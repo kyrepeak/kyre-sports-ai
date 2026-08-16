@@ -73,6 +73,30 @@ def probability_from_avg(avg, expected_ab):
     }
 
 
+def combined_exposure_projection(starter_rate, bullpen_rate, starter_ab, bullpen_ab):
+    starter_ab = max(float(starter_ab), 0.0)
+    bullpen_ab = max(float(bullpen_ab), 0.0)
+    total_ab = starter_ab + bullpen_ab
+
+    p_zero = (
+        ((1 - clamp(starter_rate, 0.0, 0.999)) ** starter_ab)
+        * ((1 - clamp(bullpen_rate, 0.0, 0.999)) ** bullpen_ab)
+    )
+    p_one_plus = 1 - p_zero
+    expected_hits = starter_rate * starter_ab + bullpen_rate * bullpen_ab
+    effective_avg = expected_hits / total_ab if total_ab > 0 else 0.0
+    smooth = probability_from_avg(effective_avg, total_ab)
+
+    return {
+        "p_zero": p_zero,
+        "p_one_plus": p_one_plus,
+        "p_exact_one": min(smooth["p_exact_one"], p_one_plus),
+        "p_two_plus": max(0.0, p_one_plus - min(smooth["p_exact_one"], p_one_plus)),
+        "expected_hits": expected_hits,
+        "effective_avg": effective_avg,
+    }
+
+
 def lineup_expected_ab(position):
     return {
         1: 4.60,
@@ -237,16 +261,25 @@ def get_pitcher_stats(pitcher_id):
     innings_text = stat.get("inningsPitched", "0.0")
     true_innings = innings_to_float(innings_text)
     strikeouts = safe_float(stat.get("strikeOuts"), 0.0) or 0.0
+    games = int(safe_float(stat.get("gamesPlayed"), 0) or 0)
+    starts = int(safe_float(stat.get("gamesStarted"), 0) or 0)
+
     return {
+        "id": int(pitcher_id),
         "name": person.get("fullName", "Unknown"),
         "hand": person.get("pitchHand", {}).get("code", "?"),
         "era": stat.get("era", "N/A"),
         "whip": stat.get("whip", "N/A"),
         "wins": stat.get("wins", 0),
         "losses": stat.get("losses", 0),
-        "games_started": stat.get("gamesStarted", 0),
+        "games": games,
+        "games_started": starts,
         "innings": innings_text,
         "true_innings": true_innings,
+        "hits_allowed": safe_float(stat.get("hits"), 0.0) or 0.0,
+        "walks": safe_float(stat.get("baseOnBalls"), 0.0) or 0.0,
+        "earned_runs": safe_float(stat.get("earnedRuns"), 0.0) or 0.0,
+        "strikeouts": strikeouts,
         "k9": strikeouts * 9 / true_innings if true_innings > 0 else None,
     }
 
@@ -277,7 +310,11 @@ def get_hitter_vs_hand_stats(player_id, pitcher_hand):
                 info = split.get("split", {}) or {}
                 code = str(info.get("code", "")).lower()
                 desc = str(info.get("description", "")).lower()
-                explicit = code == sit_code or (hand == "R" and "right" in desc) or (hand == "L" and "left" in desc)
+                explicit = (
+                    code == sit_code
+                    or (hand == "R" and "right" in desc)
+                    or (hand == "L" and "left" in desc)
+                )
                 if stat_type == "statSplits" or explicit:
                     stat = split.get("stat", {})
                     if stat:
@@ -397,7 +434,6 @@ def get_game_environment(game_pk):
 
 @st.cache_data(ttl=1800)
 def get_statcast_profile(player_id):
-    """Pull current-season expected stats + batted-ball quality from Baseball Savant CSV leaderboards."""
     year = current_season()
 
     expected_url = (
@@ -422,43 +458,109 @@ def get_statcast_profile(player_id):
     if exp_id_col is None or con_id_col is None:
         return None
 
-    exp_ids = pd.to_numeric(expected_df[exp_id_col], errors="coerce")
-    con_ids = pd.to_numeric(contact_df[con_id_col], errors="coerce")
-    exp_rows = expected_df[exp_ids == int(player_id)]
-    con_rows = contact_df[con_ids == int(player_id)]
+    exp_rows = expected_df[
+        pd.to_numeric(expected_df[exp_id_col], errors="coerce") == int(player_id)
+    ]
+    con_rows = contact_df[
+        pd.to_numeric(contact_df[con_id_col], errors="coerce") == int(player_id)
+    ]
     if exp_rows.empty and con_rows.empty:
         return None
 
     exp_row = exp_rows.iloc[0] if not exp_rows.empty else pd.Series(dtype=object)
     con_row = con_rows.iloc[0] if not con_rows.empty else pd.Series(dtype=object)
 
-    xba = safe_float(value_from_row(exp_row, expected_df, ["est_ba", "xba"])) if not exp_rows.empty else None
-    xslg = safe_float(value_from_row(exp_row, expected_df, ["est_slg", "xslg"])) if not exp_rows.empty else None
-    xwoba = safe_float(value_from_row(exp_row, expected_df, ["est_woba", "xwoba"])) if not exp_rows.empty else None
-    pa = safe_float(value_from_row(exp_row, expected_df, ["pa", "plate_appearances"], 0), 0.0) if not exp_rows.empty else 0.0
-    bip = safe_float(value_from_row(exp_row, expected_df, ["bip", "batted_ball"], 0), 0.0) if not exp_rows.empty else 0.0
-
-    avg_ev = safe_float(value_from_row(con_row, contact_df, ["exit_velocity_avg", "avg_exit_velocity"])) if not con_rows.empty else None
-    launch_angle = safe_float(value_from_row(con_row, contact_df, ["launch_angle_avg", "avg_launch_angle"])) if not con_rows.empty else None
-    hard_hit = percent_to_rate(value_from_row(con_row, contact_df, ["hard_hit_percent", "hard_hit_pct"])) if not con_rows.empty else None
-    barrel_rate = percent_to_rate(value_from_row(con_row, contact_df, ["barrel_batted_rate", "barrel_percent", "brl_percent"])) if not con_rows.empty else None
-    sweet_spot = percent_to_rate(value_from_row(con_row, contact_df, ["sweet_spot_percent", "sweet_spot_pct"])) if not con_rows.empty else None
-    bbe = safe_float(value_from_row(con_row, contact_df, ["batted_ball", "bbe"], bip), bip) if not con_rows.empty else bip
-
     return {
         "source": "Baseball Savant / Statcast",
         "year": year,
-        "xba": xba,
-        "xslg": xslg,
-        "xwoba": xwoba,
-        "pa": pa or 0.0,
-        "bip": bip or 0.0,
-        "bbe": bbe or 0.0,
-        "avg_ev": avg_ev,
-        "launch_angle": launch_angle,
-        "hard_hit_rate": hard_hit,
-        "barrel_rate": barrel_rate,
-        "sweet_spot_rate": sweet_spot,
+        "xba": safe_float(value_from_row(exp_row, expected_df, ["est_ba", "xba"])) if not exp_rows.empty else None,
+        "xslg": safe_float(value_from_row(exp_row, expected_df, ["est_slg", "xslg"])) if not exp_rows.empty else None,
+        "xwoba": safe_float(value_from_row(exp_row, expected_df, ["est_woba", "xwoba"])) if not exp_rows.empty else None,
+        "pa": safe_float(value_from_row(exp_row, expected_df, ["pa", "plate_appearances"], 0), 0.0) if not exp_rows.empty else 0.0,
+        "bip": safe_float(value_from_row(exp_row, expected_df, ["bip", "batted_ball"], 0), 0.0) if not exp_rows.empty else 0.0,
+        "bbe": safe_float(value_from_row(con_row, contact_df, ["batted_ball", "bbe"], 0), 0.0) if not con_rows.empty else 0.0,
+        "avg_ev": safe_float(value_from_row(con_row, contact_df, ["exit_velocity_avg", "avg_exit_velocity"])) if not con_rows.empty else None,
+        "launch_angle": safe_float(value_from_row(con_row, contact_df, ["launch_angle_avg", "avg_launch_angle"])) if not con_rows.empty else None,
+        "hard_hit_rate": percent_to_rate(value_from_row(con_row, contact_df, ["hard_hit_percent", "hard_hit_pct"])) if not con_rows.empty else None,
+        "barrel_rate": percent_to_rate(value_from_row(con_row, contact_df, ["barrel_batted_rate", "barrel_percent", "brl_percent"])) if not con_rows.empty else None,
+    }
+
+
+@st.cache_data(ttl=900)
+def get_team_bullpen_profile(team_id, opposing_starter_id=None):
+    """Build a current-season relief profile from the opponent's active pitching staff."""
+    if not team_id:
+        return None
+
+    roster_response = requests.get(
+        f"{MLB_API}/teams/{int(team_id)}/roster",
+        params={"rosterType": "active"},
+        timeout=15,
+    )
+    roster_response.raise_for_status()
+
+    pitcher_ids = []
+    for entry in roster_response.json().get("roster", []):
+        person = entry.get("person", {}) or {}
+        position = entry.get("position", {}) or {}
+        if position.get("abbreviation") == "P" and person.get("id"):
+            pitcher_ids.append(int(person["id"]))
+
+    relievers = []
+    for pitcher_id in pitcher_ids[:16]:
+        if opposing_starter_id and int(pitcher_id) == int(opposing_starter_id):
+            continue
+
+        try:
+            profile = get_pitcher_stats(pitcher_id)
+        except requests.RequestException:
+            continue
+
+        if not profile or profile.get("true_innings", 0.0) <= 0:
+            continue
+
+        games = profile.get("games", 0) or 0
+        starts = profile.get("games_started", 0) or 0
+        start_share = starts / max(games, 1)
+
+        # Keep pitchers whose usage is predominantly relief work.
+        if starts <= 3 or start_share <= 0.35:
+            relievers.append(profile)
+
+    if not relievers:
+        return None
+
+    total_ip = sum(p.get("true_innings", 0.0) or 0.0 for p in relievers)
+    if total_ip <= 0:
+        return None
+
+    earned_runs = sum(p.get("earned_runs", 0.0) or 0.0 for p in relievers)
+    hits = sum(p.get("hits_allowed", 0.0) or 0.0 for p in relievers)
+    walks = sum(p.get("walks", 0.0) or 0.0 for p in relievers)
+    strikeouts = sum(p.get("strikeouts", 0.0) or 0.0 for p in relievers)
+
+    r_ip = sum(
+        p.get("true_innings", 0.0) or 0.0
+        for p in relievers
+        if str(p.get("hand", "")).upper() == "R"
+    )
+    l_ip = sum(
+        p.get("true_innings", 0.0) or 0.0
+        for p in relievers
+        if str(p.get("hand", "")).upper() == "L"
+    )
+    hand_ip = r_ip + l_ip
+    r_share = r_ip / hand_ip if hand_ip > 0 else 0.60
+
+    return {
+        "reliever_count": len(relievers),
+        "innings": total_ip,
+        "era": earned_runs * 9 / total_ip,
+        "whip": (hits + walks) / total_ip,
+        "k9": strikeouts * 9 / total_ip,
+        "right_share": clamp(r_share, 0.0, 1.0),
+        "left_share": clamp(1 - r_share, 0.0, 1.0),
+        "source": "Active-roster relief aggregate",
     }
 
 
@@ -471,6 +573,7 @@ def find_player_matchup(games_df, team_id):
                 "game_pk": game["game_pk"],
                 "team_side": "away",
                 "venue_name": game.get("venue_name", "Unknown"),
+                "opponent_team_id": game["home_team_id"],
                 "opponent": game["home_team"],
                 "location": "Away",
                 "pitcher_id": game["home_pitcher_id"],
@@ -483,6 +586,7 @@ def find_player_matchup(games_df, team_id):
                 "game_pk": game["game_pk"],
                 "team_side": "home",
                 "venue_name": game.get("venue_name", "Unknown"),
+                "opponent_team_id": game["away_team_id"],
                 "opponent": game["away_team"],
                 "location": "Home",
                 "pitcher_id": game["away_pitcher_id"],
@@ -526,6 +630,7 @@ def calculate_pitcher_quality(pitcher):
     reliability = innings / (innings + 60.0) if innings > 0 else 0.0
     quality = raw * reliability
     adjustment = clamp(-0.25 * quality, -0.08, 0.08)
+
     if quality >= 0.10:
         difficulty = "Very Tough"
     elif quality >= 0.04:
@@ -536,7 +641,50 @@ def calculate_pitcher_quality(pitcher):
         difficulty = "Favorable"
     else:
         difficulty = "Near Neutral"
-    return {"reliability": reliability, "rate_adjustment": adjustment, "difficulty": difficulty}
+
+    return {
+        "reliability": reliability,
+        "rate_adjustment": adjustment,
+        "difficulty": difficulty,
+    }
+
+
+def calculate_bullpen_quality(bullpen):
+    if not bullpen:
+        return None
+
+    era = safe_float(bullpen.get("era"))
+    whip = safe_float(bullpen.get("whip"))
+    k9 = safe_float(bullpen.get("k9"))
+    innings = safe_float(bullpen.get("innings"), 0.0) or 0.0
+    if era is None or whip is None:
+        return None
+
+    raw = (
+        0.40 * ((4.20 - era) / 4.20)
+        + 0.40 * ((1.30 - whip) / 1.30)
+        + 0.20 * (((k9 - 8.50) / 8.50) if k9 is not None else 0.0)
+    )
+    reliability = innings / (innings + 120.0) if innings > 0 else 0.0
+    quality = raw * reliability
+    adjustment = clamp(-0.18 * quality, -0.05, 0.05)
+
+    if quality >= 0.10:
+        difficulty = "Very Tough"
+    elif quality >= 0.04:
+        difficulty = "Tough"
+    elif quality <= -0.10:
+        difficulty = "Very Favorable"
+    elif quality <= -0.04:
+        difficulty = "Favorable"
+    else:
+        difficulty = "Near Neutral"
+
+    return {
+        "reliability": reliability,
+        "rate_adjustment": adjustment,
+        "difficulty": difficulty,
+    }
 
 
 def apply_recent_form(base_avg, recent_form):
@@ -596,7 +744,10 @@ def calculate_environment_adjustment(environment, fallback_venue="Unknown"):
     condition = str(env.get("condition") or "Unknown")
     wind = str(env.get("wind") or "Unknown")
     roof = str(env.get("roof_type") or "Unknown")
-    indoor = any(x in condition.lower() for x in ["dome", "indoor", "roof closed", "closed roof"])
+    indoor = any(
+        x in condition.lower()
+        for x in ["dome", "indoor", "roof closed", "closed roof"]
+    )
 
     temp_adj = 0.0
     if temp is not None and not indoor:
@@ -639,14 +790,15 @@ def calculate_environment_adjustment(environment, fallback_venue="Unknown"):
 
 
 def apply_statcast_quality(base_avg, statcast):
-    """Conservative V9 xBA + contact-quality layer with sample-size shrinkage and caps."""
     if not statcast:
         return base_avg, {
             "available": False,
+            "reliability": 0.0,
             "xba_weight": 0.0,
             "quality_adjustment": 0.0,
             "pre_quality_avg": base_avg,
             "final_avg": base_avg,
+            "grade": "Unavailable",
         }
 
     xba = statcast.get("xba")
@@ -661,11 +813,10 @@ def apply_statcast_quality(base_avg, statcast):
         xba_weight = clamp(0.22 * reliability, 0.0, 0.22)
         xba_blend = base_avg * (1 - xba_weight) + xba * xba_weight
 
+    components = []
     avg_ev = statcast.get("avg_ev")
     hard_hit = statcast.get("hard_hit_rate")
     barrel = statcast.get("barrel_rate")
-
-    components = []
     if avg_ev is not None:
         components.append(0.35 * clamp((avg_ev - 88.5) / 7.0, -1.5, 1.5))
     if hard_hit is not None:
@@ -674,7 +825,11 @@ def apply_statcast_quality(base_avg, statcast):
         components.append(0.30 * clamp((barrel - 0.08) / 0.09, -1.5, 1.5))
 
     quality_score = sum(components) if components else 0.0
-    quality_adjustment = clamp(0.025 * quality_score * reliability, -0.04, 0.04)
+    quality_adjustment = clamp(
+        0.025 * quality_score * reliability,
+        -0.04,
+        0.04,
+    )
     final_avg = clamp(xba_blend * (1 + quality_adjustment), 0.050, 0.500)
 
     if quality_adjustment >= 0.020:
@@ -692,11 +847,79 @@ def apply_statcast_quality(base_avg, statcast):
         "available": True,
         "reliability": reliability,
         "xba_weight": xba_weight,
-        "quality_score": quality_score,
         "quality_adjustment": quality_adjustment,
         "pre_quality_avg": xba_blend,
         "final_avg": final_avg,
         "grade": grade,
+    }
+
+
+def build_bullpen_rate(
+    season_avg,
+    split_r,
+    split_l,
+    bullpen,
+    recent,
+    environment,
+    statcast,
+    fallback_venue="Unknown",
+):
+    if not bullpen:
+        return None
+
+    r_avg, _ = build_handedness_avg(season_avg, split_r)
+    l_avg, _ = build_handedness_avg(season_avg, split_l)
+    r_share = bullpen.get("right_share", 0.60)
+    handed_avg = r_avg * r_share + l_avg * (1 - r_share)
+
+    bullpen_quality = calculate_bullpen_quality(bullpen)
+    bullpen_adj = (
+        bullpen_quality["rate_adjustment"]
+        if bullpen_quality
+        else 0.0
+    )
+    post_bullpen = clamp(handed_avg * (1 + bullpen_adj), 0.050, 0.500)
+    post_recent, recent_weight, _ = apply_recent_form(post_bullpen, recent)
+
+    env_model = calculate_environment_adjustment(environment, fallback_venue)
+    post_env = clamp(
+        post_recent * (1 + env_model["total_adjustment"]),
+        0.050,
+        0.500,
+    )
+    final_rate, statcast_model = apply_statcast_quality(post_env, statcast)
+
+    return {
+        "rate": final_rate,
+        "handed_avg": handed_avg,
+        "quality": bullpen_quality,
+        "quality_adjustment": bullpen_adj,
+        "recent_weight": recent_weight,
+        "environment": env_model,
+        "statcast": statcast_model,
+    }
+
+
+def estimate_starter_exposure(pitcher, expected_ab):
+    if not pitcher:
+        return {
+            "starter_ip": 5.0,
+            "starter_share": 0.56,
+            "starter_ab": expected_ab * 0.56,
+            "bullpen_ab": expected_ab * 0.44,
+        }
+
+    starts = pitcher.get("games_started", 0) or 0
+    innings = pitcher.get("true_innings", 0.0) or 0.0
+    avg_ip = innings / starts if starts > 0 else 5.0
+    starter_ip = clamp(avg_ip, 4.0, 6.5)
+    starter_share = clamp(starter_ip / 9.0, 0.44, 0.72)
+
+    return {
+        "starter_ip": starter_ip,
+        "starter_share": starter_share,
+        "starter_ab": expected_ab * starter_share,
+        "bullpen_ab": expected_ab * (1 - starter_share),
     }
 
 
@@ -723,7 +946,16 @@ if sport == "MLB":
             st.warning("No MLB games found.")
         else:
             st.success(f"Schedule loaded for {game_date}")
-            display = games_df[["away_team", "home_team", "first_pitch_et", "away_pitcher", "home_pitcher", "status"]].rename(
+            display = games_df[
+                [
+                    "away_team",
+                    "home_team",
+                    "first_pitch_et",
+                    "away_pitcher",
+                    "home_pitcher",
+                    "status",
+                ]
+            ].rename(
                 columns={
                     "away_team": "Away",
                     "home_team": "Home",
@@ -738,50 +970,88 @@ if sport == "MLB":
     st.divider()
     market = st.selectbox(
         "Choose Market",
-        ["1+ Hit", "2+ Hits", "Home Run", "Hits + Runs + RBIs", "Moneyline", "Run Line", "Game Total"],
+        [
+            "1+ Hit",
+            "2+ Hits",
+            "Home Run",
+            "Hits + Runs + RBIs",
+            "Moneyline",
+            "Run Line",
+            "Game Total",
+        ],
     )
 
     if market == "1+ Hit":
         st.header("⚾ MLB 1+ Hit Projection")
-        player_name = st.text_input("Player Name", placeholder="Example: Yordan Alvarez")
+        player_name = st.text_input(
+            "Player Name",
+            placeholder="Example: Yordan Alvarez",
+        )
 
         if st.button("📡 LOAD PLAYER + MATCHUP", use_container_width=True):
             st.session_state.pop("player_data", None)
+
             if not player_name.strip():
                 st.error("Enter a player name.")
             else:
                 try:
                     player = find_mlb_player(player_name.strip())
+
                     if not player:
                         st.error("Player not found.")
                     else:
                         stats = get_player_hitting_stats(player["id"])
                         recent = get_recent_form(player["id"], 10)
                         matchup = find_player_matchup(games_df, player["team_id"])
+
                         pitcher = None
-                        hand_split = None
+                        split_r = None
+                        split_l = None
                         confirmed_lineup = None
                         recent_lineup = None
                         environment = None
                         statcast = None
-                        statcast_error = None
+                        bullpen = None
+                        data_warnings = []
 
                         if matchup:
-                            confirmed_lineup = get_lineup_position(matchup["game_pk"], player["id"], matchup["team_side"])
+                            confirmed_lineup = get_lineup_position(
+                                matchup["game_pk"],
+                                player["id"],
+                                matchup["team_side"],
+                            )
                             environment = get_game_environment(matchup["game_pk"])
 
                         if recent:
-                            recent_lineup = estimate_recent_lineup_position(player["id"], recent.get("game_pks", []), 5)
+                            recent_lineup = estimate_recent_lineup_position(
+                                player["id"],
+                                recent.get("game_pks", []),
+                                5,
+                            )
 
                         if matchup and pd.notna(matchup.get("pitcher_id")):
                             pitcher = get_pitcher_stats(int(matchup["pitcher_id"]))
-                            if pitcher:
-                                hand_split = get_hitter_vs_hand_stats(player["id"], pitcher["hand"])
+
+                        split_r = get_hitter_vs_hand_stats(player["id"], "R")
+                        split_l = get_hitter_vs_hand_stats(player["id"], "L")
+
+                        if matchup:
+                            try:
+                                bullpen = get_team_bullpen_profile(
+                                    matchup.get("opponent_team_id"),
+                                    matchup.get("pitcher_id"),
+                                )
+                            except Exception as exc:
+                                data_warnings.append(
+                                    f"Bullpen profile unavailable: {exc}"
+                                )
 
                         try:
                             statcast = get_statcast_profile(player["id"])
                         except Exception as exc:
-                            statcast_error = str(exc)
+                            data_warnings.append(
+                                f"Statcast profile unavailable: {exc}"
+                            )
 
                         st.session_state["player_data"] = {
                             "player": player,
@@ -789,13 +1059,16 @@ if sport == "MLB":
                             "recent": recent,
                             "matchup": matchup,
                             "pitcher": pitcher,
-                            "hand_split": hand_split,
+                            "split_r": split_r,
+                            "split_l": split_l,
                             "confirmed_lineup": confirmed_lineup,
                             "recent_lineup": recent_lineup,
                             "environment": environment,
                             "statcast": statcast,
-                            "statcast_error": statcast_error,
+                            "bullpen": bullpen,
+                            "warnings": data_warnings,
                         }
+
                 except requests.RequestException as exc:
                     st.error(f"Could not load MLB data: {exc}")
 
@@ -806,34 +1079,54 @@ if sport == "MLB":
             recent = data.get("recent")
             matchup = data.get("matchup")
             pitcher = data.get("pitcher")
-            hand_split = data.get("hand_split")
+            split_r = data.get("split_r")
+            split_l = data.get("split_l")
             environment = data.get("environment")
             statcast = data.get("statcast")
+            bullpen = data.get("bullpen")
 
             if stats:
                 st.success(f"Live data loaded for {player['name']}")
                 st.subheader(f"📊 {player['name']} — {stats['season']}")
-                st.caption(f"Team: {player['team_name']} • Bats: {player['bat_side']}")
+                st.caption(
+                    f"Team: {player['team_name']} • Bats: {player['bat_side']}"
+                )
 
                 c1, c2, c3, c4 = st.columns(4)
-                with c1: st.metric("AVG", stats["avg"])
-                with c2: st.metric("Hits", stats["hits"])
-                with c3: st.metric("At-Bats", stats["at_bats"])
-                with c4: st.metric("Games", stats["games"])
+                with c1:
+                    st.metric("AVG", stats["avg"])
+                with c2:
+                    st.metric("Hits", stats["hits"])
+                with c3:
+                    st.metric("At-Bats", stats["at_bats"])
+                with c4:
+                    st.metric("Games", stats["games"])
+
                 c5, c6, c7, c8 = st.columns(4)
-                with c5: st.metric("HR", stats["home_runs"])
-                with c6: st.metric("OBP", stats["obp"])
-                with c7: st.metric("SLG", stats["slg"])
-                with c8: st.metric("OPS", stats["ops"])
+                with c5:
+                    st.metric("HR", stats["home_runs"])
+                with c6:
+                    st.metric("OBP", stats["obp"])
+                with c7:
+                    st.metric("SLG", stats["slg"])
+                with c8:
+                    st.metric("OPS", stats["ops"])
 
                 st.divider()
                 st.subheader("🔥 Recent Form — Last 10 Games")
                 if recent and recent.get("avg") is not None:
                     r1, r2, r3, r4 = st.columns(4)
-                    with r1: st.metric("Recent AVG", f"{recent['avg']:.3f}")
-                    with r2: st.metric("Hits", recent["hits"])
-                    with r3: st.metric("Recent AB", recent["at_bats"])
-                    with r4: st.metric("Hit Games", f"{recent['hit_games']}/{recent['games']}")
+                    with r1:
+                        st.metric("Recent AVG", f"{recent['avg']:.3f}")
+                    with r2:
+                        st.metric("Hits", recent["hits"])
+                    with r3:
+                        st.metric("Recent AB", recent["at_bats"])
+                    with r4:
+                        st.metric(
+                            "Hit Games",
+                            f"{recent['hit_games']}/{recent['games']}",
+                        )
                 else:
                     st.info("Recent game-log data was not available.")
 
@@ -841,59 +1134,207 @@ if sport == "MLB":
                 st.subheader("📡 Statcast Contact Quality")
                 if statcast:
                     s1, s2, s3, s4 = st.columns(4)
-                    with s1: st.metric("xBA", f"{statcast['xba']:.3f}" if statcast.get("xba") is not None else "N/A")
-                    with s2: st.metric("Avg Exit Velo", f"{statcast['avg_ev']:.1f} mph" if statcast.get("avg_ev") is not None else "N/A")
-                    with s3: st.metric("Hard-Hit %", f"{statcast['hard_hit_rate'] * 100:.1f}%" if statcast.get("hard_hit_rate") is not None else "N/A")
-                    with s4: st.metric("Barrel %", f"{statcast['barrel_rate'] * 100:.1f}%" if statcast.get("barrel_rate") is not None else "N/A")
+                    with s1:
+                        st.metric(
+                            "xBA",
+                            f"{statcast['xba']:.3f}"
+                            if statcast.get("xba") is not None
+                            else "N/A",
+                        )
+                    with s2:
+                        st.metric(
+                            "Avg Exit Velo",
+                            f"{statcast['avg_ev']:.1f} mph"
+                            if statcast.get("avg_ev") is not None
+                            else "N/A",
+                        )
+                    with s3:
+                        st.metric(
+                            "Hard-Hit %",
+                            f"{statcast['hard_hit_rate'] * 100:.1f}%"
+                            if statcast.get("hard_hit_rate") is not None
+                            else "N/A",
+                        )
+                    with s4:
+                        st.metric(
+                            "Barrel %",
+                            f"{statcast['barrel_rate'] * 100:.1f}%"
+                            if statcast.get("barrel_rate") is not None
+                            else "N/A",
+                        )
+
                     s5, s6, s7 = st.columns(3)
-                    with s5: st.metric("xSLG", f"{statcast['xslg']:.3f}" if statcast.get("xslg") is not None else "N/A")
-                    with s6: st.metric("xwOBA", f"{statcast['xwoba']:.3f}" if statcast.get("xwoba") is not None else "N/A")
-                    with s7: st.metric("Launch Angle", f"{statcast['launch_angle']:.1f}°" if statcast.get("launch_angle") is not None else "N/A")
-                    st.caption("Source: Baseball Savant / Statcast. xBA is used with sample-size shrinkage; EV/Hard-Hit/Barrel are capped supporting signals.")
+                    with s5:
+                        st.metric(
+                            "xSLG",
+                            f"{statcast['xslg']:.3f}"
+                            if statcast.get("xslg") is not None
+                            else "N/A",
+                        )
+                    with s6:
+                        st.metric(
+                            "xwOBA",
+                            f"{statcast['xwoba']:.3f}"
+                            if statcast.get("xwoba") is not None
+                            else "N/A",
+                        )
+                    with s7:
+                        st.metric(
+                            "Launch Angle",
+                            f"{statcast['launch_angle']:.1f}°"
+                            if statcast.get("launch_angle") is not None
+                            else "N/A",
+                        )
                 else:
-                    st.warning("Statcast data is unavailable right now. V9 will automatically fall back to the V8 model stack.")
+                    st.warning(
+                        "Statcast data is unavailable right now. "
+                        "The model will fall back automatically."
+                    )
 
                 st.divider()
                 st.subheader("⚔️ Today's Matchup")
+
                 if matchup:
                     m1, m2, m3, m4 = st.columns(4)
-                    with m1: st.metric("Opponent", matchup["opponent"])
-                    with m2: st.metric("Home/Away", matchup["location"])
-                    with m3: st.metric("First Pitch", matchup["first_pitch"])
-                    with m4: st.metric("Status", matchup["status"])
-                    st.write(f"**Probable opposing starter:** {matchup['pitcher']}")
+                    with m1:
+                        st.metric("Opponent", matchup["opponent"])
+                    with m2:
+                        st.metric("Home/Away", matchup["location"])
+                    with m3:
+                        st.metric("First Pitch", matchup["first_pitch"])
+                    with m4:
+                        st.metric("Status", matchup["status"])
+
+                    st.write(
+                        f"**Probable opposing starter:** {matchup['pitcher']}"
+                    )
 
                     if pitcher:
                         p1, p2, p3, p4 = st.columns(4)
-                        with p1: st.metric("Pitcher", pitcher["name"])
-                        with p2: st.metric("Throws", pitcher["hand"])
-                        with p3: st.metric("ERA", pitcher["era"])
-                        with p4: st.metric("WHIP", pitcher["whip"])
-                        p5, p6, p7, p8 = st.columns(4)
-                        with p5: st.metric("W-L", f"{pitcher['wins']}-{pitcher['losses']}")
-                        with p6: st.metric("Starts", pitcher["games_started"])
-                        with p7: st.metric("IP", pitcher["innings"])
-                        with p8: st.metric("K/9", f"{pitcher['k9']:.2f}" if pitcher.get("k9") is not None else "N/A")
+                        with p1:
+                            st.metric("Pitcher", pitcher["name"])
+                        with p2:
+                            st.metric("Throws", pitcher["hand"])
+                        with p3:
+                            st.metric("ERA", pitcher["era"])
+                        with p4:
+                            st.metric("WHIP", pitcher["whip"])
 
-                    if hand_split:
-                        st.subheader("↔️ Batter vs Pitcher Hand")
+                        p5, p6, p7, p8 = st.columns(4)
+                        with p5:
+                            st.metric(
+                                "W-L",
+                                f"{pitcher['wins']}-{pitcher['losses']}",
+                            )
+                        with p6:
+                            st.metric("Starts", pitcher["games_started"])
+                        with p7:
+                            st.metric("IP", pitcher["innings"])
+                        with p8:
+                            st.metric(
+                                "K/9",
+                                f"{pitcher['k9']:.2f}"
+                                if pitcher.get("k9") is not None
+                                else "N/A",
+                            )
+
+                    starter_hand = (
+                        pitcher.get("hand")
+                        if pitcher
+                        else None
+                    )
+                    starter_split = (
+                        split_r
+                        if starter_hand == "R"
+                        else split_l
+                        if starter_hand == "L"
+                        else None
+                    )
+                    if starter_split:
+                        st.subheader("↔️ Batter vs Starter Hand")
                         h1, h2, h3, h4 = st.columns(4)
-                        with h1: st.metric("Split AVG", hand_split["avg"])
-                        with h2: st.metric("Split Hits", hand_split["hits"])
-                        with h3: st.metric("Split AB", hand_split["at_bats"])
-                        with h4: st.metric("Split OPS", hand_split["ops"])
+                        with h1:
+                            st.metric("Split AVG", starter_split["avg"])
+                        with h2:
+                            st.metric("Split Hits", starter_split["hits"])
+                        with h3:
+                            st.metric("Split AB", starter_split["at_bats"])
+                        with h4:
+                            st.metric("Split OPS", starter_split["ops"])
+
+                    st.subheader("🧯 Opponent Bullpen")
+                    if bullpen:
+                        b1, b2, b3, b4 = st.columns(4)
+                        with b1:
+                            st.metric("Bullpen ERA", f"{bullpen['era']:.2f}")
+                        with b2:
+                            st.metric("Bullpen WHIP", f"{bullpen['whip']:.2f}")
+                        with b3:
+                            st.metric("Bullpen K/9", f"{bullpen['k9']:.2f}")
+                        with b4:
+                            st.metric(
+                                "Relievers",
+                                bullpen["reliever_count"],
+                            )
+
+                        b5, b6, b7 = st.columns(3)
+                        with b5:
+                            st.metric(
+                                "RHP Exposure",
+                                f"{bullpen['right_share'] * 100:.0f}%",
+                            )
+                        with b6:
+                            st.metric(
+                                "LHP Exposure",
+                                f"{bullpen['left_share'] * 100:.0f}%",
+                            )
+                        with b7:
+                            st.metric(
+                                "Bullpen IP Sample",
+                                f"{bullpen['innings']:.1f}",
+                            )
+
+                        st.caption(
+                            "V10 bullpen profile aggregates active-roster relievers "
+                            "and excludes the listed starter. It does not yet model "
+                            "which individual relievers are rested or unavailable."
+                        )
+                    else:
+                        st.info(
+                            "Bullpen profile unavailable — V10 will fall back to "
+                            "the starter-only V9 rate for the full projected at-bats."
+                        )
 
                     st.subheader("🏟️ Park + Weather")
-                    env_view = calculate_environment_adjustment(environment, matchup.get("venue_name", "Unknown"))
+                    env_view = calculate_environment_adjustment(
+                        environment,
+                        matchup.get("venue_name", "Unknown"),
+                    )
                     e1, e2, e3, e4 = st.columns(4)
-                    with e1: st.metric("Ballpark", env_view["venue_name"])
-                    with e2: st.metric("Temperature", f"{env_view['temperature']:.0f}°F" if env_view["temperature"] is not None else "N/A")
-                    with e3: st.metric("Condition", env_view["condition"])
-                    with e4: st.metric("Wind", env_view["wind"])
+                    with e1:
+                        st.metric("Ballpark", env_view["venue_name"])
+                    with e2:
+                        st.metric(
+                            "Temperature",
+                            f"{env_view['temperature']:.0f}°F"
+                            if env_view["temperature"] is not None
+                            else "N/A",
+                        )
+                    with e3:
+                        st.metric("Condition", env_view["condition"])
+                    with e4:
+                        st.metric("Wind", env_view["wind"])
+
                     e5, e6, e7 = st.columns(3)
-                    with e5: st.metric("Roof Type", env_view["roof_type"])
-                    with e6: st.metric("Environment Grade", env_view["grade"])
-                    with e7: st.metric("Prototype Park Adj", f"{env_view['park_adjustment'] * 100:+.1f}%")
+                    with e5:
+                        st.metric("Roof Type", env_view["roof_type"])
+                    with e6:
+                        st.metric("Environment Grade", env_view["grade"])
+                    with e7:
+                        st.metric(
+                            "Prototype Park Adj",
+                            f"{env_view['park_adjustment'] * 100:+.1f}%",
+                        )
                 else:
                     st.warning("No game found today for this player's team.")
 
@@ -901,84 +1342,305 @@ if sport == "MLB":
                 st.subheader("📋 Lineup Position")
                 confirmed = data.get("confirmed_lineup")
                 estimated = data.get("recent_lineup")
-                projected_position = int(confirmed) if confirmed else int(estimated["position"]) if estimated else None
-                lineup_source = "Confirmed today's lineup" if confirmed else f"Recent lineup estimate ({estimated['sample_games']} games)" if estimated else "Manual fallback"
+                projected_position = (
+                    int(confirmed)
+                    if confirmed
+                    else int(estimated["position"])
+                    if estimated
+                    else None
+                )
+                lineup_source = (
+                    "Confirmed today's lineup"
+                    if confirmed
+                    else f"Recent lineup estimate ({estimated['sample_games']} games)"
+                    if estimated
+                    else "Manual fallback"
+                )
+
                 if projected_position:
                     l1, l2, l3 = st.columns(3)
-                    with l1: st.metric("Projected Batting Spot", f"#{projected_position}")
-                    with l2: st.metric("Lineup Source", lineup_source)
-                    with l3: st.metric("Baseline Expected AB", f"{lineup_expected_ab(projected_position):.1f}")
+                    with l1:
+                        st.metric(
+                            "Projected Batting Spot",
+                            f"#{projected_position}",
+                        )
+                    with l2:
+                        st.metric("Lineup Source", lineup_source)
+                    with l3:
+                        st.metric(
+                            "Baseline Expected AB",
+                            f"{lineup_expected_ab(projected_position):.1f}",
+                        )
 
                 default_position = projected_position or 4
-                manual_position = st.selectbox("Batting Order Used by Model", list(range(1, 10)), index=default_position - 1)
-                expected_ab = st.number_input("Projected At-Bats Today", min_value=2.5, max_value=6.0, value=float(lineup_expected_ab(manual_position)), step=0.1)
-                sportsbook_line = st.number_input("Sportsbook Hit Line", value=0.5, step=0.5)
+                manual_position = st.selectbox(
+                    "Batting Order Used by Model",
+                    list(range(1, 10)),
+                    index=default_position - 1,
+                )
+
+                expected_ab = st.number_input(
+                    "Projected At-Bats Today",
+                    min_value=2.5,
+                    max_value=6.0,
+                    value=float(lineup_expected_ab(manual_position)),
+                    step=0.1,
+                )
+
+                sportsbook_line = st.number_input(
+                    "Sportsbook Hit Line",
+                    value=0.5,
+                    step=0.5,
+                )
 
                 if st.button("🔥 RUN HIT PROJECTION", use_container_width=True):
                     season_avg = safe_float(stats["avg"], 0.0) or 0.0
-                    hand_avg, split_weight = build_handedness_avg(season_avg, hand_split)
+
+                    starter_hand = (
+                        pitcher.get("hand")
+                        if pitcher
+                        else None
+                    )
+                    starter_split = (
+                        split_r
+                        if starter_hand == "R"
+                        else split_l
+                        if starter_hand == "L"
+                        else None
+                    )
+
+                    hand_avg, split_weight = build_handedness_avg(
+                        season_avg,
+                        starter_split,
+                    )
                     pitcher_quality = calculate_pitcher_quality(pitcher)
-                    pitcher_adj = pitcher_quality["rate_adjustment"] if pitcher_quality else 0.0
-                    pitcher_avg = clamp(hand_avg * (1 + pitcher_adj), 0.050, 0.500)
-                    recent_avg_model, recent_weight, recent_avg = apply_recent_form(pitcher_avg, recent)
-                    env_model = calculate_environment_adjustment(environment, (matchup or {}).get("venue_name", "Unknown"))
-                    v8_avg = clamp(recent_avg_model * (1 + env_model["total_adjustment"]), 0.050, 0.500)
-                    final_avg, sc_model = apply_statcast_quality(v8_avg, statcast)
+                    pitcher_adj = (
+                        pitcher_quality["rate_adjustment"]
+                        if pitcher_quality
+                        else 0.0
+                    )
+                    pitcher_avg = clamp(
+                        hand_avg * (1 + pitcher_adj),
+                        0.050,
+                        0.500,
+                    )
 
-                    season_only = probability_from_avg(season_avg, expected_ab)
-                    v8_projection = probability_from_avg(v8_avg, expected_ab)
-                    final_projection = probability_from_avg(final_avg, expected_ab)
+                    recent_avg_model, recent_weight, recent_avg = apply_recent_form(
+                        pitcher_avg,
+                        recent,
+                    )
+                    env_model = calculate_environment_adjustment(
+                        environment,
+                        (matchup or {}).get("venue_name", "Unknown"),
+                    )
+                    v8_avg = clamp(
+                        recent_avg_model * (1 + env_model["total_adjustment"]),
+                        0.050,
+                        0.500,
+                    )
+                    starter_rate, sc_model = apply_statcast_quality(
+                        v8_avg,
+                        statcast,
+                    )
 
-                    st.header("🧠 V9 Model Stack")
-                    a1, a2, a3, a4 = st.columns(4)
-                    with a1: st.metric("Season AVG", f"{season_avg:.3f}")
-                    with a2: st.metric("Handedness AVG", f"{hand_avg:.3f}")
-                    with a3: st.metric("Post-Pitcher AVG", f"{pitcher_avg:.3f}")
-                    with a4: st.metric("Post-Recent AVG", f"{recent_avg_model:.3f}")
+                    bullpen_model = build_bullpen_rate(
+                        season_avg,
+                        split_r,
+                        split_l,
+                        bullpen,
+                        recent,
+                        environment,
+                        statcast,
+                        (matchup or {}).get("venue_name", "Unknown"),
+                    )
 
-                    st.subheader("🌦️ Environment Layer")
-                    ev1, ev2, ev3 = st.columns(3)
-                    with ev1: st.metric("Environment Adj", f"{env_model['total_adjustment'] * 100:+.1f}%")
-                    with ev2: st.metric("V8 Core AVG", f"{v8_avg:.3f}")
-                    with ev3: st.metric("Environment Grade", env_model["grade"])
+                    exposure = estimate_starter_exposure(
+                        pitcher,
+                        expected_ab,
+                    )
 
-                    st.subheader("📡 Statcast Quality Adjustment")
-                    if statcast and sc_model["available"]:
-                        q1, q2, q3, q4 = st.columns(4)
-                        with q1: st.metric("xBA", f"{statcast['xba']:.3f}" if statcast.get("xba") is not None else "N/A")
-                        with q2: st.metric("xBA Weight", f"{sc_model['xba_weight'] * 100:.0f}%")
-                        with q3: st.metric("Contact Grade", sc_model["grade"])
-                        with q4: st.metric("Contact Adj", f"{sc_model['quality_adjustment'] * 100:+.1f}%")
-                        q5, q6, q7 = st.columns(3)
-                        with q5: st.metric("Pre-Quality AVG", f"{sc_model['pre_quality_avg']:.3f}")
-                        with q6: st.metric("Statcast Sample Weight", f"{sc_model['reliability'] * 100:.0f}%")
-                        with q7: st.metric("Final Model AVG", f"{final_avg:.3f}")
+                    v9_projection = probability_from_avg(
+                        starter_rate,
+                        expected_ab,
+                    )
+
+                    if bullpen_model:
+                        bullpen_rate = bullpen_model["rate"]
+                        final_projection = combined_exposure_projection(
+                            starter_rate,
+                            bullpen_rate,
+                            exposure["starter_ab"],
+                            exposure["bullpen_ab"],
+                        )
                     else:
-                        st.info("Statcast unavailable — V9 is using the unchanged V8 core for this projection.")
+                        bullpen_rate = starter_rate
+                        final_projection = v9_projection
+
+                    season_only = probability_from_avg(
+                        season_avg,
+                        expected_ab,
+                    )
+
+                    st.header("🧠 V10 Model Stack")
+                    a1, a2, a3, a4 = st.columns(4)
+                    with a1:
+                        st.metric("Season AVG", f"{season_avg:.3f}")
+                    with a2:
+                        st.metric("Handedness AVG", f"{hand_avg:.3f}")
+                    with a3:
+                        st.metric("Post-Pitcher AVG", f"{pitcher_avg:.3f}")
+                    with a4:
+                        st.metric(
+                            "Post-Recent AVG",
+                            f"{recent_avg_model:.3f}",
+                        )
+
+                    st.subheader("🌦️ Environment + Statcast")
+                    v1, v2, v3, v4 = st.columns(4)
+                    with v1:
+                        st.metric(
+                            "Environment Adj",
+                            f"{env_model['total_adjustment'] * 100:+.1f}%",
+                        )
+                    with v2:
+                        st.metric("V8 Core AVG", f"{v8_avg:.3f}")
+                    with v3:
+                        st.metric(
+                            "Contact Adj",
+                            f"{sc_model['quality_adjustment'] * 100:+.1f}%",
+                        )
+                    with v4:
+                        st.metric(
+                            "Starter-Facing Rate",
+                            f"{starter_rate:.3f}",
+                        )
+
+                    st.subheader("🧯 Bullpen Exposure Adjustment")
+                    if bullpen_model:
+                        bp_quality = bullpen_model["quality"]
+
+                        bp1, bp2, bp3, bp4 = st.columns(4)
+                        with bp1:
+                            st.metric(
+                                "Bullpen Difficulty",
+                                bp_quality["difficulty"]
+                                if bp_quality
+                                else "N/A",
+                            )
+                        with bp2:
+                            st.metric(
+                                "Bullpen Hit-Rate Adj",
+                                f"{bullpen_model['quality_adjustment'] * 100:+.1f}%",
+                            )
+                        with bp3:
+                            st.metric(
+                                "Bullpen-Facing Rate",
+                                f"{bullpen_rate:.3f}",
+                            )
+                        with bp4:
+                            st.metric(
+                                "Bullpen R/L Mix",
+                                f"{bullpen['right_share'] * 100:.0f}% R / "
+                                f"{bullpen['left_share'] * 100:.0f}% L",
+                            )
+
+                        ex1, ex2, ex3, ex4 = st.columns(4)
+                        with ex1:
+                            st.metric(
+                                "Expected Starter IP",
+                                f"{exposure['starter_ip']:.1f}",
+                            )
+                        with ex2:
+                            st.metric(
+                                "Starter-Facing AB",
+                                f"{exposure['starter_ab']:.2f}",
+                            )
+                        with ex3:
+                            st.metric(
+                                "Bullpen-Facing AB",
+                                f"{exposure['bullpen_ab']:.2f}",
+                            )
+                        with ex4:
+                            st.metric(
+                                "Starter Exposure",
+                                f"{exposure['starter_share'] * 100:.0f}%",
+                            )
+                    else:
+                        st.info(
+                            "Bullpen data unavailable — V10 used the V9 rate "
+                            "across all projected at-bats."
+                        )
 
                     st.header("📊 Projection Results")
                     o1, o2, o3 = st.columns(3)
-                    with o1: st.metric("Expected Hits", f"{final_projection['expected_hits']:.2f}")
+                    with o1:
+                        st.metric(
+                            "Expected Hits",
+                            f"{final_projection['expected_hits']:.2f}",
+                        )
                     with o2:
-                        delta_v8 = (final_projection["p_one_plus"] - v8_projection["p_one_plus"]) * 100
-                        st.metric("1+ Hit Probability", f"{final_projection['p_one_plus'] * 100:.1f}%", delta=f"{delta_v8:+.1f} pts vs V8 core")
-                    with o3: st.metric("0 Hit Probability", f"{final_projection['p_zero'] * 100:.1f}%")
-                    o4, o5, o6 = st.columns(3)
-                    with o4: st.metric("Exactly 1 Hit", f"{final_projection['p_exact_one'] * 100:.1f}%")
-                    with o5: st.metric("2+ Hit Probability", f"{final_projection['p_two_plus'] * 100:.1f}%")
-                    with o6:
-                        season_delta = (final_projection["p_one_plus"] - season_only["p_one_plus"]) * 100
-                        st.metric("Season-Only 1+", f"{season_only['p_one_plus'] * 100:.1f}%", delta=f"{season_delta:+.1f} pts final vs season")
+                        delta_v9 = (
+                            final_projection["p_one_plus"]
+                            - v9_projection["p_one_plus"]
+                        ) * 100
+                        st.metric(
+                            "1+ Hit Probability",
+                            f"{final_projection['p_one_plus'] * 100:.1f}%",
+                            delta=f"{delta_v9:+.1f} pts vs V9",
+                        )
+                    with o3:
+                        st.metric(
+                            "0 Hit Probability",
+                            f"{final_projection['p_zero'] * 100:.1f}%",
+                        )
 
-                    st.success("V9 adds Baseball Savant xBA + exit velocity + Hard-Hit% + Barrel% to the existing season, handedness, pitcher, recent-form, lineup and environment stack.")
-                    st.caption("V9 remains a prototype heuristic, not a calibrated betting model. Statcast effects are sample-size shrunk and tightly capped so contact-quality metrics cannot overwhelm the rest of the model.")
+                    o4, o5, o6 = st.columns(3)
+                    with o4:
+                        st.metric(
+                            "Exactly 1 Hit",
+                            f"{final_projection['p_exact_one'] * 100:.1f}%",
+                        )
+                    with o5:
+                        st.metric(
+                            "2+ Hit Probability",
+                            f"{final_projection['p_two_plus'] * 100:.1f}%",
+                        )
+                    with o6:
+                        season_delta = (
+                            final_projection["p_one_plus"]
+                            - season_only["p_one_plus"]
+                        ) * 100
+                        st.metric(
+                            "Season-Only 1+",
+                            f"{season_only['p_one_plus'] * 100:.1f}%",
+                            delta=f"{season_delta:+.1f} pts final vs season",
+                        )
+
+                    st.success(
+                        "V10 adds opponent bullpen quality, bullpen R/L mix, "
+                        "estimated starter innings, and starter-vs-bullpen exposure "
+                        "to the V9 season + splits + pitcher + recent form + lineup "
+                        "+ park/weather + Statcast stack."
+                    )
+                    st.caption(
+                        "V10 remains a prototype heuristic, not a calibrated betting "
+                        "model. Bullpen numbers are season aggregates for active-roster "
+                        "relievers; individual reliever rest, injuries, warm-up status, "
+                        "and exact in-game usage are not yet modeled."
+                    )
+
+                    for warning in data.get("warnings", []):
+                        st.warning(warning)
 
     else:
         st.info(f"The MLB {market} engine will be added later.")
 
 else:
-    market = st.selectbox("Choose Market", ["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total"])
+    market = st.selectbox(
+        "Choose Market",
+        ["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total"],
+    )
     st.info(f"The WNBA {market} model will be added later.")
 
 st.divider()
-st.caption("Kyre Sports AI • Projection Engine V9")
+st.caption("Kyre Sports AI • Projection Engine V10")
