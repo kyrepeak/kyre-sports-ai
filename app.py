@@ -155,9 +155,12 @@ def find_mlb_player(player_name):
     )
 
     detail_response = requests.get(
-        detail_url,
-        timeout=15
-    )
+    detail_url,
+    params={
+        "hydrate": "currentTeam"
+    },
+    timeout=15
+)
 
     detail_response.raise_for_status()
 
