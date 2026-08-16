@@ -1,5 +1,8 @@
 import streamlit as st
-import math
+import requests
+import pandas as pd
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 st.set_page_config(
     page_title="Kyre Sports AI",
@@ -7,8 +10,75 @@ st.set_page_config(
     layout="wide"
 )
 
+@st.cache_data(ttl=300)
+def get_today_mlb_games():
+    today_et = datetime.now(
+        ZoneInfo("America/New_York")
+    ).strftime("%Y-%m-%d")
+
+    url = "https://statsapi.mlb.com/api/v1/schedule"
+
+    params = {
+        "sportId": 1,
+        "date": today_et,
+        "hydrate": "probablePitcher,team"
+    }
+
+    response = requests.get(
+        url,
+        params=params,
+        timeout=15
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    games = []
+
+    for date_block in data.get("dates", []):
+        for game in date_block.get("games", []):
+
+            away = game["teams"]["away"]["team"]["name"]
+            home = game["teams"]["home"]["team"]["name"]
+
+            away_pitcher = (
+                game["teams"]["away"]
+                .get("probablePitcher", {})
+                .get("fullName", "TBD")
+            )
+
+            home_pitcher = (
+                game["teams"]["home"]
+                .get("probablePitcher", {})
+                .get("fullName", "TBD")
+            )
+
+            game_time = datetime.fromisoformat(
+                game["gameDate"].replace("Z", "+00:00")
+            ).astimezone(
+                ZoneInfo("America/New_York")
+            )
+
+            games.append({
+                "Away": away,
+                "Home": home,
+                "First Pitch (ET)": game_time.strftime(
+                    "%I:%M %p"
+                ).lstrip("0"),
+                "Away Probable Pitcher": away_pitcher,
+                "Home Probable Pitcher": home_pitcher,
+                "Status": game["status"]["detailedState"]
+            })
+
+    return pd.DataFrame(games), today_et
+
+
 st.title("🧠 KYRE SPORTS AI")
-st.subheader("Sports Projection & Analytics Engine")
+
+st.subheader(
+    "Sports Projection & Analytics Engine"
+)
 
 st.divider()
 
@@ -17,11 +87,45 @@ sport = st.selectbox(
     ["MLB", "WNBA"]
 )
 
-# -----------------------------
-# MLB
-# -----------------------------
 
 if sport == "MLB":
+
+    st.header("📡 Live MLB Data")
+
+    if st.button(
+        "🔄 LOAD TODAY'S MLB GAMES",
+        use_container_width=True
+    ):
+
+        try:
+
+            games_df, game_date = get_today_mlb_games()
+
+            if games_df.empty:
+
+                st.warning(
+                    f"No MLB games were found for {game_date}."
+                )
+
+            else:
+
+                st.success(
+                    f"Live MLB schedule loaded for {game_date}."
+                )
+
+                st.dataframe(
+                    games_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+        except requests.RequestException as error:
+
+            st.error(
+                f"Could not load MLB data: {error}"
+            )
+
+    st.divider()
 
     market = st.selectbox(
         "Choose Market",
@@ -38,7 +142,9 @@ if sport == "MLB":
 
     if market == "1+ Hit":
 
-        st.header("⚾ MLB 1+ Hit Projection")
+        st.header(
+            "⚾ MLB 1+ Hit Projection"
+        )
 
         player = st.text_input(
             "Player Name",
@@ -79,15 +185,15 @@ if sport == "MLB":
         ):
 
             if player.strip() == "":
-                st.error("Enter a player name.")
+
+                st.error(
+                    "Enter a player name."
+                )
 
             else:
 
-                # Simple baseline hit model
-                hit_probability_per_ab = batting_average
-
                 probability_zero_hits = (
-                    1 - hit_probability_per_ab
+                    1 - batting_average
                 ) ** expected_ab
 
                 probability_one_plus = (
@@ -98,16 +204,19 @@ if sport == "MLB":
                     batting_average * expected_ab
                 )
 
-                # Approximate probability of exactly one hit
                 probability_exactly_one = (
                     expected_ab
                     * batting_average
-                    * ((1 - batting_average) ** (expected_ab - 1))
+                    * (
+                        (1 - batting_average)
+                        ** (expected_ab - 1)
+                    )
                 )
 
                 probability_two_plus = max(
                     0,
-                    probability_one_plus - probability_exactly_one
+                    probability_one_plus
+                    - probability_exactly_one
                 )
 
                 st.success(
@@ -116,23 +225,28 @@ if sport == "MLB":
 
                 st.divider()
 
-                st.header("📊 Projection Results")
+                st.header(
+                    "📊 Projection Results"
+                )
 
                 col1, col2, col3 = st.columns(3)
 
                 with col1:
+
                     st.metric(
                         "Expected Hits",
                         f"{expected_hits:.2f}"
                     )
 
                 with col2:
+
                     st.metric(
                         "1+ Hit Probability",
                         f"{probability_one_plus * 100:.1f}%"
                     )
 
                 with col3:
+
                     st.metric(
                         "0 Hit Probability",
                         f"{probability_zero_hits * 100:.1f}%"
@@ -141,12 +255,14 @@ if sport == "MLB":
                 col4, col5 = st.columns(2)
 
                 with col4:
+
                     st.metric(
                         "Exactly 1 Hit",
                         f"{probability_exactly_one * 100:.1f}%"
                     )
 
                 with col5:
+
                     st.metric(
                         "2+ Hit Probability",
                         f"{probability_two_plus * 100:.1f}%"
@@ -154,42 +270,24 @@ if sport == "MLB":
 
                 st.divider()
 
-                st.subheader("⚾ Matchup")
-
-                st.write(
-                    f"**Player:** {player}"
-                )
-
-                st.write(
-                    f"**Opponent:** {opponent}"
-                )
-
-                st.write(
-                    f"**Batting Average:** {batting_average:.3f}"
-                )
-
-                st.write(
-                    f"**Projected At-Bats:** {expected_ab:.1f}"
-                )
-
-                st.write(
-                    f"**Sportsbook Line:** {sportsbook_line}"
-                )
-
-                st.divider()
-
                 if probability_one_plus >= 0.70:
                     grade = "A"
+
                 elif probability_one_plus >= 0.65:
                     grade = "B+"
+
                 elif probability_one_plus >= 0.60:
                     grade = "B"
+
                 elif probability_one_plus >= 0.55:
                     grade = "C+"
+
                 else:
                     grade = "C"
 
-                st.subheader("🧠 Model Grade")
+                st.subheader(
+                    "🧠 Model Grade"
+                )
 
                 st.metric(
                     "Hit Probability Grade",
@@ -197,10 +295,9 @@ if sport == "MLB":
                 )
 
                 st.warning(
-                    "This is the Version 1 baseline model. "
-                    "It currently uses batting average and expected at-bats. "
-                    "Pitcher matchup, Statcast, lineup, weather, park, "
-                    "bullpen and recent-form adjustments will be added next."
+                    "Live MLB schedule data is now connected. "
+                    "Player stats, pitcher stats, Statcast, weather, "
+                    "park and lineup adjustments will be added next."
                 )
 
     else:
@@ -209,9 +306,6 @@ if sport == "MLB":
             f"The MLB {market} model is coming next."
         )
 
-# -----------------------------
-# WNBA
-# -----------------------------
 
 else:
 
@@ -228,9 +322,9 @@ else:
     )
 
     st.info(
-        f"The WNBA {market} projection engine will be added after "
-        f"the MLB engine is working."
+        f"The WNBA {market} model will be added later."
     )
+
 
 st.divider()
 
