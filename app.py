@@ -1,9 +1,11 @@
-import streamlit as st
-import requests
-import pandas as pd
+import re
 from collections import Counter
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+import pandas as pd
+import requests
+import streamlit as st
 
 st.set_page_config(
     page_title="Kyre Sports AI",
@@ -13,6 +15,7 @@ st.set_page_config(
 
 ET = ZoneInfo("America/New_York")
 MLB_API = "https://statsapi.mlb.com/api/v1"
+MLB_LIVE_API = "https://statsapi.mlb.com/api/v1.1"
 
 
 # -----------------------------
@@ -35,7 +38,6 @@ def clamp(value, low, high):
 
 
 def innings_to_float(value):
-    """Convert baseball innings like 132.1 to true innings (132 + 1/3)."""
     text = str(value or "0.0")
     if "." not in text:
         return safe_float(text, 0.0) or 0.0
@@ -53,30 +55,24 @@ def probability_from_avg(avg, expected_ab):
 
     p_zero = (1 - avg) ** expected_ab
     p_one_plus = 1 - p_zero
-
-    # Fractional expected AB makes a literal binomial "exactly one" imperfect.
-    # We still use this smooth approximation for the prototype display.
     p_exact_one = (
         expected_ab
         * avg
         * ((1 - avg) ** max(expected_ab - 1, 0))
     )
     p_exact_one = clamp(p_exact_one, 0.0, 1.0)
-
     p_two_plus = max(0.0, p_one_plus - p_exact_one)
-    expected_hits = avg * expected_ab
 
     return {
         "p_zero": p_zero,
         "p_one_plus": p_one_plus,
         "p_exact_one": p_exact_one,
         "p_two_plus": p_two_plus,
-        "expected_hits": expected_hits,
+        "expected_hits": avg * expected_ab,
     }
 
 
 def lineup_expected_ab(position):
-    """Simple baseline AB expectation by batting-order slot."""
     mapping = {
         1: 4.60,
         2: 4.50,
@@ -109,18 +105,14 @@ def get_today_mlb_games():
         timeout=15,
     )
     response.raise_for_status()
-    data = response.json()
 
     games = []
-
-    for date_block in data.get("dates", []):
+    for date_block in response.json().get("dates", []):
         for game in date_block.get("games", []):
             away_block = game["teams"]["away"]
             home_block = game["teams"]["home"]
-
             away_team = away_block["team"]
             home_team = home_block["team"]
-
             away_pitcher = away_block.get("probablePitcher", {})
             home_pitcher = home_block.get("probablePitcher", {})
 
@@ -128,9 +120,13 @@ def get_today_mlb_games():
                 game["gameDate"].replace("Z", "+00:00")
             ).astimezone(ET)
 
+            venue = game.get("venue", {}) or {}
+
             games.append(
                 {
                     "game_pk": game.get("gamePk"),
+                    "venue_id": venue.get("id"),
+                    "venue_name": venue.get("name", "Unknown"),
                     "away_team_id": away_team.get("id"),
                     "away_team": away_team.get("name", "Unknown"),
                     "home_team_id": home_team.get("id"),
@@ -140,9 +136,7 @@ def get_today_mlb_games():
                     "home_pitcher_id": home_pitcher.get("id"),
                     "home_pitcher": home_pitcher.get("fullName", "TBD"),
                     "first_pitch_et": game_time.strftime("%I:%M %p").lstrip("0"),
-                    "status": game.get("status", {}).get(
-                        "detailedState", "Unknown"
-                    ),
+                    "status": game.get("status", {}).get("detailedState", "Unknown"),
                 }
             )
 
@@ -163,7 +157,6 @@ def find_mlb_player(player_name):
         return None
 
     player_id = people[0].get("id")
-
     detail_response = requests.get(
         f"{MLB_API}/people/{player_id}",
         params={"hydrate": "currentTeam"},
@@ -190,14 +183,9 @@ def find_mlb_player(player_name):
 @st.cache_data(ttl=600)
 def get_player_hitting_stats(player_id):
     season = current_season()
-
     response = requests.get(
         f"{MLB_API}/people/{player_id}/stats",
-        params={
-            "stats": "season",
-            "group": "hitting",
-            "season": season,
-        },
+        params={"stats": "season", "group": "hitting", "season": season},
         timeout=15,
     )
     response.raise_for_status()
@@ -211,7 +199,6 @@ def get_player_hitting_stats(player_id):
         return None
 
     stat = splits[0].get("stat", {})
-
     return {
         "season": season,
         "games": stat.get("gamesPlayed", 0),
@@ -237,7 +224,6 @@ def get_pitcher_stats(pitcher_id):
         timeout=15,
     )
     person_response.raise_for_status()
-
     people = person_response.json().get("people", [])
     if not people:
         return None
@@ -247,18 +233,13 @@ def get_pitcher_stats(pitcher_id):
 
     stats_response = requests.get(
         f"{MLB_API}/people/{pitcher_id}/stats",
-        params={
-            "stats": "season",
-            "group": "pitching",
-            "season": season,
-        },
+        params={"stats": "season", "group": "pitching", "season": season},
         timeout=15,
     )
     stats_response.raise_for_status()
 
     stats_groups = stats_response.json().get("stats", [])
     stat = {}
-
     if stats_groups:
         splits = stats_groups[0].get("splits", [])
         if splits:
@@ -268,7 +249,7 @@ def get_pitcher_stats(pitcher_id):
     true_innings = innings_to_float(innings_text)
     strikeouts = stat.get("strikeOuts", 0)
     strikeouts_num = safe_float(strikeouts, 0.0) or 0.0
-    k9 = (strikeouts_num * 9 / true_innings) if true_innings > 0 else None
+    k9 = strikeouts_num * 9 / true_innings if true_innings > 0 else None
 
     return {
         "name": person.get("fullName", "Unknown"),
@@ -310,14 +291,11 @@ def get_hitter_vs_hand_stats(player_id, pitcher_hand):
         if response.status_code >= 400:
             continue
 
-        stats_groups = response.json().get("stats", [])
-
-        for group in stats_groups:
+        for group in response.json().get("stats", []):
             for split in group.get("splits", []):
                 split_info = split.get("split", {}) or {}
                 split_code = str(split_info.get("code", "")).lower()
                 split_desc = str(split_info.get("description", "")).lower()
-
                 explicit_match = (
                     split_code == sit_code
                     or (hand == "R" and "right" in split_desc)
@@ -351,16 +329,10 @@ def get_hitter_vs_hand_stats(player_id, pitcher_hand):
 
 @st.cache_data(ttl=600)
 def get_recent_form(player_id, games=10):
-    """Aggregate the hitter's most recent completed game logs."""
     season = current_season()
-
     response = requests.get(
         f"{MLB_API}/people/{player_id}/stats",
-        params={
-            "stats": "gameLog",
-            "group": "hitting",
-            "season": season,
-        },
+        params={"stats": "gameLog", "group": "hitting", "season": season},
         timeout=15,
     )
     response.raise_for_status()
@@ -374,19 +346,12 @@ def get_recent_form(player_id, games=10):
         return None
 
     recent_splits = splits[-games:]
-
-    total_ab = 0
-    total_hits = 0
-    total_pa = 0
-    total_hr = 0
-    total_bb = 0
-    total_so = 0
+    total_ab = total_hits = total_pa = total_hr = total_bb = total_so = 0
     hit_games = 0
     game_pks = []
 
     for split in recent_splits:
         stat = split.get("stat", {}) or {}
-
         ab = int(safe_float(stat.get("atBats"), 0) or 0)
         hits = int(safe_float(stat.get("hits"), 0) or 0)
         pa = int(safe_float(stat.get("plateAppearances"), 0) or 0)
@@ -405,12 +370,8 @@ def get_recent_form(player_id, games=10):
         if game_pk:
             game_pks.append(game_pk)
 
-    recent_avg = (total_hits / total_ab) if total_ab > 0 else None
-    hit_game_rate = (
-        hit_games / len(recent_splits)
-        if recent_splits
-        else None
-    )
+    recent_avg = total_hits / total_ab if total_ab > 0 else None
+    hit_game_rate = hit_games / len(recent_splits) if recent_splits else None
 
     return {
         "games": len(recent_splits),
@@ -429,7 +390,6 @@ def get_recent_form(player_id, games=10):
 
 @st.cache_data(ttl=180)
 def get_lineup_position(game_pk, player_id, team_side):
-    """Return confirmed batting-order slot if today's boxscore has one."""
     if not game_pk or team_side not in {"home", "away"}:
         return None
 
@@ -437,13 +397,10 @@ def get_lineup_position(game_pk, player_id, team_side):
         f"{MLB_API}/game/{game_pk}/boxscore",
         timeout=15,
     )
-
     if response.status_code >= 400:
         return None
 
-    data = response.json()
-    team = data.get("teams", {}).get(team_side, {}) or {}
-
+    team = response.json().get("teams", {}).get(team_side, {}) or {}
     batting_order = team.get("battingOrder", []) or []
     normalized_order = []
 
@@ -457,23 +414,20 @@ def get_lineup_position(game_pk, player_id, team_side):
         return normalized_order.index(int(player_id)) + 1
 
     players = team.get("players", {}) or {}
-    player_data = players.get(f"ID{player_id}", {}) or {}
-    order_value = player_data.get("battingOrder")
-
+    order_value = (players.get(f"ID{player_id}", {}) or {}).get("battingOrder")
     if order_value is not None:
         order_text = str(order_value)
         if order_text.isdigit():
             order_num = int(order_text)
             if order_num >= 100:
-                return clamp(order_num // 100, 1, 9)
-            return clamp(order_num, 1, 9)
+                return int(clamp(order_num // 100, 1, 9))
+            return int(clamp(order_num, 1, 9))
 
     return None
 
 
 @st.cache_data(ttl=1800)
 def estimate_recent_lineup_position(player_id, game_pks, max_games=5):
-    """Use recent boxscores to estimate the hitter's normal lineup slot."""
     positions = []
 
     for game_pk in list(game_pks)[-max_games:]:
@@ -481,17 +435,15 @@ def estimate_recent_lineup_position(player_id, game_pks, max_games=5):
             f"{MLB_API}/game/{game_pk}/boxscore",
             timeout=15,
         )
-
         if response.status_code >= 400:
             continue
 
         data = response.json()
-
         for side in ("home", "away"):
             team = data.get("teams", {}).get(side, {}) or {}
             batting_order = team.get("battingOrder", []) or []
-
             normalized_order = []
+
             for item in batting_order:
                 if isinstance(item, int):
                     normalized_order.append(item)
@@ -503,18 +455,13 @@ def estimate_recent_lineup_position(player_id, game_pks, max_games=5):
                 break
 
             players = team.get("players", {}) or {}
-            player_data = players.get(f"ID{player_id}", {}) or {}
-            order_value = player_data.get("battingOrder")
-
-            if order_value is not None:
-                order_text = str(order_value)
-                if order_text.isdigit():
-                    order_num = int(order_text)
-                    if order_num >= 100:
-                        positions.append(int(clamp(order_num // 100, 1, 9)))
-                    else:
-                        positions.append(int(clamp(order_num, 1, 9)))
-                    break
+            order_value = (players.get(f"ID{player_id}", {}) or {}).get("battingOrder")
+            if order_value is not None and str(order_value).isdigit():
+                order_num = int(str(order_value))
+                positions.append(
+                    int(clamp(order_num // 100 if order_num >= 100 else order_num, 1, 9))
+                )
+                break
 
     if not positions:
         return None
@@ -522,16 +469,41 @@ def estimate_recent_lineup_position(player_id, game_pks, max_games=5):
     counts = Counter(positions)
     most_common_count = counts.most_common(1)[0][1]
     tied = [pos for pos, count in counts.items() if count == most_common_count]
-
-    if len(tied) == 1:
-        projected = tied[0]
-    else:
-        projected = int(round(sum(positions) / len(positions)))
+    projected = tied[0] if len(tied) == 1 else int(round(sum(positions) / len(positions)))
 
     return {
         "position": int(clamp(projected, 1, 9)),
         "sample_games": len(positions),
         "positions": positions,
+    }
+
+
+@st.cache_data(ttl=180)
+def get_game_environment(game_pk):
+    """Pull venue and current game weather from MLB's live game feed."""
+    if not game_pk:
+        return None
+
+    response = requests.get(
+        f"{MLB_LIVE_API}/game/{game_pk}/feed/live",
+        timeout=15,
+    )
+    if response.status_code >= 400:
+        return None
+
+    game_data = response.json().get("gameData", {}) or {}
+    venue = game_data.get("venue", {}) or {}
+    weather = game_data.get("weather", {}) or {}
+    field_info = venue.get("fieldInfo", {}) or {}
+
+    return {
+        "venue_id": venue.get("id"),
+        "venue_name": venue.get("name", "Unknown"),
+        "roof_type": field_info.get("roofType", "Unknown"),
+        "turf_type": field_info.get("turfType", "Unknown"),
+        "temperature": safe_float(weather.get("temp")),
+        "condition": weather.get("condition", "Unknown"),
+        "wind": weather.get("wind", "Unknown"),
     }
 
 
@@ -544,6 +516,7 @@ def find_player_matchup(games_df, team_id):
             return {
                 "game_pk": game["game_pk"],
                 "team_side": "away",
+                "venue_name": game.get("venue_name", "Unknown"),
                 "opponent": game["home_team"],
                 "location": "Away",
                 "pitcher_id": game["home_pitcher_id"],
@@ -556,6 +529,7 @@ def find_player_matchup(games_df, team_id):
             return {
                 "game_pk": game["game_pk"],
                 "team_side": "home",
+                "venue_name": game.get("venue_name", "Unknown"),
                 "opponent": game["away_team"],
                 "location": "Home",
                 "pitcher_id": game["away_pitcher_id"],
@@ -577,16 +551,11 @@ def build_handedness_avg(season_avg, hand_split):
 
     split_avg = safe_float(hand_split.get("avg"))
     split_ab = safe_float(hand_split.get("at_bats"), 0.0) or 0.0
-
     if split_avg is None or split_ab <= 0:
         return season_avg, 0.0
 
     split_weight = split_ab / (split_ab + 200.0)
-    blended_avg = (
-        season_avg * (1 - split_weight)
-        + split_avg * split_weight
-    )
-
+    blended_avg = season_avg * (1 - split_weight) + split_avg * split_weight
     return blended_avg, split_weight
 
 
@@ -598,7 +567,6 @@ def calculate_pitcher_quality(pitcher):
     whip = safe_float(pitcher.get("whip"))
     k9 = pitcher.get("k9")
     innings = pitcher.get("true_innings", 0.0) or 0.0
-
     if era is None or whip is None:
         return None
 
@@ -608,17 +576,9 @@ def calculate_pitcher_quality(pitcher):
 
     era_skill = (neutral_era - era) / neutral_era
     whip_skill = (neutral_whip - whip) / neutral_whip
-    k9_skill = 0.0
+    k9_skill = (k9 - neutral_k9) / neutral_k9 if k9 is not None else 0.0
 
-    if k9 is not None:
-        k9_skill = (k9 - neutral_k9) / neutral_k9
-
-    raw_quality = (
-        0.40 * era_skill
-        + 0.40 * whip_skill
-        + 0.20 * k9_skill
-    )
-
+    raw_quality = 0.40 * era_skill + 0.40 * whip_skill + 0.20 * k9_skill
     reliability = innings / (innings + 60.0) if innings > 0 else 0.0
     shrunk_quality = raw_quality * reliability
     rate_adjustment = clamp(-0.25 * shrunk_quality, -0.08, 0.08)
@@ -635,16 +595,7 @@ def calculate_pitcher_quality(pitcher):
         difficulty = "Near Neutral"
 
     return {
-        "era": era,
-        "whip": whip,
-        "k9": k9,
-        "innings": innings,
-        "neutral_era": neutral_era,
-        "neutral_whip": neutral_whip,
-        "neutral_k9": neutral_k9,
-        "raw_quality": raw_quality,
         "reliability": reliability,
-        "quality_score": shrunk_quality,
         "rate_adjustment": rate_adjustment,
         "difficulty": difficulty,
     }
@@ -656,19 +607,111 @@ def apply_recent_form(base_avg, recent_form):
 
     recent_avg = recent_form.get("avg")
     recent_ab = recent_form.get("at_bats", 0) or 0
-
     if recent_avg is None or recent_ab <= 0:
         return base_avg, 0.0, None
 
-    recent_weight = 0.22 * (recent_ab / (recent_ab + 45.0))
-    recent_weight = clamp(recent_weight, 0.0, 0.22)
-
-    adjusted_avg = (
-        base_avg * (1 - recent_weight)
-        + recent_avg * recent_weight
-    )
-
+    recent_weight = clamp(0.22 * (recent_ab / (recent_ab + 45.0)), 0.0, 0.22)
+    adjusted_avg = base_avg * (1 - recent_weight) + recent_avg * recent_weight
     return adjusted_avg, recent_weight, recent_avg
+
+
+# Conservative prototype park baselines for 1+ hit rate.
+# These are intentionally small and are not official Statcast park factors.
+PARK_HIT_ADJUSTMENTS = {
+    "coors field": 0.035,
+    "fenway park": 0.018,
+    "kauffman stadium": 0.012,
+    "chase field": 0.010,
+    "great american ball park": 0.010,
+    "citizens bank park": 0.008,
+    "wrigley field": 0.006,
+    "yankee stadium": 0.005,
+    "daikin park": 0.004,
+    "minute maid park": 0.004,
+    "globe life field": 0.003,
+    "camden yards": 0.002,
+    "rogers centre": 0.002,
+    "truist park": 0.002,
+    "target field": 0.001,
+    "busch stadium": 0.000,
+    "progressive field": 0.000,
+    "comerica park": 0.000,
+    "loanDepot park".lower(): -0.003,
+    "dodger stadium": -0.004,
+    "american family field": -0.004,
+    "citi field": -0.006,
+    "angel stadium": -0.006,
+    "nationals park": -0.006,
+    "rate field": -0.007,
+    "sutter health park": -0.007,
+    "petco park": -0.010,
+    "t-mobile park": -0.016,
+    "oracle park": -0.018,
+}
+
+
+def parse_wind_speed(wind_text):
+    match = re.search(r"(\d+(?:\.\d+)?)\s*mph", str(wind_text or ""), flags=re.I)
+    return safe_float(match.group(1)) if match else None
+
+
+def calculate_environment_adjustment(environment, fallback_venue="Unknown"):
+    venue_name = (environment or {}).get("venue_name") or fallback_venue or "Unknown"
+    venue_key = venue_name.lower().strip()
+    park_adjustment = PARK_HIT_ADJUSTMENTS.get(venue_key, 0.0)
+
+    temp = (environment or {}).get("temperature")
+    condition = str((environment or {}).get("condition") or "Unknown")
+    wind = str((environment or {}).get("wind") or "Unknown")
+    roof_type = str((environment or {}).get("roof_type") or "Unknown")
+
+    indoor_words = ["dome", "indoor", "roof closed", "closed roof"]
+    treated_indoor = any(word in condition.lower() for word in indoor_words)
+
+    temperature_adjustment = 0.0
+    if temp is not None and not treated_indoor:
+        temperature_adjustment = clamp(((temp - 72.0) / 10.0) * 0.004, -0.015, 0.015)
+
+    wind_speed = parse_wind_speed(wind)
+    wind_adjustment = 0.0
+    wind_lower = wind.lower()
+
+    if wind_speed is not None and not treated_indoor:
+        wind_scale = clamp(wind_speed / 15.0, 0.0, 1.5)
+        if "out to" in wind_lower or "blowing out" in wind_lower:
+            wind_adjustment = clamp(0.012 * wind_scale, 0.0, 0.018)
+        elif "in from" in wind_lower or "blowing in" in wind_lower:
+            wind_adjustment = clamp(-0.012 * wind_scale, -0.018, 0.0)
+
+    weather_adjustment = temperature_adjustment + wind_adjustment
+    total_adjustment = clamp(park_adjustment + weather_adjustment, -0.05, 0.05)
+
+    if total_adjustment >= 0.025:
+        environment_grade = "Strong Hitter Boost"
+    elif total_adjustment >= 0.008:
+        environment_grade = "Hitter Friendly"
+    elif total_adjustment <= -0.025:
+        environment_grade = "Strong Pitcher Boost"
+    elif total_adjustment <= -0.008:
+        environment_grade = "Pitcher Friendly"
+    else:
+        environment_grade = "Near Neutral"
+
+    return {
+        "venue_name": venue_name,
+        "roof_type": roof_type,
+        "temperature": temp,
+        "condition": condition,
+        "wind": wind,
+        "wind_speed": wind_speed,
+        "park_adjustment": park_adjustment,
+        "temperature_adjustment": temperature_adjustment,
+        "wind_adjustment": wind_adjustment,
+        "weather_adjustment": weather_adjustment,
+        "total_adjustment": total_adjustment,
+        "grade": environment_grade,
+        "treated_indoor": treated_indoor,
+    }
 
 
 # -----------------------------
@@ -733,11 +776,7 @@ if sport == "MLB":
 
     if market == "1+ Hit":
         st.header("⚾ MLB 1+ Hit Projection")
-
-        player_name = st.text_input(
-            "Player Name",
-            placeholder="Example: Yordan Alvarez",
-        )
+        player_name = st.text_input("Player Name", placeholder="Example: Yordan Alvarez")
 
         if st.button("📡 LOAD PLAYER + MATCHUP", use_container_width=True):
             st.session_state.pop("player_data", None)
@@ -747,7 +786,6 @@ if sport == "MLB":
             else:
                 try:
                     player = find_mlb_player(player_name.strip())
-
                     if player is None:
                         st.error("Player not found.")
                     else:
@@ -759,30 +797,24 @@ if sport == "MLB":
                         hand_split = None
                         confirmed_lineup = None
                         recent_lineup = None
+                        environment = None
 
                         if matchup:
                             confirmed_lineup = get_lineup_position(
-                                matchup["game_pk"],
-                                player["id"],
-                                matchup["team_side"],
+                                matchup["game_pk"], player["id"], matchup["team_side"]
                             )
+                            environment = get_game_environment(matchup["game_pk"])
 
                         if recent_form:
                             recent_lineup = estimate_recent_lineup_position(
-                                player["id"],
-                                recent_form.get("game_pks", []),
-                                max_games=5,
+                                player["id"], recent_form.get("game_pks", []), max_games=5
                             )
 
                         if matchup and pd.notna(matchup.get("pitcher_id")):
-                            pitcher_stats = get_pitcher_stats(
-                                int(matchup["pitcher_id"])
-                            )
-
+                            pitcher_stats = get_pitcher_stats(int(matchup["pitcher_id"]))
                             if pitcher_stats:
                                 hand_split = get_hitter_vs_hand_stats(
-                                    player["id"],
-                                    pitcher_stats["hand"],
+                                    player["id"], pitcher_stats["hand"]
                                 )
 
                         st.session_state["player_data"] = {
@@ -794,6 +826,7 @@ if sport == "MLB":
                             "hand_split": hand_split,
                             "confirmed_lineup": confirmed_lineup,
                             "recent_lineup": recent_lineup,
+                            "environment": environment,
                         }
 
                 except requests.RequestException as error:
@@ -801,22 +834,20 @@ if sport == "MLB":
 
         if "player_data" in st.session_state:
             data = st.session_state["player_data"]
-
             player = data["player"]
             stats = data["stats"]
             recent_form = data.get("recent_form")
-            matchup = data["matchup"]
-            pitcher = data["pitcher"]
+            matchup = data.get("matchup")
+            pitcher = data.get("pitcher")
             hand_split = data.get("hand_split")
             confirmed_lineup = data.get("confirmed_lineup")
             recent_lineup = data.get("recent_lineup")
+            environment = data.get("environment")
 
             if stats is not None:
                 st.success(f"Live data loaded for {player['name']}")
                 st.subheader(f"📊 {player['name']} — {stats['season']}")
-                st.caption(
-                    f"Team: {player['team_name']} • Bats: {player['bat_side']}"
-                )
+                st.caption(f"Team: {player['team_name']} • Bats: {player['bat_side']}")
 
                 c1, c2, c3, c4 = st.columns(4)
                 with c1:
@@ -840,7 +871,6 @@ if sport == "MLB":
 
                 st.divider()
                 st.subheader("🔥 Recent Form — Last 10 Games")
-
                 if recent_form and recent_form.get("avg") is not None:
                     rf1, rf2, rf3, rf4 = st.columns(4)
                     with rf1:
@@ -850,24 +880,7 @@ if sport == "MLB":
                     with rf3:
                         st.metric("Recent AB", recent_form["at_bats"])
                     with rf4:
-                        st.metric(
-                            "Hit Games",
-                            f"{recent_form['hit_games']}/{recent_form['games']}",
-                        )
-
-                    rf5, rf6, rf7, rf8 = st.columns(4)
-                    with rf5:
-                        st.metric("HR", recent_form["home_runs"])
-                    with rf6:
-                        st.metric("BB", recent_form["walks"])
-                    with rf7:
-                        st.metric("K", recent_form["strikeouts"])
-                    with rf8:
-                        rate = recent_form.get("hit_game_rate")
-                        st.metric(
-                            "1+ Hit Game Rate",
-                            f"{rate * 100:.0f}%" if rate is not None else "N/A",
-                        )
+                        st.metric("Hit Games", f"{recent_form['hit_games']}/{recent_form['games']}")
                 else:
                     st.info("Recent game-log data was not available.")
 
@@ -891,7 +904,6 @@ if sport == "MLB":
 
                     if pitcher:
                         st.subheader("🎯 Opposing Starter")
-
                         p1, p2, p3, p4 = st.columns(4)
                         with p1:
                             st.metric("Pitcher", pitcher["name"])
@@ -910,19 +922,11 @@ if sport == "MLB":
                         with p7:
                             st.metric("IP", pitcher["innings"])
                         with p8:
-                            st.metric(
-                                "K/9",
-                                f"{pitcher['k9']:.2f}" if pitcher["k9"] is not None else "N/A",
-                            )
+                            st.metric("K/9", f"{pitcher['k9']:.2f}" if pitcher["k9"] is not None else "N/A")
 
                         st.divider()
                         st.subheader("↔️ Batter vs Pitcher Hand")
-
                         if hand_split:
-                            st.caption(
-                                f"{player['name']} {hand_split['label']} in {hand_split['season']}"
-                            )
-
                             h1, h2, h3, h4 = st.columns(4)
                             with h1:
                                 st.metric("Split AVG", hand_split["avg"])
@@ -935,20 +939,45 @@ if sport == "MLB":
                         else:
                             st.info("Handedness split was not available for this matchup.")
 
+                    st.divider()
+                    st.subheader("🏟️ Park + Weather")
+                    env_view = calculate_environment_adjustment(
+                        environment,
+                        fallback_venue=matchup.get("venue_name", "Unknown"),
+                    )
+
+                    e1, e2, e3, e4 = st.columns(4)
+                    with e1:
+                        st.metric("Ballpark", env_view["venue_name"])
+                    with e2:
+                        st.metric(
+                            "Temperature",
+                            f"{env_view['temperature']:.0f}°F" if env_view["temperature"] is not None else "N/A",
+                        )
+                    with e3:
+                        st.metric("Condition", env_view["condition"])
+                    with e4:
+                        st.metric("Wind", env_view["wind"])
+
+                    e5, e6, e7 = st.columns(3)
+                    with e5:
+                        st.metric("Roof Type", env_view["roof_type"])
+                    with e6:
+                        st.metric("Environment Grade", env_view["grade"])
+                    with e7:
+                        st.metric("Prototype Park Adj", f"{env_view['park_adjustment'] * 100:+.1f}%")
+
                 st.divider()
                 st.subheader("📋 Lineup Position")
 
                 lineup_source = "Manual fallback"
                 projected_position = None
-
                 if confirmed_lineup:
                     projected_position = int(confirmed_lineup)
                     lineup_source = "Confirmed today's lineup"
                 elif recent_lineup:
                     projected_position = int(recent_lineup["position"])
-                    lineup_source = (
-                        f"Recent lineup estimate ({recent_lineup['sample_games']} games)"
-                    )
+                    lineup_source = f"Recent lineup estimate ({recent_lineup['sample_games']} games)"
 
                 if projected_position:
                     l1, l2, l3 = st.columns(3)
@@ -957,137 +986,117 @@ if sport == "MLB":
                     with l2:
                         st.metric("Lineup Source", lineup_source)
                     with l3:
-                        st.metric(
-                            "Baseline Expected AB",
-                            f"{lineup_expected_ab(projected_position):.1f}",
-                        )
+                        st.metric("Baseline Expected AB", f"{lineup_expected_ab(projected_position):.1f}")
                 else:
-                    st.info(
-                        "Today's batting order is not confirmed and recent lineup position could not be estimated."
-                    )
+                    st.info("Today's batting order is not confirmed and recent lineup position could not be estimated.")
 
                 default_position = projected_position or 4
-
                 manual_position = st.selectbox(
                     "Batting Order Used by Model",
                     options=list(range(1, 10)),
                     index=default_position - 1,
-                    help=(
-                        "Confirmed lineup is used automatically when available. You can override it here."
-                    ),
+                    help="Confirmed lineup is used automatically when available. You can override it here.",
                 )
-
-                default_expected_ab = lineup_expected_ab(manual_position)
 
                 expected_ab = st.number_input(
                     "Projected At-Bats Today",
                     min_value=2.5,
                     max_value=6.0,
-                    value=float(default_expected_ab),
+                    value=float(lineup_expected_ab(manual_position)),
                     step=0.1,
-                    help=(
-                        "V7 sets this from batting-order slot, but you can adjust it for game context."
-                    ),
+                    help="V8 starts with batting-order opportunity. You can override expected at-bats.",
                 )
 
-                sportsbook_line = st.number_input(
-                    "Sportsbook Hit Line",
-                    value=0.5,
-                    step=0.5,
-                )
+                sportsbook_line = st.number_input("Sportsbook Hit Line", value=0.5, step=0.5)
 
                 if st.button("🔥 RUN HIT PROJECTION", use_container_width=True):
                     season_avg = safe_float(stats["avg"], 0.0) or 0.0
 
-                    hand_avg, split_weight = build_handedness_avg(
-                        season_avg,
-                        hand_split,
-                    )
-
+                    hand_avg, split_weight = build_handedness_avg(season_avg, hand_split)
                     pitcher_quality = calculate_pitcher_quality(pitcher)
+                    pitcher_adjustment = pitcher_quality["rate_adjustment"] if pitcher_quality else 0.0
+                    pitcher_avg = clamp(hand_avg * (1 + pitcher_adjustment), 0.050, 0.500)
 
-                    pitcher_adjustment = (
-                        pitcher_quality["rate_adjustment"] if pitcher_quality else 0.0
+                    recent_core_avg, recent_weight, recent_avg = apply_recent_form(
+                        pitcher_avg, recent_form
                     )
 
-                    pitcher_avg = clamp(
-                        hand_avg * (1 + pitcher_adjustment),
+                    env_model = calculate_environment_adjustment(
+                        environment,
+                        fallback_venue=(matchup or {}).get("venue_name", "Unknown"),
+                    )
+                    environment_adjustment = env_model["total_adjustment"]
+                    final_avg = clamp(
+                        recent_core_avg * (1 + environment_adjustment),
                         0.050,
                         0.500,
                     )
 
-                    final_avg, recent_weight, recent_avg = apply_recent_form(
-                        pitcher_avg,
-                        recent_form,
-                    )
-
                     season_only = probability_from_avg(season_avg, expected_ab)
-                    hand_only = probability_from_avg(hand_avg, expected_ab)
-                    pitcher_only = probability_from_avg(pitcher_avg, expected_ab)
+                    v7_core = probability_from_avg(recent_core_avg, expected_ab)
                     final_projection = probability_from_avg(final_avg, expected_ab)
 
-                    st.header("🧠 V7 Model Stack")
+                    st.header("🧠 V8 Model Stack")
 
                     ms1, ms2, ms3, ms4 = st.columns(4)
                     with ms1:
                         st.metric("Season AVG", f"{season_avg:.3f}")
                     with ms2:
-                        st.metric(
-                            "Hand Split AVG",
-                            f"{safe_float(hand_split['avg'], 0):.3f}" if hand_split else "N/A",
-                        )
+                        st.metric("Hand Split AVG", f"{safe_float(hand_split['avg'], 0):.3f}" if hand_split else "N/A")
                     with ms3:
                         st.metric("Handedness AVG", f"{hand_avg:.3f}")
                     with ms4:
                         st.metric("Split Weight", f"{split_weight * 100:.0f}%")
 
                     st.subheader("🎯 Pitcher Quality Adjustment")
-
                     pq1, pq2, pq3, pq4 = st.columns(4)
                     with pq1:
-                        st.metric(
-                            "Pitcher Difficulty",
-                            pitcher_quality["difficulty"] if pitcher_quality else "N/A",
-                        )
+                        st.metric("Pitcher Difficulty", pitcher_quality["difficulty"] if pitcher_quality else "N/A")
                     with pq2:
-                        st.metric(
-                            "Pitcher Sample Weight",
-                            f"{pitcher_quality['reliability'] * 100:.0f}%" if pitcher_quality else "N/A",
-                        )
+                        st.metric("Pitcher Sample Weight", f"{pitcher_quality['reliability'] * 100:.0f}%" if pitcher_quality else "N/A")
                     with pq3:
                         st.metric("Hit-Rate Adjustment", f"{pitcher_adjustment * 100:+.1f}%")
                     with pq4:
                         st.metric("Post-Pitcher AVG", f"{pitcher_avg:.3f}")
 
                     st.subheader("🔥 Recent Form Adjustment")
-
                     rc1, rc2, rc3, rc4 = st.columns(4)
                     with rc1:
-                        st.metric(
-                            "Recent AVG",
-                            f"{recent_avg:.3f}" if recent_avg is not None else "N/A",
-                        )
+                        st.metric("Recent AVG", f"{recent_avg:.3f}" if recent_avg is not None else "N/A")
                     with rc2:
                         st.metric("Recent Weight", f"{recent_weight * 100:.0f}%")
                     with rc3:
-                        st.metric("Final Model AVG", f"{final_avg:.3f}")
+                        st.metric("Post-Recent AVG", f"{recent_core_avg:.3f}")
                     with rc4:
                         st.metric("Batting Spot / AB", f"#{manual_position} / {expected_ab:.1f}")
 
-                    st.header("📊 Projection Results")
+                    st.subheader("🌦️ Park + Weather Adjustment")
+                    ew1, ew2, ew3, ew4 = st.columns(4)
+                    with ew1:
+                        st.metric("Park Adjustment", f"{env_model['park_adjustment'] * 100:+.1f}%")
+                    with ew2:
+                        st.metric("Temperature Adj", f"{env_model['temperature_adjustment'] * 100:+.1f}%")
+                    with ew3:
+                        st.metric("Wind Adj", f"{env_model['wind_adjustment'] * 100:+.1f}%")
+                    with ew4:
+                        st.metric("Total Environment", f"{environment_adjustment * 100:+.1f}%")
 
+                    ew5, ew6 = st.columns(2)
+                    with ew5:
+                        st.metric("Environment Grade", env_model["grade"])
+                    with ew6:
+                        st.metric("Final Model AVG", f"{final_avg:.3f}")
+
+                    st.header("📊 Projection Results")
                     r1, r2, r3 = st.columns(3)
                     with r1:
                         st.metric("Expected Hits", f"{final_projection['expected_hits']:.2f}")
                     with r2:
-                        delta_vs_v6 = (
-                            final_projection["p_one_plus"] - pitcher_only["p_one_plus"]
-                        ) * 100
-
+                        delta_vs_v7 = (final_projection["p_one_plus"] - v7_core["p_one_plus"]) * 100
                         st.metric(
                             "1+ Hit Probability",
                             f"{final_projection['p_one_plus'] * 100:.1f}%",
-                            delta=f"{delta_vs_v6:+.1f} pts vs V6 core",
+                            delta=f"{delta_vs_v7:+.1f} pts vs V7 core",
                         )
                     with r3:
                         st.metric("0 Hit Probability", f"{final_projection['p_zero'] * 100:.1f}%")
@@ -1098,10 +1107,7 @@ if sport == "MLB":
                     with r5:
                         st.metric("2+ Hit Probability", f"{final_projection['p_two_plus'] * 100:.1f}%")
                     with r6:
-                        season_delta = (
-                            final_projection["p_one_plus"] - season_only["p_one_plus"]
-                        ) * 100
-
+                        season_delta = (final_projection["p_one_plus"] - season_only["p_one_plus"]) * 100
                         st.metric(
                             "Season-Only 1+",
                             f"{season_only['p_one_plus'] * 100:.1f}%",
@@ -1109,11 +1115,10 @@ if sport == "MLB":
                         )
 
                     st.success(
-                        "V7 now uses season hitting + pitcher-handedness split + pitcher quality + recent 10-game form + batting-order position to set expected at-bats."
+                        "V8 now uses season hitting + pitcher-handedness split + pitcher quality + recent form + lineup position + MLB live-feed park/weather context."
                     )
-
                     st.caption(
-                        "V7 remains a prototype heuristic, not a calibrated betting model. Recent form is intentionally capped at a small weight, and lineup position affects opportunity through projected at-bats."
+                        "V8 is still a prototype heuristic, not a calibrated betting model. Weather comes from MLB's live game feed when available. The park adjustment is a deliberately small prototype baseline and should later be replaced with current Statcast park factors. Wind is only used mathematically when MLB describes it as blowing in or out."
                     )
 
     else:
@@ -1122,17 +1127,9 @@ if sport == "MLB":
 else:
     market = st.selectbox(
         "Choose Market",
-        [
-            "Points",
-            "Rebounds",
-            "Assists",
-            "PRA",
-            "Spread",
-            "Game Total",
-        ],
+        ["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total"],
     )
-
     st.info(f"The WNBA {market} model will be added later.")
 
 st.divider()
-st.caption("Kyre Sports AI • Projection Engine V7")
+st.caption("Kyre Sports AI • Projection Engine V8")
