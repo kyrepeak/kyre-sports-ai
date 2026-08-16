@@ -10,8 +10,13 @@ st.set_page_config(
     layout="wide"
 )
 
+# ---------------------------------
+# LIVE MLB SCHEDULE
+# ---------------------------------
+
 @st.cache_data(ttl=300)
 def get_today_mlb_games():
+
     today_et = datetime.now(
         ZoneInfo("America/New_York")
     ).strftime("%Y-%m-%d")
@@ -37,6 +42,7 @@ def get_today_mlb_games():
     games = []
 
     for date_block in data.get("dates", []):
+
         for game in date_block.get("games", []):
 
             away = game["teams"]["away"]["team"]["name"]
@@ -74,6 +80,107 @@ def get_today_mlb_games():
     return pd.DataFrame(games), today_et
 
 
+# ---------------------------------
+# FIND MLB PLAYER
+# ---------------------------------
+
+@st.cache_data(ttl=3600)
+def find_mlb_player(player_name):
+
+    url = "https://statsapi.mlb.com/api/v1/people/search"
+
+    params = {
+        "names": player_name
+    }
+
+    response = requests.get(
+        url,
+        params=params,
+        timeout=15
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    people = data.get("people", [])
+
+    if not people:
+        return None
+
+    player = people[0]
+
+    return {
+        "id": player.get("id"),
+        "name": player.get("fullName", player_name)
+    }
+
+
+# ---------------------------------
+# GET PLAYER SEASON HITTING STATS
+# ---------------------------------
+
+@st.cache_data(ttl=600)
+def get_player_hitting_stats(player_id):
+
+    season = datetime.now(
+        ZoneInfo("America/New_York")
+    ).year
+
+    url = (
+        f"https://statsapi.mlb.com/api/v1/"
+        f"people/{player_id}/stats"
+    )
+
+    params = {
+        "stats": "season",
+        "group": "hitting",
+        "season": season
+    }
+
+    response = requests.get(
+        url,
+        params=params,
+        timeout=15
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    stats_groups = data.get("stats", [])
+
+    if not stats_groups:
+        return None
+
+    splits = stats_groups[0].get("splits", [])
+
+    if not splits:
+        return None
+
+    stat = splits[0].get("stat", {})
+
+    return {
+        "season": season,
+        "games": stat.get("gamesPlayed", 0),
+        "at_bats": stat.get("atBats", 0),
+        "hits": stat.get("hits", 0),
+        "home_runs": stat.get("homeRuns", 0),
+        "runs": stat.get("runs", 0),
+        "rbi": stat.get("rbi", 0),
+        "walks": stat.get("baseOnBalls", 0),
+        "strikeouts": stat.get("strikeOuts", 0),
+        "avg": stat.get("avg", ".000"),
+        "obp": stat.get("obp", ".000"),
+        "slg": stat.get("slg", ".000"),
+        "ops": stat.get("ops", ".000")
+    }
+
+
+# ---------------------------------
+# WEBSITE
+# ---------------------------------
+
 st.title("🧠 KYRE SPORTS AI")
 
 st.subheader(
@@ -87,6 +194,10 @@ sport = st.selectbox(
     ["MLB", "WNBA"]
 )
 
+
+# =================================
+# MLB
+# =================================
 
 if sport == "MLB":
 
@@ -104,7 +215,7 @@ if sport == "MLB":
             if games_df.empty:
 
                 st.warning(
-                    f"No MLB games were found for {game_date}."
+                    f"No MLB games found for {game_date}."
                 )
 
             else:
@@ -122,7 +233,7 @@ if sport == "MLB":
         except requests.RequestException as error:
 
             st.error(
-                f"Could not load MLB data: {error}"
+                f"Could not load MLB schedule: {error}"
             )
 
     st.divider()
@@ -140,57 +251,174 @@ if sport == "MLB":
         ]
     )
 
+    # -----------------------------
+    # 1+ HIT
+    # -----------------------------
+
     if market == "1+ Hit":
 
-        st.header(
-            "⚾ MLB 1+ Hit Projection"
-        )
+        st.header("⚾ MLB 1+ Hit Projection")
 
-        player = st.text_input(
+        player_name = st.text_input(
             "Player Name",
             placeholder="Example: Yordan Alvarez"
         )
 
-        opponent = st.text_input(
-            "Opponent",
-            placeholder="Example: Seattle Mariners"
-        )
-
-        batting_average = st.number_input(
-            "Player Batting Average",
-            min_value=0.000,
-            max_value=1.000,
-            value=0.280,
-            step=0.001,
-            format="%.3f"
-        )
-
-        expected_ab = st.number_input(
-            "Expected At-Bats",
-            min_value=1.0,
-            max_value=7.0,
-            value=4.0,
-            step=0.1
-        )
-
-        sportsbook_line = st.number_input(
-            "Sportsbook Hit Line",
-            value=0.5,
-            step=0.5
-        )
-
         if st.button(
-            "🔥 RUN HIT PROJECTION",
+            "📡 LOAD PLAYER STATS",
             use_container_width=True
         ):
 
-            if player.strip() == "":
+            if not player_name.strip():
 
                 st.error(
-                    "Enter a player name."
+                    "Enter a player name first."
                 )
 
             else:
+
+                try:
+
+                    player = find_mlb_player(
+                        player_name.strip()
+                    )
+
+                    if player is None:
+
+                        st.error(
+                            "Player could not be found."
+                        )
+
+                    else:
+
+                        stats = get_player_hitting_stats(
+                            player["id"]
+                        )
+
+                        if stats is None:
+
+                            st.error(
+                                "No current season hitting stats were found."
+                            )
+
+                        else:
+
+                            st.session_state["player_data"] = {
+                                "player": player,
+                                "stats": stats
+                            }
+
+                except requests.RequestException as error:
+
+                    st.error(
+                        f"Could not load player data: {error}"
+                    )
+
+
+        # ---------------------------------
+        # DISPLAY PLAYER DATA
+        # ---------------------------------
+
+        if "player_data" in st.session_state:
+
+            player = st.session_state[
+                "player_data"
+            ]["player"]
+
+            stats = st.session_state[
+                "player_data"
+            ]["stats"]
+
+            st.success(
+                f"Live stats loaded for {player['name']}"
+            )
+
+            st.subheader(
+                f"📊 {player['name']} — {stats['season']}"
+            )
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                st.metric(
+                    "AVG",
+                    stats["avg"]
+                )
+
+            with col2:
+                st.metric(
+                    "Hits",
+                    stats["hits"]
+                )
+
+            with col3:
+                st.metric(
+                    "At-Bats",
+                    stats["at_bats"]
+                )
+
+            with col4:
+                st.metric(
+                    "Games",
+                    stats["games"]
+                )
+
+            col5, col6, col7, col8 = st.columns(4)
+
+            with col5:
+                st.metric(
+                    "HR",
+                    stats["home_runs"]
+                )
+
+            with col6:
+                st.metric(
+                    "OBP",
+                    stats["obp"]
+                )
+
+            with col7:
+                st.metric(
+                    "SLG",
+                    stats["slg"]
+                )
+
+            with col8:
+                st.metric(
+                    "OPS",
+                    stats["ops"]
+                )
+
+            st.divider()
+
+            expected_ab = st.number_input(
+                "Projected At-Bats Today",
+                min_value=1,
+                max_value=7,
+                value=4,
+                step=1
+            )
+
+            sportsbook_line = st.number_input(
+                "Sportsbook Hit Line",
+                value=0.5,
+                step=0.5
+            )
+
+            if st.button(
+                "🔥 RUN HIT PROJECTION",
+                use_container_width=True
+            ):
+
+                try:
+
+                    batting_average = float(
+                        stats["avg"]
+                    )
+
+                except:
+
+                    batting_average = 0.0
 
                 probability_zero_hits = (
                     1 - batting_average
@@ -198,10 +426,6 @@ if sport == "MLB":
 
                 probability_one_plus = (
                     1 - probability_zero_hits
-                )
-
-                expected_hits = (
-                    batting_average * expected_ab
                 )
 
                 probability_exactly_one = (
@@ -219,11 +443,14 @@ if sport == "MLB":
                     - probability_exactly_one
                 )
 
-                st.success(
-                    f"Projection completed for {player}"
+                expected_hits = (
+                    batting_average
+                    * expected_ab
                 )
 
-                st.divider()
+                st.success(
+                    f"Projection completed for {player['name']}"
+                )
 
                 st.header(
                     "📊 Projection Results"
@@ -270,7 +497,10 @@ if sport == "MLB":
 
                 st.divider()
 
-                if probability_one_plus >= 0.70:
+                if probability_one_plus >= 0.75:
+                    grade = "A+"
+
+                elif probability_one_plus >= 0.70:
                     grade = "A"
 
                 elif probability_one_plus >= 0.65:
@@ -290,22 +520,27 @@ if sport == "MLB":
                 )
 
                 st.metric(
-                    "Hit Probability Grade",
+                    "1+ Hit Grade",
                     grade
                 )
 
-                st.warning(
-                    "Live MLB schedule data is now connected. "
-                    "Player stats, pitcher stats, Statcast, weather, "
-                    "park and lineup adjustments will be added next."
+                st.info(
+                    "This is still a baseline probability model. "
+                    "The player's live season statistics are now automatic. "
+                    "Starting pitcher, Statcast, recent form, lineup position, "
+                    "park, weather and bullpen adjustments come next."
                 )
 
     else:
 
         st.info(
-            f"The MLB {market} model is coming next."
+            f"The MLB {market} engine will be added later."
         )
 
+
+# =================================
+# WNBA
+# =================================
 
 else:
 
@@ -329,5 +564,5 @@ else:
 st.divider()
 
 st.caption(
-    "Kyre Sports AI • Projection Engine V1"
+    "Kyre Sports AI • Projection Engine V2"
 )
