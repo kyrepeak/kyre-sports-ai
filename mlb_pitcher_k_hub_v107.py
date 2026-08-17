@@ -6,6 +6,7 @@ line grading, simulations and rankings remain V1.0.6 unchanged.
 from __future__ import annotations
 
 import mlb_pitcher_k_hub_v106 as v106
+import mlb_pitcher_k_hub_v101 as v101
 
 engine = v106.engine
 MODEL_VERSION = "Pitcher K V1.0.7"
@@ -26,35 +27,41 @@ TEAM_IDS = {
 
 
 def _logo_url(team):
-    tid=TEAM_IDS.get(str(team or "").strip())
+    tid = TEAM_IDS.get(str(team or "").strip())
     return f"https://www.mlbstatic.com/team-logos/{tid}.svg" if tid else ""
 
 
-# Preserve the existing card exactly, then enhance only the player-name row.
-_base_card = v106.v105.v104.v103.engine._card
+# V1.0.1 executes the original V1.0 source into its own module globals, so the
+# live card renderer is v101._card (not engine._card).
+_base_card = v101._card
 
 
 def _card_with_logo(r, rank):
-    html=_base_card(r, rank)
-    team=r.get("team")
-    logo=_logo_url(team)
+    html = _base_card(r, rank)
+    team = r.get("team")
+    logo = _logo_url(team)
     if not logo:
         return html
-    name=v106.v105.v104.v103.engine._e(r.get("player_name"))
-    old=f'<div class="pk-name">{name}</div>'
-    new=(
+
+    name = v101._e(r.get("player_name"))
+    team_esc = v101._e(team)
+    old = f'<div class="pk-name">{name}</div>'
+    new = (
         '<div class="pk-player-row" style="display:flex;align-items:center;gap:10px;'
         'margin-top:8px;margin-bottom:3px;min-height:33px">'
-        f'<img src="{logo}" alt="{v106.v105.v104.v103.engine._e(team)} logo" '
-        'style="width:33px;height:33px;object-fit:contain;object-position:center;flex:0 0 33px;display:block">'
-        f'<div class="pk-name" style="margin:0;display:flex;align-items:center;min-height:33px;line-height:1.1">{name}</div>'
+        f'<img src="{logo}" alt="{team_esc} logo" '
+        'style="width:33px;height:33px;object-fit:contain;object-position:center;'
+        'flex:0 0 33px;display:block">'
+        f'<div class="pk-name" style="margin:0;display:flex;align-items:center;'
+        f'min-height:33px;line-height:1.1">{name}</div>'
         '</div>'
     )
-    return html.replace(old,new,1)
+    return html.replace(old, new, 1)
 
 
-# The V1.0 renderer resolves _card from the base engine module at runtime.
-v106.v105.v104.v103.engine._card = _card_with_logo
+# Every later compatibility layer ultimately calls v101.render_pitcher_k_hub,
+# whose globals resolve _card at render time. Patch that exact symbol only.
+v101._card = _card_with_logo
 
 
 def render_pitcher_k_hub(games_df, section_header, status_info, team_logo, h):
