@@ -1,9 +1,9 @@
 """Kyre Sports AI main entrypoint.
 
 League-aware shell: MLB data is loaded only when MLB is selected. WNBA PRA uses
-its own WNBA-only V2.2 schedule/player layer so MLB/NBA rows cannot leak into
-WNBA cards. WNBA PRA is rendered only when the WNBA PRA market is selected.
-Existing MLB modules remain unchanged.
+its own WNBA-only V2.2 guarded data layer with the V2.3 slate command-center UI.
+WNBA PRA is rendered only when the WNBA PRA market is selected. Existing MLB
+modules remain unchanged.
 """
 
 import subprocess
@@ -30,7 +30,6 @@ def _load_v14_source():
 
 source = _load_v14_source()
 
-# Do not load/render any MLB slate data before the user has chosen a sport.
 old_data_block = '''try:
     games_df, game_date = games_today()
 except requests.RequestException:
@@ -48,8 +47,6 @@ if old_data_block not in source:
     raise RuntimeError("League-aware bridge could not locate the original data bootstrap.")
 source = source.replace(old_data_block, new_data_block, 1)
 
-# Load the correct league only after sport navigation exists. This prevents the
-# MLB hero/date/schedule from appearing in WNBA mode.
 mlb_marker = '''# ============================================================
 # MLB
 # ============================================================
@@ -65,7 +62,6 @@ if sport == "MLB":
     except requests.RequestException:
         games_df = pd.DataFrame()
 else:
-    # WNBA owns its schedule/date/player data inside the PRA hub.
     games_df = pd.DataFrame()
 
 '''
@@ -79,7 +75,6 @@ source = source.replace(
     1,
 )
 
-# Existing MLB destinations.
 source = source.replace(
     '                "1+ Hit",\n',
     '                "Slate",\n                "1+ Hit",\n',
@@ -91,8 +86,6 @@ source = source.replace(
     1,
 )
 
-# Route MLB 1+ Hit to the redesigned command center while keeping the original
-# branch available under an unreachable rollback value.
 source = source.replace(
     '    if market == "1+ Hit":\n',
     '''    if market == "1+ Hit":
@@ -140,8 +133,6 @@ if old_market_block not in source:
     raise RuntimeError("MLB module bridge could not locate the market placeholder.")
 source = source.replace(old_market_block, new_market_block, 1)
 
-# WNBA gets a completely separate market-aware path. PRA only appears beneath
-# WNBA -> PRA; the other WNBA markets stay isolated placeholders until built.
 old_wnba_block = '''else:
     section_header(f"WNBA {market}", "WNBA model workspace")
     st.info(
@@ -150,7 +141,7 @@ old_wnba_block = '''else:
 '''
 new_wnba_block = '''else:
     if market == "PRA":
-        from wnba_pra_hub_v22 import render_wnba_pra_hub
+        from wnba_pra_hub_v23 import render_wnba_pra_hub
 
         render_wnba_pra_hub(
             section_header,
@@ -170,17 +161,17 @@ source = source.replace(old_wnba_block, new_wnba_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • Hit UI V13.1 • WNBA PRA V2.2.1 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future +30d</div>",
+    "V13 • Hit UI V13.1 • WNBA PRA V2.3 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • WNBA PRA V2.2.1 • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • WNBA PRA V2.3 • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_2_1_market_isolated.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_3_command_center.py", "exec"),
     globals(),
     globals(),
 )
