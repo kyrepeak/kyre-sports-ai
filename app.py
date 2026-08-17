@@ -80,28 +80,6 @@ source = source.replace(
     1,
 )
 
-# Matchup Explorer must use the hardened MLB V3.2 loader directly. The legacy
-# shell can hand this route an empty/stale frame even while its schedule header
-# says the selected day is verified.
-matchup_preamble = '''    if market == "Matchup Explorer":
-        from mlb_schedule_v32 import games_for_date as matchup_games_for_date
-        try:
-            matchup_day = current_selected_date()
-        except Exception:
-            matchup_day = None
-        if matchup_day is None:
-            try:
-                matchup_day = games_df.iloc[0].get("game_date") if games_df is not None and not games_df.empty else None
-            except Exception:
-                matchup_day = None
-        if matchup_day is not None:
-            games_df = matchup_games_for_date(matchup_day)
-
-'''
-route_anchor = '    if market == "Slate":\n'
-if route_anchor in source:
-    source = source.replace(route_anchor, matchup_preamble + route_anchor, 1)
-
 market_marker = '''    elif market == "Live Game":
         from mlb_live_hub_v193 import render_live_hub
         render_live_hub(games_df, section_header, status_info, team_logo, h)
@@ -121,6 +99,36 @@ market_routes = '''    elif market == "Live Game":
         render_pitcher_k_hub(games_df, section_header, status_info, team_logo, h)
     elif market == "Matchup Explorer":
         from mlb_matchup_hub_v10 import render_matchup_hub
+        from mlb_schedule_v32 import load_with_diagnostics
+        import streamlit as st
+        matchup_day = None
+        # The shell's selected-date widget is the source of truth. Find its ISO
+        # date value directly rather than calling a legacy helper with a different
+        # session-state contract.
+        for _k, _v in list(st.session_state.items()):
+            try:
+                _d = str(_v)[:10]
+                if _d == str(current_selected_date())[:10]:
+                    matchup_day = _d
+                    break
+            except Exception:
+                pass
+        if matchup_day is None:
+            try:
+                matchup_day = str(current_selected_date())[:10]
+            except Exception:
+                pass
+        if matchup_day is None or len(str(matchup_day)) != 10:
+            try:
+                matchup_day = str(games_df.iloc[0].get("game_date"))[:10]
+            except Exception:
+                matchup_day = None
+        if matchup_day:
+            _matchup_games, _matchup_diag = load_with_diagnostics(matchup_day)
+            if _matchup_games is not None and not _matchup_games.empty:
+                games_df = _matchup_games
+            elif games_df is None or games_df.empty:
+                st.warning(f"Matchup Explorer schedule reload returned 0 games for {matchup_day}. Source: {_matchup_diag.get('source','none')}")
         render_matchup_hub(games_df, section_header, status_info, team_logo, h)
     else:
 '''
