@@ -103,9 +103,6 @@ def _candidate_v208(label, model_prob, market_item, snap, market, side):
 
     row = _same_book_row(snap, market_item, market, side)
     selected_price, opposite_price = _pair_prices(row, market, side)
-    # The selected best price should equal the row price. If the feed has moved
-    # between normalization steps, preserve the displayed best price and only
-    # use no-vig when the pair is coherent.
     selected_implied = _implied(selected_price)
     opposite_implied = _implied(opposite_price)
     no_vig_prob = None
@@ -131,8 +128,6 @@ def _candidate_v208(label, model_prob, market_item, snap, market, side):
         "no_vig_prob": no_vig_prob,
         "no_vig_edge": no_vig_edge,
         "hold": hold,
-        # Primary edge used for V20.8 ranking/grade. Fall back to listed edge if
-        # the opposite side is unavailable at the exact same book/line.
         "edge": no_vig_edge if no_vig_edge is not None else listed_edge,
         **fresh,
     }
@@ -206,7 +201,12 @@ def _fresh_text(item):
 
 def _edge_card_v208(title, item):
     if not item:
-        return base206._edge_card(title, item)
+        return (
+            '<div class="sl-edge pass"><div class="sl-edge-top">'
+            f'<span class="sl-edge-market">{escape(title)}</span><span class="sl-edge-grade">NO MARKET</span></div>'
+            '<div class="sl-edge-pick">Waiting for matching line</div>'
+            '<div class="sl-edge-detail">A calibrated comparison appears when the model and a compatible two-way sportsbook market are both available.</div></div>'
+        )
     edge = float(item.get("edge", 0) or 0)
     css, grade = base206._edge_grade(edge)
     nv = item.get("no_vig_edge")
@@ -215,7 +215,6 @@ def _edge_card_v208(title, item):
     hold = item.get("hold")
     model_p = float(item.get("model_prob", 0) or 0) * 100
     book = escape(str(item.get("book") or "Sportsbook"))
-    primary_label = "No-vig edge" if nv is not None else "Listed edge"
     primary = float(nv if nv is not None else raw) * 100
     nv_line = f'<span class="nv">No-vig {float(nv)*100:+.1f} pts</span>' if nv is not None else '<span class="nv">No-vig unavailable</span>'
     fair_market = f'{float(nv_prob)*100:.1f}%' if nv_prob is not None else "—"
@@ -336,19 +335,14 @@ def _render_summary(rows, intel, snaps):
 
 
 def _render_card(row, intel=None, snap=None):
-    # Reuse the mature V20.6 card layout while swapping in V20.8 comparison and
-    # edge rendering. Restore module functions immediately after this card.
     old_market = base206._model_market
-    old_edge = base206._edge_card
     old_snapshot = base206._model_snapshot_html
     try:
         base206._model_market = _model_market_v208
-        base206._edge_card = _edge_card_v208
         base206._model_snapshot_html = _model_snapshot_html_v208
         base206._render_card(row, intel, snap)
     finally:
         base206._model_market = old_market
-        base206._edge_card = old_edge
         base206._model_snapshot_html = old_snapshot
 
 
