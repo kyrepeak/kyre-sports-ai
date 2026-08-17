@@ -1,4 +1,4 @@
-"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Matchup Explorer V2.7 + Hit UI V13.3 + HR V1.1 + H+R+RBI V1.0.1 + Pitcher K V1.0.7 + Moneyline V16.3 + Spread V15.5 + Totals V17.3 + Live V19.3.
+"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Matchup Explorer V2.7 + Daily Game Picks V1.0 + Hit UI V13.3 + HR V1.1 + H+R+RBI V1.0.1 + Pitcher K V1.0.7 + Moneyline V16.3 + Spread V15.5 + Totals V17.3 + Live V19.3.
 """
 
 import subprocess
@@ -28,7 +28,7 @@ repls = [
 for a,b in repls:
     if a in source: source=source.replace(a,b,1)
 
-source=source.replace('                "Hits + Runs + RBIs",\n                "Moneyline",','                "Hits + Runs + RBIs",\n                "Pitcher Strikeouts",\n                "Matchup Explorer",\n                "Moneyline",',1)
+source=source.replace('                "Hits + Runs + RBIs",\n                "Moneyline",','                "Hits + Runs + RBIs",\n                "Pitcher Strikeouts",\n                "Matchup Explorer",\n                "Daily Game Picks",\n                "Moneyline",',1)
 market_marker='''    elif market == "Live Game":
         from mlb_live_hub_v193 import render_live_hub
         render_live_hub(games_df, section_header, status_info, team_logo, h)
@@ -60,12 +60,26 @@ market_routes='''    elif market == "Live Game":
             if _matchup_games is not None and not _matchup_games.empty: games_df=_matchup_games
             elif games_df is None or games_df.empty: st.warning(f"Matchup Explorer schedule reload returned 0 games for {matchup_day}.")
         render_matchup_hub(games_df, section_header, status_info, team_logo, h)
+    elif market == "Daily Game Picks":
+        from mlb_daily_game_picks_v10 import render_daily_game_picks
+        from mlb_schedule_v32 import load_with_diagnostics
+        import streamlit as st
+        try: picks_day=str(current_selected_date())[:10]
+        except Exception: picks_day=None
+        if not picks_day or len(picks_day)!=10:
+            try: picks_day=str(games_df.iloc[0].get("game_date"))[:10]
+            except Exception: picks_day=None
+        if picks_day:
+            _picks_games,_picks_diag=load_with_diagnostics(picks_day)
+            if _picks_games is not None and not _picks_games.empty: games_df=_picks_games
+            elif games_df is None or games_df.empty: st.warning(f"Daily Game Picks schedule reload returned 0 games for {picks_day}.")
+        render_daily_game_picks(games_df, section_header, status_info, team_logo, h)
     else:
 '''
 if market_marker not in source: raise RuntimeError("MLB production-route bridge could not locate boundary.")
 source=source.replace(market_marker,market_routes,1)
 source=source.replace("WNBA PRA V2.6","WNBA PRA V2.8.2").replace("PRA V2.6","PRA V2.8.2")
-source=source.replace("Hit UI V13.1","Hit UI V13.3 • Matchup Explorer V2.7 • HR V1.1 • H+R+RBI V1.0.1 • Pitcher K V1.0.7")
+source=source.replace("Hit UI V13.1","Hit UI V13.3 • Matchup Explorer V2.7 • Daily Game Picks V1.0 • HR V1.1 • H+R+RBI V1.0.1 • Pitcher K V1.0.7")
 source=source.replace("Moneyline V16.2","Moneyline V16.3").replace("ML V16.2","ML V16.3").replace("Spread V15.4","Spread V15.5").replace("Totals V17.2","Totals V17.3").replace("Live V19.2","Live V19.3")
 source=source.replace("kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py","kyre_sports_ai_v2_7.py")
 exec(compile(source,"kyre_sports_ai_v2_7.py","exec"),globals(),globals())
