@@ -2,7 +2,8 @@
 
 League-aware shell: MLB data is loaded only when MLB is selected. WNBA PRA uses
 its own WNBA-only V2.2 schedule/player layer so MLB/NBA rows cannot leak into
-WNBA cards. Existing MLB modules remain unchanged.
+WNBA cards. WNBA PRA is rendered only when the WNBA PRA market is selected.
+Existing MLB modules remain unchanged.
 """
 
 import subprocess
@@ -139,7 +140,8 @@ if old_market_block not in source:
     raise RuntimeError("MLB module bridge could not locate the market placeholder.")
 source = source.replace(old_market_block, new_market_block, 1)
 
-# WNBA gets a completely separate data/render path. No MLB games_df is passed in.
+# WNBA gets a completely separate market-aware path. PRA only appears beneath
+# WNBA -> PRA; the other WNBA markets stay isolated placeholders until built.
 old_wnba_block = '''else:
     section_header(f"WNBA {market}", "WNBA model workspace")
     st.info(
@@ -147,14 +149,20 @@ old_wnba_block = '''else:
     )
 '''
 new_wnba_block = '''else:
-    from wnba_pra_hub_v22 import render_wnba_pra_hub
+    if market == "PRA":
+        from wnba_pra_hub_v22 import render_wnba_pra_hub
 
-    render_wnba_pra_hub(
-        section_header,
-        status_info,
-        None,
-        h,
-    )
+        render_wnba_pra_hub(
+            section_header,
+            status_info,
+            None,
+            h,
+        )
+        st.stop()
+    else:
+        section_header(f"WNBA {market}", "WNBA market module")
+        st.info(f"WNBA {market} is separate from the PRA Command Center and will get its own model module.")
+        st.stop()
 '''
 if old_wnba_block not in source:
     raise RuntimeError("WNBA PRA bridge could not locate the original WNBA placeholder.")
@@ -162,17 +170,17 @@ source = source.replace(old_wnba_block, new_wnba_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • Hit UI V13.1 • WNBA PRA V2.2 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future +30d</div>",
+    "V13 • Hit UI V13.1 • WNBA PRA V2.2.1 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • WNBA PRA V2.2 • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • WNBA PRA V2.2.1 • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_2_league_isolated.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_2_1_market_isolated.py", "exec"),
     globals(),
     globals(),
 )
