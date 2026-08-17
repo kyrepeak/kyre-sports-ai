@@ -1,8 +1,8 @@
 """Kyre Sports AI main entrypoint.
 
-Future-slate bridge: preserve the proven V14.2/V13 main UI, keep Spread V15.3,
-and add an official MLB date selector so tomorrow and future slates can be
-viewed and analyzed from the same app.
+Verified future-slate bridge: preserve the proven V14.2/V13 main UI, keep the
+spread engine, and use a strict official-MLB date selector for tomorrow and
+future slates.
 """
 
 import subprocess
@@ -29,7 +29,6 @@ def _load_v14_source():
 
 source = _load_v14_source()
 
-# Replace the original today-only schedule load with the future slate calendar.
 old_data_block = '''try:
     games_df, game_date = games_today()
 except requests.RequestException:
@@ -51,12 +50,12 @@ except requests.RequestException:
 '''
 
 if old_data_block not in source:
-    raise RuntimeError("Future-slate bridge could not locate the original today-only schedule block.")
+    raise RuntimeError("Verified future-slate bridge could not locate the original today-only schedule block.")
 source = source.replace(old_data_block, new_data_block, 1)
 
 source = source.replace(
     'with st.expander("⚾ Today’s MLB schedule", expanded=False):',
-    'with st.expander(f"⚾ MLB schedule • {game_date}", expanded=False):',
+    'with st.expander(f"✅ Verified MLB schedule • {game_date}", expanded=False):',
     1,
 )
 
@@ -83,22 +82,22 @@ new_market_block = '''    elif market == "Run Line":
             f"MLB {market}",
             "This market module is not built yet.",
         )
-        st.info("The production models currently cover MLB 1+ Hit and Run Line V15.3.")
+        st.info("The production models currently cover MLB 1+ Hit and Run Line V15.3.1.")
 '''
 
 if old_market_block not in source:
-    raise RuntimeError("Future-slate bridge could not locate the Run Line placeholder.")
+    raise RuntimeError("Verified future-slate bridge could not locate the Run Line placeholder.")
 source = source.replace(old_market_block, new_market_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • UI 14.2 • Spread V15.3 • Future +30d</div>",
+    "V13 • UI 14.2 • Spread V15.3.1 • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Hit Model V13 • Spread V15.3 • Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • Hit Model V13 • Spread V15.3.1 • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_future_slates.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_verified_future_slates.py", "exec"), globals(), globals())
