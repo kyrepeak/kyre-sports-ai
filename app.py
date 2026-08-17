@@ -86,6 +86,125 @@ source = source.replace(
     1,
 )
 
+# Replace the old narrow three-column dropdown row with a mobile-first two-column
+# navigation strip. WNBA defaults directly to PRA, so switching leagues is one tap
+# and the PRA market is already selected. Both controls receive large touch targets.
+nav_start = source.find('nav1, nav2, nav3 = st.columns([1.05, 1.55, 1.0])')
+nav_end = source.find('\n\n# ============================================================\n# MLB', nav_start)
+if nav_start == -1 or nav_end == -1:
+    raise RuntimeError("Touch-nav bridge could not locate the original sport/market navigation.")
+
+touch_nav = r'''st.markdown(
+    """
+    <style>
+    .ks-touch-nav-note{
+        margin:2px 0 10px;
+        color:#8fa1bd;
+        font-size:.72rem;
+        font-weight:750;
+    }
+    div[data-testid="stSelectbox"] label p{
+        color:#dbeafe !important;
+        font-size:.78rem !important;
+        font-weight:900 !important;
+        letter-spacing:.055em !important;
+        text-transform:uppercase !important;
+        margin-bottom:5px !important;
+    }
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] > div{
+        min-height:58px !important;
+        border-radius:15px !important;
+        border:1px solid rgba(56,189,248,.28) !important;
+        background:linear-gradient(180deg,rgba(22,32,51,.98),rgba(13,21,36,.98)) !important;
+        box-shadow:0 8px 24px rgba(0,0,0,.13) !important;
+        padding-left:6px !important;
+    }
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] span{
+        font-size:1rem !important;
+        font-weight:850 !important;
+        color:#f8fafc !important;
+    }
+    .ks-nav-version{
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        min-height:34px;
+        margin:3px 0 8px;
+        color:#8fa1bd;
+        font-size:.68rem;
+        font-weight:800;
+    }
+    .ks-wnba-active{
+        display:flex;
+        align-items:center;
+        gap:7px;
+        margin:2px 0 9px;
+        padding:8px 11px;
+        border:1px solid rgba(244,114,182,.22);
+        border-radius:12px;
+        color:#f9a8d4;
+        background:rgba(244,114,182,.055);
+        font-size:.72rem;
+        font-weight:850;
+    }
+    @media(max-width:640px){
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div{
+            min-height:62px !important;
+        }
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] span{
+            font-size:1.05rem !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+nav1, nav2 = st.columns([1, 1], gap="small")
+with nav1:
+    sport = st.selectbox(
+        "🏟️ Sport",
+        ["MLB", "WNBA"],
+        key="ks_sport_touch",
+    )
+with nav2:
+    if sport == "MLB":
+        market = st.selectbox(
+            "🎯 Market",
+            [
+                "Slate",
+                "1+ Hit",
+                "2+ Hits",
+                "Home Run",
+                "Hits + Runs + RBIs",
+                "Moneyline",
+                "Run Line",
+                "Game Total",
+                "Live Game",
+            ],
+            key="ks_mlb_market_touch",
+        )
+    else:
+        market = st.selectbox(
+            "🎯 WNBA Market",
+            ["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total"],
+            index=3,
+            key="ks_wnba_market_touch",
+        )
+
+if sport == "WNBA" and market == "PRA":
+    st.markdown(
+        '<div class="ks-wnba-active">🏀 WNBA <b>→</b> PRA active • switching to WNBA opens PRA by default</div>',
+        unsafe_allow_html=True,
+    )
+else:
+    st.markdown(
+        '<div class="ks-nav-version">Kyre Sports AI • touch navigation</div>',
+        unsafe_allow_html=True,
+    )'''
+
+source = source[:nav_start] + touch_nav + source[nav_end:]
+
 source = source.replace(
     '    if market == "1+ Hit":\n',
     '''    if market == "1+ Hit":
@@ -171,7 +290,7 @@ source = source.replace(
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_3_2_resilient.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_3_2_resilient_touch_nav.py", "exec"),
     globals(),
     globals(),
 )
