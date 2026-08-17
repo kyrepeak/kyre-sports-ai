@@ -68,10 +68,10 @@ def _render_top5_with_logos(rows, market, sims):
 
     st.markdown("""
     <style>
-      .rk-player-row{display:flex;align-items:center;gap:12px;margin-top:8px;margin-bottom:2px}
-      .rk-team-logo{width:38px;height:38px;object-fit:contain;flex:0 0 38px}
-      .rk-player-row .rk-name{margin:0!important}
-      @media (max-width:700px){.rk-team-logo{width:34px;height:34px;flex-basis:34px}.rk-player-row{gap:10px}}
+      .rk-player-row{display:flex;align-items:center;gap:10px;margin-top:8px;margin-bottom:3px;min-height:34px}
+      .rk-team-logo{width:33px;height:33px;object-fit:contain;object-position:center;flex:0 0 33px;display:block}
+      .rk-player-row .rk-name{margin:0!important;line-height:1.1;display:flex;align-items:center;min-height:33px}
+      @media (max-width:700px){.rk-team-logo{width:30px;height:30px;flex-basis:30px}.rk-player-row{gap:9px;min-height:30px}.rk-player-row .rk-name{min-height:30px}}
     </style>
     """, unsafe_allow_html=True)
 
