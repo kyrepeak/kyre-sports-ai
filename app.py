@@ -1,4 +1,4 @@
-"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Matchup Explorer V1.8 + Hit UI V13.3 + HR V1.1 + H+R+RBI V1.0.1 + Pitcher K V1.0.6 + Moneyline V16.3 + Spread V15.5 + Totals V17.3 + Live V19.3.
+"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Matchup Explorer V1.9 + Hit UI V13.3 + HR V1.1 + H+R+RBI V1.0.1 + Pitcher K V1.0.6 + Moneyline V16.3 + Spread V15.5 + Totals V17.3 + Live V19.3.
 """
 
 import subprocess
@@ -47,7 +47,7 @@ market_routes='''    elif market == "Live Game":
         from mlb_pitcher_k_hub_v106 import render_pitcher_k_hub
         render_pitcher_k_hub(games_df, section_header, status_info, team_logo, h)
     elif market == "Matchup Explorer":
-        from mlb_matchup_hub_v18 import render_matchup_hub
+        from mlb_matchup_hub_v19 import render_matchup_hub
         from mlb_schedule_v32 import load_with_diagnostics
         import streamlit as st
         try: matchup_day=str(current_selected_date())[:10]
@@ -65,7 +65,7 @@ market_routes='''    elif market == "Live Game":
 if market_marker not in source: raise RuntimeError("MLB production-route bridge could not locate boundary.")
 source=source.replace(market_marker,market_routes,1)
 source=source.replace("WNBA PRA V2.6","WNBA PRA V2.8.2").replace("PRA V2.6","PRA V2.8.2")
-source=source.replace("Hit UI V13.1","Hit UI V13.3 • Matchup Explorer V1.8 • HR V1.1 • H+R+RBI V1.0.1 • Pitcher K V1.0.6")
+source=source.replace("Hit UI V13.1","Hit UI V13.3 • Matchup Explorer V1.9 • HR V1.1 • H+R+RBI V1.0.1 • Pitcher K V1.0.6")
 source=source.replace("Moneyline V16.2","Moneyline V16.3").replace("ML V16.2","ML V16.3").replace("Spread V15.4","Spread V15.5").replace("Totals V17.2","Totals V17.3").replace("Live V19.2","Live V19.3")
-source=source.replace("kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py","kyre_sports_ai_v1_8.py")
-exec(compile(source,"kyre_sports_ai_v1_8.py","exec"),globals(),globals())
+source=source.replace("kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py","kyre_sports_ai_v1_9.py")
+exec(compile(source,"kyre_sports_ai_v1_9.py","exec"),globals(),globals())
