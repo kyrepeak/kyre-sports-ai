@@ -80,6 +80,28 @@ source = source.replace(
     1,
 )
 
+# Matchup Explorer must use the hardened MLB V3.2 loader directly. The legacy
+# shell can hand this route an empty/stale frame even while its schedule header
+# says the selected day is verified.
+matchup_preamble = '''    if market == "Matchup Explorer":
+        from mlb_schedule_v32 import games_for_date as matchup_games_for_date
+        try:
+            matchup_day = current_selected_date()
+        except Exception:
+            matchup_day = None
+        if matchup_day is None:
+            try:
+                matchup_day = games_df.iloc[0].get("game_date") if games_df is not None and not games_df.empty else None
+            except Exception:
+                matchup_day = None
+        if matchup_day is not None:
+            games_df = matchup_games_for_date(matchup_day)
+
+'''
+route_anchor = '    if market == "Slate":\n'
+if route_anchor in source:
+    source = source.replace(route_anchor, matchup_preamble + route_anchor, 1)
+
 market_marker = '''    elif market == "Live Game":
         from mlb_live_hub_v193 import render_live_hub
         render_live_hub(games_df, section_header, status_info, team_logo, h)
