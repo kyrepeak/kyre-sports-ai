@@ -1,12 +1,8 @@
 """Kyre Sports AI main entrypoint.
 
-V15.3 bridge: preserve the proven V14.2/V13 main UI exactly, while wiring the
-existing MLB -> Run Line dropdown into the V15.3 spread hub with H2H context
-plus clean pregame backtesting.
-
-The pinned source is the V14.2 app commit. We load it from local git history
-when available (fast/no network) and fall back to the immutable raw GitHub
-commit on shallow deployments such as Streamlit Cloud.
+Future-slate bridge: preserve the proven V14.2/V13 main UI, keep Spread V15.3,
+and add an official MLB date selector so tomorrow and future slates can be
+viewed and analyzed from the same app.
 """
 
 import subprocess
@@ -33,7 +29,38 @@ def _load_v14_source():
 
 source = _load_v14_source()
 
-old_block = '''    else:
+# Replace the original today-only schedule load with the future slate calendar.
+old_data_block = '''try:
+    games_df, game_date = games_today()
+except requests.RequestException:
+    games_df = pd.DataFrame()
+    game_date = datetime.now(ET).strftime("%Y-%m-%d")
+
+render_hero(game_date)
+'''
+
+new_data_block = '''from schedule_future import current_selected_date, games_for_date, render_slate_date_control
+
+game_date = current_selected_date()
+render_hero(game_date)
+game_date = render_slate_date_control()
+try:
+    games_df = games_for_date(game_date)
+except requests.RequestException:
+    games_df = pd.DataFrame()
+'''
+
+if old_data_block not in source:
+    raise RuntimeError("Future-slate bridge could not locate the original today-only schedule block.")
+source = source.replace(old_data_block, new_data_block, 1)
+
+source = source.replace(
+    'with st.expander("⚾ Today’s MLB schedule", expanded=False):',
+    'with st.expander(f"⚾ MLB schedule • {game_date}", expanded=False):',
+    1,
+)
+
+old_market_block = '''    else:
         section_header(
             f"MLB {market}",
             "This market module is not built yet.",
@@ -41,7 +68,7 @@ old_block = '''    else:
         st.info("The production model currently covers MLB 1+ Hit.")
 '''
 
-new_block = '''    elif market == "Run Line":
+new_market_block = '''    elif market == "Run Line":
         from spread_hub_v153 import render_spread_hub
 
         render_spread_hub(
@@ -59,19 +86,19 @@ new_block = '''    elif market == "Run Line":
         st.info("The production models currently cover MLB 1+ Hit and Run Line V15.3.")
 '''
 
-if old_block not in source:
-    raise RuntimeError("V15.3 bridge could not locate the Run Line placeholder in the pinned UI source.")
+if old_market_block not in source:
+    raise RuntimeError("Future-slate bridge could not locate the Run Line placeholder.")
+source = source.replace(old_market_block, new_market_block, 1)
 
-source = source.replace(old_block, new_block, 1)
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • UI 14.2 • Spread V15.3</div>",
+    "V13 • UI 14.2 • Spread V15.3 • Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Hit Model V13 • Spread V15.3 • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • Hit Model V13 • Spread V15.3 • Future Slates +30d • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_v15_3.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_future_slates.py", "exec"), globals(), globals())
