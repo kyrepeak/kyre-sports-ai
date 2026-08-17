@@ -1,3 +1,5 @@
+from html import escape
+
 from engine import *
 from history import (
     calibration_metrics,
@@ -12,307 +14,657 @@ from history import (
     top5_performance,
 )
 
-st.title("🧠 KYRE SPORTS AI")
-st.subheader("Sports Projection & Analytics Engine")
-st.divider()
 
-sport = st.selectbox("Choose Sport", ["MLB", "WNBA"])
+# ============================================================
+# V14 UI — MODEL MATH REMAINS V13
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+    :root {
+        --ks-bg: #080d16;
+        --ks-panel: #0f1726;
+        --ks-panel-2: #131e31;
+        --ks-border: rgba(148, 163, 184, .17);
+        --ks-text: #f8fafc;
+        --ks-muted: #94a3b8;
+        --ks-blue: #38bdf8;
+        --ks-blue-2: #2563eb;
+        --ks-green: #22c55e;
+        --ks-yellow: #f59e0b;
+        --ks-red: #ef4444;
+    }
+
+    .stApp {
+        background:
+            radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .13), transparent 32rem),
+            var(--ks-bg);
+    }
+
+    .block-container {
+        max-width: 1180px;
+        padding-top: 1.3rem;
+        padding-bottom: 4rem;
+    }
+
+    .ks-hero {
+        background: linear-gradient(135deg, rgba(37,99,235,.22), rgba(15,23,38,.94) 55%, rgba(56,189,248,.08));
+        border: 1px solid var(--ks-border);
+        border-radius: 24px;
+        padding: 24px 26px;
+        margin-bottom: 20px;
+        box-shadow: 0 22px 55px rgba(0,0,0,.22);
+    }
+
+    .ks-eyebrow {
+        color: var(--ks-blue);
+        font-size: .78rem;
+        font-weight: 800;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        margin-bottom: .45rem;
+    }
+
+    .ks-title {
+        color: var(--ks-text);
+        font-size: clamp(2rem, 5vw, 3.25rem);
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        margin: 0;
+    }
+
+    .ks-subtitle {
+        color: var(--ks-muted);
+        font-size: 1rem;
+        margin-top: .7rem;
+        margin-bottom: 0;
+    }
+
+    .ks-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .ks-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--ks-border);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, .72);
+        color: #cbd5e1;
+        padding: 7px 10px;
+        font-size: .78rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .ks-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--ks-green);
+        box-shadow: 0 0 10px rgba(34,197,94,.7);
+    }
+
+    .ks-section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 12px;
+        margin: 22px 0 12px;
+    }
+
+    .ks-section-head h2,
+    .ks-section-head h3 {
+        margin: 0;
+        color: var(--ks-text);
+        letter-spacing: -.025em;
+    }
+
+    .ks-kicker {
+        color: var(--ks-muted);
+        font-size: .85rem;
+        margin: 3px 0 0;
+    }
+
+    .ks-card-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin: 10px 0 16px;
+    }
+
+    .ks-pick-card {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(180deg, rgba(19,30,49,.97), rgba(10,17,29,.97));
+        border: 1px solid var(--ks-border);
+        border-radius: 18px;
+        padding: 16px;
+        min-height: 190px;
+    }
+
+    .ks-pick-card:first-child {
+        border-color: rgba(56,189,248,.55);
+        box-shadow: 0 12px 34px rgba(37,99,235,.16);
+    }
+
+    .ks-rank {
+        font-size: .75rem;
+        color: var(--ks-blue);
+        font-weight: 900;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+    }
+
+    .ks-player {
+        font-size: 1.06rem;
+        color: var(--ks-text);
+        font-weight: 850;
+        line-height: 1.18;
+        margin-top: 8px;
+        min-height: 2.4em;
+    }
+
+    .ks-matchup {
+        color: var(--ks-muted);
+        font-size: .78rem;
+        margin-top: 5px;
+        line-height: 1.35;
+    }
+
+    .ks-prob {
+        font-size: 2rem;
+        color: white;
+        font-weight: 900;
+        letter-spacing: -.04em;
+        margin-top: 13px;
+    }
+
+    .ks-prob-label {
+        color: var(--ks-muted);
+        font-size: .72rem;
+        margin-top: -3px;
+    }
+
+    .ks-card-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-top: 13px;
+    }
+
+    .ks-badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 5px 8px;
+        font-size: .68rem;
+        font-weight: 900;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+
+    .ks-high { background: rgba(34,197,94,.14); color: #86efac; border: 1px solid rgba(34,197,94,.28); }
+    .ks-medium { background: rgba(245,158,11,.14); color: #fde68a; border: 1px solid rgba(245,158,11,.28); }
+    .ks-low { background: rgba(239,68,68,.14); color: #fca5a5; border: 1px solid rgba(239,68,68,.28); }
+
+    .ks-mini {
+        color: #cbd5e1;
+        font-size: .72rem;
+        white-space: nowrap;
+    }
+
+    .ks-feature {
+        border: 1px solid var(--ks-border);
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(37,99,235,.15), rgba(15,23,38,.95));
+        padding: 20px;
+        margin: 10px 0 16px;
+    }
+
+    .ks-feature-name {
+        color: var(--ks-text);
+        font-size: 1.45rem;
+        font-weight: 900;
+        letter-spacing: -.03em;
+    }
+
+    .ks-feature-meta {
+        color: var(--ks-muted);
+        margin-top: 5px;
+        font-size: .88rem;
+    }
+
+    .ks-feature-prob {
+        font-size: clamp(2.7rem, 8vw, 4.5rem);
+        font-weight: 950;
+        line-height: 1;
+        letter-spacing: -.06em;
+        color: #f8fafc;
+        margin-top: 14px;
+    }
+
+    .ks-note {
+        border-left: 3px solid var(--ks-blue);
+        background: rgba(56,189,248,.06);
+        padding: 10px 12px;
+        color: #cbd5e1;
+        border-radius: 0 10px 10px 0;
+        font-size: .84rem;
+        margin: 10px 0;
+    }
+
+    .ks-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: var(--ks-muted);
+        font-size: .76rem;
+        border-top: 1px solid var(--ks-border);
+        margin-top: 34px;
+        padding-top: 18px;
+    }
+
+    div[data-testid="stMetric"] {
+        background: rgba(15,23,38,.78);
+        border: 1px solid var(--ks-border);
+        border-radius: 14px;
+        padding: 10px 12px;
+        min-height: 93px;
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: var(--ks-muted);
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: var(--ks-text);
+        font-size: clamp(1.15rem, 3vw, 1.8rem);
+    }
+
+    div[data-baseweb="tab-list"] {
+        gap: 5px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    button[data-baseweb="tab"] {
+        border-radius: 12px 12px 0 0;
+        white-space: nowrap;
+    }
+
+    div[data-testid="stDataFrame"] {
+        border: 1px solid var(--ks-border);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .stButton > button,
+    .stDownloadButton > button {
+        border-radius: 12px;
+        font-weight: 800;
+        min-height: 44px;
+    }
+
+    div[data-testid="stExpander"] {
+        border: 1px solid var(--ks-border);
+        border-radius: 14px;
+        background: rgba(15,23,38,.52);
+    }
+
+    @media (max-width: 900px) {
+        .ks-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .ks-pick-card:first-child { grid-column: span 2; }
+        .block-container { padding-left: .9rem; padding-right: .9rem; }
+    }
+
+    @media (max-width: 620px) {
+        .ks-hero { border-radius: 18px; padding: 20px 17px; }
+        .ks-card-grid { grid-template-columns: 1fr; }
+        .ks-pick-card:first-child { grid-column: span 1; }
+        .ks-pick-card { min-height: 0; }
+        .ks-player { min-height: 0; }
+        .ks-footer { align-items: flex-start; flex-direction: column; }
+        div[data-testid="stMetric"] { min-height: 82px; padding: 9px; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def h(value):
+    return escape(str(value if value is not None else ""))
+
+
+def confidence_class(value):
+    text = str(value or "").upper()
+    if "HIGH" in text:
+        return "ks-high"
+    if "MEDIUM" in text:
+        return "ks-medium"
+    return "ks-low"
+
+
+def render_hero(game_date):
+    now = datetime.now(ET).strftime("%I:%M %p ET").lstrip("0")
+    st.markdown(
+        f"""
+        <div class="ks-hero">
+          <div class="ks-eyebrow">Sports projection intelligence</div>
+          <div class="ks-title">🧠 KYRE SPORTS AI</div>
+          <p class="ks-subtitle">MLB probability modeling, slate scanning and calibration — built for fast mobile use.</p>
+          <div class="ks-pills">
+            <span class="ks-pill"><span class="ks-dot"></span> Data engine online</span>
+            <span class="ks-pill">⚾ MLB • {h(game_date)}</span>
+            <span class="ks-pill">🧪 Model V13</span>
+            <span class="ks-pill">✨ UI V14</span>
+            <span class="ks-pill">🕒 {h(now)}</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def section_header(title, subtitle=""):
+    st.markdown(
+        f"""
+        <div class="ks-section-head">
+          <div>
+            <h2>{h(title)}</h2>
+            <p class="ks-kicker">{h(subtitle)}</p>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_pick_cards(results):
+    cards = []
+    medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+    for rank, result in enumerate(results[:5], 1):
+        sim = result["sim"]
+        conf = result.get("confidence", "N/A")
+        badge_class = confidence_class(conf)
+        cards.append(
+            f"""
+            <div class="ks-pick-card">
+              <div class="ks-rank">{medals.get(rank, '•')} Rank {rank}</div>
+              <div class="ks-player">{h(result['player_name'])}</div>
+              <div class="ks-matchup">{h(result['team'])} vs {h(result['opponent'])}<br>vs {h(result['starter_name'])} • Bat #{h(result['position'])}</div>
+              <div class="ks-prob">{sim['p_one_plus'] * 100:.1f}%</div>
+              <div class="ks-prob-label">Projected 1+ hit</div>
+              <div class="ks-card-bottom">
+                <span class="ks-badge {badge_class}">{h(conf)}</span>
+                <span class="ks-mini">2+ {sim['p_two_plus'] * 100:.1f}%</span>
+              </div>
+            </div>
+            """
+        )
+    st.markdown(
+        '<div class="ks-card-grid">' + "".join(cards) + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_probability_feature(player_name, team, opponent, sim, grade, subtitle="1+ Hit Probability"):
+    badge_class = confidence_class(grade)
+    st.markdown(
+        f"""
+        <div class="ks-feature">
+          <div class="ks-feature-name">{h(player_name)}</div>
+          <div class="ks-feature-meta">{h(team)} vs {h(opponent)}</div>
+          <div class="ks-feature-prob">{sim['p_one_plus'] * 100:.1f}%</div>
+          <div class="ks-feature-meta">{h(subtitle)} &nbsp; • &nbsp; 2+ hits {sim['p_two_plus'] * 100:.1f}% &nbsp; • &nbsp; Expected hits {sim['expected_hits']:.2f}</div>
+          <div style="margin-top:12px"><span class="ks-badge {badge_class}">{h(grade)} CONFIDENCE</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ============================================================
+# DATA LOAD
+# ============================================================
+
+try:
+    games_df, game_date = games_today()
+except requests.RequestException:
+    games_df, game_date = (
+        pd.DataFrame(),
+        datetime.now(ET).strftime("%Y-%m-%d"),
+    )
+
+render_hero(game_date)
+
+nav1, nav2, nav3 = st.columns([1.15, 1.55, 1.0])
+with nav1:
+    sport = st.selectbox("Sport", ["MLB", "WNBA"], label_visibility="collapsed")
+with nav2:
+    if sport == "MLB":
+        market = st.selectbox(
+            "Market",
+            ["1+ Hit", "2+ Hits", "Home Run", "Hits + Runs + RBIs", "Moneyline", "Run Line", "Game Total"],
+            label_visibility="collapsed",
+        )
+    else:
+        market = st.selectbox(
+            "Market",
+            ["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total"],
+            label_visibility="collapsed",
+        )
+with nav3:
+    st.markdown(
+        '<div class="ks-pill" style="justify-content:center;margin-top:2px;min-height:42px">Model V13 • UI V14</div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ============================================================
+# MLB
+# ============================================================
 
 if sport == "MLB":
-    try:
-        games_df, game_date = games_today()
-    except requests.RequestException:
-        games_df, game_date = (
-            pd.DataFrame(),
-            datetime.now(ET).strftime("%Y-%m-%d"),
-        )
+    with st.expander("⚾ Today’s MLB schedule", expanded=False):
+        action_col, meta_col = st.columns([1, 2])
+        with action_col:
+            reload_schedule = st.button("🔄 Refresh schedule", use_container_width=True)
+        with meta_col:
+            st.caption(f"Schedule date: {game_date} • Probable pitchers and status from MLB data")
 
-    st.header("📡 Live MLB Data")
-    if st.button("🔄 LOAD TODAY'S MLB GAMES", use_container_width=True):
-        if games_df.empty:
-            st.warning("No MLB games found.")
-        else:
-            st.success(f"Schedule loaded for {game_date}")
-            show = games_df[
-                [
-                    "away_team",
-                    "home_team",
-                    "first_pitch_et",
-                    "away_pitcher",
-                    "home_pitcher",
-                    "status",
-                ]
-            ].rename(
-                columns={
-                    "away_team": "Away",
-                    "home_team": "Home",
-                    "first_pitch_et": "First Pitch (ET)",
-                    "away_pitcher": "Away Pitcher",
-                    "home_pitcher": "Home Pitcher",
-                    "status": "Status",
-                }
-            )
-            st.dataframe(
-                show,
-                use_container_width=True,
-                hide_index=True,
-            )
-
-    st.divider()
-    market = st.selectbox(
-        "Choose Market",
-        [
-            "1+ Hit",
-            "2+ Hits",
-            "Home Run",
-            "Hits + Runs + RBIs",
-            "Moneyline",
-            "Run Line",
-            "Game Total",
-        ],
-    )
+        if reload_schedule or not games_df.empty:
+            if games_df.empty:
+                st.warning("No MLB games found.")
+            else:
+                show = games_df[
+                    ["away_team", "home_team", "first_pitch_et", "away_pitcher", "home_pitcher", "status"]
+                ].rename(
+                    columns={
+                        "away_team": "Away",
+                        "home_team": "Home",
+                        "first_pitch_et": "ET",
+                        "away_pitcher": "Away SP",
+                        "home_pitcher": "Home SP",
+                        "status": "Status",
+                    }
+                )
+                st.dataframe(show, use_container_width=True, hide_index=True)
 
     if market == "1+ Hit":
         top_tab, single_tab, backtest_tab = st.tabs(
-            [
-                "🏆 Daily Top 5 Scanner",
-                "🔎 Single Player",
-                "📈 V13 Backtest",
-            ]
+            ["🏆 Top Picks", "🔎 Analyzer", "📈 Backtest"]
         )
 
+        # ----------------------------------------------------
+        # TOP PICKS
+        # ----------------------------------------------------
         with top_tab:
-            st.header("🏆 V13 Daily Top 5 — MLB 1+ Hit")
-            st.write(
-                "Scans confirmed batting orders, screens the full actionable slate, "
-                "deep-models the strongest finalists, and automatically records "
-                "pregame Top 5 projections for calibration."
+            section_header(
+                "Daily 1+ Hit Scanner",
+                "Confirmed lineups → full-slate screen → deep Monte Carlo finalists → ranked Top 5.",
             )
 
-            include_live = st.checkbox(
-                "Include games already in progress",
-                value=False,
-            )
-            depth = st.selectbox(
-                "Slate Simulation Depth",
-                [
-                    "Fast — 100,000 per finalist",
-                    "Standard — 500,000 per finalist",
-                    "Deep — 1,000,000 per finalist",
-                ],
-                index=1,
-            )
+            ctrl1, ctrl2 = st.columns([1, 1.35])
+            with ctrl1:
+                include_live = st.checkbox("Include live games", value=False)
+            with ctrl2:
+                depth = st.selectbox(
+                    "Simulation depth",
+                    ["Fast — 100K/finalist", "Standard — 500K/finalist", "Deep — 1M/finalist"],
+                    index=1,
+                )
+
             sims = {
-                "Fast — 100,000 per finalist": 100_000,
-                "Standard — 500,000 per finalist": 500_000,
-                "Deep — 1,000,000 per finalist": 1_000_000,
+                "Fast — 100K/finalist": 100_000,
+                "Standard — 500K/finalist": 500_000,
+                "Deep — 1M/finalist": 1_000_000,
             }[depth]
 
-            if st.button(
-                "🔥 SCAN TODAY'S CONFIRMED LINEUPS",
-                use_container_width=True,
-            ):
+            if st.button("🔥 SCAN TODAY’S CONFIRMED LINEUPS", use_container_width=True, type="primary"):
                 if games_df.empty:
-                    st.error("Today's MLB schedule could not be loaded.")
+                    st.error("Today’s MLB schedule could not be loaded.")
                 else:
-                    with st.spinner(
-                        "Reading today's confirmed lineups..."
-                    ):
-                        candidates, checked, with_lineups = slate_candidates(
-                            games_df,
-                            include_live,
-                        )
+                    with st.spinner("Reading confirmed lineups..."):
+                        candidates, checked, with_lineups = slate_candidates(games_df, include_live)
 
                     if not candidates:
                         st.warning(
-                            "No confirmed hitters were found in actionable games. "
-                            "Lineups may not be posted yet, or today's remaining games "
-                            "may already be underway/final."
+                            "No confirmed hitters were found in actionable games. Lineups may not be posted yet, or remaining games may already be underway/final."
                         )
                     else:
                         st.info(
-                            f"Found {len(candidates)} confirmed hitters across "
-                            f"{with_lineups}/{checked} actionable games."
+                            f"{len(candidates)} confirmed hitters • {with_lineups}/{checked} actionable games with lineups"
                         )
-
                         screened = []
-                        bar = st.progress(
-                            0,
-                            text="Screening confirmed hitters...",
-                        )
+                        bar = st.progress(0, text="Screening hitters...")
                         for i, candidate in enumerate(candidates, 1):
                             try:
                                 screened.append(prescreen(candidate))
                             except Exception:
                                 pass
-                            bar.progress(
-                                i / len(candidates),
-                                text=f"Screening hitters: {i}/{len(candidates)}",
-                            )
+                            bar.progress(i / len(candidates), text=f"Screening {i}/{len(candidates)}")
                         bar.empty()
 
-                        screened.sort(
-                            key=lambda x: x["screen_p1"],
-                            reverse=True,
-                        )
+                        screened.sort(key=lambda x: x["screen_p1"], reverse=True)
                         finalists = screened[: min(8, len(screened))]
                         deep = []
-
-                        bar = st.progress(
-                            0,
-                            text="Running deep V13 models...",
-                        )
+                        bar = st.progress(0, text="Running deep finalist models...")
                         for i, candidate in enumerate(finalists, 1):
                             try:
                                 deep.append(deep_scan(candidate, sims))
                             except Exception:
                                 pass
-                            bar.progress(
-                                i / max(len(finalists), 1),
-                                text=(
-                                    f"Deep modeling finalists: "
-                                    f"{i}/{len(finalists)}"
-                                ),
-                            )
+                            bar.progress(i / max(len(finalists), 1), text=f"Modeling finalist {i}/{len(finalists)}")
                         bar.empty()
 
-                        deep.sort(
-                            key=lambda x: x["sim"]["p_one_plus"],
-                            reverse=True,
-                        )
+                        deep.sort(key=lambda x: x["sim"]["p_one_plus"], reverse=True)
                         st.session_state["v13_results"] = deep
 
                         if deep and not include_live:
-                            added, total, scan_id = save_top5_snapshot(
-                                deep[:5],
-                                model_version="V13",
-                            )
+                            added, total, _ = save_top5_snapshot(deep[:5], model_version="V13")
                             st.session_state["v13_save_note"] = (
-                                f"Pregame snapshot saved: {added} new "
-                                f"prediction(s). History now has {total} row(s)."
+                                f"Pregame calibration snapshot: {added} new prediction(s) • {total} total history rows."
                             )
                         elif include_live:
                             st.session_state["v13_save_note"] = (
-                                "Live-game scan was NOT added to calibration history. "
-                                "V13 only auto-saves pregame scans to avoid look-ahead bias."
+                                "Live-game scan was not saved to calibration history to avoid look-ahead bias."
                             )
 
             results = st.session_state.get("v13_results")
             if results:
-                st.subheader(
-                    "🥇 Today's Strongest 1+ Hit Projections"
-                )
-                rows = []
-
-                for rank, result in enumerate(results[:5], 1):
-                    sim = result["sim"]
-                    rows.append(
-                        {
-                            "Rank": rank,
-                            "Player": result["player_name"],
-                            "Team": result["team"],
-                            "Opponent": result["opponent"],
-                            "Starter": result["starter_name"],
-                            "Lineup": f"#{result['position']}",
-                            "1+ Hit": f"{sim['p_one_plus'] * 100:.1f}%",
-                            "2+ Hits": f"{sim['p_two_plus'] * 100:.1f}%",
-                            "Expected Hits": f"{sim['expected_hits']:.2f}",
-                            "Fair 1+ Odds": odds(sim["p_one_plus"]),
-                            "Confidence": result["confidence"],
-                            "Data": f"{result['data_score']}/8",
-                        }
-                    )
-
-                st.dataframe(
-                    pd.DataFrame(rows),
-                    use_container_width=True,
-                    hide_index=True,
-                )
+                section_header("Today’s Strongest Projections", "Probability ranking — not sportsbook value.")
+                render_pick_cards(results)
 
                 top = results[0]
-                st.success(
-                    f"#1 right now: {top['player_name']} — "
-                    f"{top['sim']['p_one_plus'] * 100:.1f}% projected "
-                    f"1+ hit probability, {top['confidence']} confidence."
+                st.markdown(
+                    f'<div class="ks-note"><b>Current #1:</b> {h(top["player_name"])} at <b>{top["sim"]["p_one_plus"] * 100:.1f}%</b> projected 1+ hit probability with {h(top["confidence"])} confidence.</div>',
+                    unsafe_allow_html=True,
                 )
 
                 save_note = st.session_state.get("v13_save_note")
                 if save_note:
-                    if "NOT" in save_note:
+                    if "not saved" in save_note.lower():
                         st.warning(save_note)
                     else:
                         st.info(save_note)
 
-                st.caption(
-                    "V13 ranks model probability, not sportsbook value. Pregame "
-                    "Top 5 snapshots are deduplicated by player + game + model version "
-                    "before entering the calibration history."
-                )
+                with st.expander("📋 Open full Top 5 table"):
+                    rows = []
+                    for rank, result in enumerate(results[:5], 1):
+                        sim = result["sim"]
+                        rows.append(
+                            {
+                                "#": rank,
+                                "Player": result["player_name"],
+                                "Team": result["team"],
+                                "Opp": result["opponent"],
+                                "SP": result["starter_name"],
+                                "Bat": f"#{result['position']}",
+                                "1+": f"{sim['p_one_plus'] * 100:.1f}%",
+                                "2+": f"{sim['p_two_plus'] * 100:.1f}%",
+                                "xHits": f"{sim['expected_hits']:.2f}",
+                                "Fair": odds(sim["p_one_plus"]),
+                                "Conf": result["confidence"],
+                                "Data": f"{result['data_score']}/8",
+                            }
+                        )
+                    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-                with st.expander("Show finalist details"):
+                with st.expander("🧪 Finalist model details"):
                     detail = []
                     for result in results:
                         sim = result["sim"]
                         detail.append(
                             {
                                 "Player": result["player_name"],
-                                "Team": result["team"],
-                                "Opponent": result["opponent"],
-                                "Starter": result["starter_name"],
-                                "Spot": result["position"],
-                                "Season AVG": (
-                                    f"{result['season_avg']:.3f}"
-                                ),
-                                "Screen 1+": (
-                                    f"{result['screen_p1'] * 100:.1f}%"
-                                ),
-                                "Final 1+": (
-                                    f"{sim['p_one_plus'] * 100:.1f}%"
-                                ),
-                                "2+": (
-                                    f"{sim['p_two_plus'] * 100:.1f}%"
-                                ),
-                                "3+": (
-                                    f"{sim['p_three_plus'] * 100:.1f}%"
-                                ),
-                                "90% Scenario Range": (
-                                    f"{sim['scenario_low'] * 100:.1f}%–"
-                                    f"{sim['scenario_high'] * 100:.1f}%"
-                                ),
-                                "MC SE": (
-                                    f"{sim['mc_se'] * 100:.3f} pts"
-                                ),
+                                "Season AVG": f"{result['season_avg']:.3f}",
+                                "Screen 1+": f"{result['screen_p1'] * 100:.1f}%",
+                                "Final 1+": f"{sim['p_one_plus'] * 100:.1f}%",
+                                "2+": f"{sim['p_two_plus'] * 100:.1f}%",
+                                "3+": f"{sim['p_three_plus'] * 100:.1f}%",
+                                "90% Range": f"{sim['scenario_low'] * 100:.1f}%–{sim['scenario_high'] * 100:.1f}%",
+                                "MC SE": f"{sim['mc_se'] * 100:.3f} pts",
                                 "Confidence": result["confidence"],
                             }
                         )
-                    st.dataframe(
-                        pd.DataFrame(detail),
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+                    st.dataframe(pd.DataFrame(detail), use_container_width=True, hide_index=True)
 
+                st.caption(
+                    "Pregame Top 5 results are deduplicated by player + game + model version before entering V13 calibration history."
+                )
+
+        # ----------------------------------------------------
+        # ANALYZER
+        # ----------------------------------------------------
         with single_tab:
-            st.header("⚾ Single-Player Deep Analysis")
-            name = st.text_input(
-                "Player Name",
-                placeholder="Example: Yordan Alvarez",
+            section_header(
+                "Single-Player Analyzer",
+                "Search one hitter, inspect the matchup layers, then run the full Monte Carlo model.",
             )
 
-            if st.button(
-                "📡 LOAD PLAYER + MATCHUP",
-                use_container_width=True,
-            ):
-                st.session_state.pop("player_data", None)
+            search_col, load_col = st.columns([2.2, 1])
+            with search_col:
+                name = st.text_input("Player", placeholder="Yordan Alvarez", label_visibility="collapsed")
+            with load_col:
+                load_clicked = st.button("📡 Load player", use_container_width=True)
 
+            if load_clicked:
+                st.session_state.pop("player_data", None)
                 if not name.strip():
                     st.error("Enter a player name.")
                 else:
                     try:
-                        with st.spinner(
-                            "Loading live hitter, matchup, Statcast and bullpen data..."
-                        ):
+                        with st.spinner("Loading hitter, matchup, Statcast and bullpen data..."):
                             data = load_player(name, games_df)
-
                         if data:
                             st.session_state["player_data"] = data
                         else:
@@ -334,805 +686,372 @@ if sport == "MLB":
                 bullpen_data = data.get("bullpen")
 
                 if not stats:
-                    st.error(
-                        "No current-season hitting stats were found."
-                    )
+                    st.error("No current-season hitting stats were found.")
                 else:
-                    st.success(
-                        f"Live data loaded for {player['name']}"
-                    )
-                    st.subheader(
-                        f"📊 {player['name']} — {stats['season']}"
-                    )
-                    st.caption(
-                        f"Team: {player['team_name']} • "
-                        f"Bats: {player['bat_side']}"
-                    )
-                    metric_grid(
-                        [
-                            ("AVG", stats["avg"]),
-                            ("Hits", stats["hits"]),
-                            ("At-Bats", stats["at_bats"]),
-                            ("Games", stats["games"]),
-                            ("HR", stats["home_runs"]),
-                            ("OBP", stats["obp"]),
-                            ("SLG", stats["slg"]),
-                            ("OPS", stats["ops"]),
-                        ]
+                    st.markdown(
+                        f"""
+                        <div class="ks-feature">
+                          <div class="ks-eyebrow">Player loaded</div>
+                          <div class="ks-feature-name">{h(player['name'])}</div>
+                          <div class="ks-feature-meta">{h(player['team_name'])} • Bats {h(player['bat_side'])} • {h(stats['season'])}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
                     )
 
-                    st.subheader("🔥 Recent Form — Last 10 Games")
-                    if recent and recent.get("avg") is not None:
-                        metric_grid(
-                            [
-                                (
-                                    "Recent AVG",
-                                    f"{recent['avg']:.3f}",
-                                ),
-                                ("Hits", recent["hits"]),
-                                ("Recent AB", recent["at_bats"]),
-                                (
-                                    "Hit Games",
-                                    f"{recent['hit_games']}/"
-                                    f"{recent['games']}",
-                                ),
-                            ]
-                        )
+                    summary1, summary2, summary3, summary4 = st.columns(4)
+                    with summary1:
+                        st.metric("AVG", stats["avg"])
+                    with summary2:
+                        st.metric("OPS", stats["ops"])
+                    with summary3:
+                        st.metric("Hits", stats["hits"])
+                    with summary4:
+                        st.metric("HR", stats["home_runs"])
 
-                    st.subheader("📡 Statcast Contact Quality")
-                    if statcast_data:
-                        metric_grid(
-                            [
-                                (
-                                    "xBA",
-                                    f"{statcast_data['xba']:.3f}"
-                                    if statcast_data.get("xba")
-                                    is not None
-                                    else "N/A",
-                                ),
-                                (
-                                    "Avg Exit Velo",
-                                    f"{statcast_data['avg_ev']:.1f} mph"
-                                    if statcast_data.get("avg_ev")
-                                    is not None
-                                    else "N/A",
-                                ),
-                                (
-                                    "Hard-Hit %",
-                                    f"{statcast_data['hard_hit_rate'] * 100:.1f}%"
-                                    if statcast_data.get(
-                                        "hard_hit_rate"
-                                    )
-                                    is not None
-                                    else "N/A",
-                                ),
-                                (
-                                    "Barrel %",
-                                    f"{statcast_data['barrel_rate'] * 100:.1f}%"
-                                    if statcast_data.get("barrel_rate")
-                                    is not None
-                                    else "N/A",
-                                ),
-                            ]
-                        )
-
-                    st.subheader("⚔️ Today's Matchup")
-                    if matchup_data:
-                        metric_grid(
-                            [
-                                (
-                                    "Opponent",
-                                    matchup_data["opponent"],
-                                ),
-                                (
-                                    "Home/Away",
-                                    matchup_data["location"],
-                                ),
-                                (
-                                    "First Pitch",
-                                    matchup_data["first_pitch"],
-                                ),
-                                (
-                                    "Status",
-                                    matchup_data["status"],
-                                ),
-                            ]
-                        )
-
-                        if pitcher:
+                    with st.expander("🔥 Recent form + Statcast", expanded=False):
+                        if recent and recent.get("avg") is not None:
                             metric_grid(
                                 [
-                                    ("Pitcher", pitcher["name"]),
-                                    ("Throws", pitcher["hand"]),
-                                    ("ERA", pitcher["era"]),
-                                    ("WHIP", pitcher["whip"]),
-                                    (
-                                        "W-L",
-                                        f"{pitcher['wins']}-"
-                                        f"{pitcher['losses']}",
-                                    ),
-                                    (
-                                        "Starts",
-                                        pitcher["games_started"],
-                                    ),
-                                    ("IP", pitcher["innings"]),
-                                    (
-                                        "K/9",
-                                        f"{pitcher['k9']:.2f}"
-                                        if pitcher.get("k9")
-                                        is not None
-                                        else "N/A",
-                                    ),
+                                    ("Last-10 AVG", f"{recent['avg']:.3f}"),
+                                    ("Hits", recent["hits"]),
+                                    ("AB", recent["at_bats"]),
+                                    ("Hit Games", f"{recent['hit_games']}/{recent['games']}"),
+                                ]
+                            )
+                        if statcast_data:
+                            st.caption("Statcast contact quality")
+                            metric_grid(
+                                [
+                                    ("xBA", f"{statcast_data['xba']:.3f}" if statcast_data.get("xba") is not None else "N/A"),
+                                    ("Exit Velo", f"{statcast_data['avg_ev']:.1f}" if statcast_data.get("avg_ev") is not None else "N/A"),
+                                    ("Hard-Hit", f"{statcast_data['hard_hit_rate'] * 100:.1f}%" if statcast_data.get("hard_hit_rate") is not None else "N/A"),
+                                    ("Barrel", f"{statcast_data['barrel_rate'] * 100:.1f}%" if statcast_data.get("barrel_rate") is not None else "N/A"),
                                 ]
                             )
 
-                        starter_split = (
-                            split_r
-                            if pitcher
-                            and pitcher.get("hand") == "R"
-                            else split_l
-                            if pitcher
-                            and pitcher.get("hand") == "L"
-                            else None
-                        )
-
-                        if starter_split:
-                            st.subheader(
-                                "↔️ Batter vs Starter Hand"
-                            )
+                    with st.expander("⚔️ Matchup + starting pitcher", expanded=True):
+                        if matchup_data:
                             metric_grid(
                                 [
-                                    (
-                                        "Split AVG",
-                                        starter_split["avg"],
-                                    ),
-                                    (
-                                        "Split Hits",
-                                        starter_split["hits"],
-                                    ),
-                                    (
-                                        "Split AB",
-                                        starter_split["at_bats"],
-                                    ),
-                                    (
-                                        "Split OPS",
-                                        starter_split["ops"],
-                                    ),
+                                    ("Opponent", matchup_data["opponent"]),
+                                    ("Venue", matchup_data.get("venue_name", "N/A")),
+                                    ("First Pitch", matchup_data["first_pitch"]),
+                                    ("Status", matchup_data["status"]),
                                 ]
                             )
+                            if pitcher:
+                                st.caption("Opposing starter")
+                                metric_grid(
+                                    [
+                                        ("Pitcher", pitcher["name"]),
+                                        ("Throws", pitcher["hand"]),
+                                        ("ERA", pitcher["era"]),
+                                        ("WHIP", pitcher["whip"]),
+                                        ("W-L", f"{pitcher['wins']}-{pitcher['losses']}"),
+                                        ("Starts", pitcher["games_started"]),
+                                        ("IP", pitcher["innings"]),
+                                        ("K/9", f"{pitcher['k9']:.2f}" if pitcher.get("k9") is not None else "N/A"),
+                                    ]
+                                )
 
-                        st.subheader("🧯 Opponent Bullpen")
+                            starter_split = (
+                                split_r if pitcher and pitcher.get("hand") == "R"
+                                else split_l if pitcher and pitcher.get("hand") == "L"
+                                else None
+                            )
+                            if starter_split:
+                                st.caption("Batter split vs starter hand")
+                                metric_grid(
+                                    [
+                                        ("Split AVG", starter_split["avg"]),
+                                        ("Split OPS", starter_split["ops"]),
+                                        ("Split Hits", starter_split["hits"]),
+                                        ("Split AB", starter_split["at_bats"]),
+                                    ]
+                                )
+                        else:
+                            st.warning("No game found today for this player’s team.")
+
+                    with st.expander("🧯 Bullpen + park/weather", expanded=False):
                         if bullpen_data:
                             metric_grid(
                                 [
-                                    (
-                                        "Bullpen ERA",
-                                        f"{bullpen_data['era']:.2f}",
-                                    ),
-                                    (
-                                        "Bullpen WHIP",
-                                        f"{bullpen_data['whip']:.2f}",
-                                    ),
-                                    (
-                                        "Bullpen K/9",
-                                        f"{bullpen_data['k9']:.2f}",
-                                    ),
-                                    (
-                                        "Relievers",
-                                        bullpen_data[
-                                            "reliever_count"
-                                        ],
-                                    ),
-                                    (
-                                        "RHP Exposure",
-                                        f"{bullpen_data['right_share'] * 100:.0f}%",
-                                    ),
-                                    (
-                                        "LHP Exposure",
-                                        f"{bullpen_data['left_share'] * 100:.0f}%",
-                                    ),
+                                    ("Bullpen ERA", f"{bullpen_data['era']:.2f}"),
+                                    ("Bullpen WHIP", f"{bullpen_data['whip']:.2f}"),
+                                    ("Bullpen K/9", f"{bullpen_data['k9']:.2f}"),
+                                    ("RHP Mix", f"{bullpen_data['right_share'] * 100:.0f}%"),
+                                ]
+                            )
+                        if matchup_data:
+                            ev = env_adj(environment_data, matchup_data.get("venue_name", "Unknown"))
+                            st.caption("Game environment")
+                            metric_grid(
+                                [
+                                    ("Ballpark", ev["venue_name"]),
+                                    ("Temp", f"{ev['temperature']:.0f}°F" if ev["temperature"] is not None else "N/A"),
+                                    ("Condition", ev["condition"]),
+                                    ("Environment", ev["grade"]),
                                 ]
                             )
 
-                        st.subheader("🏟️ Park + Weather")
-                        env_view = env_adj(
-                            environment_data,
-                            matchup_data.get(
-                                "venue_name",
-                                "Unknown",
-                            ),
-                        )
-                        metric_grid(
-                            [
-                                (
-                                    "Ballpark",
-                                    env_view["venue_name"],
-                                ),
-                                (
-                                    "Temperature",
-                                    f"{env_view['temperature']:.0f}°F"
-                                    if env_view["temperature"]
-                                    is not None
-                                    else "N/A",
-                                ),
-                                (
-                                    "Condition",
-                                    env_view["condition"],
-                                ),
-                                ("Wind", env_view["wind"]),
-                                (
-                                    "Roof Type",
-                                    env_view["roof_type"],
-                                ),
-                                (
-                                    "Environment Grade",
-                                    env_view["grade"],
-                                ),
-                                (
-                                    "Park Adj",
-                                    f"{env_view['park_adjustment'] * 100:+.1f}%",
-                                ),
-                            ]
-                        )
-                    else:
-                        st.warning(
-                            "No game found today for this player's team."
-                        )
-
                     confirmed = data.get("confirmed_lineup")
                     estimated = data.get("recent_lineup")
-                    projected = (
-                        int(confirmed)
-                        if confirmed
-                        else int(estimated["position"])
-                        if estimated
-                        else 4
-                    )
+                    projected = int(confirmed) if confirmed else int(estimated["position"]) if estimated else 4
                     source = (
-                        "Confirmed today's lineup"
-                        if confirmed
-                        else (
-                            f"Recent lineup estimate "
-                            f"({estimated['sample_games']} games)"
-                        )
-                        if estimated
+                        "Confirmed today" if confirmed
+                        else f"Recent estimate ({estimated['sample_games']} games)" if estimated
                         else "Manual fallback"
                     )
 
-                    st.subheader("📋 Lineup Position")
-                    metric_grid(
-                        [
-                            (
-                                "Projected Batting Spot",
-                                f"#{projected}",
-                            ),
-                            ("Lineup Source", source),
-                            (
-                                "Baseline Expected AB",
-                                f"{ab_for_spot(projected):.1f}",
-                            ),
-                        ],
-                        3,
-                    )
+                    section_header("Projection Controls", f"Lineup source: {source}")
+                    set1, set2, set3 = st.columns(3)
+                    with set1:
+                        spot = st.selectbox("Batting spot", list(range(1, 10)), index=projected - 1)
+                    with set2:
+                        expected_ab = st.number_input("Projected AB", 2.5, 6.0, float(ab_for_spot(spot)), 0.1)
+                    with set3:
+                        mode = st.selectbox(
+                            "Simulation size",
+                            ["Quick — 500K", "Standard — 5M", "Deep — 10M"],
+                            index=1,
+                        )
 
-                    spot = st.selectbox(
-                        "Batting Order Used by Model",
-                        list(range(1, 10)),
-                        index=projected - 1,
-                    )
-                    expected_ab = st.number_input(
-                        "Projected At-Bats Today",
-                        2.5,
-                        6.0,
-                        float(ab_for_spot(spot)),
-                        0.1,
-                    )
-                    st.number_input(
-                        "Sportsbook Hit Line",
-                        value=0.5,
-                        step=0.5,
-                    )
+                    sim_n = {"Quick — 500K": 500_000, "Standard — 5M": 5_000_000, "Deep — 10M": 10_000_000}[mode]
 
-                    mode = st.selectbox(
-                        "Monte Carlo Simulation Size",
-                        [
-                            "Quick — 500,000",
-                            "Standard — 5,000,000",
-                            "Deep — 10,000,000",
-                        ],
-                        index=1,
-                    )
-                    sim_n = {
-                        "Quick — 500,000": 500_000,
-                        "Standard — 5,000,000": 5_000_000,
-                        "Deep — 10,000,000": 10_000_000,
-                    }[mode]
-
-                    if st.button(
-                        "🔥 RUN V13 SINGLE-PLAYER MONTE CARLO",
-                        use_container_width=True,
-                    ):
+                    if st.button("🔥 RUN DEEP PROJECTION", use_container_width=True, type="primary"):
                         base = sf(stats["avg"], 0) or 0
                         model = model_inputs(
-                            base,
-                            spot,
-                            matchup_data,
-                            pitcher,
-                            split_r,
-                            split_l,
-                            recent,
-                            environment_data,
-                            statcast_data,
-                            bullpen_data,
+                            base, spot, matchup_data, pitcher, split_r, split_l,
+                            recent, environment_data, statcast_data, bullpen_data,
                         )
-                        exposure = starter_exposure(
-                            pitcher,
-                            expected_ab,
-                        )
+                        exposure = starter_exposure(pitcher, expected_ab)
                         deterministic = combined(
-                            model["starter_rate"],
-                            model["bullpen_rate"],
-                            exposure["starter_ab"],
-                            exposure["bullpen_ab"],
+                            model["starter_rate"], model["bullpen_rate"],
+                            exposure["starter_ab"], exposure["bullpen_ab"],
                         )
-                        seed = sim_seed(
-                            player["id"],
-                            (matchup_data or {}).get(
-                                "game_pk",
-                                0,
-                            ),
-                        )
+                        seed = sim_seed(player["id"], (matchup_data or {}).get("game_pk", 0))
 
-                        with st.spinner(
-                            f"Running {sim_n:,} Monte Carlo simulations..."
-                        ):
+                        with st.spinner(f"Running {sim_n:,} simulations..."):
                             sim = monte(
-                                model["starter_rate"],
-                                model["bullpen_rate"],
-                                expected_ab,
-                                exposure["starter_share"],
-                                model["split_weight"],
-                                model["statcast_model"].get(
-                                    "reliability",
-                                    0,
-                                ),
-                                model["pitcher_quality"].get(
-                                    "reliability",
-                                    0,
-                                )
-                                if model["pitcher_quality"]
-                                else 0,
-                                model["bullpen_quality"].get(
-                                    "reliability",
-                                    0,
-                                )
-                                if model["bullpen_quality"]
-                                else 0,
-                                sim_n,
-                                seed,
+                                model["starter_rate"], model["bullpen_rate"], expected_ab,
+                                exposure["starter_share"], model["split_weight"],
+                                model["statcast_model"].get("reliability", 0),
+                                model["pitcher_quality"].get("reliability", 0) if model["pitcher_quality"] else 0,
+                                model["bullpen_quality"].get("reliability", 0) if model["bullpen_quality"] else 0,
+                                sim_n, seed,
                             )
 
                         grade, score = confidence(
-                            stats,
-                            pitcher,
-                            model["starter_split"],
-                            recent,
-                            confirmed,
-                            environment_data,
-                            statcast_data,
-                            bullpen_data,
+                            stats, pitcher, model["starter_split"], recent, confirmed,
+                            environment_data, statcast_data, bullpen_data, sim,
+                        )
+                        season_base = p_from_avg(base, expected_ab)
+
+                        render_probability_feature(
+                            player["name"],
+                            player["team_name"],
+                            (matchup_data or {}).get("opponent", "No current opponent"),
                             sim,
-                        )
-                        season_base = p_from_avg(
-                            base,
-                            expected_ab,
+                            grade,
                         )
 
-                        st.header("🧠 V13 Single-Player Model")
                         metric_grid(
                             [
-                                ("Season AVG", f"{base:.3f}"),
-                                (
-                                    "Starter-Facing Rate",
-                                    f"{model['starter_rate']:.3f}",
-                                ),
-                                (
-                                    "Bullpen-Facing Rate",
-                                    f"{model['bullpen_rate']:.3f}",
-                                ),
-                                (
-                                    "Expected AB",
-                                    f"{expected_ab:.1f}",
-                                ),
-                                (
-                                    "Starter Exposure",
-                                    f"{exposure['starter_share'] * 100:.0f}%",
-                                ),
-                                (
-                                    "Deterministic 1+",
-                                    f"{deterministic['p_one_plus'] * 100:.1f}%",
-                                ),
-                                (
-                                    "Environment Adj",
-                                    f"{model['env_model']['total_adjustment'] * 100:+.1f}%",
-                                ),
-                                (
-                                    "Contact Adj",
-                                    f"{model['statcast_model']['quality_adjustment'] * 100:+.1f}%",
-                                ),
+                                ("0 Hits", f"{sim['p_zero'] * 100:.1f}%"),
+                                ("Exactly 1", f"{sim['p_exact_one'] * 100:.1f}%"),
+                                ("3+ Hits", f"{sim['p_three_plus'] * 100:.1f}%"),
+                                ("Fair 1+", odds(sim["p_one_plus"])),
                             ]
                         )
 
-                        st.subheader(
-                            "🎲 Monte Carlo — Uncertainty Engine"
-                        )
-                        metric_grid(
-                            [
-                                (
-                                    "Simulations",
-                                    f"{sim['simulations']:,}",
-                                ),
-                                ("Batches", sim["batches"]),
-                                ("Random Seed", sim["seed"]),
-                                (
-                                    "Convergence",
-                                    "PASS"
-                                    if sim["converged"]
-                                    else "CHECK",
-                                ),
-                                (
-                                    "MC Standard Error",
-                                    f"{sim['mc_se'] * 100:.3f} pts",
-                                ),
-                                (
-                                    "Max Batch Spread",
-                                    f"{sim['batch_range'] * 100:.2f} pts",
-                                ),
-                                (
-                                    "Scenario 90% Range",
-                                    f"{sim['scenario_low'] * 100:.1f}%–"
-                                    f"{sim['scenario_high'] * 100:.1f}%",
-                                ),
-                                ("Confidence Grade", grade),
-                            ]
-                        )
-
-                        st.header("📊 V13 Simulation Results")
-                        metric_grid(
-                            [
-                                (
-                                    "Expected Hits",
-                                    f"{sim['expected_hits']:.2f}",
-                                ),
-                                (
-                                    "1+ Hit Probability",
-                                    f"{sim['p_one_plus'] * 100:.1f}%",
-                                ),
-                                (
-                                    "0 Hit Probability",
-                                    f"{sim['p_zero'] * 100:.1f}%",
-                                ),
-                                (
-                                    "Exactly 1 Hit",
-                                    f"{sim['p_exact_one'] * 100:.1f}%",
-                                ),
-                                (
-                                    "2+ Hit Probability",
-                                    f"{sim['p_two_plus'] * 100:.1f}%",
-                                ),
-                                (
-                                    "3+ Hit Probability",
-                                    f"{sim['p_three_plus'] * 100:.1f}%",
-                                ),
-                                (
-                                    "Median Hits",
-                                    sim["median_hits"],
-                                ),
-                                (
-                                    "Mode Hits",
-                                    sim["mode_hits"],
-                                ),
-                                (
-                                    "Fair Odds — 1+",
-                                    odds(sim["p_one_plus"]),
-                                ),
-                                (
-                                    "Season AVG + Current AB",
-                                    f"{season_base['p_one_plus'] * 100:.1f}%",
-                                ),
-                                ("Data Layers", f"{score}/8"),
-                                ("Model Version", "V13"),
-                            ]
-                        )
-
-                        if (
-                            matchup_data
-                            and actionable(
-                                matchup_data.get("status"),
-                                include_live=False,
+                        with st.expander("🧠 Model stack", expanded=False):
+                            metric_grid(
+                                [
+                                    ("Season AVG", f"{base:.3f}"),
+                                    ("Starter Rate", f"{model['starter_rate']:.3f}"),
+                                    ("Bullpen Rate", f"{model['bullpen_rate']:.3f}"),
+                                    ("Expected AB", f"{expected_ab:.1f}"),
+                                    ("Starter Exposure", f"{exposure['starter_share'] * 100:.0f}%"),
+                                    ("Deterministic 1+", f"{deterministic['p_one_plus'] * 100:.1f}%"),
+                                    ("Environment", f"{model['env_model']['total_adjustment'] * 100:+.1f}%"),
+                                    ("Contact", f"{model['statcast_model']['quality_adjustment'] * 100:+.1f}%"),
+                                ]
                             )
-                        ):
-                            added, total = save_single_snapshot(
-                                player,
-                                matchup_data,
-                                pitcher,
-                                spot,
-                                expected_ab,
-                                sim,
-                                grade,
-                                score,
-                                model_version="V13",
-                            )
-                            if added:
-                                st.info(
-                                    "Pregame single-player projection "
-                                    f"saved to V13 history. "
-                                    f"History now has {total} row(s)."
-                                )
-                            else:
-                                st.caption(
-                                    "This player/game already has a V13 "
-                                    "pregame prediction in history, so it "
-                                    "was not duplicated."
-                                )
-                        else:
-                            st.warning(
-                                "This result was not saved to calibration "
-                                "history because the game is already live/final "
-                                "or no current game was found."
+
+                        with st.expander("🎲 Simulation diagnostics", expanded=False):
+                            metric_grid(
+                                [
+                                    ("Simulations", f"{sim['simulations']:,}"),
+                                    ("Batches", sim["batches"]),
+                                    ("Convergence", "PASS" if sim["converged"] else "CHECK"),
+                                    ("MC SE", f"{sim['mc_se'] * 100:.3f} pts"),
+                                    ("Batch Spread", f"{sim['batch_range'] * 100:.2f} pts"),
+                                    ("90% Range", f"{sim['scenario_low'] * 100:.1f}%–{sim['scenario_high'] * 100:.1f}%"),
+                                    ("Median Hits", sim["median_hits"]),
+                                    ("Mode Hits", sim["mode_hits"]),
+                                ]
                             )
 
                         st.caption(
-                            "Season AVG + Current AB is the season batting-average "
-                            "baseline using today's projected at-bat count. "
-                            "V13 history saves the first pregame prediction per "
-                            "player/game/model so repeated scans do not inflate "
-                            "the backtest sample."
+                            f"Season AVG + today’s {expected_ab:.1f} AB baseline: {season_base['p_one_plus'] * 100:.1f}% • Data layers: {score}/8 • Model V13"
                         )
 
+                        if matchup_data and actionable(matchup_data.get("status"), include_live=False):
+                            added, total = save_single_snapshot(
+                                player, matchup_data, pitcher, spot, expected_ab,
+                                sim, grade, score, model_version="V13",
+                            )
+                            if added:
+                                st.info(f"Pregame projection saved to calibration history • {total} total row(s).")
+                            else:
+                                st.caption("This player/game already has a V13 pregame prediction in history.")
+                        else:
+                            st.warning("Live/final or no-current-game result was not saved to calibration history.")
+
+        # ----------------------------------------------------
+        # BACKTEST
+        # ----------------------------------------------------
         with backtest_tab:
-            st.header("📈 V13 Prediction History & Calibration")
-            st.write(
-                "Pregame predictions are recorded before the result is known. "
-                "After games finish, V13 can pull the official MLB box score, "
-                "grade each prediction, and measure whether the probability "
-                "model is actually calibrated."
+            section_header(
+                "Prediction History & Calibration",
+                "Record first-look pregame probabilities, grade official results, and measure whether the model is calibrated.",
             )
-
-            st.warning(
-                "Free Streamlit storage is local to the running app and can reset "
-                "after a redeploy/restart. Download the history CSV periodically. "
-                "You can upload that backup here later and V13 will merge it back."
-            )
-
-            if st.button(
-                "🔄 GRADE FINISHED GAMES",
-                use_container_width=True,
-            ):
-                with st.spinner(
-                    "Checking MLB results and grading finished games..."
-                ):
-                    summary = grade_finished_games()
-
-                st.success(
-                    f"Graded {summary['graded']} prediction(s) • "
-                    f"DNP {summary['dnp']} • "
-                    f"Void {summary['void']} • "
-                    f"Still pending {summary['still_pending']}."
-                )
-                if summary["errors"]:
-                    st.warning(
-                        f"{summary['errors']} game lookup(s) could not be "
-                        "completed right now."
-                    )
 
             history = load_history()
-
             if history.empty:
-                st.info(
-                    "No prediction history yet. Run a pregame Top 5 scan "
-                    "or a pregame single-player projection first."
+                st.markdown(
+                    '<div class="ks-note"><b>No clean pregame history yet.</b> Run the Top Picks scanner or a single-player projection before a game starts. V13 will save the first clean prediction automatically.</div>',
+                    unsafe_allow_html=True,
                 )
-            else:
+
+            grade_col, backup_col = st.columns([1, 1])
+            with grade_col:
+                if st.button("🔄 GRADE FINISHED GAMES", use_container_width=True, type="primary"):
+                    with st.spinner("Checking official MLB results..."):
+                        summary = grade_finished_games()
+                    st.success(
+                        f"Graded {summary['graded']} • DNP {summary['dnp']} • Void {summary['void']} • Pending {summary['still_pending']}"
+                    )
+                    if summary["errors"]:
+                        st.warning(f"{summary['errors']} result lookup(s) could not be completed right now.")
+                    history = load_history()
+
+            with backup_col:
+                if not history.empty:
+                    st.download_button(
+                        "⬇️ DOWNLOAD HISTORY CSV",
+                        data=history_download_bytes(history),
+                        file_name="kyre_sports_ai_v13_history.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
+
+            if not history.empty:
                 metrics = calibration_metrics(history)
                 top5 = top5_performance(history)
-
                 stored = len(history)
-                pending = int(
-                    history["grade_status"]
-                    .fillna("PENDING")
-                    .eq("PENDING")
-                    .sum()
-                )
+                pending = int(history["grade_status"].fillna("PENDING").eq("PENDING").sum())
 
+                section_header("Calibration Scoreboard", "Lower Brier score and log loss are better.")
                 metric_grid(
                     [
-                        ("Stored Predictions", stored),
-                        ("Graded Predictions", metrics["graded"]),
+                        ("Stored", stored),
+                        ("Graded", metrics["graded"]),
                         ("Pending", pending),
-                        (
-                            "Actual 1+ Hit Rate",
-                            f"{metrics['hit_rate'] * 100:.1f}%"
-                            if metrics["graded"]
-                            else "N/A",
-                        ),
-                        (
-                            "Avg Projected 1+",
-                            f"{metrics['avg_prediction'] * 100:.1f}%"
-                            if metrics["graded"]
-                            else "N/A",
-                        ),
-                        (
-                            "Calibration Gap",
-                            f"{metrics['calibration_gap'] * 100:+.1f} pts"
-                            if metrics["graded"]
-                            else "N/A",
-                        ),
-                        (
-                            "Brier Score",
-                            f"{metrics['brier']:.3f}"
-                            if metrics["graded"]
-                            else "N/A",
-                        ),
-                        (
-                            "Log Loss",
-                            f"{metrics['log_loss']:.3f}"
-                            if metrics["graded"]
-                            else "N/A",
-                        ),
+                        ("Actual Hit Rate", f"{metrics['hit_rate'] * 100:.1f}%" if metrics["graded"] else "N/A"),
+                        ("Avg Projected", f"{metrics['avg_prediction'] * 100:.1f}%" if metrics["graded"] else "N/A"),
+                        ("Calibration Gap", f"{metrics['calibration_gap'] * 100:+.1f} pts" if metrics["graded"] else "N/A"),
+                        ("Brier", f"{metrics['brier']:.3f}" if metrics["graded"] else "N/A"),
+                        ("Log Loss", f"{metrics['log_loss']:.3f}" if metrics["graded"] else "N/A"),
                     ]
                 )
 
-                st.subheader("🏆 Historical Top 5 Performance")
+                st.subheader("🏆 Ranked-pick performance")
                 metric_grid(
                     [
-                        (
-                            "Top 5 Graded Picks",
-                            top5["predictions"],
-                        ),
-                        (
-                            "Top 5 Hit Rate",
-                            f"{top5['hit_rate'] * 100:.1f}%"
-                            if top5["predictions"]
-                            else "N/A",
-                        ),
-                        (
-                            "#1 Pick Hit Rate",
-                            f"{top5['rank1_rate'] * 100:.1f}%"
-                            if top5["predictions"]
-                            and not pd.isna(top5["rank1_rate"])
-                            else "N/A",
-                        ),
+                        ("Top-5 Graded", top5["predictions"]),
+                        ("Top-5 Hit Rate", f"{top5['hit_rate'] * 100:.1f}%" if top5["predictions"] else "N/A"),
+                        ("#1 Hit Rate", f"{top5['rank1_rate'] * 100:.1f}%" if top5["predictions"] and not pd.isna(top5["rank1_rate"]) else "N/A"),
                     ],
                     3,
                 )
 
-                st.subheader("🎯 Calibration by Probability Tier")
-                cal = calibration_table(history)
-                if cal.empty:
-                    st.info(
-                        "Calibration tiers will appear after at least "
-                        "one prediction has been graded."
-                    )
-                else:
-                    st.dataframe(
-                        cal,
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+                with st.expander("🎯 Calibration by probability tier", expanded=False):
+                    cal = calibration_table(history)
+                    if cal.empty:
+                        st.info("Probability tiers will appear after predictions are graded.")
+                    else:
+                        st.dataframe(cal, use_container_width=True, hide_index=True)
 
-                st.subheader("🧪 Model-Version Performance")
-                versions = model_version_table(history)
-                if not versions.empty:
-                    st.dataframe(
-                        versions,
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+                with st.expander("🧪 Model-version performance", expanded=False):
+                    versions = model_version_table(history)
+                    if not versions.empty:
+                        st.dataframe(versions, use_container_width=True, hide_index=True)
 
-                st.subheader("🗂️ Prediction History")
-                display = history.copy()
-                for col in (
-                    "predicted_p1",
-                    "predicted_p2",
-                    "predicted_p3",
-                ):
-                    display[col] = pd.to_numeric(
-                        display[col],
-                        errors="coerce",
-                    ).map(
-                        lambda x: (
-                            f"{x * 100:.1f}%"
-                            if pd.notna(x)
-                            else ""
+                with st.expander("🗂️ Prediction history", expanded=True):
+                    display = history.copy()
+                    for col_name in ("predicted_p1", "predicted_p2", "predicted_p3"):
+                        display[col_name] = pd.to_numeric(display[col_name], errors="coerce").map(
+                            lambda x: f"{x * 100:.1f}%" if pd.notna(x) else ""
                         )
+                    columns = [
+                        "created_at_et", "model_version", "source", "rank", "player_name",
+                        "team", "opponent", "predicted_p1", "confidence", "grade_status",
+                        "actual_hits", "actual_1plus",
+                    ]
+                    display = display[[c for c in columns if c in display.columns]].rename(
+                        columns={
+                            "created_at_et": "Saved ET",
+                            "model_version": "Model",
+                            "source": "Source",
+                            "rank": "Rank",
+                            "player_name": "Player",
+                            "team": "Team",
+                            "opponent": "Opp",
+                            "predicted_p1": "Proj 1+",
+                            "confidence": "Conf",
+                            "grade_status": "Status",
+                            "actual_hits": "Hits",
+                            "actual_1plus": "1+?",
+                        }
                     )
+                    st.dataframe(display.iloc[::-1].head(100), use_container_width=True, hide_index=True)
 
-                columns = [
-                    "created_at_et",
-                    "model_version",
-                    "source",
-                    "rank",
-                    "player_name",
-                    "team",
-                    "opponent",
-                    "predicted_p1",
-                    "confidence",
-                    "grade_status",
-                    "actual_hits",
-                    "actual_1plus",
-                ]
-                display = display[
-                    [c for c in columns if c in display.columns]
-                ].rename(
-                    columns={
-                        "created_at_et": "Saved At (ET)",
-                        "model_version": "Model",
-                        "source": "Source",
-                        "rank": "Rank",
-                        "player_name": "Player",
-                        "team": "Team",
-                        "opponent": "Opponent",
-                        "predicted_p1": "Projected 1+",
-                        "confidence": "Confidence",
-                        "grade_status": "Grade Status",
-                        "actual_hits": "Actual Hits",
-                        "actual_1plus": "Hit 1+?",
-                    }
-                )
-                st.dataframe(
-                    display.iloc[::-1].head(100),
-                    use_container_width=True,
-                    hide_index=True,
-                )
-
-                st.download_button(
-                    "⬇️ DOWNLOAD V13 HISTORY CSV",
-                    data=history_download_bytes(history),
-                    file_name="kyre_sports_ai_v13_history.csv",
-                    mime="text/csv",
-                    use_container_width=True,
-                )
-
-            st.divider()
-            st.subheader("♻️ Restore a History Backup")
-            upload = st.file_uploader(
-                "Upload a previous V13 history CSV",
-                type=["csv"],
-            )
-            if upload is not None and st.button(
-                "MERGE HISTORY BACKUP",
-                use_container_width=True,
-            ):
-                result = merge_uploaded_history(upload)
-                if result["ok"]:
-                    st.success(result["message"])
-                else:
-                    st.error(result["message"])
+            with st.expander("♻️ Restore a history backup", expanded=False):
+                st.caption("Free Streamlit local storage can reset after redeploys/restarts. Keep a CSV backup periodically.")
+                upload = st.file_uploader("Upload V13 history CSV", type=["csv"])
+                if upload is not None and st.button("MERGE HISTORY BACKUP", use_container_width=True):
+                    result = merge_uploaded_history(upload)
+                    if result["ok"]:
+                        st.success(result["message"])
+                    else:
+                        st.error(result["message"])
 
             st.caption(
-                "Brier score and log loss are proper probability-scoring rules: "
-                "lower is better. Calibration Gap = actual hit rate minus average "
-                "projected probability. A well-calibrated model should move toward "
-                "a gap near 0 as the sample grows."
+                "Calibration Gap = actual hit rate minus average projected probability. The goal is a gap that trends toward 0 as the sample grows."
             )
 
     else:
-        st.info(f"The MLB {market} engine will be added later.")
+        section_header(f"MLB {market}", "This market module is not built yet.")
+        st.info("The current production model is MLB 1+ Hit. Other MLB markets can be added without changing the V13 1+ Hit engine.")
+
+
+# ============================================================
+# WNBA PLACEHOLDER
+# ============================================================
 
 else:
-    market = st.selectbox(
-        "Choose Market",
-        [
-            "Points",
-            "Rebounds",
-            "Assists",
-            "PRA",
-            "Spread",
-            "Game Total",
-        ],
-    )
-    st.info(f"The WNBA {market} model will be added later.")
+    section_header(f"WNBA {market}", "WNBA model workspace")
+    st.info("The WNBA interface is ready for its own model modules. The MLB V13 engine remains untouched.")
 
-st.divider()
-st.caption("Kyre Sports AI • Projection Engine V13")
+
+st.markdown(
+    """
+    <div class="ks-footer">
+      <span><b>KYRE SPORTS AI</b> • Model V13 • UI V14</span>
+      <span>Probabilities are model estimates — not guarantees.</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
