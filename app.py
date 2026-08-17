@@ -1,8 +1,8 @@
-"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Hit UI V13.2.
+"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Hit UI V13.3.
 
 Loads the proven V2.6 league-aware shell, keeps WNBA → PRA frozen on the hardened
 V2.8.2 route, isolates MLB Slate through a V3.2 direct-loader wrapper, and isolates
-MLB 1+ Hit through its own V13.2 verified-slate wrapper. Moneyline, Run Line,
+MLB 1+ Hit through its own V13.3 full-slate wrapper. Moneyline, Run Line,
 Totals and Live Game remain unchanged.
 """
 
@@ -49,23 +49,23 @@ new_slate_import = "from mlb_slate_hub_v32 import render_slate_hub"
 if old_slate_import in source:
     source = source.replace(old_slate_import, new_slate_import, 1)
 
-# MLB 1+ Hit ONLY: direct verified-slate wrapper. The V13 probability engine is
-# still inside hit_hub_v131; this changes data intake/UI isolation, not the model.
+# MLB 1+ Hit ONLY: direct verified-slate + full-slate lineup wrapper.
+# The V13 probability engine remains unchanged inside hit_hub_v131.
 old_hit_import = "from hit_hub_v131 import render_hit_hub"
-new_hit_import = "from mlb_hit_hub_v132 import render_hit_hub"
+new_hit_import = "from mlb_hit_hub_v133 import render_hit_hub"
 if old_hit_import in source:
     source = source.replace(old_hit_import, new_hit_import, 1)
 
 source = source.replace("WNBA PRA V2.6", "WNBA PRA V2.8.2")
 source = source.replace("PRA V2.6", "PRA V2.8.2")
-source = source.replace("Hit UI V13.1", "Hit UI V13.2")
+source = source.replace("Hit UI V13.1", "Hit UI V13.3")
 source = source.replace(
     "kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py",
-    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_2.py",
+    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3.py",
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_2.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3.py", "exec"),
     globals(),
     globals(),
 )
