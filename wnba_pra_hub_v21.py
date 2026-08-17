@@ -1,5 +1,7 @@
 """WNBA PRA V2.1 UI bridge using the official-CDN schedule transport hotfix."""
 
+import streamlit as st
+
 import wnba_pra_hub_v2 as hub
 from wnba_data_v21 import (
     current_season,
@@ -29,6 +31,24 @@ hub.schedule_for_date = schedule_for_date
 hub.slate_player_pool = slate_player_pool
 hub.team_player_pool = team_player_pool
 hub.MODEL_VERSION = "PRA V2.1"
+
+
+def _hero_v21(day):
+    st.markdown(
+        '<div class="w2-hero">'
+        '<div class="w2-kicker">KYRE SPORTS AI • WNBA OFFICIAL-DATA FOUNDATION</div>'
+        '<div class="w2-title">🏀 WNBA PRA Command Center — V2.1</div>'
+        '<div class="w2-sub">Official WNBA CDN schedule, current player pool, season P/R/A, Last 10, Last 5 and on-demand rosters. Single-player baselines use official game logs and empirical P/R/A correlation; matchup, injury and confirmed-lineup adjustments remain explicitly pending.</div>'
+        '<div class="w2-pills">'
+        f'<div class="w2-pill">📅 Slate <b>{hub._e(day)}</b></div>'
+        '<div class="w2-pill">🧠 <b>PRA V2.1</b></div>'
+        '<div class="w2-pill">✅ <b>WNBA official data layer</b></div>'
+        '<div class="w2-pill">🎯 <b>P / R / A kept separate</b></div>'
+        '</div></div>', unsafe_allow_html=True,
+    )
+
+
+hub._hero = _hero_v21
 
 
 def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h=None):
