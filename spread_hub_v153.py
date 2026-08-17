@@ -42,19 +42,101 @@ def _pregame_results(results):
     return all(actionable(r.get("status"), include_live=False) for r in results)
 
 
+def _slate_date(games_df):
+    if games_df is None or games_df.empty or "game_date" not in games_df.columns:
+        return "NO_SLATE"
+    values = games_df["game_date"].dropna().astype(str).unique().tolist()
+    return values[0] if len(values) == 1 else "MIXED"
+
+
+def _verified_game_pks(games_df):
+    if games_df is None or games_df.empty or "game_pk" not in games_df.columns:
+        return set()
+    df = games_df
+    if "verified" in df.columns:
+        df = df[df["verified"].fillna(False).astype(bool)]
+    return set(pd.to_numeric(df["game_pk"], errors="coerce").dropna().astype(int).tolist())
+
+
+def _reset_stale_spread_state(games_df):
+    """Never allow a scan from another date/game list to appear on this slate."""
+    current_date = _slate_date(games_df)
+    valid_pks = _verified_game_pks(games_df)
+    previous_date = st.session_state.get("v153_verified_slate_date")
+    stored = st.session_state.get("v152_spread_slate") or []
+
+    stored_pks = set()
+    for result in stored:
+        try:
+            stored_pks.add(int(result.get("game_pk")))
+        except Exception:
+            pass
+
+    date_changed = previous_date is not None and previous_date != current_date
+    game_mismatch = bool(stored_pks - valid_pks)
+
+    if date_changed or game_mismatch:
+        for key in (
+            "v152_spread_slate",
+            "v152_spread_scan_time",
+            "v152_spread_errors",
+            "v15_spread_result",
+        ):
+            st.session_state.pop(key, None)
+
+    st.session_state["v153_verified_slate_date"] = current_date
+    return current_date, valid_pks, date_changed or game_mismatch
+
+
 def _render_scanner_with_history(games_df, section_header, status_info, team_logo, h):
-    # Keep V15.2 projection math and cards exactly intact.
-    base._render_scanner(games_df, section_header, status_info, team_logo, h)
+    current_date, valid_pks, reset = _reset_stale_spread_state(games_df)
+
+    if reset:
+        st.info(
+            f"🔄 Slate changed or a stale matchup was detected. Scanner results were cleared and rebound to the verified {current_date} MLB schedule."
+        )
+
+    if games_df is not None and not games_df.empty and "verified" in games_df.columns:
+        verified_count = int(games_df["verified"].fillna(False).astype(bool).sum())
+        st.caption(
+            f"✅ Verified MLB slate: {verified_count} game(s) • {current_date} • scanner cards can only use game IDs on this date."
+        )
+
+    # Keep V15.2 projection math and cards intact, but only feed it the
+    # verified schedule for the selected date.
+    verified_df = games_df
+    if games_df is not None and not games_df.empty and "verified" in games_df.columns:
+        verified_df = games_df[games_df["verified"].fillna(False).astype(bool)].copy()
+
+    base._render_scanner(verified_df, section_header, status_info, team_logo, h)
 
     results = st.session_state.get("v152_spread_slate") or []
     if not results:
         return
 
+    # Final integrity guard in case a component ever writes an unexpected
+    # game into session state.
+    clean_results = []
+    for result in results:
+        try:
+            if int(result.get("game_pk")) in valid_pks:
+                clean_results.append(result)
+        except Exception:
+            continue
+
+    if len(clean_results) != len(results):
+        st.session_state["v152_spread_slate"] = clean_results
+        results = clean_results
+        st.warning("A stale/cross-date spread result was removed before display/backtest storage.")
+
+    if not results:
+        return
+
     if _pregame_results(results):
-        added, total, scan_id = save_spread_scan(results, model_version="V15.3")
+        added, total, scan_id = save_spread_scan(results, model_version="V15.3.1")
         if added:
             st.success(
-                f"📈 V15.3 backtest saved {added} clean pregame spread projection(s). "
+                f"📈 V15.3.1 backtest saved {added} clean pregame spread projection(s). "
                 f"History now contains {total} record(s)."
             )
     else:
@@ -66,12 +148,12 @@ def _render_scanner_with_history(games_df, section_header, status_info, team_log
 
 def _render_backtest(section_header):
     section_header(
-        "V15.3 Spread Backtest",
+        "V15.3.1 Spread Backtest",
         "Tracks clean pregame run-line projections, grades finished games, and tests whether the H2H layer actually improves calibration.",
     )
 
     st.markdown(
-        '<div class="ks-note"><b>Backtest integrity:</b> only pregame scanner results are saved. '
+        '<div class="ks-note"><b>Backtest integrity:</b> only pregame scanner results from the verified selected MLB slate are saved. '
         'Live/final scans are excluded. Repeated scans do not create duplicate records for the same game/model version.</div>',
         unsafe_allow_html=True,
     )
@@ -99,7 +181,7 @@ def _render_backtest(section_header):
     if history.empty:
         st.info(
             "No spread prediction history yet. Run the Spread Scanner before games start; "
-            "V15.3 will automatically save the clean pregame slate."
+            "V15.3.1 will automatically save the clean pregame slate."
         )
     else:
         metrics = spread_metrics(history)
@@ -196,7 +278,7 @@ def _render_backtest(section_header):
     st.divider()
     st.subheader("♻️ Restore Spread History Backup")
     uploaded = st.file_uploader(
-        "Upload a previous V15.3 spread-history CSV",
+        "Upload a previous V15.3/V15.3.1 spread-history CSV",
         type=["csv"],
         key="spread_history_upload",
     )
@@ -234,8 +316,11 @@ def render_spread_hub(games_df, section_header, status_info, team_logo, h):
             'not whether a spread itself is guaranteed.</div>',
             unsafe_allow_html=True,
         )
-        base.render_spread_module(games_df, section_header, status_info, team_logo, h)
-        base._render_history_overlay(games_df, section_header)
+        verified_df = games_df
+        if games_df is not None and not games_df.empty and "verified" in games_df.columns:
+            verified_df = games_df[games_df["verified"].fillna(False).astype(bool)].copy()
+        base.render_spread_module(verified_df, section_header, status_info, team_logo, h)
+        base._render_history_overlay(verified_df, section_header)
 
     with backtest_tab:
         _render_backtest(section_header)
