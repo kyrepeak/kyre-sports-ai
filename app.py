@@ -1,8 +1,8 @@
 """Kyre Sports AI main entrypoint.
 
 Verified future-slate bridge: preserve the proven V14.2/V13 main UI, keep the
-spread engine, add V16.1 moneyline history/form views, and use a strict
-official-MLB date selector for tomorrow and future slates.
+spread engine, add V16.1 moneyline history/form views and V17 game totals, and
+use a strict official-MLB date selector for tomorrow and future slates.
 """
 
 import subprocess
@@ -87,12 +87,22 @@ new_market_block = '''    elif market == "Moneyline":
             team_logo,
             h,
         )
+    elif market == "Game Total":
+        from totals_hub_v17 import render_totals_hub
+
+        render_totals_hub(
+            games_df,
+            section_header,
+            status_info,
+            team_logo,
+            h,
+        )
     else:
         section_header(
             f"MLB {market}",
             "This market module is not built yet.",
         )
-        st.info("The production models currently cover MLB 1+ Hit, Moneyline V16.1 and Run Line V15.3.1.")
+        st.info("The production models currently cover MLB 1+ Hit, Moneyline V16.1, Run Line V15.3.1 and Game Totals V17.")
 '''
 
 if old_market_block not in source:
@@ -101,13 +111,13 @@ source = source.replace(old_market_block, new_market_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • UI 14.2 • ML V16.1 • Spread V15.3.1 • Verified Future +30d</div>",
+    "V13 • UI 14.2 • ML V16.1 • Spread V15.3.1 • Totals V17 • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Hit V13 • Moneyline V16.1 • Spread V15.3.1 • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • Hit V13 • Moneyline V16.1 • Spread V15.3.1 • Totals V17 • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_moneyline_v16_1.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_totals_v17.py", "exec"), globals(), globals())
