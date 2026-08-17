@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import requests
 
+from schedule_future import current_selected_date
+
 ET = ZoneInfo("America/New_York")
 MLB_LIVE_API = "https://statsapi.mlb.com/api/v1.1"
 HISTORY_PATH = Path("spread_prediction_history.csv")
@@ -63,7 +65,6 @@ def _empty_history():
 
 
 def _prediction_key(game_pk, model_version=MODEL_VERSION):
-    # One clean first pregame snapshot per game/model version.
     return f"{int(game_pk)}:{model_version}"
 
 
@@ -96,7 +97,6 @@ def append_spread_records(records):
 
     current = load_spread_history()
     incoming = pd.DataFrame(records)
-
     for col in HISTORY_COLUMNS:
         if col not in incoming.columns:
             incoming[col] = np.nan
@@ -104,7 +104,6 @@ def append_spread_records(records):
 
     existing = set(current["prediction_key"].dropna().astype(str))
     incoming = incoming[~incoming["prediction_key"].astype(str).isin(existing)].copy()
-
     if incoming.empty:
         return 0, len(current)
 
@@ -120,6 +119,7 @@ def save_spread_scan(results, model_version=MODEL_VERSION):
 
     now = _now_et()
     scan_id = now.strftime("%Y%m%dT%H%M%S")
+    slate_date = current_selected_date()
     rows = []
 
     for rank, result in enumerate(results, 1):
@@ -134,7 +134,7 @@ def save_spread_scan(results, model_version=MODEL_VERSION):
                 "prediction_key": _prediction_key(result["game_pk"], model_version),
                 "scan_id": scan_id,
                 "created_at_et": now.isoformat(),
-                "game_date": now.strftime("%Y-%m-%d"),
+                "game_date": result.get("game_date") or slate_date,
                 "model_version": model_version,
                 "source": "daily_spread_scanner",
                 "rank": rank,
@@ -186,10 +186,7 @@ def _fetch_feed(game_pk):
 
 def _game_status(feed):
     status = (feed.get("gameData", {}) or {}).get("status", {}) or {}
-    return (
-        str(status.get("abstractGameState", "")),
-        str(status.get("detailedState", "")),
-    )
+    return str(status.get("abstractGameState", "")), str(status.get("detailedState", ""))
 
 
 def _final_score(feed):
@@ -211,13 +208,7 @@ def _final_score(feed):
 
 def grade_spread_games():
     df = load_spread_history()
-    summary = {
-        "graded": 0,
-        "push": 0,
-        "void": 0,
-        "still_pending": 0,
-        "errors": 0,
-    }
+    summary = {"graded": 0, "push": 0, "void": 0, "still_pending": 0, "errors": 0}
     if df.empty:
         return summary
 
@@ -234,7 +225,6 @@ def grade_spread_games():
             summary["errors"] += 1
 
     now = _now_et().isoformat()
-
     for idx, row in pending.iterrows():
         game_pk = int(row["game_pk"])
         feed = feeds.get(game_pk)
@@ -243,7 +233,6 @@ def grade_spread_games():
 
         abstract, detailed = _game_status(feed)
         low = detailed.lower()
-
         if any(token in low for token in ("cancel", "postpon", "suspend")):
             df.at[idx, "grade_status"] = "VOID"
             df.at[idx, "game_status"] = detailed or abstract
@@ -265,7 +254,6 @@ def grade_spread_games():
         margin = home_runs - away_runs if selected_side == "home" else away_runs - home_runs
         line = float(row.get("line", 0.0) or 0.0)
         settle = margin + line
-
         actual_cover = 1 if settle > 1e-9 else 0
         actual_push = 1 if abs(settle) <= 1e-9 else 0
 
@@ -292,21 +280,10 @@ def graded_spread_history(df=None):
     df = load_spread_history() if df is None else df
     if df.empty:
         return df
-
     out = df[df["grade_status"].isin(["GRADED", "PUSH"])].copy()
     if out.empty:
         return out
-
-    numeric = [
-        "predicted_cover",
-        "core_cover",
-        "history_adjustment",
-        "actual_cover",
-        "actual_push",
-        "rank",
-        "line",
-    ]
-    for col in numeric:
+    for col in ["predicted_cover", "core_cover", "history_adjustment", "actual_cover", "actual_push", "rank", "line"]:
         out[col] = pd.to_numeric(out[col], errors="coerce")
     return out
 
@@ -315,34 +292,20 @@ def spread_metrics(df=None):
     g = graded_spread_history(df)
     if g.empty:
         return {
-            "graded": 0,
-            "wins": 0,
-            "losses": 0,
-            "pushes": 0,
-            "cover_rate": np.nan,
-            "avg_prediction": np.nan,
-            "brier_final": np.nan,
-            "brier_core": np.nan,
-            "h2h_brier_delta": np.nan,
-            "calibration_gap": np.nan,
-            "log_loss": np.nan,
+            "graded": 0, "wins": 0, "losses": 0, "pushes": 0,
+            "cover_rate": np.nan, "avg_prediction": np.nan,
+            "brier_final": np.nan, "brier_core": np.nan,
+            "h2h_brier_delta": np.nan, "calibration_gap": np.nan, "log_loss": np.nan,
         }
 
     pushes = int(g["actual_push"].fillna(0).sum())
     settled = g[g["actual_push"].fillna(0).eq(0)].copy()
     if settled.empty:
         return {
-            "graded": 0,
-            "wins": 0,
-            "losses": 0,
-            "pushes": pushes,
-            "cover_rate": np.nan,
-            "avg_prediction": np.nan,
-            "brier_final": np.nan,
-            "brier_core": np.nan,
-            "h2h_brier_delta": np.nan,
-            "calibration_gap": np.nan,
-            "log_loss": np.nan,
+            "graded": 0, "wins": 0, "losses": 0, "pushes": pushes,
+            "cover_rate": np.nan, "avg_prediction": np.nan,
+            "brier_final": np.nan, "brier_core": np.nan,
+            "h2h_brier_delta": np.nan, "calibration_gap": np.nan, "log_loss": np.nan,
         }
 
     p = settled["predicted_cover"].clip(1e-6, 1 - 1e-6).astype(float)
@@ -350,19 +313,12 @@ def spread_metrics(df=None):
     y = settled["actual_cover"].astype(float)
     brier_final = float(np.mean((p - y) ** 2))
     brier_core = float(np.mean((pc - y) ** 2))
-
     wins = int(y.sum())
     losses = int(len(y) - wins)
     return {
-        "graded": len(settled),
-        "wins": wins,
-        "losses": losses,
-        "pushes": pushes,
-        "cover_rate": float(y.mean()),
-        "avg_prediction": float(p.mean()),
-        "brier_final": brier_final,
-        "brier_core": brier_core,
-        # Positive means history/H2H improved Brier vs the core model.
+        "graded": len(settled), "wins": wins, "losses": losses, "pushes": pushes,
+        "cover_rate": float(y.mean()), "avg_prediction": float(p.mean()),
+        "brier_final": brier_final, "brier_core": brier_core,
         "h2h_brier_delta": brier_core - brier_final,
         "calibration_gap": float(y.mean() - p.mean()),
         "log_loss": float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p))),
@@ -372,30 +328,14 @@ def spread_metrics(df=None):
 def spread_calibration_table(df=None):
     g = graded_spread_history(df)
     if g.empty:
-        return pd.DataFrame(
-            columns=[
-                "Probability Tier",
-                "Picks",
-                "Avg Projected",
-                "Actual Cover",
-                "Calibration Gap",
-                "Brier",
-            ]
-        )
-
+        return pd.DataFrame(columns=["Probability Tier", "Picks", "Avg Projected", "Actual Cover", "Calibration Gap", "Brier"])
     g = g[g["actual_push"].fillna(0).eq(0)].copy()
     if g.empty:
         return pd.DataFrame()
 
     bins = [0.0, 0.55, 0.60, 0.65, 0.70, 1.000001]
     labels = ["<55%", "55–59.9%", "60–64.9%", "65–69.9%", "70%+"]
-    g["tier"] = pd.cut(
-        g["predicted_cover"],
-        bins=bins,
-        labels=labels,
-        include_lowest=True,
-        right=False,
-    )
+    g["tier"] = pd.cut(g["predicted_cover"], bins=bins, labels=labels, include_lowest=True, right=False)
 
     rows = []
     for label in labels:
@@ -404,16 +344,14 @@ def spread_calibration_table(df=None):
             continue
         p = group["predicted_cover"].astype(float)
         y = group["actual_cover"].astype(float)
-        rows.append(
-            {
-                "Probability Tier": label,
-                "Picks": len(group),
-                "Avg Projected": f"{p.mean() * 100:.1f}%",
-                "Actual Cover": f"{y.mean() * 100:.1f}%",
-                "Calibration Gap": f"{(y.mean() - p.mean()) * 100:+.1f} pts",
-                "Brier": f"{np.mean((p - y) ** 2):.3f}",
-            }
-        )
+        rows.append({
+            "Probability Tier": label,
+            "Picks": len(group),
+            "Avg Projected": f"{p.mean() * 100:.1f}%",
+            "Actual Cover": f"{y.mean() * 100:.1f}%",
+            "Calibration Gap": f"{(y.mean() - p.mean()) * 100:+.1f} pts",
+            "Brier": f"{np.mean((p - y) ** 2):.3f}",
+        })
     return pd.DataFrame(rows)
 
 
@@ -421,7 +359,6 @@ def spread_rank_performance(df=None):
     g = graded_spread_history(df)
     if g.empty:
         return pd.DataFrame(columns=["Rank", "Picks", "Record", "Cover Rate", "Avg Projection"])
-
     g = g[g["actual_push"].fillna(0).eq(0)].copy()
     rows = []
     for rank, group in g.groupby("rank"):
@@ -429,15 +366,13 @@ def spread_rank_performance(df=None):
         p = group["predicted_cover"].astype(float)
         wins = int(y.sum())
         losses = len(y) - wins
-        rows.append(
-            {
-                "Rank": int(rank) if pd.notna(rank) else "N/A",
-                "Picks": len(group),
-                "Record": f"{wins}-{losses}",
-                "Cover Rate": f"{y.mean() * 100:.1f}%",
-                "Avg Projection": f"{p.mean() * 100:.1f}%",
-            }
-        )
+        rows.append({
+            "Rank": int(rank) if pd.notna(rank) else "N/A",
+            "Picks": len(group),
+            "Record": f"{wins}-{losses}",
+            "Cover Rate": f"{y.mean() * 100:.1f}%",
+            "Avg Projection": f"{p.mean() * 100:.1f}%",
+        })
     return pd.DataFrame(rows).sort_values("Rank")
 
 
@@ -445,11 +380,9 @@ def top_spread_performance(df=None):
     g = graded_spread_history(df)
     if g.empty:
         return {"top5": 0, "top5_rate": np.nan, "number1": 0, "number1_rate": np.nan}
-
     settled = g[g["actual_push"].fillna(0).eq(0)].copy()
     top5 = settled[pd.to_numeric(settled["rank"], errors="coerce") <= 5]
     no1 = settled[pd.to_numeric(settled["rank"], errors="coerce") == 1]
-
     return {
         "top5": len(top5),
         "top5_rate": float(top5["actual_cover"].mean()) if len(top5) else np.nan,
@@ -465,17 +398,14 @@ def spread_history_download_bytes():
 def merge_uploaded_spread_history(uploaded_file):
     if uploaded_file is None:
         return 0, len(load_spread_history())
-
     try:
         incoming = pd.read_csv(uploaded_file)
     except Exception:
         return 0, len(load_spread_history())
-
     for col in HISTORY_COLUMNS:
         if col not in incoming.columns:
             incoming[col] = np.nan
     incoming = incoming[HISTORY_COLUMNS]
-
     current = load_spread_history()
     merged = pd.concat([current, incoming], ignore_index=True)
     before = len(current)
