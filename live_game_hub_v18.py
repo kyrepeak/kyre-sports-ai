@@ -6,7 +6,7 @@ import streamlit as st
 
 from engine import ET
 
-MODEL_VERSION = "V18"
+MODEL_VERSION = "V18.1"
 
 
 def _verified_df(games_df):
@@ -27,6 +27,11 @@ def _game_state_label(status):
     if any(x in low for x in ["in progress", "live", "warmup", "delayed", "manager challenge"]):
         return "LIVE"
     return "PREGAME"
+
+
+def _sort_priority(status):
+    state = _game_state_label(status)
+    return {"LIVE": 0, "PREGAME": 1, "FINAL": 2}.get(state, 3)
 
 
 @st.cache_data(ttl=4, show_spinner=False)
@@ -150,19 +155,7 @@ def _base_chip(label, runner):
     return f"{icon} {label}: {runner}"
 
 
-def _render_live_panel(game_pk, section_header):
-    try:
-        feed = fetch_live_feed(int(game_pk))
-        state = _live_state(feed)
-    except Exception as exc:
-        st.error(f"Live MLB feed could not be loaded: {exc}")
-        return
-
-    section_header(
-        f'{state["away_team"]} @ {state["home_team"]}',
-        f'{state["state"]} • Updated {state["updated"]}',
-    )
-
+def _scoreboard(state):
     st.markdown(
         f"### {state['away_team']} **{state['away_runs']}** — **{state['home_runs']}** {state['home_team']}"
     )
@@ -171,6 +164,65 @@ def _render_live_panel(game_pk, section_header):
         f"{state['home_team']}: {state['home_runs']}/{state['home_hits']}/{state['home_errors']}"
     )
 
+
+def _render_final_summary(state):
+    away_won = state["away_runs"] > state["home_runs"]
+    home_won = state["home_runs"] > state["away_runs"]
+    winner = state["away_team"] if away_won else state["home_team"] if home_won else "Tie"
+    margin = abs(state["away_runs"] - state["home_runs"])
+
+    st.markdown("## 🏁 Final Game Summary")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.metric("Winner", winner)
+    with c2:
+        st.metric("Final Margin", margin)
+    with c3:
+        st.metric("Total Runs", state["away_runs"] + state["home_runs"])
+    with c4:
+        st.metric("Status", "FINAL")
+
+    st.markdown("### 📊 Final R/H/E")
+    final_table = pd.DataFrame(
+        [
+            {
+                "Team": state["away_team"],
+                "R": state["away_runs"],
+                "H": state["away_hits"],
+                "E": state["away_errors"],
+            },
+            {
+                "Team": state["home_team"],
+                "R": state["home_runs"],
+                "H": state["home_hits"],
+                "E": state["home_errors"],
+            },
+        ]
+    )
+    st.dataframe(final_table, use_container_width=True, hide_index=True)
+
+    st.markdown("### 📝 Final play")
+    st.write(state["last_play"])
+
+    if state["recent"]:
+        with st.expander("📜 Last 5 plays", expanded=False):
+            st.dataframe(pd.DataFrame(state["recent"]), use_container_width=True, hide_index=True)
+
+    st.caption(
+        "Completed games automatically switch to Final Summary mode so stale batter, count and base-runner data are not presented as live."
+    )
+
+
+def _render_pregame_summary(state):
+    st.info("⏳ This game has not started yet. Live batter, pitcher, count, outs and base-runner data will appear automatically once MLB marks the game in progress.")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Away", state["away_team"])
+    with c2:
+        st.metric("Home", state["home_team"])
+
+
+def _render_active_game(state):
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric("Inning", f"{state['inning_state']} {state['inning']}")
@@ -214,11 +266,33 @@ def _render_live_panel(game_pk, section_header):
             st.dataframe(pd.DataFrame(state["recent"]), use_container_width=True, hide_index=True)
 
 
+def _render_live_panel(game_pk, section_header):
+    try:
+        feed = fetch_live_feed(int(game_pk))
+        state = _live_state(feed)
+    except Exception as exc:
+        st.error(f"Live MLB feed could not be loaded: {exc}")
+        return
+
+    section_header(
+        f'{state["away_team"]} @ {state["home_team"]}',
+        f'{state["state"]} • Updated {state["updated"]}',
+    )
+    _scoreboard(state)
+
+    if state["state"] == "FINAL":
+        _render_final_summary(state)
+    elif state["state"] == "PREGAME":
+        _render_pregame_summary(state)
+    else:
+        _render_active_game(state)
+
+
 def render_live_hub(games_df, section_header, status_info, team_logo, h):
     verified = _verified_df(games_df)
     section_header(
-        "MLB Live Game Center — V18",
-        "Live score, inning, batter, pitcher, count, outs, base runners and recent plays from the MLB game feed.",
+        "MLB Live Game Center — V18.1",
+        "LIVE games first • upcoming games second • finals last. Active games show batter, pitcher, count, outs, runners and recent plays.",
     )
 
     if verified.empty:
@@ -226,19 +300,44 @@ def render_live_hub(games_df, section_header, status_info, team_logo, h):
         return
 
     rows = [row for _, row in verified.iterrows()]
-    labels = [
-        f'{row["away_team"]} @ {row["home_team"]} • {row.get("first_pitch_et", "TBD")} • {row.get("status", "Unknown")}'
-        for row in rows
-    ]
+    rows.sort(
+        key=lambda row: (
+            _sort_priority(row.get("status")),
+            str(row.get("first_pitch_et", "99:99")),
+            str(row.get("away_team", "")),
+        )
+    )
+
+    live_count = sum(1 for row in rows if _game_state_label(row.get("status")) == "LIVE")
+    pregame_count = sum(1 for row in rows if _game_state_label(row.get("status")) == "PREGAME")
+    final_count = sum(1 for row in rows if _game_state_label(row.get("status")) == "FINAL")
+    st.caption(f"📡 {live_count} LIVE • ⏳ {pregame_count} upcoming • 🏁 {final_count} final")
+
+    labels = []
+    for row in rows:
+        state = _game_state_label(row.get("status"))
+        icon = {"LIVE": "🔴", "PREGAME": "⏳", "FINAL": "🏁"}.get(state, "⚾")
+        labels.append(
+            f'{icon} {state} • {row["away_team"]} @ {row["home_team"]} • '
+            f'{row.get("first_pitch_et", "TBD")} ET'
+        )
+
     choice = st.selectbox("Game", labels, key="v18_live_game")
     game = rows[labels.index(choice)]
+    selected_state = _game_state_label(game.get("status"))
 
-    st.caption("Auto-refreshes about every 10 seconds when supported by the running Streamlit version. You can also refresh manually.")
-    if st.button("🔄 REFRESH LIVE STATE", use_container_width=True, key="v18_manual_refresh"):
+    if selected_state == "LIVE":
+        st.caption("Auto-refreshes about every 10 seconds when supported by the running Streamlit version. You can also refresh manually.")
+    elif selected_state == "FINAL":
+        st.caption("Final games use a clean summary view instead of showing the last plate appearance as if it were still live.")
+    else:
+        st.caption("Pregame view will switch automatically to the full live dashboard when the game begins.")
+
+    if st.button("🔄 REFRESH GAME STATE", use_container_width=True, key="v18_manual_refresh"):
         fetch_live_feed.clear()
 
     fragment = getattr(st, "fragment", None)
-    if callable(fragment):
+    if callable(fragment) and selected_state == "LIVE":
         @fragment(run_every="10s")
         def _auto_panel():
             _render_live_panel(int(game["game_pk"]), section_header)
