@@ -1,8 +1,7 @@
-"""Kyre Sports AI main entrypoint — WNBA PRA V2.7 direct route hotfix.
+"""Kyre Sports AI main entrypoint — WNBA PRA V2.8 direct route.
 
 Loads the proven V2.6 league-aware shell, then routes WNBA → PRA directly to the
-V2.7 availability/starter module. This avoids a stale Python module cache on the
-old V2.6 compatibility import while leaving all MLB modules unchanged.
+V2.8 projected-minutes + role/usage module. MLB modules remain unchanged.
 """
 
 import subprocess
@@ -30,21 +29,20 @@ def _load_v26_shell():
 source = _load_v26_shell()
 
 old_route = "from wnba_pra_hub_v26 import render_wnba_pra_hub"
-new_route = "from wnba_pra_hub_v27 import render_wnba_pra_hub"
+new_route = "from wnba_pra_hub_v28 import render_wnba_pra_hub"
 if old_route not in source:
-    raise RuntimeError("V2.7 direct-route bridge could not locate the V2.6 WNBA PRA import.")
+    raise RuntimeError("V2.8 direct-route bridge could not locate the V2.6 WNBA PRA import.")
 source = source.replace(old_route, new_route, 1)
 
-# Keep visible version labels aligned with the actual module being rendered.
-source = source.replace("WNBA PRA V2.6", "WNBA PRA V2.7")
-source = source.replace("PRA V2.6", "PRA V2.7")
+source = source.replace("WNBA PRA V2.6", "WNBA PRA V2.8")
+source = source.replace("PRA V2.6", "PRA V2.8")
 source = source.replace(
     "kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py",
-    "kyre_sports_ai_wnba_pra_v2_7_availability_touch_nav.py",
+    "kyre_sports_ai_wnba_pra_v2_8_minutes_role_touch_nav.py",
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_7_direct_route.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_8_direct_route.py", "exec"),
     globals(),
     globals(),
 )
