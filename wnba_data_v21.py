@@ -35,6 +35,18 @@ def _player_params(season: int, last_n: int = 0) -> dict[str, Any]:
     }
 
 
+def _tip_et(game: dict) -> str:
+    # The CDN's gameDateTimeEst already represents Eastern local clock time.
+    est = game.get("gameDateTimeEst")
+    if est:
+        try:
+            ts = pd.to_datetime(est)
+            return ts.strftime("%-I:%M %p ET")
+        except Exception:
+            pass
+    return base._to_et_display(game.get("gameDateTimeUTC") or game.get("gameDateTime"))
+
+
 @st.cache_data(ttl=1800, show_spinner=False)
 def official_schedule(season: int | None = None) -> pd.DataFrame:
     season = int(season or base.current_season())
@@ -51,12 +63,12 @@ def official_schedule(season: int | None = None) -> pd.DataFrame:
             home = game.get("homeTeam") or {}
             away = game.get("awayTeam") or {}
             # gameDateTimeEst contains the actual tip time; gameDateEst can be midnight.
-            raw_et = game.get("gameDateTimeEst") or game.get("gameDateTimeUTC") or game.get("gameDateTime")
-            game_date = base._safe_date(raw_et) or base._safe_date(block_date)
+            raw_date = game.get("gameDateTimeEst") or game.get("gameDateTimeUTC") or block_date
+            game_date = base._safe_date(raw_date) or base._safe_date(block_date)
             rows.append({
                 "game_id": str(game.get("gameId") or game.get("gameID") or ""),
                 "game_date": game_date,
-                "first_tip_et": base._to_et_display(raw_et),
+                "first_tip_et": _tip_et(game),
                 "status": base._status_bucket(game.get("gameStatus"), game.get("gameStatusText")),
                 "status_text": str(game.get("gameStatusText") or ""),
                 "away_team_id": int(away.get("teamId") or 0),
