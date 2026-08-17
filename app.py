@@ -1,7 +1,8 @@
 """Kyre Sports AI main entrypoint.
 
-V15.2 bridge: preserve the proven V14.2/V13 main UI exactly, while wiring the
-existing MLB -> Run Line dropdown into the history-aware V15.2 spread hub.
+V15.3 bridge: preserve the proven V14.2/V13 main UI exactly, while wiring the
+existing MLB -> Run Line dropdown into the V15.3 spread hub with H2H context
+plus clean pregame backtesting.
 
 The pinned source is the V14.2 app commit. We load it from local git history
 when available (fast/no network) and fall back to the immutable raw GitHub
@@ -41,7 +42,7 @@ old_block = '''    else:
 '''
 
 new_block = '''    elif market == "Run Line":
-        from spread_hub_v152 import render_spread_hub
+        from spread_hub_v153 import render_spread_hub
 
         render_spread_hub(
             games_df,
@@ -55,22 +56,22 @@ new_block = '''    elif market == "Run Line":
             f"MLB {market}",
             "This market module is not built yet.",
         )
-        st.info("The production models currently cover MLB 1+ Hit and Run Line V15.2.")
+        st.info("The production models currently cover MLB 1+ Hit and Run Line V15.3.")
 '''
 
 if old_block not in source:
-    raise RuntimeError("V15.2 bridge could not locate the Run Line placeholder in the pinned UI source.")
+    raise RuntimeError("V15.3 bridge could not locate the Run Line placeholder in the pinned UI source.")
 
 source = source.replace(old_block, new_block, 1)
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • UI 14.2 • Spread V15.2</div>",
+    "V13 • UI 14.2 • Spread V15.3</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Hit Model V13 • Spread V15.2 • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • Hit Model V13 • Spread V15.3 • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_v15_2.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_v15_3.py", "exec"), globals(), globals())
