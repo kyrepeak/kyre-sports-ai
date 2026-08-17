@@ -7,9 +7,10 @@ matching, best-price/movement tracking, model-vs-market ML/run-line/total
 edge grading, a whole-slate summary bar, same-book no-vig calibration, quote
 freshness status and stale-signal protection, plus the V20.9 recursion hotfix;
 route MLB 1+ Hit through the V13.1 mobile-first command center while preserving
-the V13 probability engine and calibration history; keep live sportsbook market
-sync across moneyline/run-line/totals, V19.2 live intelligence, and use a strict
-official-MLB date selector for future slates.
+the V13 probability engine and calibration history; add a WNBA PRA V1 command
+center foundation with independent P/R/A inputs and correlated prototype Monte
+Carlo; keep live sportsbook market sync across moneyline/run-line/totals, V19.2
+live intelligence, and use a strict official-MLB date selector for future slates.
 """
 
 import subprocess
@@ -167,15 +168,35 @@ if old_market_block not in source:
     raise RuntimeError("Verified future-slate bridge could not locate the market placeholder.")
 source = source.replace(old_market_block, new_market_block, 1)
 
+old_wnba_block = '''else:
+    section_header(f"WNBA {market}", "WNBA model workspace")
+    st.info(
+        "The WNBA interface is ready for its own model modules. MLB V13 remains unchanged."
+    )
+'''
+new_wnba_block = '''else:
+    from wnba_pra_hub_v1 import render_wnba_pra_hub
+
+    render_wnba_pra_hub(
+        section_header,
+        status_info,
+        team_logo,
+        h,
+    )
+'''
+if old_wnba_block not in source:
+    raise RuntimeError("WNBA PRA bridge could not locate the original WNBA placeholder.")
+source = source.replace(old_wnba_block, new_wnba_block, 1)
+
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • Hit UI V13.1 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future +30d</div>",
+    "V13 • Hit UI V13.1 • WNBA PRA V1 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • WNBA PRA V1 • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_hit_v13_1_slate_v20_9_1.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_wnba_pra_v1_hit_v13_1_slate_v20_9_1.py", "exec"), globals(), globals())
