@@ -1,4 +1,4 @@
-"""MLB Statcast feed V1.7 — shared fast cache for Matchup Explorer.
+"""MLB Statcast feed V1.7.1 — shared fast cache + V1.5 compatibility hook.
 
 Keeps V1.5 data contract while avoiding repeated slow Savant requests. Successful
 player-season frames are cached for an hour; failures are cached briefly so a
@@ -13,9 +13,10 @@ import streamlit as st
 
 import mlb_matchup_rankings_v15 as base
 
-VERSION = "MLB Statcast Feed V1.7"
+VERSION = "MLB Statcast Feed V1.7.1"
 SAVANT_CSV = base.SAVANT_CSV
 _savant_params = base._savant_params
+_bullpen_profile = base._bullpen_profile
 
 _SESSION = requests.Session()
 _SESSION.headers.update({
@@ -57,5 +58,25 @@ def _statcast_failure_guard(player_id, year, player_type):
 def _statcast_rows(player_id, year, player_type):
     return _statcast_failure_guard(int(player_id) if player_id else 0,int(year),str(player_type))
 
-# Preserve all other V1.5 feeds/behavior.
-_bullpen_profile=base._bullpen_profile
+def _install_hotfixes():
+    """Compatibility shim expected by rankings V1.6+.
+
+    Preserve V1.5's runtime monkeypatch behavior, but point all Statcast calls to
+    this module's shared fast cache instead of the older 18/28-second fetcher.
+    """
+    try:
+        base._install_hotfixes()
+    except Exception:
+        pass
+    base._savant_params = _savant_params
+    base._statcast_rows = _statcast_rows
+    base._bullpen_profile = _bullpen_profile
+    try:
+        base.base._savant_params = _savant_params
+        base.base._statcast_rows = _statcast_rows
+    except Exception:
+        pass
+    try:
+        base.bpbase._bullpen_profile = _bullpen_profile
+    except Exception:
+        pass
