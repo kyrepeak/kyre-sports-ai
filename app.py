@@ -1,8 +1,8 @@
 """Kyre Sports AI main entrypoint.
 
 Verified future-slate bridge: preserve the proven V14.2/V13 main UI, keep the
-spread engine, and use a strict official-MLB date selector for tomorrow and
-future slates.
+spread engine, add V16 moneyline, and use a strict official-MLB date selector
+for tomorrow and future slates.
 """
 
 import subprocess
@@ -67,7 +67,17 @@ old_market_block = '''    else:
         st.info("The production model currently covers MLB 1+ Hit.")
 '''
 
-new_market_block = '''    elif market == "Run Line":
+new_market_block = '''    elif market == "Moneyline":
+        from moneyline_hub_v16 import render_moneyline_hub
+
+        render_moneyline_hub(
+            games_df,
+            section_header,
+            status_info,
+            team_logo,
+            h,
+        )
+    elif market == "Run Line":
         from spread_hub_v153 import render_spread_hub
 
         render_spread_hub(
@@ -82,22 +92,22 @@ new_market_block = '''    elif market == "Run Line":
             f"MLB {market}",
             "This market module is not built yet.",
         )
-        st.info("The production models currently cover MLB 1+ Hit and Run Line V15.3.1.")
+        st.info("The production models currently cover MLB 1+ Hit, Moneyline V16 and Run Line V15.3.1.")
 '''
 
 if old_market_block not in source:
-    raise RuntimeError("Verified future-slate bridge could not locate the Run Line placeholder.")
+    raise RuntimeError("Verified future-slate bridge could not locate the market placeholder.")
 source = source.replace(old_market_block, new_market_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • UI 14.2 • Spread V15.3.1 • Verified Future +30d</div>",
+    "V13 • UI 14.2 • ML V16 • Spread V15.3.1 • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Hit Model V13 • Spread V15.3.1 • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • Hit V13 • Moneyline V16 • Spread V15.3.1 • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_verified_future_slates.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_moneyline_v16.py", "exec"), globals(), globals())
