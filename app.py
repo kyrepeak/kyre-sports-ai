@@ -1,7 +1,7 @@
 """Kyre Sports AI main entrypoint.
 
 League-aware shell: MLB data is loaded only when MLB is selected. WNBA PRA uses
-its own WNBA-only guarded data layer with the V2.4 verified-schedule command center.
+its own WNBA-only guarded data layer with the V2.5 verified-player-pool command center.
 WNBA PRA is rendered only when the WNBA PRA market is selected. Existing MLB
 modules remain unchanged.
 """
@@ -260,7 +260,7 @@ old_wnba_block = '''else:
 '''
 new_wnba_block = '''else:
     if market == "PRA":
-        from wnba_pra_hub_v24 import render_wnba_pra_hub
+        from wnba_pra_hub_v25 import render_wnba_pra_hub
 
         render_wnba_pra_hub(
             section_header,
@@ -280,17 +280,17 @@ source = source.replace(old_wnba_block, new_wnba_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • Hit UI V13.1 • WNBA PRA V2.4 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future +30d</div>",
+    "V13 • Hit UI V13.1 • WNBA PRA V2.5 • UI 14.2 • Slate V20.9.1 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • WNBA PRA V2.4 • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • WNBA PRA V2.5 • Slate V20.9.1 • Hit V13 / UI V13.1 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_4_verified_schedule_touch_nav.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_5_verified_player_pool_touch_nav.py", "exec"),
     globals(),
     globals(),
 )
