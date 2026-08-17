@@ -8,6 +8,7 @@ and are explicitly labeled PROJECTED.
 
 from html import escape
 
+import pandas as pd
 import streamlit as st
 
 import slate_hub_v20 as core
@@ -76,9 +77,7 @@ def _avg_text(v):
         return f"{n:.3f}".lstrip("0")
     except Exception:
         text = str(v or "—")
-        if text.startswith("0."):
-            return text[1:]
-        return text
+        return text[1:] if text.startswith("0.") else text
 
 
 def _ops_text(v):
@@ -87,9 +86,7 @@ def _ops_text(v):
         return f"{n:.3f}".lstrip("0")
     except Exception:
         text = str(v or "—")
-        if text.startswith("0."):
-            return text[1:]
-        return text
+        return text[1:] if text.startswith("0.") else text
 
 
 def _hit_rows(players):
@@ -114,13 +111,12 @@ def _lineup_html(team, players, label, confirmed):
         more = ""
     else:
         body = _hit_rows(players[:4])
-        more = ""
-        if len(players) > 4:
-            more = (
-                '<details class="sl-more"><summary>＋ View hitters 5–9</summary>'
-                + _hit_rows(players[4:])
-                + '</details>'
-            )
+        more = (
+            '<details class="sl-more"><summary>＋ View hitters 5–9</summary>'
+            + _hit_rows(players[4:])
+            + '</details>'
+            if len(players) > 4 else ""
+        )
     note = (
         "Official batting order from this game feed."
         if confirmed
@@ -174,18 +170,8 @@ def _render_card_v204(row, intel=None, snap=None):
 
     lineups_html = (
         '<div class="sl-lineups">'
-        + _lineup_html(
-            away,
-            ctx.get("away_lineup"),
-            ctx.get("away_lineup_label"),
-            bool(ctx.get("away_lineup_confirmed")),
-        )
-        + _lineup_html(
-            home,
-            ctx.get("home_lineup"),
-            ctx.get("home_lineup_label"),
-            bool(ctx.get("home_lineup_confirmed")),
-        )
+        + _lineup_html(away, ctx.get("away_lineup"), ctx.get("away_lineup_label"), bool(ctx.get("away_lineup_confirmed")))
+        + _lineup_html(home, ctx.get("home_lineup"), ctx.get("home_lineup_label"), bool(ctx.get("home_lineup_confirmed")))
         + '</div>'
     )
 
@@ -210,13 +196,17 @@ def _render_card_v204(row, intel=None, snap=None):
     st.markdown(html, unsafe_allow_html=True)
 
 
-# V20.3 calls the core renderer dynamically. Replace it with the V20.4 card.
 core._render_card = _render_card_v204
 
 
 def render_slate_hub(games_df, section_header, status_info, team_logo, h):
     global _CONTEXT
-    st.markdown(LINEUP_CSS, unsafe_allow_html=True)
+
+    st.markdown(core.SLATE_CSS + previous.EXTRA_CSS + LINEUP_CSS, unsafe_allow_html=True)
+    rows = core._refresh_rows(games_df)
+    if not rows:
+        st.info("No verified MLB games are available for this selected date.")
+        return
 
     try:
         with st.spinner("Loading MLB lineups, batting averages and starter stats..."):
@@ -225,7 +215,99 @@ def render_slate_hub(games_df, section_header, status_info, team_logo, h):
         _CONTEXT = {}
         st.caption("⚠️ Player-detail enrichment is temporarily unavailable; the verified slate and sportsbook markets will still load.")
 
-    st.caption(
-        "🧬 V20.4 Player Intelligence • confirmed MLB batting orders when posted • otherwise clearly labeled projected lineups from each team's most recent official batting order • starter ERA/WHIP/K9."
+    day = str(rows[0].get("game_date") or "")
+    live = sum(core._state_label(r.get("status")) == "LIVE" for r in rows)
+    upcoming = sum(core._state_label(r.get("status")) == "PREGAME" for r in rows)
+    starters = sum(
+        1 for r in rows for k in ("away_pitcher_id", "home_pitcher_id")
+        if r.get(k) is not None and not pd.isna(r.get(k))
     )
-    return previous.render_slate_hub(games_df, section_header, status_info, team_logo, h)
+    total_starters = len(rows) * 2
+
+    st.markdown(
+        '<div class="sl-hero">'
+        '<div class="sl-kicker">KYRE SPORTS AI • MLB DAILY COMMAND CENTER • LINEUPS + ODDS</div>'
+        f'<div class="sl-title">⚾ MLB Slate — {escape(day)}</div>'
+        '<div class="sl-sub">Verified games + probable starters with ERA/WHIP/K9 + batting orders with AVG/OPS + FanDuel/DraftKings prices + best-price and movement tracking.</div>'
+        '<div class="sl-counts">'
+        f'<div class="sl-count"><b>{len(rows)}</b><span>Games</span></div>'
+        f'<div class="sl-count"><b>{live}</b><span>Live</span></div>'
+        f'<div class="sl-count"><b>{upcoming}</b><span>Upcoming</span></div>'
+        f'<div class="sl-count"><b>{starters}/{total_starters}</b><span>Probable SP</span></div>'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        view = st.radio("Slate filter", ["All", "Live", "Upcoming", "Final"], horizontal=True, key=f"v204_filter_{day}")
+    with c2:
+        intel = st.session_state.get(f"v20_intel_{day}") or {}
+        sort_options = ["Game time"] + (["Strongest ML", "Highest total", "Data quality"] if intel else [])
+        sort_by = st.selectbox("Sort", sort_options, key=f"v204_sort_{day}")
+
+    raw = previous._raw_get_api_key()
+    key = previous._get_api_key()
+    books = previous.get_bookmakers()
+    if raw and not key:
+        st.error("🔐 Streamlit Secrets still contains a placeholder API key. Replace it with the real key and save changes.")
+    elif key:
+        st.caption(f"📡 Odds connected permanently • {books} • ★ marks best listed price • 🧬 V20.4 lineups automatically switch from projected to confirmed when MLB posts them.")
+    else:
+        st.caption("📡 Odds are not connected. Add ODDS_API_IO_KEY to Streamlit Secrets to display sportsbook markets.")
+
+    if st.button("⚡ BUILD V20.4 SLATE INTELLIGENCE", use_container_width=True, type="primary", key=f"v204_build_{day}"):
+        intel = core._build_intelligence(rows, day)
+
+    if intel:
+        stamp = st.session_state.get(f"v20_intel_time_{day}")
+        err = int(st.session_state.get(f"v20_intel_errors_{day}", 0) or 0)
+        st.caption(
+            f"🧠 Model pulse built {stamp or ''} • quick 40K/game preview • use individual market modules for final deep simulations."
+            + (f" • {err} game(s) skipped" if err else "")
+        )
+
+    filtered = []
+    for r in rows:
+        state = core._state_label(r.get("status"))
+        if view == "Live" and state != "LIVE":
+            continue
+        if view == "Upcoming" and state != "PREGAME":
+            continue
+        if view == "Final" and state != "FINAL":
+            continue
+        filtered.append(r)
+
+    if sort_by == "Strongest ML":
+        filtered.sort(key=lambda r: float((intel.get(int(r["game_pk"])) or {}).get("favorite_prob", 0) or 0), reverse=True)
+    elif sort_by == "Highest total":
+        filtered.sort(key=lambda r: float((intel.get(int(r["game_pk"])) or {}).get("projected_total", 0) or 0), reverse=True)
+    elif sort_by == "Data quality":
+        filtered.sort(key=lambda r: int((intel.get(int(r["game_pk"])) or {}).get("data_score", 0) or 0), reverse=True)
+    else:
+        filtered.sort(key=lambda r: core._time_sort(r.get("first_pitch_et")))
+
+    if not filtered:
+        st.info(f"No {view.lower()} games are on this verified slate.")
+        return
+
+    snaps = {}
+    active_rows = [r for r in filtered if core._state_label(r.get("status")) != "FINAL"]
+    if key and active_rows:
+        try:
+            with st.spinner("Syncing ML • run line • totals • best prices..."):
+                snaps = previous._safe_snapshots(pd.DataFrame(active_rows), key, books)
+        except Exception as exc:
+            st.warning(f"Sportsbook markets could not refresh right now: {exc}")
+            snaps = {}
+        st.caption(
+            f"📈 Markets matched {len(snaps)}/{len(active_rows)} active games • player stats come from official MLB feeds • projected batting orders are clearly marked until confirmed."
+        )
+
+    for row in filtered:
+        pk = int(row["game_pk"])
+        core._render_card(row, intel.get(pk), snaps.get(pk))
+
+    st.caption(
+        "V20.4 Slate Command Center • confirmed lineups are official MLB batting orders • PROJECTED lineups are the team's most recent official order and are not treated as confirmed • sportsbook prices are market context, while model projections remain independent."
+    )
