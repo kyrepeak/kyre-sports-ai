@@ -2,7 +2,7 @@
 
 Verified future-slate bridge: preserve the proven V14.2/V13 main UI, keep the
 spread engine, add live sportsbook market sync across moneyline/run-line/totals,
-V19.1 live intelligence, and use a strict official-MLB date selector for
+V19.2 live intelligence, and use a strict official-MLB date selector for
 tomorrow and future slates.
 """
 
@@ -105,7 +105,7 @@ new_market_block = '''    elif market == "Moneyline":
             h,
         )
     elif market == "Live Game":
-        from live_game_hub_v191 import render_live_hub
+        from live_game_hub_v1921 import render_live_hub
 
         render_live_hub(
             games_df,
@@ -119,7 +119,7 @@ new_market_block = '''    elif market == "Moneyline":
             f"MLB {market}",
             "This market module is not built yet.",
         )
-        st.info("The production models currently cover MLB 1+ Hit, Moneyline V16.2, Run Line V15.4, Game Totals V17.2 and Live Game V19.1.")
+        st.info("The production models currently cover MLB 1+ Hit, Moneyline V16.2, Run Line V15.4, Game Totals V17.2 and Live Game V19.2.")
 '''
 
 if old_market_block not in source:
@@ -128,13 +128,13 @@ source = source.replace(old_market_block, new_market_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • UI 14.2 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.1 • Live Odds Sync • Verified Future +30d</div>",
+    "V13 • UI 14.2 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Hit V13 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.1 • Live Odds Sync • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • Hit V13 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_live_v19_1_odds.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_live_v19_2_edge.py", "exec"), globals(), globals())
