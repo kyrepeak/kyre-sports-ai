@@ -1,12 +1,12 @@
-"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Hit UI V13.3 + HR V1.1 + H+R+RBI V1.0.1 + Pitcher K V1.0.6 + Moneyline V16.3 + Spread V15.5 + Totals V17.3 + Live V19.3.
+"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Matchup Explorer V1.0 + Hit UI V13.3 + HR V1.1 + H+R+RBI V1.0.1 + Pitcher K V1.0.6 + Moneyline V16.3 + Spread V15.5 + Totals V17.3 + Live V19.3.
 
 Loads the proven V2.6 league-aware shell, keeps WNBA → PRA frozen on the hardened
-V2.8.2 route, isolates MLB Slate through a V3.2 direct-loader wrapper, isolates
-MLB 1+ Hit through its own V13.3 full-slate wrapper, isolates MLB Home Run through
-calibrated V1.1, isolates MLB Hits + Runs + RBIs through joint-event V1.0.1,
-isolates MLB Pitcher Strikeouts through workload-first V1.0.6, isolates MLB
-Moneyline through V16.3, MLB Spread through V15.5, MLB Totals through V17.3,
-and MLB Live Game through V19.3.
+V2.8.2 route, isolates MLB Slate through a V3.2 direct-loader wrapper, adds the
+new MLB Matchup Explorer V1.0 as a game-first/player-first browsing layer, keeps
+MLB 1+ Hit on V13.3, MLB Home Run on calibrated V1.1, MLB Hits + Runs + RBIs on
+joint-event V1.0.1, MLB Pitcher Strikeouts on workload-first V1.0.6, MLB
+Moneyline on V16.3, MLB Spread on V15.5, MLB Totals on V17.3, and MLB Live Game
+on V19.3.
 """
 
 import subprocess
@@ -76,7 +76,7 @@ if old_live_import in source:
 
 source = source.replace(
     '                "Hits + Runs + RBIs",\n                "Moneyline",',
-    '                "Hits + Runs + RBIs",\n                "Pitcher Strikeouts",\n                "Moneyline",',
+    '                "Hits + Runs + RBIs",\n                "Pitcher Strikeouts",\n                "Matchup Explorer",\n                "Moneyline",',
     1,
 )
 
@@ -97,6 +97,9 @@ market_routes = '''    elif market == "Live Game":
     elif market == "Pitcher Strikeouts":
         from mlb_pitcher_k_hub_v106 import render_pitcher_k_hub
         render_pitcher_k_hub(games_df, section_header, status_info, team_logo, h)
+    elif market == "Matchup Explorer":
+        from mlb_matchup_hub_v10 import render_matchup_hub
+        render_matchup_hub(games_df, section_header, status_info, team_logo, h)
     else:
 '''
 if market_marker not in source:
@@ -105,7 +108,7 @@ source = source.replace(market_marker, market_routes, 1)
 
 source = source.replace("WNBA PRA V2.6", "WNBA PRA V2.8.2")
 source = source.replace("PRA V2.6", "PRA V2.8.2")
-source = source.replace("Hit UI V13.1", "Hit UI V13.3 • HR V1.1 • H+R+RBI V1.0.1 • Pitcher K V1.0.6")
+source = source.replace("Hit UI V13.1", "Hit UI V13.3 • Matchup Explorer V1.0 • HR V1.1 • H+R+RBI V1.0.1 • Pitcher K V1.0.6")
 source = source.replace("Moneyline V16.2", "Moneyline V16.3")
 source = source.replace("ML V16.2", "ML V16.3")
 source = source.replace("Spread V15.4", "Spread V15.5")
@@ -113,11 +116,11 @@ source = source.replace("Totals V17.2", "Totals V17.3")
 source = source.replace("Live V19.2", "Live V19.3")
 source = source.replace(
     "kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py",
-    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3_hr_v1_1_hrrbi_v1_0_1_pitcher_k_v1_0_6_ml_v16_3_spread_v15_5_totals_v17_3_live_v19_3.py",
+    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_matchup_explorer_v1_0_hit_v13_3_hr_v1_1_hrrbi_v1_0_1_pitcher_k_v1_0_6_ml_v16_3_spread_v15_5_totals_v17_3_live_v19_3.py",
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3_hr_v1_1_hrrbi_v1_0_1_pitcher_k_v1_0_6_ml_v16_3_spread_v15_5_totals_v17_3_live_v19_3.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_matchup_explorer_v1_0_hit_v13_3_hr_v1_1_hrrbi_v1_0_1_pitcher_k_v1_0_6_ml_v16_3_spread_v15_5_totals_v17_3_live_v19_3.py", "exec"),
     globals(),
     globals(),
 )
