@@ -1,8 +1,8 @@
-"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB schedule V3.1.
+"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2.
 
-Loads the proven V2.6 league-aware shell, routes WNBA → PRA through the hardened
-V2.8.2 usage/minutes layer, and routes MLB schedule loading through the isolated
-MLB V3.1 schedule module. Existing MLB market models remain unchanged.
+Loads the proven V2.6 league-aware shell, keeps WNBA → PRA frozen on the hardened
+V2.8.2 route, and isolates MLB Slate through a V3.2 direct-loader wrapper.
+No WNBA module is modified by the MLB repair path.
 """
 
 import subprocess
@@ -36,22 +36,28 @@ if old_route not in source:
     raise RuntimeError("V2.8.2 direct-route bridge could not locate the V2.6 WNBA PRA import.")
 source = source.replace(old_route, new_route, 1)
 
-# MLB-only isolated schedule route. New module name forces a fresh import on
-# Streamlit deploy instead of reusing a stale schedule_future_v3 module object.
+# Keep the MLB bootstrap on a fresh MLB-only schedule module.
 old_schedule_import = "from schedule_future import current_selected_date, games_for_date, render_slate_date_control"
-new_schedule_import = "from mlb_schedule_v31 import current_selected_date, games_for_date, render_slate_date_control"
+new_schedule_import = "from mlb_schedule_v32 import current_selected_date, games_for_date, render_slate_date_control"
 if old_schedule_import in source:
     source = source.replace(old_schedule_import, new_schedule_import, 1)
+
+# Crucial isolation: MLB Slate does not depend on the global bootstrap anymore.
+# It reloads the selected MLB date itself and exposes provider diagnostics if empty.
+old_slate_import = "from slate_hub_v2091 import render_slate_hub"
+new_slate_import = "from mlb_slate_hub_v32 import render_slate_hub"
+if old_slate_import in source:
+    source = source.replace(old_slate_import, new_slate_import, 1)
 
 source = source.replace("WNBA PRA V2.6", "WNBA PRA V2.8.2")
 source = source.replace("PRA V2.6", "PRA V2.8.2")
 source = source.replace(
     "kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py",
-    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_schedule_v3_1.py",
+    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2.py",
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_schedule_v3_1.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2.py", "exec"),
     globals(),
     globals(),
 )
