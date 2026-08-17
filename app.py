@@ -1,10 +1,10 @@
-"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Hit UI V13.3 + Moneyline V16.3 + Spread V15.5 + Totals V17.3.
+"""Kyre Sports AI main entrypoint — WNBA PRA V2.8.2 + MLB Slate V3.2 + Hit UI V13.3 + Moneyline V16.3 + Spread V15.5 + Totals V17.3 + Live V19.3.
 
 Loads the proven V2.6 league-aware shell, keeps WNBA → PRA frozen on the hardened
 V2.8.2 route, isolates MLB Slate through a V3.2 direct-loader wrapper, isolates
 MLB 1+ Hit through its own V13.3 full-slate wrapper, isolates MLB Moneyline
-through V16.3, isolates MLB Spread through V15.5, and isolates MLB Totals through
-V17.3. Live Game remains unchanged.
+through V16.3, isolates MLB Spread through V15.5, isolates MLB Totals through
+V17.3, and isolates MLB Live Game through V19.3.
 """
 
 import subprocess
@@ -75,6 +75,13 @@ new_totals_import = "from mlb_totals_hub_v173 import render_totals_hub"
 if old_totals_import in source:
     source = source.replace(old_totals_import, new_totals_import, 1)
 
+# MLB Live Game ONLY: own official gamePk slate + live-feed health.
+# V19.2.1 state model, pitch-by-pitch UI and sportsbook sync remain intact.
+old_live_import = "from live_game_hub_v1921 import render_live_hub"
+new_live_import = "from mlb_live_hub_v193 import render_live_hub"
+if old_live_import in source:
+    source = source.replace(old_live_import, new_live_import, 1)
+
 source = source.replace("WNBA PRA V2.6", "WNBA PRA V2.8.2")
 source = source.replace("PRA V2.6", "PRA V2.8.2")
 source = source.replace("Hit UI V13.1", "Hit UI V13.3")
@@ -82,13 +89,14 @@ source = source.replace("Moneyline V16.2", "Moneyline V16.3")
 source = source.replace("ML V16.2", "ML V16.3")
 source = source.replace("Spread V15.4", "Spread V15.5")
 source = source.replace("Totals V17.2", "Totals V17.3")
+source = source.replace("Live V19.2", "Live V19.3")
 source = source.replace(
     "kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py",
-    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3_ml_v16_3_spread_v15_5_totals_v17_3.py",
+    "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3_ml_v16_3_spread_v15_5_totals_v17_3_live_v19_3.py",
 )
 
 exec(
-    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3_ml_v16_3_spread_v15_5_totals_v17_3.py", "exec"),
+    compile(source, "kyre_sports_ai_wnba_pra_v2_8_2_mlb_slate_v3_2_hit_v13_3_ml_v16_3_spread_v15_5_totals_v17_3_live_v19_3.py", "exec"),
     globals(),
     globals(),
 )
