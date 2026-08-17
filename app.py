@@ -1,10 +1,10 @@
 """Kyre Sports AI main entrypoint.
 
 Verified future-slate bridge: preserve the proven V14.2/V13 main UI, add a
-V20.2 dedicated MLB slate command center with pregame/live odds and safe secret
-handling, keep live sportsbook market sync across moneyline/run-line/totals,
-V19.2 live intelligence, and use a strict official-MLB date selector for future
-slates.
+V20.3 dedicated MLB slate command center with corrected totals, best-price
+highlights and movement tracking, keep live sportsbook market sync across
+moneyline/run-line/totals, V19.2 live intelligence, and use a strict official-
+MLB date selector for future slates.
 """
 
 import subprocess
@@ -82,7 +82,7 @@ old_market_block = '''    else:
 '''
 
 new_market_block = '''    elif market == "Slate":
-        from slate_hub_v202 import render_slate_hub
+        from slate_hub_v203 import render_slate_hub
 
         render_slate_hub(
             games_df,
@@ -136,7 +136,7 @@ new_market_block = '''    elif market == "Slate":
             f"MLB {market}",
             "This market module is not built yet.",
         )
-        st.info("The production models currently cover MLB Slate V20.2, 1+ Hit V13, Moneyline V16.2, Run Line V15.4, Game Totals V17.2 and Live Game V19.2.")
+        st.info("The production models currently cover MLB Slate V20.3, 1+ Hit V13, Moneyline V16.2, Run Line V15.4, Game Totals V17.2 and Live Game V19.2.")
 '''
 
 if old_market_block not in source:
@@ -145,13 +145,13 @@ source = source.replace(old_market_block, new_market_block, 1)
 
 source = source.replace(
     "V13 • UI 14.2</div>",
-    "V13 • UI 14.2 • Slate V20.2 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future +30d</div>",
+    "V13 • UI 14.2 • Slate V20.3 • ML V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future +30d</div>",
     1,
 )
 source = source.replace(
     "<b>KYRE SPORTS AI</b> • Model V13 • UI V14.2",
-    "<b>KYRE SPORTS AI</b> • Slate V20.2 • Hit V13 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future Slates +30d • UI V14.2",
+    "<b>KYRE SPORTS AI</b> • Slate V20.3 • Hit V13 • Moneyline V16.2 • Spread V15.4 • Totals V17.2 • Live V19.2 • Live Edge Board • Verified Future Slates +30d • UI V14.2",
     1,
 )
 
-exec(compile(source, "kyre_sports_ai_slate_v20_2.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_slate_v20_3.py", "exec"), globals(), globals())
