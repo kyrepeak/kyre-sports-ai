@@ -22,7 +22,7 @@ import streamlit as st
 
 try:
     from streamlit_autorefresh import st_autorefresh
-except Exception:  # graceful deploy fallback while dependency installs
+except Exception:
     st_autorefresh = None
 
 import mlb_daily_game_picks_v208 as previous
@@ -31,7 +31,6 @@ import mlb_daily_game_picks_v206 as master
 VERSION = "MLB Daily Game Picks V2.0.9 • POLISHED MOBILE FINAL CARD"
 ET = ZoneInfo("America/New_York")
 
-# Stable MLB team IDs used by official MLB static logo assets.
 TEAM_IDS = {
     "Arizona Diamondbacks": 109,
     "Atlanta Braves": 144,
@@ -96,16 +95,15 @@ def _img(team, size=26):
     return (
         f'<img src="{escape(url)}" alt="{escape(str(team or "team"))}" '
         f'width="{int(size)}" height="{int(size)}" '
-        'style="object-fit:contain;flex:0 0 auto" '
-        'onerror="this.style.display=\'none\'">'
+        'style="object-fit:contain;flex:0 0 auto">'
     )
 
 
 def _split_matchup(matchup):
     text = str(matchup or "")
     if " @ " in text:
-        a, h = text.split(" @ ", 1)
-        return a.strip(), h.strip()
+        away, home = text.split(" @ ", 1)
+        return away.strip(), home.strip()
     return text.strip(), ""
 
 
@@ -118,18 +116,47 @@ def _tier(score):
     return "QUALIFIED", "qualified"
 
 
+def _prime_active_games(games_df):
+    """Prime inherited connector globals so compact mode can read cached candidates."""
+    roots = [
+        previous.moneyline,
+        previous.pitcherk,
+        previous.hrrbi,
+        previous.hrpatch,
+        previous.hrbase,
+        previous.hitone,
+        master,
+        master.bridge,
+        master.core,
+    ]
+    seen = set()
+    stack = list(roots)
+    while stack:
+        mod = stack.pop()
+        if mod is None or id(mod) in seen:
+            continue
+        seen.add(id(mod))
+        if hasattr(mod, "_ACTIVE_GAMES"):
+            try:
+                setattr(mod, "_ACTIVE_GAMES", games_df)
+            except Exception:
+                pass
+        for attr in ("base", "previous"):
+            child = getattr(mod, attr, None)
+            if child is not None and id(child) not in seen:
+                stack.append(child)
+
+
 def _inject_css():
     st.markdown(
         """
 <style>
-/* V2.0.9 — mobile-first visual polish */
 .kui-top{border:1px solid #294c69;background:linear-gradient(145deg,#0a1c2f,#071522);border-radius:18px;padding:13px 15px;margin:8px 0 13px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .kui-title{font-size:14px;font-weight:950;color:#fff}.kui-sub{font-size:10px;color:#91a8bd;margin-top:3px}.kui-live{display:inline-flex;align-items:center;gap:6px;border:1px solid #225b49;background:#0b3028;color:#65e3a9;border-radius:999px;padding:5px 9px;font-size:9px;font-weight:950;white-space:nowrap}
 .kui-stagegrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:8px 0 13px}.kui-stage{border:1px solid #29465e;background:#081725;border-radius:11px;padding:7px 6px;text-align:center;color:#91a7ba;font-size:8px;font-weight:850}.kui-stage.ready{border-color:#27644e;background:#0a2b24;color:#65e3a9}.kui-stage.partial{border-color:#756427;background:#302b0b;color:#f1d665}.kui-stage.blocked{border-color:#6a3434;background:#2c1317;color:#ff9090}
 .kui-master{border:1px solid #326386;background:linear-gradient(145deg,#0a1e33,#071522);border-radius:21px;padding:15px;margin:11px 0 18px}.kui-kicker{font-size:9px;color:#5ddcff;font-weight:950;letter-spacing:1.4px}.kui-master-title{font-size:27px;color:#fff;font-weight:1000;margin:4px 0}.kui-master-sub{font-size:10px;color:#91a8bd;line-height:1.5}.kui-stats{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 12px}.kui-stat{border:1px solid #294c67;border-radius:999px;padding:5px 8px;color:#8fa8bb;font-size:8px}.kui-stat b{color:#fff}
 .kui-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kui-card{border:1px solid #294967;background:#09192a;border-radius:17px;padding:13px;min-height:205px}.kui-card.first{border-color:#c5a72c;box-shadow:0 0 0 1px rgba(197,167,44,.08) inset}.kui-rank{color:#62dcff;font-size:9px;font-weight:950;letter-spacing:.7px}.kui-market{color:#9bb2c5;font-size:9px;font-weight:850;margin-top:8px}.kui-name-row{display:flex;align-items:center;gap:8px;margin-top:4px}.kui-name{font-size:18px;font-weight:1000;color:#fff;line-height:1.12}.kui-side{color:#d6e2ec;font-size:10px;margin-top:5px}.kui-score{font-size:31px;font-weight:1000;color:#fff;margin-top:11px}.kui-score small{font-size:7px;color:#83a0b8}.kui-badge{display:inline-block;margin-top:4px;border-radius:999px;padding:3px 7px;font-size:7px;font-weight:950}.kui-badge.elite{border:1px solid #8a7828;background:#2a260b;color:#ffe37a}.kui-badge.strong{border:1px solid #315f7c;background:#0a2639;color:#74dbff}.kui-badge.qualified{border:1px solid #486173;background:#17222c;color:#c7d4df}.kui-matchup{display:flex;align-items:center;gap:5px;flex-wrap:wrap;color:#91a7bb;font-size:9px;line-height:1.35;margin-top:10px}.kui-meta{color:#7892a8;font-size:8px;line-height:1.45;margin-top:7px}
-.kui-market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kui-market-card{border:1px solid #29465f;background:#081725;border-radius:14px;padding:10px}.kui-market-head{display:flex;justify-content:space-between;gap:8px;color:#68dcff;font-size:8px;font-weight:950}.kui-market-pick{display:flex;align-items:center;gap:6px;color:#fff;font-size:13px;font-weight:950;margin-top:6px}.kui-market-side{font-size:9px;color:#c9d8e4;margin-top:4px}.kui-market-match{display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:#8099ad;font-size:8px;margin-top:7px}.kui-score-pill{border:1px solid #315b78;border-radius:999px;color:#7fe0ff;padding:2px 6px;font-size:7px;font-weight:950;white-space:nowrap}
-.kui-empty{border:1px dashed #31506b;border-radius:14px;padding:13px;color:#9fb0c0;font-size:10px}
+.kui-market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kui-market-card{border:1px solid #29465f;background:#081725;border-radius:14px;padding:10px}.kui-market-head{display:flex;justify-content:space-between;gap:8px;color:#68dcff;font-size:8px;font-weight:950}.kui-market-pick{display:flex;align-items:center;gap:6px;color:#fff;font-size:13px;font-weight:950;margin-top:6px}.kui-market-side{font-size:9px;color:#c9d8e4;margin-top:4px}.kui-market-match{display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:#8099ad;font-size:8px;margin-top:7px}.kui-score-pill{border:1px solid #315b78;border-radius:999px;color:#7fe0ff;padding:2px 6px;font-size:7px;font-weight:950;white-space:nowrap}.kui-empty{border:1px dashed #31506b;border-radius:14px;padding:13px;color:#9fb0c0;font-size:10px}
 @media(max-width:850px){.kui-stagegrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:650px){.kui-grid,.kui-market-grid{grid-template-columns:1fr}.kui-master-title{font-size:23px}.kui-card{min-height:0}.kui-stagegrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
@@ -153,13 +180,8 @@ def _render_stage_pills(games_df):
     cells = []
     for stage, label, _icon in previous.STAGES:
         cls, symbol = _stage_class(games_df, stage)
-        cells.append(
-            f'<div class="kui-stage {cls}">{symbol}<br>{escape(label)}</div>'
-        )
-    st.markdown(
-        f'<div class="kui-stagegrid">{"".join(cells)}</div>',
-        unsafe_allow_html=True,
-    )
+        cells.append(f'<div class="kui-stage {cls}">{symbol}<br>{escape(label)}</div>')
+    st.markdown(f'<div class="kui-stagegrid">{"".join(cells)}</div>', unsafe_allow_html=True)
 
 
 def _timestamp_key(day):
@@ -201,34 +223,35 @@ def _render_top_status(games_df):
 
 def _render_refresh_controls(games_df):
     day = _day(games_df)
+    auto_key = f"dgp_ui_autorefresh_v209::{day}"
+    secs_key = f"dgp_ui_refreshsecs_v209::{day}"
     state = st.session_state.get(previous._state_key(day)) or {}
+    if auto_key not in st.session_state:
+        st.session_state[auto_key] = True
+    if secs_key not in st.session_state:
+        st.session_state[secs_key] = 300
+
     with st.expander("⚙️ Display & refresh settings", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
             st.toggle(
                 "Auto-refresh display",
-                value=bool(st.session_state.get(f"dgp_ui_autorefresh_v209::{day}", True)),
-                key=f"dgp_ui_autorefresh_v209::{day}",
+                key=auto_key,
                 help="Reruns the screen only. It never rebuilds a production connector.",
             )
         with c2:
             st.selectbox(
                 "Display refresh interval",
                 options=[120, 300, 600],
-                index={120: 0, 300: 1, 600: 2}.get(int(st.session_state.get(f"dgp_ui_refreshsecs_v209::{day}", 300) or 300), 1),
                 format_func=lambda x: f"{x // 60} minutes",
-                key=f"dgp_ui_refreshsecs_v209::{day}",
+                key=secs_key,
             )
         st.caption(
-            "Quota-safe behavior: auto-refresh only rerenders cached UI/state. It does not call Run Line, Total, Moneyline, Pitcher K, H+R+RBI, Home Run, or 1+ Hit builders."
+            "Quota-safe behavior: auto-refresh only rerenders cached UI/state. It does not call any production builder."
         )
 
-    if (
-        st_autorefresh is not None
-        and bool(st.session_state.get(f"dgp_ui_autorefresh_v209::{day}", True))
-        and not bool(state.get("active"))
-    ):
-        secs = int(st.session_state.get(f"dgp_ui_refreshsecs_v209::{day}", 300) or 300)
+    if st_autorefresh is not None and bool(st.session_state.get(auto_key)) and not bool(state.get("active")):
+        secs = int(st.session_state.get(secs_key, 300) or 300)
         st_autorefresh(interval=max(120, secs) * 1000, key=f"dgp_ui_tick_v209::{day}")
 
 
@@ -238,9 +261,7 @@ def _candidate_logo(c):
     team = str(c.get("team") or "")
     if market in {"Moneyline", "Run Line"}:
         team = name
-    if team:
-        return _img(team, 29)
-    return ""
+    return _img(team, 29) if team else ""
 
 
 def _matchup_html(matchup):
@@ -257,12 +278,10 @@ def _master_card(c, rank):
     medals = {1: "🥇", 2: "🥈", 3: "🥉", 4: "4️⃣", 5: "5️⃣"}
     score = master._finite(c.get("score"))
     tier, tier_cls = _tier(score)
-    logo = _candidate_logo(c)
-    name = escape(str(c.get("name") or "Candidate"))
     return f'''<div class="kui-card {'first' if rank == 1 else ''}">
       <div class="kui-rank">{medals.get(rank, '•')} DAILY #{rank}</div>
       <div class="kui-market">{escape(str(c.get('market') or ''))}</div>
-      <div class="kui-name-row">{logo}<div class="kui-name">{name}</div></div>
+      <div class="kui-name-row">{_candidate_logo(c)}<div class="kui-name">{escape(str(c.get('name') or 'Candidate'))}</div></div>
       <div class="kui-side">{escape(str(c.get('side') or ''))}</div>
       <div class="kui-score">{score:.1f}<small> /100 PICK STRENGTH</small></div>
       <div class="kui-badge {tier_cls}">{tier}</div>
@@ -277,8 +296,7 @@ def _market_leader_cards(candidates):
         matchup = str(row.get("Matchup") or "")
         pick = str(row.get("Pick") or "")
         market = str(row.get("Market") or "")
-        team_for_logo = pick if market in {"Moneyline", "Run Line"} else ""
-        logo = _img(team_for_logo, 22) if team_for_logo else ""
+        logo = _img(pick, 22) if market in {"Moneyline", "Run Line"} else ""
         score = master._finite(row.get("Pick Strength"))
         parts.append(
             f'''<div class="kui-market-card">
@@ -292,6 +310,7 @@ def _market_leader_cards(candidates):
 
 
 def _render_master_polished(games_df):
+    _prime_active_games(games_df)
     candidates = master._collect_candidates(games_df)
     selected = master._select_master(candidates)
     qualified = [c for c in candidates if master._finite(c.get("score")) >= master.MASTER_MIN_SCORE]
@@ -330,29 +349,25 @@ def _render_master_polished(games_df):
             )
 
 
-# Replace Step 6's renderer only; selection/ranking functions stay untouched.
 master._render_master = _render_master_polished
 
 
 def _render_compact_final(games_df):
-    if previous._all_complete(games_df):
-        _render_master_polished(games_df)
-    else:
+    if not previous._all_complete(games_df):
         st.info("🚀 Build or resume the Full MLB Card above. The compact Final Card will populate automatically from completed production outputs.")
-        _render_master_polished(games_df)
+    _render_master_polished(games_df)
 
 
 def render_daily_game_picks(games_df, section_header=None, status_info=None, team_logo=None, h=None):
     _inject_css()
+    _prime_active_games(games_df)
     day = _day(games_df)
 
-    # Keep V2.0.7 market-neutral scoring installed before any card is rendered.
     previous.previous.step3.normalize_candidate = previous.previous.normalize_candidate
 
     _render_top_status(games_df)
     _render_refresh_controls(games_df)
 
-    # Render V2.0.8's production controller once. It handles active one-stage-per-rerun builds.
     previous._render_full_builder(games_df)
 
     view = st.radio(
@@ -370,7 +385,6 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     st.caption(
         "📊 Full Dashboard • all seven connectors, Step 5 per-game Top 3, audits, diagnostics, and the polished Step 6 Master Card."
     )
-    # Bypass V2.0.8's wrapper here so the one-tap controller is not rendered twice.
     return previous.previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
     )
