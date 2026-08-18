@@ -14,8 +14,10 @@ minutes/role, matchup context and SportsGameOdds transport, but PRA totals never
 feed the Points projection. Points is not yet fed into the shared WNBA Final Card.
 
 The deep-shell loader patch is deliberately narrow: it changes only the inherited
-WNBA non-PRA placeholder into an explicit Points route. MLB production model math,
-PRA production model math and all frozen connectors remain unchanged.
+WNBA non-PRA placeholder into an explicit Points route. Legacy Points V1.1 import
+names are also pinned to V1.3 so Streamlit cannot revive a stale module through an
+older wrapper in the chain. MLB production model math, PRA production model math
+and all frozen connectors remain unchanged.
 '''
 from __future__ import annotations
 
@@ -25,6 +27,7 @@ import urllib.request
 
 import slate_multi_provider_patch_v1 as slate_multi_provider
 import wnba_pra_hub_v321 as wnba_pra_v321
+import wnba_points_hub_v13 as wnba_points_v13
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -58,9 +61,21 @@ _NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
 
 
 def _patch_inherited_app_text(value):
-    """Patch only the real inherited WNBA placeholder, wherever it appears in the wrapper chain."""
+    """Patch only WNBA Points routing inside inherited app shells."""
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
+
+    # Upgrade any already-injected legacy Points route before checking for the
+    # original generic placeholder. This handles wrapper-chain history safely.
+    text = text.replace(
+        "from wnba_points_hub_v11 import render_wnba_points_hub",
+        "from wnba_points_hub_v13 import render_wnba_points_hub",
+    )
+    text = text.replace(
+        "from wnba_points_hub_v12 import render_wnba_points_hub",
+        "from wnba_points_hub_v13 import render_wnba_points_hub",
+    )
+
     if "wnba_points_hub_v13" not in text and _OLD_WNBA_PLACEHOLDER in text:
         text = text.replace(_OLD_WNBA_PLACEHOLDER, _NEW_WNBA_PLACEHOLDER, 1)
     return text.encode("utf-8") if is_bytes else text
@@ -82,6 +97,11 @@ def _deep_shell_check_output(*args, **kwargs):
 # Every historical wrapper uses the same subprocess module, so the hook reaches
 # the actual league-aware shell without changing unrelated source files.
 subprocess.check_output = _deep_shell_check_output
+
+# Cache-safe compatibility aliases. If any inherited wrapper still imports the
+# old Points module name, Python resolves it to the V1.3 implementation.
+sys.modules["wnba_points_hub_v11"] = wnba_points_v13
+sys.modules["wnba_points_hub_v12"] = wnba_points_v13
 
 
 def _load_previous_app():
@@ -111,7 +131,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_frozen_points_v13_deep_route.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_frozen_points_v13_forced.py", "exec"),
     globals(),
     globals(),
 )
