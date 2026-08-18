@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + Points V1.9.4 active.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + Points V1.9.5 active.
 
 Loads the current known-good wrapper chain while preserving the frozen MLB V2.1.7
 and WNBA PRA V3.2.1 checkpoints. WNBA Points is injected only when the inherited
@@ -20,12 +20,14 @@ uncertainty calibration guard and dynamic 5M/10M completion status. V1.9.3 adds
 MLB-style WNBA team-logo matchup cards. V1.9.4 is presentation/data-context Step
 2: current-season player-vs-current-opponent scoring history, H2H minutes, L3
 when available, today-line hit rate, home/away split, last meeting and explicit
-small-sample labeling. H2H remains descriptive only and does not alter the
-Points projection or simulation.
+small-sample labeling. V1.9.5 is presentation-only Step 2.1: ESPN WNBA player
+headshots on player-facing H2H and Top Points candidate visuals with team-logo
+fallbacks. H2H and photos remain descriptive/presentation only and do not alter
+the Points projection or simulation.
 
 The deep-shell loader patch is deliberately narrow: it changes only inherited
 WNBA Points routing. Legacy Points import names are pinned to the cache-safe
-V1.9.4 visual wrapper. MLB model math, PRA model math and frozen connectors
+V1.9.5 visual wrapper. MLB model math, PRA model math and frozen connectors
 remain unchanged.
 '''
 from __future__ import annotations
@@ -36,7 +38,7 @@ import urllib.request
 
 import slate_multi_provider_patch_v1 as slate_multi_provider
 import wnba_pra_hub_v321 as wnba_pra_v321
-import wnba_points_hub_v194 as wnba_points_v194
+import wnba_points_hub_v195 as wnba_points_v195
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -53,7 +55,7 @@ _OLD_WNBA_PLACEHOLDER = '''    else:
 '''
 
 _NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
-        from wnba_points_hub_v194 import render_wnba_points_hub
+        from wnba_points_hub_v195 import render_wnba_points_hub
 
         render_wnba_points_hub(
             section_header,
@@ -79,14 +81,14 @@ def _patch_inherited_app_text(value):
         "wnba_points_hub_v14", "wnba_points_hub_v15", "wnba_points_hub_v151",
         "wnba_points_hub_v16", "wnba_points_hub_v17", "wnba_points_hub_v171",
         "wnba_points_hub_v18", "wnba_points_hub_v19", "wnba_points_hub_v191",
-        "wnba_points_hub_v192", "wnba_points_hub_v193",
+        "wnba_points_hub_v192", "wnba_points_hub_v193", "wnba_points_hub_v194",
     ):
         text = text.replace(
             f"from {old_module} import render_wnba_points_hub",
-            "from wnba_points_hub_v194 import render_wnba_points_hub",
+            "from wnba_points_hub_v195 import render_wnba_points_hub",
         )
 
-    if "wnba_points_hub_v194" not in text and _OLD_WNBA_PLACEHOLDER in text:
+    if "wnba_points_hub_v195" not in text and _OLD_WNBA_PLACEHOLDER in text:
         text = text.replace(_OLD_WNBA_PLACEHOLDER, _NEW_WNBA_PLACEHOLDER, 1)
     return text.encode("utf-8") if is_bytes else text
 
@@ -106,20 +108,21 @@ def _deep_shell_check_output(*args, **kwargs):
 subprocess.check_output = _deep_shell_check_output
 
 # Cache-safe compatibility aliases for every legacy Points page name.
-sys.modules["wnba_points_hub_v11"] = wnba_points_v194
-sys.modules["wnba_points_hub_v12"] = wnba_points_v194
-sys.modules["wnba_points_hub_v13"] = wnba_points_v194
-sys.modules["wnba_points_hub_v14"] = wnba_points_v194
-sys.modules["wnba_points_hub_v15"] = wnba_points_v194
-sys.modules["wnba_points_hub_v151"] = wnba_points_v194
-sys.modules["wnba_points_hub_v16"] = wnba_points_v194
-sys.modules["wnba_points_hub_v17"] = wnba_points_v194
-sys.modules["wnba_points_hub_v171"] = wnba_points_v194
-sys.modules["wnba_points_hub_v18"] = wnba_points_v194
-sys.modules["wnba_points_hub_v19"] = wnba_points_v194
-sys.modules["wnba_points_hub_v191"] = wnba_points_v194
-sys.modules["wnba_points_hub_v192"] = wnba_points_v194
-sys.modules["wnba_points_hub_v193"] = wnba_points_v194
+sys.modules["wnba_points_hub_v11"] = wnba_points_v195
+sys.modules["wnba_points_hub_v12"] = wnba_points_v195
+sys.modules["wnba_points_hub_v13"] = wnba_points_v195
+sys.modules["wnba_points_hub_v14"] = wnba_points_v195
+sys.modules["wnba_points_hub_v15"] = wnba_points_v195
+sys.modules["wnba_points_hub_v151"] = wnba_points_v195
+sys.modules["wnba_points_hub_v16"] = wnba_points_v195
+sys.modules["wnba_points_hub_v17"] = wnba_points_v195
+sys.modules["wnba_points_hub_v171"] = wnba_points_v195
+sys.modules["wnba_points_hub_v18"] = wnba_points_v195
+sys.modules["wnba_points_hub_v19"] = wnba_points_v195
+sys.modules["wnba_points_hub_v191"] = wnba_points_v195
+sys.modules["wnba_points_hub_v192"] = wnba_points_v195
+sys.modules["wnba_points_hub_v193"] = wnba_points_v195
+sys.modules["wnba_points_hub_v194"] = wnba_points_v195
 
 
 def _load_previous_app():
@@ -149,7 +152,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_frozen_points_v194_h2h_step2.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_frozen_points_v195_headshots_step21.py", "exec"),
     globals(),
     globals(),
 )
