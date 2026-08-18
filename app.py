@@ -1,14 +1,15 @@
-'''Kyre Sports AI entrypoint — Daily Game Picks V2.1.4b.
+'''Kyre Sports AI entrypoint — Daily Game Picks V2.1.5.
 
 Loads the current known-good app shell, preserving the full MLB/WNBA system and
 all seven proven MLB production connectors, then routes Daily Game Picks through
-V2.1.4b sportsbook cooldown quarantine on top of V2.1.3 persistent completed-card
-storage and the V2.1.2.x live-risk/market-gap decision screen.
+V2.1.5 multi-provider sportsbook transport on top of V2.1.4b cooldown quarantine,
+V2.1.3 persistent completed-card storage, and the V2.1.2.x live-risk/market-gap
+decision screen.
 
-V2.1.4b prevents a Run Line/Total HTTP 429 from freezing the full seven-stage card:
-the other five production connectors continue immediately, while the two
-sportsbook-backed stages wait for the existing armed cooldown retry. V2.1.3
-persistent snapshots, all production model math, simulation depths, sportsbook
+V2.1.5 makes SportsGameOdds the primary sportsbook source when
+SPORTSGAMEODDS_API_KEY is configured and keeps Odds-API.io as automatic fallback.
+Both providers are normalized into the existing sportsbook snapshot contract, so
+production model math, simulation depths, no-vig calculations, sportsbook market
 verification gates, normalization, Step 5/6 selection rules, team logos,
 confidence badges, and identity firewalls remain unchanged.
 '''
@@ -38,10 +39,10 @@ def _load_previous_app():
 
 source = _load_previous_app()
 old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"
-new = "from mlb_daily_game_picks_v214b import render_daily_game_picks"
+new = "from mlb_daily_game_picks_v215 import render_daily_game_picks"
 if old not in source:
     raise RuntimeError("Could not locate Daily Game Picks route in previous app shell.")
 source = source.replace(old, new, 1)
-source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.4b", 1)
+source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.5", 1)
 
-exec(compile(source, "kyre_sports_ai_daily_game_picks_v214b.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_daily_game_picks_v215.py", "exec"), globals(), globals())
