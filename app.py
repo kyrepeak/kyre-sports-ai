@@ -1,15 +1,15 @@
-"""Kyre Sports AI entrypoint — force Daily Game Picks V1.9.2 fresh import.
+"""Kyre Sports AI entrypoint — Daily Game Picks V1.9.3.
 
-Loads the last known-good full app shell, preserving every existing MLB/WNBA
-module and the persistent MLB date control, then changes only the Daily Game Picks
-route to the fresh V1.9.2 module name so Streamlit cannot reuse cached V1.9.1 code.
+Loads the current known-good app shell, preserving the full MLB/WNBA system and
+the proven Moneyline V1.9.2 connector, then routes Daily Game Picks through the
+fresh V1.9.3 bridge so Pitcher K V1.8.2 cannot be hidden by Python import cache.
 """
 from __future__ import annotations
 
 import subprocess
 import urllib.request
 
-BASE_COMMIT = "8fb675ad2922cadbd0647e4e82ad97072029f4ca"
+BASE_COMMIT = "b62cd3ef8ee4e9810251c49f5aeea0a4a7518b69"
 RAW_URL = (
     "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
     f"{BASE_COMMIT}/app.py"
@@ -29,11 +29,11 @@ def _load_previous_app():
 
 
 source = _load_previous_app()
-old = "from mlb_daily_game_picks_v19 import render_daily_game_picks"
-new = "from mlb_daily_game_picks_v192 import render_daily_game_picks"
+old = "from mlb_daily_game_picks_v192 import render_daily_game_picks"
+new = "from mlb_daily_game_picks_v193 import render_daily_game_picks"
 if old not in source:
-    raise RuntimeError("Could not locate Daily Game Picks V1.9 route in previous app shell.")
+    raise RuntimeError("Could not locate Daily Game Picks V1.9.2 route in previous app shell.")
 source = source.replace(old, new, 1)
-source = source.replace("Daily Game Picks V1.9", "Daily Game Picks V1.9.2", 1)
+source = source.replace("Daily Game Picks V1.9.2", "Daily Game Picks V1.9.3", 1)
 
-exec(compile(source, "kyre_sports_ai_daily_game_picks_v192.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_daily_game_picks_v193.py", "exec"), globals(), globals())
