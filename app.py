@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence + WNBA Rebounds V1.1.1 Step 2.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence + WNBA Rebounds V1.2 Step 3.
 
 Frozen production checkpoints:
 - MLB V2.1.7: branch mlb-v217-frozen-20260818
@@ -16,10 +16,10 @@ compressed checksummed browser copies. V1.9.8.4.1 fixes browser hydration/readba
 without changing model math. No historical calibrator can change live probabilities
 until minimum sample/slate gates and chronological holdout validation pass.
 
-WNBA Rebounds V1.1.1 keeps Step 1's verified Eastern-date schedule and V1.1's
-current-roster + structured injury/status gate. It adds only conservative
-ESPN injury identity/status reconciliation; Step 3 remains locked until the gate
-passes. No Rebounds projection, sportsbook grading or simulation is enabled yet.
+WNBA Rebounds V1.2 keeps Step 1's verified Eastern-date schedule and Step 2's
+current-roster + structured injury/status gate, then adds the verified Step 3
+rotation-minutes layer. No rebound projection, sportsbook grading or simulation
+is enabled yet.
 '''
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ import streamlit as st
 import slate_multi_provider_patch_v1 as slate_multi_provider
 import wnba_pra_hub_v321 as wnba_pra_v321
 import wnba_points_hub_v19841 as wnba_points_v19841
-import wnba_rebounds_hub_v111 as wnba_rebounds_v111
+import wnba_rebounds_hub_v12 as wnba_rebounds_v12
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -60,7 +60,7 @@ _POINTS_AND_REBOUNDS_PLACEHOLDER = '''    elif market == "Points":
         )
         st.stop()
     elif str(market).strip().lower() == "rebounds":
-        from wnba_rebounds_hub_v111 import render_wnba_rebounds_hub
+        from wnba_rebounds_hub_v12 import render_wnba_rebounds_hub
 
         render_wnba_rebounds_hub(
             section_header,
@@ -76,7 +76,7 @@ _POINTS_AND_REBOUNDS_PLACEHOLDER = '''    elif market == "Points":
 '''
 
 _REBOUNDS_ONLY_PLACEHOLDER = '''    elif str(market).strip().lower() == "rebounds":
-        from wnba_rebounds_hub_v111 import render_wnba_rebounds_hub
+        from wnba_rebounds_hub_v12 import render_wnba_rebounds_hub
 
         render_wnba_rebounds_hub(
             section_header,
@@ -102,7 +102,7 @@ _GENERIC_OLD_BODY = '''        section_header(f"WNBA {market}", "WNBA market mod
 '''
 
 _GENERIC_GUARDED_FROZEN_BODY = '''        if str(market).strip().lower() == "rebounds":
-            from wnba_rebounds_hub_v111 import render_wnba_rebounds_hub
+            from wnba_rebounds_hub_v12 import render_wnba_rebounds_hub
 
             render_wnba_rebounds_hub(
                 section_header,
@@ -117,7 +117,7 @@ _GENERIC_GUARDED_FROZEN_BODY = '''        if str(market).strip().lower() == "reb
 '''
 
 _GENERIC_GUARDED_OLD_BODY = '''        if str(market).strip().lower() == "rebounds":
-            from wnba_rebounds_hub_v111 import render_wnba_rebounds_hub
+            from wnba_rebounds_hub_v12 import render_wnba_rebounds_hub
 
             render_wnba_rebounds_hub(
                 section_header,
@@ -154,14 +154,18 @@ def _patch_inherited_app_text(value):
             "from wnba_points_hub_v19841 import render_wnba_points_hub",
         )
 
-    # Upgrade any inherited Rebounds V1.0/V1.1 route to the identity-safe V1.1.1 wrapper.
-    for old_rebounds in ("wnba_rebounds_hub_v10", "wnba_rebounds_hub_v11"):
+    # Upgrade every inherited Rebounds route to the cache-busting V1.2 wrapper.
+    for old_rebounds in (
+        "wnba_rebounds_hub_v10",
+        "wnba_rebounds_hub_v11",
+        "wnba_rebounds_hub_v111",
+    ):
         text = text.replace(
             f"from {old_rebounds} import render_wnba_rebounds_hub",
-            "from wnba_rebounds_hub_v111 import render_wnba_rebounds_hub",
+            "from wnba_rebounds_hub_v12 import render_wnba_rebounds_hub",
         )
 
-    if "wnba_rebounds_hub_v111" not in text and _OLD_WNBA_PLACEHOLDER in text:
+    if "wnba_rebounds_hub_v12" not in text and _OLD_WNBA_PLACEHOLDER in text:
         replacement = _REBOUNDS_ONLY_PLACEHOLDER if has_points_route else _POINTS_AND_REBOUNDS_PLACEHOLDER
         text = text.replace(_OLD_WNBA_PLACEHOLDER, replacement, 1)
 
@@ -196,7 +200,7 @@ def _guarded_streamlit_info(body, *args, **kwargs):
     if text.startswith("WNBA Rebounds is separate from") and (
         "production model page" in text or "model module" in text
     ):
-        wnba_rebounds_v111.render_wnba_rebounds_hub(None, None, None, None)
+        wnba_rebounds_v12.render_wnba_rebounds_hub(None, None, None, None)
         st.stop()
     return _ORIGINAL_ST_INFO(body, *args, **kwargs)
 
@@ -246,7 +250,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v111_step2.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v12_step3.py", "exec"),
     globals(),
     globals(),
 )
