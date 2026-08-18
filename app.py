@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.3 calibration lab.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4 durable calibration persistence.
 
 Frozen production checkpoints:
 - MLB V2.1.7: branch mlb-v217-frozen-20260818
@@ -8,13 +8,13 @@ Frozen production checkpoints:
   branch wnba-points-v1982-frozen-20260818
   commit a16c37962f4aecaa1941786718544b0432623734
 
-WNBA Points V1.9.8.3 keeps the validated V1.9.8.2 projection, SportsGameOdds,
+WNBA Points V1.9.8.4 keeps the validated V1.9.8.2 projection, SportsGameOdds,
 Monte Carlo, uncertainty floor, rich cards, opponent identity and role display
-frozen. It adds only an observational out-of-sample calibration ledger: UPCOMING
-pregame predictions are archived, final points are resolved after games become
-FINAL, and Brier/log-loss/ECE/MAE are tracked. No historical calibrator is allowed
-to change live probabilities until minimum sample/slate gates and chronological
-holdout validation pass.
+frozen. V1.9.8.3 remains the observational out-of-sample calibration lab.
+V1.9.8.4 adds persistence only: atomic primary/backup server files, a session
+working copy, and compressed checksummed browser primary/backup copies merged on
+load. No historical calibrator can change live probabilities until minimum
+sample/slate gates and chronological holdout validation pass.
 '''
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ import urllib.request
 
 import slate_multi_provider_patch_v1 as slate_multi_provider
 import wnba_pra_hub_v321 as wnba_pra_v321
-import wnba_points_hub_v1983 as wnba_points_v1983
+import wnba_points_hub_v1984 as wnba_points_v1984
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -41,7 +41,7 @@ _OLD_WNBA_PLACEHOLDER = '''    else:
 '''
 
 _NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
-        from wnba_points_hub_v1983 import render_wnba_points_hub
+        from wnba_points_hub_v1984 import render_wnba_points_hub
 
         render_wnba_points_hub(
             section_header,
@@ -70,13 +70,14 @@ def _patch_inherited_app_text(value):
         "wnba_points_hub_v192", "wnba_points_hub_v193", "wnba_points_hub_v194",
         "wnba_points_hub_v195", "wnba_points_hub_v196", "wnba_points_hub_v197",
         "wnba_points_hub_v198", "wnba_points_hub_v1981", "wnba_points_hub_v1982",
+        "wnba_points_hub_v1983",
     ):
         text = text.replace(
             f"from {old_module} import render_wnba_points_hub",
-            "from wnba_points_hub_v1983 import render_wnba_points_hub",
+            "from wnba_points_hub_v1984 import render_wnba_points_hub",
         )
 
-    if "wnba_points_hub_v1983" not in text and _OLD_WNBA_PLACEHOLDER in text:
+    if "wnba_points_hub_v1984" not in text and _OLD_WNBA_PLACEHOLDER in text:
         text = text.replace(_OLD_WNBA_PLACEHOLDER, _NEW_WNBA_PLACEHOLDER, 1)
     return text.encode("utf-8") if is_bytes else text
 
@@ -95,8 +96,8 @@ def _deep_shell_check_output(*args, **kwargs):
 
 subprocess.check_output = _deep_shell_check_output
 
-# Cache-safe compatibility aliases for every legacy Points page name. V1.9.8.3
-# imports the genuine frozen V1.9.8.2 module before these aliases are installed.
+# Cache-safe compatibility aliases for every legacy Points page name. V1.9.8.4
+# imports the genuine V1.9.8.3/V1.9.8.2 modules before these aliases are installed.
 for _legacy in (
     "wnba_points_hub_v11", "wnba_points_hub_v12", "wnba_points_hub_v13",
     "wnba_points_hub_v14", "wnba_points_hub_v15", "wnba_points_hub_v151",
@@ -105,8 +106,9 @@ for _legacy in (
     "wnba_points_hub_v192", "wnba_points_hub_v193", "wnba_points_hub_v194",
     "wnba_points_hub_v195", "wnba_points_hub_v196", "wnba_points_hub_v197",
     "wnba_points_hub_v198", "wnba_points_hub_v1981", "wnba_points_hub_v1982",
+    "wnba_points_hub_v1983",
 ):
-    sys.modules[_legacy] = wnba_points_v1983
+    sys.modules[_legacy] = wnba_points_v1984
 
 
 def _load_previous_app():
@@ -128,7 +130,7 @@ if old not in source:
     raise RuntimeError("Could not locate Daily Game Picks route in previous app shell.")
 source = source.replace(old, new, 1)
 source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.7", 1)
-source = source.replace("WNBA Points V1.9.3", "WNBA Points V1.9.8.3", 1)
+source = source.replace("WNBA Points V1.9.3", "WNBA Points V1.9.8.4", 1)
 
 # Cache-safe PRA route stays pinned to the frozen V3.2.1 implementation.
 sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
@@ -137,7 +139,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v1983_calibration_lab.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v1984_durable_calibration.py", "exec"),
     globals(),
     globals(),
 )
