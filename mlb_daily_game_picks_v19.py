@@ -1,16 +1,16 @@
-"""MLB Daily Game Picks V1.9 — Step 4E Moneyline connector.
+"""MLB Daily Game Picks V1.9.1 — Moneyline connector responsiveness hotfix.
 
-Preserves V1.8.1 player-market connectors and adds the existing V16.3/V16.1/V16
-moneyline production model as a manual, slate-date cached connector. It models
-only actionable verified pregame rows and exposes both game sides to the shared
-cross-market normalizer. Sportsbook prices are not model inputs.
+Preserves V1.9 scoring and the existing V16.3/V16.1/V16 moneyline production
+model, but bounds the slate build so a slow game-model request cannot make the
+CONNECT button appear unresponsive. Sportsbook prices remain outside model inputs.
 """
 from __future__ import annotations
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 import streamlit as st
 import mlb_daily_game_picks_v181 as base
 import moneyline_hub_v16 as ml
 
-VERSION="MLB Daily Game Picks V1.9 • STEP 4E MONEYLINE CONNECTOR"
+VERSION="MLB Daily Game Picks V1.9.1 • MONEYLINE CONNECTOR HOTFIX"
 _ACTIVE_GAMES=None
 _orig_candidates=base.base._production_candidates
 
@@ -72,8 +72,11 @@ def _production_candidates(row,market):
     if market=="Moneyline":return _ml_candidates(row)
     return _orig_candidates(row,market)
 
-# Patch the V1.8 layer that owns the active production-candidate dispatcher.
 base.base._production_candidates=_production_candidates
+
+
+def _run_one(row):
+    return ml._scan_game(row,150_000)
 
 
 def _build(games):
@@ -81,23 +84,38 @@ def _build(games):
     rows=ml._available_rows(verified,include_live=False)
     results=[];errors=[]
     total=len(rows)
-    bar=st.progress(0,text=f"Moneyline: modeling games 0/{total}") if total else None
-    for i,row in enumerate(rows,1):
-        try:
-            # Standard production depth from the Moneyline page.
-            r=ml._scan_game(row,150_000)
-            if r:results.append(r)
-        except Exception as exc:
-            errors.append(f"{row.get('away_team','Away')} @ {row.get('home_team','Home')}: {type(exc).__name__}: {exc}")
-        if bar:bar.progress(i/max(total,1),text=f"Moneyline: modeling games {i}/{total}")
-    if bar:bar.empty()
+    if not total:
+        return {"rows":[],"modeled_count":0,"candidate_count":0,"errors":["No actionable verified pregame MLB games were available."],"sim_depth":150_000}
+
+    bar=st.progress(0,text=f"Moneyline: starting 0/{total} games")
+    pool=ThreadPoolExecutor(max_workers=min(4,total))
+    futs={pool.submit(_run_one,row):row for row in rows}
+    done=0
+    try:
+        for fut in as_completed(futs,timeout=55):
+            done+=1
+            row=futs[fut]
+            try:
+                r=fut.result()
+                if r:results.append(r)
+            except Exception as exc:
+                errors.append(f"{row.get('away_team','Away')} @ {row.get('home_team','Home')}: {type(exc).__name__}: {exc}")
+            bar.progress(done/max(total,1),text=f"Moneyline: modeled {done}/{total} games")
+    except TimeoutError:
+        errors.append("Moneyline build reached the 55-second safety limit; completed games were kept.")
+        for fut,row in futs.items():
+            if not fut.done():fut.cancel()
+    finally:
+        pool.shutdown(wait=False,cancel_futures=True)
+        bar.empty()
+
+    results.sort(key=lambda x:float(x.get("win_prob") or 0),reverse=True)
     return {"rows":results,"modeled_count":len(results),"candidate_count":len(results)*2,"errors":errors,"sim_depth":150_000}
 
 
 def render_daily_game_picks(games_df,section_header=None,status_info=None,team_logo=None,h=None):
     global _ACTIVE_GAMES
     _ACTIVE_GAMES=games_df
-    # Keep the inherited connector chain pointed at the same slate.
     base.base._ACTIVE_GAMES=games_df
     base.base.base._ACTIVE_GAMES=games_df
     base.base.base.base._ACTIVE_GAMES=games_df
@@ -109,16 +127,27 @@ def render_daily_game_picks(games_df,section_header=None,status_info=None,team_l
         if pack and pack.get("rows"):
             st.success(f"💰 Moneyline production connector ready • {pack.get('modeled_count',0)} games modeled • {pack.get('candidate_count',0)} team sides normalized • 150K sims/game • {day}")
         else:
-            st.info("💰 Moneyline connector is ready to build. It will run only when requested.")
+            st.info("💰 Moneyline connector is ready to build. Tap CONNECT once; a progress bar should appear immediately.")
     with c2:
         label="↻ REFRESH MONEYLINE" if pack and pack.get("rows") else "💰 CONNECT MONEYLINE"
-        if st.button(label,use_container_width=True,key=f"dgp_moneyline_connect_v19::{day}"):
-            with st.spinner("Building Moneyline V16.3 production projections for the verified slate..."):
-                try:st.session_state[key]=_build(games_df)
-                except Exception as exc:st.session_state[key]={"rows":[],"modeled_count":0,"candidate_count":0,"errors":[f"{type(exc).__name__}: {exc}"]}
+        if st.button(label,use_container_width=True,key=f"dgp_moneyline_connect_v191::{day}"):
+            st.toast("💰 Moneyline build started")
+            status=st.status("Moneyline connector is working…",expanded=True)
+            status.write("Loading verified pregame games and running V16 production models.")
+            try:
+                st.session_state[key]=_build(games_df)
+                built=st.session_state[key]
+                if built.get("rows"):
+                    status.update(label=f"Moneyline complete — {built.get('modeled_count',0)} games modeled",state="complete",expanded=False)
+                else:
+                    status.update(label="Moneyline finished with no completed models",state="error",expanded=True)
+            except Exception as exc:
+                st.session_state[key]={"rows":[],"modeled_count":0,"candidate_count":0,"errors":[f"{type(exc).__name__}: {exc}"]}
+                status.update(label=f"Moneyline error: {type(exc).__name__}",state="error",expanded=True)
             st.rerun()
 
     if pack and pack.get("errors"):
-        st.caption(f"⚠️ {len(pack['errors'])} moneyline game(s) could not be fully modeled and were skipped; no fallback probability was invented.")
-    st.caption("🔌 Step 4E: Moneyline uses the existing V16.3/V16.1/V16 production game model at Standard 150K depth. Both team sides are normalized; sportsbook prices remain display/market context only and are not model inputs.")
+        with st.expander(f"⚠️ Moneyline connector diagnostics ({len(pack['errors'])})"):
+            for err in pack["errors"]:st.caption(str(err))
+    st.caption("🔌 Step 4E hotfix: Moneyline still uses the existing V16.3/V16.1/V16 production model at Standard 150K depth, but the build is now concurrent, visibly acknowledged, and capped at 55 seconds so a slow request cannot silently hang the button.")
     return base.render_daily_game_picks(games_df,section_header,status_info,team_logo,h)
