@@ -1,36 +1,38 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.1.1 active.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2 active.
 
 Loads the current known-good app shell and preserves all seven proven MLB
 production connectors exactly at the frozen V2.1.7 baseline. WNBA development is
-active and routed through PRA V3.1.1 Step 8 on top of the proven V3.0
-schedule/roster/context/availability/minutes-role/matchup stack and V2.9 exact
-SportsGameOdds market grading.
+active and routed through PRA V3.2 Step 9 on top of the proven V3.1.1
+schedule/roster/context/availability/minutes-role/matchup/exact-market/
+empirical-correlated Monte Carlo stack.
 
 MLB frozen baseline:
 - commit 6f439a251329c588a097abc9281f0a528c3053be
 - branch mlb-v217-frozen-20260818
 
-WNBA V3.1.1 keeps:
+WNBA V3.2 keeps:
 - SportsGameOdds leagueID=WNBA using the existing SPORTSGAMEODDS_API_KEY;
 - full-game moneyline, spread and total visibility;
 - player Points, Rebounds, Assists and PRA market transport;
 - exact PRA player/game/line/book matching and same-book no-vig grading;
 - separate capped PTS/REB/AST matchup + pace adjustments;
-- H2H descriptive only; confirmed starters/lineups never inferred;
-- no fabricated markets and FINAL games excluded from grading;
+- empirical correlated PTS/REB/AST covariance from verified prior game logs;
 - actual 5,000,000 standard / 10,000,000 finalist Monte Carlo counts with
-  deterministic seed, batch count, MC standard error and convergence reporting.
+  deterministic seed, batch count, MC standard error and convergence reporting;
+- no fabricated markets and FINAL games excluded from grading.
 
-WNBA V3.1.1 fixes the empirical covariance handoff exposed by V3.1 diagnostics:
-- existing verified player-id game logs remain first priority;
-- ESPN WNBA team + normalized player-name game-summary logs are the verified
-  fallback before any independent variance is allowed;
-- PTS/REB/AST sample standard deviations and correlations are computed from the
-  actual prior game log when >=5 games are available;
-- old V3.1 stored 5M results are invalidated once so the user cannot silently
-  view fallback covariance results under the hotfix label.
+WNBA V3.2 adds Step 9:
+- BEST BET / STRONG / MONITOR / AVOID final-decision hierarchy;
+- WNBA Daily Master Card with a maximum five picks and no forced recommendations;
+- one final pick per game and no repeated player;
+- automatic stale/non-converged/OUT removal and lineup-pending monitoring;
+- Why-this-pick model/market/simulation/pregame explanations;
+- future connector slots for Points, Rebounds, Assists, Spread, Moneyline, Total.
 
-Sportsbook prices never feed back into the player projection/simulation mean.
+Step 9 consumes already-completed Monte Carlo session output only; it does not
+rerun simulations or make an additional sportsbook request. Sportsbook prices
+never feed back into the projection/simulation mean.
+
 MLB production probabilities, simulation depths, verified sportsbook market
 gates, Step 3 Pick Strength, no-vig calculations and all seven MLB connector
 formulas remain unchanged.
@@ -42,7 +44,7 @@ import sys
 import urllib.request
 
 import slate_multi_provider_patch_v1 as slate_multi_provider
-import wnba_pra_hub_v311 as wnba_pra_v311
+import wnba_pra_hub_v32 as wnba_pra_v32
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -72,11 +74,11 @@ source = source.replace(old, new, 1)
 source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.7", 1)
 
 # Cache-safe WNBA override. The inherited shell imports wnba_pra_hub_v282; map
-# that compatibility name to the fresh V3.1.1 implementation. This is a WNBA-only
+# that compatibility name to the fresh V3.2 implementation. This is a WNBA-only
 # render/import override and does not alter any frozen MLB model module.
-sys.modules["wnba_pra_hub_v282"] = wnba_pra_v311
+sys.modules["wnba_pra_hub_v282"] = wnba_pra_v32
 
 # Frozen MLB sportsbook routing stays exactly as before.
 slate_multi_provider.install()
 
-exec(compile(source, "kyre_sports_ai_mlb_v217_frozen_wnba_v311.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_mlb_v217_frozen_wnba_v32.py", "exec"), globals(), globals())
