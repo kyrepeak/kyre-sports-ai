@@ -7,9 +7,6 @@ are not modified.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from pathlib import Path
-
 import pandas as pd
 import requests
 
@@ -221,6 +218,7 @@ base.matchup = _MatchupFacade()
 _paired_points_markets = base._paired_points_markets
 _prepare = base._prepare
 _points_distribution = base._points_distribution
+_finalist_units = base._finalist_units
 run_standard = base.run_standard
 run_final = base.run_final
 combined_rows = base.combined_rows
@@ -231,7 +229,7 @@ render_points_connector = base.render_points_connector
 __all__ = [
     "MODEL_VERSION", "MODEL_SCHEMA", "STANDARD_SIMS", "FINAL_SIMS",
     "market", "sgo", "std_key", "final_key", "source_key",
-    "_paired_points_markets", "_prepare", "_points_distribution",
+    "_paired_points_markets", "_prepare", "_points_distribution", "_finalist_units",
     "run_standard", "run_final", "combined_rows", "restore_if_missing",
     "persist_if_ready", "render_points_connector",
 ]
