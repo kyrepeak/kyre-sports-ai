@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence + WNBA Rebounds V1.0 Step 1.
 
 Frozen production checkpoints:
 - MLB V2.1.7: branch mlb-v217-frozen-20260818
@@ -15,6 +15,10 @@ V1.9.8.4 adds atomic primary/backup server files, a session working copy and
 compressed checksummed browser copies. V1.9.8.4.1 fixes browser hydration/readback
 without changing model math. No historical calibrator can change live probabilities
 until minimum sample/slate gates and chronological holdout validation pass.
+
+WNBA Rebounds V1.0 is isolated and activates only Step 1: verified Eastern-date
+schedule reconciliation. No Rebounds projection, sportsbook grading or simulation
+is enabled yet.
 '''
 from __future__ import annotations
 
@@ -50,6 +54,16 @@ _NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
             h,
         )
         st.stop()
+    elif market == "Rebounds":
+        from wnba_rebounds_hub_v10 import render_wnba_rebounds_hub
+
+        render_wnba_rebounds_hub(
+            section_header,
+            status_info,
+            None,
+            h,
+        )
+        st.stop()
     else:
         section_header(f"WNBA {market}", "WNBA market module")
         st.info(f"WNBA {market} is separate from the frozen PRA Command Center and will get its own production model page.")
@@ -58,7 +72,7 @@ _NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
 
 
 def _patch_inherited_app_text(value):
-    'Patch only WNBA Points routing inside inherited app shells.'
+    'Patch only WNBA Points/Rebounds routing inside inherited app shells.'
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
 
@@ -139,7 +153,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_browser_fix.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v10.py", "exec"),
     globals(),
     globals(),
 )
