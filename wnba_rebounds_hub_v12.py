@@ -1,23 +1,19 @@
-"""WNBA Rebounds V1.2 cache-busting route wrapper.
+"""WNBA Rebounds route wrapper — current isolated build.
 
-The Step-3 implementation currently lives in ``wnba_rebounds_hub_v111`` for
-backward compatibility with the existing build chain.  This module gives the
-Streamlit router a brand-new import name and explicitly reloads that
-implementation, so an already-running app cannot keep serving the old V1.1.1
-module from ``sys.modules``.
-
-No model math is changed here; this file is routing/cache protection only.
+The stable Streamlit router still imports this module name. Route the Rebounds
+page to the newest isolated V1.3 implementation without touching frozen
+WNBA Points/PRA or MLB production modules.
 """
 from __future__ import annotations
 
 import importlib
 
-import wnba_rebounds_hub_v111 as _impl
+import wnba_rebounds_hub_v13 as _impl
 
-# Force the on-disk Step-3 code to win over any stale in-process V1.1.1 module.
+# Force current on-disk Rebounds build after Streamlit hot reloads/redeploys.
 _impl = importlib.reload(_impl)
 
-MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "WNBA REBOUNDS V1.2 • STEP 3 ROTATION MINUTES")
+MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "WNBA REBOUNDS V1.3 • STEP 4 OREB/DREB ROLE")
 
 
 def render_wnba_rebounds_hub(*args, **kwargs):
