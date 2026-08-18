@@ -1,8 +1,9 @@
-"""MLB Daily Game Picks V2.1.2.1 — live-risk correctness hotfix.
+"""MLB Daily Game Picks V2.1.2.2 — live-risk badge correctness hotfix.
 
-Keeps V2.1.2 intact while correcting lineup relevance:
+Keeps V2.1.2 intact while correcting pregame check semantics:
 - Pitcher K checks the opponent batting order, not the pitcher's own lineup.
-- game markets with incomplete lineups inside 60 minutes receive a monitor flag.
+- Any pending/unavailable lineup or weather check receives MONITOR status.
+- Critical staleness or probable-starter changes still escalate to REFRESH NOW.
 No production model or Pick Strength math changes.
 """
 from __future__ import annotations
@@ -15,7 +16,7 @@ ui = previous.ui
 controller = previous.controller
 master = previous.master
 bridge = previous.bridge
-VERSION = "MLB Daily Game Picks V2.1.2.1 • LIVE-RISK CORRECTNESS"
+VERSION = "MLB Daily Game Picks V2.1.2.2 • LIVE-RISK BADGE CORRECTNESS"
 
 
 def _lineup_context(c, games_df, snap):
@@ -64,11 +65,20 @@ def _risk_context(c, games_df, snap, ts, baseline):
 
     lineup_label, lineup_cls, lineup_detail = _lineup_context(c, games_df, snap)
     weather_label, weather_cls, weather_detail = previous._weather_context(snap)
-    if weather_cls == "warn":
-        warnings.append(("warn", weather_detail))
 
     mins = previous._minutes_to_pitch(snap)
     age = previous._build_age_minutes(ts)
+
+    # Headline status now represents completeness of the live checks, not only urgency.
+    if lineup_cls != "safe":
+        if mins is not None and mins <= 90:
+            warnings.append(("warn", f"{lineup_detail} First pitch is about {mins:.0f} minutes away."))
+        else:
+            warnings.append(("warn", lineup_detail))
+
+    if weather_cls != "safe":
+        warnings.append(("warn", weather_detail))
+
     if mins is not None:
         if mins <= 0:
             warnings.append(("critical", "Game has started or reached its scheduled start; this pregame card should no longer be treated as fresh."))
@@ -76,13 +86,6 @@ def _risk_context(c, games_df, snap, ts, baseline):
             warnings.append(("critical", f"First pitch is about {mins:.0f} minutes away and the card is {age:.0f} minutes old. Refresh before using it."))
         elif mins <= 90 and age is not None and age > 15:
             warnings.append(("warn", f"First pitch is about {mins:.0f} minutes away and the card is {age:.0f} minutes old. A refresh is recommended."))
-
-        if lineup_cls == "warn":
-            market = str(c.get("market") or "")
-            if mins <= 90 and market in previous.PLAYER_MARKETS:
-                warnings.append(("warn", f"{lineup_detail} First pitch is about {mins:.0f} minutes away."))
-            elif mins <= 60 and market not in previous.PLAYER_MARKETS:
-                warnings.append(("warn", f"{lineup_detail} First pitch is about {mins:.0f} minutes away; game-market inputs should be refreshed once lineups post."))
 
     if any(level == "critical" for level, _ in warnings):
         badge = ("🚨 REFRESH NOW", "critical")
@@ -109,5 +112,5 @@ previous._risk_context = _risk_context
 def render_daily_game_picks(games_df, section_header=None, status_info=None, team_logo=None, h=None):
     previous._lineup_context = _lineup_context
     previous._risk_context = _risk_context
-    st.caption("✅ V2.1.2.1 live-risk check: Pitcher K tracks opponent lineups; late incomplete game lineups trigger monitor status.")
+    st.caption("✅ V2.1.2.2 live-risk check: headline status stays MONITOR until required lineup/weather checks are confirmed; critical changes still escalate to REFRESH NOW.")
     return previous.render_daily_game_picks(games_df, section_header, status_info, team_logo, h)
