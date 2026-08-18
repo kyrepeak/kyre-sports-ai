@@ -1,19 +1,40 @@
-"""WNBA Points V1.5 — clean four-game page with corrected player/context handoff."""
+"""WNBA Points V1.5.1 — clean four-game page with corrected player/context handoff.
+
+Hotfix: load the original V1.3 UI helper under a private module name so Streamlit
+legacy sys.modules aliases cannot redirect the helper import back into a newer
+Points wrapper. Projection/model math is unchanged. Frozen PRA/MLB are untouched.
+"""
 from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-import wnba_points_hub_v13 as ui
 import wnba_points_v12 as points
 import wnba_schedule_v25 as schedule
 
-MODEL_VERSION = "WNBA POINTS V1.5 • FULL 4-GAME PREFLIGHT"
+
+def _load_ui_base():
+    """Load the real V1.3 helper file without consulting legacy module aliases."""
+    module_path = Path(__file__).with_name("wnba_points_hub_v13.py")
+    spec = importlib.util.spec_from_file_location("_kyre_wnba_points_hub_v13_base", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Could not load isolated WNBA Points UI helper.")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+ui = _load_ui_base()
+
+MODEL_VERSION = "WNBA POINTS V1.5.1 • FULL 4-GAME PREFLIGHT"
 PRA_FROZEN_BRANCH = ui.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = ui.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = ui.MLB_FROZEN_BRANCH
 
-# Patch only the isolated Points page globals.
+# Patch only this private Points UI helper instance. PRA/MLB are untouched.
 ui.points = points
 ui.schedule = schedule
 
@@ -27,8 +48,8 @@ def _render_header(day, slate):
     st.markdown("""
 <div style="border:1px solid #2f6381;background:linear-gradient(145deg,#091c2d,#071421);border-radius:20px;padding:16px;margin:8px 0 14px">
   <div style="font-size:10px;letter-spacing:1.35px;font-weight:950;color:#65dcff">KYRE SPORTS AI • WNBA POINTS • ISOLATED PRODUCTION PAGE</div>
-  <div style="font-size:30px;font-weight:1000;color:white;margin-top:5px">🏀 WNBA Points Command Center — V1.5</div>
-  <div style="font-size:12px;color:#93aabd;line-height:1.55;margin-top:7px">One corrected four-game slate now drives schedule, current players, matchup context, availability, SportsGameOdds matching and simulation readiness. PRA V3.2.1 and MLB V2.1.7 remain frozen.</div>
+  <div style="font-size:30px;font-weight:1000;color:white;margin-top:5px">🏀 WNBA Points Command Center — V1.5.1</div>
+  <div style="font-size:12px;color:#93aabd;line-height:1.55;margin-top:7px">One corrected four-game slate drives schedule, current players, matchup context, availability, SportsGameOdds matching and simulation readiness. PRA V3.2.1 and MLB V2.1.7 remain frozen.</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -66,10 +87,14 @@ def _render_data_handoff(day):
         c3.metric("Context teams", cdiag.get("teams", 0))
         c4.metric("Context games", cdiag.get("games", 0))
         st.caption(f"Player source: {pdiag.get('source','—')} • Context state: {cdiag.get('state','—')}")
+        if pdiag.get("error"):
+            st.error(f"Player handoff: {pdiag.get('error')}")
+        if cdiag.get("error"):
+            st.error(f"Context handoff: {cdiag.get('error')}")
 
 
 def render_wnba_points_hub(section_header=None, status_info=None, team_logo=None, h=None):
-    st.caption("🏀 WNBA Points V1.5 • full 4-game handoff • PRA V3.2.1 frozen • SportsGameOdds WNBA • MLB V2.1.7 frozen")
+    st.caption("🏀 WNBA Points V1.5.1 • full 4-game handoff • PRA V3.2.1 frozen • SportsGameOdds WNBA • MLB V2.1.7 frozen")
 
     selected = st.date_input("WNBA Points slate date", value=ui._default_day(), key="wnba_points_date_control")
     day = ui._day_string(selected)
