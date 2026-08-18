@@ -26,9 +26,12 @@ import subprocess
 import sys
 import urllib.request
 
+import streamlit as st
+
 import slate_multi_provider_patch_v1 as slate_multi_provider
 import wnba_pra_hub_v321 as wnba_pra_v321
 import wnba_points_hub_v19841 as wnba_points_v19841
+import wnba_rebounds_hub_v10 as wnba_rebounds_v10
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -37,6 +40,7 @@ RAW_URL = (
 )
 
 _ORIGINAL_CHECK_OUTPUT = subprocess.check_output
+_ORIGINAL_ST_INFO = st.info
 
 _OLD_WNBA_PLACEHOLDER = '''    else:
         section_header(f"WNBA {market}", "WNBA market module")
@@ -54,7 +58,7 @@ _POINTS_AND_REBOUNDS_PLACEHOLDER = '''    elif market == "Points":
             h,
         )
         st.stop()
-    elif market == "Rebounds":
+    elif str(market).strip().lower() == "rebounds":
         from wnba_rebounds_hub_v10 import render_wnba_rebounds_hub
 
         render_wnba_rebounds_hub(
@@ -70,7 +74,7 @@ _POINTS_AND_REBOUNDS_PLACEHOLDER = '''    elif market == "Points":
         st.stop()
 '''
 
-_REBOUNDS_ONLY_PLACEHOLDER = '''    elif market == "Rebounds":
+_REBOUNDS_ONLY_PLACEHOLDER = '''    elif str(market).strip().lower() == "rebounds":
         from wnba_rebounds_hub_v10 import render_wnba_rebounds_hub
 
         render_wnba_rebounds_hub(
@@ -83,6 +87,46 @@ _REBOUNDS_ONLY_PLACEHOLDER = '''    elif market == "Rebounds":
     else:
         section_header(f"WNBA {market}", "WNBA market module")
         st.info(f"WNBA {market} is separate from the frozen PRA Command Center and will get its own production model page.")
+        st.stop()
+'''
+
+_GENERIC_FROZEN_BODY = '''        section_header(f"WNBA {market}", "WNBA market module")
+        st.info(f"WNBA {market} is separate from the frozen PRA Command Center and will get its own production model page.")
+        st.stop()
+'''
+
+_GENERIC_OLD_BODY = '''        section_header(f"WNBA {market}", "WNBA market module")
+        st.info(f"WNBA {market} is separate from the PRA Command Center and will get its own model module.")
+        st.stop()
+'''
+
+_GENERIC_GUARDED_FROZEN_BODY = '''        if str(market).strip().lower() == "rebounds":
+            from wnba_rebounds_hub_v10 import render_wnba_rebounds_hub
+
+            render_wnba_rebounds_hub(
+                section_header,
+                status_info,
+                None,
+                h,
+            )
+            st.stop()
+        section_header(f"WNBA {market}", "WNBA market module")
+        st.info(f"WNBA {market} is separate from the frozen PRA Command Center and will get its own production model page.")
+        st.stop()
+'''
+
+_GENERIC_GUARDED_OLD_BODY = '''        if str(market).strip().lower() == "rebounds":
+            from wnba_rebounds_hub_v10 import render_wnba_rebounds_hub
+
+            render_wnba_rebounds_hub(
+                section_header,
+                status_info,
+                None,
+                h,
+            )
+            st.stop()
+        section_header(f"WNBA {market}", "WNBA market module")
+        st.info(f"WNBA {market} is separate from the PRA Command Center and will get its own model module.")
         st.stop()
 '''
 
@@ -92,9 +136,6 @@ def _patch_inherited_app_text(value):
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
 
-    # Detect whether the inherited shell already has a Points branch BEFORE
-    # compatibility imports are rewritten. This avoids falsely treating a
-    # rewritten import as proof that the route itself exists.
     has_points_route = 'elif market == "Points":' in text
 
     for old_module in (
@@ -112,12 +153,17 @@ def _patch_inherited_app_text(value):
             "from wnba_points_hub_v19841 import render_wnba_points_hub",
         )
 
-    # Rebounds must be patched independently of Points. The previous condition
-    # could skip this block after a legacy Points import was rewritten, leaving
-    # Rebounds on the generic placeholder page even though its module existed.
     if "wnba_rebounds_hub_v10" not in text and _OLD_WNBA_PLACEHOLDER in text:
         replacement = _REBOUNDS_ONLY_PLACEHOLDER if has_points_route else _POINTS_AND_REBOUNDS_PLACEHOLDER
         text = text.replace(_OLD_WNBA_PLACEHOLDER, replacement, 1)
+
+    # Belt-and-suspenders guard: even if an inherited shell has a different
+    # branch layout, the generic WNBA fallback itself cannot swallow Rebounds.
+    if _GENERIC_FROZEN_BODY in text and "str(market).strip().lower() == \"rebounds\"" not in text:
+        text = text.replace(_GENERIC_FROZEN_BODY, _GENERIC_GUARDED_FROZEN_BODY, 1)
+    if _GENERIC_OLD_BODY in text and "str(market).strip().lower() == \"rebounds\"" not in text:
+        text = text.replace(_GENERIC_OLD_BODY, _GENERIC_GUARDED_OLD_BODY, 1)
+
     return text.encode("utf-8") if is_bytes else text
 
 
@@ -134,6 +180,20 @@ def _deep_shell_check_output(*args, **kwargs):
 
 
 subprocess.check_output = _deep_shell_check_output
+
+# Final runtime fallback. If any legacy shell still reaches its generic Rebounds
+# info message, render the isolated Rebounds page instead of showing a placeholder.
+def _guarded_streamlit_info(body, *args, **kwargs):
+    text = str(body)
+    if text.startswith("WNBA Rebounds is separate from") and (
+        "production model page" in text or "model module" in text
+    ):
+        wnba_rebounds_v10.render_wnba_rebounds_hub(None, None, None, None)
+        st.stop()
+    return _ORIGINAL_ST_INFO(body, *args, **kwargs)
+
+
+st.info = _guarded_streamlit_info
 
 # Cache-safe compatibility aliases for every legacy Points page name. V1.9.8.4.1
 # imports the genuine V1.9.8.4/V1.9.8.3/V1.9.8.2 modules before aliases install.
@@ -162,7 +222,7 @@ def _load_previous_app():
             return _patch_inherited_app_text(response.read().decode("utf-8"))
 
 
-source = _load_previous_app()
+source = _patch_inherited_app_text(_load_previous_app())
 old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"
 new = "from mlb_daily_game_picks_v217_guard import render_daily_game_picks"
 if old not in source:
@@ -178,7 +238,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v10_routefix.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v10_hardroute.py", "exec"),
     globals(),
     globals(),
 )
