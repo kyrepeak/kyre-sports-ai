@@ -1,10 +1,18 @@
-"""WNBA Points V1.9.8 — hot-reload-safe enhanced candidate-card handoff.
+"""WNBA Points V1.9.8.1 — hot-reload-safe enhanced candidate-card handoff.
 
 Presentation/recovery wrapper over V1.9.7. This fixes the Streamlit hot-reload
 alias collision where the legacy compatibility map could make an import of
 wnba_points_hub_v196 resolve to the V1.9.7 wrapper instead of the real V1.9.6
-module object. We now obtain the already-loaded real enhanced module through
+module object. We obtain the already-loaded real enhanced module through
 V1.9.7's own reference (`prior.enhanced`) and never re-import that aliased name.
+
+V1.9.8.1 also fixes two presentation handoff collisions on the rich candidate
+cards. The protected Monte Carlo rows may contain placeholder `opponent` and
+usage columns that collide with the verified projection metadata during the
+visual merge. For the enhanced-card render only, those display-only placeholders
+are removed so the renderer receives the verified schedule opponent name and the
+role engine's PROJ_USG / USG_PCT values. The underlying production rows are not
+mutated and are restored immediately after rendering.
 
 No projection, SportsGameOdds, Monte Carlo, calibration, persistence, H2H, PRA,
 or MLB math is changed. Existing protected 5M/10M summaries are reused.
@@ -19,7 +27,7 @@ import streamlit as st
 
 import wnba_points_hub_v197 as prior
 
-MODEL_VERSION = "WNBA POINTS V1.9.8 • HOT-RELOAD-SAFE ENHANCED CARDS"
+MODEL_VERSION = "WNBA POINTS V1.9.8.1 • OPPONENT + USAGE DISPLAY HANDOFF"
 PRA_FROZEN_BRANCH = prior.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = prior.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = prior.MLB_FROZEN_BRANCH
@@ -34,6 +42,7 @@ points = prior.points
 hierarchy = prior.hierarchy
 
 _ORIGINAL_ENHANCED_RENDER = getattr(enhanced, "_render_final_points_board_enhanced", None)
+_ORIGINAL_COMBINED_ROWS = points.combined_rows
 _RENDER_MARKER = "_wnba_points_v198_cards_rendered"
 
 
@@ -48,22 +57,49 @@ def _current_day() -> str:
     return datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
 
 
+def _visual_candidate_rows(day):
+    """Return protected result rows with display-collision placeholders removed.
+
+    V1.9 production/calibration output remains untouched. The enhanced renderer
+    merges these rows with `_projection_meta`, which is the authoritative source
+    for verified schedule opponent names and role/usage fields. Dropping only
+    the colliding presentation columns prevents pandas `_x`/`_y` suffixes from
+    hiding those verified values from the card renderer.
+    """
+    rows = _ORIGINAL_COMBINED_ROWS(day)
+    if not isinstance(rows, pd.DataFrame) or rows.empty:
+        return rows
+    out = rows.copy()
+    display_meta_cols = ("opponent", "PROJ_USG", "USG_PCT")
+    drop = [col for col in display_meta_cols if col in out.columns]
+    if drop:
+        out = out.drop(columns=drop)
+    return out
+
+
 def _tracked_enhanced_render(day):
     day = pd.to_datetime(day).strftime("%Y-%m-%d")
     st.session_state[_RENDER_MARKER] = day
-    if callable(_ORIGINAL_ENHANCED_RENDER):
+    if not callable(_ORIGINAL_ENHANCED_RENDER):
+        st.warning("⚠️ Enhanced Points cards are waiting for the visual module to refresh. Protected simulation results remain intact.")
+        return None
+
+    # Patch only for the duration of the rich-card display call. This is a
+    # presentation merge fix; every production consumer receives the original
+    # protected rows immediately afterward.
+    live_combined = points.combined_rows
+    points.combined_rows = _visual_candidate_rows
+    try:
         return _ORIGINAL_ENHANCED_RENDER(day)
-    # Defensive fallback: the genuine V1.9.6 object should always expose the
-    # renderer, but never crash the app if a stale process somehow lacks it.
-    st.warning("⚠️ Enhanced Points cards are waiting for the visual module to refresh. Protected simulation results remain intact.")
-    return None
+    finally:
+        points.combined_rows = live_combined
 
 
 def _visual_header_v198(day, slate):
     visual._visual_css()
 
     try:
-        rows = points.combined_rows(day)
+        rows = _ORIGINAL_COMBINED_ROWS(day)
     except Exception:
         rows = pd.DataFrame()
     distributions = 0
@@ -75,8 +111,8 @@ def _visual_header_v198(day, slate):
         """
 <div class="kyre-wnba-hero">
   <div class="kyre-wnba-kicker">KYRE SPORTS AI • WNBA POINTS • VISUAL COMMAND CENTER</div>
-  <div class="kyre-wnba-title">🏀 WNBA Points Command Center — V1.9.8</div>
-  <div class="kyre-wnba-sub">Hot-reload-safe Step 2.2 • enhanced Top Points candidate cards • player headshots • team logos • descriptive H2H • expandable Why this pick? • protected 5M/10M simulation reuse. Production model math is unchanged.</div>
+  <div class="kyre-wnba-title">🏀 WNBA Points Command Center — V1.9.8.1</div>
+  <div class="kyre-wnba-sub">Step 2.2 display handoff fixed • actual opponent names • role-engine usage • enhanced Top Points candidate cards • player headshots • team logos • descriptive H2H • expandable Why this pick? • protected 5M/10M simulation reuse. Production model math is unchanged.</div>
 </div>
         """,
         unsafe_allow_html=True,
@@ -97,7 +133,7 @@ def _visual_header_v198(day, slate):
     else:
         st.warning(f"⚠️ WNBA schedule state: {state}")
 
-    st.info("✨ STEP 2.2 ACTIVE • rich Top Points cards read the existing protected production output; no new simulation is triggered by this visual layer.")
+    st.info("✨ STEP 2.2 ACTIVE • rich Top Points cards reuse the protected production output; opponent names and usage are read from verified projection metadata. No new simulation is triggered by this visual layer.")
     visual._render_matchup_cards(day)
     st.markdown(
         '<div class="kyre-engine-note">⚙️ <b>Production engine room below:</b> roster, minutes, history, matchup, Monte Carlo and calibration checks stay visible for auditability. The visual layer does not alter any projection.</div>',
@@ -145,7 +181,7 @@ def render_wnba_points_hub(section_header=None, status_info=None, team_logo=None
     # enhanced cards explicitly from the same protected rows after production UI.
     if st.session_state.get(_RENDER_MARKER) != day and callable(_ORIGINAL_ENHANCED_RENDER):
         st.divider()
-        st.caption("✨ V1.9.8 direct protected-result handoff • no new simulation is run.")
+        st.caption("✨ V1.9.8.1 direct protected-result handoff • no new simulation is run.")
         _tracked_enhanced_render(day)
     return result
 
