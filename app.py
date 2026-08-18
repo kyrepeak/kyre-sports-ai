@@ -81,4 +81,28 @@ source=source.replace("WNBA PRA V2.6","WNBA PRA V2.8.2").replace("PRA V2.6","PRA
 source=source.replace("Hit UI V13.1","Hit UI V13.3 • Matchup Explorer V2.7 • Daily Game Picks V1.9 • HR V1.1 • H+R+RBI V1.0.1 • Pitcher K V1.0.7")
 source=source.replace("Moneyline V16.2","Moneyline V16.3").replace("ML V16.2","ML V16.3").replace("Spread V15.4","Spread V15.5").replace("Totals V17.2","Totals V17.3").replace("Live V19.2","Live V19.3")
 source=source.replace("kyre_sports_ai_wnba_pra_v2_6_matchup_context_touch_nav.py","kyre_sports_ai_v2_7.py")
+
+# The V2.6 touch-navigation bridge accidentally replaces the block that used to
+# render the MLB date control. Reinsert it immediately before the MLB section so
+# the date picker stays visible directly under Sport / Market on phone and iPad.
+mlb_section_marker='''# ============================================================
+# MLB
+# ============================================================
+'''
+if "game_date = render_slate_date_control()" not in source:
+    date_control_bootstrap='''# ============================================================
+# MLB DATE CONTROL — persistent below touch navigation
+# ============================================================
+if sport == "MLB":
+    game_date = render_slate_date_control()
+    try:
+        games_df = games_for_date(game_date)
+    except Exception:
+        games_df = pd.DataFrame()
+
+'''
+    if mlb_section_marker not in source:
+        raise RuntimeError("Persistent MLB date-control bridge could not locate MLB section.")
+    source=source.replace(mlb_section_marker,date_control_bootstrap+mlb_section_marker,1)
+
 exec(compile(source,"kyre_sports_ai_v2_7.py","exec"),globals(),globals())
