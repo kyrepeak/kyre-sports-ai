@@ -44,7 +44,7 @@ _OLD_WNBA_PLACEHOLDER = '''    else:
         st.stop()
 '''
 
-_NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
+_POINTS_AND_REBOUNDS_PLACEHOLDER = '''    elif market == "Points":
         from wnba_points_hub_v19841 import render_wnba_points_hub
 
         render_wnba_points_hub(
@@ -70,11 +70,32 @@ _NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
         st.stop()
 '''
 
+_REBOUNDS_ONLY_PLACEHOLDER = '''    elif market == "Rebounds":
+        from wnba_rebounds_hub_v10 import render_wnba_rebounds_hub
+
+        render_wnba_rebounds_hub(
+            section_header,
+            status_info,
+            None,
+            h,
+        )
+        st.stop()
+    else:
+        section_header(f"WNBA {market}", "WNBA market module")
+        st.info(f"WNBA {market} is separate from the frozen PRA Command Center and will get its own production model page.")
+        st.stop()
+'''
+
 
 def _patch_inherited_app_text(value):
-    'Patch only WNBA Points/Rebounds routing inside inherited app shells.'
+    'Patch WNBA Points/Rebounds routing inside inherited app shells.'
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
+
+    # Detect whether the inherited shell already has a Points branch BEFORE
+    # compatibility imports are rewritten. This avoids falsely treating a
+    # rewritten import as proof that the route itself exists.
+    has_points_route = 'elif market == "Points":' in text
 
     for old_module in (
         "wnba_points_hub_v11", "wnba_points_hub_v12", "wnba_points_hub_v13",
@@ -91,8 +112,12 @@ def _patch_inherited_app_text(value):
             "from wnba_points_hub_v19841 import render_wnba_points_hub",
         )
 
-    if "wnba_points_hub_v19841" not in text and _OLD_WNBA_PLACEHOLDER in text:
-        text = text.replace(_OLD_WNBA_PLACEHOLDER, _NEW_WNBA_PLACEHOLDER, 1)
+    # Rebounds must be patched independently of Points. The previous condition
+    # could skip this block after a legacy Points import was rewritten, leaving
+    # Rebounds on the generic placeholder page even though its module existed.
+    if "wnba_rebounds_hub_v10" not in text and _OLD_WNBA_PLACEHOLDER in text:
+        replacement = _REBOUNDS_ONLY_PLACEHOLDER if has_points_route else _POINTS_AND_REBOUNDS_PLACEHOLDER
+        text = text.replace(_OLD_WNBA_PLACEHOLDER, replacement, 1)
     return text.encode("utf-8") if is_bytes else text
 
 
@@ -153,7 +178,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v10.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v10_routefix.py", "exec"),
     globals(),
     globals(),
 )
