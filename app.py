@@ -44,7 +44,7 @@ def _load_previous_app():
 
 source = _load_previous_app()
 old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"
-new = "from mlb_daily_game_picks_v216 import render_daily_game_picks"
+new = "from mlb_daily_game_picks_v216b import render_daily_game_picks"
 if old not in source:
     raise RuntimeError("Could not locate Daily Game Picks route in previous app shell.")
 source = source.replace(old, new, 1)
