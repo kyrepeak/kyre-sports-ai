@@ -10,6 +10,7 @@ V2.1.7 changes only Final Card decision orchestration and presentation:
 - BEST BET / STRONG / MONITOR / AVOID hierarchy;
 - stronger Why-this-pick explanations;
 - critical starter/lineup/weather/staleness conditions auto-remove a candidate;
+- confirmed hitter props must actually appear in the official starting lineup;
 - unresolved MONITOR candidates receive a small selection-priority penalty so a
   comparably strong confirmed-safe candidate can replace them;
 - Run Line/Total shared sportsbook-cache freshness is guarded.
@@ -46,7 +47,7 @@ def _load_previous_app():
 
 source = _load_previous_app()
 old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"
-new = "from mlb_daily_game_picks_v217 import render_daily_game_picks"
+new = "from mlb_daily_game_picks_v217_guard import render_daily_game_picks"
 if old not in source:
     raise RuntimeError("Could not locate Daily Game Picks route in previous app shell.")
 source = source.replace(old, new, 1)
