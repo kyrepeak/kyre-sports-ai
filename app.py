@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + Points V1.1 active.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + Points V1.3 active.
 
 Loads the current known-good wrapper chain while preserving the frozen MLB V2.1.7
 and WNBA PRA V3.2.1 checkpoints. WNBA Points is injected only when the inherited
@@ -9,7 +9,7 @@ Frozen checkpoints:
 - WNBA PRA V3.2.1: branch wnba-pra-v321-frozen-20260818
   commit 5f29fc48856a198d74bcdbde47821e55e275222a
 
-WNBA Points V1.1 is isolated from PRA. It reuses verified WNBA schedule, roster,
+WNBA Points V1.3 is isolated from PRA. It reuses verified WNBA schedule, roster,
 minutes/role, matchup context and SportsGameOdds transport, but PRA totals never
 feed the Points projection. Points is not yet fed into the shared WNBA Final Card.
 
@@ -41,7 +41,7 @@ _OLD_WNBA_PLACEHOLDER = '''    else:
 '''
 
 _NEW_WNBA_PLACEHOLDER = '''    elif market == "Points":
-        from wnba_points_hub_v11 import render_wnba_points_hub
+        from wnba_points_hub_v13 import render_wnba_points_hub
 
         render_wnba_points_hub(
             section_header,
@@ -61,7 +61,7 @@ def _patch_inherited_app_text(value):
     """Patch only the real inherited WNBA placeholder, wherever it appears in the wrapper chain."""
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
-    if "wnba_points_hub_v11" not in text and _OLD_WNBA_PLACEHOLDER in text:
+    if "wnba_points_hub_v13" not in text and _OLD_WNBA_PLACEHOLDER in text:
         text = text.replace(_OLD_WNBA_PLACEHOLDER, _NEW_WNBA_PLACEHOLDER, 1)
     return text.encode("utf-8") if is_bytes else text
 
@@ -111,7 +111,7 @@ sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_frozen_points_v11_deep_route.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_frozen_points_v13_deep_route.py", "exec"),
     globals(),
     globals(),
 )
