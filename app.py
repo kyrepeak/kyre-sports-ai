@@ -1,16 +1,17 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2 active.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 active.
 
 Loads the current known-good app shell and preserves all seven proven MLB
 production connectors exactly at the frozen V2.1.7 baseline. WNBA development is
-active and routed through PRA V3.2 Step 9 on top of the proven V3.1.1
-schedule/roster/context/availability/minutes-role/matchup/exact-market/
-empirical-correlated Monte Carlo stack.
+active and routed through PRA V3.2.1: verified schedule/rosters/context/
+availability/minutes-role/matchup, exact SportsGameOdds grading, empirical-
+correlated 5M/10M Monte Carlo, Step-9 Final Decision, Daily Master Card, and
+reload-safe completed-simulation summary persistence.
 
 MLB frozen baseline:
 - commit 6f439a251329c588a097abc9281f0a528c3053be
 - branch mlb-v217-frozen-20260818
 
-WNBA V3.2 keeps:
+WNBA V3.2.1 keeps:
 - SportsGameOdds leagueID=WNBA using the existing SPORTSGAMEODDS_API_KEY;
 - full-game moneyline, spread and total visibility;
 - player Points, Rebounds, Assists and PRA market transport;
@@ -19,20 +20,19 @@ WNBA V3.2 keeps:
 - empirical correlated PTS/REB/AST covariance from verified prior game logs;
 - actual 5,000,000 standard / 10,000,000 finalist Monte Carlo counts with
   deterministic seed, batch count, MC standard error and convergence reporting;
+- BEST BET / STRONG / MONITOR / AVOID Step-9 decision hierarchy;
+- WNBA Daily Master Card, max five and never forced;
 - no fabricated markets and FINAL games excluded from grading.
 
-WNBA V3.2 adds Step 9:
-- BEST BET / STRONG / MONITOR / AVOID final-decision hierarchy;
-- WNBA Daily Master Card with a maximum five picks and no forced recommendations;
-- one final pick per game and no repeated player;
-- automatic stale/non-converged/OUT removal and lineup-pending monitoring;
-- Why-this-pick model/market/simulation/pregame explanations;
-- future connector slots for Points, Rebounds, Assists, Spread, Moneyline, Total.
+V3.2.1 adds reload-safe Step-8 summary persistence:
+- only completed Monte Carlo summaries/diagnostics are stored, never raw draws;
+- browser localStorage plus compressed server-disk fallback;
+- same-date/model-schema validation before restore;
+- restored simulations are regraded against the current exact PRA market snapshot
+  when available, without rerunning the basketball simulation;
+- a new completed 5M/10M pass replaces the saved snapshot automatically.
 
-Step 9 consumes already-completed Monte Carlo session output only; it does not
-rerun simulations or make an additional sportsbook request. Sportsbook prices
-never feed back into the projection/simulation mean.
-
+Sportsbook prices never feed back into the projection/simulation distribution.
 MLB production probabilities, simulation depths, verified sportsbook market
 gates, Step 3 Pick Strength, no-vig calculations and all seven MLB connector
 formulas remain unchanged.
@@ -44,7 +44,7 @@ import sys
 import urllib.request
 
 import slate_multi_provider_patch_v1 as slate_multi_provider
-import wnba_pra_hub_v32 as wnba_pra_v32
+import wnba_pra_hub_v321 as wnba_pra_v321
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -74,11 +74,11 @@ source = source.replace(old, new, 1)
 source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.7", 1)
 
 # Cache-safe WNBA override. The inherited shell imports wnba_pra_hub_v282; map
-# that compatibility name to the fresh V3.2 implementation. This is a WNBA-only
+# that compatibility name to the fresh V3.2.1 implementation. This is a WNBA-only
 # render/import override and does not alter any frozen MLB model module.
-sys.modules["wnba_pra_hub_v282"] = wnba_pra_v32
+sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
 
 # Frozen MLB sportsbook routing stays exactly as before.
 slate_multi_provider.install()
 
-exec(compile(source, "kyre_sports_ai_mlb_v217_frozen_wnba_v32.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_mlb_v217_frozen_wnba_v321.py", "exec"), globals(), globals())
