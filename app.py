@@ -1,8 +1,8 @@
-'''Kyre Sports AI entrypoint — Daily Game Picks V2.1.2.1.
+'''Kyre Sports AI entrypoint — Daily Game Picks V2.1.2.2.
 
 Loads the current known-good app shell, preserving the full MLB/WNBA system and
 all seven proven MLB production connectors, then routes Daily Game Picks through
-V2.1.2.1 for market-gap context plus official MLB live pregame risk intelligence.
+V2.1.2.2 for market-gap context plus official MLB live pregame risk intelligence.
 
 V2.1.1 decision-screen projections/odds context, V2.1.0 bounded sportsbook
 resume, V2.0.8 one-tap orchestration, V2.0.7 market-neutral normalization,
@@ -40,6 +40,6 @@ new = "from mlb_daily_game_picks_v2121 import render_daily_game_picks"
 if old not in source:
     raise RuntimeError("Could not locate Daily Game Picks route in previous app shell.")
 source = source.replace(old, new, 1)
-source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.2.1", 1)
+source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.2.2", 1)
 
-exec(compile(source, "kyre_sports_ai_daily_game_picks_v2121.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_daily_game_picks_v2122.py", "exec"), globals(), globals())
