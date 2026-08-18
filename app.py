@@ -1,14 +1,13 @@
-"""Kyre Sports AI entrypoint — Daily Game Picks V2.0.9.
+"""Kyre Sports AI entrypoint — Daily Game Picks V2.1.0.
 
 Loads the current known-good app shell, preserving the full MLB/WNBA system and
 all seven proven MLB production connectors, then routes Daily Game Picks through
-V2.0.9 for a polished mobile Final Card experience with official MLB team logos,
-last-built timestamps, quota-safe display auto-refresh, confidence badges,
-compact market leaders, and a Final Card / Full Dashboard switch.
+V2.1.0 for bounded sportsbook resume behavior on Run Line/Total while keeping
+the V2.0.9 polished mobile Final Card experience.
 
 V2.0.8 one-tap orchestration, V2.0.7 market-neutral normalization, Step 5/6
-selection rules, production model math, sportsbook gates, simulation depths, and
-identity firewalls remain unchanged.
+selection rules, production model math, sportsbook verification gates, simulation
+depths, team logos, confidence badges, and identity firewalls remain unchanged.
 """
 from __future__ import annotations
 
@@ -36,10 +35,10 @@ def _load_previous_app():
 
 source = _load_previous_app()
 old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"
-new = "from mlb_daily_game_picks_v209 import render_daily_game_picks"
+new = "from mlb_daily_game_picks_v210 import render_daily_game_picks"
 if old not in source:
     raise RuntimeError("Could not locate Daily Game Picks route in previous app shell.")
 source = source.replace(old, new, 1)
-source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.0.9", 1)
+source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.0", 1)
 
-exec(compile(source, "kyre_sports_ai_daily_game_picks_v209.py", "exec"), globals(), globals())
+exec(compile(source, "kyre_sports_ai_daily_game_picks_v210.py", "exec"), globals(), globals())
