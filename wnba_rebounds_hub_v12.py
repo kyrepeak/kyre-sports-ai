@@ -1,19 +1,19 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to V1.9. Steps 1-9 remain preserved through the verified V1.8.4
-chain. V1.9 adds Step 10 pace + expected shot volume using the same six-hour
-ESPN team-stat payload already shared by Steps 7-8, with direct pace preferred
-and a verified FGA + 0.44*FTA - OREB + TOV possession fallback when needed.
-Frozen Points/PRA/MLB modules remain untouched.
+Route directly to V2.0. Steps 1-10 remain preserved through the verified V1.9
+chain. V2.0 adds Step 11 lineup effects / rebound competition using only the
+verified active rotation, projected minutes and Step-6 rebound-capture baseline.
+It adds zero normal-load network requests and does not invent exact five-player
+lineup overlap. Frozen Points/PRA/MLB modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v19 as _impl
+import wnba_rebounds_hub_v20 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V1.9 • STEP 10 PACE + EXPECTED SHOT VOLUME",
+    "WNBA REBOUNDS V2.0 • STEP 11 LINEUP EFFECTS / REBOUND COMPETITION",
 )
 
 
