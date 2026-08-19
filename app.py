@@ -31,6 +31,8 @@ import streamlit as st
 
 import slate_multi_provider_patch_v1 as slate_multi_provider
 import wnba_pra_hub_v321 as wnba_pra_v321
+import wnba_pra_hub_v36 as wnba_pra_v36
+import wnba_final_points_connector_v2 as wnba_final_points_v2
 import wnba_points_hub_v19841 as wnba_points_v19841
 import wnba_rebounds_hub_v12 as wnba_rebounds_v12
 
@@ -243,14 +245,25 @@ source = source.replace(old, new, 1)
 source = source.replace("Daily Game Picks V1.9.8", "Daily Game Picks V2.1.7", 1)
 source = source.replace("WNBA Points V1.9.3", "WNBA Points V1.9.8.4.1", 1)
 
-# Cache-safe PRA route stays pinned to the frozen V3.2.1 implementation.
+# Cache-safe PRA route stays pinned through the V3.2.1 compatibility entrypoint.
 sys.modules["wnba_pra_hub_v282"] = wnba_pra_v321
+
+# Runtime cache-bust for Final Decision Step 2. A long-lived Streamlit process
+# may still hold the prior V3.6 module object that referenced the Step-1 connector.
+# Rebind only that connector reference and reinstall the Final Decision read/UI
+# hooks. This does not run a model, regrade a row, or touch Rebounds/MLB.
+wnba_pra_v36.points_final_connector = wnba_final_points_v2
+try:
+    wnba_pra_v321._impl.points_final_connector = wnba_final_points_v2
+except Exception:
+    pass
+wnba_final_points_v2.install()
 
 # Frozen MLB sportsbook routing stays exactly as before.
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v12_step3.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v12_step3_finalpoints_v2.py", "exec"),
     globals(),
     globals(),
 )
