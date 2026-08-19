@@ -4,6 +4,11 @@ Step 1 only: make the selected WNBA slate trustworthy before any additional
 player/model work. The engine probes multiple WNBA schedule paths, validates the
 selected date and WNBA team IDs, and distinguishes a verified off-day from a
 provider failure. It never silently converts a broken feed into "0 games".
+
+2026-08-19 hotfix: WNBA CDN gameDateTimeUTC values are converted to Eastern time
+before assigning a slate date. Provider candidates are then reconciled by
+matchup signature so a UTC rollover or stale single provider cannot silently
+replace the consensus daily slate.
 """
 from __future__ import annotations
 
@@ -52,6 +57,33 @@ def _event_date_et(value) -> str:
         return ts.tz_convert(ET).strftime("%Y-%m-%d")
     except Exception:
         return transport.base._safe_date(value) or ""
+
+
+def _cdn_game_date(game: dict, block_date=None) -> str:
+    """Return the basketball slate date in America/New_York.
+
+    The WNBA CDN exposes gameDateTimeUTC. Taking YYYY-MM-DD directly from that
+    timestamp shifts evening games to the next calendar day. Always convert the
+    UTC timestamp to ET first. If only the legacy EST/local field exists, parse
+    it as Eastern local time rather than pretending it is UTC.
+    """
+    raw_utc = game.get("gameDateTimeUTC")
+    if raw_utc:
+        return _event_date_et(raw_utc)
+
+    raw_est = game.get("gameDateTimeEst")
+    if raw_est:
+        try:
+            ts = pd.to_datetime(raw_est, errors="raise")
+            if getattr(ts, "tzinfo", None) is None:
+                ts = ts.tz_localize(ET)
+            else:
+                ts = ts.tz_convert(ET)
+            return ts.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    return transport.base._safe_date(block_date) or ""
 
 
 def _request_json(provider: str, url: str, *, params=None, timeout=8, attempts=2):
@@ -124,10 +156,9 @@ def _parse_cdn(payload) -> tuple[pd.DataFrame, dict]:
             if not guarded._is_wnba_team_id(away_id) or not guarded._is_wnba_team_id(home_id):
                 rejected += 1
                 continue
-            raw_dt = game.get("gameDateTimeUTC") or game.get("gameDateTimeEst") or block_date
             rows.append({
                 "game_id": str(game.get("gameId") or game.get("gameID") or ""),
-                "game_date": transport.base._safe_date(raw_dt) or transport.base._safe_date(block_date),
+                "game_date": _cdn_game_date(game, block_date),
                 "first_tip_et": transport._tip_et(game),
                 "status": transport.base._status_bucket(game.get("gameStatus"), game.get("gameStatusText")),
                 "status_text": str(game.get("gameStatusText") or ""),
@@ -194,6 +225,19 @@ def _selected(frame: pd.DataFrame, day_str: str) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
+def _slate_signature(frame: pd.DataFrame):
+    """Provider-independent matchup signature for the selected local date."""
+    if frame is None or frame.empty:
+        return tuple()
+    pairs = []
+    for _, row in frame.iterrows():
+        try:
+            pairs.append((int(row.get("away_team_id") or 0), int(row.get("home_team_id") or 0)))
+        except Exception:
+            continue
+    return tuple(sorted(set(pairs)))
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def _verified_schedule(day_str: str):
     day_str = pd.to_datetime(day_str).strftime("%Y-%m-%d")
@@ -207,12 +251,13 @@ def _verified_schedule(day_str: str):
     if payload is not None:
         frame, counts = _parse_cdn(payload)
         meta.update(counts)
-        meta["selected_games"] = len(_selected(frame, day_str))
+        selected = _selected(frame, day_str)
+        meta["selected_games"] = len(selected)
         meta["parse_ok"] = True
         if len(frame):
             season_sources_ok += 1
-        if meta["selected_games"]:
-            selected_candidates.append((0, _selected(frame, day_str), "WNBA official CDN"))
+        if len(selected):
+            selected_candidates.append((0, selected, "WNBA official CDN"))
     else:
         meta.update({"raw_games": 0, "valid_games": 0, "rejected_games": 0, "selected_games": 0, "parse_ok": False})
     attempts.append(meta)
@@ -261,11 +306,24 @@ def _verified_schedule(day_str: str):
         meta.update({"raw_games": 0, "valid_games": 0, "rejected_games": 0, "selected_games": 0, "parse_ok": False})
     attempts.append(meta)
 
+    agreement = 0
+    signature_groups = {}
     if selected_candidates:
-        selected_candidates.sort(key=lambda x: x[0])
-        _, schedule, chosen = selected_candidates[0]
-        confirming = [m["provider"] for m in attempts if int(m.get("selected_games") or 0) > 0]
-        state = "VERIFIED"
+        for priority, candidate, source in selected_candidates:
+            signature = _slate_signature(candidate)
+            signature_groups.setdefault(signature, []).append((priority, candidate, source))
+
+        # Prefer the slate supported by the most independent paths. Provider
+        # priority only breaks ties after agreement count is considered.
+        best_signature, members = max(
+            signature_groups.items(),
+            key=lambda item: (len(item[1]), -min(x[0] for x in item[1])),
+        )
+        members.sort(key=lambda x: x[0])
+        _, schedule, chosen = members[0]
+        confirming = [x[2] for x in members]
+        agreement = len(members)
+        state = "VERIFIED" if agreement >= 2 or len(selected_candidates) == 1 else "PROVIDER_CONFLICT"
     elif season_sources_ok:
         schedule, chosen, confirming = _empty_schedule(), "season schedule verification", []
         state = "VERIFIED_OFF_DAY"
@@ -285,6 +343,11 @@ def _verified_schedule(day_str: str):
         "teams": len(valid_team_ids),
         "chosen_source": chosen,
         "confirming_sources": confirming,
+        "source_agreement": agreement,
+        "candidate_slates": {
+            "|".join(f"{a}-{h}" for a, h in signature): [x[2] for x in members]
+            for signature, members in signature_groups.items()
+        },
         "season_sources_ok": season_sources_ok,
         "attempts": attempts,
     }
