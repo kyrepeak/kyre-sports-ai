@@ -1,19 +1,18 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to V2.1. Steps 1-11 remain preserved through the verified V2.0
-chain. V2.1 adds Step 12 player-vs-opponent rebound history using immutable ESPN
-PLAYER_ID joins and completed current-team matchup-series box scores from the
-current and previous season. Verified no-sample players remain explicitly labeled;
-no history is guessed. Frozen Points/PRA/MLB modules remain untouched.
+Route directly to V2.2. Steps 1-12 remain preserved through the verified V2.1
+chain. V2.2 adds Step 13 exact SportsGameOdds WNBA rebound-line ingestion with
+bookmaker separation, exact same-book/same-line O/U pairing, verified NO MARKET
+states, and no consensus substitution. Frozen Points/PRA/MLB modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v21 as _impl
+import wnba_rebounds_hub_v22 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V2.1 • STEP 12 PLAYER VS OPPONENT REBOUND HISTORY",
+    "WNBA REBOUNDS V2.2 • STEP 13 EXACT SPORTSGAMEODDS REBOUND LINES",
 )
 
 
