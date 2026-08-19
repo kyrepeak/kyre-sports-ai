@@ -55,7 +55,12 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
             pre_state = integrity.current_basketball_state(pre_day)
             integrity.invalidate_stale_session(pre_day, pre_state)
         except Exception as exc:
+            # Fail closed. Never let an old 5M/10M row survive merely because the
+            # fresh availability preflight itself had a provider/parser problem.
+            st.session_state.pop(persist.std_key(pre_day), None)
+            st.session_state.pop(persist.final_key(pre_day), None)
             st.session_state[f"wnba_pra_v33_preflight_error::{_day_key(pre_day)}"] = type(exc).__name__
+            st.session_state[f"wnba_pra_v33_invalidated::{_day_key(pre_day)}"] = "availability preflight failed; stale simulation removed"
 
     # Render the proven Steps 1-8 / actual Monte Carlo engine with V3.3 runtime
     # availability guards installed underneath it.
