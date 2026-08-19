@@ -2,15 +2,16 @@
 
 The historical V3.2.1 implementation remains preserved in
 wnba_pra_hub_v321_frozen.py and the frozen branch. Main now routes PRA to
-V3.5.1, which retains the V3.4.1 Eastern-date slate + multi-source availability
-repairs, adds lineup-aware targeted 5M/10M finalization, and requires a completed
-10M finalist pass before the Daily Master Card can count a row FINAL READY.
+V3.5.2, which preserves the V3.5.1 Eastern-date slate, multi-source availability,
+lineup-aware targeted 5M/10M finalization and strict 10M Final Ready gate, while
+adding presentation-only player/headshot/team-logo cards to the Preliminary PRA
+Over Board. Rebounds and MLB are untouched.
 """
 from __future__ import annotations
 
-import wnba_pra_hub_v351 as _impl
+import wnba_pra_hub_v352 as _impl
 
-MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "PRA V3.5.1 • STRICT 10M FINAL READY")
+MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "PRA V3.5.2 • VISUAL PRELIMINARY PRA BOARD")
 MLB_FROZEN_BASELINE = _impl.MLB_FROZEN_BASELINE
 MLB_FROZEN_BRANCH = _impl.MLB_FROZEN_BRANCH
 
