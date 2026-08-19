@@ -181,5 +181,13 @@ def install():
     availability.clear_availability_cache = clear_availability_cache_v34
     availability._v34_rotowire_installed = True
 
+    # If the previous V3.3 page was already open in this Streamlit process, its
+    # 90-second diagnostics cache may contain pre-RotoWire statuses. Flush it once
+    # at install so V3.4's first render is guaranteed to rebuild availability.
+    try:
+        original_clear()
+    except Exception:
+        pass
+
 
 __all__ = ["install", "rotowire_today_snapshot", "ROTOWIRE_LINEUPS"]
