@@ -17,6 +17,16 @@ import urllib.request
 
 import wnba_daily_picks_hub_v5 as wnba_daily_picks_v5
 
+# Step 5 imports Step 4 as its UI compatibility layer. Step 4 itself keeps the
+# original Step-3 presentation helpers on its nested `ui` module. Promote only
+# those display helpers so Step 5 can render without reaching into production
+# state or changing any model behavior.
+_v4_ui = getattr(wnba_daily_picks_v5, "ui", None)
+_v3_ui = getattr(_v4_ui, "ui", None) if _v4_ui is not None else None
+for _helper in ("_status_card", "_pra_preview_display", "_points_preview_display"):
+    if _v4_ui is not None and not hasattr(_v4_ui, _helper) and _v3_ui is not None and hasattr(_v3_ui, _helper):
+        setattr(_v4_ui, _helper, getattr(_v3_ui, _helper))
+
 # V5 imports the real V4 module before this alias is installed. The preserved
 # Step-4 entrypoint asks for `wnba_daily_picks_hub_v4`; it therefore receives V5
 # while every PRA / Points / Rebounds / MLB production route stays preserved.
