@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence + WNBA Rebounds V1.2 Step 3 + WNBA Daily Picks V1 Step 1 isolated shell.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence + WNBA Rebounds V1.2 Step 3 + WNBA Daily Picks V2 Step 2 PRA read-only.
 
 Frozen production checkpoints:
 - MLB V2.1.7: branch mlb-v217-frozen-20260818
@@ -21,8 +21,11 @@ current-roster + structured injury/status gate, then adds the verified Step 3
 rotation-minutes layer. No rebound projection, sportsbook grading or simulation
 is enabled yet.
 
-WNBA Daily Picks V1 Step 1 is a new isolated display-only shell. It imports no
-PRA, Points or Rebounds production model and runs no network/model/simulation work.
+WNBA Daily Picks V2 preserves the isolated Step-1 shell and adds one passive PRA
+connector. It reads only an already-completed same-day PRA Step-8 payload from
+Streamlit session state. It imports no PRA production module, launches no network
+or simulation work, never restores/regrades/refreshes PRA, and performs zero PRA
+session-state writes. Points and Rebounds remain paused.
 '''
 from __future__ import annotations
 
@@ -38,7 +41,7 @@ import wnba_pra_hub_v36 as wnba_pra_v36
 import wnba_final_points_connector_v3 as wnba_final_points_v3
 import wnba_points_hub_v19841 as wnba_points_v19841
 import wnba_rebounds_hub_v12 as wnba_rebounds_v12
-import wnba_daily_picks_hub_v1 as wnba_daily_picks_v1
+import wnba_daily_picks_hub_v2 as wnba_daily_picks_v2
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -143,9 +146,9 @@ def _patch_inherited_app_text(value):
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
 
-    # Step 1 Daily Picks: add only the navigation option. Routing is handled by
-    # the guarded Streamlit info fallback below, keeping this new page isolated
-    # from every existing production model route.
+    # Daily Picks remains a separate navigation route. Its renderer is handled
+    # by the guarded Streamlit info fallback below so the new page cannot alter
+    # any inherited PRA/Points/Rebounds production route.
     text = text.replace(
         '["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total"]',
         '["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total", "Daily Picks"]',
@@ -208,8 +211,8 @@ def _deep_shell_check_output(*args, **kwargs):
 subprocess.check_output = _deep_shell_check_output
 
 # Final runtime fallback. Legacy shells route unfinished WNBA markets through
-# st.info. Intercept only Rebounds and the new Daily Picks shell; all other
-# inherited behavior stays untouched.
+# st.info. Intercept only Rebounds and Daily Picks; all other inherited behavior
+# stays untouched.
 def _guarded_streamlit_info(body, *args, **kwargs):
     text = str(body)
     if text.startswith("WNBA Rebounds is separate from") and (
@@ -220,7 +223,7 @@ def _guarded_streamlit_info(body, *args, **kwargs):
     if text.startswith("WNBA Daily Picks is separate from") and (
         "production model page" in text or "model module" in text
     ):
-        wnba_daily_picks_v1.render_wnba_daily_picks_hub(None, None, None, None)
+        wnba_daily_picks_v2.render_wnba_daily_picks_hub(None, None, None, None)
         st.stop()
     return _ORIGINAL_ST_INFO(body, *args, **kwargs)
 
@@ -282,7 +285,7 @@ wnba_final_points_v3.install()
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v12_step3_daily_picks_v1_step1.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v12_step3_daily_picks_v2_step2_pra_readonly.py", "exec"),
     globals(),
     globals(),
 )
