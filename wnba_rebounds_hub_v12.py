@@ -1,19 +1,19 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to V1.8.4. Steps 1-4 remain unchanged. V1.8.4 stabilizes the
-Step-5 cold-start gate by reusing already-verified Step-4 PLAYER_ID rebound
-history only when the fast Step-5 player-pool reconciliation is sparse. It adds
-zero new network requests and preserves the V1.8.2/V1.8.3 Step-9 repairs.
+Route directly to V1.9. Steps 1-9 remain preserved through the verified V1.8.4
+chain. V1.9 adds Step 10 pace + expected shot volume using the same six-hour
+ESPN team-stat payload already shared by Steps 7-8, with direct pace preferred
+and a verified FGA + 0.44*FTA - OREB + TOV possession fallback when needed.
 Frozen Points/PRA/MLB modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v184 as _impl
+import wnba_rebounds_hub_v19 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V1.8.4 • STEP 5 COLD-START COVERAGE STABILIZATION",
+    "WNBA REBOUNDS V1.9 • STEP 10 PACE + EXPECTED SHOT VOLUME",
 )
 
 
