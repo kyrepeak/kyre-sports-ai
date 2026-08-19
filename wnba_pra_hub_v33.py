@@ -5,6 +5,13 @@ weights, Monte Carlo counts and market math stay unchanged. V3.3 repairs the
 state plumbing around them: stronger availability precedence, current roster
 status fallback, fail-closed provider coverage, downstream OUT/uncertain gates,
 and fingerprint-aware 5M/10M persistence.
+
+Final Decision dashboard note:
+- Step 9 now renders on every verified slate before a PRA Monte Carlo pass exists;
+- rendering the dashboard never launches a simulation or sportsbook request;
+- PRA stays WAITING until a fingerprint-valid 5M payload exists;
+- independently completed connected markets may still report their own state;
+- stale/unverified PRA rows remain fail-closed exactly as before.
 """
 from __future__ import annotations
 
@@ -94,21 +101,25 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
     integrity.render_integrity_panel(day, state)
     persist.render_persistence_status(day, state)
 
-    # Final Card is explicitly fail-closed. Diagnostic Steps 1-8 may remain
-    # visible during provider trouble, but stale/unverified rows cannot become a
-    # production recommendation.
-    if _has_valid_mc(day, state):
-        final.render_final_decision(day)
-    else:
-        st.markdown("### 🏁 Step 9 — Final Decision / Daily Master Card")
+    # Step 9 is a dashboard, not a simulation gate. Always render it so each
+    # connected market can report its own independent state. The Final Decision
+    # renderer is read-only: it consumes only already-completed stored outputs.
+    # A missing PRA 5M therefore shows WAITING rather than hiding the dashboard.
+    has_valid_pra_mc = _has_valid_mc(day, state)
+    final.render_final_decision(day)
+
+    # Preserve the V3.3 fail-closed PRA safety messages underneath the persistent
+    # dashboard. These warnings concern the PRA feed only; they do not suppress a
+    # separately verified connected market such as Points.
+    if not has_valid_pra_mc:
         if not state.get("safe"):
-            st.error("⛔ FINAL CARD LOCKED • live injury/availability verification is incomplete. Recheck availability before using PRA picks.")
+            st.error("⛔ PRA FEED LOCKED • live injury/availability verification is incomplete. Recheck availability before using PRA picks.")
         else:
             invalidated = st.session_state.get(f"wnba_pra_v33_invalidated::{_day_key(day)}")
             if invalidated:
-                st.warning(f"🔁 FINAL CARD NEEDS A FRESH 5M PASS • {invalidated}.")
+                st.warning(f"🔁 PRA FEED NEEDS A FRESH 5M PASS • {invalidated}.")
             else:
-                st.info("Run the 5,000,000 standard PRA simulations after the verified injury/minutes/role check to unlock the Final Card.")
+                st.info("⏳ PRA WAITING FOR 5M • Final Decision stays visible. Run the standard PRA simulation only when you want to populate the PRA feed.")
 
     st.caption(
         "⚡ V3.3 integrity repair • OUT/INACTIVE/DOUBTFUL zeroed before 200 team-minute redistribution • "
