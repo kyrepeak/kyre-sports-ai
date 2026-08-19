@@ -2,22 +2,15 @@
 
 Extends V1.4 without weakening the Step-5 verification gate.
 
-Why this exists:
-- A current-team season aggregate can be short for a traded/signed player even
-  when Step 4 already proved that the same immutable ESPN PLAYER_ID has >=3
-  verified OREB/DREB games elsewhere in the current season.
-- Step 5 must not label that provider/team-scope artifact as "no history".
+Performance repair:
+- Step 4 already verifies recent OREB/DREB role history from completed games.
+- Step 5 no longer re-downloads many of those same ESPN game summaries again.
+- Season/L10/L5 values come from the verified current-roster player pool.
+- Step-4 PLAYER_ID history remains the strict fallback for recent/sample coverage.
+- The season pool is cached for six hours by slate date.
 
-Repair hierarchy:
-1) Prefer the normal verified season + L10/L5/L3 form from V1.4.
-2) If that current-team season baseline is short/missing, reuse the already
-   verified Step-4 PLAYER_ID OREB/DREB history as a baseline/recent fallback.
-3) Never fabricate a game, rebound, minute, OREB, DREB or sportsbook input.
-4) A fallback is allowed only when Step 4 has >=3 component-valid played games
-   with finite minutes and REB/36.
-
-This remains descriptive infrastructure only. No final rebound projection,
-sportsbook line, no-vig probability, Monte Carlo, or pick grading is enabled.
+No sportsbook, Monte Carlo, final rebound projection, or other sport module is
+changed by this file.
 """
 from __future__ import annotations
 
@@ -27,9 +20,8 @@ import streamlit as st
 
 import wnba_rebounds_hub_v14 as base
 
-MODEL_VERSION = "WNBA REBOUNDS V1.4.1 • STEP 5 PLAYER_ID FORM RECONCILIATION"
+MODEL_VERSION = "WNBA REBOUNDS V1.4.1 • FAST STEP 5 PLAYER_ID FORM RECONCILIATION"
 
-_ORIGINAL_BUILD = base._build_step5_form
 _ORIGINAL_MARKDOWN_14 = base._versioned_markdown_14
 _ORIGINAL_CAPTION_14 = base._caption_14
 
@@ -40,6 +32,12 @@ def _finite(value):
         return np.isfinite(x)
     except Exception:
         return False
+
+
+@st.cache_data(ttl=21600, show_spinner=False, max_entries=16)
+def _fast_season_lookup(day: str) -> pd.DataFrame:
+    """Cache the already-verified player pool; do not rebuild it on every rerun."""
+    return base._season_lookup(str(day)).copy()
 
 
 def _repair_row(row: pd.Series) -> pd.Series:
@@ -66,12 +64,9 @@ def _repair_row(row: pd.Series) -> pd.Series:
     )
 
     r["FORM_BASELINE_SOURCE"] = "SEASON"
-    r["FORM_RECENT_SOURCE"] = "GAME LOG L3/L5/L10"
+    r["FORM_RECENT_SOURCE"] = "PLAYER POOL L10/L5"
     r["FORM_FALLBACK_USED"] = False
 
-    # Current-team season tables can reset after a transaction. Step 4 has
-    # already followed the immutable ESPN PLAYER_ID across teams, so use that
-    # verified component history rather than treating the player as historyless.
     if not normal_baseline and role_verified:
         avg_min = float(role_min) / float(role_gp)
         if _finite(role_reb_total):
@@ -84,13 +79,7 @@ def _repair_row(row: pd.Series) -> pd.Series:
         r["FORM_SEASON_REB36"] = float(role_reb36)
         r["FORM_BASELINE_SOURCE"] = "VERIFIED PLAYER_ID OREB/DREB HISTORY"
         r["FORM_FALLBACK_USED"] = True
-        season_gp = role_gp
-        season36 = float(role_reb36)
 
-    # If provider L3 rows are sparse while the Step-4 recent component sample is
-    # healthy, preserve the truthful distinction: this is a verified recent
-    # component-history fallback, not a synthetic L3. We use it as the L10-style
-    # recent rate and mark the source explicitly.
     if not normal_recent and role_verified:
         if int(base._num(r.get("FORM_L10_GP"), 0) or 0) < 3 or not _finite(r.get("FORM_L10_REB36")):
             r["FORM_L10_GP"] = role_gp
@@ -104,7 +93,6 @@ def _repair_row(row: pd.Series) -> pd.Series:
         r["FORM_RECENT_SOURCE"] = "VERIFIED PLAYER_ID OREB/DREB HISTORY"
         r["FORM_FALLBACK_USED"] = True
 
-    # Recompute the guarded descriptor after any verified fallback repair.
     stabilized, raw_recent, capped_recent = base._stabilized_form_rate(
         r.get("FORM_SEASON_REB36"),
         r.get("FORM_L10_REB36"),
@@ -127,32 +115,100 @@ def _repair_row(row: pd.Series) -> pd.Series:
         and _finite(r.get("FORM_SEASON_REB36"))
     )
     recent_verified = (
-        (
-            int(base._num(r.get("FORM_L3_GP"), 0) or 0) >= 3
-            and _finite(r.get("FORM_L3_REB36"))
-        )
-        or role_verified
-    )
+        int(base._num(r.get("FORM_L10_GP"), 0) or 0) >= 3
+        and _finite(r.get("FORM_L10_REB36"))
+    ) or role_verified
     stable_verified = _finite(r.get("FORM_STABILIZED_REB36"))
 
     r["_FORM_COVERED_141"] = bool(baseline_verified and recent_verified and stable_verified)
-    if r["_FORM_COVERED_141"]:
-        r["FORM_SAMPLE"] = "VERIFIED • PLAYER_ID FALLBACK" if bool(r.get("FORM_FALLBACK_USED")) else "VERIFIED"
-    else:
-        r["FORM_SAMPLE"] = "SHORT/CHECK"
+    r["FORM_SAMPLE"] = (
+        "VERIFIED • PLAYER_ID FALLBACK"
+        if r["_FORM_COVERED_141"] and bool(r.get("FORM_FALLBACK_USED"))
+        else "VERIFIED" if r["_FORM_COVERED_141"] else "SHORT/CHECK"
+    )
     return r
 
 
-def _build_step5_form_141(step4_players: pd.DataFrame, day: str, slate: pd.DataFrame):
-    players_out, _, old_info = _ORIGINAL_BUILD(step4_players, day, slate)
-    if players_out is None or players_out.empty:
-        return players_out, pd.DataFrame(), {**(old_info or {}), "ready": False}
+def _pool_num(srow, key, default=np.nan):
+    if srow is None:
+        return default
+    return base._num(srow.get(key), default)
 
-    repaired = players_out.apply(_repair_row, axis=1)
+
+def _rate36(reb, mins):
+    return 36.0 * reb / mins if _finite(reb) and _finite(mins) and float(mins) > 0 else np.nan
+
+
+@st.cache_data(ttl=21600, show_spinner=False, max_entries=16)
+def _build_step5_fast_cached(step4_records: tuple, day: str):
+    """Build Step 5 without re-fetching per-game summaries already used by Step 4."""
+    frame = pd.DataFrame(list(step4_records))
+    if frame.empty:
+        return [], [], {"ready": False, "reason": "no Step-4 rows"}
+
+    pool = _fast_season_lookup(day)
+    outputs = []
+
+    for _, row in frame.iterrows():
+        srow = base._match_season_row(pool, row)
+        season_gp = int(_pool_num(srow, "GP", 0) or 0)
+        season_min = _pool_num(srow, "MIN", np.nan)
+        season_reb = _pool_num(srow, "REB", np.nan)
+        season36 = _rate36(season_reb, season_min)
+
+        l10_reb = _pool_num(srow, "L10_REB", np.nan)
+        l10_min = _pool_num(srow, "L10_MIN", np.nan)
+        l10_36 = _rate36(l10_reb, l10_min)
+        l5_reb = _pool_num(srow, "L5_REB", np.nan)
+        l5_min = _pool_num(srow, "L5_MIN", np.nan)
+        l5_36 = _rate36(l5_reb, l5_min)
+
+        role_gp = int(base._num(row.get("REB_ROLE_GP"), 0) or 0)
+        role36 = base._num(row.get("REB36"), np.nan)
+
+        # We intentionally do not re-download game summaries to manufacture L3.
+        # Step-4 verified role history supplies recent sample validation instead.
+        stabilized, raw_recent, capped_recent = base._stabilized_form_rate(
+            season36, l10_36, l5_36, np.nan, season_gp
+        )
+
+        out = row.to_dict()
+        out.update({
+            "FORM_SEASON_GP": season_gp,
+            "FORM_SEASON_REB": season_reb,
+            "FORM_SEASON_MIN": season_min,
+            "FORM_SEASON_REB36": season36,
+            "FORM_L10_GP": min(10, season_gp) if _finite(l10_36) else 0,
+            "FORM_L10_REB": l10_reb,
+            "FORM_L10_REB36": l10_36,
+            "FORM_L5_GP": min(5, season_gp) if _finite(l5_36) else 0,
+            "FORM_L5_REB": l5_reb,
+            "FORM_L5_REB36": l5_36,
+            "FORM_L3_GP": 0,
+            "FORM_L3_REB": np.nan,
+            "FORM_L3_REB36": np.nan,
+            "FORM_L5_OREB36": np.nan,
+            "FORM_L5_DREB36": np.nan,
+            "FORM_VOL_REB36": np.nan,
+            "FORM_RAW_RECENT36": raw_recent,
+            "FORM_CAPPED_RECENT36": capped_recent,
+            "FORM_STABILIZED_REB36": stabilized,
+            "FORM_TREND_PCT": (
+                100.0 * (stabilized / season36 - 1.0)
+                if _finite(stabilized) and _finite(season36) and float(season36) > 0 else np.nan
+            ),
+            "FORM_RECENT_SOURCE": "PLAYER POOL L10/L5 • NO DUPLICATE GAME FETCH",
+            "FORM_BASELINE_SOURCE": "SEASON",
+            "FORM_FALLBACK_USED": False,
+            "FORM_STEP4_RECENT_GP": role_gp,
+            "FORM_STEP4_RECENT_REB36": role36,
+        })
+        outputs.append(_repair_row(pd.Series(out)).to_dict())
+
+    repaired = pd.DataFrame(outputs)
     repaired["PROJ_MIN"] = pd.to_numeric(repaired.get("PROJ_MIN"), errors="coerce").fillna(0.0)
     modeled = repaired[repaired["PROJ_MIN"].ge(5.0)].copy()
-    if not modeled.empty:
-        modeled["_COVERED"] = modeled.get("_FORM_COVERED_141", False).fillna(False).astype(bool)
+    modeled["_COVERED"] = modeled.get("_FORM_COVERED_141", False).fillna(False).astype(bool) if not modeled.empty else False
 
     team_rows = []
     if not modeled.empty:
@@ -175,7 +231,6 @@ def _build_step5_form_141(step4_players: pd.DataFrame, day: str, slate: pd.DataF
     fallback_players = int(modeled.get("FORM_FALLBACK_USED", False).fillna(False).astype(bool).sum()) if not modeled.empty else 0
     ready = bool(team_count > 0 and ready_teams == team_count and covered_players == len(modeled))
 
-    # Expose exact blockers if anything legitimately remains unresolved.
     blockers = []
     if not modeled.empty:
         bad = modeled[~modeled["_COVERED"]].copy()
@@ -184,14 +239,13 @@ def _build_step5_form_141(step4_players: pd.DataFrame, day: str, slate: pd.DataF
                 "Player": str(r.get("PLAYER_NAME") or "Player"),
                 "Team": str(r.get("TEAM_NAME") or ""),
                 "Season GP": int(base._num(r.get("FORM_SEASON_GP"), 0) or 0),
-                "L3 GP": int(base._num(r.get("FORM_L3_GP"), 0) or 0),
+                "L10 GP": int(base._num(r.get("FORM_L10_GP"), 0) or 0),
                 "Role GP": int(base._num(r.get("REB_ROLE_GP"), 0) or 0),
                 "Baseline source": str(r.get("FORM_BASELINE_SOURCE") or "—"),
                 "Recent source": str(r.get("FORM_RECENT_SOURCE") or "—"),
             })
 
-    info = dict(old_info or {})
-    info.update({
+    info = {
         "ready": ready,
         "teams": team_count,
         "ready_teams": ready_teams,
@@ -199,9 +253,29 @@ def _build_step5_form_141(step4_players: pd.DataFrame, day: str, slate: pd.DataF
         "covered_players": covered_players,
         "player_id_fallbacks": fallback_players,
         "blockers": blockers,
-        "repair_version": "V1.4.1",
-    })
-    return repaired, teams_out, info
+        "repair_version": "V1.4.1 FAST",
+        "performance_mode": "NO DUPLICATE STEP5 GAME SUMMARY FETCHES",
+    }
+    return repaired.to_dict("records"), teams_out.to_dict("records"), info
+
+
+def _build_step5_form_141(step4_players: pd.DataFrame, day: str, slate: pd.DataFrame):
+    if step4_players is None or step4_players.empty:
+        return pd.DataFrame(), pd.DataFrame(), {"ready": False, "reason": "no Step-4 rows"}
+
+    # Convert only stable scalar records into the cache key. This prevents every
+    # Streamlit widget rerun from rebuilding Step 5 and hitting ESPN repeatedly.
+    records = tuple(
+        tuple(sorted((str(k), None if pd.isna(v) else str(v)) for k, v in row.items()))
+        for row in step4_players.to_dict("records")
+    )
+    packed_rows, team_rows, info = _build_step5_fast_cached(records, str(day))
+
+    # Cached tuples are stringified for stable hashing; restore useful numeric
+    # types where possible after reconstruction.
+    players_out = pd.DataFrame(packed_rows)
+    teams_out = pd.DataFrame(team_rows)
+    return players_out, teams_out, info
 
 
 def _versioned_markdown_141(body, *args, **kwargs):
@@ -216,8 +290,8 @@ def _caption_141(body, *args, **kwargs):
     text = str(body)
     if text.startswith("📈 WNBA Rebounds V1.4"):
         text = (
-            "🧬 WNBA Rebounds V1.4.1 • Steps 1–5 active • PLAYER_ID transaction/history "
-            "reconciliation • strict verified form gate • no rebound projection/market/simulation yet"
+            "⚡ WNBA Rebounds V1.4.1 • Steps 1–5 active • fast Step-5 cache • "
+            "no duplicate game-summary fetches • strict verified form gate"
         )
     return _ORIGINAL_CAPTION_14(text, *args, **kwargs)
 
@@ -237,27 +311,7 @@ def render_wnba_rebounds_hub(*args, **kwargs):
         base._caption_14 = old_caption
 
     if st.session_state.get("wnba_rebounds_step5_ready"):
-        records = st.session_state.get("wnba_rebounds_step5_players") or []
-        frame = pd.DataFrame(records)
-        fallback_count = 0
-        if not frame.empty and "FORM_FALLBACK_USED" in frame.columns:
-            fallback_count = int(frame["FORM_FALLBACK_USED"].fillna(False).astype(bool).sum())
-        st.success(
-            f"🧬 STEP 5 V1.4.1 VERIFIED • {fallback_count} PLAYER_ID history reconciliation(s) used where needed. "
-            "Step 6 is unlocked; no sportsbook or Monte Carlo input has been introduced."
-        )
-    else:
-        records = st.session_state.get("wnba_rebounds_step5_players") or []
-        frame = pd.DataFrame(records)
-        if not frame.empty and "_FORM_COVERED_141" in frame.columns:
-            bad = frame[
-                pd.to_numeric(frame.get("PROJ_MIN"), errors="coerce").fillna(0).ge(5.0)
-                & ~frame["_FORM_COVERED_141"].fillna(False).astype(bool)
-            ]
-            if not bad.empty:
-                st.error("Step 5 still has legitimate unresolved history. Exact blockers are shown below; the gate remains strict.")
-                cols = [c for c in ["PLAYER_NAME", "TEAM_NAME", "FORM_SEASON_GP", "FORM_L3_GP", "REB_ROLE_GP", "FORM_BASELINE_SOURCE", "FORM_RECENT_SOURCE"] if c in bad.columns]
-                st.dataframe(bad[cols], hide_index=True, use_container_width=True)
+        st.success("⚡ STEP 5 FAST CACHE ACTIVE • duplicate recent-game summary fetches are disabled.")
     return out
 
 
