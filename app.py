@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence + WNBA Rebounds V1.2 Step 3 + WNBA Daily Picks V2 Step 2 PRA read-only.
+'''Kyre Sports AI entrypoint — MLB V2.1.7 frozen + WNBA PRA V3.2.1 frozen + WNBA Points V1.9.8.4.1 durable calibration persistence + WNBA Rebounds V1.2 Step 3 + WNBA Daily Picks V3 Step 3 PRA + Points read-only.
 
 Frozen production checkpoints:
 - MLB V2.1.7: branch mlb-v217-frozen-20260818
@@ -21,11 +21,11 @@ current-roster + structured injury/status gate, then adds the verified Step 3
 rotation-minutes layer. No rebound projection, sportsbook grading or simulation
 is enabled yet.
 
-WNBA Daily Picks V2 preserves the isolated Step-1 shell and adds one passive PRA
-connector. It reads only an already-completed same-day PRA Step-8 payload from
-Streamlit session state. It imports no PRA production module, launches no network
-or simulation work, never restores/regrades/refreshes PRA, and performs zero PRA
-session-state writes. Points and Rebounds remain paused.
+WNBA Daily Picks V3 preserves the isolated shell and Step-2 passive PRA connector,
+then adds one passive Points connector. Both inspect only already-completed same-day
+session payloads. Daily Picks imports no PRA/Points production module, launches no
+network/simulation/restore/regrade work, and performs zero PRA/Points state writes.
+Rebounds remains paused and Top-5 ranking remains OFF.
 '''
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ import wnba_pra_hub_v36 as wnba_pra_v36
 import wnba_final_points_connector_v3 as wnba_final_points_v3
 import wnba_points_hub_v19841 as wnba_points_v19841
 import wnba_rebounds_hub_v12 as wnba_rebounds_v12
-import wnba_daily_picks_hub_v2 as wnba_daily_picks_v2
+import wnba_daily_picks_hub_v3 as wnba_daily_picks_v3
 
 BASE_COMMIT = "06d34032b9608cba07072b02934ae3a4b7d7c295"
 RAW_URL = (
@@ -223,7 +223,7 @@ def _guarded_streamlit_info(body, *args, **kwargs):
     if text.startswith("WNBA Daily Picks is separate from") and (
         "production model page" in text or "model module" in text
     ):
-        wnba_daily_picks_v2.render_wnba_daily_picks_hub(None, None, None, None)
+        wnba_daily_picks_v3.render_wnba_daily_picks_hub(None, None, None, None)
         st.stop()
     return _ORIGINAL_ST_INFO(body, *args, **kwargs)
 
@@ -285,7 +285,7 @@ wnba_final_points_v3.install()
 slate_multi_provider.install()
 
 exec(
-    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v12_step3_daily_picks_v2_step2_pra_readonly.py", "exec"),
+    compile(source, "kyre_sports_ai_mlb_v217_wnba_pra_v321_points_v19841_rebounds_v12_step3_daily_picks_v3_step3_pra_points_readonly.py", "exec"),
     globals(),
     globals(),
 )
