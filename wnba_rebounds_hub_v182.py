@@ -1,9 +1,10 @@
 """WNBA Rebounds V1.8.2 — Step 9 opponent-map/full-slate repair.
 
 Repairs Step 9 only. Steps 1-8 and Step-9 position math remain unchanged.
-The repair derives team↔opponent pairs from the verified selected-day slate and
-rebuilds cached Step-7/8 context for the full slate so live/final games are not
-silently dropped from the positional join.
+The repair derives team↔opponent pairs from the SAME verified V2.5 selected-day
+slate used by Step 1, then rebuilds cached Step-7/8 context for that exact slate.
+This prevents the older V2.4 schedule/date reconciliation from silently dropping
+matchups and leaving players with Opponent = —.
 """
 from __future__ import annotations
 
@@ -11,13 +12,13 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-import wnba_schedule_v24 as schedule_v24
+import wnba_schedule_v25 as schedule_v25
 import wnba_rebounds_hub_v16 as step7mod
 import wnba_rebounds_hub_v17 as step8mod
 import wnba_rebounds_hub_v18 as _impl
 import wnba_rebounds_hub_v181 as safe
 
-MODEL_VERSION = "WNBA REBOUNDS V1.8.2 • STEP 9 FULL-SLATE OPPONENT JOIN REPAIR"
+MODEL_VERSION = "WNBA REBOUNDS V1.8.2 • STEP 9 V2.5 SLATE JOIN REPAIR"
 
 
 def _num(value, default=np.nan):
@@ -72,17 +73,16 @@ def _build_step9_repaired():
 
     day = str(st.session_state.get("wnba_rebounds_step1_day") or pd.Timestamp.now().strftime("%Y-%m-%d"))
     try:
-        slate = schedule_v24.schedule_for_date(day)
+        # CRITICAL: Step 1 uses wnba_schedule_v25. Step 9 must use that exact
+        # reconciliation layer too, otherwise the matchup universe can differ.
+        slate = schedule_v25.schedule_for_date(day)
     except Exception:
         slate = pd.DataFrame()
 
-    # Build the matchup identity from the verified slate itself, not from Step-8
-    # session rows that may have been created from an incomplete live-state view.
     opp_map = _slate_maps(slate)
 
-    # Reconcile Step 7/8 against the same full verified slate. These builders are
-    # six-hour cached, so existing team-stat payloads are reused and only missing
-    # slate teams can require work.
+    # Step 7/8 builders accept the verified slate frame directly. Their stat
+    # calls remain cached; only the schedule identity source changes to V2.5.
     try:
         step7_frame, step7_info = step7mod._build_step7_cached(day, slate)
     except Exception:
@@ -95,7 +95,6 @@ def _build_step9_repaired():
     step7 = step7_frame.to_dict("records") if not step7_frame.empty else (st.session_state.get("wnba_rebounds_step7_teams") or [])
     step8 = step8_frame.to_dict("records") if not step8_frame.empty else (st.session_state.get("wnba_rebounds_step8_teams") or [])
 
-    # Keep session snapshots synchronized with the repaired full-slate context.
     if step7:
         st.session_state["wnba_rebounds_step7_teams"] = step7
         st.session_state["wnba_rebounds_step7_ready"] = bool((step7_info or {}).get("ready", True))
@@ -157,7 +156,7 @@ def _build_step9_repaired():
         "players": int(len(out)),
         "covered": covered,
         "teams": int(profile["Team"].nunique()) if not profile.empty else 0,
-        "method": "verified full-slate team↔opponent join + cached Step-7/8 context",
+        "method": "same V2.5 verified slate as Step 1 + cached Step-7/8 context",
         "slate_games": int(len(slate)),
         "slate_opponent_pairs": int(len(opp_map)),
     }
@@ -171,8 +170,8 @@ def render_wnba_rebounds_hub(*args, **kwargs):
     finally:
         _impl._build_step9 = old
     st.caption(
-        "⚡ V1.8.2 Step-9 repair • opponent identity comes from the verified full slate • "
-        "Step-7/8 context reconciled on the same slate • no guessed opponents • no final rebound projection."
+        "⚡ V1.8.2 Step-9 V2.5 repair • opponent identity uses the exact verified Step-1 slate • "
+        "Step-7/8 context reconciled on that same slate • no guessed opponents • no final rebound projection."
     )
     return out
 
