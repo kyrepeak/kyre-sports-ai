@@ -1,12 +1,15 @@
-"""WNBA Rebounds V1.5 — Step 6 verified rebound chances / opportunities.
+"""WNBA Rebounds V1.5.1 — Step 6 verified rebound chances / opportunities.
 
-Extends V1.4.1. Uses official WNBA/NBA Stats player-tracking Rebounding data
+Extends V1.4.1. Uses official NBA/WNBA Stats player-tracking Rebounding data
 (Second Spectrum) when available. This layer is opportunity infrastructure only:
 no sportsbook line, final rebound projection, Monte Carlo, or pick grading.
+
+V1.5.1 hardens the official tracking fetch for Streamlit Cloud. The current
+NBA Stats host is tried first and the legacy WNBA Stats host is retained as a
+fallback. Empty/blocked responses never get treated as valid data.
 """
 from __future__ import annotations
 
-import math
 import re
 import unicodedata
 from typing import Any
@@ -18,15 +21,19 @@ import streamlit as st
 
 import wnba_rebounds_hub_v141 as base
 
-MODEL_VERSION = "WNBA REBOUNDS V1.5 • STEP 6 VERIFIED REBOUND CHANCES / OPPORTUNITIES"
+MODEL_VERSION = "WNBA REBOUNDS V1.5.1 • STEP 6 VERIFIED REBOUND CHANCES / OPPORTUNITIES"
 
-TRACKING_URL = "https://stats.wnba.com/stats/leaguedashptstats"
-TRACKING_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/126.0 Safari/537.36",
+TRACKING_ENDPOINTS = (
+    ("NBA Stats", "https://stats.nba.com/stats/leaguedashptstats", "https://www.nba.com", "https://www.nba.com/"),
+    ("WNBA Stats legacy", "https://stats.wnba.com/stats/leaguedashptstats", "https://www.wnba.com", "https://www.wnba.com/"),
+)
+
+BASE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
-    "Origin": "https://www.wnba.com",
-    "Referer": "https://www.wnba.com/",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
     "Connection": "keep-alive",
 }
 
@@ -52,7 +59,7 @@ def _results_to_frame(payload: dict) -> pd.DataFrame:
     for rs in sets:
         headers = rs.get("headers") or []
         rows = rs.get("rowSet") or []
-        if headers:
+        if headers and rows:
             return pd.DataFrame(rows, columns=headers)
     return pd.DataFrame()
 
@@ -69,13 +76,47 @@ def _fetch_tracking(season: int, last_n: int) -> tuple[pd.DataFrame, dict]:
         "SeasonType": "Regular Season", "StarterBench": "", "TeamID": "0",
         "VsConference": "", "VsDivision": "", "Weight": "",
     }
-    try:
-        r = requests.get(TRACKING_URL, params=params, headers=TRACKING_HEADERS, timeout=18)
-        r.raise_for_status()
-        frame = _results_to_frame(r.json())
-        return frame, {"ok": not frame.empty, "status": r.status_code, "rows": int(len(frame)), "last_n": int(last_n)}
-    except Exception as exc:
-        return pd.DataFrame(), {"ok": False, "error": f"{type(exc).__name__}: {exc}", "last_n": int(last_n)}
+
+    attempts = []
+    session = requests.Session()
+    for label, url, origin, referer in TRACKING_ENDPOINTS:
+        headers = dict(BASE_HEADERS)
+        headers["Origin"] = origin
+        headers["Referer"] = referer
+        try:
+            r = session.get(url, params=params, headers=headers, timeout=(5, 12))
+            status = int(r.status_code)
+            content_type = str(r.headers.get("content-type", ""))
+            if status != 200:
+                attempts.append({"host": label, "status": status, "ok": False, "reason": "HTTP status"})
+                continue
+            try:
+                payload = r.json()
+            except Exception:
+                attempts.append({"host": label, "status": status, "ok": False, "reason": f"non-JSON response ({content_type})"})
+                continue
+            frame = _results_to_frame(payload)
+            if not frame.empty:
+                diag = {
+                    "ok": True,
+                    "host": label,
+                    "status": status,
+                    "rows": int(len(frame)),
+                    "last_n": int(last_n),
+                    "attempts": attempts + [{"host": label, "status": status, "ok": True, "rows": int(len(frame))}],
+                }
+                return frame, diag
+            attempts.append({"host": label, "status": status, "ok": False, "reason": "valid JSON but zero tracking rows"})
+        except Exception as exc:
+            attempts.append({"host": label, "ok": False, "error": f"{type(exc).__name__}: {exc}"})
+
+    return pd.DataFrame(), {
+        "ok": False,
+        "rows": 0,
+        "last_n": int(last_n),
+        "attempts": attempts,
+        "error": "All official tracking hosts failed or returned zero rows",
+    }
 
 
 def _col(frame: pd.DataFrame, *names: str):
@@ -168,7 +209,6 @@ def _build_step6(step5_players: pd.DataFrame, day: str):
         proj_min = _num(row.get("PROJ_MIN"), 0.0)
         out["OPP_MIN_SCALED_CHANCES"] = stable36 * proj_min / 36.0 if np.isfinite(stable36) and proj_min > 0 else np.nan
         sgp = _num(out.get("OPP_SEASON_GP"), 0)
-        lgp = _num(out.get("OPP_L10_GP"), 0)
         covered = bool(sgp >= 3 and np.isfinite(s36) and s36 > 0)
         out["OPP_TRACKING_COVERED"] = covered
         out["OPP_TRACKING_SAMPLE"] = "VERIFIED" if covered else "CHECK"
@@ -202,7 +242,7 @@ def _render_step6(day: str):
     records = st.session_state.get("wnba_rebounds_step5_players") or []
     frame = pd.DataFrame(records)
     st.markdown("## 🧲 Step 6 — Rebound Chances / Opportunities")
-    st.caption("Official WNBA player-tracking Rebounding layer. REB Chances are tracking opportunities, not a sportsbook-derived proxy. Recent opportunity movement is capped ±25% before a 70/30 season/L10 stabilization. This does not yet predict final rebounds.")
+    st.caption("Official NBA/WNBA Stats player-tracking Rebounding layer (Second Spectrum). REB Chances are tracking opportunities, not a sportsbook-derived proxy. Recent opportunity movement is capped ±25% before a 70/30 season/L10 stabilization. This does not yet predict final rebounds.")
     players, teams, info = _build_step6(frame, day)
     st.session_state["wnba_rebounds_step6_players"] = players.to_dict("records") if not players.empty else []
     st.session_state["wnba_rebounds_step6_ready"] = bool(info.get("ready"))
@@ -214,11 +254,12 @@ def _render_step6(day: str):
     d.metric("Minimum tracking sample", "3 GP")
 
     if info.get("ready"):
-        st.success("✅ STEP 6 PASSED • every modeled rotation player has a verified official rebound-chance sample. Step 7 (opponent missed-shot environment) is unlocked.")
+        host = (info.get("season_diag") or {}).get("host", "official Stats")
+        st.success(f"✅ STEP 6 PASSED • every modeled rotation player has a verified official rebound-chance sample via {host}. Step 7 (opponent missed-shot environment) is unlocked.")
     else:
         diag = info.get("season_diag") or {}
         if not diag.get("ok"):
-            st.error("⛔ STEP 6 CHECK • official WNBA tracking feed is unavailable/empty right now. Step 7 remains locked; no proxy data is being substituted.")
+            st.error("⛔ STEP 6 CHECK • both official NBA/WNBA Stats tracking paths are unavailable/empty right now. Step 7 remains locked; no proxy data is being substituted.")
         else:
             st.error("⛔ STEP 6 CHECK • at least one modeled player lacks a ≥3-game official rebound-chance sample. Step 7 remains locked; nothing is guessed.")
 
