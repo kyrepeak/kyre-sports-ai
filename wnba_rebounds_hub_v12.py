@@ -1,19 +1,19 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to V2.0. Steps 1-10 remain preserved through the verified V1.9
-chain. V2.0 adds Step 11 lineup effects / rebound competition using only the
-verified active rotation, projected minutes and Step-6 rebound-capture baseline.
-It adds zero normal-load network requests and does not invent exact five-player
-lineup overlap. Frozen Points/PRA/MLB modules remain untouched.
+Route directly to V2.1. Steps 1-11 remain preserved through the verified V2.0
+chain. V2.1 adds Step 12 player-vs-opponent rebound history using immutable ESPN
+PLAYER_ID joins and completed current-team matchup-series box scores from the
+current and previous season. Verified no-sample players remain explicitly labeled;
+no history is guessed. Frozen Points/PRA/MLB modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v20 as _impl
+import wnba_rebounds_hub_v21 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V2.0 • STEP 11 LINEUP EFFECTS / REBOUND COMPETITION",
+    "WNBA REBOUNDS V2.1 • STEP 12 PLAYER VS OPPONENT REBOUND HISTORY",
 )
 
 
