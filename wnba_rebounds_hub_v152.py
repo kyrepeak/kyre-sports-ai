@@ -1,10 +1,9 @@
-"""WNBA Rebounds V1.5.2 — fast-path caching across Steps 3-6.
+"""WNBA Rebounds V1.5.3 — fast-path caching across Steps 3-6.
 
-Keeps all model/verification math unchanged. This wrapper only memoizes the
-expensive historical build functions so Streamlit reruns do not rebuild the
-same verified slate repeatedly. Cache keys include the full input frames + day,
-so any roster, injury, projected-minute, or upstream data change invalidates the
-corresponding layer automatically.
+Keeps all model/verification math unchanged. This wrapper memoizes expensive
+historical build functions so Streamlit reruns do not rebuild the same verified
+slate repeatedly. V1.5.3 also invalidates the prior Step-6 empty-feed cache so
+the hardened dual official tracking-host fetch is attempted immediately.
 """
 from __future__ import annotations
 
@@ -17,9 +16,8 @@ import wnba_rebounds_hub_v13 as step4_mod
 import wnba_rebounds_hub_v14 as step5_mod
 import wnba_rebounds_hub_v15 as step6_mod
 
-MODEL_VERSION = "WNBA REBOUNDS V1.5.2 • FAST PATH STEPS 3–6"
+MODEL_VERSION = "WNBA REBOUNDS V1.5.3 • FAST PATH + DUAL OFFICIAL TRACKING HOST"
 
-# Preserve authoritative functions before monkey-patching.
 _ORIG_STEP3 = step3_mod._build_step3_minutes
 _ORIG_STEP4 = step4_mod._build_step4_role
 _ORIG_STEP5 = step5_mod._build_step5_form
@@ -41,14 +39,13 @@ def _cached_step5(step4_players: pd.DataFrame, day: str, slate: pd.DataFrame):
     return _ORIG_STEP5(step4_players, day, slate)
 
 
-@st.cache_data(ttl=3600, show_spinner=False, max_entries=24)
-def _cached_step6(step5_players: pd.DataFrame, day: str):
+# New function identity intentionally invalidates V1.5.2's cached empty result.
+@st.cache_data(ttl=1800, show_spinner=False, max_entries=24)
+def _cached_step6_v153(step5_players: pd.DataFrame, day: str):
     return _ORIG_STEP6(step5_players, day)
 
 
 def render_wnba_rebounds_hub(*args, **kwargs):
-    # Patch only expensive builders. Rendering, gates, labels, and math remain
-    # owned by the existing production modules.
     old3 = step3_mod._build_step3_minutes
     old4 = step4_mod._build_step4_role
     old5 = step5_mod._build_step5_form
@@ -56,7 +53,7 @@ def render_wnba_rebounds_hub(*args, **kwargs):
     step3_mod._build_step3_minutes = _cached_step3
     step4_mod._build_step4_role = _cached_step4
     step5_mod._build_step5_form = _cached_step5
-    step6_mod._build_step6 = _cached_step6
+    step6_mod._build_step6 = _cached_step6_v153
     try:
         out = base.render_wnba_rebounds_hub(*args, **kwargs)
     finally:
@@ -66,8 +63,9 @@ def render_wnba_rebounds_hub(*args, **kwargs):
         step6_mod._build_step6 = old6
 
     st.caption(
-        "⚡ V1.5.2 fast path active • verified Steps 3–5 reuse 6-hour input-keyed snapshots; "
-        "Step 6 reuses a 1-hour opportunity snapshot. Any upstream input change invalidates the relevant cache automatically."
+        "⚡ V1.5.3 fast path active • Steps 3–5 reuse 6-hour input-keyed snapshots; "
+        "Step 6 uses a fresh 30-minute snapshot and tries NBA Stats first, then the legacy WNBA Stats host. "
+        "No proxy rebound-chance data is substituted."
     )
     return out
 
