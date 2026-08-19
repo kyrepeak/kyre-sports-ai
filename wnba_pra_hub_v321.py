@@ -2,16 +2,18 @@
 
 The historical V3.2.1 implementation remains preserved in
 wnba_pra_hub_v321_frozen.py and the frozen branch. Main now routes PRA to
-V3.5.2, which preserves the V3.5.1 Eastern-date slate, multi-source availability,
-lineup-aware targeted 5M/10M finalization and strict 10M Final Ready gate, while
-adding presentation-only player/headshot/team-logo cards to the Preliminary PRA
-Over Board. Rebounds and MLB are untouched.
+V3.5.3, which preserves the V3.5.2 visual Preliminary PRA cards, V3.5.1
+lineup-aware targeted 5M/10M finalization and strict 10M Final Ready gate,
+V3.4.1 Eastern-date slate reconciliation, and current injury/minutes/role
+integrity while repairing the Step-6 empirical variance/history handoff.
+
+Rebounds and MLB are untouched.
 """
 from __future__ import annotations
 
-import wnba_pra_hub_v352 as _impl
+import wnba_pra_hub_v353 as _impl
 
-MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "PRA V3.5.2 • VISUAL PRELIMINARY PRA BOARD")
+MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "PRA V3.5.3 • EMPIRICAL VARIANCE REPAIR")
 MLB_FROZEN_BASELINE = _impl.MLB_FROZEN_BASELINE
 MLB_FROZEN_BRANCH = _impl.MLB_FROZEN_BRANCH
 
