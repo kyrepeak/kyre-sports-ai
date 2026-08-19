@@ -1,8 +1,9 @@
-"""WNBA PRA V3.4 — today-slate rollover + injury-source integrity.
+"""WNBA PRA V3.4.1 — today-slate rollover + injury-source + ET slate integrity.
 
-V3.4 keeps the V3.3 injury/minutes/role fingerprint protections and adds:
+V3.4.1 keeps the V3.3 injury/minutes/role fingerprint protections and adds:
 - automatic Eastern-date rollover to today's slate once per calendar day/session;
 - a conservative same-day RotoWire daily-lineups OUT/status supplement;
+- Eastern-date-normalized WNBA schedule reconciliation across official CDN + ESPN;
 - no use of RotoWire expected lineups as confirmed starters.
 
 Projection formulas, matchup weights, SportsGameOdds grading and 5M/10M Monte
@@ -19,7 +20,7 @@ import wnba_rotowire_status_v34 as rotowire
 import wnba_pra_hub_v33 as v33
 
 ET = ZoneInfo("America/New_York")
-MODEL_VERSION = "PRA V3.4 • TODAY SLATE + MULTI-SOURCE AVAILABILITY"
+MODEL_VERSION = "PRA V3.4.1 • ET SLATE + MULTI-SOURCE AVAILABILITY"
 MLB_FROZEN_BASELINE = v33.MLB_FROZEN_BASELINE
 MLB_FROZEN_BRANCH = v33.MLB_FROZEN_BRANCH
 
@@ -41,7 +42,7 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
     rotowire.install()
 
     st.caption(
-        "📅 PRA V3.4 • TODAY-SLATE ROLLOVER ACTIVE • ESPN/current roster + RotoWire same-day status supplement • "
+        "📅 PRA V3.4.1 • ET-SLATE RECONCILIATION ACTIVE • ESPN/current roster + RotoWire same-day status supplement • "
         "V3.3 injury/minutes/role fingerprint protection retained"
     )
 
