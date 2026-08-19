@@ -5,7 +5,7 @@ state only:
 - Final Decision may render before PRA 5M exists;
 - PRA reports WAITING 5M instead of falsely reporting LIVE when no stored PRA
   production payload exists;
-- Points continues to report its independent same-day connector state;
+- Points reports its own independent same-day production state;
 - Rebounds remains intentionally NEXT/untouched.
 
 No projection, Monte Carlo, market, qualification or card-selection math changes.
@@ -21,7 +21,7 @@ import wnba_pra_final_v32 as final_ui
 import wnba_final_points_connector_v1 as step1
 import wnba_final_points_connector_v2 as step2
 
-MODEL_VERSION = "WNBA FINAL DASHBOARD V3 • PERSISTENT MARKET STATES"
+MODEL_VERSION = "WNBA FINAL DASHBOARD V3.1 • EXPLICIT MARKET STATES"
 
 
 def _connector_tile(name: str, state: str, live: bool, detail: str = "") -> str:
@@ -49,20 +49,37 @@ def _pra_status(day):
     if live:
         source = str((meta or {}).get("source") or "5M")
         return True, "✅ LIVE", f"Completed PRA {source} payload is available to Final Decision.", int(len(rows))
-    return False, "⏳ WAITING 5M", "Final Decision is visible, but PRA has no completed same-day 5M production payload yet.", 0
+    return False, "⏳ WAITING PRA 5M", "Final Decision is visible, but PRA has no completed same-day 5M production payload yet.", 0
+
+
+def _points_status(day):
+    points = step1.status(day)
+    live = bool(points.get("live"))
+    if live:
+        detail = (
+            f"Card feed active • {points.get('unique_distributions',0)} distributions • "
+            f"{points.get('qualified',0)} qualified • {points.get('final_ready',0)} final ready"
+        )
+        return points, True, "✅ LIVE", detail
+
+    restore_error = str(st.session_state.get("_wnba_final_points_restore_error") or "").strip()
+    if restore_error:
+        return points, False, "⚠ RESTORE CHECK", f"A persisted Points recovery attempt failed: {restore_error}"
+
+    if day is not None:
+        return (
+            points,
+            False,
+            "⏳ WAITING POINTS 5M",
+            "Points is wired to Final Decision but no validated completed same-day Points production payload is currently loaded/restored.",
+        )
+    return points, False, "NEXT", "Select a WNBA slate date first."
 
 
 def render_connectors_persistent() -> None:
     day = st.session_state.get("wnba_pra_v2_date")
     pra_live, pra_state, pra_detail, pra_rows = _pra_status(day)
-    points = step1.status(day)
-    points_live = bool(points.get("live"))
-    points_state = "✅ LIVE" if points_live else str(points.get("state") or "NEXT")
-    points_detail = (
-        f"Card feed active • {points.get('unique_distributions',0)} distributions • "
-        f"{points.get('qualified',0)} qualified • {points.get('final_ready',0)} final ready"
-        if points_live else str(points.get("detail") or "Points not connected.")
-    )
+    points, points_live, points_state, points_detail = _points_status(day)
 
     items = [
         ("PRA", pra_state, pra_live, pra_detail),
@@ -88,16 +105,18 @@ def render_connectors_persistent() -> None:
             f"Points source {points.get('source') or 'NONE'} • Points lineups {points.get('lineup_ready_games',0)}/{points.get('games',0)}"
         )
         if pra_live:
-            st.success("✅ PRA completed production output is connected.")
+            st.success("✅ PRA completed production output is connected. LIVE means the PRA feed exists; it does not mean a PRA pick qualified.")
         else:
-            st.info("⏳ PRA is waiting for its standard 5M pass. The dashboard remains visible and no PRA simulation is launched here.")
+            st.info("⏳ PRA is waiting for its own standard 5M pass. The dashboard remains visible and no PRA simulation is launched here.")
         if points_live:
             st.success("✅ Points completed same-day output is connected and eligible to feed the Master Card under existing qualification rules.")
+        elif points_state == "⚠ RESTORE CHECK":
+            st.warning(points_detail)
         else:
-            st.info("Points has no validated completed same-day payload in the current/restored state.")
+            st.info("⏳ Points is connected at the dashboard level but is waiting for the POINTS 5M production pass (or a valid same-day Points snapshot restore). This is separate from the PRA Step-8 simulation.")
         st.caption(
-            "DASHBOARD ONLY • Each market reports independently. This panel never runs Monte Carlo, changes a projection, requests a sportsbook line, "
-            "or forces a pick. Rebounds is untouched."
+            "DASHBOARD ONLY • PRA 5M and Points 5M are separate simulations. Each market reports independently. "
+            "This panel never runs Monte Carlo, changes a projection, requests a sportsbook line, or forces a pick. Rebounds is untouched."
         )
 
 
