@@ -12,10 +12,12 @@ V3.6 changes only the Step-7 matchup multipliers:
 - rebound matchup adjustment no longer uses an unsupported positive defense
   multiplier without a verified missed-shot/rebound-opportunity feed.
 
-Final Decision Step 1 also installs a read-only Points connection-status strip.
-That connector only inspects an already-completed same-day Points V1.9 session
-payload. It cannot run/restore Points, request sportsbook data, alter PRA, or add
-Points selections to the Daily Master Card. Rebounds remains paused/untouched.
+Final Decision Step 2 installs the verified Points card-feed connector. It only
+consumes an already-completed same-day Points V1.9 5M/10M payload and lets rows
+that the Points engine already marked model-qualified compete with PRA under the
+existing max-five, no-repeat-player and one-pick-per-game rules. It cannot run or
+restore Points, request sportsbook data, alter a projection, or regrade a row.
+Rebounds remains paused/untouched.
 
 Sportsbook price never changes the projection. Rebounds and MLB are untouched.
 """
@@ -25,7 +27,7 @@ import streamlit as st
 
 import wnba_pra_hub_v353 as base
 import wnba_pra_matchup_v36 as step7
-import wnba_final_points_connector_v1 as points_final_connector
+import wnba_final_points_connector_v2 as points_final_connector
 
 MODEL_VERSION = "PRA V3.6 • STEP 7 MATCHUP CALIBRATION • V3.5.3 STACK PRESERVED"
 MLB_FROZEN_BASELINE = base.MLB_FROZEN_BASELINE
@@ -38,8 +40,8 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
     # calibrated matchup-adjusted P/R/A means.
     step7.install()
 
-    # Presentation-only Step-1 connector. It replaces only the hard-coded Final
-    # Decision connector strip. PRA selection/model functions remain untouched.
+    # Final Decision Step 2. This patches only stored-output read/selection/UI
+    # hooks; Points model math and PRA model math remain untouched.
     points_final_connector.install()
 
     st.caption(
@@ -47,8 +49,8 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
         "quality shrinkage • V3.5.3 injury/variance/visual/5M/10M/finalization protections preserved • Rebounds untouched"
     )
     st.caption(
-        "🔌 Final Decision Step 1 • Points read-only connection check ACTIVE • Points is NOT feeding the Daily Master Card yet • "
-        "no Points simulation/restore/sportsbook request is triggered here"
+        "🔌 Final Decision Step 2 • verified Points card feed ACTIVE • completed same-day Points rows may compete only if already model-qualified • "
+        "no Points simulation/restore/regrade/sportsbook request occurs here • Rebounds still NEXT"
     )
     return base.render_wnba_pra_hub(section_header, status_info, team_logo, h)
 
