@@ -1,12 +1,10 @@
 """WNBA Rebounds route wrapper — current isolated production build.
 
-Route directly to V3.1. The verified Steps 1–20 model/market chain and V3.0
-Production Readiness Guard remain unchanged. V3.1 adds only a responsive visual
-Top-5 production-card section using the already-verified final-card state:
-player faces, official WNBA team/opponent logos, exact sportsbook line/side/odds,
-market-independent projection context, Monte Carlo range, model probability,
-edge, EV, fair odds, projected minutes, H2H context, confidence, quote freshness
-and game/tip status.
+Route directly to V3.1.1. The verified Steps 1–20 model/market chain, V3.0
+Production Readiness Guard and V3.1 responsive Top-5 visual cards remain
+unchanged. V3.1.1 is presentation-only: player initials are removed from the
+headshot circle so the face remains unobstructed, and the #1 card gets a subtle
+BEST PICK emphasis.
 
 No Step 1–20 projection, probability, EV, qualification or ranking math changes.
 No production-readiness rules change. Cold-start reliability and subscription-safe
@@ -15,12 +13,12 @@ untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v31 as _impl
+import wnba_rebounds_hub_v311 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V3.1 • VISUAL TOP-5 PRODUCTION CARDS • V3.0 MODEL PRESERVED",
+    "WNBA REBOUNDS V3.1.1 • CLEAN PLAYER FACES + TOP-PICK POLISH • MODEL PRESERVED",
 )
 
 
