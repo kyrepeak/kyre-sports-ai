@@ -1,10 +1,11 @@
-"""WNBA Rebounds V1.7.1.1 — safe persistent fast-start wrapper.
+"""WNBA Rebounds V1.7.1.2 — crash-safe persistent fast-start wrapper.
 
 Performance-only patch over verified V1.7.
 
-Fix in V1.7.1.1:
+Fix in V1.7.1.2:
 - Persist only verified Rebounds data/checkpoint keys, never Streamlit widget keys.
-- Ignore any legacy V1.7.1 snapshot that may contain button/widget state.
+- Never write fast-start bookkeeping flags into st.session_state.
+- Ignore any legacy snapshot that may contain button/widget state.
 - Preserve Steps 1-8 model logic exactly as V1.7.
 """
 from __future__ import annotations
@@ -20,17 +21,12 @@ import streamlit as st
 
 import wnba_rebounds_hub_v17 as base
 
-MODEL_VERSION = "WNBA REBOUNDS V1.7.1.1 • SAFE PERSISTENT FAST START"
+MODEL_VERSION = "WNBA REBOUNDS V1.7.1.2 • CRASH-SAFE PERSISTENT FAST START"
 SNAPSHOT_MAX_AGE_SECONDS = 8 * 60 * 60
 SNAPSHOT_DIR = Path(os.path.expanduser("~/.cache/kyre_sports_ai"))
-# New filename deliberately prevents re-reading a legacy V1.7.1 snapshot that
-# may have captured Streamlit button/widget state.
-SNAPSHOT_FILE = SNAPSHOT_DIR / "wnba_rebounds_fast_start_v1711.json"
+SNAPSHOT_FILE = SNAPSHOT_DIR / "wnba_rebounds_fast_start_v1712.json"
 
-# Only these verified data-layer prefixes are eligible for persistence.
 _SAFE_PREFIXES = tuple(f"wnba_rebounds_step{i}_" for i in range(1, 10))
-# Defensive deny-list for any future widget/action keys that happen to share a
-# step prefix. Streamlit widget state must never be assigned during hydration.
 _UNSAFE_TOKENS = (
     "button", "clicked", "recheck", "refresh", "force_", "widget",
     "select", "radio", "toggle", "checkbox", "date_input", "number_input",
@@ -111,8 +107,9 @@ def _write_snapshot() -> bool:
         tmp.write_text(json.dumps(payload, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
         os.replace(tmp, SNAPSHOT_FILE)
         return True
-    except Exception as exc:
-        st.session_state["wnba_rebounds_fast_start_write_error"] = f"{type(exc).__name__}: {exc}"
+    except Exception:
+        # Persistence is only an optimization. Never let a snapshot failure
+        # touch Streamlit widget/session state or break the page.
         return False
 
 
@@ -137,42 +134,34 @@ def _read_snapshot() -> tuple[dict, str]:
     state = payload.get("state")
     if not isinstance(state, dict):
         return {}, "INVALID"
-    # Re-filter on read too. This is the hard guard against any malformed or
-    # manually edited snapshot ever assigning a Streamlit widget key.
     state = {str(k): v for k, v in state.items() if _safe_checkpoint_key(k)}
     return state, "HIT"
 
 
-def _hydrate_fast_start() -> str:
-    if st.session_state.get("wnba_rebounds_fast_start_hydrated_v1711"):
-        return str(st.session_state.get("wnba_rebounds_fast_start_status_v1711") or "SESSION")
-
+def _hydrate_fast_start() -> tuple[str, int]:
+    """Restore only safe data keys; never create bookkeeping session keys."""
     state, status = _read_snapshot()
     restored = 0
     if status == "HIT":
         for key, value in state.items():
-            if key not in st.session_state:
-                try:
-                    st.session_state[key] = value
-                    restored += 1
-                except Exception:
-                    # A checkpoint is a performance optimization only. If any
-                    # key cannot be restored safely, skip it and continue.
-                    continue
-
-    st.session_state["wnba_rebounds_fast_start_restored_keys"] = restored
-    st.session_state["wnba_rebounds_fast_start_hydrated_v1711"] = True
-    st.session_state["wnba_rebounds_fast_start_status_v1711"] = status
-    return status
+            if key in st.session_state:
+                continue
+            try:
+                st.session_state[key] = value
+                restored += 1
+            except Exception:
+                # If Streamlit considers a key widget-owned or otherwise unsafe,
+                # skip it. Fast start must never prevent normal rendering.
+                continue
+    return status, restored
 
 
 def render_wnba_rebounds_hub(*args, **kwargs):
-    status = _hydrate_fast_start()
+    status, restored = _hydrate_fast_start()
     out = base.render_wnba_rebounds_hub(*args, **kwargs)
     wrote = _write_snapshot()
-    restored = int(st.session_state.get("wnba_rebounds_fast_start_restored_keys") or 0)
 
-    if status == "HIT":
+    if status == "HIT" and restored:
         st.success(
             f"⚡ SAFE FAST START RESTORED • {restored} verified Rebounds checkpoint values were rehydrated after restart."
         )
@@ -182,7 +171,7 @@ def render_wnba_rebounds_hub(*args, **kwargs):
         )
 
     st.caption(
-        "⚡ V1.7.1.1 safe persistent fast start • widget/button state excluded • "
+        "⚡ V1.7.1.2 crash-safe persistent fast start • no fast-start bookkeeping is written to Streamlit session state • "
         f"snapshot {'saved' if wrote else 'not written'} • reboot restore target ≤8h • Steps 1–8 logic unchanged."
     )
     return out
