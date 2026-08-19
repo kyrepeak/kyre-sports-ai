@@ -1,18 +1,18 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to V1.8.1 safe Step 9. Steps 1-8 retain the verified V1.7/V1.7.1
-model logic; V1.8 provides Step 9 position matchup context; V1.8.1 temporarily
-bypasses persistent disk/session hydration to prevent legacy widget-state crashes.
+Route directly to V1.8.2. Steps 1-8 remain verified; V1.8.1 keeps safe mode for
+Streamlit state, and V1.8.2 repairs Step 9 by deriving opponents from the full
+verified slate and reconciling cached Step-7/8 context on that same slate.
 Frozen Points/PRA/MLB modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v181 as _impl
+import wnba_rebounds_hub_v182 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V1.8.1 • SAFE STEP 9",
+    "WNBA REBOUNDS V1.8.2 • STEP 9 FULL-SLATE OPPONENT JOIN REPAIR",
 )
 
 
