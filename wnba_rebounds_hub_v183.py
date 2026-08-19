@@ -29,6 +29,13 @@ import wnba_rebounds_hub_v182 as base
 MODEL_VERSION = "WNBA REBOUNDS V1.8.3 • STEP 9 STRUCTURAL-ZERO STABILIZATION"
 ZERO_COMPETITION_FLOOR = 0.05
 
+# Capture the real V1.8.2 builder once at import time. During rendering we
+# temporarily replace base._build_step9_repaired so V1.8.2's renderer reaches
+# this stabilization layer. The stabilizer must call this captured original,
+# not base._build_step9_repaired, otherwise the temporary replacement calls
+# itself recursively until Python raises RecursionError.
+_ORIGINAL_V182_BUILD_STEP9 = base._build_step9_repaired
+
 
 def _num(value, default=np.nan):
     try:
@@ -39,7 +46,7 @@ def _num(value, default=np.nan):
 
 
 def _build_step9_stabilized():
-    frame, board, info = base._build_step9_repaired()
+    frame, board, info = _ORIGINAL_V182_BUILD_STEP9()
     if frame is None or frame.empty:
         return frame, board, info
 
@@ -110,9 +117,9 @@ def render_wnba_rebounds_hub(*args, **kwargs):
         base._build_step9_repaired = old_repaired
 
     st.caption(
-        "⚡ V1.8.3 Step-9 stabilization • raw verified zero competition remains 0.000 • "
-        "0.05 floor used only for diagnostic divide-by-zero protection • unknown positions still never guessed • "
-        "no final rebound projection."
+        "⚡ V1.8.3 Step-9 stabilization • recursion-safe V1.8.2 builder capture • "
+        "raw verified zero competition remains 0.000 • 0.05 floor used only for diagnostic divide-by-zero protection • "
+        "unknown positions still never guessed • no final rebound projection."
     )
     return out
 
