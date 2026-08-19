@@ -1,16 +1,16 @@
 """WNBA PRA production route wrapper.
 
 The historical V3.2.1 implementation remains preserved in
-wnba_pra_hub_v321_frozen.py and the frozen branch. Main now routes PRA to V3.4,
-which keeps the V3.2.1 projection/Monte Carlo/market formulas while adding the
-V3.3 injury/minutes/role integrity guard, automatic Eastern-date rollover, and a
-same-day RotoWire OUT/status supplement.
+wnba_pra_hub_v321_frozen.py and the frozen branch. Main now routes PRA to V3.5,
+which retains the V3.4.1 Eastern-date slate + multi-source availability repairs
+and adds lineup-aware finalization: explicit starter rechecks, selective changed-
+game 5M rebuilds, targeted 10M finalists, and a Step-9 10M confirmation gate.
 """
 from __future__ import annotations
 
-import wnba_pra_hub_v34 as _impl
+import wnba_pra_hub_v35 as _impl
 
-MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "PRA V3.4 • TODAY SLATE + MULTI-SOURCE AVAILABILITY")
+MODEL_VERSION = getattr(_impl, "MODEL_VERSION", "PRA V3.5 • LINEUP-AWARE FINALIZATION")
 MLB_FROZEN_BASELINE = _impl.MLB_FROZEN_BASELINE
 MLB_FROZEN_BRANCH = _impl.MLB_FROZEN_BRANCH
 
