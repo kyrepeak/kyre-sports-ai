@@ -1,17 +1,17 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to the V1.5.5 nonblocking Step-6 build. This bypasses the legacy
-NBA/WNBA tracking timeout chain on normal Streamlit page loads while preserving
-verified Steps 1-5 and leaving frozen Points/PRA/MLB modules untouched.
+Route directly to V1.6. Steps 1-6 remain the verified V1.5.5 fast path and
+Step 7 adds only the opponent missed-shot environment. Frozen Points/PRA/MLB
+modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v155 as _impl
+import wnba_rebounds_hub_v16 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V1.5.5 • DIRECT NONBLOCKING STEP 6",
+    "WNBA REBOUNDS V1.6 • STEP 7 OPPONENT MISSED-SHOT ENVIRONMENT",
 )
 
 
