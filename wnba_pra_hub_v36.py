@@ -1,0 +1,47 @@
+"""WNBA PRA V3.6 — strengthened Step 7 matchup/pace calibration.
+
+Preserves V3.5.3 empirical variance repair, V3.5.2 visual Preliminary PRA cards,
+V3.5.1 lineup-aware targeted 5M/10M finalization + strict 10M Final Ready gate,
+V3.4.1 Eastern-date slate reconciliation, and V3.3 injury/minutes/role integrity.
+
+V3.6 changes only the Step-7 matchup multipliers:
+- team-relative pace instead of slate-relative pace;
+- team offense vs opponent defense efficiency blend;
+- low-sample context shrinkage toward neutral;
+- PTS/REB/AST remain separate;
+- rebound matchup adjustment no longer uses an unsupported positive defense
+  multiplier without a verified missed-shot/rebound-opportunity feed.
+
+Sportsbook price never changes the projection. Rebounds and MLB are untouched.
+"""
+from __future__ import annotations
+
+import streamlit as st
+
+import wnba_pra_hub_v353 as base
+import wnba_pra_matchup_v36 as step7
+
+MODEL_VERSION = "PRA V3.6 • STEP 7 MATCHUP CALIBRATION • V3.5.3 STACK PRESERVED"
+MLB_FROZEN_BASELINE = base.MLB_FROZEN_BASELINE
+MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
+
+
+def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h=None):
+    # Install before V3.3/V3.5 integrity preflight so basketball fingerprints,
+    # Step 7 grading and the downstream 5M/10M Monte Carlo all see the same
+    # calibrated matchup-adjusted P/R/A means.
+    step7.install()
+    st.caption(
+        "🧭 PRA V3.6 • Step-7 matchup calibration ACTIVE • team-relative pace + offense/defense efficiency blend • "
+        "quality shrinkage • V3.5.3 injury/variance/visual/5M/10M/finalization protections preserved • Rebounds untouched"
+    )
+    return base.render_wnba_pra_hub(section_header, status_info, team_logo, h)
+
+
+def __getattr__(name):
+    return getattr(base, name)
+
+
+__all__ = [
+    "MODEL_VERSION", "MLB_FROZEN_BASELINE", "MLB_FROZEN_BRANCH", "render_wnba_pra_hub",
+]
