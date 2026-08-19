@@ -1,22 +1,22 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to V2.6. Steps 1-16 remain preserved through the verified V2.5
-chain. V2.6 adds Step 17 Monte Carlo simulation, convergence diagnostics and
-bounded ±5% sensitivity testing from the market-independent Step-16 rebound PMF.
-The production standard is 5,000,000 simulations per player in 20 deterministic
-batches. Sportsbook lines/no-vig remain excluded from the simulation itself;
-line-specific Over/Under probability is deferred to Step 18. Cold-start
-reliability and subscription-safe SportsGameOdds behavior remain intact.
-Frozen Points/PRA/MLB modules remain untouched.
+Route directly to V2.7. Steps 1-17 remain preserved through the verified V2.6
+chain. V2.7 adds Step 18 line-specific Over/Under/Push probability and fair odds
+by evaluating the market-independent Step-16 PMF at each exact verified Step-14
+same-book/same-line threshold. Integer-line pushes are explicit and fair odds
+condition on a non-push result. Sportsbook/no-vig data never changes the player
+projection or distribution. EV/ranking remains deferred to Step 19.
+Cold-start reliability and subscription-safe SportsGameOdds behavior remain
+intact. Frozen Points/PRA/MLB modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v26 as _impl
+import wnba_rebounds_hub_v27 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V2.6 • STEP 17 MONTE CARLO + CONVERGENCE / SENSITIVITY",
+    "WNBA REBOUNDS V2.7 • STEP 18 LINE-SPECIFIC O/U PROBABILITY + FAIR ODDS",
 )
 
 
