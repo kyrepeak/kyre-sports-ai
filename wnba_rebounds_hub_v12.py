@@ -1,17 +1,17 @@
 """WNBA Rebounds route wrapper — current isolated build.
 
-Route directly to V1.7. Steps 1-7 remain the verified V1.6/V1.5.5 fast path and
-Step 8 adds only the opponent rebounding-allowed/capture environment. Frozen
-Points/PRA/MLB modules remain untouched.
+Route directly to V1.7.1. Steps 1-8 retain the verified V1.7 model logic while
+V1.7.1 adds only persistent fast-start checkpoint hydration for ordinary app
+reboots. Frozen Points/PRA/MLB modules remain untouched.
 """
 from __future__ import annotations
 
-import wnba_rebounds_hub_v17 as _impl
+import wnba_rebounds_hub_v171 as _impl
 
 MODEL_VERSION = getattr(
     _impl,
     "MODEL_VERSION",
-    "WNBA REBOUNDS V1.7 • STEP 8 OPPONENT REBOUNDING ALLOWED",
+    "WNBA REBOUNDS V1.7.1 • PERSISTENT FAST START",
 )
 
 
