@@ -1,7 +1,7 @@
 """WNBA PRA V3.3 — injury-aware projection integrity production route.
 
-Built from the frozen V3.2.1 basketball model.  Projection formulas, matchup
-weights, Monte Carlo counts and market math stay unchanged.  V3.3 repairs the
+Built from the frozen V3.2.1 basketball model. Projection formulas, matchup
+weights, Monte Carlo counts and market math stay unchanged. V3.3 repairs the
 state plumbing around them: stronger availability precedence, current roster
 status fallback, fail-closed provider coverage, downstream OUT/uncertain gates,
 and fingerprint-aware 5M/10M persistence.
@@ -11,6 +11,9 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+# Import for its deliberate one-line wiring side effect: inherited Step-4 UI now
+# reads the same V3.3 availability resolver used by the projection engine.
+import wnba_pra_ui_patch_v33 as _ui_patch  # noqa: F401
 import wnba_pra_hub_v311 as core
 import wnba_pra_final_v32 as final
 import wnba_pra_integrity_v33 as integrity
