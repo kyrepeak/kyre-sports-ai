@@ -5,7 +5,10 @@ short-lived same-day RotoWire daily-lineups check as a conservative supplement:
 explicit OUT/OFS/DOUBTFUL/GTD labels may strengthen a player's status, but an
 absence of a RotoWire label never proves that a player is available.
 
-Expected lineups from RotoWire are never treated as confirmed starters.
+For today's production slate the RotoWire cross-check is fail-closed: if the
+page cannot be verified for today's Eastern date, players cannot be labeled
+availability-verified for final-card purposes. Expected lineups are never treated
+as confirmed starters.
 """
 from __future__ import annotations
 
@@ -138,13 +141,15 @@ def install():
 
         day_str = availability._day_str(row.get("game_date") or None)
         today_str = datetime.now(ET).strftime("%Y-%m-%d")
-        snap = rotowire_today_snapshot() if day_str == today_str else {
-            "ok": False, "date": "", "text": "", "source": "RotoWire WNBA Daily Lineups"
+        is_today = day_str == today_str
+        snap = rotowire_today_snapshot() if is_today else {
+            "ok": False, "date": "", "text": "", "source": "RotoWire WNBA Daily Lineups", "error": ""
         }
+        rw_connected = bool(snap.get("ok")) and str(snap.get("date")) == day_str
 
         frame = frame.copy()
         matched = []
-        if bool(snap.get("ok")) and str(snap.get("date")) == day_str:
+        if rw_connected:
             page_text = str(snap.get("text") or "")
             for idx, player in frame.iterrows():
                 new_status = _rotowire_status(page_text, str(player.get("PLAYER_NAME") or ""))
@@ -158,15 +163,35 @@ def install():
                     frame.at[idx, "AVAILABILITY_VERIFIED"] = True
                     frame.at[idx, "PROVIDER_COVERED"] = True
                     matched.append(str(player.get("PLAYER_NAME") or ""))
+        elif is_today:
+            # Mandatory same-day cross-check failed. Preserve any hard injury
+            # status already found by ESPN, but do not call healthy-looking rows
+            # verified/available until RotoWire can be checked too.
+            for idx, player in frame.iterrows():
+                old_status = str(player.get("DESIGNATION") or "NO DESIGNATION").upper()
+                frame.at[idx, "AVAILABILITY_VERIFIED"] = False
+                frame.at[idx, "PROVIDER_COVERED"] = False
+                if old_status in {"AVAILABLE", "ACTIVE", "NO DESIGNATION"}:
+                    frame.at[idx, "DESIGNATION"] = "STATUS UNVERIFIED"
+                old_source = str(player.get("STATUS_SOURCE") or "")
+                frame.at[idx, "STATUS_SOURCE"] = (
+                    (old_source + " • ") if old_source else ""
+                ) + "RotoWire same-day cross-check unavailable"
 
         result["players"] = frame
-        result["rotowire_connected"] = bool(snap.get("ok")) and str(snap.get("date")) == day_str
+        result["rotowire_connected"] = rw_connected
         result["rotowire_date"] = str(snap.get("date") or "")
         result["rotowire_matches"] = matched
-        if result["rotowire_connected"]:
+        result["rotowire_error"] = str(snap.get("error") or "")
+        if rw_connected:
             result["source"] = (
                 str(result.get("source") or "WNBA availability")
                 + " + RotoWire same-day OUT/status supplement"
+            )
+        elif is_today:
+            result["source"] = (
+                str(result.get("source") or "WNBA availability")
+                + " + RotoWire same-day cross-check REQUIRED/UNAVAILABLE"
             )
         return result
 
@@ -181,9 +206,6 @@ def install():
     availability.clear_availability_cache = clear_availability_cache_v34
     availability._v34_rotowire_installed = True
 
-    # If the previous V3.3 page was already open in this Streamlit process, its
-    # 90-second diagnostics cache may contain pre-RotoWire statuses. Flush it once
-    # at install so V3.4's first render is guaranteed to rebuild availability.
     try:
         original_clear()
     except Exception:
