@@ -12,13 +12,15 @@ V3.6 changes only the Step-7 matchup multipliers:
 - rebound matchup adjustment no longer uses an unsupported positive defense
   multiplier without a verified missed-shot/rebound-opportunity feed.
 
-Final Decision Step 2 installs the verified Points card-feed connector. When the
-same-day Points payload disappeared from Streamlit session state after a deploy,
-this route may recover the already-completed persisted Points V1.9 snapshot using
-the Points engine's existing restore path. Restore never reruns Monte Carlo or
-changes the Points projection; the existing completed 5M/10M distributions are
-reused and their sportsbook grading is refreshed against the current exact market
-before they are exposed to Final Decision. Rebounds remains paused/untouched.
+Final Decision now installs the persistent Points card-feed/dashboard connector.
+Step 9 is allowed to render before PRA 5M exists, while PRA itself remains
+WAITING until a fingerprint-valid completed payload exists. When the same-day
+Points payload disappeared from Streamlit session state after a deploy, this
+route may recover the already-completed persisted Points V1.9 snapshot using the
+Points engine's existing restore path. Restore never reruns Monte Carlo or
+changes the Points projection; existing completed 5M/10M distributions are
+reused and sportsbook grading is refreshed against the current exact market.
+Rebounds remains paused/untouched.
 
 Sportsbook price never changes the projection. Rebounds and MLB are untouched.
 """
@@ -28,10 +30,10 @@ import streamlit as st
 
 import wnba_pra_hub_v353 as base
 import wnba_pra_matchup_v36 as step7
-import wnba_final_points_connector_v2 as points_final_connector
+import wnba_final_points_connector_v3 as points_final_connector
 import wnba_points_v19 as points_engine
 
-MODEL_VERSION = "PRA V3.6 • STEP 7 MATCHUP CALIBRATION • V3.5.3 STACK PRESERVED"
+MODEL_VERSION = "PRA V3.6 • STEP 7 MATCHUP CALIBRATION • PERSISTENT FINAL DASHBOARD"
 MLB_FROZEN_BASELINE = base.MLB_FROZEN_BASELINE
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
 
@@ -78,8 +80,9 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
     # already-completed Points snapshot but can never launch a new 5M/10M pass.
     restored_points = _restore_points_for_final_decision()
 
-    # Final Decision Step 2. This patches only stored-output read/selection/UI
-    # hooks; Points projection math and PRA projection math remain untouched.
+    # Persistent Final Decision dashboard + verified Points Step-2 card feed.
+    # This patches read/selection/presentation hooks only; Points/PRA projection
+    # and Monte Carlo math remain untouched.
     points_final_connector.install()
 
     st.caption(
@@ -93,8 +96,8 @@ def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h
         )
     else:
         st.caption(
-            "🔌 Final Decision Step 2 • verified Points card feed ACTIVE • completed same-day Points rows may compete only if already model-qualified • "
-            "no Points Monte Carlo is launched here • Rebounds still NEXT"
+            "🏆 Persistent Final Decision ACTIVE • dashboard stays visible before PRA 5M • Points reports independently • "
+            "no simulation is launched by Final Decision • Rebounds still NEXT"
         )
     return base.render_wnba_pra_hub(section_header, status_info, team_logo, h)
 
