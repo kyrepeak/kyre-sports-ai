@@ -7,7 +7,7 @@ Performance repair:
 - Step 5 no longer re-downloads many of those same ESPN game summaries again.
 - Season/L10/L5 values come from the verified current-roster player pool.
 - Step-4 PLAYER_ID history remains the strict fallback for recent/sample coverage.
-- The season pool is cached for six hours by slate date.
+- The season pool and completed Step-5 table are cached for six hours.
 
 No sportsbook, Monte Carlo, final rebound projection, or other sport module is
 changed by this file.
@@ -36,12 +36,10 @@ def _finite(value):
 
 @st.cache_data(ttl=21600, show_spinner=False, max_entries=16)
 def _fast_season_lookup(day: str) -> pd.DataFrame:
-    """Cache the already-verified player pool; do not rebuild it on every rerun."""
     return base._season_lookup(str(day)).copy()
 
 
 def _repair_row(row: pd.Series) -> pd.Series:
-    """Repair provider/team-scope gaps from already-verified Step-4 history."""
     r = row.copy()
 
     role_gp = int(base._num(r.get("REB_ROLE_GP"), 0) or 0)
@@ -56,12 +54,7 @@ def _repair_row(row: pd.Series) -> pd.Series:
 
     normal_baseline = season_gp >= 3 and _finite(season36)
     normal_recent = l3_gp >= 3 and _finite(l3_36)
-    role_verified = (
-        role_gp >= 3
-        and _finite(role_min)
-        and float(role_min) > 0
-        and _finite(role_reb36)
-    )
+    role_verified = role_gp >= 3 and _finite(role_min) and float(role_min) > 0 and _finite(role_reb36)
 
     r["FORM_BASELINE_SOURCE"] = "SEASON"
     r["FORM_RECENT_SOURCE"] = "PLAYER POOL L10/L5"
@@ -69,10 +62,11 @@ def _repair_row(row: pd.Series) -> pd.Series:
 
     if not normal_baseline and role_verified:
         avg_min = float(role_min) / float(role_gp)
-        if _finite(role_reb_total):
-            avg_reb = float(role_reb_total) / float(role_gp)
-        else:
-            avg_reb = float(role_reb36) * avg_min / 36.0
+        avg_reb = (
+            float(role_reb_total) / float(role_gp)
+            if _finite(role_reb_total)
+            else float(role_reb36) * avg_min / 36.0
+        )
         r["FORM_SEASON_GP"] = role_gp
         r["FORM_SEASON_MIN"] = avg_min
         r["FORM_SEASON_REB"] = avg_reb
@@ -110,10 +104,7 @@ def _repair_row(row: pd.Series) -> pd.Series:
         r["FORM_TREND_PCT"] = trend_pct
         r["FORM_TREND"] = "UP" if trend_pct >= 4.0 else "DOWN" if trend_pct <= -4.0 else "STEADY"
 
-    baseline_verified = (
-        int(base._num(r.get("FORM_SEASON_GP"), 0) or 0) >= 3
-        and _finite(r.get("FORM_SEASON_REB36"))
-    )
+    baseline_verified = int(base._num(r.get("FORM_SEASON_GP"), 0) or 0) >= 3 and _finite(r.get("FORM_SEASON_REB36"))
     recent_verified = (
         int(base._num(r.get("FORM_L10_GP"), 0) or 0) >= 3
         and _finite(r.get("FORM_L10_REB36"))
@@ -140,11 +131,11 @@ def _rate36(reb, mins):
 
 
 @st.cache_data(ttl=21600, show_spinner=False, max_entries=16)
-def _build_step5_fast_cached(step4_records: tuple, day: str):
-    """Build Step 5 without re-fetching per-game summaries already used by Step 4."""
-    frame = pd.DataFrame(list(step4_records))
+def _build_step5_fast_cached(step4_players: pd.DataFrame, day: str):
+    """Build Step 5 without repeating per-game ESPN summaries already used by Step 4."""
+    frame = step4_players.copy()
     if frame.empty:
-        return [], [], {"ready": False, "reason": "no Step-4 rows"}
+        return pd.DataFrame(), pd.DataFrame(), {"ready": False, "reason": "no Step-4 rows"}
 
     pool = _fast_season_lookup(day)
     outputs = []
@@ -166,8 +157,6 @@ def _build_step5_fast_cached(step4_records: tuple, day: str):
         role_gp = int(base._num(row.get("REB_ROLE_GP"), 0) or 0)
         role36 = base._num(row.get("REB36"), np.nan)
 
-        # We intentionally do not re-download game summaries to manufacture L3.
-        # Step-4 verified role history supplies recent sample validation instead.
         stabilized, raw_recent, capped_recent = base._stabilized_form_rate(
             season36, l10_36, l5_36, np.nan, season_gp
         )
@@ -208,7 +197,8 @@ def _build_step5_fast_cached(step4_records: tuple, day: str):
     repaired = pd.DataFrame(outputs)
     repaired["PROJ_MIN"] = pd.to_numeric(repaired.get("PROJ_MIN"), errors="coerce").fillna(0.0)
     modeled = repaired[repaired["PROJ_MIN"].ge(5.0)].copy()
-    modeled["_COVERED"] = modeled.get("_FORM_COVERED_141", False).fillna(False).astype(bool) if not modeled.empty else False
+    if not modeled.empty:
+        modeled["_COVERED"] = modeled.get("_FORM_COVERED_141", False).fillna(False).astype(bool)
 
     team_rows = []
     if not modeled.empty:
@@ -245,7 +235,7 @@ def _build_step5_fast_cached(step4_records: tuple, day: str):
                 "Recent source": str(r.get("FORM_RECENT_SOURCE") or "—"),
             })
 
-    info = {
+    return repaired, teams_out, {
         "ready": ready,
         "teams": team_count,
         "ready_teams": ready_teams,
@@ -256,26 +246,12 @@ def _build_step5_fast_cached(step4_records: tuple, day: str):
         "repair_version": "V1.4.1 FAST",
         "performance_mode": "NO DUPLICATE STEP5 GAME SUMMARY FETCHES",
     }
-    return repaired.to_dict("records"), teams_out.to_dict("records"), info
 
 
 def _build_step5_form_141(step4_players: pd.DataFrame, day: str, slate: pd.DataFrame):
     if step4_players is None or step4_players.empty:
         return pd.DataFrame(), pd.DataFrame(), {"ready": False, "reason": "no Step-4 rows"}
-
-    # Convert only stable scalar records into the cache key. This prevents every
-    # Streamlit widget rerun from rebuilding Step 5 and hitting ESPN repeatedly.
-    records = tuple(
-        tuple(sorted((str(k), None if pd.isna(v) else str(v)) for k, v in row.items()))
-        for row in step4_players.to_dict("records")
-    )
-    packed_rows, team_rows, info = _build_step5_fast_cached(records, str(day))
-
-    # Cached tuples are stringified for stable hashing; restore useful numeric
-    # types where possible after reconstruction.
-    players_out = pd.DataFrame(packed_rows)
-    teams_out = pd.DataFrame(team_rows)
-    return players_out, teams_out, info
+    return _build_step5_fast_cached(step4_players, str(day))
 
 
 def _versioned_markdown_141(body, *args, **kwargs):
