@@ -1,35 +1,47 @@
-'''Kyre Sports AI entrypoint — WNBA Daily Picks Step 10 routing layer.
+'''Kyre Sports AI entrypoint — WNBA Assists Step 1 isolated routing layer.
 
-This cache-safe wrapper preserves the exact deployed application at commit
-6b5958d729c3999fc0188518a9dc4fb8ee63803c and changes only the WNBA Daily Picks
-renderer binding from V4/Step 4 to V10/Step 10.
+This wrapper preserves the exact deployed application at commit
+759d0052b1d0e2a739b0618a03e1fe6e4f017dff (including WNBA Daily Picks Step 10)
+and changes only the unfinished WNBA Assists fallback so the existing Assists
+navigation item opens the new isolated Step-1 page.
 
-Daily Picks V10 preserves the passive PRA, Points and Rebounds connectors, the
-Step-5 common schema, Step-6 safety audit, Step-7 duplicate/correlation
-protection, Step-8 ranking and Step-9 visual Top-5 selection, then adds the final
-read-only production-readiness guard + guard-only recheck. It does not import or
-run production models, launch/restore simulations, request sportsbook/model data,
-refresh injuries, alter projections, or write PRA/Points/Rebounds production state.
+Assists V1 Step 1 is display-only: no schedule, roster, injury, sportsbook,
+projection, Monte Carlo, PRA, Points, Rebounds or Daily Picks production module
+is imported by the Assists page. All existing production routes remain owned by
+the preserved application.
 '''
 from __future__ import annotations
 
 import subprocess
-import sys
 import urllib.request
 
-import wnba_daily_picks_hub_v10 as wnba_daily_picks_v10
+import streamlit as st
+import wnba_assists_hub_v1 as wnba_assists_v1
 
-# The preserved Step-4 entrypoint asks for `wnba_daily_picks_hub_v4`; route only
-# that Daily Picks renderer to V10. V10 imports the frozen V9/V7/V6/V5/V4 stack
-# before this alias is installed, so all existing read-only helpers remain intact.
-# Every PRA / Points / Rebounds / MLB production route stays preserved.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v10
-
-PREVIOUS_APP_COMMIT = "6b5958d729c3999fc0188518a9dc4fb8ee63803c"
+PREVIOUS_APP_COMMIT = "759d0052b1d0e2a739b0618a03e1fe6e4f017dff"
 RAW_URL = (
     "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
     f"{PREVIOUS_APP_COMMIT}/app.py"
 )
+
+# The preserved WNBA shell already exposes Assists in its market selector but
+# routes unfinished markets through a generic st.info fallback. Intercept only
+# that Assists fallback. The preserved shell later layers its Rebounds/Daily
+# Picks guards on top of this function, so those routes remain unchanged.
+_ASSISTS_PREVIOUS_INFO = st.info
+
+
+def _assists_step1_info(body, *args, **kwargs):
+    text = str(body)
+    if text.startswith("WNBA Assists is separate from") and (
+        "production model page" in text or "model module" in text
+    ):
+        wnba_assists_v1.render_wnba_assists_hub(None, None, None, None)
+        st.stop()
+    return _ASSISTS_PREVIOUS_INFO(body, *args, **kwargs)
+
+
+st.info = _assists_step1_info
 
 
 def _load_previous_app() -> str:
@@ -48,7 +60,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_wnba_daily_picks_v10_step10_production_guard.py",
+        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v1_step1.py",
         "exec",
     ),
     globals(),
