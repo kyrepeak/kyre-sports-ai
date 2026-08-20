@@ -1,14 +1,14 @@
-'''Kyre Sports AI entrypoint — WNBA Assists V14.1 dependency-correction layer.
+'''Kyre Sports AI entrypoint — WNBA Assists Step 15 projection routing layer.
 
 This wrapper preserves the exact deployed application at commit
 759d0052b1d0e2a739b0618a03e1fe6e4f017dff (including WNBA Daily Picks Step 10)
 and changes only the unfinished WNBA Assists fallback so the existing Assists
-navigation item opens the V14.1 page.
+navigation item opens the Step-15 page.
 
-V14.1 preserves all Step 1–14 calculations and corrects only the dependency
-graph: Step 15 is unlocked by verified Steps 1–12, while Steps 13–14 remain a
-separate sportsbook/no-vig branch that rejoins later for line-specific market
-grading. No Step-15 projection math or Monte Carlo is added by this route.
+Assists V15 preserves Steps 1–14, keeps the market branch (Steps 13–14) separate,
+and adds only the market-independent expected-assists projection from verified
+Steps 1–12. No distribution calibration, Monte Carlo, fair model odds, EV,
+PRA, Points, Rebounds or Daily Picks production math is changed by this route.
 '''
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ import subprocess
 import urllib.request
 
 import streamlit as st
-import wnba_assists_hub_v14_1 as wnba_assists_v14_1
+import wnba_assists_hub_v15 as wnba_assists_v15
 
 PREVIOUS_APP_COMMIT = "759d0052b1d0e2a739b0618a03e1fe6e4f017dff"
 RAW_URL = (
@@ -27,17 +27,17 @@ RAW_URL = (
 _ASSISTS_PREVIOUS_INFO = st.info
 
 
-def _assists_v14_1_info(body, *args, **kwargs):
+def _assists_step15_info(body, *args, **kwargs):
     text = str(body)
     if text.startswith("WNBA Assists is separate from") and (
         "production model page" in text or "model module" in text
     ):
-        wnba_assists_v14_1.render_wnba_assists_hub(None, None, None, None)
+        wnba_assists_v15.render_wnba_assists_hub(None, None, None, None)
         st.stop()
     return _ASSISTS_PREVIOUS_INFO(body, *args, **kwargs)
 
 
-st.info = _assists_v14_1_info
+st.info = _assists_step15_info
 
 
 def _load_previous_app() -> str:
@@ -56,7 +56,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v14_1_dependency_fix.py",
+        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v15_step15_projection.py",
         "exec",
     ),
     globals(),
