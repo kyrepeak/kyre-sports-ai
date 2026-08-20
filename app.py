@@ -7,12 +7,13 @@ This cache-safe wrapper preserves the exact application at commit
    preserves V17 production logic and appends only passive four-market E2E
    verification.
 2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
-3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.2, which changes
-   preflight coverage only: every upcoming game still needs an exact simulatable
-   projection+market pair, but a raw sportsbook player quote with no current
-   projection can no longer deadlock all valid 5M distributions. Such unmatched
-   quote rows remain excluded from simulation/output exactly as the production
-   engine already does.
+3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.3. V1.9.8.4.2
+   preserves full upcoming-game projection+exact-market coverage while excluding
+   raw sportsbook player quotes that have no current projection. V1.9.8.4.3 then
+   repairs the inherited sanity gate so a >35% Points deviation is a hard blocker
+   only when the scoring-rate change is unexplained. A deviation driven by a
+   material minutes change, with projected points/minute still inside the verified
+   ±30% historical band, remains visible as MONITOR but no longer deadlocks 5M.
 
 No PRA, Rebounds, MLB, Daily Picks production math, Assists production math,
 Points projection math, Monte Carlo math, grading or calibration is modified.
@@ -26,15 +27,15 @@ import urllib.request
 import streamlit as st
 import wnba_daily_picks_hub_v18 as wnba_daily_picks_v18
 import wnba_assists_hub_v20 as wnba_assists_v20
-import wnba_points_hub_v19842 as wnba_points_v19842
+import wnba_points_hub_v19843 as wnba_points_v19843
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v18
 
 # The preserved application imports V1.9.8.4.1 directly. The new wrapper imported
 # the genuine V1.9.8.4.1 module before this alias is installed, then patches only
-# the live preflight readiness helper on render.
-sys.modules["wnba_points_hub_v19841"] = wnba_points_v19842
+# the live Points preflight coverage + explainable sanity-gate helpers on render.
+sys.modules["wnba_points_hub_v19841"] = wnba_points_v19843
 
 # Preserve the existing independent Assists navigation interception.
 _ASSISTS_PREVIOUS_INFO = st.info
@@ -75,7 +76,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19842.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843.py",
         "exec",
     ),
     globals(),
