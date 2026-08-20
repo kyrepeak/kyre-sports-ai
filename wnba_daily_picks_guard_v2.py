@@ -17,6 +17,13 @@ into the existing V1 Availability/Game-state gate fields on a temporary copy.
 Unknown evidence remains MONITOR; bad evidence remains BLOCKED. No guard is
 weakened and no source value is mutated.
 
+For the Assists status model, NOT LISTED has a specific verified meaning: the
+player is on the current roster and is absent from the successfully loaded injury
+feed. Step 3 cannot unlock downstream modeling unless that injury feed is same-ET-
+day, fresh, and fully reconciled. Therefore NOT LISTED is valid explicit current-
+session availability proof and passes the final guard. This does not apply to
+UNKNOWN, REPORTED, PROBABLE, QUESTIONABLE, DOUBTFUL, OUT or INACTIVE.
+
 This adapter is read-only. It launches no simulations, makes no network requests,
 refreshes no source model, performs no re-ranking/backfill and writes no source or
 Daily Picks production state.
@@ -42,7 +49,7 @@ GUARD_COLUMNS = list(v1.GUARD_COLUMNS)
 
 _BASE_MARKETS = {"PRA", "POINTS", "REBOUNDS"}
 _ET = ZoneInfo("America/New_York")
-_GOOD_AVAIL = ("ACTIVE", "AVAILABLE", "STARTER", "CONFIRMED")
+_GOOD_AVAIL = ("ACTIVE", "AVAILABLE", "STARTER", "CONFIRMED", "NOT LISTED")
 _HOLD_AVAIL = ("QUESTIONABLE", "DOUBTFUL", "DAY-TO-DAY", "GTD", "PROBABLE", "GAME TIME DECISION", "REPORTED")
 _BAD_AVAIL = ("OUT", "INACTIVE", "SUSPENDED", "DNP", "DID NOT PLAY")
 
@@ -118,7 +125,6 @@ def _tip_datetime(value: Any, slate_day: Any) -> datetime | None:
     if not s or not day_str:
         return None
 
-    # Strip a trailing display timezone token; a real ISO offset is preserved.
     clean = re.sub(r"\s+ET$", "", s, flags=re.IGNORECASE).strip()
     has_date = bool(re.search(r"\b\d{4}-\d{1,2}-\d{1,2}\b", clean))
 
@@ -133,8 +139,6 @@ def _tip_datetime(value: Any, slate_day: Any) -> datetime | None:
         except Exception:
             return None
 
-    # Display-only values such as "8:00 PM ET" are attached to the exact
-    # Eastern slate date. This prevents UTC rollover or bare-time ambiguity.
     for fmt in ("%I:%M %p", "%I:%M:%S %p", "%I %p", "%H:%M", "%H:%M:%S"):
         try:
             t = datetime.strptime(clean, fmt).time()
@@ -184,7 +188,6 @@ def _enrich_assists_final_proof(
             "Line": p.get("Line"),
             "Book": p.get("Book"),
         }))
-        # Exact duplicates are harmless; first source row wins deterministically.
         pmap.setdefault(key, p)
 
     enriched: list[dict[str, Any]] = []
@@ -245,8 +248,6 @@ def evaluate_four_market(
 
     assists_rows = work.loc[market.eq("ASSISTS")].copy()
     if not assists_rows.empty:
-        # Restore evidence that was intentionally omitted from the common schema,
-        # using only the exact same-session Step-20 source rows.
         assists_rows = _enrich_assists_final_proof(assists_rows, slate_day, now_et=now_et)
         shim = assists_rows.copy()
         shim["Market"] = "POINTS"
@@ -259,12 +260,9 @@ def evaluate_four_market(
         )
         if isinstance(assisted, pd.DataFrame) and not assisted.empty:
             assisted["Market"] = "ASSISTS"
-            # Recompute the fingerprint with the true market identity rather than
-            # the temporary compatibility label used only inside V1's quote gate.
             assisted["Guard fingerprint"] = [v1._row_fingerprint(row) for _, row in assisted.iterrows()]
             outputs.append(assisted)
 
-    # Unknown markets are fail-closed rather than silently disappearing.
     unknown = work.loc[~market.isin(_BASE_MARKETS | {"ASSISTS"})].copy()
     if not unknown.empty:
         recs = []
