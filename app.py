@@ -1,12 +1,13 @@
-'''Kyre Sports AI entrypoint — Daily Picks Assists Connector Step 1 + Assists V20.
+'''Kyre Sports AI entrypoint — Daily Picks Assists Connector Step 2 + Assists V20.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies only two isolated routes:
 
-1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V11. V11
-   renders the complete existing V10 Steps 1–10 first, then appends only the new
-   Assists read-only connector Step 1. Assists is NOT yet inserted into the
-   common schema, safety engine, ranking, selection or final Daily Picks guard.
+1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V12. V12
+   renders the complete existing V10 Steps 1–10, then Assists Connector Step 1,
+   then appends only Step 2 common-schema verification. Assists is NOT yet passed
+   through Daily Picks safety, correlation protection, ranking, selection or the
+   Step-10 final production guard.
 2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
 
 No PRA, Points, Rebounds, MLB, Daily Picks production math, or Assists production
@@ -19,12 +20,12 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v11 as wnba_daily_picks_v11
+import wnba_daily_picks_hub_v12 as wnba_daily_picks_v12
 import wnba_assists_hub_v20 as wnba_assists_v20
 
 # The preserved application imports this historical module name for Daily Picks.
-# Rebind only that import to the new wrapper; V11 itself preserves V10 intact.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v11
+# Rebind only that import to the new wrapper; V12 itself preserves V11/V10 intact.
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v12
 
 # Preserve the existing independent Assists navigation interception.
 _ASSISTS_PREVIOUS_INFO = st.info
@@ -65,7 +66,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_assists_connector_step1_and_assists_v20.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_assists_connector_step2_and_assists_v20.py",
         "exec",
     ),
     globals(),
