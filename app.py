@@ -1,34 +1,36 @@
-'''Kyre Sports AI entrypoint — WNBA Assists Step 20 final-production routing layer.
+'''Kyre Sports AI entrypoint — Daily Picks Assists Connector Step 1 + Assists V20.
 
-This wrapper preserves the exact deployed application at commit
-759d0052b1d0e2a739b0618a03e1fe6e4f017dff (including WNBA Daily Picks Step 10)
-and changes only the unfinished WNBA Assists fallback so the existing Assists
-navigation item opens the Step-20 page.
+This cache-safe wrapper preserves the exact application at commit
+6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies only two isolated routes:
 
-Assists V20 preserves Steps 1–19, including the corrected same-day ET tip parser,
-and adds only the final risk-adjusted qualification / Top-5 publisher. It does
-not change projection math, Step-16 distributions, Step-17 Monte Carlo results,
-Step-18 probabilities, Step-19 EV math, or PRA/Points/Rebounds/Daily Picks
-production math. It publishes up to five only and never forces five.
+1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V11. V11
+   renders the complete existing V10 Steps 1–10 first, then appends only the new
+   Assists read-only connector Step 1. Assists is NOT yet inserted into the
+   common schema, safety engine, ranking, selection or final Daily Picks guard.
+2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
+
+No PRA, Points, Rebounds, MLB, Daily Picks production math, or Assists production
+math is modified by this entrypoint.
 '''
 from __future__ import annotations
 
 import subprocess
+import sys
 import urllib.request
 
 import streamlit as st
+import wnba_daily_picks_hub_v11 as wnba_daily_picks_v11
 import wnba_assists_hub_v20 as wnba_assists_v20
 
-PREVIOUS_APP_COMMIT = "759d0052b1d0e2a739b0618a03e1fe6e4f017dff"
-RAW_URL = (
-    "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
-    f"{PREVIOUS_APP_COMMIT}/app.py"
-)
+# The preserved application imports this historical module name for Daily Picks.
+# Rebind only that import to the new wrapper; V11 itself preserves V10 intact.
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v11
 
+# Preserve the existing independent Assists navigation interception.
 _ASSISTS_PREVIOUS_INFO = st.info
 
 
-def _assists_step20_info(body, *args, **kwargs):
+def _assists_v20_info(body, *args, **kwargs):
     text = str(body)
     if text.startswith("WNBA Assists is separate from") and (
         "production model page" in text or "model module" in text
@@ -38,7 +40,13 @@ def _assists_step20_info(body, *args, **kwargs):
     return _ASSISTS_PREVIOUS_INFO(body, *args, **kwargs)
 
 
-st.info = _assists_step20_info
+st.info = _assists_v20_info
+
+PREVIOUS_APP_COMMIT = "6b5958d729c3999fc0188518a9dc4fb8ee63803c"
+RAW_URL = (
+    "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
+    f"{PREVIOUS_APP_COMMIT}/app.py"
+)
 
 
 def _load_previous_app() -> str:
@@ -57,7 +65,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v20_final.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_assists_connector_step1_and_assists_v20.py",
         "exec",
     ),
     globals(),
