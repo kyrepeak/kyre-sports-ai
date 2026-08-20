@@ -1,12 +1,12 @@
-'''Kyre Sports AI entrypoint — Daily Picks Assists Connector Step 3 + Assists V20.
+'''Kyre Sports AI entrypoint — Daily Picks Assists Connector Step 4 + Assists V20.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies only two isolated routes:
 
-1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V13. V13
+1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V14. V14
    renders the complete existing Daily Picks Steps 1–10, then Assists Connector
-   Steps 1–2, then appends only Step 3 safety-engine verification. Assists is NOT
-   yet passed into correlation protection, ranking, selection or the Step-10
+   Steps 1–3, then appends only Step 4 duplicate/correlation protection. Assists
+   is NOT yet passed into cross-market ranking, Top-5 selection or the Step-10
    final production guard.
 2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
 
@@ -20,12 +20,12 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v13 as wnba_daily_picks_v13
+import wnba_daily_picks_hub_v14 as wnba_daily_picks_v14
 import wnba_assists_hub_v20 as wnba_assists_v20
 
 # The preserved application imports this historical module name for Daily Picks.
-# Rebind only that import to the new wrapper; V13 itself preserves V12/V11/V10.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v13
+# Rebind only that import to the new wrapper; V14 preserves V13/V12/V11/V10.
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v14
 
 # Preserve the existing independent Assists navigation interception.
 _ASSISTS_PREVIOUS_INFO = st.info
@@ -66,7 +66,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_assists_connector_step3_and_assists_v20.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_assists_connector_step4_and_assists_v20.py",
         "exec",
     ),
     globals(),
