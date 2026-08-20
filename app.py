@@ -5,10 +5,11 @@ This wrapper preserves the exact deployed application at commit
 and changes only the unfinished WNBA Assists fallback so the existing Assists
 navigation item opens the Step-2 page.
 
-Assists V2 Step 2 adds only verified same-day schedule reads. No roster, injury,
-sportsbook, projection, Monte Carlo, PRA, Points, Rebounds or Daily Picks
-production module is imported by the Assists page. All existing production
-routes remain owned by the preserved application.
+Assists V2.1 Step 2 adds only verified same-day schedule reads with the repaired
+current WNBA CDN endpoint. No roster, injury, sportsbook, projection, Monte
+Carlo, PRA, Points, Rebounds or Daily Picks production module is imported by
+the Assists page. All existing production routes remain owned by the preserved
+application.
 '''
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ import subprocess
 import urllib.request
 
 import streamlit as st
-import wnba_assists_hub_v2 as wnba_assists_v2
+import wnba_assists_hub_v2_1 as wnba_assists_v2
 
 PREVIOUS_APP_COMMIT = "759d0052b1d0e2a739b0618a03e1fe6e4f017dff"
 RAW_URL = (
@@ -59,7 +60,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v2_step2.py",
+        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v2_1_step2.py",
         "exec",
     ),
     globals(),
