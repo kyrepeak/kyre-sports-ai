@@ -1,15 +1,16 @@
-'''Kyre Sports AI entrypoint — WNBA Assists Step 5 creation-role routing layer.
+'''Kyre Sports AI entrypoint — WNBA Assists Step 6 assist-form routing layer.
 
 This wrapper preserves the exact deployed application at commit
 759d0052b1d0e2a739b0618a03e1fe6e4f017dff (including WNBA Daily Picks Step 10)
 and changes only the unfinished WNBA Assists fallback so the existing Assists
-navigation item opens the Step-5 page.
+navigation item opens the Step-6 page.
 
-Assists V5 preserves the repaired same-day slate, Step-3 roster/status gate and
-Step-4 rotation-aware projected minutes, then adds only creator-role / ball-
-handling / usage context. No assist projection, potential-assist tracking,
-SportsGameOdds, market grading, Monte Carlo, PRA, Points, Rebounds or Daily
-Picks production math is added by this route.
+Assists V6 preserves the repaired same-day slate, Step-3 roster/status gate,
+Step-4 rotation-aware projected minutes and Step-5 creation role, then adds only
+season + L3/L5/L10 assist-form context with regression protection. No potential
+assist/pass tracking, teammate conversion, matchup projection, SportsGameOdds,
+market grading, Monte Carlo, PRA, Points, Rebounds or Daily Picks production
+math is added by this route.
 '''
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ import subprocess
 import urllib.request
 
 import streamlit as st
-import wnba_assists_hub_v5 as wnba_assists_v5
+import wnba_assists_hub_v6 as wnba_assists_v6
 
 PREVIOUS_APP_COMMIT = "759d0052b1d0e2a739b0618a03e1fe6e4f017dff"
 RAW_URL = (
@@ -31,17 +32,17 @@ RAW_URL = (
 _ASSISTS_PREVIOUS_INFO = st.info
 
 
-def _assists_step5_info(body, *args, **kwargs):
+def _assists_step6_info(body, *args, **kwargs):
     text = str(body)
     if text.startswith("WNBA Assists is separate from") and (
         "production model page" in text or "model module" in text
     ):
-        wnba_assists_v5.render_wnba_assists_hub(None, None, None, None)
+        wnba_assists_v6.render_wnba_assists_hub(None, None, None, None)
         st.stop()
     return _ASSISTS_PREVIOUS_INFO(body, *args, **kwargs)
 
 
-st.info = _assists_step5_info
+st.info = _assists_step6_info
 
 
 def _load_previous_app() -> str:
@@ -60,7 +61,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v5_step5.py",
+        "kyre_sports_ai_preserved_daily_picks_v10_plus_wnba_assists_v6_step6.py",
         "exec",
     ),
     globals(),
