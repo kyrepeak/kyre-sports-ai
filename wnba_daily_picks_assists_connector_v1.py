@@ -9,6 +9,12 @@ change a projection, write to Assists state, or perform Daily Picks ranking.
 A Step-20 PASS with zero published picks is still considered a healthy connected
 source: "no qualified picks" is a valid production result and must not be confused
 with "model not run".
+
+For the final Daily Picks guard, ``final_guard_proof`` exposes only the already-
+loaded Step-20 Top-5 fields that Step 20 itself used to qualify the pick: exact
+player/market identity, availability and tip time. This is a read-only continuity
+bridge so the final guard can recheck current evidence without weakening any gate
+or making a network request.
 """
 from __future__ import annotations
 
@@ -148,9 +154,7 @@ def status(day: Any) -> dict[str, Any]:
     connected = bool(layer_ready and state_token == "VERIFIED" and row_proof)
     if connected:
         if standard.empty:
-            detail = (
-                "Read-only Assists Step-20 PASS • 0 production picks published • no picks forced"
-            )
+            detail = "Read-only Assists Step-20 PASS • 0 production picks published • no picks forced"
         else:
             detail = (
                 f"Read-only Assists Step-20 PASS • {len(standard)} production-ready pick(s) • "
@@ -205,4 +209,49 @@ def preview_rows(day: Any, limit: int = 12) -> pd.DataFrame:
     return out.head(max(1, int(limit))).reset_index(drop=True)
 
 
-__all__ = ["MODEL_VERSION", "status", "preview_rows"]
+def final_guard_proof(day: Any) -> pd.DataFrame:
+    """Expose exact same-session Step-20 availability/tip evidence, read-only.
+
+    The standardized 22-column Daily Picks contract intentionally omits source-
+    specific status/tip fields. Step 20's Top-5 payload still retains them. This
+    function returns only those already-computed fields so the final Daily Picks
+    guard can require explicit proof rather than treating a generic SOURCE gate as
+    permanently unresolved.
+    """
+    day_str = _day(day)
+    cols = [
+        "Slate day", "Player", "Team", "Opponent", "Side", "Line", "Book",
+        "Availability proof", "Tip ET proof", "Source timestamp proof",
+    ]
+    if not day_str:
+        return pd.DataFrame(columns=cols)
+
+    top5 = _frame(st.session_state.get(_top5_key(day_str)))
+    if top5.empty:
+        return pd.DataFrame(columns=cols)
+
+    records: list[dict[str, Any]] = []
+    for _, row in top5.iterrows():
+        records.append({
+            "Slate day": day_str,
+            "Player": str(row.get("PLAYER_NAME") or "").strip(),
+            "Team": str(row.get("TEAM") or "").strip(),
+            "Opponent": str(row.get("OPPONENT") or "").strip(),
+            "Side": str(row.get("SIDE") or "").strip().upper(),
+            "Line": _num(row.get("LINE")),
+            "Book": str(row.get("BOOK") or "").strip(),
+            "Availability proof": str(row.get("AVAILABILITY") or "").strip().upper(),
+            "Tip ET proof": str(row.get("TIP_ET") or "").strip(),
+            "Source timestamp proof": str(row.get("SOURCE_TIMESTAMP") or "").strip(),
+        })
+
+    out = pd.DataFrame(records, columns=cols)
+    if out.empty:
+        return out
+    return out.drop_duplicates(
+        subset=["Player", "Team", "Opponent", "Side", "Line", "Book"],
+        keep="first",
+    ).reset_index(drop=True)
+
+
+__all__ = ["MODEL_VERSION", "status", "preview_rows", "final_guard_proof"]
