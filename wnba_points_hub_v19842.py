@@ -20,7 +20,7 @@ import pandas as pd
 import streamlit as st
 
 import wnba_points_hub_v19841 as prior
-import wnba_points_hub_v192 as core
+import wnba_points_hub_v19 as v19
 
 MODEL_VERSION = "WNBA POINTS V1.9.8.4.2 • SAFE PREFLIGHT COVERAGE REPAIR"
 PRA_FROZEN_BRANCH = prior.PRA_FROZEN_BRANCH
@@ -30,7 +30,8 @@ POINTS_FROZEN_BRANCH = prior.POINTS_FROZEN_BRANCH
 POINTS_FROZEN_COMMIT = prior.POINTS_FROZEN_COMMIT
 
 # Patch the exact manually-loaded V1.7 UI object used by the live V1.9 chain.
-v19 = core.v19
+# Import V1.9 directly instead of reaching through V1.9.2's module globals;
+# this avoids AttributeError during Streamlit cold-start/import ordering.
 v171 = v19.v18.v171
 v17 = v171.base
 ui = v17.ui
