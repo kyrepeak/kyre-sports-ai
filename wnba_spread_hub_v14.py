@@ -93,7 +93,7 @@ def _render_step5(day_str: str, pregame: pd.DataFrame, contexts: dict, market_re
             audit["OUT / uncertain"] = audit.apply(lambda r: f"{int(r.get('hard_out',0) or 0)} / {int(r.get('uncertain',0) or 0)}", axis=1)
             audit["Market inputs"] = audit.get("sportsbook_inputs", 0)
             st.dataframe(
-                audit[["Game", "Season matchup", "L10 matchup", "Venue matchup", "Advanced matchup", "Venue samples", "OUT / uncertain", "Market inputs", "State"]],
+                audit[["Game", "Season matchup", "L10 matchup", "Venue matchup", "Advanced matchup", "Venue samples", "OUT / uncertain", "Market inputs", "state"]].rename(columns={"state":"State"}),
                 use_container_width=True,
                 hide_index=True,
             )
