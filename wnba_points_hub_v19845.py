@@ -167,7 +167,10 @@ def _install():
     # player cannot sneak back into the actual simulation after preflight passes.
     points._prepare = _prepare_quarantined
     points.base._prepare = _prepare_quarantined
-    prior._install()
+    # V1.9.8.4.4 intentionally has no public _install(). Its renderer installs
+    # the inherited explainable-sanity hooks and unified readiness contract in
+    # the correct order. Calling prior._install() here caused the Streamlit
+    # AttributeError on cold render. Do not duplicate or bypass that chain.
 
 
 def _quarantine_view(day: str) -> list[dict]:
