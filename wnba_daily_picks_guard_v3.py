@@ -50,10 +50,14 @@ def _norm(v: Any) -> str:
 def _timestamp(v: Any):
     s=_text(v)
     if not s: return None
+    et_suffix=bool(re.search(r"\sET$",s,re.IGNORECASE))
+    clean=re.sub(r"\sET$","",s,flags=re.IGNORECASE).strip() if et_suffix else s
     try:
-        ts=pd.to_datetime(s,errors="raise")
-        if getattr(ts,"tzinfo",None) is None: ts=ts.tz_localize(_ET)
-        else: ts=ts.tz_convert(_ET)
+        ts=pd.to_datetime(clean,errors="raise",utc=False)
+        if getattr(ts,"tzinfo",None) is None:
+            ts=ts.tz_localize(_ET)
+        else:
+            ts=ts.tz_convert(_ET)
         return ts.to_pydatetime()
     except Exception: return None
 
@@ -106,7 +110,7 @@ def _spread_guard(rows: pd.DataFrame, slate_day: Any, now_et=None) -> pd.DataFra
             gates["Simulation recheck"]="PASS"
         else:
             blocked.append("5M Spread simulation proof missing"); gates["Simulation recheck"]="BLOCKED"
-        conv=bool(row.get("Converged")) and bool(p.get("Converged proof")) if p is not None else False
+        conv=(bool(row.get("Converged")) and bool(p.get("Converged proof"))) if p is not None else False
         if conv: gates["Convergence recheck"]="PASS"
         else:
             blocked.append("Spread convergence proof missing"); gates["Convergence recheck"]="BLOCKED"
