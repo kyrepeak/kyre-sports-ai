@@ -1,19 +1,60 @@
-"""WNBA Spread V1.5.1 — Step-6 UI integrity repair.
+"""WNBA Spread V1.5.2 — Step-6 UI integrity + quote provenance repair.
 
-Preserves V1.5 probability math exactly and fixes only the probability-audit display
-contract: V1.5 renamed book/state only inside the first dataframe expression, then
-later selected non-existent `Book` / `State` columns from the unrenamed audit frame.
-That would raise a KeyError as soon as Step 6 had real rows. V1.5.1 materializes
-those display columns before the audit table is selected.
+Preserves V1.5 probability math exactly and fixes two non-math contracts:
+1) V1.5 renamed book/state only inside the first dataframe expression, then later
+   selected non-existent `Book` / `State` columns from the unrenamed audit frame.
+2) Step 6 previously dropped the exact Step-4 side timestamps/freshness metadata.
+   Step 7 therefore had no exact quote timestamp to hand to Daily Picks, causing a
+   freshly rerun qualified Spread row to HOLD at the downstream safety freshness
+   gate even though the source connector/common-schema row were healthy.
+
+V1.5.2 copies only Step-4 quote provenance onto the Step-6 board. Projection,
+probability, sigma, fair-spread, no-vig, EV and Monte Carlo inputs/math are unchanged.
 """
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
 import wnba_spread_hub_v15 as base
 
-MODEL_VERSION = "WNBA SPREAD V1.5.1 • STEP-6 UI INTEGRITY"
+MODEL_VERSION = "WNBA SPREAD V1.5.2 • STEP-6 QUOTE PROVENANCE"
+
+_QUOTE_PROVENANCE = (
+    "away_updated_at", "home_updated_at", "away_age_seconds", "home_age_seconds",
+    "age_seconds", "freshness",
+)
+
+
+def _attach_quote_provenance(board: pd.DataFrame, ready_lines: pd.DataFrame) -> pd.DataFrame:
+    """Copy exact Step-4 quote timestamps/freshness onto Step-6 rows only."""
+    if board is None or board.empty or ready_lines is None or ready_lines.empty:
+        return board.copy() if isinstance(board, pd.DataFrame) else pd.DataFrame()
+
+    out = board.copy()
+    lines = ready_lines.copy()
+    keys = ["game_id", "book", "away_spread", "home_spread"]
+    if any(k not in out.columns for k in keys) or any(k not in lines.columns for k in keys):
+        return out
+
+    for c in ("away_spread", "home_spread"):
+        out[c] = pd.to_numeric(out[c], errors="coerce")
+        lines[c] = pd.to_numeric(lines[c], errors="coerce")
+    out["game_id"] = out["game_id"].astype(str)
+    lines["game_id"] = lines["game_id"].astype(str)
+    out["book"] = out["book"].astype(str)
+    lines["book"] = lines["book"].astype(str)
+
+    keep = keys + [c for c in _QUOTE_PROVENANCE if c in lines.columns]
+    proof = lines[keep].drop_duplicates(subset=keys, keep="last")
+    if len(keep) == len(keys):
+        return out
+
+    # These columns are metadata only. Remove any stale copies before the exact
+    # Step-4 join so the current render owns the provenance values.
+    out = out.drop(columns=[c for c in _QUOTE_PROVENANCE if c in out.columns], errors="ignore")
+    return out.merge(proof, on=keys, how="left", sort=False)
 
 
 def _render_step6(day_str, pregame, projected, ready_lines, model_ready):
@@ -35,6 +76,7 @@ def _render_step6(day_str, pregame, projected, ready_lines, model_ready):
 
     with st.spinner("📈 Converting independent margins into analytical cover probabilities…"):
         board, meta = base.probability.probability_board(day_str, pregame, projected, ready_lines)
+        board = _attach_quote_provenance(board, ready_lines)
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Game coverage", f"{int(meta.get('covered_games',0))}/{int(meta.get('games',0))}")
@@ -123,4 +165,4 @@ def __getattr__(name):
     return getattr(base, name)
 
 
-__all__ = ["MODEL_VERSION", "render_wnba_spread_hub", "_render_step6"]
+__all__ = ["MODEL_VERSION", "render_wnba_spread_hub", "_render_step6", "_attach_quote_provenance"]
