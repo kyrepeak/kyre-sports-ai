@@ -283,6 +283,7 @@ def _render_step5(day_str: str, pregame: pd.DataFrame, contexts: dict, market_re
 
         with st.expander("🔬 Step 5 win-probability audit — model components", expanded=False):
             audit = show.copy()
+            audit["State"] = audit["state"]
             audit["Season matchup"] = audit.apply(
                 lambda r: f"{_fmt(r.get('season_away'))} / {_fmt(r.get('season_home'))}", axis=1
             )
