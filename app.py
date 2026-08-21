@@ -1,7 +1,7 @@
-'''Kyre Sports AI entrypoint — Daily Picks V18 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route.
+'''Kyre Sports AI entrypoint — Daily Picks V18 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.
 
 This cache-safe wrapper preserves the exact application at commit
-6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies four isolated routes:
+6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies five isolated routes:
 
 1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V18. V18
    preserves V17 production logic and appends only passive four-market E2E
@@ -18,6 +18,10 @@ This cache-safe wrapper preserves the exact application at commit
    V3.6.1 preserves V3.6 model/grading/simulation math and only reuses duplicate
    Step-5 game projections + per-player variance calculations inside one render.
    The memo is reset on every Streamlit rerun; SportsGameOdds refresh is unchanged.
+5) The unfinished WNBA Spread fallback opens the isolated Spread V1 foundation.
+   Spread V1 verifies the slate, team context and current availability only. It
+   does not yet create a sportsbook pick, projected margin, cover probability or
+   Monte Carlo output.
 
 No PRA projection/grading/calibration math, Rebounds, MLB, Daily Picks production
 math, Assists production math, Points projection math, or Monte Carlo math is
@@ -34,6 +38,7 @@ import wnba_daily_picks_hub_v18 as wnba_daily_picks_v18
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19843 as wnba_points_v19843
 import wnba_pra_hub_v361 as wnba_pra_v361
+import wnba_spread_hub_v10 as wnba_spread_v10
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v18
@@ -48,21 +53,24 @@ sys.modules["wnba_points_hub_v19841"] = wnba_points_v19843
 # long-lived Streamlit process cannot keep the pre-performance V3.6 object.
 sys.modules["wnba_pra_hub_v321"] = wnba_pra_v361
 
-# Preserve the existing independent Assists navigation interception.
-_ASSISTS_PREVIOUS_INFO = st.info
+# Preserve the existing fallback behavior while intercepting only unfinished
+# WNBA pages that now have isolated production/foundation modules.
+_PREVIOUS_INFO = st.info
 
 
-def _assists_v20_info(body, *args, **kwargs):
+def _wnba_market_route_info(body, *args, **kwargs):
     text = str(body)
-    if text.startswith("WNBA Assists is separate from") and (
-        "production model page" in text or "model module" in text
-    ):
+    unfinished = "production model page" in text or "model module" in text
+    if text.startswith("WNBA Assists is separate from") and unfinished:
         wnba_assists_v20.render_wnba_assists_hub(None, None, None, None)
         st.stop()
-    return _ASSISTS_PREVIOUS_INFO(body, *args, **kwargs)
+    if text.startswith("WNBA Spread is separate from") and unfinished:
+        wnba_spread_v10.render_wnba_spread_hub(None, None, None, None)
+        st.stop()
+    return _PREVIOUS_INFO(body, *args, **kwargs)
 
 
-st.info = _assists_v20_info
+st.info = _wnba_market_route_info
 
 PREVIOUS_APP_COMMIT = "6b5958d729c3999fc0188518a9dc4fb8ee63803c"
 RAW_URL = (
@@ -87,7 +95,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843_pra_v361.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843_pra_v361_spread_v10.py",
         "exec",
     ),
     globals(),
