@@ -2,7 +2,7 @@
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies six isolated routes plus
-one navigation-only compatibility patch:
+one runtime navigation compatibility patch:
 
 1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V19. V19
    preserves the complete V18/V17 four-market production and verification layers,
@@ -29,15 +29,16 @@ one navigation-only compatibility patch:
    Step-3 cold-start availability handoff by forcing the selected Spread date into
    the verified roster pool/cache key and reconciling covered-team status with
    per-player verification. Projection/probability/Monte Carlo math is unchanged.
-6) WNBA Moneyline is added to the inherited WNBA MARKET selector and its unfinished
+6) WNBA Moneyline is added at the runtime WNBA selectbox boundary and its unfinished
    fallback opens isolated Moneyline V1.0. V1.0 is foundation-only: verified
    Eastern-date slate, clock-safe pregame eligibility, team context and exact-day
    current availability. Sportsbook moneyline, model win probability, fair odds,
    Monte Carlo, grading and Daily Picks remain OFF.
 
-The selector patch is deliberately applied only to a loaded app.py source that
-contains a real Streamlit selectbox. It does not rewrite wrapper source literals,
-which prevents the older Daily Picks navigation patch from removing Moneyline.
+The navigation patch wraps only the real Streamlit selectbox identified by
+key=ks_wnba_market_touch (or its WNBA Market label). It does not rewrite nested
+preserved source strings, so older compatibility wrappers cannot remove Moneyline
+again. PRA remains index 3/default because no option before PRA is changed.
 
 No PRA projection/grading/calibration math, Rebounds, MLB, Assists production math,
 Points projection math, Spread source-model math, existing Monte Carlo math, or
@@ -93,50 +94,38 @@ def _wnba_market_route_info(body, *args, **kwargs):
 
 st.info = _wnba_market_route_info
 
-# The real WNBA selector lives several preserved app.py layers below this wrapper.
-# Patch only the actual shell containing a Streamlit selectbox. In particular, do
-# NOT mutate the older wrapper whose source merely contains these option lists as
-# string literals for its own Daily Picks compatibility transform.
-_ORIGINAL_CHECK_OUTPUT = subprocess.check_output
-_WNBA_MARKETS_BASE = '["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total"]'
-_WNBA_MARKETS_DAILY = '["Points", "Rebounds", "Assists", "PRA", "Spread", "Game Total", "Daily Picks"]'
-_WNBA_MARKETS_MONEYLINE = '["Points", "Rebounds", "Assists", "PRA", "Spread", "Moneyline", "Game Total", "Daily Picks"]'
+# Runtime navigation boundary. The actual WNBA selector is created deep inside
+# the preserved app chain with key `ks_wnba_market_touch`. Previous source-string
+# patches were brittle because several wrapper layers rebuild app.py before that
+# selectbox exists. Intercept the real widget call instead.
+_PREVIOUS_SELECTBOX = st.selectbox
+_WNBA_MARKET_OPTIONS = [
+    "Points",
+    "Rebounds",
+    "Assists",
+    "PRA",
+    "Spread",
+    "Moneyline",
+    "Game Total",
+    "Daily Picks",
+]
 
 
-def _inject_moneyline_selector(value):
-    is_bytes = isinstance(value, (bytes, bytearray))
-    text = value.decode("utf-8") if is_bytes else str(value)
+def _wnba_market_selectbox(label, options, *args, **kwargs):
+    key = str(kwargs.get("key") or "")
+    label_text = str(label or "")
+    is_wnba_market = key == "ks_wnba_market_touch" or "WNBA Market" in label_text
 
-    # A wrapper may contain the option-list text only as a replacement literal.
-    # Requiring an actual selectbox call keeps those wrappers untouched. Check the
-    # exact WNBA list rather than the word Moneyline because MLB also has a
-    # Moneyline market elsewhere in the inherited application shell.
-    if "selectbox(" not in text or _WNBA_MARKETS_MONEYLINE in text:
-        return value
+    if is_wnba_market:
+        # Preserve the established first five positions so inherited index=3 still
+        # opens PRA by default. Moneyline is inserted after Spread; Daily Picks is
+        # retained/appended even if an older shell forgot to expose it.
+        options = list(_WNBA_MARKET_OPTIONS)
 
-    patched = text.replace(_WNBA_MARKETS_DAILY, _WNBA_MARKETS_MONEYLINE, 1)
-    if patched == text:
-        patched = text.replace(_WNBA_MARKETS_BASE, _WNBA_MARKETS_MONEYLINE, 1)
-
-    return patched.encode("utf-8") if is_bytes else patched
+    return _PREVIOUS_SELECTBOX(label, options, *args, **kwargs)
 
 
-def _moneyline_selector_check_output(*args, **kwargs):
-    result = _ORIGINAL_CHECK_OUTPUT(*args, **kwargs)
-    try:
-        cmd = args[0] if args else kwargs.get("args")
-        if isinstance(cmd, (list, tuple)) and len(cmd) >= 3:
-            if str(cmd[0]) == "git" and str(cmd[1]) == "show" and str(cmd[2]).endswith(":app.py"):
-                return _inject_moneyline_selector(result)
-    except Exception:
-        pass
-    return result
-
-
-# Keep this installed while the preserved app chain resolves its real UI shell.
-# The older compatibility wrapper will call this function first and then apply its
-# own existing Daily Picks/Points/Rebounds patches to the returned source.
-subprocess.check_output = _moneyline_selector_check_output
+st.selectbox = _wnba_market_selectbox
 
 PREVIOUS_APP_COMMIT = "6b5958d729c3999fc0188518a9dc4fb8ee63803c"
 RAW_URL = (
@@ -161,7 +150,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v10_selector_fix.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v10_runtime_nav.py",
         "exec",
     ),
     globals(),
