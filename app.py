@@ -8,13 +8,14 @@ This cache-safe wrapper preserves the exact application at commit
    then appends only a read-only fifth-market Spread connector, common-schema,
    safety, cross-market ranking, Top-5 selection and final production guard.
 2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
-3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.3. V1.9.8.4.2
+3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.4. V1.9.8.4.2
    preserves full upcoming-game projection+exact-market coverage while excluding
    raw sportsbook player quotes that have no current projection. V1.9.8.4.3 then
    repairs the inherited sanity gate so a >35% Points deviation is a hard blocker
-   only when the scoring-rate change is unexplained. A deviation driven by a
-   material minutes change, with projected points/minute still inside the verified
-   ±30% historical band, remains visible as MONITOR but no longer deadlocks 5M.
+   only when the scoring-rate change is unexplained. V1.9.8.4.4 unifies the exact
+   button/diagnostic readiness contract and accepts only a hardened last-3-game
+   active-roster fallback when the official current-roster endpoint is unavailable,
+   while restoring the strict V1.9 position matchup gate.
 4) The preserved PRA V3.2.1 compatibility import is rebound to PRA V3.6.1.
    V3.6.1 preserves V3.6 model/grading/simulation math and only reuses duplicate
    Step-5 game projections + per-player variance calculations inside one render.
@@ -38,7 +39,7 @@ import urllib.request
 import streamlit as st
 import wnba_daily_picks_hub_v19 as wnba_daily_picks_v19
 import wnba_assists_hub_v20 as wnba_assists_v20
-import wnba_points_hub_v19843 as wnba_points_v19843
+import wnba_points_hub_v19844 as wnba_points_v19844
 import wnba_pra_hub_v361 as wnba_pra_v361
 import wnba_spread_hub_v161 as wnba_spread_v161
 
@@ -47,8 +48,9 @@ sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v19
 
 # The preserved application imports V1.9.8.4.1 directly. The new wrapper imported
 # the genuine V1.9.8.4.1 module before this alias is installed, then patches only
-# the live Points preflight coverage + explainable sanity-gate helpers on render.
-sys.modules["wnba_points_hub_v19841"] = wnba_points_v19843
+# the live Points preflight coverage + explainable sanity + unified roster/button
+# readiness helpers on render.
+sys.modules["wnba_points_hub_v19841"] = wnba_points_v19844
 
 # Cache-safe PRA route: the preserved application imports this compatibility name
 # before it later aliases the older V2.8.2 path. Rebinding here guarantees a
@@ -97,7 +99,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19843_pra_v361_spread_v161.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19844_pra_v361_spread_v161.py",
         "exec",
     ),
     globals(),
