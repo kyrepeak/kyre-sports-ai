@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — Daily Picks V18 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.3.1.
+'''Kyre Sports AI entrypoint — Daily Picks V18 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.4.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies five isolated routes:
@@ -18,15 +18,16 @@ This cache-safe wrapper preserves the exact application at commit
    V3.6.1 preserves V3.6 model/grading/simulation math and only reuses duplicate
    Step-5 game projections + per-player variance calculations inside one render.
    The memo is reset on every Streamlit rerun; SportsGameOdds refresh is unchanged.
-5) The unfinished WNBA Spread fallback opens isolated Spread V1.3.1. Spread V1.3
-   adds exact same-book two-sided spread verification; V1.3.1 hardens that layer
-   with exact away/home provider orientation and side-specific spread freshness so
-   unrelated moneyline/total updates cannot make a stale spread appear current.
-   It still does not project a margin or run Monte Carlo.
+5) The unfinished WNBA Spread fallback opens isolated Spread V1.4. Spread V1.4
+   preserves the V1.3.1 exact-spread integrity layer and adds Step 5: an independent
+   projected score/margin model using date-cut season/recent scoring, venue splits,
+   recent pace/efficiency and verified availability. Sportsbook lines/prices are
+   explicitly excluded from projection inputs. Cover probability and Monte Carlo
+   remain off.
 
 No PRA projection/grading/calibration math, Rebounds, MLB, Daily Picks production
-math, Assists production math, Points projection math, or Monte Carlo math is
-modified.
+math, Assists production math, Points projection math, or existing Monte Carlo math
+is modified.
 '''
 from __future__ import annotations
 
@@ -39,7 +40,7 @@ import wnba_daily_picks_hub_v18 as wnba_daily_picks_v18
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19843 as wnba_points_v19843
 import wnba_pra_hub_v361 as wnba_pra_v361
-import wnba_spread_hub_v131 as wnba_spread_v131
+import wnba_spread_hub_v14 as wnba_spread_v14
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v18
@@ -66,7 +67,7 @@ def _wnba_market_route_info(body, *args, **kwargs):
         wnba_assists_v20.render_wnba_assists_hub(None, None, None, None)
         st.stop()
     if text.startswith("WNBA Spread is separate from") and unfinished:
-        wnba_spread_v131.render_wnba_spread_hub(None, None, None, None)
+        wnba_spread_v14.render_wnba_spread_hub(None, None, None, None)
         st.stop()
     return _PREVIOUS_INFO(body, *args, **kwargs)
 
@@ -96,7 +97,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843_pra_v361_spread_v131.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843_pra_v361_spread_v14.py",
         "exec",
     ),
     globals(),
