@@ -108,8 +108,10 @@ def _inject_moneyline_selector(value):
     text = value.decode("utf-8") if is_bytes else str(value)
 
     # A wrapper may contain the option-list text only as a replacement literal.
-    # Requiring an actual selectbox call keeps those wrappers untouched.
-    if "selectbox(" not in text or "Moneyline" in text:
+    # Requiring an actual selectbox call keeps those wrappers untouched. Check the
+    # exact WNBA list rather than the word Moneyline because MLB also has a
+    # Moneyline market elsewhere in the inherited application shell.
+    if "selectbox(" not in text or _WNBA_MARKETS_MONEYLINE in text:
         return value
 
     patched = text.replace(_WNBA_MARKETS_DAILY, _WNBA_MARKETS_MONEYLINE, 1)
