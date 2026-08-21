@@ -1,11 +1,12 @@
-'''Kyre Sports AI entrypoint — Daily Picks V18 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1.
+'''Kyre Sports AI entrypoint — Daily Picks V19 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies five isolated routes:
 
-1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V18. V18
-   preserves V17 production logic and appends only passive four-market E2E
-   verification.
+1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V19. V19
+   preserves the complete V18/V17 four-market production and verification layers,
+   then appends only a read-only fifth-market Spread connector, common-schema,
+   safety, cross-market ranking, Top-5 selection and final production guard.
 2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
 3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.3. V1.9.8.4.2
    preserves full upcoming-game projection+exact-market coverage while excluding
@@ -24,9 +25,9 @@ This cache-safe wrapper preserves the exact application at commit
    the verified roster pool/cache key and reconciling covered-team status with
    per-player verification. Projection/probability/Monte Carlo math is unchanged.
 
-No PRA projection/grading/calibration math, Rebounds, MLB, Daily Picks production
-math, Assists production math, Points projection math, or existing Monte Carlo math
-is modified.
+No PRA projection/grading/calibration math, Rebounds, MLB, Assists production math,
+Points projection math, Spread source-model math, or existing Monte Carlo math is
+modified.
 '''
 from __future__ import annotations
 
@@ -35,14 +36,14 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v18 as wnba_daily_picks_v18
+import wnba_daily_picks_hub_v19 as wnba_daily_picks_v19
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19843 as wnba_points_v19843
 import wnba_pra_hub_v361 as wnba_pra_v361
 import wnba_spread_hub_v161 as wnba_spread_v161
 
 # The preserved application imports this historical module name for Daily Picks.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v18
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v19
 
 # The preserved application imports V1.9.8.4.1 directly. The new wrapper imported
 # the genuine V1.9.8.4.1 module before this alias is installed, then patches only
@@ -96,7 +97,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843_pra_v361_spread_v161.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19843_pra_v361_spread_v161.py",
         "exec",
     ),
     globals(),
