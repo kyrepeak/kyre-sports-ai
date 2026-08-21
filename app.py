@@ -1,7 +1,7 @@
-'''Kyre Sports AI entrypoint — Daily Picks V18 + Assists V20 + Points preflight repair.
+'''Kyre Sports AI entrypoint — Daily Picks V18 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route.
 
 This cache-safe wrapper preserves the exact application at commit
-6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies three isolated routes:
+6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies four isolated routes:
 
 1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V18. V18
    preserves V17 production logic and appends only passive four-market E2E
@@ -14,9 +14,14 @@ This cache-safe wrapper preserves the exact application at commit
    only when the scoring-rate change is unexplained. A deviation driven by a
    material minutes change, with projected points/minute still inside the verified
    ±30% historical band, remains visible as MONITOR but no longer deadlocks 5M.
+4) The preserved PRA V3.2.1 compatibility import is rebound to PRA V3.6.1.
+   V3.6.1 preserves V3.6 model/grading/simulation math and only reuses duplicate
+   Step-5 game projections + per-player variance calculations inside one render.
+   The memo is reset on every Streamlit rerun; SportsGameOdds refresh is unchanged.
 
-No PRA, Rebounds, MLB, Daily Picks production math, Assists production math,
-Points projection math, Monte Carlo math, grading or calibration is modified.
+No PRA projection/grading/calibration math, Rebounds, MLB, Daily Picks production
+math, Assists production math, Points projection math, or Monte Carlo math is
+modified.
 '''
 from __future__ import annotations
 
@@ -28,6 +33,7 @@ import streamlit as st
 import wnba_daily_picks_hub_v18 as wnba_daily_picks_v18
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19843 as wnba_points_v19843
+import wnba_pra_hub_v361 as wnba_pra_v361
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v18
@@ -36,6 +42,11 @@ sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v18
 # the genuine V1.9.8.4.1 module before this alias is installed, then patches only
 # the live Points preflight coverage + explainable sanity-gate helpers on render.
 sys.modules["wnba_points_hub_v19841"] = wnba_points_v19843
+
+# Cache-safe PRA route: the preserved application imports this compatibility name
+# before it later aliases the older V2.8.2 path. Rebinding here guarantees a
+# long-lived Streamlit process cannot keep the pre-performance V3.6 object.
+sys.modules["wnba_pra_hub_v321"] = wnba_pra_v361
 
 # Preserve the existing independent Assists navigation interception.
 _ASSISTS_PREVIOUS_INFO = st.info
@@ -76,7 +87,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v18_assists_v20_points_v19843_pra_v361.py",
         "exec",
     ),
     globals(),
