@@ -1,8 +1,14 @@
 """WNBA Daily Picks V19 — Spread Step-8 read-only integration.
 
-Renders the complete V18 page unchanged, then appends a five-market integration
-layer for PRA + Points + Rebounds + Assists + Spread. Spread is consumed only from
-its completed same-session Step-7 payload. No source model is run or written.
+Renders the complete V18 production/verification chain, then appends a five-market
+integration layer for PRA + Points + Rebounds + Assists + Spread. Spread is consumed
+only from its completed same-session Step-7 payload. No source model is run or written.
+
+Display-only repair: the legacy V9 Market Feed Status panel originally hard-coded
+Assists and Spread as NEXT / Future independent feed. V19 now substitutes the
+existing read-only Assists/Spread connector status during that legacy render so the
+panel reports NOT RUN / CHECK / CONNECTED truthfully. No source-model, simulation,
+ranking, safety, guard or persistence behavior is changed.
 """
 from __future__ import annotations
 
@@ -13,8 +19,10 @@ import pandas as pd
 import streamlit as st
 
 import wnba_daily_picks_hub_v18 as v18
+import wnba_daily_picks_hub_v9 as legacy_v9
 import wnba_daily_picks_selection_v3 as selection_v3
 import wnba_daily_picks_guard_v3 as guard_v3
+import wnba_daily_picks_assists_connector_v1 as assists_feed
 import wnba_daily_picks_spread_connector_v1 as spread_feed
 
 MODEL_VERSION = "WNBA DAILY PICKS V19 • SPREAD STEP-8 FIVE-MARKET INTEGRATION"
@@ -27,8 +35,63 @@ def _count(frame: pd.DataFrame, market: str) -> int:
     return int(frame["Market"].astype(str).str.upper().eq(market).sum())
 
 
+def _render_v18_with_live_feed_tiles(section_header=None,status_info=None,team_logo=None,h=None):
+    """Render frozen V18 while repairing only stale legacy status-card text."""
+    now=datetime.now(_ET)
+    day=now.strftime("%Y-%m-%d")
+    assists=assists_feed.status(day)
+    spread=spread_feed.status(day)
+
+    ui=legacy_v9.prev.base._ui
+    original_card=ui._status_card
+    original_caption=st.caption
+    original_markdown=st.markdown
+
+    def live_status_card(label, state, note):
+        key=str(label or "").strip().upper()
+        if key=="ASSISTS":
+            return original_card(
+                label,
+                str(assists.get("state") or ("✅ CONNECTED" if assists.get("connected") else "⏳ NOT RUN")),
+                str(assists.get("detail") or "No completed same-day Assists Step-20 production payload is present in this session."),
+            )
+        if key=="SPREAD":
+            return original_card(
+                label,
+                str(spread.get("state") or ("✅ CONNECTED" if spread.get("connected") else "⏳ NOT RUN")),
+                str(spread.get("detail") or "No completed same-day Spread Step-7 payload is present in this session."),
+            )
+        return original_card(label,state,note)
+
+    def live_caption(body,*args,**kwargs):
+        text=str(body)
+        if text=="PRA, Points and Rebounds remain independent read-only feeds. Assists and game markets remain future connectors.":
+            body="PRA, Points, Rebounds, Assists and Spread are independent read-only feeds. Moneyline and Game Total remain future connectors."
+        return original_caption(body,*args,**kwargs)
+
+    def live_markdown(body,*args,**kwargs):
+        if isinstance(body,str) and "KYRE SPORTS AI • WNBA DAILY PICKS • STEP 9" in body:
+            body=body.replace("🔌 3 read-only connectors","🔌 5 read-only connectors")
+        return original_markdown(body,*args,**kwargs)
+
+    ui._status_card=live_status_card
+    st.caption=live_caption
+    st.markdown=live_markdown
+    try:
+        return v18.render_wnba_daily_picks_hub(
+            section_header=section_header,
+            status_info=status_info,
+            team_logo=team_logo,
+            h=h,
+        )
+    finally:
+        ui._status_card=original_card
+        st.caption=original_caption
+        st.markdown=original_markdown
+
+
 def render_wnba_daily_picks_hub(section_header=None,status_info=None,team_logo=None,h=None):
-    v18.render_wnba_daily_picks_hub(section_header=section_header,status_info=status_info,team_logo=team_logo,h=h)
+    _render_v18_with_live_feed_tiles(section_header=section_header,status_info=status_info,team_logo=team_logo,h=h)
 
     now=datetime.now(_ET); day=now.strftime("%Y-%m-%d")
     bundle=selection_v3.build_five_market_selection(day)
@@ -116,7 +179,7 @@ def render_wnba_daily_picks_hub(section_header=None,status_info=None,team_logo=N
     else:
         st.warning("⚠️ FIVE-MARKET PIPELINE CHECK • inspect the guard table before changing any source model. No backfill is performed.")
 
-    st.caption(f"⚡ Daily Picks V19 • Spread Step 8 read-only • checked {now.strftime('%Y-%m-%d %I:%M:%S %p ET')} • new simulations 0 • network requests 0 • source writes 0")
+    st.caption(f"⚡ Daily Picks V19 • live Assists/Spread feed tiles • Spread Step 8 read-only • checked {now.strftime('%Y-%m-%d %I:%M:%S %p ET')} • new simulations 0 • network requests 0 • source writes 0")
 
 
 __all__=["MODEL_VERSION","render_wnba_daily_picks_hub"]
