@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — Daily Picks V20 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5 + Game Total V1.3.
+'''Kyre Sports AI entrypoint — Daily Picks V20 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5 + Game Total V1.4.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies seven isolated routes plus
@@ -40,14 +40,16 @@ one runtime navigation compatibility patch:
    converged Step-7 output, exact-price EV, no-vig edge, upstream state and the
    existing ±5% sensitivity. No play is forced. Daily Picks V20 consumes Step 8
    read-only and never reruns Moneyline production.
-7) The unfinished WNBA Game Total fallback opens isolated Game Total V1.3. V1.3
-   preserves V1.2's verified Eastern-date slate, clock-safe pregame eligibility,
+7) The unfinished WNBA Game Total fallback opens isolated Game Total V1.4. V1.4
+   preserves V1.3's verified Eastern-date slate, clock-safe pregame eligibility,
    scoring/pace/efficiency context, exact-day availability, exact same-book
-   two-sided SportsGameOdds full-game total verification and market-independent
-   projected total. Step 6 adds date-cut empirical team/league total variance,
-   line-specific Over/Under/push probabilities, fair total and fair odds. Market
-   totals/prices remain comparison-only and cannot move the Step-5 projection.
-   Monte Carlo, final grading and Daily Picks remain OFF.
+   two-sided SportsGameOdds full-game total verification, market-independent
+   projected total and Step-6 date-cut empirical team/league total distribution.
+   Step 7 adds the actual 5,000,000-draw integer Game Total Monte Carlo per unique
+   game in 20 x 250,000 streaming batches with convergence and ±5% projected-total
+   sensitivity. The same game outcomes are reused across books; sportsbook lines
+   and prices remain settlement/comparison thresholds only and simulation input is
+   zero. Final grading and Daily Picks remain OFF.
 
 The navigation patch wraps only the real Streamlit selectbox identified by
 key=ks_wnba_market_touch (or its WNBA Market label). It does not rewrite nested
@@ -71,7 +73,7 @@ import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
 import wnba_spread_hub_v161 as wnba_spread_v161
 import wnba_moneyline_hub_v15 as wnba_moneyline_v15
-import wnba_game_total_hub_v13 as wnba_game_total_v13
+import wnba_game_total_hub_v14 as wnba_game_total_v14
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v20
@@ -105,7 +107,7 @@ def _wnba_market_route_info(body, *args, **kwargs):
         wnba_moneyline_v15.render_wnba_moneyline_hub(None, None, None, None)
         st.stop()
     if text.startswith("WNBA Game Total is separate from") and unfinished:
-        wnba_game_total_v13.render_wnba_game_total_hub(None, None, None, None)
+        wnba_game_total_v14.render_wnba_game_total_hub(None, None, None, None)
         st.stop()
     return _PREVIOUS_INFO(body, *args, **kwargs)
 
@@ -168,7 +170,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v20_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v13_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v20_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v14_runtime_nav.py",
         "exec",
     ),
     globals(),
