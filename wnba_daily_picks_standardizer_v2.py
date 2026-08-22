@@ -1,6 +1,6 @@
 """WNBA Daily Picks common-schema adapter V2 — add Assists read-only rows.
 
-Preserves the complete V1 standardizer for PRA, Points and Rebounds and adds only
+Uses the V1.1 source-contract repair for PRA, Points and Rebounds, then adds only
 completed same-day WNBA Assists V20 Step-20 production rows through the verified
 read-only connector.
 
@@ -16,10 +16,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-import wnba_daily_picks_standardizer_v1 as v1
+import wnba_daily_picks_standardizer_v11 as v1
 import wnba_daily_picks_assists_connector_v1 as assists_feed
 
-MODEL_VERSION = "WNBA DAILY PICKS STANDARDIZER V2 • ASSISTS SCHEMA STEP 2 • READ ONLY"
+MODEL_VERSION = "WNBA DAILY PICKS STANDARDIZER V2 • ASSISTS SCHEMA STEP 2 • V1.1 SOURCE CONTRACT • READ ONLY"
 STANDARD_SIMS = 5_000_000
 COMMON_COLUMNS = list(v1.COMMON_COLUMNS)
 
@@ -84,7 +84,7 @@ def normalize_assists(day: Any) -> pd.DataFrame:
 
 
 def normalize_all(day: Any) -> pd.DataFrame:
-    """PRA + Points + Rebounds from frozen V1, then append verified Assists."""
+    """PRA + Points + Rebounds from repaired V1.1, then append verified Assists."""
     base = v1.normalize_all(day)
     assists = normalize_assists(day)
     frames = [f for f in (base, assists) if isinstance(f, pd.DataFrame) and not f.empty]
