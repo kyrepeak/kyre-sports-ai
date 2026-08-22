@@ -1,17 +1,15 @@
-'''Kyre Sports AI entrypoint — Daily Picks V33 + isolated WNBA production routes.
+'''Kyre Sports AI entrypoint — Daily Picks V34 + isolated WNBA production routes.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies the existing isolated WNBA
 routes without changing source-model math.
 
-Daily Picks V33 preserves the verified V31.1 checkpointed Run-All-7 master controller,
-V32 Step-11 source-native finalization, and the complete V21 seven-market
-production/verification surface. V33 repairs only the read-only source-to-common
-schema handoff and visual aggregation: PRA/Points exact over odds/fair odds are
-preserved, Rebounds exact no-vig probability is preserved, source qualification is
-not masked by later READY/HOLD/MONITOR presentation states, and the visual Overall
-Top 5 admits at most one SAFE/RANKED winner from each market before the existing
-final production guard. No pick is forced.
+Daily Picks V34 preserves the verified V31.1 checkpointed Run-All-7 master controller,
+V32 Step-11 source-native finalization, V33 one-qualified-winner-per-market visual
+aggregation, and the complete V21 seven-market production/verification surface.
+V34 repairs only the live Standardizer-V2 -> V1.1 source-contract binding used by
+Points after Streamlit hot deploys, so a native model_qualified Points row cannot
+be masked by a later MONITOR LINEUP presentation state. No pick is forced.
 
 Rebounds Steps 18-20, Assists Steps 18-20, Moneyline Step 8 and Game Total Step 8
 remain owned by their existing source modules; PRA, Points and Spread retain their
@@ -36,7 +34,7 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v33 as wnba_daily_picks_v33
+import wnba_daily_picks_hub_v34 as wnba_daily_picks_v34
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
@@ -45,7 +43,7 @@ import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
 
 # The preserved application imports this historical module name for Daily Picks.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v33
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v34
 
 # The preserved application imports V1.9.8.4.1 directly. The wrapper patches only
 # the live Points preflight/readiness/sanity quarantine helpers on render.
@@ -127,7 +125,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v33_market_winners_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
