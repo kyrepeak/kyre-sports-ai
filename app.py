@@ -1,7 +1,7 @@
-'''Kyre Sports AI entrypoint — Daily Picks V20 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5.
+'''Kyre Sports AI entrypoint — Daily Picks V20 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5 + Game Total V1.0.
 
 This cache-safe wrapper preserves the exact application at commit
-6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies six isolated routes plus
+6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies seven isolated routes plus
 one runtime navigation compatibility patch:
 
 1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V20. V20
@@ -40,6 +40,11 @@ one runtime navigation compatibility patch:
    converged Step-7 output, exact-price EV, no-vig edge, upstream state and the
    existing ±5% sensitivity. No play is forced. Daily Picks V20 consumes Step 8
    read-only and never reruns Moneyline production.
+7) The unfinished WNBA Game Total fallback opens isolated Game Total V1.0. V1.0
+   verifies the Eastern-date slate, clock-safe pregame eligibility, scoring/pace/
+   efficiency context and exact-day availability only. Sportsbook totals,
+   projected totals, Over/Under probabilities, fair odds, Monte Carlo, grading and
+   Daily Picks output remain OFF until later verified Game Total layers are added.
 
 The navigation patch wraps only the real Streamlit selectbox identified by
 key=ks_wnba_market_touch (or its WNBA Market label). It does not rewrite nested
@@ -47,8 +52,8 @@ preserved source strings, so older compatibility wrappers cannot remove Moneylin
 again. PRA remains index 3/default because no option before PRA is changed.
 
 No PRA projection/grading/calibration math, Rebounds, MLB, Assists production math,
-Points projection math, Spread source-model math, Moneyline source-model math, or
-existing Monte Carlo math is modified by this entrypoint.
+Points projection math, Spread source-model math, Moneyline source-model math, Game
+Total source-model math, or existing Monte Carlo math is modified by this entrypoint.
 '''
 from __future__ import annotations
 
@@ -63,6 +68,7 @@ import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
 import wnba_spread_hub_v161 as wnba_spread_v161
 import wnba_moneyline_hub_v15 as wnba_moneyline_v15
+import wnba_game_total_hub_v10 as wnba_game_total_v10
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v20
@@ -94,6 +100,9 @@ def _wnba_market_route_info(body, *args, **kwargs):
         st.stop()
     if text.startswith("WNBA Moneyline is separate from") and unfinished:
         wnba_moneyline_v15.render_wnba_moneyline_hub(None, None, None, None)
+        st.stop()
+    if text.startswith("WNBA Game Total is separate from") and unfinished:
+        wnba_game_total_v10.render_wnba_game_total_hub(None, None, None, None)
         st.stop()
     return _PREVIOUS_INFO(body, *args, **kwargs)
 
@@ -156,7 +165,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v20_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v20_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v10_runtime_nav.py",
         "exec",
     ),
     globals(),
