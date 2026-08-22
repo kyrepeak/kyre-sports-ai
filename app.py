@@ -1,19 +1,21 @@
-'''Kyre Sports AI entrypoint — Daily Picks V24 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5 + Game Total V1.5.
+'''Kyre Sports AI entrypoint — Daily Picks V25 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5 + Game Total V1.5.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies seven isolated routes plus
 one runtime navigation compatibility patch:
 
-1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V24. V24
+1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V25. V25
    preserves the complete V21/V18/V17 production/verification surface and all
    seven existing read-only market integrations. Step 1's passive controller shell
-   and Step 2's 7/7 read-only infrastructure preflight are frozen/verified.
-   Step 3 wires exactly one execution adapter: the existing PRA V3.6.1 standard
-   5,000,000-simulation path. It reuses the native PRA runtime integrity, variance,
-   matchup, Monte Carlo and fingerprint-safe persistence contracts without changing
-   projection/grading/simulation math. The targeted 10M finalist pass and the other
-   six market execution adapters remain intentionally unwired; Run All 7 stays
-   disabled until each adapter is independently verified.
+   and Step 2's 7/7 read-only infrastructure preflight are frozen/verified. Step 3's
+   PRA V3.6.1 standard 5,000,000-simulation adapter is also frozen/verified.
+   Step 4 wires exactly one additional execution adapter: the existing Points
+   V1.9.8.4.5 standard 5,000,000-simulation path. It reuses the native Points
+   quarantine, unified readiness, roster/history/position gates, Monte Carlo and
+   persistence contracts without changing projection/grading/simulation math. The
+   selective Points 10M finalist pass and the other five market execution adapters
+   remain intentionally unwired; Run All 7 stays disabled until each adapter is
+   independently verified.
 2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
 3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.5. V1.9.8.4.2
    preserves full upcoming-game projection+exact-market coverage while excluding
@@ -43,7 +45,7 @@ one runtime navigation compatibility patch:
    comparison and the actual 5,000,000-draw Step-7 Monte Carlo per unique game.
    Step 8 performs risk-adjusted one-candidate-per-game final grading using only
    converged Step-7 output, exact-price EV, no-vig edge, upstream state and the
-   existing ±5% sensitivity. No play is forced. Daily Picks V24 consumes Step 8
+   existing ±5% sensitivity. No play is forced. Daily Picks V25 consumes Step 8
    read-only through the preserved V21 integration and never reruns Moneyline production.
 7) The unfinished WNBA Game Total fallback opens isolated Game Total V1.5. V1.5
    preserves V1.4's verified Eastern-date slate, clock-safe pregame eligibility,
@@ -54,7 +56,7 @@ one runtime navigation compatibility patch:
    250,000 streaming batches. Step 8 adds risk-adjusted one-candidate-per-game
    final Over/Under grading using only converged Step-7 output, same-book no-vig
    edge, exact-price EV, upstream state and the existing ±5% projected-total
-   sensitivity. No play is forced. Daily Picks V24 consumes only the completed
+   sensitivity. No play is forced. Daily Picks V25 consumes only the completed
    same-session Step-8 payload through the preserved V21 seven-market connector.
 
 The navigation patch wraps only the real Streamlit selectbox identified by
@@ -73,7 +75,7 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v24 as wnba_daily_picks_v24
+import wnba_daily_picks_hub_v25 as wnba_daily_picks_v25
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
@@ -82,7 +84,7 @@ import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
 
 # The preserved application imports this historical module name for Daily Picks.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v24
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v25
 
 # The preserved application imports V1.9.8.4.1 directly. The new wrapper imported
 # the genuine V1.9.8.4.1 module before this alias is installed, then patches only
@@ -176,7 +178,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v24_controller_pra_adapter_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v25_controller_points_adapter_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
