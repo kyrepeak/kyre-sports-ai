@@ -22,10 +22,11 @@ market and a diversified guarded overall board. Player headshots use already-loa
 player IDs with ESPN primary / WNBA fallback image URLs; team logos use ESPN. The
 image layer is presentation-only and never participates in qualification or ranking.
 
-MLB 1+ Hit is routed through Hit UI V13.2 for Step 1 visual identity only. The
-existing verified MLB player_id/team_id values are used to render official MLB
-batter headshots and team logos on the Top-5 cards. Hit Model V13 projection,
-Monte Carlo, lineup, ranking, calibration and persistence contracts remain unchanged.
+MLB 1+ Hit is routed through Hit UI V13.4 for Step 1 visual identity only. V13.4
+patches the active V13.3 full-slate Top-5 renderer so the existing verified
+player_id/team_id values render official MLB batter headshots and team logos.
+Hit Model V13 projection, Monte Carlo, full-slate lineup handling, ranking,
+calibration and persistence contracts remain unchanged.
 
 Existing isolated routes remain unchanged: Assists V20, Points V1.9.8.4.5, PRA
 V3.6.1, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5. The runtime WNBA market
@@ -40,6 +41,7 @@ import urllib.request
 
 import streamlit as st
 import hit_hub_v132 as hit_hub_v132
+import mlb_hit_hub_v134 as mlb_hit_hub_v134
 import wnba_daily_picks_hub_v34 as wnba_daily_picks_v34
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
@@ -48,10 +50,12 @@ import wnba_spread_hub_v161 as wnba_spread_v161
 import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
 
-# The preserved MLB application imports this historical Hit UI module directly.
-# Rebind only that presentation route to V13.2; the wrapped V13.1 model workflow
-# remains the owner of scan/model/ranking/calibration behavior.
+# Preserve the earlier V13.1 compatibility binding for any historical direct path.
 sys.modules["hit_hub_v131"] = hit_hub_v132
+
+# The active preserved MLB route asks for V13.3. Rebind that presentation module
+# to V13.4, which wraps the same V13.3 full-slate scanner and changes only Top-5 HTML/CSS.
+sys.modules["mlb_hit_hub_v133"] = mlb_hit_hub_v134
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v34
@@ -136,7 +140,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_mlb_hit_v132_visual_identity_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_mlb_hit_v134_active_v133_visual_identity_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
