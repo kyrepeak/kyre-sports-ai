@@ -1,72 +1,24 @@
-'''Kyre Sports AI entrypoint — Daily Picks V27 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5 + Game Total V1.5.
+'''Kyre Sports AI entrypoint — Daily Picks V28 + isolated WNBA production routes.
 
 This cache-safe wrapper preserves the exact application at commit
-6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies seven isolated routes plus
-one runtime navigation compatibility patch:
+6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies the existing isolated WNBA
+routes without changing source-model math.
 
-1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V27. V27
-   preserves the complete V21/V18/V17 production/verification surface and all
-   seven existing read-only market integrations. Controller Steps 1-5 are frozen
-   and independently verified: passive shell, 7/7 infrastructure preflight, PRA
-   standard 5M adapter, Points V1.9.8.4.5 standard 5M adapter, and Rebounds native
-   Steps 1-17 adapter. Step 6 wires exactly one additional execution adapter:
-   current Assists through its native V17 Step-17 boundary. It preserves the
-   existing Steps 1-16 analytical chain, 5,000,000 simulations/player, 20-batch
-   convergence and deterministic sensitivity while intentionally stopping before
-   Steps 18-20. Spread, Moneyline and Game Total execution adapters remain unwired;
-   Run All 7 stays disabled until each adapter is independently verified.
-2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
-3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.5. V1.9.8.4.2
-   preserves full upcoming-game projection+exact-market coverage while excluding
-   raw sportsbook player quotes that have no current projection. V1.9.8.4.3 then
-   repairs the inherited sanity gate so a >35% Points deviation is a hard blocker
-   only when the scoring-rate change is unexplained. V1.9.8.4.4 unifies the exact
-   button/diagnostic readiness contract and accepts only a hardened last-3-game
-   active-roster fallback when the official current-roster endpoint is unavailable,
-   while restoring the strict V1.9 position matchup gate. V1.9.8.4.5 keeps that
-   strict sanity rule but quarantines an unsafe player row before simulation rather
-   than deadlocking every other verified distribution; full safe game coverage is
-   still required after quarantine.
-4) The preserved PRA V3.2.1 compatibility import is rebound to PRA V3.6.1.
-   V3.6.1 preserves V3.6 model/grading/simulation math and only reuses duplicate
-   Step-5 game projections + per-player variance calculations inside one render.
-   The memo is reset on every Streamlit rerun; SportsGameOdds refresh is unchanged.
-5) The unfinished WNBA Spread fallback opens isolated Spread V1.6.1. V1.6 keeps
-   the actual 5,000,000-draw Step-7 Monte Carlo. V1.6.1 repairs only the Spread
-   Step-3 cold-start availability handoff by forcing the selected Spread date into
-   the verified roster pool/cache key and reconciling covered-team status with
-   per-player verification. Projection/probability/Monte Carlo math is unchanged.
-6) WNBA Moneyline is added at the runtime WNBA selectbox boundary and its unfinished
-   fallback opens isolated Moneyline V1.5. V1.5 preserves the verified V1.0-V1.4
-   Eastern-date slate, clock-safe pregame eligibility, team context, exact-day
-   availability, exact same-book two-sided sportsbook Moneyline verification,
-   market-independent Step-5 win probability, Step-6 same-book no-vig/fair-odds
-   comparison and the actual 5,000,000-draw Step-7 Monte Carlo per unique game.
-   Step 8 performs risk-adjusted one-candidate-per-game final grading using only
-   converged Step-7 output, exact-price EV, no-vig edge, upstream state and the
-   existing +/-5% sensitivity. No play is forced. Daily Picks V27 consumes Step 8
-   read-only through the preserved V21 integration and never reruns Moneyline production.
-7) The unfinished WNBA Game Total fallback opens isolated Game Total V1.5. V1.5
-   preserves V1.4's verified Eastern-date slate, clock-safe pregame eligibility,
-   scoring/pace/efficiency context, exact-day availability, exact same-book
-   two-sided SportsGameOdds full-game total verification, market-independent
-   projected total, Step-6 date-cut empirical team/league total distribution, and
-   the actual 5,000,000-draw integer Step-7 Monte Carlo per unique game in 20 x
-   250,000 streaming batches. Step 8 adds risk-adjusted one-candidate-per-game
-   final Over/Under grading using only converged Step-7 output, same-book no-vig
-   edge, exact-price EV, upstream state and the existing +/-5% projected-total
-   sensitivity. No play is forced. Daily Picks V27 consumes only the completed
-   same-session Step-8 payload through the preserved V21 seven-market connector.
+Daily Picks V28 preserves the complete V21 seven-market production/verification
+surface and the independently verified controller Steps 1-6: shell, 7/7 preflight,
+PRA 5M, Points 5M, Rebounds native Step 17, and Assists native Step 17. Step 7
+adds only the current Spread V1.6.1 execution adapter through its native V1.6
+Step-7 5,000,000-draw Monte Carlo boundary. The adapter preserves the current
+exact-day availability repair, Steps 1-6 source readiness, exactly 5,000,000 unique
+final-margin draws per eligible game, 20 x 250,000 streaming batches, coherent
+same-game reuse across books, source convergence and native Step-7 persistence.
+Moneyline and Game Total execution adapters remain unwired and Run All 7 remains
+disabled until every adapter is independently verified.
 
-The navigation patch wraps only the real Streamlit selectbox identified by
-key=ks_wnba_market_touch (or its WNBA Market label). It does not rewrite nested
-preserved source strings, so older compatibility wrappers cannot remove Moneyline
-again. PRA remains index 3/default because no option before PRA is changed.
-
-No PRA projection/grading/calibration math, Rebounds source-model math, MLB,
-Assists production math, Points projection math, Spread source-model math,
-Moneyline source-model math, Game Total source-model math, or existing Monte Carlo
-math is modified by this entrypoint.
+Existing isolated routes remain unchanged: Assists V20, Points V1.9.8.4.5, PRA
+V3.6.1, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5. The runtime WNBA market
+selectbox patch continues to expose Points, Rebounds, Assists, PRA, Spread,
+Moneyline, Game Total and Daily Picks while preserving PRA at index 3/default.
 '''
 from __future__ import annotations
 
@@ -75,7 +27,7 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v27 as wnba_daily_picks_v27
+import wnba_daily_picks_hub_v28 as wnba_daily_picks_v28
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
@@ -84,21 +36,17 @@ import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
 
 # The preserved application imports this historical module name for Daily Picks.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v27
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v28
 
-# The preserved application imports V1.9.8.4.1 directly. The new wrapper imported
-# the genuine V1.9.8.4.1 module before this alias is installed, then patches only
-# the live Points preflight coverage + explainable sanity + unified roster/button
-# readiness + player-level sanity quarantine helpers on render.
+# The preserved application imports V1.9.8.4.1 directly. The wrapper patches only
+# the live Points preflight/readiness/sanity quarantine helpers on render.
 sys.modules["wnba_points_hub_v19841"] = wnba_points_v19845
 
-# Cache-safe PRA route: the preserved application imports this compatibility name
-# before it later aliases the older V2.8.2 path. Rebinding here guarantees a
-# long-lived Streamlit process cannot keep the pre-performance V3.6 object.
+# Cache-safe PRA route.
 sys.modules["wnba_pra_hub_v321"] = wnba_pra_v361
 
-# Preserve the existing fallback behavior while intercepting only unfinished
-# WNBA pages that now have isolated production/foundation modules.
+# Preserve existing fallback behavior while intercepting only unfinished WNBA
+# pages that now have isolated production/foundation modules.
 _PREVIOUS_INFO = st.info
 
 
@@ -122,10 +70,7 @@ def _wnba_market_route_info(body, *args, **kwargs):
 
 st.info = _wnba_market_route_info
 
-# Runtime navigation boundary. The actual WNBA selector is created deep inside
-# the preserved app chain with key `ks_wnba_market_touch`. Previous source-string
-# patches were brittle because several wrapper layers rebuild app.py before that
-# selectbox exists. Intercept the real widget call instead.
+# Runtime navigation boundary.
 _PREVIOUS_SELECTBOX = st.selectbox
 _WNBA_MARKET_OPTIONS = [
     "Points",
@@ -143,13 +88,8 @@ def _wnba_market_selectbox(label, options, *args, **kwargs):
     key = str(kwargs.get("key") or "")
     label_text = str(label or "")
     is_wnba_market = key == "ks_wnba_market_touch" or "WNBA Market" in label_text
-
     if is_wnba_market:
-        # Preserve the established first five positions so inherited index=3 still
-        # opens PRA by default. Moneyline is inserted after Spread; Daily Picks is
-        # retained/appended even if an older shell forgot to expose it.
         options = list(_WNBA_MARKET_OPTIONS)
-
     return _PREVIOUS_SELECTBOX(label, options, *args, **kwargs)
 
 
@@ -178,7 +118,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v27_controller_assists_adapter_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v28_controller_spread_adapter_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
