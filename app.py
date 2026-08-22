@@ -1,22 +1,24 @@
-'''Kyre Sports AI entrypoint — Daily Picks V28.1 + isolated WNBA production routes.
+'''Kyre Sports AI entrypoint — Daily Picks V29 + isolated WNBA production routes.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies the existing isolated WNBA
 routes without changing source-model math.
 
-Daily Picks V28.1 preserves the complete V21 seven-market production/verification
-surface and the independently verified controller Steps 1-6: shell, 7/7 preflight,
-PRA 5M, Points 5M, Rebounds native Step 17, and Assists native Step 17. Step 7
-keeps the current Spread V1.6.1 execution adapter through its native V1.6 Step-7
-5,000,000-draw Monte Carlo boundary and repairs only the controller's Step-5 module
-traversal so it follows the same source chain as the working Spread page:
-V1.6.1 -> V1.6 -> V1.5.2 -> V1.5 -> V1.4._render_step5.
+Daily Picks V29 preserves the complete V21 seven-market production/verification
+surface and the independently verified controller Steps 1-7: shell, 7/7 preflight,
+PRA 5M, Points 5M, Rebounds native Step 17, Assists native Step 17, and Spread
+native Step 7 with its V28.1 module-chain repair. Step 8 adds only the current
+Moneyline V1.5 execution adapter through the native V1.4 Step-7 5,000,000-draw
+Monte Carlo boundary.
 
-The adapter preserves exact-day availability, Steps 1-6 source readiness, exactly
-5,000,000 unique final-margin draws per eligible game, 20 x 250,000 streaming
-batches, coherent same-game reuse across books, source convergence and native
-Step-7 persistence. Moneyline and Game Total execution adapters remain unwired and
-Run All 7 remains disabled until every adapter is independently verified.
+The Moneyline adapter preserves the exact ET slate, clock-safe pregame eligibility,
+verified team context, exact-day availability, exact same-book two-sided sportsbook
+Moneyline rows, market-independent Step-5 win distribution, native Step-6 no-vig /
+fair-odds comparison, exactly 5,000,000 unique final-margin draws per eligible game,
+20 x 250,000 batches, coherent same-game reuse across books, convergence checks and
+native Step-7 persistence. Native Step-8 final grading is intentionally not
+controller-run yet. Game Total remains unwired and Run All 7 remains disabled until
+every adapter is independently verified.
 
 Existing isolated routes remain unchanged: Assists V20, Points V1.9.8.4.5, PRA
 V3.6.1, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5. The runtime WNBA market
@@ -30,7 +32,7 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v281 as wnba_daily_picks_v281
+import wnba_daily_picks_hub_v29 as wnba_daily_picks_v29
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
@@ -39,7 +41,7 @@ import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
 
 # The preserved application imports this historical module name for Daily Picks.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v281
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v29
 
 # The preserved application imports V1.9.8.4.1 directly. The wrapper patches only
 # the live Points preflight/readiness/sanity quarantine helpers on render.
@@ -121,7 +123,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v281_controller_spread_chain_repair_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v29_controller_moneyline_adapter_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
