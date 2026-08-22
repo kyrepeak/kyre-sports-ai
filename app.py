@@ -1,13 +1,14 @@
-'''Kyre Sports AI entrypoint — Daily Picks V19 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5.
+'''Kyre Sports AI entrypoint — Daily Picks V20 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.5.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies six isolated routes plus
 one runtime navigation compatibility patch:
 
-1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V19. V19
-   preserves the complete V18/V17 four-market production and verification layers,
-   then appends only a read-only fifth-market Spread connector, common-schema,
-   safety, cross-market ranking, Top-5 selection and final production guard.
+1) WNBA Daily Picks' historical V4 import is rebound to Daily Picks V20. V20
+   preserves the complete V18/V17 production and verification layers, keeps the
+   existing read-only Assists/Spread integrations, and appends only the Moneyline
+   Step-9 read-only connector -> common schema -> safety -> cross-market protection/
+   ranking -> Top-5 selection -> final production guard. No source model is run.
 2) The unfinished WNBA Assists fallback opens the completed Assists V20 page.
 3) The preserved Points V1.9.8.4.1 import is rebound to V1.9.8.4.5. V1.9.8.4.2
    preserves full upcoming-game projection+exact-market coverage while excluding
@@ -35,9 +36,10 @@ one runtime navigation compatibility patch:
    availability, exact same-book two-sided sportsbook Moneyline verification,
    market-independent Step-5 win probability, Step-6 same-book no-vig/fair-odds
    comparison and the actual 5,000,000-draw Step-7 Monte Carlo per unique game.
-   Step 8 then performs risk-adjusted one-candidate-per-game final grading using
-   only the converged Step-7 output, exact-price EV, no-vig edge, upstream state
-   and the existing ±5% sensitivity. No play is forced. Daily Picks remains OFF.
+   Step 8 performs risk-adjusted one-candidate-per-game final grading using only
+   converged Step-7 output, exact-price EV, no-vig edge, upstream state and the
+   existing ±5% sensitivity. No play is forced. Daily Picks V20 consumes Step 8
+   read-only and never reruns Moneyline production.
 
 The navigation patch wraps only the real Streamlit selectbox identified by
 key=ks_wnba_market_touch (or its WNBA Market label). It does not rewrite nested
@@ -45,8 +47,8 @@ preserved source strings, so older compatibility wrappers cannot remove Moneylin
 again. PRA remains index 3/default because no option before PRA is changed.
 
 No PRA projection/grading/calibration math, Rebounds, MLB, Assists production math,
-Points projection math, Spread source-model math, existing Monte Carlo math, or
-existing Daily Picks connector logic is modified.
+Points projection math, Spread source-model math, Moneyline source-model math, or
+existing Monte Carlo math is modified by this entrypoint.
 '''
 from __future__ import annotations
 
@@ -55,7 +57,7 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v19 as wnba_daily_picks_v19
+import wnba_daily_picks_hub_v20 as wnba_daily_picks_v20
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
@@ -63,7 +65,7 @@ import wnba_spread_hub_v161 as wnba_spread_v161
 import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 
 # The preserved application imports this historical module name for Daily Picks.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v19
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v20
 
 # The preserved application imports V1.9.8.4.1 directly. The new wrapper imported
 # the genuine V1.9.8.4.1 module before this alias is installed, then patches only
@@ -154,7 +156,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v20_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
