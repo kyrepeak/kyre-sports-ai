@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — Daily Picks V19 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.3.
+'''Kyre Sports AI entrypoint — Daily Picks V19 + Assists V20 + Points preflight repair + PRA V3.6.1 speed route + WNBA Spread V1.6.1 + Moneyline V1.4.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies six isolated routes plus
@@ -30,14 +30,14 @@ one runtime navigation compatibility patch:
    the verified roster pool/cache key and reconciling covered-team status with
    per-player verification. Projection/probability/Monte Carlo math is unchanged.
 6) WNBA Moneyline is added at the runtime WNBA selectbox boundary and its unfinished
-   fallback opens isolated Moneyline V1.3. V1.3 preserves the verified V1.0-V1.2
+   fallback opens isolated Moneyline V1.4. V1.4 preserves the verified V1.0-V1.3
    Eastern-date slate, clock-safe pregame eligibility, team context, exact-day
-   availability, exact same-book two-sided sportsbook Moneyline verification and
-   market-independent Step-5 win probability. Step 6 converts each same-book price
-   pair to proportional no-vig probability and converts the frozen Step-5 model
-   probability to fair American odds/analytical edge. Sportsbook prices remain
-   comparison-only and never feed back into Step 5. Monte Carlo, final grading and
-   Daily Picks remain OFF.
+   availability, exact same-book two-sided sportsbook Moneyline verification,
+   market-independent Step-5 win probability and Step-6 same-book no-vig/fair-odds
+   comparison, then adds an actual 5,000,000-draw Step-7 Monte Carlo per unique
+   game with convergence and ±5% projected-margin sensitivity audits. Sportsbook
+   prices remain comparison-only and never enter the Step-5/Step-7 distribution.
+   Final grading and Daily Picks remain OFF.
 
 The navigation patch wraps only the real Streamlit selectbox identified by
 key=ks_wnba_market_touch (or its WNBA Market label). It does not rewrite nested
@@ -60,7 +60,7 @@ import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
 import wnba_spread_hub_v161 as wnba_spread_v161
-import wnba_moneyline_hub_v13 as wnba_moneyline_v13
+import wnba_moneyline_hub_v14 as wnba_moneyline_v14
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v19
@@ -91,7 +91,7 @@ def _wnba_market_route_info(body, *args, **kwargs):
         wnba_spread_v161.render_wnba_spread_hub(None, None, None, None)
         st.stop()
     if text.startswith("WNBA Moneyline is separate from") and unfinished:
-        wnba_moneyline_v13.render_wnba_moneyline_hub(None, None, None, None)
+        wnba_moneyline_v14.render_wnba_moneyline_hub(None, None, None, None)
         st.stop()
     return _PREVIOUS_INFO(body, *args, **kwargs)
 
@@ -154,7 +154,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v13_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v19_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v14_runtime_nav.py",
         "exec",
     ),
     globals(),
