@@ -21,6 +21,7 @@ import pandas as pd
 import streamlit as st
 
 import wnba_daily_picks_hub_v26 as prior
+import wnba_daily_picks_hub_v25 as controller_base
 import wnba_daily_picks_hub_v21 as v21
 import wnba_assists_hub_v17 as assists_v17
 
@@ -161,10 +162,13 @@ def _render_controller_step6():
         "Spread, Moneyline and Game Total remain unwired."
     )
 
-    records, all_pass, passed = prior._preflight_state()
+    # V26 owns the Step-5 Rebounds adapter but intentionally does not re-export
+    # the Step-2 preflight helper functions. Delegate those helpers directly to
+    # their frozen V25 controller base instead of assuming they exist on V26.
+    records, all_pass, passed = controller_base._preflight_state()
     if not all_pass:
         if st.button("🔎 CHECK ALL 7 PREFLIGHTS", key="ks_step6_recheck_preflight_v27", use_container_width=True):
-            st.session_state[_PREFLIGHT_KEY] = prior._run_preflight()
+            st.session_state[_PREFLIGHT_KEY] = controller_base._run_preflight()
             st.rerun()
         st.warning(f"⚠️ STEP 6 LOCKED • Step-2 infrastructure preflight must be 7/7 first. Current: {passed}/7.")
     else:
