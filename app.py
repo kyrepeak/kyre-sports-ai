@@ -1,23 +1,24 @@
-'''Kyre Sports AI entrypoint — Daily Picks V31 + isolated WNBA production routes.
+'''Kyre Sports AI entrypoint — Daily Picks V31.1 + isolated WNBA production routes.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies the existing isolated WNBA
 routes without changing source-model math.
 
-Daily Picks V31 preserves the complete V21 seven-market production/verification
+Daily Picks V31.1 preserves the complete V21 seven-market production/verification
 surface and all independently verified controller adapters from Steps 1-9: shell,
 7/7 preflight, PRA 5M, Points 5M, Rebounds native Step 17, Assists native Step 17,
 Spread native Step 7 with its V28.1 module-chain repair, Moneyline native Step 7,
 and Game Total native Step 7.
 
-Step 10 adds only master orchestration. RUN ALL 7 executes those seven verified
+Step 10 uses checkpointed master orchestration. RUN ALL 7 executes the seven verified
 adapters sequentially in the fixed order PRA -> Points -> Rebounds -> Assists ->
-Spread -> Moneyline -> Game Total. Each stage must satisfy its existing native
-same-day completion/convergence contract before the next stage begins. The sequence
-fails closed on the first BLOCKED/CHECK/ERROR or contract mismatch. No source-model
-projection/probability/Monte Carlo math is copied or changed, and no Daily Picks
-connector writes, cross-market ranking changes, backfills or forced picks occur in
-this step.
+Spread -> Moneyline -> Game Total, with exactly one native adapter executed and
+validated per Streamlit script pass. Each successful market is checkpointed before
+the controller advances automatically on the next rerun. The sequence fails closed
+on the first BLOCKED/CHECK/ERROR, interruption or completion-contract mismatch.
+No source-model projection/probability/Monte Carlo math is copied or changed, and no
+Daily Picks connector writes, cross-market ranking changes, backfills or forced
+picks occur in this step.
 
 Existing isolated routes remain unchanged: Assists V20, Points V1.9.8.4.5, PRA
 V3.6.1, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5. The runtime WNBA market
@@ -31,7 +32,7 @@ import sys
 import urllib.request
 
 import streamlit as st
-import wnba_daily_picks_hub_v31 as wnba_daily_picks_v31
+import wnba_daily_picks_hub_v311 as wnba_daily_picks_v311
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
 import wnba_pra_hub_v361 as wnba_pra_v361
@@ -40,7 +41,7 @@ import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
 
 # The preserved application imports this historical module name for Daily Picks.
-sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v31
+sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v311
 
 # The preserved application imports V1.9.8.4.1 directly. The wrapper patches only
 # the live Points preflight/readiness/sanity quarantine helpers on render.
@@ -122,7 +123,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_daily_picks_v31_master_run_all_7_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_daily_picks_v311_checkpointed_master_run_all_7_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
