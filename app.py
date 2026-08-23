@@ -5,12 +5,13 @@ This cache-safe wrapper preserves the exact application at commit
 without changing source-model math.
 
 Daily Picks remains V34. Existing isolated WNBA routes remain Assists V20, Points
-V1.9.8.4.5, PRA V3.6.7, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5.
-PRA V3.6.7 preserves the full V3.6.2/V3.6.1 production model, the Step-9 Final
-Top-5 identity presentation, V3.6.5 Step-5 identity reliability and V3.6.6 cached
-opponent defensive context. It adds only cached current-season/current-team player
-matchup history to the V2.8 Minutes + Role Top-5 cards. Projection, qualification,
-Monte Carlo, ranking, final-ready gates and selection logic are unchanged.
+V1.9.8.4.5, PRA V3.6.8, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5.
+PRA V3.6.8 preserves the full V3.6.2/V3.6.1 production model, the Step-9 Final
+Top-5 identity presentation, V3.6.5 Step-5 identity reliability, V3.6.6 cached
+opponent defensive context and V3.6.7 matchup history. It adds only a display-only
+projection path built from already-existing V2.8 fields; no synthetic minutes-only
+PRA or Over/Under probability is created. Projection, qualification, Monte Carlo,
+ranking, final-ready gates and selection logic are unchanged.
 
 MLB 1+ Hit is routed through Hit UI V13.15 FINAL. Steps 1-11 retain the verified
 presentation/context layers for batter/team identity, opposing starter, official
@@ -48,7 +49,7 @@ import mlb_hit_hub_v1315 as mlb_hit_hub_v1315
 import wnba_daily_picks_hub_v34 as wnba_daily_picks_v34
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
-import wnba_pra_hub_v367 as wnba_pra_v367
+import wnba_pra_hub_v368 as wnba_pra_v368
 import wnba_spread_hub_v161 as wnba_spread_v161
 import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
@@ -67,8 +68,8 @@ sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v34
 # the live Points preflight/readiness/sanity quarantine helpers on render.
 sys.modules["wnba_points_hub_v19841"] = wnba_points_v19845
 
-# Cache-safe PRA route with Step-5 identity + defense + matchup history + Final identity.
-sys.modules["wnba_pra_hub_v321"] = wnba_pra_v367
+# Cache-safe PRA route with Step-5 identity + defense + history + path + Final identity.
+sys.modules["wnba_pra_hub_v321"] = wnba_pra_v368
 
 # Preserve existing fallback behavior while intercepting only unfinished WNBA
 # pages that now have isolated production/foundation modules.
@@ -143,7 +144,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_mlb_hit_v1315_final_audit_freeze_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v367_step5_matchup_history_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_mlb_hit_v1315_final_audit_freeze_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v368_step5_projection_path_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
