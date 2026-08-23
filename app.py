@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB Pitcher K V1.0.15 fail-safe evidence reasons.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB Pitcher K V1.0.16 renderer-order repair.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
@@ -12,14 +12,14 @@ foundation, Steps 1-7, 5,000,000-draw Monte Carlo and Final Decision grading. No
 further NFL Moneyline behavior is changed here.
 
 MLB Pitcher Strikeouts alone is compatibility-routed from the frozen historical
-V1.0.7 import name to V1.0.15. V1.0.15 preserves V1.0.14's redundant sportsbook
+V1.0.7 import name to V1.0.16. V1.0.16 preserves V1.0.14's redundant sportsbook
 transport (SportsGameOdds primary, Odds-API.io fallback/gap-fill, and same-slate
-15-minute last-good real-line cache) and V1.0.11's proven Top-5 intelligence. It
-adds fail-safe Supports / Concerns boxes computed independently per signal so a
-missing or failed evidence source can never hide the rest of the intelligence
-card. Projection math, market grading, Monte Carlo, Evidence Score, candidate pool
-and Top-5 probability ranking remain unchanged. Every other MLB and WNBA route
-remains on the exact frozen production source.
+15-minute last-good real-line cache) and V1.0.15's fail-safe Supports / Concerns
+logic. It fixes the final render-order collision where V1.0.13 re-installed its
+older card renderer immediately before the Top-5 cards were drawn. Projection
+math, market grading, Monte Carlo, Evidence Score, candidate pool and Top-5
+probability ranking remain unchanged. Every other MLB and WNBA route remains on
+the exact frozen production source.
 
 Hot-reload guard: the preserved MLB/WNBA shell historically aliases hit_hub_v131
 to a later presentation wrapper at runtime. Streamlit keeps sys.modules alive
@@ -142,9 +142,9 @@ st.selectbox = _sport_selectbox_with_nfl
 
 # Isolated MLB Pitcher Strikeouts compatibility route. The preserved historical
 # application imports mlb_pitcher_k_hub_v107; only that exact module name is
-# redirected to V1.0.15. No other MLB/WNBA import is changed.
-import mlb_pitcher_k_hub_v1015 as mlb_pitcher_k_v1015
-sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v1015
+# redirected to V1.0.16. No other MLB/WNBA import is changed.
+import mlb_pitcher_k_hub_v1016 as mlb_pitcher_k_v1016
+sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v1016
 
 
 def _restore_real_hit_v131_for_hot_reload():
@@ -187,7 +187,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1015_fail_safe_evidence_reasons.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1016_renderer_order_repair.py",
         "exec",
     ),
     globals(),
