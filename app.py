@@ -1,11 +1,15 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB Pitcher K V1.0.17 Top-5 headshots.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB presentation routes.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
 
 NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
-additive headshot layer on top of the verified V1.0.16 checkpoint. Every other
-MLB/WNBA route continues to execute from the exact frozen production source.
+additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI is
+now routed through V1.0.2 Step 1, which adds only official MLB batter headshots
+and team logos to the strongest-probability cards. Every underlying H+R+RBI
+candidate, projection, Monte Carlo and ranking calculation remains V1.0/V1.0.1.
+Every other MLB/WNBA route continues to execute from the exact frozen production
+source.
 
 Streamlit hot-reload guard: the frozen application uses long compatibility-wrapper
 chains for Hit and MLB Daily Game Picks. Streamlit preserves sys.modules between
@@ -162,10 +166,7 @@ def _restore_real_hit_v131_for_hot_reload():
 def _clear_mlb_hot_reload_wrappers():
     """Clear stale Daily Picks and H+R+RBI wrappers before frozen-shell replay."""
     for name in list(sys.modules):
-        if name.startswith("mlb_daily_game_picks_v") or name in {
-            "mlb_hrrbi_hub_v10",
-            "mlb_hrrbi_hub_v101",
-        }:
+        if name.startswith("mlb_daily_game_picks_v") or name.startswith("mlb_hrrbi_hub_v"):
             sys.modules.pop(name, None)
 
 
@@ -182,10 +183,18 @@ def _install_hrrbi_candidate_pool_compat():
     hit_v1315._candidate_pool = candidate_pool
 
 
+def _install_hrrbi_step1_route():
+    """Route the frozen H+R+RBI V1.0.1 import to V1.0.2 presentation Step 1."""
+    import mlb_hrrbi_hub_v102 as hrrbi_v102
+
+    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v102
+
+
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
 _restore_real_hit_v131_for_hot_reload()
 _clear_mlb_hot_reload_wrappers()
 _install_hrrbi_candidate_pool_compat()
+_install_hrrbi_step1_route()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -206,7 +215,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1017_hrrbi_candidate_pool_compat.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v102_step1_identity.py",
         "exec",
     ),
     globals(),
