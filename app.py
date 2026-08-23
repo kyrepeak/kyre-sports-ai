@@ -5,19 +5,19 @@ Frozen MLB/WNBA application source:
 
 NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
 additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI is
-now routed through V1.0.14 Steps 1-11: official MLB batter/team visual identity,
-fail-safe opposing probable-starter photo + season ERA/WHIP/K context, official
-batter-vs-current-starter history, pitch-mix + platoon matchup with validated
-Statcast pitch-usage shares, park/weather + bullpen environment audit,
-plate-appearance/batting-order opportunity, descriptive recent H+R+RBI
-form/component-quality context, opponent run-prevention/team-defense audit,
-bullpen handedness + active relief-path context, starter workload +
-times-through-order exposure audit, and official MLB home-plate umpire assignment
-context on the strongest-probability cards. Historical umpire zone tendencies are
-not inferred when a verified source is unavailable. Every underlying H+R+RBI
-candidate, projection, Monte Carlo and ranking calculation remains V1.0/V1.0.1.
-Every other MLB/WNBA route continues to execute from the exact frozen production
-source.
+now routed through V1.0.15 Steps 1-11 plus the final Top-5 evidence summary:
+official MLB batter/team visual identity, fail-safe opposing probable-starter photo
++ season ERA/WHIP/K context, official batter-vs-current-starter history, pitch-mix
++ platoon matchup with validated Statcast pitch-usage shares, park/weather + bullpen
+environment audit, plate-appearance/batting-order opportunity, descriptive recent
+H+R+RBI form/component-quality context, opponent run-prevention/team-defense audit,
+bullpen handedness + active relief-path context, starter workload + times-through-
+order exposure audit, official MLB home-plate umpire assignment context, and final
+Pick Strength / Matchup / Opportunity / Evidence / Supports / Concerns synthesis on
+the strongest-probability cards. Historical umpire zone tendencies are not inferred
+when a verified source is unavailable. Every underlying H+R+RBI candidate,
+projection, Monte Carlo and ranking calculation remains V1.0/V1.0.1. Every other
+MLB/WNBA route continues to execute from the exact frozen production source.
 
 Streamlit hot-reload guard: the frozen application uses long compatibility-wrapper
 chains for Hit and MLB Daily Game Picks. Streamlit preserves sys.modules between
@@ -191,18 +191,18 @@ def _install_hrrbi_candidate_pool_compat():
     hit_v1315._candidate_pool = candidate_pool
 
 
-def _install_hrrbi_step11_route():
-    """Route the frozen H+R+RBI V1.0.1 import to V1.0.14 Steps 1-11."""
-    import mlb_hrrbi_hub_v114 as hrrbi_v114
+def _install_hrrbi_final_route():
+    """Route the frozen H+R+RBI V1.0.1 import to V1.0.15 final Top-5 evidence layer."""
+    import mlb_hrrbi_hub_v115 as hrrbi_v115
 
-    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v114
+    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v115
 
 
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
 _restore_real_hit_v131_for_hot_reload()
 _clear_mlb_hot_reload_wrappers()
 _install_hrrbi_candidate_pool_compat()
-_install_hrrbi_step11_route()
+_install_hrrbi_final_route()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -223,7 +223,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v114_step11_umpire_context.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_final_evidence.py",
         "exec",
     ),
     globals(),
