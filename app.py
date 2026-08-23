@@ -1,33 +1,23 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.8 runtime route + isolated MLB Pitcher K V1.0.8 Step 1.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB Pitcher K V1.0.9 Top-5 intelligence.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
 
 That commit contains the last verified pre-NFL app.py plus the isolated nfl_hub_v1
 file. This entrypoint does not patch historical source text, does not alter any
-MLB/WNBA model module, and does not depend on nested git-show/raw-GitHub wrapper
-paths.
+unrelated MLB/WNBA model module, and does not depend on nested wrapper routes.
 
-NFL routing is handled at the live Streamlit navigation boundary:
-1. while MLB/WNBA is active, only the real Sport selectbox is extended with NFL;
-2. after the user selects NFL, the next Streamlit rerun is intercepted before the
-   frozen MLB/WNBA app executes;
-3. an isolated NFL Sport/Market navigation row and nfl_hub_v18 page are rendered;
-4. selecting MLB or WNBA again returns directly to the untouched frozen app.
-
-NFL V1.8 is the frozen Moneyline checkpoint. It preserves the verified Slate V1
-foundation and Moneyline Steps 1-3.6, Step 4A historical team-strength baseline,
-Step 4B matchup/home-field features, Step 4C calibrated BASE P(win), Step 5.1
-sportsbook Moneyline/freshness, Step 6 5,000,000-draw model-only Monte Carlo,
-Step 7 no-vig edge/fair-price/EV diagnostics, and V1.8 Final Decision grading.
-During preseason, unresolved Step-3 game-plan/QB-rotation information still forces
-GATED final output. No further NFL Moneyline behavior is changed here.
+NFL V1.8 remains the frozen Moneyline checkpoint. It preserves the verified Slate
+foundation, Steps 1-7, 5,000,000-draw Monte Carlo and Final Decision grading. No
+further NFL Moneyline behavior is changed here.
 
 MLB Pitcher Strikeouts alone is compatibility-routed from the frozen historical
-V1.0.7 import name to V1.0.8. V1.0.8 adds Step 1 — Verified Pitcher Slate only:
-official MLB probable-starter slots plus handedness, ERA, WHIP, K/9, season Ks and
-starts. Pitcher K projection math, workload/opponent-K modeling, sportsbook parsing,
-line grading, Monte Carlo and rankings remain V1.0.7 behavior. Every other MLB and
+V1.0.7 import name to V1.0.9. V1.0.9 keeps the existing Strongest Pitcher
+Strikeout O/U Top-5 board and adds intelligence only inside those ranked cards:
+recent L5/L10 line results, recent pitcher-vs-opponent history, matchup grade,
+pick-strength grade, workload label and opponent K environment. The temporary
+page-level V1.0.8 Step-1 section is not routed. Projection math, sportsbook parsing,
+line grading, Monte Carlo and ranking remain V1.0.7 behavior. Every other MLB and
 WNBA route remains on the exact frozen production source.
 '''
 from __future__ import annotations
@@ -143,9 +133,9 @@ st.selectbox = _sport_selectbox_with_nfl
 
 # Isolated MLB Pitcher Strikeouts compatibility route. The preserved historical
 # application imports mlb_pitcher_k_hub_v107; only that exact module name is
-# redirected to V1.0.8. No other MLB/WNBA import is changed.
-import mlb_pitcher_k_hub_v108 as mlb_pitcher_k_v108
-sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v108
+# redirected to V1.0.9. No other MLB/WNBA import is changed.
+import mlb_pitcher_k_hub_v109 as mlb_pitcher_k_v109
+sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v109
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -166,7 +156,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v108_step1.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v109_top5_intelligence.py",
         "exec",
     ),
     globals(),
