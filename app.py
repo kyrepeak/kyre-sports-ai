@@ -5,11 +5,12 @@ Frozen MLB/WNBA application source:
 
 NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
 additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI is
-now routed through V1.0.4 Steps 1-2: official MLB batter/team visual identity plus
-fail-safe opposing probable-starter photo and official season ERA/WHIP/K context
-on the strongest-probability cards. Every underlying H+R+RBI candidate, projection,
-Monte Carlo and ranking calculation remains V1.0/V1.0.1. Every other MLB/WNBA
-route continues to execute from the exact frozen production source.
+now routed through V1.0.5 Steps 1-3: official MLB batter/team visual identity,
+fail-safe opposing probable-starter photo + season ERA/WHIP/K context, and official
+batter-vs-current-starter history on the strongest-probability cards. Every
+underlying H+R+RBI candidate, projection, Monte Carlo and ranking calculation
+remains V1.0/V1.0.1. Every other MLB/WNBA route continues to execute from the
+exact frozen production source.
 
 Streamlit hot-reload guard: the frozen application uses long compatibility-wrapper
 chains for Hit and MLB Daily Game Picks. Streamlit preserves sys.modules between
@@ -183,18 +184,18 @@ def _install_hrrbi_candidate_pool_compat():
     hit_v1315._candidate_pool = candidate_pool
 
 
-def _install_hrrbi_step2_route():
-    """Route the frozen H+R+RBI V1.0.1 import to fail-safe V1.0.4 Steps 1-2."""
-    import mlb_hrrbi_hub_v104 as hrrbi_v104
+def _install_hrrbi_step3_route():
+    """Route the frozen H+R+RBI V1.0.1 import to fail-safe V1.0.5 Steps 1-3."""
+    import mlb_hrrbi_hub_v105 as hrrbi_v105
 
-    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v104
+    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v105
 
 
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
 _restore_real_hit_v131_for_hot_reload()
 _clear_mlb_hot_reload_wrappers()
 _install_hrrbi_candidate_pool_compat()
-_install_hrrbi_step2_route()
+_install_hrrbi_step3_route()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -215,7 +216,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v104_step2_fail_safe.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v105_step3_bvp.py",
         "exec",
     ),
     globals(),
