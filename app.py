@@ -7,18 +7,25 @@ NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
 additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI
 remains routed through V1.0.15 Steps 1-11 plus the final Top-5 evidence summary.
 
-WNBA Points is now routed through V1.9.8.4.6 only at the presentation boundary.
-The validated V1.9.8.4.5 projection, exact SportsGameOdds transport, 5M/10M Monte
-Carlo, calibration, candidate hierarchy, persistence and readiness gates stay
-unchanged. V1.9.8.4.6 upgrades only the visible Top-5 Player vs Team History
-cards with richer descriptive current-season/current-team history, small-sample
-protection and meeting-by-meeting audit rows. H2H remains non-model context.
+WNBA Points is routed through V1.9.8.4.7 at the presentation boundary. The
+validated V1.9.8.4.5 projection, exact SportsGameOdds transport, 5M/10M Monte
+Carlo, calibration, candidate hierarchy, persistence and readiness gates remain
+unchanged. V1.9.8.4.6 supplies the richer Top-5 Player vs Team History cards;
+V1.9.8.4.7 adds only a hot-reload-safe compatibility shim around that UI.
+
+Streamlit preserves sys.modules across reruns. The frozen Points shell also
+intentionally aliases historical WNBA Points module names, so stale wrapper
+objects can survive a deploy under base-module names. Before installing the
+V1.9.8.4.7 route, this entrypoint clears only the WNBA Points module family and
+reimports the chain from disk in dependency order. This prevents circular/stale
+alias AttributeErrors while leaving every non-Points route untouched.
 
 Every other MLB/WNBA route continues to execute from the exact frozen production
 source. Frozen NFL V1.8 is isolated from the MLB/WNBA replay.
 """
 from __future__ import annotations
 
+import importlib
 import importlib.util
 from pathlib import Path
 import subprocess
@@ -180,27 +187,36 @@ def _install_hrrbi_final_route():
     sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v115
 
 
-def _install_wnba_points_h2h_route():
-    """Route only WNBA Points V1.9.8.4.5 to the V1.9.8.4.6 H2H presentation wrapper.
+def _clear_wnba_points_hot_reload_modules():
+    """Remove only stale WNBA Points modules/aliases before rebuilding the chain.
 
-    Restore the genuine V1.9.8.4.5 module first so Streamlit hot-reload cannot
-    leave the wrapper aliased under its own base import name.
+    The frozen shell aliases V1.9.8.4.1 to the active production checkpoint.
+    Streamlit keeps that alias alive between reruns, so manually executing a base
+    module can otherwise import an old wrapper as one of its own dependencies.
+    Clearing the Points-only family lets Python rebuild the genuine dependency
+    graph from disk before the new presentation alias is installed.
     """
-    base_path = Path(__file__).with_name("wnba_points_hub_v19845.py")
-    spec = importlib.util.spec_from_file_location("wnba_points_hub_v19845", base_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError("Could not restore WNBA Points V1.9.8.4.5 base.")
+    for name in list(sys.modules):
+        if name.startswith("wnba_points_hub_v") or name.startswith("wnba_points_v"):
+            sys.modules.pop(name, None)
+    importlib.invalidate_caches()
 
-    base_module = importlib.util.module_from_spec(spec)
-    sys.modules["wnba_points_hub_v19845"] = base_module
-    spec.loader.exec_module(base_module)
 
-    # Force the additive wrapper to bind to the genuine base on this deploy/rerun.
-    sys.modules.pop("wnba_points_hub_v19846", None)
-    import wnba_points_hub_v19846 as points_v19846
+def _install_wnba_points_h2h_route():
+    """Install V1.9.8.4.7 after a clean Points-only import-graph rebuild."""
+    _clear_wnba_points_hot_reload_modules()
 
-    # The frozen pre-NFL shell imports this historical path. Redirect only it.
-    sys.modules["wnba_points_hub_v19845"] = points_v19846
+    # Import the shim normally. Its chain loads V1.9.8.4.6 and the genuine
+    # V1.9.8.4.5 base before any frozen-shell historical alias is reinstalled.
+    import wnba_points_hub_v19847 as points_v19847
+
+    base = getattr(points_v19847, "base", None)
+    if base is None or not hasattr(base, "ui") or not hasattr(base, "v171"):
+        raise RuntimeError("WNBA Points V1.9.8.4.7 compatibility base failed to initialize.")
+
+    # The frozen pre-NFL shell imports V1.9.8.4.5 directly. Redirect only that
+    # public presentation boundary; the shim retains the genuine base object.
+    sys.modules["wnba_points_hub_v19845"] = points_v19847
 
 
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
@@ -229,7 +245,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19846_h2h_evidence.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_h2h_hot_reload_safe.py",
         "exec",
     ),
     globals(),
