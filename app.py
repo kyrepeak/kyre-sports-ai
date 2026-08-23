@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.4.1 runtime route.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.4.2 runtime route.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
@@ -12,17 +12,17 @@ NFL routing is handled at the live Streamlit navigation boundary:
 1. while MLB/WNBA is active, only the real Sport selectbox is extended with NFL;
 2. after the user selects NFL, the next Streamlit rerun is intercepted before the
    frozen MLB/WNBA app executes;
-3. an isolated NFL Sport/Market navigation row and nfl_hub_v141 page are rendered;
+3. an isolated NFL Sport/Market navigation row and nfl_hub_v142 page are rendered;
 4. selecting MLB or WNBA again returns directly to the untouched frozen app.
 
-NFL V1.4.1 preserves the verified Slate V1 foundation and Moneyline Steps 1-3.6,
-plus Step 4A's exact team-strength formula. V4.1 repairs only historical regular-
-season retrieval: ESPN team schedule remains primary, while an ESPN league-wide
-week-by-week regular-season reconstruction is used when the primary path returns
-insufficient usable history. Preseason results remain excluded. Step 3 remains a
-final-output preseason safety gate. Sportsbook pricing, calibrated P(win), Monte
-Carlo, ranking, edge/EV and recommendations remain OFF. All other NFL markets
-remain reserved. MLB/WNBA production remains frozen and untouched.
+NFL V1.4.2 preserves the verified Slate V1 foundation and Moneyline Steps 1-3.6,
+plus Step 4A's repaired historical team-strength baseline. Step 4B adds raw
+opponent interaction, recent-form separation and verified home/neutral-site
+features. The feature layer is transparent and intentionally does NOT expose a
+calibrated win probability. Step 3 remains a final-output preseason safety gate.
+Sportsbook pricing, calibrated P(win), Monte Carlo, ranking, edge/EV and
+recommendations remain OFF. All other NFL markets remain reserved. MLB/WNBA
+production remains frozen and untouched.
 '''
 from __future__ import annotations
 
@@ -103,7 +103,7 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
         unsafe_allow_html=True,
     )
 
-    from nfl_hub_v141 import render_nfl_hub
+    from nfl_hub_v142 import render_nfl_hub
 
     render_nfl_hub(selected_market)
     st.stop()
@@ -153,7 +153,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v141_moneyline_step4a_historical_fallback.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v142_moneyline_step4b_matchup_features.py",
         "exec",
     ),
     globals(),
