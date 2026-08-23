@@ -5,14 +5,14 @@ Frozen MLB/WNBA application source:
 
 NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
 additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI is
-now routed through V1.0.8 Steps 1-6: official MLB batter/team visual identity,
+now routed through V1.0.9 Steps 1-6: official MLB batter/team visual identity,
 fail-safe opposing probable-starter photo + season ERA/WHIP/K context, official
-batter-vs-current-starter history, display-only pitch-mix + platoon matchup,
-park/weather + bullpen environment audit, and plate-appearance/batting-order
-opportunity context on the strongest-probability cards. Every underlying H+R+RBI
-candidate, projection, Monte Carlo and ranking calculation remains V1.0/V1.0.1.
-Every other MLB/WNBA route continues to execute from the exact frozen production
-source.
+batter-vs-current-starter history, pitch-mix + platoon matchup with validated
+Statcast pitch-usage shares, park/weather + bullpen environment audit, and
+plate-appearance/batting-order opportunity context on the strongest-probability
+cards. Every underlying H+R+RBI candidate, projection, Monte Carlo and ranking
+calculation remains V1.0/V1.0.1. Every other MLB/WNBA route continues to execute
+from the exact frozen production source.
 
 Streamlit hot-reload guard: the frozen application uses long compatibility-wrapper
 chains for Hit and MLB Daily Game Picks. Streamlit preserves sys.modules between
@@ -187,10 +187,10 @@ def _install_hrrbi_candidate_pool_compat():
 
 
 def _install_hrrbi_step6_route():
-    """Route the frozen H+R+RBI V1.0.1 import to fail-safe V1.0.8 Steps 1-6."""
-    import mlb_hrrbi_hub_v108 as hrrbi_v108
+    """Route the frozen H+R+RBI V1.0.1 import to V1.0.9 Steps 1-6 + pitch-share validation."""
+    import mlb_hrrbi_hub_v109 as hrrbi_v109
 
-    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v108
+    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v109
 
 
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
@@ -218,7 +218,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v108_step6_opportunity.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v109_step6_validated_pitch_shares.py",
         "exec",
     ),
     globals(),
