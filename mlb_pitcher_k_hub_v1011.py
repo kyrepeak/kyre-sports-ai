@@ -60,13 +60,24 @@ def _recent_rate(logs, side, line, n):
     return float(rate), wins, pushes
 
 
-def _h2h_side_rate(hist_rows, side, line):
-    rows = list(hist_rows or [])
-    if not rows:
+def _h2h_values(hist):
+    if not hist or not int(hist.get("games") or 0):
+        return []
+    text = str(hist.get("sequence") or "").replace("•", " ")
+    out = []
+    for token in text.split():
+        value = _finite(token)
+        if value is not None:
+            out.append(value)
+    return out[:5]
+
+
+def _h2h_side_rate(values, side, line):
+    vals = list(values or [])
+    if not vals:
         return None
     wins = pushes = 0
-    for row in rows:
-        k = _finite(row.get("k"), 0.0)
+    for k in vals:
         if side == "OVER":
             if k > line:
                 wins += 1
@@ -77,51 +88,13 @@ def _h2h_side_rate(hist_rows, side, line):
                 wins += 1
             elif abs(k - line) < 1e-9:
                 pushes += 1
-    return float((wins + 0.5 * pushes) / len(rows))
-
-
-def _load_h2h_rows(player_id, opponent_name, current_season):
-    """Reuse the same source logic as V1.0.9 but retain game rows for side hit-rate."""
-    pid = int(player_id)
-    target = engine._norm_name(opponent_name)
-    rows = []
-    # These calls are cached by requests upstream only indirectly, so keep the scope tiny:
-    # Top-5 only, three seasons, and fail soft.
-    import requests
-    for yr in (int(current_season), int(current_season) - 1, int(current_season) - 2):
-        try:
-            resp = requests.get(
-                f"{engine.MLB_API}/people/{pid}/stats",
-                params={"stats": "gameLog", "group": "pitching", "season": int(yr)},
-                timeout=8,
-            )
-            resp.raise_for_status()
-            groups = resp.json().get("stats") or []
-            splits = groups[0].get("splits", []) if groups else []
-            for sp in splits:
-                opp = ((sp.get("opponent") or {}).get("name") or "")
-                if target and engine._norm_name(opp) != target:
-                    continue
-                stat = sp.get("stat") or {}
-                ip = engine.ipfloat(stat.get("inningsPitched", "0.0"))
-                if ip < 1.0:
-                    continue
-                rows.append({
-                    "date": str(sp.get("date") or ""),
-                    "k": _finite(stat.get("strikeOuts"), 0.0),
-                    "ip": ip,
-                })
-        except Exception:
-            continue
-    rows.sort(key=lambda x: x.get("date") or "", reverse=True)
-    return rows[:5]
+    return float((wins + 0.5 * pushes) / len(vals))
 
 
 def _directional_matchup_score(side, opp_rate, opp_factor):
     """0..15; league-average environment is intentionally near the middle."""
     rate = _finite(opp_rate, 0.225)
     factor = _finite(opp_factor, 1.0)
-    # Blend absolute opponent K rate with the engine's opponent factor.
     rate_support_over = _clip01((rate - 0.18) / 0.09)
     factor_support_over = _clip01((factor - 0.82) / 0.38)
     over_support = 0.65 * rate_support_over + 0.35 * factor_support_over
@@ -139,7 +112,7 @@ def _directional_workload_score(r, side):
     return 5.0 * support
 
 
-def _evidence_grade(r, logs, h2h_rows):
+def _evidence_grade(r, logs, hist):
     g = r.get("grade") or {}
     side = str(g.get("side") or "OVER").upper()
     line = _finite(g.get("line"), 0.0)
@@ -148,7 +121,8 @@ def _evidence_grade(r, logs, h2h_rows):
 
     l5_rate, _, _ = _recent_rate(logs, side, line, 5)
     l10_rate, _, _ = _recent_rate(logs, side, line, 10)
-    h2h_rate = _h2h_side_rate(h2h_rows, side, line)
+    h2h_vals = _h2h_values(hist)
+    h2h_rate = _h2h_side_rate(h2h_vals, side, line)
 
     # 35 points — independent model probability. Full credit at 80%+.
     model_score = 35.0 * _clip01((p - 0.50) / 0.30)
@@ -168,7 +142,7 @@ def _evidence_grade(r, logs, h2h_rows):
     if h2h_rate is None:
         h2h_score = 2.5
     else:
-        sample = min(len(h2h_rows), 5)
+        sample = min(len(h2h_vals), 5)
         shrink = sample / (sample + 3.0)
         shrunk = 0.50 * (1.0 - shrink) + h2h_rate * shrink
         h2h_score = 5.0 * shrunk
@@ -180,15 +154,14 @@ def _evidence_grade(r, logs, h2h_rows):
     score = max(0.0, min(100.0, score))
 
     # Count broad agreement signals for transparency. H2H only counts with >=2 meetings.
-    signals = []
-    signals.append(("Model", p >= 0.60))
+    signals = [("Model", p >= 0.60)]
     if l5_rate is not None:
         signals.append(("L5", l5_rate >= 0.60))
     if l10_rate is not None:
         signals.append(("L10", l10_rate >= 0.60))
     signals.append(("Matchup", matchup_score >= 8.0))
     signals.append(("Workload", workload_score >= 2.5 and rel >= 0.50))
-    if len(h2h_rows) >= 2 and h2h_rate is not None:
+    if len(h2h_vals) >= 2 and h2h_rate is not None:
         signals.append(("H2H", h2h_rate >= 0.60))
     supportive = sum(1 for _, ok in signals if ok)
     total_signals = len(signals)
@@ -216,9 +189,6 @@ def _evidence_grade(r, logs, h2h_rows):
         "score": score,
         "supportive": supportive,
         "signals": total_signals,
-        "l5_rate": l5_rate,
-        "l10_rate": l10_rate,
-        "h2h_rate": h2h_rate,
     }
 
 
@@ -243,12 +213,8 @@ def _intelligence_html(r):
         hist = v109._vs_team_history(int(r.get("player_id")), str(r.get("opponent") or ""), current_season)
     except Exception:
         hist = {"games": 0, "avg_k": None, "k9": None, "sequence": "Unavailable"}
-    try:
-        h2h_rows = _load_h2h_rows(int(r.get("player_id")), str(r.get("opponent") or ""), current_season)
-    except Exception:
-        h2h_rows = []
 
-    evidence = _evidence_grade(r, logs, h2h_rows)
+    evidence = _evidence_grade(r, logs, hist)
     matchup, matchup_cls = v109._matchup_grade(r)
     workload = v109._workload_grade(r)
     opp_k = _finite(r.get("opp_k_rate"))
