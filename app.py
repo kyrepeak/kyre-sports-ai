@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB Pitcher K V1.0.11 Top-5 evidence strength.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB Pitcher K V1.0.12 Top-5 evidence reasons.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
@@ -12,15 +12,13 @@ foundation, Steps 1-7, 5,000,000-draw Monte Carlo and Final Decision grading. No
 further NFL Moneyline behavior is changed here.
 
 MLB Pitcher Strikeouts alone is compatibility-routed from the frozen historical
-V1.0.7 import name to V1.0.11. The existing Strongest Pitcher Strikeout O/U Top-5
-ordering remains unchanged and probability-based. V1.0.11 changes only the Pick
-Strength intelligence inside those already-ranked cards so ELITE/STRONG/MEDIUM/
-LEAN/PASS requires broader agreement from model probability, L5/L10 line results,
-opponent K environment, workload/reliability and low-weight recent H2H. It also
-shows a compact Evidence Score /100 and signal-agreement count. Projection math,
-sportsbook parsing, line grading, Monte Carlo, candidate pool and Top-5 ranking
-remain V1.0.7 behavior. Every other MLB and WNBA route remains on the exact frozen
-production source.
+V1.0.7 import name to V1.0.12. The existing Strongest Pitcher Strikeout O/U Top-5
+ordering remains unchanged and probability-based. V1.0.12 preserves V1.0.11's
+evidence-based Pick Strength and adds compact Supports / Concerns explanations
+inside each already-ranked Top-5 card using the exact same evidence thresholds.
+Projection math, sportsbook parsing, line grading, Monte Carlo, candidate pool and
+Top-5 ranking remain V1.0.7 behavior. Every other MLB and WNBA route remains on
+the exact frozen production source.
 
 Hot-reload guard: the preserved MLB/WNBA shell historically aliases hit_hub_v131
 to a later presentation wrapper at runtime. Streamlit keeps sys.modules alive
@@ -143,9 +141,9 @@ st.selectbox = _sport_selectbox_with_nfl
 
 # Isolated MLB Pitcher Strikeouts compatibility route. The preserved historical
 # application imports mlb_pitcher_k_hub_v107; only that exact module name is
-# redirected to V1.0.11. No other MLB/WNBA import is changed.
-import mlb_pitcher_k_hub_v1011 as mlb_pitcher_k_v1011
-sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v1011
+# redirected to V1.0.12. No other MLB/WNBA import is changed.
+import mlb_pitcher_k_hub_v1012 as mlb_pitcher_k_v1012
+sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v1012
 
 
 def _restore_real_hit_v131_for_hot_reload():
@@ -188,7 +186,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1011_top5_evidence_strength.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1012_top5_evidence_reasons.py",
         "exec",
     ),
     globals(),
