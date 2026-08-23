@@ -1,19 +1,18 @@
-'''Kyre Sports AI entrypoint — frozen MLB/WNBA + isolated NFL V1 foundation.
+'''Kyre Sports AI entrypoint — frozen MLB/WNBA + isolated NFL V1 foundation route repair.
 
-This cache-safe wrapper preserves the exact application at commit
-6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies isolated production routes
-without changing existing MLB/WNBA source-model math.
+This wrapper preserves the verified MLB/WNBA application stack and adds only an
+isolated NFL V1 navigation/foundation route.
 
-MLB and WNBA remain frozen at their current production checkpoints. Existing
-isolated WNBA routes remain Daily Picks V34, Assists V20, Points V1.9.8.4.5,
-PRA V3.6.12, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5. PRA V3.6.12
-remains the frozen verified Step-5 presentation baseline.
+NFL V1 route repair:
+- fixes the failed first bridge, which incorrectly expected an inherited app-text
+  patch helper inside the immediate preserved wrapper;
+- patches nested historical app.py reads instead, so the existing wrapper chain is
+  allowed to resolve normally until the real touch-navigation source is reached;
+- uses real newline-aware navigation markers rather than escaped literal \\n text;
+- when NFL is selected, renders nfl_hub_v1 and stops before MLB/WNBA bootstrap.
 
-NFL V1 adds only a third Sport navigation option and an isolated NFL Command
-Center foundation route. NFL V1 has a verified ESPN NFL date/slate layer, team
-identity, scores/status/venue/broadcast display and reserved market navigation.
-No NFL projection, sportsbook grading, Monte Carlo, qualification, ranking or
-recommendation logic is active yet. MLB/WNBA modules are not called by NFL V1.
+MLB/WNBA model math, routing modules, Monte Carlo, ranking, qualification,
+sportsbook, calibration and persistence behavior remain unchanged.
 '''
 from __future__ import annotations
 
@@ -43,25 +42,14 @@ import wnba_spread_hub_v161 as wnba_spread_v161
 import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
 
-# Preserve the earlier V13.1 compatibility binding for any historical direct path.
+# Preserve all existing production compatibility aliases exactly as before.
 sys.modules["hit_hub_v131"] = hit_hub_v132
-
-# The preserved application imports V13.3. Route that historical presentation
-# boundary to the completed V13.15 audit/freeze wrapper. Source-model math stays V13.
 sys.modules["mlb_hit_hub_v133"] = mlb_hit_hub_v1315
-
-# The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v34
-
-# The preserved application imports V1.9.8.4.1 directly. The wrapper patches only
-# the live Points preflight/readiness/sanity quarantine helpers on render.
 sys.modules["wnba_points_hub_v19841"] = wnba_points_v19845
-
-# Frozen PRA Step-5 production baseline: V3.6.11 behavior behind V3.6.12 checkpoint.
 sys.modules["wnba_pra_hub_v321"] = wnba_pra_v3612
 
-# Preserve existing fallback behavior while intercepting only unfinished WNBA
-# pages that now have isolated production/foundation modules.
+# Preserve the currently verified isolated WNBA market fallbacks.
 _PREVIOUS_INFO = st.info
 
 
@@ -85,7 +73,7 @@ def _wnba_market_route_info(body, *args, **kwargs):
 
 st.info = _wnba_market_route_info
 
-# Runtime WNBA market boundary remains exactly as before.
+# Preserve current WNBA market options.
 _PREVIOUS_SELECTBOX = st.selectbox
 _WNBA_MARKET_OPTIONS = [
     "Points",
@@ -111,32 +99,108 @@ def _wnba_market_selectbox(label, options, *args, **kwargs):
 st.selectbox = _wnba_market_selectbox
 
 
-# NFL V1 is injected only into the inherited touch-navigation shell. This patch is
-# intentionally text-scoped to the Sport/Market UI. When NFL is selected, the
-# isolated nfl_hub_v1 renderer runs and st.stop() prevents any MLB/WNBA bootstrap.
+NFL_MARKETS_SOURCE = '''    else:
+        market = st.selectbox(
+            "🏈 NFL Market",
+            [
+                "Slate",
+                "Moneyline",
+                "Spread",
+                "Game Total",
+                "Passing Yards",
+                "Rushing Yards",
+                "Receiving Yards",
+                "Receptions",
+                "Passing TDs",
+                "Anytime TD",
+                "Daily Picks",
+            ],
+            index=0,
+            key="ks_nfl_market_touch",
+        )
+'''
+
+NFL_ROUTE_SOURCE = '''if sport == "NFL":
+    from nfl_hub_v1 import render_nfl_hub
+
+    render_nfl_hub(market)
+    st.stop()
+
+'''
+
+
 def _patch_nfl_source(value):
+    """Patch only the historical touch-navigation app source when encountered."""
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
 
-    if '["MLB", "WNBA"],' in text and '["MLB", "WNBA", "NFL"],' not in text:
-        text = text.replace('["MLB", "WNBA"],', '["MLB", "WNBA", "NFL"],', 1)
+    # Idempotent: once the NFL touch route exists, never patch the source again.
+    if 'key="ks_nfl_market_touch"' in text:
+        return value
 
-    wnba_branch = '''    else:\n        market = st.selectbox(\n            "🎯 WNBA Market",'''
-    if wnba_branch in text and 'ks_nfl_market_touch' not in text:
-        text = text.replace(
-            wnba_branch,
-            '''    elif sport == "WNBA":\n        market = st.selectbox(\n            "🎯 WNBA Market",''',
-            1,
+    # The verified historical touch-nav shell uses this exact two-sport selector.
+    sport_marker = '["MLB", "WNBA"],'
+    wnba_start = '''    else:
+        market = st.selectbox(
+            "🎯 WNBA Market",'''
+    route_boundary = '''if sport == "WNBA" and market == "PRA":'''
+    wnba_end = '''            key="ks_wnba_market_touch",
         )
-        wnba_end = '''            key="ks_wnba_market_touch",\n        )'''
-        nfl_nav = '''            key="ks_wnba_market_touch",\n        )\n    else:\n        market = st.selectbox(\n            "🏈 NFL Market",\n            [\n                "Slate",\n                "Moneyline",\n                "Spread",\n                "Game Total",\n                "Passing Yards",\n                "Rushing Yards",\n                "Receiving Yards",\n                "Receptions",\n                "Passing TDs",\n                "Anytime TD",\n                "Daily Picks",\n            ],\n            index=0,\n            key="ks_nfl_market_touch",\n        )\n\nif sport == "NFL":\n    from nfl_hub_v1 import render_nfl_hub\n    render_nfl_hub(market)\n    st.stop()'''
-        if wnba_end in text:
-            text = text.replace(wnba_end, nfl_nav, 1)
+
+'''
+
+    # This is not the touch-nav layer yet; leave wrapper source completely alone.
+    if sport_marker not in text or wnba_start not in text or route_boundary not in text:
+        return value
+
+    text = text.replace(sport_marker, '["MLB", "WNBA", "NFL"],', 1)
+    text = text.replace(
+        wnba_start,
+        '''    elif sport == "WNBA":
+        market = st.selectbox(
+            "🎯 WNBA Market",''',
+        1,
+    )
+
+    # Insert the NFL market branch immediately after the WNBA selectbox.
+    boundary_pos = text.find(route_boundary)
+    if boundary_pos == -1:
+        return value
+    prefix = text[:boundary_pos]
+    suffix = text[boundary_pos:]
+    last_wnba_end = prefix.rfind(wnba_end)
+    if last_wnba_end == -1:
+        return value
+    insertion_point = last_wnba_end + len(wnba_end)
+    prefix = prefix[:insertion_point] + NFL_MARKETS_SOURCE + "\n" + prefix[insertion_point:]
+    text = prefix + NFL_ROUTE_SOURCE + suffix
 
     return text.encode("utf-8") if is_bytes else text
 
 
-PREVIOUS_APP_COMMIT = "6b5958d729c3999fc0188518a9dc4fb8ee63803c"
+# Critical fix: the current production entrypoint is a chain of preserved wrappers.
+# Patch every nested `git show <commit>:app.py` read until the real touch-nav shell
+# appears. All non-touch-nav wrapper source passes through byte-for-byte unchanged.
+_ORIGINAL_CHECK_OUTPUT = subprocess.check_output
+
+
+def _nfl_nested_app_check_output(*args, **kwargs):
+    result = _ORIGINAL_CHECK_OUTPUT(*args, **kwargs)
+    try:
+        cmd = args[0] if args else kwargs.get("args")
+        if isinstance(cmd, (list, tuple)) and len(cmd) >= 3:
+            if str(cmd[0]) == "git" and str(cmd[1]) == "show" and str(cmd[2]).endswith(":app.py"):
+                return _patch_nfl_source(result)
+    except Exception:
+        pass
+    return result
+
+
+subprocess.check_output = _nfl_nested_app_check_output
+
+# Load the exact pre-NFL production entrypoint. The nested interception above
+# safely carries the NFL navigation patch down to the historical touch-nav shell.
+PREVIOUS_APP_COMMIT = "8c9cd1b468ae84be7abc92d54a04dc09d665f9e7"
 RAW_URL = (
     "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
     f"{PREVIOUS_APP_COMMIT}/app.py"
@@ -152,27 +216,15 @@ def _load_previous_app() -> str:
         )
     except Exception:
         with urllib.request.urlopen(RAW_URL, timeout=15) as response:
-            return response.read().decode("utf-8")
+            # Fallback still gets the same scoped NFL patch attempt.
+            return _patch_nfl_source(response.read().decode("utf-8"))
 
 
 source = _load_previous_app()
-
-# The preserved V6b wrapper already patches every inherited app.py text read. Add
-# the isolated NFL navigation patch to that existing pipeline so it reaches the
-# historical touch-nav shell without rewriting MLB/WNBA implementation code.
-_inherited_return = '    return text.encode("utf-8") if is_bytes else text'
-_inherited_replacement = (
-    '    text = _patch_nfl_source(text)\n'
-    '    return text.encode("utf-8") if is_bytes else text'
-)
-if _inherited_return not in source:
-    raise RuntimeError("NFL V1 bridge could not locate inherited app-text patch boundary.")
-source = source.replace(_inherited_return, _inherited_replacement, 1)
-
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_mlb_wnba_plus_nfl_v1_foundation_route.py",
+        "kyre_sports_ai_frozen_mlb_wnba_plus_nfl_v1_nested_route_repair.py",
         "exec",
     ),
     globals(),
