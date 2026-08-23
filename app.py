@@ -11,10 +11,17 @@ Streamlit hot-reload guard: the frozen application uses long compatibility-wrapp
 chains for Hit and MLB Daily Game Picks. Streamlit preserves sys.modules between
 reruns, so stale wrapper modules can survive a code deploy and then be reused with
 an incompatible import graph. Before replaying the frozen shell, this entrypoint
-restores the real Hit V13.1 base and clears only cached MLB Daily Game Picks
-wrapper modules so the frozen source can import them cleanly. This is import-cache
-hygiene only; no Daily Picks, Hit, H+R+RBI, Pitcher-K, WNBA or NFL model math is
-changed.
+restores the real Hit V13.1 base and clears cached MLB Daily Game Picks/H+R+RBI
+wrapper modules so the frozen source can import them cleanly.
+
+H+R+RBI compatibility repair: the frozen production shell intentionally aliases
+`mlb_hit_hub_v133` to the final V13.15 Hit presentation wrapper. H+R+RBI V1.0
+imports V13.3's `_candidate_pool` helper through that historical module name, while
+V13.15 keeps the exact V13.3 scanner under its `active` binding but did not re-export
+that helper. We restore only that missing compatibility symbol by pointing
+V13.15 `_candidate_pool` to `V13.15.active._candidate_pool`. No candidate-pool
+logic, Hit probability, H+R+RBI projection, Monte Carlo, ranking, Pitcher-K, WNBA
+or NFL model math is changed.
 '''
 from __future__ import annotations
 
@@ -152,16 +159,33 @@ def _restore_real_hit_v131_for_hot_reload():
         raise RuntimeError("Restored hit_hub_v131 is missing HIT_CSS.")
 
 
-def _clear_mlb_daily_picks_for_hot_reload():
-    """Clear only stale MLB Daily Picks wrappers before replaying frozen source."""
+def _clear_mlb_hot_reload_wrappers():
+    """Clear stale Daily Picks and H+R+RBI wrappers before frozen-shell replay."""
     for name in list(sys.modules):
-        if name.startswith("mlb_daily_game_picks_v"):
+        if name.startswith("mlb_daily_game_picks_v") or name in {
+            "mlb_hrrbi_hub_v10",
+            "mlb_hrrbi_hub_v101",
+        }:
             sys.modules.pop(name, None)
+
+
+def _install_hrrbi_candidate_pool_compat():
+    """Re-export the exact verified V13.3 candidate pool through the V13.15 alias."""
+    import mlb_hit_hub_v1315 as hit_v1315
+
+    active = getattr(hit_v1315, "active", None)
+    candidate_pool = getattr(active, "_candidate_pool", None)
+    if candidate_pool is None:
+        raise RuntimeError(
+            "H+R+RBI compatibility repair failed: verified Hit V13.3 candidate pool is unavailable."
+        )
+    hit_v1315._candidate_pool = candidate_pool
 
 
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
 _restore_real_hit_v131_for_hot_reload()
-_clear_mlb_daily_picks_for_hot_reload()
+_clear_mlb_hot_reload_wrappers()
+_install_hrrbi_candidate_pool_compat()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -182,7 +206,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1017_daily_picks_cache_repair.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1017_hrrbi_candidate_pool_compat.py",
         "exec",
     ),
     globals(),
