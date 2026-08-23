@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.2 runtime route.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.2.1 runtime route.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
@@ -12,15 +12,15 @@ NFL routing is handled at the live Streamlit navigation boundary:
 1. while MLB/WNBA is active, only the real Sport selectbox is extended with NFL;
 2. after the user selects NFL, the next Streamlit rerun is intercepted before the
    frozen MLB/WNBA app executes;
-3. an isolated NFL Sport/Market navigation row and nfl_hub_v12 page are rendered;
+3. an isolated NFL Sport/Market navigation row and nfl_hub_v121 page are rendered;
 4. selecting MLB or WNBA again returns directly to the untouched frozen app.
 
-NFL V1.2 preserves the verified Slate V1 foundation and advances only Moneyline
-to Step 2: verified pregame slate/clock + current ESPN QB depth order + current
-ESPN injury-report verification. Preseason QB rotation/starter-rest intent remains
+NFL V1.2.1 preserves the verified Slate V1 foundation and keeps Moneyline on Step
+2 while repairing QB-depth verification with ESPN's season-specific Core depth
+chart as a second verified path. Roster remains display-only last resort and is
+never labeled as QB1/QB2/QB3 depth. Preseason rotation/starter-rest intent remains
 fail-closed until an explicit game-plan source is added. NFL sportsbook pricing,
-projection math, Monte Carlo, ranking and recommendations remain OFF. All other
-NFL markets remain reserved.
+projection math, Monte Carlo, ranking and recommendations remain OFF.
 '''
 from __future__ import annotations
 
@@ -75,9 +75,6 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"] > div{
 # ---------------------------------------------------------------------------
 # NFL ACTIVE ROUTE
 # ---------------------------------------------------------------------------
-# Streamlit writes widget state before the script reruns. Therefore once NFL is
-# selected from the frozen app's Sport dropdown, we can branch here before any
-# inherited MLB/WNBA app code is imported or executed.
 if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
     st.markdown(_NAV_CSS, unsafe_allow_html=True)
 
@@ -96,9 +93,6 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
             key="ks_nfl_market_touch",
         )
 
-    # If the user moves back to either frozen league, immediately restart the
-    # script. On that rerun this NFL branch is skipped and the exact pre-NFL app
-    # owns the page again.
     if str(selected_sport).upper() != "NFL":
         st.rerun()
 
@@ -107,7 +101,7 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
         unsafe_allow_html=True,
     )
 
-    from nfl_hub_v12 import render_nfl_hub
+    from nfl_hub_v121 import render_nfl_hub
 
     render_nfl_hub(selected_market)
     st.stop()
@@ -116,9 +110,6 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
 # ---------------------------------------------------------------------------
 # FROZEN MLB / WNBA ROUTE
 # ---------------------------------------------------------------------------
-# Capture Streamlit's native selectbox before the preserved app adds its own WNBA
-# wrapper. We alter only the Sport widget options; every market widget and every
-# downstream model call remains owned by the frozen application.
 _NATIVE_SELECTBOX = st.selectbox
 
 
@@ -155,14 +146,12 @@ def _load_frozen_pre_nfl_app() -> str:
 
 
 source = _load_frozen_pre_nfl_app()
-
-# Preflight the exact frozen source itself. NFL does not modify this text.
 compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v12_moneyline_step2.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v121_moneyline_step2_repair.py",
         "exec",
     ),
     globals(),
