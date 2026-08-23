@@ -1,40 +1,22 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + frozen NFL V1.8 + isolated MLB presentation routes.
+"""Kyre Sports AI entrypoint — frozen MLB/WNBA production + isolated presentation routes.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
 
 NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
-additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI is
-now routed through V1.0.15 Steps 1-11 plus the final Top-5 evidence summary:
-official MLB batter/team visual identity, fail-safe opposing probable-starter photo
-+ season ERA/WHIP/K context, official batter-vs-current-starter history, pitch-mix
-+ platoon matchup with validated Statcast pitch-usage shares, park/weather + bullpen
-environment audit, plate-appearance/batting-order opportunity, descriptive recent
-H+R+RBI form/component-quality context, opponent run-prevention/team-defense audit,
-bullpen handedness + active relief-path context, starter workload + times-through-
-order exposure audit, official MLB home-plate umpire assignment context, and final
-Pick Strength / Matchup / Opportunity / Evidence / Supports / Concerns synthesis on
-the strongest-probability cards. Historical umpire zone tendencies are not inferred
-when a verified source is unavailable. Every underlying H+R+RBI candidate,
-projection, Monte Carlo and ranking calculation remains V1.0/V1.0.1. Every other
-MLB/WNBA route continues to execute from the exact frozen production source.
+additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI
+remains routed through V1.0.15 Steps 1-11 plus the final Top-5 evidence summary.
 
-Streamlit hot-reload guard: the frozen application uses long compatibility-wrapper
-chains for Hit and MLB Daily Game Picks. Streamlit preserves sys.modules between
-reruns, so stale wrapper modules can survive a code deploy and then be reused with
-an incompatible import graph. Before replaying the frozen shell, this entrypoint
-restores the real Hit V13.1 base and clears cached MLB Daily Game Picks/H+R+RBI
-wrapper modules so the frozen source can import them cleanly.
+WNBA Points is now routed through V1.9.8.4.6 only at the presentation boundary.
+The validated V1.9.8.4.5 projection, exact SportsGameOdds transport, 5M/10M Monte
+Carlo, calibration, candidate hierarchy, persistence and readiness gates stay
+unchanged. V1.9.8.4.6 upgrades only the visible Top-5 Player vs Team History
+cards with richer descriptive current-season/current-team history, small-sample
+protection and meeting-by-meeting audit rows. H2H remains non-model context.
 
-H+R+RBI compatibility repair: the frozen production shell intentionally aliases
-`mlb_hit_hub_v133` to the final V13.15 Hit presentation wrapper. H+R+RBI V1.0
-imports V13.3's `_candidate_pool` helper through that historical module name, while
-V13.15 keeps the exact V13.3 scanner under its `active` binding but did not re-export
-that helper. We restore only that missing compatibility symbol by pointing
-V13.15 `_candidate_pool` to `V13.15.active._candidate_pool`. No candidate-pool
-logic, Hit probability, H+R+RBI projection, Monte Carlo, ranking, Pitcher-K, WNBA
-or NFL model math is changed.
-'''
+Every other MLB/WNBA route continues to execute from the exact frozen production
+source. Frozen NFL V1.8 is isolated from the MLB/WNBA replay.
+"""
 from __future__ import annotations
 
 import importlib.util
@@ -67,7 +49,7 @@ NFL_MARKETS = [
 ]
 
 
-_NAV_CSS = r'''
+_NAV_CSS = r"""
 <style>
 .knfl-route-note{
     display:flex;align-items:center;gap:7px;margin:2px 0 10px;padding:8px 11px;
@@ -85,7 +67,7 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"] > div{
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div{min-height:62px !important;}
 }
 </style>
-'''
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -198,11 +180,35 @@ def _install_hrrbi_final_route():
     sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v115
 
 
+def _install_wnba_points_h2h_route():
+    """Route only WNBA Points V1.9.8.4.5 to the V1.9.8.4.6 H2H presentation wrapper.
+
+    Restore the genuine V1.9.8.4.5 module first so Streamlit hot-reload cannot
+    leave the wrapper aliased under its own base import name.
+    """
+    base_path = Path(__file__).with_name("wnba_points_hub_v19845.py")
+    spec = importlib.util.spec_from_file_location("wnba_points_hub_v19845", base_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Could not restore WNBA Points V1.9.8.4.5 base.")
+
+    base_module = importlib.util.module_from_spec(spec)
+    sys.modules["wnba_points_hub_v19845"] = base_module
+    spec.loader.exec_module(base_module)
+
+    # Force the additive wrapper to bind to the genuine base on this deploy/rerun.
+    sys.modules.pop("wnba_points_hub_v19846", None)
+    import wnba_points_hub_v19846 as points_v19846
+
+    # The frozen pre-NFL shell imports this historical path. Redirect only it.
+    sys.modules["wnba_points_hub_v19845"] = points_v19846
+
+
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
 _restore_real_hit_v131_for_hot_reload()
 _clear_mlb_hot_reload_wrappers()
 _install_hrrbi_candidate_pool_compat()
 _install_hrrbi_final_route()
+_install_wnba_points_h2h_route()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -223,7 +229,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_final_evidence.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19846_h2h_evidence.py",
         "exec",
     ),
     globals(),
