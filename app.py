@@ -22,7 +22,7 @@ market and a diversified guarded overall board. Player headshots use already-loa
 player IDs with ESPN primary / WNBA fallback image URLs; team logos use ESPN. The
 image layer is presentation-only and never participates in qualification or ranking.
 
-MLB 1+ Hit is routed through Hit UI V13.8. V13.4 Step 1 preserves official MLB
+MLB 1+ Hit is routed through Hit UI V13.9. V13.4 Step 1 preserves official MLB
 batter headshots and team logos. V13.5 Step 2 adds the verified opposing probable
 starter headshot plus official MLB season hand/ERA/WHIP/K%/K9 context. V13.6 Step 3
 adds official MLB batter-vs-current-starter history. V13.7 Step 4 adds display-only
@@ -31,10 +31,14 @@ and a direct batter-vs-those-pitch-types Statcast outcome join. V13.8 Step 5 add
 display-only MLB game-feed park/weather/roof context, the frozen V13 environment
 adjustment, current active-reliever bullpen ERA/WHIP/K9 quality, the native V13
 starter-vs-bullpen exposure split, and a three-day official MLB box-score relief
-workload snapshot. Missing relief-only AVG/OPS are never synthesized. Hit Model V13
-projection, Monte Carlo, full-slate lineup handling, ranking, calibration and
-persistence contracts remain unchanged; all added identity/pitcher/BvP/pitch-mix/
-environment/bullpen layers are display/context only.
+workload snapshot. V13.9 Step 6 adds display-only hit-opportunity context: batting
+slot, home/away side, frozen V13 expected AB, a transparent season-PA/AB-derived PA
+estimate, official team PA/game and runs/game, starter/bullpen projected PA exposure,
+official starter BF/start, bottom-9 structural availability, and a qualitative
+substitution watch. Missing values are never invented. Hit Model V13 projection,
+Monte Carlo, full-slate lineup handling, ranking, calibration and persistence
+contracts remain unchanged; all added identity/pitcher/BvP/pitch-mix/environment/
+bullpen/opportunity layers are display/context only.
 
 Existing isolated routes remain unchanged: Assists V20, Points V1.9.8.4.5, PRA
 V3.6.1, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5. The runtime WNBA market
@@ -54,6 +58,7 @@ import mlb_hit_hub_v135 as mlb_hit_hub_v135
 import mlb_hit_hub_v136 as mlb_hit_hub_v136
 import mlb_hit_hub_v137 as mlb_hit_hub_v137
 import mlb_hit_hub_v138 as mlb_hit_hub_v138
+import mlb_hit_hub_v139 as mlb_hit_hub_v139
 import wnba_daily_picks_hub_v34 as wnba_daily_picks_v34
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
@@ -66,9 +71,9 @@ import wnba_game_total_hub_v15 as wnba_game_total_v15
 sys.modules["hit_hub_v131"] = hit_hub_v132
 
 # The active preserved MLB route asks for V13.3. Rebind that presentation module
-# to V13.8, which preserves Steps 1-4 and adds only display-only park/weather,
-# bullpen quality, native exposure, and official recent relief-workload context.
-sys.modules["mlb_hit_hub_v133"] = mlb_hit_hub_v138
+# to V13.9, which preserves Steps 1-5 and adds only display-only plate-appearance
+# and hit-opportunity context.
+sys.modules["mlb_hit_hub_v133"] = mlb_hit_hub_v139
 
 # The preserved application imports this historical module name for Daily Picks.
 sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v34
@@ -153,7 +158,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_mlb_hit_v138_active_v133_environment_bullpen_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_mlb_hit_v139_active_v133_opportunity_context_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
