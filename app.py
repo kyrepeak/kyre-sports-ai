@@ -19,9 +19,17 @@ pick-strength grade, workload label and opponent K environment. The temporary
 page-level V1.0.8 Step-1 section is not routed. Projection math, sportsbook parsing,
 line grading, Monte Carlo and ranking remain V1.0.7 behavior. Every other MLB and
 WNBA route remains on the exact frozen production source.
+
+Hot-reload guard: the preserved MLB/WNBA shell historically aliases hit_hub_v131
+to a later presentation wrapper at runtime. Streamlit keeps sys.modules alive
+between reruns, so this entrypoint restores the real V13.1 base before replaying
+the frozen shell and clears only the dependent Hit UI presentation modules. This
+prevents stale alias recursion without changing Hit Model V13 behavior.
 '''
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
 import subprocess
 import sys
 import urllib.request
@@ -138,6 +146,28 @@ import mlb_pitcher_k_hub_v109 as mlb_pitcher_k_v109
 sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v109
 
 
+def _restore_real_hit_v131_for_hot_reload():
+    """Repair only stale Hit-UI presentation aliases left by Streamlit reruns."""
+    for name in list(sys.modules):
+        if name == "hit_hub_v131" or name == "hit_hub_v132" or name.startswith("mlb_hit_hub_v13"):
+            sys.modules.pop(name, None)
+
+    path = Path(__file__).with_name("hit_hub_v131.py")
+    spec = importlib.util.spec_from_file_location("hit_hub_v131", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Could not restore real hit_hub_v131 module for frozen app boot.")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["hit_hub_v131"] = module
+    spec.loader.exec_module(module)
+    if not hasattr(module, "HIT_CSS"):
+        raise RuntimeError("Restored hit_hub_v131 is missing HIT_CSS.")
+
+
+# The frozen shell later creates its own compatibility alias intentionally. Reset
+# the real base first on every rerun so its imports always begin from a clean state.
+_restore_real_hit_v131_for_hot_reload()
+
+
 def _load_frozen_pre_nfl_app() -> str:
     try:
         return subprocess.check_output(
@@ -156,7 +186,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v109_top5_intelligence.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v109_top5_intelligence_cache_repair.py",
         "exec",
     ),
     globals(),
