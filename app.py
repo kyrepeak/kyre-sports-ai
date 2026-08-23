@@ -59,7 +59,9 @@ def _patch_nfl_touch_navigation(value):
     """Add NFL only to the verified historical touch-nav source.
 
     Every wrapper layer that does not contain the exact navigation markers is
-    returned unchanged. The patch is idempotent.
+    returned unchanged. The patch is idempotent. If the patched outer wrapper
+    does not compile, the original source is returned so NFL can never take down
+    the frozen MLB/WNBA app.
     """
     is_bytes = isinstance(value, (bytes, bytearray))
     text = value.decode("utf-8") if is_bytes else str(value)
@@ -86,6 +88,8 @@ def _patch_nfl_touch_navigation(value):
     ):
         return value
 
+    original_text = text
+
     # 1) Sport selector: MLB / WNBA -> MLB / WNBA / NFL.
     text = text.replace(sport_marker, '["MLB", "WNBA", "NFL"],', 1)
 
@@ -98,7 +102,7 @@ def _patch_nfl_touch_navigation(value):
         1,
     )
 
-    # 3) Add the NFL market dropdown directly after that WNBA selectbox.
+    # 3) Add the NFL market dropdown directly after the WNBA selectbox.
     boundary_pos = text.find(route_boundary)
     if boundary_pos == -1:
         return value
@@ -118,7 +122,17 @@ def _patch_nfl_touch_navigation(value):
     # 4) NFL exits into its isolated page before any MLB/WNBA bootstrap executes.
     text = prefix + NFL_ROUTE_SOURCE + suffix
 
-    return text.encode("utf-8") if is_bytes else text
+    # Hard safety rail: validate the outer historical wrapper before allowing the
+    # patched source into the execution chain. A bad optional patch becomes a no-op,
+    # never a production outage.
+    try:
+        compile(text, "<kyre_nfl_touch_nav_preflight>", "exec")
+    except Exception:
+        text = original_text
+
+    if is_bytes:
+        return text.encode("utf-8")
+    return text
 
 
 # The app is a chain of preserved wrapper entrypoints. Intercept nested app.py
