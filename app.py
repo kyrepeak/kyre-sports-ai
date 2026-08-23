@@ -5,14 +5,15 @@ Frozen MLB/WNBA application source:
 
 NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
 additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI is
-now routed through V1.0.12 Steps 1-9: official MLB batter/team visual identity,
+now routed through V1.0.13 Steps 1-10: official MLB batter/team visual identity,
 fail-safe opposing probable-starter photo + season ERA/WHIP/K context, official
 batter-vs-current-starter history, pitch-mix + platoon matchup with validated
 Statcast pitch-usage shares, park/weather + bullpen environment audit,
 plate-appearance/batting-order opportunity, descriptive recent H+R+RBI
-form/component-quality context, opponent run-prevention/team-defense audit, and
-bullpen handedness + active relief-path context on the strongest-probability cards.
-Every underlying H+R+RBI candidate, projection, Monte Carlo and ranking calculation
+form/component-quality context, opponent run-prevention/team-defense audit,
+bullpen handedness + active relief-path context, and starter workload +
+times-through-order exposure audit on the strongest-probability cards. Every
+underlying H+R+RBI candidate, projection, Monte Carlo and ranking calculation
 remains V1.0/V1.0.1. Every other MLB/WNBA route continues to execute from the exact
 frozen production source.
 
@@ -188,18 +189,18 @@ def _install_hrrbi_candidate_pool_compat():
     hit_v1315._candidate_pool = candidate_pool
 
 
-def _install_hrrbi_step9_route():
-    """Route the frozen H+R+RBI V1.0.1 import to V1.0.12 Steps 1-9."""
-    import mlb_hrrbi_hub_v112 as hrrbi_v112
+def _install_hrrbi_step10_route():
+    """Route the frozen H+R+RBI V1.0.1 import to V1.0.13 Steps 1-10."""
+    import mlb_hrrbi_hub_v113 as hrrbi_v113
 
-    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v112
+    sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v113
 
 
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
 _restore_real_hit_v131_for_hot_reload()
 _clear_mlb_hot_reload_wrappers()
 _install_hrrbi_candidate_pool_compat()
-_install_hrrbi_step9_route()
+_install_hrrbi_step10_route()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -220,7 +221,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v112_step9_bullpen_path.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v113_step10_starter_tto.py",
         "exec",
     ),
     globals(),
