@@ -1,32 +1,19 @@
-'''Kyre Sports AI entrypoint — Daily Picks V34 + isolated WNBA production routes.
+'''Kyre Sports AI entrypoint — frozen MLB/WNBA + isolated NFL V1 foundation.
 
 This cache-safe wrapper preserves the exact application at commit
 6b5958d729c3999fc0188518a9dc4fb8ee63803c and applies isolated production routes
-without changing source-model math.
+without changing existing MLB/WNBA source-model math.
 
-Daily Picks remains V34. Existing isolated WNBA routes remain Assists V20, Points
-V1.9.8.4.5, PRA V3.6.12, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5.
-PRA V3.6.12 freezes the verified V3.6.11 Step-5 presentation stack as the safe
-production baseline: identity reliability, cached opponent defensive context,
-current-season matchup history, existing-field projection path, compact layout,
-presentation performance repair and the optional-enrichment fail-safe firewall.
-The underlying V3.6.2/V3.6.1 production model and Step-9 Final Top-5 presentation
-remain preserved. V3.6.12 adds no renderer/model behavior; it is a version/freeze
-checkpoint only. No projection, qualification, Monte Carlo, ranking, final-ready
-gates, selection logic, provider or cache-TTL logic is changed.
+MLB and WNBA remain frozen at their current production checkpoints. Existing
+isolated WNBA routes remain Daily Picks V34, Assists V20, Points V1.9.8.4.5,
+PRA V3.6.12, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5. PRA V3.6.12
+remains the frozen verified Step-5 presentation baseline.
 
-MLB 1+ Hit is routed through Hit UI V13.15 FINAL. Steps 1-11 retain the verified
-presentation/context layers for batter/team identity, opposing starter, official
-BvP history, pitch mix/platoon, park/weather/bullpen environment, PA opportunity,
-recent form/contact quality, opponent run prevention/fielding, bullpen arms/
-handedness pressure, starter workload/TTO and home-plate umpire/zone context.
-Step 12 adds audit-only production verification: native V13 engine bindings,
-V13.3 full-slate candidate-pool binding, history/calibration binding, Monte Carlo
-payload/convergence, probability order, lineup labels, Steps 1-11 card presence and
-proof that presentation rendering does not mutate the modeled result payload.
-Step 12 performs no new simulation, reranking, calibration write or model feature
-write. Hit Model V13 projection, Monte Carlo, full-slate lineup handling, ranking,
-confidence, calibration and persistence remain unchanged.
+NFL V1 adds only a third Sport navigation option and an isolated NFL Command
+Center foundation route. NFL V1 has a verified ESPN NFL date/slate layer, team
+identity, scores/status/venue/broadcast display and reserved market navigation.
+No NFL projection, sportsbook grading, Monte Carlo, qualification, ranking or
+recommendation logic is active yet. MLB/WNBA modules are not called by NFL V1.
 '''
 from __future__ import annotations
 
@@ -98,7 +85,7 @@ def _wnba_market_route_info(body, *args, **kwargs):
 
 st.info = _wnba_market_route_info
 
-# Runtime navigation boundary.
+# Runtime WNBA market boundary remains exactly as before.
 _PREVIOUS_SELECTBOX = st.selectbox
 _WNBA_MARKET_OPTIONS = [
     "Points",
@@ -123,6 +110,32 @@ def _wnba_market_selectbox(label, options, *args, **kwargs):
 
 st.selectbox = _wnba_market_selectbox
 
+
+# NFL V1 is injected only into the inherited touch-navigation shell. This patch is
+# intentionally text-scoped to the Sport/Market UI. When NFL is selected, the
+# isolated nfl_hub_v1 renderer runs and st.stop() prevents any MLB/WNBA bootstrap.
+def _patch_nfl_source(value):
+    is_bytes = isinstance(value, (bytes, bytearray))
+    text = value.decode("utf-8") if is_bytes else str(value)
+
+    if '["MLB", "WNBA"],' in text and '["MLB", "WNBA", "NFL"],' not in text:
+        text = text.replace('["MLB", "WNBA"],', '["MLB", "WNBA", "NFL"],', 1)
+
+    wnba_branch = '''    else:\n        market = st.selectbox(\n            "🎯 WNBA Market",'''
+    if wnba_branch in text and 'ks_nfl_market_touch' not in text:
+        text = text.replace(
+            wnba_branch,
+            '''    elif sport == "WNBA":\n        market = st.selectbox(\n            "🎯 WNBA Market",''',
+            1,
+        )
+        wnba_end = '''            key="ks_wnba_market_touch",\n        )'''
+        nfl_nav = '''            key="ks_wnba_market_touch",\n        )\n    else:\n        market = st.selectbox(\n            "🏈 NFL Market",\n            [\n                "Slate",\n                "Moneyline",\n                "Spread",\n                "Game Total",\n                "Passing Yards",\n                "Rushing Yards",\n                "Receiving Yards",\n                "Receptions",\n                "Passing TDs",\n                "Anytime TD",\n                "Daily Picks",\n            ],\n            index=0,\n            key="ks_nfl_market_touch",\n        )\n\nif sport == "NFL":\n    from nfl_hub_v1 import render_nfl_hub\n    render_nfl_hub(market)\n    st.stop()'''
+        if wnba_end in text:
+            text = text.replace(wnba_end, nfl_nav, 1)
+
+    return text.encode("utf-8") if is_bytes else text
+
+
 PREVIOUS_APP_COMMIT = "6b5958d729c3999fc0188518a9dc4fb8ee63803c"
 RAW_URL = (
     "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
@@ -143,10 +156,23 @@ def _load_previous_app() -> str:
 
 
 source = _load_previous_app()
+
+# The preserved V6b wrapper already patches every inherited app.py text read. Add
+# the isolated NFL navigation patch to that existing pipeline so it reaches the
+# historical touch-nav shell without rewriting MLB/WNBA implementation code.
+_inherited_return = '    return text.encode("utf-8") if is_bytes else text'
+_inherited_replacement = (
+    '    text = _patch_nfl_source(text)\n'
+    '    return text.encode("utf-8") if is_bytes else text'
+)
+if _inherited_return not in source:
+    raise RuntimeError("NFL V1 bridge could not locate inherited app-text patch boundary.")
+source = source.replace(_inherited_return, _inherited_replacement, 1)
+
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_mlb_hit_v1315_final_audit_freeze_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v3612_step5_frozen_baseline_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_frozen_mlb_wnba_plus_nfl_v1_foundation_route.py",
         "exec",
     ),
     globals(),
