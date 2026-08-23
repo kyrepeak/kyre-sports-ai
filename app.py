@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.7 runtime route.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.8 runtime route.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
@@ -12,21 +12,20 @@ NFL routing is handled at the live Streamlit navigation boundary:
 1. while MLB/WNBA is active, only the real Sport selectbox is extended with NFL;
 2. after the user selects NFL, the next Streamlit rerun is intercepted before the
    frozen MLB/WNBA app executes;
-3. an isolated NFL Sport/Market navigation row and nfl_hub_v17 page are rendered;
+3. an isolated NFL Sport/Market navigation row and nfl_hub_v18 page are rendered;
 4. selecting MLB or WNBA again returns directly to the untouched frozen app.
 
-NFL V1.7 preserves the verified Slate V1 foundation and Moneyline Steps 1-3.6,
+NFL V1.8 preserves the verified Slate V1 foundation and Moneyline Steps 1-3.6,
 Step 4A's repaired historical team-strength baseline, Step 4B matchup/home-field
 features, Step 4C's validated calibrated BASE P(win) with the V4.3.1 runtime
-firewall, Step 5.1's repaired sportsbook Moneyline/freshness layer, and Step 6's
-5,000,000-draw model-only Monte Carlo uncertainty layer. Step 7 adds no-vig
-model-vs-market comparison, model fair Moneyline, best-price expected value and
-Step-6 uncertainty-floor edge/EV diagnostics. Sportsbook prices remain comparison
-targets only and never feed back into Steps 4C/6. During preseason, unresolved
-Step-3 game-plan/QB-rotation information remains the final-output safety gate;
-Step-7 values are diagnostic only until that gate clears. Final grading and
-recommendations remain OFF. All other NFL markets remain reserved. MLB/WNBA
-production remains frozen and untouched.
+firewall, Step 5.1's sportsbook Moneyline/freshness layer, Step 6's 5,000,000-draw
+model-only Monte Carlo uncertainty layer, and Step 7's no-vig edge/fair-price/EV
+diagnostics. V1.8 adds the Final Decision grading layer: hard eligibility gates
+are evaluated before transparent edge/EV thresholds. During preseason, unresolved
+Step-3 game-plan/QB-rotation information forces a GATED final state regardless of
+quantitative edge. Sportsbook prices remain comparison inputs only and never feed
+back into Steps 4C/6. All other NFL markets remain reserved. MLB/WNBA production
+remains frozen and untouched.
 '''
 from __future__ import annotations
 
@@ -107,7 +106,7 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
         unsafe_allow_html=True,
     )
 
-    from nfl_hub_v17 import render_nfl_hub
+    from nfl_hub_v18 import render_nfl_hub
 
     render_nfl_hub(selected_market)
     st.stop()
@@ -157,7 +156,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v17_moneyline_step7_edge_ev.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v18_moneyline_final_decision.py",
         "exec",
     ),
     globals(),
