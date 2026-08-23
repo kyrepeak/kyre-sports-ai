@@ -1,4 +1,4 @@
-'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.4.3 runtime route.
+'''Kyre Sports AI entrypoint — exact frozen MLB/WNBA production + isolated NFL V1.4.3.1 runtime route.
 
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
@@ -12,16 +12,16 @@ NFL routing is handled at the live Streamlit navigation boundary:
 1. while MLB/WNBA is active, only the real Sport selectbox is extended with NFL;
 2. after the user selects NFL, the next Streamlit rerun is intercepted before the
    frozen MLB/WNBA app executes;
-3. an isolated NFL Sport/Market navigation row and nfl_hub_v143 page are rendered;
+3. an isolated NFL Sport/Market navigation row and nfl_hub_v1431 page are rendered;
 4. selecting MLB or WNBA again returns directly to the untouched frozen app.
 
-NFL V1.4.3 preserves the verified Slate V1 foundation and Moneyline Steps 1-3.6,
-plus Step 4A's repaired historical team-strength baseline and Step 4B's matchup /
-home-field feature layer. Step 4C adds a leakage-safe historically calibrated BASE
-win probability: 2024 regular season is used for chronological training, 2025 is
-held out for validation, then the final coefficients are refit on 2024-25. No
-sportsbook price is used in calibration. During preseason, Step 3 remains the
-final-output game-plan/QB-rotation safety gate. Sportsbook pricing, Monte Carlo,
+NFL V1.4.3.1 preserves the verified Slate V1 foundation and Moneyline Steps 1-3.6,
+plus Step 4A's repaired historical team-strength baseline, Step 4B's matchup /
+home-field feature layer and Step 4C's leakage-safe calibration design. V4.3.1
+repairs the Step-4C runtime by normalizing historical timestamps to UTC, removing
+implicit NumPy array-to-scalar conversions, hardening diagnostics and adding a
+fail-closed calibration firewall. During preseason, Step 3 remains the final-
+output game-plan/QB-rotation safety gate. Sportsbook pricing, Monte Carlo,
 no-vig edge/EV, ranking and final recommendations remain OFF. All other NFL
 markets remain reserved. MLB/WNBA production remains frozen and untouched.
 '''
@@ -104,7 +104,7 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
         unsafe_allow_html=True,
     )
 
-    from nfl_hub_v143 import render_nfl_hub
+    from nfl_hub_v1431 import render_nfl_hub
 
     render_nfl_hub(selected_market)
     st.stop()
@@ -154,7 +154,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v143_moneyline_step4c_calibrated_probability.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_direct_runtime_nfl_v1431_moneyline_step4c_runtime_repair.py",
         "exec",
     ),
     globals(),
