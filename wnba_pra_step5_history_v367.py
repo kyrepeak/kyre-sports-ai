@@ -207,7 +207,8 @@ def _history_box(obj: dict, opponent: str) -> str:
             'No current-season player matchup history available.'
             f' Team meetings found: {team_meetings}.</div>'
             '<div style="font-size:.34rem;color:#756684;margin-top:5px">'
-            'Current-team meetings only • missing history never affects ranking or projection'</n            '</div></div>'
+            'Current-team meetings only • missing history never affects ranking or projection'
+            '</div></div>'
         )
 
     def metric(label, value):
