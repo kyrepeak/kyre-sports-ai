@@ -5,7 +5,11 @@ This cache-safe wrapper preserves the exact application at commit
 without changing source-model math.
 
 Daily Picks remains V34. Existing isolated WNBA routes remain Assists V20, Points
-V1.9.8.4.5, PRA V3.6.1, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5.
+V1.9.8.4.5, PRA V3.6.2, Spread V1.6.1, Moneyline V1.5 and Game Total V1.5.
+PRA V3.6.2 preserves the full V3.6.1 production model and adds only Step-1
+presentation identity to the Step-9 Final Top-5 cards: ESPN WNBA player headshots
+plus verified slate team logos. Projection, qualification, Monte Carlo, ranking,
+final-ready gates and selection logic are unchanged.
 
 MLB 1+ Hit is routed through Hit UI V13.15 FINAL. Steps 1-11 retain the verified
 presentation/context layers for batter/team identity, opposing starter, official
@@ -43,7 +47,7 @@ import mlb_hit_hub_v1315 as mlb_hit_hub_v1315
 import wnba_daily_picks_hub_v34 as wnba_daily_picks_v34
 import wnba_assists_hub_v20 as wnba_assists_v20
 import wnba_points_hub_v19845 as wnba_points_v19845
-import wnba_pra_hub_v361 as wnba_pra_v361
+import wnba_pra_hub_v362 as wnba_pra_v362
 import wnba_spread_hub_v161 as wnba_spread_v161
 import wnba_moneyline_hub_v15 as wnba_moneyline_v15
 import wnba_game_total_hub_v15 as wnba_game_total_v15
@@ -62,8 +66,8 @@ sys.modules["wnba_daily_picks_hub_v4"] = wnba_daily_picks_v34
 # the live Points preflight/readiness/sanity quarantine helpers on render.
 sys.modules["wnba_points_hub_v19841"] = wnba_points_v19845
 
-# Cache-safe PRA route.
-sys.modules["wnba_pra_hub_v321"] = wnba_pra_v361
+# Cache-safe PRA route with Step-1 Final Top-5 identity presentation.
+sys.modules["wnba_pra_hub_v321"] = wnba_pra_v362
 
 # Preserve existing fallback behavior while intercepting only unfinished WNBA
 # pages that now have isolated production/foundation modules.
@@ -138,7 +142,7 @@ source = _load_previous_app()
 exec(
     compile(
         source,
-        "kyre_sports_ai_preserved_app_plus_mlb_hit_v1315_final_audit_freeze_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v361_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
+        "kyre_sports_ai_preserved_app_plus_mlb_hit_v1315_final_audit_freeze_daily_picks_v34_points_qualification_cache_repair_assists_v20_points_v19845_pra_v362_step1_final_top5_identity_spread_v161_moneyline_v15_game_total_v15_runtime_nav.py",
         "exec",
     ),
     globals(),
