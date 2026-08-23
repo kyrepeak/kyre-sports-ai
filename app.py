@@ -3,30 +3,18 @@
 Frozen MLB/WNBA application source:
     421568e098d0c305f26584c65e6244c65bf77e62
 
-That commit contains the last verified pre-NFL app.py plus the isolated nfl_hub_v1
-file. This entrypoint does not patch historical source text, does not alter any
-unrelated MLB/WNBA model module, and does not depend on nested wrapper routes.
+NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
+additive headshot layer on top of the verified V1.0.16 checkpoint. Every other
+MLB/WNBA route continues to execute from the exact frozen production source.
 
-NFL V1.8 remains the frozen Moneyline checkpoint. It preserves the verified Slate
-foundation, Steps 1-7, 5,000,000-draw Monte Carlo and Final Decision grading. No
-further NFL Moneyline behavior is changed here.
-
-MLB Pitcher Strikeouts alone is compatibility-routed from the frozen historical
-V1.0.7 import name to V1.0.17. V1.0.17 is an additive presentation-only layer on
-top of the frozen/verified V1.0.16 checkpoint. It preserves the redundant
-SportsGameOdds/Odds-API.io sportsbook transport, same-slate real-line cache,
-Supports/Concerns intelligence and renderer-order repair, while adding MLB player
-headshots only to the already-ranked Top-5 Pitcher Strikeout cards. Player images
-use the existing MLB player_id and load directly from MLB's image CDN with an
-inline silhouette fallback. Projection math, market grading, Monte Carlo,
-Evidence Score, candidate pool and Top-5 probability ranking remain unchanged.
-Every other MLB and WNBA route remains on the exact frozen production source.
-
-Hot-reload guard: the preserved MLB/WNBA shell historically aliases hit_hub_v131
-to a later presentation wrapper at runtime. Streamlit keeps sys.modules alive
-between reruns, so this entrypoint restores the real V13.1 base before replaying
-the frozen shell and clears only the dependent Hit UI presentation modules. This
-prevents stale alias recursion without changing Hit Model V13 behavior.
+Streamlit hot-reload guard: the frozen application uses long compatibility-wrapper
+chains for Hit and MLB Daily Game Picks. Streamlit preserves sys.modules between
+reruns, so stale wrapper modules can survive a code deploy and then be reused with
+an incompatible import graph. Before replaying the frozen shell, this entrypoint
+restores the real Hit V13.1 base and clears only cached MLB Daily Game Picks
+wrapper modules so the frozen source can import them cleanly. This is import-cache
+hygiene only; no Daily Picks, Hit, H+R+RBI, Pitcher-K, WNBA or NFL model math is
+changed.
 '''
 from __future__ import annotations
 
@@ -142,14 +130,13 @@ def _sport_selectbox_with_nfl(label, options, *args, **kwargs):
 st.selectbox = _sport_selectbox_with_nfl
 
 # Isolated MLB Pitcher Strikeouts compatibility route. The preserved historical
-# application imports mlb_pitcher_k_hub_v107; only that exact module name is
-# redirected to V1.0.17. No other MLB/WNBA import is changed.
+# app imports mlb_pitcher_k_hub_v107; only that exact name is redirected.
 import mlb_pitcher_k_hub_v1017 as mlb_pitcher_k_v1017
 sys.modules["mlb_pitcher_k_hub_v107"] = mlb_pitcher_k_v1017
 
 
 def _restore_real_hit_v131_for_hot_reload():
-    """Repair only stale Hit-UI presentation aliases left by Streamlit reruns."""
+    """Repair stale Hit-UI presentation aliases left by Streamlit reruns."""
     for name in list(sys.modules):
         if name == "hit_hub_v131" or name == "hit_hub_v132" or name.startswith("mlb_hit_hub_v13"):
             sys.modules.pop(name, None)
@@ -165,9 +152,16 @@ def _restore_real_hit_v131_for_hot_reload():
         raise RuntimeError("Restored hit_hub_v131 is missing HIT_CSS.")
 
 
-# The frozen shell later creates its own compatibility alias intentionally. Reset
-# the real base first on every rerun so its imports always begin from a clean state.
+def _clear_mlb_daily_picks_for_hot_reload():
+    """Clear only stale MLB Daily Picks wrappers before replaying frozen source."""
+    for name in list(sys.modules):
+        if name.startswith("mlb_daily_game_picks_v"):
+            sys.modules.pop(name, None)
+
+
+# Reset known hot-reload-sensitive import chains before every frozen-shell replay.
 _restore_real_hit_v131_for_hot_reload()
+_clear_mlb_daily_picks_for_hot_reload()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -188,7 +182,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1017_top5_headshots.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_plus_pitcher_k_v1017_daily_picks_cache_repair.py",
         "exec",
     ),
     globals(),
