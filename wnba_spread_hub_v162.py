@@ -1,16 +1,17 @@
-"""WNBA Spread V1.6.2 compatibility boundary -> V1.6.7 Step-4 style repair + Step 5.
+"""WNBA Spread V1.6.2 compatibility boundary -> V1.6.8 Card Step 6.
 
 The frozen application still imports wnba_spread_hub_v162. The verified V1.6.2
 Steps 1-2 implementation remains preserved byte-for-byte in
 wnba_spread_hub_v162_core.py. V1.6.3 adds descriptive team form, V1.6.4 fixes
 its Markdown/HTML rendering seam, V1.6.5 adds descriptive recent matchup
-analytics, V1.6.6 adds descriptive injury + availability context, and V1.6.7
-restores the Step-4 stylesheet that V1.6.6 bypassed while preserving Step 5.
+analytics, V1.6.6 adds descriptive injury + availability context, V1.6.7
+restores the Step-4 stylesheet under Step 5, and V1.6.8 adds descriptive
+spread-specific matchup + market context from the existing verified final row.
 The protected V1.6.1 production model remains untouched.
 """
 from __future__ import annotations
 
-import wnba_spread_hub_v167 as presentation
+import wnba_spread_hub_v168 as presentation
 
 base = presentation.base
 MODEL_VERSION = presentation.MODEL_VERSION
