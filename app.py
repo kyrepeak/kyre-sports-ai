@@ -10,7 +10,7 @@ remains routed through V1.0.15 Steps 1-11 plus the final Top-5 evidence summary.
 WNBA Points is routed through V1.9.8.4.7 at the presentation boundary. The
 validated V1.9.8.4.5 projection, exact SportsGameOdds transport, 5M/10M Monte
 Carlo, calibration, candidate hierarchy, persistence and readiness gates remain
-unchanged. V1.9.8.4.7 now forwards to the completed Step-12 presentation stack.
+unchanged. V1.9.8.4.7 forwards to the completed Step-12 presentation stack.
 
 WNBA Spread is routed through V1.6.2 at the historical V1.6.1 boundary. The
 verified V1.6.1 exact-day availability repair, independent margin model,
@@ -23,12 +23,16 @@ adds only verified slate/player identity, ESPN headshots/team logos and existing
 descriptive REB+AST baselines. It does not change or import the existing
 Rebounds, Assists, PRA or Points production math.
 
-Streamlit preserves sys.modules across reruns. The frozen shell intentionally
-imports historical WNBA module names, so stale wrapper objects can survive a
-deploy. Before installing the active Points and Spread presentation routes, this
-entrypoint clears only their respective WNBA module families and reimports each
-chain from disk. The new R+A selector intercept clears only wnba_ra_* modules
-before rendering its isolated page. Every unrelated market remains untouched.
+HOT-RELOAD NOTE
+---------------
+Streamlit keeps the imported ``streamlit`` module alive across reruns. Older
+frozen wrappers assign directly to ``st.selectbox`` and ``st.info``. Capturing
+``st.selectbox`` at the start of a new deploy can therefore capture yesterday's
+wrapper instead of Streamlit's real widget method. That stale wrapper replaces
+the new WNBA market options with its old fixed list, which is exactly why the
+new Rebounds + Assists option could disappear even though main already contained
+it. This entrypoint now restores the genuine DeltaGenerator methods before any
+new wrapper is installed, then rebuilds the intended wrapper chain from disk.
 
 Every other MLB/WNBA route continues to execute from the exact frozen production
 source. Frozen NFL V1.8 is isolated from the MLB/WNBA replay.
@@ -64,6 +68,26 @@ NFL_MARKETS = [
     "Anytime TD",
     "Daily Picks",
 ]
+
+
+# ---------------------------------------------------------------------------
+# STREAMLIT HOT-RELOAD REPAIR
+# ---------------------------------------------------------------------------
+def _real_streamlit_method(name: str, fallback):
+    """Return the real top-level DeltaGenerator method, bypassing stale wrappers."""
+    main = getattr(st, "_main", None)
+    candidate = getattr(main, name, None) if main is not None else None
+    return candidate if callable(candidate) else fallback
+
+
+_REAL_SELECTBOX = _real_streamlit_method("selectbox", st.selectbox)
+_REAL_INFO = _real_streamlit_method("info", st.info)
+
+# A previous Streamlit rerun may have left frozen compatibility wrappers assigned
+# directly on the streamlit module. Reset only the two callables this app wraps;
+# the intended wrappers are installed again below on every run.
+st.selectbox = _REAL_SELECTBOX
+st.info = _REAL_INFO
 
 
 _NAV_CSS = r"""
@@ -125,7 +149,7 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
 # ---------------------------------------------------------------------------
 # FROZEN MLB / WNBA ROUTE
 # ---------------------------------------------------------------------------
-_NATIVE_SELECTBOX = st.selectbox
+_NATIVE_SELECTBOX = _REAL_SELECTBOX
 
 
 def _render_wnba_ra_route():
@@ -299,12 +323,22 @@ def _load_frozen_pre_nfl_app() -> str:
 
 
 source = _load_frozen_pre_nfl_app()
+
+# Belt-and-suspenders navigation repair: the frozen wrapper owns a fixed WNBA
+# market list. Add R+A to that exact replayed list as well, so both the current
+# outer boundary and the preserved inner navigation agree on the same options.
+source = source.replace(
+    '    "Assists",\n    "PRA",',
+    '    "Assists",\n    "Rebounds + Assists",\n    "PRA",',
+    1,
+)
+
 compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_spread_v162_ra_v1_hot_reload_safe.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_spread_v162_ra_v1_hot_reload_repair.py",
         "exec",
     ),
     globals(),
