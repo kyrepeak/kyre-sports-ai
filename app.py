@@ -7,6 +7,12 @@ NFL Moneyline V1.8 remains frozen. MLB Pitcher Strikeouts V1.0.17 remains the
 additive headshot layer on top of the verified V1.0.16 checkpoint. MLB H+R+RBI
 remains routed through V1.0.15 Steps 1-11 plus the final Top-5 evidence summary.
 
+MLB Spread is routed through V15.6 at the historical V15.5 boundary. V15.6 is a
+presentation-only Top-5 Card Step 1 over the existing V15.2 history-adjusted
+probability/ranking chain: both team logos, display-only pick/probability strength,
+and clearer H2H + Last-5 history. Projection, simulation, history adjustment,
+fair odds, ranking, backtest, live board and verified-slate intake remain unchanged.
+
 WNBA Points is routed through V1.9.8.4.7 at the presentation boundary. The
 validated V1.9.8.4.5 projection, exact SportsGameOdds transport, 5M/10M Monte
 Carlo, calibration, candidate hierarchy, persistence and readiness gates remain
@@ -254,6 +260,27 @@ def _install_hrrbi_final_route():
     sys.modules["mlb_hrrbi_hub_v101"] = hrrbi_v115
 
 
+def _clear_mlb_spread_hot_reload_modules():
+    """Rebuild only the MLB Spread V15.x presentation chain from disk."""
+    for name in list(sys.modules):
+        if name in {"spread_hub_v152", "spread_hub_v153", "spread_hub_v154", "mlb_spread_hub_v155", "mlb_spread_hub_v156"}:
+            sys.modules.pop(name, None)
+    importlib.invalidate_caches()
+
+
+def _install_mlb_spread_card_route():
+    """Route the frozen V15.5 Spread boundary to V15.6 Card Step 1."""
+    _clear_mlb_spread_hot_reload_modules()
+
+    # V15.6 imports the genuine V15.5 module first, then this historical alias is
+    # installed so the preserved app receives the additive card renderer only.
+    import mlb_spread_hub_v156 as spread_v156
+
+    if getattr(spread_v156, "prior", None) is None or not hasattr(spread_v156.prior, "render_spread_hub"):
+        raise RuntimeError("MLB Spread V15.6 compatibility base failed to initialize.")
+    sys.modules["mlb_spread_hub_v155"] = spread_v156
+
+
 def _clear_wnba_points_hot_reload_modules():
     """Remove only stale WNBA Points modules/aliases before rebuilding the chain."""
     for name in list(sys.modules):
@@ -306,6 +333,7 @@ _restore_real_hit_v131_for_hot_reload()
 _clear_mlb_hot_reload_wrappers()
 _install_hrrbi_candidate_pool_compat()
 _install_hrrbi_final_route()
+_install_mlb_spread_card_route()
 _install_wnba_points_h2h_route()
 _install_wnba_spread_top5_route()
 
@@ -338,7 +366,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_spread_v162_ra_v1_hot_reload_repair.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_mlb_spread_v156_wnba_points_v19847_spread_v162_ra_v1_hot_reload_repair.py",
         "exec",
     ),
     globals(),
