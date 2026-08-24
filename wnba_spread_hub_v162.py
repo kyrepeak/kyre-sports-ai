@@ -7,6 +7,17 @@ per-game selection remain unchanged.
 
 Step 2 adds fail-soft current-season completed team-vs-team history inside the
 same cards. History is descriptive only and never feeds the production model.
+
+2026-08-24 repair:
+- The Step-7 Monte Carlo final payload intentionally carries team names/game_id
+  but not team IDs. Step 2 was incorrectly reading home_team_id/away_team_id
+  directly from that final row, so identity resolution failed before the history
+  provider was even reached and the card showed SOURCE CHECK.
+- Team IDs are now re-hydrated from the already-verified selected-date WNBA
+  schedule by game_id (name fallback only if needed).
+- Historical final scores now come directly from the official WNBA current-season
+  scheduleLeagueV2 CDN, whose completed-game team objects already include score.
+  The unnecessary ESPN season/daily dependency is removed from this card layer.
 """
 from __future__ import annotations
 
@@ -22,7 +33,7 @@ import wnba_schedule_v24 as schedule24
 import wnba_schedule_v25 as schedule25
 
 base = prior.base
-MODEL_VERSION = "WNBA SPREAD V1.6.2 • TOP-5 CARD STEP 2"
+MODEL_VERSION = "WNBA SPREAD V1.6.2 • TOP-5 CARD STEP 2 • IDENTITY/SCORE REPAIR"
 _ORIGINAL_STEP7 = base._render_step7
 
 
@@ -123,172 +134,139 @@ def _presentation_order(final: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _score_value(competitor: dict):
-    raw = (competitor or {}).get("score")
-    if isinstance(raw, dict):
-        raw = raw.get("value", raw.get("displayValue"))
-    return _num(raw, np.nan)
+def _valid_team_id(value) -> int:
+    try:
+        tid = int(float(value))
+    except Exception:
+        return 0
+    try:
+        return tid if schedule24.guarded._is_wnba_team_id(tid) else 0
+    except Exception:
+        return tid if tid > 0 else 0
 
 
-def _parse_espn_events(payload) -> pd.DataFrame:
-    rows = []
-    for event in (payload or {}).get("events", []) or []:
-        comps = event.get("competitions") or []
-        if not comps:
-            continue
-        comp = comps[0]
-        status = (event.get("status") or {}).get("type") or {}
-        state = str(status.get("state") or "").lower()
-        completed = bool(status.get("completed")) or state == "post" or "FINAL" in str(
-            status.get("name") or status.get("description") or status.get("detail") or ""
-        ).upper()
-        if not completed:
-            continue
+def _resolved_team_ids(day_str: str, row) -> tuple[int, int, str]:
+    """Re-hydrate IDs omitted by the Step-6/Step-7 presentation payload.
 
-        sides = {}
-        for competitor in comp.get("competitors", []) or []:
-            sides[str(competitor.get("homeAway") or "").lower()] = competitor
-        away_c, home_c = sides.get("away") or {}, sides.get("home") or {}
-        away_t, home_t = away_c.get("team") or {}, home_c.get("team") or {}
-        try:
-            away_id = int(schedule24._safe_team_id(away_t))
-            home_id = int(schedule24._safe_team_id(home_t))
-        except Exception:
-            continue
-        if not schedule24.guarded._is_wnba_team_id(away_id) or not schedule24.guarded._is_wnba_team_id(home_id):
-            continue
+    The Monte Carlo/final payload is intentionally model-focused and does not
+    preserve away_team_id/home_team_id. Resolve them from the verified daily
+    schedule without mutating the production payload.
+    """
+    away_id = _valid_team_id(row.get("away_team_id"))
+    home_id = _valid_team_id(row.get("home_team_id"))
+    if away_id and home_id:
+        return away_id, home_id, "FINAL_PAYLOAD"
 
-        away_score = _score_value(away_c)
-        home_score = _score_value(home_c)
-        if not np.isfinite(away_score) or not np.isfinite(home_score):
-            continue
+    try:
+        slate = schedule25.schedule_for_date(str(day_str))
+    except Exception:
+        slate = pd.DataFrame()
+    if slate is None or slate.empty:
+        return away_id, home_id, "UNRESOLVED"
 
-        raw_dt = event.get("date") or comp.get("date")
-        rows.append({
-            "game_id": str(event.get("id") or ""),
-            "game_date": schedule24._event_date_et(raw_dt),
-            "away_team_id": away_id,
-            "away_team": str(away_t.get("displayName") or away_t.get("shortDisplayName") or "Away"),
-            "away_abbr": str(away_t.get("abbreviation") or "AWY"),
-            "away_score": float(away_score),
-            "home_team_id": home_id,
-            "home_team": str(home_t.get("displayName") or home_t.get("shortDisplayName") or "Home"),
-            "home_abbr": str(home_t.get("abbreviation") or "HME"),
-            "home_score": float(home_score),
-        })
-    frame = pd.DataFrame(rows)
-    if not frame.empty:
-        frame = frame.drop_duplicates(subset=["game_id"], keep="first").reset_index(drop=True)
-    return frame
+    gid = str(row.get("game_id") or "").strip()
+    part = pd.DataFrame()
+    if gid and "game_id" in slate.columns:
+        part = slate.loc[slate["game_id"].astype(str).eq(gid)].copy()
+
+    if part.empty:
+        away_name = _norm(row.get("away_team"))
+        home_name = _norm(row.get("home_team"))
+        if away_name and home_name and {"away_team", "home_team"}.issubset(slate.columns):
+            mask = slate["away_team"].map(_norm).eq(away_name) & slate["home_team"].map(_norm).eq(home_name)
+            part = slate.loc[mask].copy()
+
+    if part.empty:
+        return away_id, home_id, "UNRESOLVED"
+
+    match = part.iloc[0]
+    away_id = _valid_team_id(match.get("away_team_id")) or away_id
+    home_id = _valid_team_id(match.get("home_team_id")) or home_id
+    return away_id, home_id, "VERIFIED_DAILY_SCHEDULE"
 
 
-@st.cache_data(ttl=180, show_spinner=False, max_entries=8)
-def _season_h2h_results(season: int):
-    """Primary ESPN season read. Short cache prevents one timeout from sticking."""
+@st.cache_data(ttl=300, show_spinner=False, max_entries=8)
+def _official_history_results(day_str: str):
+    """Completed current-season team scores from the official WNBA CDN only."""
+    day = pd.to_datetime(day_str).normalize()
     try:
         payload, request_meta = schedule24._request_json(
-            "ESPN WNBA Spread Step-2 history",
-            schedule24.ESPN_SCOREBOARD,
-            params={"dates": str(int(season)), "limit": 1000},
+            "WNBA official CDN Spread Step-2 history",
+            schedule25.WNBA_CDN,
             timeout=10,
             attempts=3,
         )
     except Exception as exc:
-        return pd.DataFrame(), {"state": "UNAVAILABLE", "error": str(exc)[:160]}
+        return pd.DataFrame(), {"state": "UNAVAILABLE", "error": str(exc)[:180]}
 
     if payload is None:
         return pd.DataFrame(), {
             "state": "UNAVAILABLE",
-            "error": str((request_meta or {}).get("error") or "history provider unavailable")[:160],
+            "error": str((request_meta or {}).get("error") or "official WNBA history source unavailable")[:180],
         }
 
-    frame = _parse_espn_events(payload)
-    return frame, {
-        "state": "READY",
-        "source": "ESPN WNBA completed-game scoreboard",
-        "season": int(season),
-        "games": int(len(frame)),
-    }
-
-
-@st.cache_data(ttl=300, show_spinner=False, max_entries=64)
-def _daily_espn_results(day_yyyymmdd: str) -> pd.DataFrame:
-    try:
-        payload, _ = schedule24._request_json(
-            "ESPN WNBA Spread Step-2 daily fallback",
-            schedule24.ESPN_SCOREBOARD,
-            params={"dates": str(day_yyyymmdd), "limit": 100},
-            timeout=8,
-            attempts=2,
-        )
-    except Exception:
-        payload = None
-    return _parse_espn_events(payload) if payload is not None else pd.DataFrame()
-
-
-@st.cache_data(ttl=600, show_spinner=False, max_entries=64)
-def _fallback_pair_results(day_str: str, selected_id: int, opponent_id: int):
-    """Official WNBA schedule -> exact H2H dates -> ESPN daily score fallback."""
-    day = pd.to_datetime(day_str).normalize()
-    try:
-        payload, meta = schedule24._request_json(
-            "WNBA official CDN Spread Step-2 fallback",
-            schedule25.WNBA_CDN,
-            timeout=9,
-            attempts=2,
-        )
-    except Exception as exc:
-        return pd.DataFrame(), {"state": "UNAVAILABLE", "error": str(exc)[:160]}
-
-    if payload is None:
-        return pd.DataFrame(), {
-            "state": "UNAVAILABLE",
-            "error": str((meta or {}).get("error") or "official schedule unavailable")[:160],
-        }
-
-    candidate_dates = []
     league = (payload or {}).get("leagueSchedule") or {}
+    season_year = int(_num(league.get("seasonYear"), day.year) or day.year)
+    if season_year != int(day.year):
+        return pd.DataFrame(), {
+            "state": "UNAVAILABLE",
+            "error": f"official WNBA CDN season mismatch: {season_year} vs {int(day.year)}",
+        }
+
+    rows = []
     for block in league.get("gameDates", []) or []:
         block_date = block.get("gameDate")
         for game in block.get("games", []) or []:
+            if int(_num(game.get("gameStatus"), 0) or 0) != 3:
+                continue
+
+            away = game.get("awayTeam") or {}
+            home = game.get("homeTeam") or {}
+            away_id = _valid_team_id(away.get("teamId"))
+            home_id = _valid_team_id(home.get("teamId"))
+            if not away_id or not home_id:
+                try:
+                    away_id = _valid_team_id(schedule24._safe_team_id(away, away.get("teamId")))
+                    home_id = _valid_team_id(schedule24._safe_team_id(home, home.get("teamId")))
+                except Exception:
+                    pass
+            if not away_id or not home_id:
+                continue
+
+            away_score = _num(away.get("score"), np.nan)
+            home_score = _num(home.get("score"), np.nan)
+            if not np.isfinite(away_score) or not np.isfinite(home_score):
+                continue
+
             try:
-                away = game.get("awayTeam") or {}
-                home = game.get("homeTeam") or {}
-                away_id = int(schedule24._safe_team_id(away, away.get("teamId")))
-                home_id = int(schedule24._safe_team_id(home, home.get("teamId")))
+                game_date = schedule25._cdn_game_date(game, block_date)
             except Exception:
+                game_date = schedule24._cdn_game_date(game, block_date)
+            if not game_date:
                 continue
-            if not (
-                (away_id == selected_id and home_id == opponent_id)
-                or (away_id == opponent_id and home_id == selected_id)
-            ):
-                continue
-            if int(_num(game.get("gameStatus"), 0)) != 3:
-                continue
-            gdate = schedule24._cdn_game_date(game, block_date)
-            gdt = pd.to_datetime(gdate, errors="coerce")
-            if pd.notna(gdt) and gdt < day:
-                candidate_dates.append(gdt.strftime("%Y%m%d"))
 
-    frames = []
-    for date_key in sorted(set(candidate_dates), reverse=True)[:10]:
-        daily = _daily_espn_results(date_key)
-        if daily is None or daily.empty:
-            continue
-        away = pd.to_numeric(daily.get("away_team_id"), errors="coerce").fillna(0).astype(int)
-        home = pd.to_numeric(daily.get("home_team_id"), errors="coerce").fillna(0).astype(int)
-        pair = (
-            (away.eq(selected_id) & home.eq(opponent_id))
-            | (away.eq(opponent_id) & home.eq(selected_id))
-        )
-        part = daily.loc[pair].copy()
-        if not part.empty:
-            frames.append(part)
+            rows.append({
+                "game_id": str(game.get("gameId") or game.get("gameID") or ""),
+                "game_date": str(game_date),
+                "away_team_id": away_id,
+                "away_team": " ".join(x for x in [str(away.get("teamCity") or "").strip(), str(away.get("teamName") or "").strip()] if x).strip() or str(away.get("teamTricode") or "Away"),
+                "away_abbr": str(away.get("teamTricode") or "AWY"),
+                "away_score": float(away_score),
+                "home_team_id": home_id,
+                "home_team": " ".join(x for x in [str(home.get("teamCity") or "").strip(), str(home.get("teamName") or "").strip()] if x).strip() or str(home.get("teamTricode") or "Home"),
+                "home_abbr": str(home.get("teamTricode") or "HME"),
+                "home_score": float(home_score),
+            })
 
-    if not frames:
-        return pd.DataFrame(), {"state": "NO_MEETINGS", "source": "WNBA CDN + ESPN daily fallback"}
-    out = pd.concat(frames, ignore_index=True).drop_duplicates("game_id", keep="first")
-    return out, {"state": "READY", "source": "WNBA official schedule + ESPN daily score fallback"}
+    frame = pd.DataFrame(rows)
+    if not frame.empty:
+        frame = frame.drop_duplicates(subset=["game_id"], keep="first").reset_index(drop=True)
+    return frame, {
+        "state": "READY",
+        "source": "WNBA official CDN scheduleLeagueV2 completed-game scores",
+        "season": season_year,
+        "games": int(len(frame)),
+    }
 
 
 def _record_text(wins: int, losses: int) -> str:
@@ -312,40 +290,44 @@ def _pair_filter(results: pd.DataFrame, day, selected_id: int, opponent_id: int)
 def _history_summary(day_str: str, row) -> dict:
     try:
         selected_is_home = _is_home(row)
-        selected_id = int(float(row.get("home_team_id") if selected_is_home else row.get("away_team_id")))
-        opponent_id = int(float(row.get("away_team_id") if selected_is_home else row.get("home_team_id")))
+        away_id, home_id, identity_source = _resolved_team_ids(str(day_str), row)
+        if not away_id or not home_id:
+            return {
+                "state": "UNAVAILABLE",
+                "error": "team IDs missing from MC final payload and could not be re-hydrated from verified daily schedule",
+            }
+
+        selected_id = home_id if selected_is_home else away_id
+        opponent_id = away_id if selected_is_home else home_id
         selected_name = str(row.get("best_side") or (row.get("home_team") if selected_is_home else row.get("away_team")) or "Selected team")
         opponent_name = str((row.get("away_team") if selected_is_home else row.get("home_team")) or "Opponent")
         day = pd.to_datetime(day_str).normalize()
     except Exception as exc:
-        return {"state": "UNAVAILABLE", "error": str(exc)[:160]}
+        return {"state": "UNAVAILABLE", "error": str(exc)[:180]}
 
-    results, provider = _season_h2h_results(int(day.year))
+    results, provider = _official_history_results(str(day_str))
+    if str((provider or {}).get("state") or "").upper() != "READY":
+        return {
+            "state": "UNAVAILABLE",
+            "error": str((provider or {}).get("error") or "official WNBA history source unavailable")[:180],
+        }
+
     meetings = _pair_filter(results, day, selected_id, opponent_id)
-
-    # If the season-wide ESPN call times out or returns a partial/empty slate,
-    # fall back to official WNBA H2H dates and only query those exact dates.
     if meetings.empty:
-        fallback, fallback_meta = _fallback_pair_results(str(day_str), selected_id, opponent_id)
-        fallback_meetings = _pair_filter(fallback, day, selected_id, opponent_id)
-        if not fallback_meetings.empty:
-            meetings = fallback_meetings
-            provider = fallback_meta
-        elif str((provider or {}).get("state") or "").upper() != "READY":
-            return {
-                "state": "UNAVAILABLE",
-                "error": str((provider or {}).get("error") or (fallback_meta or {}).get("error") or "history sources unavailable"),
-            }
-
-    if meetings.empty:
-        return {"state": "NO_MEETINGS", "season": int(day.year), "games": 0}
+        return {
+            "state": "NO_MEETINGS",
+            "season": int(day.year),
+            "games": 0,
+            "identity_source": identity_source,
+            "source": str((provider or {}).get("source") or "WNBA official CDN"),
+        }
 
     meetings["_date"] = pd.to_datetime(meetings.get("game_date"), errors="coerce")
     meetings = meetings.sort_values("_date", ascending=False).drop_duplicates("game_id", keep="first")
 
     enriched = []
     for _, game in meetings.iterrows():
-        selected_home = int(_num(game.get("home_team_id"), 0)) == selected_id
+        selected_home = int(_num(game.get("home_team_id"), 0) or 0) == selected_id
         if selected_home:
             selected_score = _num(game.get("home_score"), np.nan)
             opponent_score = _num(game.get("away_score"), np.nan)
@@ -372,7 +354,13 @@ def _history_summary(day_str: str, row) -> dict:
         })
 
     if not enriched:
-        return {"state": "NO_MEETINGS", "season": int(day.year), "games": 0}
+        return {
+            "state": "NO_MEETINGS",
+            "season": int(day.year),
+            "games": 0,
+            "identity_source": identity_source,
+            "source": str((provider or {}).get("source") or "WNBA official CDN"),
+        }
 
     games = pd.DataFrame(enriched).sort_values("date", ascending=False).reset_index(drop=True)
     gp = int(len(games))
@@ -420,7 +408,8 @@ def _history_summary(day_str: str, row) -> dict:
         "reliability": reliability,
         "reliability_class": reliability_class,
         "scope": f"{int(day.year)} current season",
-        "source": str((provider or {}).get("source") or "verified WNBA/ESPN history"),
+        "identity_source": identity_source,
+        "source": str((provider or {}).get("source") or "WNBA official CDN"),
     }
 
 
@@ -428,14 +417,16 @@ def _history_block(day_str: str, row) -> str:
     try:
         summary = _history_summary(day_str, row)
     except Exception as exc:
-        summary = {"state": "UNAVAILABLE", "error": str(exc)[:160]}
+        summary = {"state": "UNAVAILABLE", "error": str(exc)[:180]}
 
     state = str(summary.get("state") or "UNAVAILABLE").upper()
     if state == "UNAVAILABLE":
-        return """
+        reason = escape(str(summary.get("error") or "history source unavailable"))
+        return f"""
   <div class="ks-spread162-history">
     <div class="ks-spread162-hhead"><span>STEP 2 • TEAM VS TEAM HISTORY</span><span class="ks-spread162-rel warn">SOURCE CHECK</span></div>
     <div class="ks-spread162-hempty">Historical results are temporarily unavailable. Step 1 and the verified Spread model are unchanged.</div>
+    <div class="ks-spread162-hdiag">Diagnostic • {reason}</div>
     <div class="ks-spread162-hnote">Descriptive layer only • history failure cannot block, alter or rerank the production Spread result.</div>
   </div>
 """
@@ -445,7 +436,7 @@ def _history_block(day_str: str, row) -> str:
   <div class="ks-spread162-history">
     <div class="ks-spread162-hhead"><span>STEP 2 • TEAM VS TEAM HISTORY</span><span class="ks-spread162-rel warn">LOW / NONE</span></div>
     <div class="ks-spread162-hempty">No verified completed prior meetings found in the {season} current season before this slate date.</div>
-    <div class="ks-spread162-hnote">Descriptive layer only • no history adjustment is applied to projection, 5M Monte Carlo, qualification or ranking.</div>
+    <div class="ks-spread162-hnote">Source • {escape(str(summary.get('source') or 'WNBA official CDN'))} • descriptive only • no history adjustment is applied to projection, 5M Monte Carlo, qualification or ranking.</div>
   </div>
 """
 
@@ -470,7 +461,7 @@ def _history_block(day_str: str, row) -> str:
       <div class="wide"><small>MOST RECENT MEETING</small><strong>{escape(str(summary.get('latest') or '—'))}</strong></div>
     </div>
     <div class="ks-spread162-meetings"><small>LAST MEETINGS</small>{meetings_html}</div>
-    <div class="ks-spread162-hnote">Source • {escape(str(summary.get('source') or 'verified WNBA/ESPN history'))} • descriptive only • NOT FED INTO projection, 5M Monte Carlo, edge, EV, qualification or card ranking.</div>
+    <div class="ks-spread162-hnote">Source • {escape(str(summary.get('source') or 'WNBA official CDN'))} • identity • {escape(str(summary.get('identity_source') or 'verified schedule'))} • descriptive only • NOT FED INTO projection, 5M Monte Carlo, edge, EV, qualification or card ranking.</div>
   </div>
 """
 
@@ -481,8 +472,9 @@ def _card(row, rank: int, day_str: str) -> str:
     best = str(row.get("best_side") or "Team")
     is_home = _is_home(row)
 
-    selected_id = row.get("home_team_id") if is_home else row.get("away_team_id")
-    opp_id = row.get("away_team_id") if is_home else row.get("home_team_id")
+    away_id, home_id, _ = _resolved_team_ids(str(day_str), row)
+    selected_id = home_id if is_home else away_id
+    opp_id = away_id if is_home else home_id
     opponent = away if is_home else home
     selected_logo = escape(_logo(selected_id), quote=True)
     opp_logo = escape(_logo(opp_id), quote=True)
@@ -574,7 +566,7 @@ def _render_top5_step1(day_str: str, final: pd.DataFrame, meta: dict) -> None:
 .ks-spread162-prob{font-size:2.75rem;font-weight:1000;color:#fff;line-height:1;margin-top:16px}.ks-spread162-probsub{font-size:.55rem;color:#7890a5;font-weight:900;letter-spacing:.035em;margin-top:5px}
 .ks-spread162-badges{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.ks-spread162-badges span{border:1px solid #355873;background:#0b1824;color:#bed4e3;border-radius:999px;padding:6px 8px;font-size:.49rem;font-weight:950;letter-spacing:.035em}.ks-spread162-badges .elite,.ks-spread162-badges .strong,.ks-spread162-badges .pass{border-color:#237a59;background:#0b3327;color:#7df2ba}.ks-spread162-badges .medium{border-color:#826c16;background:#3a3009;color:#ffe17a}.ks-spread162-badges .monitor,.ks-spread162-badges .nop,.ks-spread162-badges .warn{border-color:#7c5832;background:#352516;color:#ffc984}.ks-spread162-badges .blocked{border-color:#7a3941;background:#35171b;color:#ff9aa5}
 .ks-spread162-grid,.ks-spread162-hgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ks-spread162-grid div,.ks-spread162-hgrid div{background:#081522;border:1px solid #284b64;border-radius:11px;padding:9px}.ks-spread162-grid small,.ks-spread162-hgrid small,.ks-spread162-meetings small{display:block;color:#718ba0;font-size:.47rem;font-weight:950;letter-spacing:.04em}.ks-spread162-grid strong,.ks-spread162-hgrid strong{display:block;color:#f6fbff;font-size:.78rem;margin-top:3px}.ks-spread162-note{color:#6f8799;font-size:.54rem;line-height:1.45;margin-top:10px}
-.ks-spread162-history{background:#091827;border:1px solid #294b64;border-radius:15px;padding:12px;margin-top:14px}.ks-spread162-hhead{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#79d8ff;font-size:.59rem;font-weight:950;letter-spacing:.05em;text-transform:uppercase}.ks-spread162-rel{border-radius:999px;padding:5px 7px;border:1px solid #355873;color:#bed4e3;white-space:nowrap}.ks-spread162-rel.good{border-color:#237a59;background:#0b3327;color:#7df2ba}.ks-spread162-rel.mid{border-color:#826c16;background:#3a3009;color:#ffe17a}.ks-spread162-rel.warn{border-color:#7c5832;background:#352516;color:#ffc984}.ks-spread162-hscope{color:#8198aa;font-size:.54rem;margin:7px 0 9px}.ks-spread162-hgrid .wide{grid-column:1/-1}.ks-spread162-meetings{margin-top:8px;background:#07131f;border:1px solid #24445c;border-radius:10px;padding:8px}.ks-spread162-meetings div{color:#d7e5ef;font-size:.61rem;line-height:1.5;margin-top:3px}.ks-spread162-hnote{color:#6f8799;font-size:.50rem;line-height:1.45;margin-top:8px}.ks-spread162-hempty{color:#c8d7e3;font-size:.66rem;line-height:1.5;margin-top:9px}
+.ks-spread162-history{background:#091827;border:1px solid #294b64;border-radius:15px;padding:12px;margin-top:14px}.ks-spread162-hhead{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#79d8ff;font-size:.59rem;font-weight:950;letter-spacing:.05em;text-transform:uppercase}.ks-spread162-rel{border-radius:999px;padding:5px 7px;border:1px solid #355873;color:#bed4e3;white-space:nowrap}.ks-spread162-rel.good{border-color:#237a59;background:#0b3327;color:#7df2ba}.ks-spread162-rel.mid{border-color:#826c16;background:#3a3009;color:#ffe17a}.ks-spread162-rel.warn{border-color:#7c5832;background:#352516;color:#ffc984}.ks-spread162-hscope{color:#8198aa;font-size:.54rem;margin:7px 0 9px}.ks-spread162-hgrid .wide{grid-column:1/-1}.ks-spread162-meetings{margin-top:8px;background:#07131f;border:1px solid #24445c;border-radius:10px;padding:8px}.ks-spread162-meetings div{color:#d7e5ef;font-size:.61rem;line-height:1.5;margin-top:3px}.ks-spread162-hnote{color:#6f8799;font-size:.50rem;line-height:1.45;margin-top:8px}.ks-spread162-hempty{color:#c8d7e3;font-size:.66rem;line-height:1.5;margin-top:9px}.ks-spread162-hdiag{color:#9fb2c2;font-size:.50rem;line-height:1.45;margin-top:7px;word-break:break-word}
 @media(max-width:760px){.ks-spread162-wrap{grid-template-columns:1fr}.ks-spread162-rank b{float:none;display:block;margin-top:3px}.ks-spread162-logo{width:48px;height:48px}.ks-spread162-logo img{max-width:48px;max-height:48px}.ks-spread162-prob{font-size:2.45rem}.ks-spread162-hhead{align-items:flex-start}.ks-spread162-rel{font-size:.48rem}}
 </style>
 """, unsafe_allow_html=True)
@@ -603,7 +595,7 @@ def render_wnba_spread_hub(section_header=None, status_info=None, team_logo=None
     _install()
     st.caption(
         "🎨 Spread V1.6.2 • Top-5 Card Steps 1–2 ACTIVE • exact spread + 5M probability + "
-        "pick strength + fail-soft verified team history • production model/ranking unchanged"
+        "pick strength + official WNBA team history • production model/ranking unchanged"
     )
     return prior.render_wnba_spread_hub(section_header, status_info, team_logo, h)
 
