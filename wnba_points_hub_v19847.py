@@ -1,12 +1,12 @@
 """WNBA Points V1.9.8.4.7 — hot-reload-safe compatibility shim.
 
 The live frozen shell still imports this historical filename. This shim now
-forwards that boundary to V1.9.8.4.18, which keeps the same Top-5 Step 2
+forwards that boundary to V1.9.8.4.19, which keeps the same Top-5 Step 2
 Player-vs-Team History, Step 3 Minutes + Role + Usage, Step 4 Recent Scoring
 Form, Step 5 Opponent Defense + Positional Matchup, Step 6 Pace + Game Scoring
-Environment, Step 7 Shot Volume + Scoring Efficiency, and adds Step 8 Injuries
-+ Lineup / Rotation Effects using explicit current-roster designations plus the
-protected role/minutes/usage signals already produced by the Points runtime.
+Environment, Step 7 Shot Volume + Scoring Efficiency, and Step 8 Injuries +
+Lineup / Rotation Effects with repaired usage handoff and explicit boolean
+lineup-source labels.
 
 No Points projection, SportsGameOdds transport, 5M/10M Monte Carlo,
 calibration, candidate hierarchy, persistence, readiness, sanity quarantine,
@@ -14,12 +14,12 @@ PRA, Rebounds, Assists, MLB or NFL model math is changed.
 """
 from __future__ import annotations
 
-import wnba_points_hub_v198418 as presentation
+import wnba_points_hub_v198419 as presentation
 
-# V1.9.8.4.18 exposes the genuine V1.9.8.4.5 production runtime object.
+# V1.9.8.4.19 exposes the genuine V1.9.8.4.5 production runtime object.
 base = presentation.base
 
-MODEL_VERSION = "WNBA POINTS V1.9.8.4.18 • STEP 8 INJURY + LINEUP/ROTATION AUDIT VIA HOT-RELOAD-SAFE ROUTE"
+MODEL_VERSION = "WNBA POINTS V1.9.8.4.19 • STEP 8 USAGE HANDOFF + LINEUP LABEL REPAIR VIA HOT-RELOAD-SAFE ROUTE"
 PRA_FROZEN_BRANCH = base.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = base.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
