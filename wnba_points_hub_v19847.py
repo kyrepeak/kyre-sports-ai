@@ -1,24 +1,24 @@
 """WNBA Points V1.9.8.4.7 — hot-reload-safe compatibility shim.
 
 The live frozen shell still imports this historical filename. This shim now
-forwards that boundary to V1.9.8.4.23, preserving the Top-5 Step 2–9 card stack.
+forwards that boundary to V1.9.8.4.24, preserving the Top-5 Step 2–9 card stack.
 
-V1.9.8.4.23 keeps the V1.9.8.4.22 opponent shot-profile defense audit and fixes
-a late historical installer overwrite that caused the Step-9 version banner to
-load while the actual Step-9 card disappeared after Step 8. The repaired route
-reasserts the Step-7 → Step-8 → Step-9 combiner at the final card-render boundary.
+V1.9.8.4.24 keeps the V1.9.8.4.23 late-install Step-9 render repair and also
+fixes Step 8's RECENT USAGE DELTA presentation so a percentage-point difference
+is not multiplied by 100 a second time. Example: Season 21.3% vs L5 21.5% now
+renders approximately +0.2 pp rather than an inflated double-scaled percentage.
 
-No Points formulas, Monte Carlo distribution, calibration, sportsbook transport,
-readiness, sanity quarantine or Top-5 ranking are changed. PRA, Rebounds,
-Assists, MLB and NFL continue using their existing modules.
+No Points formulas, opportunity grading, Monte Carlo distribution, calibration,
+sportsbook transport, readiness, sanity quarantine or Top-5 ranking are changed.
+PRA, Rebounds, Assists, MLB and NFL continue using their existing modules.
 """
 from __future__ import annotations
 
-import wnba_points_hub_v198423 as presentation
+import wnba_points_hub_v198424 as presentation
 
 base = presentation.base
 
-MODEL_VERSION = "WNBA POINTS V1.9.8.4.23 • STEP 9 LATE-INSTALL RENDER REPAIR VIA HOT-RELOAD-SAFE ROUTE"
+MODEL_VERSION = "WNBA POINTS V1.9.8.4.24 • STEP 8 USAGE DELTA + STEP 9 RENDER REPAIRS VIA HOT-RELOAD-SAFE ROUTE"
 PRA_FROZEN_BRANCH = base.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = base.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
