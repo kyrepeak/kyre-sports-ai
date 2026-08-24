@@ -18,11 +18,17 @@ SportsGameOdds spread market, analytical probability, 5M Monte Carlo,
 convergence and final grading remain unchanged. V1.6.2 adds only Top-5 visual
 Card Step 1 for the exact current final one-candidate-per-game payload.
 
+WNBA Rebounds + Assists is a new isolated route through wnba_ra_hub_v1. Step 1
+adds only verified slate/player identity, ESPN headshots/team logos and existing
+descriptive REB+AST baselines. It does not change or import the existing
+Rebounds, Assists, PRA or Points production math.
+
 Streamlit preserves sys.modules across reruns. The frozen shell intentionally
 imports historical WNBA module names, so stale wrapper objects can survive a
 deploy. Before installing the active Points and Spread presentation routes, this
 entrypoint clears only their respective WNBA module families and reimports each
-chain from disk. Every unrelated market remains untouched.
+chain from disk. The new R+A selector intercept clears only wnba_ra_* modules
+before rendering its isolated page. Every unrelated market remains untouched.
 
 Every other MLB/WNBA route continues to execute from the exact frozen production
 source. Frozen NFL V1.8 is isolated from the MLB/WNBA replay.
@@ -122,10 +128,24 @@ if str(st.session_state.get("ks_sport_touch") or "").upper() == "NFL":
 _NATIVE_SELECTBOX = st.selectbox
 
 
+def _render_wnba_ra_route():
+    """Render only the isolated WNBA Rebounds + Assists route and stop frozen replay."""
+    for name in list(sys.modules):
+        if name.startswith("wnba_ra_"):
+            sys.modules.pop(name, None)
+    importlib.invalidate_caches()
+
+    import wnba_ra_hub_v1 as wnba_ra_v1
+
+    wnba_ra_v1.render_wnba_ra_hub(None, None, None, None)
+    st.stop()
+
+
 def _sport_selectbox_with_nfl(label, options, *args, **kwargs):
     key = str(kwargs.get("key") or "")
     label_text = str(label or "")
     is_sport_widget = key == "ks_sport_touch" or label_text.strip() == "🏟️ Sport"
+    is_wnba_market_widget = key == "ks_wnba_market_touch" or "WNBA Market" in label_text
 
     if is_sport_widget:
         try:
@@ -136,7 +156,26 @@ def _sport_selectbox_with_nfl(label, options, *args, **kwargs):
             values.append("NFL")
         options = values
 
-    return _NATIVE_SELECTBOX(label, options, *args, **kwargs)
+    if is_wnba_market_widget:
+        try:
+            values = list(options)
+        except Exception:
+            values = []
+        ra_market = "Rebounds + Assists"
+        if ra_market not in values:
+            try:
+                insert_at = values.index("Assists") + 1
+            except ValueError:
+                insert_at = min(3, len(values))
+            values.insert(insert_at, ra_market)
+        options = values
+
+    selected = _NATIVE_SELECTBOX(label, options, *args, **kwargs)
+
+    if is_wnba_market_widget and str(selected) == "Rebounds + Assists":
+        _render_wnba_ra_route()
+
+    return selected
 
 
 st.selectbox = _sport_selectbox_with_nfl
@@ -265,7 +304,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_spread_v162_hot_reload_safe.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_spread_v162_ra_v1_hot_reload_safe.py",
         "exec",
     ),
     globals(),
