@@ -10,15 +10,19 @@ remains routed through V1.0.15 Steps 1-11 plus the final Top-5 evidence summary.
 WNBA Points is routed through V1.9.8.4.7 at the presentation boundary. The
 validated V1.9.8.4.5 projection, exact SportsGameOdds transport, 5M/10M Monte
 Carlo, calibration, candidate hierarchy, persistence and readiness gates remain
-unchanged. V1.9.8.4.6 supplies the richer Top-5 Player vs Team History cards;
-V1.9.8.4.7 adds only a hot-reload-safe compatibility shim around that UI.
+unchanged. V1.9.8.4.7 now forwards to the completed Step-12 presentation stack.
 
-Streamlit preserves sys.modules across reruns. The frozen Points shell also
-intentionally aliases historical WNBA Points module names, so stale wrapper
-objects can survive a deploy under base-module names. Before installing the
-V1.9.8.4.7 route, this entrypoint clears only the WNBA Points module family and
-reimports the chain from disk in dependency order. This prevents circular/stale
-alias AttributeErrors while leaving every non-Points route untouched.
+WNBA Spread is routed through V1.6.2 at the historical V1.6.1 boundary. The
+verified V1.6.1 exact-day availability repair, independent margin model,
+SportsGameOdds spread market, analytical probability, 5M Monte Carlo,
+convergence and final grading remain unchanged. V1.6.2 adds only Top-5 visual
+Card Step 1 for the exact current final one-candidate-per-game payload.
+
+Streamlit preserves sys.modules across reruns. The frozen shell intentionally
+imports historical WNBA module names, so stale wrapper objects can survive a
+deploy. Before installing the active Points and Spread presentation routes, this
+entrypoint clears only their respective WNBA module families and reimports each
+chain from disk. Every unrelated market remains untouched.
 
 Every other MLB/WNBA route continues to execute from the exact frozen production
 source. Frozen NFL V1.8 is isolated from the MLB/WNBA replay.
@@ -188,14 +192,7 @@ def _install_hrrbi_final_route():
 
 
 def _clear_wnba_points_hot_reload_modules():
-    """Remove only stale WNBA Points modules/aliases before rebuilding the chain.
-
-    The frozen shell aliases V1.9.8.4.1 to the active production checkpoint.
-    Streamlit keeps that alias alive between reruns, so manually executing a base
-    module can otherwise import an old wrapper as one of its own dependencies.
-    Clearing the Points-only family lets Python rebuild the genuine dependency
-    graph from disk before the new presentation alias is installed.
-    """
+    """Remove only stale WNBA Points modules/aliases before rebuilding the chain."""
     for name in list(sys.modules):
         if name.startswith("wnba_points_hub_v") or name.startswith("wnba_points_v"):
             sys.modules.pop(name, None)
@@ -206,17 +203,39 @@ def _install_wnba_points_h2h_route():
     """Install V1.9.8.4.7 after a clean Points-only import-graph rebuild."""
     _clear_wnba_points_hot_reload_modules()
 
-    # Import the shim normally. Its chain loads V1.9.8.4.6 and the genuine
-    # V1.9.8.4.5 base before any frozen-shell historical alias is reinstalled.
     import wnba_points_hub_v19847 as points_v19847
 
     base = getattr(points_v19847, "base", None)
     if base is None or not hasattr(base, "ui") or not hasattr(base, "v171"):
         raise RuntimeError("WNBA Points V1.9.8.4.7 compatibility base failed to initialize.")
 
-    # The frozen pre-NFL shell imports V1.9.8.4.5 directly. Redirect only that
-    # public presentation boundary; the shim retains the genuine base object.
+    # The frozen pre-NFL shell imports V1.9.8.4.5 directly.
     sys.modules["wnba_points_hub_v19845"] = points_v19847
+
+
+def _clear_wnba_spread_hot_reload_modules():
+    """Remove only stale Spread modules before rebuilding the V1.6.2 chain."""
+    for name in list(sys.modules):
+        if name.startswith("wnba_spread_"):
+            sys.modules.pop(name, None)
+    importlib.invalidate_caches()
+
+
+def _install_wnba_spread_top5_route():
+    """Route the frozen V1.6.1 Spread boundary to V1.6.2 presentation only."""
+    _clear_wnba_spread_hot_reload_modules()
+
+    # V1.6.2 imports the genuine V1.6.1 module before this historical alias is
+    # installed, so the exact-day availability repair remains part of its base.
+    import wnba_spread_hub_v162 as spread_v162
+
+    base = getattr(spread_v162, "base", None)
+    if base is None or not hasattr(base, "_render_step7"):
+        raise RuntimeError("WNBA Spread V1.6.2 compatibility base failed to initialize.")
+
+    # The frozen pre-NFL shell imports V1.6.1 directly. Redirect only that public
+    # presentation boundary; V1.6.2 retains the genuine V1.6.1 module internally.
+    sys.modules["wnba_spread_hub_v161"] = spread_v162
 
 
 # Reset known hot-reload-sensitive import chains before every frozen-shell replay.
@@ -225,6 +244,7 @@ _clear_mlb_hot_reload_wrappers()
 _install_hrrbi_candidate_pool_compat()
 _install_hrrbi_final_route()
 _install_wnba_points_h2h_route()
+_install_wnba_spread_top5_route()
 
 
 def _load_frozen_pre_nfl_app() -> str:
@@ -245,7 +265,7 @@ compile(source, "<kyre_frozen_pre_nfl_app_preflight>", "exec")
 exec(
     compile(
         source,
-        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_h2h_hot_reload_safe.py",
+        "kyre_sports_ai_frozen_pre_nfl_plus_frozen_nfl_v18_pitcher_k_v1017_hrrbi_v115_wnba_points_v19847_spread_v162_hot_reload_safe.py",
         "exec",
     ),
     globals(),
