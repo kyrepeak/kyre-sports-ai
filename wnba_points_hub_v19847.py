@@ -1,29 +1,29 @@
 """WNBA Points V1.9.8.4.7 — hot-reload-safe compatibility shim.
 
 The live frozen shell still imports this historical filename. This shim now
-forwards that boundary to V1.9.8.4.20, which keeps the same Top-5 Step 2
-Player-vs-Team History, Step 3 Minutes + Role + Usage, Step 4 Recent Scoring
-Form, Step 5 Opponent Defense + Positional Matchup, Step 6 Pace + Game Scoring
-Environment, Step 7 Shot Volume + Scoring Efficiency, and Step 8 Injuries +
-Lineup / Rotation Effects with provider-safe usage identity matching.
+forwards that boundary to V1.9.8.4.21, preserving the Top-5 Step 2–8 card stack
+while repairing the underlying Points-only usage identity handoff.
 
-V1.9.8.4.20 fixes the Step-8 audit handoff where ESPN player IDs and preferred
-WNBA/NBA Stats usage IDs can live in different namespaces. It matches exact IDs
-first, then normalized player name, then the verified day-aware ESPN usage
-fallback when the preferred league table omits that player.
+V1.9.8.4.21 fixes the cross-provider identity mismatch at the role boundary:
+ESPN player-pool IDs and preferred WNBA/NBA Stats usage IDs are not assumed to
+share a namespace. The isolated Points role facade now uses exact ID first,
+normalized full name second, and the existing date-scoped verified ESPN usage
+fallback only for fields still missing for that player. Provenance is carried
+in USG_SOURCE and Step 8 displays it.
 
-No Points projection, SportsGameOdds transport, 5M/10M Monte Carlo,
-calibration, candidate hierarchy, persistence, readiness, sanity quarantine,
-PRA, Rebounds, Assists, MLB or NFL model math is changed.
+Only the WNBA Points module's role reference is replaced. PRA, Rebounds,
+Assists, MLB and NFL continue using their existing modules unchanged. The
+existing Points role formulas, Monte Carlo distribution, calibration,
+sportsbook transport, readiness, sanity quarantine and ranking rules are not
+reweighted or replaced; this is a provider-identity/data-handoff correction.
 """
 from __future__ import annotations
 
-import wnba_points_hub_v198420 as presentation
+import wnba_points_hub_v198421 as presentation
 
-# V1.9.8.4.20 exposes the genuine V1.9.8.4.5 production runtime object.
 base = presentation.base
 
-MODEL_VERSION = "WNBA POINTS V1.9.8.4.20 • STEP 8 CROSS-PROVIDER USAGE IDENTITY REPAIR VIA HOT-RELOAD-SAFE ROUTE"
+MODEL_VERSION = "WNBA POINTS V1.9.8.4.21 • POINTS-ONLY USAGE IDENTITY BRIDGE VIA HOT-RELOAD-SAFE ROUTE"
 PRA_FROZEN_BRANCH = base.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = base.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
