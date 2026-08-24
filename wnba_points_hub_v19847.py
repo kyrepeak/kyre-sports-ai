@@ -1,13 +1,12 @@
 """WNBA Points V1.9.8.4.7 — hot-reload-safe compatibility shim.
 
 The live frozen shell still imports this historical filename. This shim now
-forwards that boundary to V1.9.8.4.26, preserving the Top-5 Step 2–11 card stack.
+forwards that boundary to V1.9.8.4.27, preserving the Top-5 Step 2–11 card stack.
 
-V1.9.8.4.26 keeps the Step-8 percentage-point display repair, Step-9 final-render
-repair and Step-10 rest/schedule audit, then adds Step 11 Game Script + Blowout /
-Close-Game Context using the existing SportsGameOdds WNBA full-game spread/total
-transport. Stale market rows are not scored and no direct overtime probability
-is invented.
+V1.9.8.4.27 keeps the Step-8 percentage-point display repair, Step-9 final-render
+repair, Step-10 rest/schedule audit and Step-11 market/game-script audit. It only
+repairs Step-11 negative grade labels so true blowout risk is distinguished from
+a low-scoring market environment.
 
 No Points formulas, Monte Carlo distribution, calibration, sportsbook prop
 transport, readiness, sanity quarantine or Top-5 ranking are changed. PRA,
@@ -15,11 +14,11 @@ Rebounds, Assists, MLB and NFL continue using their existing modules.
 """
 from __future__ import annotations
 
-import wnba_points_hub_v198426 as presentation
+import wnba_points_hub_v198427 as presentation
 
 base = presentation.base
 
-MODEL_VERSION = "WNBA POINTS V1.9.8.4.26 • STEP 11 GAME SCRIPT AUDIT VIA HOT-RELOAD-SAFE ROUTE"
+MODEL_VERSION = "WNBA POINTS V1.9.8.4.27 • STEP 11 CONTEXT-AWARE SCRIPT LABELS VIA HOT-RELOAD-SAFE ROUTE"
 PRA_FROZEN_BRANCH = base.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = base.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
