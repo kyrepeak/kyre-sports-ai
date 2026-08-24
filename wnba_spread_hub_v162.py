@@ -1,15 +1,16 @@
-"""WNBA Spread V1.6.2 — Top-5 visual card foundation, Step 1.
+"""WNBA Spread V1.6.2 — Top-5 visual cards, Step 2 team-vs-team history.
 
 Presentation-only wrapper over the verified V1.6.1 Spread production route.
 The V1.6.1 exact-day availability repair, independent margin projection,
 analytical probability, exact sportsbook market, 5,000,000-draw Monte Carlo,
 convergence contract and final grading remain unchanged.
 
-Step 1 adds visual cards for up to five existing one-candidate-per-game final
-Spread outputs. Cards show team identity/logos, exact spread/price, Monte Carlo
-cover probability, fair odds, no-vig edge, EV, projected cover cushion,
-convergence and a presentation-only strength label. No model input, simulation,
-qualification rule, candidate side or production result is modified.
+Step 1 keeps the existing Top-5 pick identity/model snapshot cards. Step 2 adds
+verified current-season completed team-vs-team history inside those same cards:
+prior meetings, selected-team W/L record, recent margins, home/away H2H splits,
+average scoring margin, average total, most recent meetings and sample
+reliability. The history layer is descriptive only and never feeds the spread
+projection, simulation, qualification, candidate side, grading or ranking.
 """
 from __future__ import annotations
 
@@ -21,11 +22,12 @@ import pandas as pd
 import streamlit as st
 
 import wnba_spread_hub_v161 as prior
+import wnba_schedule_v24 as schedule24
 import wnba_schedule_v25 as schedule25
 
 base = prior.base  # verified V1.6 production renderer
 
-MODEL_VERSION = "WNBA SPREAD V1.6.2 • TOP-5 CARD STEP 1"
+MODEL_VERSION = "WNBA SPREAD V1.6.2 • TOP-5 CARD STEP 2"
 
 # Capture the genuine V1.6 Step-7 renderer once. The wrapper is installed only at
 # the presentation seam so its returned detail/final/meta payloads are unchanged.
@@ -136,7 +138,274 @@ def _presentation_order(final: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _card(row, rank: int) -> str:
+def _score_value(competitor: dict):
+    raw = (competitor or {}).get("score")
+    if isinstance(raw, dict):
+        raw = raw.get("value", raw.get("displayValue"))
+    return _num(raw, np.nan)
+
+
+@st.cache_data(ttl=900, show_spinner=False, max_entries=8)
+def _season_h2h_results(season: int):
+    """One fail-soft ESPN season read used only by the descriptive card layer."""
+    try:
+        payload, request_meta = schedule24._request_json(
+            "ESPN WNBA Spread Step-2 history",
+            schedule24.ESPN_SCOREBOARD,
+            params={"dates": str(int(season)), "limit": 1000},
+            timeout=6,
+            attempts=1,
+        )
+    except Exception as exc:
+        return pd.DataFrame(), {"state": "UNAVAILABLE", "error": str(exc)[:160]}
+
+    if payload is None:
+        return pd.DataFrame(), {
+            "state": "UNAVAILABLE",
+            "error": str((request_meta or {}).get("error") or "history provider unavailable")[:160],
+        }
+
+    rows = []
+    for event in (payload or {}).get("events", []) or []:
+        comps = event.get("competitions") or []
+        if not comps:
+            continue
+        comp = comps[0]
+        status = (event.get("status") or {}).get("type") or {}
+        state = str(status.get("state") or "").lower()
+        completed = bool(status.get("completed")) or state == "post" or "FINAL" in str(
+            status.get("name") or status.get("description") or status.get("detail") or ""
+        ).upper()
+        if not completed:
+            continue
+
+        sides = {}
+        for competitor in comp.get("competitors", []) or []:
+            sides[str(competitor.get("homeAway") or "").lower()] = competitor
+        away_c, home_c = sides.get("away") or {}, sides.get("home") or {}
+        away_t, home_t = away_c.get("team") or {}, home_c.get("team") or {}
+        try:
+            away_id = int(schedule24._safe_team_id(away_t))
+            home_id = int(schedule24._safe_team_id(home_t))
+        except Exception:
+            continue
+        if not schedule24.guarded._is_wnba_team_id(away_id) or not schedule24.guarded._is_wnba_team_id(home_id):
+            continue
+
+        away_score = _score_value(away_c)
+        home_score = _score_value(home_c)
+        if not np.isfinite(away_score) or not np.isfinite(home_score):
+            continue
+
+        raw_dt = event.get("date") or comp.get("date")
+        game_date = schedule24._event_date_et(raw_dt)
+        rows.append({
+            "game_id": str(event.get("id") or ""),
+            "game_date": game_date,
+            "away_team_id": away_id,
+            "away_team": str(away_t.get("displayName") or away_t.get("shortDisplayName") or "Away"),
+            "away_abbr": str(away_t.get("abbreviation") or "AWY"),
+            "away_score": float(away_score),
+            "home_team_id": home_id,
+            "home_team": str(home_t.get("displayName") or home_t.get("shortDisplayName") or "Home"),
+            "home_abbr": str(home_t.get("abbreviation") or "HME"),
+            "home_score": float(home_score),
+        })
+
+    frame = pd.DataFrame(rows)
+    if not frame.empty:
+        frame = frame.drop_duplicates(subset=["game_id"], keep="first").reset_index(drop=True)
+    return frame, {
+        "state": "READY",
+        "source": "ESPN WNBA completed-game scoreboard",
+        "season": int(season),
+        "games": int(len(frame)),
+    }
+
+
+def _record_text(wins: int, losses: int) -> str:
+    total = int(wins) + int(losses)
+    return "—" if total <= 0 else f"{int(wins)}-{int(losses)}"
+
+
+def _history_summary(day_str: str, row) -> dict:
+    """Current-season H2H summary from the selected spread side's perspective."""
+    try:
+        selected_is_home = _is_home(row)
+        selected_id = int(float(row.get("home_team_id") if selected_is_home else row.get("away_team_id")))
+        opponent_id = int(float(row.get("away_team_id") if selected_is_home else row.get("home_team_id")))
+        selected_name = str(row.get("best_side") or (row.get("home_team") if selected_is_home else row.get("away_team")) or "Selected team")
+        opponent_name = str((row.get("away_team") if selected_is_home else row.get("home_team")) or "Opponent")
+        day = pd.to_datetime(day_str).normalize()
+        results, provider = _season_h2h_results(int(day.year))
+    except Exception as exc:
+        return {"state": "UNAVAILABLE", "error": str(exc)[:160]}
+
+    if str((provider or {}).get("state") or "").upper() != "READY":
+        return {"state": "UNAVAILABLE", "error": str((provider or {}).get("error") or "history source unavailable")}
+    if results is None or results.empty:
+        return {"state": "NO_MEETINGS", "season": int(day.year), "games": 0}
+
+    away_id = pd.to_numeric(results.get("away_team_id"), errors="coerce").fillna(0).astype(int)
+    home_id = pd.to_numeric(results.get("home_team_id"), errors="coerce").fillna(0).astype(int)
+    dates = pd.to_datetime(results.get("game_date"), errors="coerce")
+    pair = ((away_id.eq(selected_id) & home_id.eq(opponent_id)) | (away_id.eq(opponent_id) & home_id.eq(selected_id)))
+    prior_mask = dates < day
+    meetings = results.loc[pair & prior_mask].copy()
+    if meetings.empty:
+        return {"state": "NO_MEETINGS", "season": int(day.year), "games": 0}
+
+    meetings["_date"] = pd.to_datetime(meetings.get("game_date"), errors="coerce")
+    meetings = meetings.sort_values("_date", ascending=False).drop_duplicates("game_id", keep="first")
+
+    enriched = []
+    for _, game in meetings.iterrows():
+        selected_home = int(_num(game.get("home_team_id"), 0)) == selected_id
+        if selected_home:
+            selected_score = _num(game.get("home_score"), np.nan)
+            opponent_score = _num(game.get("away_score"), np.nan)
+            selected_abbr = str(game.get("home_abbr") or selected_name[:3]).upper()
+            opponent_abbr = str(game.get("away_abbr") or opponent_name[:3]).upper()
+        else:
+            selected_score = _num(game.get("away_score"), np.nan)
+            opponent_score = _num(game.get("home_score"), np.nan)
+            selected_abbr = str(game.get("away_abbr") or selected_name[:3]).upper()
+            opponent_abbr = str(game.get("home_abbr") or opponent_name[:3]).upper()
+        if not np.isfinite(selected_score) or not np.isfinite(opponent_score):
+            continue
+        margin = float(selected_score - opponent_score)
+        enriched.append({
+            "date": game.get("_date"),
+            "selected_home": bool(selected_home),
+            "selected_score": float(selected_score),
+            "opponent_score": float(opponent_score),
+            "selected_abbr": selected_abbr,
+            "opponent_abbr": opponent_abbr,
+            "margin": margin,
+            "total": float(selected_score + opponent_score),
+            "win": margin > 0,
+        })
+
+    if not enriched:
+        return {"state": "NO_MEETINGS", "season": int(day.year), "games": 0}
+
+    games = pd.DataFrame(enriched).sort_values("date", ascending=False).reset_index(drop=True)
+    gp = int(len(games))
+    wins = int(games["win"].sum())
+    losses = gp - wins
+    home_games = games.loc[games["selected_home"]]
+    away_games = games.loc[~games["selected_home"]]
+    home_w = int(home_games["win"].sum()) if len(home_games) else 0
+    away_w = int(away_games["win"].sum()) if len(away_games) else 0
+    home_l = int(len(home_games) - home_w)
+    away_l = int(len(away_games) - away_w)
+
+    if gp >= 5:
+        reliability, reliability_class = "HIGH", "good"
+    elif gp >= 3:
+        reliability, reliability_class = "MEDIUM", "mid"
+    else:
+        reliability, reliability_class = "LOW", "warn"
+
+    last5 = games.head(5)
+    margins = " • ".join(f"{float(x):+.0f}" for x in last5["margin"].tolist()) or "—"
+    meeting_lines = []
+    for _, game in last5.iterrows():
+        dt = game.get("date")
+        date_text = dt.strftime("%b %d") if pd.notna(dt) else "—"
+        result = "W" if bool(game.get("win")) else "L"
+        meeting_lines.append(
+            f"{date_text} • {game.get('selected_abbr')} {float(game.get('selected_score')):.0f}–"
+            f"{float(game.get('opponent_score')):.0f} {game.get('opponent_abbr')} • "
+            f"{result} {float(game.get('margin')):+.0f}"
+        )
+
+    latest = meeting_lines[0] if meeting_lines else "—"
+    return {
+        "state": "READY",
+        "season": int(day.year),
+        "games": gp,
+        "wins": wins,
+        "losses": losses,
+        "record": _record_text(wins, losses),
+        "home_record": _record_text(home_w, home_l),
+        "away_record": _record_text(away_w, away_l),
+        "avg_margin": float(games["margin"].mean()),
+        "avg_total": float(games["total"].mean()),
+        "recent_margins": margins,
+        "latest": latest,
+        "meeting_lines": meeting_lines,
+        "reliability": reliability,
+        "reliability_class": reliability_class,
+        "scope": f"{int(day.year)} current season",
+        "source": str((provider or {}).get("source") or "ESPN WNBA completed-game scoreboard"),
+    }
+
+
+def _history_block(day_str: str, row) -> str:
+    try:
+        summary = _history_summary(day_str, row)
+    except Exception as exc:
+        summary = {"state": "UNAVAILABLE", "error": str(exc)[:160]}
+
+    state = str(summary.get("state") or "UNAVAILABLE").upper()
+    if state == "UNAVAILABLE":
+        return """
+  <div class="ks-spread162-history">
+    <div class="ks-spread162-hhead"><span>STEP 2 • TEAM VS TEAM HISTORY</span><span class="ks-spread162-rel warn">SOURCE CHECK</span></div>
+    <div class="ks-spread162-hempty">Historical results are temporarily unavailable. Step 1 and the verified Spread model are unchanged.</div>
+    <div class="ks-spread162-hnote">Descriptive layer only • history failure cannot block, alter or rerank the production Spread result.</div>
+  </div>
+"""
+    if state == "NO_MEETINGS":
+        season = escape(str(summary.get("season") or "current"))
+        return f"""
+  <div class="ks-spread162-history">
+    <div class="ks-spread162-hhead"><span>STEP 2 • TEAM VS TEAM HISTORY</span><span class="ks-spread162-rel warn">LOW / NONE</span></div>
+    <div class="ks-spread162-hempty">No verified completed prior meetings found in the {season} current season before this slate date.</div>
+    <div class="ks-spread162-hnote">Descriptive layer only • no history adjustment is applied to projection, 5M Monte Carlo, qualification or ranking.</div>
+  </div>
+"""
+
+    gp = int(summary.get("games") or 0)
+    record = escape(str(summary.get("record") or "—"))
+    home_record = escape(str(summary.get("home_record") or "—"))
+    away_record = escape(str(summary.get("away_record") or "—"))
+    avg_margin = _num(summary.get("avg_margin"), np.nan)
+    avg_total = _num(summary.get("avg_total"), np.nan)
+    margin_text = "—" if not np.isfinite(avg_margin) else f"{avg_margin:+.1f} pts"
+    total_text = "—" if not np.isfinite(avg_total) else f"{avg_total:.1f}"
+    recent_margins = escape(str(summary.get("recent_margins") or "—"))
+    latest = escape(str(summary.get("latest") or "—"))
+    reliability = escape(str(summary.get("reliability") or "LOW"))
+    reliability_class = escape(str(summary.get("reliability_class") or "warn"))
+    scope = escape(str(summary.get("scope") or "current season"))
+    source = escape(str(summary.get("source") or "ESPN WNBA completed-game scoreboard"))
+    meetings = summary.get("meeting_lines") or []
+    meetings_html = "".join(f"<div>{escape(str(text))}</div>" for text in meetings)
+    if not meetings_html:
+        meetings_html = "<div>—</div>"
+
+    return f"""
+  <div class="ks-spread162-history">
+    <div class="ks-spread162-hhead"><span>STEP 2 • TEAM VS TEAM HISTORY</span><span class="ks-spread162-rel {reliability_class}">{reliability} RELIABILITY</span></div>
+    <div class="ks-spread162-hscope">{scope} • {gp} verified completed meeting(s) • selected-team perspective</div>
+    <div class="ks-spread162-hgrid">
+      <div><small>H2H RECORD</small><strong>{record}</strong></div>
+      <div><small>AVG SCORING MARGIN</small><strong>{margin_text}</strong></div>
+      <div><small>HOME H2H</small><strong>{home_record}</strong></div>
+      <div><small>AWAY H2H</small><strong>{away_record}</strong></div>
+      <div><small>AVG GAME TOTAL</small><strong>{total_text}</strong></div>
+      <div><small>RECENT MARGINS</small><strong>{recent_margins}</strong></div>
+      <div class="wide"><small>MOST RECENT MEETING</small><strong>{latest}</strong></div>
+    </div>
+    <div class="ks-spread162-meetings"><small>LAST MEETINGS</small>{meetings_html}</div>
+    <div class="ks-spread162-hnote">Source • {source} • descriptive only • NOT FED INTO projection, 5M Monte Carlo, edge, EV, qualification or card ranking.</div>
+  </div>
+"""
+
+
+def _card(row, rank: int, day_str: str) -> str:
     away = str(row.get("away_team") or "Away")
     home = str(row.get("home_team") or "Home")
     best = str(row.get("best_side") or "Team")
@@ -174,6 +443,7 @@ def _card(row, rank: int) -> str:
     cushion_text = "—" if not np.isfinite(cushion) else f"{cushion:+.1f} pts"
     mean_text = "—" if not np.isfinite(mean_home) else f"{mean_home:+.1f} pts"
     sims_text = f"{sims:,}" if sims else "—"
+    history_html = _history_block(day_str, row)
 
     return f"""
 <div class="ks-spread162-card {('rank1' if rank == 1 else '')}">
@@ -210,6 +480,7 @@ def _card(row, rank: int) -> str:
     <div><small>SIMULATIONS</small><strong>{sims_text}</strong></div>
   </div>
   <div class="ks-spread162-note">CARD STEP 1 • PICK IDENTITY + VERIFIED MODEL SNAPSHOT • existing V1.6.1 side, line, probability, edge, EV, convergence and qualification only. No new spread projection or reranking is fed back into production.</div>
+  {history_html}
 </div>
 """
 
@@ -217,8 +488,8 @@ def _card(row, rank: int) -> str:
 def _render_top5_step1(day_str: str, final: pd.DataFrame, meta: dict) -> None:
     st.markdown("### 🏆 Strongest WNBA Spread Picks — Top-5 Cards")
     st.caption(
-        "CARD STEP 1 • Pick identity + model snapshot. Uses the existing V1.6 one-candidate-per-game final output after the actual 5M pass. "
-        "Up to five are displayed; no fifth play is forced when the slate/model produces fewer candidates."
+        "CARD STEPS 1–2 • Pick identity/model snapshot + team-vs-team history. Uses the existing V1.6 one-candidate-per-game final output after the actual 5M pass. "
+        "History is descriptive only; up to five are displayed and no fifth play is forced when the slate/model produces fewer candidates."
     )
 
     if not isinstance(final, pd.DataFrame) or final.empty:
@@ -241,18 +512,19 @@ def _render_top5_step1(day_str: str, final: pd.DataFrame, meta: dict) -> None:
 .ks-spread162-prob{font-size:2.75rem;font-weight:1000;color:#fff;line-height:1;margin-top:16px}.ks-spread162-probsub{font-size:.55rem;color:#7890a5;font-weight:900;letter-spacing:.035em;margin-top:5px}
 .ks-spread162-badges{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.ks-spread162-badges span{border:1px solid #355873;background:#0b1824;color:#bed4e3;border-radius:999px;padding:6px 8px;font-size:.49rem;font-weight:950;letter-spacing:.035em}.ks-spread162-badges .elite,.ks-spread162-badges .strong,.ks-spread162-badges .pass{border-color:#237a59;background:#0b3327;color:#7df2ba}.ks-spread162-badges .medium{border-color:#826c16;background:#3a3009;color:#ffe17a}.ks-spread162-badges .monitor,.ks-spread162-badges .nop,.ks-spread162-badges .warn{border-color:#7c5832;background:#352516;color:#ffc984}.ks-spread162-badges .blocked{border-color:#7a3941;background:#35171b;color:#ff9aa5}
 .ks-spread162-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ks-spread162-grid div{background:#081522;border:1px solid #284b64;border-radius:11px;padding:9px}.ks-spread162-grid small{display:block;color:#718ba0;font-size:.47rem;font-weight:950;letter-spacing:.04em}.ks-spread162-grid strong{display:block;color:#f6fbff;font-size:.78rem;margin-top:3px}.ks-spread162-note{color:#6f8799;font-size:.54rem;line-height:1.45;margin-top:10px}
-@media(max-width:760px){.ks-spread162-wrap{grid-template-columns:1fr}.ks-spread162-rank b{float:none;display:block;margin-top:3px}.ks-spread162-logo{width:48px;height:48px}.ks-spread162-logo img{max-width:48px;max-height:48px}.ks-spread162-prob{font-size:2.45rem}}
+.ks-spread162-history{background:#091827;border:1px solid #294b64;border-radius:15px;padding:12px;margin-top:14px}.ks-spread162-hhead{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#79d8ff;font-size:.59rem;font-weight:950;letter-spacing:.05em;text-transform:uppercase}.ks-spread162-rel{border-radius:999px;padding:5px 7px;border:1px solid #355873;color:#bed4e3;white-space:nowrap}.ks-spread162-rel.good{border-color:#237a59;background:#0b3327;color:#7df2ba}.ks-spread162-rel.mid{border-color:#826c16;background:#3a3009;color:#ffe17a}.ks-spread162-rel.warn{border-color:#7c5832;background:#352516;color:#ffc984}.ks-spread162-hscope{color:#8198aa;font-size:.54rem;margin:7px 0 9px}.ks-spread162-hgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.ks-spread162-hgrid div{background:#07131f;border:1px solid #24445c;border-radius:10px;padding:8px}.ks-spread162-hgrid .wide{grid-column:1/-1}.ks-spread162-hgrid small,.ks-spread162-meetings small{display:block;color:#718ba0;font-size:.45rem;font-weight:950;letter-spacing:.04em}.ks-spread162-hgrid strong{display:block;color:#f6fbff;font-size:.72rem;margin-top:3px}.ks-spread162-meetings{margin-top:8px;background:#07131f;border:1px solid #24445c;border-radius:10px;padding:8px}.ks-spread162-meetings div{color:#d7e5ef;font-size:.61rem;line-height:1.5;margin-top:3px}.ks-spread162-hnote{color:#6f8799;font-size:.50rem;line-height:1.45;margin-top:8px}.ks-spread162-hempty{color:#c8d7e3;font-size:.66rem;line-height:1.5;margin-top:9px}
+@media(max-width:760px){.ks-spread162-wrap{grid-template-columns:1fr}.ks-spread162-rank b{float:none;display:block;margin-top:3px}.ks-spread162-logo{width:48px;height:48px}.ks-spread162-logo img{max-width:48px;max-height:48px}.ks-spread162-prob{font-size:2.45rem}.ks-spread162-hhead{align-items:flex-start}.ks-spread162-rel{font-size:.48rem}}
 </style>
         """,
         unsafe_allow_html=True,
     )
-    cards = "".join(_card(row, i + 1) for i, (_, row) in enumerate(ranked.iterrows()))
+    cards = "".join(_card(row, i + 1, day_str) for i, (_, row) in enumerate(ranked.iterrows()))
     st.markdown(f'<div class="ks-spread162-wrap">{cards}</div>', unsafe_allow_html=True)
 
     qualified = int(ranked.get("grade", pd.Series(dtype=object)).astype(str).str.upper().eq("QUALIFIED").sum())
     st.caption(
         f"Current card set • {len(ranked)} one-per-game candidate(s) • {qualified} QUALIFIED • "
-        "visual ordering uses existing production grade → MC cover → no-vig edge → EV only. Production payload and per-game selection are unchanged."
+        "visual ordering uses existing production grade → MC cover → no-vig edge → EV only. Team history is read-only descriptive context; production payload and per-game selection are unchanged."
     )
 
 
@@ -272,7 +544,7 @@ def _install() -> None:
 def render_wnba_spread_hub(section_header=None, status_info=None, team_logo=None, h=None):
     _install()
     st.caption(
-        "🎨 Spread V1.6.2 • Top-5 Card Step 1 ACTIVE • team logos + exact spread + 5M probability + pick strength • production model/ranking unchanged"
+        "🎨 Spread V1.6.2 • Top-5 Card Steps 1–2 ACTIVE • team logos + exact spread + 5M probability + pick strength + descriptive team history • production model/ranking unchanged"
     )
     return prior.render_wnba_spread_hub(section_header, status_info, team_logo, h)
 
