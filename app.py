@@ -1,14 +1,15 @@
-"""Kyre Sports AI — WNBA Live Games Step-6.5 Q4 robustness wrapper.
+"""Kyre Sports AI — WNBA Live Games Step-6.5.1 selection-aware Q4 wrapper.
 
 Preserves the frozen Step-1 application checkpoint exactly and changes only the
 isolated WNBA Live Games implementation target:
 
-    Live Games -> wnba_live_hub_v65
+    Live Games -> wnba_live_hub_v651
 
 The verified production Steps 1-6, Step-6.1 replay harness, rejected Step-6.2
 score/clock calibration, Step-6.3 PBP fidelity audit and Step-6.4 PBP-rich
-calibration lab remain intact. V6.5 adds a Q4-only robustness + fresh-holdout
-promotion audit without changing production Step 6 or halftime behavior.
+calibration lab remain intact. V6.5.1 adds Q4-only retrospective robustness but
+explicitly blocks promotion from historical games already exposed during model
+selection. Production Step 6 and halftime behavior remain unchanged.
 
 All pre-existing WNBA, MLB and NFL routes remain owned by the preserved app.
 """
@@ -39,14 +40,14 @@ def _load_step1_app() -> str:
 
 source = _load_step1_app()
 anchor = "    import wnba_live_hub_v1 as wnba_live_v1"
-replacement = "    import wnba_live_hub_v65 as wnba_live_v1"
+replacement = "    import wnba_live_hub_v651 as wnba_live_v1"
 if anchor not in source:
     raise RuntimeError("Frozen WNBA Live Step-1 route import not found.")
 source = source.replace(anchor, replacement, 1)
 
-compile(source, "<kyre_wnba_live_step65_q4_robustness_preflight>", "exec")
+compile(source, "<kyre_wnba_live_step651_q4_selection_aware_preflight>", "exec")
 exec(
-    compile(source, "kyre_wnba_live_games_v65_q4_robustness.py", "exec"),
+    compile(source, "kyre_wnba_live_games_v651_q4_selection_aware.py", "exec"),
     globals(),
     globals(),
 )
