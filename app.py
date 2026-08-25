@@ -1,15 +1,14 @@
-"""Kyre Sports AI — WNBA Live Games Step-6.2 calibration routing wrapper.
+"""Kyre Sports AI — WNBA Live Games Step-6.3 replay-fidelity routing wrapper.
 
 Preserves the frozen Step-1 application checkpoint exactly and changes only the
 isolated WNBA Live Games implementation target:
 
-    Live Games -> wnba_live_hub_v62
+    Live Games -> wnba_live_hub_v63
 
-The verified production Steps 1-6 and Step-6.1 single-game replay remain
-unchanged inside V6.2. V6.2 appends an opt-in multi-game walk-forward calibration
-lab when no Step-1 verified game is live. Calibration candidates are trained on
-older completed replay games, validated on newer held-out games, and are never
-automatically promoted into production.
+The verified production Steps 1-6, Step-6.1 replay harness, and Step-6.2 rejected
+calibration audit remain intact. V6.3 appends a checkpoint-only ESPN play-by-play
+fidelity audit so historical replay can better match the partial data available
+to a real live Step-6 state before any further calibration is attempted.
 
 All pre-existing WNBA, MLB and NFL routes remain owned by the preserved app.
 """
@@ -40,14 +39,14 @@ def _load_step1_app() -> str:
 
 source = _load_step1_app()
 anchor = "    import wnba_live_hub_v1 as wnba_live_v1"
-replacement = "    import wnba_live_hub_v62 as wnba_live_v1"
+replacement = "    import wnba_live_hub_v63 as wnba_live_v1"
 if anchor not in source:
     raise RuntimeError("Frozen WNBA Live Step-1 route import not found.")
 source = source.replace(anchor, replacement, 1)
 
-compile(source, "<kyre_wnba_live_step62_calibration_preflight>", "exec")
+compile(source, "<kyre_wnba_live_step63_replay_fidelity_preflight>", "exec")
 exec(
-    compile(source, "kyre_wnba_live_games_v62_calibration.py", "exec"),
+    compile(source, "kyre_wnba_live_games_v63_replay_fidelity.py", "exec"),
     globals(),
     globals(),
 )
