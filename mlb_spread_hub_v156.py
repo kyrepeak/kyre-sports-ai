@@ -1,25 +1,31 @@
-"""MLB Spread / Run Line V15.6.3 — Step-1 H2H official-date repair.
+"""MLB Spread / Run Line V15.6.4 — Step-1 H2H regular-season repair.
 
 This wrapper preserves the exact V15.6 Step-1 card from commit
 8f44cf7da6e678be1371452f7db2de985c27c656, keeps the direct MLB-logo transport,
-and keeps the V15.6.2 season-by-season newest-first H2H intake.
+keeps the season-by-season newest-first H2H intake, and removes Spring Training
+(and any other non-regular-season game types) from the history sample.
 
-Root cause fixed here
----------------------
-MLB StatsAPI ``gameDate`` is a UTC timestamp. Taking its first 10 characters can
-move a night game to the following calendar date (for example a May 31 game in
-San Diego can be represented as June 1 UTC). The H2H card must display MLB's
-official schedule date, not the UTC calendar date.
+Root cause
+----------
+The repaired season-by-season MLB StatsAPI loader correctly found newer games,
+but it accepted every completed game returned for the team pair. MLB schedule
+responses can include Spring Training games (gameType ``S``). Those exhibition
+games were therefore appearing in the Last-5 ledger and were also contaminating
+current-season H2H counts, venue history, recency weighting and the existing V15.2
+history adjustment.
 
 Repair
 ------
-Use the schedule block ``date`` first, then ``officialDate``. ``gameDate`` is
-retained only as a precise sort key so same-day doubleheaders remain ordered.
+Only completed MLB regular-season games (gameType ``R``) are eligible for the
+Spread Scanner H2H sample. Official schedule-date handling remains in place so
+UTC rollover cannot shift a local game to the following calendar date.
 
+Protected behavior
+------------------
 The V15.2 H2H weighting formula, shrinkage, +/-5 pp total cap, core simulation,
 projected score, ranking logic, fair odds and all downstream presentation rules
-remain unchanged. A saved scan is invalidated once because corrected chronological
-ordering can slightly change recency weights.
+remain unchanged. Because the source history is corrected, a fresh scan can
+legitimately produce a different history adjustment/final probability.
 """
 from __future__ import annotations
 
@@ -39,8 +45,8 @@ import spread_history as legacy_history
 _BASE_COMMIT = "8f44cf7da6e678be1371452f7db2de985c27c656"
 _BASE_PATH = "mlb_spread_hub_v156.py"
 _BASE_MODULE_NAME = "_kyre_mlb_spread_v156_frozen_step1"
-MODEL_VERSION = "V15.6.3 • TOP-5 CARD STEP 1 • OFFICIAL H2H DATES"
-_HISTORY_SOURCE_TOKEN = "mlb_spread_h2h_official_dates_v1563"
+MODEL_VERSION = "V15.6.4 • TOP-5 CARD STEP 1 • REGULAR-SEASON H2H"
+_HISTORY_SOURCE_TOKEN = "mlb_spread_h2h_regular_season_v1564"
 
 
 def _load_frozen_v156():
@@ -100,40 +106,20 @@ def _completed_state(game: dict) -> bool:
     return "final" in status or "game over" in status
 
 
-def _official_game_date(block: dict, game: dict):
-    """Return MLB's official local schedule date, never the UTC day by accident."""
-    candidates = (
-        block.get("date"),
-        game.get("officialDate"),
-    )
-    for value in candidates:
-        text = str(value or "")[:10]
-        if not text:
-            continue
-        try:
-            return datetime.fromisoformat(text).date()
-        except Exception:
-            continue
-
-    # Emergency fallback only. gameDate is UTC, so converting its YYYY-MM-DD part
-    # is less desirable than schedule/officialDate but better than dropping a game.
-    text = str(game.get("gameDate") or "")[:10]
-    if text:
-        try:
-            return datetime.fromisoformat(text).date()
-        except Exception:
-            pass
-    return None
-
-
-def _game_sort_key(game: dict) -> tuple:
-    """Newest official date first, with UTC start time resolving same-day games."""
-    return (str(game.get("date") or ""), str(game.get("game_datetime_utc") or ""), int(game.get("game_pk") or 0))
+def _regular_season(game: dict) -> bool:
+    """True only for MLB regular-season games; excludes Spring Training/exhibitions."""
+    return str(game.get("gameType") or "").upper() == "R"
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def _fresh_pair_games(team_a: int, team_b: int, years_back: int = 4) -> list[dict]:
-    """Fetch recent completed meetings for one normalized MLB team pair."""
+    """Fetch recent completed regular-season meetings for one MLB team pair.
+
+    Requests are segmented by season because a single multi-season StatsAPI range
+    can yield an incomplete/stale schedule slice. The official schedule date is
+    used for display/history bucketing; UTC ``gameDate`` is retained only as a
+    same-day ordering tiebreaker.
+    """
     a, b = sorted((int(team_a), int(team_b)))
     today = datetime.now(ET).date()
     latest_allowed = today - timedelta(days=1)
@@ -160,8 +146,11 @@ def _fresh_pair_games(team_a: int, team_b: int, years_back: int = 4) -> list[dic
         response.raise_for_status()
 
         for block in response.json().get("dates", []):
+            schedule_date_text = str(block.get("date") or "")[:10]
             for game in block.get("games", []):
                 if not _completed_state(game):
+                    continue
+                if not _regular_season(game):
                     continue
 
                 teams = game.get("teams") or {}
@@ -177,8 +166,14 @@ def _fresh_pair_games(team_a: int, team_b: int, years_back: int = 4) -> list[dic
                 if away_score is None or home_score is None:
                     continue
 
-                game_date = _official_game_date(block, game)
-                if game_date is None or game_date > latest_allowed:
+                # ``block['date']`` is MLB's official schedule date and avoids a
+                # local night game rolling into the next UTC date via gameDate.
+                date_text = schedule_date_text or str(game.get("gameDate") or "")[:10]
+                try:
+                    game_date = datetime.fromisoformat(date_text).date()
+                except Exception:
+                    continue
+                if game_date > latest_allowed:
                     continue
 
                 game_pk = int(game.get("gamePk") or 0)
@@ -189,7 +184,8 @@ def _fresh_pair_games(team_a: int, team_b: int, years_back: int = 4) -> list[dic
                     "game_pk": game_pk,
                     "date": game_date.isoformat(),
                     "year": game_date.year,
-                    "game_datetime_utc": str(game.get("gameDate") or ""),
+                    "game_type": str(game.get("gameType") or "").upper(),
+                    "game_datetime": str(game.get("gameDate") or ""),
                     "away_team_id": away_id,
                     "home_team_id": home_id,
                     "away_runs": float(away_score),
@@ -200,12 +196,16 @@ def _fresh_pair_games(team_a: int, team_b: int, years_back: int = 4) -> list[dic
         if len(found) >= 10:
             break
 
-    games = sorted(found.values(), key=_game_sort_key, reverse=True)
+    games = sorted(
+        found.values(),
+        key=lambda x: (x["date"], x.get("game_datetime") or ""),
+        reverse=True,
+    )
     return games[:10]
 
 
 def _fresh_h2h_last10(team_id, opponent_id, max_games=10, years_back=4):
-    """Completed H2H games before today, always from team_id's perspective."""
+    """Completed regular-season H2H games, always from team_id's perspective."""
     team_id = int(team_id)
     opponent_id = int(opponent_id)
     raw_games = _fresh_pair_games(team_id, opponent_id, int(years_back))
@@ -231,7 +231,6 @@ def _fresh_h2h_last10(team_id, opponent_id, max_games=10, years_back=4):
                 "game_pk": game["game_pk"],
                 "date": game["date"],
                 "year": game["year"],
-                "game_datetime_utc": game.get("game_datetime_utc", ""),
                 "team_runs": team_runs,
                 "opponent_runs": opp_runs,
                 "margin": team_runs - opp_runs,
@@ -241,12 +240,12 @@ def _fresh_h2h_last10(team_id, opponent_id, max_games=10, years_back=4):
             }
         )
 
-    out.sort(key=_game_sort_key, reverse=True)
+    out.sort(key=lambda x: x["date"], reverse=True)
     return out[: int(max_games)]
 
 
 def _invalidate_legacy_saved_scan_once():
-    """Prevent pre-official-date H2H payloads from surviving this repair."""
+    """Prevent pre-filter H2H payloads from surviving the regular-season repair."""
     if st.session_state.get("_mlb_spread_history_source") == _HISTORY_SOURCE_TOKEN:
         return False
 
@@ -263,7 +262,7 @@ def _invalidate_legacy_saved_scan_once():
 
 
 def render_spread_hub(games_df, section_header, status_info, team_logo, h):
-    """Render frozen V15.6 with direct logos + official local H2H dates."""
+    """Render frozen V15.6 with direct logos + regular-season-only H2H intake."""
     refreshed = _invalidate_legacy_saved_scan_once()
 
     def robust_team_logo(team_id):
@@ -275,20 +274,22 @@ def render_spread_hub(games_df, section_header, status_info, team_logo, h):
         except Exception:
             return ""
 
-    # V15.2 imported history_adjustment from spread_history, but that function
-    # resolves h2h_last10 from spread_history's module globals at call time.
-    # Replacing only this data-source function preserves the verified formula.
+    # V15.2 imported ``history_adjustment`` from spread_history, but that function
+    # resolves ``h2h_last10`` from spread_history's module globals at call time.
+    # Replacing only this data-source function preserves all verified weighting,
+    # shrinkage and cap formulas.
     original_h2h = legacy_history.h2h_last10
     legacy_history.h2h_last10 = _fresh_h2h_last10
     try:
         st.caption(
-            "🛠️ MLB Spread V15.6.3 • H2H official dates repaired: MLB schedule date "
-            "is used for display/recency; UTC gameDate is only a same-day sort key • model formula unchanged."
+            "🛠️ MLB Spread V15.6.4 • H2H source repaired: official MLB regular-season "
+            "games only, newest-first, with local schedule dates • model formula unchanged."
         )
         if refreshed:
             st.info(
-                "H2H calendar dates were repaired, so the saved spread scan was cleared. "
-                "Run the V15.2 spread scan once to rebuild the H2H chronology and probability."
+                "Spring Training/non-regular-season games were removed from H2H history, "
+                "so the saved pre-repair spread scan was cleared. Run the V15.2 spread "
+                "scan once to rebuild probabilities from regular-season H2H only."
             )
 
         return base.render_spread_hub(
