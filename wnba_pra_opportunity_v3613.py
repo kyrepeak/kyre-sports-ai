@@ -323,10 +323,11 @@ def _render_opportunity(picks):
 
 def install():
     """Patch only the V2.8 Top-5 presentation hook; safe across Streamlit reruns."""
-    if getattr(v28, _PATCH_SENTINEL, False):
+    current = v28._render_top5
+    if getattr(current, "_pra_precision_step1_wrapper", False):
         return
 
-    original = v28._render_top5
+    original = current
 
     def _wrapped_top5(picks):
         original(picks)
@@ -338,6 +339,7 @@ def install():
                 "The frozen PRA Top-5 and all model outputs are unaffected."
             )
 
+    setattr(_wrapped_top5, "_pra_precision_step1_wrapper", True)
     v28._render_top5 = _wrapped_top5
     setattr(v28, _PATCH_SENTINEL, True)
     setattr(v28, "_PRA_PRECISION_STEP1_ORIGINAL_RENDER_TOP5", original)
