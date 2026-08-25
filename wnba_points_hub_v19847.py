@@ -1,13 +1,13 @@
 """WNBA Points V1.9.8.4.7 — hot-reload-safe compatibility shim.
 
 The frozen shell still imports this historical filename. This shim now forwards
-that boundary to V1.9.8.4.29.
+that boundary to V1.9.8.4.30.
 
-V1.9.8.4.29 preserves the completed Top-5 Step 2–12 presentation stack from
-V1.9.8.4.28 and adds only a pre-market readiness semantics repair: verified
-current rosters no longer display as failed simply because SportsGameOdds has not
-yet posted an exact player Points pair, and 0/0 history/position checks are shown
-as PENDING rather than false PASS/FAIL states.
+V1.9.8.4.30 preserves the V1.9.8.4.29 market-aware readiness repair and the
+completed Top-5 Step 2–12 evidence stack, then repairs presentation order:
+Top-5 Player-vs-Team History cards render first and the one real protected 5M
+control renders immediately below them. The inherited later production-widget
+call is suppressed so Streamlit never receives a duplicate button key.
 
 The actual 5M readiness contract remains fail-closed. Exact sportsbook pairs,
 matched projections, empirical history, positional verification, sanity checks
@@ -20,11 +20,11 @@ untouched.
 """
 from __future__ import annotations
 
-import wnba_points_hub_v198429 as presentation
+import wnba_points_hub_v198430 as presentation
 
 base = presentation.base
 
-MODEL_VERSION = "WNBA POINTS V1.9.8.4.29 • PRE-MARKET READINESS REPAIR VIA HOT-RELOAD-SAFE ROUTE"
+MODEL_VERSION = "WNBA POINTS V1.9.8.4.30 • CARDS FIRST + SINGLE 5M CONTROL VIA HOT-RELOAD-SAFE ROUTE"
 PRA_FROZEN_BRANCH = base.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = base.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
