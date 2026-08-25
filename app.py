@@ -1,32 +1,22 @@
-"""Kyre Sports AI — WNBA Live Games V6.6 full-width route repair.
+"""Kyre Sports AI — WNBA Live Games V6.6.1 memory-safe full-width route.
 
 This wrapper preserves the frozen Step-1 application checkpoint and the V6.6
-structural Q4 calibration audit, but fixes the actual iPad layout bug at the
-routing layer.
+structural Q4 audit, while fixing two route-level problems:
 
-Root cause
-----------
-The historical Live Games route was invoked *inside* the WNBA market selectbox
-wrapper. On tablet/desktop that selectbox is rendered inside the right navigation
-column, so the entire Live Games page inherited that column's width. CSS on the
-main Streamlit block could not escape the parent column, which is why iPad still
-looked like a phone with a large empty area on the left.
+1) iPad/tablet width: Live Games must render after leaving the WNBA navigation
+   columns so the page owns the full Streamlit main canvas.
+2) memory growth: the previous route deleted and re-imported every ``wnba_live_*``
+   module on each rerun. Those modules contain Streamlit caches; repeatedly
+   recreating them can leave duplicate cache/function objects alive and drive the
+   Community Cloud process over its memory limit. V6.6.1 uses normal Python
+   module reuse instead.
 
-Repair
-------
-- When Live Games is already selected, render a small dedicated WNBA navigation
-  row first, exit the column context, and only then render ``wnba_live_hub_v66``.
-- On the first selection of Live Games from the frozen shell, rerun immediately
-  instead of rendering from inside the selectbox callback. The next run enters
-  the dedicated full-width route.
-- All non-Live WNBA/MLB/NFL routes remain owned by the exact frozen Step-1 app.
-- Production Step 6 remains unchanged. V6.6 remains an audit only.
+No production model math is changed here.
 """
 from __future__ import annotations
 
-import importlib
+import gc
 import subprocess
-import sys
 import urllib.request
 
 import streamlit as st
@@ -74,33 +64,84 @@ def _real_streamlit_method(name: str, fallback):
 _REAL_SELECTBOX = _real_streamlit_method("selectbox", st.selectbox)
 
 
-def _clear_live_modules():
-    for name in list(sys.modules):
-        if name.startswith("wnba_live_"):
-            sys.modules.pop(name, None)
-    importlib.invalidate_caches()
+def _purge_rejected_calibration_state_once():
+    """Drop obsolete heavy audit payloads from this browser session once.
+
+    The rejected Step 6.4/6.5 payloads can contain nested replay/projection data.
+    They are no longer rendered by V6.6, so retaining them wastes RAM. This does
+    not touch production outputs, the verified Step-6 model, or navigation state.
+    """
+    marker = "__wnba_live_v661_memory_migration_done"
+    if st.session_state.get(marker):
+        return
+
+    prefixes = (
+        "wnba_step64_pbp_calibration_",
+        "wnba_step65_",
+        "wnba_step651_",
+        "wnba_step66_q4_shrinkage_",
+    )
+    for key in list(st.session_state.keys()):
+        text = str(key)
+        if text.startswith(prefixes):
+            st.session_state.pop(key, None)
+
+    st.session_state[marker] = True
+    gc.collect()
 
 
-def _render_live_full_width():
-    """Render WNBA Live Games only after leaving all Streamlit nav columns."""
-    # Restore the native selectbox in case a previous hot reload left a wrapper.
-    st.selectbox = _REAL_SELECTBOX
-
+def _live_route_css():
     st.markdown(
         r'''<style>
+        /* The Live Games page is now a direct child of the main Streamlit block.
+           These rules make tablet/desktop use the real viewport instead of the
+           narrow default content column. */
         @media (min-width: 768px) {
-          [data-testid="stMainBlockContainer"], .stMainBlockContainer, main .block-container {
+          [data-testid="stAppViewContainer"],
+          [data-testid="stMain"],
+          section.main {
+            width: 100% !important;
+            max-width: none !important;
+          }
+          [data-testid="stMainBlockContainer"],
+          .stMainBlockContainer,
+          main .block-container,
+          section.main > div.block-container {
             width: calc(100vw - 32px) !important;
-            max-width: 1280px !important;
+            max-width: 1320px !important;
             margin-left: auto !important;
             margin-right: auto !important;
             padding-left: 16px !important;
             padding-right: 16px !important;
           }
+          [data-testid="stMainBlockContainer"] > div,
+          .stMainBlockContainer > div,
+          main .block-container > div {
+            width: 100% !important;
+            max-width: none !important;
+          }
+        }
+        @media (min-width: 768px) and (max-width: 1100px) {
+          [data-testid="stMainBlockContainer"],
+          .stMainBlockContainer,
+          main .block-container,
+          section.main > div.block-container {
+            width: calc(100vw - 24px) !important;
+            max-width: none !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+          }
         }
         </style>''',
         unsafe_allow_html=True,
     )
+
+
+def _render_live_full_width():
+    """Render WNBA Live Games outside every navigation column."""
+    st.selectbox = _REAL_SELECTBOX
+    _purge_rejected_calibration_state_once()
+    _live_route_css()
 
     nav1, nav2 = st.columns([1, 1], gap="small")
     with nav1:
@@ -116,13 +157,12 @@ def _render_live_full_width():
             key="ks_wnba_market_touch",
         )
 
-    # IMPORTANT: route only after both `with st.columns(...)` blocks have ended.
-    # This is the layout bug fix; the page is now a child of the main block, not
-    # of the right navigation column.
+    # Both column contexts are closed before the Live Games page is rendered.
     if str(selected_sport).upper() != "WNBA" or str(selected_market) != "Live Games":
         st.rerun()
 
-    _clear_live_modules()
+    # IMPORTANT: normal import reuse only. Do NOT delete/re-import the live module
+    # tree on every Streamlit rerun; that was the memory-growth bug.
     import wnba_live_hub_v66 as live_v66
 
     live_v66.render_wnba_live_hub(None, None, None, None)
@@ -130,7 +170,7 @@ def _render_live_full_width():
 
 
 # If Live Games was selected on the previous widget event, take the dedicated
-# full-width path before replaying the frozen application shell.
+# full-width route before replaying the frozen application shell.
 if (
     str(st.session_state.get("ks_sport_touch") or "").upper() == "WNBA"
     and str(st.session_state.get("ks_wnba_market_touch") or "") == "Live Games"
@@ -138,10 +178,10 @@ if (
     _render_live_full_width()
 
 
-# Otherwise replay the exact frozen Step-1 app. We make two narrow source edits:
-# (1) point its isolated Live route at V6.6, and
-# (2) when Live Games is first selected, rerun instead of rendering inside the
-#     selectbox's right-column context.
+# Otherwise replay the exact frozen Step-1 app. The only source edits are:
+# (1) point the isolated Live route at V6.6, and
+# (2) when Live Games is first selected, rerun so the next pass can render it
+#     outside the navigation column.
 source = _load_step1_app()
 
 import_anchor = "    import wnba_live_hub_v1 as wnba_live_v1"
@@ -156,9 +196,9 @@ if route_anchor not in source:
     raise RuntimeError("Frozen WNBA Live in-column route hook not found.")
 source = source.replace(route_anchor, route_replacement, 1)
 
-compile(source, "<kyre_wnba_live_v66_full_width_preflight>", "exec")
+compile(source, "<kyre_wnba_live_v661_full_width_preflight>", "exec")
 exec(
-    compile(source, "kyre_wnba_live_games_v66_full_width_route.py", "exec"),
+    compile(source, "kyre_wnba_live_games_v661_memory_safe_route.py", "exec"),
     globals(),
     globals(),
 )
