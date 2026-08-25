@@ -1,25 +1,30 @@
 """WNBA Points V1.9.8.4.7 — hot-reload-safe compatibility shim.
 
-The live frozen shell still imports this historical filename. This shim now
-forwards that boundary to V1.9.8.4.28, preserving the Top-5 Step 2–12 card stack.
+The frozen shell still imports this historical filename. This shim now forwards
+that boundary to V1.9.8.4.29.
 
-V1.9.8.4.28 keeps every prior Points repair through Step 11 and adds Step 12 — a
-final evidence synthesis that summarizes weighted agreement + verified coverage
-across Steps 2–11. It does not create a second probability model and cannot
-change the protected projection, Monte Carlo probability, calibration, sportsbook
-line, pick side or Top-5 ordering.
+V1.9.8.4.29 preserves the completed Top-5 Step 2–12 presentation stack from
+V1.9.8.4.28 and adds only a pre-market readiness semantics repair: verified
+current rosters no longer display as failed simply because SportsGameOdds has not
+yet posted an exact player Points pair, and 0/0 history/position checks are shown
+as PENDING rather than false PASS/FAIL states.
 
-No Points formulas, Monte Carlo distribution, calibration, sportsbook prop
-transport, readiness, sanity quarantine or Top-5 ranking are changed. PRA,
-Rebounds, Assists, MLB and NFL continue using their existing modules.
+The actual 5M readiness contract remains fail-closed. Exact sportsbook pairs,
+matched projections, empirical history, positional verification, sanity checks
+and all inherited production gates are still required before simulation.
+
+No Points projection formulas, minutes, matchup factors, Monte Carlo distribution,
+calibration, sportsbook transport, no-vig math, sanity quarantine, ranking or
+Top-5 ordering are changed. PRA, Rebounds, Assists, Spread, MLB and NFL remain
+untouched.
 """
 from __future__ import annotations
 
-import wnba_points_hub_v198428 as presentation
+import wnba_points_hub_v198429 as presentation
 
 base = presentation.base
 
-MODEL_VERSION = "WNBA POINTS V1.9.8.4.28 • STEP 12 FINAL EVIDENCE SYNTHESIS VIA HOT-RELOAD-SAFE ROUTE"
+MODEL_VERSION = "WNBA POINTS V1.9.8.4.29 • PRE-MARKET READINESS REPAIR VIA HOT-RELOAD-SAFE ROUTE"
 PRA_FROZEN_BRANCH = base.PRA_FROZEN_BRANCH
 PRA_FROZEN_COMMIT = base.PRA_FROZEN_COMMIT
 MLB_FROZEN_BRANCH = base.MLB_FROZEN_BRANCH
