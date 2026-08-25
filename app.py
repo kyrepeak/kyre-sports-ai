@@ -12,11 +12,12 @@ Contracts
 - WNBA Live Games is not rendered, routed, or offered in navigation.
 - No ``wnba_live_*`` module is imported by this entrypoint.
 - Existing WNBA Points, Rebounds, Assists, Rebounds + Assists, PRA, Spread,
-  Moneyline, Game Total and Daily Picks remain exactly as they were at the
-  frozen pre-live checkpoint.
+  Moneyline, Game Total and Daily Picks retain their frozen production behavior.
 - Existing MLB and NFL routes remain exactly as they were at that checkpoint.
+- A tiny PRA presentation-route refresh is allowed so additive current PRA card
+  layers can hot-reload without restarting the whole Streamlit worker.
 - No production projection, probability, Monte Carlo, calibration, ranking,
-  qualification, sportsbook, or presentation logic is changed here.
+  qualification, or sportsbook logic is changed here.
 - Historical ``wnba_live_*`` source files may remain in the repository as an
   archive, but they are unreachable from the app and consume no runtime memory
   after a clean process restart.
@@ -24,6 +25,7 @@ Contracts
 from __future__ import annotations
 
 import gc
+import importlib
 import subprocess
 import sys
 import urllib.request
@@ -70,6 +72,28 @@ def _purge_live_runtime_state() -> None:
     gc.collect()
 
 
+def _refresh_pra_presentation_route() -> None:
+    """Reload only the current PRA presentation route on a hot Streamlit worker.
+
+    The outer app intentionally executes a frozen pre-live source file. That
+    frozen source imports ``wnba_pra_hub_v3612`` by its historical module name.
+    Streamlit keeps Python modules resident across reruns, so changing the current
+    v3612 compatibility wrapper on disk is not enough: an already-imported old
+    module object can keep routing to the previous presentation indefinitely.
+
+    Clear only the four tiny route/presentation modules that are allowed to move.
+    The heavy PRA production/model stack remains resident and untouched.
+    """
+    for name in (
+        "wnba_pra_hub_v321",          # historical alias installed by frozen app
+        "wnba_pra_hub_v3612",         # frozen import name / current compat route
+        "wnba_pra_hub_v3613",         # additive precision presentation hub
+        "wnba_pra_opportunity_v3613", # additive card-only Step 1 helper
+    ):
+        sys.modules.pop(name, None)
+    importlib.invalidate_caches()
+
+
 def _load_frozen_pre_live_app() -> str:
     try:
         return subprocess.check_output(
@@ -83,6 +107,7 @@ def _load_frozen_pre_live_app() -> str:
 
 
 _purge_live_runtime_state()
+_refresh_pra_presentation_route()
 source = _load_frozen_pre_live_app()
 
 # Guard against accidentally pointing this wrapper at a checkpoint that already
