@@ -39,12 +39,16 @@ PRECISION_STEP1_CONTRACT = {
 
 
 def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h=None):
+    # V3.6.11 intentionally reinstalls its fail-safe renderer at the start of
+    # every Streamlit render. Run that exact baseline setup first, then attach
+    # the read-only Step-1 wrapper so the baseline cannot overwrite our hook.
+    frozen.step5_failsafe.begin_render()
     opportunity.install()
     st.caption(
         "🔬 PRA UI V3.6.13 • Precision Step 1 Opportunity Decomposition ACTIVE • "
         "V3.6.12 production checkpoint preserved • model/market/MC/ranking unchanged"
     )
-    return frozen.render_wnba_pra_hub(section_header, status_info, team_logo, h)
+    return frozen.base.render_wnba_pra_hub(section_header, status_info, team_logo, h)
 
 
 def __getattr__(name):
