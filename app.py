@@ -1,9 +1,9 @@
-"""Kyre Sports AI — WNBA Live Games Step-4.3 routing wrapper.
+"""Kyre Sports AI — WNBA Live Games Step-5 routing wrapper.
 
 Preserves the frozen Step-1 application checkpoint exactly and changes only the
 isolated WNBA Live Games implementation target:
 
-    Live Games -> wnba_live_hub_v43
+    Live Games -> wnba_live_hub_v5
 
 All pre-existing WNBA, MLB and NFL routes remain owned by the preserved app.
 """
@@ -34,14 +34,14 @@ def _load_step1_app() -> str:
 
 source = _load_step1_app()
 anchor = "    import wnba_live_hub_v1 as wnba_live_v1"
-replacement = "    import wnba_live_hub_v43 as wnba_live_v1"
+replacement = "    import wnba_live_hub_v5 as wnba_live_v1"
 if anchor not in source:
     raise RuntimeError("Frozen WNBA Live Step-1 route import not found.")
 source = source.replace(anchor, replacement, 1)
 
-compile(source, "<kyre_wnba_live_step43_preflight>", "exec")
+compile(source, "<kyre_wnba_live_step5_preflight>", "exec")
 exec(
-    compile(source, "kyre_wnba_live_games_v43_step4_rolling_history.py", "exec"),
+    compile(source, "kyre_wnba_live_games_v5_context.py", "exec"),
     globals(),
     globals(),
 )
