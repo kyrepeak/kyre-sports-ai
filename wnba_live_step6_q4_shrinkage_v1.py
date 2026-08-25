@@ -23,6 +23,14 @@ search space:
   consistency check only and are not promotion evidence.
 - no sportsbook, no final-box leakage, no future plays, no historical injury
   backfill, and no production auto-promotion.
+
+Memory contract
+---------------
+The Step-6.4 feature builder returns nested replay/projection/history objects that
+are useful for paired 5M replay confirmation, but Step 6.6 never uses them. This
+module now strips those unused nested objects immediately and retains only the
+scalar fields required by the two-parameter audit. Calibration math is unchanged;
+only the in-memory representation is smaller.
 """
 from __future__ import annotations
 
@@ -55,6 +63,26 @@ RIDGE = 18.0
 ALPHA_BOUNDS = (0.0, 1.0)
 BETA_BOUNDS = (-0.20, 0.10)
 
+# Step 6.6 only needs these scalar fields. Keeping nested state/projection/truth/
+# reconstruction objects here would duplicate large replay payloads in both
+# Streamlit caches and session state without changing a single fitted value.
+ROW_FIELDS = (
+    "event_id",
+    "game_date",
+    "away_team",
+    "home_team",
+    "current_away",
+    "current_home",
+    "current_home_margin",
+    "base_remaining_total",
+    "base_remaining_diff_home",
+    "actual_remaining_diff_home",
+    "actual_final_away",
+    "actual_final_home",
+    "actual_home_win",
+    "base_margin_variance",
+)
+
 
 def _num(value: Any, default=None):
     try:
@@ -75,7 +103,11 @@ def _date_key(value: Any) -> str:
         return str(value or "")
 
 
-@st.cache_data(ttl=1800, show_spinner=False, max_entries=4)
+def _compact_row(row: dict) -> dict:
+    return {key: row.get(key) for key in ROW_FIELDS}
+
+
+@st.cache_data(ttl=1800, show_spinner=False, max_entries=1)
 def q4_dataset(day_str: str) -> dict:
     games, discovery = preview.recent_completed_previews(
         day_str,
@@ -88,7 +120,7 @@ def q4_dataset(day_str: str) -> dict:
     for game in games:
         row, error = q4._single_q4_row(game)
         if row is not None:
-            rows.append(row)
+            rows.append(_compact_row(row))
         elif error:
             errors.append(error)
     rows = sorted(rows, key=lambda r: str(r.get("game_date") or ""))
@@ -448,5 +480,11 @@ def clear_cache():
         pass
     try:
         preview.recent_completed_previews.clear()
+    except Exception:
+        pass
+    # Step 6.6 calls the shared Q4 replay transport; release its historical PBP,
+    # replay and preview caches too after an audit. This changes no model values.
+    try:
+        q4.clear_cache()
     except Exception:
         pass
