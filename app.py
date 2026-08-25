@@ -1,17 +1,18 @@
-"""Kyre Sports AI — WNBA Live Games Step-6.5.1 selection-aware Q4 wrapper.
+"""Kyre Sports AI — WNBA Live Games Step-6.6 structural Q4 repair wrapper.
 
 Preserves the frozen Step-1 application checkpoint exactly and changes only the
 isolated WNBA Live Games implementation target:
 
-    Live Games -> wnba_live_hub_v651
+    Live Games -> wnba_live_hub_v66
 
 The verified production Steps 1-6, Step-6.1 replay harness, rejected Step-6.2
-score/clock calibration, Step-6.3 PBP fidelity audit and Step-6.4 PBP-rich
-calibration lab remain intact. V6.5.1 adds Q4-only retrospective robustness but
-explicitly blocks promotion from historical games already exposed during model
-selection. Production Step 6 and halftime behavior remain unchanged.
+score/clock calibration, Step-6.3 PBP fidelity audit, Step-6.4 PBP-rich audit and
+Step-6.5.1 selection-aware diagnosis remain intact in the repository. V6.6 stops
+re-rendering the failed calibration family and adds one structurally simplified
+Q4 residual-shrink audit plus route-scoped iPad/tablet width repair.
 
-All pre-existing WNBA, MLB and NFL routes remain owned by the preserved app.
+Production Step 6 and halftime behavior remain unchanged. All pre-existing
+WNBA, MLB and NFL routes remain owned by the preserved app.
 """
 from __future__ import annotations
 
@@ -40,14 +41,14 @@ def _load_step1_app() -> str:
 
 source = _load_step1_app()
 anchor = "    import wnba_live_hub_v1 as wnba_live_v1"
-replacement = "    import wnba_live_hub_v651 as wnba_live_v1"
+replacement = "    import wnba_live_hub_v66 as wnba_live_v1"
 if anchor not in source:
     raise RuntimeError("Frozen WNBA Live Step-1 route import not found.")
 source = source.replace(anchor, replacement, 1)
 
-compile(source, "<kyre_wnba_live_step651_q4_selection_aware_preflight>", "exec")
+compile(source, "<kyre_wnba_live_step66_structural_q4_preflight>", "exec")
 exec(
-    compile(source, "kyre_wnba_live_games_v651_q4_selection_aware.py", "exec"),
+    compile(source, "kyre_wnba_live_games_v66_structural_q4.py", "exec"),
     globals(),
     globals(),
 )
