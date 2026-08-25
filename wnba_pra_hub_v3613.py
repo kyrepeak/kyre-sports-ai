@@ -38,12 +38,31 @@ PRECISION_STEP1_CONTRACT = {
 }
 
 
+def _bind_precision_top5_aliases():
+    """Mirror the active wrapper onto every alias used by the Step-5 stack."""
+    fs = frozen.step5_failsafe
+    wrapped = fs.v28._render_top5
+
+    # The Step-5 presentation stack carries the same renderer through several
+    # module aliases. V3.6.11 resets all of them together, so the precision hook
+    # must be mirrored to the same aliases after it is installed.
+    fs.cards._render_top5 = wrapped
+    fs.cards.v28._render_top5 = wrapped
+    fs.defense_layer.cards._render_top5 = wrapped
+    fs.defense_layer.cards.v28._render_top5 = wrapped
+
+    # Keep the direct V2.8 module binding explicit as the source of truth.
+    fs.v28._render_top5 = wrapped
+
+
 def render_wnba_pra_hub(section_header=None, status_info=None, team_logo=None, h=None):
     # V3.6.11 intentionally reinstalls its fail-safe renderer at the start of
     # every Streamlit render. Run that exact baseline setup first, then attach
     # the read-only Step-1 wrapper so the baseline cannot overwrite our hook.
     frozen.step5_failsafe.begin_render()
     opportunity.install()
+    _bind_precision_top5_aliases()
+
     st.caption(
         "🔬 PRA UI V3.6.13 • Precision Step 1 Opportunity Decomposition ACTIVE • "
         "V3.6.12 production checkpoint preserved • model/market/MC/ranking unchanged"
