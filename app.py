@@ -1,14 +1,14 @@
-"""Kyre Sports AI — WNBA Live Games Step-6 projection routing wrapper.
+"""Kyre Sports AI — WNBA Live Games Step-6.1 replay-validation routing wrapper.
 
 Preserves the frozen Step-1 application checkpoint exactly and changes only the
 isolated WNBA Live Games implementation target:
 
-    Live Games -> wnba_live_hub_v6
+    Live Games -> wnba_live_hub_v61
 
-The verified Steps 1-5, completed-game validation preview and Step-5 audit remain
-inside the V6 wrapper unchanged. V6 appends the first state-conditional live
-projection + 5,000,000-draw Monte Carlo layer. Sportsbook price/no-vig stays out
-of the statistical projection; edge/EV/qualification/picks do not exist in V6.
+The verified production Steps 1-6 remain unchanged inside V6. V6.1 only appends
+an opt-in completed-game quarter-boundary replay harness when no Step-1 verified
+game is live. Replay truth, historical markets and completed full-game boxscore
+fields are not fed into the production projection path.
 
 All pre-existing WNBA, MLB and NFL routes remain owned by the preserved app.
 """
@@ -39,14 +39,14 @@ def _load_step1_app() -> str:
 
 source = _load_step1_app()
 anchor = "    import wnba_live_hub_v1 as wnba_live_v1"
-replacement = "    import wnba_live_hub_v6 as wnba_live_v1"
+replacement = "    import wnba_live_hub_v61 as wnba_live_v1"
 if anchor not in source:
     raise RuntimeError("Frozen WNBA Live Step-1 route import not found.")
 source = source.replace(anchor, replacement, 1)
 
-compile(source, "<kyre_wnba_live_step6_projection_preflight>", "exec")
+compile(source, "<kyre_wnba_live_step61_replay_preflight>", "exec")
 exec(
-    compile(source, "kyre_wnba_live_games_v6_projection.py", "exec"),
+    compile(source, "kyre_wnba_live_games_v61_replay.py", "exec"),
     globals(),
     globals(),
 )
