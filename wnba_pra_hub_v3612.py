@@ -2,8 +2,9 @@
 
 The preserved application imports this historical module name. It now forwards
 that presentation boundary to V3.6.13, which adds only PRA Precision Step 1
-Opportunity Decomposition beneath the existing V2.8 Minutes + Role Top-5.
-Production PRA math and every downstream betting/model output remain frozen.
+Opportunity Decomposition inside each existing V2.8 Minutes + Role Top-5 player
+card. Production PRA math and every downstream betting/model output remain
+frozen.
 """
 from __future__ import annotations
 
