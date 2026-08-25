@@ -1,10 +1,10 @@
-"""WNBA Live Games V4.1 — Step 4 summary-backed history repair.
+"""WNBA Live Games V4.2 — Step 4 official-date history repair.
 
 Preserves the existing V4 renderer and Steps 1-3 exactly. This wrapper swaps only
-Step 4's historical transport to wnba_live_second_half_v12. If the repaired
+Step 4's historical transport to wnba_live_second_half_v13. If the repaired
 transport still returns zero usable games, a compact diagnostic panel is shown so
-we can see whether team schedules, summaries, or quarter parsing failed instead
-of silently displaying THIN / 0 GP forever.
+we can see whether official dates, ESPN daily scoreboards, summaries, or quarter
+parsing failed instead of silently displaying THIN / 0 GP forever.
 """
 from __future__ import annotations
 
@@ -16,10 +16,10 @@ import streamlit as st
 
 import wnba_live_hub_v4 as v4
 import wnba_live_hub_v2 as v2
-import wnba_live_second_half_v12 as hist12
+import wnba_live_second_half_v13 as hist12
 
 ET = ZoneInfo("America/New_York")
-MODEL_VERSION = "WNBA LIVE GAMES V4.1 • STEP 4 SUMMARY-BACKFILLED HISTORY"
+MODEL_VERSION = "WNBA LIVE GAMES V4.2 • STEP 4 OFFICIAL-DATE HISTORY"
 
 
 def _diag_text(meta: dict) -> str:
@@ -31,6 +31,16 @@ def _diag_text(meta: dict) -> str:
         f"SUMMARY ERRORS {int(meta.get('summary_errors') or 0)}",
         f"USABLE GAMES {int(meta.get('games') or 0)}",
     ]
+    discovery = meta.get("team_discovery") or []
+    if discovery:
+        details = []
+        for item in discovery:
+            details.append(
+                f"TEAM {item.get('team_id','?')}: official {int(item.get('official_dates') or 0)} / "
+                f"query {int(item.get('query_dates') or 0)} / events {int(item.get('events') or 0)} / "
+                f"scoreboard ok {int(item.get('scoreboard_ok') or 0)} / errors {int(item.get('scoreboard_errors') or 0)}"
+            )
+        pieces.append("DISCOVERY " + " | ".join(details))
     rejected = meta.get("rejected") or {}
     if rejected:
         pieces.append("REJECTED " + escape(str(rejected)))
