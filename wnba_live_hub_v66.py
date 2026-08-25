@@ -10,6 +10,7 @@ Production Step 6 remains V1. Halftime remains V1. No candidate is promoted.
 from __future__ import annotations
 
 from datetime import datetime
+import gc
 from html import escape
 from zoneinfo import ZoneInfo
 
@@ -26,23 +27,23 @@ MODEL_VERSION = "WNBA LIVE GAMES V6.6 • Q4 STRUCTURAL REPAIR"
 
 def _ipad_css():
     st.markdown(r'''<style>
-/* Route-scoped tablet/desktop repair. The Live Games page was inheriting a
-   narrow phone-like main block on iPad. Force a real tablet canvas while
-   leaving phones compact. */
+/* Route-scoped tablet/desktop repair. The Live Games route itself now renders
+   outside the navigation columns; these rules only control responsive sizing. */
 @media (min-width: 768px) {
   [data-testid="stMainBlockContainer"],
   .stMainBlockContainer,
   main .block-container {
-    width: calc(100vw - 48px) !important;
-    max-width: 1180px !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 1320px !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    padding-left: 24px !important;
-    padding-right: 24px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
   [data-testid="stMainBlockContainer"] > div,
   .stMainBlockContainer > div,
   main .block-container > div {
+    width:100% !important;
     max-width: none !important;
   }
   .kwl66-grid {grid-template-columns: repeat(4,minmax(0,1fr)) !important;}
@@ -50,14 +51,14 @@ def _ipad_css():
   .kwl64-grid {grid-template-columns: repeat(2,minmax(0,1fr)) !important;}
   .kwl64-block,.kwl66-card,.kwl66-hero,.kwl66-note {width:100% !important;max-width:none !important;}
 }
-@media (min-width:768px) and (max-width:1024px) {
+@media (min-width:768px) and (max-width:1100px) {
   [data-testid="stMainBlockContainer"],
   .stMainBlockContainer,
   main .block-container {
-    width: calc(100vw - 32px) !important;
+    width: calc(100vw - 24px) !important;
     max-width: none !important;
-    padding-left: 16px !important;
-    padding-right: 16px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
   }
   .kwl66-grid {grid-template-columns: repeat(2,minmax(0,1fr)) !important;}
 }
@@ -118,6 +119,43 @@ def _contract_html(contract: dict, title: str, retrospective=False) -> str:
     return f'<div class="kwl66-note {cls}"><b>{escape(title)} • {escape(str(contract.get("status") or ("PASS" if ok else "HOLD")))}</b><ul>{items}</ul></div>'
 
 
+def _compact_audit(audit: dict) -> dict:
+    """Keep only presentation/decision fields in session state.
+
+    The raw audit dataset is useful while calculating folds, but the UI never
+    needs its 56 per-game rows after the metrics are computed. Removing them
+    prevents Streamlit from serializing and retaining a second copy of the
+    historical replay dataset in session state.
+    """
+    dataset = dict((audit or {}).get("dataset") or {})
+    dataset.pop("rows", None)
+    return {
+        "model_version": (audit or {}).get("model_version"),
+        "ready": bool((audit or {}).get("ready")),
+        "error": (audit or {}).get("error", ""),
+        "dataset": dataset,
+        "design": (audit or {}).get("design") or {},
+        "folds": (audit or {}).get("folds") or [],
+        "robustness": (audit or {}).get("robustness") or {},
+        "tail": (audit or {}).get("tail") or {},
+        "final_params": (audit or {}).get("final_params") or {},
+        "shadow_freeze_eligible": bool((audit or {}).get("shadow_freeze_eligible")),
+        "tail_consistent": bool((audit or {}).get("tail_consistent")),
+        "sportsbook_used": bool((audit or {}).get("sportsbook_used")),
+        "production_changed": bool((audit or {}).get("production_changed")),
+        "prospective_games_used": int((audit or {}).get("prospective_games_used") or 0),
+        "created_at": (audit or {}).get("created_at"),
+    }
+
+
+def _release_audit_memory():
+    try:
+        shrink.clear_cache()
+    except Exception:
+        pass
+    gc.collect()
+
+
 def render_wnba_live_hub(section_header=None, status_info=None, team_logo=None, h=None):
     # Preserve the verified live foundation and PBP fidelity audit, but stop
     # re-rendering the failed 6.4/6.5 model-search panels on every visit.
@@ -147,12 +185,15 @@ def render_wnba_live_hub(section_header=None, status_info=None, team_logo=None, 
         clear = st.button("♻️ Clear Step 6.6 cache", use_container_width=True, key="wnba_step66_clear")
 
     if clear:
-        shrink.clear_cache()
         st.session_state.pop(key, None)
+        _release_audit_memory()
         st.rerun()
     if run:
         with st.spinner("Building the 56-game Q4 PBP-rich audit and running four chronological folds…"):
-            st.session_state[key] = shrink.robustness_audit(day_str)
+            raw_audit = shrink.robustness_audit(day_str)
+            st.session_state[key] = _compact_audit(raw_audit)
+            del raw_audit
+            _release_audit_memory()
         st.rerun()
 
     audit = st.session_state.get(key)
