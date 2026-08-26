@@ -335,13 +335,13 @@ class Step5WTests(unittest.TestCase):
             self.assertIn("step_5w", status["production_runtime"])
 
     def test_53_worker_blocked_gate_never_calls_step5q_cycle(self):
-        stop = MagicMock(); stop.wait.return_value = True
+        stop = MagicMock(); stop.is_set.return_value = False; stop.wait.return_value = True
         with patch.object(api5w, "_worker_stop", stop), patch.object(api5w, "require_staging_activation_ready", side_effect=s.WNBAStagingActivationNotReadyError("blocked")), patch.object(api5w.step5q, "_run_one_background_cycle") as cycle:
             api5w._worker_loop(30)
             cycle.assert_not_called()
 
     def test_54_worker_green_gate_calls_step5q_cycle(self):
-        stop = MagicMock(); stop.wait.return_value = True
+        stop = MagicMock(); stop.is_set.return_value = False; stop.wait.return_value = True
         with patch.object(api5w, "_worker_stop", stop), patch.object(api5w, "require_staging_activation_ready", return_value={"live_cycle_allowed": True}), patch.object(api5w.step5q, "_run_one_background_cycle", return_value={"outcome": "published"}) as cycle:
             api5w._worker_loop(30)
             cycle.assert_called_once()
