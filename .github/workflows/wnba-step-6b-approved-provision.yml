@@ -1,114 +1,16 @@
-name: WNBA Step 6B approved paid Render staging provision
+name: WNBA Step 6B legacy Render provision (retired)
 
 on:
-  push:
-    branches:
-      - api-foundation-v1
-    paths:
-      - ".github/workflows/wnba-step-6b-approved-provision.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  provision-approved-render-staging:
+  legacy-retired:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    environment: wnba-render-staging
-
-    env:
-      WNBA_APPROVED_RELEASE_ID: wnba-step6a-e2f5783c66b0
-      WNBA_APPROVED_REVISION: e2f5783c66b03c495e6ec037825ecf0a4b32e9f0
-      WNBA_APPROVED_IMAGE_REF: ghcr.io/kyrepeak/kyre-sports-api@sha256:825e4c54830200c7aef7be26869b0731c786f2e086cac74a46b1de508766a735
-      WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
-      WNBA_RENDER_ALLOW_PAID_PROVISIONING: "true"
-
     steps:
-      - name: Checkout provisioning code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install API dependencies
-        run: python -m pip install -r sports_api/requirements.txt
-
-      - name: Verify explicit paid-deployment approval contract
-        shell: bash
+      - name: Step 6B retired
         run: |
-          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = "false"
-          test "$WNBA_RENDER_ALLOW_PAID_PROVISIONING" = "true"
-          test "$WNBA_APPROVED_REVISION" = "e2f5783c66b03c495e6ec037825ecf0a4b32e9f0"
-          test "$WNBA_APPROVED_IMAGE_REF" = "ghcr.io/kyrepeak/kyre-sports-api@sha256:825e4c54830200c7aef7be26869b0731c786f2e086cac74a46b1de508766a735"
-
-      - name: Verify required operator secrets are present
-        shell: bash
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          GHCR_RENDER_USERNAME: ${{ secrets.GHCR_RENDER_USERNAME }}
-          GHCR_RENDER_TOKEN: ${{ secrets.GHCR_RENDER_TOKEN }}
-          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
-        run: |
-          missing=0
-          for name in RENDER_API_KEY GHCR_RENDER_USERNAME GHCR_RENDER_TOKEN SPORTSGAMEODDS_API_KEY; do
-            if [ -z "${!name}" ]; then
-              echo "Missing required environment secret: $name" >&2
-              missing=1
-            fi
-          done
-          test "$missing" -eq 0
-
-      - name: Provision and verify real paid Render staging service
-        env:
-          PYTHONPATH: .
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
-          GHCR_RENDER_USERNAME: ${{ secrets.GHCR_RENDER_USERNAME }}
-          GHCR_RENDER_TOKEN: ${{ secrets.GHCR_RENDER_TOKEN }}
-          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
-        run: |
-          mkdir -p .wnba-step6b
-          python sports_api/tools/wnba_render_provision.py \
-            --confirm-paid-provisioning \
-            --release-id "$WNBA_APPROVED_RELEASE_ID" \
-            --revision "$WNBA_APPROVED_REVISION" \
-            --image-ref "$WNBA_APPROVED_IMAGE_REF" \
-            --deploy-timeout-seconds 420 \
-            --poll-seconds 3 \
-            | tee .wnba-step6b/render-provisioning.json
-
-      - name: Assert sanitized provisioning result stayed fail-closed
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          data = json.loads(Path('.wnba-step6b/render-provisioning.json').read_text())
-          safety = data.get('safety') or {}
-          if safety.get('production_runtime_enabled') is True:
-              raise SystemExit('production runtime unexpectedly enabled')
-          if safety.get('sportsbook_called') is True:
-              raise SystemExit('sportsbook unexpectedly called')
-          if safety.get('monte_carlo_run') is True:
-              raise SystemExit('Monte Carlo unexpectedly ran')
-          print(json.dumps({
-              'provisioned': data.get('provisioned'),
-              'service_id': data.get('service_id'),
-              'service_url': data.get('service_url'),
-              'deploy_id': data.get('deploy_id'),
-              'production_runtime_enabled': safety.get('production_runtime_enabled'),
-              'sportsbook_called': safety.get('sportsbook_called'),
-              'monte_carlo_run': safety.get('monte_carlo_run'),
-          }, sort_keys=True))
-          PY
-
-      - name: Upload sanitized Step 6B provisioning evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: wnba-step6b-render-provision-${{ github.run_id }}
-          path: .wnba-step6b/
-          if-no-files-found: error
-          include-hidden-files: true
-          retention-days: 30
+          echo "Step 6B is retired because it required the expired SportsGameOdds dependency."
+          echo "Use the Step 6C Kyre-owned market deployment path instead."
