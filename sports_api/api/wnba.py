@@ -31,6 +31,13 @@ from sports_api.wnba_schedule import (
     get_today_schedule_dataset,
     verify_daily_slate_dataset,
 )
+from sports_api.wnba_season_stats import (
+    ALLOWED_PER_MODES,
+    WNBASeasonStatsUpstreamError,
+    get_player_rolling_stats_dataset,
+    get_player_season_stats_dataset,
+    get_team_season_stats_dataset,
+)
 
 router = APIRouter(prefix="/api/v1/wnba", tags=["wnba"])
 
@@ -53,6 +60,12 @@ def _history_value_error(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=status_code, detail=message)
 
 
+def _season_stats_value_error(exc: ValueError) -> HTTPException:
+    message = str(exc)
+    status_code = 400 if "player_id must be a positive integer" in message else 422
+    return HTTPException(status_code=status_code, detail=message)
+
+
 def _not_found_error(exc: WNBAEntityNotFoundError) -> HTTPException:
     return HTTPException(status_code=404, detail=str(exc))
 
@@ -70,6 +83,10 @@ def _schedule_upstream_error(exc: WNBAScheduleUpstreamError) -> HTTPException:
 
 
 def _history_upstream_error(exc: WNBAHistoryUpstreamError) -> HTTPException:
+    return HTTPException(status_code=502, detail=str(exc))
+
+
+def _season_stats_upstream_error(exc: WNBASeasonStatsUpstreamError) -> HTTPException:
     return HTTPException(status_code=502, detail=str(exc))
 
 
@@ -194,6 +211,86 @@ def verify_slate(
         raise _schedule_upstream_error(exc) from exc
 
 
+@router.get("/stats/players")
+def get_player_season_stats(
+    season: int = Query(
+        default=CURRENT_SUPPORTED_SEASON,
+        description="WNBA season. Step 4E currently supports the verified 2026 season.",
+    ),
+    season_type: str = Query(
+        default="Regular Season",
+        description=(
+            "WNBA season type. Allowed values: "
+            + ", ".join(ALLOWED_SEASON_TYPES)
+        ),
+    ),
+    last_n_games: int = Query(
+        default=0,
+        description="0 = season-to-date; otherwise official LastNGames window (1-100).",
+    ),
+    per_mode: str = Query(
+        default="PerGame",
+        description="Output mode. Allowed values: " + ", ".join(ALLOWED_PER_MODES),
+    ),
+    team_key: str | None = Query(
+        default=None,
+        description="Optional stable Step-4A team key used as a post-fetch filter.",
+    ),
+):
+    try:
+        return get_player_season_stats_dataset(
+            season,
+            season_type=season_type,
+            last_n_games=last_n_games,
+            per_mode=per_mode,
+            team_key=team_key,
+        )
+    except ValueError as exc:
+        raise _season_stats_value_error(exc) from exc
+    except WNBASeasonStatsUpstreamError as exc:
+        raise _season_stats_upstream_error(exc) from exc
+
+
+@router.get("/stats/teams")
+def get_team_season_stats(
+    season: int = Query(
+        default=CURRENT_SUPPORTED_SEASON,
+        description="WNBA season. Step 4E currently supports the verified 2026 season.",
+    ),
+    season_type: str = Query(
+        default="Regular Season",
+        description=(
+            "WNBA season type. Allowed values: "
+            + ", ".join(ALLOWED_SEASON_TYPES)
+        ),
+    ),
+    last_n_games: int = Query(
+        default=0,
+        description="0 = season-to-date; otherwise official LastNGames window (1-100).",
+    ),
+    per_mode: str = Query(
+        default="PerGame",
+        description="Output mode. Allowed values: " + ", ".join(ALLOWED_PER_MODES),
+    ),
+    team_key: str | None = Query(
+        default=None,
+        description="Optional stable Step-4A team key used as a post-fetch filter.",
+    ),
+):
+    try:
+        return get_team_season_stats_dataset(
+            season,
+            season_type=season_type,
+            last_n_games=last_n_games,
+            per_mode=per_mode,
+            team_key=team_key,
+        )
+    except ValueError as exc:
+        raise _season_stats_value_error(exc) from exc
+    except WNBASeasonStatsUpstreamError as exc:
+        raise _season_stats_upstream_error(exc) from exc
+
+
 @router.get("/players")
 def get_players(
     season: int = Query(
@@ -217,6 +314,40 @@ def get_players(
         raise _unsupported_season_error(exc) from exc
     except WNBAStatsUpstreamError as exc:
         raise _upstream_error(exc) from exc
+
+
+@router.get("/players/{player_id}/rolling-stats")
+def get_player_rolling_stats(
+    player_id: int,
+    season: int = Query(
+        default=CURRENT_SUPPORTED_SEASON,
+        description="WNBA season. Step 4E currently supports the verified 2026 season.",
+    ),
+    season_type: str = Query(
+        default="Regular Season",
+        description=(
+            "WNBA season type. Allowed values: "
+            + ", ".join(ALLOWED_SEASON_TYPES)
+        ),
+    ),
+    windows: str = Query(
+        default="5,10",
+        description="Comma-separated rolling windows from 1 through 50; defaults to 5,10.",
+    ),
+):
+    try:
+        return get_player_rolling_stats_dataset(
+            player_id,
+            season,
+            season_type=season_type,
+            windows=windows,
+        )
+    except ValueError as exc:
+        raise _season_stats_value_error(exc) from exc
+    except WNBASeasonStatsUpstreamError as exc:
+        raise _season_stats_upstream_error(exc) from exc
+    except WNBAHistoryUpstreamError as exc:
+        raise _history_upstream_error(exc) from exc
 
 
 @router.get("/players/{player_id}/game-log")
