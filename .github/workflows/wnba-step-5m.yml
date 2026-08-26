@@ -1,0 +1,86 @@
+name: WNBA Step 5M deterministic tests
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - "sports_api/wnba_prop_line_feed_adapter.py"
+      - "sports_api/api/wnba_prop_line_feed_adapter.py"
+      - "sports_api/wnba_daily_slate_top_five.py"
+      - "sports_api/wnba_multi_sportsbook_market_consensus.py"
+      - "sports_api/wnba_player_prop_top_five_board.py"
+      - "sports_api/database/wnba_pregame_prediction_store.py"
+      - "sports_api/wnba_historical_backtest_calibration.py"
+      - "sports_api/main.py"
+      - "sports_api/tests/test_wnba_prop_line_feed_adapter.py"
+      - ".github/workflows/wnba-step-5m.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "sports_api/wnba_prop_line_feed_adapter.py"
+      - "sports_api/api/wnba_prop_line_feed_adapter.py"
+      - "sports_api/wnba_daily_slate_top_five.py"
+      - "sports_api/wnba_multi_sportsbook_market_consensus.py"
+      - "sports_api/wnba_player_prop_top_five_board.py"
+      - "sports_api/database/wnba_pregame_prediction_store.py"
+      - "sports_api/wnba_historical_backtest_calibration.py"
+      - "sports_api/main.py"
+      - "sports_api/tests/test_wnba_prop_line_feed_adapter.py"
+      - ".github/workflows/wnba-step-5m.yml"
+
+jobs:
+  step5m:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sports_api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 5M modules
+        run: |
+          python -m py_compile sports_api/wnba_prop_line_feed_adapter.py
+          python -m py_compile sports_api/api/wnba_prop_line_feed_adapter.py
+          python -m py_compile sports_api/main.py
+
+      - name: Run Step 5H regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_multi_sportsbook_market_consensus.py
+
+      - name: Run Step 5I regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_historical_backtest_calibration.py
+
+      - name: Run Step 5J regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_pregame_prediction_store.py
+
+      - name: Run Step 5K regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_player_prop_top_five_board.py
+
+      - name: Run Step 5L regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_daily_slate_top_five.py
+
+      - name: Run Step 5M deterministic harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_prop_line_feed_adapter.py
