@@ -106,6 +106,67 @@ python -m sports_api.tools.wnba_live_smoke https://your-api-host.example.com --e
 
 The Step 5S smoke runner issues **GET requests only**. It intentionally excludes `POST /api/v1/wnba/rankings/player-props/current/refresh`, so smoke testing does not intentionally trigger sportsbook collection or Monte Carlo work.
 
+## WNBA immutable releases + rollback — Step 5T
+
+Step 5T adds an immutable release manifest and a two-phase activation/rollback contract around frozen Steps 5R and 5S. It does not change any projection or sportsbook logic.
+
+New runtime endpoints:
+
+- `GET /api/v1/wnba/runtime/release` — current immutable release identity, storage fingerprint, activation state, and rollback readiness
+- `GET /api/v1/wnba/runtime/activation-plan` — ordered fail-closed activation procedure
+- `GET /api/v1/wnba/runtime/rollback-plan` — ordered rollback procedure that preserves the persistent volume
+
+Every normal production release should record:
+
+```text
+WNBA_RELEASE_ID
+WNBA_RELEASE_CHANNEL=production
+WNBA_DEPLOYMENT_REVISION=<full 40-character Git SHA>
+WNBA_DEPLOYMENT_IMAGE_REF=<image-name>@sha256:<64-hex digest>
+WNBA_PREVIOUS_DEPLOYMENT_REVISION=<previous full Git SHA>
+WNBA_PREVIOUS_DEPLOYMENT_IMAGE_REF=<previous immutable image digest>
+```
+
+For a first-ever deployment, explicitly set `WNBA_RELEASE_INITIAL_DEPLOYMENT=true`; the emergency fallback is then to disable the runtime while preserving the persistent volume because there is no prior image yet.
+
+The release sequence is deliberately two phase:
+
+```text
+immutable image deployed
+→ WNBA_PRODUCTION_RUNTIME_ENABLED=false
+→ persistent volume mounted
+→ Step 5S read-only smoke passes
+→ Step 5T release identity matches expected Git SHA + image digest
+→ enable frozen Step 5R runtime switch
+→ runtime health must return 200
+→ active read-only smoke passes
+→ current board publication appears
+→ restart once
+→ exact persistent storage identity is reverified
+```
+
+Remote release verification is also GET-only:
+
+```bash
+python -m sports_api.tools.wnba_release_verify \
+  https://your-api-host.example.com \
+  --revision <full-git-sha> \
+  --image-ref registry.example.com/kyre-sports-api@sha256:<digest> \
+  --release-id <release-id>
+```
+
+Rollback always disables scheduler writes first. It then keeps the same persistent volume and, for non-initial releases, redeploys the previously recorded immutable image. Step 5T never deletes SQLite files and never performs backward schema migration as part of rollback.
+
+The Docker image also records OCI `revision` and `version` labels when built with:
+
+```bash
+docker build \
+  --build-arg WNBA_RELEASE_REVISION=<full-git-sha> \
+  --build-arg WNBA_RELEASE_ID=<release-id> \
+  -f sports_api/Dockerfile \
+  -t kyre-sports-api .
+```
+
 Use `sports_api/production.env.example` as the deployment template. Real provider credentials and HMAC secrets belong in the deployment secret manager, never in Git.
 
 ## Architecture
