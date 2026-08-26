@@ -51,6 +51,7 @@ from sports_api.api.wnba_player_prop_top_five_board import router as wnba_player
 from sports_api.api.wnba_pregame_prediction_store import router as wnba_pregame_prediction_store_router
 from sports_api.api.wnba_projection_input_snapshot import router as wnba_projection_input_snapshot_router
 from sports_api.api.wnba_projection_scenarios import router as wnba_projection_scenarios_router
+from sports_api.api.wnba_prop_feed_collector import router as wnba_prop_feed_collector_router
 from sports_api.api.wnba_prop_line_feed_adapter import router as wnba_prop_line_feed_adapter_router
 from sports_api.api.wnba_prop_threshold_probability import router as wnba_prop_threshold_probability_router
 from sports_api.api.wnba_rotation_context import router as wnba_rotation_context_router
@@ -118,6 +119,7 @@ app.include_router(wnba_player_prop_top_five_board_router)
 app.include_router(wnba_pregame_prediction_store_router)
 app.include_router(wnba_projection_input_snapshot_router)
 app.include_router(wnba_projection_scenarios_router)
+app.include_router(wnba_prop_feed_collector_router)
 app.include_router(wnba_prop_line_feed_adapter_router)
 app.include_router(wnba_prop_threshold_probability_router)
 app.include_router(wnba_rotation_context_router)
