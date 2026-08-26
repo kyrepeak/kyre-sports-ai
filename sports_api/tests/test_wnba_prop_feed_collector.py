@@ -1,5 +1,6 @@
 import copy
 import json
+from pathlib import Path
 import unittest
 
 import httpx
@@ -7,7 +8,6 @@ from fastapi import HTTPException
 
 import sports_api.api.wnba_prop_feed_collector as api
 import sports_api.collectors.wnba_prop_feed_collector as m
-from sports_api.main import app as fastapi_app
 
 
 def provider(**overrides):
@@ -533,14 +533,21 @@ class Step5NTests(unittest.TestCase):
         self.assertEqual(ctx.exception.status_code, 502)
 
     def test_84_main_registers_all_step_5n_routes(self):
-        paths = {getattr(route, "path", None) for route in fastapi_app.routes}
         expected = {
             "/api/v1/wnba/markets/player-props/providers",
             "/api/v1/wnba/markets/player-props/collect",
             "/api/v1/wnba/markets/player-props/collect/line-board",
             "/api/v1/wnba/rankings/player-props/collect/daily-top-five",
         }
-        self.assertTrue(expected.issubset(paths))
+        router_paths = {getattr(route, "path", None) for route in api.router.routes}
+        self.assertTrue(expected.issubset(router_paths))
+
+        main_source = (Path(__file__).resolve().parents[1] / "main.py").read_text(encoding="utf-8")
+        self.assertIn(
+            "from sports_api.api.wnba_prop_feed_collector import router as wnba_prop_feed_collector_router",
+            main_source,
+        )
+        self.assertIn("app.include_router(wnba_prop_feed_collector_router)", main_source)
 
 
 if __name__ == "__main__":
