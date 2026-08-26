@@ -1,4 +1,4 @@
-# WNBA Step 5U Render staging Blueprint TEMPLATE.
+# WNBA Step 5U + 5V Render staging Blueprint TEMPLATE.
 # This file is intentionally NOT named render.yaml and will not auto-sync.
 # Replace every __TOKEN__ before using it in Render.
 # A persistent disk requires a compatible paid Render web-service plan.
@@ -12,7 +12,7 @@ services:
     healthCheckPath: /health
     maxShutdownDelaySeconds: 60
     image:
-      # MUST be pinned by digest, not :latest.
+      # MUST be pinned by digest, not :latest. Step 5V requires this exact ref.
       url: __IMMUTABLE_IMAGE_REF__
       # If GHCR is private, configure a Render registry credential and uncomment:
       # creds:
@@ -58,7 +58,24 @@ services:
       - key: WNBA_STAGING_ALLOW_CUSTOM_DOMAIN
         value: "false"
 
-      # Fail-closed. Do not enable during Step 5U first hosted verification.
+      # Step 5V immutable publication handoff. __IMMUTABLE_IMAGE_REF__ must be
+      # the exact GHCR name@sha256 value produced by the publication workflow.
+      - key: WNBA_RELEASE_REGISTRY
+        value: ghcr.io
+      - key: WNBA_RELEASE_IMAGE_REPOSITORY
+        value: ghcr.io/kyrepeak/kyre-sports-api
+      - key: WNBA_RELEASE_PUBLISHED_IMAGE_REF
+        value: __IMMUTABLE_IMAGE_REF__
+      - key: WNBA_RELEASE_PUBLICATION_VERIFIED
+        value: "true"
+      - key: WNBA_RELEASE_PUBLISHER
+        value: github-actions
+      - key: WNBA_RELEASE_SOURCE_REPOSITORY
+        value: kyrepeak/kyre-sports-ai
+      - key: WNBA_RELEASE_HANDOFF_FORMAT
+        value: render-staging-v1
+
+      # Fail-closed. Do not enable during Step 5U/5V first hosted verification.
       - key: WNBA_PRODUCTION_RUNTIME_ENABLED
         value: "false"
 
