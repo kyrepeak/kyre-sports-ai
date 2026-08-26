@@ -30,6 +30,7 @@ from sports_api.api.mlb_team_analytics import router as mlb_team_analytics_route
 from sports_api.api.wnba import router as wnba_router
 from sports_api.api.wnba_advanced import router as wnba_advanced_router
 from sports_api.api.wnba_availability import router as wnba_availability_router
+from sports_api.api.wnba_defensive_activity import router as wnba_defensive_activity_router
 from sports_api.api.wnba_lineup_context import router as wnba_lineup_context_router
 from sports_api.api.wnba_live_game import router as wnba_live_game_router
 from sports_api.api.wnba_officiating_context import router as wnba_officiating_context_router
@@ -75,6 +76,7 @@ app.include_router(mlb_park_factor_context_router)
 app.include_router(wnba_router)
 app.include_router(wnba_advanced_router)
 app.include_router(wnba_availability_router)
+app.include_router(wnba_defensive_activity_router)
 app.include_router(wnba_lineup_context_router)
 app.include_router(wnba_live_game_router)
 app.include_router(wnba_officiating_context_router)
