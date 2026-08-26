@@ -622,7 +622,7 @@ class Step5PTests(unittest.TestCase):
 
     # API/worker surface
     def test_55_routes_registered(self):
-        paths = {route.path for route in app.routes}
+        paths = {route.path for route in app.routes if hasattr(route, "path")}
         self.assertIn("/api/v1/wnba/rankings/player-props/current", paths)
         self.assertIn("/api/v1/wnba/rankings/player-props/current/refresh", paths)
         self.assertIn("/api/v1/wnba/rankings/player-props/current/status", paths)
