@@ -311,12 +311,33 @@ def _role_rates(opportunity: dict[str, Any], expected_team_key: str) -> dict[str
     summary = context.get("role_summary")
     if not isinstance(summary, dict):
         raise WNBABaselineProjectionModelInputError("Step 5A role context is missing role_summary.")
+
+    starter_games = _to_int(summary.get("starter_games"))
+    bench_games = _to_int(summary.get("bench_games"))
+    if starter_games is None or bench_games is None or starter_games < 0 or bench_games < 0:
+        raise WNBABaselineProjectionUpstreamError(
+            "Step 4G role summary has invalid starter/bench game counts."
+        )
+    total_role_games = starter_games + bench_games
+    if total_role_games <= 0:
+        raise WNBABaselineProjectionModelInputError(
+            "Step 5A requires at least one observed starter/bench role game."
+        )
+    observed_share = starter_games / total_role_games
     start_share = _to_float(summary.get("starter_game_share"))
-    if start_share is not None and not 0.0 <= start_share <= 1.0:
+    if start_share is None:
+        start_share = observed_share
+    elif not 0.0 <= start_share <= 1.0:
         raise WNBABaselineProjectionUpstreamError("Step 4G starter_game_share is outside 0..1.")
+    elif abs(start_share - observed_share) > 1e-6:
+        raise WNBABaselineProjectionUpstreamError(
+            "Step 4G starter_game_share disagrees with starter/bench game counts."
+        )
 
     result: dict[str, Any] = {
-        "starter_game_share": start_share,
+        "starter_games": starter_games,
+        "bench_games": bench_games,
+        "starter_game_share": round(start_share, 6),
         "primary_observed_role": summary.get("primary_observed_role"),
         "observed_role_band": context.get("observed_role_band"),
         "stats": {},
@@ -324,21 +345,29 @@ def _role_rates(opportunity: dict[str, Any], expected_team_key: str) -> dict[str
     for stat_key in STAT_KEYS:
         starter = _role_row_rate(context.get("starter"), stat_key, expected_team_key)
         bench = _role_row_rate(context.get("bench"), stat_key, expected_team_key)
-        if starter is not None and bench is not None:
-            if start_share is None:
-                raise WNBABaselineProjectionModelInputError(
-                    "Step 5A cannot blend starter/bench rates without starter_game_share."
-                )
+        if starter_games > 0 and starter is None:
+            raise WNBABaselineProjectionModelInputError(
+                f"Step 5A is missing the official starter role rate for {stat_key} despite observed starter games."
+            )
+        if bench_games > 0 and bench is None:
+            raise WNBABaselineProjectionModelInputError(
+                f"Step 5A is missing the official bench role rate for {stat_key} despite observed bench games."
+            )
+
+        if starter_games > 0 and bench_games > 0:
+            assert starter is not None and bench is not None
             rate = start_share * starter["stat_per_minute"] + (1.0 - start_share) * bench["stat_per_minute"]
             method = "starter_bench_rate_blend_by_observed_start_share"
             weights = {"starter": round(start_share, 6), "bench": round(1.0 - start_share, 6)}
-        elif starter is not None:
+        elif starter_games > 0:
+            assert starter is not None
             rate = starter["stat_per_minute"]
-            method = "starter_rate_only_available_role_split"
+            method = "starter_rate_only_observed_role"
             weights = {"starter": 1.0, "bench": 0.0}
-        elif bench is not None:
+        elif bench_games > 0:
+            assert bench is not None
             rate = bench["stat_per_minute"]
-            method = "bench_rate_only_available_role_split"
+            method = "bench_rate_only_observed_role"
             weights = {"starter": 0.0, "bench": 1.0}
         else:
             raise WNBABaselineProjectionModelInputError(
@@ -515,6 +544,7 @@ def project_from_readiness_report(readiness: dict[str, Any]) -> dict[str, Any]:
             "step_4w_snapshot_reference_must_match_included_snapshot": True,
             "official_gamerotation_drives_minutes_baseline": True,
             "official_starter_bench_rates_drive_stat_baseline": True,
+            "partial_observed_role_splits_fail_closed": True,
             "step_4u_event_counts_are_diagnostic_not_treated_as_complete_box_score": True,
             "no_matchup_adjustment_created": True,
             "no_pace_adjustment_created": True,
@@ -531,6 +561,8 @@ def project_from_readiness_report(readiness: dict[str, Any]) -> dict[str, Any]:
             "projection_started_only_after_step_4x_gate": True,
             "snapshot_player_game_identity_checked": True,
             "step_4v_player_team_identity_checked": True,
+            "starter_bench_game_counts_cross_checked_with_start_share": True,
+            "observed_role_games_require_corresponding_role_rate": True,
             "minutes_model_parameters_versioned": True,
             "role_rate_sources_exposed": True,
             "projection_fingerprint_created": True,
