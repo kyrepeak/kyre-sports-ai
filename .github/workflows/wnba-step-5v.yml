@@ -200,6 +200,7 @@ jobs:
           path: .step5v-handoff/
           if-no-files-found: error
           retention-days: 14
+          include-hidden-files: true
 
       - name: Show container logs on failure
         if: failure()
