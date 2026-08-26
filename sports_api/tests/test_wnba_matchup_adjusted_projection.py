@@ -375,11 +375,14 @@ class WNBAMatchupAdjustedProjectionTests(unittest.TestCase):
 
     def test_low_zone_match_share_disables_shot_adjustment(self):
         report = readiness()
-        report["snapshot"]["inputs"]["player_recent_shot_chart"]["zone_summary"][1]["canonical_zone"] = "mid_range"
+        zones = report["snapshot"]["inputs"]["player_recent_shot_chart"]["zone_summary"]
+        zones[0]["attempt_share"] = 0.49
+        zones[1]["attempt_share"] = 0.51
+        zones[1]["canonical_zone"] = "mid_range"
         result = m.project_matchup_adjusted_from_readiness(report)
         shot = result["adjustments"]["shot_zone_fit"]
         self.assertFalse(shot["applied"])
-        self.assertAlmostEqual(shot["matched_player_attempt_share"], 0.5, places=8)
+        self.assertAlmostEqual(shot["matched_player_attempt_share"], 0.49, places=8)
 
     def test_wrong_shot_player_fails_closed(self):
         report = readiness()
