@@ -7,6 +7,11 @@ class Step5WRouteContractTests(unittest.TestCase):
     def test_staging_activation_plan_route_is_registered(self):
         self.assertIn("/api/v1/wnba/runtime/staging-activation-plan", app.openapi()["paths"])
 
+    def test_staging_activation_plan_is_get_only(self):
+        methods = app.openapi()["paths"]["/api/v1/wnba/runtime/staging-activation-plan"]
+        self.assertIn("get", methods)
+        self.assertNotIn("post", methods)
+
     def test_step5t_activation_plan_route_remains_registered(self):
         self.assertIn("/api/v1/wnba/runtime/activation-plan", app.openapi()["paths"])
 
