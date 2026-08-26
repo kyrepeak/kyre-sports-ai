@@ -36,6 +36,23 @@ def _get_json(url: str, *, params=None, headers=None, timeout=20.0):
     return response.json()
 
 
+def _soft_get_json(url: str, *, params=None, headers=None, timeout=15.0):
+    try:
+        response = httpx.get(
+            url,
+            params=params,
+            headers=headers,
+            timeout=timeout,
+            follow_redirects=True,
+        )
+        if response.status_code == 404:
+            return None, "not_found"
+        response.raise_for_status()
+        return response.json(), None
+    except httpx.HTTPError as exc:
+        return None, str(exc)
+
+
 def _parse_iso_datetime(value):
     if not value:
         return None
@@ -66,20 +83,22 @@ def _extract_coordinates(venue):
 def _venue_details(venue_id: int | None, live_venue):
     venue = live_venue or {}
 
-    if _extract_coordinates(venue) is not None:
-        return venue
+    if _extract_coordinates(venue) is not None and venue.get("fieldInfo"):
+        return venue, None
 
     if not isinstance(venue_id, int):
-        return venue
+        return venue, "venue_id_missing"
 
-    payload = _get_json(
+    payload, error = _soft_get_json(
         MLB_VENUE_URL.format(venue_id=venue_id),
-        params={"hydrate": "location"},
         timeout=15.0,
     )
 
     venues = (payload or {}).get("venues", [])
-    return venues[0] if venues else venue
+    if venues:
+        return venues[0], None
+
+    return venue, error or "venue_details_unavailable"
 
 
 def _weather_relevance(roof_type):
@@ -137,7 +156,7 @@ def _fetch_nws_weather(latitude: float, longitude: float, game_datetime):
         longitude=round(longitude, 4),
     )
 
-    points_payload = _get_json(
+    points_payload, points_error = _soft_get_json(
         points_url,
         headers=NWS_HEADERS,
         timeout=15.0,
@@ -147,6 +166,7 @@ def _fetch_nws_weather(latitude: float, longitude: float, game_datetime):
         return {
             "available": False,
             "reason": "nws_point_lookup_unavailable",
+            "upstream_error": points_error,
         }
 
     properties = points_payload.get("properties", {})
@@ -161,13 +181,23 @@ def _fetch_nws_weather(latitude: float, longitude: float, game_datetime):
             "grid_y": properties.get("gridY"),
         }
 
-    hourly_payload = _get_json(
+    hourly_payload, hourly_error = _soft_get_json(
         hourly_url,
         headers=NWS_HEADERS,
         timeout=15.0,
     )
 
-    periods = (hourly_payload or {}).get("properties", {}).get("periods", [])
+    if not hourly_payload:
+        return {
+            "available": False,
+            "reason": "nws_hourly_forecast_unavailable",
+            "upstream_error": hourly_error,
+            "grid_id": properties.get("gridId"),
+            "grid_x": properties.get("gridX"),
+            "grid_y": properties.get("gridY"),
+        }
+
+    periods = hourly_payload.get("properties", {}).get("periods", [])
     period = _nearest_hourly_period(periods, game_datetime)
 
     if period is None:
@@ -208,7 +238,6 @@ def _normalize_park(venue):
     location = venue.get("location", {})
     coordinates = location.get("defaultCoordinates", {})
     field_info = venue.get("fieldInfo", {})
-
     roof_type = field_info.get("roofType")
 
     return {
@@ -254,9 +283,8 @@ def get_mlb_game_environment(game_pk: int):
     live_venue = game_data.get("venue", {})
 
     venue_id = live_venue.get("id")
-    venue = _venue_details(venue_id, live_venue)
+    venue, venue_lookup_error = _venue_details(venue_id, live_venue)
     coordinates = _extract_coordinates(venue)
-
     game_datetime = _parse_iso_datetime(datetime_data.get("dateTime"))
 
     if coordinates is None:
@@ -289,9 +317,11 @@ def get_mlb_game_environment(game_pk: int):
         "weather": weather,
         "environment_readiness": {
             "venue_identified": park.get("venue_id") is not None,
+            "venue_details_available": venue_lookup_error is None,
             "coordinates_available": coordinates is not None,
             "weather_available": weather.get("available") is True,
             "weather_relevance": park.get("weather_relevance"),
+            "venue_lookup_error": venue_lookup_error,
         },
         "modeling_note": (
             "Weather is an external environment input. Retractable-roof stadiums require "
