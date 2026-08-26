@@ -8,6 +8,7 @@ router = APIRouter(prefix="/api/v1/mlb", tags=["mlb"])
 
 MLB_SCHEDULE_URL = "https://statsapi.mlb.com/api/v1/schedule"
 MLB_TEAMS_URL = "https://statsapi.mlb.com/api/v1/teams"
+MLB_PEOPLE_URL = "https://statsapi.mlb.com/api/v1/people"
 ARIZONA_TZ = ZoneInfo("America/Phoenix")
 
 
@@ -154,4 +155,70 @@ def get_mlb_team_roster(team_id: int):
         "roster_type": "active",
         "player_count": len(roster),
         "players": roster,
+    }
+
+
+@router.get("/players/{player_id}")
+def get_mlb_player_profile(player_id: int):
+    url = f"{MLB_PEOPLE_URL}/{player_id}"
+    params = {"hydrate": "currentTeam"}
+
+    try:
+        response = httpx.get(url, params=params, timeout=15.0)
+        if response.status_code == 404:
+            raise HTTPException(
+                status_code=404,
+                detail=f"MLB player {player_id} was not found.",
+            )
+        response.raise_for_status()
+    except HTTPException:
+        raise
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"MLB upstream request failed: {exc}",
+        ) from exc
+
+    payload = response.json()
+    people = payload.get("people", [])
+
+    if not people:
+        raise HTTPException(
+            status_code=404,
+            detail=f"MLB player {player_id} was not found.",
+        )
+
+    person = people[0]
+    position = person.get("primaryPosition", {})
+    current_team = person.get("currentTeam", {})
+    bat_side = person.get("batSide", {})
+    pitch_hand = person.get("pitchHand", {})
+
+    return {
+        "source": "MLB Stats API",
+        "player": {
+            "player_id": person.get("id"),
+            "full_name": person.get("fullName"),
+            "first_name": person.get("firstName"),
+            "last_name": person.get("lastName"),
+            "active": person.get("active"),
+            "current_age": person.get("currentAge"),
+            "birth_date": person.get("birthDate"),
+            "birth_city": person.get("birthCity"),
+            "birth_state_province": person.get("birthStateProvince"),
+            "birth_country": person.get("birthCountry"),
+            "height": person.get("height"),
+            "weight_lbs": person.get("weight"),
+            "mlb_debut_date": person.get("mlbDebutDate"),
+            "primary_position_code": position.get("code"),
+            "primary_position_name": position.get("name"),
+            "primary_position_type": position.get("type"),
+            "primary_position_abbreviation": position.get("abbreviation"),
+            "bat_side_code": bat_side.get("code"),
+            "bat_side_description": bat_side.get("description"),
+            "pitch_hand_code": pitch_hand.get("code"),
+            "pitch_hand_description": pitch_hand.get("description"),
+            "current_team_id": current_team.get("id"),
+            "current_team_name": current_team.get("name"),
+        },
     }
