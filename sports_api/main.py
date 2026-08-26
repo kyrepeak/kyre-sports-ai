@@ -43,6 +43,7 @@ from sports_api.api.wnba_officiating_context import router as wnba_officiating_c
 from sports_api.api.wnba_player_event_features import router as wnba_player_event_features_router
 from sports_api.api.wnba_player_opportunity_context import router as wnba_player_opportunity_context_router
 from sports_api.api.wnba_projection_input_snapshot import router as wnba_projection_input_snapshot_router
+from sports_api.api.wnba_projection_scenarios import router as wnba_projection_scenarios_router
 from sports_api.api.wnba_rotation_context import router as wnba_rotation_context_router
 from sports_api.api.wnba_schedule_context import router as wnba_schedule_context_router
 from sports_api.api.wnba_shot_context import router as wnba_shot_context_router
@@ -99,6 +100,7 @@ app.include_router(wnba_officiating_context_router)
 app.include_router(wnba_player_event_features_router)
 app.include_router(wnba_player_opportunity_context_router)
 app.include_router(wnba_projection_input_snapshot_router)
+app.include_router(wnba_projection_scenarios_router)
 app.include_router(wnba_rotation_context_router)
 app.include_router(wnba_schedule_context_router)
 app.include_router(wnba_shot_context_router)
