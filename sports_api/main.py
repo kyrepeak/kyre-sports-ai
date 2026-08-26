@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
 from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
+from sports_api.api.mlb_advanced_pitching import router as mlb_advanced_pitching_router
 from sports_api.api.mlb_batter_pitcher import router as mlb_batter_pitcher_router
 from sports_api.api.mlb_boxscore import router as mlb_boxscore_router
 from sports_api.api.mlb_bullpen import router as mlb_bullpen_router
@@ -37,6 +38,7 @@ app.include_router(mlb_environment_router)
 app.include_router(mlb_batter_pitcher_router)
 app.include_router(mlb_roster_status_router)
 app.include_router(mlb_advanced_hitting_router)
+app.include_router(mlb_advanced_pitching_router)
 
 
 @app.get("/", tags=["system"])
