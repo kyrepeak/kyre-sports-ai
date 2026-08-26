@@ -2,6 +2,13 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 
+from sports_api.wnba_game_history import (
+    ALLOWED_SEASON_TYPES,
+    WNBAHistoryNotFoundError,
+    WNBAHistoryUpstreamError,
+    get_game_box_score_dataset,
+    get_player_game_log_dataset,
+)
 from sports_api.wnba_league import (
     CURRENT_SUPPORTED_SEASON,
     OFFICIAL_SOURCE,
@@ -37,7 +44,20 @@ def _schedule_value_error(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=status_code, detail=str(exc))
 
 
+def _history_value_error(exc: ValueError) -> HTTPException:
+    message = str(exc)
+    status_code = 400 if (
+        "game_id must be exactly 10 numeric digits" in message
+        or "player_id must be a positive integer" in message
+    ) else 422
+    return HTTPException(status_code=status_code, detail=message)
+
+
 def _not_found_error(exc: WNBAEntityNotFoundError) -> HTTPException:
+    return HTTPException(status_code=404, detail=str(exc))
+
+
+def _history_not_found_error(exc: WNBAHistoryNotFoundError) -> HTTPException:
     return HTTPException(status_code=404, detail=str(exc))
 
 
@@ -46,6 +66,10 @@ def _upstream_error(exc: WNBAStatsUpstreamError) -> HTTPException:
 
 
 def _schedule_upstream_error(exc: WNBAScheduleUpstreamError) -> HTTPException:
+    return HTTPException(status_code=502, detail=str(exc))
+
+
+def _history_upstream_error(exc: WNBAHistoryUpstreamError) -> HTTPException:
     return HTTPException(status_code=502, detail=str(exc))
 
 
@@ -132,6 +156,24 @@ def get_games(
         raise _schedule_upstream_error(exc) from exc
 
 
+@router.get("/games/{game_id}/box-score")
+def get_game_box_score(
+    game_id: str,
+    season: int = Query(
+        default=CURRENT_SUPPORTED_SEASON,
+        description="WNBA season used to validate team identity for the official box score.",
+    ),
+):
+    try:
+        return get_game_box_score_dataset(game_id, season)
+    except ValueError as exc:
+        raise _history_value_error(exc) from exc
+    except WNBAHistoryNotFoundError as exc:
+        raise _history_not_found_error(exc) from exc
+    except WNBAHistoryUpstreamError as exc:
+        raise _history_upstream_error(exc) from exc
+
+
 @router.get("/slate/verify")
 def verify_slate(
     date: str | None = Query(
@@ -175,6 +217,35 @@ def get_players(
         raise _unsupported_season_error(exc) from exc
     except WNBAStatsUpstreamError as exc:
         raise _upstream_error(exc) from exc
+
+
+@router.get("/players/{player_id}/game-log")
+def get_player_game_log(
+    player_id: int,
+    season: int = Query(
+        default=CURRENT_SUPPORTED_SEASON,
+        description="WNBA season. Step 4D currently supports the verified 2026 season.",
+    ),
+    season_type: str = Query(
+        default="Regular Season",
+        description=(
+            "WNBA season type. Allowed values: "
+            + ", ".join(ALLOWED_SEASON_TYPES)
+        ),
+    ),
+):
+    try:
+        return get_player_game_log_dataset(
+            player_id,
+            season,
+            season_type=season_type,
+        )
+    except ValueError as exc:
+        raise _history_value_error(exc) from exc
+    except WNBAHistoryNotFoundError as exc:
+        raise _history_not_found_error(exc) from exc
+    except WNBAHistoryUpstreamError as exc:
+        raise _history_upstream_error(exc) from exc
 
 
 @router.get("/players/{player_id}")
