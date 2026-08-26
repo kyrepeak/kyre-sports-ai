@@ -533,7 +533,7 @@ class Step5NTests(unittest.TestCase):
         self.assertEqual(ctx.exception.status_code, 502)
 
     def test_84_main_registers_all_step_5n_routes(self):
-        paths = {route.path for route in fastapi_app.routes}
+        paths = {getattr(route, "path", None) for route in fastapi_app.routes}
         expected = {
             "/api/v1/wnba/markets/player-props/providers",
             "/api/v1/wnba/markets/player-props/collect",
