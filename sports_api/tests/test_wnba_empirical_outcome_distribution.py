@@ -148,6 +148,17 @@ def build(distribution_last_n_games=5, *, games=None):
 
 
 class WNBAEmpiricalOutcomeDistributionTests(unittest.TestCase):
+    def test_direct_builder_not_ready_gate_blocks_5d(self):
+        with self.assertRaisesRegex(m.WNBAEmpiricalDistributionNotReadyError, "NOT_READY"):
+            m.build_empirical_outcome_distribution(
+                readiness("NOT_READY"),
+                scenarios(),
+                game_log(),
+                season=2026,
+                season_type="Regular Season",
+                distribution_last_n_games=5,
+            )
+
     def test_selects_latest_requested_complete_target_team_games(self):
         result = build(5)
         self.assertEqual(result["distribution_window"]["selected_game_ids"], [
@@ -342,6 +353,18 @@ class WNBAEmpiricalOutcomeDistributionTests(unittest.TestCase):
         second = build(5)
         self.assertEqual(first["distribution_fingerprint_sha256"], second["distribution_fingerprint_sha256"])
         self.assertEqual(first["distribution_id"], second["distribution_id"])
+
+    def test_distribution_fingerprint_ignores_retrieval_timestamp_metadata(self):
+        first = m.build_empirical_outcome_distribution(
+            readiness(), scenarios(), game_log(retrieved="2026-08-26T16:00:00+00:00"),
+            season=2026, season_type="Regular Season", distribution_last_n_games=5,
+        )
+        second = m.build_empirical_outcome_distribution(
+            readiness(), scenarios(), game_log(retrieved="2026-08-26T16:05:00+00:00"),
+            season=2026, season_type="Regular Season", distribution_last_n_games=5,
+        )
+        self.assertEqual(first["distribution_fingerprint_sha256"], second["distribution_fingerprint_sha256"])
+        self.assertNotEqual(first["official_game_log_reference"]["retrieved_at_utc"], second["official_game_log_reference"]["retrieved_at_utc"])
 
     def test_distribution_fingerprint_changes_when_observation_changes(self):
         first = build(5)
