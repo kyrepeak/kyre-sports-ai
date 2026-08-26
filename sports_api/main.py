@@ -28,6 +28,7 @@ from sports_api.api.mlb_starting_pitchers import router as mlb_starting_pitchers
 from sports_api.api.mlb_stats import router as mlb_stats_router
 from sports_api.api.mlb_team_analytics import router as mlb_team_analytics_router
 from sports_api.api.wnba import router as wnba_router
+from sports_api.api.wnba_advanced import router as wnba_advanced_router
 
 app = FastAPI(
     title="Kyre Sports API",
@@ -63,6 +64,7 @@ app.include_router(mlb_hit_defense_context_router)
 app.include_router(mlb_batted_ball_context_router)
 app.include_router(mlb_park_factor_context_router)
 app.include_router(wnba_router)
+app.include_router(wnba_advanced_router)
 
 
 @app.get("/", tags=["system"])
