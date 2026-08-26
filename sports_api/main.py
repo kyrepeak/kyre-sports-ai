@@ -11,6 +11,7 @@ from sports_api.api.mlb_bullpen import router as mlb_bullpen_router
 from sports_api.api.mlb_environment import router as mlb_environment_router
 from sports_api.api.mlb_game_logs import router as mlb_game_logs_router
 from sports_api.api.mlb_head_to_head import router as mlb_head_to_head_router
+from sports_api.api.mlb_hit_opportunity_features import router as mlb_hit_opportunity_features_router
 from sports_api.api.mlb_hitter_pitch_type import router as mlb_hitter_pitch_type_router
 from sports_api.api.mlb_lineup_matchups import router as mlb_lineup_matchups_router
 from sports_api.api.mlb_pitch_movement import router as mlb_pitch_movement_router
@@ -51,6 +52,7 @@ app.include_router(mlb_hitter_pitch_type_router)
 app.include_router(mlb_arsenal_matchup_router)
 app.include_router(mlb_lineup_matchups_router)
 app.include_router(mlb_plate_appearances_router)
+app.include_router(mlb_hit_opportunity_features_router)
 
 
 @app.get("/", tags=["system"])
