@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from api.health import router as health_router
+from sports_api.api.health import router as health_router
 
 app = FastAPI(
     title="Kyre Sports API",
