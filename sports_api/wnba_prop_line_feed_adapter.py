@@ -252,7 +252,7 @@ def _name_key(value: Any) -> str | None:
         return None
     decomposed = unicodedata.normalize("NFKD", text)
     asciiish = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-    asciiish = asciiish.casefold().replace("’", "'")
+    asciiish = asciiish.casefold().replace("’", "").replace("'", "")
     tokens = re.findall(r"[a-z0-9]+", asciiish)
     return " ".join(tokens) or None
 
@@ -454,7 +454,7 @@ def _flatten_feed(
         flattened = _flatten_canonical(raw_feed, feed_captured_at)
     elif feed_format == BOOKMAKER_EVENT_FEED_FORMAT:
         flattened = _flatten_bookmaker_events(raw_feed, feed_captured_at)
-    else:  # validated before call; defensive only
+    else:
         raise WNBAPropLineFeedModelInputError(f"Unsupported Step 5M feed format {feed_format!r}.")
     if not MIN_RAW_OFFERS <= len(flattened) <= MAX_RAW_OFFERS:
         raise WNBAPropLineFeedModelInputError(
