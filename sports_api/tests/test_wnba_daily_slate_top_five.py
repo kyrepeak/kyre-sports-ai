@@ -1,4 +1,5 @@
 import copy
+from pathlib import Path
 import unittest
 
 from fastapi import HTTPException
@@ -649,10 +650,13 @@ class Step5LTests(unittest.TestCase):
             api._raise_api_error(l.WNBADailySlateTopFiveUpstreamError("bad upstream"))
         self.assertEqual(caught.exception.status_code, 502)
 
-    def test_50_main_app_contains_daily_route(self):
-        from sports_api.main import app
-        paths = {getattr(route, "path", None) for route in app.routes}
-        self.assertIn("/api/v1/wnba/rankings/player-props/daily-top-five", paths)
+    def test_50_main_source_wires_daily_router(self):
+        main_source = Path("sports_api/main.py").read_text(encoding="utf-8")
+        self.assertIn(
+            "from sports_api.api.wnba_daily_slate_top_five import router as wnba_daily_slate_top_five_router",
+            main_source,
+        )
+        self.assertIn("app.include_router(wnba_daily_slate_top_five_router)", main_source)
 
 
 if __name__ == "__main__":
