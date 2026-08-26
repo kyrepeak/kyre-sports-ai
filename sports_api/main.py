@@ -39,6 +39,7 @@ from sports_api.api.wnba_deployment_smoke import router as wnba_deployment_smoke
 from sports_api.api.wnba_empirical_outcome_distribution import router as wnba_empirical_outcome_distribution_router
 from sports_api.api.wnba_event_lineup_context import router as wnba_event_lineup_context_router
 from sports_api.api.wnba_historical_backtest_calibration import router as wnba_historical_backtest_calibration_router
+from sports_api.api.wnba_hosted_staging import router as wnba_hosted_staging_router
 from sports_api.api.wnba_lineup_context import router as wnba_lineup_context_router
 from sports_api.api.wnba_live_game import router as wnba_live_game_router
 from sports_api.api.wnba_matchup_adjusted_projection import router as wnba_matchup_adjusted_projection_router
@@ -111,6 +112,7 @@ app.include_router(wnba_deployment_smoke_router)
 app.include_router(wnba_empirical_outcome_distribution_router)
 app.include_router(wnba_event_lineup_context_router)
 app.include_router(wnba_historical_backtest_calibration_router)
+app.include_router(wnba_hosted_staging_router)
 app.include_router(wnba_lineup_context_router)
 app.include_router(wnba_live_game_router)
 app.include_router(wnba_matchup_adjusted_projection_router)
