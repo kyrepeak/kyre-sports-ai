@@ -78,6 +78,7 @@ SERVICE_ID_ENV = "WNBA_RENDER_SERVICE_ID"
 SERVICE_URL_ENV = "WNBA_RENDER_SERVICE_URL"
 DEPLOY_ID_ENV = "WNBA_RENDER_DEPLOY_ID"
 ARCHIVE_HMAC_ENV = "WNBA_BACKTEST_ARCHIVE_HMAC_SECRET"
+INGEST_TOKEN_ENV = "WNBA_KYRE_MARKET_INGEST_TOKEN"
 LEGACY_SGO_ENV = "SPORTSGAMEODDS_API_KEY"
 _SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 _IMAGE_RE = re.compile(r"^[^\s@]+@sha256:[0-9a-f]{64}$")
@@ -172,7 +173,7 @@ def build_step6c_render_plan(
         "service_name": service_name,
         "owner_id": owner_id,
         "required_operator_secrets": [RENDER_API_KEY_ENV, GHCR_USERNAME_ENV, GHCR_TOKEN_ENV],
-        "runtime_generated_secret_keys": [ARCHIVE_HMAC_ENV],
+        "runtime_generated_secret_keys": [ARCHIVE_HMAC_ENV, INGEST_TOKEN_ENV],
         "removed_required_dependencies": [LEGACY_SGO_ENV],
         "service": {
             "type": "web_service",
@@ -195,6 +196,7 @@ def build_step6c_render_plan(
             "activation_approved": False,
             "sportsbook_vendor_secret_required": False,
             "sportsgameodds_injected": False,
+            "ingest_token_value_in_plan": False,
             "sportsbook_called": False,
             "monte_carlo_run": False,
         },
@@ -218,6 +220,7 @@ def _service_payload(
     )
     env_rows = [{"key": key, "value": value} for key, value in sorted(env_values.items())]
     env_rows.append({"key": ARCHIVE_HMAC_ENV, "generateValue": True})
+    env_rows.append({"key": INGEST_TOKEN_ENV, "generateValue": True})
     return {
         "type": "web_service",
         "name": service_name,
@@ -340,6 +343,7 @@ def validate_step6c_render_state(
     if env.get(KYRE_MARKET_FEED_PATH_ENV) != DEFAULT_KYRE_MARKET_FEED_PATH: failures.append("kyre_market_path_mismatch")
     if env.get("WNBA_PROP_FEED_FAILOVER_ORDER", "").casefold() != "kyre": failures.append("failover_order_not_kyre")
     if not _clean(env.get(ARCHIVE_HMAC_ENV)): failures.append("archive_hmac_missing")
+    if not _clean(env.get(INGEST_TOKEN_ENV)): failures.append("market_ingest_token_missing")
 
     identity = {
         "model_version": MODEL_VERSION,
@@ -353,6 +357,7 @@ def validate_step6c_render_state(
         "instance_count": len(instances),
         "market_provider_mode": "kyre",
         "market_feed_path": DEFAULT_KYRE_MARKET_FEED_PATH,
+        "market_ingest_token_configured": bool(_clean(env.get(INGEST_TOKEN_ENV))),
     }
     return {
         "passed": not failures,
@@ -365,6 +370,7 @@ def validate_step6c_render_state(
         "disk_size_gb": disk_size,
         "instance_count": len(instances),
         "sportsgameodds_required": False,
+        "market_ingest_token_configured": bool(_clean(env.get(INGEST_TOKEN_ENV))),
         "secret_values_returned": False,
     }
 
@@ -375,6 +381,7 @@ def _remote_pre_activation(base_url: str, *, timeout_seconds: float, transport: 
         ("runtime_readiness", "/api/v1/wnba/runtime/readiness", {200}),
         ("runtime_health", "/api/v1/wnba/runtime/health", {503}),
         ("current_board", "/api/v1/wnba/rankings/player-props/current?require_current=true", {200, 409}),
+        ("owned_market_status", "/api/v1/wnba/markets/owned/status", {200}),
     )
     statuses: dict[str, int] = {}
     with httpx.Client(base_url=base_url.rstrip("/"), timeout=timeout_seconds, transport=transport, follow_redirects=False) as client:
@@ -503,6 +510,7 @@ def provision_step6c_render_staging(
         "deploy_id": deploy_id,
         "market_provider_mode": "kyre",
         "market_feed_path": DEFAULT_KYRE_MARKET_FEED_PATH,
+        "market_ingest_token_configured": True,
     }
     return {
         "source": MODEL_SOURCE,
@@ -524,6 +532,7 @@ def provision_step6c_render_staging(
             "sportsbook_called": False,
             "monte_carlo_run": False,
             "operator_secret_values_returned": False,
+            "market_ingest_token_returned": False,
             "paid_provisioning_was_explicitly_confirmed": True,
         },
     }
