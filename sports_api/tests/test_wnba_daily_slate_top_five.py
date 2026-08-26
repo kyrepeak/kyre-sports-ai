@@ -651,7 +651,7 @@ class Step5LTests(unittest.TestCase):
 
     def test_50_main_app_contains_daily_route(self):
         from sports_api.main import app
-        paths = {route.path for route in app.routes}
+        paths = {getattr(route, "path", None) for route in app.routes}
         self.assertIn("/api/v1/wnba/rankings/player-props/daily-top-five", paths)
 
 
