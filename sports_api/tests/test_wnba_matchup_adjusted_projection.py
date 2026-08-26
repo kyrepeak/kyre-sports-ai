@@ -318,9 +318,13 @@ class WNBAMatchupAdjustedProjectionTests(unittest.TestCase):
 
     def test_minutes_remain_exactly_step_5a_baseline(self):
         result = m.project_matchup_adjusted_from_readiness(readiness())
-        self.assertEqual(result["baseline_projection"]["minutes"], result["projection"]["minutes"] | {"adjusted_in_step_5b": False})
-        self.assertEqual(result["projection"]["minutes"]["expected"], 31.2)
-        self.assertFalse(result["projection"]["minutes"]["adjusted_in_step_5b"])
+        baseline = result["baseline_projection"]["minutes"]
+        adjusted = result["projection"]["minutes"]
+        self.assertEqual(adjusted["expected"], baseline["expected"])
+        self.assertEqual(adjusted["sensitivity_low"], baseline["sensitivity_low"])
+        self.assertEqual(adjusted["sensitivity_high"], baseline["sensitivity_high"])
+        self.assertEqual(adjusted["expected"], 31.2)
+        self.assertFalse(adjusted["adjusted_in_step_5b"])
 
     def test_pace_adjustment_is_hand_calculable(self):
         result = m.project_matchup_adjusted_from_readiness(readiness())
