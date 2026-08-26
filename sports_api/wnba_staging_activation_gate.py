@@ -6,7 +6,7 @@ contact a sportsbook provider or run Monte Carlo on hosted staging.
 The gate has two phases:
 1. pre-activation: frozen Step 5V must be fully green and this module emits a
    stable activation checkpoint that intentionally excludes ephemeral Render
-   instance IDs;
+   instance IDs and activation-state-dependent fingerprints;
 2. activation: the operator must explicitly approve that exact checkpoint,
    record an activation timestamp, and enable the frozen Step 5R runtime. The
    currently deployed release/host/storage identity must still hash to the same
@@ -112,17 +112,16 @@ def _failed_required_checks(report: Mapping[str, Any]) -> set[str]:
 
 
 def _checkpoint_payload(
-    step5r: Mapping[str, Any],
     step5u: Mapping[str, Any],
     step5v: Mapping[str, Any],
 ) -> dict[str, Any]:
     publication = step5v.get("publication") or {}
     release = step5v.get("release") or {}
     host = step5u.get("host") or {}
-    # Deliberately exclude RENDER_INSTANCE_ID / host_identity_sha256. Render may
-    # replace a process/instance during an environment update. Service identity,
-    # immutable release identity, and persistent-storage identity are the stable
-    # activation boundary.
+    # Deliberately exclude RENDER_INSTANCE_ID / host_identity_sha256 and the
+    # Step-5R configuration fingerprint. Render may replace an instance during
+    # the environment update, and Step 5R's fingerprint intentionally includes
+    # the activation flag. Neither may make the pre-activation checkpoint drift.
     return {
         "checkpoint_version": MODEL_VERSION,
         "release": {
@@ -150,7 +149,6 @@ def _checkpoint_payload(
             "git_commit": host.get("git_commit"),
         },
         "storage_identity_sha256": step5u.get("storage_identity_sha256"),
-        "step_5r_configuration_fingerprint_sha256": step5r.get("configuration_fingerprint_sha256"),
     }
 
 
@@ -173,7 +171,6 @@ def _checkpoint_fields_complete(payload: Mapping[str, Any]) -> bool:
         host.get("git_branch"),
         host.get("git_commit"),
         payload.get("storage_identity_sha256"),
-        payload.get("step_5r_configuration_fingerprint_sha256"),
     ]
     return all(_clean(value) for value in required)
 
@@ -191,7 +188,7 @@ def get_staging_activation_gate(*, env: Mapping[str, str] | None = None) -> dict
     activated_at_raw = _clean(environment.get(ACTIVATED_AT_ENV))
     activated_at = _parse_timestamp(activated_at_raw)
 
-    payload = _checkpoint_payload(step5r, step5u, step5v)
+    payload = _checkpoint_payload(step5u, step5v)
     checkpoint = _hash(payload)
     fields_complete = _checkpoint_fields_complete(payload)
     current_5u_failures = _failed_required_checks(step5u)
@@ -310,6 +307,7 @@ def get_staging_activation_gate(*, env: Mapping[str, str] | None = None) -> dict
         "semantics": {
             "fail_closed": True,
             "checkpoint_excludes_ephemeral_render_instance_id": True,
+            "checkpoint_excludes_activation_state_dependent_fingerprints": True,
             "explicit_operator_approval_required": True,
             "approved_checkpoint_must_match_current_deployment": True,
             "frozen_step_5r_remains_runtime_preflight_authority": True,
