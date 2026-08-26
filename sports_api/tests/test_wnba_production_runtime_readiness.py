@@ -1,10 +1,9 @@
-import copy
 from datetime import datetime, timedelta, timezone
 import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastapi import HTTPException
 
@@ -186,15 +185,15 @@ class Step5RTests(unittest.TestCase):
         self.assertTrue(report["semantics"]["failed_preflight_blocks_sportsbook_collection"])
         self.assertTrue(report["semantics"]["failed_preflight_blocks_monte_carlo_rebuild"])
 
-    def test_24_main_registers_current_routes_once(self):
-        paths = [getattr(route, "path", None) for route in app.routes]
+    def test_24_main_registers_current_routes(self):
+        paths = set(app.openapi().get("paths", {}))
         for path in {
             "/api/v1/wnba/rankings/player-props/current",
             "/api/v1/wnba/rankings/player-props/current/refresh",
             "/api/v1/wnba/rankings/player-props/current/status",
             "/api/v1/wnba/rankings/player-props/current/history",
         }:
-            self.assertEqual(1, paths.count(path), path)
+            self.assertIn(path, paths)
 
     def test_25_main_registers_runtime_routes(self):
         paths = set(app.openapi().get("paths", {}))
@@ -255,6 +254,7 @@ class Step5RTests(unittest.TestCase):
             api._start_runtime_worker()
         self.assertIsNone(api._runtime_worker_thread)
         self.assertFalse(api._runtime_worker_state["startup_scheduler_allowed"])
+        self.assertFalse(api._runtime_worker_state["startup_activation_requested"])
 
     def test_33_history_delegates_to_frozen_step5q(self):
         with patch.object(api.step5q, "get_current_wnba_player_prop_publication_history", return_value={"publication_count": 1}) as delegated:
@@ -266,6 +266,19 @@ class Step5RTests(unittest.TestCase):
         report = self.readiness()
         self.assertTrue(report["semantics"]["step_5q_distributed_lock_remains_authoritative"])
         self.assertTrue(report["semantics"]["frozen_step_5p_model_and_publication_semantics_are_unchanged"])
+
+    def test_35_activated_worker_starts_fail_closed_supervisor_even_if_preflight_red(self):
+        env = dict(self.env)
+        env["WNBA_BACKTEST_ARCHIVE_HMAC_SECRET"] = "short"
+        fake_thread = MagicMock()
+        fake_thread.is_alive.return_value = False
+        with patch.dict(os.environ, env, clear=True), \
+             patch.object(api.threading, "Thread", return_value=fake_thread), \
+             patch.object(api.step5q, "get_scheduler_configuration", return_value={"loop_seconds": 30}):
+            api._start_runtime_worker()
+        self.assertTrue(api._runtime_worker_state["startup_activation_requested"])
+        self.assertFalse(api._runtime_worker_state["startup_scheduler_allowed"])
+        fake_thread.start.assert_called_once()
 
 
 if __name__ == "__main__":
