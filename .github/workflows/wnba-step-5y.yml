@@ -202,8 +202,13 @@ jobs:
               .replace('__FULL_GIT_SHA__', revision)
               .replace('__RELEASE_ID__', release_id)
           )
-          if '__' in rendered:
-              raise SystemExit('unresolved Step 5Y Render template token remains')
+          unresolved = [
+              token
+              for token in ('__IMMUTABLE_IMAGE_REF__', '__FULL_GIT_SHA__', '__RELEASE_ID__')
+              if token in rendered
+          ]
+          if unresolved:
+              raise SystemExit(f'unresolved Step 5Y Render template tokens remain: {unresolved}')
 
           record = {
               'schema_version': 'wnba_step_5y_render_attachment_bundle_v1',
