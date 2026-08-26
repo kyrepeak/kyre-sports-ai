@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
+from sports_api.api.mlb_game_logs import router as mlb_game_logs_router
 from sports_api.api.mlb_stats import router as mlb_stats_router
 
 app = FastAPI(
@@ -13,6 +14,7 @@ app = FastAPI(
 app.include_router(health_router)
 app.include_router(mlb_router)
 app.include_router(mlb_stats_router)
+app.include_router(mlb_game_logs_router)
 
 
 @app.get("/", tags=["system"])
