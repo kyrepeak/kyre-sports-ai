@@ -1,5 +1,4 @@
 import unittest
-from copy import deepcopy
 from unittest.mock import patch
 
 from sports_api import wnba_baseline_projection as m
@@ -189,32 +188,55 @@ class WNBABaselineProjectionTests(unittest.TestCase):
         self.assertEqual(result["projection"]["minutes"]["expected"], 40.0)
         self.assertEqual(result["projection"]["minutes"]["sensitivity_high"], 40.0)
 
-    def test_starter_only_role_source_is_supported(self):
+    def test_starter_only_role_is_supported_when_no_bench_games_observed(self):
         report = readiness()
         role = report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]
+        role["role_summary"].update({"starter_games": 5, "bench_games": 0, "starter_game_share": 1.0})
         role["bench"] = None
         result = m.project_from_readiness_report(report)
         self.assertAlmostEqual(result["model_inputs"]["role_rates"]["stats"]["points"]["rate_per_minute"], 0.5, places=8)
-        self.assertEqual(result["model_inputs"]["role_rates"]["stats"]["points"]["method"], "starter_rate_only_available_role_split")
+        self.assertEqual(result["model_inputs"]["role_rates"]["stats"]["points"]["method"], "starter_rate_only_observed_role")
 
-    def test_bench_only_role_source_is_supported(self):
+    def test_bench_only_role_is_supported_when_no_starter_games_observed(self):
         report = readiness()
         role = report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]
+        role["role_summary"].update({"starter_games": 0, "bench_games": 5, "starter_game_share": 0.0})
         role["starter"] = None
+        role["bench"]["games_played"] = 5
         result = m.project_from_readiness_report(report)
         self.assertAlmostEqual(result["model_inputs"]["role_rates"]["stats"]["points"]["rate_per_minute"], 0.4, places=8)
-        self.assertEqual(result["model_inputs"]["role_rates"]["stats"]["points"]["method"], "bench_rate_only_available_role_split")
+        self.assertEqual(result["model_inputs"]["role_rates"]["stats"]["points"]["method"], "bench_rate_only_observed_role")
 
-    def test_both_role_sources_require_valid_start_share(self):
+    def test_missing_start_share_is_derived_from_role_game_counts(self):
         report = readiness()
         report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]["role_summary"]["starter_game_share"] = None
-        with self.assertRaisesRegex(m.WNBABaselineProjectionModelInputError, "starter_game_share"):
-            m.project_from_readiness_report(report)
+        result = m.project_from_readiness_report(report)
+        self.assertEqual(result["model_inputs"]["role_rates"]["starter_game_share"], 0.6)
 
     def test_invalid_start_share_fails_closed(self):
         report = readiness()
         report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]["role_summary"]["starter_game_share"] = 1.2
         with self.assertRaisesRegex(m.WNBABaselineProjectionUpstreamError, "outside 0..1"):
+            m.project_from_readiness_report(report)
+
+    def test_start_share_must_match_role_game_counts(self):
+        report = readiness()
+        report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]["role_summary"]["starter_game_share"] = 0.5
+        with self.assertRaisesRegex(m.WNBABaselineProjectionUpstreamError, "disagrees with starter/bench game counts"):
+            m.project_from_readiness_report(report)
+
+    def test_partial_bench_role_row_fails_when_bench_games_were_observed(self):
+        report = readiness()
+        role = report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]
+        role["bench"] = None
+        with self.assertRaisesRegex(m.WNBABaselineProjectionModelInputError, "missing the official bench role rate"):
+            m.project_from_readiness_report(report)
+
+    def test_partial_starter_role_row_fails_when_starter_games_were_observed(self):
+        report = readiness()
+        role = report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]
+        role["starter"] = None
+        with self.assertRaisesRegex(m.WNBABaselineProjectionModelInputError, "missing the official starter role rate"):
             m.project_from_readiness_report(report)
 
     def test_missing_role_context_is_model_specific_hard_stop(self):
@@ -227,8 +249,7 @@ class WNBABaselineProjectionTests(unittest.TestCase):
         report = readiness()
         role = report["snapshot"]["inputs"]["player_opportunity_context"]["observed_role_context"]
         role["starter"]["stats"]["minutes"] = 0.0
-        role["bench"]["stats"]["minutes"] = 0.0
-        with self.assertRaisesRegex(m.WNBABaselineProjectionModelInputError, "no valid official role rate"):
+        with self.assertRaisesRegex(m.WNBABaselineProjectionModelInputError, "missing the official starter role rate"):
             m.project_from_readiness_report(report)
 
     def test_negative_role_stat_fails_closed(self):
@@ -314,6 +335,7 @@ class WNBABaselineProjectionTests(unittest.TestCase):
         self.assertFalse(config["officiating_adjustment"])
         self.assertTrue(result["guardrails"]["no_sportsbook_data_used"])
         self.assertTrue(result["guardrails"]["no_monte_carlo_created"])
+        self.assertTrue(result["guardrails"]["partial_observed_role_splits_fail_closed"])
 
     @patch("sports_api.wnba_baseline_projection.get_player_game_model_input_readiness")
     def test_wrapper_requests_only_5a_required_snapshot_context(self, gate):
