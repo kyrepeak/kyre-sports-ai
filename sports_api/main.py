@@ -46,6 +46,7 @@ from sports_api.api.wnba_multi_sportsbook_market_consensus import router as wnba
 from sports_api.api.wnba_officiating_context import router as wnba_officiating_context_router
 from sports_api.api.wnba_player_event_features import router as wnba_player_event_features_router
 from sports_api.api.wnba_player_opportunity_context import router as wnba_player_opportunity_context_router
+from sports_api.api.wnba_player_prop_top_five_board import router as wnba_player_prop_top_five_board_router
 from sports_api.api.wnba_pregame_prediction_store import router as wnba_pregame_prediction_store_router
 from sports_api.api.wnba_projection_input_snapshot import router as wnba_projection_input_snapshot_router
 from sports_api.api.wnba_projection_scenarios import router as wnba_projection_scenarios_router
@@ -110,6 +111,7 @@ app.include_router(wnba_multi_sportsbook_market_consensus_router)
 app.include_router(wnba_officiating_context_router)
 app.include_router(wnba_player_event_features_router)
 app.include_router(wnba_player_opportunity_context_router)
+app.include_router(wnba_player_prop_top_five_board_router)
 app.include_router(wnba_pregame_prediction_store_router)
 app.include_router(wnba_projection_input_snapshot_router)
 app.include_router(wnba_projection_scenarios_router)
