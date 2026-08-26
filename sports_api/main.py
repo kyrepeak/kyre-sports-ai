@@ -33,6 +33,7 @@ from sports_api.api.wnba_availability import router as wnba_availability_router
 from sports_api.api.wnba_lineup_context import router as wnba_lineup_context_router
 from sports_api.api.wnba_live_game import router as wnba_live_game_router
 from sports_api.api.wnba_shot_context import router as wnba_shot_context_router
+from sports_api.api.wnba_standings import router as wnba_standings_router
 from sports_api.api.wnba_team_history import router as wnba_team_history_router
 from sports_api.api.wnba_tracking import router as wnba_tracking_router
 
@@ -75,6 +76,7 @@ app.include_router(wnba_availability_router)
 app.include_router(wnba_lineup_context_router)
 app.include_router(wnba_live_game_router)
 app.include_router(wnba_shot_context_router)
+app.include_router(wnba_standings_router)
 app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
 
