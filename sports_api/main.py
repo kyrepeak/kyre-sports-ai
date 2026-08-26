@@ -36,6 +36,7 @@ from sports_api.api.wnba_correlated_monte_carlo import router as wnba_correlated
 from sports_api.api.wnba_defensive_activity import router as wnba_defensive_activity_router
 from sports_api.api.wnba_empirical_outcome_distribution import router as wnba_empirical_outcome_distribution_router
 from sports_api.api.wnba_event_lineup_context import router as wnba_event_lineup_context_router
+from sports_api.api.wnba_historical_backtest_calibration import router as wnba_historical_backtest_calibration_router
 from sports_api.api.wnba_lineup_context import router as wnba_lineup_context_router
 from sports_api.api.wnba_live_game import router as wnba_live_game_router
 from sports_api.api.wnba_matchup_adjusted_projection import router as wnba_matchup_adjusted_projection_router
@@ -98,6 +99,7 @@ app.include_router(wnba_correlated_monte_carlo_router)
 app.include_router(wnba_defensive_activity_router)
 app.include_router(wnba_empirical_outcome_distribution_router)
 app.include_router(wnba_event_lineup_context_router)
+app.include_router(wnba_historical_backtest_calibration_router)
 app.include_router(wnba_lineup_context_router)
 app.include_router(wnba_live_game_router)
 app.include_router(wnba_matchup_adjusted_projection_router)
