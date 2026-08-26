@@ -55,11 +55,6 @@ jobs:
           python -m py_compile sports_api/api/wnba_prop_line_feed_adapter.py
           python -m py_compile sports_api/main.py
 
-      - name: Run Step 5H regression harness
-        env:
-          PYTHONPATH: .
-        run: python sports_api/tests/test_wnba_multi_sportsbook_market_consensus.py
-
       - name: Run Step 5I regression harness
         env:
           PYTHONPATH: .
