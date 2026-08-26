@@ -102,3 +102,56 @@ def get_mlb_teams():
         "team_count": len(teams),
         "teams": teams,
     }
+
+
+@router.get("/teams/{team_id}/roster")
+def get_mlb_team_roster(team_id: int):
+    url = f"{MLB_TEAMS_URL}/{team_id}/roster"
+    params = {"rosterType": "active"}
+
+    try:
+        response = httpx.get(url, params=params, timeout=15.0)
+        if response.status_code == 404:
+            raise HTTPException(
+                status_code=404,
+                detail=f"MLB team {team_id} was not found.",
+            )
+        response.raise_for_status()
+    except HTTPException:
+        raise
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"MLB upstream request failed: {exc}",
+        ) from exc
+
+    payload = response.json()
+    roster = []
+
+    for entry in payload.get("roster", []):
+        person = entry.get("person", {})
+        position = entry.get("position", {})
+
+        roster.append(
+            {
+                "player_id": person.get("id"),
+                "full_name": person.get("fullName"),
+                "jersey_number": entry.get("jerseyNumber"),
+                "position_code": position.get("code"),
+                "position_name": position.get("name"),
+                "position_type": position.get("type"),
+                "position_abbreviation": position.get("abbreviation"),
+                "status_code": entry.get("status", {}).get("code"),
+                "status_description": entry.get("status", {}).get("description"),
+            }
+        )
+
+    roster.sort(key=lambda player: (player.get("full_name") or ""))
+
+    return {
+        "source": "MLB Stats API",
+        "team_id": team_id,
+        "roster_type": "active",
+        "player_count": len(roster),
+        "players": roster,
+    }
