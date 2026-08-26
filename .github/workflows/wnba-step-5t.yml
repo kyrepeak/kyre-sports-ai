@@ -1,0 +1,253 @@
+name: WNBA Step 5T release + rollback readiness tests
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - "sports_api/wnba_release_activation_readiness.py"
+      - "sports_api/api/wnba_release_activation.py"
+      - "sports_api/tools/wnba_release_verify.py"
+      - "sports_api/tests/test_wnba_release_activation_readiness.py"
+      - "sports_api/Dockerfile"
+      - "sports_api/production.env.example"
+      - "sports_api/main.py"
+      - "sports_api/README.md"
+      - ".github/workflows/wnba-step-5t.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "sports_api/wnba_release_activation_readiness.py"
+      - "sports_api/api/wnba_release_activation.py"
+      - "sports_api/tools/wnba_release_verify.py"
+      - "sports_api/tests/test_wnba_release_activation_readiness.py"
+      - "sports_api/Dockerfile"
+      - "sports_api/production.env.example"
+      - "sports_api/main.py"
+      - "sports_api/README.md"
+      - ".github/workflows/wnba-step-5t.yml"
+
+jobs:
+  step5t:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sports_api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 5T modules
+        run: |
+          python -m py_compile sports_api/wnba_release_activation_readiness.py
+          python -m py_compile sports_api/api/wnba_release_activation.py
+          python -m py_compile sports_api/tools/wnba_release_verify.py
+          python -m py_compile sports_api/main.py
+
+      - name: Run Step 5I regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_historical_backtest_calibration.py
+
+      - name: Run Step 5J regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_pregame_prediction_store.py
+
+      - name: Run Step 5K regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_player_prop_top_five_board.py
+
+      - name: Run Step 5L regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_daily_slate_top_five.py
+
+      - name: Run Step 5M regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_prop_line_feed_adapter.py
+
+      - name: Run Step 5N regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_prop_feed_collector.py
+
+      - name: Run Step 5O regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_prop_feed_failover.py
+
+      - name: Run Step 5P regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_pregame_board_scheduler.py
+
+      - name: Run Step 5Q regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_scheduler_cycle_lock.py
+
+      - name: Run Step 5R regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_production_runtime_readiness.py
+
+      - name: Run Step 5S regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_deployment_smoke_readiness.py
+
+      - name: Run Step 5T deterministic harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_release_activation_readiness.py
+
+      - name: Build immutable release candidate container
+        run: |
+          docker build \
+            --build-arg WNBA_RELEASE_REVISION="$GITHUB_SHA" \
+            --build-arg WNBA_RELEASE_ID="step5t-ci-$GITHUB_RUN_ID" \
+            -f sports_api/Dockerfile \
+            -t kyre-sports-api:step5t .
+          IMAGE_ID="$(docker image inspect -f '{{.Id}}' kyre-sports-api:step5t)"
+          echo "STEP5T_IMAGE_REF=kyre-sports-api@${IMAGE_ID}" >> "$GITHUB_ENV"
+          echo "STEP5T_RELEASE_ID=step5t-ci-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Prepare persistent volume
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.step5t-data"
+          chmod 0777 "$GITHUB_WORKSPACE/.step5t-data"
+
+      - name: Start pre-activation release candidate
+        run: |
+          docker run -d --name kyre-step5t -p 18000:8000 \
+            -v "$GITHUB_WORKSPACE/.step5t-data:/var/lib/kyre-sports-api" \
+            -e WNBA_PRODUCTION_RUNTIME_ENABLED=false \
+            -e WNBA_CURRENT_BOARD_STORE_PATH=/var/lib/kyre-sports-api/wnba_current_board.sqlite3 \
+            -e WNBA_PROP_FEED_STORE_PATH=/var/lib/kyre-sports-api/wnba_prop_feed.sqlite3 \
+            -e WNBA_BACKTEST_STORE_PATH=/var/lib/kyre-sports-api/wnba_backtest.sqlite3 \
+            -e WNBA_BOARD_SCHEDULER_LOCK_PATH=/var/lib/kyre-sports-api/wnba_scheduler_lock.sqlite3 \
+            -e WNBA_BOARD_SCHEDULER_ENABLED=true \
+            -e WNBA_BOARD_AUTO_ARCHIVE_ENABLED=true \
+            -e SPORTSGAMEODDS_API_KEY=step5t-ci-demo-key \
+            -e WNBA_BACKTEST_ARCHIVE_HMAC_SECRET=step5t-ci-secret-material-12345678901234567890 \
+            -e WNBA_DEPLOYMENT_REVISION="$GITHUB_SHA" \
+            -e WNBA_RELEASE_ID="$STEP5T_RELEASE_ID" \
+            -e WNBA_RELEASE_CHANNEL=production \
+            -e WNBA_DEPLOYMENT_IMAGE_REF="$STEP5T_IMAGE_REF" \
+            -e WNBA_PREVIOUS_DEPLOYMENT_REVISION=cccccccccccccccccccccccccccccccccccccccc \
+            -e WNBA_PREVIOUS_DEPLOYMENT_IMAGE_REF=kyre-sports-api@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
+            -e WNBA_RELEASE_INITIAL_DEPLOYMENT=false \
+            kyre-sports-api:step5t
+
+      - name: Wait for pre-activation liveness
+        run: |
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18000/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs kyre-step5t
+          exit 1
+
+      - name: Run Step 5S read-only smoke before activation
+        env:
+          PYTHONPATH: .
+        run: python -m sports_api.tools.wnba_live_smoke http://127.0.0.1:18000
+
+      - name: Capture release storage identity
+        run: |
+          STORAGE_IDENTITY="$(curl --fail --silent http://127.0.0.1:18000/api/v1/wnba/runtime/release | python -c 'import json,sys; print(json.load(sys.stdin)["storage_identity_sha256"])')"
+          test "${#STORAGE_IDENTITY}" -eq 64
+          echo "STEP5T_STORAGE_IDENTITY=$STORAGE_IDENTITY" >> "$GITHUB_ENV"
+
+      - name: Verify immutable release identity before activation
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m sports_api.tools.wnba_release_verify \
+            http://127.0.0.1:18000 \
+            --revision "$GITHUB_SHA" \
+            --image-ref "$STEP5T_IMAGE_REF" \
+            --release-id "$STEP5T_RELEASE_ID" \
+            --storage-identity "$STEP5T_STORAGE_IDENTITY"
+
+      - name: Record exact persistent SQLite file identities
+        run: |
+          for file in wnba_current_board.sqlite3 wnba_prop_feed.sqlite3 wnba_backtest.sqlite3 wnba_scheduler_lock.sqlite3; do
+            test -f "$GITHUB_WORKSPACE/.step5t-data/$file"
+          done
+          find "$GITHUB_WORKSPACE/.step5t-data" -maxdepth 1 -type f -name '*.sqlite3' -printf '%f:%D:%i\n' | sort > "$GITHUB_WORKSPACE/.step5t-before.txt"
+          test "$(wc -l < "$GITHUB_WORKSPACE/.step5t-before.txt")" -eq 4
+
+      - name: Restart release candidate on same persistent volume
+        run: |
+          docker rm -f kyre-step5t
+          docker run -d --name kyre-step5t -p 18000:8000 \
+            -v "$GITHUB_WORKSPACE/.step5t-data:/var/lib/kyre-sports-api" \
+            -e WNBA_PRODUCTION_RUNTIME_ENABLED=false \
+            -e WNBA_CURRENT_BOARD_STORE_PATH=/var/lib/kyre-sports-api/wnba_current_board.sqlite3 \
+            -e WNBA_PROP_FEED_STORE_PATH=/var/lib/kyre-sports-api/wnba_prop_feed.sqlite3 \
+            -e WNBA_BACKTEST_STORE_PATH=/var/lib/kyre-sports-api/wnba_backtest.sqlite3 \
+            -e WNBA_BOARD_SCHEDULER_LOCK_PATH=/var/lib/kyre-sports-api/wnba_scheduler_lock.sqlite3 \
+            -e WNBA_BOARD_SCHEDULER_ENABLED=true \
+            -e WNBA_BOARD_AUTO_ARCHIVE_ENABLED=true \
+            -e SPORTSGAMEODDS_API_KEY=step5t-ci-demo-key \
+            -e WNBA_BACKTEST_ARCHIVE_HMAC_SECRET=step5t-ci-secret-material-12345678901234567890 \
+            -e WNBA_DEPLOYMENT_REVISION="$GITHUB_SHA" \
+            -e WNBA_RELEASE_ID="$STEP5T_RELEASE_ID" \
+            -e WNBA_RELEASE_CHANNEL=production \
+            -e WNBA_DEPLOYMENT_IMAGE_REF="$STEP5T_IMAGE_REF" \
+            -e WNBA_PREVIOUS_DEPLOYMENT_REVISION=cccccccccccccccccccccccccccccccccccccccc \
+            -e WNBA_PREVIOUS_DEPLOYMENT_IMAGE_REF=kyre-sports-api@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
+            -e WNBA_RELEASE_INITIAL_DEPLOYMENT=false \
+            kyre-sports-api:step5t
+
+      - name: Wait for restarted container
+        run: |
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18000/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs kyre-step5t
+          exit 1
+
+      - name: Prove exact SQLite files survived restart
+        run: |
+          find "$GITHUB_WORKSPACE/.step5t-data" -maxdepth 1 -type f -name '*.sqlite3' -printf '%f:%D:%i\n' | sort > "$GITHUB_WORKSPACE/.step5t-after.txt"
+          diff -u "$GITHUB_WORKSPACE/.step5t-before.txt" "$GITHUB_WORKSPACE/.step5t-after.txt"
+
+      - name: Reverify release and storage identity after restart
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m sports_api.tools.wnba_release_verify \
+            http://127.0.0.1:18000 \
+            --revision "$GITHUB_SHA" \
+            --image-ref "$STEP5T_IMAGE_REF" \
+            --release-id "$STEP5T_RELEASE_ID" \
+            --storage-identity "$STEP5T_STORAGE_IDENTITY"
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs kyre-step5t || true
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f kyre-step5t || true
