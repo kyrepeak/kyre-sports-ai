@@ -167,6 +167,59 @@ docker build \
   -t kyre-sports-api .
 ```
 
+## WNBA hosted staging — Step 5U
+
+Step 5U is the first real-host integration contract. The initial supported host adapter is **Render** because this SQLite architecture requires a Docker-capable web service with one service instance, HTTPS, and a persistent disk.
+
+Step 5U does not activate the sportsbook/model scheduler. The first hosted deployment must stay fail-closed with:
+
+```text
+WNBA_PRODUCTION_RUNTIME_ENABLED=false
+WNBA_DEPLOYMENT_REPLICA_COUNT=1
+WNBA_STAGING_HOST_PROVIDER=render
+WNBA_HOST_ENVIRONMENT=staging
+```
+
+New endpoints:
+
+- `GET /api/v1/wnba/runtime/hosting` — verifies the hosted staging identity, Render runtime metadata, Step 5T release revision, single-instance deployment contract, persistent-storage identity, and pre-activation state
+- `GET /api/v1/wnba/runtime/hosting-smoke-plan` — returns the exact Step 5U GET-only remote verification plan
+
+The Step 5U remote verifier is:
+
+```bash
+python -m sports_api.tools.wnba_staging_verify \
+  https://your-staging-service.onrender.com \
+  --revision <full-git-sha> \
+  --release-id <release-id> \
+  --storage-identity <64-character-storage-sha256> \
+  --service-name kyre-sports-api-staging
+```
+
+The hosted smoke sequence requires:
+
+```text
+GET /health                                      → 200
+GET /api/v1/wnba/runtime/readiness              → 200 + activation OFF
+GET /api/v1/wnba/runtime/deployment             → 200
+GET /api/v1/wnba/runtime/release                → 200 + pre_activation_ready
+GET /api/v1/wnba/runtime/hosting                → 200 + host_contract_ready
+GET /api/v1/wnba/runtime/health                 → 503 (required before activation)
+GET /api/v1/wnba/rankings/player-props/current → 200 or 409
+```
+
+That 503 is intentional during Step 5U: it proves the web service is alive while the production scheduler remains disarmed. Every Step 5U remote request is GET-only; the verifier never calls the manual refresh endpoint and does not intentionally trigger sportsbook collection or Monte Carlo.
+
+A non-auto-sync Render staging Blueprint template is provided at:
+
+```text
+sports_api/hosting/render.staging.yaml.template
+```
+
+It is deliberately not named `render.yaml` and contains placeholders so committing the API code cannot create a paid external resource by accident. Before a real staging deployment, replace every `__TOKEN__`, pin the container by digest, create exactly one Render web-service instance, attach a persistent disk at `/var/lib/kyre-sports-api`, and store the real provider credential in Render's secret environment configuration.
+
+The first external deployment remains a separate operator action because it requires access to the hosting account and may create billable infrastructure. Step 5U's code, CI contract, and verification tooling can be completed without creating that external resource.
+
 Use `sports_api/production.env.example` as the deployment template. Real provider credentials and HMAC secrets belong in the deployment secret manager, never in Git.
 
 ## Architecture
@@ -176,6 +229,7 @@ sports_api/
 ├── api/
 ├── collectors/
 ├── database/
+├── hosting/
 ├── models/
 ├── simulation/
 ├── tools/
