@@ -3,7 +3,7 @@
 Builds a backtest-safe observed distribution from official WNBA player game logs
 for one player and one target game. The exact Step 4W snapshot behind Step 5C
 provides target-game identity/date; only complete played games strictly before
-the target date and on the target team are eligible by default.
+the target date and on the target team are eligible.
 
 Step 5D describes observed Points/Rebounds/Assists/PRA outcomes, empirical tails,
 variance, covariance, correlation, and minutes relationships. It does not change
@@ -180,6 +180,14 @@ def _target_identity(
 ) -> tuple[dict[str, Any], int, str, str, str, str]:
     if not isinstance(readiness, dict):
         raise ValueError("WNBA Step 5D readiness report must be an object.")
+    state = _clean(readiness.get("readiness"))
+    if state == "NOT_READY" or readiness.get("can_start_projection") is False:
+        raise WNBAEmpiricalDistributionNotReadyError(
+            "Step 4X marked the player/game input package NOT_READY."
+        )
+    if state not in {"READY", "READY_WITH_WARNINGS"} or readiness.get("can_start_projection") is not True:
+        raise WNBAEmpiricalDistributionUpstreamError("Step 4X readiness state is invalid.")
+
     snapshot = readiness.get("snapshot")
     if readiness.get("snapshot_included") is not True or not isinstance(snapshot, dict):
         raise WNBAEmpiricalDistributionUpstreamError(
@@ -189,6 +197,7 @@ def _target_identity(
         raise WNBAEmpiricalDistributionUpstreamError(
             "Step 5D received an unexpected Step 5C model version."
         )
+
     player_id = _to_int(snapshot.get("player_id"))
     game_id = _clean(snapshot.get("game_id"))
     focal = snapshot.get("focal_identity")
@@ -276,17 +285,33 @@ def _validate_game_log_dataset(
             raise WNBAEmpiricalDistributionUpstreamError(
                 "Official WNBA player game log failed player identity verification."
             )
+        if verification.get("all_game_ids_valid") is False:
+            raise WNBAEmpiricalDistributionUpstreamError(
+                "Official WNBA player game log failed game-ID validation."
+            )
         if verification.get("all_game_ids_unique") is False:
             raise WNBAEmpiricalDistributionUpstreamError(
                 "Official WNBA player game log contains duplicate game IDs."
             )
+        if verification.get("all_matchup_teams_mapped_to_registry") is False:
+            raise WNBAEmpiricalDistributionUpstreamError(
+                "Official WNBA player game log contains unmapped matchup teams."
+            )
+
+    ids = [
+        _clean(row.get("game_id"))
+        for row in games
+        if isinstance(row, dict) and _clean(row.get("game_id")) is not None
+    ]
+    duplicate_ids = sorted({game_id for game_id in ids if ids.count(game_id) > 1})
+    if duplicate_ids:
+        raise WNBAEmpiricalDistributionUpstreamError(
+            "Official WNBA player game log contains duplicate game IDs."
+        )
     return games
 
 
-def _normalized_observation(
-    game: dict[str, Any],
-    player_id: int,
-) -> dict[str, Any] | None:
+def _normalized_observation(game: dict[str, Any], player_id: int) -> dict[str, Any] | None:
     if not isinstance(game, dict):
         return None
     if _to_int(game.get("player_id")) not in {None, player_id}:
@@ -404,9 +429,8 @@ def _mean(values: list[float]) -> float:
 
 def _median(values: list[float]) -> float:
     ordered = sorted(values)
-    n = len(ordered)
-    mid = n // 2
-    if n % 2:
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
         return ordered[mid]
     return (ordered[mid - 1] + ordered[mid]) / 2.0
 
@@ -417,8 +441,7 @@ def _nearest_rank(values: list[float], probability: float) -> float:
         return ordered[0]
     if probability >= 1:
         return ordered[-1]
-    rank = max(1, ceil(probability * len(ordered)))
-    return ordered[rank - 1]
+    return ordered[max(1, ceil(probability * len(ordered))) - 1]
 
 
 def _modes(values: list[float]) -> list[float]:
@@ -449,7 +472,7 @@ def _distribution_table(values: list[int]) -> list[dict[str, Any]]:
     for value in ordered:
         count = counts[value]
         cumulative += count
-        tail = sum(counts[x] for x in ordered if x >= value)
+        tail = sum(counts[item] for item in ordered if item >= value)
         rows.append(
             {
                 "value": value,
@@ -505,27 +528,22 @@ def _correlation(x: list[float], y: list[float]) -> float | None:
     if vx is None or vy is None or vx <= 0 or vy <= 0:
         return None
     cov = _covariance(x, y, sample=True)
-    if cov is None:
-        return None
-    return cov / sqrt(vx * vy)
+    return None if cov is None else cov / sqrt(vx * vy)
 
 
 def _matrix(
-    vectors: dict[str, list[float]],
-    *,
-    correlation: bool,
+    vectors: dict[str, list[float]], *, correlation: bool
 ) -> dict[str, dict[str, float | None]]:
     out: dict[str, dict[str, float | None]] = {}
     for left in DEPENDENCE_KEYS:
-        row: dict[str, float | None] = {}
+        out[left] = {}
         for right in DEPENDENCE_KEYS:
             value = (
                 _correlation(vectors[left], vectors[right])
                 if correlation
                 else _covariance(vectors[left], vectors[right], sample=True)
             )
-            row[right] = round(value, 8) if value is not None else None
-        out[left] = row
+            out[left][right] = round(value, 8) if value is not None else None
     return out
 
 
@@ -537,19 +555,19 @@ def _dependence(observations: list[dict[str, Any]]) -> dict[str, Any]:
     minutes = [float(row["minutes"]) for row in observations]
     sample_covariance = _matrix(vectors, correlation=False)
     correlations = _matrix(vectors, correlation=True)
-    minutes_correlations = {
-        key: (
-            round(value, 8)
-            if (value := _correlation(minutes, vectors[key])) is not None
-            else None
-        )
-        for key in DEPENDENCE_KEYS
-    }
-    zero_variance = [
-        key
-        for key in DEPENDENCE_KEYS
-        if (_variance(vectors[key], sample=True) or 0.0) <= 0.0
-    ] if len(observations) >= 2 else list(DEPENDENCE_KEYS)
+    minutes_correlations = {}
+    for key in DEPENDENCE_KEYS:
+        value = _correlation(minutes, vectors[key])
+        minutes_correlations[key] = round(value, 8) if value is not None else None
+    zero_variance = (
+        [
+            key
+            for key in DEPENDENCE_KEYS
+            if (_variance(vectors[key], sample=True) or 0.0) <= 0.0
+        ]
+        if len(observations) >= 2
+        else list(DEPENDENCE_KEYS)
+    )
     return {
         "game_count": len(observations),
         "sample_covariance_matrix": sample_covariance,
@@ -605,19 +623,28 @@ def build_empirical_outcome_distribution(
     }
     dependence = _dependence(observations)
     sample_ready = len(observations) >= MIN_SAMPLE_VARIANCE_GAMES
-    dependence_ready = len(observations) >= MIN_DEPENDENCE_GAMES and not dependence["zero_sample_variance_stats"]
+    dependence_ready = (
+        len(observations) >= MIN_DEPENDENCE_GAMES
+        and not dependence["zero_sample_variance_stats"]
+    )
 
     scenario_base = _dig(scenarios, "scenarios", "base")
     if not isinstance(scenario_base, dict):
         raise WNBAEmpiricalDistributionUpstreamError(
             "Step 5C scenario payload is missing the BASE scenario."
         )
-    for key in ("points", "rebounds", "assists", "pra"):
+    base_values: dict[str, float] = {}
+    for key in DEPENDENCE_KEYS:
         value = _to_float(scenario_base.get(key))
         if value is None or value < 0:
             raise WNBAEmpiricalDistributionUpstreamError(
                 f"Step 5C BASE scenario has invalid {key}."
             )
+        base_values[key] = value
+    if abs(base_values["pra"] - sum(base_values[key] for key in STAT_KEYS)) > 0.001:
+        raise WNBAEmpiricalDistributionUpstreamError(
+            "Step 5C BASE PRA does not equal BASE points + rebounds + assists."
+        )
 
     model_config = {
         "model_version": MODEL_VERSION,
@@ -636,7 +663,6 @@ def build_empirical_outcome_distribution(
         "snapshot_content_sha256": snapshot.get("content_sha256"),
         "scenario_fingerprint_sha256": scenarios.get("scenario_fingerprint_sha256"),
         "game_log_source": game_log.get("source"),
-        "game_log_retrieved_at_utc": game_log.get("retrieved_at_utc"),
         "model_config": model_config,
         "observations": observations,
         "summaries": summaries,
@@ -699,8 +725,10 @@ def build_empirical_outcome_distribution(
             "covariance_is_observed_sample_dependence_not_causal_relationship": True,
             "step_5c_central_projection_unchanged": True,
             "distribution_is_conditioned_only_by_date_and_target_team_not_by_sportsbook": True,
+            "retrieval_timestamp_is_metadata_not_distribution_fingerprint_content": True,
         },
         "guardrails": {
+            "step_4x_not_ready_blocks_5d": True,
             "target_game_and_same_date_rows_excluded": True,
             "future_game_rows_excluded": True,
             "prior_team_rows_excluded": True,
@@ -715,6 +743,7 @@ def build_empirical_outcome_distribution(
             "no_named_defender_assignment_inferred": True,
         },
         "verification": {
+            "step_4x_readiness_state_checked": True,
             "step_5c_model_version_checked": True,
             "step_5c_and_step_4w_identity_match": True,
             "step_5c_and_step_4x_snapshot_reference_match": True,
@@ -723,6 +752,7 @@ def build_empirical_outcome_distribution(
             "all_selected_rows_strictly_predate_target_date": True,
             "all_selected_rows_match_target_team": True,
             "pra_recomputed_as_points_plus_rebounds_plus_assists": True,
+            "step_5c_base_pra_component_sum_checked": True,
             "distribution_fingerprint_created": True,
         },
     }
