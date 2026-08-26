@@ -133,7 +133,17 @@ def normalized_game(game_id="1022600204", player_id=20, team_key="seattle-storm"
         "players": [player],
         "stints": [stint],
     }
-    return {"away": other, "home": side, "game_id": game_id}
+    return {
+        "source": "WNBA Stats API",
+        "source_url": "https://stats.wnba.com/",
+        "source_endpoint": "gamerotation",
+        "league_id": "10",
+        "rotation_stat": "PLAYER_PTS",
+        "time_basis": {},
+        "away": other,
+        "home": side,
+        "game_id": game_id,
+    }
 
 
 class WNBARotationContextTests(unittest.TestCase):
@@ -161,11 +171,11 @@ class WNBARotationContextTests(unittest.TestCase):
         self.assertTrue(player["finished_game"])
 
     @patch("sports_api.wnba_rotation_context._request_stats_json")
-    def test_league_id_first_and_rotation_stat_forwarded(self, request):
+    def test_league_id_is_first_and_rotation_stat_forwarded(self, request):
         request.return_value = (payload(), "x", False, 60)
         m.get_game_rotation("1022600204", 2026, rotation_stat="USG_PCT")
         endpoint, params = request.call_args.args
-        self.assertEqual(endpoint, "gamerotation")
+        self.assertEqual(endpoint, m.ROTATION_ENDPOINT)
         self.assertEqual(params[0], ("LeagueID", "10"))
         self.assertEqual(dict(params)["RotationStat"], "USG_PCT")
 
@@ -181,17 +191,13 @@ class WNBARotationContextTests(unittest.TestCase):
     @patch("sports_api.wnba_rotation_context._request_stats_json")
     def test_duplicate_stint_fails_closed(self, request):
         duplicate = row(in_time=0, out_time=6000)
-        request.return_value = (
-            payload(home_rows=[duplicate, duplicate]), "x", False, 60
-        )
+        request.return_value = (payload(home_rows=[duplicate, duplicate]), "x", False, 60)
         with self.assertRaisesRegex(m.WNBARotationUpstreamError, "duplicate stint"):
             m.get_game_rotation("1022600204", 2026)
 
     @patch("sports_api.wnba_rotation_context._request_stats_json")
     def test_mismatched_game_id_fails_closed(self, request):
-        request.return_value = (
-            payload(home_rows=[row(game_id="1022600999")]), "x", False, 60
-        )
+        request.return_value = (payload(home_rows=[row(game_id="1022600999")]), "x", False, 60)
         with self.assertRaisesRegex(m.WNBARotationUpstreamError, "expected"):
             m.get_game_rotation("1022600204", 2026)
 
@@ -230,19 +236,19 @@ class WNBARotationContextTests(unittest.TestCase):
 
     @patch("sports_api.wnba_rotation_context._request_stats_json")
     def test_bad_interval_fails_closed(self, request):
-        request.return_value = (
-            payload(home_rows=[row(in_time=7000, out_time=6000)]), "x", False, 60
-        )
+        request.return_value = (payload(home_rows=[row(in_time=7000, out_time=6000)]), "x", False, 60)
         with self.assertRaisesRegex(m.WNBARotationUpstreamError, "invalid in/out"):
             m.get_game_rotation("1022600204", 2026)
 
     @patch("sports_api.wnba_rotation_context._request_stats_json")
     def test_malformed_schema_fails_closed(self, request):
         bad_headers = [item for item in HEADERS if item != "USG_PCT"]
-        bad_home = [row()[:-1]]
-        bad_away = [row(team_id=2, city="Toronto", team_name="Tempo", player_id=10)[:-1]]
         request.return_value = (
-            payload(away_rows=bad_away, home_rows=bad_home, headers=bad_headers),
+            payload(
+                away_rows=[row(team_id=2, city="Toronto", team_name="Tempo", player_id=10)[:-1]],
+                home_rows=[row()[:-1]],
+                headers=bad_headers,
+            ),
             "x", False, 60,
         )
         with self.assertRaisesRegex(m.WNBARotationUpstreamError, "missing required fields"):
@@ -270,10 +276,7 @@ class WNBARotationContextTests(unittest.TestCase):
                 {"game_id": "1022600203", "game_date": "2026-08-24", "matchup": {}},
             ]
         }
-        game_rotation.side_effect = [
-            normalized_game("1022600204"),
-            normalized_game("1022600203"),
-        ]
+        game_rotation.side_effect = [normalized_game("1022600204"), normalized_game("1022600203")]
         result = m.get_player_recent_rotation_context(20, 2026, last_n_games=2)
         self.assertEqual(result["rotation_game_count"], 2)
         self.assertEqual(result["aggregate"]["stint_count"], 2)
@@ -290,10 +293,7 @@ class WNBARotationContextTests(unittest.TestCase):
                 {"game_id": "1022600203", "game_date": "2026-08-24", "matchup": {}},
             ]
         }
-        game_rotation.side_effect = [
-            normalized_game("1022600204"),
-            m.WNBARotationNotFoundError("missing"),
-        ]
+        game_rotation.side_effect = [normalized_game("1022600204"), m.WNBARotationNotFoundError("missing")]
         result = m.get_player_recent_rotation_context(20, 2026, last_n_games=2)
         self.assertEqual(result["rotation_game_count"], 1)
         self.assertEqual(result["missing_rotation_game_ids"], ["1022600203"])
