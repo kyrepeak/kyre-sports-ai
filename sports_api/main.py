@@ -6,6 +6,7 @@ from sports_api.api.mlb_boxscore import router as mlb_boxscore_router
 from sports_api.api.mlb_game_logs import router as mlb_game_logs_router
 from sports_api.api.mlb_recent_form import router as mlb_recent_form_router
 from sports_api.api.mlb_stats import router as mlb_stats_router
+from sports_api.api.mlb_team_analytics import router as mlb_team_analytics_router
 
 app = FastAPI(
     title="Kyre Sports API",
@@ -19,6 +20,7 @@ app.include_router(mlb_stats_router)
 app.include_router(mlb_game_logs_router)
 app.include_router(mlb_recent_form_router)
 app.include_router(mlb_boxscore_router)
+app.include_router(mlb_team_analytics_router)
 
 
 @app.get("/", tags=["system"])
