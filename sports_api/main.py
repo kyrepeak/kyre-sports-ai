@@ -32,6 +32,7 @@ from sports_api.api.wnba_advanced import router as wnba_advanced_router
 from sports_api.api.wnba_availability import router as wnba_availability_router
 from sports_api.api.wnba_baseline_projection import router as wnba_baseline_projection_router
 from sports_api.api.wnba_clutch_context import router as wnba_clutch_context_router
+from sports_api.api.wnba_correlated_monte_carlo import router as wnba_correlated_monte_carlo_router
 from sports_api.api.wnba_defensive_activity import router as wnba_defensive_activity_router
 from sports_api.api.wnba_empirical_outcome_distribution import router as wnba_empirical_outcome_distribution_router
 from sports_api.api.wnba_event_lineup_context import router as wnba_event_lineup_context_router
@@ -90,6 +91,7 @@ app.include_router(wnba_advanced_router)
 app.include_router(wnba_availability_router)
 app.include_router(wnba_baseline_projection_router)
 app.include_router(wnba_clutch_context_router)
+app.include_router(wnba_correlated_monte_carlo_router)
 app.include_router(wnba_defensive_activity_router)
 app.include_router(wnba_empirical_outcome_distribution_router)
 app.include_router(wnba_event_lineup_context_router)
