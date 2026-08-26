@@ -277,6 +277,7 @@ class Step5KTests(unittest.TestCase):
             [{"threshold":value}],
             require_same_favored_side_all_scenarios=False,
             minimum_worst_scenario_probability=.35,
+            maximum_scenario_span_percentage_points=40,
         )
         self.assertEqual(result["probability_board_count"], 1)
 
