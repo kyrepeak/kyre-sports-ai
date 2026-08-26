@@ -60,6 +60,7 @@ from sports_api.api.wnba_prop_line_feed_adapter import router as wnba_prop_line_
 from sports_api.api.wnba_prop_threshold_probability import router as wnba_prop_threshold_probability_router
 from sports_api.api.wnba_real_staging import router as wnba_real_staging_router
 from sports_api.api.wnba_release_activation import router as wnba_release_activation_router
+from sports_api.api.wnba_render_attachment import router as wnba_render_attachment_router
 from sports_api.api.wnba_rotation_context import router as wnba_rotation_context_router
 from sports_api.api.wnba_schedule_context import router as wnba_schedule_context_router
 from sports_api.api.wnba_shot_context import router as wnba_shot_context_router
@@ -134,6 +135,7 @@ app.include_router(wnba_prop_line_feed_adapter_router)
 app.include_router(wnba_prop_threshold_probability_router)
 app.include_router(wnba_real_staging_router)
 app.include_router(wnba_release_activation_router)
+app.include_router(wnba_render_attachment_router)
 app.include_router(wnba_rotation_context_router)
 app.include_router(wnba_schedule_context_router)
 app.include_router(wnba_shot_context_router)
