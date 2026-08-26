@@ -1,0 +1,212 @@
+name: WNBA Step 6A Render credential preflight + immutable image
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  render-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: wnba-render-staging
+
+    steps:
+      - name: Checkout exact branch revision
+        uses: actions/checkout@v4
+
+      - name: Resolve immutable Step 6A release identity
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          test "${#REVISION}" -eq 40
+          SHORT_SHA="${REVISION:0:12}"
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          RELEASE_ID="wnba-step6a-$SHORT_SHA"
+          echo "WNBA_STEP6A_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6A_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6A_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR with GitHub Actions publisher
+        shell: bash
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish exact preflight image
+        shell: bash
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$WNBA_STEP6A_REVISION" \
+            --build-arg WNBA_RELEASE_ID="$WNBA_STEP6A_RELEASE_ID" \
+            --metadata-file /tmp/wnba-step6a-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$WNBA_STEP6A_REPOSITORY:$WNBA_STEP6A_RELEASE_ID" \
+            -t "$WNBA_STEP6A_REPOSITORY:$WNBA_STEP6A_REVISION" \
+            --push .
+
+      - name: Freeze registry digest
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, re
+          meta = json.load(open('/tmp/wnba-step6a-build-metadata.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid registry digest: {digest!r}')
+          image_ref = f"{os.environ['WNBA_STEP6A_REPOSITORY']}@{digest}"
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f"WNBA_STEP6A_IMAGE_REF={image_ref}\n")
+              handle.write(f"WNBA_STEP6A_IMAGE_DIGEST={digest}\n")
+          print(image_ref)
+          PY
+
+      - name: Check required staging secret presence without exposing values
+        id: secret_presence
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+          GHCR_RENDER_USERNAME: ${{ secrets.GHCR_RENDER_USERNAME }}
+          GHCR_RENDER_TOKEN: ${{ secrets.GHCR_RENDER_TOKEN }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+        run: |
+          present() {
+            if [ -n "$1" ]; then printf 'true'; else printf 'false'; fi
+          }
+          echo "render_api_key_present=$(present "$RENDER_API_KEY")" >> "$GITHUB_OUTPUT"
+          echo "render_owner_id_present=$(present "$RENDER_OWNER_ID")" >> "$GITHUB_OUTPUT"
+          echo "ghcr_username_present=$(present "$GHCR_RENDER_USERNAME")" >> "$GITHUB_OUTPUT"
+          echo "ghcr_token_present=$(present "$GHCR_RENDER_TOKEN")" >> "$GITHUB_OUTPUT"
+          echo "provider_key_present=$(present "$SPORTSGAMEODDS_API_KEY")" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Render API authentication with GET only
+        id: render_auth
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "authenticated=false" >> "$GITHUB_OUTPUT"
+            echo "http_status=not_attempted" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          status="$(curl --silent --show-error --output /tmp/render-owners.json --write-out '%{http_code}' \
+            --header 'Accept: application/json' \
+            --header "Authorization: Bearer $RENDER_API_KEY" \
+            'https://api.render.com/v1/owners?limit=1' || true)"
+          if [ "$status" = "200" ]; then
+            echo "authenticated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "authenticated=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "http_status=$status" >> "$GITHUB_OUTPUT"
+          rm -f /tmp/render-owners.json
+
+      - name: Validate Render GHCR pull credential against exact digest
+        id: ghcr_auth
+        shell: bash
+        env:
+          GHCR_RENDER_USERNAME: ${{ secrets.GHCR_RENDER_USERNAME }}
+          GHCR_RENDER_TOKEN: ${{ secrets.GHCR_RENDER_TOKEN }}
+        run: |
+          if [ -z "$GHCR_RENDER_USERNAME" ] || [ -z "$GHCR_RENDER_TOKEN" ]; then
+            echo "authenticated=false" >> "$GITHUB_OUTPUT"
+            echo "digest_access=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if echo "$GHCR_RENDER_TOKEN" | docker login ghcr.io -u "$GHCR_RENDER_USERNAME" --password-stdin >/dev/null 2>&1; then
+            echo "authenticated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "authenticated=false" >> "$GITHUB_OUTPUT"
+            echo "digest_access=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if docker buildx imagetools inspect "$WNBA_STEP6A_IMAGE_REF" >/dev/null 2>&1; then
+            echo "digest_access=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "digest_access=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write sanitized Step 6A preflight report
+        shell: bash
+        env:
+          RENDER_API_KEY_PRESENT: ${{ steps.secret_presence.outputs.render_api_key_present }}
+          RENDER_OWNER_ID_PRESENT: ${{ steps.secret_presence.outputs.render_owner_id_present }}
+          GHCR_USERNAME_PRESENT: ${{ steps.secret_presence.outputs.ghcr_username_present }}
+          GHCR_TOKEN_PRESENT: ${{ steps.secret_presence.outputs.ghcr_token_present }}
+          PROVIDER_KEY_PRESENT: ${{ steps.secret_presence.outputs.provider_key_present }}
+          RENDER_AUTHENTICATED: ${{ steps.render_auth.outputs.authenticated }}
+          RENDER_HTTP_STATUS: ${{ steps.render_auth.outputs.http_status }}
+          GHCR_AUTHENTICATED: ${{ steps.ghcr_auth.outputs.authenticated }}
+          GHCR_DIGEST_ACCESS: ${{ steps.ghcr_auth.outputs.digest_access }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          def b(name): return os.environ.get(name, '').lower() == 'true'
+          required = {
+              'RENDER_API_KEY': b('RENDER_API_KEY_PRESENT'),
+              'GHCR_RENDER_USERNAME': b('GHCR_USERNAME_PRESENT'),
+              'GHCR_RENDER_TOKEN': b('GHCR_TOKEN_PRESENT'),
+              'SPORTSGAMEODDS_API_KEY': b('PROVIDER_KEY_PRESENT'),
+          }
+          report = {
+              'schema_version': 'wnba_step_6a_render_credential_preflight_v1',
+              'release_id': os.environ['WNBA_STEP6A_RELEASE_ID'],
+              'revision': os.environ['WNBA_STEP6A_REVISION'],
+              'published_image_ref': os.environ['WNBA_STEP6A_IMAGE_REF'],
+              'published_image_digest': os.environ['WNBA_STEP6A_IMAGE_DIGEST'],
+              'required_secret_presence': required,
+              'optional_render_owner_id_present': b('RENDER_OWNER_ID_PRESENT'),
+              'all_required_secrets_present': all(required.values()),
+              'render_api_authenticated': b('RENDER_AUTHENTICATED'),
+              'render_api_http_status': os.environ.get('RENDER_HTTP_STATUS'),
+              'ghcr_render_authenticated': b('GHCR_AUTHENTICATED'),
+              'ghcr_exact_digest_accessible': b('GHCR_DIGEST_ACCESS'),
+              'provisioning_preflight_ready': (
+                  all(required.values())
+                  and b('RENDER_AUTHENTICATED')
+                  and b('GHCR_AUTHENTICATED')
+                  and b('GHCR_DIGEST_ACCESS')
+              ),
+              'safety': {
+                  'render_api_methods_used': ['GET'] if b('RENDER_API_KEY_PRESENT') else [],
+                  'paid_render_resource_created': False,
+                  'render_service_mutated': False,
+                  'sportsbook_api_called': False,
+                  'monte_carlo_run': False,
+                  'secret_values_in_report': False,
+              },
+          }
+          out = pathlib.Path('.wnba-step6a-preflight')
+          out.mkdir(exist_ok=True)
+          (out / 'render-credential-preflight.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps({
+              'provisioning_preflight_ready': report['provisioning_preflight_ready'],
+              'all_required_secrets_present': report['all_required_secrets_present'],
+              'render_api_authenticated': report['render_api_authenticated'],
+              'ghcr_render_authenticated': report['ghcr_render_authenticated'],
+              'ghcr_exact_digest_accessible': report['ghcr_exact_digest_accessible'],
+              'optional_render_owner_id_present': report['optional_render_owner_id_present'],
+          }, sort_keys=True))
+          PY
+
+      - name: Upload sanitized Step 6A preflight evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6a-render-preflight-${{ github.run_id }}
+          path: .wnba-step6a-preflight/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 30
