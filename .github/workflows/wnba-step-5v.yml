@@ -128,6 +128,7 @@ jobs:
         run: |
           docker run -d --name kyre-step5v -p 18002:8000 \
             -v "$GITHUB_WORKSPACE/.step5v-data:/var/lib/kyre-sports-api" \
+            -v "$GITHUB_WORKSPACE/.step5v-handoff:/handoff" \
             -e WNBA_PRODUCTION_RUNTIME_ENABLED=false \
             -e WNBA_CURRENT_BOARD_STORE_PATH=/var/lib/kyre-sports-api/wnba_current_board.sqlite3 \
             -e WNBA_PROP_FEED_STORE_PATH=/var/lib/kyre-sports-api/wnba_prop_feed.sqlite3 \
@@ -185,52 +186,9 @@ jobs:
           STATUS="$(curl --silent --output /tmp/step5v-health.json --write-out '%{http_code}' http://127.0.0.1:18002/api/v1/wnba/runtime/health)"
           test "$STATUS" = "503"
 
-      - name: Build sanitized Step 5V handoff bundle
-        env:
-          PYTHONPATH: .
-          WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
-          WNBA_CURRENT_BOARD_STORE_PATH: ${{ github.workspace }}/.step5v-data/wnba_current_board.sqlite3
-          WNBA_PROP_FEED_STORE_PATH: ${{ github.workspace }}/.step5v-data/wnba_prop_feed.sqlite3
-          WNBA_BACKTEST_STORE_PATH: ${{ github.workspace }}/.step5v-data/wnba_backtest.sqlite3
-          WNBA_BOARD_SCHEDULER_LOCK_PATH: ${{ github.workspace }}/.step5v-data/wnba_scheduler_lock.sqlite3
-          WNBA_BACKTEST_ARCHIVE_HMAC_SECRET: step5v-ci-secret-material-12345678901234567890
-          SPORTSGAMEODDS_API_KEY: step5v-ci-demo-key
-          WNBA_BOARD_SCHEDULER_ENABLED: "true"
-          WNBA_BOARD_AUTO_ARCHIVE_ENABLED: "true"
-          WNBA_DEPLOYMENT_MODE: container
-          WNBA_DEPLOYMENT_REPLICA_COUNT: "1"
-          WNBA_PERSISTENT_VOLUME_ROOT: ${{ github.workspace }}/.step5v-data
-          WEB_CONCURRENCY: "2"
-          PORT: "8000"
-          WNBA_DEPLOYMENT_REVISION: ${{ github.sha }}
-          WNBA_RELEASE_CHANNEL: production
-          WNBA_RELEASE_INITIAL_DEPLOYMENT: "true"
-          WNBA_STAGING_HOST_PROVIDER: render
-          WNBA_HOST_ENVIRONMENT: staging
-          WNBA_STAGING_EXTERNAL_URL: https://kyre-step5v-ci.onrender.com
-          WNBA_STAGING_EXPECTED_SERVICE_NAME: kyre-sports-api-staging
-          WNBA_STAGING_EXPECTED_GIT_BRANCH: api-foundation-v1
-          RENDER: "true"
-          RENDER_SERVICE_ID: srv-step5v-ci
-          RENDER_SERVICE_NAME: kyre-sports-api-staging
-          RENDER_SERVICE_TYPE: web
-          RENDER_EXTERNAL_URL: https://kyre-step5v-ci.onrender.com
-          RENDER_EXTERNAL_HOSTNAME: kyre-step5v-ci.onrender.com
-          RENDER_GIT_COMMIT: ${{ github.sha }}
-          RENDER_GIT_BRANCH: api-foundation-v1
-          RENDER_GIT_REPO_SLUG: kyrepeak/kyre-sports-ai
-          RENDER_INSTANCE_ID: instance-step5v-ci
-          WNBA_RELEASE_REGISTRY: ghcr.io
-          WNBA_RELEASE_IMAGE_REPOSITORY: ghcr.io/kyrepeak/kyre-sports-api
-          WNBA_RELEASE_PUBLICATION_VERIFIED: "true"
-          WNBA_RELEASE_PUBLISHER: github-actions
-          WNBA_RELEASE_SOURCE_REPOSITORY: kyrepeak/kyre-sports-ai
-          WNBA_RELEASE_HANDOFF_FORMAT: render-staging-v1
+      - name: Build sanitized Step 5V handoff bundle inside staged runtime
         run: |
-          export WNBA_RELEASE_ID="$STEP5V_RELEASE_ID"
-          export WNBA_DEPLOYMENT_IMAGE_REF="$STEP5V_PUBLISHED_IMAGE_REF"
-          export WNBA_RELEASE_PUBLISHED_IMAGE_REF="$STEP5V_PUBLISHED_IMAGE_REF"
-          python -m sports_api.tools.wnba_release_handoff "$GITHUB_WORKSPACE/.step5v-handoff"
+          docker exec kyre-step5v python -m sports_api.tools.wnba_release_handoff /handoff
           grep -R --fixed-strings 'WNBA_PRODUCTION_RUNTIME_ENABLED=false' "$GITHUB_WORKSPACE/.step5v-handoff"
           if grep -R --fixed-strings 'step5v-ci-secret-material' "$GITHUB_WORKSPACE/.step5v-handoff"; then exit 1; fi
           if grep -R --fixed-strings 'step5v-ci-demo-key' "$GITHUB_WORKSPACE/.step5v-handoff"; then exit 1; fi
