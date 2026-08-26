@@ -1,0 +1,88 @@
+# WNBA Step 5U Render staging Blueprint TEMPLATE.
+# This file is intentionally NOT named render.yaml and will not auto-sync.
+# Replace every __TOKEN__ before using it in Render.
+# A persistent disk requires a compatible paid Render web-service plan.
+services:
+  - type: web
+    name: kyre-sports-api-staging
+    runtime: image
+    plan: starter
+    region: oregon
+    numInstances: 1
+    healthCheckPath: /health
+    maxShutdownDelaySeconds: 60
+    image:
+      # MUST be pinned by digest, not :latest.
+      url: __IMMUTABLE_IMAGE_REF__
+      # If GHCR is private, configure a Render registry credential and uncomment:
+      # creds:
+      #   fromRegistryCreds:
+      #     name: __RENDER_REGISTRY_CREDENTIAL_NAME__
+    disk:
+      name: kyre-sports-api-staging-data
+      mountPath: /var/lib/kyre-sports-api
+      sizeGB: 1
+    envVars:
+      - key: WNBA_DEPLOYMENT_MODE
+        value: container
+      - key: WNBA_DEPLOYMENT_REPLICA_COUNT
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: WNBA_PERSISTENT_VOLUME_ROOT
+        value: /var/lib/kyre-sports-api
+
+      # Step 5T immutable release identity.
+      - key: WNBA_RELEASE_ID
+        value: __RELEASE_ID__
+      - key: WNBA_RELEASE_CHANNEL
+        value: production
+      - key: WNBA_DEPLOYMENT_REVISION
+        value: __FULL_GIT_SHA__
+      - key: WNBA_DEPLOYMENT_IMAGE_REF
+        value: __IMMUTABLE_IMAGE_REF__
+      - key: WNBA_RELEASE_INITIAL_DEPLOYMENT
+        value: "true"
+
+      # Step 5U hosted staging contract.
+      - key: WNBA_STAGING_HOST_PROVIDER
+        value: render
+      - key: WNBA_HOST_ENVIRONMENT
+        value: staging
+      - key: WNBA_STAGING_EXTERNAL_URL
+        value: __RENDER_HTTPS_URL__
+      - key: WNBA_STAGING_EXPECTED_SERVICE_NAME
+        value: kyre-sports-api-staging
+      - key: WNBA_STAGING_EXPECTED_GIT_BRANCH
+        value: api-foundation-v1
+      - key: WNBA_STAGING_ALLOW_CUSTOM_DOMAIN
+        value: "false"
+
+      # Fail-closed. Do not enable during Step 5U first hosted verification.
+      - key: WNBA_PRODUCTION_RUNTIME_ENABLED
+        value: "false"
+
+      # Persistent SQLite stores.
+      - key: WNBA_CURRENT_BOARD_STORE_PATH
+        value: /var/lib/kyre-sports-api/wnba_current_board.sqlite3
+      - key: WNBA_PROP_FEED_STORE_PATH
+        value: /var/lib/kyre-sports-api/wnba_prop_feed.sqlite3
+      - key: WNBA_BACKTEST_STORE_PATH
+        value: /var/lib/kyre-sports-api/wnba_backtest.sqlite3
+      - key: WNBA_BOARD_SCHEDULER_LOCK_PATH
+        value: /var/lib/kyre-sports-api/wnba_scheduler_lock.sqlite3
+
+      - key: WNBA_BOARD_SCHEDULER_ENABLED
+        value: "true"
+      - key: WNBA_BOARD_AUTO_ARCHIVE_ENABLED
+        value: "true"
+      - key: WNBA_BOARD_SCHEDULER_LOOP_SECONDS
+        value: "30"
+      - key: WNBA_BOARD_MIN_PROVIDER_SPACING_SECONDS
+        value: "60"
+
+      # Secret values are supplied in Render, never committed.
+      - key: SPORTSGAMEODDS_API_KEY
+        sync: false
+      - key: WNBA_BACKTEST_ARCHIVE_HMAC_SECRET
+        generateValue: true
