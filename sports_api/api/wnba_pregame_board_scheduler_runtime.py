@@ -35,6 +35,7 @@ _runtime_worker_thread: threading.Thread | None = None
 _runtime_worker_state: dict[str, Any] = {
     "thread_running": False,
     "startup_evaluated_at_utc": None,
+    "startup_activation_requested": False,
     "startup_scheduler_allowed": False,
     "startup_preflight_ready": False,
     "startup_blocking_reasons": [],
@@ -91,18 +92,31 @@ def _runtime_worker_loop(loop_seconds: int) -> None:
 
 
 def _start_runtime_worker() -> None:
+    """Start a fail-closed supervisor in every activated FastAPI worker.
+
+    A worker does not need a green preflight at its exact startup instant to
+    run the supervisor. This matters in multi-worker deployments because
+    another process may briefly own the Step-5Q lock while this worker boots.
+    The supervisor keeps rechecking the Step-5R gate and never delegates a
+    cycle until the gate is green.
+    """
     global _runtime_worker_thread
     report = get_production_runtime_readiness()
+    activation_requested = report.get("activation_requested") is True
     _set_state(
         startup_evaluated_at_utc=_utc_now_iso(),
+        startup_activation_requested=activation_requested,
         startup_scheduler_allowed=report.get("scheduler_allowed") is True,
         startup_preflight_ready=report.get("preflight_ready") is True,
         startup_blocking_reasons=list(report.get("blocking_reasons") or []),
     )
-    if report.get("scheduler_allowed") is not True:
+    if not activation_requested:
         return
-    config = step5q.get_scheduler_configuration()
-    loop_seconds = int(config.get("loop_seconds") or 30)
+    try:
+        config = step5q.get_scheduler_configuration()
+        loop_seconds = int(config.get("loop_seconds") or 30)
+    except Exception:
+        loop_seconds = 30
     with _runtime_worker_lock:
         if _runtime_worker_thread is not None and _runtime_worker_thread.is_alive():
             return
@@ -201,6 +215,7 @@ def get_current_wnba_player_prop_scheduler_status(
             "read_path_remains_network_free": True,
             "scheduler_cycle_requires_step_5r_gate": True,
             "step_5q_locking_remains_authoritative": True,
+            "activated_workers_keep_a_fail_closed_supervisor_for_takeover": True,
         },
     }
     return status
