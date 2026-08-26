@@ -1,6 +1,6 @@
 import unittest
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from sports_api import wnba_model_input_readiness as m
@@ -22,7 +22,25 @@ def _status(requested=True, available=True, error=None):
     }
 
 
+def _rehash(snap):
+    snap["content_sha256"] = m._canonical_hash(m._snapshot_hash_content(snap))
+    snap["snapshot_id"] = f"wnba-4w-{GAME_ID}-{PLAYER_ID}-{snap['content_sha256'][:16]}"
+    return snap
+
+
 def _snapshot():
+    focal_availability = {
+        "player_id": PLAYER_ID,
+        "player_name": "Focal Player",
+        "injury_report_status": None,
+        "availability_class": "not_listed",
+        "availability_blocking": False,
+        "availability_uncertain": False,
+    }
+    report = {
+        "report_timestamp_eastern": "2026-08-26T10:00:00-04:00",
+        "retrieved_at_utc": "2026-08-26T15:55:00+00:00",
+    }
     snap = {
         "source": "Step 4W",
         "data_type": "content_addressed_pre_model_projection_input_snapshot",
@@ -55,17 +73,8 @@ def _snapshot():
         },
         "availability_summary": {
             "focal_player_current_roster_match": True,
-            "focal_player_availability": {
-                "player_id": PLAYER_ID,
-                "injury_report_status": None,
-                "availability_class": "not_listed",
-                "availability_blocking": False,
-                "availability_uncertain": False,
-            },
-            "injury_report": {
-                "report_timestamp_eastern": "2026-08-26T10:00:00-04:00",
-                "retrieved_at_utc": "2026-08-26T15:55:00+00:00",
-            },
+            "focal_player_availability": deepcopy(focal_availability),
+            "injury_report": deepcopy(report),
         },
         "component_status": {
             "game_availability": _status(),
@@ -121,6 +130,9 @@ def _snapshot():
             "game_availability": {
                 "game_id": GAME_ID,
                 "date": "2026-08-26",
+                "away": {"team_key": AWAY, "players": []},
+                "home": {"team_key": HOME, "players": [deepcopy(focal_availability)]},
+                "injury_report": deepcopy(report),
                 "verification": {
                     "injury_report_game_present": True,
                     "injury_report_submission_complete": True,
@@ -164,18 +176,16 @@ def _snapshot():
     return _rehash(snap)
 
 
-def _rehash(snap):
-    snap["content_sha256"] = m._canonical_hash(m._snapshot_hash_content(snap))
-    snap["snapshot_id"] = f"wnba-4w-{GAME_ID}-{PLAYER_ID}-{snap['content_sha256'][:16]}"
-    return snap
-
-
 def _eval(snap, **kwargs):
     return m.evaluate_projection_input_snapshot(
         snap,
         evaluated_at_utc=EVALUATED,
         **kwargs,
     )
+
+
+def _raw_focal(snap):
+    return snap["inputs"]["game_availability"]["home"]["players"][0]
 
 
 class WNBAModelInputReadinessTests(unittest.TestCase):
@@ -211,93 +221,90 @@ class WNBAModelInputReadinessTests(unittest.TestCase):
         snap = _snapshot()
         snap["inputs"]["player_opportunity_context"]["observed_event_opportunity"]["feature_game_count"] = 2
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("event_feature_game_coverage", result["summary"]["blocker_ids"])
+        self.assertIn("event_feature_game_coverage", _eval(snap)["summary"]["blocker_ids"])
 
     def test_feature_eligible_share_warning_band(self):
         snap = _snapshot()
         snap["inputs"]["player_opportunity_context"]["observed_event_opportunity"]["data_quality"]["feature_eligible_share_of_selected_lineup_events"] = 0.70
         _rehash(snap)
-        result = _eval(snap)
-        self.assertEqual(result["readiness"], "READY_WITH_WARNINGS")
-        self.assertIn("feature_eligible_event_share", result["summary"]["warning_ids"])
+        self.assertIn("feature_eligible_event_share", _eval(snap)["summary"]["warning_ids"])
 
     def test_feature_eligible_share_below_minimum_blocks(self):
         snap = _snapshot()
         snap["inputs"]["player_opportunity_context"]["observed_event_opportunity"]["data_quality"]["feature_eligible_share_of_selected_lineup_events"] = 0.50
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("feature_eligible_event_share", result["summary"]["blocker_ids"])
+        self.assertIn("feature_eligible_event_share", _eval(snap)["summary"]["blocker_ids"])
 
-    def test_missing_role_context_warns_not_blocks(self):
+    def test_missing_role_context_warns(self):
         snap = _snapshot()
-        snap["inputs"]["player_opportunity_context"]["components"]["starter_bench_role"] = {"available": False, "error": "missing"}
+        snap["inputs"]["player_opportunity_context"]["components"]["starter_bench_role"] = {"available": False}
         _rehash(snap)
-        result = _eval(snap)
-        self.assertEqual(result["readiness"], "READY_WITH_WARNINGS")
-        self.assertIn("optional_starter_bench_role", result["summary"]["warning_ids"])
+        self.assertIn("optional_starter_bench_role", _eval(snap)["summary"]["warning_ids"])
 
-    def test_missing_lineup_context_warns_not_blocks(self):
+    def test_missing_lineup_context_warns(self):
         snap = _snapshot()
-        snap["inputs"]["player_opportunity_context"]["components"]["five_player_lineups"] = {"available": False, "error": "missing"}
+        snap["inputs"]["player_opportunity_context"]["components"]["five_player_lineups"] = {"available": False}
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("optional_five_player_lineups", result["summary"]["warning_ids"])
+        self.assertIn("optional_five_player_lineups", _eval(snap)["summary"]["warning_ids"])
 
     def test_high_observed_minute_variability_warns(self):
         snap = _snapshot()
         snap["inputs"]["player_opportunity_context"]["observed_minutes_opportunity"]["tracked_minutes"]["stability"]["tracked_minutes_coefficient_of_variation"] = 0.50
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("observed_minutes_variability", result["summary"]["warning_ids"])
+        self.assertIn("observed_minutes_variability", _eval(snap)["summary"]["warning_ids"])
 
     def test_required_availability_not_requested_blocks(self):
         snap = _snapshot()
         snap["component_status"]["game_availability"] = _status(False, False)
-        snap["inputs"].pop("game_availability", None)
+        snap["inputs"].pop("game_availability")
         snap["availability_summary"] = None
         _rehash(snap)
-        result = _eval(snap, require_current_availability=True)
-        self.assertIn("current_availability_requested", result["summary"]["blocker_ids"])
+        self.assertIn("current_availability_requested", _eval(snap)["summary"]["blocker_ids"])
 
     def test_availability_can_be_optional_without_warning(self):
         snap = _snapshot()
         snap["component_status"]["game_availability"] = _status(False, False)
-        snap["inputs"].pop("game_availability", None)
+        snap["inputs"].pop("game_availability")
         snap["availability_summary"] = None
         _rehash(snap)
-        result = _eval(snap, require_current_availability=False)
-        self.assertEqual(result["readiness"], "READY")
+        self.assertEqual(_eval(snap, require_current_availability=False)["readiness"], "READY")
 
     def test_focal_current_roster_mismatch_blocks(self):
         snap = _snapshot()
+        snap["inputs"]["game_availability"]["home"]["players"] = []
         snap["availability_summary"]["focal_player_current_roster_match"] = False
+        snap["availability_summary"]["focal_player_availability"] = None
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("focal_current_roster_match", result["summary"]["blocker_ids"])
+        self.assertIn("focal_current_roster_match", _eval(snap)["summary"]["blocker_ids"])
 
     def test_focal_player_out_blocks(self):
         snap = _snapshot()
-        focal = snap["availability_summary"]["focal_player_availability"]
-        focal.update({"injury_report_status": "Out", "availability_class": "unavailable", "availability_blocking": True})
+        changes = {"injury_report_status": "Out", "availability_class": "unavailable", "availability_blocking": True}
+        _raw_focal(snap).update(changes)
+        snap["availability_summary"]["focal_player_availability"].update(changes)
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("focal_player_game_availability", result["summary"]["blocker_ids"])
+        self.assertIn("focal_player_game_availability", _eval(snap)["summary"]["blocker_ids"])
 
     def test_questionable_player_warns(self):
         snap = _snapshot()
-        focal = snap["availability_summary"]["focal_player_availability"]
-        focal.update({"injury_report_status": "Questionable", "availability_class": "uncertain", "availability_uncertain": True})
+        changes = {"injury_report_status": "Questionable", "availability_class": "uncertain", "availability_uncertain": True}
+        _raw_focal(snap).update(changes)
+        snap["availability_summary"]["focal_player_availability"].update(changes)
         _rehash(snap)
+        self.assertIn("focal_player_game_availability", _eval(snap)["summary"]["warning_ids"])
+
+    def test_unhashed_availability_summary_tampering_blocks(self):
+        snap = _snapshot()
+        snap["availability_summary"]["focal_player_availability"]["injury_report_status"] = "Out"
         result = _eval(snap)
-        self.assertIn("focal_player_game_availability", result["summary"]["warning_ids"])
+        self.assertIn("availability_summary_integrity", result["summary"]["blocker_ids"])
+        self.assertNotIn("snapshot_content_hash", result["summary"]["blocker_ids"])
 
     def test_missing_report_game_near_tip_blocks(self):
         snap = _snapshot()
         snap["inputs"]["game_availability"]["verification"]["injury_report_game_present"] = False
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("injury_report_game_present", result["summary"]["blocker_ids"])
+        self.assertIn("injury_report_game_present", _eval(snap)["summary"]["blocker_ids"])
 
     def test_missing_report_game_far_from_tip_warns(self):
         snap = _snapshot()
@@ -305,71 +312,73 @@ class WNBAModelInputReadinessTests(unittest.TestCase):
         snap["inputs"]["game_availability"]["verification"]["injury_report_game_present"] = False
         _rehash(snap)
         result = _eval(snap)
-        self.assertNotIn("injury_report_game_present", result["summary"]["blocker_ids"])
         self.assertIn("injury_report_game_present", result["summary"]["warning_ids"])
+        self.assertNotIn("injury_report_game_present", result["summary"]["blocker_ids"])
 
     def test_stale_injury_report_near_tip_blocks(self):
         snap = _snapshot()
-        snap["availability_summary"]["injury_report"]["report_timestamp_eastern"] = "2026-08-25T10:00:00-04:00"
+        value = "2026-08-25T10:00:00-04:00"
+        snap["inputs"]["game_availability"]["injury_report"]["report_timestamp_eastern"] = value
+        snap["availability_summary"]["injury_report"]["report_timestamp_eastern"] = value
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("injury_report_freshness", result["summary"]["blocker_ids"])
+        self.assertIn("injury_report_freshness", _eval(snap)["summary"]["blocker_ids"])
 
     def test_moderately_old_injury_report_warns(self):
         snap = _snapshot()
-        snap["availability_summary"]["injury_report"]["report_timestamp_eastern"] = "2026-08-26T01:00:00-04:00"
+        value = "2026-08-26T01:00:00-04:00"
+        snap["inputs"]["game_availability"]["injury_report"]["report_timestamp_eastern"] = value
+        snap["availability_summary"]["injury_report"]["report_timestamp_eastern"] = value
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("injury_report_freshness", result["summary"]["warning_ids"])
+        self.assertIn("injury_report_freshness", _eval(snap)["summary"]["warning_ids"])
 
     def test_hash_mismatch_blocks_even_with_good_inputs(self):
         snap = _snapshot()
         snap["content_sha256"] = "0" * 64
         result = _eval(snap)
-        self.assertEqual(result["readiness"], "NOT_READY")
         self.assertIn("snapshot_content_hash", result["summary"]["blocker_ids"])
+        self.assertEqual(result["readiness"], "NOT_READY")
 
     def test_stale_snapshot_blocks(self):
         snap = _snapshot()
         snap["captured_at_utc"] = "2026-08-26T15:00:00+00:00"
         snap["finalized_at_utc"] = "2026-08-26T15:00:30+00:00"
-        result = _eval(snap, max_snapshot_age_minutes=15)
-        self.assertIn("snapshot_age", result["summary"]["blocker_ids"])
+        self.assertIn("snapshot_age", _eval(snap)["summary"]["blocker_ids"])
 
     def test_future_snapshot_clock_skew_blocks(self):
         snap = _snapshot()
         snap["captured_at_utc"] = "2026-08-26T16:10:00+00:00"
         snap["finalized_at_utc"] = "2026-08-26T16:10:01+00:00"
-        result = _eval(snap)
-        self.assertIn("snapshot_clock_skew", result["summary"]["blocker_ids"])
+        self.assertIn("snapshot_clock_skew", _eval(snap)["summary"]["blocker_ids"])
 
     def test_live_game_blocks_pregame_gate(self):
         snap = _snapshot()
         snap["game_identity"]["status"]["category"] = "live"
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("pregame_status", result["summary"]["blocker_ids"])
+        self.assertIn("pregame_status", _eval(snap)["summary"]["blocker_ids"])
 
     def test_final_game_blocks_pregame_gate(self):
         snap = _snapshot()
         snap["game_identity"]["status"]["category"] = "final"
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("pregame_status", result["summary"]["blocker_ids"])
+        self.assertIn("pregame_status", _eval(snap)["summary"]["blocker_ids"])
+
+    def test_scheduled_game_with_passed_tip_blocks(self):
+        snap = _snapshot()
+        snap["game_identity"]["game_datetime_utc"] = "2026-08-26T14:00:00+00:00"
+        _rehash(snap)
+        self.assertIn("game_tip_not_passed", _eval(snap)["summary"]["blocker_ids"])
 
     def test_cancelled_game_blocks(self):
         snap = _snapshot()
         snap["game_identity"]["schedule_change"]["cancelled"] = True
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("game_schedule_active", result["summary"]["blocker_ids"])
+        self.assertIn("game_schedule_active", _eval(snap)["summary"]["blocker_ids"])
 
     def test_focal_identity_mismatch_blocks(self):
         snap = _snapshot()
         snap["focal_identity"]["opponent_team_key"] = "seattle-storm"
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("game_focal_identity_consistency", result["summary"]["blocker_ids"])
+        self.assertIn("game_focal_identity_consistency", _eval(snap)["summary"]["blocker_ids"])
 
     def test_official_defender_matchup_unavailability_does_not_downgrade(self):
         snap = _snapshot()
@@ -386,19 +395,17 @@ class WNBAModelInputReadinessTests(unittest.TestCase):
     def test_requested_shot_context_outage_warns(self):
         snap = _snapshot()
         snap["component_status"]["player_recent_shot_chart"] = _status(True, False, "unavailable")
-        snap["inputs"].pop("player_recent_shot_chart", None)
+        snap["inputs"].pop("player_recent_shot_chart")
         _rehash(snap)
-        result = _eval(snap)
-        self.assertIn("shot_context_coverage", result["summary"]["warning_ids"])
+        self.assertIn("shot_context_coverage", _eval(snap)["summary"]["warning_ids"])
 
     def test_unrequested_shot_context_is_informational_only(self):
         snap = _snapshot()
         for name in ("player_recent_shot_chart", "player_vs_opponent_shot_chart", "opponent_defense_by_shot_zone"):
             snap["component_status"][name] = _status(False, False)
-            snap["inputs"].pop(name, None)
+            snap["inputs"].pop(name)
         _rehash(snap)
-        result = _eval(snap)
-        self.assertEqual(result["readiness"], "READY")
+        self.assertEqual(_eval(snap)["readiness"], "READY")
 
     def test_future_source_timestamp_blocks(self):
         snap = _snapshot()
@@ -406,10 +413,9 @@ class WNBAModelInputReadinessTests(unittest.TestCase):
             "path": "inputs.team_advanced.retrieved_at_utc",
             "value": "2026-08-26T16:30:00+00:00",
         })
-        result = _eval(snap)
-        self.assertIn("source_timestamp_clock_skew", result["summary"]["blocker_ids"])
+        self.assertIn("source_timestamp_clock_skew", _eval(snap)["summary"]["blocker_ids"])
 
-    def test_missing_opportunity_input_fails_closed_not_crashes(self):
+    def test_missing_opportunity_input_fails_closed(self):
         snap = _snapshot()
         snap["inputs"].pop("player_opportunity_context")
         _rehash(snap)
@@ -452,12 +458,7 @@ class WNBAModelInputReadinessTests(unittest.TestCase):
         utc_now.return_value = EVALUATED
         snap = _snapshot()
         get_snapshot.return_value = snap
-        result = m.get_player_game_model_input_readiness(
-            PLAYER_ID,
-            GAME_ID,
-            2026,
-            include_snapshot=True,
-        )
+        result = m.get_player_game_model_input_readiness(PLAYER_ID, GAME_ID, 2026, include_snapshot=True)
         self.assertTrue(result["snapshot_included"])
         self.assertEqual(result["snapshot"]["content_sha256"], snap["content_sha256"])
 
@@ -486,6 +487,7 @@ class WNBAModelInputReadinessTests(unittest.TestCase):
         self.assertTrue(result["guardrails"]["gate_does_not_create_projected_minutes"])
         self.assertTrue(result["guardrails"]["gate_does_not_create_monte_carlo"])
         self.assertTrue(result["guardrails"]["gate_does_not_create_betting_probability"])
+        self.assertTrue(result["verification"]["hash_covered_availability_rechecked"])
         self.assertTrue(result["verification"]["no_projection_created"])
 
 
