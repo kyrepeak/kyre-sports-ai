@@ -1,12 +1,21 @@
 FROM python:3.12-slim
 
+ARG WNBA_RELEASE_REVISION=unknown
+ARG WNBA_RELEASE_ID=unversioned
+
+LABEL org.opencontainers.image.title="Kyre Sports API" \
+      org.opencontainers.image.revision="${WNBA_RELEASE_REVISION}" \
+      org.opencontainers.image.version="${WNBA_RELEASE_ID}"
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000 \
     WEB_CONCURRENCY=2 \
     WNBA_DEPLOYMENT_MODE=container \
     WNBA_DEPLOYMENT_REPLICA_COUNT=1 \
-    WNBA_PERSISTENT_VOLUME_ROOT=/var/lib/kyre-sports-api
+    WNBA_PERSISTENT_VOLUME_ROOT=/var/lib/kyre-sports-api \
+    WNBA_RELEASE_BUILD_REVISION=${WNBA_RELEASE_REVISION} \
+    WNBA_RELEASE_BUILD_ID=${WNBA_RELEASE_ID}
 
 WORKDIR /app
 
