@@ -6,6 +6,7 @@ from sports_api.api.mlb_boxscore import router as mlb_boxscore_router
 from sports_api.api.mlb_game_logs import router as mlb_game_logs_router
 from sports_api.api.mlb_head_to_head import router as mlb_head_to_head_router
 from sports_api.api.mlb_recent_form import router as mlb_recent_form_router
+from sports_api.api.mlb_starting_pitchers import router as mlb_starting_pitchers_router
 from sports_api.api.mlb_stats import router as mlb_stats_router
 from sports_api.api.mlb_team_analytics import router as mlb_team_analytics_router
 
@@ -23,6 +24,7 @@ app.include_router(mlb_recent_form_router)
 app.include_router(mlb_boxscore_router)
 app.include_router(mlb_team_analytics_router)
 app.include_router(mlb_head_to_head_router)
+app.include_router(mlb_starting_pitchers_router)
 
 
 @app.get("/", tags=["system"])
