@@ -118,6 +118,7 @@ jobs:
       - name: Start pre-activation container on persistent volume
         run: |
           mkdir -p "$GITHUB_WORKSPACE/.step5s-data"
+          chmod 0777 "$GITHUB_WORKSPACE/.step5s-data"
           docker run -d --name kyre-step5s -p 18000:8000 \
             -v "$GITHUB_WORKSPACE/.step5s-data:/var/lib/kyre-sports-api" \
             -e WNBA_PRODUCTION_RUNTIME_ENABLED=false \
