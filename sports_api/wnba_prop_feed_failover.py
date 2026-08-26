@@ -11,6 +11,14 @@ from pathlib import Path
 import re
 from typing import Any
 
+from sports_api.collectors.wnba_kyre_market_feed import (
+    KYRE_MARKET_PROVIDER_ID,
+    MARKET_PROVIDER_MODE_ENV,
+    collect_kyre_market_feed,
+    describe_kyre_market_onboarding,
+    kyre_market_ready,
+    market_provider_mode,
+)
 from sports_api.collectors.wnba_prop_feed_collector import (
     WNBAPropFeedCollectorConfigError,
     WNBAPropFeedCollectorModelInputError,
@@ -121,6 +129,17 @@ def _dedupe(values: Sequence[str]) -> list[str]:
     return result
 
 
+def _generic_ready_order(environment: Mapping[str, str]) -> list[str]:
+    result: list[str] = []
+    registry = describe_provider_registry(environment)
+    ready = [row for row in registry.get("providers", []) if row.get("enabled") and row.get("ready")]
+    default_id = registry.get("default_provider_id")
+    if default_id and any(row.get("provider_id") == default_id for row in ready):
+        result.append(default_id)
+    result.extend(sorted(row["provider_id"] for row in ready if row.get("provider_id") != default_id))
+    return result
+
+
 def resolve_failover_order(
     provider_ids: Sequence[str] | None = None,
     *,
@@ -142,20 +161,46 @@ def resolve_failover_order(
             )
         return result
 
+    try:
+        mode = market_provider_mode(environment)
+    except WNBAPropFeedCollectorModelInputError as exc:
+        raise WNBAPropFeedFailoverModelInputError(str(exc)) from exc
+
     result: list[str] = []
-    if sportsgameodds_ready(environment):
-        result.append(SPORTSGAMEODDS_PROVIDER_ID)
-    registry = describe_provider_registry(environment)
-    ready = [row for row in registry.get("providers", []) if row.get("enabled") and row.get("ready")]
-    default_id = registry.get("default_provider_id")
-    if default_id and any(row.get("provider_id") == default_id for row in ready):
-        result.append(default_id)
-    result.extend(sorted(row["provider_id"] for row in ready if row.get("provider_id") != default_id))
+    if mode == "kyre":
+        if kyre_market_ready(environment):
+            result.append(KYRE_MARKET_PROVIDER_ID)
+        else:
+            raise WNBAPropFeedFailoverNotReadyError(
+                "WNBA Step 6C Kyre market mode is active but the durable Kyre market feed is not ready."
+            )
+    elif mode == "auto":
+        if kyre_market_ready(environment):
+            result.append(KYRE_MARKET_PROVIDER_ID)
+        if sportsgameodds_ready(environment):
+            result.append(SPORTSGAMEODDS_PROVIDER_ID)
+        result.extend(_generic_ready_order(environment))
+    elif mode == "legacy_sportsgameodds":
+        if sportsgameodds_ready(environment):
+            result.append(SPORTSGAMEODDS_PROVIDER_ID)
+        result.extend(_generic_ready_order(environment))
+    else:
+        # Frozen Step 5O behavior when Step 6C mode is not explicitly configured.
+        # This keeps historical tests/deployments reproducible while all new
+        # Step 6C deployments explicitly set WNBA_MARKET_PROVIDER_MODE=kyre.
+        if sportsgameodds_ready(environment):
+            result.append(SPORTSGAMEODDS_PROVIDER_ID)
+        result.extend(_generic_ready_order(environment))
+
     result = _dedupe(result)
     if not result:
+        if mode in {"kyre", "auto"}:
+            raise WNBAPropFeedFailoverNotReadyError(
+                "WNBA Step 6C has no ready market source. Load the Kyre-owned durable market feed before activation."
+            )
         raise WNBAPropFeedFailoverNotReadyError(
-            "WNBA Step 5O has no ready providers. Configure SPORTSGAMEODDS_API_KEY, "
-            "WNBA_PROP_FEED_PROVIDERS_JSON, or an explicit failover order."
+            "WNBA Step 5O has no ready providers. Configure the Kyre-owned Step 6C market mode, "
+            "a legacy SportsGameOdds key, WNBA_PROP_FEED_PROVIDERS_JSON, or an explicit failover order."
         )
     return result
 
@@ -163,6 +208,7 @@ def resolve_failover_order(
 def describe_provider_onboarding(env: Mapping[str, str] | None = None) -> dict[str, Any]:
     environment = _environment(env)
     sportsgameodds = describe_sportsgameodds_onboarding(environment)
+    kyre_owned = describe_kyre_market_onboarding(environment)
     generic = describe_provider_registry(environment)
     try:
         order = resolve_failover_order(env=environment)
@@ -179,7 +225,10 @@ def describe_provider_onboarding(env: Mapping[str, str] | None = None) -> dict[s
         "model_version": MODEL_VERSION,
         "generated_at_utc": _utc_now_iso(),
         "ready": ready,
+        "market_provider_mode": _clean(environment.get(MARKET_PROVIDER_MODE_ENV)),
+        "kyre_owned_provider": kyre_owned,
         "built_in_provider": sportsgameodds,
+        "legacy_sportsgameodds_provider": sportsgameodds,
         "generic_step_5n_registry": generic,
         "resolved_failover_order": order,
         "failover_order_env": FAILOVER_ORDER_ENV,
@@ -187,9 +236,12 @@ def describe_provider_onboarding(env: Mapping[str, str] | None = None) -> dict[s
         "explicit_persistent_store_configured": bool(_clean(environment.get(STORE_PATH_ENV))),
         "order_error": order_error,
         "semantics": {
+            "step_6c_kyre_owned_provider_is_supported": True,
+            "step_6c_kyre_provider_is_network_free": True,
+            "sportsgameodds_is_legacy_optional_when_step_6c_mode_is_kyre": True,
             "built_in_provider_uses_frozen_step_5n_transport": True,
             "generic_providers_use_frozen_step_5n_transport": True,
-            "every_successful_http_collection_is_snapshotted_before_market_acceptance": True,
+            "every_successful_collection_is_snapshotted_before_market_acceptance": True,
             "frozen_step_5m_decides_market_integrity": True,
             "http_200_alone_does_not_mark_provider_usable": True,
             "no_provider_can_modify_model_probability": True,
@@ -241,6 +293,29 @@ def _generic_collection(
     }
 
 
+def _kyre_collection(
+    *,
+    date: str | None,
+    season: int,
+    env: Mapping[str, str],
+    requester: Callable[..., Any] | None,
+    collector: Callable[..., dict[str, Any]],
+) -> dict[str, Any]:
+    collection = collector(date=date, season=season, env=env, requester=requester)
+    return {
+        "provider_id": collection["provider_id"],
+        "collection": collection,
+        "adapter": None,
+        "feed_source": collection["feed_source"],
+        "feed_format": collection["feed_format"],
+        "odds_format": collection["odds_format"],
+        "date": collection["date"],
+        "season": collection["season"],
+        "collected_at_utc": collection["collected_at_utc"],
+        "raw_feed": collection["raw_feed"],
+    }
+
+
 def _collect_candidate(
     provider_id: str,
     *,
@@ -250,7 +325,16 @@ def _collect_candidate(
     requester: Callable[..., Any] | None,
     generic_collector: Callable[..., dict[str, Any]],
     sportsgameodds_collector: Callable[..., dict[str, Any]],
+    kyre_market_collector: Callable[..., dict[str, Any]],
 ) -> dict[str, Any]:
+    if provider_id == KYRE_MARKET_PROVIDER_ID:
+        return _kyre_collection(
+            date=date,
+            season=season,
+            env=env,
+            requester=requester,
+            collector=kyre_market_collector,
+        )
     if provider_id == SPORTSGAMEODDS_PROVIDER_ID:
         return sportsgameodds_collector(
             date=date,
@@ -329,6 +413,7 @@ def collect_failover_line_board(
     requester: Callable[..., Any] | None = None,
     generic_collector: Callable[..., dict[str, Any]] = collect_provider_feed,
     sportsgameodds_collector: Callable[..., dict[str, Any]] = collect_sportsgameodds_feed,
+    kyre_market_collector: Callable[..., dict[str, Any]] = collect_kyre_market_feed,
     line_board_builder: Callable[..., dict[str, Any]] = build_prop_line_feed_board,
     snapshot_persister: Callable[..., dict[str, Any]] = persist_feed_snapshot,
     attempt_appender: Callable[..., dict[str, Any]] = append_feed_attempt,
@@ -356,6 +441,7 @@ def collect_failover_line_board(
                 requester=requester,
                 generic_collector=generic_collector,
                 sportsgameodds_collector=sportsgameodds_collector,
+                kyre_market_collector=kyre_market_collector,
             )
         except (WNBAPropFeedCollectorNotReadyError,) as exc:
             summary = _attempt_summary(provider_id=provider_id, rank=rank, outcome="not_ready", error_type=type(exc).__name__, detail=str(exc))
@@ -372,8 +458,8 @@ def collect_failover_line_board(
             _record_attempt(summary, started_at_utc=started_at, store_path=store_path, env=environment, appender=attempt_appender)
             attempts.append(summary)
             continue
-        except Exception as exc:
-            summary = _attempt_summary(provider_id=provider_id, rank=rank, outcome="unexpected_collection_error", error_type=type(exc).__name__, detail="provider collection failed unexpectedly")
+        except Exception:
+            summary = _attempt_summary(provider_id=provider_id, rank=rank, outcome="unexpected_collection_error", error_type="UnexpectedCollectionError", detail="provider collection failed unexpectedly")
             _record_attempt(summary, started_at_utc=started_at, store_path=store_path, env=environment, appender=attempt_appender)
             attempts.append(summary)
             continue
@@ -485,6 +571,8 @@ def collect_failover_line_board(
             "line_board": line_board,
             "semantics": {
                 "successful_network_collections_are_persisted_before_market_acceptance": True,
+                "all_successful_collections_are_persisted_before_market_acceptance": True,
+                "kyre_owned_local_collection_supported": True,
                 "frozen_step_5m_is_market_integrity_authority": True,
                 "stale_or_unusable_provider_output_can_trigger_failover": True,
                 "empty_slate_is_not_treated_as_provider_failure": True,
