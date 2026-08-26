@@ -213,4 +213,5 @@ jobs:
           name: wnba-step5x-publication-${{ github.run_id }}
           path: .wnba-step5x-publication/
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 30
