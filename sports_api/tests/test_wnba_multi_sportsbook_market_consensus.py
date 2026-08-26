@@ -433,7 +433,8 @@ class TestWNBAMultiSportsbookMarketConsensus(unittest.TestCase):
         threshold = threshold_fixture()
         with patch.object(h, "get_player_game_prop_threshold_probability", return_value=threshold) as getter:
             result = h.get_player_game_multi_sportsbook_market_consensus(
-                123, "1022600001", 2026, stat="points", line=19.5, quotes=three_quotes()
+                123, "1022600001", 2026, stat="points", line=19.5, quotes=three_quotes(),
+                exclude_stale_quotes=False,
             )
         getter.assert_called_once()
         self.assertEqual(result["quote_set"]["input_quote_count"], 3)
@@ -457,6 +458,7 @@ class TestWNBAMultiSportsbookMarketConsensus(unittest.TestCase):
                 require_current_availability=False,
                 max_snapshot_age_minutes=30,
                 require_convergence=False,
+                exclude_stale_quotes=False,
             )
         kwargs = getter.call_args.kwargs
         self.assertEqual(kwargs["stat"], "points")
