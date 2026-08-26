@@ -4,6 +4,7 @@ from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
 from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
 from sports_api.api.mlb_advanced_pitching import router as mlb_advanced_pitching_router
+from sports_api.api.mlb_arsenal_matchup import router as mlb_arsenal_matchup_router
 from sports_api.api.mlb_batter_pitcher import router as mlb_batter_pitcher_router
 from sports_api.api.mlb_boxscore import router as mlb_boxscore_router
 from sports_api.api.mlb_bullpen import router as mlb_bullpen_router
@@ -45,6 +46,7 @@ app.include_router(mlb_advanced_pitching_router)
 app.include_router(mlb_pitch_type_effectiveness_router)
 app.include_router(mlb_pitch_movement_router)
 app.include_router(mlb_hitter_pitch_type_router)
+app.include_router(mlb_arsenal_matchup_router)
 
 
 @app.get("/", tags=["system"])
