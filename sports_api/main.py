@@ -31,6 +31,7 @@ from sports_api.api.wnba import router as wnba_router
 from sports_api.api.wnba_advanced import router as wnba_advanced_router
 from sports_api.api.wnba_availability import router as wnba_availability_router
 from sports_api.api.wnba_lineup_context import router as wnba_lineup_context_router
+from sports_api.api.wnba_team_history import router as wnba_team_history_router
 from sports_api.api.wnba_tracking import router as wnba_tracking_router
 
 app = FastAPI(
@@ -70,6 +71,7 @@ app.include_router(wnba_router)
 app.include_router(wnba_advanced_router)
 app.include_router(wnba_availability_router)
 app.include_router(wnba_lineup_context_router)
+app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
 
 
