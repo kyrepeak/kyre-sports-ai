@@ -36,6 +36,7 @@ from sports_api.api.wnba_defensive_activity import router as wnba_defensive_acti
 from sports_api.api.wnba_event_lineup_context import router as wnba_event_lineup_context_router
 from sports_api.api.wnba_lineup_context import router as wnba_lineup_context_router
 from sports_api.api.wnba_live_game import router as wnba_live_game_router
+from sports_api.api.wnba_matchup_adjusted_projection import router as wnba_matchup_adjusted_projection_router
 from sports_api.api.wnba_matchup_context import router as wnba_matchup_context_router
 from sports_api.api.wnba_model_input_readiness import router as wnba_model_input_readiness_router
 from sports_api.api.wnba_officiating_context import router as wnba_officiating_context_router
@@ -91,6 +92,7 @@ app.include_router(wnba_defensive_activity_router)
 app.include_router(wnba_event_lineup_context_router)
 app.include_router(wnba_lineup_context_router)
 app.include_router(wnba_live_game_router)
+app.include_router(wnba_matchup_adjusted_projection_router)
 app.include_router(wnba_matchup_context_router)
 app.include_router(wnba_model_input_readiness_router)
 app.include_router(wnba_officiating_context_router)
