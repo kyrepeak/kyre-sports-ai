@@ -18,8 +18,6 @@ import sports_api.api.wnba_pregame_board_scheduler_distributed as step5q
 from sports_api.wnba_league import CURRENT_SUPPORTED_SEASON
 from sports_api.wnba_production_runtime_readiness import get_production_runtime_readiness
 from sports_api.wnba_staging_activation_gate import (
-    MODEL_SOURCE as ACTIVATION_SOURCE,
-    MODEL_VERSION as ACTIVATION_MODEL_VERSION,
     WNBAStagingActivationNotReadyError,
     build_staging_activation_plan,
     get_first_live_cycle_verification,
@@ -65,22 +63,14 @@ def _worker_loop(loop_seconds: int) -> None:
     try:
         while not _worker_stop.is_set():
             started = _utc_now_iso()
-            _set_state(
-                last_gate_evaluated_at_utc=started,
-                last_cycle_started_at_utc=started,
-                last_error=None,
-            )
+            _set_state(last_gate_evaluated_at_utc=started, last_cycle_started_at_utc=started, last_error=None)
             try:
                 require_staging_activation_ready()
                 _set_state(last_gate_passed=True)
                 result = step5q._run_one_background_cycle()
                 _set_state(last_cycle_outcome=result.get("outcome"))
             except WNBAStagingActivationNotReadyError as exc:
-                _set_state(
-                    last_gate_passed=False,
-                    last_cycle_outcome="blocked_by_step_5w_activation_gate",
-                    last_error=f"{type(exc).__name__}: {exc}",
-                )
+                _set_state(last_gate_passed=False, last_cycle_outcome="blocked_by_step_5w_activation_gate", last_error=f"{type(exc).__name__}: {exc}")
             except Exception as exc:
                 _set_state(last_error=f"{type(exc).__name__}: {exc}")
             finally:
@@ -113,12 +103,7 @@ def _start_worker() -> None:
         if _worker_thread is not None and _worker_thread.is_alive():
             return
         _worker_stop.clear()
-        _worker_thread = threading.Thread(
-            target=_worker_loop,
-            args=(loop_seconds,),
-            name="wnba-step-5w-staging-activation",
-            daemon=True,
-        )
+        _worker_thread = threading.Thread(target=_worker_loop, args=(loop_seconds,), name="wnba-step-5w-staging-activation", daemon=True)
         _worker_thread.start()
 
 
@@ -161,12 +146,7 @@ def refresh_current_wnba_player_prop_board(
         require_staging_activation_ready()
     except WNBAStagingActivationNotReadyError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    return step5q.refresh_current_wnba_player_prop_board(
-        date=date,
-        season=season,
-        provider_ids=provider_ids,
-        force=force,
-    )
+    return step5q.refresh_current_wnba_player_prop_board(date=date, season=season, provider_ids=provider_ids, force=force)
 
 
 @router.get("/rankings/player-props/current/status")
@@ -203,12 +183,7 @@ def get_current_wnba_player_prop_publication_history(
     publication_limit: int = Query(default=25, ge=1, le=2_000),
     run_limit: int = Query(default=50, ge=1, le=5_000),
 ):
-    return step5q.get_current_wnba_player_prop_publication_history(
-        date=date,
-        season=season,
-        publication_limit=publication_limit,
-        run_limit=run_limit,
-    )
+    return step5q.get_current_wnba_player_prop_publication_history(date=date, season=season, publication_limit=publication_limit, run_limit=run_limit)
 
 
 @router.get("/runtime/readiness")
@@ -252,7 +227,7 @@ def get_wnba_staging_activation_gate():
     return get_staging_activation_gate()
 
 
-@router.get("/runtime/activation-plan")
+@router.get("/runtime/staging-activation-plan")
 def get_wnba_staging_activation_plan():
     return build_staging_activation_plan()
 
