@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: wnba-step7g-fastapi-availability-probe
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
