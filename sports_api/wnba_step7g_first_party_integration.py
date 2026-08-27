@@ -21,6 +21,7 @@ import sports_api.wnba_availability as availability
 import sports_api.wnba_event_lineup_context as event_lineup
 import sports_api.wnba_player_event_features as event_features
 import sports_api.wnba_player_opportunity_context as opportunity
+import sports_api.wnba_projection_input_snapshot as projection_snapshot
 import sports_api.wnba_rotation_context as rotation
 import sports_api.wnba_schedule_context as schedule_context
 from sports_api.wnba_game_history import WNBAHistoryUpstreamError
@@ -42,13 +43,17 @@ from sports_api.wnba_step7g_first_party_rosters import (
 from sports_api.wnba_step7g_first_party_schedule_context import (
     get_step7g_step4n_season_schedule_dataset,
 )
+from sports_api.wnba_step7g_first_party_shot_context import (
+    get_first_party_opponent_defense_by_shot_zone_dataset,
+    get_first_party_player_shot_chart_dataset,
+)
 from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
     get_first_party_team_game_log_dataset,
     install_exact_cup_exclusion,
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v5"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v6"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -64,6 +69,10 @@ _ORIGINAL_AVAILABILITY_CURRENT_ROSTER = availability.get_current_players_dataset
 _ORIGINAL_AVAILABILITY_INJURY_REPORT = availability.get_latest_injury_report_dataset
 _ORIGINAL_AVAILABILITY_RECENT_STATS = availability.get_player_season_stats_dataset
 _ORIGINAL_AVAILABILITY_LINEUPS = availability.get_lineups_dataset
+_ORIGINAL_PROJECTION_PLAYER_SHOT = projection_snapshot.get_player_shot_chart_dataset
+_ORIGINAL_PROJECTION_OPPONENT_ZONE = (
+    projection_snapshot.get_opponent_defense_by_shot_zone_dataset
+)
 
 
 def _environment(env: Mapping[str, str] | None = None) -> Mapping[str, str]:
@@ -221,6 +230,18 @@ def _install_enabled_seams() -> None:
         original=_ORIGINAL_AVAILABILITY_LINEUPS,
         target=_availability_lineups_unavailable,
     )
+    projection_snapshot.get_player_shot_chart_dataset = _guarded_replace(
+        label="Step 4W player-shot provider",
+        current=projection_snapshot.get_player_shot_chart_dataset,
+        original=_ORIGINAL_PROJECTION_PLAYER_SHOT,
+        target=get_first_party_player_shot_chart_dataset,
+    )
+    projection_snapshot.get_opponent_defense_by_shot_zone_dataset = _guarded_replace(
+        label="Step 4W opponent-zone provider",
+        current=projection_snapshot.get_opponent_defense_by_shot_zone_dataset,
+        original=_ORIGINAL_PROJECTION_OPPONENT_ZONE,
+        target=get_first_party_opponent_defense_by_shot_zone_dataset,
+    )
 
 
 def get_step7g_first_party_status(
@@ -254,6 +275,12 @@ def get_step7g_first_party_status(
         is _availability_recent_stats_unavailable,
         "availability_lineups_fail_soft": availability.get_lineups_dataset
         is _availability_lineups_unavailable,
+        "projection_player_shot_context": projection_snapshot.get_player_shot_chart_dataset
+        is get_first_party_player_shot_chart_dataset,
+        "projection_opponent_zone_defense": (
+            projection_snapshot.get_opponent_defense_by_shot_zone_dataset
+            is get_first_party_opponent_defense_by_shot_zone_dataset
+        ),
     }
     return {
         "source": MODEL_SOURCE,
@@ -284,6 +311,7 @@ def get_step7g_first_party_status(
             "frozen_step4j_source_modified": False,
             "frozen_step4n_source_modified": False,
             "frozen_step4i_source_modified": False,
+            "frozen_step4l_source_modified": False,
             "frozen_step4c_source_modified": False,
             "frozen_step4b_source_modified": False,
         },
