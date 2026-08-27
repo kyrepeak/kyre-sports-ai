@@ -19,6 +19,7 @@ import sports_api.api.wnba_pregame_board_scheduler_distributed as step5q
 from sports_api.wnba_league import CURRENT_SUPPORTED_SEASON
 from sports_api.wnba_production_runtime_readiness import get_production_runtime_readiness
 from sports_api.wnba_staging_activation_gate import (
+    WNBAStagingActivationNotReadyError,
     build_staging_activation_plan,
     get_first_live_cycle_verification,
     get_staging_activation_gate,
@@ -33,6 +34,11 @@ MODEL_SOURCE = "Kyre Sports API WNBA Step 6K-interlocked staging activation tran
 MODEL_VERSION = "wnba_step_6k_interlocked_staging_activation_transport_v1"
 
 router = APIRouter(prefix="/api/v1/wnba", tags=["wnba"])
+
+# Backward-compatible transport symbol only.  Existing Step 5W callers/tests
+# may still patch this name, but its default authority is now the stronger
+# Step 6K gate.  This does not create a Step 5W bypass.
+require_staging_activation_ready = require_step6k_scheduler_authorized
 
 _worker_lock = threading.Lock()
 _worker_stop = threading.Event()
@@ -70,11 +76,11 @@ def _worker_loop(loop_seconds: int) -> None:
             started = _utc_now_iso()
             _set_state(last_gate_evaluated_at_utc=started, last_cycle_started_at_utc=started, last_error=None)
             try:
-                require_step6k_scheduler_authorized()
+                require_staging_activation_ready()
                 _set_state(last_gate_passed=True)
                 result = step5q._run_one_background_cycle()
                 _set_state(last_cycle_outcome=result.get("outcome"))
-            except WNBAStep6KActivationNotReadyError as exc:
+            except (WNBAStep6KActivationNotReadyError, WNBAStagingActivationNotReadyError) as exc:
                 _set_state(
                     last_gate_passed=False,
                     last_cycle_outcome="blocked_by_step_6k_post_canary_gate",
@@ -162,8 +168,8 @@ def refresh_current_wnba_player_prop_board(
     force: bool = Query(default=True, description="Bypass normal next-due clock; frozen provider-spacing guard still applies."),
 ):
     try:
-        require_step6k_scheduler_authorized()
-    except WNBAStep6KActivationNotReadyError as exc:
+        require_staging_activation_ready()
+    except (WNBAStep6KActivationNotReadyError, WNBAStagingActivationNotReadyError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return step5q.refresh_current_wnba_player_prop_board(date=date, season=season, provider_ids=provider_ids, force=force)
 
@@ -245,6 +251,7 @@ def get_wnba_production_runtime_health():
         "model_version": MODEL_VERSION,
         "status": "ready",
         "scheduler_authorized": True,
+        "live_cycle_allowed": True,
         "step_6k_activation_checkpoint_sha256": step6k.get("activation_checkpoint_sha256"),
         "step_6j_verified": step6k.get("step6j_verified"),
         "step_5w_activation_checkpoint_sha256": (step6k.get("step_5w") or {}).get("activation_checkpoint_sha256"),
