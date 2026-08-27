@@ -80,26 +80,68 @@ jobs:
           python - <<'PY'
           import json
           import os
+          import time
           from pathlib import Path
           from sports_api.tools.wnba_step7g_one_shot_activation import run_step7g_one_shot
+          from sports_api.wnba_rosters import WNBAStatsUpstreamError, get_current_players_dataset
 
           out = Path('step7g-live-one-shot-evidence.json')
+          season = int(os.environ['TARGET_SEASON'])
+          roster_attempts = []
+          roster = None
           try:
+              for attempt in range(1, 4):
+                  try:
+                      roster = get_current_players_dataset(season, current_roster_only=True)
+                      roster_attempts.append({
+                          'attempt': attempt,
+                          'status': 'success',
+                          'player_count': int(roster.get('player_count') or 0),
+                      })
+                      break
+                  except WNBAStatsUpstreamError as exc:
+                      roster_attempts.append({
+                          'attempt': attempt,
+                          'status': 'retryable_upstream_error',
+                          'error_type': type(exc).__name__,
+                          'error_message_returned': False,
+                      })
+                      if attempt >= 3:
+                          raise
+                      time.sleep(float(attempt))
+
+              if not isinstance(roster, dict) or int(roster.get('player_count') or 0) <= 0:
+                  raise RuntimeError('Official WNBA roster cache warm-up did not produce a valid roster.')
+
               result = run_step7g_one_shot(
                   date=os.environ['TARGET_DATE'],
-                  season=int(os.environ['TARGET_SEASON']),
+                  season=season,
                   activation_id=os.environ['ACTIVATION_ID'],
               )
+              result['official_roster_preflight'] = {
+                  'cache_warmed': True,
+                  'attempt_count': len(roster_attempts),
+                  'attempts': roster_attempts,
+                  'player_count': int(roster.get('player_count') or 0),
+                  'secret_value_returned': False,
+              }
           except Exception as exc:
               result = {
                   'status': 'failed',
                   'activation_id': os.environ['ACTIVATION_ID'],
                   'date': os.environ['TARGET_DATE'],
-                  'season': int(os.environ['TARGET_SEASON']),
+                  'season': season,
                   'error_type': type(exc).__name__,
                   'error_message_returned': False,
                   'secret_value_returned': False,
                   'recurring_scheduler_started': False,
+                  'official_roster_preflight': {
+                      'cache_warmed': roster is not None,
+                      'attempt_count': len(roster_attempts),
+                      'attempts': roster_attempts,
+                      'player_count': int((roster or {}).get('player_count') or 0),
+                      'secret_value_returned': False,
+                  },
               }
               out.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8')
               raise
@@ -111,6 +153,7 @@ jobs:
               'date': result.get('date'),
               'season': result.get('season'),
               'cycle_outcome': (result.get('cycle') or {}).get('outcome'),
+              'roster_preflight_attempts': (result.get('official_roster_preflight') or {}).get('attempt_count'),
               'recurring_scheduler_started': (result.get('safety') or {}).get('recurring_scheduler_started'),
           }, indent=2, sort_keys=True))
           PY
@@ -141,6 +184,8 @@ jobs:
           latest_publication = store.get_latest_publication(date='2026-08-27', season=2026, require_current=False)
 
           assert result['status'] == 'completed'
+          assert result['official_roster_preflight']['cache_warmed'] is True
+          assert result['official_roster_preflight']['attempt_count'] in {1, 2, 3}
           assert marker['status'] == 'completed'
           assert marker['activation_id'] == result['activation_id']
           assert marker['post_cycle_feed_sha256'] == result['post_cycle_feed_sha256'] == feed_sha
@@ -168,6 +213,8 @@ jobs:
               'all_global_switches_off': True,
               'recurring_scheduler_started': False,
               'production_runtime_enabled': False,
+              'official_roster_cache_warmed': True,
+              'official_roster_attempt_count': result['official_roster_preflight']['attempt_count'],
               'secret_value_returned': False,
           }
           Path('step7g-live-post-verification.json').write_text(
@@ -218,5 +265,6 @@ jobs:
           assert verify['active_scheduler_locks'] == 0
           assert verify['all_global_switches_off'] is True
           assert verify['recurring_scheduler_started'] is False
+          assert verify['official_roster_cache_warmed'] is True
           print('Step 7G live one-shot cycle passed all final gates.')
           PY
