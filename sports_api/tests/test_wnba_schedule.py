@@ -3,6 +3,8 @@ import unittest
 from unittest.mock import patch
 
 from sports_api.wnba_schedule import (
+    WNBA_CDN_SCHEDULE_URL,
+    WNBA_PUBLIC_SCHEDULE_API_URL,
     WNBA_STATS_SCHEDULE_URL,
     _CACHE,
     _date_block_iso,
@@ -214,7 +216,24 @@ class WNBAScheduleTests(unittest.TestCase):
             get_daily_schedule_dataset("08/26/2026", 2026)
 
     @patch("sports_api.wnba_schedule.httpx.get")
-    def test_fetch_falls_back_to_stats_schedule_endpoint(self, mock_get):
+    def test_fetch_prefers_public_wnba_schedule_api(self, mock_get):
+        valid = _payload(season="2026")
+        mock_get.return_value = _FakeResponse(valid)
+
+        _, _, source_variant, source_url, cache_hit = _fetch_schedule_payload(2026)
+
+        self.assertEqual(source_variant, "wnba_public_schedule_api")
+        self.assertEqual(source_url, WNBA_PUBLIC_SCHEDULE_API_URL)
+        self.assertNotEqual(source_url, WNBA_STATS_SCHEDULE_URL)
+        self.assertFalse(cache_hit)
+        self.assertEqual(mock_get.call_count, 1)
+        self.assertEqual(
+            mock_get.call_args.kwargs["params"],
+            [("season", "2026"), ("regionId", "1")],
+        )
+
+    @patch("sports_api.wnba_schedule.httpx.get")
+    def test_fetch_falls_back_to_current_cdn_not_retired_stats(self, mock_get):
         wrong_season = _payload(season="2025")
         valid = _payload(season="2026")
         mock_get.side_effect = [
@@ -224,8 +243,9 @@ class WNBAScheduleTests(unittest.TestCase):
 
         _, _, source_variant, source_url, cache_hit = _fetch_schedule_payload(2026)
 
-        self.assertEqual(source_variant, "wnba_stats_scheduleleaguev2")
-        self.assertEqual(source_url, WNBA_STATS_SCHEDULE_URL)
+        self.assertEqual(source_variant, "wnba_cdn_schedule")
+        self.assertEqual(source_url, WNBA_CDN_SCHEDULE_URL)
+        self.assertNotEqual(source_url, WNBA_STATS_SCHEDULE_URL)
         self.assertFalse(cache_hit)
         self.assertEqual(mock_get.call_count, 2)
 
