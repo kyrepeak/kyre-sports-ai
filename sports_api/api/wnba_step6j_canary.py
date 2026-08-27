@@ -21,6 +21,23 @@ def _activation_id(value: str | None) -> str:
     return text
 
 
+def _block_failed_canary_replay() -> None:
+    """A failed-and-restored live canary is terminal: never write twice."""
+    status = get_step6j_canary_status()
+    state = status.get("canary_state") or {}
+    terminal_status = state.get("status")
+    if terminal_status == "rolled_back":
+        raise HTTPException(
+            status_code=409,
+            detail="Step 6J already failed closed and rolled back; the canary cannot be replayed.",
+        )
+    if terminal_status == "manually_rolled_back":
+        raise HTTPException(
+            status_code=409,
+            detail="Step 6J was manually rolled back; the canary cannot be replayed.",
+        )
+
+
 @router.get("/step6j-canary/status")
 def get_draftkings_step6j_canary_status():
     return get_step6j_canary_status()
@@ -34,6 +51,7 @@ def post_draftkings_step6j_canary(
     x_wnba_step6j_activation_id: str | None = Header(default=None, alias="X-WNBA-Step6J-Activation-ID"),
 ):
     require_ingest_authorization(authorization)
+    _block_failed_canary_replay()
     try:
         return run_step6j_canary(
             date=date,
