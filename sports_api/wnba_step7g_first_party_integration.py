@@ -1,9 +1,8 @@
 """Default-OFF Step 7G first-party integration for the frozen WNBA core chain.
 
-This module installs only already-certified first-party transport seams used by
-Step 4X model-input readiness. It follows the same pre-router integration pattern
-used elsewhere in the API: ``sports_api.main`` imports this module before WNBA
-routers bind their functions, but nothing changes unless
+This module installs only certified first-party transport seams used by Step 4X
+model-input readiness. ``sports_api.main`` imports it before WNBA routers bind
+their functions, but nothing changes unless
 ``WNBA_STEP7G_FIRST_PARTY_ENABLED=true`` is explicitly set.
 
 The integration does NOT enable production runtime, schedulers, market sync,
@@ -11,26 +10,6 @@ persistence, Supabase, or sportsbook access. It does not modify frozen source
 files. It only replaces module-local transport dependencies with certified
 WNBA.com first-party adapters or explicit fail-soft/bypass sentinels where the
 frozen layer already defines those semantics.
-
-Certified seams installed when enabled:
-- Step 4R recent player history -> WNBA.com first-party player game history.
-- Step 4R direct gamerotation transport -> immediate upstream-unavailable signal,
-  causing the already-certified period-aware WNBA.com reconstruction fallback.
-- Step 4T play-by-play -> WNBA.com first-party game-page play-by-play.
-- Step 4U player history -> WNBA.com first-party player game history.
-- Step 4N season schedule -> certified WNBA.com schedule-context adapter.
-- Step 4N observed team workload -> certified Cup-safe Step 4J team history.
-- Step 4I daily schedule -> daily view derived from the same certified WNBA.com
-  season schedule, translated into Step 4I's frozen availability error family on
-  transport failure.
-- Optional Step 4G role/lineup Stats transports -> explicit upstream-unavailable
-  signals so frozen Step 4V reports warnings instead of waiting on an unreachable
-  host. These components remain optional exactly as frozen Step 4V defines them.
-
-The Step 4I daily-schedule transport is certified here, but full current
-availability is not declared certified until its roster, report, and observed
-rotation dependencies also pass the real FastAPI gate. Shot/advanced/officiating
-transports likewise require separate certification.
 """
 from __future__ import annotations
 
@@ -54,6 +33,9 @@ from sports_api.wnba_step7g_first_party_history import (
     get_first_party_player_recent_game_log_dataset,
     get_first_party_play_by_play_dataset,
 )
+from sports_api.wnba_step7g_first_party_rosters import (
+    get_first_party_current_players_dataset,
+)
 from sports_api.wnba_step7g_first_party_schedule_context import (
     get_step7g_step4n_season_schedule_dataset,
 )
@@ -63,7 +45,7 @@ from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v2"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v3"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -75,6 +57,9 @@ _ORIGINAL_OPPORTUNITY_LINEUPS = opportunity.get_lineups_dataset
 _ORIGINAL_SCHEDULE_CONTEXT_SEASON = schedule_context._season_schedule_dataset
 _ORIGINAL_SCHEDULE_CONTEXT_TEAM_HISTORY = schedule_context.get_team_game_log_dataset
 _ORIGINAL_AVAILABILITY_DAILY_SCHEDULE = availability.get_daily_schedule_dataset
+_ORIGINAL_AVAILABILITY_CURRENT_ROSTER = availability.get_current_players_dataset
+_ORIGINAL_AVAILABILITY_RECENT_STATS = availability.get_player_season_stats_dataset
+_ORIGINAL_AVAILABILITY_LINEUPS = availability.get_lineups_dataset
 
 
 def _environment(env: Mapping[str, str] | None = None) -> Mapping[str, str]:
@@ -108,11 +93,24 @@ def _optional_lineup_stats_unavailable(*args: Any, **kwargs: Any) -> Any:
     )
 
 
+def _availability_recent_stats_unavailable(*args: Any, **kwargs: Any) -> Any:
+    raise availability.WNBASeasonStatsUpstreamError(
+        "Step 7G first-party mode leaves optional Step 4I recent aggregate stats "
+        "unavailable rather than waiting on the unreachable Stats transport."
+    )
+
+
+def _availability_lineups_unavailable(*args: Any, **kwargs: Any) -> Any:
+    raise availability.WNBALineupContextUpstreamError(
+        "Step 7G first-party mode leaves optional Step 4I five-player lineup "
+        "context unavailable rather than waiting on the unreachable Stats transport."
+    )
+
+
 def _availability_daily_schedule_first_party(
     target_date: str,
     season: int,
 ) -> dict[str, Any]:
-    """Expose certified daily schedule through Step 4I's expected error family."""
     try:
         return get_step7g_step4i_daily_schedule_dataset(target_date, season)
     except (WNBAScheduleUpstreamError, WNBARestTravelUpstreamError) as exc:
@@ -139,8 +137,6 @@ def _guarded_replace(
 
 
 def _install_enabled_seams() -> None:
-    # The Cup-safe overlay itself is also guarded/idempotent and only changes the
-    # isolated Step 7G adapter, never frozen Step 4J source.
     install_exact_cup_exclusion()
 
     rotation._request_stats_json = _guarded_replace(
@@ -197,6 +193,24 @@ def _install_enabled_seams() -> None:
         original=_ORIGINAL_AVAILABILITY_DAILY_SCHEDULE,
         target=_availability_daily_schedule_first_party,
     )
+    availability.get_current_players_dataset = _guarded_replace(
+        label="Step 4I current-roster provider",
+        current=availability.get_current_players_dataset,
+        original=_ORIGINAL_AVAILABILITY_CURRENT_ROSTER,
+        target=get_first_party_current_players_dataset,
+    )
+    availability.get_player_season_stats_dataset = _guarded_replace(
+        label="optional Step 4I recent-stats provider",
+        current=availability.get_player_season_stats_dataset,
+        original=_ORIGINAL_AVAILABILITY_RECENT_STATS,
+        target=_availability_recent_stats_unavailable,
+    )
+    availability.get_lineups_dataset = _guarded_replace(
+        label="optional Step 4I lineup provider",
+        current=availability.get_lineups_dataset,
+        original=_ORIGINAL_AVAILABILITY_LINEUPS,
+        target=_availability_lineups_unavailable,
+    )
 
 
 def get_step7g_first_party_status(
@@ -222,6 +236,12 @@ def get_step7g_first_party_status(
         is get_first_party_team_game_log_dataset,
         "availability_daily_schedule": availability.get_daily_schedule_dataset
         is _availability_daily_schedule_first_party,
+        "availability_current_roster": availability.get_current_players_dataset
+        is get_first_party_current_players_dataset,
+        "availability_recent_stats_fail_soft": availability.get_player_season_stats_dataset
+        is _availability_recent_stats_unavailable,
+        "availability_lineups_fail_soft": availability.get_lineups_dataset
+        is _availability_lineups_unavailable,
     }
     return {
         "source": MODEL_SOURCE,
@@ -234,6 +254,7 @@ def get_step7g_first_party_status(
             "season_type": "Regular Season",
             "core_model_input_readiness": True,
             "current_availability_daily_schedule": True,
+            "current_availability_roster": True,
             "current_availability": False,
             "shot_context": False,
             "advanced_context": False,
@@ -251,6 +272,7 @@ def get_step7g_first_party_status(
             "frozen_step4n_source_modified": False,
             "frozen_step4i_source_modified": False,
             "frozen_step4c_source_modified": False,
+            "frozen_step4b_source_modified": False,
         },
     }
 
