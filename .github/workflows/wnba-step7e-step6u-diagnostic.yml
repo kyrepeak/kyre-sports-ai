@@ -1,0 +1,45 @@
+name: WNBA Step 7E Step 6U diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/wnba-step7e-step6u-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-step6u:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read hosted Step 6U status only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request
+          url='https://kyre-sports-api.onrender.com/api/v1/wnba/runtime/step6u-activation-bridge/status'
+          last=None
+          for _ in range(30):
+              try:
+                  with urllib.request.urlopen(url, timeout=20) as r:
+                      body=json.load(r)
+                  safe={
+                      'selected_backend': body.get('selected_backend'),
+                      'configuration_ready': body.get('configuration_ready'),
+                      'bridge_ready': body.get('bridge_ready'),
+                      'scheduler_authorized': body.get('scheduler_authorized'),
+                      'verification_required': body.get('verification_required'),
+                      'blocking_reasons': body.get('blocking_reasons'),
+                      'step_6t': body.get('step_6t'),
+                      'step_5w': body.get('step_5w'),
+                      'safety': body.get('safety'),
+                  }
+                  print(json.dumps(safe, indent=2, sort_keys=True))
+                  raise SystemExit(0)
+              except Exception as exc:
+                  last=exc
+                  time.sleep(4)
+          raise SystemExit(f'could not read hosted Step 6U: {last}')
+          PY
