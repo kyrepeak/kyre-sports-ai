@@ -1,0 +1,29 @@
+name: WNBA Step 6H hosted official transport probe
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/tools/wnba_step6h_transport_probe.py'
+      - '.github/workflows/wnba-step-6h-transport-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hosted-transport-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Probe official WNBA GET transports
+        run: python -m sports_api.tools.wnba_step6h_transport_probe
