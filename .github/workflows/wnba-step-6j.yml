@@ -76,10 +76,14 @@ jobs:
             sports_api/wnba_step6j_canary_activation.py \
             sports_api/api/wnba_step6j_canary.py \
             sports_api/tools/wnba_step6j_render_canary.py \
+            sports_api/tools/wnba_step6j_render_canary_contract.py \
             sports_api/wnba_reconciled_direct_sync.py \
             sports_api/main.py
       - name: Run Step 6J deterministic tests
-        run: python -m unittest sports_api.tests.test_wnba_step6j_canary_activation
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_step6j_canary_activation \
+            sports_api.tests.test_wnba_step6j_render_canary_contract
       - name: Run frozen Step 6I regression
         run: python -m unittest sports_api.tests.test_wnba_reconciled_direct_sync
       - name: Run frozen Step 6H through Step 6C regressions
@@ -101,9 +105,13 @@ jobs:
           from pathlib import Path
           module = Path('sports_api/wnba_step6j_canary_activation.py').read_text(encoding='utf-8').lower()
           tool = Path('sports_api/tools/wnba_step6j_render_canary.py').read_text(encoding='utf-8').lower()
+          discovery = Path('sports_api/tools/wnba_step6j_render_canary_contract.py').read_text(encoding='utf-8').lower()
           assert 'wnba_production_runtime_enabled": "true"' not in tool
+          assert 'wnba_production_runtime_enabled": "true"' not in discovery
           assert 'create_service(' not in tool
+          assert 'create_service(' not in discovery
           assert 'create_registry_credential(' not in tool
+          assert 'create_registry_credential(' not in discovery
           assert 'place_wager' not in module
           assert 'run_monte_carlo' not in module
           print('Step 6J is a one-shot feed canary only: no scheduler activation, paid provisioning, Monte Carlo, or wager action.')
@@ -176,7 +184,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p .wnba-step6j-canary
-          python -m sports_api.tools.wnba_step6j_render_canary \
+          python -m sports_api.tools.wnba_step6j_render_canary_contract \
             --revision "$WNBA_STEP6J_REVISION" \
             --release-id "$WNBA_STEP6J_RELEASE_ID" \
             --image-ref "$WNBA_STEP6J_IMAGE_REF" \
@@ -191,9 +199,12 @@ jobs:
           final = report.get('final') or {}
           canary = report.get('canary') or {}
           safety = report.get('safety') or {}
+          discovery = report.get('service_discovery') or {}
           assert report.get('completed') is True
           assert canary.get('status') == 'completed'
           assert canary.get('post_write_sha256') == final.get('feed_content_sha256')
+          assert discovery.get('strategy') == 'frozen_step6c_contract'
+          assert discovery.get('exactly_one_contract_match_required') is True
           assert final.get('canary_enabled') is False
           assert final.get('direct_sync_enabled') is False
           assert final.get('reconciled_sync_enabled') is False
