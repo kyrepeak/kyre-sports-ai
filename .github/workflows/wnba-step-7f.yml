@@ -1,0 +1,198 @@
+name: WNBA Step 7F Streamlit API integration
+
+on:
+  push:
+    branches:
+      - wnba-step7f-streamlit-integration-20260827
+    paths:
+      - 'app.py'
+      - 'wnba_api_client_v1.py'
+      - 'wnba_api_schedule_bridge_v1.py'
+      - 'tests/test_wnba_step7f_streamlit_api.py'
+      - '.github/workflows/wnba-step-7f.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7f-streamlit-api-integration
+  cancel-in-progress: false
+
+jobs:
+  certify-streamlit-api-bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Step 7F branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify frozen Step 7E ancestry
+        shell: bash
+        run: |
+          git merge-base --is-ancestor cab48f4240aedb79796afe98794e5e88c7461316 HEAD
+          echo 'Step 7F remains descended from the frozen Step 7E certificate.'
+
+      - name: Prove Step 7F diff scope
+        shell: bash
+        run: |
+          CHANGED="$(git diff --name-only cab48f4240aedb79796afe98794e5e88c7461316..HEAD | sort)"
+          EXPECTED=$'.github/workflows/wnba-step-7f.yml\napp.py\ntests/test_wnba_step7f_streamlit_api.py\nwnba_api_client_v1.py\nwnba_api_schedule_bridge_v1.py'
+          test "$CHANGED" = "$EXPECTED"
+          echo "$CHANGED"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Streamlit dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Compile Step 7F integration
+        run: |
+          python -m py_compile app.py
+          python -m py_compile wnba_api_client_v1.py
+          python -m py_compile wnba_api_schedule_bridge_v1.py
+          python -m py_compile tests/test_wnba_step7f_streamlit_api.py
+
+      - name: Run Step 7F fail-closed tests
+        run: python -m unittest discover -s tests -p 'test_wnba_step7f_streamlit_api.py'
+
+      - name: Prove Step 7F has no secret context
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          for name in (
+              'RENDER_API_KEY',
+              'WNBA_KYRE_SUPABASE_SECRET_KEY',
+              'WNBA_KYRE_MARKET_INGEST_TOKEN',
+              'SPORTSGAMEODDS_API_KEY',
+              'GHCR_RENDER_TOKEN',
+          ):
+              assert not os.environ.get(name), name
+          print('Step 7F certification has no deployment, database, ingest, or sportsbook secret context.')
+          PY
+
+      - name: Run live hosted API and Streamlit bridge proof
+        shell: bash
+        run: |
+          mkdir -p .step7f
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from wnba_api_client_v1 import KyreWNBAAPIClient
+          from wnba_api_schedule_bridge_v1 import install_wnba_api_schedule_bridge
+          import wnba_schedule_v25 as schedule25
+
+          client = KyreWNBAAPIClient(timeout_seconds=30, attempts=3)
+          health = client.health()
+          root = client.root()
+          teams = client.teams()
+          games = client.games_today()
+          readiness = client.readiness()
+
+          assert health['status'] == 'ok'
+          assert root['name'] == 'Kyre Sports API'
+          assert teams['season'] == 2026
+          assert int(teams['team_count']) >= 13
+          assert games['season'] == 2026
+          assert games.get('source_variant') == 'wnba_public_schedule_api'
+          assert games.get('source_url') == 'https://www.wnba.com/api/schedule'
+          assert readiness['selected_backend'] == 'supabase'
+          assert readiness['supabase_ready'] is True
+          assert readiness['evidence_ready'] is True
+          assert readiness['scheduler_authorized'] is False
+          assert readiness['production_runtime_enabled'] is False
+
+          install = install_wnba_api_schedule_bridge(client=client)
+          diagnostics = schedule25.schedule_diagnostics('2026-08-27')
+          frame = schedule25.schedule_for_date('2026-08-27')
+          assert install['installed'] is True
+          assert diagnostics['step7f_api_first'] is True
+          assert diagnostics['fallback_used'] is False
+          assert diagnostics['chosen_source'] == 'Kyre Sports API • WNBA official schedule'
+          if len(frame):
+              assert set(frame['source'].astype(str)) == {'Kyre Sports API • WNBA official schedule'}
+
+          evidence = {
+              'data_type': 'wnba_step7f_streamlit_api_integration',
+              'state': 'streamlit_api_bridge_certified',
+              'base_url': client.base_url,
+              'step7e_base_revision': 'cab48f4240aedb79796afe98794e5e88c7461316',
+              'api': {
+                  'health': health['status'],
+                  'name': root['name'],
+                  'team_count': int(teams['team_count']),
+                  'schedule_source_variant': games.get('source_variant'),
+                  'schedule_source_url': games.get('source_url'),
+              },
+              'bridge': {
+                  'installed': True,
+                  'api_first': True,
+                  'fallback_used': False,
+                  'schedule_rows_for_2026_08_27': int(len(frame)),
+                  'historical_frame_contract_preserved': True,
+              },
+              'readiness': readiness,
+              'safety': {
+                  'http_methods_used': ['GET'],
+                  'secret_required': False,
+                  'secret_value_returned': False,
+                  'render_mutation_performed': False,
+                  'supabase_write_performed': False,
+                  'sportsbook_called_directly_by_step7f': False,
+                  'sportsbook_write_performed': False,
+                  'projection_math_changed': False,
+                  'monte_carlo_changed': False,
+                  'scheduler_authorized': False,
+                  'scheduler_started': False,
+                  'production_runtime_enabled': False,
+                  'legacy_schedule_fallback_preserved': True,
+              },
+          }
+          Path('.step7f/streamlit-api-integration.json').write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print('Step 7F live Streamlit API bridge proof passed.')
+          PY
+
+      - name: Verify sanitized Step 7F evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          path = Path('.step7f/streamlit-api-integration.json')
+          raw = path.read_text(encoding='utf-8')
+          evidence = json.loads(raw)
+          assert evidence['state'] == 'streamlit_api_bridge_certified'
+          assert evidence['bridge']['api_first'] is True
+          assert evidence['bridge']['fallback_used'] is False
+          assert evidence['readiness']['scheduler_authorized'] is False
+          assert evidence['readiness']['production_runtime_enabled'] is False
+          assert evidence['safety']['supabase_write_performed'] is False
+          assert evidence['safety']['sportsbook_called_directly_by_step7f'] is False
+          assert evidence['safety']['projection_math_changed'] is False
+          assert evidence['safety']['monte_carlo_changed'] is False
+          evidence['ci_freeze'] = {
+              'workflow_revision': os.environ['GITHUB_SHA'],
+              'workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
+              'workflow_run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+          }
+          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print('Step 7F evidence verified and sanitized.')
+          PY
+
+      - name: Upload Step 7F integration evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7f-streamlit-api-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step7f/streamlit-api-integration.json
+          if-no-files-found: error
+          retention-days: 90

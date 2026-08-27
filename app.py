@@ -16,8 +16,11 @@ Contracts
 - Existing MLB and NFL routes remain exactly as they were at that checkpoint.
 - A tiny PRA presentation-route refresh is allowed so additive current PRA card
   layers can hot-reload without restarting the whole Streamlit worker.
+- Step 7F installs an API-first read-only WNBA schedule bridge above the frozen
+  replay. It preserves the exact V2.5 schedule frame contract and falls back to
+  the original direct schedule transport if the hosted API cannot be consumed.
 - No production projection, probability, Monte Carlo, calibration, ranking,
-  qualification, or sportsbook logic is changed here.
+  qualification, sportsbook pricing, scheduler or write logic is changed here.
 - Historical ``wnba_live_*`` source files may remain in the repository as an
   archive, but they are unreachable from the app and consume no runtime memory
   after a clean process restart.
@@ -94,6 +97,24 @@ def _refresh_pra_presentation_route() -> None:
     importlib.invalidate_caches()
 
 
+def _install_step7f_wnba_api_bridge() -> dict:
+    """Install the read-only API schedule transport without risking app boot."""
+    try:
+        from wnba_api_schedule_bridge_v1 import install_wnba_api_schedule_bridge
+
+        return install_wnba_api_schedule_bridge()
+    except Exception as exc:
+        # The bridge itself has a per-read legacy fallback. This outer guard also
+        # ensures an import/configuration problem can never take down the frozen
+        # Streamlit application before it renders.
+        return {
+            "installed": False,
+            "model_version": "WNBA STREAMLIT API SCHEDULE BRIDGE V1",
+            "error_type": type(exc).__name__,
+            "legacy_app_boot_preserved": True,
+        }
+
+
 def _load_frozen_pre_live_app() -> str:
     try:
         return subprocess.check_output(
@@ -108,6 +129,7 @@ def _load_frozen_pre_live_app() -> str:
 
 _purge_live_runtime_state()
 _refresh_pra_presentation_route()
+_STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()
 source = _load_frozen_pre_live_app()
 
 # Guard against accidentally pointing this wrapper at a checkpoint that already
