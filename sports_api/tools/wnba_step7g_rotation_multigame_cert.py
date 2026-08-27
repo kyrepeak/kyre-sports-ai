@@ -1,8 +1,14 @@
 """Multi-game certification for Step 7G period-aware WNBA rotations.
 
-The gate intentionally covers a recent multi-day slate plus a known overtime
-game. Every attempted completed game must produce one unique rotation solution
-for both teams. No passing subset is cherry-picked.
+This certification deliberately uses a fixed matrix of official completed WNBA
+game IDs instead of performing schedule discovery at runtime. Schedule transport
+and exact-rotation correctness are separate concerns; a CDN or stats-schedule
+timeout must not prevent us from testing the rotation solver itself.
+
+The matrix covers ten completed 2026 games, thirteen distinct teams, multiple
+recent dates, and a known overtime control. Every attempted game must pass; no
+passing subset is cherry-picked. Per-game exceptions are captured in the report
+so CI always leaves useful diagnostic evidence.
 """
 from __future__ import annotations
 
@@ -10,8 +16,8 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+from typing import Any
 
-from sports_api.wnba_schedule import get_daily_schedule_dataset
 from sports_api.wnba_step7g_first_party_history import (
     get_first_party_game_box_score_dataset,
     get_first_party_play_by_play_dataset,
@@ -24,10 +30,9 @@ from sports_api.tools.wnba_step7g_rotation_reconstruction_probe import (
 )
 
 SEASON = 2026
-DATES = ("2026-08-23", "2026-08-24", "2026-08-25", "2026-08-26")
-KNOWN_OVERTIME_GAME_ID = "1022600261"  # Indiana @ Atlanta, Aug. 16, 2026
 MIN_GAMES = 8
 MIN_DISTINCT_TEAMS = 12
+KNOWN_OVERTIME_GAME_ID = "1022600261"
 REPORT_PATH = Path("step7g-rotation-multigame-cert.json")
 OFF_ENV = (
     "WNBA_PRODUCTION_RUNTIME_ENABLED",
@@ -38,141 +43,187 @@ OFF_ENV = (
     "WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED",
 )
 
+# IDs independently verified against public WNBA.com game pages before this
+# certification was frozen. Team identity is still taken from each fetched box
+# payload, not trusted from these labels.
+CERT_GAMES: tuple[dict[str, Any], ...] = (
+    {
+        "game_id": "1022600278",
+        "date": "2026-08-23",
+        "label": "Seattle Storm / Dallas Wings",
+        "official_page": "https://www.wnba.com/game/sea-vs-dal-1022600278",
+    },
+    {
+        "game_id": "1022600279",
+        "date": "2026-08-23",
+        "label": "Indiana Fever / Chicago Sky",
+        "official_page": "https://www.wnba.com/game/1022600279/boxscore",
+    },
+    {
+        "game_id": "1022600280",
+        "date": "2026-08-23",
+        "label": "Washington Mystics / Portland Fire",
+        "official_page": "https://www.wnba.com/game/1022600280",
+    },
+    {
+        "game_id": "1022600281",
+        "date": "2026-08-23",
+        "label": "Las Vegas Aces / Toronto Tempo",
+        "official_page": "https://www.wnba.com/game/1022600281/LVA-vs-TOR",
+    },
+    {
+        "game_id": "1022600282",
+        "date": "2026-08-24",
+        "label": "Golden State Valkyries / Minnesota Lynx",
+        "official_page": "https://www.wnba.com/game/gsv-vs-min-1022600282",
+    },
+    {
+        "game_id": "1022600284",
+        "date": "2026-08-25",
+        "label": "Chicago Sky / Connecticut Sun",
+        "official_page": "https://www.wnba.com/game/chi-vs-con-1022600284",
+    },
+    {
+        "game_id": "1022600285",
+        "date": "2026-08-25",
+        "label": "Portland Fire / Dallas Wings",
+        "official_page": "https://www.wnba.com/game/pdx-vs-dal-1022600285",
+    },
+    {
+        "game_id": "1022600286",
+        "date": "2026-08-25",
+        "label": "Washington Mystics / Phoenix Mercury",
+        "official_page": "https://www.wnba.com/game/was-vs-phx-1022600286",
+    },
+    {
+        "game_id": "1022600288",
+        "date": "2026-08-26",
+        "label": "Toronto Tempo / Seattle Storm",
+        "official_page": "https://www.wnba.com/game/1022600288",
+    },
+    {
+        "game_id": KNOWN_OVERTIME_GAME_ID,
+        "date": "2026-08-16",
+        "label": "Indiana Fever / Atlanta Dream",
+        "official_page": "https://www.wnba.com/game/1022600261",
+        "explicit_overtime_control": True,
+    },
+)
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _candidate_games() -> tuple[list[dict], list[dict]]:
-    games: list[dict] = []
-    schedule_evidence: list[dict] = []
-    seen: set[str] = set()
-    for target_date in DATES:
-        dataset = get_daily_schedule_dataset(target_date, SEASON)
-        finals = [
-            game for game in dataset["games"]
-            if game.get("status", {}).get("category") == "final"
-            and isinstance(game.get("game_id"), str)
-        ]
-        schedule_evidence.append({
-            "date": target_date,
-            "source_url": dataset["source_url"],
-            "source_variant": dataset["source_variant"],
-            "official_game_count": dataset["game_count"],
-            "final_game_count": len(finals),
-            "game_ids": [game["game_id"] for game in finals],
-        })
-        for game in finals:
-            game_id = game["game_id"]
-            if game_id in seen:
-                continue
-            seen.add(game_id)
-            games.append({
-                "game_id": game_id,
-                "date": target_date,
-                "away_team_key": game.get("away", {}).get("team_key"),
-                "home_team_key": game.get("home", {}).get("team_key"),
-                "schedule_status": game.get("status"),
-            })
-
-    if KNOWN_OVERTIME_GAME_ID not in seen:
-        games.append({
-            "game_id": KNOWN_OVERTIME_GAME_ID,
-            "date": "2026-08-16",
-            "away_team_key": "indiana-fever",
-            "home_team_key": "atlanta-dream",
-            "schedule_status": {"category": "final", "text": "Final/OT"},
-            "explicit_overtime_control": True,
-        })
-    return games, schedule_evidence
-
-
-def _certify_game(meta: dict) -> dict:
-    game_id = meta["game_id"]
-    box = get_first_party_game_box_score_dataset(game_id, SEASON)
-    pbp = get_first_party_play_by_play_dataset(game_id, SEASON)
-    actions = pbp["actions"]
-    final_period = _final_period(actions)
-    away = _solve_side("away", box["away"], actions, final_period)
-    home = _solve_side("home", box["home"], actions, final_period)
-    passed = (
-        box["verification"]["requested_game_id_matches_source"]
-        and box["verification"]["player_ids_unique"]
-        and pbp["verification"]["action_ids_unique_when_present"]
-        and pbp["verification"]["all_team_events_mapped_to_registry"]
-        and away["passed"]
-        and home["passed"]
-    )
+def _side_summary(side: dict[str, Any], team_key: str | None) -> dict[str, Any]:
     return {
-        **meta,
-        "passed": passed,
-        "final_period": final_period,
-        "overtime": final_period > 4,
-        "source_action_count": pbp["source_action_count"],
-        "away": {
-            "team_key": box["away"]["team_key"],
-            "passed": away["passed"],
-            "unique_solution": away.get("unique_solution"),
-            "accepted_solution_count": away.get("accepted_solution_count"),
-            "combination_count": away.get("combination_count"),
-            "max_abs_player_delta_seconds": away.get("best_max_abs_player_delta_seconds"),
-            "official_team_total_within_source_precision": away.get("official_team_total_within_source_precision"),
-            "period_lineups": away.get("period_lineups"),
-            "parse_errors": away.get("parse_errors"),
-            "failure_reason": away.get("failure_reason"),
-        },
-        "home": {
-            "team_key": box["home"]["team_key"],
-            "passed": home["passed"],
-            "unique_solution": home.get("unique_solution"),
-            "accepted_solution_count": home.get("accepted_solution_count"),
-            "combination_count": home.get("combination_count"),
-            "max_abs_player_delta_seconds": home.get("best_max_abs_player_delta_seconds"),
-            "official_team_total_within_source_precision": home.get("official_team_total_within_source_precision"),
-            "period_lineups": home.get("period_lineups"),
-            "parse_errors": home.get("parse_errors"),
-            "failure_reason": home.get("failure_reason"),
-        },
-        "source_urls": {
-            "box_score": box["source_url"],
-            "play_by_play": pbp["source_url"],
-        },
+        "team_key": team_key,
+        "passed": side.get("passed"),
+        "unique_solution": side.get("unique_solution"),
+        "accepted_solution_count": side.get("accepted_solution_count"),
+        "combination_count": side.get("combination_count"),
+        "max_abs_player_delta_seconds": side.get("best_max_abs_player_delta_seconds"),
+        "official_team_total_within_source_precision": side.get(
+            "official_team_total_within_source_precision"
+        ),
+        "period_lineups": side.get("period_lineups"),
+        "parse_errors": side.get("parse_errors"),
+        "failure_reason": side.get("failure_reason"),
     }
 
 
-def main() -> None:
-    off_state = {key: os.getenv(key, "").strip().casefold() == "false" for key in OFF_ENV}
-    if not all(off_state.values()):
-        raise RuntimeError("Multi-game rotation cert refused because production is not fully OFF.")
+def _certify_game(meta: dict[str, Any]) -> dict[str, Any]:
+    game_id = str(meta["game_id"])
+    base: dict[str, Any] = {**meta, "attempted": True}
+    try:
+        box = get_first_party_game_box_score_dataset(game_id, SEASON)
+        pbp = get_first_party_play_by_play_dataset(game_id, SEASON)
+        actions = pbp["actions"]
+        final_period = _final_period(actions)
+        away = _solve_side("away", box["away"], actions, final_period)
+        home = _solve_side("home", box["home"], actions, final_period)
+        passed = (
+            box["verification"]["requested_game_id_matches_source"]
+            and box["verification"]["player_ids_unique"]
+            and pbp["verification"]["action_ids_unique_when_present"]
+            and pbp["verification"]["all_team_events_mapped_to_registry"]
+            and away.get("passed") is True
+            and home.get("passed") is True
+        )
+        return {
+            **base,
+            "passed": bool(passed),
+            "final_period": final_period,
+            "overtime": final_period > 4,
+            "source_action_count": pbp["source_action_count"],
+            "away": _side_summary(away, box["away"].get("team_key")),
+            "home": _side_summary(home, box["home"].get("team_key")),
+            "source_urls": {
+                "box_score": box["source_url"],
+                "play_by_play": pbp["source_url"],
+            },
+            "exception": None,
+        }
+    except Exception as exc:  # diagnostic certification must preserve evidence
+        return {
+            **base,
+            "passed": False,
+            "final_period": None,
+            "overtime": False,
+            "source_action_count": None,
+            "away": {},
+            "home": {},
+            "source_urls": {},
+            "exception": {
+                "type": type(exc).__name__,
+                "message": str(exc),
+            },
+        }
 
-    candidates, schedule_evidence = _candidate_games()
-    results = [_certify_game(game) for game in candidates]
+
+def main() -> None:
+    off_state = {
+        key: os.getenv(key, "").strip().casefold() == "false" for key in OFF_ENV
+    }
+    if not all(off_state.values()):
+        raise RuntimeError(
+            "Multi-game rotation cert refused because production is not fully OFF."
+        )
+
+    results = [_certify_game(dict(game)) for game in CERT_GAMES]
     distinct_teams = sorted({
-        side["team_key"]
+        side.get("team_key")
         for result in results
-        for side in (result["away"], result["home"])
+        for side in (result.get("away", {}), result.get("home", {}))
         if side.get("team_key")
     })
-    overtime_games = [result["game_id"] for result in results if result["overtime"]]
-    failed_games = [result["game_id"] for result in results if not result["passed"]]
+    overtime_games = [result["game_id"] for result in results if result.get("overtime")]
+    failed_games = [result["game_id"] for result in results if not result.get("passed")]
+    exceptions = {
+        result["game_id"]: result["exception"]
+        for result in results
+        if result.get("exception") is not None
+    }
     max_delta = max(
         [
             float(side["max_abs_player_delta_seconds"])
             for result in results
-            for side in (result["away"], result["home"])
+            for side in (result.get("away", {}), result.get("home", {}))
             if side.get("max_abs_player_delta_seconds") is not None
         ] or [0.0]
+    )
+    all_unique = all(
+        side.get("unique_solution") is True
+        for result in results
+        if result.get("passed")
+        for side in (result.get("away", {}), result.get("home", {}))
     )
     gate = (
         len(results) >= MIN_GAMES
         and len(distinct_teams) >= MIN_DISTINCT_TEAMS
-        and bool(overtime_games)
+        and KNOWN_OVERTIME_GAME_ID in overtime_games
         and not failed_games
-        and all(
-            side.get("unique_solution") is True
-            for result in results
-            for side in (result["away"], result["home"])
-        )
+        and all_unique
     )
 
     report = {
@@ -181,16 +232,17 @@ def main() -> None:
         "read_only": True,
         "season": SEASON,
         "production_flags_off": off_state,
-        "date_window": list(DATES),
+        "source": "Fixed official WNBA.com game-ID matrix + first-party page data",
+        "runtime_schedule_discovery_used": False,
+        "certification_matrix": list(CERT_GAMES),
         "known_overtime_control_game_id": KNOWN_OVERTIME_GAME_ID,
-        "source": "WNBA Official Schedule + WNBA.com First-Party Page Data",
         "player_tolerance_seconds": PLAYER_TOLERANCE_SECONDS,
         "team_tolerance_seconds": TEAM_TOLERANCE_SECONDS,
-        "schedule_evidence": schedule_evidence,
         "summary": {
             "attempted_game_count": len(results),
-            "passed_game_count": sum(result["passed"] for result in results),
+            "passed_game_count": sum(bool(result.get("passed")) for result in results),
             "failed_game_ids": failed_games,
+            "exceptions": exceptions,
             "distinct_team_count": len(distinct_teams),
             "distinct_teams": distinct_teams,
             "overtime_game_count": len(overtime_games),
@@ -198,11 +250,7 @@ def main() -> None:
             "max_observed_player_delta_seconds": round(max_delta, 3),
             "minimum_games_required": MIN_GAMES,
             "minimum_distinct_teams_required": MIN_DISTINCT_TEAMS,
-            "all_team_solutions_unique": all(
-                side.get("unique_solution") is True
-                for result in results
-                for side in (result["away"], result["home"])
-            ),
+            "all_passing_team_solutions_unique": all_unique,
             "certification_gate_passed": gate,
         },
         "games": results,
@@ -216,12 +264,15 @@ def main() -> None:
         "sportsbook_called": False,
         "scheduler_started": False,
     }
-    REPORT_PATH.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    REPORT_PATH.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
     print(json.dumps({
         "attempted_games": len(results),
-        "passed_games": sum(result["passed"] for result in results),
+        "passed_games": sum(bool(result.get("passed")) for result in results),
         "failed_games": failed_games,
+        "exception_game_ids": sorted(exceptions),
         "distinct_teams": len(distinct_teams),
         "overtime_games": overtime_games,
         "max_player_delta_seconds": round(max_delta, 3),
