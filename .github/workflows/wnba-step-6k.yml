@@ -9,6 +9,7 @@ on:
       - 'sports_api/api/wnba_step6k_activation_preflight.py'
       - 'sports_api/api/wnba_pregame_board_scheduler_staging_activation.py'
       - 'sports_api/tests/test_wnba_step6k_activation_preflight.py'
+      - 'sports_api/tests/test_wnba_staging_activation_gate.py'
       - 'sports_api/main.py'
       - '.github/workflows/wnba-step-6k.yml'
   pull_request:
@@ -17,6 +18,7 @@ on:
       - 'sports_api/api/wnba_step6k_activation_preflight.py'
       - 'sports_api/api/wnba_pregame_board_scheduler_staging_activation.py'
       - 'sports_api/tests/test_wnba_step6k_activation_preflight.py'
+      - 'sports_api/tests/test_wnba_staging_activation_gate.py'
       - 'sports_api/main.py'
       - '.github/workflows/wnba-step-6k.yml'
 
@@ -83,7 +85,8 @@ jobs:
               assert token not in core, token
 
           assert '@router.post' not in api
-          assert 'require_step6k_scheduler_authorized()' in transport
+          assert 'require_staging_activation_ready = require_step6k_scheduler_authorized' in transport
+          assert 'require_staging_activation_ready()' in transport
           assert 'if not scheduler_authorized:' in transport
           assert 'step_6j_durable_canary_required' in transport
 
@@ -94,8 +97,6 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import tempfile
-          from pathlib import Path
           from unittest.mock import patch
           import sports_api.wnba_step6k_activation_preflight as s
 
