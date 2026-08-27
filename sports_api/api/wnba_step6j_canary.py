@@ -1,4 +1,4 @@
-"""Authenticated Step 6J one-shot canary transport."""
+"""Authenticated Step 6J one-shot canary transport with Step 6S storage dispatch."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Header, HTTPException, Query
@@ -7,8 +7,11 @@ from sports_api.api.wnba_kyre_market_feed import require_ingest_authorization
 from sports_api.wnba_step6j_canary_activation import (
     WNBAStep6JCanaryError,
     get_step6j_canary_status,
-    rollback_step6j_canary,
-    run_step6j_canary,
+)
+from sports_api.wnba_step6s_canary_storage import (
+    get_step6s_canary_storage_status,
+    rollback_storage_aware_step6j_canary as rollback_step6j_canary,
+    run_storage_aware_step6j_canary as run_step6j_canary,
 )
 
 router = APIRouter(prefix="/markets/direct/draftkings", tags=["wnba"])
@@ -22,7 +25,12 @@ def _activation_id(value: str | None) -> str:
 
 
 def _block_failed_canary_replay() -> None:
-    """A failed-and-restored live canary is terminal: never write twice."""
+    """Preserve the historical filesystem replay block before transport dispatch.
+
+    The Step 6S Supabase runner independently enforces the same terminal replay
+    rule against its remote marker because this legacy status read is purposely
+    network-free and cannot inspect Supabase.
+    """
     status = get_step6j_canary_status()
     state = status.get("canary_state") or {}
     terminal_status = state.get("status")
@@ -41,6 +49,12 @@ def _block_failed_canary_replay() -> None:
 @router.get("/step6j-canary/status")
 def get_draftkings_step6j_canary_status():
     return get_step6j_canary_status()
+
+
+@router.get("/step6j-canary/storage-status")
+def get_draftkings_step6j_canary_storage_status():
+    """Return network-free Step 6S backend-dispatch readiness."""
+    return get_step6s_canary_storage_status()
 
 
 @router.post("/step6j-canary")
