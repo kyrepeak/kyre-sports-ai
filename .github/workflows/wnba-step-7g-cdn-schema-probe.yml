@@ -1,0 +1,160 @@
+name: WNBA Step 7G - Official CDN schema probe
+
+on:
+  push:
+    branches:
+      - wnba-production-7g-one-shot-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-cdn-schema-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-cdn-schema-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Inspect official WNBA CDN box score and substitutions
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request
+          from pathlib import Path
+
+          GAME_ID = '1022600254'
+          BASE = 'https://cdn.wnba.com/static/json/liveData'
+          HEADERS = {
+              'Accept': 'application/json, text/plain, */*',
+              'Referer': 'https://www.wnba.com/',
+              'User-Agent': 'Mozilla/5.0 (compatible; kyre-sports-ai-step7g-cdn-probe/1.0)',
+          }
+
+          def get(path):
+              req = urllib.request.Request(BASE + path, headers=HEADERS, method='GET')
+              with urllib.request.urlopen(req, timeout=20.0) as response:
+                  raw = response.read()
+                  status = int(response.status)
+              doc = json.loads(raw.decode('utf-8'))
+              if not isinstance(doc, dict):
+                  raise RuntimeError('official WNBA CDN returned non-object JSON')
+              return doc, status, len(raw)
+
+          box, box_status, box_bytes = get(f'/boxscore/boxscore_{GAME_ID}.json')
+          pbp, pbp_status, pbp_bytes = get(f'/playbyplay/playbyplay_{GAME_ID}.json')
+          game = box.get('game') or {}
+          pbp_game = pbp.get('game') or {}
+
+          teams = {}
+          for side_key in ('awayTeam', 'homeTeam'):
+              side = game.get(side_key) or {}
+              players = side.get('players') or []
+              teams[side_key] = {
+                  'teamId': side.get('teamId'),
+                  'teamTricode': side.get('teamTricode'),
+                  'teamCity': side.get('teamCity'),
+                  'teamName': side.get('teamName'),
+                  'player_count': len(players),
+                  'player_keys': sorted({k for p in players if isinstance(p, dict) for k in p.keys()}),
+                  'statistics_keys': sorted({k for p in players if isinstance(p, dict) and isinstance(p.get('statistics'), dict) for k in p['statistics'].keys()}),
+                  'players': [
+                      {
+                          'personId': p.get('personId'),
+                          'firstName': p.get('firstName'),
+                          'familyName': p.get('familyName'),
+                          'position': p.get('position'),
+                          'starter': bool(p.get('position')),
+                          'minutes': (p.get('statistics') or {}).get('minutes'),
+                          'points': (p.get('statistics') or {}).get('points'),
+                      }
+                      for p in players if isinstance(p, dict)
+                  ],
+              }
+
+          actions = pbp_game.get('actions') or []
+          substitutions = []
+          substitution_keys = set()
+          for action in actions:
+              if not isinstance(action, dict):
+                  continue
+              action_type = str(action.get('actionType') or action.get('action_type') or '').casefold()
+              sub_type = str(action.get('subType') or action.get('sub_type') or '').casefold()
+              desc = str(action.get('description') or '')
+              if 'substitut' in action_type or 'substitut' in sub_type or 'substitution' in desc.casefold():
+                  substitution_keys.update(action.keys())
+                  scalar = {}
+                  for key, value in action.items():
+                      if isinstance(value, (str, int, float, bool)) or value is None:
+                          scalar[key] = value
+                  substitutions.append(scalar)
+
+          report = {
+              'data_type': 'wnba_step7g_official_cdn_schema_probe_v1',
+              'game_id': GAME_ID,
+              'read_only': True,
+              'official_source_only': True,
+              'supabase_mutation_performed': False,
+              'sportsbook_called': False,
+              'scheduler_started': False,
+              'secret_value_returned': False,
+              'boxscore': {
+                  'http_status': box_status,
+                  'bytes': box_bytes,
+                  'top_level_keys': sorted(box.keys()),
+                  'game_keys': sorted(game.keys()),
+                  'game_id': game.get('gameId'),
+                  'teams': teams,
+              },
+              'playbyplay': {
+                  'http_status': pbp_status,
+                  'bytes': pbp_bytes,
+                  'top_level_keys': sorted(pbp.keys()),
+                  'game_keys': sorted(pbp_game.keys()),
+                  'game_id': pbp_game.get('gameId'),
+                  'action_count': len(actions),
+                  'action_keys': sorted({k for a in actions if isinstance(a, dict) for k in a.keys()}),
+                  'substitution_count': len(substitutions),
+                  'substitution_keys': sorted(substitution_keys),
+                  'substitutions': substitutions[:40],
+              },
+          }
+          Path('wnba-step7g-cdn-schema-probe.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          PY
+
+      - name: Verify source and safety envelope
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('wnba-step7g-cdn-schema-probe.json').read_text())
+          assert r['read_only'] is True
+          assert r['official_source_only'] is True
+          assert r['supabase_mutation_performed'] is False
+          assert r['sportsbook_called'] is False
+          assert r['scheduler_started'] is False
+          assert r['secret_value_returned'] is False
+          assert r['boxscore']['http_status'] == 200
+          assert r['playbyplay']['http_status'] == 200
+          assert r['boxscore']['game_id'] == r['game_id']
+          assert r['playbyplay']['game_id'] == r['game_id']
+          assert r['playbyplay']['substitution_count'] > 0
+          print('Official WNBA CDN schema probe is green and read-only.')
+          PY
+
+      - name: Upload sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-cdn-schema-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wnba-step7g-cdn-schema-probe.json
+          if-no-files-found: error
+          retention-days: 30
