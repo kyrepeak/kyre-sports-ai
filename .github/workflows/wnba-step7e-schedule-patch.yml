@@ -33,6 +33,7 @@ jobs:
 
           schedule = Path('sports_api/wnba_schedule.py')
           text = schedule.read_text(encoding='utf-8')
+
           old_constants = '''WNBA_LEAGUE_ID = "10"
           WNBA_CDN_SCHEDULE_URL = (
               "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2_10.json"
@@ -44,28 +45,23 @@ jobs:
           WNBA_CDN_SCHEDULE_URL = (
               "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json"
           )
-          # Retained only as a historical compatibility constant. The endpoint is
-          # retired and is intentionally never called by the current schedule path.
+          # Historical compatibility constant only. The retired stats transport is
+          # intentionally excluded from the active production request sequence.
           WNBA_STATS_SCHEDULE_URL = "https://stats.wnba.com/stats/scheduleleaguev2"
           WNBA_SCHEDULE_SOURCE = "WNBA Official Schedule"'''.replace('          ', '')
-          assert text.count(old_constants) == 1
+          if text.count(old_constants) != 1:
+              raise SystemExit('Could not uniquely locate WNBA schedule constants.')
           text = text.replace(old_constants, new_constants)
 
-          old_fetch = '''    """Fetch official schedule data, preferring the WNBA CDN with stats fallback."""
+          old_doc = '"""Fetch official schedule data, preferring the WNBA CDN with stats fallback."""'
+          new_doc = '''"""Fetch official schedule data from WNBA.com with current-CDN fallback.
 
-              now = monotonic()
-          '''.replace('              ', '    ')
-          new_fetch = '''    """Fetch official schedule data from WNBA.com with current-CDN fallback.
-
-              The legacy stats.wnba.com scheduleLeagueV2 transport was retired in 2026
-              and is deliberately excluded here so cloud deployments fail over quickly
-              instead of waiting on the retired endpoint.
-              """
-
-              now = monotonic()
-          '''.replace('              ', '    ')
-          assert text.count(old_fetch) == 1
-          text = text.replace(old_fetch, new_fetch)
+              The legacy stats.wnba.com scheduleLeagueV2 transport is deliberately
+              excluded so cloud deployments do not block on the retired endpoint.
+              """'''.replace('              ', '    ')
+          if text.count(old_doc) != 1:
+              raise SystemExit('Could not uniquely locate schedule fetch docstring.')
+          text = text.replace(old_doc, new_doc)
 
           old_requests = '''    requests_to_try = (
               (
@@ -91,38 +87,37 @@ jobs:
                   None,
               ),
           )'''
-          assert text.count(old_requests) == 1
+          if text.count(old_requests) != 1:
+              raise SystemExit('Could not uniquely locate official schedule request sequence.')
           text = text.replace(old_requests, new_requests)
           schedule.write_text(text, encoding='utf-8')
 
           tests = Path('sports_api/tests/test_wnba_schedule.py')
           text = tests.read_text(encoding='utf-8')
-          old_import = '''from sports_api.wnba_schedule import (
-              WNBA_STATS_SCHEDULE_URL,'''
-          new_import = '''from sports_api.wnba_schedule import (
-              WNBA_CDN_SCHEDULE_URL,
-              WNBA_PUBLIC_SCHEDULE_API_URL,
-              WNBA_STATS_SCHEDULE_URL,'''
-          assert text.count(old_import) == 1
+          old_import = 'from sports_api.wnba_schedule import (\n    WNBA_STATS_SCHEDULE_URL,'
+          new_import = (
+              'from sports_api.wnba_schedule import (\n'
+              '    WNBA_CDN_SCHEDULE_URL,\n'
+              '    WNBA_PUBLIC_SCHEDULE_API_URL,\n'
+              '    WNBA_STATS_SCHEDULE_URL,'
+          )
+          if text.count(old_import) != 1:
+              raise SystemExit('Could not uniquely locate schedule test imports.')
           text = text.replace(old_import, new_import)
 
-          old_test = '''    @patch("sports_api.wnba_schedule.httpx.get")
-              def test_fetch_falls_back_to_stats_schedule_endpoint(self, mock_get):
-                  wrong_season = _payload(season="2025")
-                  valid = _payload(season="2026")
-                  mock_get.side_effect = [
-                      _FakeResponse(wrong_season),
-                      _FakeResponse(valid),
-                  ]
+          marker = (
+              '    @patch("sports_api.wnba_schedule.httpx.get")\n'
+              '    def test_fetch_falls_back_to_stats_schedule_endpoint(self, mock_get):'
+          )
+          start = text.find(marker)
+          if start < 0:
+              raise SystemExit('Could not locate retired-stats fallback unit test.')
+          end_marker = '\n\n\nif __name__ == "__main__":'
+          end = text.find(end_marker, start)
+          if end < 0:
+              raise SystemExit('Could not locate unit-test module footer.')
 
-                  _, _, source_variant, source_url, cache_hit = _fetch_schedule_payload(2026)
-
-                  self.assertEqual(source_variant, "wnba_stats_scheduleleaguev2")
-                  self.assertEqual(source_url, WNBA_STATS_SCHEDULE_URL)
-                  self.assertFalse(cache_hit)
-                  self.assertEqual(mock_get.call_count, 2)
-          '''.replace('              ', '    ')
-          new_test = '''    @patch("sports_api.wnba_schedule.httpx.get")
+          replacement = '''    @patch("sports_api.wnba_schedule.httpx.get")
               def test_fetch_prefers_public_wnba_schedule_api(self, mock_get):
                   valid = _payload(season="2026")
                   mock_get.return_value = _FakeResponse(valid)
@@ -155,9 +150,8 @@ jobs:
                   self.assertNotEqual(source_url, WNBA_STATS_SCHEDULE_URL)
                   self.assertFalse(cache_hit)
                   self.assertEqual(mock_get.call_count, 2)
-          '''.replace('              ', '    ')
-          assert text.count(old_test) == 1
-          text = text.replace(old_test, new_test)
+          '''.replace('              ', '    ').rstrip()
+          text = text[:start] + replacement + text[end:]
           tests.write_text(text, encoding='utf-8')
           PY
 
@@ -213,5 +207,4 @@ jobs:
           git add sports_api/wnba_schedule.py sports_api/tests/test_wnba_schedule.py
           git commit -m 'Step 7E: repair official WNBA schedule transport'
           git push origin HEAD:wnba-production-7e-schedule-fix-20260827
-          echo "PATCH_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "Certified schedule patch: $(git rev-parse HEAD)"
