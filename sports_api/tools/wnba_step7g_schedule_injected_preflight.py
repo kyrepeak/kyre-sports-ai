@@ -8,12 +8,17 @@ local preflight module, then reports the next dependency boundary.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import json
 from typing import Any
+
+import httpx
 
 from sports_api import wnba_schedule as frozen_schedule
 from sports_api.tools import wnba_step7g_official_data_preflight as preflight
 from sports_api.wnba_step7g_first_party_history import (
+    HTTP_HEADERS as FIRST_PARTY_HTTP_HEADERS,
+    _parse_page_props,
     get_first_party_game_box_score_dataset,
     get_first_party_play_by_play_dataset,
 )
@@ -124,6 +129,83 @@ def _first_party_preflight_game_state(game_id: str, season: int) -> dict[str, An
     }
 
 
+def _resolve_official_team_identity(team_key: str) -> tuple[int, str] | None:
+    """Resolve the official team ID + slug from certified first-party schedule data."""
+    dataset = _first_party_season_schedule_dataset(preflight.SEASON)
+    for game in dataset.get("games", []):
+        if not isinstance(game, dict):
+            continue
+        for side in ("away", "home"):
+            team = game.get(side)
+            if not isinstance(team, dict) or team.get("team_key") != team_key:
+                continue
+            team_id = team.get("official_team_id")
+            slug = team.get("team_slug") or team.get("team_key")
+            if isinstance(team_id, int) and team_id > 0 and isinstance(slug, str) and slug:
+                return team_id, slug
+    return None
+
+
+def _first_party_team_page_roster_probe(
+    team_key: str,
+    sample_player_name: str | None,
+) -> dict[str, Any]:
+    """Verify roster evidence on the real WNBA team-page route.
+
+    WNBA.com's route is /team/{official_team_id}/{slug}; the legacy preflight's
+    /team/{slug}/roster route is not a valid current WNBA.com route.
+    """
+    identity = _resolve_official_team_identity(team_key)
+    if identity is None:
+        return {
+            "url": None,
+            "reachable": False,
+            "error_type": "OfficialTeamIdentityNotResolved",
+            "route_shape": "/team/{official_team_id}/{slug}",
+        }
+
+    team_id, slug = identity
+    url = f"https://www.wnba.com/team/{team_id}/{slug}"
+    started = datetime.now(timezone.utc)
+    try:
+        response = httpx.get(
+            url,
+            headers=FIRST_PARTY_HTTP_HEADERS,
+            timeout=20.0,
+            follow_redirects=True,
+        )
+        elapsed = (datetime.now(timezone.utc) - started).total_seconds()
+        response.raise_for_status()
+        page_props = _parse_page_props(response.text, url=str(response.url))
+        serialized = json.dumps(page_props, sort_keys=True).casefold()
+        needle = " ".join(str(sample_player_name or "").strip().split()).casefold()
+        player_present = bool(needle and needle in serialized)
+        return {
+            "url": str(response.url),
+            "http_status": response.status_code,
+            "elapsed_seconds": round(elapsed, 3),
+            "html_bytes": len(response.content),
+            "route_shape": "/team/{official_team_id}/{slug}",
+            "official_team_id": team_id,
+            "team_slug": slug,
+            "structured_next_data_available": True,
+            "sample_player_name_present": player_present,
+            "reachable": player_present,
+        }
+    except (httpx.HTTPError, RuntimeError, LookupError, ValueError) as exc:
+        elapsed = (datetime.now(timezone.utc) - started).total_seconds()
+        return {
+            "url": url,
+            "http_status": getattr(getattr(exc, "response", None), "status_code", None),
+            "elapsed_seconds": round(elapsed, 3),
+            "route_shape": "/team/{official_team_id}/{slug}",
+            "official_team_id": team_id,
+            "team_slug": slug,
+            "reachable": False,
+            "error_type": type(exc).__name__,
+        }
+
+
 def _is_first_party_wnba_url(value: Any) -> bool:
     return str(value or "").startswith("https://www.wnba.com/")
 
@@ -133,6 +215,7 @@ def main() -> int:
     preflight._season_schedule_dataset = _first_party_season_schedule_dataset
     preflight.get_live_game_state_dataset = _first_party_preflight_game_state
     preflight.get_play_by_play_dataset = get_first_party_play_by_play_dataset
+    preflight._official_roster_web_probe = _first_party_team_page_roster_probe
 
     report = preflight.build_report()
 
@@ -143,11 +226,12 @@ def main() -> int:
     box_first_party = _is_first_party_wnba_url(probe.get("box_score_source_url"))
     pbp_first_party = _is_first_party_wnba_url(probe.get("play_by_play_source_url"))
 
-    report["data_type"] = "wnba_step7g_official_data_preflight_v2_first_party_injected"
+    report["data_type"] = "wnba_step7g_official_data_preflight_v3_first_party_injected"
     report["diagnostic_injections"] = {
         "certified_first_party_schedule": True,
         "certified_first_party_box_score": True,
         "certified_first_party_play_by_play": True,
+        "official_team_page_roster_route": True,
         "diagnostic_compatibility_view_only": True,
         "frozen_production_provider_replaced": False,
     }
@@ -163,9 +247,9 @@ def main() -> int:
     )
     feasibility["production_activation_safe_now"] = False
     report["next_required_step"] = (
-        "Keep production OFF. Use the now-certified first-party schedule/history/PBP "
-        "surfaces plus the separately certified rotation fallback in an isolated "
-        "Step-7G dependency-injection test. Do not replace frozen shared providers."
+        "Keep production OFF. Use the certified first-party schedule/history/PBP/team-page "
+        "surfaces plus the separately certified rotation fallback in an isolated Step-7G "
+        "dependency-injection test. Do not replace frozen shared providers."
     )
 
     preflight.REPORT_PATH.write_text(
