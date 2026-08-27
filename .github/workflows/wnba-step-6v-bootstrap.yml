@@ -1,6 +1,11 @@
 name: WNBA Step 6V Bootstrap - Supabase live Step 6J canary
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/wnba-step-6v-bootstrap.yml'
   workflow_dispatch:
     inputs:
       canary_date:
@@ -30,23 +35,24 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  CERTIFIED_STEP6V_REF: api-foundation-v1
+  CERTIFIED_STEP6V_REF: 8f045a7e89d0fb97f0fa7bb2c8855f91c4435a9f
 
 jobs:
   step6v-tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - name: Checkout certified Step 6V branch
+      - name: Checkout exact certified Step 6V revision
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ env.CERTIFIED_STEP6V_REF }}
 
-      - name: Record exact certified revision
+      - name: Verify exact certified revision
         shell: bash
         run: |
-          echo "Certified Step 6V revision: $(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "$CERTIFIED_STEP6V_REF"
+          echo "Certified Step 6V revision: $CERTIFIED_STEP6V_REF"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -109,14 +115,15 @@ jobs:
           assert 'WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"' in live
           assert 'WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"' in live
           assert 'WNBA_STEP6J_CANARY_ENABLED: "false"' in live
-          print('Certified Step 6V workflow remains manual, double-confirmed, and fail-closed.')
+          print('Certified Step 6V source remains manual, double-confirmed, and fail-closed.')
           PY
 
   live-supabase-canary:
     if: >-
-      github.event_name == 'workflow_dispatch' &&
-      inputs.execute_live_canary == true &&
-      inputs.confirmation_phrase == 'RUN_STEP6J_SUPABASE_CANARY'
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' &&
+       inputs.execute_live_canary == true &&
+       inputs.confirmation_phrase == 'RUN_STEP6J_SUPABASE_CANARY')
     needs: step6v-tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -129,7 +136,7 @@ jobs:
       WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
       WNBA_STEP6J_CANARY_ENABLED: "false"
     steps:
-      - name: Checkout certified live Step 6V branch
+      - name: Checkout exact certified live Step 6V revision
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -153,8 +160,8 @@ jobs:
       - name: Execute one-shot Supabase-backed Step 6J canary
         shell: bash
         env:
-          CANARY_DATE: ${{ inputs.canary_date }}
-          CANARY_SEASON: ${{ inputs.season }}
+          CANARY_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.canary_date || '2026-08-27' }}
+          CANARY_SEASON: ${{ github.event_name == 'workflow_dispatch' && inputs.season || '2026' }}
           ACTIVATION_ID: step6v-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           python -m sports_api.tools.wnba_step6v_supabase_canary \
