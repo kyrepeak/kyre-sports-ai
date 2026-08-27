@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
-from sports_api.wnba_official_reconciliation_live import run_live_official_reconciliation
+from sports_api.wnba_official_reconciliation_live_current import run_live_official_reconciliation
 
 
 def main() -> int:
