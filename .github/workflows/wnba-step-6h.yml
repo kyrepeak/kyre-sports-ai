@@ -6,6 +6,7 @@ on:
       - api-foundation-v1
     paths:
       - 'sports_api/wnba_official_reconciliation.py'
+      - 'sports_api/wnba_official_reconciliation_live.py'
       - 'sports_api/api/wnba_draftkings_direct.py'
       - 'sports_api/tools/wnba_official_reconciliation_probe.py'
       - 'sports_api/tests/test_wnba_official_reconciliation.py'
@@ -14,6 +15,7 @@ on:
   pull_request:
     paths:
       - 'sports_api/wnba_official_reconciliation.py'
+      - 'sports_api/wnba_official_reconciliation_live.py'
       - 'sports_api/api/wnba_draftkings_direct.py'
       - 'sports_api/tools/wnba_official_reconciliation_probe.py'
       - 'sports_api/tests/test_wnba_official_reconciliation.py'
@@ -41,6 +43,7 @@ jobs:
         run: |
           python -m py_compile \
             sports_api/wnba_official_reconciliation.py \
+            sports_api/wnba_official_reconciliation_live.py \
             sports_api/api/wnba_draftkings_direct.py \
             sports_api/tools/wnba_official_reconciliation_probe.py
       - name: Run Step 6H deterministic tests
@@ -65,6 +68,7 @@ jobs:
           from pathlib import Path
           files = [
               Path('sports_api/wnba_official_reconciliation.py'),
+              Path('sports_api/wnba_official_reconciliation_live.py'),
               Path('sports_api/tools/wnba_official_reconciliation_probe.py'),
           ]
           joined = '\n'.join(p.read_text(encoding='utf-8') for p in files).lower()
