@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - 'sports_api/tools/wnba_step7e_schedule_hotfix_deploy.py'
+      - 'sports_api/tools/wnba_step7e_schedule_hotfix_deploy_v2.py'
       - 'sports_api/tests/test_wnba_step7e_schedule_hotfix_deploy.py'
+      - 'sports_api/tests/test_wnba_step7e_schedule_hotfix_deploy_v2.py'
       - '.github/workflows/wnba-step7e-hotfix-deploy.yml'
   workflow_dispatch:
 
@@ -44,11 +46,14 @@ jobs:
           test "${#RENDER_API_KEY}" -ge 20
           echo 'Render credential present; value not printed.'
 
-      - name: Compile and test Step 7E hotfix deploy operator
+      - name: Compile and test Step 7E hotfix deploy operators
         run: |
           python -m py_compile sports_api/tools/wnba_step7e_schedule_hotfix_deploy.py
+          python -m py_compile sports_api/tools/wnba_step7e_schedule_hotfix_deploy_v2.py
           python -m py_compile sports_api/tests/test_wnba_step7e_schedule_hotfix_deploy.py
+          python -m py_compile sports_api/tests/test_wnba_step7e_schedule_hotfix_deploy_v2.py
           python -m unittest sports_api.tests.test_wnba_step7e_schedule_hotfix_deploy
+          python -m unittest sports_api.tests.test_wnba_step7e_schedule_hotfix_deploy_v2
 
       - name: Prove certified hotfix branch identity and ancestry
         shell: bash
@@ -67,7 +72,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p .step7e-hotfix
-          python -m sports_api.tools.wnba_step7e_schedule_hotfix_deploy > .step7e-hotfix/deployment.json
+          python -m sports_api.tools.wnba_step7e_schedule_hotfix_deploy_v2 > .step7e-hotfix/deployment.json
 
       - name: Verify sanitized hotfix deployment evidence
         shell: bash
@@ -83,6 +88,9 @@ jobs:
           evidence = json.loads(raw)
           assert evidence['deployment_complete'] is True
           assert evidence['state'] == 'wnba_step7e_schedule_hotfix_live'
+          assert evidence['model_version'] == 'wnba_step_7e_schedule_hotfix_deploy_v2'
+          assert evidence['compatibility']['supabase_origin_normalized'] is True
+          assert evidence['compatibility']['supabase_project_host_exact'] == 'jqajcdckalsfizbvngiu.supabase.co'
           assert evidence['patch']['revision'] == '9a45b11704bb95ec5ace275b5dd941e27e32f745'
           assert evidence['patch']['parent_revision'] == '12b9a0bb21e72f16282f562d848673222d48c7f2'
           assert evidence['patch']['scope'] == [
