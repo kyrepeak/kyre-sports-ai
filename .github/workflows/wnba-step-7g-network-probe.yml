@@ -1,0 +1,167 @@
+name: WNBA Step 7G read-only network probe
+
+on:
+  push:
+    branches:
+      - wnba-production-7g-one-shot-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-network-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-network-probe
+  cancel-in-progress: false
+
+env:
+  CERTIFIED_STEP7G_REF: b600c640359cdb3b37dc512710600eb2e2d23db1
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact certified Step 7G code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CERTIFIED_STEP7G_REF }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Probe official WNBA read paths only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          import httpx
+
+          from sports_api.wnba_rosters import get_current_players_dataset
+          from sports_api.wnba_game_history import get_player_game_log_dataset
+
+          results = {
+              'data_type': 'wnba_step7g_network_probe_v1',
+              'read_only': True,
+              'supabase_used': False,
+              'sportsbook_used': False,
+              'scheduler_started': False,
+              'production_runtime_enabled': False,
+              'probes': [],
+          }
+
+          def record(name, fn):
+              started = time.monotonic()
+              try:
+                  value = fn()
+                  elapsed = round(time.monotonic() - started, 3)
+                  results['probes'].append({
+                      'name': name,
+                      'status': 'success',
+                      'elapsed_seconds': elapsed,
+                      'summary': value,
+                  })
+              except Exception as exc:
+                  elapsed = round(time.monotonic() - started, 3)
+                  results['probes'].append({
+                      'name': name,
+                      'status': 'failed',
+                      'elapsed_seconds': elapsed,
+                      'error_type': type(exc).__name__,
+                      'error_message_returned': False,
+                  })
+
+          record(
+              'stats_commonallplayers',
+              lambda: {
+                  'player_count': get_current_players_dataset(2026, current_roster_only=True).get('player_count'),
+                  'source': 'stats.wnba.com/commonallplayers',
+              },
+          )
+
+          record(
+              'stats_playergamelog',
+              lambda: {
+                  'game_count': get_player_game_log_dataset(1629546, 2026).get('game_count'),
+                  'player_id': 1629546,
+                  'source': 'stats.wnba.com/playergamelog',
+              },
+          )
+
+          def team_roster_page():
+              response = httpx.get(
+                  'https://liberty.wnba.com/roster/',
+                  headers={
+                      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/126.0 Safari/537.36',
+                      'Accept': 'text/html,application/xhtml+xml',
+                  },
+                  timeout=20.0,
+                  follow_redirects=True,
+              )
+              response.raise_for_status()
+              text = response.text
+              return {
+                  'status_code': response.status_code,
+                  'bytes': len(response.content),
+                  'contains_official_player_link': '/player/1629546/' in text or '1629546' in text,
+                  'source': 'official Liberty roster page',
+              }
+
+          record('official_team_roster_page', team_roster_page)
+
+          def player_page():
+              response = httpx.get(
+                  'https://www.wnba.com/player/1629546/marine-johannes',
+                  headers={'User-Agent': 'Mozilla/5.0'},
+                  timeout=20.0,
+                  follow_redirects=True,
+              )
+              response.raise_for_status()
+              return {
+                  'status_code': response.status_code,
+                  'bytes': len(response.content),
+                  'source': 'www.wnba.com official player page',
+              }
+
+          record('official_player_page', player_page)
+
+          Path('step7g-network-probe.json').write_text(
+              json.dumps(results, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(results, indent=2, sort_keys=True))
+          PY
+
+      - name: Verify probe remained read-only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('step7g-network-probe.json').read_text(encoding='utf-8'))
+          assert result['read_only'] is True
+          assert result['supabase_used'] is False
+          assert result['sportsbook_used'] is False
+          assert result['scheduler_started'] is False
+          assert result['production_runtime_enabled'] is False
+          print('Step 7G network probe remained read-only.')
+          PY
+
+      - name: Upload probe evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-network-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-network-probe.json
+          retention-days: 30
