@@ -106,8 +106,10 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           text = Path('.github/workflows/wnba-step-6w.yml').read_text(encoding='utf-8')
-          assert 'secrets.' not in text
-          assert 'WNBA_KYRE_SUPABASE_SECRET_KEY' not in text
+          secret_expression = '$' + '{{ ' + 'sec' + 'rets.'
+          server_key_name = 'WNBA_KYRE_SUPABASE_' + 'SECRET_KEY'
+          assert secret_expression not in text
+          assert server_key_name not in text
           print('Step 6W is secret-free.')
           PY
 
