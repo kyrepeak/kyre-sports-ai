@@ -10,13 +10,21 @@ from pypdf import PdfReader
 
 from sports_api.wnba_availability import (
     EASTERN_TZ,
+    GAME_DATE_RE,
+    GAME_TIME_RE,
+    MATCHUP_RE,
+    STATUS_RE,
     _fetch_pdf_bytes,
+    _team_maps,
     discover_latest_injury_report_url,
     parse_injury_report_text,
 )
+from sports_api.wnba_step7g_first_party_schedule_context import (
+    get_step7g_step4n_season_schedule_dataset,
+)
 
 OUTPUT = Path("step7g-injury-report-probe.json")
-TARGET_DATE = "2026-08-27"
+TARGET_GAME_ID = "1022600290"
 TARGET_TEAM_KEYS = {"washington-mystics", "phoenix-mercury"}
 
 
@@ -29,7 +37,7 @@ def _extract(content: bytes, *, layout: bool) -> tuple[str, int]:
     return "\n".join(texts).strip(), len(reader.pages)
 
 
-def _summary(parsed: dict[str, object]) -> dict[str, object]:
+def _summary(parsed: dict[str, object], *, target_date: str | None) -> dict[str, object]:
     entries = parsed.get("entries") if isinstance(parsed.get("entries"), list) else []
     submissions = parsed.get("team_submissions") if isinstance(parsed.get("team_submissions"), list) else []
     matchup_counts = Counter(
@@ -91,7 +99,7 @@ def _summary(parsed: dict[str, object]) -> dict[str, object]:
     target_games = [
         row
         for row in games
-        if row.get("game_date") == TARGET_DATE
+        if (target_date is None or row.get("game_date") == target_date)
         and (
             row.get("away_team_key") in TARGET_TEAM_KEYS
             or row.get("home_team_key") in TARGET_TEAM_KEYS
@@ -101,7 +109,7 @@ def _summary(parsed: dict[str, object]) -> dict[str, object]:
     target_submissions = [
         row
         for row in submission_surfaces
-        if row.get("game_date") == TARGET_DATE
+        if (target_date is None or row.get("game_date") == target_date)
         and (
             row.get("away_team_key") in TARGET_TEAM_KEYS
             or row.get("home_team_key") in TARGET_TEAM_KEYS
@@ -124,8 +132,90 @@ def _summary(parsed: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _schedule_target() -> dict[str, object]:
+    dataset = get_step7g_step4n_season_schedule_dataset(2026)
+    games = dataset.get("games") if isinstance(dataset.get("games"), list) else []
+    matching = [row for row in games if isinstance(row, dict) and str(row.get("game_id")) == TARGET_GAME_ID]
+    if len(matching) != 1:
+        raise RuntimeError(
+            f"Expected exactly one certified Step 4N game {TARGET_GAME_ID}; got {len(matching)}."
+        )
+    game = matching[0]
+    return {
+        "game_id": game.get("game_id"),
+        "date": game.get("date"),
+        "official_schedule_date": game.get("official_schedule_date"),
+        "game_datetime_utc": game.get("game_datetime_utc"),
+        "game_datetime_eastern": game.get("game_datetime_eastern"),
+        "away_team_key": (game.get("away") or {}).get("team_key") if isinstance(game.get("away"), dict) else None,
+        "away_team_tricode": (game.get("away") or {}).get("team_tricode") if isinstance(game.get("away"), dict) else None,
+        "home_team_key": (game.get("home") or {}).get("team_key") if isinstance(game.get("home"), dict) else None,
+        "home_team_tricode": (game.get("home") or {}).get("team_tricode") if isinstance(game.get("home"), dict) else None,
+        "status_category": (game.get("status") or {}).get("category") if isinstance(game.get("status"), dict) else None,
+    }
+
+
+def _structural_lines(text: str, *, target_matchup: str | None) -> list[dict[str, object]]:
+    teams_by_name, _ = _team_maps(2026)
+    team_names = sorted(
+        ((team["full_name"], team["team_key"]) for team in teams_by_name.values()),
+        key=lambda row: len(row[0]),
+        reverse=True,
+    )
+    rows: list[dict[str, object]] = []
+    context_countdown = 0
+    for index, raw in enumerate(str(text).splitlines()):
+        clean = " ".join(raw.split())
+        if not clean:
+            if context_countdown > 0:
+                context_countdown -= 1
+            continue
+        date_match = GAME_DATE_RE.search(clean)
+        time_match = GAME_TIME_RE.search(clean)
+        matchup_match = MATCHUP_RE.search(clean)
+        status_match = STATUS_RE.search(clean)
+        team_hits = [team_key for full_name, team_key in team_names if full_name.casefold() in clean.casefold()]
+        not_submitted = "not yet submitted" in clean.casefold()
+        matchup = matchup_match.group(1).upper() if matchup_match else None
+        target_marker = bool(target_matchup and matchup == target_matchup)
+        if target_marker:
+            context_countdown = 8
+        structurally_interesting = bool(
+            date_match
+            or time_match
+            or matchup_match
+            or team_hits
+            or status_match
+            or not_submitted
+            or context_countdown > 0
+        )
+        if structurally_interesting:
+            rows.append(
+                {
+                    "line_index": index,
+                    "game_date_token": date_match.group(1) if date_match else None,
+                    "game_time_token": time_match.group(1) if time_match else None,
+                    "matchup_token": matchup,
+                    "team_keys_present": sorted(set(team_hits)),
+                    "status_token": status_match.group(1).title() if status_match else None,
+                    "not_yet_submitted": not_submitted,
+                    "target_matchup_line": target_marker,
+                    "character_count": len(clean),
+                }
+            )
+        if context_countdown > 0 and not target_marker:
+            context_countdown -= 1
+    return rows
+
+
 def main() -> None:
     started = datetime.now(EASTERN_TZ)
+    schedule = _schedule_target()
+    target_date = str(schedule.get("date") or schedule.get("official_schedule_date") or "") or None
+    away_code = str(schedule.get("away_team_tricode") or "")
+    home_code = str(schedule.get("home_team_tricode") or "")
+    target_matchup = f"{away_code}@{home_code}" if away_code and home_code else None
+
     url, slot, discovery_cache_hit = discover_latest_injury_report_url(as_of_eastern=started)
     content, retrieved_at_utc, pdf_cache_hit = _fetch_pdf_bytes(url)
 
@@ -138,7 +228,7 @@ def main() -> None:
     layout_parsed = parse_injury_report_text(layout_text, 2026)
 
     output = {
-        "data_type": "wnba_step7g_injury_report_extraction_probe_v2",
+        "data_type": "wnba_step7g_injury_report_structure_probe_v3",
         "started_at_eastern": started.isoformat(),
         "source_url": url,
         "discovered_report_slot_eastern": slot,
@@ -146,12 +236,11 @@ def main() -> None:
         "discovery_cache_hit": discovery_cache_hit,
         "pdf_cache_hit": pdf_cache_hit,
         "page_count": page_count,
-        "default_extraction": _summary(default_parsed),
-        "layout_extraction": _summary(layout_parsed),
-        "target": {
-            "expected_date": TARGET_DATE,
-            "expected_team_keys": sorted(TARGET_TEAM_KEYS),
-        },
+        "schedule_target": schedule,
+        "target_matchup_from_schedule": target_matchup,
+        "default_extraction": _summary(default_parsed, target_date=target_date),
+        "layout_extraction": _summary(layout_parsed, target_date=target_date),
+        "layout_structural_lines": _structural_lines(layout_text, target_matchup=target_matchup),
         "safety": {
             "production_runtime_enabled": False,
             "scheduler_enabled": False,
