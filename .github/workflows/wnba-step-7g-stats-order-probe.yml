@@ -1,0 +1,145 @@
+name: WNBA Step 7G - Stats parameter-order probe
+
+on:
+  push:
+    branches:
+      - wnba-production-7g-one-shot-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-stats-order-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-stats-order-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Probe read-only WNBA Stats query ordering
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          BASE = 'https://stats.wnba.com/stats'
+          HEADERS = {
+              'Accept': 'application/json, text/plain, */*',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'Origin': 'https://www.wnba.com',
+              'Referer': 'https://www.wnba.com/',
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+              'x-nba-stats-origin': 'stats',
+              'x-nba-stats-token': 'true',
+              'Pragma': 'no-cache',
+              'Cache-Control': 'no-cache',
+          }
+          rows = []
+
+          def probe(name, endpoint, params, timeout=12.0):
+              query = urllib.parse.urlencode(params)
+              url = f'{BASE}/{endpoint}?{query}'
+              started = time.monotonic()
+              row = {'name': name, 'endpoint': endpoint, 'parameter_order': [k for k, _ in params]}
+              try:
+                  req = urllib.request.Request(url, headers=HEADERS, method='GET')
+                  with urllib.request.urlopen(req, timeout=timeout) as resp:
+                      raw = resp.read()
+                      status = int(resp.status)
+                      content_type = resp.headers.get('content-type')
+                  elapsed = round(time.monotonic() - started, 3)
+                  payload = json.loads(raw.decode('utf-8'))
+                  row.update({
+                      'status': 'success',
+                      'http_status': status,
+                      'elapsed_seconds': elapsed,
+                      'content_type': content_type,
+                      'json_object': isinstance(payload, dict),
+                      'result_set_count': len(payload.get('resultSets') or []) if isinstance(payload, dict) and isinstance(payload.get('resultSets'), list) else None,
+                  })
+              except Exception as exc:
+                  row.update({
+                      'status': 'failed',
+                      'elapsed_seconds': round(time.monotonic() - started, 3),
+                      'error_type': type(exc).__name__,
+                  })
+              rows.append(row)
+              print(json.dumps(row, sort_keys=True))
+
+          player_current = [
+              ('PlayerID', '1629546'),
+              ('Season', '2026'),
+              ('SeasonType', 'Regular Season'),
+              ('LeagueID', '10'),
+              ('DateFrom', ''),
+              ('DateTo', ''),
+          ]
+          player_league_first = [
+              ('LeagueID', '10'),
+              ('PlayerID', '1629546'),
+              ('Season', '2026'),
+              ('SeasonType', 'Regular Season'),
+              ('DateFrom', ''),
+              ('DateTo', ''),
+          ]
+          roster_current = [('IsOnlyCurrentSeason', '1'), ('LeagueID', '10'), ('Season', '2026')]
+          roster_league_first = [('LeagueID', '10'), ('Season', '2026'), ('IsOnlyCurrentSeason', '1')]
+          rotation_league_first = [('LeagueID', '10'), ('GameID', '1022600254'), ('RotationStat', 'PLAYER_PTS')]
+          rotation_game_first = [('GameID', '1022600254'), ('LeagueID', '10'), ('RotationStat', 'PLAYER_PTS')]
+          league_log_league_first = [
+              ('LeagueID', '10'), ('Season', '2026'), ('SeasonType', 'Regular Season'),
+              ('PlayerOrTeam', 'P'), ('Direction', 'DESC'), ('Sorter', 'DATE'), ('Counter', '1000')
+          ]
+
+          probe('playergamelog_current_order', 'playergamelog', player_current)
+          probe('playergamelog_league_first', 'playergamelog', player_league_first)
+          probe('commonallplayers_current_order', 'commonallplayers', roster_current)
+          probe('commonallplayers_league_first', 'commonallplayers', roster_league_first)
+          probe('gamerotation_league_first', 'gamerotation', rotation_league_first)
+          probe('gamerotation_game_first', 'gamerotation', rotation_game_first)
+          probe('leaguegamelog_league_first', 'leaguegamelog', league_log_league_first)
+
+          report = {
+              'data_type': 'wnba_step7g_stats_parameter_order_probe_v1',
+              'read_only': True,
+              'supabase_mutation_performed': False,
+              'sportsbook_called': False,
+              'scheduler_started': False,
+              'secret_value_returned': False,
+              'probes': rows,
+          }
+          Path('wnba-step7g-stats-order-probe.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Upload sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-stats-order-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: wnba-step7g-stats-order-probe.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Verify probe safety envelope
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('wnba-step7g-stats-order-probe.json').read_text(encoding='utf-8'))
+          assert report['read_only'] is True
+          assert report['supabase_mutation_performed'] is False
+          assert report['sportsbook_called'] is False
+          assert report['scheduler_started'] is False
+          assert report['secret_value_returned'] is False
+          print('Step 7G parameter-order probe remained read-only and fail-closed.')
+          PY
