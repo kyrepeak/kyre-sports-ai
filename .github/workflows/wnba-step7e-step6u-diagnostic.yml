@@ -1,4 +1,4 @@
-name: WNBA Step 7E schedule diagnostic
+name: WNBA Step 7E official CDN diagnostic
 
 on:
   push:
@@ -10,32 +10,35 @@ permissions:
   contents: read
 
 jobs:
-  inspect-schedule:
+  inspect-official-cdn:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Read hosted WNBA games today endpoint only
+      - name: Read current official WNBA schedule CDN only
         shell: bash
         run: |
           python - <<'PY'
-          import json, urllib.error, urllib.request
-          url='https://kyre-sports-api.onrender.com/api/v1/wnba/games/today?season=2026'
-          req=urllib.request.Request(url, headers={'User-Agent':'kyre-sports-api-step7e-diagnostic/1'})
-          try:
-              with urllib.request.urlopen(req, timeout=45) as r:
-                  raw=r.read().decode('utf-8', 'replace')
-                  print('HTTP', r.status)
-                  try:
-                      body=json.loads(raw)
-                      safe={k: body.get(k) for k in ('source','data_type','date','season','game_count','games') if k in body}
-                      if isinstance(safe.get('games'), list):
-                          safe['games']={'count': len(safe['games'])}
-                      print(json.dumps(safe, indent=2, sort_keys=True))
-                  except Exception:
-                      print(raw[:2000])
-          except urllib.error.HTTPError as exc:
-              raw=exc.read().decode('utf-8', 'replace')
-              print('HTTP', exc.code)
-              print(raw[:4000])
-              raise
+          import json, urllib.request
+          url='https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json'
+          req=urllib.request.Request(url, headers={
+              'User-Agent':'Mozilla/5.0',
+              'Accept':'application/json, text/plain, */*',
+              'Referer':'https://www.wnba.com/',
+          })
+          with urllib.request.urlopen(req, timeout=45) as r:
+              raw=r.read()
+          body=json.loads(raw.decode('utf-8'))
+          root=body.get('leagueSchedule') or {}
+          dates=root.get('gameDates') or []
+          assert str(root.get('leagueId')) == '10', root.get('leagueId')
+          assert str(root.get('seasonYear')) == '2026', root.get('seasonYear')
+          assert isinstance(dates, list) and dates, type(dates)
+          games=sum(len(x.get('games') or []) for x in dates if isinstance(x, dict))
+          print(json.dumps({
+              'http_status': r.status,
+              'league_id': root.get('leagueId'),
+              'season_year': root.get('seasonYear'),
+              'date_blocks': len(dates),
+              'game_count': games,
+          }, indent=2, sort_keys=True))
           PY
