@@ -31,12 +31,14 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["safety"]["default_enabled"] is False
             assert integration.availability.get_daily_schedule_dataset is integration._ORIGINAL_AVAILABILITY_DAILY_SCHEDULE
             assert integration.availability.get_latest_injury_report_dataset is integration._ORIGINAL_AVAILABILITY_INJURY_REPORT
+            assert integration.projection_snapshot.get_player_shot_chart_dataset is integration._ORIGINAL_PROJECTION_PLAYER_SHOT
+            assert integration.projection_snapshot.get_opponent_defense_by_shot_zone_dataset is integration._ORIGINAL_PROJECTION_OPPONENT_ZONE
             """,
             enabled=False,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
 
-    def test_explicit_enable_installs_all_certified_core_seams(self) -> None:
+    def test_explicit_enable_installs_all_certified_core_and_candidate_shot_seams(self) -> None:
         completed = self._run_child(
             """
             import sports_api.wnba_step7g_first_party_integration as integration
@@ -48,6 +50,10 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["seams"]["availability_daily_schedule"] is True
             assert status["seams"]["availability_current_roster"] is True
             assert status["seams"]["availability_injury_report"] is True
+            assert status["seams"]["projection_player_shot_context"] is True
+            assert status["seams"]["projection_opponent_zone_defense"] is True
+            assert integration.projection_snapshot.get_player_shot_chart_dataset is integration.get_first_party_player_shot_chart_dataset
+            assert integration.projection_snapshot.get_opponent_defense_by_shot_zone_dataset is integration.get_first_party_opponent_defense_by_shot_zone_dataset
             assert status["certified_scope"]["core_model_input_readiness"] is True
             assert status["certified_scope"]["current_availability_daily_schedule"] is True
             assert status["certified_scope"]["current_availability_roster"] is True
@@ -57,7 +63,23 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["certified_scope"]["advanced_context"] is False
             assert status["certified_scope"]["officiating_context"] is False
             assert status["safety"]["frozen_step4i_source_modified"] is False
+            assert status["safety"]["frozen_step4l_source_modified"] is False
             assert status["safety"]["frozen_step4c_source_modified"] is False
+            """,
+            enabled=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
+
+    def test_install_is_idempotent_with_shot_seams(self) -> None:
+        completed = self._run_child(
+            """
+            import sports_api.wnba_step7g_first_party_integration as integration
+            first = integration.install_step7g_first_party_integration()
+            second = integration.install_step7g_first_party_integration()
+            assert first["installed"] is True
+            assert second["installed"] is True
+            assert second["seams"]["projection_player_shot_context"] is True
+            assert second["seams"]["projection_opponent_zone_defense"] is True
             """,
             enabled=True,
         )
