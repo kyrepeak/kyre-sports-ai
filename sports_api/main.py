@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 
+# Step 6D must install before WNBA scheduler/router modules bind Step 5O functions.
+import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integration  # noqa: F401
+
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
 from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
@@ -36,6 +39,7 @@ from sports_api.api.wnba_correlated_monte_carlo import router as wnba_correlated
 from sports_api.api.wnba_daily_slate_top_five import router as wnba_daily_slate_top_five_router
 from sports_api.api.wnba_defensive_activity import router as wnba_defensive_activity_router
 from sports_api.api.wnba_deployment_smoke import router as wnba_deployment_smoke_router
+from sports_api.api.wnba_draftkings_direct import router as wnba_draftkings_direct_router
 from sports_api.api.wnba_empirical_outcome_distribution import router as wnba_empirical_outcome_distribution_router
 from sports_api.api.wnba_event_lineup_context import router as wnba_event_lineup_context_router
 from sports_api.api.wnba_historical_backtest_calibration import router as wnba_historical_backtest_calibration_router
@@ -113,6 +117,7 @@ app.include_router(wnba_correlated_monte_carlo_router)
 app.include_router(wnba_daily_slate_top_five_router)
 app.include_router(wnba_defensive_activity_router)
 app.include_router(wnba_deployment_smoke_router)
+app.include_router(wnba_draftkings_direct_router)
 app.include_router(wnba_empirical_outcome_distribution_router)
 app.include_router(wnba_event_lineup_context_router)
 app.include_router(wnba_historical_backtest_calibration_router)
