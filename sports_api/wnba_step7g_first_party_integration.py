@@ -1,8 +1,8 @@
 """Default-OFF Step 7G first-party integration for the frozen WNBA core chain.
 
-This module installs only certified first-party transport seams used by Step 4X
-model-input readiness. ``sports_api.main`` imports it before WNBA routers bind
-their functions, but nothing changes unless
+This module installs only certified or actively-certifying first-party transport
+seams used by Step 4X model-input readiness. ``sports_api.main`` imports it
+before WNBA routers bind their functions, but nothing changes unless
 ``WNBA_STEP7G_FIRST_PARTY_ENABLED=true`` is explicitly set.
 
 The integration does NOT enable production runtime, schedulers, market sync,
@@ -10,6 +10,10 @@ persistence, Supabase, or sportsbook access. It does not modify frozen source
 files. It only replaces module-local transport dependencies with certified
 WNBA.com first-party adapters or explicit fail-soft/bypass sentinels where the
 frozen layer already defines those semantics.
+
+Candidate seams may be installed while their ``certified_scope`` flag remains
+false. A scope flag is promoted only after a live real-FastAPI certification
+proves the frozen readiness group passes.
 """
 from __future__ import annotations
 
@@ -27,6 +31,10 @@ import sports_api.wnba_schedule_context as schedule_context
 from sports_api.wnba_game_history import WNBAHistoryUpstreamError
 from sports_api.wnba_schedule import WNBAScheduleUpstreamError
 from sports_api.wnba_schedule_context import WNBARestTravelUpstreamError
+from sports_api.wnba_step7g_first_party_advanced_stats_contract_safe import (
+    get_first_party_player_advanced_stats_dataset,
+    get_first_party_team_advanced_stats_dataset,
+)
 from sports_api.wnba_step7g_first_party_availability import (
     get_step7g_step4i_daily_schedule_dataset,
 )
@@ -53,7 +61,7 @@ from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v7"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v8_candidate"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -72,6 +80,12 @@ _ORIGINAL_AVAILABILITY_LINEUPS = availability.get_lineups_dataset
 _ORIGINAL_PROJECTION_PLAYER_SHOT = projection_snapshot.get_player_shot_chart_dataset
 _ORIGINAL_PROJECTION_OPPONENT_ZONE = (
     projection_snapshot.get_opponent_defense_by_shot_zone_dataset
+)
+_ORIGINAL_PROJECTION_PLAYER_ADVANCED = (
+    projection_snapshot.get_player_advanced_stats_dataset
+)
+_ORIGINAL_PROJECTION_TEAM_ADVANCED = (
+    projection_snapshot.get_team_advanced_stats_dataset
 )
 
 
@@ -242,6 +256,18 @@ def _install_enabled_seams() -> None:
         original=_ORIGINAL_PROJECTION_OPPONENT_ZONE,
         target=get_first_party_opponent_defense_by_shot_zone_dataset,
     )
+    projection_snapshot.get_player_advanced_stats_dataset = _guarded_replace(
+        label="Step 4W player-advanced provider",
+        current=projection_snapshot.get_player_advanced_stats_dataset,
+        original=_ORIGINAL_PROJECTION_PLAYER_ADVANCED,
+        target=get_first_party_player_advanced_stats_dataset,
+    )
+    projection_snapshot.get_team_advanced_stats_dataset = _guarded_replace(
+        label="Step 4W team-advanced provider",
+        current=projection_snapshot.get_team_advanced_stats_dataset,
+        original=_ORIGINAL_PROJECTION_TEAM_ADVANCED,
+        target=get_first_party_team_advanced_stats_dataset,
+    )
 
 
 def get_step7g_first_party_status(
@@ -281,6 +307,14 @@ def get_step7g_first_party_status(
             projection_snapshot.get_opponent_defense_by_shot_zone_dataset
             is get_first_party_opponent_defense_by_shot_zone_dataset
         ),
+        "projection_player_advanced_context": (
+            projection_snapshot.get_player_advanced_stats_dataset
+            is get_first_party_player_advanced_stats_dataset
+        ),
+        "projection_team_advanced_context": (
+            projection_snapshot.get_team_advanced_stats_dataset
+            is get_first_party_team_advanced_stats_dataset
+        ),
     }
     return {
         "source": MODEL_SOURCE,
@@ -300,6 +334,9 @@ def get_step7g_first_party_status(
             "advanced_context": False,
             "officiating_context": False,
         },
+        "candidate_scope": {
+            "advanced_context": True,
+        },
         "safety": {
             "default_enabled": False,
             "production_runtime_enabled_by_this_module": False,
@@ -312,6 +349,7 @@ def get_step7g_first_party_status(
             "frozen_step4n_source_modified": False,
             "frozen_step4i_source_modified": False,
             "frozen_step4l_source_modified": False,
+            "frozen_step4f_source_modified": False,
             "frozen_step4c_source_modified": False,
             "frozen_step4b_source_modified": False,
         },
