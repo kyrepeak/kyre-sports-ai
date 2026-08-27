@@ -142,6 +142,7 @@ jobs:
           python - <<'PY'
           import json
           import os
+          import subprocess
           from pathlib import Path
           from sports_api.wnba_step7a_release_candidate import build_step7a_release_candidate
 
@@ -157,8 +158,12 @@ jobs:
           assert report['semantics']['merge_performed'] is False
           assert report['semantics']['render_deployment_performed'] is False
 
+          checked_out_revision = subprocess.check_output(
+              ['git', 'rev-parse', 'HEAD'], text=True
+          ).strip()
           report['ci_freeze'] = {
-              'release_candidate_revision': os.environ['GITHUB_SHA'],
+              'release_candidate_revision': checked_out_revision,
+              'github_event_sha': os.environ['GITHUB_SHA'],
               'workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
               'workflow_run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
               'source_branch': os.environ.get('GITHUB_HEAD_REF') or os.environ.get('GITHUB_REF_NAME'),
