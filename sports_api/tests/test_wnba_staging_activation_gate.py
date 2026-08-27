@@ -309,10 +309,11 @@ class Step5WTests(unittest.TestCase):
             self.assertEqual(503, ctx.exception.status_code)
             refresh.assert_not_called()
 
-    def test_48_manual_refresh_delegates_after_step6k(self):
-        with patch.object(api5w, "require_staging_activation_ready", return_value={"scheduler_authorized": True}), patch.object(api5w.step5q, "refresh_current_wnba_player_prop_board", return_value={"outcome": "ok"}) as refresh:
+    def test_48_manual_refresh_delegates_after_step6m(self):
+        with patch.object(api5w, "require_staging_activation_ready", return_value={"scheduler_authorized": True}), patch.object(api5w.step6m, "require_step6m_scheduler_ready", return_value={"scheduler_cycle_ready": True}), patch.object(api5w.step6m, "run_step6m_manual_cycle", return_value={"outcome": "ok"}) as refresh, patch.object(api5w.step5q, "refresh_current_wnba_player_prop_board") as raw_refresh:
             self.assertEqual("ok", api5w.refresh_current_wnba_player_prop_board()["outcome"])
             refresh.assert_called_once()
+            raw_refresh.assert_not_called()
 
     def test_49_runtime_health_503_when_step6k_blocked(self):
         blocked = {"scheduler_authorized": False, "phase": "activation_blocked", "activation_requested": True, "activation_checkpoint_sha256": None, "blocking_reasons": ["x"]}
@@ -321,16 +322,18 @@ class Step5WTests(unittest.TestCase):
                 api5w.get_wnba_production_runtime_health()
             self.assertEqual(503, ctx.exception.status_code)
 
-    def test_50_runtime_health_ready_when_step6k_green(self):
+    def test_50_runtime_health_ready_when_step6m_green(self):
         gate = {
             "scheduler_authorized": True,
             "step6j_verified": True,
             "activation_checkpoint_sha256": "d" * 64,
             "step_5w": {"activation_checkpoint_sha256": "a" * 64, "live_cycle_allowed": True},
         }
-        with patch.object(api5w, "get_step6k_activation_preflight", return_value=gate):
+        step6m_status = {"scheduler_cycle_ready": True, "blocking_reasons": []}
+        with patch.object(api5w, "get_step6k_activation_preflight", return_value=gate), patch.object(api5w.step6m, "get_step6m_scheduler_orchestration_status", return_value=step6m_status):
             report = api5w.get_wnba_production_runtime_health()
             self.assertTrue(report["scheduler_authorized"])
+            self.assertTrue(report["scheduler_cycle_ready"])
             self.assertTrue(report["live_cycle_allowed"])
 
     def test_51_runtime_readiness_includes_step5w_and_step6k(self):
@@ -351,11 +354,12 @@ class Step5WTests(unittest.TestCase):
             api5w._worker_loop(30)
             cycle.assert_not_called()
 
-    def test_54_worker_green_step6k_calls_step5q_cycle(self):
+    def test_54_worker_green_step6m_calls_step6m_cycle(self):
         stop = MagicMock(); stop.is_set.return_value = False; stop.wait.return_value = True
-        with patch.object(api5w, "_worker_stop", stop), patch.object(api5w, "require_staging_activation_ready", return_value={"scheduler_authorized": True}), patch.object(api5w.step5q, "_run_one_background_cycle", return_value={"outcome": "published"}) as cycle:
+        with patch.object(api5w, "_worker_stop", stop), patch.object(api5w, "require_staging_activation_ready", return_value={"scheduler_authorized": True}), patch.object(api5w.step6m, "require_step6m_scheduler_ready", return_value={"scheduler_cycle_ready": True}), patch.object(api5w.step6m, "run_step6m_background_cycle", return_value={"outcome": "published"}) as cycle, patch.object(api5w.step5q, "_run_one_background_cycle") as raw_cycle:
             api5w._worker_loop(30)
             cycle.assert_called_once()
+            raw_cycle.assert_not_called()
 
     def test_55_start_worker_does_not_start_when_step6k_unauthorized(self):
         blocked = {"activation_requested": True, "scheduler_authorized": False, "phase": "activation_blocked", "blocking_reasons": ["step6j missing"], "step_5w": {"live_cycle_allowed": True}}
