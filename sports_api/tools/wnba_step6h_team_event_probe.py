@@ -22,41 +22,23 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 
 GAME_ID_RE = re.compile(r"(?<!\d)(10\d{8})(?!\d)")
 
 DK_TEAM_ALIASES = {
-    "atl dream": "Atlanta Dream",
-    "atlanta dream": "Atlanta Dream",
-    "chi sky": "Chicago Sky",
-    "chicago sky": "Chicago Sky",
-    "con sun": "Connecticut Sun",
-    "connecticut sun": "Connecticut Sun",
-    "dal wings": "Dallas Wings",
-    "dallas wings": "Dallas Wings",
-    "gs valkyries": "Golden State Valkyries",
-    "gsv valkyries": "Golden State Valkyries",
+    "atl dream": "Atlanta Dream", "atlanta dream": "Atlanta Dream",
+    "chi sky": "Chicago Sky", "chicago sky": "Chicago Sky",
+    "con sun": "Connecticut Sun", "connecticut sun": "Connecticut Sun",
+    "dal wings": "Dallas Wings", "dallas wings": "Dallas Wings",
+    "gs valkyries": "Golden State Valkyries", "gsv valkyries": "Golden State Valkyries",
     "golden state valkyries": "Golden State Valkyries",
-    "ind fever": "Indiana Fever",
-    "indiana fever": "Indiana Fever",
-    "lv aces": "Las Vegas Aces",
-    "lva aces": "Las Vegas Aces",
-    "las vegas aces": "Las Vegas Aces",
-    "la sparks": "Los Angeles Sparks",
-    "las sparks": "Los Angeles Sparks",
+    "ind fever": "Indiana Fever", "indiana fever": "Indiana Fever",
+    "lv aces": "Las Vegas Aces", "lva aces": "Las Vegas Aces", "las vegas aces": "Las Vegas Aces",
+    "la sparks": "Los Angeles Sparks", "las sparks": "Los Angeles Sparks",
     "los angeles sparks": "Los Angeles Sparks",
-    "min lynx": "Minnesota Lynx",
-    "minnesota lynx": "Minnesota Lynx",
-    "ny liberty": "New York Liberty",
-    "nyl liberty": "New York Liberty",
-    "new york liberty": "New York Liberty",
-    "pho mercury": "Phoenix Mercury",
-    "phx mercury": "Phoenix Mercury",
-    "phoenix mercury": "Phoenix Mercury",
-    "por fire": "Portland Fire",
-    "portland fire": "Portland Fire",
-    "sea storm": "Seattle Storm",
-    "seattle storm": "Seattle Storm",
-    "tor tempo": "Toronto Tempo",
-    "toronto tempo": "Toronto Tempo",
-    "was mystics": "Washington Mystics",
-    "washington mystics": "Washington Mystics",
+    "min lynx": "Minnesota Lynx", "minnesota lynx": "Minnesota Lynx",
+    "ny liberty": "New York Liberty", "nyl liberty": "New York Liberty", "new york liberty": "New York Liberty",
+    "pho mercury": "Phoenix Mercury", "phx mercury": "Phoenix Mercury", "phoenix mercury": "Phoenix Mercury",
+    "por fire": "Portland Fire", "portland fire": "Portland Fire",
+    "sea storm": "Seattle Storm", "seattle storm": "Seattle Storm",
+    "tor tempo": "Toronto Tempo", "toronto tempo": "Toronto Tempo",
+    "was mystics": "Washington Mystics", "washington mystics": "Washington Mystics",
 }
 
 
@@ -67,11 +49,10 @@ class PageParser(HTMLParser):
         self.hrefs: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag.casefold() != "a":
-            return
-        for key, value in attrs:
-            if key.casefold() == "href" and value:
-                self.hrefs.append(str(value))
+        if tag.casefold() == "a":
+            for key, value in attrs:
+                if key.casefold() == "href" and value:
+                    self.hrefs.append(str(value))
 
     def handle_data(self, data: str) -> None:
         text = str(data).strip()
@@ -150,19 +131,15 @@ def _page(team_name: str, path: str) -> dict[str, Any]:
         if "/game/" not in parsed.path.casefold():
             continue
         match = GAME_ID_RE.search(parsed.path)
-        game_id = match.group(1) if match else None
         item = ((parsed.hostname or "").casefold(), parsed.path)
         if item in seen:
             continue
         seen.add(item)
-        game_links.append({
-            "host": item[0],
-            "path": item[1],
-            "game_id": game_id,
-        })
+        game_links.append({"host": item[0], "path": item[1], "game_id": match.group(1) if match else None})
         if len(game_links) >= 80:
             break
 
+    raw_game_ids = sorted(set(GAME_ID_RE.findall(raw)))[:100]
     return {
         "host": host,
         "path": path,
@@ -172,6 +149,14 @@ def _page(team_name: str, path: str) -> dict[str, Any]:
         "upcoming": upcoming,
         "upcoming_marker_present": start >= 0,
         "game_links": game_links,
+        "raw_game_ids": raw_game_ids,
+        "serialized_markers": {
+            "game_id_token": "gameid" in raw or "game_id" in raw,
+            "schedule_league_v2": "scheduleleaguev2" in raw,
+            "cdn_wnba": "cdn.wnba.com" in raw,
+            "stats_wnba": "stats.wnba.com" in raw,
+            "next_data": "__next_data__" in raw,
+        },
     }
 
 
@@ -195,10 +180,7 @@ def main() -> int:
                 root = page_cache.setdefault((team, "/"), _page(team, "/"))
                 schedule = page_cache.setdefault((team, "/schedule"), _page(team, "/schedule"))
                 date_markers = _date_markers(event.get("event_date"))
-                game_links = root["game_links"] + [
-                    row for row in schedule["game_links"] if row not in root["game_links"]
-                ]
-                ids = sorted({row["game_id"] for row in game_links if row.get("game_id")})
+                ids = sorted(set(root["raw_game_ids"]) | set(schedule["raw_game_ids"]))
                 discovered_game_ids.update(ids)
                 checks.append({
                     "team": team,
@@ -210,9 +192,11 @@ def main() -> int:
                     "opponent_in_schedule_page": _name_key(opponent) in schedule["visible"],
                     "dk_utc_date_marker_in_root": any(marker in root["raw"] for marker in date_markers),
                     "dk_utc_date_marker_in_schedule": any(marker in schedule["raw"] for marker in date_markers),
-                    "game_link_count": len(game_links),
-                    "game_ids": ids[:30],
-                    "game_links": game_links[:30],
+                    "anchor_game_link_count": len(root["game_links"]) + len(schedule["game_links"]),
+                    "raw_game_id_count": len(ids),
+                    "raw_game_ids": ids[:40],
+                    "root_serialized_markers": root["serialized_markers"],
+                    "schedule_serialized_markers": schedule["serialized_markers"],
                 })
         rows.append({
             "source_event_id": event_id,
@@ -223,8 +207,7 @@ def main() -> int:
             "checks": checks,
             "discovered_game_ids": sorted(discovered_game_ids),
             "both_team_pages_confirm_opponent": len(checks) == 2 and all(
-                row["root_http_status"] == 200
-                and row["schedule_http_status"] == 200
+                row["root_http_status"] == 200 and row["schedule_http_status"] == 200
                 and (row["opponent_in_upcoming"] or row["opponent_in_schedule_page"])
                 for row in checks
             ),
@@ -240,7 +223,7 @@ def main() -> int:
             "http_methods": ["GET"],
             "authentication_used": False,
             "raw_page_content_returned": False,
-            "only_sanitized_game_link_paths_returned": True,
+            "only_sanitized_identifiers_returned": True,
         },
     }
     print(json.dumps(report, indent=2, sort_keys=True))
