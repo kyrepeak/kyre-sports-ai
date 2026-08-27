@@ -7,6 +7,8 @@ from sports_api.tools.wnba_step7e_production_smoke import (
     CRITICAL_OPENAPI_PATHS,
     ENDPOINTS,
     EXPECTED_RELEASE_REVISION,
+    EXPECTED_SCHEDULE_SOURCE_URL,
+    EXPECTED_SCHEDULE_SOURCE_VARIANT,
     EXPECTED_SUPABASE_HOST,
     Step7ESmokeError,
     validate_games_today,
@@ -23,8 +25,10 @@ from sports_api.tools.wnba_step7e_production_smoke import (
 class Step7EProductionSmokeTests(unittest.TestCase):
     def test_source_and_release_are_pinned(self):
         self.assertEqual(BASE_URL, "https://kyre-sports-api.onrender.com")
-        self.assertEqual(EXPECTED_RELEASE_REVISION, "12b9a0bb21e72f16282f562d848673222d48c7f2")
+        self.assertEqual(EXPECTED_RELEASE_REVISION, "9a45b11704bb95ec5ace275b5dd941e27e32f745")
         self.assertEqual(EXPECTED_SUPABASE_HOST, "jqajcdckalsfizbvngiu.supabase.co")
+        self.assertEqual(EXPECTED_SCHEDULE_SOURCE_VARIANT, "wnba_public_schedule_api")
+        self.assertEqual(EXPECTED_SCHEDULE_SOURCE_URL, "https://www.wnba.com/api/schedule")
 
     def test_only_get_smoke_paths_are_defined(self):
         names = [row[0] for row in ENDPOINTS]
@@ -104,10 +108,27 @@ class Step7EProductionSmokeTests(unittest.TestCase):
             "scheduler_authorized": False,
         })
 
-    def test_games_today_requires_2026_and_list_shape(self):
-        validate_games_today({"season": 2026, "games": []})
+    def test_games_today_requires_certified_2026_transport(self):
+        validate_games_today({
+            "season": 2026,
+            "source_variant": EXPECTED_SCHEDULE_SOURCE_VARIANT,
+            "source_url": EXPECTED_SCHEDULE_SOURCE_URL,
+            "games": [],
+        })
         with self.assertRaises(Step7ESmokeError):
-            validate_games_today({"season": 2025, "games": []})
+            validate_games_today({
+                "season": 2026,
+                "source_variant": "wnba_stats_scheduleleaguev2",
+                "source_url": "https://stats.wnba.com/stats/scheduleleaguev2",
+                "games": [],
+            })
+        with self.assertRaises(Step7ESmokeError):
+            validate_games_today({
+                "season": 2025,
+                "source_variant": EXPECTED_SCHEDULE_SOURCE_VARIANT,
+                "source_url": EXPECTED_SCHEDULE_SOURCE_URL,
+                "games": [],
+            })
 
 
 if __name__ == "__main__":
