@@ -1,0 +1,152 @@
+name: WNBA Step 6R Supabase durable storage
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6r_supabase_storage.py'
+      - 'sports_api/api/wnba_step6r_supabase_storage.py'
+      - 'sports_api/sql/wnba_step6r_supabase.sql'
+      - 'sports_api/tests/test_wnba_step6r_supabase_storage.py'
+      - 'sports_api/step6r_supabase.env.example'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6r.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6r_supabase_storage.py'
+      - 'sports_api/api/wnba_step6r_supabase_storage.py'
+      - 'sports_api/sql/wnba_step6r_supabase.sql'
+      - 'sports_api/tests/test_wnba_step6r_supabase_storage.py'
+      - 'sports_api/step6r_supabase.env.example'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6r.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6r-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6r-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact Step 6R revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6R backend and API
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6r_supabase_storage.py \
+            sports_api/api/wnba_step6r_supabase_storage.py \
+            sports_api/main.py
+
+      - name: Run Step 6R Supabase contract tests
+        run: python -m unittest sports_api.tests.test_wnba_step6r_supabase_storage
+
+      - name: Run frozen Step 6Q durable-storage regression
+        run: python -m unittest sports_api.tests.test_wnba_step6q_durable_storage
+
+      - name: Run frozen Step 6J filesystem canary regression
+        run: python -m unittest sports_api.tests.test_wnba_step6j_canary_activation
+
+      - name: Run Phase 6 master certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove frozen Step 6Q implementation was not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code 079a170b456087f60b88596c992ca755e7576c8e -- \
+            sports_api/wnba_step6q_durable_storage.py \
+            sports_api/api/wnba_step6q_durable_storage.py \
+            sports_api/tests/test_wnba_step6q_durable_storage.py
+          echo 'Frozen Step 6Q implementation is unchanged.'
+
+      - name: Prove Supabase schema is server-only and RLS locked
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          sql = Path('sports_api/sql/wnba_step6r_supabase.sql').read_text(encoding='utf-8').lower()
+          assert 'enable row level security' in sql
+          assert 'from public, anon, authenticated' in sql
+          assert 'to service_role' in sql
+          assert 'security invoker' in sql
+          assert 'security definer' not in sql
+          assert 'wnba_durable_objects' in sql
+          assert 'wnba_durable_lock_acquire' in sql
+          assert 'wnba_durable_lock_release' in sql
+          print('Supabase schema is RLS locked, service-role only, and invoker-only.')
+          PY
+
+      - name: Prove Step 6R readiness route is GET-only and network-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          import httpx
+          from unittest.mock import patch
+          from sports_api.wnba_step6q_durable_storage import STORAGE_BACKEND_ENV, SUPABASE_BACKEND
+          from sports_api.wnba_step6r_supabase_storage import (
+              SUPABASE_SECRET_KEY_ENV,
+              SUPABASE_URL_ENV,
+              get_step6r_supabase_storage_status,
+          )
+          env = {
+              STORAGE_BACKEND_ENV: SUPABASE_BACKEND,
+              SUPABASE_URL_ENV: 'https://certification.supabase.co',
+              SUPABASE_SECRET_KEY_ENV: 'sb_secret_certification_placeholder_1234567890',
+          }
+          with patch.object(httpx.Client, 'request', side_effect=AssertionError('status must not call network')):
+              result = get_step6r_supabase_storage_status(env)
+          assert result['configuration_ready'] is True
+          assert result['safety']['network_used_by_status'] is False
+          api = open('sports_api/api/wnba_step6r_supabase_storage.py', encoding='utf-8').read().lower()
+          assert '@router.get' in api
+          assert '@router.post' not in api
+          assert '@router.put' not in api
+          assert '@router.delete' not in api
+          print('Step 6R readiness is GET-only and network-free.')
+          PY
+
+      - name: Prove no real Supabase secret is committed
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          template = Path('sports_api/step6r_supabase.env.example').read_text(encoding='utf-8')
+          assert 'sb_secret_' in template
+          assert 'replace-with-server-side-sb_secret-key' in template
+          for line in template.splitlines():
+              stripped = line.strip()
+              if stripped.startswith('WNBA_KYRE_SUPABASE_SECRET_KEY='):
+                  raise AssertionError('A live secret assignment must not exist in the example template.')
+          print('No live Supabase secret assignment is committed.')
+          PY
+
+      - name: Prove Step 6R performs no live activation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          api = Path('sports_api/api/wnba_step6r_supabase_storage.py').read_text(encoding='utf-8').lower()
+          core = Path('sports_api/wnba_step6r_supabase_storage.py').read_text(encoding='utf-8').lower()
+          assert '@router.post' not in api
+          assert 'render.com' not in core
+          assert 'monte carlo' in core  # documented as explicitly not performed
+          assert 'place wagers' in core
+          print('Step 6R exposes no live activation/mutation route.')
+          PY
