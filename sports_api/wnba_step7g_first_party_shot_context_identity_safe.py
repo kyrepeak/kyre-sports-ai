@@ -8,9 +8,12 @@ the official WNBA.com game-page box score before any shot is admitted.
 
 The player must occur on exactly one box-score team, that team must match the
 certified Step-4N schedule participants, and the box away/home identities must
-match Step-4N. This is a stricter identity bridge; no mismatch is guessed or
-repaired. Opponent-defense and current-team-vs-opponent paths continue to use
-the base first-party Step-4L adapter.
+match Step-4N. Numeric player ID and certified game/team identity are
+always authoritative; human-readable player-name labels are audit metadata only
+because WNBA.com surfaces can legitimately format the same player differently.
+No identity mismatch is guessed or repaired. Opponent-defense and
+current-team-vs-opponent paths continue to use the base first-party Step-4L
+adapter.
 """
 from __future__ import annotations
 
@@ -27,7 +30,7 @@ from sports_api.wnba_step7g_first_party_history import (
     get_first_party_game_box_score_dataset,
 )
 
-SOURCE_VARIANT = base.SOURCE_VARIANT + "+box_score_player_identity_v1"
+SOURCE_VARIANT = base.SOURCE_VARIANT + "+box_score_player_identity_v2"
 
 
 def _selected_recent_games_box_verified(
@@ -151,6 +154,8 @@ def _selected_recent_games_box_verified(
                 "box_schedule_home_match": True,
                 "player_resolved_once": True,
                 "player_appeared": True,
+                "box_score_player_name": name,
+                "display_name_used_for_identity": False,
             }
         )
 
@@ -182,7 +187,7 @@ def get_first_party_player_shot_chart_dataset(
     season_type = base._validate_scope(season, season_type)
     last_n_games = base._validate_last_n(last_n_games)
     schedule_dataset, schedule_by_id = base._schedule(season)
-    games, player_name, identity_evidence = _selected_recent_games_box_verified(
+    games, box_player_name, identity_evidence = _selected_recent_games_box_verified(
         player_id,
         season,
         last_n_games,
@@ -192,16 +197,19 @@ def get_first_party_player_shot_chart_dataset(
     observed_names = sorted(
         {row["player_name"] for row in shots if row.get("player_name")}
     )
-    if len(observed_names) > 1:
-        raise WNBAShotContextUpstreamError(
-            "First-party shot actions returned conflicting player names."
-        )
-    if observed_names:
-        if player_name and observed_names[0] != player_name:
-            raise WNBAShotContextUpstreamError(
-                "Official shot-action player name disagrees with official box-score player name."
-            )
+
+    # Human-readable labels vary across official WNBA.com surfaces (for example,
+    # full name vs abbreviated display label). They are never used as identity.
+    # Prefer the box-score full name when available; otherwise use a PBP label
+    # only when the PBP surface itself exposes exactly one unique label.
+    player_name = box_player_name
+    if player_name is None and len(observed_names) == 1:
         player_name = observed_names[0]
+    name_labels_match = (
+        box_player_name is None
+        or not observed_names
+        or observed_names == [box_player_name]
+    )
 
     zones = base._aggregate_shots(shots)
     attempts = len(shots)
@@ -242,9 +250,18 @@ def get_first_party_player_shot_chart_dataset(
         "league_average_rows": [],
         "shots": shots,
         "recent_game_identity_evidence": identity_evidence,
+        "display_name_audit": {
+            "box_score_player_name": box_player_name,
+            "play_by_play_player_name_labels": observed_names,
+            "labels_match_exactly": name_labels_match,
+            "labels_used_for_identity": False,
+            "authoritative_identity_field": "player_id",
+        },
         "derivation": {
             "game_selection": "official_player_latestGames_exact_ids",
             "player_team_identity": "official_game_box_score_cross_checked_to_certified_step4n_schedule",
+            "player_identity": "official_numeric_player_id",
+            "display_name_labels_are_audit_only": True,
             "zone_classification": "official description + preserved official legacy x/y geometry",
             "legacy_coordinate_units_preserved": True,
             "league_average_rows_not_reconstructed": True,
@@ -262,6 +279,9 @@ def get_first_party_player_shot_chart_dataset(
             "unmapped_shot_count": 0,
             "recent_game_box_schedule_identity_cross_checked": True,
             "recent_player_resolved_exactly_once_per_selected_box": True,
+            "numeric_player_id_authoritative": True,
+            "display_name_labels_used_for_identity": False,
+            "display_name_labels_match_exactly": name_labels_match,
             "coordinates_preserved_in_source_units": True,
             "zone_labels_explicitly_derived_not_source_claimed": True,
             "only_certified_regular_season_game_ids_admitted": True,
