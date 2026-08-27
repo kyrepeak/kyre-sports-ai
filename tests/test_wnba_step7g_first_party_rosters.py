@@ -53,7 +53,8 @@ class Step7GFirstPartyRosterTests(unittest.TestCase):
             cards.append(
                 f'<div><a href="https://www.wnba.com/player/{player_id}">'
                 f'<img alt="{name} headshot" src="headshot.png"></a>'
-                f'<span>#{44 if index in (0, 1) else index} {name} Guard '</n                f'PPG 1.0 RPG 1.0 APG 1.0</span></div>'
+                f'<span>#{44 if index in (0, 1) else index} {name} Guard '
+                f'PPG 1.0 RPG 1.0 APG 1.0</span></div>'
             )
             # Duplicate presentation link to the same player must collapse by ID.
             cards.append(
