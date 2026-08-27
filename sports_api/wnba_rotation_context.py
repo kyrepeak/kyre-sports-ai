@@ -1,11 +1,10 @@
 """Official WNBA game rotation and exact stint context.
 
-Step 4R consumes the WNBA Stats API ``gamerotation`` endpoint and preserves
-per-player in/out intervals. Source rotation times are tenths of a second
-elapsed from game start. Derived clocks are descriptive only; this module does
-not create projected minutes, grades, probabilities, or causal claims.
+Step 4R prefers the official WNBA Stats API ``gamerotation`` endpoint. When
+that transport is unavailable, Step 7G may use the separately certified,
+fail-closed WNBA.com period-aware reconstruction. Successful but malformed
+Stats responses are never masked by the fallback.
 """
-
 from __future__ import annotations
 
 from typing import Any, Iterable
@@ -88,7 +87,11 @@ def _choice(value: str, allowed: Iterable[str], label: str) -> str:
 
 
 def _recent_game_count(value: int) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= MAX_RECENT_GAMES:
+    if (
+        not isinstance(value, int)
+        or isinstance(value, bool)
+        or not 1 <= value <= MAX_RECENT_GAMES
+    ):
         raise ValueError("WNBA last_n_games must be an integer from 1 through 20.")
     return value
 
@@ -99,7 +102,9 @@ def _result_set(payload: dict[str, Any], name: str) -> list[dict[str, Any]]:
         raw = payload.get("resultSet")
     candidates = [raw] if isinstance(raw, dict) else raw
     if not isinstance(candidates, list):
-        raise WNBARotationUpstreamError(f"WNBA rotation payload is missing result sets for {name}.")
+        raise WNBARotationUpstreamError(
+            f"WNBA rotation payload is missing result sets for {name}."
+        )
     selected = next(
         (
             item for item in candidates
@@ -109,10 +114,14 @@ def _result_set(payload: dict[str, Any], name: str) -> list[dict[str, Any]]:
         None,
     )
     if selected is None:
-        raise WNBARotationUpstreamError(f"WNBA rotation payload is missing the {name} result set.")
+        raise WNBARotationUpstreamError(
+            f"WNBA rotation payload is missing the {name} result set."
+        )
     headers, row_set = selected.get("headers"), selected.get("rowSet")
     if not isinstance(headers, list) or not isinstance(row_set, list):
-        raise WNBARotationUpstreamError(f"WNBA {name} rotation result set has an unexpected schema.")
+        raise WNBARotationUpstreamError(
+            f"WNBA {name} rotation result set has an unexpected schema."
+        )
     headers = [str(item) for item in headers]
     missing = sorted(_REQUIRED_HEADERS - set(headers))
     if missing:
@@ -121,24 +130,22 @@ def _result_set(payload: dict[str, Any], name: str) -> list[dict[str, Any]]:
             + ", ".join(missing)
             + "."
         )
-    rows = []
+    rows: list[dict[str, Any]] = []
     for raw_row in row_set:
         if not isinstance(raw_row, (list, tuple)) or len(raw_row) != len(headers):
-            raise WNBARotationUpstreamError(f"WNBA {name} rotation result set contains a malformed row.")
+            raise WNBARotationUpstreamError(
+                f"WNBA {name} rotation result set contains a malformed row."
+            )
         rows.append(dict(zip(headers, raw_row)))
     return rows
 
 
 def _clock_from_tenths(raw_tenths: int, *, boundary_role: str) -> dict[str, Any]:
-    """Derive a WNBA period clock using 10-minute quarters and 5-minute OTs."""
     if raw_tenths < 0:
         raise ValueError("rotation time cannot be negative")
     if boundary_role not in {"in", "out"}:
         raise ValueError("boundary_role must be 'in' or 'out'")
-
-    q = 6000
-    regulation_end = 24000
-    ot = 3000
+    q, regulation_end, ot = 6000, 24000, 3000
     if raw_tenths == 0:
         period, length, offset = 1, q, 0
     elif raw_tenths < regulation_end:
@@ -163,7 +170,6 @@ def _clock_from_tenths(raw_tenths: int, *, boundary_role: str) -> dict[str, Any]
             period = 4 + ot_number
             length = ot
             offset = after - (ot_number - 1) * ot
-
     remaining_tenths = max(0, length - offset)
     remaining_seconds = remaining_tenths / 10.0
     minutes = int(remaining_seconds // 60)
@@ -177,21 +183,27 @@ def _clock_from_tenths(raw_tenths: int, *, boundary_role: str) -> dict[str, Any]
     }
 
 
-def _normalize_stint(row: dict[str, Any], side: str, season: int, game_id: str) -> dict[str, Any]:
+def _normalize_stint(
+    row: dict[str, Any], side: str, season: int, game_id: str
+) -> dict[str, Any]:
     if _clean(row.get("GAME_ID")) != game_id:
         raise WNBARotationUpstreamError(
             f"WNBA rotation returned game ID {_clean(row.get('GAME_ID'))!r}; expected {game_id}."
         )
     team_id = _to_int(row.get("TEAM_ID"))
     player_id = _to_int(row.get("PERSON_ID"))
-    in_raw, out_raw = _to_float(row.get("IN_TIME_REAL")), _to_float(row.get("OUT_TIME_REAL"))
+    in_raw = _to_float(row.get("IN_TIME_REAL"))
+    out_raw = _to_float(row.get("OUT_TIME_REAL"))
     if team_id in (None, 0) or player_id in (None, 0):
-        raise WNBARotationUpstreamError("WNBA rotation returned a missing team or player ID.")
+        raise WNBARotationUpstreamError(
+            "WNBA rotation returned a missing team or player ID."
+        )
     if in_raw is None or out_raw is None:
         raise WNBARotationUpstreamError("WNBA rotation returned a missing in/out time.")
     if in_raw < 0 or out_raw < in_raw:
-        raise WNBARotationUpstreamError("WNBA rotation returned an invalid in/out time interval.")
-
+        raise WNBARotationUpstreamError(
+            "WNBA rotation returned an invalid in/out time interval."
+        )
     team = _registry_team_from_values(
         season=season,
         team_name=row.get("TEAM_NAME"),
@@ -203,7 +215,8 @@ def _normalize_stint(row: dict[str, Any], side: str, season: int, game_id: str) 
         )
     in_tenths, out_tenths = int(round(in_raw)), int(round(out_raw))
     duration = out_tenths - in_tenths
-    first, last = _clean(row.get("PLAYER_FIRST")), _clean(row.get("PLAYER_LAST"))
+    first = _clean(row.get("PLAYER_FIRST"))
+    last = _clean(row.get("PLAYER_LAST"))
     return {
         "side": side,
         "game_id": game_id,
@@ -230,16 +243,29 @@ def _normalize_stint(row: dict[str, Any], side: str, season: int, game_id: str) 
     }
 
 
-def _player_summary(stints: list[dict[str, Any]], game_end_tenths: int) -> dict[str, Any]:
-    ordered = sorted(stints, key=lambda item: (item["in_time_real"], item["out_time_real"]))
+def _player_summary(
+    stints: list[dict[str, Any]], game_end_tenths: int
+) -> dict[str, Any]:
+    ordered = sorted(
+        stints, key=lambda item: (item["in_time_real"], item["out_time_real"])
+    )
     total_seconds = sum(item["duration_seconds"] for item in ordered)
     durations = [item["duration_seconds"] for item in ordered]
-    points = [item["player_points_during_stint"] for item in ordered if item["player_points_during_stint"] is not None]
-    diffs = [item["team_point_differential_during_stint"] for item in ordered if item["team_point_differential_during_stint"] is not None]
+    points = [
+        item["player_points_during_stint"]
+        for item in ordered
+        if item["player_points_during_stint"] is not None
+    ]
+    diffs = [
+        item["team_point_differential_during_stint"]
+        for item in ordered
+        if item["team_point_differential_during_stint"] is not None
+    ]
     usage = [
         (item["usage_percentage_during_stint"], item["duration_seconds"])
         for item in ordered
-        if item["usage_percentage_during_stint"] is not None and item["duration_seconds"] > 0
+        if item["usage_percentage_during_stint"] is not None
+        and item["duration_seconds"] > 0
     ]
     usage_den = sum(seconds for _, seconds in usage)
     first, last = ordered[0], ordered[-1]
@@ -258,8 +284,12 @@ def _player_summary(stints: list[dict[str, Any]], game_end_tenths: int) -> dict[
         "player_points_during_stints": round(sum(points), 4) if points else None,
         "team_point_differential_during_stints": round(sum(diffs), 4) if diffs else None,
         "time_weighted_usage_percentage": (
-            round(sum(value * seconds for value, seconds in usage) / usage_den, 6)
-            if usage_den else None
+            round(
+                sum(value * seconds for value, seconds in usage) / usage_den,
+                6,
+            )
+            if usage_den
+            else None
         ),
         "started_game": int(round(first["in_time_real"])) == 0,
         "finished_game": int(round(last["out_time_real"])) == game_end_tenths,
@@ -269,15 +299,26 @@ def _player_summary(stints: list[dict[str, Any]], game_end_tenths: int) -> dict[
     }
 
 
-def _normalize_side(rows: list[dict[str, Any]], side: str, season: int, game_id: str) -> dict[str, Any]:
+def _normalize_side(
+    rows: list[dict[str, Any]], side: str, season: int, game_id: str
+) -> dict[str, Any]:
     stints = [_normalize_stint(item, side, season, game_id) for item in rows]
-    if len({item["official_team_id"] for item in stints}) != 1 or len({item["team_key"] for item in stints}) != 1:
+    if not stints:
+        raise WNBARotationUpstreamError(f"WNBA {side} rotation has no stint rows.")
+    if (
+        len({item["official_team_id"] for item in stints}) != 1
+        or len({item["team_key"] for item in stints}) != 1
+    ):
         raise WNBARotationUpstreamError(
             f"WNBA {side} rotation result set contains multiple team identities."
         )
     seen: set[tuple[int, int, int]] = set()
     for item in stints:
-        key = (item["player_id"], int(round(item["in_time_real"])), int(round(item["out_time_real"])))
+        key = (
+            item["player_id"],
+            int(round(item["in_time_real"])),
+            int(round(item["out_time_real"])),
+        )
         if key in seen:
             raise WNBARotationUpstreamError(
                 f"WNBA {side} rotation result set contains duplicate stint intervals."
@@ -289,7 +330,11 @@ def _normalize_side(rows: list[dict[str, Any]], side: str, season: int, game_id:
         grouped.setdefault(item["player_id"], []).append(item)
     players = [_player_summary(items, game_end) for items in grouped.values()]
     players.sort(key=lambda item: (item["player_name"] or "", item["player_id"]))
-    stints.sort(key=lambda item: (item["in_time_real"], item["out_time_real"], item["player_id"]))
+    stints.sort(
+        key=lambda item: (
+            item["in_time_real"], item["out_time_real"], item["player_id"]
+        )
+    )
     first = stints[0]
     return {
         "side": side,
@@ -305,34 +350,16 @@ def _normalize_side(rows: list[dict[str, Any]], side: str, season: int, game_id:
     }
 
 
-def get_game_rotation(game_id: str, season: int, *, rotation_stat: str = "PLAYER_PTS") -> dict[str, Any]:
-    get_wnba_teams(season)
-    game_id = _game_id(game_id)
-    rotation_stat = _choice(rotation_stat, ALLOWED_ROTATION_STATS, "rotation_stat")
-    params = [
-        ("LeagueID", WNBA_LEAGUE_ID),
-        ("GameID", game_id),
-        ("RotationStat", rotation_stat),
-    ]
-    try:
-        payload, retrieved_at_utc, cache_hit, cache_ttl_seconds = _request_stats_json(
-            ROTATION_ENDPOINT, params
+def _validate_two_sides(
+    away: dict[str, Any], home: dict[str, Any]
+) -> None:
+    if (
+        away["official_team_id"] == home["official_team_id"]
+        or away["team_key"] == home["team_key"]
+    ):
+        raise WNBARotationUpstreamError(
+            "WNBA rotation returned identical away and home teams."
         )
-    except WNBAHistoryNotFoundError as exc:
-        raise WNBARotationNotFoundError(str(exc)) from exc
-    except WNBAHistoryUpstreamError as exc:
-        raise WNBARotationUpstreamError(str(exc)) from exc
-
-    away_rows, home_rows = _result_set(payload, "AwayTeam"), _result_set(payload, "HomeTeam")
-    if not away_rows and not home_rows:
-        raise WNBARotationNotFoundError(f"WNBA rotation data is not available for game {game_id}.")
-    if not away_rows or not home_rows:
-        raise WNBARotationUpstreamError("WNBA rotation returned only one team result set with stint rows.")
-
-    away = _normalize_side(away_rows, "away", season, game_id)
-    home = _normalize_side(home_rows, "home", season, game_id)
-    if away["official_team_id"] == home["official_team_id"] or away["team_key"] == home["team_key"]:
-        raise WNBARotationUpstreamError("WNBA rotation returned identical away and home teams.")
     overlap = sorted(
         {item["player_id"] for item in away["players"]}
         & {item["player_id"] for item in home["players"]}
@@ -343,10 +370,105 @@ def get_game_rotation(game_id: str, season: int, *, rotation_stat: str = "PLAYER
             + ", ".join(str(item) for item in overlap)
             + "."
         )
+
+
+def get_game_rotation(
+    game_id: str,
+    season: int,
+    *,
+    rotation_stat: str = "PLAYER_PTS",
+) -> dict[str, Any]:
+    get_wnba_teams(season)
+    game_id = _game_id(game_id)
+    rotation_stat = _choice(rotation_stat, ALLOWED_ROTATION_STATS, "rotation_stat")
+    params = [
+        ("LeagueID", WNBA_LEAGUE_ID),
+        ("GameID", game_id),
+        ("RotationStat", rotation_stat),
+    ]
+
+    fallback = None
+    try:
+        payload, retrieved_at_utc, cache_hit, cache_ttl_seconds = _request_stats_json(
+            ROTATION_ENDPOINT, params
+        )
+    except WNBAHistoryNotFoundError as exc:
+        raise WNBARotationNotFoundError(str(exc)) from exc
+    except WNBAHistoryUpstreamError as direct_exc:
+        from sports_api.wnba_rotation_reconstruction import (
+            WNBARotationReconstructionError,
+            reconstruct_game_rotation_rows,
+        )
+        try:
+            fallback = reconstruct_game_rotation_rows(game_id, season)
+        except WNBARotationReconstructionError as fallback_exc:
+            raise WNBARotationUpstreamError(
+                "Official WNBA Stats gamerotation transport failed and the "
+                f"certified first-party fallback also failed: {fallback_exc}"
+            ) from direct_exc
+        away_rows = fallback["away_rows"]
+        home_rows = fallback["home_rows"]
+        retrieved_at_utc = fallback["retrieved_at_utc"]
+        cache_hit = fallback["cache_hit"]
+        cache_ttl_seconds = fallback["cache_ttl_seconds"]
+    else:
+        away_rows = _result_set(payload, "AwayTeam")
+        home_rows = _result_set(payload, "HomeTeam")
+        if not away_rows and not home_rows:
+            raise WNBARotationNotFoundError(
+                f"WNBA rotation data is not available for game {game_id}."
+            )
+        if not away_rows or not home_rows:
+            raise WNBARotationUpstreamError(
+                "WNBA rotation returned only one team result set with stint rows."
+            )
+
+    away = _normalize_side(away_rows, "away", season, game_id)
+    home = _normalize_side(home_rows, "home", season, game_id)
+    _validate_two_sides(away, home)
+
+    if fallback is None:
+        return {
+            "source": WNBA_HISTORY_SOURCE,
+            "source_url": WNBA_HISTORY_SOURCE_URL,
+            "source_endpoint": ROTATION_ENDPOINT,
+            "data_type": "official_game_rotation_stints",
+            "league_id": WNBA_LEAGUE_ID,
+            "season": season,
+            "game_id": game_id,
+            "rotation_stat": rotation_stat,
+            "retrieved_at_utc": retrieved_at_utc,
+            "cache_hit": cache_hit,
+            "cache_ttl_seconds": cache_ttl_seconds,
+            "time_basis": {
+                "source_fields": ["IN_TIME_REAL", "OUT_TIME_REAL"],
+                "source_units": "tenths_of_a_second_elapsed_from_game_start",
+                "derived_seconds_divisor": 10,
+                "wnba_regulation_period_minutes": 10,
+                "wnba_overtime_period_minutes": 5,
+            },
+            "away": away,
+            "home": home,
+            "verification": {
+                "required_rotation_schema_verified": True,
+                "requested_game_id_matches_all_stints": True,
+                "away_home_team_identity_distinct": True,
+                "player_ids_do_not_cross_teams": True,
+                "duplicate_stints_rejected": True,
+                "period_clocks_are_derived_from_source_elapsed_time": True,
+                "rotation_data_is_descriptive_not_projected": True,
+                "no_projected_minutes_created": True,
+                "no_rotation_grade_created": True,
+                "no_betting_probability_created": True,
+            },
+        }
+
     return {
-        "source": WNBA_HISTORY_SOURCE,
-        "source_url": WNBA_HISTORY_SOURCE_URL,
-        "source_endpoint": ROTATION_ENDPOINT,
+        "source": fallback["source"],
+        "source_url": fallback["source_urls"]["box_score"],
+        "source_urls": fallback["source_urls"],
+        "source_endpoint": fallback["source_endpoint"],
+        "provider_mode": "first_party_reconstruction_fallback",
         "data_type": "official_game_rotation_stints",
         "league_id": WNBA_LEAGUE_ID,
         "season": season,
@@ -356,7 +478,8 @@ def get_game_rotation(game_id: str, season: int, *, rotation_stat: str = "PLAYER
         "cache_hit": cache_hit,
         "cache_ttl_seconds": cache_ttl_seconds,
         "time_basis": {
-            "source_fields": ["IN_TIME_REAL", "OUT_TIME_REAL"],
+            "source_fields": ["WNBA.com PBP elapsed_game_seconds"],
+            "compatibility_fields": ["IN_TIME_REAL", "OUT_TIME_REAL"],
             "source_units": "tenths_of_a_second_elapsed_from_game_start",
             "derived_seconds_divisor": 10,
             "wnba_regulation_period_minutes": 10,
@@ -364,6 +487,7 @@ def get_game_rotation(game_id: str, season: int, *, rotation_stat: str = "PLAYER
         },
         "away": away,
         "home": home,
+        "fallback_diagnostics": fallback["diagnostics"],
         "verification": {
             "required_rotation_schema_verified": True,
             "requested_game_id_matches_all_stints": True,
@@ -375,14 +499,25 @@ def get_game_rotation(game_id: str, season: int, *, rotation_stat: str = "PLAYER
             "no_projected_minutes_created": True,
             "no_rotation_grade_created": True,
             "no_betting_probability_created": True,
+            "stats_transport_failed_before_fallback": True,
+            "period_aware_reconstruction": True,
+            "first_participation_evidence_used": True,
+            "unique_solution_required": True,
+            "official_minutes_reconciled": True,
+            "per_stint_player_points_available": False,
+            "per_stint_point_differential_available": False,
+            "per_stint_usage_percentage_available": False,
+            "fabricated_stint_metrics": False,
         },
     }
 
 
 def _find_player(game: dict[str, Any], player_id: int) -> dict[str, Any] | None:
     matches = [
-        player for side in (game["away"], game["home"])
-        for player in side["players"] if player["player_id"] == player_id
+        player
+        for side in (game["away"], game["home"])
+        for player in side["players"]
+        if player["player_id"] == player_id
     ]
     if len(matches) > 1:
         raise WNBARotationUpstreamError(
@@ -405,7 +540,7 @@ def get_game_player_rotation(
         raise WNBARotationNotFoundError(
             f"No WNBA rotation stints were found for player {player_id} in game {game['game_id']}."
         )
-    return {
+    result = {
         "source": game["source"],
         "source_url": game["source_url"],
         "source_endpoint": game["source_endpoint"],
@@ -422,6 +557,10 @@ def get_game_player_rotation(
             "no_projected_minutes_created": True,
         },
     }
+    if "provider_mode" in game:
+        result["provider_mode"] = game["provider_mode"]
+        result["source_urls"] = game.get("source_urls")
+    return result
 
 
 def get_player_recent_rotation_context(
@@ -438,17 +577,26 @@ def get_player_recent_rotation_context(
     last_n_games = _recent_game_count(last_n_games)
     rotation_stat = _choice(rotation_stat, ALLOWED_ROTATION_STATS, "rotation_stat")
     try:
-        history = get_player_game_log_dataset(player_id, season, season_type=season_type)
+        history = get_player_game_log_dataset(
+            player_id, season, season_type=season_type
+        )
     except WNBAHistoryUpstreamError as exc:
         raise WNBARotationUpstreamError(str(exc)) from exc
     games = history.get("games")
     if not isinstance(games, list):
-        raise WNBARotationUpstreamError("WNBA player game log returned a malformed games field.")
+        raise WNBARotationUpstreamError(
+            "WNBA player game log returned a malformed games field."
+        )
     selected = games[:last_n_games]
     if not selected:
-        raise WNBARotationNotFoundError(f"No WNBA games were found for player {player_id} in {season}.")
+        raise WNBARotationNotFoundError(
+            f"No WNBA games were found for player {player_id} in {season}."
+        )
 
-    rows, all_stints, missing, team_keys = [], [], [], []
+    rows: list[dict[str, Any]] = []
+    all_stints: list[dict[str, Any]] = []
+    missing: list[str] = []
+    team_keys: list[str] = []
     for history_game in selected:
         gid = _clean(history_game.get("game_id"))
         if not gid:
@@ -480,12 +628,23 @@ def get_player_recent_rotation_context(
     usage = [
         (item["usage_percentage_during_stint"], item["duration_seconds"])
         for item in all_stints
-        if item["usage_percentage_during_stint"] is not None and item["duration_seconds"] > 0
+        if item["usage_percentage_during_stint"] is not None
+        and item["duration_seconds"] > 0
     ]
     usage_den = sum(seconds for _, seconds in usage)
-    points = [item["player_points_during_stint"] for item in all_stints if item["player_points_during_stint"] is not None]
-    diffs = [item["team_point_differential_during_stint"] for item in all_stints if item["team_point_differential_during_stint"] is not None]
-    starts = sum(1 for item in rows if item["player_rotation"]["started_game"])
+    points = [
+        item["player_points_during_stint"]
+        for item in all_stints
+        if item["player_points_during_stint"] is not None
+    ]
+    diffs = [
+        item["team_point_differential_during_stint"]
+        for item in all_stints
+        if item["team_point_differential_during_stint"] is not None
+    ]
+    starts = sum(
+        1 for item in rows if item["player_rotation"]["started_game"]
+    )
     return {
         "source": WNBA_HISTORY_SOURCE,
         "source_url": WNBA_HISTORY_SOURCE_URL,
@@ -504,15 +663,27 @@ def get_player_recent_rotation_context(
             "stint_count": len(all_stints),
             "tracked_seconds": round(total_seconds, 1),
             "tracked_minutes": round(total_seconds / 60.0, 4),
-            "tracked_minutes_per_rotation_game": round(total_seconds / 60.0 / len(rows), 4),
-            "average_stint_seconds": round(total_seconds / len(all_stints), 1) if all_stints else None,
+            "tracked_minutes_per_rotation_game": round(
+                total_seconds / 60.0 / len(rows), 4
+            ),
+            "average_stint_seconds": (
+                round(total_seconds / len(all_stints), 1)
+                if all_stints
+                else None
+            ),
             "starts_in_rotation_games": starts,
             "start_share": round(starts / len(rows), 6),
             "player_points_during_stints": round(sum(points), 4) if points else None,
-            "team_point_differential_during_stints": round(sum(diffs), 4) if diffs else None,
+            "team_point_differential_during_stints": (
+                round(sum(diffs), 4) if diffs else None
+            ),
             "time_weighted_usage_percentage": (
-                round(sum(value * seconds for value, seconds in usage) / usage_den, 6)
-                if usage_den else None
+                round(
+                    sum(value * seconds for value, seconds in usage) / usage_den,
+                    6,
+                )
+                if usage_den
+                else None
             ),
         },
         "games": rows,
