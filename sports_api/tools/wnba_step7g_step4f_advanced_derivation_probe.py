@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from sports_api.wnba_step7g_first_party_advanced_stats import (
+from sports_api.wnba_step7g_first_party_advanced_stats_fast import (
     get_first_party_player_advanced_stats_dataset,
     get_first_party_team_advanced_stats_dataset,
 )
@@ -110,6 +110,9 @@ def main() -> int:
         assert isinstance(ids, list) and len(ids) == LAST_N and len(ids) == len(set(ids))
         assert all(isinstance(game_id, str) and game_id.startswith("10226") for game_id in ids)
 
+    for dataset in (team, opponent):
+        assert dataset.get("verification", {}).get("full_season_box_fanout_performed") is False
+
     assert player_adv.get("estimated_usage_percentage") is not None
     assert player_adv.get("usage_percentage") is None
     assert player_adv.get("offensive_rating") is None
@@ -123,7 +126,7 @@ def main() -> int:
         assert adv.get("pace") is None
 
     report = {
-        "data_type": "wnba_step7g_step4f_advanced_derivation_probe_v1",
+        "data_type": "wnba_step7g_step4f_advanced_derivation_probe_v2",
         "result": "LIVE_FIRST_PARTY_BOX_DERIVATION_READY_FOR_STEP4F_INTEGRATION",
         "started_at_utc": started.isoformat(),
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -138,17 +141,20 @@ def main() -> int:
             "team_key": TEAM_KEY,
             "selected_game_ids": team.get("selected_game_ids"),
             "metric_summary": _metric_summary(team_adv),
+            "bounded_before_box_fetch": True,
         },
         "opponent": {
             "team_key": OPPONENT_KEY,
             "selected_game_ids": opponent.get("selected_game_ids"),
             "metric_summary": _metric_summary(opponent_adv),
+            "bounded_before_box_fetch": True,
         },
         "semantics": {
             "estimated_ratings_labeled_estimated": True,
             "unavailable_official_on_court_metrics_left_null": True,
             "derived_only_from_official_box_counts": True,
             "no_projection_values": True,
+            "full_season_box_fanout_performed": False,
         },
         "safety": {
             "production_runtime_enabled": False,
