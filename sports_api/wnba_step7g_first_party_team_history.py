@@ -56,8 +56,8 @@ _REGULAR_SEASON_GAME_ID_PREFIX_BY_SEASON = {2026: "10226"}
 _KNOWN_NON_REGULAR_GAME_ID_PREFIXES = {"101", "103", "104"}
 
 # A synthetic LeagueGameLog-shaped row is used only as an input to the frozen
-# Step 4J normalizer. Every value comes from the official schedule or official
-# box score; no model value is inserted.
+# Step 4J normalizer. Every value comes from the official schedule, official box
+# score, or Step 4J's frozen team registry; no model value is inserted.
 _SYNTHETIC_HEADERS = (
     "SEASON_ID",
     "TEAM_ID",
@@ -111,10 +111,6 @@ _REQUIRED_BOX_STATS = (
 
 _CACHE: dict[tuple[str, int, str], dict[str, Any]] = {}
 _CACHE_LOCK = Lock()
-
-
-class _NoValue:
-    pass
 
 
 def _clean(value: Any) -> str | None:
@@ -253,6 +249,28 @@ def _validate_schedule_box_identity_and_score(
     return box_away, box_home
 
 
+def _canonical_step4j_registry_team(team: dict[str, Any], season: int) -> dict[str, Any]:
+    """Resolve an already-verified page team through Step 4J's frozen registry.
+
+    WNBA.com page tricodes are not guaranteed to use the exact historical
+    LeagueGameLog abbreviation spelling expected by Step 4J's matchup parser.
+    The page adapter has already verified ``team_key`` against the schedule; this
+    final resolution uses the frozen registry's canonical abbreviation solely to
+    construct the synthetic LeagueGameLog MATCHUP field.
+    """
+    registry = frozen._registry_team_from_values(
+        team.get("team_abbreviation"),
+        team.get("full_name"),
+        season,
+    )
+    if registry is None or registry.get("team_key") != team.get("team_key"):
+        _raise(
+            "Official WNBA.com box identity cannot be resolved through the frozen "
+            "Step 4J team registry."
+        )
+    return registry
+
+
 def _raw_step4j_row(
     *,
     game: dict[str, Any],
@@ -264,10 +282,12 @@ def _raw_step4j_row(
     stats = team["stats"]
     opponent_points = float(opponent["stats"]["points"])
     team_points = float(stats["points"])
-    team_abbreviation = _clean(team.get("team_abbreviation"))
-    opponent_abbreviation = _clean(opponent.get("team_abbreviation"))
+    registry_team = _canonical_step4j_registry_team(team, season)
+    registry_opponent = _canonical_step4j_registry_team(opponent, season)
+    team_abbreviation = _clean(registry_team.get("abbreviation"))
+    opponent_abbreviation = _clean(registry_opponent.get("abbreviation"))
     if not team_abbreviation or not opponent_abbreviation:
-        _raise("Official WNBA.com box score is missing a team abbreviation.")
+        _raise("Frozen Step 4J registry is missing a canonical team abbreviation.")
 
     marker = "vs." if side == "home" else "@"
     matchup = f"{team_abbreviation} {marker} {opponent_abbreviation}"
@@ -277,7 +297,7 @@ def _raw_step4j_row(
         "SEASON_ID": f"2{season}",
         "TEAM_ID": team.get("official_team_id"),
         "TEAM_ABBREVIATION": team_abbreviation,
-        "TEAM_NAME": team.get("full_name"),
+        "TEAM_NAME": registry_team.get("full_name"),
         "GAME_ID": game.get("game_id"),
         "GAME_DATE": game.get("official_schedule_date"),
         "MATCHUP": matchup,
@@ -396,11 +416,25 @@ def _build_team_history_base(
         }
     )
     unmapped = sum(not bool(row.get("mapped_to_registry")) for row in rows)
+    unresolved_opponents = sorted(
+        {
+            str(row.get("game_id"))
+            for row in rows
+            if row.get("opponent_team_key") is None
+            or row.get("opponent_team_key") == row.get("team_key")
+        }
+    )
     target_rows = [row for row in rows if row.get("team_key") == team_key]
     if len(target_rows) != len(selected):
         _raise("Step 7G Step 4J target-team row count does not match selected schedule games.")
     if unmapped or invalid_game_ids:
         _raise("Step 7G Step 4J normalized rows failed team/game identity validation.")
+    if unresolved_opponents:
+        _raise(
+            "Step 7G Step 4J normalized rows contain unresolved opponent identity for game(s): "
+            + ", ".join(unresolved_opponents)
+            + "."
+        )
 
     return {
         "source": STEP7G_STEP4J_SOURCE,
@@ -424,6 +458,8 @@ def _build_team_history_base(
             "normalized_with_frozen_step4j_row_contract": True,
             "paired_with_frozen_step4j_pairing_semantics": True,
             "filtered_and_summarized_with_frozen_step4j_semantics": True,
+            "canonical_matchup_abbreviations_from_frozen_registry": True,
+            "all_opponent_team_keys_resolved": not unresolved_opponents,
             "all_rows_mapped_to_registry": unmapped == 0,
             "unmapped_team_count": unmapped,
             "all_game_ids_valid": not invalid_game_ids,
