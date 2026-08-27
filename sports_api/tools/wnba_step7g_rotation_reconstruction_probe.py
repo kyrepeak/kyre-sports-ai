@@ -1,20 +1,25 @@
-"""Certify exact WNBA rotation boundaries from already-certified page data.
+"""Certify period-aware WNBA rotation boundaries from first-party page data.
 
-The historical liveData box-score URL is not reliably JSON-reachable from our
-runner, so this proof intentionally uses the first-party WNBA.com page bridge
-that Step 7G has already certified:
+WNBA play-by-play does not always emit between-period lineup changes as normal
+substitution events. Treating the entire game as one uninterrupted lineup state
+therefore creates false mismatches of roughly one full quarter.
 
-- official traditional box score -> starter flags + exact final minutes
-- official play-by-play -> every substitution + exact period/clock timestamp
+This proof solves each period independently. For every team/period:
+- the first outgoing substitution requires that player to be ON at period start;
+- the first incoming substitution requires that player to be OFF at period start;
+- exactly five players must start the period;
+- every subsequent in-period substitution must be a legal one-out/one-in move.
 
-Starting from the five official starters, each substitution is replayed in
-source order. The proof fails closed unless the lineup remains exactly five,
-every in/out transition is legal, and every reconstructed player second agrees
-with the official box score. No production provider is changed here.
+Period 1 is additionally pinned to the official box-score starters. Candidate
+period-start lineups for later periods are combined and accepted only if exactly
+one complete-game solution reconciles every player's reconstructed seconds to
+the official box-score minutes within the source clock precision. Ambiguity or
+mismatch fails closed. Production remains untouched.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from itertools import combinations, product
 import json
 import os
 from pathlib import Path
@@ -38,7 +43,12 @@ OFF_ENV = (
     "WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED",
 )
 SUB_RE = re.compile(r"^SUB:\s*(.+?)\s+FOR\s+(.+?)\s*$", re.I)
-TOLERANCE_SECONDS = 0.11
+# PBP substitution clocks are exposed at hundredths/whole-second resolution,
+# while official player minutes can retain fractional-second accounting. The
+# reconstruction must land within one source clock tick, never a loose window.
+PLAYER_TOLERANCE_SECONDS = 1.05
+TEAM_TOLERANCE_SECONDS = 2.1
+MAX_COMBINATIONS = 250_000
 
 
 def _now() -> str:
@@ -54,12 +64,17 @@ def _period_length(period: int) -> float:
     return 600.0 if period <= 4 else 300.0
 
 
-def _game_end(actions: list[dict[str, Any]]) -> float:
+def _period_start_elapsed(period: int) -> float:
+    return sum(_period_length(value) for value in range(1, period))
+
+
+def _final_period(actions: list[dict[str, Any]]) -> int:
     periods = [int(action["period"]) for action in actions if action.get("period")]
-    final_period = max(periods or [4])
-    if final_period < 4:
-        final_period = 4
-    return sum(_period_length(period) for period in range(1, final_period + 1))
+    return max(max(periods or [4]), 4)
+
+
+def _game_end(actions: list[dict[str, Any]]) -> float:
+    return sum(_period_length(period) for period in range(1, _final_period(actions) + 1))
 
 
 def _player_lookup(players: list[dict[str, Any]]) -> dict[str, list[int]]:
@@ -72,14 +87,6 @@ def _player_lookup(players: list[dict[str, Any]]) -> dict[str, list[int]]:
             _norm_name(player.get("last_name")),
             _norm_name(player.get("full_name")),
             _norm_name(player.get("name_initial")),
-            _norm_name(
-                " ".join(
-                    value for value in (
-                        str(player.get("first_name") or "").strip(),
-                        str(player.get("last_name") or "").strip(),
-                    ) if value
-                )
-            ),
         }
         for form in forms:
             if form:
@@ -105,38 +112,229 @@ def _resolve_incoming(label: str, lookup: dict[str, list[int]]) -> tuple[int | N
 
 def _roster_name(player_id: int, players: list[dict[str, Any]]) -> str:
     player = next((item for item in players if item.get("player_id") == player_id), None)
-    return str(player.get("full_name") or player.get("name_initial") or player_id) if player else str(player_id)
+    if player is None:
+        return str(player_id)
+    return str(player.get("full_name") or player.get("name_initial") or player_id)
 
 
-def _outgoing_label_matches(
-    outgoing_label: str,
-    outgoing_id: int,
-    players: list[dict[str, Any]],
-) -> bool:
-    player = next((item for item in players if item.get("player_id") == outgoing_id), None)
+def _outgoing_label_matches(label: str, player_id: int, players: list[dict[str, Any]]) -> bool:
+    player = next((item for item in players if item.get("player_id") == player_id), None)
     if player is None:
         return False
-    label = _norm_name(outgoing_label)
-    return label in {
+    value = _norm_name(label)
+    return value in {
         _norm_name(player.get("last_name")),
         _norm_name(player.get("full_name")),
         _norm_name(player.get("name_initial")),
     }
 
 
-def _simulate_side(
+def _parse_team_substitutions(
+    team_key: str,
+    players: list[dict[str, Any]],
+    actions: list[dict[str, Any]],
+) -> tuple[dict[int, list[dict[str, Any]]], list[str]]:
+    lookup = _player_lookup(players)
+    by_period: dict[int, list[dict[str, Any]]] = {}
+    errors: list[str] = []
+    roster_ids = {
+        player["player_id"] for player in players if isinstance(player.get("player_id"), int)
+    }
+    for action in actions:
+        if action.get("event_category") != "substitution" or action.get("team_key") != team_key:
+            continue
+        period = action.get("period")
+        elapsed = action.get("elapsed_game_seconds")
+        description = str(action.get("description") or "").strip()
+        match = SUB_RE.match(description)
+        if not isinstance(period, int) or period <= 0:
+            errors.append(f"substitution_missing_period:{description}")
+            continue
+        if not isinstance(elapsed, (int, float)):
+            errors.append(f"substitution_missing_elapsed:{description}")
+            continue
+        if not match:
+            errors.append(f"unparsed_substitution:{description}")
+            continue
+        incoming_label, outgoing_label = match.group(1), match.group(2)
+        outgoing_id = action.get("person_id")
+        incoming_id, resolution = _resolve_incoming(incoming_label, lookup)
+        if not isinstance(outgoing_id, int) or outgoing_id not in roster_ids:
+            errors.append(f"invalid_outgoing:{description}:{outgoing_id}")
+            continue
+        if incoming_id is None or incoming_id not in roster_ids:
+            errors.append(f"invalid_incoming:{description}:{incoming_id}")
+            continue
+        if not _outgoing_label_matches(outgoing_label, outgoing_id, players):
+            errors.append(f"outgoing_name_id_mismatch:{description}:{outgoing_id}")
+            continue
+        by_period.setdefault(period, []).append({
+            "action_number": action.get("action_number"),
+            "period": period,
+            "clock": action.get("clock"),
+            "elapsed_game_seconds": float(elapsed),
+            "description": description,
+            "incoming_player_id": incoming_id,
+            "incoming_resolution": resolution,
+            "outgoing_player_id": outgoing_id,
+        })
+    return by_period, errors
+
+
+def _period_start_requirements(subs: list[dict[str, Any]]) -> tuple[set[int], set[int], list[str]]:
+    first_role: dict[int, str] = {}
+    errors: list[str] = []
+    for sub in subs:
+        outgoing = sub["outgoing_player_id"]
+        incoming = sub["incoming_player_id"]
+        if outgoing not in first_role:
+            first_role[outgoing] = "outgoing"
+        if incoming not in first_role:
+            first_role[incoming] = "incoming"
+    required_on = {player_id for player_id, role in first_role.items() if role == "outgoing"}
+    required_off = {player_id for player_id, role in first_role.items() if role == "incoming"}
+    overlap = required_on & required_off
+    if overlap:
+        errors.append("period_start_requirement_overlap:" + ",".join(map(str, sorted(overlap))))
+    return required_on, required_off, errors
+
+
+def _simulate_period(
+    period: int,
+    start_lineup: set[int],
+    subs: list[dict[str, Any]],
+    roster_ids: set[int],
+) -> dict[str, Any] | None:
+    period_start = _period_start_elapsed(period)
+    period_end = period_start + _period_length(period)
+    current = set(start_lineup)
+    tracked = {player_id: 0.0 for player_id in roster_ids}
+    open_since = {player_id: period_start for player_id in current}
+    stints: dict[int, list[tuple[float, float]]] = {player_id: [] for player_id in roster_ids}
+    last_elapsed = period_start
+    transitions: list[dict[str, Any]] = []
+
+    if len(current) != 5:
+        return None
+    for sub in subs:
+        elapsed = float(sub["elapsed_game_seconds"])
+        if elapsed < period_start - 1e-6 or elapsed > period_end + 1e-6:
+            return None
+        if elapsed < last_elapsed - 1e-6:
+            return None
+        duration = elapsed - last_elapsed
+        for player_id in current:
+            tracked[player_id] += duration
+        last_elapsed = elapsed
+        outgoing = sub["outgoing_player_id"]
+        incoming = sub["incoming_player_id"]
+        if outgoing not in current or incoming in current:
+            return None
+        current.remove(outgoing)
+        start = open_since.pop(outgoing, None)
+        if start is None:
+            return None
+        stints[outgoing].append((start, elapsed))
+        current.add(incoming)
+        open_since[incoming] = elapsed
+        if len(current) != 5:
+            return None
+        transitions.append({**sub, "lineup_after": sorted(current)})
+
+    duration = period_end - last_elapsed
+    for player_id in current:
+        tracked[player_id] += duration
+    for player_id in list(current):
+        start = open_since.get(player_id)
+        if start is not None:
+            stints[player_id].append((start, period_end))
+    if abs(sum(tracked.values()) - 5 * _period_length(period)) > 1e-6:
+        return None
+    return {
+        "period": period,
+        "start_lineup": sorted(start_lineup),
+        "end_lineup": sorted(current),
+        "tracked": tracked,
+        "stints": stints,
+        "transitions": transitions,
+    }
+
+
+def _period_candidates(
+    period: int,
+    players: list[dict[str, Any]],
+    subs: list[dict[str, Any]],
+    official_starters: set[int],
+    active_ids: set[int],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    roster_ids = {
+        player["player_id"] for player in players if isinstance(player.get("player_id"), int)
+    }
+    required_on, required_off, requirement_errors = _period_start_requirements(subs)
+    if requirement_errors or required_on & required_off or len(required_on) > 5:
+        return [], {
+            "required_on": sorted(required_on),
+            "required_off": sorted(required_off),
+            "requirement_errors": requirement_errors,
+        }
+
+    if period == 1:
+        lineups = [official_starters] if (
+            len(official_starters) == 5
+            and required_on.issubset(official_starters)
+            and official_starters.isdisjoint(required_off)
+        ) else []
+    else:
+        # A player with zero official minutes cannot be a period starter. Limit
+        # unknown choices to players who actually appeared in the game.
+        eligible_unknown = sorted(active_ids - required_on - required_off)
+        needed = 5 - len(required_on)
+        lineups = [required_on | set(extra) for extra in combinations(eligible_unknown, needed)]
+
+    candidates = []
+    for lineup in lineups:
+        simulated = _simulate_period(period, set(lineup), subs, roster_ids)
+        if simulated is not None:
+            candidates.append(simulated)
+    return candidates, {
+        "required_on": sorted(required_on),
+        "required_off": sorted(required_off),
+        "candidate_count": len(candidates),
+        "requirement_errors": requirement_errors,
+    }
+
+
+def _merge_stints(period_solutions: tuple[dict[str, Any], ...], roster_ids: set[int]) -> dict[int, list[tuple[float, float]]]:
+    raw: dict[int, list[tuple[float, float]]] = {player_id: [] for player_id in roster_ids}
+    for solution in period_solutions:
+        for player_id, intervals in solution["stints"].items():
+            raw[player_id].extend(intervals)
+    merged: dict[int, list[tuple[float, float]]] = {player_id: [] for player_id in roster_ids}
+    for player_id, intervals in raw.items():
+        ordered = sorted(intervals)
+        for start, end in ordered:
+            if merged[player_id] and abs(merged[player_id][-1][1] - start) <= 1e-9:
+                merged[player_id][-1] = (merged[player_id][-1][0], end)
+            else:
+                merged[player_id].append((start, end))
+    return merged
+
+
+def _solve_side(
     side: str,
     team: dict[str, Any],
     actions: list[dict[str, Any]],
-    game_end: float,
+    final_period: int,
 ) -> dict[str, Any]:
     players = [player for player in team.get("players", []) if isinstance(player, dict)]
-    starters = [
+    roster_ids = {
+        player["player_id"] for player in players if isinstance(player.get("player_id"), int)
+    }
+    official_starters = {
         player["player_id"]
         for player in players
         if player.get("is_starter") is True and isinstance(player.get("player_id"), int)
-    ]
-    lookup = _player_lookup(players)
+    }
     official_seconds = {
         player["player_id"]: (
             round(float(player.get("stats", {}).get("minutes")) * 60.0, 3)
@@ -145,123 +343,96 @@ def _simulate_side(
         for player in players
         if isinstance(player.get("player_id"), int)
     }
-    active_player_ids = {
+    active_ids = {
         player_id for player_id, seconds in official_seconds.items()
         if seconds is not None and seconds > 0
     }
-    tracked = {player_id: 0.0 for player_id in official_seconds}
-    current = set(starters)
-    last_elapsed = 0.0
-    substitutions: list[dict[str, Any]] = []
-    errors: list[str] = []
-    stint_boundaries: dict[int, list[tuple[float, float]]] = {
-        player_id: [] for player_id in official_seconds
-    }
-    open_since = {player_id: 0.0 for player_id in current}
+    by_period, parse_errors = _parse_team_substitutions(
+        str(team.get("team_key")), players, actions
+    )
 
-    team_key = team.get("team_key")
-    side_actions = [
-        action for action in actions
-        if action.get("event_category") == "substitution"
-        and action.get("team_key") == team_key
-    ]
+    candidate_lists: list[list[dict[str, Any]]] = []
+    period_evidence: dict[int, Any] = {}
+    for period in range(1, final_period + 1):
+        candidates, evidence = _period_candidates(
+            period,
+            players,
+            by_period.get(period, []),
+            official_starters,
+            active_ids,
+        )
+        period_evidence[period] = evidence
+        candidate_lists.append(candidates)
 
-    for action in side_actions:
-        elapsed = action.get("elapsed_game_seconds")
-        if not isinstance(elapsed, (int, float)):
-            errors.append("substitution_missing_elapsed_time")
-            continue
-        elapsed = float(elapsed)
-        if elapsed < last_elapsed - 1e-6:
-            errors.append("substitution_time_moved_backward")
-            continue
+    combination_count = 1
+    for candidates in candidate_lists:
+        combination_count *= max(len(candidates), 1)
+    if any(not candidates for candidates in candidate_lists):
+        return {
+            "side": side,
+            "team_key": team.get("team_key"),
+            "passed": False,
+            "parse_errors": parse_errors,
+            "period_evidence": period_evidence,
+            "combination_count": 0,
+            "failure_reason": "one_or_more_periods_have_no_legal_start_lineup",
+        }
+    if combination_count > MAX_COMBINATIONS:
+        return {
+            "side": side,
+            "team_key": team.get("team_key"),
+            "passed": False,
+            "parse_errors": parse_errors,
+            "period_evidence": period_evidence,
+            "combination_count": combination_count,
+            "failure_reason": "candidate_combination_cap_exceeded",
+        }
 
-        duration = elapsed - last_elapsed
-        for player_id in current:
-            tracked[player_id] = tracked.get(player_id, 0.0) + duration
-        last_elapsed = elapsed
+    accepted: list[dict[str, Any]] = []
+    best: dict[str, Any] | None = None
+    for selected in product(*candidate_lists):
+        tracked = {player_id: 0.0 for player_id in roster_ids}
+        for period_solution in selected:
+            for player_id, seconds in period_solution["tracked"].items():
+                tracked[player_id] += seconds
+        deltas = {
+            player_id: (
+                None if official_seconds.get(player_id) is None
+                else round(tracked[player_id] - float(official_seconds[player_id]), 3)
+            )
+            for player_id in roster_ids
+        }
+        comparable = [abs(delta) for delta in deltas.values() if delta is not None]
+        max_abs = max(comparable or [0.0])
+        sum_abs = sum(comparable)
+        score = (round(max_abs, 6), round(sum_abs, 6))
+        record = {
+            "selected": selected,
+            "tracked": tracked,
+            "deltas": deltas,
+            "max_abs_delta": max_abs,
+            "sum_abs_delta": sum_abs,
+            "score": score,
+        }
+        if best is None or score < best["score"]:
+            best = record
+        if max_abs <= PLAYER_TOLERANCE_SECONDS:
+            accepted.append(record)
 
-        description = str(action.get("description") or "").strip()
-        match = SUB_RE.match(description)
-        if not match:
-            errors.append(f"unparsed_substitution:{description}")
-            continue
+    if best is None:
+        raise RuntimeError("Internal Step 7G solver error: no combinations were evaluated.")
 
-        incoming_label, outgoing_label = match.group(1), match.group(2)
-        outgoing_id = action.get("person_id")
-        incoming_id, incoming_resolution = _resolve_incoming(incoming_label, lookup)
-        if not isinstance(outgoing_id, int):
-            errors.append(f"missing_outgoing_id:{description}")
-            continue
-        if outgoing_id not in official_seconds:
-            errors.append(f"outgoing_not_on_roster:{description}:{outgoing_id}")
-            continue
-        if incoming_id is None:
-            errors.append(f"unresolved_incoming:{description}")
-            continue
-        if incoming_id not in official_seconds:
-            errors.append(f"incoming_not_on_roster:{description}:{incoming_id}")
-            continue
-        if not _outgoing_label_matches(outgoing_label, outgoing_id, players):
-            errors.append(f"outgoing_name_id_mismatch:{description}:{outgoing_id}")
-        if len(current) != 5:
-            errors.append(f"pre_sub_lineup_count:{len(current)}:{description}")
-        if outgoing_id not in current:
-            errors.append(f"outgoing_not_on_court:{description}:{outgoing_id}")
-        if incoming_id in current:
-            errors.append(f"incoming_already_on_court:{description}:{incoming_id}")
-
-        if outgoing_id in current:
-            current.remove(outgoing_id)
-            start = open_since.pop(outgoing_id, None)
-            if start is not None:
-                stint_boundaries.setdefault(outgoing_id, []).append((start, elapsed))
-        current.add(incoming_id)
-        if incoming_id not in open_since:
-            open_since[incoming_id] = elapsed
-
-        if len(current) != 5:
-            errors.append(f"post_sub_lineup_count:{len(current)}:{description}")
-        substitutions.append({
-            "action_number": action.get("action_number"),
-            "elapsed_game_seconds": elapsed,
-            "period": action.get("period"),
-            "clock": action.get("clock"),
-            "description": description,
-            "incoming_label": incoming_label,
-            "incoming_player_id": incoming_id,
-            "incoming_resolution": incoming_resolution,
-            "outgoing_label": outgoing_label,
-            "outgoing_player_id": outgoing_id,
-            "outgoing_name_id_match": _outgoing_label_matches(outgoing_label, outgoing_id, players),
-            "lineup_count_after": len(current),
-        })
-
-    if game_end < last_elapsed:
-        errors.append("game_end_precedes_last_substitution")
-    else:
-        duration = game_end - last_elapsed
-        for player_id in current:
-            tracked[player_id] = tracked.get(player_id, 0.0) + duration
-        for player_id in list(current):
-            start = open_since.pop(player_id, None)
-            if start is not None:
-                stint_boundaries.setdefault(player_id, []).append((start, game_end))
-
-    comparisons: list[dict[str, Any]] = []
-    max_abs_delta = 0.0
-    unmatched: list[int] = []
+    unique = len(accepted) == 1
+    chosen = accepted[0] if unique else best
+    merged_stints = _merge_stints(tuple(chosen["selected"]), roster_ids)
+    comparisons = []
     for player in players:
         player_id = player.get("player_id")
         if not isinstance(player_id, int):
             continue
         official = official_seconds.get(player_id)
-        reconstructed = round(tracked.get(player_id, 0.0), 3)
-        delta = None if official is None else round(reconstructed - official, 3)
-        if delta is not None:
-            max_abs_delta = max(max_abs_delta, abs(delta))
-            if abs(delta) > TOLERANCE_SECONDS:
-                unmatched.append(player_id)
+        reconstructed = round(chosen["tracked"][player_id], 3)
+        delta = chosen["deltas"][player_id]
         comparisons.append({
             "player_id": player_id,
             "player_name": _roster_name(player_id, players),
@@ -277,43 +448,54 @@ def _simulate_side(
                     "out_elapsed_seconds": end,
                     "duration_seconds": round(end - start, 3),
                 }
-                for start, end in stint_boundaries.get(player_id, [])
+                for start, end in merged_stints[player_id]
             ],
         })
 
     official_total = sum(value for value in official_seconds.values() if value is not None)
-    reconstructed_total = sum(tracked.values())
-    final_count = len(current)
+    reconstructed_total = sum(chosen["tracked"].values())
+    game_end = sum(_period_length(period) for period in range(1, final_period + 1))
+    team_total_ok = abs(official_total - 5 * game_end) <= TEAM_TOLERANCE_SECONDS
+    period_lineups = [
+        {
+            "period": solution["period"],
+            "start_lineup_ids": solution["start_lineup"],
+            "start_lineup_names": [
+                _roster_name(player_id, players) for player_id in solution["start_lineup"]
+            ],
+            "end_lineup_ids": solution["end_lineup"],
+            "substitution_count": len(solution["transitions"]),
+        }
+        for solution in chosen["selected"]
+    ]
     return {
         "side": side,
-        "team_key": team_key,
-        "starter_ids": starters,
-        "starter_names": [_roster_name(player_id, players) for player_id in starters],
-        "starter_count": len(starters),
-        "official_active_player_ids": sorted(active_player_ids),
-        "substitution_count": len(side_actions),
-        "resolved_substitution_count": len(substitutions),
-        "errors": errors,
-        "comparisons": comparisons,
-        "unmatched_player_ids": unmatched,
-        "max_abs_player_minute_delta_seconds": round(max_abs_delta, 3),
+        "team_key": team.get("team_key"),
+        "official_starter_ids": sorted(official_starters),
+        "official_starter_names": [
+            _roster_name(player_id, players) for player_id in sorted(official_starters)
+        ],
+        "official_starter_count": len(official_starters),
+        "parse_errors": parse_errors,
+        "period_evidence": period_evidence,
+        "combination_count": combination_count,
+        "accepted_solution_count": len(accepted),
+        "unique_solution": unique,
+        "best_max_abs_player_delta_seconds": round(chosen["max_abs_delta"], 3),
+        "best_sum_abs_player_delta_seconds": round(chosen["sum_abs_delta"], 3),
         "official_total_player_seconds": round(official_total, 3),
         "reconstructed_total_player_seconds": round(reconstructed_total, 3),
         "expected_five_player_seconds": round(5 * game_end, 3),
-        "official_total_matches_five_player_invariant": (
-            abs(official_total - 5 * game_end) <= TOLERANCE_SECONDS
-        ),
-        "reconstructed_total_matches_five_player_invariant": (
-            abs(reconstructed_total - 5 * game_end) <= TOLERANCE_SECONDS
-        ),
-        "reconstructed_final_lineup_count": final_count,
+        "official_team_total_within_source_precision": team_total_ok,
+        "period_lineups": period_lineups,
+        "comparisons": comparisons,
         "passed": (
-            len(starters) == 5
-            and final_count == 5
-            and not errors
-            and not unmatched
-            and abs(official_total - 5 * game_end) <= TOLERANCE_SECONDS
-            and abs(reconstructed_total - 5 * game_end) <= TOLERANCE_SECONDS
+            len(official_starters) == 5
+            and not parse_errors
+            and unique
+            and chosen["max_abs_delta"] <= PLAYER_TOLERANCE_SECONDS
+            and team_total_ok
+            and abs(reconstructed_total - 5 * game_end) <= 1e-6
         ),
     }
 
@@ -326,10 +508,10 @@ def main() -> None:
     box = get_first_party_game_box_score_dataset(GAME_ID, SEASON)
     pbp = get_first_party_play_by_play_dataset(GAME_ID, SEASON)
     actions = pbp["actions"]
+    final_period = _final_period(actions)
     game_end = _game_end(actions)
-
-    away = _simulate_side("away", box["away"], actions, game_end)
-    home = _simulate_side("home", box["home"], actions, game_end)
+    away = _solve_side("away", box["away"], actions, final_period)
+    home = _solve_side("home", box["home"], actions, final_period)
     passed = (
         box["verification"]["requested_game_id_matches_source"]
         and box["verification"]["player_ids_unique"]
@@ -340,7 +522,7 @@ def main() -> None:
     )
 
     report = {
-        "data_type": "wnba_step7g_rotation_reconstruction_probe",
+        "data_type": "wnba_step7g_period_aware_rotation_reconstruction_probe",
         "created_at_utc": _now(),
         "read_only": True,
         "game_id": GAME_ID,
@@ -351,14 +533,17 @@ def main() -> None:
             "box_score": box["source_url"],
             "play_by_play": pbp["source_url"],
         },
+        "final_period": final_period,
         "game_end_elapsed_seconds": game_end,
+        "player_tolerance_seconds": PLAYER_TOLERANCE_SECONDS,
+        "team_tolerance_seconds": TEAM_TOLERANCE_SECONDS,
         "play_by_play_action_count": pbp["source_action_count"],
         "away": away,
         "home": home,
         "decision": {
-            "single_game_exact_minute_reconciliation_passed": passed,
-            "rotation_boundaries_deterministic_from_official_starters_and_substitutions": passed,
-            "stats_gamerotation_endpoint_required_for_boundaries": False if passed else None,
+            "single_game_period_aware_reconciliation_passed": passed,
+            "unique_period_start_lineups_required": True,
+            "rotation_boundaries_deterministic_from_first_party_data": passed,
             "multi_game_certification_required_before_provider_integration": True,
             "production_activation_allowed": False,
         },
@@ -373,18 +558,18 @@ def main() -> None:
         "passed": passed,
         "away_passed": away["passed"],
         "home_passed": home["passed"],
-        "away_starters": away["starter_count"],
-        "home_starters": home["starter_count"],
-        "away_max_delta_seconds": away["max_abs_player_minute_delta_seconds"],
-        "home_max_delta_seconds": home["max_abs_player_minute_delta_seconds"],
-        "away_substitutions": away["substitution_count"],
-        "home_substitutions": home["substitution_count"],
+        "away_unique_solution": away.get("unique_solution"),
+        "home_unique_solution": home.get("unique_solution"),
+        "away_best_max_delta_seconds": away.get("best_max_abs_player_delta_seconds"),
+        "home_best_max_delta_seconds": home.get("best_max_abs_player_delta_seconds"),
+        "away_combination_count": away.get("combination_count"),
+        "home_combination_count": home.get("combination_count"),
         "production_activation_allowed": False,
     }, sort_keys=True))
 
     if not passed:
         raise RuntimeError(
-            "Certified WNBA.com box/PBP did not reconcile to exact player minutes for the target game."
+            "Period-aware first-party WNBA rotation reconstruction did not produce one unique exact solution."
         )
 
 
