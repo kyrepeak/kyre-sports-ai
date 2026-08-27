@@ -7,7 +7,9 @@ on:
     paths:
       - '.github/workflows/wnba-step-7g-pregame-readiness-cert.yml'
       - 'sports_api/tools/wnba_step7g_pregame_readiness_cert.py'
+      - 'sports_api/tools/wnba_step7g_pregame_readiness_cert_cup_safe.py'
       - 'sports_api/wnba_step7g_first_party_team_history.py'
+      - 'sports_api/wnba_step7g_first_party_team_history_cup_safe.py'
   workflow_dispatch:
 
 permissions:
@@ -57,7 +59,9 @@ jobs:
         run: |
           python -m py_compile \
             sports_api/tools/wnba_step7g_pregame_readiness_cert.py \
-            sports_api/wnba_step7g_first_party_team_history.py
+            sports_api/tools/wnba_step7g_pregame_readiness_cert_cup_safe.py \
+            sports_api/wnba_step7g_first_party_team_history.py \
+            sports_api/wnba_step7g_first_party_team_history_cup_safe.py
 
       - name: Prove inherited dependency-chain files unchanged from exact Step 7G baseline
         shell: bash
@@ -79,7 +83,7 @@ jobs:
 
       - name: Run live scheduled-game Step 4X readiness certification
         shell: bash
-        run: python -m sports_api.tools.wnba_step7g_pregame_readiness_cert
+        run: python -m sports_api.tools.wnba_step7g_pregame_readiness_cert_cup_safe
 
       - name: Upload sanitized certification evidence
         if: always()
