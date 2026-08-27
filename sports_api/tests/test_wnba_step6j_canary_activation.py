@@ -160,12 +160,13 @@ class Step6JCanaryActivationTests(unittest.TestCase):
         app = FastAPI()
         app.include_router(api.router)
         client = TestClient(app)
+        path = "/markets/direct/draftkings/step6j-canary?date=2026-08-27&season=2026"
         with tempfile.TemporaryDirectory() as td, patch.dict(os.environ, {"WNBA_KYRE_MARKET_INGEST_TOKEN": "secret-token", KYRE_MARKET_FEED_PATH_ENV: str(Path(td) / "feed.json")}, clear=False):
-            response = client.post("/api/v1/wnba/markets/direct/draftkings/step6j-canary?date=2026-08-27&season=2026")
+            response = client.post(path)
             self.assertEqual(401, response.status_code)
             with patch.object(api, "run_step6j_canary", return_value={"status": "completed"}) as run:
                 response = client.post(
-                    "/api/v1/wnba/markets/direct/draftkings/step6j-canary?date=2026-08-27&season=2026",
+                    path,
                     headers={"Authorization": "Bearer secret-token", "X-WNBA-Step6J-Activation-ID": "step6j-test-001"},
                 )
             self.assertEqual(200, response.status_code)
