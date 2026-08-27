@@ -3,16 +3,14 @@
 The frozen Step 4B/4I path normally obtains league-wide current roster identity
 from ``stats.wnba.com/commonallplayers``. Hosted runners have repeatedly timed
 out on that transport. This isolated adapter instead reads each franchise's
-official ``*.wnba.com/roster`` page. Those pages expose active roster cards as
-links to canonical ``www.wnba.com/player/{player_id}`` pages, allowing current
-membership and player identity to be verified without inventing IDs or relying
-on a third party.
+official ``*.wnba.com/roster`` page.
 
-Official roster cards can contain more than one link to the same player (for
-example a headshot link and a separate text link). The parser therefore groups
-all roster-section links by official player ID and chooses the strongest
-parseable identity candidate rather than treating a presentation-only duplicate
-link as malformed data.
+The official team pages expose canonical ``www.wnba.com/player/{player_id}``
+links and visible roster cards containing jersey/name/position. On the live site
+the card text is not guaranteed to be nested inside the player anchor, so this
+adapter validates the roster section two ways: ordered unique canonical player
+IDs from official links are paired with ordered visible roster cards. If those
+counts disagree, the adapter fails closed instead of guessing membership.
 
 This module performs GET requests only. It does not write production state,
 start schedulers, access sportsbooks, persist data, or change frozen providers.
@@ -35,7 +33,7 @@ from sports_api.wnba_league import get_wnba_teams
 from sports_api.wnba_rosters import WNBAStatsUpstreamError
 
 SOURCE = "Official WNBA Team Roster Pages"
-SOURCE_VARIANT = "wnba_team_roster_pages_player_links"
+SOURCE_VARIANT = "wnba_team_roster_pages_player_links_and_visible_cards"
 CACHE_TTL_SECONDS = 120
 CACHE_MAX_ENTRIES = 8
 MAX_PAGE_BYTES = 5_000_000
@@ -83,17 +81,23 @@ _POSITION_VALUES = (
     "Forward",
     "Center",
 )
+_POSITION_PATTERN = "|".join(re.escape(value) for value in _POSITION_VALUES)
+_VISIBLE_CARD_RE = re.compile(
+    rf"#(?P<jersey>\S+)\s+(?P<name>.+?)\s+(?P<position>{_POSITION_PATTERN})\s+PPG\b",
+    re.I,
+)
 
 _CACHE: dict[int, dict[str, Any]] = {}
 _CACHE_LOCK = Lock()
 
 
 class _RosterHTMLParser(HTMLParser):
-    """Collect visible text and player links only inside the roster section."""
+    """Collect visible text and canonical player links inside the roster section."""
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.visible_parts: list[str] = []
+        self.roster_visible_parts: list[str] = []
         self.player_links: list[tuple[str, str]] = []
         self._in_roster = False
         self._href: str | None = None
@@ -122,9 +126,13 @@ class _RosterHTMLParser(HTMLParser):
         folded = text.casefold()
         if "2026 team roster" in folded or folded == "team roster":
             self._in_roster = True
-        elif "coaching staff" in folded:
+            return
+        if "coaching staff" in folded:
             self._in_roster = False
+            return
 
+        if self._in_roster:
+            self.roster_visible_parts.append(text)
         if self._href is not None and self._anchor_in_roster:
             self._anchor_parts.append(text)
 
@@ -177,13 +185,18 @@ def _parse_card_text(text: str) -> tuple[str | None, str | None, str | None]:
 
 
 def _plain_name_candidate(text: str) -> str | None:
-    """Accept a name-only roster anchor/alt while rejecting labels and metrics."""
     clean = " ".join(str(text or "").split()).strip()
     if not clean or clean.startswith("#"):
         return None
     clean = re.split(r"\s+(?:PPG|RPG|APG)\b", clean, maxsplit=1, flags=re.I)[0].strip()
     folded = clean.casefold()
-    if folded in {"view profile", "player profile", "read more", "roster"}:
+    if folded in {
+        "view profile",
+        "player profile",
+        "read more",
+        "roster",
+        "show more",
+    } or "headshot" in folded:
         return None
     if any(character.isdigit() for character in clean):
         return None
@@ -209,9 +222,38 @@ def _best_identity_candidate(texts: list[str]) -> tuple[str | None, str | None, 
             candidates.append((10, None, plain, None))
     if not candidates:
         return None, None, None
-    candidates.sort(key=lambda row: (row[0], len(row[2])), reverse=True)
+    candidates.sort(key=lambda row: (row[0], -len(row[2])), reverse=True)
     _, jersey, name, position = candidates[0]
     return jersey, name, position
+
+
+def _ordered_unique_player_ids(links: list[tuple[str, str]]) -> list[int]:
+    result: list[int] = []
+    seen: set[int] = set()
+    for href, _ in links:
+        player_id = _player_id_from_href(href)
+        if player_id is None or player_id in seen:
+            continue
+        seen.add(player_id)
+        result.append(player_id)
+    return result
+
+
+def _visible_roster_cards(parts: list[str]) -> list[dict[str, str]]:
+    joined = " ".join(parts)
+    cards: list[dict[str, str]] = []
+    for match in _VISIBLE_CARD_RE.finditer(joined):
+        name = " ".join(match.group("name").split()).strip()
+        if not name:
+            continue
+        cards.append(
+            {
+                "jersey": match.group("jersey").strip(),
+                "name": name,
+                "position": match.group("position").strip(),
+            }
+        )
+    return cards
 
 
 def _parse_roster_html(html: str, *, team: dict[str, Any], source_url: str) -> list[dict[str, Any]]:
@@ -233,20 +275,41 @@ def _parse_roster_html(html: str, *, team: dict[str, Any], source_url: str) -> l
             f"Official WNBA coaching-staff boundary was not found for {team['full_name']}."
         )
 
-    link_texts_by_player_id: dict[int, list[str]] = {}
+    ordered_ids = _ordered_unique_player_ids(parser.player_links)
+    visible_cards = _visible_roster_cards(parser.roster_visible_parts)
+    if not 7 <= len(ordered_ids) <= 20:
+        raise WNBAStatsUpstreamError(
+            f"Official WNBA roster section returned an implausible canonical player-ID "
+            f"count ({len(ordered_ids)}) for {team['full_name']}."
+        )
+    if len(visible_cards) != len(ordered_ids):
+        raise WNBAStatsUpstreamError(
+            f"Official WNBA roster identity surfaces disagree for {team['full_name']}: "
+            f"{len(ordered_ids)} unique player IDs vs {len(visible_cards)} visible roster cards."
+        )
+
+    anchor_texts_by_id: dict[int, list[str]] = {}
     for href, anchor_text in parser.player_links:
         player_id = _player_id_from_href(href)
-        if player_id is None:
-            continue
-        link_texts_by_player_id.setdefault(player_id, []).append(anchor_text)
+        if player_id is not None:
+            anchor_texts_by_id.setdefault(player_id, []).append(anchor_text)
 
     players: list[dict[str, Any]] = []
-    unresolved_ids: list[int] = []
-    for player_id, texts in sorted(link_texts_by_player_id.items()):
-        jersey, name, position = _best_identity_candidate(texts)
-        if not name:
-            unresolved_ids.append(player_id)
-            continue
+    for player_id, card in zip(ordered_ids, visible_cards):
+        jersey = card["jersey"]
+        name = card["name"]
+        position = card["position"]
+
+        # If an anchor also exposes a parseable name, it must agree with the
+        # visible-card pairing. This is an additional integrity check, not a
+        # requirement of the live page structure.
+        _, anchor_name, _ = _best_identity_candidate(anchor_texts_by_id.get(player_id, []))
+        if anchor_name and anchor_name.casefold() != name.casefold():
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster anchor/card name mismatch for player {player_id} "
+                f"on {team['full_name']}."
+            )
+
         players.append(
             {
                 "player_id": player_id,
@@ -271,18 +334,6 @@ def _parse_roster_html(html: str, *, team: dict[str, Any], source_url: str) -> l
                 "headshot_url": f"https://cdn.wnba.com/headshots/wnba/latest/1040x760/{player_id}.png",
                 "current_membership_source_url": source_url,
             }
-        )
-
-    if not 7 <= len(players) <= 20:
-        raise WNBAStatsUpstreamError(
-            f"Official WNBA roster page returned an implausible active-player count "
-            f"({len(players)}) for {team['full_name']} "
-            f"with {len(unresolved_ids)} unresolved roster-section player IDs."
-        )
-    if len(link_texts_by_player_id) > 20:
-        raise WNBAStatsUpstreamError(
-            f"Official WNBA roster section exposed an implausible number of unique "
-            f"player IDs ({len(link_texts_by_player_id)}) for {team['full_name']}."
         )
     return players
 
@@ -404,7 +455,7 @@ def get_first_party_current_players_dataset(
     dataset = {
         "source": SOURCE,
         "source_url": "https://www.wnba.com/",
-        "source_endpoint": "official team *.wnba.com/roster player links",
+        "source_endpoint": "official team *.wnba.com/roster player links + visible cards",
         "source_variant": SOURCE_VARIANT,
         "season": season,
         "current_roster_only": True,
@@ -418,6 +469,7 @@ def get_first_party_current_players_dataset(
             "all_registered_teams_loaded": True,
             "all_players_have_official_wnba_player_ids": True,
             "player_ids_unique_across_teams": True,
+            "canonical_id_count_matches_visible_card_count_per_team": True,
             "current_membership_from_official_team_roster_pages": True,
             "duplicate_presentation_links_collapsed_by_player_id": True,
             "third_party_sources_used": False,
