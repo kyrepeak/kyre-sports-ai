@@ -40,6 +40,7 @@ from sports_api.api.wnba_daily_slate_top_five import router as wnba_daily_slate_
 from sports_api.api.wnba_defensive_activity import router as wnba_defensive_activity_router
 from sports_api.api.wnba_deployment_smoke import router as wnba_deployment_smoke_router
 from sports_api.api.wnba_draftkings_direct import router as wnba_draftkings_direct_router
+from sports_api.api.wnba_draftkings_endpoint_discovery import router as wnba_draftkings_endpoint_discovery_router
 from sports_api.api.wnba_empirical_outcome_distribution import router as wnba_empirical_outcome_distribution_router
 from sports_api.api.wnba_event_lineup_context import router as wnba_event_lineup_context_router
 from sports_api.api.wnba_historical_backtest_calibration import router as wnba_historical_backtest_calibration_router
@@ -118,6 +119,7 @@ app.include_router(wnba_daily_slate_top_five_router)
 app.include_router(wnba_defensive_activity_router)
 app.include_router(wnba_deployment_smoke_router)
 app.include_router(wnba_draftkings_direct_router)
+app.include_router(wnba_draftkings_endpoint_discovery_router)
 app.include_router(wnba_empirical_outcome_distribution_router)
 app.include_router(wnba_event_lineup_context_router)
 app.include_router(wnba_historical_backtest_calibration_router)
