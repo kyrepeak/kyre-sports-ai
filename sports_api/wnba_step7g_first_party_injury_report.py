@@ -108,12 +108,31 @@ def _parse_team(cell: str | None, teams_by_name: dict[str, dict[str, Any]]) -> d
     clean = _clean(cell)
     if clean is None:
         return None
+
     team, remainder = frozen._match_team_prefix(clean, teams_by_name)
-    if team is None or _clean(remainder) is not None:
-        raise frozen.WNBAAvailabilityUpstreamError(
-            f"Official WNBA injury report exposed an unrecognized team cell: {clean!r}."
-        )
-    return team
+    if team is not None and _clean(remainder) is None:
+        return team
+
+    # Layout extraction occasionally collapses an internal space (for example
+    # ``LasVegas Aces``). Compare only the normalized complete cell against
+    # complete official team names, and accept it only when exactly one registry
+    # identity matches. This repairs presentation spacing, not semantic identity.
+    normalized = frozen._normalize_name(clean)
+    matches: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for candidate in teams_by_name.values():
+        team_key = str(candidate.get("team_key") or "")
+        if not team_key or team_key in seen:
+            continue
+        seen.add(team_key)
+        if normalized and frozen._normalize_name(candidate.get("full_name")) == normalized:
+            matches.append(candidate)
+    if len(matches) == 1:
+        return matches[0]
+
+    raise frozen.WNBAAvailabilityUpstreamError(
+        f"Official WNBA injury report exposed an unrecognized team cell: {clean!r}."
+    )
 
 
 def _game_datetime_eastern(game: dict[str, Any]) -> datetime | None:
