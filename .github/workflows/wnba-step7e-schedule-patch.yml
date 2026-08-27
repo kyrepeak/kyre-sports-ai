@@ -54,42 +54,38 @@ jobs:
           text = text.replace(old_constants, new_constants)
 
           old_doc = '"""Fetch official schedule data, preferring the WNBA CDN with stats fallback."""'
-          new_doc = '''"""Fetch official schedule data from WNBA.com with current-CDN fallback.
-
-              The legacy stats.wnba.com scheduleLeagueV2 transport is deliberately
-              excluded so cloud deployments do not block on the retired endpoint.
-              """'''.replace('              ', '    ')
+          new_doc = (
+              '"""Fetch official schedule data from WNBA.com with current-CDN fallback.\n\n'
+              '    The legacy stats.wnba.com scheduleLeagueV2 transport is deliberately\n'
+              '    excluded so cloud deployments do not block on the retired endpoint.\n'
+              '    """'
+          )
           if text.count(old_doc) != 1:
               raise SystemExit('Could not uniquely locate schedule fetch docstring.')
           text = text.replace(old_doc, new_doc)
 
-          old_requests = '''    requests_to_try = (
-              (
-                  "wnba_cdn_schedule",
-                  WNBA_CDN_SCHEDULE_URL,
-                  None,
-              ),
-              (
-                  "wnba_stats_scheduleleaguev2",
-                  WNBA_STATS_SCHEDULE_URL,
-                  [("LeagueID", WNBA_LEAGUE_ID), ("Season", str(season))],
-              ),
-          )'''
-          new_requests = '''    requests_to_try = (
-              (
-                  "wnba_public_schedule_api",
-                  WNBA_PUBLIC_SCHEDULE_API_URL,
-                  [("season", str(season)), ("regionId", "1")],
-              ),
-              (
-                  "wnba_cdn_schedule",
-                  WNBA_CDN_SCHEDULE_URL,
-                  None,
-              ),
-          )'''
-          if text.count(old_requests) != 1:
-              raise SystemExit('Could not uniquely locate official schedule request sequence.')
-          text = text.replace(old_requests, new_requests)
+          request_start = text.find('    requests_to_try = (\n')
+          request_end = text.find('\n\n    payload = None', request_start)
+          if request_start < 0 or request_end < 0:
+              raise SystemExit('Could not locate official schedule request sequence markers.')
+          old_request_region = text[request_start:request_end]
+          if 'wnba_stats_scheduleleaguev2' not in old_request_region:
+              raise SystemExit('Expected retired stats transport was not found in request region.')
+          new_request_region = '\n'.join([
+              '    requests_to_try = (',
+              '        (',
+              '            "wnba_public_schedule_api",',
+              '            WNBA_PUBLIC_SCHEDULE_API_URL,',
+              '            [("season", str(season)), ("regionId", "1")],',
+              '        ),',
+              '        (',
+              '            "wnba_cdn_schedule",',
+              '            WNBA_CDN_SCHEDULE_URL,',
+              '            None,',
+              '        ),',
+              '    )',
+          ])
+          text = text[:request_start] + new_request_region + text[request_end:]
           schedule.write_text(text, encoding='utf-8')
 
           tests = Path('sports_api/tests/test_wnba_schedule.py')
@@ -110,12 +106,10 @@ jobs:
               '    def test_fetch_falls_back_to_stats_schedule_endpoint(self, mock_get):'
           )
           start = text.find(marker)
-          if start < 0:
-              raise SystemExit('Could not locate retired-stats fallback unit test.')
           end_marker = '\n\n\nif __name__ == "__main__":'
           end = text.find(end_marker, start)
-          if end < 0:
-              raise SystemExit('Could not locate unit-test module footer.')
+          if start < 0 or end < 0:
+              raise SystemExit('Could not locate retired-stats unit-test region.')
 
           replacement = '''    @patch("sports_api.wnba_schedule.httpx.get")
               def test_fetch_prefers_public_wnba_schedule_api(self, mock_get):
