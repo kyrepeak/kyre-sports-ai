@@ -158,6 +158,6 @@ jobs:
           workflow = Path('.github/workflows/wnba-step-6s.yml').read_text(encoding='utf-8').lower()
           assert 'render api' not in workflow
           assert 'workflow_dispatch' in workflow
-          assert 'supabase_secret_key: ${{' not in workflow
+          assert 'secrets.' not in workflow
           print('Step 6S certification contains no live hosting or Supabase activation action.')
           PY
