@@ -1,0 +1,125 @@
+name: WNBA Step 6M owned-feed scheduler orchestration
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/api/wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/api/wnba_pregame_board_scheduler_staging_activation.py'
+      - 'sports_api/tests/test_wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/tests/test_wnba_staging_activation_gate.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6m.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/api/wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/api/wnba_pregame_board_scheduler_staging_activation.py'
+      - 'sports_api/tests/test_wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/tests/test_wnba_staging_activation_gate.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6m.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6m-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6m-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact Step 6M revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6M orchestration
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6m_scheduler_orchestration.py \
+            sports_api/api/wnba_step6m_scheduler_orchestration.py \
+            sports_api/api/wnba_pregame_board_scheduler_staging_activation.py \
+            sports_api/main.py
+
+      - name: Run Step 6M deterministic orchestration tests
+        run: python -m unittest sports_api.tests.test_wnba_step6m_scheduler_orchestration
+
+      - name: Run frozen Step 5Q locking regression
+        run: python -m unittest sports_api.tests.test_wnba_scheduler_cycle_lock
+
+      - name: Run Step 5W through Step 6K activation regressions
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_staging_activation_gate \
+            sports_api.tests.test_wnba_staging_activation_routes \
+            sports_api.tests.test_wnba_step6k_activation_preflight
+
+      - name: Run Step 6L refresh authority regression
+        run: python -m unittest sports_api.tests.test_wnba_step6l_production_feed_refresh
+
+      - name: Prove distributed ownership precedes refresh and paid providers are impossible
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/wnba_step6m_scheduler_orchestration.py').read_text(encoding='utf-8').lower()
+          transport = Path('sports_api/api/wnba_pregame_board_scheduler_staging_activation.py').read_text(encoding='utf-8').lower()
+          api = Path('sports_api/api/wnba_step6m_scheduler_orchestration.py').read_text(encoding='utf-8').lower()
+
+          assert 'step5q._run_cycle_with_distributed_lock' in core
+          assert 'refresh_step6l_owned_market_feed' in core
+          assert 'provider_ids=[kyre_provider_id]' in core
+          assert 'paid_provider_fallback_allowed' in core
+          assert 'run_step6m_background_cycle()' in transport
+          assert 'run_step6m_manual_cycle(' in transport
+          assert 'step5q._run_one_background_cycle()' not in transport
+          assert 'step5q.refresh_current_wnba_player_prop_board(' not in transport
+          assert '@router.post' not in api
+
+          for token in ('collect_sportsgameodds_feed(', 'place_wager(', 'put_env_var(', 'trigger_deploy('):
+              assert token not in core, token
+
+          print('Step 6M preserves Step 5Q ownership, forces Kyre-only market input, and adds no public mutation/deployment bypass.')
+          PY
+
+      - name: Prove CI executes no live refresh or model cycle
+        shell: bash
+        run: |
+          python - <<'PY'
+          from unittest.mock import MagicMock, patch
+          import sports_api.wnba_step6m_scheduler_orchestration as s
+
+          blocked = {
+              'production_refresh_ready': False,
+              'production_refresh_enabled': False,
+              'market_provider_mode': 'kyre',
+              'global_temporary_write_switches_off': True,
+              'step_6k': {'scheduler_authorized': False},
+              'blocking_reasons': ['Step 6J durable canary remains deferred'],
+          }
+          refresh = MagicMock()
+          model = MagicMock()
+          with patch.object(s, 'get_step6l_production_refresh_status', return_value=blocked):
+              try:
+                  s.run_step6m_background_cycle(env={}, refresher=refresh, cycle_runner=model)
+              except s.WNBAStep6MOrchestrationNotReadyError:
+                  pass
+              else:
+                  raise AssertionError('Step 6M unexpectedly escaped the deferred production gate')
+          refresh.assert_not_called()
+          model.assert_not_called()
+          print('Deferred/no-hosting CI performed no DraftKings refresh, Monte Carlo cycle, publication, or wager action.')
+          PY
