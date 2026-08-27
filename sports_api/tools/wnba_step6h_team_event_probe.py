@@ -1,12 +1,10 @@
-"""Sanitized Step 6H probe: DK events vs official WNBA team/game-page evidence."""
+"""Sanitized Step 6H probe: timezone-aware DK events vs official WNBA schedules."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from html.parser import HTMLParser
 import json
-import re
 from typing import Any
-from urllib.parse import urljoin, urlparse
 
 import httpx
 
@@ -19,7 +17,7 @@ from sports_api.wnba_official_reconciliation import _name_key, extract_draftking
 from sports_api.wnba_official_reconciliation_live import TEAM_ROSTER_HOSTS
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"
-GAME_ID_RE = re.compile(r"(?<!\d)(10\d{8})(?!\d)")
+MAX_PAIR_DATE_DISTANCE = 1200
 
 DK_TEAM_ALIASES = {
     "atl dream": "Atlanta Dream", "atlanta dream": "Atlanta Dream",
@@ -42,17 +40,10 @@ DK_TEAM_ALIASES = {
 }
 
 
-class PageParser(HTMLParser):
+class TextParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.parts: list[str] = []
-        self.hrefs: list[str] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag.casefold() == "a":
-            for key, value in attrs:
-                if key.casefold() == "href" and value:
-                    self.hrefs.append(str(value))
 
     def handle_data(self, data: str) -> None:
         text = str(data).strip()
@@ -85,25 +76,63 @@ def _event_teams(event: dict[str, Any]) -> list[str]:
     return resolved[:2]
 
 
-def _date_markers(value: str | None) -> list[str]:
-    if not value:
+def _candidate_local_dates(utc_calendar_date: str | None) -> list[str]:
+    if not utc_calendar_date:
         return []
     try:
-        day = datetime.strptime(value, "%Y-%m-%d")
+        day = datetime.strptime(utc_calendar_date, "%Y-%m-%d")
     except ValueError:
         return []
-    return [
-        value.casefold(),
-        day.strftime("%B %-d").casefold(),
-        day.strftime("%b %-d").casefold(),
+    # WNBA games are in North American time zones. A late local game can fall
+    # on the following UTC calendar date, so Step 6H checks both values.
+    return [(day - timedelta(days=1)).strftime("%Y-%m-%d"), day.strftime("%Y-%m-%d")]
+
+
+def _date_markers(value: str) -> list[str]:
+    day = datetime.strptime(value, "%Y-%m-%d")
+    raw = [
+        value,
+        day.strftime("%B %d"),
+        day.strftime("%B %-d"),
+        day.strftime("%b %d"),
+        day.strftime("%b %-d"),
         f"{day.month}/{day.day}",
         f"{day.month:02d}/{day.day:02d}",
+        f"{day.month}-{day.day}",
+        f"{day.month:02d}-{day.day:02d}",
     ]
+    return sorted({_name_key(marker) for marker in raw if _name_key(marker)})
 
 
-def _page(team_name: str, path: str) -> dict[str, Any]:
+def _positions(text: str, token: str) -> list[int]:
+    out: list[int] = []
+    start = 0
+    while token:
+        pos = text.find(token, start)
+        if pos < 0:
+            break
+        out.append(pos)
+        start = pos + 1
+    return out
+
+
+def _pair_date_distance(text: str, opponent: str, local_date: str) -> int | None:
+    opponent_key = _name_key(opponent)
+    opponent_tokens = {opponent_key, _name_key(opponent.split()[-1])}
+    opponent_positions = [
+        pos for token in opponent_tokens if token for pos in _positions(text, token)
+    ]
+    date_positions = [
+        pos for marker in _date_markers(local_date) for pos in _positions(text, marker)
+    ]
+    if not opponent_positions or not date_positions:
+        return None
+    return min(abs(a - b) for a in opponent_positions for b in date_positions)
+
+
+def _page(team_name: str) -> dict[str, Any]:
     host = TEAM_ROSTER_HOSTS[_name_key(team_name)]
-    url = f"https://{host}{path}"
+    url = f"https://{host}/schedule"
     headers = {
         "Accept": "text/html,application/xhtml+xml",
         "Accept-Language": "en-US,en;q=0.9",
@@ -111,52 +140,12 @@ def _page(team_name: str, path: str) -> dict[str, Any]:
     }
     with httpx.Client(timeout=15.0, follow_redirects=True, headers=headers) as client:
         response = client.get(url)
-    parser = PageParser()
+    parser = TextParser()
     parser.feed(response.text)
-    visible = _name_key(" ".join(parser.parts))
-    raw = response.text.casefold()
-    start = visible.find("upcoming games")
-    if start < 0:
-        start = visible.find("upcoming")
-    if start < 0:
-        start = visible.find("schedule")
-    end = min(len(visible), start + 18000) if start >= 0 else 0
-    upcoming = visible[start:end] if start >= 0 else ""
-
-    game_links: list[dict[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
-    for href in parser.hrefs:
-        absolute = urljoin(str(response.url), href)
-        parsed = urlparse(absolute)
-        if "/game/" not in parsed.path.casefold():
-            continue
-        match = GAME_ID_RE.search(parsed.path)
-        item = ((parsed.hostname or "").casefold(), parsed.path)
-        if item in seen:
-            continue
-        seen.add(item)
-        game_links.append({"host": item[0], "path": item[1], "game_id": match.group(1) if match else None})
-        if len(game_links) >= 80:
-            break
-
-    raw_game_ids = sorted(set(GAME_ID_RE.findall(raw)))[:100]
     return {
         "host": host,
-        "path": path,
         "status": response.status_code,
-        "visible": visible,
-        "raw": raw,
-        "upcoming": upcoming,
-        "upcoming_marker_present": start >= 0,
-        "game_links": game_links,
-        "raw_game_ids": raw_game_ids,
-        "serialized_markers": {
-            "game_id_token": "gameid" in raw or "game_id" in raw,
-            "schedule_league_v2": "scheduleleaguev2" in raw,
-            "cdn_wnba": "cdn.wnba.com" in raw,
-            "stats_wnba": "stats.wnba.com" in raw,
-            "next_data": "__next_data__" in raw,
-        },
+        "visible": _name_key(" ".join(parser.parts)),
     }
 
 
@@ -169,61 +158,59 @@ def main() -> int:
             events[event["source_event_id"]] = event
 
     rows = []
-    page_cache: dict[tuple[str, str], dict[str, Any]] = {}
+    page_cache: dict[str, dict[str, Any]] = {}
     for event_id, event in sorted(events.items()):
         participants = _event_teams(event)
+        candidate_dates = _candidate_local_dates(event.get("event_date"))
         checks = []
-        discovered_game_ids: set[str] = set()
         if len(participants) == 2:
             for team in participants:
                 opponent = participants[1] if team == participants[0] else participants[0]
-                root = page_cache.setdefault((team, "/"), _page(team, "/"))
-                schedule = page_cache.setdefault((team, "/schedule"), _page(team, "/schedule"))
-                date_markers = _date_markers(event.get("event_date"))
-                ids = sorted(set(root["raw_game_ids"]) | set(schedule["raw_game_ids"]))
-                discovered_game_ids.update(ids)
+                page = page_cache.setdefault(team, _page(team))
+                date_rows = []
+                for local_date in candidate_dates:
+                    distance = _pair_date_distance(page["visible"], opponent, local_date)
+                    date_rows.append({
+                        "local_date": local_date,
+                        "pair_date_distance": distance,
+                        "pair_date_near": distance is not None and distance <= MAX_PAIR_DATE_DISTANCE,
+                    })
+                near_dates = [row["local_date"] for row in date_rows if row["pair_date_near"]]
                 checks.append({
                     "team": team,
-                    "host": root["host"],
-                    "root_http_status": root["status"],
-                    "schedule_http_status": schedule["status"],
-                    "opponent_in_root": _name_key(opponent) in root["visible"],
-                    "opponent_in_upcoming": _name_key(opponent) in root["upcoming"],
-                    "opponent_in_schedule_page": _name_key(opponent) in schedule["visible"],
-                    "dk_utc_date_marker_in_root": any(marker in root["raw"] for marker in date_markers),
-                    "dk_utc_date_marker_in_schedule": any(marker in schedule["raw"] for marker in date_markers),
-                    "anchor_game_link_count": len(root["game_links"]) + len(schedule["game_links"]),
-                    "raw_game_id_count": len(ids),
-                    "raw_game_ids": ids[:40],
-                    "root_serialized_markers": root["serialized_markers"],
-                    "schedule_serialized_markers": schedule["serialized_markers"],
+                    "host": page["host"],
+                    "http_status": page["status"],
+                    "opponent_in_schedule_page": _name_key(opponent) in page["visible"],
+                    "candidate_dates": date_rows,
+                    "near_local_dates": near_dates,
                 })
+        common_dates = set(candidate_dates)
+        for check in checks:
+            common_dates &= set(check["near_local_dates"])
         rows.append({
             "source_event_id": event_id,
             "event_name": event.get("event_name"),
             "draftkings_utc_calendar_date": event.get("event_date"),
-            "raw_participants": event.get("participants") or [],
             "resolved_participants": participants,
+            "candidate_local_dates": candidate_dates,
             "checks": checks,
-            "discovered_game_ids": sorted(discovered_game_ids),
-            "both_team_pages_confirm_opponent": len(checks) == 2 and all(
-                row["root_http_status"] == 200 and row["schedule_http_status"] == 200
-                and (row["opponent_in_upcoming"] or row["opponent_in_schedule_page"])
-                for row in checks
-            ),
+            "common_official_local_dates": sorted(common_dates),
+            "unique_mutual_local_date": len(common_dates) == 1,
+            "mutual_official_local_date": sorted(common_dates)[0] if len(common_dates) == 1 else None,
         })
 
     report = {
-        "data_type": "wnba_step6h_official_team_event_probe",
+        "data_type": "wnba_step6h_timezone_aware_official_schedule_probe",
         "event_count": len(rows),
         "events": rows,
-        "all_events_confirmed_by_both_official_team_pages": bool(rows)
-        and all(row["both_team_pages_confirm_opponent"] for row in rows),
+        "all_events_have_unique_mutual_official_local_date": bool(rows)
+        and all(row["unique_mutual_local_date"] for row in rows),
+        "max_pair_date_distance": MAX_PAIR_DATE_DISTANCE,
         "safety": {
             "http_methods": ["GET"],
             "authentication_used": False,
             "raw_page_content_returned": False,
-            "only_sanitized_identifiers_returned": True,
+            "production_feed_written": False,
         },
     }
     print(json.dumps(report, indent=2, sort_keys=True))
