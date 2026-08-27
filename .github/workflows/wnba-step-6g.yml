@@ -1,0 +1,119 @@
+name: WNBA Step 6G DraftKings shadow ingestion gate
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_draftkings_shadow_ingestion.py'
+      - 'sports_api/api/wnba_draftkings_direct.py'
+      - 'sports_api/tools/wnba_draftkings_shadow_probe.py'
+      - 'sports_api/tests/test_wnba_draftkings_shadow_ingestion.py'
+      - 'sports_api/tests/test_wnba_draftkings_shadow_ingestion_routes.py'
+      - '.github/workflows/wnba-step-6g.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_draftkings_shadow_ingestion.py'
+      - 'sports_api/api/wnba_draftkings_direct.py'
+      - 'sports_api/tools/wnba_draftkings_shadow_probe.py'
+      - 'sports_api/tests/test_wnba_draftkings_shadow_ingestion.py'
+      - 'sports_api/tests/test_wnba_draftkings_shadow_ingestion_routes.py'
+      - '.github/workflows/wnba-step-6g.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  step6g-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Compile Step 6G modules
+        run: |
+          python -m py_compile \
+            sports_api/wnba_draftkings_shadow_ingestion.py \
+            sports_api/api/wnba_draftkings_direct.py \
+            sports_api/tools/wnba_draftkings_shadow_probe.py
+      - name: Run Step 6G deterministic tests
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_shadow_ingestion sports_api.tests.test_wnba_draftkings_shadow_ingestion_routes
+      - name: Run Step 6F discovery regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_prop_market_discovery
+      - name: Run Step 6E discovery regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_endpoint_discovery sports_api.tests.test_wnba_draftkings_endpoint_discovery_routes
+      - name: Run Step 6D direct collector regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_direct sports_api.tests.test_wnba_step6d_direct_integration
+      - name: Run Step 6C owned-feed regression
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed sports_api.tests.test_wnba_kyre_market_feed_routes
+      - name: Run frozen Step 5O regression
+        run: python -m unittest sports_api.tests.test_wnba_prop_feed_failover
+      - name: Run frozen Step 5P regression
+        run: python -m unittest sports_api.tests.test_wnba_pregame_board_scheduler
+      - name: Run frozen Step 5R regression
+        run: python -m unittest sports_api.tests.test_wnba_production_runtime_readiness
+      - name: Prove Step 6G stays shadow-only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files = [Path('sports_api/wnba_draftkings_shadow_ingestion.py'), Path('sports_api/tools/wnba_draftkings_shadow_probe.py')]
+          joined = '\n'.join(p.read_text(encoding='utf-8') for p in files).lower()
+          assert '.post(' not in joined
+          assert 'sportsgameodds_api_key' not in joined
+          assert 'wnba_production_runtime_enabled=true' not in joined
+          assert 'wnba_kyre_direct_sync_enabled=true' not in joined
+          assert 'sync_draftkings_to_kyre_feed(' not in joined
+          print('Step 6G is GET-only, production-feed-write-free, scheduler-off, vendor-free, and Monte-Carlo-free.')
+          PY
+
+  live-shadow-probe:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: step6g-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Run full live DraftKings shadow ingestion
+        env:
+          WNBA_DRAFTKINGS_REQUEST_TIMEOUT_SECONDS: '10'
+        run: |
+          mkdir -p .wnba-step6g-shadow
+          python -m sports_api.tools.wnba_draftkings_shadow_probe --output .wnba-step6g-shadow/live-shadow.json
+      - name: Print sanitized Step 6G evidence
+        run: |
+          python - <<'PY'
+          import json
+          report = json.load(open('.wnba-step6g-shadow/live-shadow.json', encoding='utf-8'))
+          print('ready_for_auto_sync=', report.get('ready_for_auto_sync'))
+          print('offer_side_count=', report.get('offer_side_count'))
+          print('two_sided_player_line_count=', report.get('two_sided_player_line_count'))
+          print('verified_event_count=', report.get('verified_event_count'))
+          print('blockers=', report.get('blockers'))
+          print('incomplete_pair_count=', report.get('incomplete_pair_count'))
+          print('cross_game_market_count=', report.get('cross_game_market_count'))
+          print('duplicate_source_offer_id_count=', report.get('duplicate_source_offer_id_count'))
+          for stat, row in (report.get('stat_summary') or {}).items():
+              print('stat', stat, row.get('two_sided_player_line_count'), row.get('offer_side_count'))
+          print('validation_fingerprint_sha256=', report.get('validation_fingerprint_sha256'))
+          PY
+      - name: Upload sanitized Step 6G live shadow evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6g-live-shadow-${{ github.run_id }}
+          path: .wnba-step6g-shadow/live-shadow.json
+          if-no-files-found: error
+          retention-days: 30
