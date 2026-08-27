@@ -43,7 +43,7 @@ from sports_api.wnba_step7g_first_party_rosters import (
 from sports_api.wnba_step7g_first_party_schedule_context import (
     get_step7g_step4n_season_schedule_dataset,
 )
-from sports_api.wnba_step7g_first_party_shot_context import (
+from sports_api.wnba_step7g_first_party_shot_context_identity_safe import (
     get_first_party_opponent_defense_by_shot_zone_dataset,
     get_first_party_player_shot_chart_dataset,
 )
