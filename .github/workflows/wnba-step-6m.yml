@@ -69,7 +69,7 @@ jobs:
       - name: Run Step 6L refresh authority regression
         run: python -m unittest sports_api.tests.test_wnba_step6l_production_feed_refresh
 
-      - name: Prove distributed ownership precedes refresh and paid providers are impossible
+      - name: Prove Step 5P guards precede refresh and paid providers are impossible
         shell: bash
         run: |
           python - <<'PY'
@@ -81,7 +81,13 @@ jobs:
 
           assert 'step5q._run_cycle_with_distributed_lock' in core
           assert 'refresh_step6l_owned_market_feed' in core
-          assert 'provider_ids=[kyre_provider_id]' in core
+          assert 'failover_collector=refreshing_failover_collector' in core
+          assert 'step_5p_due_guard_precedes_network_refresh' in core
+          assert 'official_slate_guard_precedes_network_refresh' in core
+          assert 'provider_spacing_guard_precedes_network_refresh' in core
+          assert 'not_due_cycle_refreshes_feed' in core
+          assert 'empty_or_closed_official_slate_refreshes_feed' in core
+          assert 'provider_spacing_guarded_cycle_refreshes_feed' in core
           assert 'paid_provider_fallback_allowed' in core
           assert 'run_step6m_background_cycle()' in transport
           assert 'run_step6m_manual_cycle(' in transport
@@ -92,7 +98,7 @@ jobs:
           for token in ('collect_sportsgameodds_feed(', 'place_wager(', 'put_env_var(', 'trigger_deploy('):
               assert token not in core, token
 
-          print('Step 6M preserves Step 5Q ownership, forces Kyre-only market input, and adds no public mutation/deployment bypass.')
+          print('Step 6M preserves Step 5P pre-provider guards and Step 5Q ownership, refreshes only at provider collection, and forces Kyre-only market input.')
           PY
 
       - name: Prove CI executes no live refresh or model cycle
