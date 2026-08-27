@@ -1,12 +1,16 @@
-"""Certify whether official WNBA liveData can reconstruct exact rotation stints.
+"""Certify exact WNBA rotation boundaries from already-certified page data.
 
-This diagnostic uses only first-party WNBA liveData:
-- completed-game box score for official starter flags and final player minutes
-- completed-game play-by-play for official substitution timestamps/descriptions
+The historical liveData box-score URL is not reliably JSON-reachable from our
+runner, so this proof intentionally uses the first-party WNBA.com page bridge
+that Step 7G has already certified:
 
-It replays each team's substitutions from the five official starters, measures
-tracked seconds for every player, and rejects any inconsistency. No production
-provider is changed and no betting/model state is touched.
+- official traditional box score -> starter flags + exact final minutes
+- official play-by-play -> every substitution + exact period/clock timestamp
+
+Starting from the five official starters, each substitution is replayed in
+source order. The proof fails closed unless the lineup remains exactly five,
+every in/out transition is legal, and every reconstructed player second agrees
+with the official box score. No production provider is changed here.
 """
 from __future__ import annotations
 
@@ -17,9 +21,9 @@ from pathlib import Path
 import re
 from typing import Any
 
-from sports_api.wnba_live_game import (
-    get_live_game_state_dataset,
-    get_play_by_play_dataset,
+from sports_api.wnba_step7g_first_party_history import (
+    get_first_party_game_box_score_dataset,
+    get_first_party_play_by_play_dataset,
 )
 
 GAME_ID = "1022600288"
@@ -34,33 +38,11 @@ OFF_ENV = (
     "WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED",
 )
 SUB_RE = re.compile(r"^SUB:\s*(.+?)\s+FOR\s+(.+?)\s*$", re.I)
+TOLERANCE_SECONDS = 0.11
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _starter(value: Any) -> bool:
-    return str(value or "").strip().casefold() in {"1", "true", "yes", "y"}
-
-
-def _minutes_seconds(value: Any) -> float | None:
-    text = str(value or "").strip()
-    if not text:
-        return None
-    match = re.fullmatch(
-        r"PT(?:(?P<h>\d+(?:\.\d+)?)H)?(?:(?P<m>\d+(?:\.\d+)?)M)?(?:(?P<s>\d+(?:\.\d+)?)S)?",
-        text,
-        re.I,
-    )
-    if not match:
-        return None
-    return round(
-        float(match.group("h") or 0) * 3600
-        + float(match.group("m") or 0) * 60
-        + float(match.group("s") or 0),
-        3,
-    )
 
 
 def _norm_name(value: Any) -> str:
@@ -72,12 +54,11 @@ def _period_length(period: int) -> float:
     return 600.0 if period <= 4 else 300.0
 
 
-def _game_end(actions: list[dict[str, Any]], state: dict[str, Any]) -> float:
+def _game_end(actions: list[dict[str, Any]]) -> float:
     periods = [int(action["period"]) for action in actions if action.get("period")]
-    state_period = state.get("period")
-    if isinstance(state_period, int) and state_period > 0:
-        periods.append(state_period)
     final_period = max(periods or [4])
+    if final_period < 4:
+        final_period = 4
     return sum(_period_length(period) for period in range(1, final_period + 1))
 
 
@@ -88,13 +69,14 @@ def _player_lookup(players: list[dict[str, Any]]) -> dict[str, list[int]]:
         if not isinstance(player_id, int):
             continue
         forms = {
-            _norm_name(player.get("family_name")),
-            _norm_name(player.get("name")),
+            _norm_name(player.get("last_name")),
+            _norm_name(player.get("full_name")),
+            _norm_name(player.get("name_initial")),
             _norm_name(
                 " ".join(
                     value for value in (
                         str(player.get("first_name") or "").strip(),
-                        str(player.get("family_name") or "").strip(),
+                        str(player.get("last_name") or "").strip(),
                     ) if value
                 )
             ),
@@ -121,6 +103,27 @@ def _resolve_incoming(label: str, lookup: dict[str, list[int]]) -> tuple[int | N
     return None, "unresolved_or_ambiguous"
 
 
+def _roster_name(player_id: int, players: list[dict[str, Any]]) -> str:
+    player = next((item for item in players if item.get("player_id") == player_id), None)
+    return str(player.get("full_name") or player.get("name_initial") or player_id) if player else str(player_id)
+
+
+def _outgoing_label_matches(
+    outgoing_label: str,
+    outgoing_id: int,
+    players: list[dict[str, Any]],
+) -> bool:
+    player = next((item for item in players if item.get("player_id") == outgoing_id), None)
+    if player is None:
+        return False
+    label = _norm_name(outgoing_label)
+    return label in {
+        _norm_name(player.get("last_name")),
+        _norm_name(player.get("full_name")),
+        _norm_name(player.get("name_initial")),
+    }
+
+
 def _simulate_side(
     side: str,
     team: dict[str, Any],
@@ -128,10 +131,17 @@ def _simulate_side(
     game_end: float,
 ) -> dict[str, Any]:
     players = [player for player in team.get("players", []) if isinstance(player, dict)]
-    starters = [player["player_id"] for player in players if _starter(player.get("starter"))]
+    starters = [
+        player["player_id"]
+        for player in players
+        if player.get("is_starter") is True and isinstance(player.get("player_id"), int)
+    ]
     lookup = _player_lookup(players)
     official_seconds = {
-        player["player_id"]: _minutes_seconds(player.get("statistics", {}).get("minutes"))
+        player["player_id"]: (
+            round(float(player.get("stats", {}).get("minutes")) * 60.0, 3)
+            if player.get("stats", {}).get("minutes") is not None else None
+        )
         for player in players
         if isinstance(player.get("player_id"), int)
     }
@@ -142,9 +152,11 @@ def _simulate_side(
     tracked = {player_id: 0.0 for player_id in official_seconds}
     current = set(starters)
     last_elapsed = 0.0
-    substitutions = []
-    errors = []
-    stint_boundaries: dict[int, list[tuple[float, float]]] = {player_id: [] for player_id in official_seconds}
+    substitutions: list[dict[str, Any]] = []
+    errors: list[str] = []
+    stint_boundaries: dict[int, list[tuple[float, float]]] = {
+        player_id: [] for player_id in official_seconds
+    }
     open_since = {player_id: 0.0 for player_id in current}
 
     team_key = team.get("team_key")
@@ -163,6 +175,7 @@ def _simulate_side(
         if elapsed < last_elapsed - 1e-6:
             errors.append("substitution_time_moved_backward")
             continue
+
         duration = elapsed - last_elapsed
         for player_id in current:
             tracked[player_id] = tracked.get(player_id, 0.0) + duration
@@ -173,25 +186,30 @@ def _simulate_side(
         if not match:
             errors.append(f"unparsed_substitution:{description}")
             continue
+
         incoming_label, outgoing_label = match.group(1), match.group(2)
         outgoing_id = action.get("person_id")
         incoming_id, incoming_resolution = _resolve_incoming(incoming_label, lookup)
         if not isinstance(outgoing_id, int):
             errors.append(f"missing_outgoing_id:{description}")
             continue
+        if outgoing_id not in official_seconds:
+            errors.append(f"outgoing_not_on_roster:{description}:{outgoing_id}")
+            continue
         if incoming_id is None:
             errors.append(f"unresolved_incoming:{description}")
             continue
-        outgoing_name_matches = _norm_name(outgoing_label) in {
-            _norm_name(next((p.get("family_name") for p in players if p.get("player_id") == outgoing_id), "")),
-            _norm_name(next((p.get("name") for p in players if p.get("player_id") == outgoing_id), "")),
-        }
+        if incoming_id not in official_seconds:
+            errors.append(f"incoming_not_on_roster:{description}:{incoming_id}")
+            continue
+        if not _outgoing_label_matches(outgoing_label, outgoing_id, players):
+            errors.append(f"outgoing_name_id_mismatch:{description}:{outgoing_id}")
+        if len(current) != 5:
+            errors.append(f"pre_sub_lineup_count:{len(current)}:{description}")
         if outgoing_id not in current:
             errors.append(f"outgoing_not_on_court:{description}:{outgoing_id}")
         if incoming_id in current:
             errors.append(f"incoming_already_on_court:{description}:{incoming_id}")
-        if len(current) != 5:
-            errors.append(f"pre_sub_lineup_count:{len(current)}")
 
         if outgoing_id in current:
             current.remove(outgoing_id)
@@ -199,10 +217,11 @@ def _simulate_side(
             if start is not None:
                 stint_boundaries.setdefault(outgoing_id, []).append((start, elapsed))
         current.add(incoming_id)
-        open_since[incoming_id] = elapsed
+        if incoming_id not in open_since:
+            open_since[incoming_id] = elapsed
 
         if len(current) != 5:
-            errors.append(f"post_sub_lineup_count:{len(current)}")
+            errors.append(f"post_sub_lineup_count:{len(current)}:{description}")
         substitutions.append({
             "action_number": action.get("action_number"),
             "elapsed_game_seconds": elapsed,
@@ -214,7 +233,7 @@ def _simulate_side(
             "incoming_resolution": incoming_resolution,
             "outgoing_label": outgoing_label,
             "outgoing_player_id": outgoing_id,
-            "outgoing_name_matches_roster": outgoing_name_matches,
+            "outgoing_name_id_match": _outgoing_label_matches(outgoing_label, outgoing_id, players),
             "lineup_count_after": len(current),
         })
 
@@ -229,9 +248,9 @@ def _simulate_side(
             if start is not None:
                 stint_boundaries.setdefault(player_id, []).append((start, game_end))
 
-    comparisons = []
+    comparisons: list[dict[str, Any]] = []
     max_abs_delta = 0.0
-    unmatched = []
+    unmatched: list[int] = []
     for player in players:
         player_id = player.get("player_id")
         if not isinstance(player_id, int):
@@ -241,36 +260,35 @@ def _simulate_side(
         delta = None if official is None else round(reconstructed - official, 3)
         if delta is not None:
             max_abs_delta = max(max_abs_delta, abs(delta))
-            if abs(delta) > 0.11:
+            if abs(delta) > TOLERANCE_SECONDS:
                 unmatched.append(player_id)
         comparisons.append({
             "player_id": player_id,
-            "player_name": player.get("name") or " ".join(
-                value for value in (player.get("first_name"), player.get("family_name")) if value
-            ),
-            "starter": _starter(player.get("starter")),
-            "official_minutes_raw": player.get("statistics", {}).get("minutes"),
+            "player_name": _roster_name(player_id, players),
+            "is_starter": player.get("is_starter"),
+            "start_position": player.get("start_position"),
+            "official_minutes_raw": player.get("stats", {}).get("minutes_raw"),
             "official_seconds": official,
             "reconstructed_seconds": reconstructed,
             "delta_seconds": delta,
             "stints": [
-                {"in_elapsed_seconds": start, "out_elapsed_seconds": end, "duration_seconds": round(end-start, 3)}
+                {
+                    "in_elapsed_seconds": start,
+                    "out_elapsed_seconds": end,
+                    "duration_seconds": round(end - start, 3),
+                }
                 for start, end in stint_boundaries.get(player_id, [])
             ],
         })
 
     official_total = sum(value for value in official_seconds.values() if value is not None)
     reconstructed_total = sum(tracked.values())
-    final_on_court_ids = set(team.get("on_court_player_ids") or [])
-    final_on_court_verified = (
-        team.get("on_court_exactly_five") is True
-        and final_on_court_ids == current
-    )
-
+    final_count = len(current)
     return {
         "side": side,
         "team_key": team_key,
         "starter_ids": starters,
+        "starter_names": [_roster_name(player_id, players) for player_id in starters],
         "starter_count": len(starters),
         "official_active_player_ids": sorted(active_player_ids),
         "substitution_count": len(side_actions),
@@ -282,18 +300,20 @@ def _simulate_side(
         "official_total_player_seconds": round(official_total, 3),
         "reconstructed_total_player_seconds": round(reconstructed_total, 3),
         "expected_five_player_seconds": round(5 * game_end, 3),
-        "official_total_matches_five_player_invariant": abs(official_total - 5 * game_end) <= 0.11,
-        "reconstructed_total_matches_five_player_invariant": abs(reconstructed_total - 5 * game_end) <= 0.11,
-        "final_on_court_player_ids": sorted(final_on_court_ids),
-        "reconstructed_final_on_court_player_ids": sorted(current),
-        "final_on_court_verified": final_on_court_verified,
+        "official_total_matches_five_player_invariant": (
+            abs(official_total - 5 * game_end) <= TOLERANCE_SECONDS
+        ),
+        "reconstructed_total_matches_five_player_invariant": (
+            abs(reconstructed_total - 5 * game_end) <= TOLERANCE_SECONDS
+        ),
+        "reconstructed_final_lineup_count": final_count,
         "passed": (
             len(starters) == 5
+            and final_count == 5
             and not errors
             and not unmatched
-            and abs(official_total - 5 * game_end) <= 0.11
-            and abs(reconstructed_total - 5 * game_end) <= 0.11
-            and (final_on_court_verified or team.get("on_court_exactly_five") is not True)
+            and abs(official_total - 5 * game_end) <= TOLERANCE_SECONDS
+            and abs(reconstructed_total - 5 * game_end) <= TOLERANCE_SECONDS
         ),
     }
 
@@ -303,16 +323,16 @@ def main() -> None:
     if not all(off_state.values()):
         raise RuntimeError("Rotation reconstruction probe refused because production is not fully OFF.")
 
-    state_dataset = get_live_game_state_dataset(GAME_ID, SEASON)
-    pbp = get_play_by_play_dataset(GAME_ID, SEASON)
-    state = state_dataset["state"]
+    box = get_first_party_game_box_score_dataset(GAME_ID, SEASON)
+    pbp = get_first_party_play_by_play_dataset(GAME_ID, SEASON)
     actions = pbp["actions"]
-    game_end = _game_end(actions, state)
+    game_end = _game_end(actions)
 
-    away = _simulate_side("away", state["away"], actions, game_end)
-    home = _simulate_side("home", state["home"], actions, game_end)
+    away = _simulate_side("away", box["away"], actions, game_end)
+    home = _simulate_side("home", box["home"], actions, game_end)
     passed = (
-        state["status"]["category"] == "final"
+        box["verification"]["requested_game_id_matches_source"]
+        and box["verification"]["player_ids_unique"]
         and pbp["verification"]["action_ids_unique_when_present"]
         and pbp["verification"]["all_team_events_mapped_to_registry"]
         and away["passed"]
@@ -326,12 +346,11 @@ def main() -> None:
         "game_id": GAME_ID,
         "season": SEASON,
         "production_flags_off": off_state,
-        "source": "WNBA Official Live Data",
+        "source": "WNBA.com First-Party Page Data",
         "source_urls": {
-            "box_score": state_dataset["source_url"],
+            "box_score": box["source_url"],
             "play_by_play": pbp["source_url"],
         },
-        "status": state["status"],
         "game_end_elapsed_seconds": game_end,
         "play_by_play_action_count": pbp["source_action_count"],
         "away": away,
@@ -354,6 +373,8 @@ def main() -> None:
         "passed": passed,
         "away_passed": away["passed"],
         "home_passed": home["passed"],
+        "away_starters": away["starter_count"],
+        "home_starters": home["starter_count"],
         "away_max_delta_seconds": away["max_abs_player_minute_delta_seconds"],
         "home_max_delta_seconds": home["max_abs_player_minute_delta_seconds"],
         "away_substitutions": away["substitution_count"],
@@ -362,7 +383,9 @@ def main() -> None:
     }, sort_keys=True))
 
     if not passed:
-        raise RuntimeError("Official WNBA liveData did not reconcile to exact player minutes for the target game.")
+        raise RuntimeError(
+            "Certified WNBA.com box/PBP did not reconcile to exact player minutes for the target game."
+        )
 
 
 if __name__ == "__main__":
