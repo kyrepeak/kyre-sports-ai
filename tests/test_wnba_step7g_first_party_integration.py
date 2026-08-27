@@ -51,8 +51,8 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["certified_scope"]["core_model_input_readiness"] is True
             assert status["certified_scope"]["current_availability_daily_schedule"] is True
             assert status["certified_scope"]["current_availability_roster"] is True
-            assert status["certified_scope"]["current_availability_injury_report"] is False
-            assert status["certified_scope"]["current_availability"] is False
+            assert status["certified_scope"]["current_availability_injury_report"] is True
+            assert status["certified_scope"]["current_availability"] is True
             assert status["certified_scope"]["shot_context"] is False
             assert status["certified_scope"]["advanced_context"] is False
             assert status["certified_scope"]["officiating_context"] is False
