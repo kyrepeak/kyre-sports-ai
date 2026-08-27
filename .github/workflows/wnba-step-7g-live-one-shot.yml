@@ -1,0 +1,222 @@
+name: WNBA Step 7G approved live one-shot cycle
+
+on:
+  push:
+    branches:
+      - wnba-production-7g-one-shot-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-live-one-shot.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-live-one-shot-20260827
+  cancel-in-progress: false
+
+env:
+  CERTIFIED_STEP7G_REF: b600c640359cdb3b37dc512710600eb2e2d23db1
+  WNBA_KYRE_DURABLE_STORAGE_BACKEND: supabase
+  WNBA_KYRE_SUPABASE_URL: ${{ secrets.WNBA_KYRE_SUPABASE_URL }}
+  WNBA_KYRE_SUPABASE_SECRET_KEY: ${{ secrets.WNBA_KYRE_SUPABASE_SECRET_KEY }}
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  live-step7g-one-shot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact green Step 7G implementation
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.CERTIFIED_STEP7G_REF }}
+
+      - name: Verify exact certified revision
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$CERTIFIED_STEP7G_REF"
+          echo "Using certified Step 7G revision: $CERTIFIED_STEP7G_REF"
+
+      - name: Verify secrets are present without printing them
+        shell: bash
+        run: |
+          test -n "$WNBA_KYRE_SUPABASE_URL"
+          test -n "$WNBA_KYRE_SUPABASE_SECRET_KEY"
+          test "${#WNBA_KYRE_SUPABASE_SECRET_KEY}" -ge 20
+
+      - name: Verify all global activation switches begin OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Execute exactly one approved Step 7G cycle
+        id: activate
+        continue-on-error: true
+        shell: bash
+        env:
+          TARGET_DATE: '2026-08-27'
+          TARGET_SEASON: '2026'
+          ACTIVATION_ID: step7g-20260827-one-shot-v1
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from sports_api.tools.wnba_step7g_one_shot_activation import run_step7g_one_shot
+
+          out = Path('step7g-live-one-shot-evidence.json')
+          try:
+              result = run_step7g_one_shot(
+                  date=os.environ['TARGET_DATE'],
+                  season=int(os.environ['TARGET_SEASON']),
+                  activation_id=os.environ['ACTIVATION_ID'],
+              )
+          except Exception as exc:
+              result = {
+                  'status': 'failed',
+                  'activation_id': os.environ['ACTIVATION_ID'],
+                  'date': os.environ['TARGET_DATE'],
+                  'season': int(os.environ['TARGET_SEASON']),
+                  'error_type': type(exc).__name__,
+                  'error_message_returned': False,
+                  'secret_value_returned': False,
+                  'recurring_scheduler_started': False,
+              }
+              out.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+              raise
+          out.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps({
+              'status': result.get('status'),
+              'already_completed': result.get('already_completed'),
+              'activation_id': result.get('activation_id'),
+              'date': result.get('date'),
+              'season': result.get('season'),
+              'cycle_outcome': (result.get('cycle') or {}).get('outcome'),
+              'recurring_scheduler_started': (result.get('safety') or {}).get('recurring_scheduler_started'),
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Independently re-read durable Step 7G state
+        if: steps.activate.outcome == 'success'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from sports_api.wnba_step6q_durable_storage import FEED_OBJECT_KEY
+          from sports_api.wnba_step6r_supabase_storage import build_step6r_durable_storage
+          from sports_api.wnba_step7g_supabase_scheduler_storage import Step7GSupabaseSchedulerStore
+          from sports_api.tools.wnba_step7g_one_shot_activation import ACTIVATION_MARKER_KEY
+
+          result = json.loads(Path('step7g-live-one-shot-evidence.json').read_text(encoding='utf-8'))
+          storage = build_step6r_durable_storage(env=os.environ)
+          marker_raw = storage.read_bytes(ACTIVATION_MARKER_KEY)
+          marker = json.loads(marker_raw.decode('utf-8'))
+          feed = storage.read_bytes(FEED_OBJECT_KEY)
+          feed_sha = hashlib.sha256(feed).hexdigest()
+          store = Step7GSupabaseSchedulerStore(os.environ)
+          locks = store.active_scheduler_locks()
+          latest_run = store.get_latest_scheduler_run(date='2026-08-27', season=2026)
+          latest_publication = store.get_latest_publication(date='2026-08-27', season=2026, require_current=False)
+
+          assert result['status'] == 'completed'
+          assert marker['status'] == 'completed'
+          assert marker['activation_id'] == result['activation_id']
+          assert marker['post_cycle_feed_sha256'] == result['post_cycle_feed_sha256'] == feed_sha
+          assert locks == []
+          assert isinstance(latest_run, dict)
+          assert latest_run.get('run_id') == result['cycle']['scheduler_run_id']
+          if result['cycle']['board_rebuild_attempted'] is True:
+              assert isinstance(latest_publication, dict)
+          assert result['persistence']['publication_run_atomic_commit'] is True
+          assert result['persistence']['active_scheduler_locks'] == 0
+          assert result['safety']['recurring_scheduler_started'] is False
+          assert result['safety']['production_runtime_enabled'] is False
+          assert result['safety']['wager_action_performed'] is False
+          assert result['safety']['secret_value_returned'] is False
+          assert all(value is False for value in result['final_switch_state'].values())
+
+          verification = {
+              'status': 'verified',
+              'activation_id': result['activation_id'],
+              'activation_marker_sha256': hashlib.sha256(marker_raw).hexdigest(),
+              'post_cycle_feed_sha256': feed_sha,
+              'scheduler_run_id': latest_run.get('run_id'),
+              'publication_id': (latest_publication or {}).get('publication_id'),
+              'active_scheduler_locks': 0,
+              'all_global_switches_off': True,
+              'recurring_scheduler_started': False,
+              'production_runtime_enabled': False,
+              'secret_value_returned': False,
+          }
+          Path('step7g-live-post-verification.json').write_text(
+              json.dumps(verification, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(verification, indent=2, sort_keys=True))
+          PY
+
+      - name: Prove evidence contains no Supabase secret
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          secret = os.environ['WNBA_KYRE_SUPABASE_SECRET_KEY']
+          for name in ('step7g-live-one-shot-evidence.json', 'step7g-live-post-verification.json'):
+              path = Path(name)
+              if path.exists():
+                  assert secret not in path.read_text(encoding='utf-8')
+          print('Sanitized Step 7G evidence contains no Supabase secret value.')
+          PY
+
+      - name: Upload sanitized Step 7G evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-live-one-shot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            step7g-live-one-shot-evidence.json
+            step7g-live-post-verification.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Final Step 7G live gate
+        if: always()
+        shell: bash
+        run: |
+          test '${{ steps.activate.outcome }}' = 'success'
+          test -f step7g-live-post-verification.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('step7g-live-one-shot-evidence.json').read_text(encoding='utf-8'))
+          verify = json.loads(Path('step7g-live-post-verification.json').read_text(encoding='utf-8'))
+          assert result['status'] == 'completed'
+          assert verify['status'] == 'verified'
+          assert verify['active_scheduler_locks'] == 0
+          assert verify['all_global_switches_off'] is True
+          assert verify['recurring_scheduler_started'] is False
+          print('Step 7G live one-shot cycle passed all final gates.')
+          PY
