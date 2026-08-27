@@ -38,7 +38,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
 
-    def test_explicit_enable_installs_all_certified_core_and_candidate_shot_seams(self) -> None:
+    def test_explicit_enable_installs_all_certified_core_and_shot_seams(self) -> None:
         completed = self._run_child(
             """
             import sports_api.wnba_step7g_first_party_integration as integration
@@ -47,6 +47,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["all_core_seams_installed"] is True, status
             assert integration.INSTALLATION["installed"] is True, integration.INSTALLATION
             assert all(status["seams"].values()), status
+            assert status["model_version"] == "wnba_step_7g_first_party_core_integration_v7"
             assert status["seams"]["availability_daily_schedule"] is True
             assert status["seams"]["availability_current_roster"] is True
             assert status["seams"]["availability_injury_report"] is True
@@ -59,7 +60,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["certified_scope"]["current_availability_roster"] is True
             assert status["certified_scope"]["current_availability_injury_report"] is True
             assert status["certified_scope"]["current_availability"] is True
-            assert status["certified_scope"]["shot_context"] is False
+            assert status["certified_scope"]["shot_context"] is True
             assert status["certified_scope"]["advanced_context"] is False
             assert status["certified_scope"]["officiating_context"] is False
             assert status["safety"]["frozen_step4i_source_modified"] is False
@@ -80,6 +81,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert second["installed"] is True
             assert second["seams"]["projection_player_shot_context"] is True
             assert second["seams"]["projection_opponent_zone_defense"] is True
+            assert second["certified_scope"]["shot_context"] is True
             """,
             enabled=True,
         )
