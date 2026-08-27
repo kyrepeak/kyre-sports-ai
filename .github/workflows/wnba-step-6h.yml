@@ -7,19 +7,25 @@ on:
     paths:
       - 'sports_api/wnba_official_reconciliation.py'
       - 'sports_api/wnba_official_reconciliation_live.py'
+      - 'sports_api/wnba_official_reconciliation_live_current.py'
+      - 'sports_api/wnba_official_team_page_reconciliation_live.py'
       - 'sports_api/api/wnba_draftkings_direct.py'
       - 'sports_api/tools/wnba_official_reconciliation_probe.py'
       - 'sports_api/tests/test_wnba_official_reconciliation.py'
       - 'sports_api/tests/test_wnba_official_reconciliation_routes.py'
+      - 'sports_api/tests/test_wnba_official_team_page_reconciliation_live.py'
       - '.github/workflows/wnba-step-6h.yml'
   pull_request:
     paths:
       - 'sports_api/wnba_official_reconciliation.py'
       - 'sports_api/wnba_official_reconciliation_live.py'
+      - 'sports_api/wnba_official_reconciliation_live_current.py'
+      - 'sports_api/wnba_official_team_page_reconciliation_live.py'
       - 'sports_api/api/wnba_draftkings_direct.py'
       - 'sports_api/tools/wnba_official_reconciliation_probe.py'
       - 'sports_api/tests/test_wnba_official_reconciliation.py'
       - 'sports_api/tests/test_wnba_official_reconciliation_routes.py'
+      - 'sports_api/tests/test_wnba_official_team_page_reconciliation_live.py'
       - '.github/workflows/wnba-step-6h.yml'
   workflow_dispatch:
 
@@ -44,10 +50,16 @@ jobs:
           python -m py_compile \
             sports_api/wnba_official_reconciliation.py \
             sports_api/wnba_official_reconciliation_live.py \
+            sports_api/wnba_official_reconciliation_live_current.py \
+            sports_api/wnba_official_team_page_reconciliation_live.py \
             sports_api/api/wnba_draftkings_direct.py \
             sports_api/tools/wnba_official_reconciliation_probe.py
       - name: Run Step 6H deterministic tests
-        run: python -m unittest sports_api.tests.test_wnba_official_reconciliation sports_api.tests.test_wnba_official_reconciliation_routes
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_official_reconciliation \
+            sports_api.tests.test_wnba_official_reconciliation_routes \
+            sports_api.tests.test_wnba_official_team_page_reconciliation_live
       - name: Run Step 6G regression
         run: python -m unittest sports_api.tests.test_wnba_draftkings_shadow_ingestion sports_api.tests.test_wnba_draftkings_shadow_ingestion_routes
       - name: Run Step 6F discovery regression
@@ -69,6 +81,8 @@ jobs:
           files = [
               Path('sports_api/wnba_official_reconciliation.py'),
               Path('sports_api/wnba_official_reconciliation_live.py'),
+              Path('sports_api/wnba_official_reconciliation_live_current.py'),
+              Path('sports_api/wnba_official_team_page_reconciliation_live.py'),
               Path('sports_api/tools/wnba_official_reconciliation_probe.py'),
           ]
           joined = '\n'.join(p.read_text(encoding='utf-8') for p in files).lower()
@@ -117,6 +131,8 @@ jobs:
           print('blockers=', report.get('blockers'))
           print('mismatch_count=', len(report.get('mismatch_details') or []))
           print('reconciliation_fingerprint_sha256=', report.get('reconciliation_fingerprint_sha256'))
+          print('numeric_game_id_fabricated=', (report.get('official_source_summary') or {}).get('numeric_game_id_fabricated'))
+          print('official_local_game_date_claimed=', (report.get('official_source_summary') or {}).get('official_local_game_date_claimed'))
           PY
       - name: Upload sanitized Step 6H evidence
         uses: actions/upload-artifact@v4
