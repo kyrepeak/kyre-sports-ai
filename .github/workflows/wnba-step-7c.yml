@@ -7,8 +7,10 @@ on:
     paths:
       - 'sports_api/tools/wnba_step7c_render_free_deploy.py'
       - 'sports_api/tools/wnba_step7c_render_free_deploy_v2.py'
+      - 'sports_api/tools/wnba_step7c_render_free_deploy_v3.py'
       - 'sports_api/tests/test_wnba_step7c_render_free_deploy.py'
       - 'sports_api/tests/test_wnba_step7c_render_free_deploy_v2.py'
+      - 'sports_api/tests/test_wnba_step7c_render_free_deploy_v3.py'
       - '.github/workflows/wnba-step-7c.yml'
   workflow_dispatch:
 
@@ -55,17 +57,20 @@ jobs:
           test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
           echo 'Render operator credential is present; secret value not printed.'
 
-      - name: Compile Step 7C operator
+      - name: Compile Step 7C operators
         run: |
           python -m py_compile sports_api/tools/wnba_step7c_render_free_deploy.py
           python -m py_compile sports_api/tools/wnba_step7c_render_free_deploy_v2.py
+          python -m py_compile sports_api/tools/wnba_step7c_render_free_deploy_v3.py
           python -m py_compile sports_api/tests/test_wnba_step7c_render_free_deploy.py
           python -m py_compile sports_api/tests/test_wnba_step7c_render_free_deploy_v2.py
+          python -m py_compile sports_api/tests/test_wnba_step7c_render_free_deploy_v3.py
 
       - name: Run Step 7C free-only guard tests
         run: |
           python -m unittest sports_api.tests.test_wnba_step7c_render_free_deploy
           python -m unittest sports_api.tests.test_wnba_step7c_render_free_deploy_v2
+          python -m unittest sports_api.tests.test_wnba_step7c_render_free_deploy_v3
 
       - name: Prove deployment branch is pinned to exact Step 7B merge
         shell: bash
@@ -101,11 +106,11 @@ jobs:
           print('Step 7C has no database, sportsbook, or registry secret context.')
           PY
 
-      - name: Deploy frozen FastAPI release to Render Free
+      - name: Repair Render Docker settings and deploy frozen release
         shell: bash
         run: |
           mkdir -p .step7c
-          python -m sports_api.tools.wnba_step7c_render_free_deploy_v2 > .step7c/render-evidence.json
+          python -m sports_api.tools.wnba_step7c_render_free_deploy_v3 > .step7c/render-evidence.json
 
       - name: Verify sanitized deployment evidence
         shell: bash
@@ -121,16 +126,22 @@ jobs:
           evidence = json.loads(raw)
           assert evidence['deployment_complete'] is True
           assert evidence['state'] == 'wnba_render_free_preactivation_live'
+          assert evidence['model_version'] == 'wnba_step_7c_render_free_deploy_v3'
           assert evidence['source_release']['revision'] == '12b9a0bb21e72f16282f562d848673222d48c7f2'
           assert evidence['render']['plan'] == 'free'
           assert evidence['render']['deploy_status'] == 'live'
+          assert evidence['render']['dockerfile_path'] in {'sports_api/Dockerfile', './sports_api/Dockerfile'}
+          assert evidence['render']['docker_context'] == '.'
           assert evidence['render']['persistent_disk_attached'] is False
           assert evidence['health']['status_code'] == 200
           assert evidence['health']['body_status'] == 'ok'
-          assert evidence['compatibility']['free_tier_max_shutdown_delay_omitted'] is True
+          assert evidence['compatibility']['render_free_max_shutdown_delay_omitted'] is True
+          assert evidence['compatibility']['docker_settings_nested_under_env_specific_details'] is True
+          assert evidence['compatibility']['clean_build_cache_requested'] is True
           safety = evidence['safety']
           assert safety['render_plan_is_free'] is True
           assert safety['paid_render_provisioning_authorized'] is False
+          assert safety['persistent_disk_attached'] is False
           assert safety['production_runtime_enabled'] is False
           assert safety['scheduler_authorized'] is False
           assert safety['scheduler_started'] is False
