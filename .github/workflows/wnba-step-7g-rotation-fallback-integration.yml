@@ -59,10 +59,10 @@ jobs:
           python -m py_compile sports_api/tools/wnba_step7g_rotation_multigame_cert.py
 
       - name: Run frozen Step 4R regression tests
-        run: python tests/test_wnba_rotation_context.py -v
+        run: PYTHONPATH=. python tests/test_wnba_rotation_context.py -v
 
       - name: Run Step 7G fallback-boundary tests
-        run: python tests/test_wnba_rotation_fallback.py -v
+        run: PYTHONPATH=. python tests/test_wnba_rotation_fallback.py -v
 
       - name: Rerun multi-game live rotation certification
         run: python -m sports_api.tools.wnba_step7g_rotation_multigame_cert
