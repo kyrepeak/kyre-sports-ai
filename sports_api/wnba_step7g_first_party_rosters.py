@@ -5,15 +5,17 @@ from ``stats.wnba.com/commonallplayers``. Hosted runners have repeatedly timed
 out on that transport. This isolated adapter instead reads each franchise's
 official ``*.wnba.com/roster`` page.
 
-The official team pages expose canonical ``www.wnba.com/player/{player_id}``
-links and visible roster cards containing jersey/name/position. On the live site
-the card text is not guaranteed to be nested inside the player anchor, so this
-adapter validates the roster section two ways: ordered unique canonical player
-IDs from official links are paired with ordered visible roster cards. If those
-counts disagree, the adapter fails closed instead of guessing membership.
+The live official page exposes two independent first-party identity surfaces in
+its server response:
+1. rendered TeamRoster player tiles containing headshot player IDs and names;
+2. React Flight data containing playerId/playerName/playerNumber/position/teamId
+   and the canonical ``www.wnba.com/player/{id}`` link.
+
+Both surfaces must agree exactly for every active player. Any missing/duplicate
+identity, mismatched team, or implausible roster size fails closed.
 
 This module performs GET requests only. It does not write production state,
-start schedulers, access sportsbooks, persist data, or change frozen providers.
+start schedulers, access sportsbooks, persist data, or modify frozen providers.
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from copy import deepcopy
 from datetime import datetime, timezone
 from html.parser import HTMLParser
+import json
 import re
 from threading import Lock
 from time import monotonic, sleep
@@ -33,13 +36,15 @@ from sports_api.wnba_league import get_wnba_teams
 from sports_api.wnba_rosters import WNBAStatsUpstreamError
 
 SOURCE = "Official WNBA Team Roster Pages"
-SOURCE_VARIANT = "wnba_team_roster_pages_player_links_and_visible_cards"
+SOURCE_VARIANT = "wnba_team_roster_tiles_plus_react_flight_identity"
 CACHE_TTL_SECONDS = 120
 CACHE_MAX_ENTRIES = 8
 MAX_PAGE_BYTES = 5_000_000
 REQUEST_TIMEOUT_SECONDS = 12.0
 REQUEST_ATTEMPTS = 2
 MAX_WORKERS = 8
+MIN_ROSTER_PLAYERS = 7
+MAX_ROSTER_PLAYERS = 20
 
 TEAM_ROSTER_HOSTS = {
     "atlanta-dream": "dream.wnba.com",
@@ -69,6 +74,7 @@ HTTP_HEADERS = {
 }
 
 _PLAYER_PATH_RE = re.compile(r"^/player/(\d+)(?:/)?$")
+_HEADSHOT_ID_RE = re.compile(r"/headshots/wnba/(?:latest|\d+)/\d+x\d+/(\d+)\.png(?:[?#].*)?$", re.I)
 _JERSEY_RE = re.compile(r"^#([^\s]+)\s+(.+)$")
 _POSITION_VALUES = (
     "Guard-Forward",
@@ -81,70 +87,16 @@ _POSITION_VALUES = (
     "Forward",
     "Center",
 )
-_POSITION_PATTERN = "|".join(re.escape(value) for value in _POSITION_VALUES)
-_VISIBLE_CARD_RE = re.compile(
-    rf"#(?P<jersey>\S+)\s+(?P<name>.+?)\s+(?P<position>{_POSITION_PATTERN})\s+PPG\b",
-    re.I,
-)
 
 _CACHE: dict[int, dict[str, Any]] = {}
 _CACHE_LOCK = Lock()
 
 
-class _RosterHTMLParser(HTMLParser):
-    """Collect visible text and canonical player links inside the roster section."""
-
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.visible_parts: list[str] = []
-        self.roster_visible_parts: list[str] = []
-        self.player_links: list[tuple[str, str]] = []
-        self._in_roster = False
-        self._href: str | None = None
-        self._anchor_parts: list[str] = []
-        self._anchor_in_roster = False
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        lowered = tag.casefold()
-        values = {str(key).casefold(): value for key, value in attrs}
-        if lowered == "a":
-            self._href = values.get("href")
-            self._anchor_parts = []
-            self._anchor_in_roster = self._in_roster
-            return
-        if lowered == "img" and self._href is not None and self._anchor_in_roster:
-            alt = " ".join(str(values.get("alt") or "").split())
-            if alt:
-                self._anchor_parts.append(alt)
-
-    def handle_data(self, data: str) -> None:
-        text = " ".join(str(data).split())
-        if not text:
-            return
-        self.visible_parts.append(text)
-
-        folded = text.casefold()
-        if "2026 team roster" in folded or folded == "team roster":
-            self._in_roster = True
-            return
-        if "coaching staff" in folded:
-            self._in_roster = False
-            return
-
-        if self._in_roster:
-            self.roster_visible_parts.append(text)
-        if self._href is not None and self._anchor_in_roster:
-            self._anchor_parts.append(text)
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag.casefold() != "a" or self._href is None:
-            return
-        if self._anchor_in_roster:
-            text = " ".join(self._anchor_parts).strip()
-            self.player_links.append((self._href, text))
-        self._href = None
-        self._anchor_parts = []
-        self._anchor_in_roster = False
+def _clean(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = " ".join(str(value).split()).strip()
+    return text or None
 
 
 def _utc_now_iso() -> str:
@@ -169,7 +121,23 @@ def _player_id_from_href(href: str) -> int | None:
     return value if value > 0 else None
 
 
+def _headshot_player_id(src: str | None) -> int | None:
+    if not src:
+        return None
+    parsed = urlparse(str(src).strip())
+    if parsed.scheme and parsed.scheme != "https":
+        return None
+    if parsed.netloc and parsed.netloc.casefold() != "cdn.wnba.com":
+        return None
+    match = _HEADSHOT_ID_RE.search(parsed.path)
+    if not match:
+        return None
+    value = int(match.group(1))
+    return value if value > 0 else None
+
+
 def _parse_card_text(text: str) -> tuple[str | None, str | None, str | None]:
+    """Compatibility helper retained for isolated regression tests."""
     clean = " ".join(str(text or "").split())
     match = _JERSEY_RE.match(clean)
     if not match:
@@ -185,10 +153,10 @@ def _parse_card_text(text: str) -> tuple[str | None, str | None, str | None]:
 
 
 def _plain_name_candidate(text: str) -> str | None:
+    """Compatibility helper for safe name-only identity candidates."""
     clean = " ".join(str(text or "").split()).strip()
     if not clean or clean.startswith("#"):
         return None
-    clean = re.split(r"\s+(?:PPG|RPG|APG)\b", clean, maxsplit=1, flags=re.I)[0].strip()
     folded = clean.casefold()
     if folded in {
         "view profile",
@@ -203,61 +171,172 @@ def _plain_name_candidate(text: str) -> str | None:
     words = clean.split()
     if not 2 <= len(words) <= 6:
         return None
-    allowed_punctuation = {" ", "-", "'", "’", "."}
-    if not all(character.isalpha() or character in allowed_punctuation for character in clean):
+    allowed = {" ", "-", "'", "’", "."}
+    if not all(character.isalpha() or character in allowed for character in clean):
         return None
     return clean
 
 
-def _best_identity_candidate(texts: list[str]) -> tuple[str | None, str | None, str | None]:
-    candidates: list[tuple[int, str | None, str, str | None]] = []
-    for text in texts:
-        jersey, name, position = _parse_card_text(text)
-        if name:
-            score = 100 + (10 if position else 0) + (5 if jersey else 0)
-            candidates.append((score, jersey, name, position))
-            continue
-        plain = _plain_name_candidate(text)
-        if plain:
-            candidates.append((10, None, plain, None))
-    if not candidates:
-        return None, None, None
-    candidates.sort(key=lambda row: (row[0], -len(row[2])), reverse=True)
-    _, jersey, name, position = candidates[0]
-    return jersey, name, position
+class _RosterTileParser(HTMLParser):
+    """Extract rendered official TeamRoster tiles from server HTML."""
 
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.visible_parts: list[str] = []
+        self.tiles: list[dict[str, Any]] = []
+        self.all_player_link_ids: list[int] = []
+        self._tile: dict[str, Any] | None = None
+        self._capture: str | None = None
+        self._in_subtitle = False
+        self._subtitle_span = False
 
-def _ordered_unique_player_ids(links: list[tuple[str, str]]) -> list[int]:
-    result: list[int] = []
-    seen: set[int] = set()
-    for href, _ in links:
-        player_id = _player_id_from_href(href)
-        if player_id is None or player_id in seen:
-            continue
-        seen.add(player_id)
-        result.append(player_id)
-    return result
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        lowered = tag.casefold()
+        values = {str(key).casefold(): value for key, value in attrs}
+        class_name = str(values.get("class") or "")
 
-
-def _visible_roster_cards(parts: list[str]) -> list[dict[str, str]]:
-    joined = " ".join(parts)
-    cards: list[dict[str, str]] = []
-    for match in _VISIBLE_CARD_RE.finditer(joined):
-        name = " ".join(match.group("name").split()).strip()
-        if not name:
-            continue
-        cards.append(
-            {
-                "jersey": match.group("jersey").strip(),
-                "name": name,
-                "position": match.group("position").strip(),
+        if lowered == "li" and "teamroster_playertile" in class_name.casefold():
+            if self._tile is not None:
+                self._tile["malformed_nested_tile"] = True
+            self._tile = {
+                "href_ids": [],
+                "headshot_id": None,
+                "headshot_alt": None,
+                "name": None,
+                "jersey_number": None,
+                "position": None,
             }
+
+        if lowered == "a":
+            player_id = _player_id_from_href(str(values.get("href") or ""))
+            if player_id is not None:
+                self.all_player_link_ids.append(player_id)
+                if self._tile is not None:
+                    self._tile["href_ids"].append(player_id)
+
+        if self._tile is None:
+            return
+
+        if lowered == "img":
+            player_id = _headshot_player_id(values.get("src"))
+            if player_id is not None:
+                existing = self._tile.get("headshot_id")
+                if existing is not None and existing != player_id:
+                    self._tile["conflicting_headshot_ids"] = True
+                self._tile["headshot_id"] = player_id
+                self._tile["headshot_alt"] = _clean(values.get("alt"))
+            return
+
+        folded_class = class_name.casefold()
+        if lowered == "h3" and "playertile__player__name" in folded_class:
+            self._capture = "name"
+        elif lowered == "span" and "playertile__number__digit" in folded_class:
+            self._capture = "jersey_number"
+        elif lowered == "p" and "playertile__player__subtitle" in folded_class:
+            self._in_subtitle = True
+        elif lowered == "span" and self._in_subtitle and self._tile.get("position") is None:
+            self._subtitle_span = True
+            self._capture = "position"
+
+    def handle_data(self, data: str) -> None:
+        text = _clean(data)
+        if text is None:
+            return
+        self.visible_parts.append(text)
+        if self._tile is not None and self._capture is not None:
+            current = self._tile.get(self._capture)
+            if not current:
+                self._tile[self._capture] = text
+
+    def handle_endtag(self, tag: str) -> None:
+        lowered = tag.casefold()
+        if lowered in {"h3", "span"}:
+            if lowered == "span" and self._subtitle_span:
+                self._subtitle_span = False
+            self._capture = None
+        if lowered == "p" and self._in_subtitle:
+            self._in_subtitle = False
+            self._subtitle_span = False
+            self._capture = None
+        if lowered == "li" and self._tile is not None:
+            self.tiles.append(self._tile)
+            self._tile = None
+            self._capture = None
+            self._in_subtitle = False
+            self._subtitle_span = False
+
+
+def _decode_flight_html(html: str) -> str:
+    # React Flight strings escape JSON quotes with one or more backslashes. Remove
+    # only the quote-escape slashes, leaving unicode/string escapes intact.
+    return re.sub(r"\\+(?=\")", "", html)
+
+
+def _json_unescape(value: str) -> str:
+    try:
+        return str(json.loads(f'"{value}"'))
+    except Exception:
+        return value
+
+
+def _flight_roster_rows(html: str) -> list[dict[str, Any]]:
+    normalized = _decode_flight_html(html)
+    # Bound each search window so one malformed object cannot swallow unrelated
+    # page data. The observed official object is well under 1,500 characters.
+    pattern = re.compile(
+        r'"playerId":(?P<player_id>\d+)'
+        r'(?P<body>.{0,1600}?)'
+        r'"playerLink":"https://www\.wnba\.com/player/(?P<link_id>\d+)"',
+        re.S,
+    )
+    field_patterns = {
+        "player_name": re.compile(r'"playerName":"([^"]+)"'),
+        "player_number": re.compile(r'"playerNumber":"([^"]*)"'),
+        "position": re.compile(r'"position":"([^"]*)"'),
+        "team_id": re.compile(r'"teamId":"?(\d+)"?'),
+    }
+    by_id: dict[int, dict[str, Any]] = {}
+    conflicts: set[int] = set()
+    for match in pattern.finditer(normalized):
+        player_id = int(match.group("player_id"))
+        link_id = int(match.group("link_id"))
+        if player_id != link_id:
+            conflicts.add(player_id)
+            continue
+        body = match.group("body")
+        row: dict[str, Any] = {
+            "player_id": player_id,
+            "player_link_id": link_id,
+        }
+        complete = True
+        for key, field_pattern in field_patterns.items():
+            field_match = field_pattern.search(body)
+            if field_match is None:
+                complete = False
+                break
+            raw_value = field_match.group(1)
+            row[key] = _json_unescape(raw_value) if key != "team_id" else raw_value
+        if not complete:
+            continue
+        existing = by_id.get(player_id)
+        if existing is not None and existing != row:
+            conflicts.add(player_id)
+            continue
+        by_id[player_id] = row
+    if conflicts:
+        raise WNBAStatsUpstreamError(
+            f"Official WNBA React roster data returned conflicting rows for player IDs {sorted(conflicts)}."
         )
-    return cards
+    return list(by_id.values())
 
 
-def _parse_roster_html(html: str, *, team: dict[str, Any], source_url: str) -> list[dict[str, Any]]:
-    parser = _RosterHTMLParser()
+def _parse_roster_html(
+    html: str,
+    *,
+    team: dict[str, Any],
+    source_url: str,
+) -> list[dict[str, Any]]:
+    parser = _RosterTileParser()
     try:
         parser.feed(str(html))
     except Exception as exc:
@@ -266,7 +345,7 @@ def _parse_roster_html(html: str, *, team: dict[str, Any], source_url: str) -> l
         ) from exc
 
     visible = " ".join(parser.visible_parts)
-    if "2026 Team Roster" not in visible and "Team Roster" not in visible:
+    if "Team Roster" not in visible:
         raise WNBAStatsUpstreamError(
             f"Official WNBA roster marker was not found for {team['full_name']}."
         )
@@ -275,45 +354,88 @@ def _parse_roster_html(html: str, *, team: dict[str, Any], source_url: str) -> l
             f"Official WNBA coaching-staff boundary was not found for {team['full_name']}."
         )
 
-    ordered_ids = _ordered_unique_player_ids(parser.player_links)
-    visible_cards = _visible_roster_cards(parser.roster_visible_parts)
-    if not 7 <= len(ordered_ids) <= 20:
-        raise WNBAStatsUpstreamError(
-            f"Official WNBA roster section returned an implausible canonical player-ID "
-            f"count ({len(ordered_ids)}) for {team['full_name']}."
-        )
-    if len(visible_cards) != len(ordered_ids):
-        raise WNBAStatsUpstreamError(
-            f"Official WNBA roster identity surfaces disagree for {team['full_name']}: "
-            f"{len(ordered_ids)} unique player IDs vs {len(visible_cards)} visible roster cards."
-        )
-
-    anchor_texts_by_id: dict[int, list[str]] = {}
-    for href, anchor_text in parser.player_links:
-        player_id = _player_id_from_href(href)
-        if player_id is not None:
-            anchor_texts_by_id.setdefault(player_id, []).append(anchor_text)
-
-    players: list[dict[str, Any]] = []
-    for player_id, card in zip(ordered_ids, visible_cards):
-        jersey = card["jersey"]
-        name = card["name"]
-        position = card["position"]
-
-        # If an anchor also exposes a parseable name, it must agree with the
-        # visible-card pairing. This is an additional integrity check, not a
-        # requirement of the live page structure.
-        _, anchor_name, _ = _best_identity_candidate(anchor_texts_by_id.get(player_id, []))
-        if anchor_name and anchor_name.casefold() != name.casefold():
+    tiles_by_id: dict[int, dict[str, Any]] = {}
+    for tile in parser.tiles:
+        if tile.get("malformed_nested_tile") or tile.get("conflicting_headshot_ids"):
             raise WNBAStatsUpstreamError(
-                f"Official WNBA roster anchor/card name mismatch for player {player_id} "
-                f"on {team['full_name']}."
+                f"Official WNBA roster tile structure was ambiguous for {team['full_name']}."
+            )
+        player_id = tile.get("headshot_id")
+        name = _clean(tile.get("name"))
+        if not isinstance(player_id, int) or player_id <= 0 or name is None:
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster tile was missing player ID/name for {team['full_name']}."
+            )
+        href_ids = {int(value) for value in tile.get("href_ids", [])}
+        if href_ids and href_ids != {player_id}:
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster tile link/headshot identity disagreed for {team['full_name']}."
+            )
+        alt = _clean(tile.get("headshot_alt"))
+        if alt:
+            expected_alt = f"{name} headshot".casefold()
+            if alt.casefold() != expected_alt:
+                raise WNBAStatsUpstreamError(
+                    f"Official WNBA roster tile name/headshot alt disagreed for player {player_id}."
+                )
+        if player_id in tiles_by_id:
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster HTML returned duplicate player tile {player_id}."
+            )
+        tiles_by_id[player_id] = tile
+
+    if not MIN_ROSTER_PLAYERS <= len(tiles_by_id) <= MAX_ROSTER_PLAYERS:
+        raise WNBAStatsUpstreamError(
+            f"Official WNBA roster page returned an implausible player-tile count "
+            f"({len(tiles_by_id)}) for {team['full_name']}."
+        )
+
+    flight_rows = _flight_roster_rows(str(html))
+    flight_by_id = {int(row["player_id"]): row for row in flight_rows}
+    if set(flight_by_id) != set(tiles_by_id):
+        raise WNBAStatsUpstreamError(
+            f"Official WNBA roster rendered/React identity surfaces disagree for {team['full_name']}: "
+            f"tile_ids={len(tiles_by_id)}, flight_ids={len(flight_by_id)}."
+        )
+
+    page_link_ids = set(parser.all_player_link_ids)
+    if not set(tiles_by_id).issubset(page_link_ids):
+        raise WNBAStatsUpstreamError(
+            f"Official WNBA roster tiles are missing canonical player links for {team['full_name']}."
+        )
+
+    expected_team_id = str(team.get("official_team_id") or "")
+    players: list[dict[str, Any]] = []
+    for player_id, tile in tiles_by_id.items():
+        flight = flight_by_id[player_id]
+        tile_name = _clean(tile.get("name"))
+        flight_name = _clean(flight.get("player_name"))
+        if tile_name is None or flight_name is None or tile_name.casefold() != flight_name.casefold():
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster tile/React name mismatch for player {player_id}."
+            )
+        if expected_team_id and str(flight.get("team_id")) != expected_team_id:
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster React team ID mismatch for player {player_id}."
+            )
+
+        tile_number = _clean(tile.get("jersey_number"))
+        flight_number = _clean(flight.get("player_number"))
+        if tile_number and flight_number and tile_number != flight_number:
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster jersey mismatch for player {player_id}."
+            )
+        tile_position = _clean(tile.get("position"))
+        flight_position = _clean(flight.get("position"))
+        if tile_position and flight_position and tile_position.casefold() != flight_position.casefold():
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster position mismatch for player {player_id}."
             )
 
         players.append(
             {
                 "player_id": player_id,
-                "full_name": name,
+                "full_name": flight_name,
                 "display_last_comma_first": None,
                 "player_code": None,
                 "player_slug": None,
@@ -329,12 +451,14 @@ def _parse_roster_html(html: str, *, team: dict[str, Any], source_url: str) -> l
                 "team_abbreviation": team.get("abbreviation"),
                 "team_code": None,
                 "team_slug": team.get("slug"),
-                "jersey_number": jersey,
-                "position": position,
+                "jersey_number": flight_number or tile_number,
+                "position": flight_position or tile_position,
                 "headshot_url": f"https://cdn.wnba.com/headshots/wnba/latest/1040x760/{player_id}.png",
                 "current_membership_source_url": source_url,
             }
         )
+
+    players.sort(key=lambda row: (row["full_name"], row["player_id"]))
     return players
 
 
@@ -455,7 +579,7 @@ def get_first_party_current_players_dataset(
     dataset = {
         "source": SOURCE,
         "source_url": "https://www.wnba.com/",
-        "source_endpoint": "official team *.wnba.com/roster player links + visible cards",
+        "source_endpoint": "official team roster rendered tiles + React Flight identity",
         "source_variant": SOURCE_VARIANT,
         "season": season,
         "current_roster_only": True,
@@ -469,9 +593,10 @@ def get_first_party_current_players_dataset(
             "all_registered_teams_loaded": True,
             "all_players_have_official_wnba_player_ids": True,
             "player_ids_unique_across_teams": True,
-            "canonical_id_count_matches_visible_card_count_per_team": True,
+            "rendered_tiles_match_react_flight_identity": True,
+            "canonical_player_links_verified": True,
+            "react_team_ids_match_registry": True,
             "current_membership_from_official_team_roster_pages": True,
-            "duplicate_presentation_links_collapsed_by_player_id": True,
             "third_party_sources_used": False,
             "production_provider_replaced": False,
         },
