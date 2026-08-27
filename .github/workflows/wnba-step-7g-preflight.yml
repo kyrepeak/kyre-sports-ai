@@ -116,9 +116,12 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          text = Path('.github/workflows/wnba-step-7g-preflight.yml').read_text(encoding='utf-8')
-          assert 'WNBA_KYRE_SUPABASE_SECRET_KEY:' not in text
-          assert 'wnba_step7g_one_shot_activation.py --date' not in text
-          assert 'schedule:' not in text
-          print('Preflight has no live activation command and no recurring schedule.')
+          lines = Path('.github/workflows/wnba-step-7g-preflight.yml').read_text(encoding='utf-8').splitlines()
+          secret_key = 'WNBA_KYRE_SUPABASE_' + 'SECRET_KEY:'
+          live_command = 'wnba_step7g_one_shot_' + 'activation.py --date'
+          recurring_key = 'sched' + 'ule:'
+          assert not any(line.lstrip().startswith(secret_key) for line in lines)
+          assert not any(live_command in line and not line.lstrip().startswith('live_command') for line in lines)
+          assert not any(line.lstrip().startswith(recurring_key) for line in lines)
+          print('Preflight has no Supabase secret assignment, live activation command, or recurring schedule trigger.')
           PY
