@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from sports_api import wnba_step7g_first_party_team_history as base
 from sports_api import wnba_step7g_first_party_team_history_cup_safe as cup_safe
@@ -34,9 +35,35 @@ class Step7GCommissionersCupExclusionTests(unittest.TestCase):
         )
 
     def test_overlay_install_is_idempotent(self) -> None:
-        first = base._regular_season_marker
+        marker = base._regular_season_marker
+        loader = base.get_first_party_game_box_score_dataset
         cup_safe.install_exact_cup_exclusion()
-        self.assertIs(base._regular_season_marker, first)
+        self.assertIs(base._regular_season_marker, marker)
+        self.assertIs(base.get_first_party_game_box_score_dataset, loader)
+
+    def test_transient_upstream_box_failure_is_retried_then_succeeds(self) -> None:
+        transient = base.WNBAStep7GFirstPartyUpstreamError("transient 502")
+        expected = {"game_id": "1022600150"}
+        with patch.object(
+            cup_safe,
+            "_ORIGINAL_BOX_LOADER",
+            side_effect=[transient, transient, expected],
+        ) as loader, patch.object(cup_safe, "sleep") as sleeper:
+            result = cup_safe._retrying_box_loader("1022600150", 2026)
+        self.assertEqual(result, expected)
+        self.assertEqual(loader.call_count, 3)
+        self.assertEqual(sleeper.call_count, 2)
+
+    def test_non_transport_failure_is_not_retried(self) -> None:
+        with patch.object(
+            cup_safe,
+            "_ORIGINAL_BOX_LOADER",
+            side_effect=ValueError("malformed data"),
+        ) as loader, patch.object(cup_safe, "sleep") as sleeper:
+            with self.assertRaises(ValueError):
+                cup_safe._retrying_box_loader("1022600150", 2026)
+        self.assertEqual(loader.call_count, 1)
+        sleeper.assert_not_called()
 
 
 if __name__ == "__main__":
