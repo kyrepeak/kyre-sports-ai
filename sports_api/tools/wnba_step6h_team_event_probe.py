@@ -73,7 +73,7 @@ def _resolve_team(value: Any) -> str | None:
     if not key:
         return None
     if key in TEAM_ROSTER_HOSTS:
-        return next(name for name in TEAM_ROSTER_HOSTS if name == key).title()
+        return key.title()
     return DK_TEAM_ALIASES.get(key)
 
 
@@ -106,6 +106,7 @@ def _date_markers(value: str | None) -> list[str]:
     weekday_short = day.strftime("%a").casefold()
     d = str(day.day)
     return [
+        value.casefold(),
         f"{month_full} {d}",
         f"{month_short} {d}",
         f"{day.month}/{day.day}",
@@ -113,6 +114,38 @@ def _date_markers(value: str | None) -> list[str]:
         f"{weekday} {month_full} {d}",
         f"{weekday_short} {month_short} {d}",
     ]
+
+
+def _min_raw_distance(raw: str, opponent: str, event_date: str | None) -> int | None:
+    if not event_date:
+        return None
+    opponent_tokens = {
+        opponent.casefold(),
+        _name_key(opponent),
+        opponent.split()[-1].casefold(),
+    }
+    date_tokens = {event_date.casefold(), event_date.replace("-", "\\u002d").casefold()}
+    opponent_positions = []
+    for token in opponent_tokens:
+        start = 0
+        while token:
+            pos = raw.find(token, start)
+            if pos < 0:
+                break
+            opponent_positions.append(pos)
+            start = pos + 1
+    date_positions = []
+    for token in date_tokens:
+        start = 0
+        while token:
+            pos = raw.find(token, start)
+            if pos < 0:
+                break
+            date_positions.append(pos)
+            start = pos + 1
+    if not opponent_positions or not date_positions:
+        return None
+    return min(abs(a - b) for a in opponent_positions for b in date_positions)
 
 
 def _page(team_name: str) -> dict[str, Any]:
@@ -128,6 +161,7 @@ def _page(team_name: str) -> dict[str, Any]:
     parser = TextParser()
     parser.feed(response.text)
     visible = _name_key(" ".join(parser.parts))
+    raw = response.text.casefold()
     start = visible.find("upcoming games")
     if start < 0:
         start = visible.find("upcoming")
@@ -139,6 +173,7 @@ def _page(team_name: str) -> dict[str, Any]:
         "host": host,
         "status": response.status_code,
         "visible": visible,
+        "raw": raw,
         "upcoming": upcoming,
         "upcoming_marker_present": start >= 0,
     }
@@ -161,7 +196,8 @@ def main() -> int:
             for team in participants:
                 opponent = participants[1] if team == participants[0] else participants[0]
                 page = page_cache.setdefault(team, _page(team))
-                date_markers = [_name_key(v) for v in _date_markers(event.get("event_date"))]
+                date_markers = [marker.casefold() for marker in _date_markers(event.get("event_date"))]
+                raw_distance = _min_raw_distance(page["raw"], opponent, event.get("event_date"))
                 checks.append(
                     {
                         "team": team,
@@ -170,8 +206,11 @@ def main() -> int:
                         "upcoming_marker_present": page["upcoming_marker_present"],
                         "opponent_in_page": _name_key(opponent) in page["visible"],
                         "opponent_in_upcoming": _name_key(opponent) in page["upcoming"],
-                        "date_in_page": any(marker in page["visible"] for marker in date_markers),
-                        "date_in_upcoming": any(marker in page["upcoming"] for marker in date_markers),
+                        "date_in_visible_page": any(_name_key(marker) in page["visible"] for marker in date_markers),
+                        "iso_date_in_raw_html": bool(event.get("event_date")) and str(event["event_date"]).casefold() in page["raw"],
+                        "any_date_marker_in_raw_html": any(marker in page["raw"] for marker in date_markers),
+                        "min_raw_chars_between_opponent_and_iso_date": raw_distance,
+                        "opponent_and_date_nearby_in_raw_html": raw_distance is not None and raw_distance <= 8000,
                         "upcoming_section_chars": len(page["upcoming"]),
                     }
                 )
@@ -187,7 +226,7 @@ def main() -> int:
                 and all(
                     row["http_status"] == 200
                     and row["opponent_in_upcoming"]
-                    and row["date_in_upcoming"]
+                    and row["opponent_and_date_nearby_in_raw_html"]
                     for row in checks
                 ),
             }
