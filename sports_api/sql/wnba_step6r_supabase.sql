@@ -47,8 +47,8 @@ grant select, insert, update, delete on table public.wnba_durable_objects to ser
 grant select, insert, update, delete on table public.wnba_durable_locks to service_role;
 
 -- RPCs intentionally remain SECURITY INVOKER. The caller must itself be the
--- privileged service_role; there is no SECURITY DEFINER elevation path exposed
--- through the Data API.
+-- privileged service_role; no privilege-elevation function is exposed through
+-- the Data API.
 create or replace function public.wnba_durable_lock_acquire(
     p_lock_key text,
     p_owner_token uuid,
