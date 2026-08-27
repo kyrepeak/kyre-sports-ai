@@ -156,8 +156,10 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           workflow = Path('.github/workflows/wnba-step-6s.yml').read_text(encoding='utf-8').lower()
-          assert 'render api' not in workflow
+          forbidden_render_action = 'render' + ' api'
+          forbidden_secret_context = 'secrets' + '.'
+          assert forbidden_render_action not in workflow
           assert 'workflow_dispatch' in workflow
-          assert 'secrets.' not in workflow
+          assert forbidden_secret_context not in workflow
           print('Step 6S certification contains no live hosting or Supabase activation action.')
           PY
