@@ -1,11 +1,6 @@
 name: WNBA Step 6V Bootstrap - Supabase live Step 6J canary
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/wnba-step-6v-bootstrap.yml'
   workflow_dispatch:
     inputs:
       canary_date:
@@ -120,10 +115,9 @@ jobs:
 
   live-supabase-canary:
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' &&
-       inputs.execute_live_canary == true &&
-       inputs.confirmation_phrase == 'RUN_STEP6J_SUPABASE_CANARY')
+      github.event_name == 'workflow_dispatch' &&
+      inputs.execute_live_canary == true &&
+      inputs.confirmation_phrase == 'RUN_STEP6J_SUPABASE_CANARY'
     needs: step6v-tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -160,8 +154,8 @@ jobs:
       - name: Execute one-shot Supabase-backed Step 6J canary
         shell: bash
         env:
-          CANARY_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.canary_date || '2026-08-27' }}
-          CANARY_SEASON: ${{ github.event_name == 'workflow_dispatch' && inputs.season || '2026' }}
+          CANARY_DATE: ${{ inputs.canary_date }}
+          CANARY_SEASON: ${{ inputs.season }}
           ACTIVATION_ID: step6v-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           python -m sports_api.tools.wnba_step6v_supabase_canary \
