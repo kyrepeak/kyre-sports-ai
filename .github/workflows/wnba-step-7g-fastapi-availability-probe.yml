@@ -10,9 +10,11 @@ on:
       - 'sports_api/wnba_step7g_first_party_integration.py'
       - 'sports_api/wnba_step7g_first_party_availability.py'
       - 'sports_api/wnba_step7g_first_party_rosters.py'
+      - 'sports_api/wnba_step7g_first_party_injury_report.py'
       - 'sports_api/tools/wnba_step7g_fastapi_availability_probe.py'
       - 'tests/test_wnba_step7g_first_party_integration.py'
       - 'tests/test_wnba_step7g_first_party_rosters.py'
+      - 'tests/test_wnba_step7g_first_party_injury_report.py'
   workflow_dispatch:
 
 permissions:
@@ -66,15 +68,18 @@ jobs:
             sports_api/wnba_step7g_first_party_integration.py \
             sports_api/wnba_step7g_first_party_availability.py \
             sports_api/wnba_step7g_first_party_rosters.py \
+            sports_api/wnba_step7g_first_party_injury_report.py \
             sports_api/tools/wnba_step7g_fastapi_availability_probe.py \
             tests/test_wnba_step7g_first_party_integration.py \
-            tests/test_wnba_step7g_first_party_rosters.py
+            tests/test_wnba_step7g_first_party_rosters.py \
+            tests/test_wnba_step7g_first_party_injury_report.py
 
       - name: Run guarded Step 7G regression tests
         shell: bash
         run: |
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_rosters.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report.py
 
       - name: Prove inherited availability and frozen core files unchanged
         shell: bash
