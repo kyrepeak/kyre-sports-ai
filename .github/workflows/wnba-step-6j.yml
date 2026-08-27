@@ -1,0 +1,220 @@
+name: WNBA Step 6J controlled canary activation
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - '.github/step6j_activation_request.json'
+  workflow_dispatch:
+    inputs:
+      confirm_step6j_canary:
+        description: 'Explicitly approve one Step 6J durable canary write'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: wnba-step6j-controlled-canary
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact activation revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require frozen Step 6I ancestry and explicit one-shot approval
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_APPROVED: ${{ inputs.confirm_step6j_canary }}
+        run: |
+          git merge-base --is-ancestor 2195b1839f47745737c2d0e788c319743cda3ee0 HEAD
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          request_path = Path('.github/step6j_activation_request.json')
+          if os.environ.get('EVENT_NAME') == 'workflow_dispatch':
+              if os.environ.get('DISPATCH_APPROVED', '').lower() != 'true':
+                  raise SystemExit('Step 6J workflow_dispatch requires explicit approval.')
+          elif os.environ.get('EVENT_NAME') == 'push':
+              request = json.loads(request_path.read_text(encoding='utf-8'))
+              assert request.get('step') == '6J'
+              assert request.get('approved') is True
+              assert request.get('one_shot') is True
+              assert request.get('frozen_step6i_sha') == '2195b1839f47745737c2d0e788c319743cda3ee0'
+              assert request.get('activation_mode') == 'controlled_render_persistent_disk_canary'
+          else:
+              raise SystemExit('Unsupported Step 6J trigger.')
+          print('Step 6J explicit one-shot activation approval accepted.')
+          PY
+
+  step6j-tests:
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact approved revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Compile Step 6J and frozen Step 6I integration
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6j_canary_activation.py \
+            sports_api/api/wnba_step6j_canary.py \
+            sports_api/tools/wnba_step6j_render_canary.py \
+            sports_api/wnba_reconciled_direct_sync.py \
+            sports_api/main.py
+      - name: Run Step 6J deterministic tests
+        run: python -m unittest sports_api.tests.test_wnba_step6j_canary_activation
+      - name: Run frozen Step 6I regression
+        run: python -m unittest sports_api.tests.test_wnba_reconciled_direct_sync
+      - name: Run frozen Step 6H through Step 6C regressions
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_official_reconciliation \
+            sports_api.tests.test_wnba_official_reconciliation_routes \
+            sports_api.tests.test_wnba_official_team_page_reconciliation_live \
+            sports_api.tests.test_wnba_draftkings_shadow_ingestion \
+            sports_api.tests.test_wnba_draftkings_shadow_ingestion_routes \
+            sports_api.tests.test_wnba_draftkings_prop_market_discovery \
+            sports_api.tests.test_wnba_draftkings_direct \
+            sports_api.tests.test_wnba_step6d_direct_integration \
+            sports_api.tests.test_wnba_kyre_market_feed \
+            sports_api.tests.test_wnba_kyre_market_feed_routes
+      - name: Prove Step 6J cannot start the scheduler or wager path
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          module = Path('sports_api/wnba_step6j_canary_activation.py').read_text(encoding='utf-8').lower()
+          tool = Path('sports_api/tools/wnba_step6j_render_canary.py').read_text(encoding='utf-8').lower()
+          assert 'wnba_production_runtime_enabled": "true"' not in tool
+          assert 'create_service(' not in tool
+          assert 'create_registry_credential(' not in tool
+          assert 'place_wager' not in module
+          assert 'run_monte_carlo' not in module
+          print('Step 6J is a one-shot feed canary only: no scheduler activation, paid provisioning, Monte Carlo, or wager action.')
+          PY
+
+  render-persistent-disk-canary:
+    needs: step6j-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: wnba-render-staging
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout exact tested activation revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Confirm Render control secret without exposing its value
+        shell: bash
+        run: |
+          test -n "$RENDER_API_KEY"
+          echo 'Render API control secret is present.'
+      - name: Log in to GHCR with GitHub Actions publisher
+        shell: bash
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and publish exact Step 6J immutable image
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          SHORT_SHA="${REVISION:0:12}"
+          RELEASE_ID="wnba-step6j-$SHORT_SHA"
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$REVISION" \
+            --build-arg WNBA_RELEASE_ID="$RELEASE_ID" \
+            --metadata-file /tmp/step6j-build.json \
+            -f sports_api/Dockerfile \
+            -t "$REPOSITORY:$REVISION" \
+            -t "$REPOSITORY:$RELEASE_ID" \
+            --push .
+          echo "WNBA_STEP6J_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6J_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6J_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6J_ACTIVATION_ID=step6j-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+      - name: Freeze exact immutable Step 6J image digest
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, re
+          meta = json.load(open('/tmp/step6j-build.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid image digest: {digest!r}')
+          image = f"{os.environ['WNBA_STEP6J_REPOSITORY']}@{digest}"
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f"WNBA_STEP6J_IMAGE_REF={image}\n")
+          print(image)
+          PY
+      - name: Execute exactly one guarded Render persistent-disk canary
+        shell: bash
+        run: |
+          mkdir -p .wnba-step6j-canary
+          python -m sports_api.tools.wnba_step6j_render_canary \
+            --revision "$WNBA_STEP6J_REVISION" \
+            --release-id "$WNBA_STEP6J_RELEASE_ID" \
+            --image-ref "$WNBA_STEP6J_IMAGE_REF" \
+            --activation-id "$WNBA_STEP6J_ACTIVATION_ID" \
+            --output .wnba-step6j-canary/render-canary.json
+      - name: Assert final Step 6J state is durable and fail-closed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('.wnba-step6j-canary/render-canary.json').read_text(encoding='utf-8'))
+          final = report.get('final') or {}
+          canary = report.get('canary') or {}
+          safety = report.get('safety') or {}
+          assert report.get('completed') is True
+          assert canary.get('status') == 'completed'
+          assert canary.get('post_write_sha256') == final.get('feed_content_sha256')
+          assert final.get('canary_enabled') is False
+          assert final.get('direct_sync_enabled') is False
+          assert final.get('reconciled_sync_enabled') is False
+          assert final.get('production_runtime_enabled') is False
+          assert safety.get('write_switches_disabled_after_canary') is True
+          assert safety.get('scheduler_started') is False
+          assert safety.get('paid_odds_vendor_used') is False
+          assert safety.get('monte_carlo_run') is False
+          assert safety.get('wager_action_performed') is False
+          print('Step 6J durable canary verified; all write switches are back OFF.')
+          print('offer_side_count=', canary.get('offer_side_count'))
+          print('snapshot_sha256=', canary.get('snapshot_sha256'))
+          print('post_write_sha256=', canary.get('post_write_sha256'))
+          print('persistent_feed_sha256=', canary.get('verified_persistent_feed_sha256'))
+          print('reconciliation_fingerprint_sha256=', canary.get('reconciliation_fingerprint_sha256'))
+          print('attestation_sha256=', canary.get('attestation_sha256'))
+          PY
+      - name: Upload sanitized Step 6J canary evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6j-render-canary-${{ github.run_id }}
+          path: .wnba-step6j-canary/render-canary.json
+          if-no-files-found: error
+          retention-days: 30
