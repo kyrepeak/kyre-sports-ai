@@ -7,8 +7,11 @@ on:
     paths:
       - '.github/workflows/wnba-step-7g-step4j-team-history-cert.yml'
       - 'sports_api/wnba_step7g_first_party_team_history.py'
+      - 'sports_api/wnba_step7g_first_party_team_history_cup_safe.py'
       - 'sports_api/tools/wnba_step7g_step4j_team_history_cert.py'
+      - 'sports_api/tools/wnba_step7g_step4j_cup_exclusion_cert.py'
       - 'tests/test_wnba_step7g_team_history.py'
+      - 'tests/test_wnba_step7g_cup_exclusion.py'
   workflow_dispatch:
 
 permissions:
@@ -58,12 +61,17 @@ jobs:
         run: |
           python -m py_compile \
             sports_api/wnba_step7g_first_party_team_history.py \
+            sports_api/wnba_step7g_first_party_team_history_cup_safe.py \
             sports_api/tools/wnba_step7g_step4j_team_history_cert.py \
-            tests/test_wnba_step7g_team_history.py
+            sports_api/tools/wnba_step7g_step4j_cup_exclusion_cert.py \
+            tests/test_wnba_step7g_team_history.py \
+            tests/test_wnba_step7g_cup_exclusion.py
 
       - name: Run fail-closed Step 4J adapter regressions
         shell: bash
-        run: PYTHONPATH=. python tests/test_wnba_step7g_team_history.py
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step7g_team_history.py
+          PYTHONPATH=. python tests/test_wnba_step7g_cup_exclusion.py
 
       - name: Prove frozen Step 4J and Step 4N files are unchanged from main
         shell: bash
@@ -78,12 +86,18 @@ jobs:
         shell: bash
         run: python -m sports_api.tools.wnba_step7g_step4j_team_history_cert
 
+      - name: Run live exact 2026 Commissioner's Cup exclusion certification
+        shell: bash
+        run: python -m sports_api.tools.wnba_step7g_step4j_cup_exclusion_cert
+
       - name: Upload sanitized certification evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: wnba-step7g-step4j-team-history-cert-${{ github.run_id }}-${{ github.run_attempt }}
-          path: step7g-step4j-team-history-cert.json
+          path: |
+            step7g-step4j-team-history-cert.json
+            step7g-step4j-cup-exclusion-cert.json
           if-no-files-found: warn
           retention-days: 30
 
