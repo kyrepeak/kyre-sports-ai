@@ -6,7 +6,9 @@ on:
       - main
     paths:
       - 'sports_api/tools/wnba_step7c_render_free_deploy.py'
+      - 'sports_api/tools/wnba_step7c_render_free_deploy_v2.py'
       - 'sports_api/tests/test_wnba_step7c_render_free_deploy.py'
+      - 'sports_api/tests/test_wnba_step7c_render_free_deploy_v2.py'
       - '.github/workflows/wnba-step-7c.yml'
   workflow_dispatch:
 
@@ -56,10 +58,14 @@ jobs:
       - name: Compile Step 7C operator
         run: |
           python -m py_compile sports_api/tools/wnba_step7c_render_free_deploy.py
+          python -m py_compile sports_api/tools/wnba_step7c_render_free_deploy_v2.py
           python -m py_compile sports_api/tests/test_wnba_step7c_render_free_deploy.py
+          python -m py_compile sports_api/tests/test_wnba_step7c_render_free_deploy_v2.py
 
       - name: Run Step 7C free-only guard tests
-        run: python -m unittest sports_api.tests.test_wnba_step7c_render_free_deploy
+        run: |
+          python -m unittest sports_api.tests.test_wnba_step7c_render_free_deploy
+          python -m unittest sports_api.tests.test_wnba_step7c_render_free_deploy_v2
 
       - name: Prove deployment branch is pinned to exact Step 7B merge
         shell: bash
@@ -99,7 +105,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p .step7c
-          python -m sports_api.tools.wnba_step7c_render_free_deploy > .step7c/render-evidence.json
+          python -m sports_api.tools.wnba_step7c_render_free_deploy_v2 > .step7c/render-evidence.json
 
       - name: Verify sanitized deployment evidence
         shell: bash
@@ -121,6 +127,7 @@ jobs:
           assert evidence['render']['persistent_disk_attached'] is False
           assert evidence['health']['status_code'] == 200
           assert evidence['health']['body_status'] == 'ok'
+          assert evidence['compatibility']['free_tier_max_shutdown_delay_omitted'] is True
           safety = evidence['safety']
           assert safety['render_plan_is_free'] is True
           assert safety['paid_render_provisioning_authorized'] is False
