@@ -8,7 +8,9 @@ on:
       - '.github/workflows/wnba-step-7g-fastapi-availability-probe.yml'
       - 'sports_api/main.py'
       - 'sports_api/wnba_step7g_first_party_integration.py'
+      - 'sports_api/wnba_step7g_first_party_availability.py'
       - 'sports_api/tools/wnba_step7g_fastapi_availability_probe.py'
+      - 'tests/test_wnba_step7g_first_party_integration.py'
   workflow_dispatch:
 
 permissions:
@@ -56,11 +58,17 @@ jobs:
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt
 
-      - name: Compile availability boundary probe
+      - name: Compile Step 4I integration and availability probe
         run: |
           python -m py_compile \
             sports_api/wnba_step7g_first_party_integration.py \
-            sports_api/tools/wnba_step7g_fastapi_availability_probe.py
+            sports_api/wnba_step7g_first_party_availability.py \
+            sports_api/tools/wnba_step7g_fastapi_availability_probe.py \
+            tests/test_wnba_step7g_first_party_integration.py
+
+      - name: Run guarded integration regression tests
+        shell: bash
+        run: PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
 
       - name: Prove inherited availability and frozen core files unchanged
         shell: bash
@@ -74,6 +82,7 @@ jobs:
             sports_api/wnba_rosters.py \
             sports_api/wnba_season_stats.py \
             sports_api/wnba_lineup_context.py \
+            sports_api/wnba_schedule.py \
             sports_api/wnba_model_input_readiness.py \
             sports_api/wnba_projection_input_snapshot.py
 
