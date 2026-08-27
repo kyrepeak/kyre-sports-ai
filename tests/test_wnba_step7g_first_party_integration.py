@@ -29,6 +29,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["all_core_seams_installed"] is False, status
             assert integration.INSTALLATION["installed"] is False, integration.INSTALLATION
             assert status["safety"]["default_enabled"] is False
+            assert integration.availability.get_daily_schedule_dataset is integration._ORIGINAL_AVAILABILITY_DAILY_SCHEDULE
             """,
             enabled=False,
         )
@@ -43,11 +44,15 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["all_core_seams_installed"] is True, status
             assert integration.INSTALLATION["installed"] is True, integration.INSTALLATION
             assert all(status["seams"].values()), status
+            assert status["seams"]["availability_daily_schedule"] is True
             assert status["certified_scope"]["core_model_input_readiness"] is True
+            assert status["certified_scope"]["current_availability_daily_schedule"] is True
             assert status["certified_scope"]["current_availability"] is False
             assert status["certified_scope"]["shot_context"] is False
             assert status["certified_scope"]["advanced_context"] is False
             assert status["certified_scope"]["officiating_context"] is False
+            assert status["safety"]["frozen_step4i_source_modified"] is False
+            assert status["safety"]["frozen_step4c_source_modified"] is False
             """,
             enabled=True,
         )
@@ -79,6 +84,27 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
                 pass
             else:
                 raise AssertionError("optional lineup bypass did not use fail-soft error family")
+            """,
+            enabled=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
+
+    def test_step4i_schedule_failure_translates_to_availability_error_family(self) -> None:
+        completed = self._run_child(
+            """
+            import sports_api.wnba_step7g_first_party_integration as integration
+            from sports_api.wnba_schedule import WNBAScheduleUpstreamError
+
+            def broken(*args, **kwargs):
+                raise WNBAScheduleUpstreamError("synthetic schedule failure")
+
+            integration.get_step7g_step4i_daily_schedule_dataset = broken
+            try:
+                integration.availability.get_daily_schedule_dataset("2026-08-27", 2026)
+            except integration.availability.WNBAAvailabilityUpstreamError as exc:
+                assert "synthetic schedule failure" in str(exc)
+            else:
+                raise AssertionError("Step 4I schedule failure did not translate to availability family")
             """,
             enabled=True,
         )
