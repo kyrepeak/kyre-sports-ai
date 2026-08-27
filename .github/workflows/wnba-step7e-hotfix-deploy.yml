@@ -1,0 +1,136 @@
+name: WNBA Step 7E certified schedule hotfix deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sports_api/tools/wnba_step7e_schedule_hotfix_deploy.py'
+      - 'sports_api/tests/test_wnba_step7e_schedule_hotfix_deploy.py'
+      - '.github/workflows/wnba-step7e-hotfix-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7e-schedule-hotfix-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-certified-hotfix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout Step 7E deployment operator
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Confirm Render credential without exposing it
+        shell: bash
+        run: |
+          test -n "$RENDER_API_KEY"
+          test "${#RENDER_API_KEY}" -ge 20
+          echo 'Render credential present; value not printed.'
+
+      - name: Compile and test Step 7E hotfix deploy operator
+        run: |
+          python -m py_compile sports_api/tools/wnba_step7e_schedule_hotfix_deploy.py
+          python -m py_compile sports_api/tests/test_wnba_step7e_schedule_hotfix_deploy.py
+          python -m unittest sports_api.tests.test_wnba_step7e_schedule_hotfix_deploy
+
+      - name: Prove certified hotfix branch identity and ancestry
+        shell: bash
+        run: |
+          git fetch origin refs/heads/wnba-production-7e-schedule-fix-20260827:refs/remotes/origin/wnba-production-7e-schedule-fix-20260827 --force
+          ACTUAL="$(git rev-parse refs/remotes/origin/wnba-production-7e-schedule-fix-20260827)"
+          EXPECTED='9a45b11704bb95ec5ace275b5dd941e27e32f745'
+          test "$ACTUAL" = "$EXPECTED"
+          PARENTS="$(git show -s --format=%P "$ACTUAL")"
+          test "$PARENTS" = '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          CHANGED="$(git diff --name-only 12b9a0bb21e72f16282f562d848673222d48c7f2..$ACTUAL)"
+          test "$CHANGED" = $'sports_api/tests/test_wnba_schedule.py\nsports_api/wnba_schedule.py'
+          echo "Certified hotfix branch verified: $ACTUAL"
+
+      - name: Deploy exact certified schedule hotfix to existing Render Free service
+        shell: bash
+        run: |
+          mkdir -p .step7e-hotfix
+          python -m sports_api.tools.wnba_step7e_schedule_hotfix_deploy > .step7e-hotfix/deployment.json
+
+      - name: Verify sanitized hotfix deployment evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          path = Path('.step7e-hotfix/deployment.json')
+          raw = path.read_text(encoding='utf-8')
+          render_secret = os.environ['RENDER_API_KEY']
+          assert render_secret not in raw
+          evidence = json.loads(raw)
+          assert evidence['deployment_complete'] is True
+          assert evidence['state'] == 'wnba_step7e_schedule_hotfix_live'
+          assert evidence['patch']['revision'] == '9a45b11704bb95ec5ace275b5dd941e27e32f745'
+          assert evidence['patch']['parent_revision'] == '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          assert evidence['patch']['scope'] == [
+              'sports_api/wnba_schedule.py',
+              'sports_api/tests/test_wnba_schedule.py',
+          ]
+          assert evidence['render']['plan'] == 'free'
+          assert evidence['render']['auto_deploy'] == 'no'
+          assert evidence['render']['deploy_status'] == 'live'
+          assert evidence['render']['deployed_revision'] == '9a45b11704bb95ec5ace275b5dd941e27e32f745'
+          assert evidence['schedule']['status_code'] == 200
+          assert evidence['schedule']['season'] == 2026
+          assert evidence['schedule']['source_variant'] == 'wnba_public_schedule_api'
+          assert evidence['schedule']['source_url'] == 'https://www.wnba.com/api/schedule'
+          assert evidence['runtime_readiness']['health'] == 'ok'
+          assert evidence['runtime_readiness']['step6r_supabase_ready'] is True
+          assert evidence['runtime_readiness']['step6t_supabase_ready'] is True
+          assert evidence['runtime_readiness']['legacy_step6u_expected_block_preserved'] is True
+          safety = evidence['safety']
+          assert safety['render_plan_is_free'] is True
+          assert safety['persistent_disk_attached'] is False
+          assert safety['auto_deploy_enabled'] is False
+          assert safety['supabase_environment_changed'] is False
+          assert safety['supabase_write_performed'] is False
+          assert safety['production_runtime_enabled'] is False
+          assert safety['scheduler_authorized'] is False
+          assert safety['scheduler_started'] is False
+          assert safety['direct_sync_enabled'] is False
+          assert safety['reconciled_sync_enabled'] is False
+          assert safety['step6j_canary_enabled'] is False
+          assert safety['sportsbook_called'] is False
+          assert safety['monte_carlo_run'] is False
+          assert safety['wager_action_performed'] is False
+          assert safety['render_api_key_returned'] is False
+          assert safety['supabase_secret_returned'] is False
+          evidence['ci_freeze'] = {
+              'workflow_revision': os.environ['GITHUB_SHA'],
+              'workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
+              'workflow_run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+          }
+          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print('Step 7E hotfix deployment evidence verified.')
+          PY
+
+      - name: Upload Step 7E hotfix deployment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7e-schedule-hotfix-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step7e-hotfix/deployment.json
+          if-no-files-found: error
+          retention-days: 90
