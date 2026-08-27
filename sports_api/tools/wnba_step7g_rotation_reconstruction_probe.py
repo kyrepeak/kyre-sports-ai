@@ -4,16 +4,17 @@ WNBA play-by-play does not always emit between-period lineup changes as normal
 substitution events. Treating the entire game as one uninterrupted lineup state
 therefore creates false mismatches of roughly one full quarter.
 
-This proof solves each period independently. For every team/period:
-- the first outgoing substitution requires that player to be ON at period start;
-- the first incoming substitution requires that player to be OFF at period start;
-- exactly five players must start the period;
-- every subsequent in-period substitution must be a legal one-out/one-in move.
+This proof solves each period independently. It uses the first reliable PBP
+evidence for each player in a period to constrain the opening five:
+- an outgoing substitution means the player began the period ON;
+- an incoming substitution means the player began the period OFF;
+- a shot, free throw, rebound, turnover, jump ball, assist, or block before any
+  substitution evidence means the player was already ON the court.
 
 Period 1 is additionally pinned to the official box-score starters. Candidate
 period-start lineups for later periods are combined and accepted only if exactly
 one complete-game solution reconciles every player's reconstructed seconds to
-the official box-score minutes within the source clock precision. Ambiguity or
+the official box-score minutes within source clock precision. Ambiguity or
 mismatch fails closed. Production remains untouched.
 """
 from __future__ import annotations
@@ -43,9 +44,16 @@ OFF_ENV = (
     "WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED",
 )
 SUB_RE = re.compile(r"^SUB:\s*(.+?)\s+FOR\s+(.+?)\s*$", re.I)
-# PBP substitution clocks are exposed at hundredths/whole-second resolution,
-# while official player minutes can retain fractional-second accounting. The
-# reconstruction must land within one source clock tick, never a loose window.
+PARTICIPATION_CATEGORIES = {
+    "shot",
+    "free_throw",
+    "rebound",
+    "turnover",
+    "jump_ball",
+}
+# PBP clocks are exposed at hundredths/whole-second resolution while official
+# player minutes can retain fractional-second accounting. The reconstruction
+# must land within roughly one source clock tick, never a loose window.
 PLAYER_TOLERANCE_SECONDS = 1.05
 TEAM_TOLERANCE_SECONDS = 2.1
 MAX_COMBINATIONS = 250_000
@@ -181,21 +189,115 @@ def _parse_team_substitutions(
     return by_period, errors
 
 
-def _period_start_requirements(subs: list[dict[str, Any]]) -> tuple[set[int], set[int], list[str]]:
-    first_role: dict[int, str] = {}
+def _first_period_evidence(
+    team_key: str,
+    players: list[dict[str, Any]],
+    actions: list[dict[str, Any]],
+) -> dict[int, dict[int, dict[str, Any]]]:
+    """Return each player's first reliable ON/OFF evidence in each period.
+
+    Source order is authoritative. Once a player's first evidence is recorded,
+    later events cannot rewrite whether they must have begun that period ON or
+    OFF. Secondary assist/block IDs are used only when they belong to this
+    team's verified roster.
+    """
+    roster_ids = {
+        player["player_id"] for player in players if isinstance(player.get("player_id"), int)
+    }
+    lookup = _player_lookup(players)
+    evidence: dict[int, dict[int, dict[str, Any]]] = {}
+
+    def record(period: int, player_id: int, role: str, reason: str, action: dict[str, Any]) -> None:
+        period_map = evidence.setdefault(period, {})
+        if player_id in period_map:
+            return
+        period_map[player_id] = {
+            "role": role,
+            "reason": reason,
+            "action_number": action.get("action_number"),
+            "clock": action.get("clock"),
+            "elapsed_game_seconds": action.get("elapsed_game_seconds"),
+        }
+
+    for action in actions:
+        period = action.get("period")
+        if not isinstance(period, int) or period <= 0:
+            continue
+        category = action.get("event_category")
+
+        if category == "substitution" and action.get("team_key") == team_key:
+            description = str(action.get("description") or "").strip()
+            match = SUB_RE.match(description)
+            if match:
+                incoming_id, _ = _resolve_incoming(match.group(1), lookup)
+                outgoing_id = action.get("person_id")
+                if isinstance(outgoing_id, int) and outgoing_id in roster_ids:
+                    record(
+                        period,
+                        outgoing_id,
+                        "on",
+                        "first_outgoing_substitution",
+                        action,
+                    )
+                if isinstance(incoming_id, int) and incoming_id in roster_ids:
+                    record(
+                        period,
+                        incoming_id,
+                        "off",
+                        "first_incoming_substitution",
+                        action,
+                    )
+            continue
+
+        participant_ids: set[int] = set()
+        person_id = action.get("person_id")
+        if (
+            action.get("team_key") == team_key
+            and category in PARTICIPATION_CATEGORIES
+            and isinstance(person_id, int)
+            and person_id in roster_ids
+        ):
+            participant_ids.add(person_id)
+
+        # Assister and blocker must physically be on court for the recorded play.
+        # A block belongs to the defending team, so roster membership—not the
+        # action's offense team—is the safe ownership test.
+        for field in ("assist_person_id", "block_person_id"):
+            player_id = action.get(field)
+            if isinstance(player_id, int) and player_id in roster_ids:
+                participant_ids.add(player_id)
+
+        for player_id in sorted(participant_ids):
+            record(
+                period,
+                player_id,
+                "on",
+                f"first_participation_{category}",
+                action,
+            )
+
+    return evidence
+
+
+def _period_start_requirements(
+    first_evidence: dict[int, dict[str, Any]],
+) -> tuple[set[int], set[int], list[str]]:
+    required_on = {
+        player_id for player_id, item in first_evidence.items() if item.get("role") == "on"
+    }
+    required_off = {
+        player_id for player_id, item in first_evidence.items() if item.get("role") == "off"
+    }
     errors: list[str] = []
-    for sub in subs:
-        outgoing = sub["outgoing_player_id"]
-        incoming = sub["incoming_player_id"]
-        if outgoing not in first_role:
-            first_role[outgoing] = "outgoing"
-        if incoming not in first_role:
-            first_role[incoming] = "incoming"
-    required_on = {player_id for player_id, role in first_role.items() if role == "outgoing"}
-    required_off = {player_id for player_id, role in first_role.items() if role == "incoming"}
     overlap = required_on & required_off
     if overlap:
-        errors.append("period_start_requirement_overlap:" + ",".join(map(str, sorted(overlap))))
+        errors.append(
+            "period_start_requirement_overlap:" + ",".join(map(str, sorted(overlap)))
+        )
+    if len(required_on) > 5:
+        errors.append(
+            "period_start_required_on_exceeds_five:" + ",".join(map(str, sorted(required_on)))
+        )
     return required_on, required_off, errors
 
 
@@ -210,7 +312,9 @@ def _simulate_period(
     current = set(start_lineup)
     tracked = {player_id: 0.0 for player_id in roster_ids}
     open_since = {player_id: period_start for player_id in current}
-    stints: dict[int, list[tuple[float, float]]] = {player_id: [] for player_id in roster_ids}
+    stints: dict[int, list[tuple[float, float]]] = {
+        player_id: [] for player_id in roster_ids
+    }
     last_elapsed = period_start
     transitions: list[dict[str, Any]] = []
 
@@ -264,17 +368,19 @@ def _period_candidates(
     period: int,
     players: list[dict[str, Any]],
     subs: list[dict[str, Any]],
+    first_evidence: dict[int, dict[str, Any]],
     official_starters: set[int],
     active_ids: set[int],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     roster_ids = {
         player["player_id"] for player in players if isinstance(player.get("player_id"), int)
     }
-    required_on, required_off, requirement_errors = _period_start_requirements(subs)
+    required_on, required_off, requirement_errors = _period_start_requirements(first_evidence)
     if requirement_errors or required_on & required_off or len(required_on) > 5:
         return [], {
             "required_on": sorted(required_on),
             "required_off": sorted(required_off),
+            "first_evidence": first_evidence,
             "requirement_errors": requirement_errors,
         }
 
@@ -285,11 +391,15 @@ def _period_candidates(
             and official_starters.isdisjoint(required_off)
         ) else []
     else:
-        # A player with zero official minutes cannot be a period starter. Limit
-        # unknown choices to players who actually appeared in the game.
         eligible_unknown = sorted(active_ids - required_on - required_off)
         needed = 5 - len(required_on)
-        lineups = [required_on | set(extra) for extra in combinations(eligible_unknown, needed)]
+        if needed < 0 or needed > len(eligible_unknown):
+            lineups = []
+        else:
+            lineups = [
+                required_on | set(extra)
+                for extra in combinations(eligible_unknown, needed)
+            ]
 
     candidates = []
     for lineup in lineups:
@@ -299,17 +409,25 @@ def _period_candidates(
     return candidates, {
         "required_on": sorted(required_on),
         "required_off": sorted(required_off),
+        "first_evidence": first_evidence,
         "candidate_count": len(candidates),
         "requirement_errors": requirement_errors,
     }
 
 
-def _merge_stints(period_solutions: tuple[dict[str, Any], ...], roster_ids: set[int]) -> dict[int, list[tuple[float, float]]]:
-    raw: dict[int, list[tuple[float, float]]] = {player_id: [] for player_id in roster_ids}
+def _merge_stints(
+    period_solutions: tuple[dict[str, Any], ...],
+    roster_ids: set[int],
+) -> dict[int, list[tuple[float, float]]]:
+    raw: dict[int, list[tuple[float, float]]] = {
+        player_id: [] for player_id in roster_ids
+    }
     for solution in period_solutions:
         for player_id, intervals in solution["stints"].items():
             raw[player_id].extend(intervals)
-    merged: dict[int, list[tuple[float, float]]] = {player_id: [] for player_id in roster_ids}
+    merged: dict[int, list[tuple[float, float]]] = {
+        player_id: [] for player_id in roster_ids
+    }
     for player_id, intervals in raw.items():
         ordered = sorted(intervals)
         for start, end in ordered:
@@ -350,6 +468,9 @@ def _solve_side(
     by_period, parse_errors = _parse_team_substitutions(
         str(team.get("team_key")), players, actions
     )
+    evidence_by_period = _first_period_evidence(
+        str(team.get("team_key")), players, actions
+    )
 
     candidate_lists: list[list[dict[str, Any]]] = []
     period_evidence: dict[int, Any] = {}
@@ -358,6 +479,7 @@ def _solve_side(
             period,
             players,
             by_period.get(period, []),
+            evidence_by_period.get(period, {}),
             official_starters,
             active_ids,
         )
@@ -501,9 +623,13 @@ def _solve_side(
 
 
 def main() -> None:
-    off_state = {key: os.getenv(key, "").strip().casefold() == "false" for key in OFF_ENV}
+    off_state = {
+        key: os.getenv(key, "").strip().casefold() == "false" for key in OFF_ENV
+    }
     if not all(off_state.values()):
-        raise RuntimeError("Rotation reconstruction probe refused because production is not fully OFF.")
+        raise RuntimeError(
+            "Rotation reconstruction probe refused because production is not fully OFF."
+        )
 
     box = get_first_party_game_box_score_dataset(GAME_ID, SEASON)
     pbp = get_first_party_play_by_play_dataset(GAME_ID, SEASON)
@@ -542,6 +668,7 @@ def main() -> None:
         "home": home,
         "decision": {
             "single_game_period_aware_reconciliation_passed": passed,
+            "first_participation_evidence_used": True,
             "unique_period_start_lineups_required": True,
             "rotation_boundaries_deterministic_from_first_party_data": passed,
             "multi_game_certification_required_before_provider_integration": True,
@@ -552,7 +679,9 @@ def main() -> None:
         "sportsbook_called": False,
         "scheduler_started": False,
     }
-    REPORT_PATH.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    REPORT_PATH.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
     print(json.dumps({
         "passed": passed,
