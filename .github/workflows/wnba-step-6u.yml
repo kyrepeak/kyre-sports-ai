@@ -1,0 +1,199 @@
+name: WNBA Step 6U storage-aware activation bridge
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6u_activation_bridge.py'
+      - 'sports_api/api/wnba_step6u_activation_bridge.py'
+      - 'sports_api/tests/test_wnba_step6u_activation_bridge.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6u.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6u_activation_bridge.py'
+      - 'sports_api/api/wnba_step6u_activation_bridge.py'
+      - 'sports_api/tests/test_wnba_step6u_activation_bridge.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6u.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6u-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6u-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact Step 6U revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact Step 6U revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "Certified exact Step 6U revision: $EXPECTED_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6U core API and main router
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6u_activation_bridge.py \
+            sports_api/api/wnba_step6u_activation_bridge.py \
+            sports_api/main.py
+
+      - name: Run Step 6U activation bridge tests
+        run: python -m unittest sports_api.tests.test_wnba_step6u_activation_bridge
+
+      - name: Run frozen Step 6T durable evidence regression
+        run: python -m unittest sports_api.tests.test_wnba_step6t_canary_evidence
+
+      - name: Run frozen Step 6S storage-aware canary regression
+        run: python -m unittest sports_api.tests.test_wnba_step6s_canary_storage
+
+      - name: Run frozen Step 6R Supabase backend regression
+        run: python -m unittest sports_api.tests.test_wnba_step6r_supabase_storage
+
+      - name: Run frozen Step 6Q durable-storage regression
+        run: python -m unittest sports_api.tests.test_wnba_step6q_durable_storage
+
+      - name: Run frozen Step 6K scheduler-preflight regression
+        run: python -m unittest sports_api.tests.test_wnba_step6k_activation_preflight
+
+      - name: Run existing Step 5W activation authority regression
+        run: python -m unittest sports_api.tests.test_wnba_staging_activation_gate
+
+      - name: Run Phase 6 master certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove Step 6T through Step 6Q were not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code cdd11cabc707135362d47dd5e4d65b89e189127f -- \
+            sports_api/wnba_step6t_canary_evidence.py \
+            sports_api/api/wnba_step6t_canary_evidence.py \
+            sports_api/tests/test_wnba_step6t_canary_evidence.py \
+            sports_api/wnba_step6s_canary_storage.py \
+            sports_api/api/wnba_step6j_canary.py \
+            sports_api/tests/test_wnba_step6s_canary_storage.py \
+            sports_api/wnba_step6r_supabase_storage.py \
+            sports_api/api/wnba_step6r_supabase_storage.py \
+            sports_api/sql/wnba_step6r_supabase.sql \
+            sports_api/tests/test_wnba_step6r_supabase_storage.py \
+            sports_api/wnba_step6q_durable_storage.py \
+            sports_api/api/wnba_step6q_durable_storage.py \
+            sports_api/tests/test_wnba_step6q_durable_storage.py
+          echo 'Frozen Step 6T/6S/6R/6Q implementations are unchanged.'
+
+      - name: Prove frozen Step 6K and Step 5W authorities were not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code cdd11cabc707135362d47dd5e4d65b89e189127f -- \
+            sports_api/wnba_step6k_activation_preflight.py \
+            sports_api/wnba_staging_activation_gate.py
+          echo 'Frozen Step 6K and Step 5W authority implementations are unchanged.'
+
+      - name: Prove Step 6U core cannot mutate durable state or run a cycle
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('sports_api/wnba_step6u_activation_bridge.py').read_text(encoding='utf-8')
+          forbidden = [
+              'write_' + 'bytes_atomic(',
+              '.de' + 'lete(',
+              'exclusive_' + 'lock(',
+              'sync_' + 'reconciled_draftkings_to_kyre_feed(',
+              'run_' + 'pregame_board_cycle(',
+              '_start_' + 'worker(',
+          ]
+          for token in forbidden:
+              assert token not in source, token
+          assert '"scheduler_authorized": False' in source
+          assert '"scheduler_authorized_by_step6u": False' in source
+          print('Step 6U core has no durable mutation or scheduler-cycle primitive.')
+          PY
+
+      - name: Prove Step 6U status is verification-free and fail-closed
+        shell: bash
+        run: |
+          python - <<'PY'
+          from unittest.mock import patch
+          import sports_api.wnba_step6u_activation_bridge as u
+
+          step6t = {
+              'selected_backend': 'supabase',
+              'configuration_ready': True,
+              'configuration_error': None,
+              'verification_requires_network': True,
+              'verification_is_read_only': True,
+          }
+          step5w = {
+              'phase': 'pre_activation_checkpoint_ready',
+              'activation_requested': False,
+              'checkpoint_ready': True,
+              'live_cycle_allowed': False,
+              'activation_checkpoint_sha256': 'a' * 64,
+          }
+          with patch.object(u, 'get_step6t_canary_evidence_status', return_value=step6t), patch.object(
+              u, 'get_staging_activation_gate', return_value=step5w
+          ), patch.object(
+              u, 'verify_step6t_canary_evidence', side_effect=AssertionError('status may not verify storage')
+          ):
+              result = u.get_step6u_activation_bridge_status({})
+          assert result['configuration_ready'] is True
+          assert result['bridge_ready'] is False
+          assert result['scheduler_authorized'] is False
+          assert result['safety']['network_used_by_status'] is False
+          assert result['safety']['storage_read_performed_by_status'] is False
+          print('Step 6U status remains network-free and cannot create a bridge checkpoint.')
+          PY
+
+      - name: Prove Step 6U API separates status from authenticated verification
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('sports_api/api/wnba_step6u_activation_bridge.py').read_text(encoding='utf-8')
+          assert '@router.get("/step6u-activation-bridge/status")' in source
+          assert '@router.post("/step6u-activation-bridge/verify")' in source
+          assert 'require_ingest_authorization(authorization)' in source
+          assert '@router.put' not in source.lower()
+          assert '@router.delete' not in source.lower()
+          print('Step 6U exposes public status plus authenticated read-only verification only.')
+          PY
+
+      - name: Prove certification contains no live credentials or activation executor
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          workflow = Path('.github/workflows/wnba-step-6u.yml').read_text(encoding='utf-8').lower()
+          forbidden = [
+              'se' + 'crets.',
+              'render_' + 'api_key',
+              'supabase_' + 'secret_key:',
+              'curl ' + '-x post',
+          ]
+          for token in forbidden:
+              assert token not in workflow, token
+          print('Step 6U certification contains no live credential or activation executor.')
+          PY

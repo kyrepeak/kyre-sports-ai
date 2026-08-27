@@ -1,0 +1,162 @@
+name: WNBA Step 6C Kyre-owned market architecture
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+  pull_request:
+    paths:
+      - 'sports_api/**'
+      - '.github/workflows/wnba-step-6c.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  step6c-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6C owned-market modules
+        run: |
+          python -m py_compile \
+            sports_api/collectors/wnba_kyre_market_feed.py \
+            sports_api/wnba_prop_feed_failover.py \
+            sports_api/api/wnba_kyre_market_feed.py \
+            sports_api/wnba_render_provisioning_step6c.py \
+            sports_api/tools/wnba_kyre_market_feed_import.py \
+            sports_api/tools/wnba_render_provision_step6c.py \
+            sports_api/main.py
+
+      - name: Run Step 6C owned-market tests
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed
+
+      - name: Run Step 6C secured ingest route tests
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed_routes
+
+      - name: Run frozen Step 5O regression
+        run: python -m unittest sports_api.tests.test_wnba_prop_feed_failover
+
+      - name: Run frozen Step 5P regression
+        run: python -m unittest sports_api.tests.test_wnba_pregame_board_scheduler
+
+      - name: Run frozen Step 5R regression
+        run: python -m unittest sports_api.tests.test_wnba_production_runtime_readiness
+
+      - name: Run Step 6C Render provisioning tests
+        run: python -m unittest sports_api.tests.test_wnba_render_provisioning_step6c
+
+      - name: Prove active Step 6C files do not require SportsGameOdds
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          active = [
+              Path('sports_api/collectors/wnba_kyre_market_feed.py'),
+              Path('sports_api/api/wnba_kyre_market_feed.py'),
+              Path('sports_api/wnba_render_provisioning_step6c.py'),
+              Path('sports_api/tools/wnba_render_provision_step6c.py'),
+          ]
+          render = Path('sports_api/wnba_render_provisioning_step6c.py').read_text(encoding='utf-8')
+          assert 'SPORTSGAMEODDS_API_KEY' in render  # only the declared retired dependency name
+          assert 'sportsgameodds_key' not in render
+          assert 'sportsbook_key' not in render
+          for path in active:
+              text = path.read_text(encoding='utf-8')
+              assert 'api.sportsgameodds.com' not in text.lower(), path
+          print('Step 6C active path is SportsGameOdds-network-free and vendor-secret-free.')
+          PY
+
+  publish-tested-step6c-image:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: step6c-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Resolve Step 6C immutable release identity
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          SHORT_SHA="${REVISION:0:12}"
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          RELEASE_ID="wnba-step6c-$SHORT_SHA"
+          echo "WNBA_STEP6C_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6C_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6C_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        shell: bash
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish exact Step 6C image
+        shell: bash
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$WNBA_STEP6C_REVISION" \
+            --build-arg WNBA_RELEASE_ID="$WNBA_STEP6C_RELEASE_ID" \
+            --metadata-file /tmp/wnba-step6c-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$WNBA_STEP6C_REPOSITORY:$WNBA_STEP6C_RELEASE_ID" \
+            -t "$WNBA_STEP6C_REPOSITORY:$WNBA_STEP6C_REVISION" \
+            --push .
+
+      - name: Freeze Step 6C digest and write sanitized handoff
+        shell: bash
+        run: |
+          mkdir -p .wnba-step6c-release
+          python - <<'PY'
+          import json, os, pathlib, re
+          meta = json.load(open('/tmp/wnba-step6c-build-metadata.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid image digest: {digest!r}')
+          image = f"{os.environ['WNBA_STEP6C_REPOSITORY']}@{digest}"
+          report = {
+              'schema_version': 'wnba_step_6c_release_handoff_v1',
+              'release_id': os.environ['WNBA_STEP6C_RELEASE_ID'],
+              'revision': os.environ['WNBA_STEP6C_REVISION'],
+              'immutable_image_ref': image,
+              'market_provider_mode': 'kyre',
+              'sportsgameodds_required': False,
+              'production_runtime_enabled': False,
+              'render_provisioning_attempted': False,
+              'sportsbook_called': False,
+              'monte_carlo_run': False,
+          }
+          pathlib.Path('.wnba-step6c-release/release-handoff.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          pathlib.Path('.wnba-step6c-release/PUBLISHED_IMAGE_REF.txt').write_text(image + '\n', encoding='utf-8')
+          print(image)
+          PY
+
+      - name: Upload Step 6C sanitized release handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6c-release-${{ github.run_id }}
+          path: .wnba-step6c-release/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

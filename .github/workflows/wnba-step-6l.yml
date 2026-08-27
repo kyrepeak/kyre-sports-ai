@@ -1,0 +1,122 @@
+name: WNBA Step 6L guarded production feed refresh
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6l_production_feed_refresh.py'
+      - 'sports_api/api/wnba_step6l_production_feed_refresh.py'
+      - 'sports_api/tests/test_wnba_step6l_production_feed_refresh.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6l.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6l_production_feed_refresh.py'
+      - 'sports_api/api/wnba_step6l_production_feed_refresh.py'
+      - 'sports_api/tests/test_wnba_step6l_production_feed_refresh.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6l.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6l-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6l-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact Step 6L revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6L authority
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6l_production_feed_refresh.py \
+            sports_api/api/wnba_step6l_production_feed_refresh.py \
+            sports_api/main.py
+
+      - name: Run Step 6L deterministic safety tests
+        run: python -m unittest sports_api.tests.test_wnba_step6l_production_feed_refresh
+
+      - name: Run Kyre-only Step 5O regression
+        run: python -m unittest sports_api.tests.test_wnba_prop_feed_failover
+
+      - name: Run Step 6I through Step 6K regressions
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_reconciled_direct_sync \
+            sports_api.tests.test_wnba_step6j_canary_activation \
+            sports_api.tests.test_wnba_step6j_render_canary_contract \
+            sports_api.tests.test_wnba_step6k_activation_preflight
+
+      - name: Prove Step 6L adds no paid-provider or public mutation bypass
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/wnba_step6l_production_feed_refresh.py').read_text(encoding='utf-8').lower()
+          api = Path('sports_api/api/wnba_step6l_production_feed_refresh.py').read_text(encoding='utf-8').lower()
+
+          for token in (
+              'put_env_var(', 'trigger_deploy(', 'create_service(', 'create_registry_credential(',
+              'collect_sportsgameodds_feed(', 'run_monte_carlo(', 'place_wager(',
+          ):
+              assert token not in core, token
+
+          assert '@router.post' not in api
+          assert 'sync_reconciled_draftkings_to_kyre_feed' in core
+          assert 'scoped[direct_sync_enabled_env] = "true"' in core
+          assert 'scoped[reconciled_sync_enabled_env] = "true"' in core
+          assert 'global_environment_mutated' in core
+          assert 'sports_game_odds_fallback_allowed' in core
+          print('Step 6L has no public mutation route, paid fallback, Render mutation, wager action, or global write-switch activation.')
+          PY
+
+      - name: Prove current no-hosting state remains safely deferred
+        shell: bash
+        run: |
+          python - <<'PY'
+          from unittest.mock import MagicMock, patch
+          import sports_api.wnba_step6l_production_feed_refresh as s
+
+          env = {
+              s.PRODUCTION_REFRESH_ENABLED_ENV: 'false',
+              s.MARKET_PROVIDER_MODE_ENV: 'kyre',
+              s.CANARY_ENABLED_ENV: 'false',
+              s.DIRECT_SYNC_ENABLED_ENV: 'false',
+              s.RECONCILED_SYNC_ENABLED_ENV: 'false',
+              s.REFRESH_LOCK_PATH_ENV: '/tmp/wnba-step6l-ci.lock',
+          }
+          blocked_step6k = {
+              'phase': 'post_canary_preactivation_blocked',
+              'scheduler_authorized': False,
+              'activation_checkpoint_sha256': None,
+              'step6j_verified': False,
+          }
+          syncer = MagicMock()
+          with patch.object(s, 'get_step6k_activation_preflight', return_value=blocked_step6k):
+              report = s.get_step6l_production_refresh_status(env=env)
+              assert report['production_refresh_ready'] is False
+              try:
+                  s.refresh_step6l_owned_market_feed(date='2026-08-27', season=2026, env=env, syncer=syncer)
+              except s.WNBAStep6LRefreshNotReadyError:
+                  pass
+              else:
+                  raise AssertionError('Step 6L refresh unexpectedly escaped the deferred gate')
+          syncer.assert_not_called()
+          print('Expected deferred state verified: no hosting, network request, or feed write was needed for Step 6L CI.')
+          PY

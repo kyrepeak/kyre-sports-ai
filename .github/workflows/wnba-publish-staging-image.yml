@@ -1,0 +1,95 @@
+name: WNBA publish immutable staging image
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish
+        required: true
+        default: api-foundation-v1
+      release_id:
+        description: Immutable WNBA release ID
+        required: true
+        default: wnba-staging-manual
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 1
+
+      - name: Resolve immutable revision
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          test "${#REVISION}" -eq 40
+          echo "WNBA_PUBLISH_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_PUBLISH_REPOSITORY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Buildx builder
+        run: docker buildx create --use --name wnba-step5v-publisher
+
+      - name: Build and publish immutable image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$WNBA_PUBLISH_REVISION" \
+            --build-arg WNBA_RELEASE_ID="${{ inputs.release_id }}" \
+            --metadata-file /tmp/wnba-step5v-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$WNBA_PUBLISH_REPOSITORY:${{ inputs.release_id }}" \
+            -t "$WNBA_PUBLISH_REPOSITORY:$WNBA_PUBLISH_REVISION" \
+            --push .
+
+      - name: Capture registry digest and publication manifest
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, re
+          meta = json.load(open('/tmp/wnba-step5v-build-metadata.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid registry digest: {digest!r}')
+          repo = os.environ['WNBA_PUBLISH_REPOSITORY']
+          revision = os.environ['WNBA_PUBLISH_REVISION']
+          release_id = os.environ['RELEASE_ID']
+          published = f'{repo}@{digest}'
+          payload = {
+              'schema_version': 'wnba_step_5v_ghcr_publication_v1',
+              'release_id': release_id,
+              'revision': revision,
+              'registry': 'ghcr.io',
+              'image_repository': repo,
+              'published_image_ref': published,
+              'image_digest_sha256': digest.removeprefix('sha256:'),
+              'runtime_activation_requested': False,
+              'next_action': 'Use this exact name@sha256 ref in the Step 5V Render staging handoff. Do not use :latest.',
+          }
+          out = pathlib.Path('.wnba-step5v-publication')
+          out.mkdir(exist_ok=True)
+          (out / 'published-image.json').write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          (out / 'PUBLISHED_IMAGE_REF.txt').write_text(published + '\n', encoding='utf-8')
+          print(published)
+          PY
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+
+      - name: Upload publication record
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step5v-publication-${{ inputs.release_id }}
+          path: .wnba-step5v-publication/
+          if-no-files-found: error
+          retention-days: 30

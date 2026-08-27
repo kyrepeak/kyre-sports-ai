@@ -1,0 +1,129 @@
+name: WNBA Step 6K post-canary activation preflight
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6k_activation_preflight.py'
+      - 'sports_api/api/wnba_step6k_activation_preflight.py'
+      - 'sports_api/api/wnba_pregame_board_scheduler_staging_activation.py'
+      - 'sports_api/tests/test_wnba_step6k_activation_preflight.py'
+      - 'sports_api/tests/test_wnba_staging_activation_gate.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6k.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6k_activation_preflight.py'
+      - 'sports_api/api/wnba_step6k_activation_preflight.py'
+      - 'sports_api/api/wnba_pregame_board_scheduler_staging_activation.py'
+      - 'sports_api/tests/test_wnba_step6k_activation_preflight.py'
+      - 'sports_api/tests/test_wnba_staging_activation_gate.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6k.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6k-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6k-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact Step 6K revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6K scheduler interlock
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6k_activation_preflight.py \
+            sports_api/api/wnba_step6k_activation_preflight.py \
+            sports_api/api/wnba_pregame_board_scheduler_staging_activation.py \
+            sports_api/main.py
+
+      - name: Run Step 6K fail-closed tests
+        run: python -m unittest sports_api.tests.test_wnba_step6k_activation_preflight
+
+      - name: Run existing Step 5W activation regression
+        run: python -m unittest sports_api.tests.test_wnba_staging_activation_gate sports_api.tests.test_wnba_staging_activation_routes
+
+      - name: Run Step 6J and frozen Step 6I regressions
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_step6j_canary_activation \
+            sports_api.tests.test_wnba_step6j_render_canary_contract \
+            sports_api.tests.test_wnba_reconciled_direct_sync
+
+      - name: Prove Step 6K itself is free and mutation-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/wnba_step6k_activation_preflight.py').read_text(encoding='utf-8').lower()
+          api = Path('sports_api/api/wnba_step6k_activation_preflight.py').read_text(encoding='utf-8').lower()
+          transport = Path('sports_api/api/wnba_pregame_board_scheduler_staging_activation.py').read_text(encoding='utf-8').lower()
+
+          forbidden_core = (
+              'put_env_var(', 'trigger_deploy(', 'create_service(', 'create_registry_credential(',
+              'sync_reconciled_draftkings_to_kyre_feed(', 'write_kyre_market_feed(',
+              'run_monte_carlo(', 'place_wager(', 'httpx.', 'requests.',
+          )
+          for token in forbidden_core:
+              assert token not in core, token
+
+          assert '@router.post' not in api
+          assert 'require_staging_activation_ready = require_step6k_scheduler_authorized' in transport
+          assert 'require_staging_activation_ready()' in transport
+          assert 'scheduler_authorized = step6k.get("scheduler_authorized") is true' in transport
+          assert 'if not scheduler_authorized or not scheduler_cycle_ready:' in transport
+          assert 'step_6j_durable_canary_required' in transport
+          assert 'step6m.require_step6m_scheduler_ready()' in transport
+
+          print('Step 6K remains read-only/free and the Step 6M production scheduler path stays hard-interlocked behind it.')
+          PY
+
+      - name: Prove deferred live state is expected without paid hosting
+        shell: bash
+        run: |
+          python - <<'PY'
+          from unittest.mock import patch
+          import sports_api.wnba_step6k_activation_preflight as s
+
+          missing = {
+              'canary_enabled': False,
+              'direct_sync_enabled': False,
+              'reconciled_sync_enabled': False,
+              'production_runtime_enabled': False,
+              'feed_exists': False,
+              'feed_content_sha256': None,
+              'canary_state': None,
+          }
+          step5w = {
+              'phase': 'pre_activation_checkpoint_ready',
+              'activation_requested': False,
+              'checkpoint_ready': True,
+              'live_cycle_allowed': False,
+              'activation_checkpoint_sha256': 'c' * 64,
+              'approved_checkpoint_sha256': None,
+          }
+          with patch.object(s, 'get_step6j_canary_status', return_value=missing), patch.object(s, 'get_staging_activation_gate', return_value=step5w):
+              report = s.get_step6k_activation_preflight()
+          assert report['step6j_verified'] is False
+          assert report['scheduler_authorized'] is False
+          assert report['activation_checkpoint_sha256'] is None
+          assert 'deferred' in report['deferred_reason'].lower()
+          print('Expected deferred state verified: no paid hosting is required to complete Step 6K CI.')
+          PY

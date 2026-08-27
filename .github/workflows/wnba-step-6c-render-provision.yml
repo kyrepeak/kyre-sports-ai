@@ -1,0 +1,163 @@
+name: WNBA Step 6C manual Render staging provision
+
+on:
+  workflow_dispatch:
+    inputs:
+      provision_render:
+        description: 'Provision/update the paid Render staging service'
+        required: true
+        type: boolean
+        default: false
+      confirm_paid_provisioning:
+        description: 'I explicitly approve the paid Render Starter service and persistent disk'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require both explicit switches
+        shell: bash
+        run: |
+          test '${{ inputs.provision_render }}' = 'true'
+          test '${{ inputs.confirm_paid_provisioning }}' = 'true'
+          echo 'Explicit Step 6C paid provisioning approval accepted.'
+
+  provision-owned-market-staging:
+    needs: guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: wnba-render-staging
+    env:
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_RENDER_ALLOW_PAID_PROVISIONING: 'true'
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+      GHCR_RENDER_USERNAME: ${{ secrets.GHCR_RENDER_USERNAME }}
+      GHCR_RENDER_TOKEN: ${{ secrets.GHCR_RENDER_TOKEN }}
+    steps:
+      - name: Checkout exact requested revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Confirm required operator secrets without exposing values
+        shell: bash
+        run: |
+          missing=0
+          for name in RENDER_API_KEY GHCR_RENDER_USERNAME GHCR_RENDER_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required environment secret: $name" >&2
+              missing=1
+            fi
+          done
+          test "$missing" -eq 0
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          if [ -n "${SPORTSGAMEODDS_API_KEY:-}" ]; then
+            echo 'SPORTSGAMEODDS_API_KEY is intentionally ignored by Step 6C.'
+          fi
+
+      - name: Log in to GHCR with GitHub Actions publisher
+        shell: bash
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish exact approved Step 6C image
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          SHORT_SHA="${REVISION:0:12}"
+          RELEASE_ID="wnba-step6c-$SHORT_SHA"
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$REVISION" \
+            --build-arg WNBA_RELEASE_ID="$RELEASE_ID" \
+            --metadata-file /tmp/step6c-apply-build.json \
+            -f sports_api/Dockerfile \
+            -t "$REPOSITORY:$REVISION" \
+            -t "$REPOSITORY:$RELEASE_ID" \
+            --push .
+          echo "WNBA_STEP6C_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6C_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6C_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+
+      - name: Freeze exact immutable image digest
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, re
+          meta = json.load(open('/tmp/step6c-apply-build.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid image digest: {digest!r}')
+          image = f"{os.environ['WNBA_STEP6C_REPOSITORY']}@{digest}"
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f"WNBA_STEP6C_IMAGE_REF={image}\n")
+          print(image)
+          PY
+
+      - name: Provision exact Kyre-owned Render staging service
+        shell: bash
+        env:
+          PYTHONPATH: .
+        run: |
+          mkdir -p .wnba-step6c-provision
+          python sports_api/tools/wnba_render_provision_step6c.py \
+            --confirm-paid-provisioning \
+            --release-id "$WNBA_STEP6C_RELEASE_ID" \
+            --revision "$WNBA_STEP6C_REVISION" \
+            --image-ref "$WNBA_STEP6C_IMAGE_REF" \
+            --deploy-timeout-seconds 420 \
+            --poll-seconds 3 \
+            > .wnba-step6c-provision/render-provisioning.json
+
+      - name: Assert result remains preactivation and SportsGameOdds-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('.wnba-step6c-provision/render-provisioning.json').read_text(encoding='utf-8'))
+          safety = data.get('safety') or {}
+          assert data.get('provisioning_complete') is True
+          assert safety.get('production_runtime_enabled') is False
+          assert safety.get('sportsgameodds_required') is False
+          assert safety.get('sportsgameodds_injected') is False
+          assert safety.get('sportsbook_called') is False
+          assert safety.get('monte_carlo_run') is False
+          assert safety.get('market_ingest_token_returned') is False
+          print(json.dumps({
+              'provisioning_complete': True,
+              'service_id': (data.get('identity') or {}).get('service_id'),
+              'service_url': (data.get('identity') or {}).get('service_url'),
+              'market_provider_mode': (data.get('identity') or {}).get('market_provider_mode'),
+              'production_runtime_enabled': False,
+              'sportsgameodds_required': False,
+          }, sort_keys=True))
+          PY
+
+      - name: Upload sanitized provisioning evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6c-render-provision-${{ github.run_id }}
+          path: .wnba-step6c-provision/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

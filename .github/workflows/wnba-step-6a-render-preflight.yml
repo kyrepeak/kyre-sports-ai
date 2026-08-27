@@ -1,0 +1,16 @@
+name: WNBA Step 6A legacy Render preflight (retired)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  legacy-retired:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Step 6A retired
+        run: |
+          echo "Step 6A is retired because its credential contract included SportsGameOdds."
+          echo "Use WNBA Step 6C Kyre-owned market architecture and its manual Render provision workflow."

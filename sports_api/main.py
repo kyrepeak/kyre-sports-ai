@@ -1,0 +1,192 @@
+from fastapi import FastAPI
+
+# Step 6D must install before WNBA scheduler/router modules bind Step 5O functions.
+import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integration  # noqa: F401
+# Step 6I interposes reconciliation before the Step 6D runtime write hook.
+import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  # noqa: F401
+
+from sports_api.api.health import router as health_router
+from sports_api.api.mlb import router as mlb_router
+from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
+from sports_api.api.mlb_advanced_pitching import router as mlb_advanced_pitching_router
+from sports_api.api.mlb_arsenal_matchup import router as mlb_arsenal_matchup_router
+from sports_api.api.mlb_batted_ball_context import router as mlb_batted_ball_context_router
+from sports_api.api.mlb_batter_pitcher import router as mlb_batter_pitcher_router
+from sports_api.api.mlb_boxscore import router as mlb_boxscore_router
+from sports_api.api.mlb_bullpen import router as mlb_bullpen_router
+from sports_api.api.mlb_environment import router as mlb_environment_router
+from sports_api.api.mlb_game_logs import router as mlb_game_logs_router
+from sports_api.api.mlb_head_to_head import router as mlb_head_to_head_router
+from sports_api.api.mlb_hit_defense_context import router as mlb_hit_defense_context_router
+from sports_api.api.mlb_hit_environment_context import router as mlb_hit_environment_context_router
+from sports_api.api.mlb_hit_opportunity_features import router as mlb_hit_opportunity_features_router
+from sports_api.api.mlb_hitter_pitch_type import router as mlb_hitter_pitch_type_router
+from sports_api.api.mlb_lineup_matchups import router as mlb_lineup_matchups_router
+from sports_api.api.mlb_park_factor_context import router as mlb_park_factor_context_router
+from sports_api.api.mlb_pitch_movement import router as mlb_pitch_movement_router
+from sports_api.api.mlb_pitch_type_effectiveness import router as mlb_pitch_type_effectiveness_router
+from sports_api.api.mlb_plate_appearances import router as mlb_plate_appearances_router
+from sports_api.api.mlb_recent_form import router as mlb_recent_form_router
+from sports_api.api.mlb_roster_status import router as mlb_roster_status_router
+from sports_api.api.mlb_slate_verification import router as mlb_slate_verification_router
+from sports_api.api.mlb_starting_pitchers import router as mlb_starting_pitchers_router
+from sports_api.api.mlb_stats import router as mlb_stats_router
+from sports_api.api.mlb_team_analytics import router as mlb_team_analytics_router
+from sports_api.api.wnba import router as wnba_router
+from sports_api.api.wnba_advanced import router as wnba_advanced_router
+from sports_api.api.wnba_availability import router as wnba_availability_router
+from sports_api.api.wnba_baseline_projection import router as wnba_baseline_projection_router
+from sports_api.api.wnba_clutch_context import router as wnba_clutch_context_router
+from sports_api.api.wnba_correlated_monte_carlo import router as wnba_correlated_monte_carlo_router
+from sports_api.api.wnba_daily_slate_top_five import router as wnba_daily_slate_top_five_router
+from sports_api.api.wnba_defensive_activity import router as wnba_defensive_activity_router
+from sports_api.api.wnba_deployment_smoke import router as wnba_deployment_smoke_router
+from sports_api.api.wnba_draftkings_direct import router as wnba_draftkings_direct_router
+from sports_api.api.wnba_draftkings_endpoint_discovery import router as wnba_draftkings_endpoint_discovery_router
+from sports_api.api.wnba_empirical_outcome_distribution import router as wnba_empirical_outcome_distribution_router
+from sports_api.api.wnba_event_lineup_context import router as wnba_event_lineup_context_router
+from sports_api.api.wnba_historical_backtest_calibration import router as wnba_historical_backtest_calibration_router
+from sports_api.api.wnba_hosted_staging import router as wnba_hosted_staging_router
+from sports_api.api.wnba_kyre_market_feed import router as wnba_kyre_market_feed_router
+from sports_api.api.wnba_lineup_context import router as wnba_lineup_context_router
+from sports_api.api.wnba_live_game import router as wnba_live_game_router
+from sports_api.api.wnba_matchup_adjusted_projection import router as wnba_matchup_adjusted_projection_router
+from sports_api.api.wnba_matchup_context import router as wnba_matchup_context_router
+from sports_api.api.wnba_model_input_readiness import router as wnba_model_input_readiness_router
+from sports_api.api.wnba_multi_sportsbook_market_consensus import router as wnba_multi_sportsbook_market_consensus_router
+from sports_api.api.wnba_officiating_context import router as wnba_officiating_context_router
+from sports_api.api.wnba_player_event_features import router as wnba_player_event_features_router
+from sports_api.api.wnba_player_opportunity_context import router as wnba_player_opportunity_context_router
+from sports_api.api.wnba_player_prop_top_five_board import router as wnba_player_prop_top_five_board_router
+from sports_api.api.wnba_pregame_board_scheduler_staging_activation import router as wnba_pregame_board_scheduler_router
+from sports_api.api.wnba_pregame_prediction_store import router as wnba_pregame_prediction_store_router
+from sports_api.api.wnba_projection_input_snapshot import router as wnba_projection_input_snapshot_router
+from sports_api.api.wnba_projection_scenarios import router as wnba_projection_scenarios_router
+from sports_api.api.wnba_prop_feed_collector import router as wnba_prop_feed_collector_router
+from sports_api.api.wnba_prop_feed_failover import router as wnba_prop_feed_failover_router
+from sports_api.api.wnba_prop_line_feed_adapter import router as wnba_prop_line_feed_adapter_router
+from sports_api.api.wnba_prop_threshold_probability import router as wnba_prop_threshold_probability_router
+from sports_api.api.wnba_real_staging import router as wnba_real_staging_router
+from sports_api.api.wnba_release_activation import router as wnba_release_activation_router
+from sports_api.api.wnba_render_attachment import router as wnba_render_attachment_router
+from sports_api.api.wnba_render_provisioning import router as wnba_render_provisioning_router
+from sports_api.api.wnba_rotation_context import router as wnba_rotation_context_router
+from sports_api.api.wnba_schedule_context import router as wnba_schedule_context_router
+from sports_api.api.wnba_shot_context import router as wnba_shot_context_router
+from sports_api.api.wnba_sportsbook_market_edge import router as wnba_sportsbook_market_edge_router
+from sports_api.api.wnba_standings import router as wnba_standings_router
+from sports_api.api.wnba_step6k_activation_preflight import router as wnba_step6k_activation_preflight_router
+from sports_api.api.wnba_step6l_production_feed_refresh import router as wnba_step6l_production_feed_refresh_router
+from sports_api.api.wnba_step6m_scheduler_orchestration import router as wnba_step6m_scheduler_orchestration_router
+from sports_api.api.wnba_step6n_production_observability import router as wnba_step6n_production_observability_router
+from sports_api.api.wnba_step6o_activation_rollback_package import router as wnba_step6o_activation_rollback_package_router
+from sports_api.api.wnba_step6p_phase6_certification import router as wnba_step6p_phase6_certification_router
+from sports_api.api.wnba_step6q_durable_storage import router as wnba_step6q_durable_storage_router
+from sports_api.api.wnba_step6r_supabase_storage import router as wnba_step6r_supabase_storage_router
+from sports_api.api.wnba_step6t_canary_evidence import router as wnba_step6t_canary_evidence_router
+from sports_api.api.wnba_step6u_activation_bridge import router as wnba_step6u_activation_bridge_router
+from sports_api.api.wnba_step6w_final_certification import router as wnba_step6w_final_certification_router
+from sports_api.api.wnba_team_history import router as wnba_team_history_router
+from sports_api.api.wnba_tracking import router as wnba_tracking_router
+
+app = FastAPI(
+    title="Kyre Sports API",
+    description="Sports data and analytics API for the Kyre Sports AI Streamlit app.",
+    version="0.1.0",
+)
+
+app.include_router(health_router)
+app.include_router(mlb_router)
+app.include_router(mlb_stats_router)
+app.include_router(mlb_game_logs_router)
+app.include_router(mlb_recent_form_router)
+app.include_router(mlb_boxscore_router)
+app.include_router(mlb_team_analytics_router)
+app.include_router(mlb_head_to_head_router)
+app.include_router(mlb_starting_pitchers_router)
+app.include_router(mlb_slate_verification_router)
+app.include_router(mlb_bullpen_router)
+app.include_router(mlb_environment_router)
+app.include_router(mlb_batter_pitcher_router)
+app.include_router(mlb_roster_status_router)
+app.include_router(mlb_advanced_hitting_router)
+app.include_router(mlb_advanced_pitching_router)
+app.include_router(mlb_pitch_type_effectiveness_router)
+app.include_router(mlb_pitch_movement_router)
+app.include_router(mlb_hitter_pitch_type_router)
+app.include_router(mlb_arsenal_matchup_router)
+app.include_router(mlb_lineup_matchups_router)
+app.include_router(mlb_plate_appearances_router)
+app.include_router(mlb_hit_opportunity_features_router)
+app.include_router(mlb_hit_environment_context_router)
+app.include_router(mlb_hit_defense_context_router)
+app.include_router(mlb_batted_ball_context_router)
+app.include_router(mlb_park_factor_context_router)
+app.include_router(wnba_router)
+app.include_router(wnba_advanced_router)
+app.include_router(wnba_availability_router)
+app.include_router(wnba_baseline_projection_router)
+app.include_router(wnba_clutch_context_router)
+app.include_router(wnba_correlated_monte_carlo_router)
+app.include_router(wnba_daily_slate_top_five_router)
+app.include_router(wnba_defensive_activity_router)
+app.include_router(wnba_deployment_smoke_router)
+app.include_router(wnba_draftkings_direct_router)
+app.include_router(wnba_draftkings_endpoint_discovery_router)
+app.include_router(wnba_empirical_outcome_distribution_router)
+app.include_router(wnba_event_lineup_context_router)
+app.include_router(wnba_historical_backtest_calibration_router)
+app.include_router(wnba_hosted_staging_router)
+app.include_router(wnba_kyre_market_feed_router)
+app.include_router(wnba_lineup_context_router)
+app.include_router(wnba_live_game_router)
+app.include_router(wnba_matchup_adjusted_projection_router)
+app.include_router(wnba_matchup_context_router)
+app.include_router(wnba_model_input_readiness_router)
+app.include_router(wnba_multi_sportsbook_market_consensus_router)
+app.include_router(wnba_officiating_context_router)
+app.include_router(wnba_player_event_features_router)
+app.include_router(wnba_player_opportunity_context_router)
+app.include_router(wnba_player_prop_top_five_board_router)
+app.include_router(wnba_pregame_board_scheduler_router)
+app.include_router(wnba_pregame_prediction_store_router)
+app.include_router(wnba_projection_input_snapshot_router)
+app.include_router(wnba_projection_scenarios_router)
+app.include_router(wnba_prop_feed_collector_router)
+app.include_router(wnba_prop_feed_failover_router)
+app.include_router(wnba_prop_line_feed_adapter_router)
+app.include_router(wnba_prop_threshold_probability_router)
+app.include_router(wnba_real_staging_router)
+app.include_router(wnba_release_activation_router)
+app.include_router(wnba_render_attachment_router)
+app.include_router(wnba_render_provisioning_router)
+app.include_router(wnba_rotation_context_router)
+app.include_router(wnba_schedule_context_router)
+app.include_router(wnba_shot_context_router)
+app.include_router(wnba_sportsbook_market_edge_router)
+app.include_router(wnba_standings_router)
+app.include_router(wnba_step6k_activation_preflight_router)
+app.include_router(wnba_step6l_production_feed_refresh_router)
+app.include_router(wnba_step6m_scheduler_orchestration_router)
+app.include_router(wnba_step6n_production_observability_router)
+app.include_router(wnba_step6o_activation_rollback_package_router)
+app.include_router(wnba_step6p_phase6_certification_router)
+app.include_router(wnba_step6q_durable_storage_router)
+app.include_router(wnba_step6r_supabase_storage_router)
+app.include_router(wnba_step6t_canary_evidence_router)
+app.include_router(wnba_step6u_activation_bridge_router)
+app.include_router(wnba_step6w_final_certification_router)
+app.include_router(wnba_team_history_router)
+app.include_router(wnba_tracking_router)
+
+
+@app.get("/", tags=["system"])
+def root():
+    return {
+        "name": "Kyre Sports API",
+        "version": "0.1.0",
+        "status": "online",
+        "docs": "/docs",
+        "health": "/health",
+        "first_data_endpoint": "/api/v1/mlb/games/today",
+    }

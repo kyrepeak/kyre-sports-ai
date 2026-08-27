@@ -1,0 +1,136 @@
+# WNBA Step 5Y real Render staging attachment template.
+# The Step 5Y GitHub Actions publication job replaces the three __TOKEN__ values
+# and uploads the filled file as a sanitized deployment artifact.
+#
+# IMPORTANT:
+# - Create a Render registry credential named `kyre-sports-ghcr` if the GHCR
+#   package is private. Never commit that credential or its token.
+# - Keep WNBA_PRODUCTION_RUNTIME_ENABLED=false through the entire Step 5Y gate.
+# - After the first healthy deploy, run the GET-only Step 5Y Render verifier and
+#   add its three post-deploy attestation values (attachment=true, evidence hash,
+#   and disk ID). Do not enable the live scheduler yet.
+services:
+  - type: web
+    name: kyre-sports-api-staging
+    runtime: image
+    plan: starter
+    region: oregon
+    numInstances: 1
+    healthCheckPath: /health
+    maxShutdownDelaySeconds: 60
+    image:
+      url: __IMMUTABLE_IMAGE_REF__
+      creds:
+        fromRegistryCreds:
+          name: kyre-sports-ghcr
+    disk:
+      name: kyre-sports-api-staging-data
+      mountPath: /var/lib/kyre-sports-api
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: WNBA_DEPLOYMENT_MODE
+        value: container
+      - key: WNBA_DEPLOYMENT_REPLICA_COUNT
+        value: "1"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: WNBA_PERSISTENT_VOLUME_ROOT
+        value: /var/lib/kyre-sports-api
+
+      # Step 5T immutable release identity.
+      - key: WNBA_RELEASE_ID
+        value: __RELEASE_ID__
+      - key: WNBA_RELEASE_CHANNEL
+        value: production
+      - key: WNBA_DEPLOYMENT_REVISION
+        value: __FULL_GIT_SHA__
+      - key: WNBA_DEPLOYMENT_IMAGE_REF
+        value: __IMMUTABLE_IMAGE_REF__
+      - key: WNBA_RELEASE_INITIAL_DEPLOYMENT
+        value: "true"
+
+      # Step 5U hosted staging identity. Render supplies RENDER_* defaults.
+      - key: WNBA_STAGING_HOST_PROVIDER
+        value: render
+      - key: WNBA_HOST_ENVIRONMENT
+        value: staging
+      - key: WNBA_STAGING_EXTERNAL_URL
+        fromService:
+          type: web
+          name: kyre-sports-api-staging
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: WNBA_STAGING_EXPECTED_SERVICE_NAME
+        value: kyre-sports-api-staging
+      - key: WNBA_STAGING_EXPECTED_GIT_BRANCH
+        value: api-foundation-v1
+      - key: WNBA_STAGING_ALLOW_CUSTOM_DOMAIN
+        value: "false"
+
+      # Step 5V immutable GHCR publication identity.
+      - key: WNBA_RELEASE_REGISTRY
+        value: ghcr.io
+      - key: WNBA_RELEASE_IMAGE_REPOSITORY
+        value: ghcr.io/kyrepeak/kyre-sports-api
+      - key: WNBA_RELEASE_PUBLISHED_IMAGE_REF
+        value: __IMMUTABLE_IMAGE_REF__
+      - key: WNBA_RELEASE_PUBLICATION_VERIFIED
+        value: "true"
+      - key: WNBA_RELEASE_PUBLISHER
+        value: github-actions
+      - key: WNBA_RELEASE_SOURCE_REPOSITORY
+        value: kyrepeak/kyre-sports-ai
+      - key: WNBA_RELEASE_HANDOFF_FORMAT
+        value: render-staging-v1
+
+      # Step 5R/5W fail-closed activation switch. DO NOT change in Step 5Y.
+      - key: WNBA_PRODUCTION_RUNTIME_ENABLED
+        value: "false"
+
+      # Persistent SQLite stores. All four live under the attached Render disk.
+      - key: WNBA_CURRENT_BOARD_STORE_PATH
+        value: /var/lib/kyre-sports-api/wnba_current_board.sqlite3
+      - key: WNBA_PROP_FEED_STORE_PATH
+        value: /var/lib/kyre-sports-api/wnba_prop_feed.sqlite3
+      - key: WNBA_BACKTEST_STORE_PATH
+        value: /var/lib/kyre-sports-api/wnba_backtest.sqlite3
+      - key: WNBA_BOARD_SCHEDULER_LOCK_PATH
+        value: /var/lib/kyre-sports-api/wnba_scheduler_lock.sqlite3
+
+      # Frozen Step 5P scheduler configuration. The Step 5R switch above keeps
+      # the worker blocked until explicit activation even though this is enabled.
+      - key: WNBA_BOARD_SCHEDULER_ENABLED
+        value: "true"
+      - key: WNBA_BOARD_AUTO_ARCHIVE_ENABLED
+        value: "true"
+      - key: WNBA_BOARD_SCHEDULER_LOOP_SECONDS
+        value: "30"
+      - key: WNBA_BOARD_MIN_PROVIDER_SPACING_SECONDS
+        value: "60"
+
+      # Step 5Y expected attachment facts present before verification.
+      - key: WNBA_RENDER_DEPLOYED_IMAGE_REF
+        value: __IMMUTABLE_IMAGE_REF__
+      - key: WNBA_RENDER_DISK_NAME
+        value: kyre-sports-api-staging-data
+      - key: WNBA_RENDER_DISK_MOUNT_PATH
+        value: /var/lib/kyre-sports-api
+      - key: WNBA_RENDER_DISK_SIZE_GB
+        value: "1"
+      - key: WNBA_RENDER_INSTANCE_COUNT
+        value: "1"
+      - key: WNBA_RENDER_REGISTRY_ACCESS_VERIFIED
+        value: "true"
+      - key: WNBA_RENDER_SECRET_WIRING_VERIFIED
+        value: "true"
+      - key: WNBA_RENDER_REGISTRY_CREDENTIAL_NAME
+        value: kyre-sports-ghcr
+      - key: WNBA_RENDER_ATTACHMENT_VERIFIED
+        value: "false"
+
+      # Secret values are supplied/generated only inside Render.
+      - key: SPORTSGAMEODDS_API_KEY
+        sync: false
+      - key: WNBA_BACKTEST_ARCHIVE_HMAC_SECRET
+        generateValue: true
