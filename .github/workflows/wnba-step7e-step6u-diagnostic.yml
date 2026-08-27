@@ -1,4 +1,4 @@
-name: WNBA Step 7E official CDN diagnostic
+name: WNBA Step 7E official schedule transport diagnostic
 
 on:
   push:
@@ -10,35 +10,62 @@ permissions:
   contents: read
 
 jobs:
-  inspect-official-cdn:
+  inspect-official-schedule:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Read current official WNBA schedule CDN only
+      - name: Probe official WNBA schedule transports read-only
         shell: bash
         run: |
           python - <<'PY'
-          import json, urllib.request
-          url='https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json'
-          req=urllib.request.Request(url, headers={
-              'User-Agent':'Mozilla/5.0',
-              'Accept':'application/json, text/plain, */*',
-              'Referer':'https://www.wnba.com/',
-          })
-          with urllib.request.urlopen(req, timeout=45) as r:
-              raw=r.read()
-          body=json.loads(raw.decode('utf-8'))
-          root=body.get('leagueSchedule') or {}
-          dates=root.get('gameDates') or []
-          assert str(root.get('leagueId')) == '10', root.get('leagueId')
-          assert str(root.get('seasonYear')) == '2026', root.get('seasonYear')
-          assert isinstance(dates, list) and dates, type(dates)
-          games=sum(len(x.get('games') or []) for x in dates if isinstance(x, dict))
-          print(json.dumps({
-              'http_status': r.status,
-              'league_id': root.get('leagueId'),
-              'season_year': root.get('seasonYear'),
-              'date_blocks': len(dates),
-              'game_count': games,
-          }, indent=2, sort_keys=True))
+          import json, urllib.error, urllib.request
+
+          urls = [
+              ('cdn_current', 'https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json'),
+              ('wnba_api', 'https://www.wnba.com/api/schedule?season=2026&regionId=1'),
+          ]
+          rows=[]
+          for name, url in urls:
+              req=urllib.request.Request(url, headers={
+                  'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36',
+                  'Accept':'application/json, text/plain, */*',
+                  'Accept-Language':'en-US,en;q=0.9',
+                  'Origin':'https://www.wnba.com',
+                  'Referer':'https://www.wnba.com/',
+              })
+              try:
+                  with urllib.request.urlopen(req, timeout=35) as r:
+                      raw=r.read()
+                      status=r.status
+                      ctype=r.headers.get('content-type')
+                  row={'name':name,'status':status,'content_type':ctype,'bytes':len(raw),'prefix_hex':raw[:24].hex()}
+                  try:
+                      body=json.loads(raw.decode('utf-8'))
+                      row['json']=True
+                      if isinstance(body, dict):
+                          root=body.get('leagueSchedule') if isinstance(body.get('leagueSchedule'), dict) else body
+                          row['top_keys']=sorted(body.keys())[:20]
+                          if isinstance(root, dict):
+                              row['league_id']=root.get('leagueId')
+                              row['season_year']=root.get('seasonYear')
+                              dates=root.get('gameDates')
+                              if isinstance(dates, list):
+                                  row['date_blocks']=len(dates)
+                                  row['game_count']=sum(len(x.get('games') or []) for x in dates if isinstance(x, dict))
+                  except Exception as exc:
+                      row['json']=False
+                      row['parse_error']=type(exc).__name__
+                      try:
+                          row['text_prefix']=raw[:300].decode('utf-8','replace')
+                      except Exception:
+                          pass
+                  rows.append(row)
+              except urllib.error.HTTPError as exc:
+                  raw=exc.read()
+                  rows.append({'name':name,'status':exc.code,'content_type':exc.headers.get('content-type'),'bytes':len(raw),'text_prefix':raw[:300].decode('utf-8','replace')})
+              except Exception as exc:
+                  rows.append({'name':name,'error':f'{type(exc).__name__}: {exc}'})
+          print(json.dumps(rows, indent=2, sort_keys=True))
+          if not any(row.get('json') is True for row in rows):
+              raise SystemExit('No official JSON schedule transport succeeded from cloud runner.')
           PY
