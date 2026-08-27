@@ -67,6 +67,23 @@ def _box(player_team_key="washington-mystics"):
     }
 
 
+def _shot_row(*, player_id=PLAYER_ID, player_name="S. Citron"):
+    return {
+        "game_id": "1022600280",
+        "game_event_id": 101,
+        "game_id_valid": True,
+        "player_id": player_id,
+        "player_name": player_name,
+        "team_key": "washington-mystics",
+        "mapped_to_registry": True,
+        "canonical_zone": "above_the_break_3",
+        "shot_zone_basic": "Above the Break 3",
+        "attempted": True,
+        "made": False,
+        "points_scored": 0,
+    }
+
+
 class Step7GShotIdentitySafeTests(unittest.TestCase):
     def test_bad_display_matchup_does_not_override_box_schedule_identity(self):
         game = _game()
@@ -81,6 +98,7 @@ class Step7GShotIdentitySafeTests(unittest.TestCase):
         self.assertEqual(name, "Sonia Citron")
         self.assertEqual(evidence[0]["player_team_key"], "washington-mystics")
         self.assertTrue(evidence[0]["player_resolved_once"])
+        self.assertFalse(evidence[0]["display_name_used_for_identity"])
 
     def test_box_schedule_team_disagreement_fails_closed(self):
         game = _game()
@@ -107,6 +125,60 @@ class Step7GShotIdentitySafeTests(unittest.TestCase):
                 safe._selected_recent_games_box_verified(
                     PLAYER_ID, SEASON, 1, {game["game_id"]: game}
                 )
+
+    def test_same_player_id_different_display_labels_are_audit_only(self):
+        game = _game()
+        schedule = {
+            "retrieved_at_utc": "2026-08-27T20:00:00+00:00",
+            "cache_hit": False,
+            "games": [game],
+        }
+        with (
+            patch.object(base, "_schedule", return_value=(schedule, {game["game_id"]: game})),
+            patch.object(
+                safe,
+                "_selected_recent_games_box_verified",
+                return_value=([game], "Sonia Citron", [{"game_id": game["game_id"]}]),
+            ),
+            patch.object(
+                base,
+                "_player_shots_from_games",
+                return_value=([_shot_row(player_name="S. Citron")], ["https://www.wnba.com/game/test"]),
+            ),
+        ):
+            result = safe.get_first_party_player_shot_chart_dataset(
+                PLAYER_ID, SEASON, last_n_games=1
+            )
+        self.assertEqual(result["player_id"], PLAYER_ID)
+        self.assertEqual(result["player_name"], "Sonia Citron")
+        self.assertEqual(
+            result["display_name_audit"]["play_by_play_player_name_labels"],
+            ["S. Citron"],
+        )
+        self.assertFalse(result["display_name_audit"]["labels_match_exactly"])
+        self.assertFalse(result["display_name_audit"]["labels_used_for_identity"])
+        self.assertTrue(result["verification"]["numeric_player_id_authoritative"])
+        self.assertFalse(result["verification"]["display_name_labels_used_for_identity"])
+
+    def test_numeric_player_id_conflict_still_fails_in_shot_normalizer(self):
+        game = _game()
+        action = {
+            "event_category": "shot",
+            "person_id": PLAYER_ID + 1,
+            "team_key": "washington-mystics",
+            "shot_result": "Missed",
+            "action_type": "2pt",
+            "sub_type": "Jump Shot",
+            "description": "Other Player 12' Jump Shot",
+            "action_number": 7,
+            "period": 1,
+            "clock_seconds_remaining": 500,
+            "x_legacy": 80,
+            "y_legacy": 80,
+            "shot_distance_feet": 12,
+        }
+        with self.assertRaises(WNBAShotContextUpstreamError):
+            base._normalize_shot(action, game, expected_player_id=PLAYER_ID)
 
 
 if __name__ == "__main__":
