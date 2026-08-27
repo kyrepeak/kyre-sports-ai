@@ -2,6 +2,8 @@ from fastapi import FastAPI
 
 # Step 6D must install before WNBA scheduler/router modules bind Step 5O functions.
 import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integration  # noqa: F401
+# Step 6I interposes reconciliation before the Step 6D runtime write hook.
+import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  # noqa: F401
 
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
