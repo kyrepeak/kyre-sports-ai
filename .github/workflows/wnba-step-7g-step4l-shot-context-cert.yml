@@ -7,9 +7,12 @@ on:
     paths:
       - '.github/workflows/wnba-step-7g-step4l-shot-context-cert.yml'
       - 'sports_api/wnba_step7g_first_party_shot_context.py'
+      - 'sports_api/wnba_step7g_first_party_shot_context_identity_safe.py'
       - 'sports_api/wnba_step7g_first_party_integration.py'
       - 'sports_api/tools/wnba_step7g_step4l_shot_context_cert.py'
+      - 'sports_api/tools/wnba_step7g_step4l_shot_context_cert_identity_safe.py'
       - 'tests/test_wnba_step7g_first_party_shot_context.py'
+      - 'tests/test_wnba_step7g_first_party_shot_context_identity_safe.py'
       - 'tests/test_wnba_step7g_first_party_integration.py'
   workflow_dispatch:
 
@@ -62,13 +65,16 @@ jobs:
       - name: Compile Step 4L adapter and cert
         run: |
           python -m py_compile sports_api/wnba_step7g_first_party_shot_context.py
+          python -m py_compile sports_api/wnba_step7g_first_party_shot_context_identity_safe.py
           python -m py_compile sports_api/wnba_step7g_first_party_integration.py
           python -m py_compile sports_api/tools/wnba_step7g_step4l_shot_context_cert.py
+          python -m py_compile sports_api/tools/wnba_step7g_step4l_shot_context_cert_identity_safe.py
 
       - name: Run fail-closed Step 4L regression tests
         shell: bash
         run: |
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_shot_context.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_shot_context_identity_safe.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
 
       - name: Prove frozen Step 4L/4W/4X chain unchanged
@@ -94,7 +100,7 @@ jobs:
 
       - name: Certify live first-party Step 4L through real FastAPI defaults
         shell: bash
-        run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_step4l_shot_context_cert
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_step4l_shot_context_cert_identity_safe
 
       - name: Upload sanitized Step 4L evidence
         if: always()
