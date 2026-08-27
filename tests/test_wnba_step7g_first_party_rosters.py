@@ -41,22 +41,24 @@ class Step7GFirstPartyRosterTests(unittest.TestCase):
         self.assertEqual(_plain_name_candidate("A'ja Wilson"), "A'ja Wilson")
         self.assertIsNone(_plain_name_candidate("View Profile"))
         self.assertIsNone(_plain_name_candidate("PPG 16.9"))
+        self.assertIsNone(_plain_name_candidate("Sonia Citron headshot"))
 
-    def test_parser_collapses_headshot_and_text_links_by_player_id(self) -> None:
+    def test_parser_pairs_ordered_ids_with_sibling_visible_cards(self) -> None:
         cards = []
         for index in range(7):
             player_id = 1000 + index
+            name = f"Player Name {chr(65 + index)}"
+            # The canonical player link contains only an image; the actual roster
+            # card text is a sibling. This mirrors the live team-page structure.
             cards.append(
-                f'<a href="https://www.wnba.com/player/{player_id}">'
-                f'<img alt="Player Name {index}" src="headshot.png"></a>'
+                f'<div><a href="https://www.wnba.com/player/{player_id}">'
+                f'<img alt="{name} headshot" src="headshot.png"></a>'
+                f'<span>#{44 if index in (0, 1) else index} {name} Guard '</n                f'PPG 1.0 RPG 1.0 APG 1.0</span></div>'
             )
+            # Duplicate presentation link to the same player must collapse by ID.
             cards.append(
-                f'<a href="https://www.wnba.com/player/{player_id}">'
-                f'#{44 if index in (0, 1) else index} Player Name {index} Guard '
-                f'PPG 1.0 RPG 1.0 APG 1.0</a>'
+                f'<a href="https://www.wnba.com/player/{player_id}">Show more</a>'
             )
-        # A player link outside the verified roster section must not contaminate
-        # active membership.
         html = (
             '<a href="https://www.wnba.com/player/999999">Old News Player</a>'
             '<h3>2026 Team Roster</h3>'
@@ -73,22 +75,29 @@ class Step7GFirstPartyRosterTests(unittest.TestCase):
         self.assertEqual(len({row["player_id"] for row in players}), 7)
         self.assertNotIn(999999, {row["player_id"] for row in players})
         self.assertNotIn(888888, {row["player_id"] for row in players})
+        self.assertEqual(players[0]["full_name"], "Player Name A")
         self.assertEqual(players[0]["team_key"], "washington-mystics")
         self.assertTrue(all(row["is_current_roster"] for row in players))
 
-    def test_parser_accepts_name_only_text_links_when_card_metrics_are_separate(self) -> None:
-        cards = "".join(
-            f'<a href="https://www.wnba.com/player/{2000 + index}">Player Name {chr(65 + index)}</a>'
-            for index in range(7)
+    def test_parser_fails_closed_when_id_and_visible_card_counts_disagree(self) -> None:
+        html = (
+            '<h3>2026 Team Roster</h3>'
+            '<a href="https://www.wnba.com/player/1001"></a>'
+            '<a href="https://www.wnba.com/player/1002"></a>'
+            '<a href="https://www.wnba.com/player/1003"></a>'
+            '<a href="https://www.wnba.com/player/1004"></a>'
+            '<a href="https://www.wnba.com/player/1005"></a>'
+            '<a href="https://www.wnba.com/player/1006"></a>'
+            '<a href="https://www.wnba.com/player/1007"></a>'
+            '<span>#1 Only One Card Guard PPG 1.0 RPG 1.0 APG 1.0</span>'
+            '<h2>Coaching Staff</h2>'
         )
-        html = f"<h3>2026 Team Roster</h3>{cards}<h2>Coaching Staff</h2>"
-        players = _parse_roster_html(
-            html,
-            team=self.team,
-            source_url="https://mystics.wnba.com/roster",
-        )
-        self.assertEqual(len(players), 7)
-        self.assertEqual(players[0]["full_name"], "Player Name A")
+        with self.assertRaises(Exception):
+            _parse_roster_html(
+                html,
+                team=self.team,
+                source_url="https://mystics.wnba.com/roster",
+            )
 
     def test_parser_fails_closed_without_roster_boundary(self) -> None:
         html = '<a href="https://www.wnba.com/player/1642785">#22 Sonia Citron Guard PPG 1</a>'
