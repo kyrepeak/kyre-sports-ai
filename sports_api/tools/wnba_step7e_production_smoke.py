@@ -20,7 +20,9 @@ import httpx
 MODEL_VERSION = "wnba_step_7e_production_smoke_v1"
 BASE_URL = "https://kyre-sports-api.onrender.com"
 EXPECTED_SUPABASE_HOST = "jqajcdckalsfizbvngiu.supabase.co"
-EXPECTED_RELEASE_REVISION = "12b9a0bb21e72f16282f562d848673222d48c7f2"
+EXPECTED_RELEASE_REVISION = "9a45b11704bb95ec5ace275b5dd941e27e32f745"
+EXPECTED_SCHEDULE_SOURCE_VARIANT = "wnba_public_schedule_api"
+EXPECTED_SCHEDULE_SOURCE_URL = "https://www.wnba.com/api/schedule"
 
 CRITICAL_OPENAPI_PATHS = {
     "/health",
@@ -54,7 +56,7 @@ def _safe_summary(body: Any) -> dict[str, Any]:
         "name", "version", "status", "data_type", "season", "team_count",
         "game_count", "selected_backend", "configuration_ready", "bridge_ready",
         "scheduler_authorized", "final_architecture_certified", "production_live",
-        "state", "source",
+        "state", "source", "source_variant", "source_url",
     )
     out = {key: body.get(key) for key in interesting if key in body}
     out["json_object"] = True
@@ -189,6 +191,10 @@ def validate_games_today(body: Any) -> None:
     doc = _assert_dict(body, "games today")
     if doc.get("season") != 2026:
         raise Step7ESmokeError("WNBA games/today did not return season 2026.")
+    if doc.get("source_variant") != EXPECTED_SCHEDULE_SOURCE_VARIANT:
+        raise Step7ESmokeError("WNBA games/today is not using the certified public WNBA schedule transport.")
+    if doc.get("source_url") != EXPECTED_SCHEDULE_SOURCE_URL:
+        raise Step7ESmokeError("WNBA games/today returned an unexpected official schedule source URL.")
     games = doc.get("games")
     if games is not None and not isinstance(games, list):
         raise Step7ESmokeError("WNBA games/today games field is not a list.")
