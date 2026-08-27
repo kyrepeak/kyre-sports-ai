@@ -21,8 +21,8 @@ from sports_api.wnba_step7g_first_party_history import _player_page
 REPORT_PATH = Path("step7g-advanced-surface-probe.json")
 PLAYER_ID = 1642785
 URLS = (
-    "https://www.wnba.com/stats/players/advanced?Season=2026&SeasonType=Regular%20Season",
-    "https://www.wnba.com/stats/teams/advanced?Season=2026&SeasonType=Regular%20Season",
+    "https://www.wnba.com/stats/player-stats-advanced?Season=2026&SeasonType=Regular%20Season",
+    "https://www.wnba.com/stats/team-stats-advanced?Season=2026&SeasonType=Regular%20Season",
 )
 TOKENS = (
     "rating", "pace", "usage", "usg", "true", "effective", "efg", "ts_pct",
@@ -48,7 +48,7 @@ def _assert_safe() -> None:
         raise RuntimeError("Advanced probe refuses production-enabled environment: " + ", ".join(bad))
 
 
-def _matching_key_paths(value: Any, path: str = "root", *, limit: int = 300) -> list[str]:
+def _matching_key_paths(value: Any, path: str = "root", *, limit: int = 500) -> list[str]:
     out: list[str] = []
     def walk(item: Any, current: str) -> None:
         if len(out) >= limit:
@@ -87,6 +87,10 @@ def _next_data_from_html(text: str) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
 
 
+def _keys(value: Any) -> list[str]:
+    return sorted(str(key) for key in value.keys()) if isinstance(value, dict) else []
+
+
 def main() -> int:
     _assert_safe()
     started = datetime.now(timezone.utc)
@@ -101,28 +105,41 @@ def main() -> int:
         try:
             response = httpx.get(url, headers=headers, timeout=20.0, follow_redirects=True)
             row["http_status"] = response.status_code
+            row["final_url"] = str(response.url)
             row["content_type"] = response.headers.get("content-type")
             row["body_length"] = len(response.text)
             response.raise_for_status()
             next_data = _next_data_from_html(response.text)
             row["next_data_present"] = next_data is not None
+            row["next_data_top_level_keys"] = _keys(next_data)
             row["matching_key_paths"] = _matching_key_paths(next_data) if next_data else []
+            folded_body = response.text.casefold()
             row["body_token_presence"] = {
-                token: token in response.text.casefold() for token in TOKENS
+                token: token in folded_body for token in TOKENS
             }
+            row["next_data_script_count"] = len(
+                re.findall(r'__next_data__', folded_body)
+            )
+            row["next_flight_marker_present"] = "self.__next_f.push" in folded_body
         except Exception as exc:
             row["error_type"] = type(exc).__name__
             row["error_message"] = str(exc)[:500]
         surfaces.append(row)
 
+    stats = player.get("stats") if isinstance(player, dict) else None
+    career = player.get("careerStats") if isinstance(player, dict) else None
     report = {
-        "data_type": "wnba_step7g_advanced_first_party_surface_probe_v1",
+        "data_type": "wnba_step7g_advanced_first_party_surface_probe_v2",
         "started_at_utc": started.isoformat(),
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "player_page": {
             "url": player_url,
             "matching_key_paths": _matching_key_paths(player),
-            "top_level_keys": sorted(str(key) for key in player.keys()),
+            "top_level_keys": _keys(player),
+            "stats_keys": _keys(stats),
+            "stats_matching_key_paths": _matching_key_paths(stats, "player.stats"),
+            "career_stats_type": type(career).__name__,
+            "career_stats_matching_key_paths": _matching_key_paths(career, "player.careerStats"),
         },
         "stats_pages": surfaces,
         "safety": {
