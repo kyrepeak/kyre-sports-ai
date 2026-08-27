@@ -6,7 +6,9 @@ on:
       - main
     paths:
       - 'sports_api/tools/wnba_step7e_production_smoke.py'
+      - 'sports_api/tools/wnba_step7e_production_smoke_v2.py'
       - 'sports_api/tests/test_wnba_step7e_production_smoke.py'
+      - 'sports_api/tests/test_wnba_step7e_production_smoke_v2.py'
       - '.github/workflows/wnba-step-7e.yml'
   workflow_dispatch:
 
@@ -35,13 +37,17 @@ jobs:
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt
 
-      - name: Compile Step 7E smoke operator
+      - name: Compile Step 7E smoke operators
         run: |
           python -m py_compile sports_api/tools/wnba_step7e_production_smoke.py
+          python -m py_compile sports_api/tools/wnba_step7e_production_smoke_v2.py
           python -m py_compile sports_api/tests/test_wnba_step7e_production_smoke.py
+          python -m py_compile sports_api/tests/test_wnba_step7e_production_smoke_v2.py
 
       - name: Run Step 7E fail-closed tests
-        run: python -m unittest sports_api.tests.test_wnba_step7e_production_smoke
+        run: |
+          python -m unittest sports_api.tests.test_wnba_step7e_production_smoke
+          python -m unittest sports_api.tests.test_wnba_step7e_production_smoke_v2
 
       - name: Prove hosted release branch remains pinned to Step 7B
         shell: bash
@@ -68,11 +74,11 @@ jobs:
           print('Step 7E has no deployment, database, ingest, or sportsbook secret context.')
           PY
 
-      - name: Run outside-in production smoke test
+      - name: Run outside-in production smoke test v2
         shell: bash
         run: |
           mkdir -p .step7e
-          python -m sports_api.tools.wnba_step7e_production_smoke > .step7e/production-smoke.json
+          python -m sports_api.tools.wnba_step7e_production_smoke_v2 > .step7e/production-smoke.json
 
       - name: Verify sanitized Step 7E evidence
         shell: bash
@@ -85,14 +91,23 @@ jobs:
           evidence = json.loads(path.read_text(encoding='utf-8'))
           assert evidence['smoke_complete'] is True
           assert evidence['state'] == 'wnba_production_smoke_passed'
+          assert evidence['model_version'] == 'wnba_step_7e_production_smoke_v2'
           assert evidence['base_url'] == 'https://kyre-sports-api.onrender.com'
           assert evidence['expected_release_revision'] == '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          assert evidence['expected_legacy_step6u_blocker'] == 'Step 5W pre-activation checkpoint is not ready.'
           assert evidence['checks_total'] >= 10
           assert evidence['checks_passed'] == evidence['checks_total']
           assert evidence['checks_failed'] == 0
           assert all(row['status_code'] == 200 and row['passed'] is True for row in evidence['endpoint_results'])
           names = {row['name'] for row in evidence['endpoint_results']}
           assert {'health','openapi','wnba_teams','wnba_games_today','step6r_supabase','step6t_evidence_status','step6u_bridge_status','step6w_final_certificate'} <= names
+          step6u = next(row for row in evidence['endpoint_results'] if row['name'] == 'step6u_bridge_status')
+          assert step6u['summary']['configuration_ready'] is False
+          assert step6u['summary']['bridge_ready'] is False
+          assert step6u['summary']['scheduler_authorized'] is False
+          assert step6u['summary']['blocking_reasons'] == ['Step 5W pre-activation checkpoint is not ready.']
+          assert step6u['summary']['legacy_step5w']['phase'] == 'pre_activation_blocked'
+          assert step6u['summary']['legacy_step5w']['live_cycle_allowed'] is False
           safety = evidence['safety']
           assert safety['http_methods_used'] == ['GET']
           assert safety['render_mutation_performed'] is False
@@ -105,6 +120,8 @@ jobs:
           assert safety['wager_action_performed'] is False
           assert safety['secret_required'] is False
           assert safety['secret_value_returned'] is False
+          assert safety['legacy_step6u_fail_closed_preserved'] is True
+          assert safety['legacy_step5w_live_cycle_allowed'] is False
 
           evidence['ci_freeze'] = {
               'workflow_revision': os.environ['GITHUB_SHA'],
@@ -113,7 +130,7 @@ jobs:
               'hosted_release_revision': '12b9a0bb21e72f16282f562d848673222d48c7f2',
           }
           path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-          print('Step 7E production smoke evidence verified.')
+          print('Step 7E v2 production smoke evidence verified.')
           print('Smoke manifest:', evidence['smoke_manifest_sha256'])
           PY
 
