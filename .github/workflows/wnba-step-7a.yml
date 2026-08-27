@@ -1,0 +1,182 @@
+name: WNBA Step 7A production release candidate certification
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step7a_release_candidate.py'
+      - 'sports_api/api/wnba_step7a_release_candidate.py'
+      - 'sports_api/tests/test_wnba_step7a_release_candidate.py'
+      - '.github/workflows/wnba-step-7a.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step7a_release_candidate.py'
+      - 'sports_api/api/wnba_step7a_release_candidate.py'
+      - 'sports_api/tests/test_wnba_step7a_release_candidate.py'
+      - '.github/workflows/wnba-step-7a.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7a-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-candidate-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact Step 7A revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact Step 7A revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "Certifying exact Step 7A revision: $EXPECTED_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 7A package
+        run: |
+          python -m py_compile sports_api/wnba_step7a_release_candidate.py
+          python -m py_compile sports_api/api/wnba_step7a_release_candidate.py
+          python -m py_compile sports_api/tests/test_wnba_step7a_release_candidate.py
+
+      - name: Run Step 7A release candidate tests
+        run: python -m unittest sports_api.tests.test_wnba_step7a_release_candidate
+
+      - name: Run frozen Step 6W final certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6w_final_certification
+
+      - name: Run frozen Step 6V operator regression
+        run: python -m unittest sports_api.tests.test_wnba_step6v_supabase_canary
+
+      - name: Run frozen Step 6U activation bridge regression
+        run: python -m unittest sports_api.tests.test_wnba_step6u_activation_bridge
+
+      - name: Run frozen Step 6T durable evidence regression
+        run: python -m unittest sports_api.tests.test_wnba_step6t_canary_evidence
+
+      - name: Run frozen Step 6R Supabase backend regression
+        run: python -m unittest sports_api.tests.test_wnba_step6r_supabase_storage
+
+      - name: Run original Step 6J filesystem regression
+        run: python -m unittest sports_api.tests.test_wnba_step6j_canary_activation
+
+      - name: Run Phase 6 master certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove frozen Step 6W and live-proof core were not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code 653ea47836b436076c2bc8e9e58d6a1d11b3dee3 -- \
+            .github/workflows/wnba-step-6w.yml \
+            sports_api/wnba_step6w_final_certification.py \
+            sports_api/api/wnba_step6w_final_certification.py \
+            sports_api/tests/test_wnba_step6w_final_certification.py \
+            sports_api/certification/wnba_step6v_live_canary_evidence.json \
+            .github/workflows/wnba-step-6v.yml \
+            sports_api/tools/wnba_step6v_supabase_canary.py \
+            sports_api/wnba_step6u_activation_bridge.py \
+            sports_api/wnba_step6t_canary_evidence.py \
+            sports_api/wnba_step6r_supabase_storage.py \
+            sports_api/wnba_step6q_durable_storage.py \
+            sports_api/wnba_step6j_canary_activation.py
+
+      - name: Prove Step 7A delta is certification-only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import subprocess
+
+          base = '653ea47836b436076c2bc8e9e58d6a1d11b3dee3'
+          changed = set(
+              subprocess.check_output(['git', 'diff', '--name-only', base, 'HEAD'], text=True).splitlines()
+          )
+          allowed = {
+              'sports_api/wnba_step7a_release_candidate.py',
+              'sports_api/api/wnba_step7a_release_candidate.py',
+              'sports_api/tests/test_wnba_step7a_release_candidate.py',
+              '.github/workflows/wnba-step-7a.yml',
+          }
+          unexpected = sorted(changed - allowed)
+          missing = sorted(allowed - changed)
+          assert not unexpected, f'unexpected Step 7A files: {unexpected}'
+          assert not missing, f'missing Step 7A files: {missing}'
+          print('Step 7A delta is isolated to the certification package.')
+          PY
+
+      - name: Prove Step 7A receives no live secrets
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          assert not os.environ.get('WNBA_KYRE_SUPABASE_URL')
+          assert not os.environ.get('WNBA_KYRE_SUPABASE_SECRET_KEY')
+          text = Path('.github/workflows/wnba-step-7a.yml').read_text(encoding='utf-8')
+          forbidden = '$' + '{{' + ' secrets.'
+          assert forbidden not in text
+          print('Step 7A has no live Supabase secret context.')
+          PY
+
+      - name: Build frozen Step 7A release candidate artifact
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from sports_api.wnba_step7a_release_candidate import build_step7a_release_candidate
+
+          report = build_step7a_release_candidate()
+          assert report['release_candidate_certified'] is True, report['blocking_reasons']
+          assert report['state'] == 'wnba_production_release_candidate_certified'
+          assert report['production_live'] is False
+          assert report['merge_to_main_authorized'] is False
+          assert report['render_deployment_authorized'] is False
+          assert report['scheduler_authorized'] is False
+          assert report['scheduler_started'] is False
+          assert report['semantics']['network_used'] is False
+          assert report['semantics']['merge_performed'] is False
+          assert report['semantics']['render_deployment_performed'] is False
+
+          report['ci_freeze'] = {
+              'release_candidate_revision': os.environ['GITHUB_SHA'],
+              'workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
+              'workflow_run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+              'source_branch': os.environ.get('GITHUB_HEAD_REF') or os.environ.get('GITHUB_REF_NAME'),
+              'certified_step6w_revision': '653ea47836b436076c2bc8e9e58d6a1d11b3dee3',
+          }
+          Path('step7a-production-release-candidate.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print('Step 7A production release candidate is certified.')
+          print('Release manifest SHA-256:', report['release_candidate']['release_manifest_sha256'])
+          print('Release candidate revision:', report['ci_freeze']['release_candidate_revision'])
+          PY
+
+      - name: Upload Step 7A release candidate certification
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7a-release-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7a-production-release-candidate.json
+          if-no-files-found: error
+          retention-days: 90
