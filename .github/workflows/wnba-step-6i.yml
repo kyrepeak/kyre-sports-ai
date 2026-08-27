@@ -1,0 +1,141 @@
+name: WNBA Step 6I guarded reconciled DraftKings sync gate
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_reconciled_direct_sync.py'
+      - 'sports_api/wnba_official_team_page_reconciliation_live.py'
+      - 'sports_api/wnba_official_reconciliation_live.py'
+      - 'sports_api/wnba_step6d_direct_integration.py'
+      - 'sports_api/collectors/wnba_kyre_market_feed.py'
+      - 'sports_api/api/wnba_draftkings_direct.py'
+      - 'sports_api/tools/wnba_reconciled_sync_probe.py'
+      - 'sports_api/tests/test_wnba_reconciled_direct_sync.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6i.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_reconciled_direct_sync.py'
+      - 'sports_api/wnba_official_team_page_reconciliation_live.py'
+      - 'sports_api/wnba_official_reconciliation_live.py'
+      - 'sports_api/wnba_step6d_direct_integration.py'
+      - 'sports_api/collectors/wnba_kyre_market_feed.py'
+      - 'sports_api/api/wnba_draftkings_direct.py'
+      - 'sports_api/tools/wnba_reconciled_sync_probe.py'
+      - 'sports_api/tests/test_wnba_reconciled_direct_sync.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6i.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  step6i-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Compile Step 6I modules
+        run: |
+          python -m py_compile \
+            sports_api/wnba_reconciled_direct_sync.py \
+            sports_api/api/wnba_draftkings_direct.py \
+            sports_api/tools/wnba_reconciled_sync_probe.py \
+            sports_api/main.py
+      - name: Run Step 6I deterministic tests
+        run: python -m unittest sports_api.tests.test_wnba_reconciled_direct_sync
+      - name: Run frozen Step 6H regression
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_official_reconciliation \
+            sports_api.tests.test_wnba_official_reconciliation_routes \
+            sports_api.tests.test_wnba_official_team_page_reconciliation_live
+      - name: Run frozen Step 6G regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_shadow_ingestion sports_api.tests.test_wnba_draftkings_shadow_ingestion_routes
+      - name: Run frozen Step 6F regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_prop_market_discovery
+      - name: Run frozen Step 6D regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_direct sports_api.tests.test_wnba_step6d_direct_integration
+      - name: Run frozen Step 6C regression
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed sports_api.tests.test_wnba_kyre_market_feed_routes
+      - name: Run frozen Step 5O regression
+        run: python -m unittest sports_api.tests.test_wnba_prop_feed_failover
+      - name: Run frozen Step 5P regression
+        run: python -m unittest sports_api.tests.test_wnba_pregame_board_scheduler
+      - name: Run frozen Step 5R regression
+        run: python -m unittest sports_api.tests.test_wnba_production_runtime_readiness
+      - name: Prove Step 6I activation stays off and public API stays read-only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          api = Path('sports_api/api/wnba_draftkings_direct.py').read_text(encoding='utf-8').lower()
+          probe = Path('sports_api/tools/wnba_reconciled_sync_probe.py').read_text(encoding='utf-8').lower()
+          workflow = Path('.github/workflows/wnba-step-6i.yml').read_text(encoding='utf-8').lower()
+          assert '.post(' not in api
+          assert 'sync_reconciled_draftkings_to_kyre_feed(' not in probe
+          assert 'write_kyre_market_feed(' not in probe
+          assert 'wnba_kyre_direct_sync_enabled=true' not in workflow
+          assert 'wnba_kyre_reconciled_sync_enabled=true' not in workflow
+          assert 'wnba_production_runtime_enabled=true' not in workflow
+          print('Step 6I CI leaves both sync switches OFF; live probe is attestation-only and public transport is GET-only.')
+          PY
+
+  live-reconciled-sync-attestation:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: step6i-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Build live GET-only reconciled-sync attestation
+        env:
+          WNBA_OFFICIAL_RECONCILIATION_TIMEOUT_SECONDS: '15'
+          WNBA_KYRE_RECONCILED_SYNC_MAX_AGE_SECONDS: '120'
+        run: |
+          mkdir -p .wnba-step6i-attestation
+          python -m sports_api.tools.wnba_reconciled_sync_probe --output .wnba-step6i-attestation/live-attestation.json
+      - name: Print sanitized Step 6I evidence
+        run: |
+          python - <<'PY'
+          import json
+          report = json.load(open('.wnba-step6i-attestation/live-attestation.json', encoding='utf-8'))
+          print('reconciliation_ready=', report.get('reconciliation_ready'))
+          print('would_sync_if_enabled=', report.get('would_sync_if_enabled'))
+          print('write_requested=', report.get('write_requested'))
+          print('write_authorized=', report.get('write_authorized'))
+          print('offer_side_count=', report.get('offer_side_count'))
+          print('market_count=', report.get('market_count'))
+          print('draftkings_event_count=', report.get('draftkings_event_count'))
+          print('verified_event_count=', report.get('verified_event_count'))
+          print('verified_player_count=', report.get('verified_player_count'))
+          print('blockers=', report.get('blockers'))
+          print('mismatch_count=', report.get('mismatch_count'))
+          print('snapshot_sha256=', report.get('snapshot_sha256'))
+          print('reconciliation_fingerprint_sha256=', report.get('reconciliation_fingerprint_sha256'))
+          print('attestation_sha256=', report.get('attestation_sha256'))
+          print('feed_write_performed=', (report.get('safety') or {}).get('feed_write_performed'))
+          PY
+      - name: Upload sanitized Step 6I attestation
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6i-reconciled-sync-${{ github.run_id }}
+          path: .wnba-step6i-attestation/live-attestation.json
+          if-no-files-found: error
+          retention-days: 30
