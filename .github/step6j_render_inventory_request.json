@@ -1,9 +1,10 @@
 {
-  "step": "6J",
+  "step": "7G",
   "action": "read_only_render_inventory",
   "approved": true,
   "render_mutation_allowed": false,
   "feed_write_allowed": false,
   "secret_values_allowed_in_output": false,
-  "reason": "Identify the existing Render service after two pre-write canary stops without weakening the Step 6J identity gate."
+  "requested_at_utc": "2026-08-27T17:41:00Z",
+  "reason": "Refresh the sanitized Render service identity and fail-closed environment contract before moving the Step 7G one-shot execution off GitHub Actions."
 }
