@@ -87,10 +87,12 @@ jobs:
           assert '@router.post' not in api
           assert 'require_staging_activation_ready = require_step6k_scheduler_authorized' in transport
           assert 'require_staging_activation_ready()' in transport
-          assert 'if not scheduler_authorized:' in transport
+          assert 'scheduler_authorized = step6k.get("scheduler_authorized") is true' in transport
+          assert 'if not scheduler_authorized or not scheduler_cycle_ready:' in transport
           assert 'step_6j_durable_canary_required' in transport
+          assert 'step6m.require_step6m_scheduler_ready()' in transport
 
-          print('Step 6K is read-only/free and the real scheduler path is hard-interlocked behind it.')
+          print('Step 6K remains read-only/free and the Step 6M production scheduler path stays hard-interlocked behind it.')
           PY
 
       - name: Prove deferred live state is expected without paid hosting
