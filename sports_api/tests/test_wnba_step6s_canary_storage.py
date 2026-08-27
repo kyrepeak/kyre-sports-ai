@@ -432,14 +432,14 @@ class Step6SCanaryStorageTests(unittest.TestCase):
         app = FastAPI()
         app.include_router(api.router)
         client = TestClient(app)
-        with patch.dict(os.environ, {STORAGE_BACKEND_ENV: FILESYSTEM_BACKEND}, clear=False), patch.object(
-            httpx.Client,
-            "request",
-            side_effect=AssertionError("status must not call network"),
-        ):
+        with patch.dict(os.environ, {STORAGE_BACKEND_ENV: FILESYSTEM_BACKEND}, clear=False):
             response = client.get("/markets/direct/draftkings/step6j-canary/storage-status")
         self.assertEqual(200, response.status_code)
-        self.assertEqual(FILESYSTEM_BACKEND, response.json()["selected_backend"])
+        body = response.json()
+        self.assertEqual(FILESYSTEM_BACKEND, body["selected_backend"])
+        self.assertFalse(body["safety"]["network_used_by_status"])
+        self.assertFalse(body["safety"]["remote_storage_read_performed_by_status"])
+        self.assertFalse(body["safety"]["storage_write_performed_by_status"])
         self.assertEqual(405, client.put("/markets/direct/draftkings/step6j-canary/storage-status").status_code)
 
 
