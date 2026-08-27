@@ -11,7 +11,7 @@ from sports_api.wnba_step6j_canary_activation import (
     run_step6j_canary,
 )
 
-router = APIRouter(prefix="/api/v1/wnba/markets/direct/draftkings", tags=["wnba"])
+router = APIRouter(prefix="/markets/direct/draftkings", tags=["wnba"])
 
 
 def _activation_id(value: str | None) -> str:
