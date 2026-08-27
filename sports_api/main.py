@@ -81,6 +81,7 @@ from sports_api.api.wnba_step6m_scheduler_orchestration import router as wnba_st
 from sports_api.api.wnba_step6n_production_observability import router as wnba_step6n_production_observability_router
 from sports_api.api.wnba_step6o_activation_rollback_package import router as wnba_step6o_activation_rollback_package_router
 from sports_api.api.wnba_step6p_phase6_certification import router as wnba_step6p_phase6_certification_router
+from sports_api.api.wnba_step6q_durable_storage import router as wnba_step6q_durable_storage_router
 from sports_api.api.wnba_team_history import router as wnba_team_history_router
 from sports_api.api.wnba_tracking import router as wnba_tracking_router
 
@@ -166,6 +167,7 @@ app.include_router(wnba_step6m_scheduler_orchestration_router)
 app.include_router(wnba_step6n_production_observability_router)
 app.include_router(wnba_step6o_activation_rollback_package_router)
 app.include_router(wnba_step6p_phase6_certification_router)
+app.include_router(wnba_step6q_durable_storage_router)
 app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
 
