@@ -1,0 +1,174 @@
+name: WNBA Step 6T durable canary evidence
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6t_canary_evidence.py'
+      - 'sports_api/api/wnba_step6t_canary_evidence.py'
+      - 'sports_api/tests/test_wnba_step6t_canary_evidence.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6t.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6t_canary_evidence.py'
+      - 'sports_api/api/wnba_step6t_canary_evidence.py'
+      - 'sports_api/tests/test_wnba_step6t_canary_evidence.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6t.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6t-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6t-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact Step 6T revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact Step 6T revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "Certified exact Step 6T revision: $EXPECTED_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6T core API and main router
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6t_canary_evidence.py \
+            sports_api/api/wnba_step6t_canary_evidence.py \
+            sports_api/main.py
+
+      - name: Run Step 6T durable evidence tests
+        run: python -m unittest sports_api.tests.test_wnba_step6t_canary_evidence
+
+      - name: Run frozen Step 6S storage-aware canary regression
+        run: python -m unittest sports_api.tests.test_wnba_step6s_canary_storage
+
+      - name: Run frozen Step 6R Supabase backend regression
+        run: python -m unittest sports_api.tests.test_wnba_step6r_supabase_storage
+
+      - name: Run frozen Step 6Q durable-storage regression
+        run: python -m unittest sports_api.tests.test_wnba_step6q_durable_storage
+
+      - name: Run frozen Step 6K scheduler-preflight regression
+        run: python -m unittest sports_api.tests.test_wnba_step6k_activation_preflight
+
+      - name: Run Phase 6 master certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove frozen Step 6S implementation was not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code c1952947899a1ca3f42a2bb0bd26c9611f7be386 -- \
+            sports_api/wnba_step6s_canary_storage.py \
+            sports_api/api/wnba_step6j_canary.py \
+            sports_api/tests/test_wnba_step6s_canary_storage.py \
+            .github/workflows/wnba-step-6s.yml
+          echo 'Frozen Step 6S implementation is unchanged.'
+
+      - name: Prove frozen Step 6R and Step 6Q implementations were not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code c1952947899a1ca3f42a2bb0bd26c9611f7be386 -- \
+            sports_api/wnba_step6q_durable_storage.py \
+            sports_api/api/wnba_step6q_durable_storage.py \
+            sports_api/tests/test_wnba_step6q_durable_storage.py \
+            sports_api/wnba_step6r_supabase_storage.py \
+            sports_api/api/wnba_step6r_supabase_storage.py \
+            sports_api/sql/wnba_step6r_supabase.sql \
+            sports_api/tests/test_wnba_step6r_supabase_storage.py
+          echo 'Frozen Step 6Q/6R implementations are unchanged.'
+
+      - name: Prove frozen Step 6K network-free authority was not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code c1952947899a1ca3f42a2bb0bd26c9611f7be386 -- \
+            sports_api/wnba_step6k_activation_preflight.py \
+            sports_api/api/wnba_step6k_activation_preflight.py
+          echo 'Frozen Step 6K remains untouched.'
+
+      - name: Prove Step 6T status is network-free and secret-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import httpx
+          from unittest.mock import patch
+          from sports_api.wnba_step6q_durable_storage import STORAGE_BACKEND_ENV, SUPABASE_BACKEND
+          from sports_api.wnba_step6r_supabase_storage import SUPABASE_SECRET_KEY_ENV, SUPABASE_URL_ENV
+          from sports_api.wnba_step6t_canary_evidence import get_step6t_canary_evidence_status
+
+          secret = 'sb_secret_certification_placeholder_abcdefghijklmnopqrstuvwxyz'
+          env = {
+              STORAGE_BACKEND_ENV: SUPABASE_BACKEND,
+              SUPABASE_URL_ENV: 'https://certification.supabase.co',
+              SUPABASE_SECRET_KEY_ENV: secret,
+          }
+          with patch.object(httpx.Client, 'request', side_effect=AssertionError('status must not call network')):
+              result = get_step6t_canary_evidence_status(env)
+          assert result['configuration_ready'] is True
+          assert result['verification_requires_network'] is True
+          assert result['scheduler_authorized'] is False
+          assert result['safety']['network_used_by_status'] is False
+          assert result['safety']['storage_read_performed_by_status'] is False
+          assert result['safety']['storage_write_performed_by_status'] is False
+          assert secret not in json.dumps(result, sort_keys=True)
+          print('Step 6T status is network-free, read-only, and secret-free.')
+          PY
+
+      - name: Prove Step 6T verification core has no mutation calls
+        shell: bash
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          source = Path('sports_api/wnba_step6t_canary_evidence.py').read_text(encoding='utf-8')
+          tree = ast.parse(source)
+          forbidden_attributes = {'write_bytes_atomic', 'delete', 'exclusive_lock'}
+          called_attributes = {
+              node.func.attr
+              for node in ast.walk(tree)
+              if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+          }
+          assert not (forbidden_attributes & called_attributes), forbidden_attributes & called_attributes
+          assert 'sync_reconciled_draftkings_to_kyre_feed' not in source
+          assert 'scheduler_authorized": False' in source
+          assert 'step6k_network_free_contract_preserved' in source
+          print('Step 6T verification contains no storage mutation, sportsbook sync, or scheduler authority path.')
+          PY
+
+      - name: Prove Step 6T API separates status from authenticated verification
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          api = Path('sports_api/api/wnba_step6t_canary_evidence.py').read_text(encoding='utf-8')
+          assert '@router.get("/step6t-canary-evidence/status")' in api
+          assert '@router.post("/step6t-canary-evidence/verify")' in api
+          assert 'require_ingest_authorization(authorization)' in api
+          assert 'verify_step6t_canary_evidence()' in api
+          print('Step 6T status is GET-only while explicit verification is authenticated.')
+          PY
