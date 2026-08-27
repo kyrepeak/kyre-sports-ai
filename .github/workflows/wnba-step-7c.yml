@@ -1,0 +1,153 @@
+name: WNBA Step 7C free Render FastAPI deployment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sports_api/tools/wnba_step7c_render_free_deploy.py'
+      - 'sports_api/tests/test_wnba_step7c_render_free_deploy.py'
+      - '.github/workflows/wnba-step-7c.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7c-free-render
+  cancel-in-progress: false
+
+jobs:
+  deploy-free-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_STEP6J_CANARY_ENABLED: 'false'
+    steps:
+      - name: Checkout Step 7C operator revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Confirm Render operator credential without exposing it
+        shell: bash
+        run: |
+          test -n "$RENDER_API_KEY"
+          test "${#RENDER_API_KEY}" -ge 20
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          echo 'Render operator credential is present; secret value not printed.'
+
+      - name: Compile Step 7C operator
+        run: |
+          python -m py_compile sports_api/tools/wnba_step7c_render_free_deploy.py
+          python -m py_compile sports_api/tests/test_wnba_step7c_render_free_deploy.py
+
+      - name: Run Step 7C free-only guard tests
+        run: python -m unittest sports_api.tests.test_wnba_step7c_render_free_deploy
+
+      - name: Prove deployment branch is pinned to exact Step 7B merge
+        shell: bash
+        run: |
+          git fetch origin refs/heads/wnba-production-7c-20260827:refs/remotes/origin/wnba-production-7c-20260827 --force
+          ACTUAL="$(git rev-parse refs/remotes/origin/wnba-production-7c-20260827)"
+          EXPECTED='12b9a0bb21e72f16282f562d848673222d48c7f2'
+          test "$ACTUAL" = "$EXPECTED"
+          echo "Pinned Render source revision verified: $EXPECTED"
+
+      - name: Prove frozen release parents are intact
+        shell: bash
+        run: |
+          python - <<'PY'
+          import subprocess
+          merge = '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          parents = subprocess.check_output(['git', 'show', '-s', '--format=%P', merge], text=True).strip().split()
+          assert parents == [
+              '9bf400b30e1fe8e46c58495125a6536d1b7baf0d',
+              '77a62395ab4736bb0ba52fd00374b7a796108be9',
+          ], parents
+          print('Step 7B merge ancestry verified.')
+          PY
+
+      - name: Prove Step 7C receives no Supabase or sportsbook secrets
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          assert not os.environ.get('WNBA_KYRE_SUPABASE_SECRET_KEY')
+          assert not os.environ.get('SPORTSGAMEODDS_API_KEY')
+          assert not os.environ.get('GHCR_RENDER_TOKEN')
+          print('Step 7C has no database, sportsbook, or registry secret context.')
+          PY
+
+      - name: Deploy frozen FastAPI release to Render Free
+        shell: bash
+        run: |
+          mkdir -p .step7c
+          python -m sports_api.tools.wnba_step7c_render_free_deploy > .step7c/render-evidence.json
+
+      - name: Verify sanitized deployment evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          path = Path('.step7c/render-evidence.json')
+          raw = path.read_text(encoding='utf-8')
+          secret = os.environ['RENDER_API_KEY']
+          assert secret not in raw
+          evidence = json.loads(raw)
+          assert evidence['deployment_complete'] is True
+          assert evidence['state'] == 'wnba_render_free_preactivation_live'
+          assert evidence['source_release']['revision'] == '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          assert evidence['render']['plan'] == 'free'
+          assert evidence['render']['deploy_status'] == 'live'
+          assert evidence['render']['persistent_disk_attached'] is False
+          assert evidence['health']['status_code'] == 200
+          assert evidence['health']['body_status'] == 'ok'
+          safety = evidence['safety']
+          assert safety['render_plan_is_free'] is True
+          assert safety['paid_render_provisioning_authorized'] is False
+          assert safety['production_runtime_enabled'] is False
+          assert safety['scheduler_authorized'] is False
+          assert safety['scheduler_started'] is False
+          assert safety['direct_sync_enabled'] is False
+          assert safety['reconciled_sync_enabled'] is False
+          assert safety['step6j_canary_enabled'] is False
+          assert safety['supabase_credentials_injected'] is False
+          assert safety['render_api_key_returned'] is False
+
+          evidence['ci_freeze'] = {
+              'workflow_revision': os.environ['GITHUB_SHA'],
+              'workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
+              'workflow_run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+              'deployed_step7b_revision': '12b9a0bb21e72f16282f562d848673222d48c7f2',
+          }
+          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print('Step 7C Render Free deployment evidence verified.')
+          print('Service URL:', evidence['render']['service_url'])
+          PY
+
+      - name: Upload Step 7C deployment evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7c-render-free-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step7c/render-evidence.json
+          if-no-files-found: error
+          retention-days: 90
