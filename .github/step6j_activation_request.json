@@ -4,7 +4,13 @@
   "one_shot": true,
   "activation_mode": "controlled_render_persistent_disk_canary",
   "frozen_step6i_sha": "2195b1839f47745737c2d0e788c319743cda3ee0",
-  "requested_at_utc": "2026-08-27T03:04:00Z",
+  "retry": {
+    "attempt": 2,
+    "prior_run_id": 33035423453,
+    "prior_attempt_reached_feed_write": false,
+    "prior_attempt_reached_render_mutation": false,
+    "reason": "historical Render display-name lookup returned zero services; retry uses frozen Step 6C contract discovery"
+  },
   "safety": {
     "production_runtime_must_remain_disabled": true,
     "scheduler_must_not_start": true,
