@@ -39,12 +39,16 @@ create table if not exists public.wnba_durable_locks (
 alter table public.wnba_durable_objects enable row level security;
 alter table public.wnba_durable_locks enable row level security;
 
--- These are server-owned tables. No browser/user role receives direct access.
+-- Server-owned tables: browser/user roles get no direct privileges. The
+-- server-side Supabase secret key maps to service_role, which bypasses RLS.
 revoke all on table public.wnba_durable_objects from public, anon, authenticated;
 revoke all on table public.wnba_durable_locks from public, anon, authenticated;
 grant select, insert, update, delete on table public.wnba_durable_objects to service_role;
 grant select, insert, update, delete on table public.wnba_durable_locks to service_role;
 
+-- RPCs intentionally remain SECURITY INVOKER. The caller must itself be the
+-- privileged service_role; there is no SECURITY DEFINER elevation path exposed
+-- through the Data API.
 create or replace function public.wnba_durable_lock_acquire(
     p_lock_key text,
     p_owner_token uuid,
@@ -52,7 +56,7 @@ create or replace function public.wnba_durable_lock_acquire(
 )
 returns boolean
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 declare
@@ -100,7 +104,7 @@ create or replace function public.wnba_durable_lock_release(
 )
 returns boolean
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $$
 declare
