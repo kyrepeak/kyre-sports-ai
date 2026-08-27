@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
-from sports_api.wnba_official_reconciliation import run_official_reconciliation
+from sports_api.wnba_official_reconciliation_live import run_live_official_reconciliation
 
 
 def main() -> int:
@@ -16,7 +16,7 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
-    report = run_official_reconciliation(date=args.date, season=args.season)
+    report = run_live_official_reconciliation(date=args.date, season=args.season)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
