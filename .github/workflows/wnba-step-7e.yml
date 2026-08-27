@@ -49,14 +49,17 @@ jobs:
           python -m unittest sports_api.tests.test_wnba_step7e_production_smoke
           python -m unittest sports_api.tests.test_wnba_step7e_production_smoke_v2
 
-      - name: Prove hosted release branch remains pinned to Step 7B
+      - name: Prove hosted release branch remains pinned to certified Step 7E hotfix
         shell: bash
         run: |
-          git fetch origin refs/heads/wnba-production-7c-20260827:refs/remotes/origin/wnba-production-7c-20260827 --force
-          ACTUAL="$(git rev-parse refs/remotes/origin/wnba-production-7c-20260827)"
-          EXPECTED='12b9a0bb21e72f16282f562d848673222d48c7f2'
+          git fetch origin refs/heads/wnba-production-7e-schedule-fix-20260827:refs/remotes/origin/wnba-production-7e-schedule-fix-20260827 --force
+          ACTUAL="$(git rev-parse refs/remotes/origin/wnba-production-7e-schedule-fix-20260827)"
+          EXPECTED='9a45b11704bb95ec5ace275b5dd941e27e32f745'
           test "$ACTUAL" = "$EXPECTED"
-          echo "Hosted release source still pinned: $EXPECTED"
+          test "$(git show -s --format=%P "$ACTUAL")" = '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          CHANGED="$(git diff --name-only 12b9a0bb21e72f16282f562d848673222d48c7f2..$ACTUAL)"
+          test "$CHANGED" = $'sports_api/tests/test_wnba_schedule.py\nsports_api/wnba_schedule.py'
+          echo "Hosted release source pinned to certified hotfix: $EXPECTED"
 
       - name: Prove Step 7E has no secret context
         shell: bash
@@ -93,7 +96,7 @@ jobs:
           assert evidence['state'] == 'wnba_production_smoke_passed'
           assert evidence['model_version'] == 'wnba_step_7e_production_smoke_v2'
           assert evidence['base_url'] == 'https://kyre-sports-api.onrender.com'
-          assert evidence['expected_release_revision'] == '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          assert evidence['expected_release_revision'] == '9a45b11704bb95ec5ace275b5dd941e27e32f745'
           assert evidence['expected_legacy_step6u_blocker'] == 'Step 5W pre-activation checkpoint is not ready.'
           assert evidence['checks_total'] >= 10
           assert evidence['checks_passed'] == evidence['checks_total']
@@ -101,6 +104,9 @@ jobs:
           assert all(row['status_code'] == 200 and row['passed'] is True for row in evidence['endpoint_results'])
           names = {row['name'] for row in evidence['endpoint_results']}
           assert {'health','openapi','wnba_teams','wnba_games_today','step6r_supabase','step6t_evidence_status','step6u_bridge_status','step6w_final_certificate'} <= names
+          schedule = next(row for row in evidence['endpoint_results'] if row['name'] == 'wnba_games_today')
+          assert schedule['summary']['source_variant'] == 'wnba_public_schedule_api'
+          assert schedule['summary']['source_url'] == 'https://www.wnba.com/api/schedule'
           step6u = next(row for row in evidence['endpoint_results'] if row['name'] == 'step6u_bridge_status')
           assert step6u['summary']['configuration_ready'] is False
           assert step6u['summary']['bridge_ready'] is False
@@ -127,7 +133,8 @@ jobs:
               'workflow_revision': os.environ['GITHUB_SHA'],
               'workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
               'workflow_run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
-              'hosted_release_revision': '12b9a0bb21e72f16282f562d848673222d48c7f2',
+              'hosted_release_revision': '9a45b11704bb95ec5ace275b5dd941e27e32f745',
+              'hotfix_parent_revision': '12b9a0bb21e72f16282f562d848673222d48c7f2',
           }
           path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
           print('Step 7E v2 production smoke evidence verified.')
