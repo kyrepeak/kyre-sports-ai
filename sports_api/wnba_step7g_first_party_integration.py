@@ -20,13 +20,17 @@ Certified seams installed when enabled:
 - Step 4U player history -> WNBA.com first-party player game history.
 - Step 4N season schedule -> certified WNBA.com schedule-context adapter.
 - Step 4N observed team workload -> certified Cup-safe Step 4J team history.
+- Step 4I daily schedule -> daily view derived from the same certified WNBA.com
+  season schedule, translated into Step 4I's frozen availability error family on
+  transport failure.
 - Optional Step 4G role/lineup Stats transports -> explicit upstream-unavailable
   signals so frozen Step 4V reports warnings instead of waiting on an unreachable
   host. These components remain optional exactly as frozen Step 4V defines them.
 
-Current availability/shot/advanced/officiating transports are intentionally not
-changed here; they require separate certification before the public endpoint's
-full default option set can be declared first-party ready.
+The Step 4I daily-schedule transport is certified here, but full current
+availability is not declared certified until its roster, report, and observed
+rotation dependencies also pass the real FastAPI gate. Shot/advanced/officiating
+transports likewise require separate certification.
 """
 from __future__ import annotations
 
@@ -34,12 +38,18 @@ from collections.abc import Mapping
 import os
 from typing import Any, Callable
 
+import sports_api.wnba_availability as availability
 import sports_api.wnba_event_lineup_context as event_lineup
 import sports_api.wnba_player_event_features as event_features
 import sports_api.wnba_player_opportunity_context as opportunity
 import sports_api.wnba_rotation_context as rotation
 import sports_api.wnba_schedule_context as schedule_context
 from sports_api.wnba_game_history import WNBAHistoryUpstreamError
+from sports_api.wnba_schedule import WNBAScheduleUpstreamError
+from sports_api.wnba_schedule_context import WNBARestTravelUpstreamError
+from sports_api.wnba_step7g_first_party_availability import (
+    get_step7g_step4i_daily_schedule_dataset,
+)
 from sports_api.wnba_step7g_first_party_history import (
     get_first_party_player_recent_game_log_dataset,
     get_first_party_play_by_play_dataset,
@@ -53,7 +63,7 @@ from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v1"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v2"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -64,6 +74,7 @@ _ORIGINAL_OPPORTUNITY_ROLE = opportunity.get_player_role_context_dataset
 _ORIGINAL_OPPORTUNITY_LINEUPS = opportunity.get_lineups_dataset
 _ORIGINAL_SCHEDULE_CONTEXT_SEASON = schedule_context._season_schedule_dataset
 _ORIGINAL_SCHEDULE_CONTEXT_TEAM_HISTORY = schedule_context.get_team_game_log_dataset
+_ORIGINAL_AVAILABILITY_DAILY_SCHEDULE = availability.get_daily_schedule_dataset
 
 
 def _environment(env: Mapping[str, str] | None = None) -> Mapping[str, str]:
@@ -95,6 +106,20 @@ def _optional_lineup_stats_unavailable(*args: Any, **kwargs: Any) -> Any:
         "Step 7G first-party mode has no separately certified Step 4G Stats "
         "transport; this frozen Step 4V component is optional and unavailable."
     )
+
+
+def _availability_daily_schedule_first_party(
+    target_date: str,
+    season: int,
+) -> dict[str, Any]:
+    """Expose certified daily schedule through Step 4I's expected error family."""
+    try:
+        return get_step7g_step4i_daily_schedule_dataset(target_date, season)
+    except (WNBAScheduleUpstreamError, WNBARestTravelUpstreamError) as exc:
+        raise availability.WNBAAvailabilityUpstreamError(
+            "Step 7G first-party daily schedule was unavailable for Step 4I: "
+            f"{exc}"
+        ) from exc
 
 
 def _guarded_replace(
@@ -166,6 +191,12 @@ def _install_enabled_seams() -> None:
         original=_ORIGINAL_SCHEDULE_CONTEXT_TEAM_HISTORY,
         target=get_first_party_team_game_log_dataset,
     )
+    availability.get_daily_schedule_dataset = _guarded_replace(
+        label="Step 4I daily-schedule provider",
+        current=availability.get_daily_schedule_dataset,
+        original=_ORIGINAL_AVAILABILITY_DAILY_SCHEDULE,
+        target=_availability_daily_schedule_first_party,
+    )
 
 
 def get_step7g_first_party_status(
@@ -189,6 +220,8 @@ def get_step7g_first_party_status(
         is get_step7g_step4n_season_schedule_dataset,
         "team_history": schedule_context.get_team_game_log_dataset
         is get_first_party_team_game_log_dataset,
+        "availability_daily_schedule": availability.get_daily_schedule_dataset
+        is _availability_daily_schedule_first_party,
     }
     return {
         "source": MODEL_SOURCE,
@@ -200,6 +233,7 @@ def get_step7g_first_party_status(
             "season": 2026,
             "season_type": "Regular Season",
             "core_model_input_readiness": True,
+            "current_availability_daily_schedule": True,
             "current_availability": False,
             "shot_context": False,
             "advanced_context": False,
@@ -215,6 +249,8 @@ def get_step7g_first_party_status(
             "frozen_step4x_source_modified": False,
             "frozen_step4j_source_modified": False,
             "frozen_step4n_source_modified": False,
+            "frozen_step4i_source_modified": False,
+            "frozen_step4c_source_modified": False,
         },
     }
 
