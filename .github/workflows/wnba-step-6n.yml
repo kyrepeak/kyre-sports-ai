@@ -1,0 +1,98 @@
+name: WNBA Step 6N production observability
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6n_production_observability.py'
+      - 'sports_api/api/wnba_step6n_production_observability.py'
+      - 'sports_api/tests/test_wnba_step6n_production_observability.py'
+      - 'sports_api/wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6n.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6n_production_observability.py'
+      - 'sports_api/api/wnba_step6n_production_observability.py'
+      - 'sports_api/tests/test_wnba_step6n_production_observability.py'
+      - 'sports_api/wnba_step6m_scheduler_orchestration.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6n.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6n-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6n-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact Step 6N revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Compile Step 6N observability
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6n_production_observability.py \
+            sports_api/api/wnba_step6n_production_observability.py \
+            sports_api/main.py
+      - name: Run Step 6N deterministic health tests
+        run: python -m unittest sports_api.tests.test_wnba_step6n_production_observability
+      - name: Run corrected Step 6M regression
+        run: python -m unittest sports_api.tests.test_wnba_step6m_scheduler_orchestration
+      - name: Run Step 6K activation regression
+        run: python -m unittest sports_api.tests.test_wnba_step6k_activation_preflight
+      - name: Prove Step 6N is read-only and network-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          core = Path('sports_api/wnba_step6n_production_observability.py').read_text(encoding='utf-8').lower()
+          api = Path('sports_api/api/wnba_step6n_production_observability.py').read_text(encoding='utf-8').lower()
+          assert 'mode=ro' in core
+          assert '@router.post' not in api
+          forbidden = (
+              'refresh_step6l_owned_market_feed(',
+              'sync_reconciled_draftkings_to_kyre_feed(',
+              'write_kyre_market_feed(',
+              'run_step6m_background_cycle(',
+              'run_step6m_manual_cycle(',
+              'run_pregame_board_cycle(',
+              'place_wager(',
+              'httpx.',
+              'requests.',
+              'mkdir(',
+              'initialize_store(',
+              'get_cycle_lock_status(',
+          )
+          for token in forbidden:
+              assert token not in core, token
+          print('Step 6N has no network, feed-write, scheduler, model, wager, lock-probe, or store-initialization path.')
+          PY
+      - name: Prove deferred hosting is healthy not incident
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import sports_api.wnba_step6n_production_observability as s
+          report = s.build_step6n_production_observability(
+              date='2026-08-26', season=2026,
+              now_utc=datetime(2026,8,27,4,0,tzinfo=timezone.utc), env={},
+              step6m_getter=lambda **_: {'scheduler_cycle_ready': False, 'step_6l': {'step_6k': {'scheduler_authorized': False}}},
+              feed_getter=lambda **_: {'ready': False, 'feed_exists': False, 'feed_valid': False},
+              store_reader=lambda **_: {'ready': False, 'store_exists': False, 'read_only': True, 'error': 'not provisioned', 'latest_scheduler_run': None, 'recent_scheduler_runs': [], 'latest_publication': None},
+          )
+          assert report['state'] == 'safe_deferred'
+          assert report['healthy'] is True
+          assert report['incident_active'] is False
+          print('Deferred/no-paid-hosting state is correctly classified SAFE DEFERRED.')
+          PY
