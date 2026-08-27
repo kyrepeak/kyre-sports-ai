@@ -1,13 +1,14 @@
-"""OFF-only diagnostic of the next Step 7G FastAPI default-option boundary.
+"""OFF-only diagnostic of the next Step 7G FastAPI availability boundary.
 
 The certified Step 7G core integration is enabled before importing the FastAPI
 app. The public Step 4X endpoint is then called with current availability ON,
 while shot, advanced, and officiating contexts remain OFF. This isolates Step 4I
 availability without conflating later optional/default dependencies.
 
-This is a diagnostic probe, not an activation. Expected upstream failures are
-captured as HTTP responses and written to sanitized evidence so the next exact
-transport seam can be identified.
+The TestClient deliberately re-raises server exceptions in this diagnostic so a
+generic HTTP 500 cannot hide the actual Python failure family. Only sanitized
+exception type/message chains are recorded; no traceback frames, request headers,
+secrets, or local variables are persisted.
 """
 from __future__ import annotations
 
@@ -49,6 +50,28 @@ def _assert_safe() -> None:
         raise RuntimeError("Step 7G availability probe requires first-party core mode ON.")
 
 
+def _exception_chain(exc: BaseException, *, max_depth: int = 8) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and len(rows) < max_depth and id(current) not in seen:
+        seen.add(id(current))
+        rows.append(
+            {
+                "type": type(current).__name__,
+                "module": type(current).__module__,
+                "message": str(current)[:1200],
+            }
+        )
+        if current.__cause__ is not None:
+            current = current.__cause__
+        elif current.__context__ is not None and not current.__suppress_context__:
+            current = current.__context__
+        else:
+            current = None
+    return rows
+
+
 def main() -> int:
     _assert_safe()
     started = datetime.now(timezone.utc)
@@ -80,45 +103,61 @@ def main() -> int:
         "include_snapshot": "false",
     }
 
-    with TestClient(app, raise_server_exceptions=False) as client:
-        response = client.get(path, params=params)
+    response = None
+    body: Any = None
+    exception_rows: list[dict[str, str]] = []
+    with TestClient(app, raise_server_exceptions=True) as client:
+        try:
+            response = client.get(path, params=params)
+        except Exception as exc:  # diagnostic capture of the server boundary
+            exception_rows = _exception_chain(exc)
 
-    try:
-        body = response.json()
-    except Exception:
-        body = {"raw_body_prefix": response.text[:1000]}
-
-    summary = body.get("summary") if isinstance(body, dict) else None
-    readiness = body.get("readiness") if isinstance(body, dict) else None
-    can_start = body.get("can_start_projection") if isinstance(body, dict) else None
-    if response.status_code == 200:
-        outcome = "AVAILABILITY_PATH_RETURNED"
-        next_required_dependency = None
-    elif response.status_code == 502:
-        outcome = "AVAILABILITY_UPSTREAM_BOUNDARY_CAPTURED"
-        next_required_dependency = "Step 4I current availability upstream dependency"
-    elif response.status_code == 404:
-        outcome = "AVAILABILITY_NOT_FOUND_BOUNDARY_CAPTURED"
-        next_required_dependency = "Step 4I current availability data discovery"
+    if exception_rows:
+        outcome = "AVAILABILITY_EXCEPTION_BOUNDARY_CAPTURED"
+        next_required_dependency = "Step 4I current availability exception shown in exception_chain"
+        http_status = None
+        readiness = None
+        can_start = None
+        summary = None
     else:
-        outcome = "UNEXPECTED_FASTAPI_RESPONSE"
-        next_required_dependency = "Investigate unexpected availability probe response"
+        assert response is not None
+        http_status = response.status_code
+        try:
+            body = response.json()
+        except Exception:
+            body = {"raw_body_prefix": response.text[:1000]}
+        summary = body.get("summary") if isinstance(body, dict) else None
+        readiness = body.get("readiness") if isinstance(body, dict) else None
+        can_start = body.get("can_start_projection") if isinstance(body, dict) else None
+        if response.status_code == 200:
+            outcome = "AVAILABILITY_PATH_RETURNED"
+            next_required_dependency = None
+        elif response.status_code == 502:
+            outcome = "AVAILABILITY_UPSTREAM_BOUNDARY_CAPTURED"
+            next_required_dependency = "Step 4I current availability upstream dependency"
+        elif response.status_code == 404:
+            outcome = "AVAILABILITY_NOT_FOUND_BOUNDARY_CAPTURED"
+            next_required_dependency = "Step 4I current availability data discovery"
+        else:
+            outcome = "UNEXPECTED_FASTAPI_RESPONSE"
+            next_required_dependency = "Investigate unexpected availability probe response"
 
     report = {
-        "data_type": "wnba_step7g_fastapi_availability_probe_v1",
+        "data_type": "wnba_step7g_fastapi_availability_probe_v2",
         "started_at_utc": started.isoformat(),
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "endpoint": path,
         "request_params": params,
         "selected_game": selected_game,
         "selected_player": selected_player,
-        "http_status": response.status_code,
+        "http_status": http_status,
         "probe_outcome": outcome,
         "next_required_dependency": next_required_dependency,
         "readiness": readiness,
         "can_start_projection": can_start,
         "summary": summary,
         "response_body": body,
+        "exception_chain": exception_rows,
         "integration_status": status,
         "safety": {
             "production_runtime_enabled": False,
@@ -127,6 +166,7 @@ def main() -> int:
             "supabase_mutation_performed": False,
             "persistence_performed": False,
             "step7g_first_party_enabled_for_ci_process_only": True,
+            "traceback_frames_persisted": False,
         },
     }
     REPORT_PATH.write_text(
@@ -137,7 +177,7 @@ def main() -> int:
     _assert_safe()
 
     if outcome == "UNEXPECTED_FASTAPI_RESPONSE":
-        raise RuntimeError(f"Unexpected Step 7G availability probe HTTP {response.status_code}.")
+        raise RuntimeError(f"Unexpected Step 7G availability probe HTTP {http_status}.")
     return 0
 
 
