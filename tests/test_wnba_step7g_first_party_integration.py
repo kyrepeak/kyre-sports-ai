@@ -30,6 +30,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert integration.INSTALLATION["installed"] is False, integration.INSTALLATION
             assert status["safety"]["default_enabled"] is False
             assert integration.availability.get_daily_schedule_dataset is integration._ORIGINAL_AVAILABILITY_DAILY_SCHEDULE
+            assert integration.availability.get_latest_injury_report_dataset is integration._ORIGINAL_AVAILABILITY_INJURY_REPORT
             """,
             enabled=False,
         )
@@ -45,8 +46,12 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert integration.INSTALLATION["installed"] is True, integration.INSTALLATION
             assert all(status["seams"].values()), status
             assert status["seams"]["availability_daily_schedule"] is True
+            assert status["seams"]["availability_current_roster"] is True
+            assert status["seams"]["availability_injury_report"] is True
             assert status["certified_scope"]["core_model_input_readiness"] is True
             assert status["certified_scope"]["current_availability_daily_schedule"] is True
+            assert status["certified_scope"]["current_availability_roster"] is True
+            assert status["certified_scope"]["current_availability_injury_report"] is False
             assert status["certified_scope"]["current_availability"] is False
             assert status["certified_scope"]["shot_context"] is False
             assert status["certified_scope"]["advanced_context"] is False
