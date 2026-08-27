@@ -33,6 +33,9 @@ from sports_api.wnba_step7g_first_party_history import (
     get_first_party_player_recent_game_log_dataset,
     get_first_party_play_by_play_dataset,
 )
+from sports_api.wnba_step7g_first_party_injury_report import (
+    get_step7g_first_party_injury_report_dataset,
+)
 from sports_api.wnba_step7g_first_party_rosters import (
     get_first_party_current_players_dataset,
 )
@@ -45,7 +48,7 @@ from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v3"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v4"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -58,6 +61,7 @@ _ORIGINAL_SCHEDULE_CONTEXT_SEASON = schedule_context._season_schedule_dataset
 _ORIGINAL_SCHEDULE_CONTEXT_TEAM_HISTORY = schedule_context.get_team_game_log_dataset
 _ORIGINAL_AVAILABILITY_DAILY_SCHEDULE = availability.get_daily_schedule_dataset
 _ORIGINAL_AVAILABILITY_CURRENT_ROSTER = availability.get_current_players_dataset
+_ORIGINAL_AVAILABILITY_INJURY_REPORT = availability.get_latest_injury_report_dataset
 _ORIGINAL_AVAILABILITY_RECENT_STATS = availability.get_player_season_stats_dataset
 _ORIGINAL_AVAILABILITY_LINEUPS = availability.get_lineups_dataset
 
@@ -199,6 +203,12 @@ def _install_enabled_seams() -> None:
         original=_ORIGINAL_AVAILABILITY_CURRENT_ROSTER,
         target=get_first_party_current_players_dataset,
     )
+    availability.get_latest_injury_report_dataset = _guarded_replace(
+        label="Step 4I injury-report provider",
+        current=availability.get_latest_injury_report_dataset,
+        original=_ORIGINAL_AVAILABILITY_INJURY_REPORT,
+        target=get_step7g_first_party_injury_report_dataset,
+    )
     availability.get_player_season_stats_dataset = _guarded_replace(
         label="optional Step 4I recent-stats provider",
         current=availability.get_player_season_stats_dataset,
@@ -238,6 +248,8 @@ def get_step7g_first_party_status(
         is _availability_daily_schedule_first_party,
         "availability_current_roster": availability.get_current_players_dataset
         is get_first_party_current_players_dataset,
+        "availability_injury_report": availability.get_latest_injury_report_dataset
+        is get_step7g_first_party_injury_report_dataset,
         "availability_recent_stats_fail_soft": availability.get_player_season_stats_dataset
         is _availability_recent_stats_unavailable,
         "availability_lineups_fail_soft": availability.get_lineups_dataset
@@ -255,6 +267,7 @@ def get_step7g_first_party_status(
             "core_model_input_readiness": True,
             "current_availability_daily_schedule": True,
             "current_availability_roster": True,
+            "current_availability_injury_report": False,
             "current_availability": False,
             "shot_context": False,
             "advanced_context": False,
