@@ -110,7 +110,7 @@ class Step6DIntegrationTests(unittest.TestCase):
         self.assertEqual(405, response.status_code)
 
     def test_12_no_public_direct_sync_route_exists(self):
-        paths = {route.path for route in app.routes}
+        paths = {path for route in app.routes if (path := getattr(route, "path", None))}
         self.assertNotIn("/api/v1/wnba/markets/direct/draftkings/sync", paths)
 
 
