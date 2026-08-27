@@ -1,0 +1,17 @@
+{
+  "step": "6J",
+  "approved": true,
+  "one_shot": true,
+  "activation_mode": "controlled_render_persistent_disk_canary",
+  "frozen_step6i_sha": "2195b1839f47745737c2d0e788c319743cda3ee0",
+  "requested_at_utc": "2026-08-27T03:04:00Z",
+  "safety": {
+    "production_runtime_must_remain_disabled": true,
+    "scheduler_must_not_start": true,
+    "automatic_rollback_on_verification_failure": true,
+    "disable_write_switches_after_canary": true,
+    "paid_odds_vendor_allowed": false,
+    "monte_carlo_allowed": false,
+    "wager_action_allowed": false
+  }
+}
