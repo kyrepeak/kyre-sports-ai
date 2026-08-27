@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import unittest
 
+import sports_api.wnba_availability as frozen
 from sports_api.wnba_availability import WNBAAvailabilityUpstreamError
-from sports_api.wnba_step7g_first_party_injury_report import _parse_layout_report
+from sports_api.wnba_step7g_first_party_injury_report import (
+    _parse_layout_report,
+    _parse_team,
+)
 
 
 def _game(game_id: str, date: str, eastern: str) -> dict:
@@ -163,6 +167,17 @@ class Step7GFirstPartyInjuryReportTests(unittest.TestCase):
             _schedule(self.target),
         )
         self.assertEqual(parsed["entries"][0]["team_key"], "phoenix-mercury")
+
+    def test_collapsed_internal_team_spacing_matches_one_official_registry_team(self) -> None:
+        teams_by_name, _ = frozen._team_maps(2026)
+        team = _parse_team("LasVegas Aces", teams_by_name)
+        self.assertIsNotNone(team)
+        self.assertEqual(team["team_key"], "las-vegas-aces")
+
+    def test_unknown_normalized_team_cell_still_fails_closed(self) -> None:
+        teams_by_name, _ = frozen._team_maps(2026)
+        with self.assertRaises(WNBAAvailabilityUpstreamError):
+            _parse_team("LasVegas Mystery", teams_by_name)
 
     def test_not_yet_submitted_team_only_row_uses_unique_schedule_identity(self) -> None:
         parsed = _parse_layout_report(
