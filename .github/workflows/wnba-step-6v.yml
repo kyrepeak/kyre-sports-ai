@@ -1,0 +1,233 @@
+name: WNBA Step 6V GitHub Supabase live Step 6J canary
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/tools/wnba_step6v_supabase_canary.py'
+      - 'sports_api/tests/test_wnba_step6v_supabase_canary.py'
+      - '.github/workflows/wnba-step-6v.yml'
+  pull_request:
+    paths:
+      - 'sports_api/tools/wnba_step6v_supabase_canary.py'
+      - 'sports_api/tests/test_wnba_step6v_supabase_canary.py'
+      - '.github/workflows/wnba-step-6v.yml'
+  workflow_dispatch:
+    inputs:
+      canary_date:
+        description: 'WNBA slate date for the one-shot Supabase canary (YYYY-MM-DD)'
+        required: true
+        type: string
+      season:
+        description: 'WNBA season'
+        required: true
+        default: '2026'
+        type: string
+      execute_live_canary:
+        description: 'I explicitly approve one live DraftKings -> Supabase Step 6J canary write'
+        required: true
+        default: false
+        type: boolean
+      confirmation_phrase:
+        description: 'Type RUN_STEP6J_SUPABASE_CANARY exactly'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6v-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  step6v-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact Step 6V revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact Step 6V revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "Certified exact Step 6V revision: $EXPECTED_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6V operator
+        run: python -m py_compile sports_api/tools/wnba_step6v_supabase_canary.py
+
+      - name: Run Step 6V operator tests
+        run: python -m unittest sports_api.tests.test_wnba_step6v_supabase_canary
+
+      - name: Run frozen Step 6U activation bridge regression
+        run: python -m unittest sports_api.tests.test_wnba_step6u_activation_bridge
+
+      - name: Run frozen Step 6T durable evidence regression
+        run: python -m unittest sports_api.tests.test_wnba_step6t_canary_evidence
+
+      - name: Run frozen Step 6S storage-aware canary regression
+        run: python -m unittest sports_api.tests.test_wnba_step6s_canary_storage
+
+      - name: Run frozen Step 6R Supabase backend regression
+        run: python -m unittest sports_api.tests.test_wnba_step6r_supabase_storage
+
+      - name: Run frozen Step 6Q durable-storage regression
+        run: python -m unittest sports_api.tests.test_wnba_step6q_durable_storage
+
+      - name: Run original Step 6J filesystem regression
+        run: python -m unittest sports_api.tests.test_wnba_step6j_canary_activation
+
+      - name: Run Phase 6 master certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove Step 6U through Step 6Q and Step 6J core were not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code 0ed7d9a312348a24294658fe49e4f8585d00c402 -- \
+            sports_api/wnba_step6u_activation_bridge.py \
+            sports_api/wnba_step6t_canary_evidence.py \
+            sports_api/wnba_step6s_canary_storage.py \
+            sports_api/wnba_step6r_supabase_storage.py \
+            sports_api/wnba_step6q_durable_storage.py \
+            sports_api/wnba_step6j_canary_activation.py
+
+      - name: Prove Step 6V base-to-active-to-verification isolation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('sports_api/tools/wnba_step6v_supabase_canary.py').read_text(encoding='utf-8')
+          assert '_require_base_fail_closed(base)' in source
+          assert '_active_canary_environment(base, canary_id)' in source
+          assert '_verification_environment(base)' in source
+          assert 'run_storage_aware_step6j_canary(' in source
+          assert 'verify_step6t_canary_evidence(verification)' in source
+          assert 'base_environment_mutated": False' in source
+          assert 'scheduler_authorized": False' in source
+          print('Step 6V preserves isolated temporary write switches and fail-closed verification.')
+          PY
+
+      - name: Prove test job receives no live Supabase secrets
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/wnba-step-6v.yml').read_text(encoding='utf-8')
+          test_job = text.split('  live-supabase-canary:', 1)[0]
+          secret_ref = 'secrets' + '.'
+          assert secret_ref not in test_job
+          print('Step 6V test job has no live-secret references.')
+          PY
+
+      - name: Prove live job is manual confirmation gated
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/wnba-step-6v.yml').read_text(encoding='utf-8')
+          live = text.split('  live-supabase-canary:', 1)[1]
+          assert "github.event_name == 'workflow_dispatch'" in live
+          assert 'inputs.execute_live_canary == true' in live
+          assert "inputs.confirmation_phrase == 'RUN_STEP6J_SUPABASE_CANARY'" in live
+          assert 'needs: step6v-tests' in live
+          assert 'WNBA_PRODUCTION_RUNTIME_ENABLED: "false"' in live
+          assert 'WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"' in live
+          assert 'WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"' in live
+          assert 'WNBA_STEP6J_CANARY_ENABLED: "false"' in live
+          print('Step 6V live job is manual, double-confirmed, and begins fail-closed.')
+          PY
+
+  live-supabase-canary:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.execute_live_canary == true &&
+      inputs.confirmation_phrase == 'RUN_STEP6J_SUPABASE_CANARY'
+    needs: step6v-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      WNBA_KYRE_DURABLE_STORAGE_BACKEND: supabase
+      WNBA_KYRE_SUPABASE_URL: ${{ secrets.WNBA_KYRE_SUPABASE_URL }}
+      WNBA_KYRE_SUPABASE_SECRET_KEY: ${{ secrets.WNBA_KYRE_SUPABASE_SECRET_KEY }}
+      WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+      WNBA_STEP6J_CANARY_ENABLED: "false"
+    steps:
+      - name: Checkout exact live Step 6V revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Verify live secrets are present without printing them
+        shell: bash
+        run: |
+          test -n "$WNBA_KYRE_SUPABASE_URL"
+          test -n "$WNBA_KYRE_SUPABASE_SECRET_KEY"
+          test "${#WNBA_KYRE_SUPABASE_SECRET_KEY}" -ge 20
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Execute one-shot Supabase-backed Step 6J canary
+        shell: bash
+        env:
+          CANARY_DATE: ${{ inputs.canary_date }}
+          CANARY_SEASON: ${{ inputs.season }}
+          ACTIVATION_ID: step6v-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python -m sports_api.tools.wnba_step6v_supabase_canary \
+            --date "$CANARY_DATE" \
+            --season "$CANARY_SEASON" \
+            --activation-id "$ACTIVATION_ID" \
+            --output step6v-live-canary-evidence.json
+
+      - name: Prove sanitized evidence contains no secret value
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          evidence = json.loads(Path('step6v-live-canary-evidence.json').read_text(encoding='utf-8'))
+          raw = json.dumps(evidence, sort_keys=True)
+          secret = os.environ['WNBA_KYRE_SUPABASE_SECRET_KEY']
+          assert secret not in raw
+          assert evidence['status'] == 'completed'
+          assert evidence['step6j_complete_candidate'] is True
+          assert evidence['safety']['scheduler_authorized'] is False
+          assert evidence['final_switch_state']['WNBA_PRODUCTION_RUNTIME_ENABLED'] is False
+          assert evidence['final_switch_state']['WNBA_KYRE_DIRECT_SYNC_ENABLED'] is False
+          assert evidence['final_switch_state']['WNBA_KYRE_RECONCILED_SYNC_ENABLED'] is False
+          assert evidence['final_switch_state']['WNBA_STEP6J_CANARY_ENABLED'] is False
+          print('Step 6V sanitized live evidence is complete and all runtime/write switches remain OFF.')
+          PY
+
+      - name: Upload sanitized Step 6V evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6v-live-canary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step6v-live-canary-evidence.json
+          if-no-files-found: error
+          retention-days: 30
