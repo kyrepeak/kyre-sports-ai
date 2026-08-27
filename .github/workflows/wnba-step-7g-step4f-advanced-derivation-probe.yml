@@ -7,8 +7,11 @@ on:
     paths:
       - '.github/workflows/wnba-step-7g-step4f-advanced-derivation-probe.yml'
       - 'sports_api/wnba_step7g_first_party_advanced_stats.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_fast.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py'
       - 'sports_api/tools/wnba_step7g_step4f_advanced_derivation_probe.py'
       - 'tests/test_wnba_step7g_first_party_advanced_stats.py'
+      - 'tests/test_wnba_step7g_first_party_advanced_contract_units.py'
   workflow_dispatch:
 
 permissions:
@@ -53,15 +56,21 @@ jobs:
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt
 
-      - name: Compile Step 4F adapter and live probe
+      - name: Compile Step 4F adapters and live probe
         shell: bash
         run: |
           python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats.py
+          python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats_fast.py
+          python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py
           python -m py_compile sports_api/tools/wnba_step7g_step4f_advanced_derivation_probe.py
           python -m py_compile tests/test_wnba_step7g_first_party_advanced_stats.py
+          python -m py_compile tests/test_wnba_step7g_first_party_advanced_contract_units.py
 
-      - name: Run fail-closed advanced derivation tests
-        run: PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_stats.py
+      - name: Run fail-closed advanced derivation and contract-unit tests
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_stats.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_contract_units.py
 
       - name: Prove frozen Step 4F and readiness chain unchanged
         shell: bash
@@ -76,7 +85,7 @@ jobs:
             sports_api/wnba_projection_input_snapshot.py \
             sports_api/wnba_model_input_readiness.py
 
-      - name: Probe live WNBA.com box-derived advanced context
+      - name: Probe live WNBA.com box-derived advanced context in frozen units
         run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_step4f_advanced_derivation_probe
 
       - name: Upload sanitized Step 4F derivation evidence
