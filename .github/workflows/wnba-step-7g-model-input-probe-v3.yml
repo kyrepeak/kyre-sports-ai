@@ -59,11 +59,14 @@ jobs:
             sports_api/tools/wnba_step7g_model_input_dependency_probe_v3.py \
             sports_api/wnba_step7g_first_party_team_history.py
 
-      - name: Prove frozen dependency-chain modules are unchanged from main
+      - name: Prove inherited dependency-chain files unchanged from exact Step 7G baseline
         shell: bash
         run: |
-          git fetch origin main --depth=1
-          git diff --exit-code origin/main -- \
+          EXPECTED_BASE_SHA='368dbde84ea0aa6f570703688ae899285ecd7cfc'
+          git fetch origin wnba-step7g-official-data-preflight-20260827 --depth=1
+          ACTUAL_BASE_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$ACTUAL_BASE_SHA" = "$EXPECTED_BASE_SHA"
+          git diff --exit-code "$EXPECTED_BASE_SHA" -- \
             sports_api/wnba_team_history.py \
             sports_api/wnba_schedule.py \
             sports_api/wnba_schedule_context.py \
