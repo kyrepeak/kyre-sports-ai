@@ -1,0 +1,158 @@
+name: WNBA Step 7G Render-hosted upstream probe
+
+on:
+  push:
+    branches:
+      - wnba-production-7g-one-shot-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-render-host-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-render-host-probe
+  cancel-in-progress: false
+
+env:
+  RENDER_ORIGIN: https://kyre-sports-api.onrender.com
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Probe hosted API and WNBA Stats-backed reads
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          origin = os.environ['RENDER_ORIGIN'].rstrip('/')
+          probes = []
+
+          def get_json(name, path, params=None, timeout=75.0):
+              url = origin + path
+              if params:
+                  url += '?' + urllib.parse.urlencode(params)
+              started = time.monotonic()
+              row = {'name': name, 'path': path}
+              try:
+                  request = urllib.request.Request(
+                      url,
+                      headers={
+                          'Accept': 'application/json',
+                          'User-Agent': 'kyre-sports-ai-step7g-render-probe/1',
+                      },
+                      method='GET',
+                  )
+                  with urllib.request.urlopen(request, timeout=timeout) as response:
+                      payload = response.read()
+                      status = int(response.status)
+                  elapsed = round(time.monotonic() - started, 3)
+                  document = json.loads(payload.decode('utf-8'))
+                  if not isinstance(document, dict):
+                      raise RuntimeError('Hosted API returned a non-object JSON payload.')
+                  row.update({'status': 'success', 'http_status': status, 'elapsed_seconds': elapsed})
+                  if name == 'health':
+                      row['summary'] = {'status': document.get('status')}
+                  elif name == 'players':
+                      row['summary'] = {
+                          'player_count': document.get('player_count'),
+                          'source': document.get('source') or document.get('source_url'),
+                      }
+                  elif name == 'player_game_log':
+                      row['summary'] = {
+                          'game_count': document.get('game_count'),
+                          'player_id': document.get('player_id') or 1629546,
+                          'source': document.get('source') or document.get('source_url'),
+                      }
+                  probes.append(row)
+                  return document
+              except Exception as exc:
+                  elapsed = round(time.monotonic() - started, 3)
+                  row.update({
+                      'status': 'failed',
+                      'elapsed_seconds': elapsed,
+                      'error_type': type(exc).__name__,
+                      'error_message_returned': False,
+                  })
+                  probes.append(row)
+                  return None
+
+          get_json('health', '/health', timeout=30.0)
+          players = get_json(
+              'players',
+              '/api/v1/wnba/players',
+              {'season': 2026, 'current_roster_only': 'true'},
+          )
+          get_json(
+              'player_game_log',
+              '/api/v1/wnba/players/1629546/game-log',
+              {'season': 2026},
+          )
+
+          report = {
+              'data_type': 'wnba_step7g_render_host_probe_v1',
+              'render_origin': origin,
+              'read_only': True,
+              'supabase_mutation_performed': False,
+              'sportsbook_called': False,
+              'scheduler_started': False,
+              'production_runtime_enabled': False,
+              'probes': probes,
+          }
+          Path('step7g-render-host-probe.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload sanitized probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-render-host-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-render-host-probe.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Require Render-hosted WNBA Stats reads to succeed
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('step7g-render-host-probe.json').read_text(encoding='utf-8'))
+          by_name = {row['name']: row for row in report['probes']}
+          assert report['read_only'] is True
+          assert report['supabase_mutation_performed'] is False
+          assert report['sportsbook_called'] is False
+          assert report['scheduler_started'] is False
+          assert report['production_runtime_enabled'] is False
+          assert by_name['health']['status'] == 'success'
+          assert by_name['health']['http_status'] == 200
+          assert by_name['players']['status'] == 'success'
+          assert by_name['players']['http_status'] == 200
+          assert int((by_name['players'].get('summary') or {}).get('player_count') or 0) > 0
+          assert by_name['player_game_log']['status'] == 'success'
+          assert by_name['player_game_log']['http_status'] == 200
+          print('Render-hosted WNBA Stats path is green for Step 7G.')
+          PY
