@@ -1,0 +1,217 @@
+name: WNBA Step 7E controlled schedule hotfix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/wnba-step7e-schedule-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  certify-and-push-patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact production patch branch
+        uses: actions/checkout@v4
+        with:
+          ref: wnba-production-7e-schedule-fix-20260827
+          fetch-depth: 0
+
+      - name: Verify patch branch starts at Step 7B release
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = '12b9a0bb21e72f16282f562d848673222d48c7f2'
+
+      - name: Apply minimal official WNBA schedule transport patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          schedule = Path('sports_api/wnba_schedule.py')
+          text = schedule.read_text(encoding='utf-8')
+          old_constants = '''WNBA_LEAGUE_ID = "10"
+          WNBA_CDN_SCHEDULE_URL = (
+              "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2_10.json"
+          )
+          WNBA_STATS_SCHEDULE_URL = "https://stats.wnba.com/stats/scheduleleaguev2"
+          WNBA_SCHEDULE_SOURCE = "WNBA Official Schedule"'''.replace('          ', '')
+          new_constants = '''WNBA_LEAGUE_ID = "10"
+          WNBA_PUBLIC_SCHEDULE_API_URL = "https://www.wnba.com/api/schedule"
+          WNBA_CDN_SCHEDULE_URL = (
+              "https://cdn.wnba.com/static/json/staticData/scheduleLeagueV2.json"
+          )
+          # Retained only as a historical compatibility constant. The endpoint is
+          # retired and is intentionally never called by the current schedule path.
+          WNBA_STATS_SCHEDULE_URL = "https://stats.wnba.com/stats/scheduleleaguev2"
+          WNBA_SCHEDULE_SOURCE = "WNBA Official Schedule"'''.replace('          ', '')
+          assert text.count(old_constants) == 1
+          text = text.replace(old_constants, new_constants)
+
+          old_fetch = '''    """Fetch official schedule data, preferring the WNBA CDN with stats fallback."""
+
+              now = monotonic()
+          '''.replace('              ', '    ')
+          new_fetch = '''    """Fetch official schedule data from WNBA.com with current-CDN fallback.
+
+              The legacy stats.wnba.com scheduleLeagueV2 transport was retired in 2026
+              and is deliberately excluded here so cloud deployments fail over quickly
+              instead of waiting on the retired endpoint.
+              """
+
+              now = monotonic()
+          '''.replace('              ', '    ')
+          assert text.count(old_fetch) == 1
+          text = text.replace(old_fetch, new_fetch)
+
+          old_requests = '''    requests_to_try = (
+              (
+                  "wnba_cdn_schedule",
+                  WNBA_CDN_SCHEDULE_URL,
+                  None,
+              ),
+              (
+                  "wnba_stats_scheduleleaguev2",
+                  WNBA_STATS_SCHEDULE_URL,
+                  [("LeagueID", WNBA_LEAGUE_ID), ("Season", str(season))],
+              ),
+          )'''
+          new_requests = '''    requests_to_try = (
+              (
+                  "wnba_public_schedule_api",
+                  WNBA_PUBLIC_SCHEDULE_API_URL,
+                  [("season", str(season)), ("regionId", "1")],
+              ),
+              (
+                  "wnba_cdn_schedule",
+                  WNBA_CDN_SCHEDULE_URL,
+                  None,
+              ),
+          )'''
+          assert text.count(old_requests) == 1
+          text = text.replace(old_requests, new_requests)
+          schedule.write_text(text, encoding='utf-8')
+
+          tests = Path('sports_api/tests/test_wnba_schedule.py')
+          text = tests.read_text(encoding='utf-8')
+          old_import = '''from sports_api.wnba_schedule import (
+              WNBA_STATS_SCHEDULE_URL,'''
+          new_import = '''from sports_api.wnba_schedule import (
+              WNBA_CDN_SCHEDULE_URL,
+              WNBA_PUBLIC_SCHEDULE_API_URL,
+              WNBA_STATS_SCHEDULE_URL,'''
+          assert text.count(old_import) == 1
+          text = text.replace(old_import, new_import)
+
+          old_test = '''    @patch("sports_api.wnba_schedule.httpx.get")
+              def test_fetch_falls_back_to_stats_schedule_endpoint(self, mock_get):
+                  wrong_season = _payload(season="2025")
+                  valid = _payload(season="2026")
+                  mock_get.side_effect = [
+                      _FakeResponse(wrong_season),
+                      _FakeResponse(valid),
+                  ]
+
+                  _, _, source_variant, source_url, cache_hit = _fetch_schedule_payload(2026)
+
+                  self.assertEqual(source_variant, "wnba_stats_scheduleleaguev2")
+                  self.assertEqual(source_url, WNBA_STATS_SCHEDULE_URL)
+                  self.assertFalse(cache_hit)
+                  self.assertEqual(mock_get.call_count, 2)
+          '''.replace('              ', '    ')
+          new_test = '''    @patch("sports_api.wnba_schedule.httpx.get")
+              def test_fetch_prefers_public_wnba_schedule_api(self, mock_get):
+                  valid = _payload(season="2026")
+                  mock_get.return_value = _FakeResponse(valid)
+
+                  _, _, source_variant, source_url, cache_hit = _fetch_schedule_payload(2026)
+
+                  self.assertEqual(source_variant, "wnba_public_schedule_api")
+                  self.assertEqual(source_url, WNBA_PUBLIC_SCHEDULE_API_URL)
+                  self.assertNotEqual(source_url, WNBA_STATS_SCHEDULE_URL)
+                  self.assertFalse(cache_hit)
+                  self.assertEqual(mock_get.call_count, 1)
+                  self.assertEqual(
+                      mock_get.call_args.kwargs["params"],
+                      [("season", "2026"), ("regionId", "1")],
+                  )
+
+              @patch("sports_api.wnba_schedule.httpx.get")
+              def test_fetch_falls_back_to_current_cdn_not_retired_stats(self, mock_get):
+                  wrong_season = _payload(season="2025")
+                  valid = _payload(season="2026")
+                  mock_get.side_effect = [
+                      _FakeResponse(wrong_season),
+                      _FakeResponse(valid),
+                  ]
+
+                  _, _, source_variant, source_url, cache_hit = _fetch_schedule_payload(2026)
+
+                  self.assertEqual(source_variant, "wnba_cdn_schedule")
+                  self.assertEqual(source_url, WNBA_CDN_SCHEDULE_URL)
+                  self.assertNotEqual(source_url, WNBA_STATS_SCHEDULE_URL)
+                  self.assertFalse(cache_hit)
+                  self.assertEqual(mock_get.call_count, 2)
+          '''.replace('              ', '    ')
+          assert text.count(old_test) == 1
+          text = text.replace(old_test, new_test)
+          tests.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Run schedule regressions
+        run: |
+          python -m py_compile sports_api/wnba_schedule.py
+          python -m unittest sports_api.tests.test_wnba_schedule
+          python -m unittest sports_api.tests.test_wnba_schedule_context
+          python -m unittest sports_api.tests.test_wnba_league_structure
+
+      - name: Prove new official WNBA transport live from cloud runner
+        shell: bash
+        run: |
+          python - <<'PY'
+          import httpx
+          url='https://www.wnba.com/api/schedule'
+          r=httpx.get(url, params=[('season','2026'),('regionId','1')], headers={
+              'Accept':'application/json, text/plain, */*',
+              'Origin':'https://www.wnba.com',
+              'Referer':'https://www.wnba.com/',
+              'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36',
+          }, timeout=30.0, follow_redirects=True)
+          r.raise_for_status()
+          body=r.json()
+          root=body['leagueSchedule']
+          assert str(root['leagueId']) == '10'
+          assert str(root['seasonYear']) == '2026'
+          dates=root['gameDates']
+          assert isinstance(dates, list) and dates
+          print('Official WNBA schedule API verified:', len(dates), 'date blocks')
+          PY
+
+      - name: Prove patch scope is schedule-only
+        shell: bash
+        run: |
+          CHANGED="$(git diff --name-only)"
+          printf '%s\n' "$CHANGED"
+          test "$CHANGED" = $'sports_api/tests/test_wnba_schedule.py\nsports_api/wnba_schedule.py'
+
+      - name: Commit certified schedule patch
+        shell: bash
+        run: |
+          git config user.name 'kyrepeak'
+          git config user.email 'kyrewhite15@gmail.com'
+          git add sports_api/wnba_schedule.py sports_api/tests/test_wnba_schedule.py
+          git commit -m 'Step 7E: repair official WNBA schedule transport'
+          git push origin HEAD:wnba-production-7e-schedule-fix-20260827
+          echo "PATCH_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "Certified schedule patch: $(git rev-parse HEAD)"
