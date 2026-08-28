@@ -42,10 +42,19 @@ jobs:
           python -m py_compile sports_api/main.py sports_api/api/wnba_step17c_reliability.py sports_api/wnba_step17c_production_reliability.py
           PYTHONPATH=. python tests/test_wnba_step17c_production_reliability.py
           python - <<'PY'
+          from pathlib import Path
           from sports_api.main import app
-          paths = {getattr(route, 'path', None) for route in app.routes}
+          from sports_api.api.wnba_step17c_reliability import router
+          paths = {getattr(route, 'path', None) for route in router.routes}
           assert '/api/v1/wnba/runtime/step17c' in paths
           assert '/api/v1/wnba/runtime/step17c/health' in paths
+          text = Path('sports_api/main.py').read_text()
+          import_line = 'from sports_api.api.wnba_step17c_reliability import router as wnba_step17c_reliability_router'
+          include_line = 'app.include_router(wnba_step17c_reliability_router)'
+          assert text.count(import_line) == 1
+          assert text.count(include_line) == 1
+          assert 'lifespan=step17b_lifespan' in text
+          assert app is not None
           print('STEP17C_FASTAPI_ROUTES_OK')
           PY
       - name: Commit exact main.py wiring
