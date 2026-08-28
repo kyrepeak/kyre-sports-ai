@@ -96,6 +96,13 @@ jobs:
               while current is not None and id(current) not in seen and len(chain)<12:
                   seen.add(id(current))
                   chain.append(type(current).__name__)
+                  if type(current).__name__ in {
+                      'WNBAStep11DraftKingsProviderIdentityError',
+                      'WNBAStep11FanDuelProviderIdentityError',
+                  }:
+                      message=' '.join(str(current).split())
+                      if len(message) <= 500 and 'http://' not in message and 'https://' not in message:
+                          print('STEP17B_ROOT_CAUSE_SAFE_IDENTITY_MESSAGE', message)
                   frames=traceback.extract_tb(current.__traceback__)
                   for frame in frames:
                       path=Path(frame.filename)
