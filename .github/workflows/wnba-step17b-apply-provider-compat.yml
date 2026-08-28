@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   patch-and-test:
-    if: ${{ !contains(github.event.head_commit.message, '[compat-applied]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[event-alias-applied]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -27,63 +27,86 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r sports_api/requirements.txt
 
-      - name: Apply narrow Step 7G team-id compatibility and regression tests
+      - name: Apply fail-closed sportsbook team alias reconciliation
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          dk_path = Path('sports_api/wnba_step11_draftkings_provider.py')
-          dk = dk_path.read_text()
-          dk_old = '''        try:\n            player_id = int(raw.get("player_id"))\n            team_id = int(raw.get("team_id"))\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11DraftKingsProviderIdentityError(\n                "Step 11A official roster row is missing numeric player/team identity."\n            ) from exc\n'''
-          dk_new = '''        legacy_team_id = raw.get("team_id")\n        official_team_id = raw.get("official_team_id")\n        if legacy_team_id is not None and official_team_id is not None:\n            try:\n                legacy_team_id_int = int(legacy_team_id)\n                official_team_id_int = int(official_team_id)\n            except (TypeError, ValueError) as exc:\n                raise WNBAStep11DraftKingsProviderIdentityError(\n                    "Step 11A official roster row is missing numeric player/team identity."\n                ) from exc\n            if legacy_team_id_int != official_team_id_int:\n                raise WNBAStep11DraftKingsProviderIdentityError(\n                    "Step 11A official roster row has conflicting team identity fields."\n                )\n        team_id_source = legacy_team_id if legacy_team_id is not None else official_team_id\n        try:\n            player_id = int(raw.get("player_id"))\n            team_id = int(team_id_source)\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11DraftKingsProviderIdentityError(\n                "Step 11A official roster row is missing numeric player/team identity."\n            ) from exc\n'''
-          if dk_old in dk:
-              dk = dk.replace(dk_old, dk_new, 1)
-          elif 'Step 11A official roster row has conflicting team identity fields.' not in dk:
-              raise SystemExit('DraftKings compatibility target drifted')
-          dk_path.write_text(dk)
+          def patch_provider(path_str: str, *, error_class: str, event_expr: str, game_expr: str) -> None:
+              path = Path(path_str)
+              text = path.read_text()
+              import_anchor = 'from sports_api.wnba_step7g_first_party_rosters import '
+              if 'from sports_api.wnba_league import get_wnba_teams\n' not in text:
+                  idx = text.find(import_anchor)
+                  if idx < 0:
+                      raise SystemExit(f'{path_str}: import anchor drifted')
+                  text = text[:idx] + 'from sports_api.wnba_league import get_wnba_teams\n' + text[idx:]
 
-          fd_path = Path('sports_api/wnba_step11_fanduel_provider.py')
-          fd = fd_path.read_text()
-          fd_old = '''        try:\n            player_id = int(raw.get("player_id")); team_id = int(raw.get("team_id"))\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc\n'''
-          fd_new = '''        legacy_team_id = raw.get("team_id")\n        official_team_id = raw.get("official_team_id")\n        if legacy_team_id is not None and official_team_id is not None:\n            try:\n                legacy_team_id_int = int(legacy_team_id)\n                official_team_id_int = int(official_team_id)\n            except (TypeError, ValueError) as exc:\n                raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc\n            if legacy_team_id_int != official_team_id_int:\n                raise WNBAStep11FanDuelProviderIdentityError(\n                    "Official roster row has conflicting team identity fields."\n                )\n        team_id_source = legacy_team_id if legacy_team_id is not None else official_team_id\n        try:\n            player_id = int(raw.get("player_id")); team_id = int(team_id_source)\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc\n'''
-          if fd_old in fd:
-              fd = fd.replace(fd_old, fd_new, 1)
-          elif 'Official roster row has conflicting team identity fields.' not in fd:
-              raise SystemExit('FanDuel compatibility target drifted')
-          fd_path.write_text(fd)
+              helper_anchor = '''def _name_key(value: Any) -> str:\n'''
+              helper_marker = 'def _team_identity_key(value: Any) -> str:'
+              if helper_marker not in text:
+                  start = text.find(helper_anchor)
+                  if start < 0:
+                      raise SystemExit(f'{path_str}: name-key anchor drifted')
+                  next_def = text.find('\n\ndef ', start + len(helper_anchor))
+                  if next_def < 0:
+                      raise SystemExit(f'{path_str}: name-key end drifted')
+                  helper = f'''\n\ndef _team_identity_key(value: Any) -> str:\n    """Resolve exact official/sportsbook WNBA team aliases to one canonical key."""\n    key = _name_key(value)\n    if not key:\n        return ""\n    aliases: dict[str, str] = {{}}\n    for team in get_wnba_teams():\n        full_name = str(team["full_name"])\n        abbreviation = str(team["abbreviation"])\n        city = str(team["city"])\n        nickname = str(team["nickname"])\n        canonical = _name_key(full_name)\n        city_initials = "".join(part[0] for part in re.findall(r"[A-Za-z0-9]+", city) if part)\n        candidates = (\n            full_name,\n            f"{{abbreviation}} {{nickname}}",\n            f"{{city_initials}} {{nickname}}" if city_initials else "",\n        )\n        for alias in candidates:\n            alias_key = _name_key(alias)\n            if not alias_key:\n                continue\n            previous = aliases.get(alias_key)\n            if previous is not None and previous != canonical:\n                raise {error_class}("WNBA team alias registry is ambiguous.")\n            aliases[alias_key] = canonical\n    return aliases.get(key, key)\n'''
+                  text = text[:next_def] + helper + text[next_def:]
+
+              if event_expr not in text:
+                  raise SystemExit(f'{path_str}: event identity target drifted')
+              text = text.replace(event_expr, event_expr.replace('_name_key(', '_team_identity_key('), 1)
+              if game_expr not in text:
+                  raise SystemExit(f'{path_str}: game identity target drifted')
+              text = text.replace(game_expr, game_expr.replace('_name_key(', '_team_identity_key('), 2), 1)
+              path.write_text(text)
+
+          patch_provider(
+              'sports_api/wnba_step11_draftkings_provider.py',
+              error_class='WNBAStep11DraftKingsProviderIdentityError',
+              event_expr='''            _name_key(name) for name in (event.get("participants") or []) if _name_key(name)\n''',
+              game_expr='''                _name_key(game.get("home_team_name")),\n                _name_key(game.get("away_team_name")),\n''',
+          )
+          patch_provider(
+              'sports_api/wnba_step11_fanduel_provider.py',
+              error_class='WNBAStep11FanDuelProviderIdentityError',
+              event_expr='''        participants = {_name_key(name) for name in _event_participants(event) if _name_key(name)}\n''',
+              game_expr='''            pair = {_name_key(game.get("home_team_name")), _name_key(game.get("away_team_name"))}\n''',
+          )
 
           dk_test_path = Path('tests/test_wnba_step11_draftkings_provider.py')
           dk_test = dk_test_path.read_text()
           dk_anchor = '''    def test_output_is_exact_step10d_provider_refresh_shape_and_step10b_validated(self):\n'''
-          dk_tests = '''    def test_step7g_first_party_official_team_id_is_accepted(self):\n        roster = _roster()\n        for row in roster:\n            row["official_team_id"] = row.pop("team_id")\n        result = _build(official_roster_players=roster)\n        self.assertEqual(result["identity"]["two_way_record_count"], 4)\n\n    def test_conflicting_team_id_fields_fail_closed(self):\n        roster = _roster()\n        roster[0]["official_team_id"] = AWAY_TEAM_ID\n        with self.assertRaises(s11.WNBAStep11DraftKingsProviderIdentityError):\n            _build(official_roster_players=roster)\n\n'''
-          if 'test_step7g_first_party_official_team_id_is_accepted' not in dk_test:
+          dk_case = '''    def test_sportsbook_abbreviation_plus_nickname_reconciles(self):\n        docs = _documents()\n        for row in docs:\n            event = row["document"]["events"][0]\n            event["participants"] = [{"name": "ATL Dream"}, {"name": "POR Fire"}]\n        result = _build(draftkings_documents=docs)\n        records = result["provider_refresh"]["attempts"][0]["payload"]["records"]\n        self.assertEqual({row["game_id"] for row in records}, {GAME_ID})\n\n'''
+          if 'test_sportsbook_abbreviation_plus_nickname_reconciles' not in dk_test:
               if dk_anchor not in dk_test:
-                  raise SystemExit('DraftKings test anchor drifted')
-              dk_test = dk_test.replace(dk_anchor, dk_tests + dk_anchor, 1)
+                  raise SystemExit('DraftKings alias-test anchor drifted')
+              dk_test = dk_test.replace(dk_anchor, dk_case + dk_anchor, 1)
           dk_test_path.write_text(dk_test)
 
           fd_test_path = Path('tests/test_wnba_step11_fanduel_provider.py')
           fd_test = fd_test_path.read_text()
           fd_anchor = '''    def test_exact_step10_provider_refresh_shape_and_validation(self):\n'''
-          fd_tests = '''    def test_step7g_first_party_official_team_id_is_accepted(self):\n        roster = _roster()\n        for row in roster:\n            row["official_team_id"] = row.pop("team_id")\n        result = _build(official_roster_players=roster)\n        self.assertEqual(result["identity"]["two_way_record_count"], 4)\n\n    def test_conflicting_team_id_fields_fail_closed(self):\n        roster = _roster()\n        roster[0]["official_team_id"] = AWAY_TEAM_ID\n        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):\n            _build(official_roster_players=roster)\n\n'''
-          if 'test_step7g_first_party_official_team_id_is_accepted' not in fd_test:
+          fd_case = '''    def test_sportsbook_abbreviation_plus_nickname_reconciles(self):\n        doc = _event_doc()\n        event = doc["attachments"]["events"][EVENT_ID]\n        event["homeTeam"]["name"] = "ATL Dream"\n        event["awayTeam"]["name"] = "POR Fire"\n        event["name"] = "POR Fire @ ATL Dream"\n        result = _build(event_page_documents=_entries(doc))\n        records = result["provider_refresh"]["attempts"][0]["payload"]["records"]\n        self.assertEqual({row["game_id"] for row in records}, {GAME_ID})\n\n'''
+          if 'test_sportsbook_abbreviation_plus_nickname_reconciles' not in fd_test:
               if fd_anchor not in fd_test:
-                  raise SystemExit('FanDuel test anchor drifted')
-              fd_test = fd_test.replace(fd_anchor, fd_tests + fd_anchor, 1)
+                  raise SystemExit('FanDuel alias-test anchor drifted')
+              fd_test = fd_test.replace(fd_anchor, fd_case + fd_anchor, 1)
           fd_test_path.write_text(fd_test)
           PY
 
       - name: Run focused provider regressions
         run: python -m unittest tests.test_wnba_step11_draftkings_provider tests.test_wnba_step11_fanduel_provider
 
-      - name: Commit compatibility patch to diagnostic branch
+      - name: Commit event alias compatibility patch to diagnostic branch
         run: |
           if git diff --quiet; then
-            echo "Compatibility patch already present."
+            echo "Event alias compatibility patch already present."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add sports_api/wnba_step11_draftkings_provider.py sports_api/wnba_step11_fanduel_provider.py tests/test_wnba_step11_draftkings_provider.py tests/test_wnba_step11_fanduel_provider.py
-          git commit -m "Fix Step 17B first-party provider team identity [compat-applied]"
+          git commit -m "Fix Step 17B sportsbook team aliases [event-alias-applied] [compat-applied] [step7g-team-id-applied]"
           git push origin HEAD:wnba-step17b-diagnostic-20260828
