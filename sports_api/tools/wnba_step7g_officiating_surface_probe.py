@@ -114,6 +114,23 @@ def _keyword_hits(value: Any, path: str = "root") -> list[dict[str, Any]]:
     return hits
 
 
+def _official_rows(game: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = game.get("officials")
+    if not isinstance(raw, list):
+        return []
+    rows: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        rows.append(
+            {
+                "keys": sorted(str(key) for key in item.keys()),
+                "values": {str(key): _safe_scalar(value) for key, value in item.items()},
+            }
+        )
+    return rows
+
+
 def _team_stat_shape(game: dict[str, Any]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for side in ("awayTeam", "homeTeam"):
@@ -151,6 +168,7 @@ def _probe_game(label: str, schedule_game: dict[str, Any]) -> dict[str, Any]:
         "page_props_top_level_keys": sorted(str(key) for key in props.keys()),
         "game_top_level_keys": sorted(str(key) for key in game.keys()),
         "officiating_keyword_hits": _keyword_hits(props, "pageProps"),
+        "official_rows": _official_rows(game),
         "team_stat_shape": _team_stat_shape(game),
     }
 
