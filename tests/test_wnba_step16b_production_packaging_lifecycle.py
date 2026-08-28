@@ -128,9 +128,10 @@ class Tests(unittest.TestCase):
     def test_17_enabled_lifespan_binds_but_never_runs_or_connects(self) -> None:
         async def exercise() -> None:
             app = SimpleNamespace(state=SimpleNamespace())
+            database_url = "postgresql://user:secret@db.example.invalid:5432/kyre"
             env = {
                 lifecycle.STEP16B_DURABLE_LIFECYCLE_ENABLED_ENV: "true",
-                lifecycle.DATABASE_URL_ENV: "postgresql://user:secret@db.example.invalid:5432/kyre",
+                lifecycle.DATABASE_URL_ENV: database_url,
             }
             with patch.dict(os.environ, env, clear=True), patch.object(
                 lifecycle, "persistence_driver_available", return_value=True
@@ -142,7 +143,8 @@ class Tests(unittest.TestCase):
                     self.assertFalse(status["database_connected"])
                     self.assertFalse(status["runtime_executed"])
                     self.assertFalse(status["background_task_started"])
-                    self.assertNotIn("secret", str(status))
+                    self.assertNotIn(database_url, str(status))
+                    self.assertNotIn("user:secret@", str(status))
                 self.assertEqual(app.state.wnba_step16b_lifecycle["status"], "shutdown_bound_never_executed")
                 self.assertIsNone(app.state.wnba_step16b_runtime_runner)
         asyncio.run(exercise())
