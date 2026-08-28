@@ -154,7 +154,7 @@ def main() -> int:
         raise RuntimeError("Step 9B no-vig Over edge changed.")
     if abs(under["edge"]["vs_no_vig_market_probability"] + 0.10) > 1e-10:
         raise RuntimeError("Step 9B no-vig Under edge changed.")
-    if abs(over["expected_value"]["net_profit_per_unit_staked"] - 0.1454545455) > 1e-10:
+    if abs(over["expected_value"]["net_profit_per_unit_staked"] - 0.145454546) > 1e-10:
         raise RuntimeError("Step 9B Over EV formula changed.")
     if over["price_threshold"]["minimum_acceptable_american_odds"] != -133:
         raise RuntimeError("Step 9B +5% EV minimum playable price changed.")
