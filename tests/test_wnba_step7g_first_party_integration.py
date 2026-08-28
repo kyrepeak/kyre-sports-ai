@@ -37,6 +37,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert integration.projection_snapshot.get_team_advanced_stats_dataset is integration._ORIGINAL_PROJECTION_TEAM_ADVANCED
             assert status["certified_scope"]["advanced_context"] is False
             assert status["candidate_scope"]["advanced_context"] is True
+            assert status["candidate_scope"]["current_availability_coordinate_parser"] is True
             """,
             enabled=False,
         )
@@ -51,10 +52,11 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["all_core_seams_installed"] is True, status
             assert integration.INSTALLATION["installed"] is True, integration.INSTALLATION
             assert all(status["seams"].values()), status
-            assert status["model_version"] == "wnba_step_7g_first_party_core_integration_v8_candidate"
+            assert status["model_version"] == "wnba_step_7g_first_party_core_integration_v9_candidate"
             assert status["seams"]["availability_daily_schedule"] is True
             assert status["seams"]["availability_current_roster"] is True
             assert status["seams"]["availability_injury_report"] is True
+            assert integration.availability.get_latest_injury_report_dataset is integration.get_step7g_first_party_injury_report_dataset
             assert status["seams"]["projection_player_shot_context"] is True
             assert status["seams"]["projection_opponent_zone_defense"] is True
             assert status["seams"]["projection_player_advanced_context"] is True
@@ -71,6 +73,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["certified_scope"]["shot_context"] is True
             assert status["certified_scope"]["advanced_context"] is False
             assert status["candidate_scope"]["advanced_context"] is True
+            assert status["candidate_scope"]["current_availability_coordinate_parser"] is True
             assert status["certified_scope"]["officiating_context"] is False
             assert status["safety"]["frozen_step4i_source_modified"] is False
             assert status["safety"]["frozen_step4l_source_modified"] is False
@@ -89,6 +92,8 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             second = integration.install_step7g_first_party_integration()
             assert first["installed"] is True
             assert second["installed"] is True
+            assert second["seams"]["availability_injury_report"] is True
+            assert integration.availability.get_latest_injury_report_dataset is integration.get_step7g_first_party_injury_report_dataset
             assert second["seams"]["projection_player_shot_context"] is True
             assert second["seams"]["projection_opponent_zone_defense"] is True
             assert second["seams"]["projection_player_advanced_context"] is True
@@ -96,6 +101,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert second["certified_scope"]["shot_context"] is True
             assert second["certified_scope"]["advanced_context"] is False
             assert second["candidate_scope"]["advanced_context"] is True
+            assert second["candidate_scope"]["current_availability_coordinate_parser"] is True
             """,
             enabled=True,
         )
