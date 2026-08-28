@@ -220,6 +220,19 @@ class Step11DraftKingsProviderTests(unittest.TestCase):
         self.assertEqual({row["player_name"] for row in records}, {"Certification Player"})
         self.assertEqual({row["stat"] for row in records}, {"points", "rebounds", "assists", "pra"})
 
+    def test_step7g_first_party_official_team_id_is_accepted(self):
+        roster = _roster()
+        for row in roster:
+            row["official_team_id"] = row.pop("team_id")
+        result = _build(official_roster_players=roster)
+        self.assertEqual(result["identity"]["two_way_record_count"], 4)
+
+    def test_conflicting_team_id_fields_fail_closed(self):
+        roster = _roster()
+        roster[0]["official_team_id"] = AWAY_TEAM_ID
+        with self.assertRaises(s11.WNBAStep11DraftKingsProviderIdentityError):
+            _build(official_roster_players=roster)
+
     def test_output_is_exact_step10d_provider_refresh_shape_and_step10b_validated(self):
         result = _build()
         refresh = result["provider_refresh"]

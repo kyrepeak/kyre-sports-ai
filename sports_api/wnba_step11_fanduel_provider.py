@@ -292,8 +292,21 @@ def _roster_index(players: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, A
             raise WNBAStep11FanDuelProviderIdentityError("Official roster row must be an object.")
         name = _clean(raw.get("full_name") or raw.get("player_name"))
         key = _name_key(name)
+        legacy_team_id = raw.get("team_id")
+        official_team_id = raw.get("official_team_id")
+        if legacy_team_id is not None and official_team_id is not None:
+            try:
+                legacy_team_id_int = int(legacy_team_id)
+                official_team_id_int = int(official_team_id)
+            except (TypeError, ValueError) as exc:
+                raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc
+            if legacy_team_id_int != official_team_id_int:
+                raise WNBAStep11FanDuelProviderIdentityError(
+                    "Official roster row has conflicting team identity fields."
+                )
+        team_id_source = legacy_team_id if legacy_team_id is not None else official_team_id
         try:
-            player_id = int(raw.get("player_id")); team_id = int(raw.get("team_id"))
+            player_id = int(raw.get("player_id")); team_id = int(team_id_source)
         except (TypeError, ValueError) as exc:
             raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc
         if not key or player_id <= 0 or team_id <= 0 or key in index:

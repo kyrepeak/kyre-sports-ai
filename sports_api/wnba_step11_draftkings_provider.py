@@ -304,9 +304,24 @@ def _roster_index(players: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, A
             )
         player_name = _clean(raw.get("full_name") or raw.get("player_name"))
         key = _name_key(player_name)
+        legacy_team_id = raw.get("team_id")
+        official_team_id = raw.get("official_team_id")
+        if legacy_team_id is not None and official_team_id is not None:
+            try:
+                legacy_team_id_int = int(legacy_team_id)
+                official_team_id_int = int(official_team_id)
+            except (TypeError, ValueError) as exc:
+                raise WNBAStep11DraftKingsProviderIdentityError(
+                    "Step 11A official roster row is missing numeric player/team identity."
+                ) from exc
+            if legacy_team_id_int != official_team_id_int:
+                raise WNBAStep11DraftKingsProviderIdentityError(
+                    "Step 11A official roster row has conflicting team identity fields."
+                )
+        team_id_source = legacy_team_id if legacy_team_id is not None else official_team_id
         try:
             player_id = int(raw.get("player_id"))
-            team_id = int(raw.get("team_id"))
+            team_id = int(team_id_source)
         except (TypeError, ValueError) as exc:
             raise WNBAStep11DraftKingsProviderIdentityError(
                 "Step 11A official roster row is missing numeric player/team identity."
