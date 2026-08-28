@@ -140,7 +140,8 @@ def main() -> None:
     assert result["pipeline"]["matched_prop_count"] == 4
     assert result["board"]["qualification_summary"]["qualified_prop_count"] == 4
     assert result["board"]["qualification_summary"]["top_card_count"] == 4
-    assert result["board"]["top_cards"]["requested_top_n"] == 5
+    assert result["board"]["qualification_policy"]["top_n_requested"] == 5
+    assert result["board"]["qualification_summary"]["requested_top_card_count"] == 5
     assert result["board"]["top_cards"]["not_forced"] is True
     ranked_players = [row["player_id"] for row in result["board"]["top_cards"]["primary"]]
     assert ranked_players == [1642301, 1642302, 1642304, 1642303], ranked_players
@@ -183,7 +184,7 @@ def main() -> None:
             "eligible_market_records": result["refresh_cycle"]["market_snapshot"]["snapshot"]["eligible_record_count"],
             "matched_prop_count": result["pipeline"]["matched_prop_count"],
             "qualified_prop_count": result["board"]["qualification_summary"]["qualified_prop_count"],
-            "requested_top_n": result["board"]["top_cards"]["requested_top_n"],
+            "requested_top_n": result["board"]["qualification_policy"]["top_n_requested"],
             "returned_top_cards": result["board"]["qualification_summary"]["top_card_count"],
             "not_forced": result["board"]["top_cards"]["not_forced"],
             "ranked_player_ids": ranked_players,
