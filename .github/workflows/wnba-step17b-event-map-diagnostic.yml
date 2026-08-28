@@ -1,0 +1,60 @@
+name: WNBA Step 17B event map diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+  WNBA_STEP10_FASTAPI_ENABLED: "true"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+
+jobs:
+  diagnose-event-map:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r sports_api/requirements.txt
+      - name: Print public sportsbook event and nearby official schedule identities
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from datetime import date
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api.wnba_official_reconciliation import extract_draftkings_events, parse_official_schedule
+
+          wanted='34570685'
+          found=[]
+          for url in dk.FROZEN_DRAFTKINGS_ENDPOINTS:
+              doc=dk._get_json(url, requester=None, timeout_seconds=15.0)
+              for event in extract_draftkings_events(doc):
+                  if str(event.get('source_event_id')) == wanted:
+                      found.append(event)
+          schedule_doc=dk._get_json(dk.OFFICIAL_SCHEDULE_URL, requester=None, timeout_seconds=15.0)
+          games=parse_official_schedule(schedule_doc)
+          print('EVENT_MATCH_COUNT', len(found))
+          for event in found:
+              print('EVENT', event.get('source_event_id'), event.get('event_date'), repr(event.get('event_name')), repr(event.get('participants')), repr(event.get('participant_keys')))
+              keys=set(event.get('participant_keys') or [])
+              event_date=event.get('event_date')
+              target=date.fromisoformat(event_date) if event_date else date(2026,8,28)
+              for game in games:
+                  gd=date.fromisoformat(str(game['game_date']))
+                  overlap=len(keys & {dk._name_key(game['home_team_name']), dk._name_key(game['away_team_name'])})
+                  if abs((gd-target).days) <= 1 and overlap:
+                      print('NEARBY_OVERLAP', overlap, game['game_id'], game['game_date'], repr(game['away_team_name']), 'at', repr(game['home_team_name']))
+          PY
