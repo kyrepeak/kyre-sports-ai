@@ -177,12 +177,10 @@ def _validate_current_page_identity(
 
 
 def _normalize_official_rows(raw_officials: Any, game_id: str) -> list[dict[str, Any]]:
+    if raw_officials is None:
+        raw_officials = []
     if not isinstance(raw_officials, list):
         _raise("Official WNBA.com game page officials field is malformed.")
-    if not raw_officials:
-        raise frozen.WNBAOfficiatingNotFoundError(
-            f"Official assignments are not yet available on WNBA.com for game {game_id}."
-        )
 
     rows: list[dict[str, Any]] = []
     for raw in raw_officials:
@@ -249,6 +247,7 @@ def _official_assignment_dataset(
 
     away_box, home_box = _validate_current_page_identity(schedule_game, box)
     officials = _normalize_official_rows(game.get("officials"), game_id)
+    officials_available = bool(officials)
 
     return {
         "source": WNBA_FIRST_PARTY_SOURCE,
@@ -269,16 +268,21 @@ def _official_assignment_dataset(
         "away": _summary_team(away_box),
         "home": _summary_team(home_box),
         "official_count": len(officials),
-        "officials_available": True,
-        "assignment_status": "assigned_from_official_wnba_game_page",
+        "officials_available": officials_available,
+        "assignment_status": (
+            "assigned_from_official_wnba_game_page"
+            if officials_available
+            else "not_available_from_official_wnba_game_page"
+        ),
         "officials": officials,
         "verification": {
             "requested_game_id_matches_source": True,
             "home_away_teams_mapped": True,
             "current_page_teams_match_certified_schedule": True,
             "official_person_ids_unique": True,
-            "official_names_present": True,
+            "official_names_present_for_returned_rows": all(bool(row.get("name")) for row in officials),
             "officials_are_current_game_assignment_only": True,
+            "pending_assignment_is_valid_frozen_step4o_state": not officials_available,
             "referee_tendencies_or_bias_inferred": False,
             "third_party_sources_used": False,
         },
@@ -652,9 +656,10 @@ def get_first_party_game_whistle_context(
     """Return frozen-Step-4O-compatible first-party whistle context.
 
     Certification scope is 2026 Regular Season with recent windows from 1 to 20
-    games. The exact current-game officials must already be published by WNBA.com;
-    otherwise this optional component fails soft through the frozen Step 4W error
-    family rather than inventing an assignment.
+    games. Current-game officials are returned when WNBA.com has published them;
+    before publication the assignment remains a valid frozen Step-4O pending
+    state with an empty officials list while the observed team environment stays
+    available. Malformed or conflicting identity still fails closed.
     """
     game_id = frozen._game_id(game_id)
     season_type, last_n_games = _validate_scope(season, season_type, last_n_games)
@@ -732,6 +737,7 @@ def get_first_party_game_whistle_context(
             "history_unique_box_count": league.get("unique_box_count"),
             "history_box_cache_hit_count": league.get("box_cache_hit_count"),
             "league_profile_cache_hit": league_cache_hit,
+            "officials_currently_available": officials.get("officials_available") is True,
             "production_provider_replaced": False,
         },
     }
