@@ -110,7 +110,7 @@ jobs:
           image=os.environ['STEP17A_IMAGE_REF']
           sha=os.environ['STEP16E_SHA']
           base='https://api.render.com/v1'
-          headers={'Authorization':f'Bearer {token}','Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17a/1'}
+          headers={'Authorization':f'Bearer {token}','Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17a/2'}
 
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode()
@@ -123,13 +123,43 @@ jobs:
           rows=raw if isinstance(raw,list) else (raw.get('items') or raw.get('data') or [])
           services=[]
           for row in rows:
-              if isinstance(row,dict): services.append(row.get('service') if isinstance(row.get('service'),dict) else row)
-          aliases={'kyre-sports-api-staging','wnba-render-staging'}
-          matches=[s for s in services if str(s.get('name','')).strip() in aliases and str(s.get('type','')).lower() in {'web','web_service'}]
+              if isinstance(row,dict):
+                  svc=row.get('service') if isinstance(row.get('service'),dict) else row
+                  services.append(svc)
+
+          safe=[]
+          for svc in services:
+              details=svc.get('serviceDetails') if isinstance(svc.get('serviceDetails'),dict) else {}
+              safe.append({
+                  'id':svc.get('id'),'name':svc.get('name'),'type':svc.get('type'),
+                  'runtime':details.get('runtime') or details.get('env'),
+                  'url':details.get('url') or svc.get('url'),
+                  'repo':svc.get('repo'),'branch':svc.get('branch'),
+              })
+          print('STEP17A_RENDER_INVENTORY',json.dumps(safe,sort_keys=True))
+
+          web=[s for s in services if str(s.get('type','')).lower() in {'web','web_service'}]
+          aliases={'kyre-sports-api-staging','wnba-render-staging','kyre-sports-api'}
+          exact=[s for s in web if str(s.get('name','')).strip().lower() in aliases]
+          repo=[s for s in web if 'kyrepeak/kyre-sports-ai' in str(s.get('repo','')).lower()]
+          branded=[s for s in web if any(t in str(s.get('name','')).lower() for t in ('kyre','wnba','sports'))]
+
+          if len(exact)==1:
+              matches=exact; method='known_name'
+          elif len(repo)==1:
+              matches=repo; method='repository_contract'
+          elif len(branded)==1:
+              matches=branded; method='project_name_contract'
+          elif len(web)==1:
+              matches=web; method='single_web_service_contract'
+          else:
+              matches=[]; method='ambiguous'
+
           if len(matches)!=1:
-              raise SystemExit(f'Step 17A requires exactly one existing Render host; found {len(matches)}. No service will be created.')
+              raise SystemExit(f'Step 17A cannot safely identify exactly one existing Render host; total={len(services)} web={len(web)} exact={len(exact)} repo={len(repo)} branded={len(branded)}. No service will be created or mutated.')
           svc=matches[0]; sid=svc.get('id'); name=svc.get('name')
           if not sid: raise SystemExit('existing Render service has no ID')
+          print('STEP17A_EXISTING_HOST_RESOLVED',sid,name,method)
 
           envs={
             'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
@@ -171,7 +201,7 @@ jobs:
 
           evidence={
             'step':'17A','status':'certified','service_id':sid,'service_name':name,
-            'service_url':url,'deploy_id':did,'deploy_status':status,
+            'service_url':url,'host_discovery_method':method,'deploy_id':did,'deploy_status':status,
             'image_ref':image,'frozen_step16e_sha':sha,
             'health_status':'ok','scheduler_enabled':False,'production_runtime_enabled':False,
             'database_secret_configured':True,'database_secret_exposed':False,
