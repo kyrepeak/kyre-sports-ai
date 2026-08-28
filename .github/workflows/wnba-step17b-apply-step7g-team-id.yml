@@ -1,0 +1,80 @@
+name: WNBA Step 17B apply Step 7G team identity
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, '[step7g-team-id-applied]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Preserve verified official team ID from Step 7G React identity
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('sports_api/wnba_step7g_first_party_rosters.py')
+          source = source_path.read_text()
+          old = '''        if expected_team_id and str(flight.get("team_id")) != expected_team_id:\n            raise WNBAStatsUpstreamError(\n                f"Official WNBA roster React team ID mismatch for player {player_id}."\n            )\n\n        tile_number = _clean(tile.get("jersey_number"))\n'''
+          new = '''        try:\n            flight_team_id = int(flight.get("team_id"))\n        except (TypeError, ValueError) as exc:\n            raise WNBAStatsUpstreamError(\n                f"Official WNBA roster React team ID was invalid for player {player_id}."\n            ) from exc\n        if flight_team_id <= 0:\n            raise WNBAStatsUpstreamError(\n                f"Official WNBA roster React team ID was invalid for player {player_id}."\n            )\n        if expected_team_id and str(flight_team_id) != expected_team_id:\n            raise WNBAStatsUpstreamError(\n                f"Official WNBA roster React team ID mismatch for player {player_id}."\n            )\n\n        tile_number = _clean(tile.get("jersey_number"))\n'''
+          if old in source:
+              source = source.replace(old, new, 1)
+          elif 'flight_team_id = int(flight.get("team_id"))' not in source:
+              raise SystemExit('Step 7G team identity validation target drifted')
+
+          old_row = '''                "official_team_id": team.get("official_team_id"),\n'''
+          new_row = '''                "official_team_id": flight_team_id,\n'''
+          if old_row in source:
+              source = source.replace(old_row, new_row, 1)
+          elif new_row not in source:
+              raise SystemExit('Step 7G output identity target drifted')
+          source_path.write_text(source)
+
+          test_path = Path('tests/test_wnba_step7g_first_party_rosters.py')
+          tests = test_path.read_text()
+          anchor = '''    def test_parser_fails_closed_on_tile_react_name_mismatch(self) -> None:\n'''
+          addition = '''    def test_parser_preserves_react_team_id_without_static_registry_id(self) -> None:\n        team = dict(self.team)\n        team.pop("official_team_id", None)\n        players = _parse_roster_html(\n            self._fixture(),\n            team=team,\n            source_url="https://mystics.wnba.com/roster",\n        )\n        self.assertEqual({row["official_team_id"] for row in players}, {1611661322})\n\n'''
+          if 'test_parser_preserves_react_team_id_without_static_registry_id' not in tests:
+              if anchor not in tests:
+                  raise SystemExit('Step 7G test anchor drifted')
+              tests = tests.replace(anchor, addition + anchor, 1)
+          test_path.write_text(tests)
+          PY
+
+      - name: Run Step 7G and Step 11 identity regressions
+        run: |
+          python -m unittest \
+            tests.test_wnba_step7g_first_party_rosters \
+            tests.test_wnba_step11_draftkings_provider \
+            tests.test_wnba_step11_fanduel_provider
+
+      - name: Commit upstream identity repair
+        run: |
+          if git diff --quiet; then
+            echo "Step 7G repair already present."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sports_api/wnba_step7g_first_party_rosters.py tests/test_wnba_step7g_first_party_rosters.py
+          git commit -m "Preserve Step 7G official WNBA team identity [step7g-team-id-applied]"
+          git push origin HEAD:wnba-step17b-diagnostic-20260828
