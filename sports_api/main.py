@@ -90,6 +90,7 @@ from sports_api.api.wnba_step6t_canary_evidence import router as wnba_step6t_can
 from sports_api.api.wnba_step6u_activation_bridge import router as wnba_step6u_activation_bridge_router
 from sports_api.api.wnba_step6w_final_certification import router as wnba_step6w_final_certification_router
 from sports_api.api.wnba_step8_projection import router as wnba_step8_projection_router
+from sports_api.api.wnba_step9_market_board import router as wnba_step9_market_board_router
 from sports_api.api.wnba_team_history import router as wnba_team_history_router
 from sports_api.api.wnba_tracking import router as wnba_tracking_router
 
@@ -181,6 +182,7 @@ app.include_router(wnba_step6t_canary_evidence_router)
 app.include_router(wnba_step6u_activation_bridge_router)
 app.include_router(wnba_step6w_final_certification_router)
 app.include_router(wnba_step8_projection_router)
+app.include_router(wnba_step9_market_board_router)
 app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
 
