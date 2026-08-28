@@ -310,6 +310,68 @@ class Tests(unittest.TestCase):
         self.assertEqual(audit["retryable_failures"], 1)
         self.assertEqual(audit["attempts_executed"], 2)
 
+    def test_fanduel_transient_not_ready_uses_frozen_controller_without_projection(self):
+        fd_calls = []
+        projection_calls = []
+
+        def fd_not_ready(**kwargs):
+            fd_calls.append(kwargs)
+            raise fd.WNBAStep11FanDuelProviderNotReadyError("no current player props")
+
+        def loader(**kwargs):
+            projection_calls.append(kwargs)
+            return distribution(kwargs["player_id"])
+
+        result = step12b.run_step12b_live_runtime_job(
+            request(),
+            env=env(),
+            draftkings_fetcher=fetcher_for(self.dk),
+            fanduel_fetcher=fd_not_ready,
+            projection_loader=loader,
+        )
+        self.assertEqual(len(fd_calls), step11d.DEFAULT_PROVIDER_ATTEMPTS)
+        self.assertEqual(projection_calls, [])
+        self.assertEqual(result["status"], "transient_failure")
+        self.assertEqual(result["health"], "degraded")
+        self.assertTrue(result["provider_discovery"]["transient_provider_short_circuit"])
+        self.assertTrue(result["projection_assembly"]["short_circuited_before_projection"])
+        self.assertEqual(result["runtime_summary"]["step8_distribution_count"], 0)
+        tick = result["step12a_result"]["step11e_tick"]
+        self.assertEqual(tick["execution"]["cycle_outcome"], "provider_transient_not_ready")
+        self.assertIsNone(tick["shadow_board_result"])
+        self.assertIsNotNone(tick["automation_state"]["state_content_sha256"])
+
+    def test_draftkings_transient_not_ready_also_uses_controller_and_never_fakes_multibook(self):
+        dk_calls = []
+
+        def dk_not_ready(**kwargs):
+            dk_calls.append(kwargs)
+            raise dk.WNBAStep11DraftKingsProviderNotReadyError("no current player props")
+
+        result = step12b.run_step12b_live_runtime_job(
+            request(),
+            env=env(),
+            draftkings_fetcher=dk_not_ready,
+            fanduel_fetcher=fetcher_for(self.fd),
+            projection_loader=lambda **kwargs: distribution(kwargs["player_id"]),
+        )
+        self.assertEqual(len(dk_calls), step11d.DEFAULT_PROVIDER_ATTEMPTS)
+        self.assertEqual(result["market_overlap"]["exact_line_multibook_group_count"], 0)
+        self.assertEqual(result["step12a_result"]["step11e_tick"]["execution"]["cycle_outcome"], "provider_transient_not_ready")
+
+    def test_provider_identity_error_remains_terminal(self):
+        def fd_identity(**_kwargs):
+            raise fd.WNBAStep11FanDuelProviderIdentityError("bad player identity")
+
+        with self.assertRaises(fd.WNBAStep11FanDuelProviderIdentityError):
+            step12b.run_step12b_live_runtime_job(
+                request(),
+                env=env(),
+                draftkings_fetcher=fetcher_for(self.dk),
+                fanduel_fetcher=fd_identity,
+                projection_loader=lambda **kwargs: distribution(kwargs["player_id"]),
+            )
+
     def test_tampered_step8_distribution_is_rejected(self):
         bad = distribution()
         bad["distributions"]["points"]["probability_mass"][1]["probability"] = 0.63

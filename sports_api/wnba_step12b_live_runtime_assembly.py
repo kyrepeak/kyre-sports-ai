@@ -438,9 +438,227 @@ def _fetch_provider_bridge(
             "bridge_content_sha256": candidate.get("provider_bridge_content_sha256"),
             "errors": errors,
         }
-    raise WNBAStep12LiveRuntimeNotReadyError(
+    discovery = {
+        "provider": provider,
+        "attempt_limit": attempts,
+        "attempts_executed": attempts,
+        "retryable_failures": len(errors),
+        "record_count": 0,
+        "bridge_content_sha256": None,
+        "errors": errors,
+    }
+    exc = WNBAStep12LiveRuntimeNotReadyError(
         f"Step 12B {provider} discovery exhausted {attempts} bounded attempts."
     )
+    setattr(exc, "provider", provider)
+    setattr(exc, "provider_discovery", discovery)
+    raise exc
+
+
+def _transient_stub_fetcher(provider: str) -> Callable[..., Mapping[str, Any]]:
+    if provider == draftkings.PROVIDER:
+        error_type = draftkings.WNBAStep11DraftKingsProviderNotReadyError
+    elif provider == fanduel.PROVIDER:
+        error_type = fanduel.WNBAStep11FanDuelProviderNotReadyError
+    else:
+        raise WNBAStep12LiveRuntimeInputError(f"Unsupported provider {provider!r}.")
+
+    def fetcher(**_kwargs: Any) -> Mapping[str, Any]:
+        raise error_type(
+            f"Step 12B bounded prefetch classified {provider} as transiently not ready."
+        )
+
+    return fetcher
+
+
+def _provider_record_count(bridge: Mapping[str, Any] | None, provider: str) -> int:
+    if bridge is None:
+        return 0
+    try:
+        payload = step11d._verify_bridge(bridge, provider=provider)
+    except step11d.WNBAStep11MultiBookShadowIntegrityError as exc:
+        raise WNBAStep12LiveRuntimeIntegrityError(str(exc)) from exc
+    records = payload.get("records")
+    return len(records) if isinstance(records, list) else 0
+
+
+def _controlled_provider_not_ready_response(
+    *,
+    normalized: Mapping[str, Any],
+    controller_policy: Mapping[str, Any],
+    provider_attempts: int,
+    dk_bridge: Mapping[str, Any] | None,
+    fd_bridge: Mapping[str, Any] | None,
+    dk_discovery: Mapping[str, Any],
+    fd_discovery: Mapping[str, Any],
+    env: Mapping[str, str] | None,
+) -> dict[str, Any]:
+    dk_fetcher = (
+        _cached_bridge_fetcher(
+            dk_bridge,
+            expected_provider=draftkings.PROVIDER,
+            season=int(normalized["season"]),
+            slate_date=str(normalized["slate_date"]),
+        )
+        if dk_bridge is not None
+        else _transient_stub_fetcher(draftkings.PROVIDER)
+    )
+    fd_fetcher = (
+        _cached_bridge_fetcher(
+            fd_bridge,
+            expected_provider=fanduel.PROVIDER,
+            season=int(normalized["season"]),
+            slate_date=str(normalized["slate_date"]),
+        )
+        if fd_bridge is not None
+        else _transient_stub_fetcher(fanduel.PROVIDER)
+    )
+    tick = step11e.run_step11e_controlled_automation_tick(
+        season=int(normalized["season"]),
+        slate_date=str(normalized["slate_date"]),
+        step8_distributions=[],
+        previous_state=normalized["previous_state"],
+        evaluated_at=normalized["evaluated_at"],
+        refresh_interval_seconds=controller_policy.get(
+            "refresh_interval_seconds", step11e.DEFAULT_REFRESH_INTERVAL_SECONDS
+        ),
+        failure_threshold=controller_policy.get(
+            "failure_threshold", step11e.DEFAULT_FAILURE_THRESHOLD
+        ),
+        circuit_cooldown_seconds=controller_policy.get(
+            "circuit_cooldown_seconds", step11e.DEFAULT_CIRCUIT_COOLDOWN_SECONDS
+        ),
+        provider_attempts=provider_attempts,
+        refresh_policy=normalized["refresh_policy"],
+        qualification_policy=normalized["qualification_policy"],
+        draftkings_fetcher=dk_fetcher,
+        fanduel_fetcher=fd_fetcher,
+        env=env,
+    )
+    execution = tick.get("execution") or {}
+    if execution.get("cycle_outcome") not in {"provider_transient_not_ready", "not_executed"}:
+        raise WNBAStep12LiveRuntimeIntegrityError(
+            "Step 12B transient-provider fallback produced an unexpected controller outcome."
+        )
+    state = tick.get("automation_state")
+    if not isinstance(state, Mapping):
+        raise WNBAStep12LiveRuntimeIntegrityError(
+            "Step 12B transient-provider fallback is missing controller state."
+        )
+    step12a_compat = {
+        "data_type": "wnba_step12a_shadow_runner_response",
+        "schema_version": step12a.SCHEMA_VERSION,
+        "status": tick.get("status"),
+        "health": tick.get("health"),
+        "automation_state": deepcopy(dict(state)),
+        "shadow_board_result": tick.get("shadow_board_result"),
+        "step11e_tick": tick,
+        "compatibility_short_circuit": "provider_transient_not_ready_before_projection",
+    }
+    response = {
+        "data_type": "wnba_step12b_live_runtime_assembly_response",
+        "schema_version": SCHEMA_VERSION,
+        "source": SOURCE,
+        "model_version": MODEL_VERSION,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "request_content_sha256": normalized["request_content_sha256"],
+        "status": tick.get("status"),
+        "health": tick.get("health"),
+        "slate_date": normalized["slate_date"],
+        "provider_discovery": {
+            "sportsbooks": [draftkings.PROVIDER, fanduel.PROVIDER],
+            "draftkings": deepcopy(dict(dk_discovery)),
+            "fanduel": deepcopy(dict(fd_discovery)),
+            "sportsbook_network_fetches_reused_in_step11_tick": True,
+            "duplicate_sportsbook_discovery_performed": False,
+            "transient_provider_short_circuit": True,
+        },
+        "market_overlap": {
+            "draftkings_record_count": _provider_record_count(dk_bridge, draftkings.PROVIDER),
+            "fanduel_record_count": _provider_record_count(fd_bridge, fanduel.PROVIDER),
+            "exact_line_multibook_group_count": 0,
+            "exact_line_multibook_groups": [],
+            "unique_projection_target_count": 0,
+            "different_lines_blended": False,
+        },
+        "projection_assembly": {
+            "requested_target_count": 0,
+            "built_target_count": 0,
+            "skipped_target_count": 0,
+            "simulations_per_built_target": CERTIFIED_SIMULATIONS,
+            "batch_size": CERTIFIED_BATCH_SIZE,
+            "targets": [],
+            "skipped_targets": [],
+            "all_built_distributions_converged": True,
+            "short_circuited_before_projection": True,
+        },
+        "runtime_summary": {
+            "step8_distribution_count": 0,
+            "step11_cycle_executed": execution.get("cycle_executed"),
+            "qualified_prop_count": None,
+            "top_card_count": None,
+        },
+        "step12a_result": step12a_compat,
+        "lineage": {
+            "step12a_frozen_sha": STEP12A_FROZEN_SHA,
+            "step11e_frozen_sha": STEP11E_FROZEN_SHA,
+            "step8_frozen_sha": STEP8_FROZEN_SHA,
+            "step12a_runner_content_sha256": None,
+            "draftkings_bridge_content_sha256": (
+                dk_bridge.get("provider_bridge_content_sha256") if dk_bridge is not None else None
+            ),
+            "fanduel_bridge_content_sha256": (
+                fd_bridge.get("provider_bridge_content_sha256") if fd_bridge is not None else None
+            ),
+            "step8_result_content_sha256": [],
+        },
+        "guardrails": {
+            "shadow_only": True,
+            "caller_driven_job_only": True,
+            "market_driven_projection_target_discovery": True,
+            "official_wnba_identity_reconciliation_required": True,
+            "exact_line_multibook_overlap_required": True,
+            "frozen_step8_projection_generated": False,
+            "five_million_simulations_required": True,
+            "provider_not_ready_short_circuit_before_projection": True,
+            "frozen_step11e_transient_controller_reused": True,
+            "sportsbook_network_fetch_performed": True,
+            "sportsbook_http_methods": ["GET"],
+            "sportsbook_discovery_reused_without_second_network_fetch": True,
+            "scheduler_started": False,
+            "background_worker_started": False,
+            "sleep_performed": False,
+            "state_persisted": False,
+            "caller_resupplies_state": True,
+            "public_fastapi_route_added": False,
+            "supabase_mutated": False,
+            "persistence_mutated": False,
+            "production_runtime_enabled": False,
+            "production_activation_allowed": False,
+            "wager_action_performed": False,
+            "authentication_used": False,
+            "cookies_used": False,
+            "paid_odds_vendor_used": False,
+            "basketball_model_modified": False,
+            "step8_distribution_modified_after_generation": False,
+        },
+    }
+    hash_surface = {
+        "data_type": response["data_type"],
+        "schema_version": response["schema_version"],
+        "request_content_sha256": response["request_content_sha256"],
+        "status": response["status"],
+        "health": response["health"],
+        "slate_date": response["slate_date"],
+        "provider_discovery": response["provider_discovery"],
+        "market_overlap": response["market_overlap"],
+        "projection_assembly": response["projection_assembly"],
+        "runtime_summary": response["runtime_summary"],
+        "lineage": response["lineage"],
+        "guardrails": response["guardrails"],
+    }
+    response["runtime_content_sha256"] = _canonical_hash(hash_surface)
+    return response
 
 
 def _payload_records(bridge: Mapping[str, Any], provider: str) -> list[dict[str, Any]]:
@@ -682,28 +900,62 @@ def run_step12b_live_runtime_job(
 
     dk_fetch = draftkings_fetcher or draftkings.fetch_step11a_draftkings_provider_bridge
     fd_fetch = fanduel_fetcher or fanduel.fetch_step11c_fanduel_provider_bridge
-    dk_bridge, dk_discovery = _fetch_provider_bridge(
-        provider=draftkings.PROVIDER,
-        fetcher=dk_fetch,
-        season=normalized["season"],
-        slate_date=normalized["slate_date"],
-        evaluated_at=normalized["evaluated_at"],
-        attempts=provider_attempts,
-        requester=draftkings_requester,
-        roster_loader=roster_loader,
-        env=env,
-    )
-    fd_bridge, fd_discovery = _fetch_provider_bridge(
-        provider=fanduel.PROVIDER,
-        fetcher=fd_fetch,
-        season=normalized["season"],
-        slate_date=normalized["slate_date"],
-        evaluated_at=normalized["evaluated_at"],
-        attempts=provider_attempts,
-        requester=fanduel_requester,
-        roster_loader=roster_loader,
-        env=env,
-    )
+    dk_bridge: dict[str, Any] | None = None
+    fd_bridge: dict[str, Any] | None = None
+    dk_discovery: dict[str, Any]
+    fd_discovery: dict[str, Any]
+    dk_not_ready: WNBAStep12LiveRuntimeNotReadyError | None = None
+    fd_not_ready: WNBAStep12LiveRuntimeNotReadyError | None = None
+    try:
+        dk_bridge, dk_discovery = _fetch_provider_bridge(
+            provider=draftkings.PROVIDER,
+            fetcher=dk_fetch,
+            season=normalized["season"],
+            slate_date=normalized["slate_date"],
+            evaluated_at=normalized["evaluated_at"],
+            attempts=provider_attempts,
+            requester=draftkings_requester,
+            roster_loader=roster_loader,
+            env=env,
+        )
+    except WNBAStep12LiveRuntimeNotReadyError as exc:
+        if getattr(exc, "provider", None) != draftkings.PROVIDER:
+            raise
+        dk_not_ready = exc
+        dk_discovery = deepcopy(getattr(exc, "provider_discovery"))
+    try:
+        fd_bridge, fd_discovery = _fetch_provider_bridge(
+            provider=fanduel.PROVIDER,
+            fetcher=fd_fetch,
+            season=normalized["season"],
+            slate_date=normalized["slate_date"],
+            evaluated_at=normalized["evaluated_at"],
+            attempts=provider_attempts,
+            requester=fanduel_requester,
+            roster_loader=roster_loader,
+            env=env,
+        )
+    except WNBAStep12LiveRuntimeNotReadyError as exc:
+        if getattr(exc, "provider", None) != fanduel.PROVIDER:
+            raise
+        fd_not_ready = exc
+        fd_discovery = deepcopy(getattr(exc, "provider_discovery"))
+
+    if dk_not_ready is not None or fd_not_ready is not None:
+        return _controlled_provider_not_ready_response(
+            normalized=normalized,
+            controller_policy=controller_policy,
+            provider_attempts=provider_attempts,
+            dk_bridge=dk_bridge,
+            fd_bridge=fd_bridge,
+            dk_discovery=dk_discovery,
+            fd_discovery=fd_discovery,
+            env=env,
+        )
+    if dk_bridge is None or fd_bridge is None:
+        raise WNBAStep12LiveRuntimeIntegrityError(
+            "Step 12B provider discovery completed without required bridge state."
+        )
 
     dk_records = _payload_records(dk_bridge, draftkings.PROVIDER)
     fd_records = _payload_records(fd_bridge, fanduel.PROVIDER)
