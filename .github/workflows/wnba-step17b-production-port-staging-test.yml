@@ -1,0 +1,85 @@
+name: WNBA Step 17B production port staging test
+
+on:
+  push:
+    branches:
+      - wnba-step17b-production-port-test-20260828
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+  WNBA_STEP17B_ALWAYS_ON_ENABLED: "false"
+  WNBA_STEP16B_PRODUCTION_LIFECYCLE_ENABLED: "false"
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: "true"
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: "true"
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: "true"
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: "true"
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: "true"
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: "true"
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+  WNBA_STEP10_FASTAPI_ENABLED: "true"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: "true"
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: "true"
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: "true"
+  WNBA_STEP8_MONTE_CARLO_ENABLED: "true"
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: "true"
+
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Compile changed runtime modules
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step11_draftkings_provider.py \
+            sports_api/wnba_step11_fanduel_provider.py \
+            sports_api/wnba_step7g_first_party_rosters.py \
+            sports_api/wnba_step12b_live_runtime_assembly.py
+      - name: Run provider and identity regressions
+        run: |
+          python -m unittest \
+            tests.test_wnba_step11_draftkings_provider \
+            tests.test_wnba_step11_fanduel_provider \
+            tests.test_wnba_step7g_first_party_rosters
+      - name: Run Step 12 through Step 13 regressions
+        run: |
+          python -m unittest \
+            tests.test_wnba_step12b_live_runtime_assembly \
+            tests.test_wnba_step12c_live_board_runtime \
+            tests.test_wnba_step13a_bounded_scheduler \
+            tests.test_wnba_step13b_runtime_supervisor \
+            tests.test_wnba_step13c_reliability_recovery
+      - name: Run durable runtime and Step 17B regressions
+        run: |
+          python -m unittest \
+            tests.test_wnba_step14a_persistence_contract \
+            tests.test_wnba_step14b_database_checkpoint_adapter \
+            tests.test_wnba_step14c_durable_restart_lease \
+            tests.test_wnba_step16b_production_packaging_lifecycle \
+            tests.test_wnba_step17b_always_on_runtime
