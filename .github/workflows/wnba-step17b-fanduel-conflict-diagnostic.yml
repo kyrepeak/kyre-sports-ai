@@ -1,0 +1,73 @@
+name: WNBA Step 17B FanDuel conflict diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-conflict:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r sports_api/requirements.txt
+      - name: Compare duplicate public FanDuel market fields
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step11_fanduel_provider as fd
+
+          wanted='734.183287170'
+          target_date=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          common={"_ak":fd.FANDUEL_PUBLIC_WEB_KEY,"page":"CUSTOM","customPageId":fd.WNBA_CUSTOM_PAGE_ID,"timezone":"America/New_York"}
+          content=fd._get_json(fd.FANDUEL_BASE_URL+fd.CONTENT_PAGE_PATH,params=common,requester=None,timeout=15.0)
+          events=[e for e in fd._extract_events(content) if fd._event_date(e) in {None,target_date}]
+          copies=[]
+          for event in events:
+              eid=fd._event_id(event)
+              if not eid: continue
+              base=fd._get_json(fd.FANDUEL_BASE_URL+fd.EVENT_PAGE_PATH,params={"_ak":fd.FANDUEL_PUBLIC_WEB_KEY,"eventId":eid},requester=None,timeout=15.0)
+              docs=[('base',base)]
+              for tab in fd._relevant_tab_ids(base):
+                  docs.append((f'tab:{tab}',fd._get_json(fd.FANDUEL_BASE_URL+fd.EVENT_PAGE_PATH,params={"_ak":fd.FANDUEL_PUBLIC_WEB_KEY,"eventId":eid,"tab":tab},requester=None,timeout=15.0)))
+              for source,doc in docs:
+                  for market in fd._extract_markets(doc):
+                      mid=fd._clean(market.get('marketId') or market.get('id') or market.get('_attachment_key'))
+                      if mid==wanted:
+                          copies.append((eid,source,dict(market)))
+          print('FD_CONFLICT_COPY_COUNT',len(copies))
+          if copies:
+              base_eid,base_source,base=copies[0]
+              print('FD_CONFLICT_BASE',base_eid,base_source)
+              safe_keys=('marketId','id','_attachment_key','marketName','marketType','name','type','marketStatus','status','playerName','participantName','player')
+              print('FD_CONFLICT_BASE_FIELDS',repr({k:base.get(k) for k in safe_keys if k in base}))
+              def canonical_runner(r):
+                  if not isinstance(r,dict): return repr(r)
+                  keys=('selectionId','runnerId','id','runnerName','name','selectionName','runnerStatus','status','handicap','line','playerName','participantName','player')
+                  odds=r.get('winRunnerOdds')
+                  return {**{k:r.get(k) for k in keys if k in r},'winRunnerOdds':odds}
+              print('FD_CONFLICT_BASE_RUNNERS',repr([canonical_runner(r) for r in fd._iter_mapping_or_list(base.get('runners'))]))
+              for eid,source,m in copies[1:]:
+                  all_keys=sorted(set(base)|set(m))
+                  diff=[k for k in all_keys if base.get(k)!=m.get(k)]
+                  print('FD_CONFLICT_COPY',eid,source,'DIFF_KEYS',repr(diff))
+                  for k in diff:
+                      if k=='runners':
+                          print('FD_CONFLICT_RUNNERS',source,repr([canonical_runner(r) for r in fd._iter_mapping_or_list(m.get('runners'))]))
+                      elif k in safe_keys:
+                          print('FD_CONFLICT_FIELD',source,k,repr(m.get(k)))
+                      else:
+                          # Metadata only: print key and value type/size, not arbitrary nested payloads.
+                          v=m.get(k)
+                          size=len(v) if isinstance(v,(list,dict,str)) else None
+                          print('FD_CONFLICT_META',source,k,type(v).__name__,size)
+          PY
