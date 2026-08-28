@@ -1,0 +1,99 @@
+name: WNBA Step 17B root cause diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+  WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED: "true"
+  WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED: "true"
+  WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: "true"
+  WNBA_STEP14B_DATABASE_READ_ENABLED: "true"
+  WNBA_STEP14B_DATABASE_WRITE_ENABLED: "true"
+  WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED: "true"
+  WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED: "true"
+  WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED: "true"
+  WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED: "true"
+  WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: "true"
+  WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: "true"
+  WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: "true"
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: "true"
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: "true"
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: "true"
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: "true"
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: "true"
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: "true"
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+  WNBA_STEP10_FASTAPI_ENABLED: "true"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: "true"
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: "true"
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: "true"
+  WNBA_STEP8_MONTE_CARLO_ENABLED: "true"
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: "true"
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Step 17B code plus diagnostic
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Execute frozen live chain without persistence and show exception classes only
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import os
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step13c_reliability_recovery as step13c
+          from sports_api import wnba_step17b_always_on_runtime as s17b
+
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          request=s17b.build_step17b_request(slate)
+          env=s17b.build_runtime_env(os.environ)
+          print('STEP17B_ROOT_CAUSE_DIAGNOSTIC_SLATE', slate)
+          try:
+              result=step13c.run_step13c_reliability_recovery(request, env=env)
+              print('STEP17B_ROOT_CAUSE_UNEXPECTED_SUCCESS', result.get('status'), result.get('health'))
+          except BaseException as exc:
+              chain=[]
+              seen=set()
+              current=exc
+              while current is not None and id(current) not in seen and len(chain)<12:
+                  seen.add(id(current))
+                  chain.append(type(current).__name__)
+                  current=current.__cause__ or current.__context__
+              print('STEP17B_ROOT_CAUSE_CLASS_CHAIN', ' -> '.join(chain))
+              raise SystemExit(0)
+          PY
