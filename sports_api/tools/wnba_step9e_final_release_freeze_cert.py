@@ -196,7 +196,8 @@ def main() -> int:
     board = body.get("board") or {}
     summary = board.get("qualification_summary") or {}
     ranking = (board.get("rankings") or {}).get("pure_probability") or []
-    top_cards = board.get("top_cards") or []
+    top_card_envelope = board.get("top_cards") or {}
+    top_cards = top_card_envelope.get("primary") or []
 
     if body.get("data_type") != "wnba_step9_market_board_api_response_v1":
         raise RuntimeError("Step 9E response data type drifted.")
@@ -210,6 +211,8 @@ def main() -> int:
         raise RuntimeError("Step 9E must expose four cards while five were requested.")
     if summary.get("full_requested_board_available") is not False:
         raise RuntimeError("Step 9E must never force a fifth card.")
+    if top_card_envelope.get("not_forced") is not True:
+        raise RuntimeError("Step 9E frozen Step-9D top-card envelope lost not_forced=true.")
 
     expected_probability_order = [1642301, 1642302, 1642304, 1642303]
     observed_probability_order = [int(item["player_id"]) for item in ranking]
