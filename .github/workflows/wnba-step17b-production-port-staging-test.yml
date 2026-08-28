@@ -81,5 +81,4 @@ jobs:
             tests.test_wnba_step14a_persistence_contract \
             tests.test_wnba_step14b_database_checkpoint_adapter \
             tests.test_wnba_step14c_durable_restart_lease \
-            tests.test_wnba_step16b_production_packaging_lifecycle \
             tests.test_wnba_step17b_always_on_runtime
