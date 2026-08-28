@@ -1,4 +1,4 @@
-name: WNBA Step 7G Step 4O officiating context cert
+name: WNBA Step 7G v11 officiating promoted seal
 
 on:
   push:
@@ -11,8 +11,9 @@ on:
       - 'sports_api/wnba_step7g_first_party_rosters.py'
       - 'sports_api/wnba_step7g_first_party_injury_report.py'
       - 'sports_api/wnba_step7g_first_party_injury_report_coordinate.py'
-      - 'sports_api/tools/wnba_step7g_step4o_officiating_context_cert.py'
-      - 'sports_api/tools/wnba_step7g_step4o_officiating_context_cert_pending_safe.py'
+      - 'sports_api/wnba_step7g_first_party_shot_context_identity_safe.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py'
+      - 'sports_api/tools/wnba_step7g_v11_officiating_seal.py'
       - 'tests/test_wnba_step7g_first_party_officiating.py'
       - 'tests/test_wnba_step7g_first_party_integration.py'
       - 'tests/test_wnba_step7g_first_party_rosters.py'
@@ -24,7 +25,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: wnba-step7g-step4o-officiating-context-cert
+  group: wnba-step7g-v11-officiating-promoted-seal
   cancel-in-progress: true
 
 env:
@@ -37,7 +38,7 @@ env:
   WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
 
 jobs:
-  certify:
+  seal:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -66,7 +67,7 @@ jobs:
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt
 
-      - name: Compile Step 4O candidate integration dependencies tests and cert
+      - name: Compile promoted v11 integration tests and seal
         shell: bash
         run: |
           python -m py_compile sports_api/wnba_step7g_first_party_officiating.py
@@ -74,15 +75,14 @@ jobs:
           python -m py_compile sports_api/wnba_step7g_first_party_rosters.py
           python -m py_compile sports_api/wnba_step7g_first_party_injury_report.py
           python -m py_compile sports_api/wnba_step7g_first_party_injury_report_coordinate.py
-          python -m py_compile sports_api/tools/wnba_step7g_step4o_officiating_context_cert.py
-          python -m py_compile sports_api/tools/wnba_step7g_step4o_officiating_context_cert_pending_safe.py
+          python -m py_compile sports_api/tools/wnba_step7g_v11_officiating_seal.py
           python -m py_compile tests/test_wnba_step7g_first_party_officiating.py
           python -m py_compile tests/test_wnba_step7g_first_party_integration.py
           python -m py_compile tests/test_wnba_step7g_first_party_rosters.py
           python -m py_compile tests/test_wnba_step7g_first_party_injury_report.py
           python -m py_compile tests/test_wnba_step7g_first_party_injury_report_coordinate.py
 
-      - name: Run fail-closed Step 4O and current availability dependency regressions
+      - name: Run promoted v11 fail-closed regressions
         shell: bash
         run: |
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_officiating.py
@@ -114,16 +114,16 @@ jobs:
             sports_api/wnba_event_lineup_context.py \
             sports_api/wnba_rotation_context.py
 
-      - name: Certify live first-party Step 4O through real FastAPI defaults
+      - name: Seal promoted v11 through real FastAPI defaults
         shell: bash
-        run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_step4o_officiating_context_cert_pending_safe
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_v11_officiating_seal
 
-      - name: Upload sanitized Step 4O evidence
+      - name: Upload sanitized promoted v11 evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: wnba-step7g-step4o-officiating-context-${{ github.run_id }}-${{ github.run_attempt }}
-          path: step7g-step4o-officiating-context-cert.json
+          name: wnba-step7g-v11-officiating-seal-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-v11-officiating-seal.json
           if-no-files-found: warn
           retention-days: 30
 
