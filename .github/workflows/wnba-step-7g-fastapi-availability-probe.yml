@@ -11,6 +11,7 @@ on:
       - 'sports_api/wnba_step7g_first_party_availability.py'
       - 'sports_api/wnba_step7g_first_party_rosters.py'
       - 'sports_api/wnba_step7g_first_party_injury_report.py'
+      - 'sports_api/wnba_step7g_first_party_injury_report_coordinate.py'
       - 'sports_api/wnba_step7g_first_party_advanced_stats.py'
       - 'sports_api/wnba_step7g_first_party_advanced_stats_fast.py'
       - 'sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py'
@@ -18,6 +19,7 @@ on:
       - 'tests/test_wnba_step7g_first_party_integration.py'
       - 'tests/test_wnba_step7g_first_party_rosters.py'
       - 'tests/test_wnba_step7g_first_party_injury_report.py'
+      - 'tests/test_wnba_step7g_first_party_injury_report_coordinate.py'
       - 'tests/test_wnba_step7g_first_party_advanced_stats.py'
       - 'tests/test_wnba_step7g_first_party_advanced_contract_units.py'
   workflow_dispatch:
@@ -74,6 +76,7 @@ jobs:
             sports_api/wnba_step7g_first_party_availability.py \
             sports_api/wnba_step7g_first_party_rosters.py \
             sports_api/wnba_step7g_first_party_injury_report.py \
+            sports_api/wnba_step7g_first_party_injury_report_coordinate.py \
             sports_api/wnba_step7g_first_party_advanced_stats.py \
             sports_api/wnba_step7g_first_party_advanced_stats_fast.py \
             sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py \
@@ -81,6 +84,7 @@ jobs:
             tests/test_wnba_step7g_first_party_integration.py \
             tests/test_wnba_step7g_first_party_rosters.py \
             tests/test_wnba_step7g_first_party_injury_report.py \
+            tests/test_wnba_step7g_first_party_injury_report_coordinate.py \
             tests/test_wnba_step7g_first_party_advanced_stats.py \
             tests/test_wnba_step7g_first_party_advanced_contract_units.py
 
@@ -90,6 +94,7 @@ jobs:
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_rosters.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report_coordinate.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_stats.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_contract_units.py
 
