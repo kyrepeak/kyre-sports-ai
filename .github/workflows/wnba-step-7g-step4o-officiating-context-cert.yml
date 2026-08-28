@@ -12,6 +12,7 @@ on:
       - 'sports_api/wnba_step7g_first_party_injury_report.py'
       - 'sports_api/wnba_step7g_first_party_injury_report_coordinate.py'
       - 'sports_api/tools/wnba_step7g_step4o_officiating_context_cert.py'
+      - 'sports_api/tools/wnba_step7g_step4o_officiating_context_cert_pending_safe.py'
       - 'tests/test_wnba_step7g_first_party_officiating.py'
       - 'tests/test_wnba_step7g_first_party_integration.py'
       - 'tests/test_wnba_step7g_first_party_rosters.py'
@@ -74,6 +75,7 @@ jobs:
           python -m py_compile sports_api/wnba_step7g_first_party_injury_report.py
           python -m py_compile sports_api/wnba_step7g_first_party_injury_report_coordinate.py
           python -m py_compile sports_api/tools/wnba_step7g_step4o_officiating_context_cert.py
+          python -m py_compile sports_api/tools/wnba_step7g_step4o_officiating_context_cert_pending_safe.py
           python -m py_compile tests/test_wnba_step7g_first_party_officiating.py
           python -m py_compile tests/test_wnba_step7g_first_party_integration.py
           python -m py_compile tests/test_wnba_step7g_first_party_rosters.py
@@ -114,7 +116,7 @@ jobs:
 
       - name: Certify live first-party Step 4O through real FastAPI defaults
         shell: bash
-        run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_step4o_officiating_context_cert
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_step4o_officiating_context_cert_pending_safe
 
       - name: Upload sanitized Step 4O evidence
         if: always()
