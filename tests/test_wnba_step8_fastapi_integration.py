@@ -59,14 +59,17 @@ class Step8FastAPIIntegrationTests(unittest.TestCase):
         self.assertFalse(freeze.SAFETY_CONTRACT["persistence_mutation_allowed"])
 
     def test_projection_probability_route_is_registered_once(self) -> None:
-        matches = [
-            route
-            for route in app.routes
-            if getattr(route, "path", None)
-            == "/api/v1/wnba/games/{game_id}/players/{player_id}/projection-probabilities"
-        ]
-        self.assertEqual(len(matches), 1)
-        self.assertIn("GET", matches[0].methods)
+        # FastAPI's public OpenAPI surface is the release contract we care about.
+        # Starlette's internal route attributes are version-dependent and are not
+        # a stable API, so certify the exact templated path and GET operation here.
+        paths = app.openapi().get("paths") or {}
+        self.assertIn(freeze.ENDPOINT_PATH_TEMPLATE, paths)
+        operations = paths[freeze.ENDPOINT_PATH_TEMPLATE]
+        self.assertEqual(set(operations), {"get"})
+        self.assertEqual(
+            operations["get"].get("operationId"),
+            "player_game_step8_projection_probabilities_api_v1_wnba_games__game_id__players__player_id__projection_probabilities_get",
+        )
 
     def test_route_returns_distribution_and_requested_line_probabilities(self) -> None:
         with patch(
