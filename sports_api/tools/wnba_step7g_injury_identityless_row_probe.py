@@ -1,11 +1,9 @@
-"""OFF-only structural probe for identity-less rows in the official WNBA injury PDF.
+"""OFF-only structural probe for current official WNBA injury-report parsing.
 
-The Step 7G fixed-column parser recently encountered a row with no date, time,
-matchup, or team identity but with content in one of the payload columns. This
-probe records only those identity-less fixed-column cells and basic line
-classification so the parser can distinguish harmless repeated labels/layout
-artifacts from meaningful injury/submission data without weakening fail-closed
-identity rules.
+This diagnostic compares the existing layout-preserving extraction with pypdf's
+logical reading-order extraction. It records only bounded normalized line samples
+and identity-less fixed-column cells so the Step 7G parser can be repaired from
+first-party evidence without weakening fail-closed identity rules.
 
 No full PDF text, HTTP headers, cookies, sportsbook data, persistence, scheduler,
 or production state is recorded.
@@ -13,10 +11,13 @@ or production state is recorded.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from io import BytesIO
 import json
 import os
 from pathlib import Path
 from typing import Any
+
+from pypdf import PdfReader
 
 import sports_api.wnba_availability as frozen
 from sports_api.wnba_step7g_first_party_injury_report import (
@@ -39,6 +40,8 @@ from sports_api.wnba_step7g_first_party_injury_report import (
 
 REPORT_PATH = Path("step7g-injury-identityless-row-probe.json")
 SEASON = 2026
+MAX_LOGICAL_LINES_PER_PAGE = 90
+MAX_LINE_CHARS = 360
 _OFF_ENV_KEYS = (
     "WNBA_PRODUCTION_RUNTIME_ENABLED",
     "WNBA_BOARD_SCHEDULER_ENABLED",
@@ -57,13 +60,42 @@ def _truthy(value: Any) -> bool:
 def _assert_safe() -> None:
     bad = [key for key in _OFF_ENV_KEYS if _truthy(os.getenv(key))]
     if bad:
-        raise RuntimeError("Identity-less injury-row probe requires all runtime flags OFF: " + ", ".join(bad))
+        raise RuntimeError("Injury-report structure probe requires all runtime flags OFF: " + ", ".join(bad))
 
 
 def _header_like(text: str | None) -> bool:
     folded = str(text or "").casefold()
     tokens = ("game date", "game time", "matchup", "team", "player name", "current status", "reason")
     return any(token in folded for token in tokens)
+
+
+def _logical_samples(content: bytes) -> list[dict[str, Any]]:
+    reader = PdfReader(BytesIO(content))
+    pages: list[dict[str, Any]] = []
+    for page_number, page in enumerate(reader.pages, start=1):
+        logical_text = page.extract_text() or ""
+        lines: list[dict[str, Any]] = []
+        for source_line_number, raw in enumerate(logical_text.splitlines(), start=1):
+            clean = _clean(raw)
+            if clean is None:
+                continue
+            lines.append(
+                {
+                    "source_line_number": source_line_number,
+                    "text": clean[:MAX_LINE_CHARS],
+                    "truncated": len(clean) > MAX_LINE_CHARS,
+                }
+            )
+            if len(lines) >= MAX_LOGICAL_LINES_PER_PAGE:
+                break
+        pages.append(
+            {
+                "page_number": page_number,
+                "sampled_line_count": len(lines),
+                "lines": lines,
+            }
+        )
+    return pages
 
 
 def main() -> int:
@@ -142,7 +174,7 @@ def main() -> int:
         )
 
     report = {
-        "data_type": "wnba_step7g_injury_identityless_row_probe_v1",
+        "data_type": "wnba_step7g_injury_structure_probe_v2",
         "started_at_utc": started.isoformat(),
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "retrieved_at_utc": retrieved_at_utc,
@@ -150,7 +182,8 @@ def main() -> int:
         "discovered_slot": discovered_slot.isoformat() if hasattr(discovered_slot, "isoformat") else str(discovered_slot),
         "page_count": page_count,
         "identityless_payload_row_count": len(rows),
-        "rows": rows,
+        "identityless_rows": rows,
+        "logical_reading_order_samples": _logical_samples(content),
         "cache": {
             "discovery_cache_hit": discovery_cache_hit,
             "pdf_cache_hit": pdf_cache_hit,
@@ -162,6 +195,7 @@ def main() -> int:
             "persistence_performed": False,
             "supabase_mutation_performed": False,
             "full_pdf_text_persisted": False,
+            "bounded_logical_line_samples_only": True,
             "http_headers_persisted": False,
         },
     }
