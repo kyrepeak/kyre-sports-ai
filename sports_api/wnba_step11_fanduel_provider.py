@@ -489,6 +489,33 @@ def _american_price(runner: Mapping[str, Any]) -> int:
     return price
 
 
+def _market_identity_surface(market: Mapping[str, Any]) -> dict[str, Any]:
+    """Canonical immutable identity for one FanDuel market across page/tab copies."""
+    runners = []
+    for runner in _iter_mapping_or_list(market.get("runners")):
+        runners.append({
+            "selection_id": _clean(runner.get("selectionId") or runner.get("runnerId") or runner.get("id") or runner.get("_attachment_key")),
+            "runner_name": _clean(runner.get("runnerName") or runner.get("name") or runner.get("selectionName")),
+            "side": _clean(runner.get("side")).casefold(),
+            "result_type": _clean(runner.get("resultType")).casefold(),
+            "handicap": runner.get("handicap"),
+            "line": runner.get("line"),
+            "player_name": _clean(runner.get("playerName")),
+            "participant_name": _clean(runner.get("participantName")),
+            "player": _clean(runner.get("player")),
+        })
+    runners.sort(key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":"), default=str))
+    return {
+        "market_id": _clean(market.get("marketId") or market.get("id") or market.get("_attachment_key")),
+        "market_name": _clean(market.get("marketName") or market.get("name")),
+        "market_type": _clean(market.get("marketType") or market.get("type")),
+        "player_name": _clean(market.get("playerName")),
+        "participant_name": _clean(market.get("participantName")),
+        "player": _clean(market.get("player")),
+        "runners": runners,
+    }
+
+
 def build_step11c_fanduel_provider_bridge(
     *,
     event_page_documents: Sequence[Mapping[str, Any]],
@@ -530,9 +557,26 @@ def build_step11c_fanduel_provider_bridge(
             key = (eid, market_id)
             existing = market_meta.get(key)
             normalized = dict(market)
-            if existing is not None and existing[0] != normalized:
-                raise WNBAStep11FanDuelProviderIdentityError(f"Conflicting FanDuel market payload for {market_id}.")
-            market_meta[key] = (normalized, captured)
+            if existing is None:
+                market_meta[key] = (normalized, captured)
+                continue
+            existing_market, existing_captured = existing
+            if _market_identity_surface(existing_market) != _market_identity_surface(normalized):
+                raise WNBAStep11FanDuelProviderIdentityError(
+                    f"Conflicting FanDuel market identity for {market_id}."
+                )
+            if captured == existing_captured:
+                if existing_market != normalized:
+                    raise WNBAStep11FanDuelProviderIdentityError(
+                        f"Conflicting same-timestamp FanDuel market payload for {market_id}."
+                    )
+                continue
+            # Base and tab GETs are sequential and each response receives its own
+            # trusted UTC capture timestamp. FanDuel can legitimately reprice or
+            # suspend the exact same market between those GETs. Preserve the
+            # newest complete market copy only after immutable identity matches.
+            if captured > existing_captured:
+                market_meta[key] = (normalized, captured)
         source_summary.append({"event_id": eid, "captured_at_utc": captured, "market_count": len(_extract_markets(doc))})
 
     if not event_meta:

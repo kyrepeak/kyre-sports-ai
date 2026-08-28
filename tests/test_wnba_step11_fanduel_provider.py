@@ -215,6 +215,70 @@ class Step11FanDuelProviderTests(unittest.TestCase):
         with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):
             _build(event_page_documents=_entries(doc))
 
+    def test_newer_duplicate_market_price_refresh_is_selected(self):
+        first = _event_doc()
+        second = deepcopy(first)
+        point = second["attachments"]["markets"]["fd-points"]
+        point["runners"][0]["winRunnerOdds"] = _odds(120)
+        point["runners"][1]["winRunnerOdds"] = _odds(-145)
+        entries = [
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},
+        ]
+        result = _build(event_page_documents=entries)
+        point_record = next(r for r in result["provider_refresh"]["attempts"][0]["payload"]["records"] if r["stat"] == "points")
+        self.assertEqual(point_record["over_price"], 120)
+        self.assertEqual(point_record["under_price"], -145)
+        self.assertEqual(point_record["market_captured_at"], "2026-08-28T06:07:46+00:00")
+
+    def test_newer_duplicate_market_status_refresh_is_selected(self):
+        first = _event_doc()
+        second = deepcopy(first)
+        second["attachments"]["markets"]["fd-points"]["marketStatus"] = "SUSPENDED"
+        entries = [
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},
+        ]
+        result = _build(event_page_documents=entries)
+        stats = {r["stat"] for r in result["provider_refresh"]["attempts"][0]["payload"]["records"]}
+        self.assertNotIn("points", stats)
+        self.assertIn("rebounds", stats)
+
+    def test_duplicate_market_wrapper_metadata_difference_is_allowed(self):
+        first = _event_doc()
+        second = deepcopy(first)
+        second["attachments"]["markets"]["fd-points"]["displayOrder"] = 99
+        entries = [
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},
+        ]
+        result = _build(event_page_documents=entries)
+        self.assertEqual(result["identity"]["two_way_record_count"], 4)
+
+    def test_duplicate_market_line_identity_change_fails_closed(self):
+        first = _event_doc()
+        second = deepcopy(first)
+        point = second["attachments"]["markets"]["fd-points"]
+        point["runners"][0]["runnerName"] = "Over 21.5"
+        point["runners"][1]["runnerName"] = "Under 21.5"
+        entries = [
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},
+        ]
+        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):
+            _build(event_page_documents=entries)
+
+    def test_same_timestamp_changed_quote_fails_closed(self):
+        first = _event_doc()
+        second = deepcopy(first)
+        second["attachments"]["markets"]["fd-points"]["runners"][0]["winRunnerOdds"] = _odds(120)
+        entries = [
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},
+            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": second},
+        ]
+        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):
+            _build(event_page_documents=entries)
+
     def test_duplicate_same_side_quote_fails_closed(self):
         with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):
             _build(event_page_documents=_entries(_event_doc(duplicate_over=True)))
