@@ -1,15 +1,15 @@
 """OFF-only structural probe for current official WNBA injury-report parsing.
 
-This diagnostic compares the existing layout-preserving extraction with pypdf's
-logical reading-order extraction. It records only bounded normalized line samples
-and identity-less fixed-column cells so the Step 7G parser can be repaired from
-first-party evidence without weakening fail-closed identity rules.
+This diagnostic compares brittle layout-string slicing with the PDF's actual text
+coordinates. It records bounded normalized samples only so Step 7G can migrate to
+coordinate-aware row reconstruction without weakening fail-closed identity rules.
 
 No full PDF text, HTTP headers, cookies, sportsbook data, persistence, scheduler,
 or production state is recorded.
 """
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import datetime, timezone
 from io import BytesIO
 import json
@@ -40,8 +40,8 @@ from sports_api.wnba_step7g_first_party_injury_report import (
 
 REPORT_PATH = Path("step7g-injury-identityless-row-probe.json")
 SEASON = 2026
-MAX_LOGICAL_LINES_PER_PAGE = 90
-MAX_LINE_CHARS = 360
+MAX_COORDINATE_ROWS_PER_PAGE = 75
+MAX_FRAGMENTS_PER_ROW = 12
 _OFF_ENV_KEYS = (
     "WNBA_PRODUCTION_RUNTIME_ENABLED",
     "WNBA_BOARD_SCHEDULER_ENABLED",
@@ -69,33 +69,44 @@ def _header_like(text: str | None) -> bool:
     return any(token in folded for token in tokens)
 
 
-def _logical_samples(content: bytes) -> list[dict[str, Any]]:
+def _coordinate_samples(content: bytes) -> list[dict[str, Any]]:
     reader = PdfReader(BytesIO(content))
-    pages: list[dict[str, Any]] = []
+    page_reports: list[dict[str, Any]] = []
     for page_number, page in enumerate(reader.pages, start=1):
-        logical_text = page.extract_text() or ""
-        lines: list[dict[str, Any]] = []
-        for source_line_number, raw in enumerate(logical_text.splitlines(), start=1):
-            clean = _clean(raw)
+        fragments: list[tuple[float, float, str]] = []
+
+        def visitor(text: str, cm: list[float], tm: list[float], font_dict: Any, font_size: float) -> None:
+            clean = _clean(text)
             if clean is None:
+                return
+            # Current official injury PDFs use unrotated text; capture the text
+            # matrix coordinates directly. The production parser will still
+            # validate page geometry before trusting these positions.
+            fragments.append((round(float(tm[4]), 2), round(float(tm[5]), 2), clean[:220]))
+
+        page.extract_text(visitor_text=visitor)
+        grouped: dict[float, list[tuple[float, str]]] = defaultdict(list)
+        for x, y, text in fragments:
+            grouped[round(y, 1)].append((x, text))
+
+        rows: list[dict[str, Any]] = []
+        for y in sorted(grouped, reverse=True):
+            row_fragments = sorted(grouped[y], key=lambda item: item[0])
+            if not row_fragments:
                 continue
-            lines.append(
+            rows.append(
                 {
-                    "source_line_number": source_line_number,
-                    "text": clean[:MAX_LINE_CHARS],
-                    "truncated": len(clean) > MAX_LINE_CHARS,
+                    "y": y,
+                    "fragments": [
+                        {"x": x, "text": text}
+                        for x, text in row_fragments[:MAX_FRAGMENTS_PER_ROW]
+                    ],
                 }
             )
-            if len(lines) >= MAX_LOGICAL_LINES_PER_PAGE:
+            if len(rows) >= MAX_COORDINATE_ROWS_PER_PAGE:
                 break
-        pages.append(
-            {
-                "page_number": page_number,
-                "sampled_line_count": len(lines),
-                "lines": lines,
-            }
-        )
-    return pages
+        page_reports.append({"page_number": page_number, "rows": rows})
+    return page_reports
 
 
 def main() -> int:
@@ -165,16 +176,13 @@ def main() -> int:
                     "player_cell_header_like": _header_like(player_cell),
                     "status_cell_header_like": _header_like(status_cell),
                     "reason_cell_header_like": _header_like(reason_cell),
-                    "reason_not_yet_submitted": bool(
-                        reason_cell and reason_cell.casefold() == "not yet submitted"
-                    ),
                     "status_recognized": status_value is not None,
                 },
             }
         )
 
     report = {
-        "data_type": "wnba_step7g_injury_structure_probe_v2",
+        "data_type": "wnba_step7g_injury_structure_probe_v3",
         "started_at_utc": started.isoformat(),
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "retrieved_at_utc": retrieved_at_utc,
@@ -183,7 +191,7 @@ def main() -> int:
         "page_count": page_count,
         "identityless_payload_row_count": len(rows),
         "identityless_rows": rows,
-        "logical_reading_order_samples": _logical_samples(content),
+        "coordinate_rows": _coordinate_samples(content),
         "cache": {
             "discovery_cache_hit": discovery_cache_hit,
             "pdf_cache_hit": pdf_cache_hit,
@@ -195,7 +203,7 @@ def main() -> int:
             "persistence_performed": False,
             "supabase_mutation_performed": False,
             "full_pdf_text_persisted": False,
-            "bounded_logical_line_samples_only": True,
+            "bounded_coordinate_samples_only": True,
             "http_headers_persisted": False,
         },
     }
