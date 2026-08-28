@@ -32,22 +32,11 @@ MAX_AMERICAN_ODDS = 100_000
 MARKET_FUTURE_TOLERANCE_SECONDS = 120
 SUPPORTED_STATS = ("points", "rebounds", "assists", "pra")
 STAT_ALIASES = {
-    "points": "points",
-    "point": "points",
-    "pts": "points",
-    "rebounds": "rebounds",
-    "rebound": "rebounds",
-    "reb": "rebounds",
-    "rebs": "rebounds",
-    "assists": "assists",
-    "assist": "assists",
-    "ast": "assists",
-    "asts": "assists",
-    "pra": "pra",
-    "points+rebounds+assists": "pra",
-    "points rebounds assists": "pra",
+    "points": "points", "point": "points", "pts": "points",
+    "rebounds": "rebounds", "rebound": "rebounds", "reb": "rebounds", "rebs": "rebounds",
+    "assists": "assists", "assist": "assists", "ast": "assists", "asts": "assists",
+    "pra": "pra", "points+rebounds+assists": "pra", "points rebounds assists": "pra",
 }
-
 _OFF_ENV_KEYS = (
     "WNBA_PRODUCTION_RUNTIME_ENABLED",
     "WNBA_BOARD_SCHEDULER_ENABLED",
@@ -71,14 +60,10 @@ class WNBAStep10LiveMarketInputIdentityError(ValueError):
 
 
 def _truthy(value: object) -> bool:
-    return str(value or "").strip().casefold() not in {
-        "", "0", "false", "no", "off", "disabled"
-    }
+    return str(value or "").strip().casefold() not in {"", "0", "false", "no", "off", "disabled"}
 
 
-def step10a_live_market_input_enabled(
-    env: Mapping[str, str] | None = None,
-) -> bool:
+def step10a_live_market_input_enabled(env: Mapping[str, str] | None = None) -> bool:
     source = os.environ if env is None else env
     return _truthy(source.get(STEP10A_LIVE_MARKET_INPUT_ENABLED_ENV))
 
@@ -88,8 +73,7 @@ def _assert_safe_environment(env: Mapping[str, str] | None = None) -> None:
     bad = [name for name in _OFF_ENV_KEYS if _truthy(source.get(name))]
     if bad:
         raise WNBAStep10LiveMarketInputDisabledError(
-            "Step 10A refuses to run while production switches are enabled: "
-            + ", ".join(bad)
+            "Step 10A refuses to run while production switches are enabled: " + ", ".join(bad)
         )
     if not _truthy(source.get(STEP10A_LIVE_MARKET_INPUT_ENABLED_ENV)):
         raise WNBAStep10LiveMarketInputDisabledError(
@@ -107,11 +91,7 @@ def _assert_safe_environment(env: Mapping[str, str] | None = None) -> None:
 
 def _canonical_hash(value: Any) -> str:
     raw = json.dumps(
-        value,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-        default=str,
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
     ).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
 
@@ -133,13 +113,14 @@ def _game_id(value: Any) -> str:
 def _player_id(value: Any) -> int:
     if isinstance(value, bool):
         raise ValueError("WNBA player_id must be a positive integer.")
-    try:
-        result = int(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("WNBA player_id must be a positive integer.") from exc
-    if result <= 0 or str(result) != str(value).strip():
-        if not isinstance(value, int):
-            raise ValueError("WNBA player_id must be a positive integer.")
+    if isinstance(value, int):
+        result = value
+    elif isinstance(value, str) and value.strip().isdigit():
+        result = int(value.strip())
+    else:
+        raise ValueError("WNBA player_id must be a positive integer.")
+    if result <= 0:
+        raise ValueError("WNBA player_id must be a positive integer.")
     return result
 
 
@@ -149,8 +130,7 @@ def _stat(value: Any) -> str:
     if result is None:
         raise ValueError(
             f"Unsupported WNBA prop stat {value!r}. Allowed canonical values: "
-            + ", ".join(SUPPORTED_STATS)
-            + "."
+            + ", ".join(SUPPORTED_STATS) + "."
         )
     return result
 
@@ -170,9 +150,7 @@ def _line(value: Any) -> float:
 
 
 def _american_odds(value: Any, label: str) -> int:
-    if isinstance(value, bool):
-        raise ValueError(f"WNBA {label} must be integer American odds with absolute value >= 100.")
-    if isinstance(value, float) and not value.is_integer():
+    if isinstance(value, bool) or (isinstance(value, float) and not value.is_integer()):
         raise ValueError(f"WNBA {label} must be integer American odds with absolute value >= 100.")
     try:
         result = int(value)
@@ -199,9 +177,7 @@ def _parse_timestamp(value: Any) -> datetime:
             "WNBA market_captured_at_utc must be an ISO-8601 timestamp with timezone."
         ) from exc
     if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise ValueError(
-            "WNBA market_captured_at_utc must include a timezone offset."
-        )
+        raise ValueError("WNBA market_captured_at_utc must include a timezone offset.")
     return parsed.astimezone(timezone.utc)
 
 
@@ -215,17 +191,9 @@ def _evaluation_time(value: datetime | None) -> datetime:
 def _normalize_record(record: Mapping[str, Any], *, evaluated_at: datetime) -> dict[str, Any]:
     if not isinstance(record, Mapping):
         raise ValueError("WNBA Step 10A market records must be objects.")
-
     allowed = {
-        "game_id",
-        "player_id",
-        "player_name",
-        "sportsbook",
-        "stat",
-        "line",
-        "over_odds",
-        "under_odds",
-        "market_captured_at_utc",
+        "game_id", "player_id", "player_name", "sportsbook", "stat", "line",
+        "over_odds", "under_odds", "market_captured_at_utc",
     }
     extra = sorted(str(key) for key in record if key not in allowed)
     missing = sorted(key for key in allowed if key not in record)
@@ -234,47 +202,33 @@ def _normalize_record(record: Mapping[str, Any], *, evaluated_at: datetime) -> d
     if missing:
         raise ValueError("WNBA Step 10A missing required market fields: " + ", ".join(missing))
 
-    game = _game_id(record.get("game_id"))
-    player = _player_id(record.get("player_id"))
-    player_name = _clean_text(record.get("player_name"), "player_name", maximum=120)
-    sportsbook = _clean_text(record.get("sportsbook"), "sportsbook", maximum=80)
-    stat = _stat(record.get("stat"))
-    line = _line(record.get("line"))
-    over_odds = _american_odds(record.get("over_odds"), "over_odds")
-    under_odds = _american_odds(record.get("under_odds"), "under_odds")
     captured = _parse_timestamp(record.get("market_captured_at_utc"))
     delta_seconds = (evaluated_at - captured).total_seconds()
     if delta_seconds < -MARKET_FUTURE_TOLERANCE_SECONDS:
-        raise ValueError(
-            "WNBA market_captured_at_utc cannot be more than 120 seconds in the future."
-        )
-    age_seconds = max(0.0, delta_seconds)
+        raise ValueError("WNBA market_captured_at_utc cannot be more than 120 seconds in the future.")
 
     quote_core = {
-        "game_id": game,
-        "player_id": player,
-        "player_name": player_name,
-        "sportsbook": sportsbook,
-        "stat": stat,
-        "line": line,
-        "over_odds": over_odds,
-        "under_odds": under_odds,
+        "game_id": _game_id(record.get("game_id")),
+        "player_id": _player_id(record.get("player_id")),
+        "player_name": _clean_text(record.get("player_name"), "player_name", maximum=120),
+        "sportsbook": _clean_text(record.get("sportsbook"), "sportsbook", maximum=80),
+        "stat": _stat(record.get("stat")),
+        "line": _line(record.get("line")),
+        "over_odds": _american_odds(record.get("over_odds"), "over_odds"),
+        "under_odds": _american_odds(record.get("under_odds"), "under_odds"),
         "market_captured_at_utc": captured.isoformat(),
     }
     return {
         **quote_core,
         "quote_id": _canonical_hash(quote_core),
-        "market_age_seconds_at_evaluation": round(age_seconds, 3),
+        "market_age_seconds_at_evaluation": round(max(0.0, delta_seconds), 3),
     }
 
 
 def _duplicate_key(record: Mapping[str, Any]) -> tuple[Any, ...]:
     return (
-        record["game_id"],
-        int(record["player_id"]),
-        record["stat"],
-        str(record["sportsbook"]).casefold(),
-        float(record["line"]),
+        record["game_id"], int(record["player_id"]), record["stat"],
+        str(record["sportsbook"]).casefold(), float(record["line"]),
     )
 
 
@@ -304,9 +258,9 @@ def build_step10a_live_market_input_snapshot(
 
     evaluated = _evaluation_time(evaluated_at)
     normalized = [_normalize_record(record, evaluated_at=evaluated) for record in records]
-
     seen_quotes: dict[tuple[Any, ...], dict[str, Any]] = {}
     player_names: dict[tuple[str, int], str] = {}
+
     for record in normalized:
         duplicate_key = _duplicate_key(record)
         if duplicate_key in seen_quotes:
@@ -330,18 +284,13 @@ def build_step10a_live_market_input_snapshot(
 
     normalized.sort(
         key=lambda item: (
-            item["game_id"],
-            int(item["player_id"]),
-            item["stat"],
-            str(item["sportsbook"]).casefold(),
-            float(item["line"]),
+            item["game_id"], int(item["player_id"]), item["stat"],
+            str(item["sportsbook"]).casefold(), float(item["line"]),
             item["market_captured_at_utc"],
         )
     )
-
     captured_times = [_parse_timestamp(item["market_captured_at_utc"]) for item in normalized]
-    earliest = min(captured_times)
-    latest = max(captured_times)
+    earliest, latest = min(captured_times), max(captured_times)
     unique_games = sorted({item["game_id"] for item in normalized})
     unique_players = sorted({(item["game_id"], int(item["player_id"])) for item in normalized})
     unique_books = sorted({str(item["sportsbook"]) for item in normalized}, key=str.casefold)
@@ -407,7 +356,6 @@ def build_step10a_live_market_input_snapshot(
             "production_activation_allowed": False,
         },
     }
-
     hash_surface = {
         "data_type": result["data_type"],
         "schema_version": result["schema_version"],
@@ -415,8 +363,7 @@ def build_step10a_live_market_input_snapshot(
         "model_version": result["model_version"],
         "release_id": result["release_id"],
         "snapshot": {
-            key: value
-            for key, value in result["snapshot"].items()
+            key: value for key, value in result["snapshot"].items()
             if key != "future_clock_tolerance_seconds"
         },
         "records": [_content_record(record) for record in normalized],
