@@ -11,10 +11,15 @@ on:
       - 'sports_api/wnba_step7g_first_party_availability.py'
       - 'sports_api/wnba_step7g_first_party_rosters.py'
       - 'sports_api/wnba_step7g_first_party_injury_report.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_fast.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py'
       - 'sports_api/tools/wnba_step7g_fastapi_availability_probe.py'
       - 'tests/test_wnba_step7g_first_party_integration.py'
       - 'tests/test_wnba_step7g_first_party_rosters.py'
       - 'tests/test_wnba_step7g_first_party_injury_report.py'
+      - 'tests/test_wnba_step7g_first_party_advanced_stats.py'
+      - 'tests/test_wnba_step7g_first_party_advanced_contract_units.py'
   workflow_dispatch:
 
 permissions:
@@ -69,10 +74,15 @@ jobs:
             sports_api/wnba_step7g_first_party_availability.py \
             sports_api/wnba_step7g_first_party_rosters.py \
             sports_api/wnba_step7g_first_party_injury_report.py \
+            sports_api/wnba_step7g_first_party_advanced_stats.py \
+            sports_api/wnba_step7g_first_party_advanced_stats_fast.py \
+            sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py \
             sports_api/tools/wnba_step7g_fastapi_availability_probe.py \
             tests/test_wnba_step7g_first_party_integration.py \
             tests/test_wnba_step7g_first_party_rosters.py \
-            tests/test_wnba_step7g_first_party_injury_report.py
+            tests/test_wnba_step7g_first_party_injury_report.py \
+            tests/test_wnba_step7g_first_party_advanced_stats.py \
+            tests/test_wnba_step7g_first_party_advanced_contract_units.py
 
       - name: Run guarded Step 7G regression tests
         shell: bash
@@ -80,6 +90,8 @@ jobs:
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_rosters.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_stats.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_contract_units.py
 
       - name: Prove inherited availability and frozen core files unchanged
         shell: bash
@@ -94,6 +106,7 @@ jobs:
             sports_api/wnba_season_stats.py \
             sports_api/wnba_lineup_context.py \
             sports_api/wnba_schedule.py \
+            sports_api/wnba_advanced_stats.py \
             sports_api/wnba_model_input_readiness.py \
             sports_api/wnba_projection_input_snapshot.py
 
