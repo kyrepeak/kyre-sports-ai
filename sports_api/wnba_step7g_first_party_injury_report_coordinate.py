@@ -79,7 +79,12 @@ def _join_tokens(tokens: list[str]) -> str | None:
         return None
     output = values[0]
     for token in values[1:]:
-        if output.endswith("-") and token and token[0].isalnum():
+        if (
+            output.endswith("-")
+            and not output.endswith(" -")
+            and token
+            and token[0].isalnum()
+        ):
             output += token
         elif token in {",", ";", ":"}:
             output += token
