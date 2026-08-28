@@ -1,0 +1,32 @@
+name: WNBA Step 17B live diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Read live health and Step 17B status only
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          for i in range(3):
+              print('DIAGNOSTIC_SAMPLE',i+1)
+              for path in ('/health','/api/v1/wnba/runtime/step17b'):
+                  try:
+                      with urllib.request.urlopen(base+path,timeout=30) as r:
+                          body=json.loads(r.read().decode())
+                      print(path,json.dumps(body,sort_keys=True))
+                  except Exception as exc:
+                      print(path,'ERROR',type(exc).__name__,str(exc))
+              if i<2: time.sleep(10)
+          PY
