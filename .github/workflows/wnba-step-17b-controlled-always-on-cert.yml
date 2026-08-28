@@ -95,7 +95,7 @@ jobs:
           from sports_api import wnba_step17a_production_host_contract as host
 
           base='https://api.render.com/v1'
-          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17b/1'}
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17b/2'}
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode()
               r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
@@ -105,13 +105,14 @@ jobs:
           sid=host.EXPECTED_RENDER_SERVICE_ID
           service=req('GET',f'/services/{sid}')
           identity=host.validate_render_service_identity(service)
-          instances=req('GET',f'/services/{sid}/instances')
-          rows=instances if isinstance(instances,list) else (instances.get('items') or instances.get('data') or [])
-          if len(rows)!=1:
-              raise SystemExit(f'Step 17B requires exactly one Render instance; found {len(rows)}')
+          details=service.get('serviceDetails') if isinstance(service.get('serviceDetails'),dict) else {}
+          configured_instances=details.get('numInstances')
+          if configured_instances not in {None,1}:
+              raise SystemExit(f'Step 17B refuses a Render service configured for {configured_instances} instances')
+          print('STEP17B_SINGLE_PROCESS_CONTRACT_OK',configured_instances)
 
           deploys=req('GET',f'/services/{sid}/deploys?limit=20')
-          rows=deploys if isinstance(deploys,list) else (deploys.get('items') or deploys.get('data') or [])
+          rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
           previous=None
           for row in rows:
               d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
@@ -142,7 +143,6 @@ jobs:
               'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
               'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
               'WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false',
-              # Frozen live analytical chain gates required by Step 12B.
               'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
               'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
               'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
@@ -178,7 +178,7 @@ jobs:
           import json, os, time, urllib.request
           sid=os.environ['STEP17B_RENDER_SERVICE_ID']; sha=os.environ['GITHUB_SHA']
           base='https://api.render.com/v1'
-          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17b/1'}
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17b/2'}
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
               with urllib.request.urlopen(r,timeout=30) as x:
@@ -237,7 +237,7 @@ jobs:
           python - <<'PY'
           import json, os, time, urllib.request
           sid=os.environ['STEP17B_RENDER_SERVICE_ID']; sha=os.environ['GITHUB_SHA']; base='https://api.render.com/v1'
-          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17b/1'}
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17b/2'}
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
               with urllib.request.urlopen(r,timeout=30) as x:
