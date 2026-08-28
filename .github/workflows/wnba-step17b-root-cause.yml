@@ -121,3 +121,5 @@ jobs:
               print('STEP17B_ROOT_CAUSE_CLASS_CHAIN', ' -> '.join(chain))
               raise SystemExit(0)
           PY
+
+# User-triggered rerun after the tested sportsbook alias compatibility patch.
