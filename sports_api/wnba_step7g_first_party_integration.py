@@ -45,6 +45,9 @@ from sports_api.wnba_step7g_first_party_history import (
 from sports_api.wnba_step7g_first_party_injury_report_coordinate import (
     get_step7g_coordinate_injury_report_dataset as get_step7g_first_party_injury_report_dataset,
 )
+from sports_api.wnba_step7g_first_party_officiating import (
+    get_first_party_game_whistle_context,
+)
 from sports_api.wnba_step7g_first_party_rosters import (
     get_first_party_current_players_dataset,
 )
@@ -87,6 +90,7 @@ _ORIGINAL_PROJECTION_PLAYER_ADVANCED = (
 _ORIGINAL_PROJECTION_TEAM_ADVANCED = (
     projection_snapshot.get_team_advanced_stats_dataset
 )
+_ORIGINAL_PROJECTION_GAME_WHISTLE = projection_snapshot.get_game_whistle_context
 
 
 def _environment(env: Mapping[str, str] | None = None) -> Mapping[str, str]:
@@ -268,6 +272,12 @@ def _install_enabled_seams() -> None:
         original=_ORIGINAL_PROJECTION_TEAM_ADVANCED,
         target=get_first_party_team_advanced_stats_dataset,
     )
+    projection_snapshot.get_game_whistle_context = _guarded_replace(
+        label="Step 4W game-whistle provider",
+        current=projection_snapshot.get_game_whistle_context,
+        original=_ORIGINAL_PROJECTION_GAME_WHISTLE,
+        target=get_first_party_game_whistle_context,
+    )
 
 
 def get_step7g_first_party_status(
@@ -315,6 +325,10 @@ def get_step7g_first_party_status(
             projection_snapshot.get_team_advanced_stats_dataset
             is get_first_party_team_advanced_stats_dataset
         ),
+        "projection_game_whistle_context": (
+            projection_snapshot.get_game_whistle_context
+            is get_first_party_game_whistle_context
+        ),
     }
     return {
         "source": MODEL_SOURCE,
@@ -335,7 +349,9 @@ def get_step7g_first_party_status(
             "advanced_context": True,
             "officiating_context": False,
         },
-        "candidate_scope": {},
+        "candidate_scope": {
+            "officiating_context": "candidate_first_party_pregame_official_assignment_plus_exact_paired_box_whistle_environment"
+        },
         "safety": {
             "default_enabled": False,
             "production_runtime_enabled_by_this_module": False,
@@ -349,6 +365,7 @@ def get_step7g_first_party_status(
             "frozen_step4i_source_modified": False,
             "frozen_step4l_source_modified": False,
             "frozen_step4f_source_modified": False,
+            "frozen_step4o_source_modified": False,
             "frozen_step4c_source_modified": False,
             "frozen_step4b_source_modified": False,
         },
