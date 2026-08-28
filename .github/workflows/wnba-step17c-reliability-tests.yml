@@ -1,0 +1,44 @@
+name: WNBA Step 17C reliability tests
+
+on:
+  push:
+    branches:
+      - wnba-step17c-production-reliability-monitoring-20260828
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+      - name: Compile Step 17C
+        run: |
+          python -m py_compile sports_api/wnba_step17c_production_reliability.py
+          python -m py_compile tests/test_wnba_step17c_production_reliability.py
+      - name: Run Step 17C monitor regressions
+        run: PYTHONPATH=. python tests/test_wnba_step17c_production_reliability.py
+      - name: Run certified parent runtime regressions
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step17b_always_on_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step14c_durable_restart_lease.py
