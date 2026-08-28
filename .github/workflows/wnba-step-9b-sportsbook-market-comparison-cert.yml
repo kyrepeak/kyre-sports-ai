@@ -31,7 +31,7 @@ jobs:
       - name: Checkout Step 9 market bridge branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 20
 
       - name: Assert production OFF and isolated Step 9 gates ON
         shell: bash
