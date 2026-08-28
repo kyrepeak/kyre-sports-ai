@@ -410,6 +410,26 @@ def _runner_side_line(runner: Mapping[str, Any]) -> tuple[str, float] | None:
     return side, round(line, 6)
 
 
+def _declares_player_market(
+    market: Mapping[str, Any],
+    runners: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Return True only when FanDuel explicitly supplies player-market evidence."""
+    identity_fields = ("playerName", "participantName", "player")
+    for key in identity_fields:
+        if _clean(market.get(key)):
+            return True
+    for runner in runners:
+        for key in identity_fields:
+            if _clean(runner.get(key)):
+                return True
+    declaration = " ".join(
+        _clean(market.get(key))
+        for key in ("marketName", "marketType", "name", "type")
+    )
+    return bool(re.search(r"\bplayer\b", declaration, flags=re.I))
+
+
 def _market_player_name(market: Mapping[str, Any], runners: Sequence[Mapping[str, Any]], stat: str) -> str:
     for key in ("playerName", "participantName", "player"):
         value = _clean(market.get(key))
@@ -533,6 +553,12 @@ def build_step11c_fanduel_provider_bridge(
         player_name = _market_player_name(market, runners, stat)
         player = roster.get(_name_key(player_name))
         if player is None:
+            # FanDuel exposes many team/game markets whose names contain words
+            # such as "Points" (for example Race to 15 and Total Points).
+            # They are not player props and must not enter player identity
+            # reconciliation merely because _market_stat recognized a stat token.
+            if not _declares_player_market(market, runners):
+                continue
             raise WNBAStep11FanDuelProviderIdentityError(
                 f"Step 11C could not uniquely map FanDuel player {player_name!r}."
             )

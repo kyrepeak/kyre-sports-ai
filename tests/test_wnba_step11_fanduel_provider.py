@@ -192,6 +192,29 @@ class Step11FanDuelProviderTests(unittest.TestCase):
         stats = {r["stat"] for r in result["provider_refresh"]["attempts"][0]["payload"]["records"]}
         self.assertNotIn("points", stats); self.assertIn("rebounds", stats)
 
+    def test_team_points_market_is_skipped_not_treated_as_player_prop(self):
+        doc = _event_doc()
+        doc["attachments"]["markets"]["fd-team-race"] = {
+            "marketId": "fd-team-race",
+            "marketName": "3rd Quarter Race to 15 Points",
+            "marketType": "3RD_QUARTER_RACE_TO_15_POINTS_WNBA",
+            "marketStatus": "OPEN",
+            "runners": [
+                {"selectionId": "race-away", "runnerName": "Portland Fire", "runnerStatus": "ACTIVE", "handicap": 0, "winRunnerOdds": _odds(-110)},
+                {"selectionId": "race-home", "runnerName": "Atlanta Dream", "runnerStatus": "ACTIVE", "handicap": 0, "winRunnerOdds": _odds(-110)},
+            ],
+        }
+        result = _build(event_page_documents=_entries(doc))
+        records = result["provider_refresh"]["attempts"][0]["payload"]["records"]
+        self.assertEqual(len(records), 4)
+        self.assertEqual({row["stat"] for row in records}, {"points", "rebounds", "assists", "pra"})
+
+    def test_declared_unknown_player_market_still_fails_closed(self):
+        doc = _event_doc()
+        doc["attachments"]["markets"]["fd-points"]["marketName"] = "Unknown Person - Player Points"
+        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):
+            _build(event_page_documents=_entries(doc))
+
     def test_duplicate_same_side_quote_fails_closed(self):
         with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):
             _build(event_page_documents=_entries(_event_doc(duplicate_over=True)))
