@@ -1,0 +1,354 @@
+name: WNBA Step 17C production reliability certification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+
+jobs:
+  certify-and-activate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact Step 17C revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API and persistence dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+
+      - name: Compile and test Step 17C plus certified parent runtime
+        run: |
+          python -m py_compile sports_api/wnba_step17c_production_reliability.py
+          python -m py_compile sports_api/api/wnba_step17c_reliability.py
+          python -m py_compile sports_api/main.py
+          PYTHONPATH=. python tests/test_wnba_step17c_production_reliability.py
+          PYTHONPATH=. python tests/test_wnba_step17b_always_on_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step14c_durable_restart_lease.py
+          PYTHONPATH=. python tests/test_wnba_step13c_reliability_recovery.py
+
+      - name: Prove certified Step 17B parent and frozen runtime lineage
+        run: |
+          set -euo pipefail
+          STEP17B_SHA='8f6ba0b3e4cd3d07466a2545a870cab7121decfe'
+          STEP17A_SHA='da6e9d8e660c1ead7c497cbaeb6205c845978cfd'
+          STEP16E_SHA='5becd6af4fc8ce20a458c3bcb738dbff8312c8d7'
+          git merge-base --is-ancestor "$STEP17B_SHA" HEAD
+          git merge-base --is-ancestor "$STEP17A_SHA" HEAD
+          git merge-base --is-ancestor "$STEP16E_SHA" HEAD
+          test "$(git hash-object sports_api/wnba_step17b_always_on_runtime.py)" = 'ab9be7cda82e72b5f823c8e036c669642054818f'
+          test "$(git hash-object sports_api/Dockerfile)" = '324defd214f334c372f3b0b2dcafd958c962a6aa'
+          test "$(git hash-object sports_api/requirements-persistence.txt)" = '46331822d0a55f5a4983d289c73a45ea9745ca89'
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('sports_api/main.py').read_text()
+          assert text.count('from sports_api.api.wnba_step17c_reliability import router as wnba_step17c_reliability_router') == 1
+          assert text.count('app.include_router(wnba_step17c_reliability_router)') == 1
+          assert 'lifespan=step17b_lifespan' in text
+          print('STEP17C_LINEAGE_AND_LIFESPAN_OK')
+          PY
+
+      - name: Verify protected deployment credentials exist
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+        run: |
+          test -n "$RENDER_API_KEY"
+          test -n "$KYRE_DATABASE_URL"
+          python - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          p=urlsplit(os.environ['KYRE_DATABASE_URL'])
+          assert p.scheme.lower() in {'postgres','postgresql'} and p.hostname and p.path not in {'','/'}
+          print('STEP17C_PROTECTED_SECRETS_PRESENT_REDACTED_OK')
+          PY
+
+      - name: Verify current certified host and capture rollback state
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json, os, urllib.request
+          from sports_api import wnba_step17a_production_host_contract as host
+
+          base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17c/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode()
+              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+
+          sid=host.EXPECTED_RENDER_SERVICE_ID
+          service=req('GET',f'/services/{sid}')
+          identity=host.validate_render_service_identity(service)
+          details=service.get('serviceDetails') if isinstance(service.get('serviceDetails'),dict) else {}
+          configured_instances=details.get('numInstances')
+          if configured_instances not in {None,1}:
+              raise SystemExit(f'Step 17C refuses a Render service configured for {configured_instances} instances')
+
+          deploys=req('GET',f'/services/{sid}/deploys?limit=20')
+          rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
+          previous=None; previous_blob=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live' and d.get('id'):
+                  previous=d['id']; previous_blob=json.dumps(d).lower(); break
+          if not previous:
+              raise SystemExit('Step 17C could not capture prior live deployment for rollback')
+          if '8f6ba0b3e4cd3d07466a2545a870cab7121decfe' not in (previous_blob or ''):
+              raise SystemExit('Step 17C refuses activation because current live deploy is not certified Step 17B')
+
+          url=identity['url'].rstrip('/')
+          pre={'started_at_utc':None,'checkpoint_version':0}
+          try:
+              with urllib.request.urlopen(url+'/api/v1/wnba/runtime/step17b',timeout=30) as r:
+                  status=json.loads(r.read().decode())
+              pre['started_at_utc']=status.get('started_at_utc')
+              pre['checkpoint_version']=int(status.get('last_checkpoint_version') or 0)
+          except Exception:
+              pass
+          open('/tmp/step17c-predeploy.json','w').write(json.dumps(pre))
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write(f"STEP17C_RENDER_SERVICE_ID={sid}\n")
+              f.write(f"STEP17C_RENDER_URL={url}\n")
+              f.write(f"STEP17C_ROLLBACK_DEPLOY_ID={previous}\n")
+          print('STEP17C_EXISTING_CERTIFIED_HOST_OK',sid,configured_instances)
+          PY
+
+      - name: Configure existing Render host for Step 17C
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json, os, urllib.request
+          sid=os.environ['STEP17C_RENDER_SERVICE_ID']; base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17c/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode()
+              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
+          envs={
+              'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
+              'WEB_CONCURRENCY':'1',
+              'WNBA_STEP17B_ALWAYS_ON_ENABLED':'true',
+              'WNBA_STEP17B_LOOP_SECONDS':'60',
+              'WNBA_STEP17B_EXPECTED_REVISION':os.environ['GITHUB_SHA'],
+              'WNBA_STEP17C_MONITORING_ENABLED':'true',
+              'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+              'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+              'WNBA_PERSISTENCE_ENABLED':'false',
+              'WNBA_SUPABASE_WRITE_ENABLED':'false',
+              'WNBA_WAGERING_ENABLED':'false',
+              'WNBA_STEP12_SCHEDULER_ENABLED':'false',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
+              'WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false',
+              'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
+              'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
+              'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
+              'WNBA_STEP10_FASTAPI_ENABLED':'true',
+              'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true',
+              'WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
+              'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true',
+              'WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+              'WNBA_STEP9_FASTAPI_ENABLED':'true',
+              'WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true',
+              'WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true',
+              'WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true',
+              'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+              'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true',
+              'WNBA_STEP8_CORE_PROJECTION_ENABLED':'true',
+              'WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true',
+              'WNBA_STEP8_MONTE_CARLO_ENABLED':'true',
+              'WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+              'WNBA_DEPLOYMENT_REVISION':os.environ['GITHUB_SHA'],
+              'WNBA_RELEASE_ID':'wnba-step17c-production-reliability',
+          }
+          for key,value in envs.items():
+              req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          print('STEP17C_EXISTING_RENDER_HOST_CONFIGURED_NO_NEW_SERVICE',sid)
+          PY
+
+      - name: Deploy exact Step 17C commit
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          sid=os.environ['STEP17C_RENDER_SERVICE_ID']; sha=os.environ['GITHUB_SHA']; base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17c/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          d=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
+          did=d.get('id')
+          if not did: raise SystemExit('Render returned no Step 17C deploy ID')
+          bad={'build_failed','update_failed','canceled','cancelled','deactivated'}; detail={}
+          for _ in range(180):
+              detail=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(detail.get('status','')).lower()
+              if status=='live': break
+              if status in bad: raise SystemExit(f'Step 17C deploy failed: {status}')
+              time.sleep(5)
+          else: raise SystemExit('Step 17C deploy timed out')
+          if sha.lower() not in json.dumps(detail).lower(): raise SystemExit('Render live deploy does not attest exact Step 17C SHA')
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f: f.write(f"STEP17C_DEPLOY_ID={did}\n")
+          print('STEP17C_EXACT_COMMIT_LIVE',did,sha)
+          PY
+
+      - name: Certify recovered leader and healthy read-only watchdog
+        env:
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          import psycopg
+          from sports_api.wnba_step17b_always_on_runtime import LEADERSHIP_LOCK_KEY
+
+          url=os.environ['STEP17C_RENDER_URL'].rstrip('/')
+          pre=json.load(open('/tmp/step17c-predeploy.json'))
+          first=None; monitor=None
+          for _ in range(120):
+              try:
+                  with urllib.request.urlopen(url+'/health',timeout=30) as r: health=json.loads(r.read().decode())
+                  with urllib.request.urlopen(url+'/api/v1/wnba/runtime/step17b',timeout=30) as r: status=json.loads(r.read().decode())
+                  with urllib.request.urlopen(url+'/api/v1/wnba/runtime/step17c',timeout=30) as r: report=json.loads(r.read().decode())
+                  restarted = not pre.get('started_at_utc') or status.get('started_at_utc') != pre.get('started_at_utc')
+                  progressed = int(status.get('last_checkpoint_version') or 0) > int(pre.get('checkpoint_version') or 0)
+                  if (health.get('status')=='ok' and restarted and progressed and status.get('role')=='leader' and
+                      status.get('leadership_acquired') is True and int(status.get('success_count') or 0)>=1 and
+                      status.get('recovered_from_checkpoint') is True and int(status.get('failure_count') or 0)==0 and
+                      report.get('monitor_enabled') is True and report.get('state')=='healthy' and report.get('healthy') is True and
+                      report.get('incident_active') is False):
+                      first=status; monitor=report; break
+              except Exception:
+                  pass
+              time.sleep(10)
+          if first is None or monitor is None:
+              raise SystemExit('Step 17C did not reach recovered-leader + healthy-watchdog state in time')
+          if monitor.get('semantics',{}).get('read_only') is not True:
+              raise SystemExit('Step 17C monitor is not attesting read-only semantics')
+          forbidden=('database_connection_opened','database_write_performed','scheduler_started','scheduler_cycle_triggered','sportsbook_network_called','model_run','monte_carlo_run','wager_action_performed','database_secret_exposed','new_render_service_created')
+          for key in forbidden:
+              if monitor.get('semantics',{}).get(key) is not False:
+                  raise SystemExit(f'Step 17C unsafe monitor semantic: {key}')
+          with psycopg.connect(os.environ['KYRE_DATABASE_URL'],connect_timeout=10,autocommit=True) as conn:
+              with conn.cursor() as cur:
+                  cur.execute('SELECT pg_try_advisory_lock(%s)',(LEADERSHIP_LOCK_KEY,)); acquired=cur.fetchone()[0]
+                  if acquired:
+                      cur.execute('SELECT pg_advisory_unlock(%s)',(LEADERSHIP_LOCK_KEY,))
+                      raise SystemExit('External process acquired Step 17B leadership during Step 17C certification')
+          evidence={
+              'started_at_utc':first.get('started_at_utc'),
+              'checkpoint_version':int(first.get('last_checkpoint_version') or 0),
+              'success_count':int(first.get('success_count') or 0),
+              'heartbeat_at_utc':first.get('heartbeat_at_utc'),
+              'monitor_state':monitor.get('state'),
+          }
+          open('/tmp/step17c-first.json','w').write(json.dumps(evidence))
+          print('STEP17C_RECOVERED_LEADER_WATCHDOG_OK',json.dumps(evidence,sort_keys=True))
+          PY
+
+      - name: Prove continued checkpoint and heartbeat progression
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          url=os.environ['STEP17C_RENDER_URL'].rstrip('/')
+          first=json.load(open('/tmp/step17c-first.json'))
+          final_status=None; final_monitor=None
+          for _ in range(30):
+              try:
+                  with urllib.request.urlopen(url+'/api/v1/wnba/runtime/step17b',timeout=30) as r: status=json.loads(r.read().decode())
+                  with urllib.request.urlopen(url+'/api/v1/wnba/runtime/step17c',timeout=30) as r: monitor=json.loads(r.read().decode())
+                  if (int(status.get('last_checkpoint_version') or 0) > int(first['checkpoint_version']) and
+                      int(status.get('success_count') or 0) > int(first['success_count']) and
+                      status.get('heartbeat_at_utc') != first.get('heartbeat_at_utc') and
+                      status.get('role')=='leader' and status.get('leadership_acquired') is True and
+                      int(status.get('failure_count') or 0)==0 and monitor.get('state')=='healthy' and
+                      monitor.get('incident_active') is False):
+                      final_status=status; final_monitor=monitor; break
+              except Exception:
+                  pass
+              time.sleep(10)
+          if final_status is None or final_monitor is None:
+              raise SystemExit('Step 17C did not prove another healthy durable cycle in time')
+          evidence={
+              'step':'17C','status':'certified','revision':os.environ['GITHUB_SHA'],
+              'render_service_id':os.environ['STEP17C_RENDER_SERVICE_ID'],
+              'deploy_id':os.environ.get('STEP17C_DEPLOY_ID'),
+              'recovered_from_checkpoint':True,
+              'first_checkpoint_version':first['checkpoint_version'],
+              'final_checkpoint_version':final_status.get('last_checkpoint_version'),
+              'final_success_count':final_status.get('success_count'),
+              'leadership_acquired':final_status.get('leadership_acquired'),
+              'monitor_state':final_monitor.get('state'),
+              'monitor_incident_active':final_monitor.get('incident_active'),
+              'monitor_read_only':final_monitor.get('semantics',{}).get('read_only'),
+              'web_concurrency':1,
+              'legacy_scheduler_switch':False,
+              'legacy_production_switch':False,
+              'new_render_service_created':False,
+              'database_secret_exposed':False,
+          }
+          open('step17c-live-certification.json','w').write(json.dumps(evidence,indent=2,sort_keys=True))
+          print('STEP17C_PRODUCTION_RELIABILITY_OK',json.dumps(evidence,sort_keys=True))
+          PY
+
+      - name: Upload Step 17C live certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step17c-production-reliability-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step17c-live-certification.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Roll back to certified Step 17B on certification failure
+        if: failure() && env.STEP17C_RENDER_SERVICE_ID != '' && env.STEP17C_ROLLBACK_DEPLOY_ID != ''
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          sid=os.environ['STEP17C_RENDER_SERVICE_ID']; previous=os.environ['STEP17C_ROLLBACK_DEPLOY_ID']; base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17c-rollback/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          restore={
+              'WNBA_STEP17C_MONITORING_ENABLED':'false',
+              'WNBA_STEP17B_EXPECTED_REVISION':'8f6ba0b3e4cd3d07466a2545a870cab7121decfe',
+              'WNBA_DEPLOYMENT_REVISION':'8f6ba0b3e4cd3d07466a2545a870cab7121decfe',
+              'WNBA_RELEASE_ID':'wnba-step17b-controlled-always-on',
+          }
+          for key,value in restore.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          req('POST',f'/services/{sid}/rollback',{'deployId':previous})
+          print('STEP17C_AUTOMATIC_ROLLBACK_TO_STEP17B_REQUESTED',previous)
+          PY
