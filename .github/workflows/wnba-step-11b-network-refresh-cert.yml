@@ -1,0 +1,179 @@
+name: WNBA Step 11B network refresh certification
+
+on:
+  push:
+    branches:
+      - wnba-step11b-network-refresh-orchestrator-20260828
+    paths:
+      - sports_api/wnba_step11_network_refresh_orchestrator.py
+      - tests/test_wnba_step11_network_refresh_orchestrator.py
+      - sports_api/tools/wnba_step11b_network_refresh_cert.py
+      - .github/workflows/wnba-step-11b-network-refresh-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: "true"
+  WNBA_STEP10_FASTAPI_ENABLED: "true"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Step 11B branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 140
+
+      - name: Assert production scheduler sync OFF; Step 11A and 11B isolated gates ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED" = 'true'
+          test "$WNBA_STEP11B_NETWORK_REFRESH_ENABLED" = 'true'
+          test "$WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED" = 'true'
+          test "$WNBA_STEP10B_MARKET_ADAPTER_ENABLED" = 'true'
+          test "$WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED" = 'true'
+          test "$WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED" = 'true'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 11B surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step11_network_refresh_orchestrator.py
+          python -m py_compile tests/test_wnba_step11_network_refresh_orchestrator.py
+          python -m py_compile sports_api/tools/wnba_step11b_network_refresh_cert.py
+
+      - name: Run Step 11B network refresh guards
+        run: PYTHONPATH=. python tests/test_wnba_step11_network_refresh_orchestrator.py
+
+      - name: Run frozen Step 11A guards
+        run: PYTHONPATH=. python tests/test_wnba_step11_draftkings_provider.py
+
+      - name: Run frozen Step 10 guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 11A head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP11A_FROZEN_SHA='695e7b45bd74fcb70c4f4fa6a886b4a054d06810'
+          git merge-base --is-ancestor "$STEP11A_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP11A_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only Step 11B files changed after frozen Step 11A
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP11A_FROZEN_SHA='695e7b45bd74fcb70c4f4fa6a886b4a054d06810'
+          git diff --name-only "$STEP11A_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step11_network_refresh_orchestrator.py|\
+              tests/test_wnba_step11_network_refresh_orchestrator.py|\
+              sports_api/tools/wnba_step11b_network_refresh_cert.py|\
+              .github/workflows/wnba-step-11b-network-refresh-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step11A file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify frozen Step 11A and Step 10 lineage remains exact
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step10_release_freeze as s10
+          from sports_api import wnba_step11_draftkings_provider as s11a
+          from sports_api import wnba_step11_network_refresh_orchestrator as s11b
+          assert s11b.STEP11A_FROZEN_HEAD_SHA == '695e7b45bd74fcb70c4f4fa6a886b4a054d06810'
+          assert s11b.STEP10_FROZEN_HEAD_SHA == '4341d178aa65806e9bc001c8759eccb4a003ea63'
+          assert s11a.STEP10_FROZEN_SHA == s11b.STEP10_FROZEN_HEAD_SHA
+          assert s11a.RELEASE_ID == 'wnba_step11a_draftkings_provider_2026_regular_season_v1'
+          assert s10.DEFAULT_ENABLED is False
+          assert s10.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert all(value is False for value in s10.SAFETY_CONTRACT.values())
+          assert s11a.step11a_draftkings_provider_enabled({}) is False
+          assert s11b.step11b_network_refresh_enabled({}) is False
+          print('STEP11B_FROZEN_LINEAGE_STATIC_GUARDS_OK')
+          PY
+
+      - name: Certify Step 11B one-shot network refresh orchestration
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step11b_network_refresh_cert
+
+      - name: Upload Step 11B certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step11b-network-refresh-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step11b-network-refresh-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production scheduler sync OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
