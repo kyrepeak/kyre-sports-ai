@@ -1,6 +1,9 @@
 name: WNBA Step 17C production reliability certification
 
 on:
+  push:
+    branches:
+      - wnba-step17c-production-reliability-monitoring-20260828
   workflow_dispatch:
 
 permissions:
