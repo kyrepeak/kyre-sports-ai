@@ -1,0 +1,85 @@
+name: WNBA Step 17B apply Step12B transient provider handoff v2
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: write
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: "true"
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: "true"
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: "true"
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: "true"
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: "true"
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: "true"
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+  WNBA_STEP10_FASTAPI_ENABLED: "true"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: "true"
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: "true"
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: "true"
+  WNBA_STEP8_MONTE_CARLO_ENABLED: "true"
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: "true"
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, '[step12b-transient-applied]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r sports_api/requirements.txt
+      - name: Reuse audited patch script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, yaml
+          doc = yaml.safe_load(Path('.github/workflows/wnba-step17b-apply-step12b-transient-provider.yml').read_text())
+          steps = doc['jobs']['patch-and-test']['steps']
+          script = next(step['run'] for step in steps if step.get('name') == 'Apply controlled transient-provider handoff')
+          subprocess.run(['bash', '-euo', 'pipefail', '-c', script], check=True)
+          PY
+      - name: Run certified regressions
+        run: |
+          python -m unittest \
+            tests.test_wnba_step12b_live_runtime_assembly \
+            tests.test_wnba_step12c_live_board_runtime \
+            tests.test_wnba_step13a_bounded_scheduler \
+            tests.test_wnba_step13b_runtime_supervisor \
+            tests.test_wnba_step13c_reliability_recovery
+      - name: Commit tested Step12B transient-provider handoff
+        run: |
+          if git diff --quiet; then
+            echo "No source diff to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sports_api/wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12b_live_runtime_assembly.py
+          git commit -m "Route Step12B provider not-ready through frozen controller [step12b-transient-applied] [fanduel-market-filter-applied] [event-alias-applied] [compat-applied] [step7g-team-id-applied]"
+          git push origin HEAD:wnba-step17b-diagnostic-20260828
