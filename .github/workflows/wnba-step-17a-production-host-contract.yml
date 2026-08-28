@@ -73,7 +73,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and publish exact frozen Step 16E image
+      - name: Build and publish immutable reference image from frozen Step 16E
         working-directory: frozen-step16e
         env:
           IMAGE_REPO: ghcr.io/kyrepeak/kyre-sports-api
@@ -93,24 +93,25 @@ jobs:
           assert re.fullmatch(r'sha256:[0-9a-f]{64}', d), d
           ref=f"ghcr.io/kyrepeak/kyre-sports-api@{d}"
           with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f: f.write(f"STEP17A_IMAGE_REF={ref}\n")
-          print('STEP17A_IMMUTABLE_IMAGE_PUBLISHED', ref)
+          print('STEP17A_IMMUTABLE_REFERENCE_IMAGE_PUBLISHED', ref)
           PY
 
-      - name: Reuse existing Render service and deploy exact image
+      - name: Deploy exact frozen commit to verified existing Render Docker host
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
         run: |
           test -n "$RENDER_API_KEY"
           test -n "$KYRE_DATABASE_URL"
-          python - <<'PY'
+          PYTHONPATH=. python - <<'PY'
           import json, os, time, urllib.request
+          from sports_api import wnba_step17a_production_host_contract as contract
 
           token=os.environ['RENDER_API_KEY']
           image=os.environ['STEP17A_IMAGE_REF']
           sha=os.environ['STEP16E_SHA']
           base='https://api.render.com/v1'
-          headers={'Authorization':f'Bearer {token}','Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17a/2'}
+          headers={'Authorization':f'Bearer {token}','Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17a/3'}
 
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode()
@@ -119,47 +120,22 @@ jobs:
                   raw=x.read().decode()
                   return json.loads(raw) if raw else None
 
-          raw=req('GET','/services?limit=100')
-          rows=raw if isinstance(raw,list) else (raw.get('items') or raw.get('data') or [])
-          services=[]
+          sid=contract.EXPECTED_RENDER_SERVICE_ID
+          svc=req('GET',f'/services/{sid}')
+          identity=contract.validate_render_service_identity(svc)
+          print('STEP17A_EXISTING_HOST_IDENTITY_OK', identity['id'], identity['name'], identity['runtime'])
+
+          # Capture the currently-live deploy so a post-deploy health failure can roll back.
+          deploy_rows=req('GET',f'/services/{sid}/deploys?limit=20')
+          rows=deploy_rows if isinstance(deploy_rows,list) else (deploy_rows.get('items') or deploy_rows.get('data') or [])
+          previous_live=None
           for row in rows:
-              if isinstance(row,dict):
-                  svc=row.get('service') if isinstance(row.get('service'),dict) else row
-                  services.append(svc)
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live' and d.get('id'):
+                  previous_live=d.get('id'); break
 
-          safe=[]
-          for svc in services:
-              details=svc.get('serviceDetails') if isinstance(svc.get('serviceDetails'),dict) else {}
-              safe.append({
-                  'id':svc.get('id'),'name':svc.get('name'),'type':svc.get('type'),
-                  'runtime':details.get('runtime') or details.get('env'),
-                  'url':details.get('url') or svc.get('url'),
-                  'repo':svc.get('repo'),'branch':svc.get('branch'),
-              })
-          print('STEP17A_RENDER_INVENTORY',json.dumps(safe,sort_keys=True))
-
-          web=[s for s in services if str(s.get('type','')).lower() in {'web','web_service'}]
-          aliases={'kyre-sports-api-staging','wnba-render-staging','kyre-sports-api'}
-          exact=[s for s in web if str(s.get('name','')).strip().lower() in aliases]
-          repo=[s for s in web if 'kyrepeak/kyre-sports-ai' in str(s.get('repo','')).lower()]
-          branded=[s for s in web if any(t in str(s.get('name','')).lower() for t in ('kyre','wnba','sports'))]
-
-          if len(exact)==1:
-              matches=exact; method='known_name'
-          elif len(repo)==1:
-              matches=repo; method='repository_contract'
-          elif len(branded)==1:
-              matches=branded; method='project_name_contract'
-          elif len(web)==1:
-              matches=web; method='single_web_service_contract'
-          else:
-              matches=[]; method='ambiguous'
-
-          if len(matches)!=1:
-              raise SystemExit(f'Step 17A cannot safely identify exactly one existing Render host; total={len(services)} web={len(web)} exact={len(exact)} repo={len(repo)} branded={len(branded)}. No service will be created or mutated.')
-          svc=matches[0]; sid=svc.get('id'); name=svc.get('name')
-          if not sid: raise SystemExit('existing Render service has no ID')
-          print('STEP17A_EXISTING_HOST_RESOLVED',sid,name,method)
+          # Freeze automatic deploys before pinning the certified commit.
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
 
           envs={
             'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
@@ -178,37 +154,63 @@ jobs:
           for key,value in envs.items():
               req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
 
-          deploy=req('POST',f'/services/{sid}/deploys',{'imageUrl':image})
-          did=(deploy or {}).get('id')
-          if not did: raise SystemExit('Render did not return a deploy ID')
-          terminal_bad={'build_failed','update_failed','canceled','cancelled','deactivated'}
-          status=''
-          for _ in range(120):
-              d=req('GET',f'/services/{sid}/deploys/{did}')
-              status=str((d or {}).get('status','')).lower()
-              if status=='live': break
-              if status in terminal_bad: raise SystemExit(f'Render deploy failed closed: {status}')
-              time.sleep(5)
-          if status!='live': raise SystemExit(f'Render deploy did not become live: {status}')
+          deploy=None
+          did=None
+          try:
+              deploy=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'})
+              did=(deploy or {}).get('id')
+              if not did:
+                  raise RuntimeError('Render did not return a deploy ID')
+              terminal_bad={'build_failed','update_failed','canceled','cancelled','deactivated'}
+              status=''
+              detail={}
+              for _ in range(120):
+                  detail=req('GET',f'/services/{sid}/deploys/{did}') or {}
+                  status=str(detail.get('status','')).lower()
+                  if status=='live': break
+                  if status in terminal_bad:
+                      raise RuntimeError(f'Render deploy failed closed: {status}')
+                  time.sleep(5)
+              if status!='live':
+                  raise RuntimeError(f'Render deploy did not become live: {status}')
 
-          svc=req('GET',f'/services/{sid}')
-          details=svc.get('serviceDetails') or {}
-          url=(details.get('url') or svc.get('url') or '').rstrip('/')
-          if not url: raise SystemExit('Render service URL unavailable')
-          with urllib.request.urlopen(url+'/health',timeout=30) as h:
-              health=json.loads(h.read().decode())
-          if health.get('status')!='ok': raise SystemExit(f'health check failed: {health}')
+              def contains_sha(value):
+                  if isinstance(value,str): return value.strip().lower()==sha
+                  if isinstance(value,dict): return any(contains_sha(v) for v in value.values())
+                  if isinstance(value,list): return any(contains_sha(v) for v in value)
+                  return False
+              if not contains_sha(detail):
+                  raise RuntimeError('live Render deploy did not attest the exact Step-16E commit SHA')
+
+              svc=req('GET',f'/services/{sid}')
+              identity=contract.validate_render_service_identity(svc)
+              url=identity['url'].rstrip('/')
+              with urllib.request.urlopen(url+'/health',timeout=30) as h:
+                  health=json.loads(h.read().decode())
+              if health.get('status')!='ok':
+                  raise RuntimeError(f'health check failed: {health}')
+          except Exception:
+              if previous_live and did:
+                  try:
+                      req('POST',f'/services/{sid}/rollback',{'deployId':previous_live})
+                      print('STEP17A_AUTOMATIC_ROLLBACK_REQUESTED',previous_live)
+                  except Exception:
+                      print('STEP17A_ROLLBACK_REQUEST_FAILED')
+              raise
 
           evidence={
-            'step':'17A','status':'certified','service_id':sid,'service_name':name,
-            'service_url':url,'host_discovery_method':method,'deploy_id':did,'deploy_status':status,
-            'image_ref':image,'frozen_step16e_sha':sha,
-            'health_status':'ok','scheduler_enabled':False,'production_runtime_enabled':False,
+            'step':'17A','status':'certified',
+            'service_id':identity['id'],'service_name':identity['name'],'service_url':identity['url'],
+            'service_runtime':identity['runtime'],'service_repository':identity['repo'],
+            'deploy_method':'specific_git_commit_docker_build','deploy_id':did,'deploy_status':'live',
+            'frozen_step16e_sha':sha,'dockerfile_blob_sha':contract.STEP16E_DOCKERFILE_BLOB_SHA,
+            'immutable_reference_image_ref':image,'health_status':'ok','auto_deploy_enabled':False,
+            'scheduler_enabled':False,'production_runtime_enabled':False,
             'database_secret_configured':True,'database_secret_exposed':False,
             'new_render_service_created':False,
           }
           open('step17a-render-evidence.json','w',encoding='utf-8').write(json.dumps(evidence,indent=2,sort_keys=True))
-          print('STEP17A_EXISTING_RENDER_HOST_LIVE_OK', sid, did)
+          print('STEP17A_EXISTING_RENDER_HOST_LIVE_OK', identity['id'], did, sha)
           PY
 
       - name: Upload sanitized Step 17A evidence
