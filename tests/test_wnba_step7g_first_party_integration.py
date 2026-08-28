@@ -20,7 +20,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             check=False,
         )
 
-    def test_default_off_import_does_not_install_core_or_candidate_seams(self) -> None:
+    def test_default_off_import_does_not_install_certified_seams(self) -> None:
         completed = self._run_child(
             """
             import sports_api.wnba_step7g_first_party_integration as integration
@@ -35,15 +35,15 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert integration.projection_snapshot.get_opponent_defense_by_shot_zone_dataset is integration._ORIGINAL_PROJECTION_OPPONENT_ZONE
             assert integration.projection_snapshot.get_player_advanced_stats_dataset is integration._ORIGINAL_PROJECTION_PLAYER_ADVANCED
             assert integration.projection_snapshot.get_team_advanced_stats_dataset is integration._ORIGINAL_PROJECTION_TEAM_ADVANCED
-            assert status["certified_scope"]["advanced_context"] is False
-            assert status["candidate_scope"]["advanced_context"] is True
-            assert status["candidate_scope"]["current_availability_coordinate_parser"] is True
+            assert status["certified_scope"]["advanced_context"] is True
+            assert status["certified_scope"]["current_availability_coordinate_parser"] is True
+            assert status["candidate_scope"] == {}
             """,
             enabled=False,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
 
-    def test_explicit_enable_installs_certified_core_shot_and_candidate_advanced_seams(self) -> None:
+    def test_explicit_enable_installs_certified_core_shot_advanced_and_availability_seams(self) -> None:
         completed = self._run_child(
             """
             import sports_api.wnba_step7g_first_party_integration as integration
@@ -52,7 +52,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["all_core_seams_installed"] is True, status
             assert integration.INSTALLATION["installed"] is True, integration.INSTALLATION
             assert all(status["seams"].values()), status
-            assert status["model_version"] == "wnba_step_7g_first_party_core_integration_v9_candidate"
+            assert status["model_version"] == "wnba_step_7g_first_party_core_integration_v10_advanced_certified"
             assert status["seams"]["availability_daily_schedule"] is True
             assert status["seams"]["availability_current_roster"] is True
             assert status["seams"]["availability_injury_report"] is True
@@ -69,11 +69,11 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert status["certified_scope"]["current_availability_daily_schedule"] is True
             assert status["certified_scope"]["current_availability_roster"] is True
             assert status["certified_scope"]["current_availability_injury_report"] is True
+            assert status["certified_scope"]["current_availability_coordinate_parser"] is True
             assert status["certified_scope"]["current_availability"] is True
             assert status["certified_scope"]["shot_context"] is True
-            assert status["certified_scope"]["advanced_context"] is False
-            assert status["candidate_scope"]["advanced_context"] is True
-            assert status["candidate_scope"]["current_availability_coordinate_parser"] is True
+            assert status["certified_scope"]["advanced_context"] is True
+            assert status["candidate_scope"] == {}
             assert status["certified_scope"]["officiating_context"] is False
             assert status["safety"]["frozen_step4i_source_modified"] is False
             assert status["safety"]["frozen_step4l_source_modified"] is False
@@ -84,7 +84,7 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
 
-    def test_install_is_idempotent_with_shot_and_advanced_seams(self) -> None:
+    def test_install_is_idempotent_with_certified_shot_and_advanced_seams(self) -> None:
         completed = self._run_child(
             """
             import sports_api.wnba_step7g_first_party_integration as integration
@@ -99,9 +99,9 @@ class Step7GFirstPartyIntegrationTests(unittest.TestCase):
             assert second["seams"]["projection_player_advanced_context"] is True
             assert second["seams"]["projection_team_advanced_context"] is True
             assert second["certified_scope"]["shot_context"] is True
-            assert second["certified_scope"]["advanced_context"] is False
-            assert second["candidate_scope"]["advanced_context"] is True
-            assert second["candidate_scope"]["current_availability_coordinate_parser"] is True
+            assert second["certified_scope"]["advanced_context"] is True
+            assert second["certified_scope"]["current_availability_coordinate_parser"] is True
+            assert second["candidate_scope"] == {}
             """,
             enabled=True,
         )
