@@ -42,8 +42,8 @@ from sports_api.wnba_step7g_first_party_history import (
     get_first_party_player_recent_game_log_dataset,
     get_first_party_play_by_play_dataset,
 )
-from sports_api.wnba_step7g_first_party_injury_report import (
-    get_step7g_first_party_injury_report_dataset,
+from sports_api.wnba_step7g_first_party_injury_report_coordinate import (
+    get_step7g_coordinate_injury_report_dataset as get_step7g_first_party_injury_report_dataset,
 )
 from sports_api.wnba_step7g_first_party_rosters import (
     get_first_party_current_players_dataset,
@@ -61,7 +61,7 @@ from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v8_candidate"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v9_candidate"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -336,6 +336,7 @@ def get_step7g_first_party_status(
         },
         "candidate_scope": {
             "advanced_context": True,
+            "current_availability_coordinate_parser": True,
         },
         "safety": {
             "default_enabled": False,
