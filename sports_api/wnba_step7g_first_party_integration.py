@@ -1,8 +1,8 @@
 """Default-OFF Step 7G first-party integration for the frozen WNBA core chain.
 
-This module installs only certified or actively-certifying first-party transport
-seams used by Step 4X model-input readiness. ``sports_api.main`` imports it
-before WNBA routers bind their functions, but nothing changes unless
+This module installs only certified first-party transport seams used by Step 4X
+model-input readiness. ``sports_api.main`` imports it before WNBA routers bind
+their functions, but nothing changes unless
 ``WNBA_STEP7G_FIRST_PARTY_ENABLED=true`` is explicitly set.
 
 The integration does NOT enable production runtime, schedulers, market sync,
@@ -10,10 +10,6 @@ persistence, Supabase, or sportsbook access. It does not modify frozen source
 files. It only replaces module-local transport dependencies with certified
 WNBA.com first-party adapters or explicit fail-soft/bypass sentinels where the
 frozen layer already defines those semantics.
-
-Candidate seams may be installed while their ``certified_scope`` flag remains
-false. A scope flag is promoted only after a live real-FastAPI certification
-proves the frozen readiness group passes.
 """
 from __future__ import annotations
 
@@ -64,7 +60,7 @@ from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v10_advanced_certified"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v11_officiating_certified"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -347,11 +343,9 @@ def get_step7g_first_party_status(
             "current_availability": True,
             "shot_context": True,
             "advanced_context": True,
-            "officiating_context": False,
+            "officiating_context": True,
         },
-        "candidate_scope": {
-            "officiating_context": "candidate_first_party_pregame_official_assignment_plus_exact_paired_box_whistle_environment"
-        },
+        "candidate_scope": {},
         "safety": {
             "default_enabled": False,
             "production_runtime_enabled_by_this_module": False,
