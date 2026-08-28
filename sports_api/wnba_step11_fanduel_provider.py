@@ -29,6 +29,7 @@ import httpx
 from sports_api import wnba_step10_market_adapters as step10b
 from sports_api import wnba_step10_release_freeze as step10_freeze
 from sports_api.wnba_official_reconciliation import parse_official_schedule
+from sports_api.wnba_league import get_wnba_teams
 from sports_api.wnba_step7g_first_party_rosters import get_first_party_current_players_dataset
 
 SOURCE = "Kyre Sports API WNBA Step 11C FanDuel anonymous public live provider bridge"
@@ -128,6 +129,35 @@ def _name_key(value: Any) -> str:
     text = unicodedata.normalize("NFKD", _clean(value))
     text = "".join(ch for ch in text if not unicodedata.combining(ch)).casefold()
     return " ".join(re.sub(r"[^a-z0-9]+", " ", text).split())
+
+
+def _team_identity_key(value: Any) -> str:
+    """Resolve exact official/sportsbook WNBA team aliases to one canonical key."""
+    key = _name_key(value)
+    if not key:
+        return ""
+    aliases: dict[str, str] = {}
+    for team in get_wnba_teams():
+        full_name = str(team["full_name"])
+        abbreviation = str(team["abbreviation"])
+        city = str(team["city"])
+        nickname = str(team["nickname"])
+        canonical = _name_key(full_name)
+        city_initials = "".join(part[0] for part in re.findall(r"[A-Za-z0-9]+", city) if part)
+        candidates = (
+            full_name,
+            f"{abbreviation} {nickname}",
+            f"{city_initials} {nickname}" if city_initials else "",
+        )
+        for alias in candidates:
+            alias_key = _name_key(alias)
+            if not alias_key:
+                continue
+            previous = aliases.get(alias_key)
+            if previous is not None and previous != canonical:
+                raise WNBAStep11FanDuelProviderIdentityError("WNBA team alias registry is ambiguous.")
+            aliases[alias_key] = canonical
+    return aliases.get(key, key)
 
 
 def _utc(value: Any, label: str) -> datetime:
@@ -292,8 +322,21 @@ def _roster_index(players: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, A
             raise WNBAStep11FanDuelProviderIdentityError("Official roster row must be an object.")
         name = _clean(raw.get("full_name") or raw.get("player_name"))
         key = _name_key(name)
+        legacy_team_id = raw.get("team_id")
+        official_team_id = raw.get("official_team_id")
+        if legacy_team_id is not None and official_team_id is not None:
+            try:
+                legacy_team_id_int = int(legacy_team_id)
+                official_team_id_int = int(official_team_id)
+            except (TypeError, ValueError) as exc:
+                raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc
+            if legacy_team_id_int != official_team_id_int:
+                raise WNBAStep11FanDuelProviderIdentityError(
+                    "Official roster row has conflicting team identity fields."
+                )
+        team_id_source = legacy_team_id if legacy_team_id is not None else official_team_id
         try:
-            player_id = int(raw.get("player_id")); team_id = int(raw.get("team_id"))
+            player_id = int(raw.get("player_id")); team_id = int(team_id_source)
         except (TypeError, ValueError) as exc:
             raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc
         if not key or player_id <= 0 or team_id <= 0 or key in index:
@@ -307,12 +350,12 @@ def _game_map(events: Sequence[Mapping[str, Any]], games: Sequence[Mapping[str, 
     result: dict[str, dict[str, Any]] = {}
     for event in events:
         eid = _event_id(event)
-        participants = {_name_key(name) for name in _event_participants(event) if _name_key(name)}
+        participants = {_team_identity_key(name) for name in _event_participants(event) if _team_identity_key(name)}
         if not eid or len(participants) != 2:
             raise WNBAStep11FanDuelProviderIdentityError("FanDuel event lacks unique id/two team identities.")
         candidates = []
         for game in games:
-            pair = {_name_key(game.get("home_team_name")), _name_key(game.get("away_team_name"))}
+            pair = {_team_identity_key(game.get("home_team_name")), _team_identity_key(game.get("away_team_name"))}
             if pair != participants:
                 continue
             try:
@@ -365,6 +408,26 @@ def _runner_side_line(runner: Mapping[str, Any]) -> tuple[str, float] | None:
     if not math.isfinite(line):
         return None
     return side, round(line, 6)
+
+
+def _declares_player_market(
+    market: Mapping[str, Any],
+    runners: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Return True only when FanDuel explicitly supplies player-market evidence."""
+    identity_fields = ("playerName", "participantName", "player")
+    for key in identity_fields:
+        if _clean(market.get(key)):
+            return True
+    for runner in runners:
+        for key in identity_fields:
+            if _clean(runner.get(key)):
+                return True
+    declaration = " ".join(
+        _clean(market.get(key))
+        for key in ("marketName", "marketType", "name", "type")
+    )
+    return bool(re.search(r"\bplayer\b", declaration, flags=re.I))
 
 
 def _market_player_name(market: Mapping[str, Any], runners: Sequence[Mapping[str, Any]], stat: str) -> str:
@@ -426,6 +489,33 @@ def _american_price(runner: Mapping[str, Any]) -> int:
     return price
 
 
+def _market_identity_surface(market: Mapping[str, Any]) -> dict[str, Any]:
+    """Canonical immutable identity for one FanDuel market across page/tab copies."""
+    runners = []
+    for runner in _iter_mapping_or_list(market.get("runners")):
+        runners.append({
+            "selection_id": _clean(runner.get("selectionId") or runner.get("runnerId") or runner.get("id") or runner.get("_attachment_key")),
+            "runner_name": _clean(runner.get("runnerName") or runner.get("name") or runner.get("selectionName")),
+            "side": _clean(runner.get("side")).casefold(),
+            "result_type": _clean(runner.get("resultType")).casefold(),
+            "handicap": runner.get("handicap"),
+            "line": runner.get("line"),
+            "player_name": _clean(runner.get("playerName")),
+            "participant_name": _clean(runner.get("participantName")),
+            "player": _clean(runner.get("player")),
+        })
+    runners.sort(key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":"), default=str))
+    return {
+        "market_id": _clean(market.get("marketId") or market.get("id") or market.get("_attachment_key")),
+        "market_name": _clean(market.get("marketName") or market.get("name")),
+        "market_type": _clean(market.get("marketType") or market.get("type")),
+        "player_name": _clean(market.get("playerName")),
+        "participant_name": _clean(market.get("participantName")),
+        "player": _clean(market.get("player")),
+        "runners": runners,
+    }
+
+
 def build_step11c_fanduel_provider_bridge(
     *,
     event_page_documents: Sequence[Mapping[str, Any]],
@@ -467,9 +557,26 @@ def build_step11c_fanduel_provider_bridge(
             key = (eid, market_id)
             existing = market_meta.get(key)
             normalized = dict(market)
-            if existing is not None and existing[0] != normalized:
-                raise WNBAStep11FanDuelProviderIdentityError(f"Conflicting FanDuel market payload for {market_id}.")
-            market_meta[key] = (normalized, captured)
+            if existing is None:
+                market_meta[key] = (normalized, captured)
+                continue
+            existing_market, existing_captured = existing
+            if _market_identity_surface(existing_market) != _market_identity_surface(normalized):
+                raise WNBAStep11FanDuelProviderIdentityError(
+                    f"Conflicting FanDuel market identity for {market_id}."
+                )
+            if captured == existing_captured:
+                if existing_market != normalized:
+                    raise WNBAStep11FanDuelProviderIdentityError(
+                        f"Conflicting same-timestamp FanDuel market payload for {market_id}."
+                    )
+                continue
+            # Base and tab GETs are sequential and each response receives its own
+            # trusted UTC capture timestamp. FanDuel can legitimately reprice or
+            # suspend the exact same market between those GETs. Preserve the
+            # newest complete market copy only after immutable identity matches.
+            if captured > existing_captured:
+                market_meta[key] = (normalized, captured)
         source_summary.append({"event_id": eid, "captured_at_utc": captured, "market_count": len(_extract_markets(doc))})
 
     if not event_meta:
@@ -490,6 +597,12 @@ def build_step11c_fanduel_provider_bridge(
         player_name = _market_player_name(market, runners, stat)
         player = roster.get(_name_key(player_name))
         if player is None:
+            # FanDuel exposes many team/game markets whose names contain words
+            # such as "Points" (for example Race to 15 and Total Points).
+            # They are not player props and must not enter player identity
+            # reconciliation merely because _market_stat recognized a stat token.
+            if not _declares_player_market(market, runners):
+                continue
             raise WNBAStep11FanDuelProviderIdentityError(
                 f"Step 11C could not uniquely map FanDuel player {player_name!r}."
             )

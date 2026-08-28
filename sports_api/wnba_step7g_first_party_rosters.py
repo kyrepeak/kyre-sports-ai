@@ -414,7 +414,17 @@ def _parse_roster_html(
             raise WNBAStatsUpstreamError(
                 f"Official WNBA roster tile/React name mismatch for player {player_id}."
             )
-        if expected_team_id and str(flight.get("team_id")) != expected_team_id:
+        try:
+            flight_team_id = int(flight.get("team_id"))
+        except (TypeError, ValueError) as exc:
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster React team ID was invalid for player {player_id}."
+            ) from exc
+        if flight_team_id <= 0:
+            raise WNBAStatsUpstreamError(
+                f"Official WNBA roster React team ID was invalid for player {player_id}."
+            )
+        if expected_team_id and str(flight_team_id) != expected_team_id:
             raise WNBAStatsUpstreamError(
                 f"Official WNBA roster React team ID mismatch for player {player_id}."
             )
@@ -444,7 +454,7 @@ def _parse_roster_html(
                 "roster_status": 1,
                 "is_current_roster": True,
                 "games_played_flag": None,
-                "official_team_id": team.get("official_team_id"),
+                "official_team_id": flight_team_id,
                 "team_key": team["team_key"],
                 "team_city": team.get("city"),
                 "team_name": team.get("nickname"),

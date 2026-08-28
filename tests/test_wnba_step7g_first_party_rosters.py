@@ -101,6 +101,16 @@ class Step7GFirstPartyRosterTests(unittest.TestCase):
         self.assertEqual(by_id[1000]["team_key"], "washington-mystics")
         self.assertTrue(all(row["is_current_roster"] for row in players))
 
+    def test_parser_preserves_react_team_id_without_static_registry_id(self) -> None:
+        team = dict(self.team)
+        team.pop("official_team_id", None)
+        players = _parse_roster_html(
+            self._fixture(),
+            team=team,
+            source_url="https://mystics.wnba.com/roster",
+        )
+        self.assertEqual({row["official_team_id"] for row in players}, {1611661322})
+
     def test_parser_fails_closed_on_tile_react_name_mismatch(self) -> None:
         with self.assertRaises(Exception):
             _parse_roster_html(
