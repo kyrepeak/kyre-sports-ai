@@ -1,0 +1,159 @@
+name: WNBA Step 9B sportsbook market comparison certification
+
+on:
+  push:
+    branches:
+      - wnba-step9-market-bridge-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step9b-sportsbook-market-comparison-cert
+  cancel-in-progress: true
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Step 9 market bridge branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert production OFF and isolated Step 9 gates ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP9_THRESHOLD_PRICING_ENABLED" = 'true'
+          test "$WNBA_STEP9B_MARKET_COMPARISON_ENABLED" = 'true'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 9B and frozen upstream contracts
+        shell: bash
+        run: |
+          python -m py_compile sports_api/wnba_step9_sportsbook_market_comparison.py
+          python -m py_compile sports_api/tools/wnba_step9b_sportsbook_market_comparison_cert.py
+          python -m py_compile tests/test_wnba_step9_sportsbook_market_comparison.py
+          python -m py_compile sports_api/wnba_step9_threshold_pricing.py
+          python -m py_compile sports_api/wnba_step8_release_freeze.py
+
+      - name: Run Step 9B fail-closed contract guards
+        shell: bash
+        run: PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+
+      - name: Run inherited Step 9A and frozen Step 8 guards
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove complete frozen Step 8 surface unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8_FROZEN_SHA='8faf468b770f7a31244914df75390fc788f859a1'
+          git fetch origin wnba-step8-projection-contract-20260828 --depth=1
+          ACTUAL_FROZEN_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$ACTUAL_FROZEN_SHA" = "$STEP8_FROZEN_SHA"
+          git diff --exit-code "$STEP8_FROZEN_SHA" -- \
+            sports_api/main.py \
+            sports_api/api/wnba_step8_projection.py \
+            sports_api/wnba_step8_release_freeze.py \
+            sports_api/wnba_step8_projection_handoff.py \
+            sports_api/wnba_step8_official_box_baseline.py \
+            sports_api/wnba_step8_core_projection.py \
+            sports_api/wnba_step8_context_adjustment.py \
+            sports_api/wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_projection_handoff.py \
+            tests/test_wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_core_projection.py \
+            tests/test_wnba_step8_context_adjustment.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 9A surface unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP9A_FROZEN_SHA='3b9acde91250d0e7a1767f3861765d4366f510ba'
+          git cat-file -e "$STEP9A_FROZEN_SHA^{commit}"
+          git diff --exit-code "$STEP9A_FROZEN_SHA" -- \
+            sports_api/wnba_step9_threshold_pricing.py \
+            tests/test_wnba_step9_threshold_pricing.py \
+            sports_api/tools/wnba_step9a_threshold_pricing_cert.py \
+            .github/workflows/wnba-step-9a-threshold-pricing-cert.yml
+
+      - name: Prove only Step 9B files changed after frozen Step 9A
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP9A_FROZEN_SHA='3b9acde91250d0e7a1767f3861765d4366f510ba'
+          git diff --name-only "$STEP9A_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step9_sportsbook_market_comparison.py|\
+              tests/test_wnba_step9_sportsbook_market_comparison.py|\
+              sports_api/tools/wnba_step9b_sportsbook_market_comparison_cert.py|\
+              .github/workflows/wnba-step-9b-sportsbook-market-comparison-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step9A file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Certify Step 9B sportsbook market comparison boundary
+        shell: bash
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step9b_sportsbook_market_comparison_cert
+
+      - name: Upload Step 9B certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step9b-sportsbook-market-comparison-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step9b-sportsbook-market-comparison-cert.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Re-assert production OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
