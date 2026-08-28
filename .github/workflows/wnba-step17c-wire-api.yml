@@ -43,7 +43,7 @@ jobs:
           PYTHONPATH=. python tests/test_wnba_step17c_production_reliability.py
           python - <<'PY'
           from sports_api.main import app
-          paths = {route.path for route in app.routes}
+          paths = {getattr(route, 'path', None) for route in app.routes}
           assert '/api/v1/wnba/runtime/step17c' in paths
           assert '/api/v1/wnba/runtime/step17c/health' in paths
           print('STEP17C_FASTAPI_ROUTES_OK')
