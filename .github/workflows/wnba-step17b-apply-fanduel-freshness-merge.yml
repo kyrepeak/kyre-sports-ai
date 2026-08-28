@@ -1,0 +1,71 @@
+name: WNBA Step 17B apply FanDuel freshness merge
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, '[fanduel-freshness-applied]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Apply freshness-aware duplicate market merge
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('sports_api/wnba_step11_fanduel_provider.py')
+          text = path.read_text()
+          anchor = '''def build_step11c_fanduel_provider_bridge(\n'''
+          helper = '''def _market_identity_surface(market: Mapping[str, Any]) -> dict[str, Any]:\n    """Canonical immutable identity for one FanDuel market across page/tab copies."""\n    runners = []\n    for runner in _iter_mapping_or_list(market.get("runners")):\n        runners.append({\n            "selection_id": _clean(runner.get("selectionId") or runner.get("runnerId") or runner.get("id") or runner.get("_attachment_key")),\n            "runner_name": _clean(runner.get("runnerName") or runner.get("name") or runner.get("selectionName")),\n            "side": _clean(runner.get("side")).casefold(),\n            "result_type": _clean(runner.get("resultType")).casefold(),\n            "handicap": runner.get("handicap"),\n            "line": runner.get("line"),\n            "player_name": _clean(runner.get("playerName")),\n            "participant_name": _clean(runner.get("participantName")),\n            "player": _clean(runner.get("player")),\n        })\n    runners.sort(key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":"), default=str))\n    return {\n        "market_id": _clean(market.get("marketId") or market.get("id") or market.get("_attachment_key")),\n        "market_name": _clean(market.get("marketName") or market.get("name")),\n        "market_type": _clean(market.get("marketType") or market.get("type")),\n        "player_name": _clean(market.get("playerName")),\n        "participant_name": _clean(market.get("participantName")),\n        "player": _clean(market.get("player")),\n        "runners": runners,\n    }\n\n\n'''
+          if 'def _market_identity_surface(' not in text:
+              if anchor not in text:
+                  raise SystemExit('FanDuel builder anchor drifted')
+              text = text.replace(anchor, helper + anchor, 1)
+
+          old = '''            existing = market_meta.get(key)\n            normalized = dict(market)\n            if existing is not None and existing[0] != normalized:\n                raise WNBAStep11FanDuelProviderIdentityError(f"Conflicting FanDuel market payload for {market_id}.")\n            market_meta[key] = (normalized, captured)\n'''
+          new = '''            existing = market_meta.get(key)\n            normalized = dict(market)\n            if existing is None:\n                market_meta[key] = (normalized, captured)\n                continue\n            existing_market, existing_captured = existing\n            if _market_identity_surface(existing_market) != _market_identity_surface(normalized):\n                raise WNBAStep11FanDuelProviderIdentityError(\n                    f"Conflicting FanDuel market identity for {market_id}."\n                )\n            if captured == existing_captured:\n                if existing_market != normalized:\n                    raise WNBAStep11FanDuelProviderIdentityError(\n                        f"Conflicting same-timestamp FanDuel market payload for {market_id}."\n                    )\n                continue\n            # Base and tab GETs are sequential and each response receives its own\n            # trusted UTC capture timestamp. FanDuel can legitimately reprice or\n            # suspend the exact same market between those GETs. Preserve the\n            # newest complete market copy only after immutable identity matches.\n            if captured > existing_captured:\n                market_meta[key] = (normalized, captured)\n'''
+          if new not in text:
+              if old not in text:
+                  raise SystemExit('FanDuel market merge block drifted')
+              text = text.replace(old, new, 1)
+          path.write_text(text)
+
+          test_path = Path('tests/test_wnba_step11_fanduel_provider.py')
+          tests = test_path.read_text()
+          test_anchor = '''    def test_duplicate_same_side_quote_fails_closed(self):\n'''
+          cases = '''    def test_newer_duplicate_market_price_refresh_is_selected(self):\n        first = _event_doc()\n        second = deepcopy(first)\n        point = second["attachments"]["markets"]["fd-points"]\n        point["runners"][0]["winRunnerOdds"] = _odds(120)\n        point["runners"][1]["winRunnerOdds"] = _odds(-145)\n        entries = [\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},\n        ]\n        result = _build(event_page_documents=entries)\n        point_record = next(r for r in result["provider_refresh"]["attempts"][0]["payload"]["records"] if r["stat"] == "points")\n        self.assertEqual(point_record["over_price"], 120)\n        self.assertEqual(point_record["under_price"], -145)\n        self.assertEqual(point_record["market_captured_at"], "2026-08-28T06:07:46+00:00")\n\n    def test_newer_duplicate_market_status_refresh_is_selected(self):\n        first = _event_doc()\n        second = deepcopy(first)\n        second["attachments"]["markets"]["fd-points"]["marketStatus"] = "SUSPENDED"\n        entries = [\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},\n        ]\n        result = _build(event_page_documents=entries)\n        stats = {r["stat"] for r in result["provider_refresh"]["attempts"][0]["payload"]["records"]}\n        self.assertNotIn("points", stats)\n        self.assertIn("rebounds", stats)\n\n    def test_duplicate_market_wrapper_metadata_difference_is_allowed(self):\n        first = _event_doc()\n        second = deepcopy(first)\n        second["attachments"]["markets"]["fd-points"]["displayOrder"] = 99\n        entries = [\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},\n        ]\n        result = _build(event_page_documents=entries)\n        self.assertEqual(result["identity"]["two_way_record_count"], 4)\n\n    def test_duplicate_market_line_identity_change_fails_closed(self):\n        first = _event_doc()\n        second = deepcopy(first)\n        point = second["attachments"]["markets"]["fd-points"]\n        point["runners"][0]["runnerName"] = "Over 21.5"\n        point["runners"][1]["runnerName"] = "Under 21.5"\n        entries = [\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:46+00:00", "document": second},\n        ]\n        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):\n            _build(event_page_documents=entries)\n\n    def test_same_timestamp_changed_quote_fails_closed(self):\n        first = _event_doc()\n        second = deepcopy(first)\n        second["attachments"]["markets"]["fd-points"]["runners"][0]["winRunnerOdds"] = _odds(120)\n        entries = [\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": first},\n            {"event_id": EVENT_ID, "captured_at_utc": "2026-08-28T06:07:45+00:00", "document": second},\n        ]\n        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):\n            _build(event_page_documents=entries)\n\n'''
+          if 'test_newer_duplicate_market_price_refresh_is_selected' not in tests:
+              if test_anchor not in tests:
+                  raise SystemExit('FanDuel test anchor drifted')
+              tests = tests.replace(test_anchor, cases + test_anchor, 1)
+          test_path.write_text(tests)
+          PY
+
+      - name: Run provider regressions
+        run: python -m unittest tests.test_wnba_step11_fanduel_provider tests.test_wnba_step11_draftkings_provider
+
+      - name: Commit tested freshness merge
+        run: |
+          if git diff --quiet; then
+            echo "Freshness merge already present."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sports_api/wnba_step11_fanduel_provider.py tests/test_wnba_step11_fanduel_provider.py
+          git commit -m "Handle live FanDuel repricing across tab captures [fanduel-freshness-applied] [step12b-transient-applied] [fanduel-market-filter-applied] [event-alias-applied] [compat-applied] [step7g-team-id-applied]"
+          git push origin HEAD:wnba-step17b-diagnostic-20260828
