@@ -114,7 +114,7 @@ def wnba_step10_live_market_board(request: Step10LiveMarketBoardRequest):
     try:
         evaluated_at = datetime.now(timezone.utc)
         pipeline = build_step10e_live_market_board(
-            provider_refreshes=[row.model_dump() for row in request.provider_refreshes],
+            provider_refreshes=[row.model_dump(exclude_none=True) for row in request.provider_refreshes],
             step8_distributions=request.step8_distributions,
             last_good_snapshot=request.last_good_snapshot,
             expected_sportsbooks=request.expected_sportsbooks,
