@@ -10,10 +10,16 @@ on:
       - 'sports_api/wnba_step7g_first_party_advanced_stats_fast.py'
       - 'sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py'
       - 'sports_api/wnba_step7g_first_party_integration.py'
+      - 'sports_api/wnba_step7g_first_party_rosters.py'
+      - 'sports_api/wnba_step7g_first_party_injury_report.py'
+      - 'sports_api/wnba_step7g_first_party_injury_report_coordinate.py'
       - 'sports_api/tools/wnba_step7g_step4f_advanced_context_cert.py'
       - 'tests/test_wnba_step7g_first_party_advanced_stats.py'
       - 'tests/test_wnba_step7g_first_party_advanced_contract_units.py'
       - 'tests/test_wnba_step7g_first_party_integration.py'
+      - 'tests/test_wnba_step7g_first_party_rosters.py'
+      - 'tests/test_wnba_step7g_first_party_injury_report.py'
+      - 'tests/test_wnba_step7g_first_party_injury_report_coordinate.py'
   workflow_dispatch:
 
 permissions:
@@ -62,24 +68,33 @@ jobs:
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt
 
-      - name: Compile Step 4F adapters integration and cert
+      - name: Compile Step 4F adapters availability dependency integration and cert
         shell: bash
         run: |
           python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats.py
           python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats_fast.py
           python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py
           python -m py_compile sports_api/wnba_step7g_first_party_integration.py
+          python -m py_compile sports_api/wnba_step7g_first_party_rosters.py
+          python -m py_compile sports_api/wnba_step7g_first_party_injury_report.py
+          python -m py_compile sports_api/wnba_step7g_first_party_injury_report_coordinate.py
           python -m py_compile sports_api/tools/wnba_step7g_step4f_advanced_context_cert.py
           python -m py_compile tests/test_wnba_step7g_first_party_advanced_stats.py
           python -m py_compile tests/test_wnba_step7g_first_party_advanced_contract_units.py
           python -m py_compile tests/test_wnba_step7g_first_party_integration.py
+          python -m py_compile tests/test_wnba_step7g_first_party_rosters.py
+          python -m py_compile tests/test_wnba_step7g_first_party_injury_report.py
+          python -m py_compile tests/test_wnba_step7g_first_party_injury_report_coordinate.py
 
-      - name: Run fail-closed Step 4F and integration regression tests
+      - name: Run fail-closed Step 4F and current availability dependency regressions
         shell: bash
         run: |
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_stats.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_contract_units.py
           PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_rosters.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report_coordinate.py
 
       - name: Prove frozen Step 4F 4L 4W 4X chain unchanged
         shell: bash
