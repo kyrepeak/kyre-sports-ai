@@ -1,0 +1,89 @@
+name: WNBA Step 17B apply provider compatibility
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, '[compat-applied]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Apply narrow Step 7G team-id compatibility and regression tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          dk_path = Path('sports_api/wnba_step11_draftkings_provider.py')
+          dk = dk_path.read_text()
+          dk_old = '''        try:\n            player_id = int(raw.get("player_id"))\n            team_id = int(raw.get("team_id"))\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11DraftKingsProviderIdentityError(\n                "Step 11A official roster row is missing numeric player/team identity."\n            ) from exc\n'''
+          dk_new = '''        legacy_team_id = raw.get("team_id")\n        official_team_id = raw.get("official_team_id")\n        if legacy_team_id is not None and official_team_id is not None:\n            try:\n                legacy_team_id_int = int(legacy_team_id)\n                official_team_id_int = int(official_team_id)\n            except (TypeError, ValueError) as exc:\n                raise WNBAStep11DraftKingsProviderIdentityError(\n                    "Step 11A official roster row is missing numeric player/team identity."\n                ) from exc\n            if legacy_team_id_int != official_team_id_int:\n                raise WNBAStep11DraftKingsProviderIdentityError(\n                    "Step 11A official roster row has conflicting team identity fields."\n                )\n        team_id_source = legacy_team_id if legacy_team_id is not None else official_team_id\n        try:\n            player_id = int(raw.get("player_id"))\n            team_id = int(team_id_source)\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11DraftKingsProviderIdentityError(\n                "Step 11A official roster row is missing numeric player/team identity."\n            ) from exc\n'''
+          if dk_old in dk:
+              dk = dk.replace(dk_old, dk_new, 1)
+          elif 'Step 11A official roster row has conflicting team identity fields.' not in dk:
+              raise SystemExit('DraftKings compatibility target drifted')
+          dk_path.write_text(dk)
+
+          fd_path = Path('sports_api/wnba_step11_fanduel_provider.py')
+          fd = fd_path.read_text()
+          fd_old = '''        try:\n            player_id = int(raw.get("player_id")); team_id = int(raw.get("team_id"))\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc\n'''
+          fd_new = '''        legacy_team_id = raw.get("team_id")\n        official_team_id = raw.get("official_team_id")\n        if legacy_team_id is not None and official_team_id is not None:\n            try:\n                legacy_team_id_int = int(legacy_team_id)\n                official_team_id_int = int(official_team_id)\n            except (TypeError, ValueError) as exc:\n                raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc\n            if legacy_team_id_int != official_team_id_int:\n                raise WNBAStep11FanDuelProviderIdentityError(\n                    "Official roster row has conflicting team identity fields."\n                )\n        team_id_source = legacy_team_id if legacy_team_id is not None else official_team_id\n        try:\n            player_id = int(raw.get("player_id")); team_id = int(team_id_source)\n        except (TypeError, ValueError) as exc:\n            raise WNBAStep11FanDuelProviderIdentityError("Official roster row lacks numeric identity.") from exc\n'''
+          if fd_old in fd:
+              fd = fd.replace(fd_old, fd_new, 1)
+          elif 'Official roster row has conflicting team identity fields.' not in fd:
+              raise SystemExit('FanDuel compatibility target drifted')
+          fd_path.write_text(fd)
+
+          dk_test_path = Path('tests/test_wnba_step11_draftkings_provider.py')
+          dk_test = dk_test_path.read_text()
+          dk_anchor = '''    def test_output_is_exact_step10d_provider_refresh_shape_and_step10b_validated(self):\n'''
+          dk_tests = '''    def test_step7g_first_party_official_team_id_is_accepted(self):\n        roster = _roster()\n        for row in roster:\n            row["official_team_id"] = row.pop("team_id")\n        result = _build(official_roster_players=roster)\n        self.assertEqual(result["identity"]["two_way_record_count"], 4)\n\n    def test_conflicting_team_id_fields_fail_closed(self):\n        roster = _roster()\n        roster[0]["official_team_id"] = AWAY_TEAM_ID\n        with self.assertRaises(s11.WNBAStep11DraftKingsProviderIdentityError):\n            _build(official_roster_players=roster)\n\n'''
+          if 'test_step7g_first_party_official_team_id_is_accepted' not in dk_test:
+              if dk_anchor not in dk_test:
+                  raise SystemExit('DraftKings test anchor drifted')
+              dk_test = dk_test.replace(dk_anchor, dk_tests + dk_anchor, 1)
+          dk_test_path.write_text(dk_test)
+
+          fd_test_path = Path('tests/test_wnba_step11_fanduel_provider.py')
+          fd_test = fd_test_path.read_text()
+          fd_anchor = '''    def test_exact_step10_provider_refresh_shape_and_validation(self):\n'''
+          fd_tests = '''    def test_step7g_first_party_official_team_id_is_accepted(self):\n        roster = _roster()\n        for row in roster:\n            row["official_team_id"] = row.pop("team_id")\n        result = _build(official_roster_players=roster)\n        self.assertEqual(result["identity"]["two_way_record_count"], 4)\n\n    def test_conflicting_team_id_fields_fail_closed(self):\n        roster = _roster()\n        roster[0]["official_team_id"] = AWAY_TEAM_ID\n        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):\n            _build(official_roster_players=roster)\n\n'''
+          if 'test_step7g_first_party_official_team_id_is_accepted' not in fd_test:
+              if fd_anchor not in fd_test:
+                  raise SystemExit('FanDuel test anchor drifted')
+              fd_test = fd_test.replace(fd_anchor, fd_tests + fd_anchor, 1)
+          fd_test_path.write_text(fd_test)
+          PY
+
+      - name: Run focused provider regressions
+        run: python -m unittest tests.test_wnba_step11_draftkings_provider tests.test_wnba_step11_fanduel_provider
+
+      - name: Commit compatibility patch to diagnostic branch
+        run: |
+          if git diff --quiet; then
+            echo "Compatibility patch already present."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sports_api/wnba_step11_draftkings_provider.py sports_api/wnba_step11_fanduel_provider.py tests/test_wnba_step11_draftkings_provider.py tests/test_wnba_step11_fanduel_provider.py
+          git commit -m "Fix Step 17B first-party provider team identity [compat-applied]"
+          git push origin HEAD:wnba-step17b-diagnostic-20260828
