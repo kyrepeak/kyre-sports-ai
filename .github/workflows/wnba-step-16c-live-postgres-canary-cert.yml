@@ -1,0 +1,279 @@
+name: WNBA Step 16C live PostgreSQL canary certification
+
+on:
+  push:
+    branches:
+      - wnba-step16c-live-postgres-canary-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+
+  WNBA_STEP16C_LIVE_POSTGRES_CANARY_ENABLED: "true"
+  WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED: "true"
+  KYRE_DATABASE_URL: "postgresql://canary:placeholder@db.example.invalid:5432/kyre"
+
+  WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED: "true"
+  WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: "true"
+  WNBA_STEP14B_DATABASE_READ_ENABLED: "true"
+  WNBA_STEP14B_DATABASE_WRITE_ENABLED: "true"
+  WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED: "true"
+  WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED: "true"
+  WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED: "true"
+  WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED: "true"
+  WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: "true"
+  WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: "true"
+  WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: "true"
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: "true"
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: "true"
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: "true"
+
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Step 16C branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - name: Assert production remains OFF and CI DSN is non-live
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_STEP16C_LIVE_POSTGRES_CANARY_ENABLED" = 'true'
+          test "$WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED" = 'true'
+          case "$KYRE_DATABASE_URL" in
+            *db.example.invalid*) ;;
+            *) echo 'Step16C CI refuses a live KYRE_DATABASE_URL' >&2; exit 1 ;;
+          esac
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API plus persistence dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+          python - <<'PY'
+          import psycopg
+          assert psycopg.__version__.split('.')[0] == '3'
+          print('STEP16C_PSYCOPG3_PACKAGED_NO_LIVE_CONNECTION', psycopg.__version__)
+          PY
+
+      - name: Compile Step 16C canary surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step16c_live_postgres_canary.py
+          python -m py_compile tests/test_wnba_step16c_live_postgres_canary.py
+          python -m py_compile sports_api/tools/wnba_step16c_live_postgres_canary_cert.py
+          python -m json.tool sports_api/certification/wnba_step16c_live_postgres_canary_evidence.json >/dev/null
+
+      - name: Run Step 16C live PostgreSQL canary guards
+        run: PYTHONPATH=. python tests/test_wnba_step16c_live_postgres_canary.py
+
+      - name: Run frozen Step 16B packaging lifecycle guards
+        run: PYTHONPATH=. python tests/test_wnba_step16b_production_packaging_lifecycle.py
+
+      - name: Run frozen Step 16A guards at exact parent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP16A_FROZEN_SHA='4ea88aa9a54f5110a03e9e4374219ed15ab30def'
+          rm -rf /tmp/wnba-step16a-parent
+          git worktree add --detach /tmp/wnba-step16a-parent "$STEP16A_FROZEN_SHA"
+          (
+            cd /tmp/wnba-step16a-parent
+            PYTHONPATH=. python tests/test_wnba_step16a_production_activation_contract.py
+          )
+          git worktree remove /tmp/wnba-step16a-parent --force
+
+      - name: Run frozen Step 15C through Step 15A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step15_live_persistence_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step15b_live_adapter_transaction_smoke.py
+          PYTHONPATH=. python tests/test_wnba_step15a_live_postgres_preflight.py
+
+      - name: Run frozen Step 14D through Step 14A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step14_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step14c_durable_restart_lease.py
+          PYTHONPATH=. python tests/test_wnba_step14b_database_checkpoint_adapter.py
+          PYTHONPATH=. python tests/test_wnba_step14a_persistence_contract.py
+
+      - name: Run frozen Step 13D through Step 13A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step13_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step13c_reliability_recovery.py
+          PYTHONPATH=. python tests/test_wnba_step13b_runtime_supervisor.py
+          PYTHONPATH=. python tests/test_wnba_step13a_bounded_scheduler.py
+
+      - name: Run frozen Step 12D through Step 12A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step12_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step12c_live_board_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step12b_live_runtime_assembly.py
+          PYTHONPATH=. python tests/test_wnba_step12_shadow_runner.py
+
+      - name: Run frozen Step 11E through Step 11A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step11_controlled_automation.py
+          PYTHONPATH=. python tests/test_wnba_step11_multibook_shadow_board.py
+          PYTHONPATH=. python tests/test_wnba_step11_fanduel_provider.py
+          PYTHONPATH=. python tests/test_wnba_step11_network_refresh_orchestrator.py
+          PYTHONPATH=. python tests/test_wnba_step11_draftkings_provider.py
+
+      - name: Run frozen Step 10 guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 16B head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP16B_FROZEN_SHA='f898ca410c10db59f635888166d1666a952d8bd7'
+          git merge-base --is-ancestor "$STEP16B_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP16B_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only approved Step 16C files changed after frozen Step 16B
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP16B_FROZEN_SHA='f898ca410c10db59f635888166d1666a952d8bd7'
+          git diff --name-only "$STEP16B_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/certification/wnba_step16c_live_postgres_canary_evidence.json|\
+              sports_api/wnba_step16c_live_postgres_canary.py|\
+              tests/test_wnba_step16c_live_postgres_canary.py|\
+              sports_api/tools/wnba_step16c_live_postgres_canary_cert.py|\
+              .github/workflows/wnba-step-16c-live-postgres-canary-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step16B file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+          test "$(git diff --name-only "$STEP16B_FROZEN_SHA" HEAD | wc -l | tr -d ' ')" = '5'
+
+      - name: Prove frozen production packaging and persistence requirements are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP16B_FROZEN_SHA='f898ca410c10db59f635888166d1666a952d8bd7'
+          for path in sports_api/Dockerfile sports_api/production.env.example sports_api/main.py sports_api/wnba_step16b_production_lifecycle.py sports_api/wnba_step16b_packaging_lifecycle_contract.py sports_api/requirements-persistence.txt; do
+            test "$(git rev-parse "$STEP16B_FROZEN_SHA:$path")" = "$(git rev-parse "HEAD:$path")"
+          done
+          test "$(cat sports_api/requirements-persistence.txt)" = 'psycopg[binary]>=3.2,<4'
+
+      - name: Verify Step 16C live evidence and activation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step16c_live_postgres_canary as c
+          evidence = c.validate_step16c_live_evidence(c.load_step16c_live_evidence())
+          manifest = c.build_step16c_canary_manifest(
+              env=dict(__import__('os').environ),
+              generated_at_utc='2026-08-28T20:12:00+00:00',
+          )
+          assert c.STEP16B_CERTIFIED_SHA == 'f898ca410c10db59f635888166d1666a952d8bd7'
+          assert evidence['live_results']['transaction_rolled_back'] is True
+          assert evidence['live_results']['post_rollback_checkpoint_rows'] == 0
+          assert evidence['live_results']['post_rollback_checkpoint_head_rows'] == 0
+          assert evidence['live_results']['post_rollback_lease_rows'] == 0
+          assert manifest['live_database_canary']['certified'] is True
+          assert manifest['bound_runner_canary']['exact_step16b_bound_step14c_runner'] is True
+          assert manifest['bound_runner_canary']['direct_psycopg_live_connection_certified'] is False
+          assert manifest['phase_boundary']['controlled_production_activation_not_authorized'] is True
+          assert all(value is False for value in manifest['safety_contract'].values())
+          print('STEP16C_LIVE_DB_GREEN_BOUND_RUNNER_CI_ONLY_PRODUCTION_OFF_OK')
+          PY
+
+      - name: Certify Step 16C live PostgreSQL and bound runner canary
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python -m sports_api.tools.wnba_step16c_live_postgres_canary_cert
+
+      - name: Upload Step 16C certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step16c-live-postgres-canary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step16c-live-postgres-canary-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production remains OFF and no live DB secret was used
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          case "$KYRE_DATABASE_URL" in
+            *db.example.invalid*) ;;
+            *) echo 'Step16C final assertion detected a non-canary DSN' >&2; exit 1 ;;
+          esac
