@@ -1,0 +1,59 @@
+name: WNBA Step 17B FanDuel market diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-fanduel-market:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r sports_api/requirements.txt
+      - name: Print public metadata for Race to 15 markets only
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step11_fanduel_provider as fd
+
+          target_date = datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          common = {"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "page": "CUSTOM", "customPageId": fd.WNBA_CUSTOM_PAGE_ID, "timezone": "America/New_York"}
+          content = fd._get_json(fd.FANDUEL_BASE_URL + fd.CONTENT_PAGE_PATH, params=common, requester=None, timeout=15.0)
+          events = [e for e in fd._extract_events(content) if fd._event_date(e) in {None, target_date}]
+          print('FANDUEL_DIAGNOSTIC_DATE', target_date, 'EVENTS', len(events))
+          seen = set()
+          for event in events:
+              eid = fd._event_id(event)
+              if not eid:
+                  continue
+              docs = [fd._get_json(fd.FANDUEL_BASE_URL + fd.EVENT_PAGE_PATH, params={"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "eventId": eid}, requester=None, timeout=15.0)]
+              for tab in fd._relevant_tab_ids(docs[0]):
+                  docs.append(fd._get_json(fd.FANDUEL_BASE_URL + fd.EVENT_PAGE_PATH, params={"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "eventId": eid, "tab": tab}, requester=None, timeout=15.0))
+              for doc in docs:
+                  for market in fd._extract_markets(doc):
+                      title = fd._clean(market.get('marketName') or market.get('name'))
+                      if 'race to 15' not in title.casefold():
+                          continue
+                      mid = fd._clean(market.get('marketId') or market.get('id') or market.get('_attachment_key'))
+                      key = (eid, mid)
+                      if key in seen:
+                          continue
+                      seen.add(key)
+                      safe_fields = {k: market.get(k) for k in ('marketName','marketType','name','type','playerName','participantName','player','marketStatus','status') if market.get(k) is not None}
+                      runners = fd._iter_mapping_or_list(market.get('runners'))
+                      safe_runners = []
+                      for r in runners[:6]:
+                          safe_runners.append({k: r.get(k) for k in ('runnerName','name','selectionName','side','resultType','handicap','line','playerName','participantName','player','runnerStatus','status') if r.get(k) is not None})
+                      print('FANDUEL_RACE_MARKET', eid, mid, repr(safe_fields))
+                      print('FANDUEL_RACE_RUNNERS', repr(safe_runners))
+          print('FANDUEL_RACE_MARKET_COUNT', len(seen))
+          PY
