@@ -59,7 +59,7 @@ jobs:
               text = text.replace(event_expr, event_expr.replace('_name_key(', '_team_identity_key('), 1)
               if game_expr not in text:
                   raise SystemExit(f'{path_str}: game identity target drifted')
-              text = text.replace(game_expr, game_expr.replace('_name_key(', '_team_identity_key('), 2), 1)
+              text = text.replace(game_expr, game_expr.replace('_name_key(', '_team_identity_key(', 2), 1)
               path.write_text(text)
 
           patch_provider(
