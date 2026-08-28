@@ -233,6 +233,15 @@ class Step11DraftKingsProviderTests(unittest.TestCase):
         with self.assertRaises(s11.WNBAStep11DraftKingsProviderIdentityError):
             _build(official_roster_players=roster)
 
+    def test_sportsbook_abbreviation_plus_nickname_reconciles(self):
+        docs = _documents()
+        for row in docs:
+            event = row["document"]["events"][0]
+            event["participants"] = [{"name": "ATL Dream"}, {"name": "POR Fire"}]
+        result = _build(draftkings_documents=docs)
+        records = result["provider_refresh"]["attempts"][0]["payload"]["records"]
+        self.assertEqual({row["game_id"] for row in records}, {GAME_ID})
+
     def test_output_is_exact_step10d_provider_refresh_shape_and_step10b_validated(self):
         result = _build()
         refresh = result["provider_refresh"]

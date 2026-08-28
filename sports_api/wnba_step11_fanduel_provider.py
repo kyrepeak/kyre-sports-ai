@@ -29,6 +29,7 @@ import httpx
 from sports_api import wnba_step10_market_adapters as step10b
 from sports_api import wnba_step10_release_freeze as step10_freeze
 from sports_api.wnba_official_reconciliation import parse_official_schedule
+from sports_api.wnba_league import get_wnba_teams
 from sports_api.wnba_step7g_first_party_rosters import get_first_party_current_players_dataset
 
 SOURCE = "Kyre Sports API WNBA Step 11C FanDuel anonymous public live provider bridge"
@@ -128,6 +129,35 @@ def _name_key(value: Any) -> str:
     text = unicodedata.normalize("NFKD", _clean(value))
     text = "".join(ch for ch in text if not unicodedata.combining(ch)).casefold()
     return " ".join(re.sub(r"[^a-z0-9]+", " ", text).split())
+
+
+def _team_identity_key(value: Any) -> str:
+    """Resolve exact official/sportsbook WNBA team aliases to one canonical key."""
+    key = _name_key(value)
+    if not key:
+        return ""
+    aliases: dict[str, str] = {}
+    for team in get_wnba_teams():
+        full_name = str(team["full_name"])
+        abbreviation = str(team["abbreviation"])
+        city = str(team["city"])
+        nickname = str(team["nickname"])
+        canonical = _name_key(full_name)
+        city_initials = "".join(part[0] for part in re.findall(r"[A-Za-z0-9]+", city) if part)
+        candidates = (
+            full_name,
+            f"{abbreviation} {nickname}",
+            f"{city_initials} {nickname}" if city_initials else "",
+        )
+        for alias in candidates:
+            alias_key = _name_key(alias)
+            if not alias_key:
+                continue
+            previous = aliases.get(alias_key)
+            if previous is not None and previous != canonical:
+                raise WNBAStep11FanDuelProviderIdentityError("WNBA team alias registry is ambiguous.")
+            aliases[alias_key] = canonical
+    return aliases.get(key, key)
 
 
 def _utc(value: Any, label: str) -> datetime:
@@ -320,12 +350,12 @@ def _game_map(events: Sequence[Mapping[str, Any]], games: Sequence[Mapping[str, 
     result: dict[str, dict[str, Any]] = {}
     for event in events:
         eid = _event_id(event)
-        participants = {_name_key(name) for name in _event_participants(event) if _name_key(name)}
+        participants = {_team_identity_key(name) for name in _event_participants(event) if _team_identity_key(name)}
         if not eid or len(participants) != 2:
             raise WNBAStep11FanDuelProviderIdentityError("FanDuel event lacks unique id/two team identities.")
         candidates = []
         for game in games:
-            pair = {_name_key(game.get("home_team_name")), _name_key(game.get("away_team_name"))}
+            pair = {_team_identity_key(game.get("home_team_name")), _team_identity_key(game.get("away_team_name"))}
             if pair != participants:
                 continue
             try:

@@ -159,6 +159,16 @@ class Step11FanDuelProviderTests(unittest.TestCase):
         with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):
             _build(official_roster_players=roster)
 
+    def test_sportsbook_abbreviation_plus_nickname_reconciles(self):
+        doc = _event_doc()
+        event = doc["attachments"]["events"][EVENT_ID]
+        event["homeTeam"]["name"] = "ATL Dream"
+        event["awayTeam"]["name"] = "POR Fire"
+        event["name"] = "POR Fire @ ATL Dream"
+        result = _build(event_page_documents=_entries(doc))
+        records = result["provider_refresh"]["attempts"][0]["payload"]["records"]
+        self.assertEqual({row["game_id"] for row in records}, {GAME_ID})
+
     def test_exact_step10_provider_refresh_shape_and_validation(self):
         result = _build(); refresh = result["provider_refresh"]
         self.assertEqual(set(refresh), {"provider", "adapter_type", "attempts"})

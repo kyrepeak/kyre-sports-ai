@@ -34,6 +34,7 @@ from sports_api.wnba_official_reconciliation import (
     extract_draftkings_events,
     parse_official_schedule,
 )
+from sports_api.wnba_league import get_wnba_teams
 from sports_api.wnba_step7g_first_party_rosters import (
     get_first_party_current_players_dataset,
 )
@@ -145,6 +146,35 @@ def _name_key(value: Any) -> str:
     text = text.casefold().replace("’", "'").replace("‘", "'")
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return " ".join(text.split())
+
+
+def _team_identity_key(value: Any) -> str:
+    """Resolve exact official/sportsbook WNBA team aliases to one canonical key."""
+    key = _name_key(value)
+    if not key:
+        return ""
+    aliases: dict[str, str] = {}
+    for team in get_wnba_teams():
+        full_name = str(team["full_name"])
+        abbreviation = str(team["abbreviation"])
+        city = str(team["city"])
+        nickname = str(team["nickname"])
+        canonical = _name_key(full_name)
+        city_initials = "".join(part[0] for part in re.findall(r"[A-Za-z0-9]+", city) if part)
+        candidates = (
+            full_name,
+            f"{abbreviation} {nickname}",
+            f"{city_initials} {nickname}" if city_initials else "",
+        )
+        for alias in candidates:
+            alias_key = _name_key(alias)
+            if not alias_key:
+                continue
+            previous = aliases.get(alias_key)
+            if previous is not None and previous != canonical:
+                raise WNBAStep11DraftKingsProviderIdentityError("WNBA team alias registry is ambiguous.")
+            aliases[alias_key] = canonical
+    return aliases.get(key, key)
 
 
 def _date(value: Any, label: str) -> str:
@@ -360,7 +390,7 @@ def _event_game_map(
         if not event_id:
             continue
         participant_keys = {
-            _name_key(name) for name in (event.get("participants") or []) if _name_key(name)
+            _team_identity_key(name) for name in (event.get("participants") or []) if _team_identity_key(name)
         }
         if len(participant_keys) < 2:
             raise WNBAStep11DraftKingsProviderIdentityError(
@@ -369,8 +399,8 @@ def _event_game_map(
         candidates: list[dict[str, Any]] = []
         for game in games:
             pair = {
-                _name_key(game.get("home_team_name")),
-                _name_key(game.get("away_team_name")),
+                _team_identity_key(game.get("home_team_name")),
+                _team_identity_key(game.get("away_team_name")),
             }
             if pair != participant_keys:
                 continue
