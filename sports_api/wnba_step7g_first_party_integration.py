@@ -61,7 +61,7 @@ from sports_api.wnba_step7g_first_party_team_history_cup_safe import (
 )
 
 MODEL_SOURCE = "Kyre Sports API WNBA Step 7G first-party core integration"
-MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v9_candidate"
+MODEL_VERSION = "wnba_step_7g_first_party_core_integration_v10_advanced_certified"
 STEP7G_FIRST_PARTY_ENABLED_ENV = "WNBA_STEP7G_FIRST_PARTY_ENABLED"
 
 _ORIGINAL_ROTATION_REQUEST = rotation._request_stats_json
@@ -329,15 +329,13 @@ def get_step7g_first_party_status(
             "current_availability_daily_schedule": True,
             "current_availability_roster": True,
             "current_availability_injury_report": True,
+            "current_availability_coordinate_parser": True,
             "current_availability": True,
             "shot_context": True,
-            "advanced_context": False,
+            "advanced_context": True,
             "officiating_context": False,
         },
-        "candidate_scope": {
-            "advanced_context": True,
-            "current_availability_coordinate_parser": True,
-        },
+        "candidate_scope": {},
         "safety": {
             "default_enabled": False,
             "production_runtime_enabled_by_this_module": False,
