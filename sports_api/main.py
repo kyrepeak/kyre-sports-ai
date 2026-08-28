@@ -7,9 +7,9 @@ import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  #
 # Step 7G is default-OFF and, when explicitly enabled, installs certified
 # first-party WNBA core-data seams before readiness/projection routers bind them.
 import sports_api.wnba_step7g_first_party_integration as _wnba_step7g_first_party_integration  # noqa: F401
-# Step 16B binds the frozen Step-14C durable foreground runner into FastAPI
-# lifespan state. The binding is default-OFF and never executes a cycle itself.
-from sports_api.wnba_step16b_production_lifecycle import step16b_lifespan
+# Step 17B composes the frozen Step-16B lifecycle and, only when explicitly
+# enabled, starts one PostgreSQL-leader-controlled durable scheduler loop.
+from sports_api.wnba_step17b_always_on_runtime import step17b_lifespan
 
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
@@ -95,6 +95,7 @@ from sports_api.api.wnba_step6w_final_certification import router as wnba_step6w
 from sports_api.api.wnba_step8_projection import router as wnba_step8_projection_router
 from sports_api.api.wnba_step9_market_board import router as wnba_step9_market_board_router
 from sports_api.api.wnba_step10_live_market_board import router as wnba_step10_live_market_board_router
+from sports_api.api.wnba_step17b_runtime import router as wnba_step17b_runtime_router
 from sports_api.api.wnba_team_history import router as wnba_team_history_router
 from sports_api.api.wnba_tracking import router as wnba_tracking_router
 
@@ -102,7 +103,7 @@ app = FastAPI(
     title="Kyre Sports API",
     description="Sports data and analytics API for the Kyre Sports AI Streamlit app.",
     version="0.1.0",
-    lifespan=step16b_lifespan,
+    lifespan=step17b_lifespan,
 )
 
 app.include_router(health_router)
@@ -189,6 +190,7 @@ app.include_router(wnba_step6w_final_certification_router)
 app.include_router(wnba_step8_projection_router)
 app.include_router(wnba_step9_market_board_router)
 app.include_router(wnba_step10_live_market_board_router)
+app.include_router(wnba_step17b_runtime_router)
 app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
 
