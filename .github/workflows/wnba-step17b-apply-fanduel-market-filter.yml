@@ -1,0 +1,77 @@
+name: WNBA Step 17B apply FanDuel market filter
+
+on:
+  push:
+    branches:
+      - wnba-step17b-diagnostic-20260828
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, '[fanduel-market-filter-applied]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Apply fail-closed FanDuel player-market admission filter
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('sports_api/wnba_step11_fanduel_provider.py')
+          source = source_path.read_text()
+
+          helper_anchor = '''def _market_player_name(market: Mapping[str, Any], runners: Sequence[Mapping[str, Any]], stat: str) -> str:\n'''
+          helper = '''def _declares_player_market(\n    market: Mapping[str, Any],\n    runners: Sequence[Mapping[str, Any]],\n) -> bool:\n    """Return True only when FanDuel explicitly supplies player-market evidence."""\n    identity_fields = ("playerName", "participantName", "player")\n    for key in identity_fields:\n        if _clean(market.get(key)):\n            return True\n    for runner in runners:\n        for key in identity_fields:\n            if _clean(runner.get(key)):\n                return True\n    declaration = " ".join(\n        _clean(market.get(key))\n        for key in ("marketName", "marketType", "name", "type")\n    )\n    return bool(re.search(r"\\bplayer\\b", declaration, flags=re.I))\n\n\n'''
+          if 'def _declares_player_market(' not in source:
+              if helper_anchor not in source:
+                  raise SystemExit('FanDuel helper anchor drifted')
+              source = source.replace(helper_anchor, helper + helper_anchor, 1)
+
+          old = '''        player_name = _market_player_name(market, runners, stat)\n        player = roster.get(_name_key(player_name))\n        if player is None:\n            raise WNBAStep11FanDuelProviderIdentityError(\n                f"Step 11C could not uniquely map FanDuel player {player_name!r}."\n            )\n'''
+          new = '''        player_name = _market_player_name(market, runners, stat)\n        player = roster.get(_name_key(player_name))\n        if player is None:\n            # FanDuel exposes many team/game markets whose names contain words\n            # such as "Points" (for example Race to 15 and Total Points).\n            # They are not player props and must not enter player identity\n            # reconciliation merely because _market_stat recognized a stat token.\n            if not _declares_player_market(market, runners):\n                continue\n            raise WNBAStep11FanDuelProviderIdentityError(\n                f"Step 11C could not uniquely map FanDuel player {player_name!r}."\n            )\n'''
+          if new not in source:
+              if old not in source:
+                  raise SystemExit('FanDuel builder target drifted')
+              source = source.replace(old, new, 1)
+          source_path.write_text(source)
+
+          test_path = Path('tests/test_wnba_step11_fanduel_provider.py')
+          tests = test_path.read_text()
+          anchor = '''    def test_duplicate_same_side_quote_fails_closed(self):\n'''
+          cases = '''    def test_team_points_market_is_skipped_not_treated_as_player_prop(self):\n        doc = _event_doc()\n        doc["attachments"]["markets"]["fd-team-race"] = {\n            "marketId": "fd-team-race",\n            "marketName": "3rd Quarter Race to 15 Points",\n            "marketType": "3RD_QUARTER_RACE_TO_15_POINTS_WNBA",\n            "marketStatus": "OPEN",\n            "runners": [\n                {"selectionId": "race-away", "runnerName": "Portland Fire", "runnerStatus": "ACTIVE", "handicap": 0, "winRunnerOdds": _odds(-110)},\n                {"selectionId": "race-home", "runnerName": "Atlanta Dream", "runnerStatus": "ACTIVE", "handicap": 0, "winRunnerOdds": _odds(-110)},\n            ],\n        }\n        result = _build(event_page_documents=_entries(doc))\n        records = result["provider_refresh"]["attempts"][0]["payload"]["records"]\n        self.assertEqual(len(records), 4)\n        self.assertEqual({row["stat"] for row in records}, {"points", "rebounds", "assists", "pra"})\n\n    def test_declared_unknown_player_market_still_fails_closed(self):\n        doc = _event_doc()\n        doc["attachments"]["markets"]["fd-points"]["marketName"] = "Unknown Person - Player Points"\n        with self.assertRaises(s11c.WNBAStep11FanDuelProviderIdentityError):\n            _build(event_page_documents=_entries(doc))\n\n'''
+          if 'test_team_points_market_is_skipped_not_treated_as_player_prop' not in tests:
+              if anchor not in tests:
+                  raise SystemExit('FanDuel regression-test anchor drifted')
+              tests = tests.replace(anchor, cases + anchor, 1)
+          test_path.write_text(tests)
+          PY
+
+      - name: Run focused provider regressions
+        run: python -m unittest tests.test_wnba_step11_fanduel_provider tests.test_wnba_step11_draftkings_provider
+
+      - name: Commit tested FanDuel market filter
+        run: |
+          if git diff --quiet; then
+            echo "FanDuel market filter already present."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sports_api/wnba_step11_fanduel_provider.py tests/test_wnba_step11_fanduel_provider.py
+          git commit -m "Fix FanDuel non-player market admission [fanduel-market-filter-applied] [event-alias-applied] [compat-applied] [step7g-team-id-applied]"
+          git push origin HEAD:wnba-step17b-diagnostic-20260828
