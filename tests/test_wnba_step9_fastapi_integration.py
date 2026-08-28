@@ -139,7 +139,8 @@ class Step9FastAPIIntegrationTests(unittest.TestCase):
         self.assertEqual(body["pipeline"]["order"], ["step9a", "step9b", "step9c", "step9d"])
         self.assertEqual(body["board"]["qualification_summary"]["qualified_prop_count"], 1)
         self.assertEqual(body["board"]["qualification_summary"]["top_card_count"], 1)
-        card = body["board"]["top_cards"][0]
+        self.assertTrue(body["board"]["top_cards"]["not_forced"])
+        card = body["board"]["top_cards"]["primary"][0]
         self.assertEqual(card["side"], "over")
         self.assertEqual(card["stat"], "points")
         self.assertGreaterEqual(card["model_probability"], 0.55)
