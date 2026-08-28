@@ -63,9 +63,13 @@ class Step7GFirstPartyOfficiatingTests(unittest.TestCase):
                 "1022600290",
             )
 
-    def test_empty_official_assignment_uses_frozen_not_found_family(self) -> None:
-        with self.assertRaises(frozen.WNBAOfficiatingNotFoundError):
-            fp._normalize_official_rows([], "1022600290")
+    def test_empty_official_assignment_is_valid_frozen_pending_state(self) -> None:
+        self.assertEqual(fp._normalize_official_rows([], "1022600290"), [])
+        self.assertEqual(fp._normalize_official_rows(None, "1022600290"), [])
+
+    def test_malformed_official_assignment_still_fails_closed(self) -> None:
+        with self.assertRaises(frozen.WNBAOfficiatingUpstreamError):
+            fp._normalize_official_rows({"personId": 77}, "1022600290")
 
     def test_current_page_schedule_team_mismatch_fails_closed(self) -> None:
         schedule_game = {
