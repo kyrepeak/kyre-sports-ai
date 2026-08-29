@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 import sports_api.wnba_step11_draftkings_provider as _dk
 import sports_api.wnba_step11_fanduel_provider as _fd
 
-MODEL_VERSION = "wnba_step19a_live_provider_compat_v4"
+MODEL_VERSION = "wnba_step19a_live_provider_compat_v5"
 _ET = ZoneInfo("America/New_York")
 
 _ORIGINAL_DK_TEAM_IDENTITY_KEY = _dk._team_identity_key
@@ -25,6 +25,7 @@ _ORIGINAL_FD_RELEVANT_TAB_IDS = _fd._relevant_tab_ids
 _ORIGINAL_FD_RUNNER_SIDE_LINE = _fd._runner_side_line
 _ORIGINAL_FD_DECLARES_PLAYER_MARKET = _fd._declares_player_market
 _ORIGINAL_FD_MARKET_STAT = _fd._market_stat
+_ORIGINAL_FD_MARKET_PLAYER_NAME = _fd._market_player_name
 
 _FANDUEL_PLAYER_TAB_SLUGS = {
     "player points": "player-points",
@@ -32,6 +33,12 @@ _FANDUEL_PLAYER_TAB_SLUGS = {
     "player rebounds": "player-rebounds",
     "player combos": "player-combos",
     "player props": "player-props",
+}
+_FANDUEL_PLAYER_SUFFIXES = {
+    "points": {"points"},
+    "rebounds": {"rebounds"},
+    "assists": {"assists"},
+    "pra": {"pts + reb + ast", "points + rebounds + assists"},
 }
 
 
@@ -94,6 +101,21 @@ def fanduel_market_stat_current(market: Mapping[str, Any]) -> str | None:
     return None
 
 
+def fanduel_market_player_name_current(
+    market: Mapping[str, Any],
+    runners: Sequence[Mapping[str, Any]],
+    stat: str,
+) -> str:
+    market_type = _fd._clean(market.get("marketType") or market.get("type")).upper()
+    if market_type.startswith("PLAYER_") and stat in _FANDUEL_PLAYER_SUFFIXES:
+        title = _fd._clean(market.get("marketName") or market.get("name"))
+        if " - " in title:
+            player, suffix = title.rsplit(" - ", 1)
+            if suffix.strip().casefold() in _FANDUEL_PLAYER_SUFFIXES[stat] and _fd._clean(player):
+                return _fd._clean(player)
+    return _ORIGINAL_FD_MARKET_PLAYER_NAME(market, runners, stat)
+
+
 def fanduel_runner_side_line_current(runner: Mapping[str, Any]) -> tuple[str, float] | None:
     legacy = _ORIGINAL_FD_RUNNER_SIDE_LINE(runner)
     if legacy is not None:
@@ -140,6 +162,7 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
     _fd._event_date = fanduel_event_date_eastern
     _fd._relevant_tab_ids = fanduel_relevant_tab_slugs
     _fd._market_stat = fanduel_market_stat_current
+    _fd._market_player_name = fanduel_market_player_name_current
     _fd._runner_side_line = fanduel_runner_side_line_current
     _fd._declares_player_market = fanduel_declares_player_market_current
     return {
@@ -149,6 +172,7 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
         "fanduel_eastern_slate_date_installed": True,
         "fanduel_player_tab_slug_transport_installed": True,
         "fanduel_supported_stat_scope_installed": True,
+        "fanduel_current_player_title_parser_installed": True,
         "fanduel_nested_result_side_parser_installed": True,
         "fanduel_two_way_player_market_evidence_installed": True,
         "frozen_step11a_source_modified": False,
@@ -165,6 +189,7 @@ __all__ = [
     "draftkings_team_identity_key",
     "fanduel_declares_player_market_current",
     "fanduel_event_date_eastern",
+    "fanduel_market_player_name_current",
     "fanduel_market_stat_current",
     "fanduel_relevant_tab_slugs",
     "fanduel_runner_side_line_current",
