@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 import sports_api.wnba_step11_draftkings_provider as _dk
 import sports_api.wnba_step11_fanduel_provider as _fd
 
-MODEL_VERSION = "wnba_step19a_live_provider_compat_v2"
+MODEL_VERSION = "wnba_step19a_live_provider_compat_v3"
 _ET = ZoneInfo("America/New_York")
 
 _ORIGINAL_DK_TEAM_IDENTITY_KEY = _dk._team_identity_key
@@ -105,9 +105,15 @@ def fanduel_declares_player_market_current(
     if _ORIGINAL_FD_DECLARES_PLAYER_MARKET(market, runners):
         return True
     market_type = _fd._clean(market.get("marketType") or market.get("type")).upper()
-    if market_type.startswith("PLAYER_"):
-        return True
-    return any(runner.get("isPlayerSelection") is True for runner in runners)
+    if not market_type.startswith("PLAYER_"):
+        return False
+    parsed = [fanduel_runner_side_line_current(runner) for runner in runners]
+    parsed = [item for item in parsed if item is not None]
+    if len(parsed) != 2:
+        return False
+    sides = {side for side, _line in parsed}
+    lines = {line for _side, line in parsed}
+    return sides == {"over", "under"} and len(lines) == 1
 
 
 def install_step19a_live_provider_compat() -> dict[str, Any]:
@@ -124,7 +130,7 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
         "fanduel_eastern_slate_date_installed": True,
         "fanduel_player_tab_slug_transport_installed": True,
         "fanduel_nested_result_side_parser_installed": True,
-        "fanduel_explicit_player_market_evidence_installed": True,
+        "fanduel_two_way_player_market_evidence_installed": True,
         "frozen_step11a_source_modified": False,
         "frozen_step11c_source_modified": False,
         "frozen_step11d_source_modified": False,
