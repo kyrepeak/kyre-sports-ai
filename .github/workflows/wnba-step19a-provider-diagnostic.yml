@@ -1,4 +1,4 @@
-name: WNBA Step19A historical rotation trace
+name: WNBA Step19A failing historical substitution inspection
 
 on:
   push:
@@ -12,7 +12,7 @@ env:
   PYTHONPATH: .
 
 jobs:
-  trace-history:
+  inspect-source:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -22,38 +22,43 @@ jobs:
           fetch-depth: 1
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt >/dev/null
-      - name: Trace rotation game IDs through one live projection target
+      - name: Inspect box roster and raw/normalized substitution identity semantics
         run: |
           set -euo pipefail
           python - <<'PY'
-          import os
-          os.environ.update({
-            'WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
-            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true',
-            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false'
-          })
-          import sports_api.wnba_step7g_first_party_integration as i
-          i.install_step7g_first_party_integration()
-          from sports_api import wnba_rotation_context as rot
-          from sports_api import wnba_step8_projection_handoff as s8
-          original=rot.get_game_rotation
-          seen=[]
-          def traced(game_id,season,**kwargs):
-            print('ROTATION_ATTEMPT',game_id,season,flush=True)
-            seen.append(str(game_id))
-            try:
-              out=original(game_id,season,**kwargs)
-            except Exception as exc:
-              print('ROTATION_FAILURE_GAME',game_id,type(exc).__name__,' '.join(str(exc).split())[:2000],flush=True)
-              raise
-            print('ROTATION_OK',game_id,flush=True)
-            return out
-          rot.get_game_rotation=traced
-          try:
-            s8.get_player_game_step8_projection_handoff(202664,'1022600295',env=os.environ)
-          except Exception as exc:
-            print('PROJECTION_HANDOFF_FAILED',type(exc).__name__,' '.join(str(exc).split())[:2500])
-            print('ROTATION_GAMES_SEEN',seen)
-            raise
-          print('PROJECTION_HANDOFF_OK',seen)
+          import json
+          from sports_api import wnba_step7g_first_party_history as fp
+          from sports_api.wnba_live_game import _normalize_action
+
+          game_id='1022600265'; season=2026
+          box=fp.get_first_party_game_box_score_dataset(game_id,season)
+          for side in ('away','home'):
+              team=box[side]
+              roster=[]
+              for p in team.get('players') or []:
+                  roster.append({k:p.get(k) for k in ('player_id','full_name','first_name','last_name','name_initial','is_starter')})
+              print('BOX_TEAM',side,team.get('team_key'),team.get('team_full_name'))
+              print('BOX_ROSTER',side,json.dumps(roster,sort_keys=True,ensure_ascii=False))
+
+          props, game, retrieved, cache_hit, ttl, url = fp._game_page(game_id,ttl_seconds=fp.PLAY_BY_PLAY_CACHE_TTL_SECONDS)
+          raw_surface=props.get('playByPlay')
+          raw_actions=fp._extract_action_rows(raw_surface)
+          print('RAW_ACTION_COUNT',len(raw_actions),'SOURCE_URL',url)
+          rows=[]
+          for raw in raw_actions:
+              desc=str(raw.get('description') or '').strip()
+              action_type=str(raw.get('actionType') or raw.get('action_type') or '')
+              if 'SUB:' not in desc.upper() and 'substitut' not in action_type.casefold():
+                  continue
+              normalized=_normalize_action(raw,season)
+              raw_identity={k:raw.get(k) for k in (
+                  'actionNumber','actionId','actionType','subType','description','personId','person_id','playerId','player_id','personName','playerName','teamId','teamTricode','period','clock'
+              ) if k in raw}
+              norm_identity={k:normalized.get(k) for k in (
+                  'action_number','action_id','event_category','description','person_id','person_name','team_key','team_tricode','period','clock','elapsed_game_seconds'
+              )}
+              rows.append({'raw':raw_identity,'normalized':norm_identity})
+          print('SUBSTITUTION_IDENTITIES',json.dumps(rows,sort_keys=True,ensure_ascii=False,default=str))
+          if not rows:
+              raise SystemExit('No substitution source rows found for failing historical game')
           PY
