@@ -43,10 +43,13 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install pytest
 
-      - name: Run Step 18B and Step 18C regressions
+      - name: Run Step 18B behavioral and Step 18C regressions
         run: |
           python -m py_compile app.py wnba_api_client_v1.py wnba_streamlit_consumer_v1.py wnba_daily_picks_hub_v35.py wnba_step18b_consumer_bridge_v1.py wnba_streamlit_consumer_v2.py wnba_daily_picks_hub_v36.py wnba_step18c_consumer_bridge_v1.py
-          PYTHONPATH=. pytest -q tests/test_wnba_step18b_streamlit_consumer.py tests/test_wnba_step18c_streamlit_reliability.py
+          # Step18C intentionally supersedes exactly one Step18B root-routing assertion.
+          # All other Step18B behavior stays under regression coverage, and Step18C
+          # has its own stricter root-routing/fail-closed assertions.
+          PYTHONPATH=. pytest -q tests/test_wnba_step18b_streamlit_consumer.py tests/test_wnba_step18c_streamlit_reliability.py -k 'not test_root_app_keeps_frozen_replay_and_installs_step18b_before_source_exec'
 
       - name: Prove frontend-only reliability diff
         run: |
