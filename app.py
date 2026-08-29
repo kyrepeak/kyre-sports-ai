@@ -122,6 +122,30 @@ def _install_step18b_wnba_consumer_bridge() -> dict:
     return install_step18b_consumer_bridge()
 
 
+def _install_step18c_wnba_consumer_bridge() -> dict:
+    """Install the reliability bridge; fail closed if its module cannot import."""
+    try:
+        sys.modules.pop("wnba_step18c_consumer_bridge_v1", None)
+        importlib.invalidate_caches()
+        from wnba_step18c_consumer_bridge_v1 import install_step18c_consumer_bridge
+
+        return install_step18c_consumer_bridge()
+    except Exception as exc:
+        import types
+        safe = types.ModuleType("wnba_daily_picks_hub_step18c_boot_fail_closed")
+        safe.MODEL_VERSION = "WNBA DAILY PICKS STEP 18C BOOT FAIL-CLOSED"
+
+        def render_wnba_daily_picks_hub(section_header=None, status_info=None, team_logo=None, h=None):
+            st.error("WNBA Daily Picks could not load the certified consumer presentation. No legacy computation or cached picks are being shown.")
+            st.caption(f"Consumer presentation state: {type(exc).__name__}")
+            return {"state": "error", "available": False, "reason": "consumer_presentation_unavailable", "error_type": type(exc).__name__, "cards": []}
+
+        safe.render_wnba_daily_picks_hub = render_wnba_daily_picks_hub
+        sys.modules["wnba_daily_picks_hub_v34"] = safe
+        sys.modules["wnba_daily_picks_hub_v4"] = safe
+        return {"installed": True, "fail_closed": True, "error_type": type(exc).__name__, "legacy_daily_picks_compute_fallback": False}
+
+
 def _load_frozen_pre_live_app() -> str:
     try:
         return subprocess.check_output(
@@ -137,7 +161,7 @@ def _load_frozen_pre_live_app() -> str:
 _purge_live_runtime_state()
 _refresh_pra_presentation_route()
 _STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()
-_STEP18B_WNBA_CONSUMER_BRIDGE = _install_step18b_wnba_consumer_bridge()
+_STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()
 source = _load_frozen_pre_live_app()
 
 # Guard against accidentally pointing this wrapper at a checkpoint that already
