@@ -8,22 +8,51 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: 98c8802d34b3ede77ef9264342b326fed1592575
+
 jobs:
   diagnose:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
-      - name: Print current production runtime state
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 1
+      - run: python -m pip install -r sports_api/requirements.txt >/dev/null
+      - name: Print current production runtime state and provider diagnostics
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, urllib.request
+          import json, os, urllib.request
+          from datetime import datetime, timezone
           base='https://kyre-sports-api.onrender.com'
           for path in ['/health','/api/v1/wnba/runtime/step17b','/api/v1/wnba/runtime/step17c/health','/api/v1/wnba/consumer/latest','/api/v1/wnba/markets/direct/draftkings/status']:
               try:
-                  with urllib.request.urlopen(base+path,timeout=35) as r:
-                      obj=json.loads(r.read().decode())
+                  with urllib.request.urlopen(base+path,timeout=35) as r: obj=json.loads(r.read().decode())
                   print('LIVE_DIAG',path,json.dumps(obj,sort_keys=True,default=str))
+              except Exception as exc: print('LIVE_DIAG_ERROR',path,type(exc).__name__,' '.join(str(exc).split())[:300])
+          env={
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
+          }
+          os.environ.update(env)
+          import sports_api.wnba_step19a_step17b_bridge
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
+          now=datetime.now(timezone.utc)
+          for name,provider,fetcher in [('draftkings',dk.PROVIDER,dk.fetch_step11a_draftkings_provider_bridge),('fanduel',fd.PROVIDER,fd.fetch_step11c_fanduel_provider_bridge)]:
+              try:
+                  bridge,audit=s12._fetch_provider_bridge(provider=provider,fetcher=fetcher,season=2026,slate_date='2026-08-29',evaluated_at=now,attempts=3,requester=None,roster_loader=None,env=env)
+                  print('PROVIDER_DIAG',name,'READY',json.dumps(audit,sort_keys=True,default=str))
               except Exception as exc:
-                  print('LIVE_DIAG_ERROR',path,type(exc).__name__,' '.join(str(exc).split())[:300])
+                  print('PROVIDER_DIAG',name,'ERROR',type(exc).__name__,' '.join(str(exc).split())[:500])
+                  print('PROVIDER_DIAG_DETAIL',name,json.dumps(getattr(exc,'provider_discovery',None),sort_keys=True,default=str))
           PY
