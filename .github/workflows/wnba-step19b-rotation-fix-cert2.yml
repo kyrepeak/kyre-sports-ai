@@ -72,10 +72,8 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json,time
+          import json,os,time
           from datetime import datetime,timezone
-          import sports_api.wnba_step19a_step17b_bridge
-          from sports_api import wnba_step12b_live_runtime_assembly as s12
           env={
             'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz','WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
             'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
@@ -84,6 +82,9 @@ jobs:
             'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
             'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
           }
+          os.environ.update(env)
+          import sports_api.wnba_step19a_step17b_bridge
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
           request=s12.build_step12b_request(season=2026,slate_date='2026-08-29',evaluated_at=datetime.now(timezone.utc),previous_state=None,controller_policy={'provider_attempts':3,'refresh_interval_seconds':60,'failure_threshold':3,'circuit_cooldown_seconds':180},refresh_policy={},qualification_policy={})
           started=time.monotonic(); result=s12.run_step12b_live_runtime_job(request,env=env)
           tick=((result.get('step12a_result') or {}).get('step11e_tick') or {}); execution=tick.get('execution') or {}; state=tick.get('automation_state') or {}
