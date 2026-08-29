@@ -1,0 +1,28 @@
+name: WNBA Step19F production observer
+
+on:
+  push:
+    branches: [wnba-step19f-production-observe-20260829]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read current public production state
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          for path in ['/health','/api/v1/wnba/runtime/step17b','/api/v1/wnba/consumer/latest','/api/v1/wnba/markets/direct/draftkings/status']:
+              try:
+                  with urllib.request.urlopen(base+path,timeout=45) as r:
+                      value=json.loads(r.read().decode())
+                  print('OBSERVE',path,json.dumps(value,sort_keys=True))
+              except Exception as exc:
+                  print('OBSERVE_ERROR',path,type(exc).__name__,str(exc))
+          PY
