@@ -1,4 +1,4 @@
-name: WNBA Step19B injury-report completeness diagnostic
+name: WNBA Step19C empty distribution controller diagnostic
 
 on:
   push:
@@ -13,7 +13,7 @@ env:
   APP_CANDIDATE_SHA: ca34373548e5b54e65426160b0cf5e7eae4d89c9
 
 jobs:
-  diagnose-injury-report:
+  diagnose-controller:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -23,30 +23,37 @@ jobs:
           fetch-depth: 1
       - name: Install dependencies
         run: python -m pip install -r sports_api/requirements.txt >/dev/null
-      - name: Inspect hash-covered availability evidence for one current target
+      - name: Prove healthy providers plus empty Step8 maps to market-not-ready
         run: |
           set -euo pipefail
           python - <<'PY'
           import json, os
+          from datetime import datetime, timezone
           env={
-            'WNBA_STEP7G_FIRST_PARTY_ENABLED':'true','WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true',
-            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false'
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
           }
           os.environ.update(env)
-          import sports_api.wnba_step7g_first_party_integration as integration
-          integration.install_step7g_first_party_integration()
-          from sports_api.wnba_model_input_readiness import get_player_game_model_input_readiness
-          gate=get_player_game_model_input_readiness(203826,'1022600296',2026,include_snapshot=True)
-          snap=gate.get('snapshot') or {}
-          availability=((snap.get('inputs') or {}).get('game_availability'))
-          payload={
-            'readiness':gate.get('readiness'),
-            'summary':gate.get('summary'),
-            'game_identity':(snap.get('game_identity') or snap.get('focal_identity')),
-            'component_status':((snap.get('component_status') or {}).get('game_availability')),
-            'availability_summary':snap.get('availability_summary'),
-            'game_availability':availability,
-            'source_timestamps':snap.get('source_timestamps')
-          }
-          print('INJURY_COMPLETENESS_EVIDENCE',json.dumps(payload,sort_keys=True,default=str))
+          import sports_api.wnba_step19a_step17b_bridge
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          from sports_api import wnba_step11_controlled_automation as s11e
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
+          now=datetime.now(timezone.utc)
+          dkb,_=s12._fetch_provider_bridge(provider=dk.PROVIDER,fetcher=dk.fetch_step11a_draftkings_provider_bridge,season=2026,slate_date='2026-08-29',evaluated_at=now,attempts=3,requester=None,roster_loader=None,env=env)
+          fdb,_=s12._fetch_provider_bridge(provider=fd.PROVIDER,fetcher=fd.fetch_step11c_fanduel_provider_bridge,season=2026,slate_date='2026-08-29',evaluated_at=now,attempts=3,requester=None,roster_loader=None,env=env)
+          cached_dk=s12._cached_bridge_fetcher(dkb,expected_provider=dk.PROVIDER,season=2026,slate_date='2026-08-29')
+          cached_fd=s12._cached_bridge_fetcher(fdb,expected_provider=fd.PROVIDER,season=2026,slate_date='2026-08-29')
+          tick=s11e.run_step11e_controlled_automation_tick(season=2026,slate_date='2026-08-29',step8_distributions=[],previous_state=None,evaluated_at=now,provider_attempts=3,draftkings_fetcher=cached_dk,fanduel_fetcher=cached_fd,env=env)
+          out={'status':tick.get('status'),'health':tick.get('health'),'cycle_outcome':((tick.get('execution') or {}).get('cycle_outcome')),'error':((tick.get('execution') or {}).get('error')),'circuit_state':((tick.get('automation_state') or {}).get('circuit_state')),'failure_count':((tick.get('automation_state') or {}).get('consecutive_failure_count'))}
+          print('EMPTY_DISTRIBUTION_TICK',json.dumps(out,sort_keys=True,default=str))
+          assert tick.get('status')=='market_not_ready'
+          assert tick.get('health')=='market_not_ready'
+          assert (tick.get('execution') or {}).get('cycle_outcome')=='market_board_not_ready'
+          assert (tick.get('automation_state') or {}).get('consecutive_failure_count')==0
+          print('STEP19C_CONTROLLED_MARKET_NOT_READY_PROOF_OK')
           PY
