@@ -189,9 +189,10 @@ def build_step17c_production_reliability(
         if duplicate_skips > 0:
             incident("duplicate_lease_skip_observed", "warning", f"Step 17B has skipped {duplicate_skips} duplicate durable lease attempt(s).")
 
-        leadership_misses = int(status.get("leadership_miss_count") or 0)
-        if leadership_misses > 0 and leadership:
-            incident("historical_leadership_miss", "warning", f"Current process recorded {leadership_misses} prior leadership miss(es).")
+        # A prior leadership miss is expected during a safe Render rolling handoff:
+        # the old process can still own the PostgreSQL advisory lock while the new
+        # process starts. Keep leadership_miss_count in the sanitized snapshot for
+        # auditability, but classify current health from current ownership/freshness.
 
         if status.get("database_secret_exposed") is not False:
             incident("secret_exposure_contract_failed", "critical", "Step 17B secret-exposure safety flag is not false.")

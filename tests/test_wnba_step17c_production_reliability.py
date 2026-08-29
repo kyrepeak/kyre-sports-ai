@@ -68,6 +68,15 @@ def test_healthy_single_leader_runtime_is_healthy_and_read_only():
     assert "leadership_lock_key" not in report["step17b"]
 
 
+def test_historical_handoff_leadership_miss_does_not_degrade_recovered_current_leader():
+    report = _report(_status(leadership_miss_count=1))
+    assert report["state"] == "healthy"
+    assert report["healthy"] is True
+    assert report["incident_active"] is False
+    assert report["incidents"] == []
+    assert report["step17b"]["leadership_miss_count"] == 1
+
+
 def test_startup_window_is_degraded_not_falsely_critical():
     status = _status(
         role="candidate",
@@ -131,6 +140,7 @@ def test_disabled_monitor_is_explicit_and_does_not_run_work():
 
 if __name__ == "__main__":
     test_healthy_single_leader_runtime_is_healthy_and_read_only()
+    test_historical_handoff_leadership_miss_does_not_degrade_recovered_current_leader()
     test_startup_window_is_degraded_not_falsely_critical()
     test_stale_heartbeat_and_stale_cycle_are_critical()
     test_active_runtime_error_is_critical_but_historical_failure_is_warning()
