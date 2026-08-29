@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 9fe4227fd7c20d10900bd6861593a4ddda2e9a26
+          ref: 222550f3d2db46d470e4ba050848a9110920fcab
           fetch-depth: 1
       - name: Install test dependencies
         run: |
@@ -23,8 +23,8 @@ jobs:
           PYTHONPATH: .
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "9fe4227fd7c20d10900bd6861593a4ddda2e9a26"
-          python -m py_compile sports_api/wnba_step19e_cooldown_aware_cycle.py sports_api/api/__init__.py sports_api/main.py
+          test "$(git rev-parse HEAD)" = "222550f3d2db46d470e4ba050848a9110920fcab"
+          python -m py_compile sports_api/wnba_step19e_cooldown_aware_cycle.py sports_api/api/__init__.py sports_api/api/wnba_step17b_runtime.py sports_api/main.py
           python -m pytest -q tests/test_wnba_step19e_cooldown_aware_cycle.py tests/test_wnba_step19d_history_transport_resilience.py tests/test_wnba_rotation_context.py tests/test_wnba_rotation_fallback.py tests/test_wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12c_live_board_runtime.py
       - name: Prove startup wiring
         env:
