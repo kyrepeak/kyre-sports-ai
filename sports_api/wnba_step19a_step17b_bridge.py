@@ -30,7 +30,7 @@ def _environment(env: Mapping[str, str] | None) -> Mapping[str, str]:
 def _local_reconciliation_env(env: Mapping[str, str]) -> dict[str, str]:
     local = {str(k): str(v) for k, v in dict(env).items()}
     local[_step6d.DIRECT_SYNC_ENABLED_ENV] = "true"
-    local[_step6d.DIRECT_SYNC_PROVIDER_ENV] = _step6d.DRAFTKINGS_PROVIDER_ID
+    local[_step6d.DIRECT_SYNC_PROVIDER_ENV] = _step6d.SUPPORTED_DIRECT_PROVIDER
     local[_step6i.RECONCILED_SYNC_ENABLED_ENV] = "true"
     return local
 
