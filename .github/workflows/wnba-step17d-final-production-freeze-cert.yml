@@ -1,0 +1,235 @@
+name: WNBA Step 17D final production freeze certification
+
+on:
+  push:
+    branches:
+      - wnba-step17d-final-freeze-cert-20260829
+    paths:
+      - .github/workflows/wnba-step17d-final-production-freeze-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact frozen runtime reference
+        uses: actions/checkout@v4
+        with:
+          ref: wnba-step17d-final-always-on-production-freeze-20260829
+          fetch-depth: 500
+
+      - name: Prove exact certified source lineage and hashes
+        run: |
+          set -euo pipefail
+          STEP17D_RUNTIME_SHA='8448984adc779fb9af7c7a8187b0eaeb67d034c8'
+          STEP17B_SHA='8f6ba0b3e4cd3d07466a2545a870cab7121decfe'
+          STEP17A_SHA='da6e9d8e660c1ead7c497cbaeb6205c845978cfd'
+          STEP16E_SHA='5becd6af4fc8ce20a458c3bcb738dbff8312c8d7'
+          test "$(git rev-parse HEAD)" = "$STEP17D_RUNTIME_SHA"
+          git merge-base --is-ancestor "$STEP17B_SHA" HEAD
+          git merge-base --is-ancestor "$STEP17A_SHA" HEAD
+          git merge-base --is-ancestor "$STEP16E_SHA" HEAD
+          test "$(git hash-object sports_api/Dockerfile)" = '324defd214f334c372f3b0b2dcafd958c962a6aa'
+          test "$(git hash-object sports_api/wnba_step17b_always_on_runtime.py)" = 'ab9be7cda82e72b5f823c8e036c669642054818f'
+          test "$(git hash-object sports_api/wnba_step17c_production_reliability.py)" = '7470c40895c8a9e23513354d75b0ce59e541d022'
+          test "$(git hash-object sports_api/requirements-persistence.txt)" = '46331822d0a55f5a4983d289c73a45ea9745ca89'
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('sports_api/main.py').read_text()
+          assert 'lifespan=step17b_lifespan' in text
+          assert text.count('from sports_api.api.wnba_step17c_reliability import router as wnba_step17c_reliability_router') == 1
+          assert text.count('app.include_router(wnba_step17c_reliability_router)') == 1
+          print('STEP17D_FROZEN_SOURCE_IDENTITY_OK')
+          PY
+
+      - name: Verify protected Render credential exists
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: test -n "$RENDER_API_KEY"
+
+      - name: Read-only certify live host and one more healthy durable cycle
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.error, urllib.request
+
+          EXPECTED_SHA='8448984adc779fb9af7c7a8187b0eaeb67d034c8'
+          EXPECTED_SERVICE_ID='srv-da84q6ifngtc73bdbm6g'
+          EXPECTED_SERVICE_NAME='kyre-sports-api'
+          EXPECTED_URL='https://kyre-sports-api.onrender.com'
+          render_base='https://api.render.com/v1'
+          headers={
+              'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",
+              'Accept':'application/json',
+              'User-Agent':'kyre-step17d-final-freeze/1',
+          }
+
+          def render_get(path):
+              req=urllib.request.Request(render_base+path,headers=headers,method='GET')
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read().decode(); return json.loads(raw) if raw else None
+
+          def public_get(path, attempts=18):
+              last=None
+              for attempt in range(1,attempts+1):
+                  try:
+                      with urllib.request.urlopen(EXPECTED_URL+path,timeout=30) as r:
+                          return r.status, json.loads(r.read().decode())
+                  except urllib.error.HTTPError as exc:
+                      if exc.code < 500:
+                          return exc.code, None
+                      last=type(exc).__name__
+                  except Exception as exc:
+                      last=type(exc).__name__
+                  print('STEP17D_PUBLIC_RETRY',path,attempt,last)
+                  time.sleep(10)
+              raise SystemExit(f'Step 17D public endpoint timeout: {path}: {last}')
+
+          service=render_get(f'/services/{EXPECTED_SERVICE_ID}') or {}
+          if service.get('id') != EXPECTED_SERVICE_ID:
+              raise SystemExit('Step 17D Render service ID mismatch')
+          if service.get('name') != EXPECTED_SERVICE_NAME:
+              raise SystemExit('Step 17D Render service name mismatch')
+          if str(service.get('type') or '').lower() != 'web_service':
+              raise SystemExit('Step 17D Render service type mismatch')
+          details=service.get('serviceDetails') if isinstance(service.get('serviceDetails'),dict) else {}
+          if str(details.get('runtime') or '').lower() != 'docker':
+              raise SystemExit('Step 17D Render runtime mismatch')
+          if details.get('numInstances') != 1:
+              raise SystemExit(f"Step 17D requires exactly one configured instance, got {details.get('numInstances')!r}")
+          plan=str(details.get('plan') or service.get('plan') or '').lower()
+          if plan != 'free':
+              raise SystemExit(f'Step 17D unexpected Render plan: {plan!r}')
+          auto=str(service.get('autoDeploy') or '').lower()
+          if auto not in {'no','false'}:
+              raise SystemExit(f'Step 17D requires autoDeploy=no, got {auto!r}')
+
+          deploys=render_get(f'/services/{EXPECTED_SERVICE_ID}/deploys?limit=20')
+          rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
+          live=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live':
+                  live=d; break
+          if not live:
+              raise SystemExit('Step 17D found no live Render deploy')
+          if EXPECTED_SHA not in json.dumps(live).lower():
+              raise SystemExit('Step 17D live Render deploy is not exact frozen Step 17C revision')
+          live_deploy_id=live.get('id')
+
+          health_code,health=public_get('/health')
+          b_code,b=public_get('/api/v1/wnba/runtime/step17b')
+          c_code,c=public_get('/api/v1/wnba/runtime/step17c')
+          if health_code != 200 or not isinstance(health,dict) or health.get('status') != 'ok':
+              raise SystemExit('Step 17D /health is not OK')
+          if b_code != 200 or not isinstance(b,dict):
+              raise SystemExit('Step 17D Step 17B runtime status unavailable')
+          if c_code != 200 or not isinstance(c,dict):
+              raise SystemExit('Step 17D Step 17C monitor unavailable')
+
+          def assert_runtime(status, monitor):
+              if status.get('enabled') is not True or status.get('running') is not True:
+                  raise SystemExit('Step 17D certified scheduler supervisor is not running')
+              if status.get('role') != 'leader' or status.get('leadership_acquired') is not True:
+                  raise SystemExit('Step 17D production process is not sole current leader')
+              if int(status.get('success_count') or 0) < 1 or int(status.get('failure_count') or 0) != 0:
+                  raise SystemExit('Step 17D production runtime success/failure contract failed')
+              if status.get('recovered_from_checkpoint') is not True:
+                  raise SystemExit('Step 17D durable checkpoint recovery flag is not true')
+              if int(status.get('last_checkpoint_version') or 0) <= 0:
+                  raise SystemExit('Step 17D durable checkpoint version missing')
+              if int(status.get('duplicate_lease_skip_count') or 0) != 0:
+                  raise SystemExit('Step 17D duplicate durable lease skip observed')
+              if status.get('database_secret_exposed') is not False:
+                  raise SystemExit('Step 17D database secret exposure contract failed')
+              if status.get('legacy_production_switches_enabled') is not False:
+                  raise SystemExit('Step 17D legacy production switch contract failed')
+              if status.get('new_render_service_created') is not False:
+                  raise SystemExit('Step 17D single Render service contract failed')
+              if monitor.get('monitor_enabled') is not True or monitor.get('state') != 'healthy':
+                  raise SystemExit('Step 17D monitor is not healthy/enabled')
+              if monitor.get('healthy') is not True or monitor.get('incident_active') is not False:
+                  raise SystemExit('Step 17D monitor reports active incident')
+              semantics=monitor.get('semantics') or {}
+              if semantics.get('read_only') is not True:
+                  raise SystemExit('Step 17D monitor is not read-only')
+              forbidden=(
+                  'database_connection_opened','database_write_performed','scheduler_started',
+                  'scheduler_cycle_triggered','sportsbook_network_called','model_run',
+                  'monte_carlo_run','wager_action_performed','database_secret_exposed',
+                  'new_render_service_created',
+              )
+              for key in forbidden:
+                  if semantics.get(key) is not False:
+                      raise SystemExit(f'Step 17D unsafe monitor semantic: {key}')
+
+          assert_runtime(b,c)
+          first_checkpoint=int(b.get('last_checkpoint_version') or 0)
+          first_success=int(b.get('success_count') or 0)
+          first_heartbeat=b.get('heartbeat_at_utc')
+          final_b=None; final_c=None
+          for _ in range(18):
+              time.sleep(10)
+              _,current_b=public_get('/api/v1/wnba/runtime/step17b',attempts=3)
+              _,current_c=public_get('/api/v1/wnba/runtime/step17c',attempts=3)
+              if not isinstance(current_b,dict) or not isinstance(current_c,dict):
+                  continue
+              assert_runtime(current_b,current_c)
+              if (int(current_b.get('last_checkpoint_version') or 0) > first_checkpoint and
+                  int(current_b.get('success_count') or 0) > first_success and
+                  current_b.get('heartbeat_at_utc') != first_heartbeat):
+                  final_b=current_b; final_c=current_c; break
+          if final_b is None or final_c is None:
+              raise SystemExit('Step 17D did not observe another healthy durable checkpoint cycle')
+
+          evidence={
+              'step':'17D',
+              'status':'certified_final_freeze',
+              'frozen_runtime_revision':EXPECTED_SHA,
+              'frozen_runtime_branch':'wnba-step17d-final-always-on-production-freeze-20260829',
+              'step17b_certified_parent':'8f6ba0b3e4cd3d07466a2545a870cab7121decfe',
+              'step17c_certification_run_id':33224083936,
+              'step17c_evidence_artifact_id':9706275826,
+              'render_service_id':EXPECTED_SERVICE_ID,
+              'render_service_name':EXPECTED_SERVICE_NAME,
+              'render_url':EXPECTED_URL,
+              'render_plan':'free',
+              'render_instances':1,
+              'render_auto_deploy':'no',
+              'live_deploy_id':live_deploy_id,
+              'first_checkpoint_version':first_checkpoint,
+              'final_checkpoint_version':int(final_b.get('last_checkpoint_version') or 0),
+              'final_success_count':int(final_b.get('success_count') or 0),
+              'leadership_acquired':True,
+              'recovered_from_checkpoint':True,
+              'monitor_state':'healthy',
+              'monitor_incident_active':False,
+              'monitor_read_only':True,
+              'legacy_scheduler_switch':False,
+              'legacy_production_switch':False,
+              'new_render_service_created':False,
+              'database_secret_exposed':False,
+              'production_mutation_performed_by_step17d':False,
+              'paid_upgrade_performed':False,
+              'availability_mode':'best_effort_free_tier',
+              'guaranteed_24_7':False,
+              'free_tier_sleep_possible':True,
+          }
+          with open('step17d-final-production-freeze.json','w',encoding='utf-8') as f:
+              json.dump(evidence,f,indent=2,sort_keys=True)
+          print('STEP17D_FINAL_PRODUCTION_FREEZE_OK',json.dumps(evidence,sort_keys=True))
+          PY
+
+      - name: Upload Step 17D final freeze evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step17d-final-production-freeze-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step17d-final-production-freeze.json
+          if-no-files-found: error
+          retention-days: 90
