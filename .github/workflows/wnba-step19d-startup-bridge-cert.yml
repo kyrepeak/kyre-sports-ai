@@ -1,0 +1,95 @@
+name: WNBA Step19D startup bridge certification
+
+on:
+  push:
+    branches:
+      - wnba-step19d-startup-bridge-fix-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: c32ecbffab4404c965e9d14f2808d92ea58b0d91
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact Step19D candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 500
+      - name: Install dependencies
+        run: python -m pip install -r sports_api/requirements.txt >/dev/null
+      - name: Prove exact scope and frozen regressions
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_CANDIDATE_SHA"
+          echo STEP19D_CHANGED_FILES
+          git diff --name-only 98c8802d34b3ede77ef9264342b326fed1592575..HEAD | sort
+          test "$(git diff --name-only 98c8802d34b3ede77ef9264342b326fed1592575..HEAD | sort | tr '\n' ' ')" = "sports_api/Dockerfile sports_api/main_step19d.py "
+          grep -q 'sports_api.main_step19d:app' sports_api/Dockerfile
+          python -m py_compile sports_api/main_step19d.py sports_api/main.py sports_api/wnba_step19c_market_not_ready_compat.py
+          python -m pip install pytest >/dev/null
+          WNBA_STEP9_THRESHOLD_PRICING_ENABLED=true WNBA_STEP9_FASTAPI_ENABLED=true WNBA_STEP9B_MARKET_COMPARISON_ENABLED=true WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED=true WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED=true pytest -q tests/test_wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12c_live_board_runtime.py tests/test_wnba_rotation_fallback.py tests/test_wnba_rotation_context.py
+          echo STEP19D_SCOPE_REGRESSIONS_OK
+      - name: Prove production entrypoint installs both compatibility layers before runtime use
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          env={
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
+          }
+          os.environ.update(env)
+          import sports_api.main_step19d as entry
+          from sports_api import wnba_step19a_step17b_bridge as bridge
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          from sports_api import wnba_step19c_market_not_ready_compat as compat
+          assert entry.app is not None
+          assert dk.fetch_step11a_draftkings_provider_bridge is bridge.fetch_step11a_draftkings_provider_bridge_step19a
+          assert s12.run_step12b_live_runtime_job is compat.run_step12b_live_runtime_job_step19c
+          assert bridge.INSTALLATION['installed'] is True
+          assert bridge.INSTALLATION['step11a_current_transport_installed'] is True
+          assert compat.INSTALLATION['underlying_step8_readiness_gates_relaxed'] is False
+          assert compat.INSTALLATION['projection_fabrication_allowed'] is False
+          print('STEP19D_STARTUP_BINDING_CERTIFIED')
+          PY
+      - name: Prove both current providers work without explicit diagnostic bridge import
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          env={
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
+          }
+          os.environ.update(env)
+          import sports_api.main_step19d  # installs production startup wiring
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
+          now=datetime.now(timezone.utc)
+          rows={}
+          for name,provider,fetcher in [('draftkings',dk.PROVIDER,dk.fetch_step11a_draftkings_provider_bridge),('fanduel',fd.PROVIDER,fd.fetch_step11c_fanduel_provider_bridge)]:
+              bridge,audit=s12._fetch_provider_bridge(provider=provider,fetcher=fetcher,season=2026,slate_date='2026-08-29',evaluated_at=now,attempts=3,requester=None,roster_loader=None,env=env)
+              assert audit['retryable_failures']==0
+              assert audit['record_count']>0
+              rows[name]=audit
+          print('STEP19D_PROVIDER_PROOF',json.dumps(rows,sort_keys=True,default=str))
+          print('STEP19D_CURRENT_PROVIDERS_CERTIFIED')
+          PY
