@@ -10,6 +10,9 @@ import sports_api.wnba_step19a_draftkings_sportscontent as _wnba_step19a_draftki
 # Step 7G is default-OFF and, when explicitly enabled, installs certified
 # first-party WNBA core-data seams before readiness/projection routers bind them.
 import sports_api.wnba_step7g_first_party_integration as _wnba_step7g_first_party_integration  # noqa: F401
+# Step 19C preserves all certified Step-8 readiness blockers while converting
+# the all-target-not-ready pregame state into a controlled market-not-ready result.
+import sports_api.wnba_step19c_market_not_ready_compat as _wnba_step19c_market_not_ready_compat  # noqa: F401
 # Step 17B composes the frozen Step-16B lifecycle and, only when explicitly
 # enabled, starts one PostgreSQL-leader-controlled durable scheduler loop.
 from sports_api.wnba_step17b_always_on_runtime import step17b_lifespan
