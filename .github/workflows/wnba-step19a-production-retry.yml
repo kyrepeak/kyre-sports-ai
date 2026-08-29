@@ -1,0 +1,342 @@
+name: WNBA Step19A exact production retry with schema-aware verification
+
+on:
+  push:
+    branches:
+      - wnba-step19a-release-retry-20260829
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  CANDIDATE_SHA: e676f4cbfb64dee64bf73f2dbd8034162d69922e
+  CERTIFIED_STEP18_SHA: a2e1dc6ec2b6c0c8c5e0bd15cd73b24fa9a56ab2
+  RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
+  RENDER_SERVICE_NAME: kyre-sports-api
+  RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+  STEP19A_IMAGE_REF: ghcr.io/kyrepeak/kyre-sports-api@sha256:fabf80bd6a2439a77d1b80779b0f7a261ed753551865542b3b77af51a01af93a
+  RELEASE_ID: wnba-step19a-e676f4cb
+
+jobs:
+  retry-production:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact certified Step19A application revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          path: candidate
+          fetch-depth: 500
+
+      - name: Re-prove exact candidate and immutable reference image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "$CANDIDATE_SHA"
+          BASE='70aa357df98ef8ce931a249677484fd205f25467'
+          git -C candidate diff --exit-code "$BASE"..HEAD -- \
+            sports_api/wnba_step11_draftkings_provider.py \
+            sports_api/wnba_step11_fanduel_provider.py \
+            sports_api/wnba_step11_multibook_shadow_board.py \
+            sports_api/wnba_step11_controlled_automation.py \
+            sports_api/wnba_step17b_always_on_runtime.py \
+            sports_api/wnba_step6d_direct_integration.py \
+            sports_api/wnba_reconciled_direct_sync.py
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
+          docker pull "$STEP19A_IMAGE_REF" >/dev/null
+          got=$(docker image inspect "$STEP19A_IMAGE_REF" --format '{{index .RepoDigests 0}}' | sed 's#.*@##')
+          test "$got" = 'sha256:fabf80bd6a2439a77d1b80779b0f7a261ed753551865542b3b77af51a01af93a'
+          echo STEP19A_RETRY_EXACT_CANDIDATE_AND_DIGEST_OK
+
+      - name: Confirm exact healthy Step18 baseline and capture rollback deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, re, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; public=os.environ['RENDER_SERVICE_URL'].rstrip('/')
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-retry-preflight/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode()
+              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          svc=req('GET',f'/services/{sid}') or {}; details=svc.get('serviceDetails') if isinstance(svc.get('serviceDetails'),dict) else {}
+          observed={'id':str(svc.get('id') or ''),'name':str(svc.get('name') or ''),'type':str(svc.get('type') or '').lower(),'runtime':str(details.get('runtime') or details.get('env') or '').lower(),'repo':str(svc.get('repo') or '').rstrip('/'),'url':str(details.get('url') or svc.get('url') or '').rstrip('/')}
+          expected={'id':sid,'name':os.environ['RENDER_SERVICE_NAME'],'type':'web_service','runtime':'docker','repo':'https://github.com/kyrepeak/kyre-sports-ai','url':public}
+          if observed != expected: raise SystemExit(f'Render identity drift: {observed!r}')
+          doc=req('GET',f'/services/{sid}/deploys?limit=30'); rows=doc if isinstance(doc,list) else ((doc or {}).get('items') or (doc or {}).get('data') or [])
+          live=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live': live=d; break
+          if not live or not live.get('id'): raise SystemExit('No live Render deploy')
+          shas=re.findall(r'(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])',json.dumps(live,sort_keys=True).lower())
+          if os.environ['CERTIFIED_STEP18_SHA'].lower() not in shas: raise SystemExit(f'Live baseline is not exact Step18: {sorted(set(shas))}')
+          with urllib.request.urlopen(public+'/health',timeout=45) as r: health=json.loads(r.read().decode())
+          if health.get('status')!='ok': raise SystemExit('Step18 health is not ok')
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f: f.write(f"STEP19A_STEP18_DEPLOY_ID={live['id']}\n")
+          print('STEP19A_RETRY_EXACT_STEP18_BASELINE_OK',live['id'])
+          PY
+
+      - name: Snapshot env, apply only corrected release gates, and deploy exact candidate
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, re, time, urllib.request
+          from pathlib import Path
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; public=os.environ['RENDER_SERVICE_URL'].rstrip('/'); candidate=os.environ['CANDIDATE_SHA'].lower(); step18=os.environ['CERTIFIED_STEP18_SHA'].lower()
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-retry-deploy/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          def unpack(row): return row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+          def has_sha(obj,sha): return sha in re.findall(r'(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])',json.dumps(obj,sort_keys=True).lower())
+          doc=req('GET',f'/services/{sid}/deploys?limit=30'); rows=doc if isinstance(doc,list) else ((doc or {}).get('items') or (doc or {}).get('data') or [])
+          live=next((unpack(r) for r in rows if isinstance(unpack(r),dict) and str(unpack(r).get('status','')).lower()=='live'),None)
+          if not live or not has_sha(live,step18) or str(live.get('id'))!=os.environ['STEP19A_STEP18_DEPLOY_ID']: raise SystemExit('Step18 baseline changed before mutation')
+          envdoc=req('GET',f'/services/{sid}/env-vars?limit=100'); erows=envdoc if isinstance(envdoc,list) else ((envdoc or {}).get('items') or (envdoc or {}).get('data') or [])
+          current={}
+          for row in erows:
+              e=row.get('envVar') if isinstance(row,dict) and isinstance(row.get('envVar'),dict) else row
+              if isinstance(e,dict) and isinstance(e.get('key'),str) and e.get('value') is not None: current[e['key']]=str(e['value'])
+          db=str(current.get('KYRE_DATABASE_URL') or '').strip()
+          if not (db.startswith('postgres://') or db.startswith('postgresql://')): raise SystemExit('Protected Render KYRE_DATABASE_URL is missing or not PostgreSQL')
+          desired={
+              'WEB_CONCURRENCY':'1',
+              'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true',
+              'WNBA_STEP17B_ALWAYS_ON_ENABLED':'true',
+              'WNBA_STEP17B_LOOP_SECONDS':'60',
+              'WNBA_STEP17B_EXPECTED_REVISION':candidate,
+              'WNBA_STEP17C_MONITORING_ENABLED':'true',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+              'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+              'WNBA_STEP12_SCHEDULER_ENABLED':'false',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
+              'WNBA_PERSISTENCE_ENABLED':'false',
+              'WNBA_SUPABASE_WRITE_ENABLED':'false',
+              'WNBA_WAGERING_ENABLED':'false',
+              'WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false',
+              'WNBA_STEP6J_CANARY_ENABLED':'false',
+              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false',
+              'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true',
+              'WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+              'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
+              'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
+              'WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+              'WNBA_STEP10_FASTAPI_ENABLED':'true',
+              'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true',
+              'WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
+              'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true',
+              'WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+              'WNBA_STEP9_FASTAPI_ENABLED':'true',
+              'WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true',
+              'WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true',
+              'WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true',
+              'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+              'WNBA_DEPLOYMENT_REVISION':candidate,
+              'WNBA_RELEASE_ID':os.environ['RELEASE_ID'],
+          }
+          prior={k:(current[k] if k in current else None) for k in desired}
+          Path('/tmp/step19a-retry-prior-env.json').write_text(json.dumps(prior),encoding='utf-8')
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
+          for key,value in desired.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          out=req('POST',f'/services/{sid}/deploys',{'commitId':candidate,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
+          if not did: raise SystemExit('Render returned no candidate deploy ID')
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f: f.write(f'STEP19A_CANDIDATE_DEPLOY_ID={did}\n')
+          terminal={'build_failed','update_failed','canceled','cancelled','deactivated'}; detail={}; status=''
+          for _ in range(180):
+              detail=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(detail.get('status','')).lower()
+              if status=='live': break
+              if status in terminal: raise SystemExit('Step19A retry candidate deploy failed: '+status)
+              time.sleep(5)
+          if status!='live': raise SystemExit('Step19A retry candidate deploy timed out')
+          if not has_sha(detail,candidate): raise SystemExit('Live candidate does not attest exact candidate SHA')
+          print('STEP19A_RETRY_EXACT_CANDIDATE_RENDER_LIVE',did,candidate)
+          PY
+
+      - name: Verify Step19A transport and always-on runtime safety
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, time, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(path):
+              with urllib.request.urlopen(base+path,timeout=30) as r: return json.loads(r.read().decode())
+          last=None
+          for _ in range(48):
+              try:
+                  h=get('/health'); direct=get('/api/v1/wnba/markets/direct/draftkings/status'); runtime=get('/api/v1/wnba/runtime/step17b'); rel=get('/api/v1/wnba/runtime/step17c/health')
+                  dk=direct.get('draftkings') or {}; last={'health':h.get('status'),'dk':dk,'runtime':runtime,'reliability':rel}
+                  if h.get('status')=='ok' and direct.get('direct_sync_active') is False and dk.get('model_version')=='wnba_step_19a_draftkings_sportscontent_v1' and dk.get('ready') is True and dk.get('secret_required') is False and runtime.get('enabled') is True and runtime.get('running') is True and runtime.get('legacy_production_switches_enabled') is False and runtime.get('database_secret_exposed') is False and runtime.get('new_render_service_created') is False and rel.get('healthy') is True:
+                      print('STEP19A_RETRY_TRANSPORT_RUNTIME_SAFETY_OK',{'role':runtime.get('role'),'success_count':runtime.get('success_count')}); break
+              except Exception as exc: last={'exception':type(exc).__name__}
+              time.sleep(5)
+          else: raise SystemExit('Step19A transport/runtime safety did not converge: '+repr(last))
+          PY
+
+      - name: Verify actual Step18A consumer schema and wait through certified circuit cooldown
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, time, urllib.request
+          from datetime import datetime, timezone
+          base='https://kyre-sports-api.onrender.com'
+          def get(path):
+              with urllib.request.urlopen(base+path,timeout=30) as r: return json.loads(r.read().decode())
+          def valid_sha256(value):
+              text=str(value or '').strip().lower(); return len(text)==64 and all(c in '0123456789abcdef' for c in text)
+          def parse_utc(value):
+              text=str(value or '').strip(); text=text[:-1]+'+00:00' if text.endswith(('Z','z')) else text
+              try:
+                  dt=datetime.fromisoformat(text)
+              except ValueError:
+                  return None
+              return dt.astimezone(timezone.utc) if dt.tzinfo else None
+          deadline=time.monotonic()+900
+          last=None; saw_fresh_snapshot=False; saw_cooldown=False
+          while time.monotonic()<deadline:
+              try:
+                  runtime=get('/api/v1/wnba/runtime/step17b'); consumer=get('/api/v1/wnba/consumer/latest')
+                  snap=consumer.get('snapshot') or {}; control=consumer.get('runtime') or {}; board=consumer.get('board') or {}
+                  snap_hash=snap.get('snapshot_content_sha256'); stale=snap.get('stale')
+                  if valid_sha256(snap_hash) and stale is False: saw_fresh_snapshot=True
+                  last={
+                      'runtime_success_count':runtime.get('success_count'),
+                      'runtime_failure_count':runtime.get('failure_count'),
+                      'runtime_last_error_class':runtime.get('last_error_class'),
+                      'consumer_enabled':consumer.get('enabled'),
+                      'consumer_available':consumer.get('available'),
+                      'consumer_reason':consumer.get('reason'),
+                      'snapshot_hash_present':valid_sha256(snap_hash),
+                      'snapshot_stale':stale,
+                      'circuit_state':control.get('circuit_state'),
+                      'consecutive_failures':control.get('consecutive_failures'),
+                      'cycle_executed':control.get('cycle_executed'),
+                      'cycle_outcome':control.get('cycle_outcome'),
+                      'skip_reason':control.get('skip_reason'),
+                      'circuit_open_until_utc':control.get('circuit_open_until_utc'),
+                      'board_available':board.get('available'),
+                      'board_reason':board.get('reason'),
+                  }
+                  runtime_ok=int(runtime.get('success_count') or 0)>=1 and int(runtime.get('failure_count') or 0)==0 and not runtime.get('last_error_class')
+                  if runtime_ok and consumer.get('enabled') is True and saw_fresh_snapshot:
+                      if control.get('circuit_state')=='open' and control.get('skip_reason')=='circuit_open_cooldown':
+                          saw_cooldown=True
+                          open_until=parse_utc(control.get('circuit_open_until_utc'))
+                          if open_until:
+                              remain=max(0.0,(open_until-datetime.now(timezone.utc)).total_seconds())
+                              print('STEP19A_RETRY_WAITING_FOR_CERTIFIED_COOLDOWN',round(remain,1))
+                              time.sleep(min(max(remain+2.0,5.0),30.0)); continue
+                      outcome=control.get('cycle_outcome')
+                      recovered=(control.get('cycle_executed') is True and control.get('circuit_state')=='closed' and int(control.get('consecutive_failures') or 0)==0 and outcome in {'shadow_board_ready','market_board_not_ready'})
+                      if recovered:
+                          print('STEP19A_RETRY_CONSUMER_PIPELINE_RECOVERED',{'outcome':outcome,'consumer_available':consumer.get('available'),'board_available':board.get('available'),'saw_prior_cooldown':saw_cooldown,'snapshot':str(snap_hash)[:12]}); break
+              except Exception as exc:
+                  last={'exception':type(exc).__name__}
+              time.sleep(10)
+          else: raise SystemExit('Step19A actual-schema consumer pipeline did not recover after certified cooldown/probes: '+repr(last))
+          PY
+
+      - name: Final exact-live certification and evidence
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, re, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; candidate=os.environ['CANDIDATE_SHA'].lower()
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','User-Agent':'kyre-step19a-retry-final/1'}
+          r=urllib.request.Request(base+f'/services/{sid}/deploys?limit=30',headers=headers,method='GET')
+          with urllib.request.urlopen(r,timeout=30) as x: doc=json.loads(x.read().decode())
+          rows=doc if isinstance(doc,list) else ((doc or {}).get('items') or (doc or {}).get('data') or []); live=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live': live=d; break
+          if not live: raise SystemExit('No final live Render deployment')
+          shas=re.findall(r'(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])',json.dumps(live,sort_keys=True).lower())
+          if candidate not in shas: raise SystemExit(f'Final live revision is not exact candidate: {sorted(set(shas))}')
+          evidence={
+              'step':'19A-production-retry','status':'verified_live','service_id':sid,'service_name':os.environ['RENDER_SERVICE_NAME'],'candidate_sha':candidate,'candidate_deploy_id':live.get('id'),'immutable_reference_image_ref':os.environ['STEP19A_IMAGE_REF'],'step18_rollback_deploy_id':os.environ['STEP19A_STEP18_DEPLOY_ID'],'step18_rollback_revision':os.environ['CERTIFIED_STEP18_SHA'],'health_status':'ok','step17b_always_on_enabled':True,'step16b_lifecycle_binding_enabled':True,'step19a_transport_verified':True,'step18a_consumer_schema_verified':True,'circuit_recovery_verified':True,'legacy_production_runtime_enabled':False,'direct_sync_enabled':False,'reconciled_sync_enabled':False,'persistence_write_enabled':False,'supabase_write_enabled':False,'wagering_enabled':False,'database_secret_exposed':False,'new_render_service_created':False,'rollback_ready':True
+          }
+          open('step19a-production-retry-evidence.json','w',encoding='utf-8').write(json.dumps(evidence,indent=2,sort_keys=True)+'\n')
+          print('STEP19A_RETRY_FINAL_EXACT_LIVE_CERTIFIED',live.get('id'),candidate)
+          PY
+
+      - name: Restore exact pre-retry env and Step18 on failure
+        if: failure()
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, re, time, urllib.error, urllib.request
+          from pathlib import Path
+          p=Path('/tmp/step19a-retry-prior-env.json')
+          if not p.exists():
+              print('STEP19A_RETRY_ROLLBACK_NOT_NEEDED_NO_MUTATION'); raise SystemExit(0)
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; step18=os.environ['CERTIFIED_STEP18_SHA'].lower(); target=os.environ.get('STEP19A_STEP18_DEPLOY_ID',''); public=os.environ['RENDER_SERVICE_URL'].rstrip('/')
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-retry-rollback/1'}
+          def req(method,path,body=None,allow404=False):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              try:
+                  with urllib.request.urlopen(r,timeout=30) as x:
+                      raw=x.read().decode(); return json.loads(raw) if raw else None
+              except urllib.error.HTTPError as exc:
+                  if allow404 and exc.code==404: return None
+                  raise
+          def has_sha(obj,sha): return sha in re.findall(r'(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])',json.dumps(obj,sort_keys=True).lower())
+          prior=json.loads(p.read_text(encoding='utf-8'))
+          for key,value in prior.items():
+              if value is None: req('DELETE',f'/services/{sid}/env-vars/{key}',allow404=True)
+              else: req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
+          print('STEP19A_RETRY_PREVIOUS_ENV_RESTORED')
+          def current_live():
+              doc=req('GET',f'/services/{sid}/deploys?limit=30'); rows=doc if isinstance(doc,list) else ((doc or {}).get('items') or (doc or {}).get('data') or [])
+              for row in rows:
+                  d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+                  if isinstance(d,dict) and str(d.get('status','')).lower()=='live': return d
+              return None
+          live=current_live()
+          if live and has_sha(live,step18):
+              print('STEP19A_RETRY_STEP18_ALREADY_LIVE_SKIP_ROLLBACK',live.get('id'))
+          else:
+              if not target: raise SystemExit('Missing exact Step18 rollback deploy ID')
+              try:
+                  out=req('POST',f'/services/{sid}/rollback',{'deployId':target}) or {}; print('STEP19A_RETRY_STEP18_ROLLBACK_REQUESTED',target,out.get('id'))
+              except Exception as exc:
+                  print('STEP19A_RETRY_ROLLBACK_ENDPOINT_FALLBACK',type(exc).__name__)
+                  req('POST',f'/services/{sid}/deploys',{'commitId':step18,'clearCache':'do_not_clear'})
+              for _ in range(150):
+                  live=current_live()
+                  if live and has_sha(live,step18): break
+                  time.sleep(5)
+              else: raise SystemExit('Could not restore exact Step18')
+          for _ in range(30):
+              try:
+                  with urllib.request.urlopen(public+'/health',timeout=30) as r: h=json.loads(r.read().decode())
+                  if h.get('status')=='ok': print('STEP19A_RETRY_STEP18_HEALTH_OK'); break
+              except Exception: pass
+              time.sleep(5)
+          else: raise SystemExit('Step18 health did not recover')
+          PY
+
+      - name: Upload final sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step19a-production-retry-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step19a-production-retry-evidence.json
+          if-no-files-found: warn
+          retention-days: 90
