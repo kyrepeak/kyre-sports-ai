@@ -5,6 +5,13 @@ from sports_api import wnba_step11_fanduel_provider as fd
 from sports_api import wnba_step19a_live_compat as compat
 
 
+def _ou(line: float):
+    return [
+        {"isPlayerSelection": True, "runnerName": "Player Over", "result": {"type": "OVER"}, "handicap": line},
+        {"isPlayerSelection": True, "runnerName": "Player Under", "result": {"type": "UNDER"}, "handicap": line},
+    ]
+
+
 def test_draftkings_pho_mercury_alias_is_explicit_and_canonical() -> None:
     assert compat.draftkings_team_identity_key("PHO Mercury") == dk._name_key("Phoenix Mercury")
     assert compat.draftkings_team_identity_key("PHX Mercury") == dk._name_key("Phoenix Mercury")
@@ -16,52 +23,34 @@ def test_fanduel_event_date_uses_eastern_slate_day() -> None:
 
 
 def test_fanduel_player_tabs_use_current_public_slugs() -> None:
-    document = {
-        "layout": {
-            "tabs": [
-                {"id": 168, "title": "Player Points"},
-                {"id": 169, "title": "Player Assists"},
-                {"id": 170, "title": "Player Rebounds"},
-                {"id": 171, "title": "Player Combos"},
-                {"id": 26, "title": "1st Quarter"},
-            ]
-        }
-    }
+    document = {"layout": {"tabs": [
+        {"id": 168, "title": "Player Points"},
+        {"id": 169, "title": "Player Assists"},
+        {"id": 170, "title": "Player Rebounds"},
+        {"id": 171, "title": "Player Combos"},
+        {"id": 26, "title": "1st Quarter"},
+    ]}}
     assert compat.fanduel_relevant_tab_slugs(document) == [
-        "player-points",
-        "player-assists",
-        "player-rebounds",
-        "player-combos",
+        "player-points", "player-assists", "player-rebounds", "player-combos"
     ]
 
 
 def test_fanduel_nested_result_type_and_handicap_form_two_way_line() -> None:
-    over = {
-        "runnerName": "Kiki Rice Over",
-        "result": {"type": "OVER"},
-        "handicap": 15.5,
-    }
-    under = {
-        "runnerName": "Kiki Rice Under",
-        "result": {"type": "UNDER"},
-        "handicap": 15.5,
-    }
+    over, under = _ou(15.5)
     assert compat.fanduel_runner_side_line_current(over) == ("over", 15.5)
     assert compat.fanduel_runner_side_line_current(under) == ("under", 15.5)
 
 
-def test_fanduel_current_player_evidence_is_explicit_not_fuzzy() -> None:
-    runners = [
-        {"isPlayerSelection": True, "result": {"type": "OVER"}, "handicap": 15.5},
-        {"isPlayerSelection": True, "result": {"type": "UNDER"}, "handicap": 15.5},
-    ]
+def test_fanduel_current_player_evidence_requires_exact_two_way_market() -> None:
     assert compat.fanduel_declares_player_market_current(
-        {"marketType": "PLAYER_D_TOTAL_POINTS_WNBA", "marketName": "Kiki Rice - Points"},
-        runners,
+        {"marketType": "PLAYER_D_TOTAL_POINTS_WNBA", "marketName": "Kiki Rice - Points"}, _ou(15.5)
     ) is True
     assert compat.fanduel_declares_player_market_current(
-        {"marketType": "TOTAL_POINTS_(OVER/UNDER)", "marketName": "Total Points"},
-        [{"isPlayerSelection": False}],
+        {"marketType": "PLAYER_TO_SCORE_35_POINTS_WNBA", "marketName": "To Score 35+"},
+        [{"result": {"type": "YES"}, "handicap": 0}, {"result": {"type": "NO"}, "handicap": 0}],
+    ) is False
+    assert compat.fanduel_declares_player_market_current(
+        {"marketType": "TOTAL_POINTS_(OVER/UNDER)", "marketName": "Total Points"}, _ou(179.5)
     ) is False
 
 
@@ -73,8 +62,7 @@ def test_installation_patches_only_compatibility_helpers() -> None:
     assert fd._relevant_tab_ids({"layout": {"tabs": [{"id": 168, "title": "Player Points"}]}}) == ["player-points"]
     assert fd._runner_side_line({"runnerName": "Alyssa Thomas Over", "result": {"type": "OVER"}, "handicap": 20.5}) == ("over", 20.5)
     assert fd._declares_player_market(
-        {"marketType": "PLAYER_B_TOTAL_REBOUNDS_WNBA", "marketName": "Alyssa Thomas - Rebounds"},
-        [{"isPlayerSelection": True}],
+        {"marketType": "PLAYER_B_TOTAL_REBOUNDS_WNBA", "marketName": "Alyssa Thomas - Rebounds"}, _ou(10.5)
     ) is True
     assert status["frozen_step11a_source_modified"] is False
     assert status["frozen_step11c_source_modified"] is False
