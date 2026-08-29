@@ -1,4 +1,4 @@
-name: WNBA Step 19A Render deploy parser fix certification
+name: WNBA Step 19A production live compatibility certification
 
 on:
   push:
@@ -11,15 +11,15 @@ permissions:
 
 env:
   PYTHONPATH: .
-  STEP19A_TARGET_SHA: 70aa357df98ef8ce931a249677484fd205f25467
+  STEP19A_TARGET_SHA: 03cfdf0c48094dd35e1f8f491af2bd08f0c4c8b6
 
 jobs:
   certify-deploy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 55
     environment: wnba-render-staging
     steps:
-      - name: Checkout exact certified Step 19A candidate
+      - name: Checkout exact non-production certified Step19A candidate
         uses: actions/checkout@v4
         with:
           ref: ${{ env.STEP19A_TARGET_SHA }}
@@ -37,21 +37,28 @@ jobs:
           python -m pip install -r sports_api/requirements-persistence.txt
           python -m pip install pytest
 
-      - name: Re-certify deterministic Step 19A and 57-failure recovery
+      - name: Re-certify Step19A compatibility and 57-failure recovery
         run: |
           set -euo pipefail
           python -m py_compile sports_api/wnba_step19a_draftkings_sportscontent.py
+          python -m py_compile sports_api/wnba_step19a_live_compat.py
           python -m py_compile sports_api/wnba_step19a_step17b_bridge.py
-          python -m py_compile sports_api/wnba_step11_controlled_automation.py
-          pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py
-          PYTHONPATH=. python tests/test_wnba_step19a_circuit_recovery.py
+          pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py tests/test_wnba_step19a_live_compat.py
+          pytest -q tests/test_wnba_step19a_circuit_recovery.py
           git merge-base --is-ancestor d5da3830ab2194074f2e077d6b1ea41d4bc98633 "$STEP19A_TARGET_SHA"
-          git diff --exit-code d5da3830ab2194074f2e077d6b1ea41d4bc98633.."$STEP19A_TARGET_SHA" -- sports_api/wnba_reconciled_direct_sync.py sports_api/wnba_step6d_direct_integration.py sports_api/wnba_step17b_always_on_runtime.py
+          git diff --exit-code 70aa357df98ef8ce931a249677484fd205f25467.."$STEP19A_TARGET_SHA" -- \
+            sports_api/wnba_step11_draftkings_provider.py \
+            sports_api/wnba_step11_fanduel_provider.py \
+            sports_api/wnba_step11_multibook_shadow_board.py \
+            sports_api/wnba_step11_controlled_automation.py \
+            sports_api/wnba_reconciled_direct_sync.py \
+            sports_api/wnba_step6d_direct_integration.py \
+            sports_api/wnba_step17b_always_on_runtime.py
 
       - name: Build and boot exact production Docker image
         run: |
           set -euo pipefail
-          docker build --build-arg WNBA_RELEASE_REVISION="$STEP19A_TARGET_SHA" --build-arg WNBA_RELEASE_ID="wnba-step19a-sportscontent-market-transport" -f sports_api/Dockerfile -t "kyre-step19a:$STEP19A_TARGET_SHA" .
+          docker build --build-arg WNBA_RELEASE_REVISION="$STEP19A_TARGET_SHA" --build-arg WNBA_RELEASE_ID="wnba-step19a-live-compat" -f sports_api/Dockerfile -t "kyre-step19a:$STEP19A_TARGET_SHA" .
           cid=$(docker run -d -e PORT=8000 -e WEB_CONCURRENCY=1 -p 18000:8000 "kyre-step19a:$STEP19A_TARGET_SHA")
           trap 'docker logs "$cid" || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
           for i in $(seq 1 30); do
@@ -60,23 +67,38 @@ jobs:
           done
           exit 1
 
-      - name: Live read-only DraftKings WNBA market probe
+      - name: Live read-only two-book WNBA provider probe
         run: |
           python - <<'PY'
           from datetime import datetime, timezone
-          from sports_api import wnba_step19a_draftkings_sportscontent as s
-          date=datetime.now(timezone.utc).date().isoformat()
-          snap=s.build_step19a_draftkings_snapshot(date=date,season=datetime.now(timezone.utc).year,env={s.STEP19A_ENABLED_ENV:'true',s.STEP19A_SITE_ENV:'dkusaz'})
-          offers=snap.get('offers') or []
-          stats={k:0 for k in ('points','rebounds','assists','pra')}; sides={k:set() for k in stats}
-          for row in offers:
-              stat=row.get('stat'); side=row.get('side')
-              if stat in stats: stats[stat]+=1; sides[stat].add(side)
-          assert offers and snap.get('source_events')
-          assert all(stats[k] > 0 for k in stats), stats
-          assert all({'over','under'} <= sides[k] for k in sides), sides
-          assert snap.get('step19a',{}).get('provider_api_key_used') is False
-          print('STEP19A_LIVE_PROBE_OK', {'offers':len(offers),'events':len(snap['source_events']),'stats':stats})
+          from zoneinfo import ZoneInfo
+          import os
+          from sports_api import wnba_step19a_step17b_bridge
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step19a_draftkings_sportscontent as s19
+          now=datetime.now(timezone.utc); slate=now.astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          env=dict(os.environ); env.update({
+              s19.STEP19A_ENABLED_ENV:'true', s19.STEP19A_SITE_ENV:'dkusaz',
+              'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
+              'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP10_FASTAPI_ENABLED':'true',
+              'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
+              'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+          })
+          def records(result):
+              attempts=(result.get('provider_refresh') or {}).get('attempts') or []
+              assert len(attempts)==1 and attempts[0].get('ok') is True, attempts
+              return (attempts[0].get('payload') or {}).get('records') or []
+          dkr=records(dk.fetch_step11a_draftkings_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env))
+          fdr=records(fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env))
+          assert dkr and fdr
+          for name,rows in [('DraftKings',dkr),('FanDuel',fdr)]:
+              stats={str(r.get('stat')) for r in rows}
+              assert {'points','rebounds','assists','pra'} <= stats, (name,stats)
+              assert all(r.get('over_price') is not None and r.get('under_price') is not None for r in rows), name
+          common={(str(r['game_id']),int(r['player_id'])) for r in dkr} & {(str(r['game_id']),int(r['player_id'])) for r in fdr}
+          assert common
+          print('STEP19A_TWO_BOOK_LIVE_PROBE_OK', {'slate':slate,'draftkings':len(dkr),'fanduel':len(fdr),'common_players':len(common)})
           PY
 
       - name: Capture safe production state and configure additive Step19A gate
@@ -86,19 +108,19 @@ jobs:
           python - <<'PY'
           import json, os, urllib.request
           sid='srv-da84q6ifngtc73bdbm6g'; base='https://api.render.com/v1'
-          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-parser-fix/1'}
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-live-compat/1'}
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
               with urllib.request.urlopen(r,timeout=30) as x:
                   raw=x.read().decode(); return json.loads(raw) if raw else None
-          def unwrap_deploy(value):
+          def unwrap(value):
               if isinstance(value,dict) and isinstance(value.get('deploy'),dict): return value['deploy']
               return value if isinstance(value,dict) else {}
           deploys=req('GET',f'/services/{sid}/deploys?limit=20')
           rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
           live=None
           for row in rows:
-              d=unwrap_deploy(row)
+              d=unwrap(row)
               if str(d.get('status','')).lower()=='live': live=d; break
           if not live: raise SystemExit('No prior live Render deployment')
           commit=live.get('commit'); prior_sha=(commit.get('id') if isinstance(commit,dict) else commit)
@@ -119,7 +141,7 @@ jobs:
               'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true',
               'WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
               'WNBA_DEPLOYMENT_REVISION':os.environ['STEP19A_TARGET_SHA'],
-              'WNBA_RELEASE_ID':'wnba-step19a-sportscontent-market-transport',
+              'WNBA_RELEASE_ID':'wnba-step19a-live-compat',
           }
           for key,value in desired.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
           print('STEP19A_ADDITIVE_GATE_CONFIGURED_PRIOR',prior_sha)
@@ -132,33 +154,27 @@ jobs:
           python - <<'PY'
           import json, os, time, urllib.request
           sid=os.environ['STEP19A_RENDER_SERVICE_ID']; sha=os.environ['STEP19A_TARGET_SHA']; base='https://api.render.com/v1'
-          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-parser-fix/1'}
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-live-compat/1'}
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
               with urllib.request.urlopen(r,timeout=30) as x:
                   raw=x.read().decode(); return json.loads(raw) if raw else None
-          def unwrap_deploy(value):
+          def unwrap(value):
               if isinstance(value,dict) and isinstance(value.get('deploy'),dict): return value['deploy']
               return value if isinstance(value,dict) else {}
           raw=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
-          d=unwrap_deploy(raw); did=d.get('id')
-          if not did:
-              print('STEP19A_RENDER_CREATE_RESPONSE_KEYS', sorted(raw.keys()) if isinstance(raw,dict) else type(raw).__name__)
-              raise SystemExit('Render returned no deploy ID after envelope normalization')
+          did=unwrap(raw).get('id')
+          if not did: raise SystemExit('Render returned no deploy ID after envelope normalization')
           print('STEP19A_RENDER_DEPLOY_CREATED',did)
           for _ in range(180):
-              detail=unwrap_deploy(req('GET',f'/services/{sid}/deploys/{did}') or {})
-              status=str(detail.get('status','')).lower()
-              if status=='live':
-                  print('STEP19A_EXACT_COMMIT_LIVE',did,sha); break
-              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}:
-                  print('STEP19A_RENDER_FAILURE_DETAIL', {k:detail.get(k) for k in ('id','status','reason','message','createdAt','updatedAt')})
-                  raise SystemExit('Step 19A deploy failed: '+status)
+              detail=unwrap(req('GET',f'/services/{sid}/deploys/{did}') or {}); status=str(detail.get('status','')).lower()
+              if status=='live': print('STEP19A_EXACT_COMMIT_LIVE',did,sha); break
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('Step19A deploy failed: '+status)
               time.sleep(5)
-          else: raise SystemExit('Step 19A deploy timed out')
+          else: raise SystemExit('Step19A deploy timed out')
           PY
 
-      - name: Verify Step17B safety and live Step19A transport
+      - name: Verify Step17B host safety and Step19A transport
         run: |
           python - <<'PY'
           import json, time, urllib.request
@@ -166,7 +182,7 @@ jobs:
           def get(path):
               with urllib.request.urlopen(base+path,timeout=30) as r: return json.loads(r.read().decode())
           last=None
-          for _ in range(30):
+          for _ in range(36):
               try:
                   h=get('/health'); direct=get('/api/v1/wnba/markets/direct/draftkings/status'); runtime=get('/api/v1/wnba/runtime/step17b')
                   last=(h,direct,runtime); dk=direct.get('draftkings') or {}
@@ -174,26 +190,44 @@ jobs:
                       print('STEP19A_PRODUCTION_SAFETY_OK'); break
               except Exception as exc: last=repr(exc)
               time.sleep(5)
-          else: raise SystemExit('Step19A production safety status did not converge: '+repr(last))
+          else: raise SystemExit('Step19A production safety did not converge: '+repr(last))
           PY
 
-      - name: Verify always-on scheduler consumes Step19A market feed
+      - name: Verify natural circuit recovery and consumer provider readiness
         run: |
           python - <<'PY'
           import json, time, urllib.request
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
           base='https://kyre-sports-api.onrender.com'
+          today=datetime.now(ZoneInfo('America/New_York')).date().isoformat()
           def get(path):
               with urllib.request.urlopen(base+path,timeout=30) as r: return json.loads(r.read().decode())
           last=None
-          for _ in range(42):
+          # Intentionally only observe. No circuit reset or controller mutation is permitted.
+          for attempt in range(72):
               try:
                   runtime=get('/api/v1/wnba/runtime/step17b'); consumer=get('/api/v1/wnba/consumer/latest'); last=(runtime,consumer)
-                  cards=consumer.get('cards') or []; state=consumer.get('state'); snap=consumer.get('snapshot') or {}
-                  if int(runtime.get('success_count') or 0)>=1 and not runtime.get('last_error_class') and state in {'ready','unavailable'} and (state=='ready' or not cards) and snap.get('hash_sha256'):
-                      print('STEP19A_LIVE_PIPELINE_OK',{'state':state,'cards':len(cards),'hash':str(snap['hash_sha256'])[:12]}); break
+                  cr=consumer.get('runtime') or {}; board=consumer.get('board') or {}; snap=consumer.get('snapshot') or {}
+                  circuit=str(cr.get('circuit_state') or '').lower(); failures=int(cr.get('consecutive_failures') or 0)
+                  reason=str(consumer.get('reason') or ''); health=str(consumer.get('health') or '')
+                  provider_ready=(reason!='provider_transient_not_ready' and health!='blocked')
+                  closed=(circuit=='closed' and failures==0)
+                  current_slate=(str(runtime.get('last_slate_date') or consumer.get('slate_date') or '')==today)
+                  scheduler_ok=(int(runtime.get('success_count') or 0)>=1 and runtime.get('last_error_class') is None and runtime.get('last_status')=='cycle_completed')
+                  snapshot_ok=bool(snap.get('snapshot_content_sha256'))
+                  available=consumer.get('available') is True and board.get('available') is True
+                  if scheduler_ok and current_slate and closed and provider_ready and snapshot_ok and available:
+                      print('STEP19A_NATURAL_RECOVERY_AND_CONSUMER_OK', {
+                          'attempt':attempt+1,'slate':today,'circuit':circuit,'failures':failures,
+                          'consumer_available':consumer.get('available'),'qualified_props':board.get('qualified_prop_count'),
+                          'snapshot_hash':str(snap.get('snapshot_content_sha256'))[:12],
+                      }); break
+                  if attempt % 6 == 0:
+                      print('STEP19A_RECOVERY_WAIT', {'attempt':attempt+1,'circuit':circuit,'failures':failures,'reason':reason,'health':health,'last_status':runtime.get('last_status')})
               except Exception as exc: last=repr(exc)
               time.sleep(10)
-          else: raise SystemExit('Step19A scheduler/consumer did not converge: '+repr(last))
+          else: raise SystemExit('Step19A circuit/consumer did not naturally recover: '+repr(last))
           PY
 
       - name: Restore prior production state on failure
@@ -205,12 +239,12 @@ jobs:
           import json, os, time, urllib.request
           sid=os.environ.get('STEP19A_RENDER_SERVICE_ID'); prior_sha=os.environ.get('STEP19A_PRIOR_COMMIT_SHA')
           if not sid or not prior_sha: raise SystemExit(0)
-          base='https://api.render.com/v1'; headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-rollback/3'}
+          base='https://api.render.com/v1'; headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-rollback/4'}
           def req(method,path,body=None):
               data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
               with urllib.request.urlopen(r,timeout=30) as x:
                   raw=x.read().decode(); return json.loads(raw) if raw else None
-          def unwrap_deploy(value):
+          def unwrap(value):
               if isinstance(value,dict) and isinstance(value.get('deploy'),dict): return value['deploy']
               return value if isinstance(value,dict) else {}
           try: prior=json.load(open('/tmp/step19a-prior-env.json'))
@@ -221,11 +255,10 @@ jobs:
               else:
                   try: req('DELETE',f'/services/{sid}/env-vars/{key}')
                   except Exception: pass
-          raw=req('POST',f'/services/{sid}/deploys',{'commitId':prior_sha,'clearCache':'do_not_clear'}) or {}; did=unwrap_deploy(raw).get('id')
-          if not did:
-              raise SystemExit('Rollback could not obtain Render deploy ID')
+          raw=req('POST',f'/services/{sid}/deploys',{'commitId':prior_sha,'clearCache':'do_not_clear'}) or {}; did=unwrap(raw).get('id')
+          if not did: raise SystemExit('Rollback could not obtain Render deploy ID')
           for _ in range(120):
-              detail=unwrap_deploy(req('GET',f'/services/{sid}/deploys/{did}') or {}); status=str(detail.get('status','')).lower()
+              detail=unwrap(req('GET',f'/services/{sid}/deploys/{did}') or {}); status=str(detail.get('status','')).lower()
               if status=='live': print('STEP19A_PRIOR_COMMIT_REDEPLOYED',prior_sha); break
               if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('Rollback redeploy failed: '+status)
               time.sleep(5)
