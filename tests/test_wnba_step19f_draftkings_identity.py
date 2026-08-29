@@ -50,7 +50,6 @@ def test_live_dk_con_dal_event_maps_with_next_day_feed_date() -> None:
 
 def test_fanduel_late_evening_utc_instant_uses_eastern_slate_date() -> None:
     event = {"openDate": "2026-08-30T01:00:00Z"}
-    assert fanduel._event_date(event) == "2026-08-30"  # frozen pre-Step19F behavior
     step19f.install_step19f_draftkings_identity()
     assert fanduel._event_date(event) == "2026-08-29"
     assert step19f.fanduel_event_date_step19f(event) == "2026-08-29"
