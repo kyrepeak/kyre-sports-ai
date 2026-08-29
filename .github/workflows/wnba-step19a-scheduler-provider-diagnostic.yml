@@ -51,90 +51,137 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r sports_api/requirements.txt
-      - name: Trace exact provider and official schedule identity
+      - name: Trace current FanDuel player prop surface
         run: |
           python - <<'PY'
-          from datetime import date, datetime, timezone
+          from collections import Counter
+          from datetime import datetime, timezone
           import json
           import os
 
-          from sports_api import wnba_step19a_step17b_bridge as step19a_bridge
-          from sports_api import wnba_step19a_draftkings_sportscontent as sportscontent
-          from sports_api import wnba_step11_draftkings_provider as draftkings
-          from sports_api import wnba_step11_fanduel_provider as fanduel
-          from sports_api.wnba_official_reconciliation import parse_official_schedule
+          # Keep the Step19A DK patch installed while inspecting the exact sibling
+          # provider required by the Step11D two-book scheduler contract.
+          from sports_api import wnba_step19a_step17b_bridge  # noqa: F401
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api.wnba_step7g_first_party_rosters import get_first_party_current_players_dataset
 
           now = datetime.now(timezone.utc)
           slate_date = now.date().isoformat()
-          print("STEP19A_DIAGNOSTIC_START", {"slate_date": slate_date, "bridge": step19a_bridge.MODEL_VERSION})
+          content_url = fd.FANDUEL_BASE_URL + fd.CONTENT_PAGE_PATH
+          event_url = fd.FANDUEL_BASE_URL + fd.EVENT_PAGE_PATH
+          common = {
+              "_ak": fd.FANDUEL_PUBLIC_WEB_KEY,
+              "page": "CUSTOM",
+              "customPageId": fd.WNBA_CUSTOM_PAGE_ID,
+              "timezone": "America/New_York",
+          }
+          content = fd._get_json(content_url, params=common, requester=None, timeout=15.0)
+          discovered = fd._extract_events(content)
+          discovered_summary = [{
+              "id": fd._event_id(e),
+              "name": fd._event_name(e),
+              "participants": fd._event_participants(e),
+              "event_day_utc": fd._event_date(e),
+          } for e in discovered]
+          print("FANDUEL_DISCOVERED_EVENTS", json.dumps(discovered_summary, sort_keys=True))
 
-          snap = sportscontent.build_step19a_draftkings_snapshot(
-              date=slate_date,
-              season=2026,
-              env=os.environ,
-          )
-          events = snap.get("source_events") or []
-          print("STEP19A_RAW_EVENTS", json.dumps(events, sort_keys=True, default=str))
+          target_events = [e for e in discovered if fd._event_date(e) is None or fd._event_date(e) == slate_date]
+          print("FANDUEL_TARGET_EVENT_COUNT", len(target_events))
 
-          official_document = draftkings._get_json(
-              draftkings.OFFICIAL_SCHEDULE_URL,
-              requester=None,
-              timeout_seconds=15.0,
-          )
-          games = parse_official_schedule(official_document)
-          target = date.fromisoformat(slate_date)
-          nearby = []
-          for game in games:
-              try:
-                  game_day = date.fromisoformat(str(game.get("game_date")))
-              except Exception:
-                  continue
-              if abs((game_day - target).days) <= 2:
-                  nearby.append(game)
-          print("STEP19A_OFFICIAL_NEARBY_GAMES", json.dumps(nearby, sort_keys=True, default=str))
-          print("STEP19A_OFFICIAL_GAME_COUNT", len(games))
+          roster_dataset = get_first_party_current_players_dataset(2026, current_roster_only=True)
+          roster = fd._roster_index(roster_dataset["players"])
+          total_markets = 0
+          total_supported = 0
+          total_player_declared = 0
+          total_roster_match = 0
+          total_two_side = 0
 
-          # Reproduce the Step11A pair matching logic visibly.
-          for event in events:
-              event_id = str(event.get("source_event_id") or "")
-              participant_keys = {
-                  draftkings._team_identity_key(name)
-                  for name in (event.get("participants") or [])
-                  if draftkings._team_identity_key(name)
-              }
-              pair_matches = []
-              for game in nearby:
-                  pair = {
-                      draftkings._team_identity_key(game.get("home_team_name")),
-                      draftkings._team_identity_key(game.get("away_team_name")),
-                  }
-                  if pair == participant_keys:
-                      pair_matches.append(game)
-              print("STEP19A_EVENT_MATCH_TRACE", json.dumps({
-                  "event_id": event_id,
-                  "event_date": event.get("event_date"),
-                  "participants": event.get("participants"),
-                  "participant_keys": sorted(participant_keys),
-                  "pair_match_count": len(pair_matches),
-                  "pair_matches": pair_matches,
-              }, sort_keys=True, default=str))
+          for event in target_events:
+              eid = fd._event_id(event)
+              base = fd._get_json(event_url, params={"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "eventId": eid}, requester=None, timeout=15.0)
+              tab_ids = fd._relevant_tab_ids(base)
+              print("FANDUEL_EVENT", json.dumps({
+                  "id": eid,
+                  "name": fd._event_name(event),
+                  "participants": fd._event_participants(event),
+                  "event_day_utc": fd._event_date(event),
+                  "tab_ids": tab_ids,
+                  "base_market_count": len(fd._extract_markets(base)),
+              }, sort_keys=True))
 
-          results = {}
-          def probe(name, fn):
-              try:
-                  value = fn(season=2026, slate_date=slate_date, evaluated_at=now, env=os.environ)
-              except Exception as exc:
-                  results[name] = {"ok": False, "error_type": type(exc).__name__, "error_message": " ".join(str(exc).split())[:1000]}
-                  print(f"STEP19A_PROVIDER_{name.upper()}_FAIL", json.dumps(results[name], sort_keys=True))
-                  return
-              refresh = value.get("provider_refresh") or {}
-              attempts = refresh.get("attempts") or []
-              payload = attempts[0].get("payload") if attempts and isinstance(attempts[0], dict) else {}
-              records = (payload or {}).get("records") or []
-              results[name] = {"ok": True, "provider": value.get("provider"), "record_count": len(records), "bridge_hash": value.get("provider_bridge_content_sha256")}
-              print(f"STEP19A_PROVIDER_{name.upper()}_OK", json.dumps(results[name], sort_keys=True))
+              docs = [("base", base)]
+              for tab_id in tab_ids:
+                  tab = fd._get_json(event_url, params={"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "eventId": eid, "tab": tab_id}, requester=None, timeout=15.0)
+                  docs.append((f"tab:{tab_id}", tab))
 
-          probe("draftkings", draftkings.fetch_step11a_draftkings_provider_bridge)
-          probe("fanduel", fanduel.fetch_step11c_fanduel_provider_bridge)
-          print("STEP19A_PROVIDER_DIAGNOSTIC", json.dumps(results, sort_keys=True))
+              for label, doc in docs:
+                  markets = fd._extract_markets(doc)
+                  total_markets += len(markets)
+                  stats = Counter()
+                  samples = []
+                  for market in markets:
+                      stat = fd._market_stat(market)
+                      if stat:
+                          total_supported += 1
+                          stats[stat] += 1
+                      runners = fd._iter_mapping_or_list(market.get("runners"))
+                      declared = fd._declares_player_market(market, runners)
+                      if declared:
+                          total_player_declared += 1
+                      player_name = fd._market_player_name(market, runners, stat) if stat else ""
+                      roster_match = bool(player_name and fd._name_key(player_name) in roster)
+                      if stat and roster_match:
+                          total_roster_match += 1
+                      side_lines = [fd._runner_side_line(r) for r in runners]
+                      sides = {item[0] for item in side_lines if item is not None}
+                      if stat and roster_match and sides == {"over", "under"}:
+                          total_two_side += 1
+                      if stat and len(samples) < 12:
+                          samples.append({
+                              "market_id": market.get("marketId") or market.get("id"),
+                              "market_name": market.get("marketName") or market.get("name"),
+                              "market_type": market.get("marketType") or market.get("type"),
+                              "market_status": market.get("marketStatus") or market.get("status"),
+                              "stat": stat,
+                              "declared_player": declared,
+                              "player_name": player_name,
+                              "roster_match": roster_match,
+                              "runner_count": len(runners),
+                              "runner_samples": [{
+                                  "runner_name": r.get("runnerName") or r.get("name") or r.get("selectionName"),
+                                  "result_type": r.get("resultType") or r.get("side"),
+                                  "handicap": r.get("handicap") if r.get("handicap") is not None else r.get("line"),
+                                  "player_name": r.get("playerName") or r.get("participantName") or r.get("player"),
+                                  "status": r.get("runnerStatus") or r.get("status"),
+                              } for r in runners[:2]],
+                          })
+                  print("FANDUEL_DOCUMENT_TRACE", json.dumps({
+                      "event_id": eid,
+                      "document": label,
+                      "market_count": len(markets),
+                      "supported_stat_counts": dict(stats),
+                      "samples": samples,
+                  }, sort_keys=True, default=str))
+
+          print("FANDUEL_PARSE_TOTALS", json.dumps({
+              "markets": total_markets,
+              "supported_stat_markets": total_supported,
+              "declared_player_markets": total_player_declared,
+              "roster_matched_supported_markets": total_roster_match,
+              "complete_two_side_candidates": total_two_side,
+          }, sort_keys=True))
+
+          try:
+              result = fd.fetch_step11c_fanduel_provider_bridge(
+                  season=2026,
+                  slate_date=slate_date,
+                  evaluated_at=now,
+                  env=os.environ,
+              )
+          except Exception as exc:
+              print("FANDUEL_FINAL_FAIL", json.dumps({"type": type(exc).__name__, "message": " ".join(str(exc).split())[:1000]}, sort_keys=True))
+          else:
+              attempts = (result.get("provider_refresh") or {}).get("attempts") or []
+              payload = attempts[0].get("payload") if attempts else {}
+              print("FANDUEL_FINAL_OK", json.dumps({"records": len((payload or {}).get("records") or [])}, sort_keys=True))
           PY
