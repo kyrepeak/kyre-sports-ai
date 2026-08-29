@@ -1,0 +1,73 @@
+name: WNBA Step 19A circuit recovery certification
+
+on:
+  push:
+    branches:
+      - wnba-step19a-sportscontent-market-transport-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-circuit-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+      WNBA_BOARD_SCHEDULER_ENABLED: "false"
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+      WNBA_STEP6J_CANARY_ENABLED: "false"
+      WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+      WNBA_PERSISTENCE_ENABLED: "false"
+      WNBA_SUPABASE_WRITE_ENABLED: "false"
+      WNBA_WAGERING_ENABLED: "false"
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+      WNBA_STEP12_SCHEDULER_ENABLED: "false"
+
+    steps:
+      - name: Checkout Step 19A candidate
+        uses: actions/checkout@v4
+
+      - name: Assert production and writes remain OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile recovery certification surface
+        run: |
+          python -m py_compile sports_api/wnba_step11_controlled_automation.py
+          python -m py_compile tests/test_wnba_step11_controlled_automation.py
+          python -m py_compile tests/test_wnba_step19a_circuit_recovery.py
+
+      - name: Run frozen Step 11E circuit guards
+        run: PYTHONPATH=. python tests/test_wnba_step11_controlled_automation.py
+
+      - name: Run Step 19A 57-failure recovery certification
+        run: PYTHONPATH=. python tests/test_wnba_step19a_circuit_recovery.py
+
+      - name: Re-assert production and writes remain OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'
