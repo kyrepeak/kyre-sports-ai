@@ -1,0 +1,148 @@
+name: WNBA Step 19A market feed production audit
+
+on:
+  push:
+    branches:
+      - wnba-step19a-market-feed-audit-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP19A_BACKEND_SHA: d5da3830ab2194074f2e077d6b1ea41d4bc98633
+  STEP17D_FROZEN_SHA: 8448984adc779fb9af7c7a8187b0eaeb67d034c8
+
+jobs:
+  audit-production-market-feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact certified Step 18A backend
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.STEP19A_BACKEND_SHA }}
+          fetch-depth: 500
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Prove frozen backend target
+        run: |
+          test "$(git rev-parse HEAD)" = "$STEP19A_BACKEND_SHA"
+          git merge-base --is-ancestor "$STEP17D_FROZEN_SHA" HEAD
+          python -m py_compile sports_api/wnba_step6d_direct_integration.py sports_api/wnba_reconciled_direct_sync.py sports_api/collectors/wnba_draftkings_direct.py
+          echo STEP19A_FROZEN_BACKEND_OK
+
+      - name: Audit Render market configuration without exposing secrets
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          test -n "$RENDER_API_KEY"
+          PYTHONPATH=. python - <<'PY'
+          import json, os, urllib.request
+          from sports_api import wnba_step17a_production_host_contract as host
+
+          base='https://api.render.com/v1'
+          headers={
+              'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",
+              'Accept':'application/json',
+              'User-Agent':'kyre-step19a-market-audit/1',
+          }
+          sid=host.EXPECTED_RENDER_SERVICE_ID
+          def req(path):
+              r=urllib.request.Request(base+path,headers=headers,method='GET')
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+
+          service=req(f'/services/{sid}') or {}
+          identity=host.validate_render_service_identity(service)
+          rows=req(f'/services/{sid}/env-vars') or []
+          if isinstance(rows,dict):
+              rows=rows.get('items') or rows.get('data') or []
+          envs={}
+          for row in rows:
+              if not isinstance(row,dict): continue
+              item=row.get('envVar') if isinstance(row.get('envVar'),dict) else row
+              key=str(item.get('key') or '')
+              if key: envs[key]=item.get('value')
+
+          def truthy(name):
+              return str(envs.get(name) or '').strip().casefold() not in {'','0','false','no','off','disabled'}
+          def url_count():
+              raw=str(envs.get('WNBA_DRAFTKINGS_MARKET_URLS_JSON') or '').strip()
+              try: value=json.loads(raw) if raw else []
+              except Exception: return -1
+              return len(value) if isinstance(value,list) else -1
+
+          report={
+              'service_id':sid,
+              'service_url':identity['url'],
+              'step18a_consumer_enabled':truthy('WNBA_STEP18A_STREAMLIT_CONSUMER_ENABLED'),
+              'production_runtime_enabled':truthy('WNBA_PRODUCTION_RUNTIME_ENABLED'),
+              'board_scheduler_enabled':truthy('WNBA_BOARD_SCHEDULER_ENABLED'),
+              'direct_sync_enabled':truthy('WNBA_KYRE_DIRECT_SYNC_ENABLED'),
+              'direct_sync_provider':str(envs.get('WNBA_KYRE_DIRECT_SYNC_PROVIDER') or 'draftkings').strip().casefold(),
+              'reconciled_sync_enabled':truthy('WNBA_KYRE_RECONCILED_SYNC_ENABLED'),
+              'draftkings_configured_url_count':url_count(),
+              'kyre_market_ingest_token_present':bool(str(envs.get('WNBA_KYRE_MARKET_INGEST_TOKEN') or '').strip()),
+              'sportsgameodds_key_present':bool(str(envs.get('SPORTSGAMEODDS_API_KEY') or '').strip()),
+              'odds_api_io_key_present':bool(str(envs.get('ODDS_API_IO_KEY') or '').strip()),
+          }
+          print('STEP19A_RENDER_MARKET_CONFIG',json.dumps(report,sort_keys=True))
+          open('/tmp/step19a-config.json','w').write(json.dumps(report))
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write(f"STEP19A_RENDER_URL={identity['url'].rstrip('/')}\n")
+          PY
+
+      - name: Read current live market and consumer status
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          base=os.environ['STEP19A_RENDER_URL']
+          def get(path, attempts=6):
+              last=None
+              for _ in range(attempts):
+                  try:
+                      r=urllib.request.Request(base+path,headers={'Accept':'application/json','User-Agent':'kyre-step19a-market-audit/1'})
+                      with urllib.request.urlopen(r,timeout=30) as x:
+                          return json.loads(x.read().decode())
+                  except Exception as exc:
+                      last=type(exc).__name__; time.sleep(5)
+              raise SystemExit(f'STEP19A_PUBLIC_READ_FAILED:{path}:{last}')
+
+          direct=get('/api/v1/wnba/markets/direct/draftkings/status')
+          reconciled=get('/api/v1/wnba/markets/direct/draftkings/reconciled-sync-status')
+          consumer=get('/api/v1/wnba/consumer/latest')
+          board=consumer.get('board') or {}
+          snap=consumer.get('snapshot') or {}
+          report={
+              'direct_sync_enabled':direct.get('direct_sync_enabled'),
+              'direct_sync_active':direct.get('direct_sync_active'),
+              'direct_blockers':direct.get('blockers') or [],
+              'draftkings_ready':(direct.get('draftkings') or {}).get('ready'),
+              'draftkings_configured_url_count':(direct.get('draftkings') or {}).get('configured_url_count'),
+              'draftkings_secret_required':(direct.get('draftkings') or {}).get('secret_required'),
+              'reconciled_sync_enabled':reconciled.get('reconciled_sync_enabled'),
+              'reconciled_sync_active':reconciled.get('reconciled_sync_active'),
+              'reconciled_blockers':reconciled.get('blockers') or [],
+              'consumer_enabled':consumer.get('enabled'),
+              'consumer_available':consumer.get('available'),
+              'consumer_reason':consumer.get('reason'),
+              'board_available':board.get('available'),
+              'board_reason':board.get('reason'),
+              'qualified_prop_count':board.get('qualified_prop_count'),
+              'snapshot_stale':snap.get('stale'),
+              'snapshot_age_seconds':snap.get('age_seconds'),
+          }
+          print('STEP19A_LIVE_MARKET_STATUS',json.dumps(report,sort_keys=True))
+          PY
+
+      - name: Audit marker
+        run: echo STEP19A_MARKET_FEED_AUDIT_COMPLETE
