@@ -96,6 +96,29 @@ def test_fanduel_nested_result_refuses_non_over_under() -> None:
     assert fanduel._runner_side_line(runner) is None
 
 
+def test_fanduel_standard_two_way_prop_declares_player_market() -> None:
+    step19f.install_step19f_draftkings_identity()
+    market = {"marketName": "Kia Nurse - Points", "marketType": "PLAYER_G_TOTAL_POINTS_WNBA"}
+    runners = [
+        {"runnerName": "Kia Nurse Over", "handicap": 10.5, "result": {"type": "OVER"}},
+        {"runnerName": "Kia Nurse Under", "handicap": 10.5, "result": {"type": "UNDER"}},
+    ]
+    assert fanduel._declares_player_market(market, runners) is True
+
+
+def test_fanduel_one_way_alternate_market_is_not_identity_bearing() -> None:
+    step19f.install_step19f_draftkings_identity()
+    market = {
+        "marketName": "Player To Score X+ Points Each Quarter",
+        "marketType": "PLAYER_TO_SCORE_X+_POINTS_IN_EACH_QUARTER_WNBA",
+    }
+    runners = [
+        {"runnerName": "Kahleah Copper To Score 3+ Points in Each Quarter", "handicap": 0, "result": {}},
+        {"runnerName": "Kahleah Copper To Score 4+ Points in Each Quarter", "handicap": 0, "result": {}},
+    ]
+    assert fanduel._declares_player_market(market, runners) is False
+
+
 def test_unrelated_event_still_fails_closed() -> None:
     step19f.install_step19f_draftkings_identity()
     events = [{
