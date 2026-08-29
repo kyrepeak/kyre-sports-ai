@@ -13,6 +13,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONPATH: .
+
 jobs:
   certify-consumer-verifier:
     runs-on: ubuntu-24.04
