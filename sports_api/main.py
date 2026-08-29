@@ -4,6 +4,9 @@ from fastapi import FastAPI
 import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integration  # noqa: F401
 # Step 6I interposes reconciliation before the Step 6D runtime write hook.
 import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  # noqa: F401
+# Step 19A replaces only the obsolete DraftKings public GET transport while
+# preserving the frozen Step 6I official-reconciliation write guard.
+import sports_api.wnba_step19a_draftkings_sportscontent as _wnba_step19a_draftkings_sportscontent  # noqa: F401
 # Step 7G is default-OFF and, when explicitly enabled, installs certified
 # first-party WNBA core-data seams before readiness/projection routers bind them.
 import sports_api.wnba_step7g_first_party_integration as _wnba_step7g_first_party_integration  # noqa: F401
