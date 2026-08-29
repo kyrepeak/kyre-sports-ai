@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 import sports_api.wnba_step11_draftkings_provider as _dk
 import sports_api.wnba_step11_fanduel_provider as _fd
 
-MODEL_VERSION = "wnba_step19a_live_provider_compat_v5"
+MODEL_VERSION = "wnba_step19a_live_provider_compat_v6"
 _ET = ZoneInfo("America/New_York")
 
 _ORIGINAL_DK_TEAM_IDENTITY_KEY = _dk._team_identity_key
@@ -88,6 +88,8 @@ def fanduel_market_stat_current(market: Mapping[str, Any]) -> str | None:
     market_type = _fd._clean(market.get("marketType") or market.get("type")).upper()
     if not market_type.startswith("PLAYER_"):
         return _ORIGINAL_FD_MARKET_STAT(market)
+    if "_TOTAL_" not in market_type:
+        return None
     present = {
         "points": "POINTS" in market_type,
         "rebounds": "REBOUNDS" in market_type,
@@ -107,7 +109,7 @@ def fanduel_market_player_name_current(
     stat: str,
 ) -> str:
     market_type = _fd._clean(market.get("marketType") or market.get("type")).upper()
-    if market_type.startswith("PLAYER_") and stat in _FANDUEL_PLAYER_SUFFIXES:
+    if market_type.startswith("PLAYER_") and "_TOTAL_" in market_type and stat in _FANDUEL_PLAYER_SUFFIXES:
         title = _fd._clean(market.get("marketName") or market.get("name"))
         if " - " in title:
             player, suffix = title.rsplit(" - ", 1)
@@ -120,14 +122,10 @@ def fanduel_runner_side_line_current(runner: Mapping[str, Any]) -> tuple[str, fl
     legacy = _ORIGINAL_FD_RUNNER_SIDE_LINE(runner)
     if legacy is not None:
         return legacy
-
     result = runner.get("result") or {}
-    side = ""
-    if isinstance(result, Mapping):
-        side = _fd._clean(result.get("type")).casefold()
+    side = _fd._clean(result.get("type")).casefold() if isinstance(result, Mapping) else ""
     if side not in {"over", "under"}:
         return None
-
     raw_line = runner.get("handicap") if runner.get("handicap") is not None else runner.get("line")
     try:
         line = float(raw_line)
@@ -142,10 +140,10 @@ def fanduel_declares_player_market_current(
     market: Mapping[str, Any],
     runners: Sequence[Mapping[str, Any]],
 ) -> bool:
-    if _ORIGINAL_FD_DECLARES_PLAYER_MARKET(market, runners):
-        return True
     market_type = _fd._clean(market.get("marketType") or market.get("type")).upper()
     if not market_type.startswith("PLAYER_"):
+        return _ORIGINAL_FD_DECLARES_PLAYER_MARKET(market, runners)
+    if fanduel_market_stat_current(market) is None:
         return False
     parsed = [fanduel_runner_side_line_current(runner) for runner in runners]
     parsed = [item for item in parsed if item is not None]
@@ -171,6 +169,7 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
         "draftkings_phoenix_alias_installed": True,
         "fanduel_eastern_slate_date_installed": True,
         "fanduel_player_tab_slug_transport_installed": True,
+        "fanduel_full_game_total_scope_installed": True,
         "fanduel_supported_stat_scope_installed": True,
         "fanduel_current_player_title_parser_installed": True,
         "fanduel_nested_result_side_parser_installed": True,
@@ -184,15 +183,9 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
 INSTALLATION = install_step19a_live_provider_compat()
 
 __all__ = [
-    "INSTALLATION",
-    "MODEL_VERSION",
-    "draftkings_team_identity_key",
-    "fanduel_declares_player_market_current",
-    "fanduel_event_date_eastern",
-    "fanduel_market_player_name_current",
-    "fanduel_market_stat_current",
-    "fanduel_relevant_tab_slugs",
-    "fanduel_runner_side_line_current",
-    "fanduel_team_identity_key",
-    "install_step19a_live_provider_compat",
+    "INSTALLATION", "MODEL_VERSION", "draftkings_team_identity_key",
+    "fanduel_declares_player_market_current", "fanduel_event_date_eastern",
+    "fanduel_market_player_name_current", "fanduel_market_stat_current",
+    "fanduel_relevant_tab_slugs", "fanduel_runner_side_line_current",
+    "fanduel_team_identity_key", "install_step19a_live_provider_compat",
 ]
