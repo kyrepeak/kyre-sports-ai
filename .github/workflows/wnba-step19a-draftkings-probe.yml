@@ -1,4 +1,4 @@
-name: WNBA Step 19A DraftKings sportscontent probe
+name: WNBA Step 19A DraftKings sportscontent compatibility probe
 
 on:
   push:
@@ -28,78 +28,64 @@ jobs:
         run: |
           python -m pip install -r sports_api/requirements.txt
           python -m pip install curl_cffi
-      - name: Discover current WNBA DraftKings sportscontent markets without writes
+      - name: Prove current WNBA sportscontent is compatible with frozen canonical normalizer
         run: |
           PYTHONPATH=. python - <<'PY'
+          from collections import Counter
           import json
           from curl_cffi import requests as cffi_requests
+          from sports_api.collectors.wnba_draftkings_direct import normalize_draftkings_document
+          from sports_api.wnba_official_reconciliation import extract_draftkings_events
 
           league_id=94682
-          states=('az','nj','il')
-          success=None
-          league_data=None
-          for state in states:
-              url=f'https://sportsbook-nash.draftkings.com/api/sportscontent/dkus{state}/v1/leagues/{league_id}'
-              try:
-                  r=cffi_requests.get(url,impersonate='chrome120',timeout=20)
-                  info={'site':f'dkus{state}','status':int(r.status_code),'content_type':str(r.headers.get('content-type') or ''),'bytes':len(r.content)}
-                  if r.status_code==200:
-                      data=r.json()
-                      cats=data.get('categories') or [] if isinstance(data,dict) else []
-                      subs=data.get('subcategories') or [] if isinstance(data,dict) else []
-                      info['category_count']=len(cats) if isinstance(cats,list) else -1
-                      info['subcategory_count']=len(subs) if isinstance(subs,list) else -1
-                      success=state
-                      league_data=data
-                  print('STEP19A_SPORTSCONTENT_LEAGUE',json.dumps(info,sort_keys=True))
-                  if success:
-                      break
-              except Exception as exc:
-                  print('STEP19A_SPORTSCONTENT_LEAGUE_ERROR',f'dkus{state}',type(exc).__name__)
-          if not success or not isinstance(league_data,dict):
-              raise SystemExit('STEP19A_NO_WORKING_WNBA_SPORTSCONTENT_LEAGUE_ENDPOINT')
-
-          categories=[x for x in (league_data.get('categories') or []) if isinstance(x,dict)]
-          subcategories=[x for x in (league_data.get('subcategories') or []) if isinstance(x,dict)]
+          site='dkusaz'
+          league_url=f'https://sportsbook-nash.draftkings.com/api/sportscontent/{site}/v1/leagues/{league_id}'
+          r=cffi_requests.get(league_url,impersonate='chrome120',timeout=20)
+          r.raise_for_status()
+          league=r.json()
+          categories=[x for x in (league.get('categories') or []) if isinstance(x,dict)]
+          subcategories=[x for x in (league.get('subcategories') or []) if isinstance(x,dict)]
           category_names={str(x.get('id')):str(x.get('name') or '') for x in categories}
-          wanted=[]
-          keywords=('point','rebound','assist','pra','pts + reb + ast','points + rebounds + assists')
+          targets={
+              ('Player Points','Points O/U'):'points',
+              ('Player Rebounds','Rebounds O/U'):'rebounds',
+              ('Player Assists','Assists O/U'):'assists',
+              ('Player Combos','Pts + Reb + Ast O/U'):'pra',
+          }
+          chosen=[]
           for sc in subcategories:
-              name=str(sc.get('name') or '')
-              folded=name.casefold()
-              if any(k in folded for k in keywords):
-                  wanted.append({
-                      'category_id':str(sc.get('categoryId') or ''),
-                      'category_name':category_names.get(str(sc.get('categoryId') or ''),''),
-                      'subcategory_id':str(sc.get('id') or ''),
-                      'subcategory_name':name,
-                  })
-          print('STEP19A_WNBA_PROP_DISCOVERY',json.dumps({'site':f'dkus{success}','matches':wanted[:100],'match_count':len(wanted)},sort_keys=True))
-          if not wanted:
-              raise SystemExit('STEP19A_NO_WNBA_PRA_PROP_SUBCATEGORIES_DISCOVERED')
+              cat_name=category_names.get(str(sc.get('categoryId') or ''),'')
+              sub_name=str(sc.get('name') or '')
+              stat=targets.get((cat_name,sub_name))
+              if stat:
+                  chosen.append((str(sc.get('categoryId')),str(sc.get('id')),cat_name,sub_name,stat))
+          if {row[4] for row in chosen}!={'points','rebounds','assists','pra'}:
+              raise SystemExit(f'STEP19A_REQUIRED_PROP_DISCOVERY_FAILED:{chosen}')
 
-          useful=[]
-          for item in wanted:
-              cid=item['category_id']; sid=item['subcategory_id']
-              if not cid or not sid:
-                  continue
-              url=(f'https://sportsbook-nash.draftkings.com/api/sportscontent/dkus{success}/v1/'
-                   f'leagues/{league_id}/categories/{cid}/subcategories/{sid}')
-              try:
-                  r=cffi_requests.get(url,impersonate='chrome120',timeout=20)
-                  if r.status_code!=200:
-                      continue
-                  data=r.json()
-                  events=data.get('events') or [] if isinstance(data,dict) else []
-                  markets=data.get('markets') or [] if isinstance(data,dict) else []
-                  selections=data.get('selections') or [] if isinstance(data,dict) else []
-                  row={**item,'status':200,'event_count':len(events),'market_count':len(markets),'selection_count':len(selections)}
-                  if markets and selections:
-                      useful.append(row)
-                  print('STEP19A_WNBA_PROP_ENDPOINT',json.dumps(row,sort_keys=True))
-              except Exception as exc:
-                  print('STEP19A_WNBA_PROP_ENDPOINT_ERROR',item['subcategory_name'],type(exc).__name__)
-          print('STEP19A_WNBA_USEFUL_PROP_MARKETS',json.dumps({'site':f'dkus{success}','useful':useful[:50],'useful_count':len(useful)},sort_keys=True))
-          if not useful:
-              raise SystemExit('STEP19A_NO_WNBA_PROP_MARKETS_WITH_SELECTIONS')
+          all_offers=[]; all_events={}; summaries=[]
+          for cid,sid,cat_name,sub_name,expected_stat in chosen:
+              url=f'https://sportsbook-nash.draftkings.com/api/sportscontent/{site}/v1/leagues/{league_id}/categories/{cid}/subcategories/{sid}'
+              response=cffi_requests.get(url,impersonate='chrome120',timeout=20)
+              response.raise_for_status()
+              document=response.json()
+              offers=normalize_draftkings_document(document)
+              events=extract_draftkings_events(document)
+              stats=Counter(str(x.get('stat')) for x in offers)
+              sides=Counter(str(x.get('side')) for x in offers)
+              named=sum(bool(str(x.get('player_name') or '').strip()) for x in offers)
+              priced=sum(('american_odds' in x or 'decimal_odds' in x) for x in offers)
+              if not offers or stats.get(expected_stat,0)<=0:
+                  raise SystemExit(f'STEP19A_NORMALIZER_NO_{expected_stat.upper()}_OFFERS')
+              if sides.get('over',0)<=0 or sides.get('under',0)<=0:
+                  raise SystemExit(f'STEP19A_NORMALIZER_MISSING_SIDES:{expected_stat}:{dict(sides)}')
+              if named!=len(offers) or priced!=len(offers) or not events:
+                  raise SystemExit(f'STEP19A_NORMALIZER_INCOMPLETE:{expected_stat}')
+              all_offers.extend(offers)
+              for event in events:
+                  if event.get('source_event_id'):
+                      all_events[str(event['source_event_id'])]=event
+              summaries.append({'stat':expected_stat,'category_id':cid,'subcategory_id':sid,'offer_count':len(offers),'event_count':len(events),'side_counts':dict(sides)})
+
+          stats=Counter(str(x.get('stat')) for x in all_offers)
+          print('STEP19A_FROZEN_NORMALIZER_COMPAT_OK',json.dumps({'site':site,'offer_count':len(all_offers),'event_count':len(all_events),'stat_counts':dict(stats),'sources':summaries},sort_keys=True))
           PY
