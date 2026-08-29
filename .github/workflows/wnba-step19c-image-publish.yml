@@ -1,0 +1,71 @@
+name: WNBA Step19C immutable image publish
+
+on:
+  push:
+    branches:
+      - wnba-step19c-image-publish-20260829
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  APP_CANDIDATE_SHA: 98c8802d34b3ede77ef9264342b326fed1592575
+  RELEASE_ID: wnba-step19c-98c8802d
+  IMAGE_NAME: ghcr.io/kyrepeak/kyre-sports-api
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact certified app candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Prove exact candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_CANDIDATE_SHA"
+          python -m py_compile sports_api/wnba_step19c_market_not_ready_compat.py sports_api/main.py
+          echo "STEP19C_IMAGE_EXACT_CANDIDATE_OK=$APP_CANDIDATE_SHA"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push exact candidate image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: sports_api/Dockerfile
+          push: true
+          build-args: |
+            WNBA_RELEASE_REVISION=${{ env.APP_CANDIDATE_SHA }}
+            WNBA_RELEASE_ID=${{ env.RELEASE_ID }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.RELEASE_ID }}
+            ${{ env.IMAGE_NAME }}:sha-${{ env.APP_CANDIDATE_SHA }}
+
+      - name: Resolve and verify immutable digest
+        run: |
+          set -euo pipefail
+          RELEASE_REF="$IMAGE_NAME:$RELEASE_ID"
+          SHA_REF="$IMAGE_NAME:sha-$APP_CANDIDATE_SHA"
+          release_digest="$(docker buildx imagetools inspect "$RELEASE_REF" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          sha_digest="$(docker buildx imagetools inspect "$SHA_REF" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          test -n "$release_digest"
+          test "$release_digest" = "$sha_digest"
+          case "$release_digest" in sha256:*) ;; *) echo 'invalid digest' >&2; exit 1;; esac
+          echo "STEP19C_IMAGE_DIGEST=$release_digest"
+          echo "STEP19C_IMMUTABLE_IMAGE=$IMAGE_NAME@$release_digest"
+          echo "STEP19C_RELEASE_ID=$RELEASE_ID"
+          echo "STEP19C_APP_CANDIDATE_SHA=$APP_CANDIDATE_SHA"
