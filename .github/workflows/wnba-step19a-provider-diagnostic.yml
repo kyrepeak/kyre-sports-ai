@@ -1,4 +1,4 @@
-name: WNBA Step19A failing historical substitution inspection
+name: WNBA Step19A official minute precision diagnostic
 
 on:
   push:
@@ -12,53 +12,40 @@ env:
   PYTHONPATH: .
 
 jobs:
-  inspect-source:
+  inspect-minutes:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: e676f4cbfb64dee64bf73f2dbd8034162d69922e
+          ref: 631ad9c3f065433557279c6eaa5eadd3b23d5aa3
           fetch-depth: 1
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt >/dev/null
-      - name: Inspect box roster and raw/normalized substitution identity semantics
+      - name: Measure normalized and raw official player-minute totals
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
           from sports_api import wnba_step7g_first_party_history as fp
-          from sports_api.wnba_live_game import _normalize_action
-
           game_id='1022600265'; season=2026
           box=fp.get_first_party_game_box_score_dataset(game_id,season)
+          props,game,*_=fp._game_page(game_id,ttl_seconds=fp.BOX_SCORE_CACHE_TTL_SECONDS)
+          raw_teams={'away':game.get('awayTeam') or {},'home':game.get('homeTeam') or {}}
           for side in ('away','home'):
-              team=box[side]
-              roster=[]
+              team=box[side]; rows=[]; total=0.0
               for p in team.get('players') or []:
-                  roster.append({k:p.get(k) for k in ('player_id','full_name','first_name','last_name','name_initial','is_starter')})
-              print('BOX_TEAM',side,team.get('team_key'),team.get('team_full_name'))
-              print('BOX_ROSTER',side,json.dumps(roster,sort_keys=True,ensure_ascii=False))
-
-          props, game, retrieved, cache_hit, ttl, url = fp._game_page(game_id,ttl_seconds=fp.PLAY_BY_PLAY_CACHE_TTL_SECONDS)
-          raw_surface=props.get('playByPlay')
-          raw_actions=fp._extract_action_rows(raw_surface)
-          print('RAW_ACTION_COUNT',len(raw_actions),'SOURCE_URL',url)
-          rows=[]
-          for raw in raw_actions:
-              desc=str(raw.get('description') or '').strip()
-              action_type=str(raw.get('actionType') or raw.get('action_type') or '')
-              if 'SUB:' not in desc.upper() and 'substitut' not in action_type.casefold():
-                  continue
-              normalized=_normalize_action(raw,season)
-              raw_identity={k:raw.get(k) for k in (
-                  'actionNumber','actionId','actionType','subType','description','personId','person_id','playerId','player_id','personName','playerName','teamId','teamTricode','period','clock'
-              ) if k in raw}
-              norm_identity={k:normalized.get(k) for k in (
-                  'action_number','action_id','event_category','description','person_id','person_name','team_key','team_tricode','period','clock','elapsed_game_seconds'
-              )}
-              rows.append({'raw':raw_identity,'normalized':norm_identity})
-          print('SUBSTITUTION_IDENTITIES',json.dumps(rows,sort_keys=True,ensure_ascii=False,default=str))
-          if not rows:
-              raise SystemExit('No substitution source rows found for failing historical game')
+                  minutes=(p.get('stats') or {}).get('minutes')
+                  if minutes is not None:
+                      total += float(minutes)
+                  rows.append({'player_id':p.get('player_id'),'full_name':p.get('full_name'),'minutes':minutes})
+              raw=raw_teams[side]
+              raw_players=raw.get('players') if isinstance(raw,dict) else None
+              raw_min=[]
+              if isinstance(raw_players,list):
+                  for p in raw_players:
+                      if isinstance(p,dict):
+                          stats=p.get('statistics') if isinstance(p.get('statistics'),dict) else (p.get('stats') if isinstance(p.get('stats'),dict) else {})
+                          raw_min.append({'personId':p.get('personId') or p.get('playerId') or p.get('id'),'name':p.get('name') or p.get('nameI') or p.get('familyName'),'minutes_candidates':{k:stats.get(k) for k in ('minutes','minutesCalculated','MIN','min') if k in stats}})
+              print('MINUTE_SIDE',side,json.dumps({'normalized_total_minutes':round(total,6),'normalized_total_seconds':round(total*60,3),'expected_seconds':12000.0,'delta_seconds':round(total*60-12000.0,3),'normalized_players':rows,'raw_players':raw_min},sort_keys=True,ensure_ascii=False,default=str))
           PY
