@@ -1,4 +1,4 @@
-name: WNBA Step19A read-only exact-overlap diagnostic
+name: WNBA Step19A full read-only Step12B diagnostic
 
 on:
   push:
@@ -13,9 +13,9 @@ env:
   CANDIDATE_SHA: e676f4cbfb64dee64bf73f2dbd8034162d69922e
 
 jobs:
-  diagnose-overlap:
+  diagnose-step12b:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,49 +25,71 @@ jobs:
         run: |
           python -m pip install --upgrade pip >/dev/null
           python -m pip install -r sports_api/requirements.txt >/dev/null
-      - name: Fetch current bridges and calculate exact overlap
+      - name: Execute frozen Step12B fresh-state pipeline read-only
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
+          import json, time
           from datetime import datetime, timezone
           import sports_api.wnba_step19a_step17b_bridge
-          from sports_api import wnba_step11_draftkings_provider as dk
-          from sports_api import wnba_step11_fanduel_provider as fd
-          from sports_api import wnba_step11_multibook_shadow_board as mb
           from sports_api import wnba_step12b_live_runtime_assembly as s12
 
           env={
             'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
-            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
             'WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
             'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
             'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
             'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
             'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
           }
-          now=datetime.now(timezone.utc); slate='2026-08-29'
-          d=dk.fetch_step11a_draftkings_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env)
-          f=fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env)
-          dr=s12._payload_records(d,dk.PROVIDER); fr=s12._payload_records(f,fd.PROVIDER)
-          print('CURRENT_RECORD_COUNTS',{'DraftKings':len(dr),'FanDuel':len(fr)})
+          now=datetime.now(timezone.utc)
+          request=s12.build_step12b_request(
+            season=2026,
+            slate_date='2026-08-29',
+            evaluated_at=now,
+            previous_state=None,
+            controller_policy={'provider_attempts':3,'refresh_interval_seconds':60,'failure_threshold':3,'circuit_cooldown_seconds':180},
+            refresh_policy={},
+            qualification_policy={},
+          )
+          started=time.monotonic()
           try:
-            targets,groups=s12._exact_multibook_targets(dr,fr)
+            result=s12.run_step12b_live_runtime_job(request,env=env)
           except Exception as exc:
-            print('EXACT_OVERLAP_FAILED',type(exc).__name__,' '.join(str(exc).split())[:1000])
-            # Show near-overlap by same game/player/stat ignoring line, never prices/secrets.
-            def key3(r): return (str(r.get('game_id')),int(r.get('player_id')),str(r.get('stat')))
-            d3={key3(r) for r in dr}; f3={key3(r) for r in fr}; common=sorted(d3 & f3)
-            examples=[]
-            for key in common[:30]:
-              dlines=sorted({float(r['line']) for r in dr if key3(r)==key}); flines=sorted({float(r['line']) for r in fr if key3(r)==key})
-              examples.append({'game_id':key[0],'player_id':key[1],'stat':key[2],'draftkings_lines':dlines,'fanduel_lines':flines,'exact_line_overlap':sorted(set(dlines)&set(flines))})
-            print('SAME_PROP_NEAR_OVERLAP_COUNT',len(common))
-            print('SAME_PROP_NEAR_OVERLAP_EXAMPLES',json.dumps(examples,sort_keys=True))
+            chain=[]; cur=exc; seen=set()
+            while cur is not None and id(cur) not in seen:
+              seen.add(id(cur)); chain.append({'type':type(cur).__name__,'message':' '.join(str(cur).split())[:1500]}); cur=cur.__cause__ or cur.__context__
+            print('STEP12B_FULL_PIPELINE_FAILED',json.dumps({'elapsed_seconds':round(time.monotonic()-started,2),'chain':chain},sort_keys=True))
             raise
-          print('EXACT_OVERLAP_OK',{'groups':len(groups),'targets':len(targets)})
-          print('EXACT_OVERLAP_EXAMPLES',json.dumps(groups[:25],sort_keys=True))
-          # Verify cached bridges also pass Step11D's exact provider integrity checks.
-          dp=mb._verify_bridge(d,provider=dk.PROVIDER); fp=mb._verify_bridge(f,provider=fd.PROVIDER)
-          print('CACHED_BRIDGE_VERIFY_OK',{'dk_records':len(dp.get('records') or []),'fd_records':len(fp.get('records') or [])})
+          tick=((result.get('step12a_result') or {}).get('step11e_tick') or {})
+          execution=tick.get('execution') or {}
+          state=tick.get('automation_state') or {}
+          summary={
+            'elapsed_seconds':round(time.monotonic()-started,2),
+            'status':result.get('status'),'health':result.get('health'),
+            'market_overlap':{
+              'dk_records':(result.get('market_overlap') or {}).get('draftkings_record_count'),
+              'fd_records':(result.get('market_overlap') or {}).get('fanduel_record_count'),
+              'exact_groups':(result.get('market_overlap') or {}).get('exact_line_multibook_group_count'),
+              'targets':(result.get('market_overlap') or {}).get('unique_projection_target_count'),
+            },
+            'projection_assembly':{
+              'requested':(result.get('projection_assembly') or {}).get('requested_target_count'),
+              'built':(result.get('projection_assembly') or {}).get('built_target_count'),
+              'skipped':(result.get('projection_assembly') or {}).get('skipped_target_count'),
+              'all_converged':(result.get('projection_assembly') or {}).get('all_built_distributions_converged'),
+            },
+            'runtime_summary':result.get('runtime_summary'),
+            'controller':{
+              'cycle_executed':execution.get('cycle_executed'),'cycle_outcome':execution.get('cycle_outcome'),'error':execution.get('error'),
+              'circuit_state':state.get('circuit_state'),'consecutive_failure_count':state.get('consecutive_failure_count'),'next_refresh_due_at_utc':state.get('next_refresh_due_at_utc')
+            }
+          }
+          print('STEP12B_FULL_PIPELINE_RESULT',json.dumps(summary,sort_keys=True,default=str))
+          if result.get('health') not in {'healthy','market_not_ready'}:
+            raise SystemExit('Fresh-state Step12B pipeline did not reach acceptable non-provider-failure state')
+          if execution.get('cycle_outcome')=='provider_transient_not_ready':
+            raise SystemExit('Fresh-state Step12B reproduced provider transient failure')
+          print('STEP12B_FRESH_STATE_PIPELINE_PROOF_OK')
           PY
