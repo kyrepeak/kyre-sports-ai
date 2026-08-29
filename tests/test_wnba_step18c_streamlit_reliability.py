@@ -74,8 +74,11 @@ def test_available_board_count_drift_fails_closed():
         v2.normalize_consumer_payload(payload)
 
 
-def test_current_no_board_stays_empty_and_current():
-    view = v2.normalize_consumer_payload(_payload(available=False, reason="not_executed"))
+def test_current_no_board_stays_empty_and_current_when_top_n_metadata_is_omitted():
+    payload = _payload(available=False, reason="not_executed")
+    payload["board"].pop("top_n_forced")
+    payload["board"].pop("top_card_count")
+    view = v2.normalize_consumer_payload(payload)
     assert view["state"] == "unavailable"
     assert view["cards"] == []
     assert view["snapshot"]["effective_stale"] is False
