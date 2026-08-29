@@ -1,0 +1,106 @@
+name: WNBA Step19C market-not-ready certification
+
+on:
+  push:
+    branches:
+      - wnba-step19c-market-not-ready-cert-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: 98c8802d34b3ede77ef9264342b326fed1592575
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact app candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 500
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Prove exact revision, scope, compile, and frozen regressions
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_CANDIDATE_SHA"
+          echo 'STEP19C_CHANGED_FILES'
+          git diff --name-only ca34373548e5b54e65426160b0cf5e7eae4d89c9..HEAD | sort
+          python -m py_compile sports_api/wnba_step19c_market_not_ready_compat.py sports_api/main.py
+          pytest -q tests/test_wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12c_live_board_runtime.py tests/test_wnba_rotation_fallback.py tests/test_wnba_rotation_context.py
+          echo STEP19C_SCOPE_COMPILE_REGRESSIONS_OK
+
+      - name: Prove application startup installs Step19C before frozen runtime binding
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import sports_api.main  # noqa: F401
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          from sports_api import wnba_step19c_market_not_ready_compat as compat
+          assert s12.run_step12b_live_runtime_job is compat.run_step12b_live_runtime_job_step19c
+          assert compat.INSTALLATION['underlying_step8_readiness_gates_relaxed'] is False
+          assert compat.INSTALLATION['projection_fabrication_allowed'] is False
+          print('STEP19C_STARTUP_INSTALL_OK', compat.INSTALLATION)
+          PY
+
+      - name: Run current-market Step12B and require controlled market-not-ready
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, time
+          from datetime import datetime, timezone
+          env={
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
+          }
+          os.environ.update(env)
+          import sports_api.wnba_step19a_step17b_bridge
+          import sports_api.wnba_step19c_market_not_ready_compat
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          req=s12.build_step12b_request(season=2026,slate_date='2026-08-29',evaluated_at=datetime.now(timezone.utc),previous_state=None,controller_policy={'provider_attempts':3,'refresh_interval_seconds':60,'failure_threshold':3,'circuit_cooldown_seconds':180},refresh_policy={},qualification_policy={})
+          started=time.monotonic()
+          result=s12.run_step12b_live_runtime_job(req,env=env)
+          tick=((result.get('step12a_result') or {}).get('step11e_tick') or {})
+          execution=tick.get('execution') or {}
+          state=tick.get('automation_state') or {}
+          summary={
+            'elapsed_seconds':round(time.monotonic()-started,2),
+            'status':result.get('status'),'health':result.get('health'),
+            'exact_groups':(result.get('market_overlap') or {}).get('exact_line_multibook_group_count'),
+            'targets':(result.get('market_overlap') or {}).get('unique_projection_target_count'),
+            'built':(result.get('projection_assembly') or {}).get('built_target_count'),
+            'skipped':(result.get('projection_assembly') or {}).get('skipped_target_count'),
+            'cycle_outcome':execution.get('cycle_outcome'),
+            'failure_count':state.get('consecutive_failure_count'),
+            'circuit_state':state.get('circuit_state'),
+            'runtime_hash':result.get('runtime_content_sha256'),
+          }
+          print('STEP19C_LIVE_RESULT',json.dumps(summary,sort_keys=True,default=str))
+          assert result.get('status')=='market_not_ready'
+          assert result.get('health')=='market_not_ready'
+          assert execution.get('cycle_outcome')=='market_board_not_ready'
+          assert state.get('consecutive_failure_count')==0
+          assert state.get('circuit_state')=='closed'
+          assert (result.get('market_overlap') or {}).get('exact_line_multibook_group_count',0)>0
+          assert (result.get('projection_assembly') or {}).get('built_target_count')==0
+          assert (result.get('projection_assembly') or {}).get('skipped_target_count')==(result.get('projection_assembly') or {}).get('requested_target_count')
+          assert (result.get('guardrails') or {}).get('frozen_step8_projection_generated') is False
+          assert (result.get('guardrails') or {}).get('wager_action_performed') is False
+          assert (result.get('guardrails') or {}).get('supabase_mutated') is False
+          assert isinstance(result.get('runtime_content_sha256'),str) and len(result['runtime_content_sha256'])==64
+          print('STEP19C_CONTROLLED_MARKET_NOT_READY_CERTIFIED')
+          PY
