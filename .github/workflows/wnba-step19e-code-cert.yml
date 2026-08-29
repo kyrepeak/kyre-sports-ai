@@ -1,0 +1,46 @@
+name: WNBA Step19E code certification
+on:
+  push:
+    branches: [wnba-step19e-cooldown-cert-20260829]
+permissions:
+  contents: read
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 9fe4227fd7c20d10900bd6861593a4ddda2e9a26
+          fetch-depth: 1
+      - name: Install test dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+      - name: Compile and test exact candidate
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "9fe4227fd7c20d10900bd6861593a4ddda2e9a26"
+          python -m py_compile sports_api/wnba_step19e_cooldown_aware_cycle.py sports_api/api/__init__.py sports_api/main.py
+          python -m pytest -q tests/test_wnba_step19e_cooldown_aware_cycle.py tests/test_wnba_step19d_history_transport_resilience.py tests/test_wnba_rotation_context.py tests/test_wnba_rotation_fallback.py tests/test_wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12c_live_board_runtime.py
+      - name: Prove startup wiring
+        env:
+          PYTHONPATH: .
+        run: |
+          python - <<'PY'
+          import sports_api.main
+          from sports_api import wnba_step17b_always_on_runtime as s17b
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19c_market_not_ready_compat as s19c
+          from sports_api import wnba_step19e_cooldown_aware_cycle as s19e
+          assert s17b.run_one_cycle is s19e.run_one_cycle_step19e
+          assert s12b.run_step12b_live_runtime_job is s19c.run_step12b_live_runtime_job_step19c
+          assert s19e.INSTALLATION['controller_state_mutated_by_preflight'] is False
+          assert s19e.INSTALLATION['circuit_force_closed'] is False
+          assert s19e.INSTALLATION['readiness_gates_relaxed'] is False
+          assert s19e.INSTALLATION['projection_fabrication_allowed'] is False
+          print('STEP19E_CODE_STARTUP_CERTIFIED')
+          PY
