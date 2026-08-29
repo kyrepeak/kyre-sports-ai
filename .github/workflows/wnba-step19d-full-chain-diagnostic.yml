@@ -1,9 +1,8 @@
-name: WNBA Step19D full-chain read-only diagnostic
+name: WNBA Step19E full-chain read-only certification
 
 on:
   push:
-    branches:
-      - wnba-step19d-full-chain-diagnostic-20260829
+    branches: [wnba-step19d-full-chain-diagnostic-20260829]
 
 permissions:
   contents: read
@@ -63,7 +62,7 @@ env:
   WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
 
 jobs:
-  diagnose:
+  certify:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: wnba-render-staging
@@ -72,84 +71,57 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fdde4a82b6cf6d0deb3e2b5d38b6dcf3d4cf1b2f
+          ref: 222550f3d2db46d470e4ba050848a9110920fcab
           fetch-depth: 1
       - name: Install runtime dependencies
         run: |
           python -m pip install -r sports_api/requirements.txt >/dev/null
           python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
-      - name: Reproduce exact Step13C stack immediately after persisted cooldown without persistence write
+      - name: Prove exact candidate and full scheduler recovery read-only
         run: |
           python - <<'PY'
-          import json, os, traceback
+          import json, os
           from datetime import datetime, timezone, timedelta
           import sports_api.main
+          from sports_api import wnba_step17b_always_on_runtime as s17b
+          from sports_api import wnba_step19e_cooldown_aware_cycle as s19e
           from sports_api import wnba_step14c_durable_restart_lease as s14c
           from sports_api import wnba_step13b_runtime_supervisor as s13b
           from sports_api import wnba_step13c_reliability_recovery as s13c
-
+          assert s17b.run_one_cycle is s19e.run_one_cycle_step19e
           env=dict(os.environ)
           loaded=s14c.load_step14c_restart_checkpoint(slate_date='2026-08-29',env=env)
           state=loaded.get('controller_state_for_restart') if loaded.get('found') else None
           if not isinstance(state,dict): raise SystemExit('missing durable checkpoint')
+          before={k:state.get(k) for k in ('circuit_state','consecutive_failure_count','circuit_open_until_utc','policy')}
+          print('STEP19E_REAL_CHECKPOINT_BEFORE',json.dumps(before,sort_keys=True,default=str),flush=True)
           policy=state.get('policy') or {}
+          probe=datetime.now(timezone.utc)
           raw=str(state.get('circuit_open_until_utc') or '').strip()
           if raw.endswith(('Z','z')): raw=raw[:-1]+'+00:00'
-          probe=datetime.now(timezone.utc)
           if raw:
               opened=datetime.fromisoformat(raw).astimezone(timezone.utc)
-              if opened>=probe:
-                  probe=opened+timedelta(seconds=1)
-          print('FULL_CHAIN_POST_COOLDOWN_PROBE_AT',probe.isoformat(),flush=True)
-          print('FULL_CHAIN_CHECKPOINT',json.dumps({k:state.get(k) for k in ('circuit_state','consecutive_failure_count','last_failure_at_utc','next_refresh_due_at_utc','circuit_open_until_utc','policy')},sort_keys=True,default=str),flush=True)
+              if opened>=probe: probe=opened+timedelta(seconds=1)
           parent=s13b.build_step13b_request(
-              season=2026,
-              initial_slate_date='2026-08-29',
-              slate_timezone='America/New_York',
-              rollover_policy='stop',
-              max_supervisor_sessions=1,
-              max_supervisor_runtime_seconds=300,
-              max_total_intersession_sleep_seconds=0,
-              scheduler_cycles_per_session=1,
-              scheduler_sleep_budget_seconds_per_session=0,
-              initial_previous_state=state,
-              controller_policy={
-                  'refresh_interval_seconds':int(policy.get('refresh_interval_seconds',60)),
-                  'failure_threshold':int(policy.get('failure_threshold',3)),
-                  'circuit_cooldown_seconds':int(policy.get('circuit_cooldown_seconds',180)),
-                  'provider_attempts':3,
-              },
-              refresh_policy={},
-              qualification_policy={},
-          )
-          req=s13c.build_step13c_request(
-              supervisor_request=parent,
-              max_recovery_attempts=2,
-              base_recovery_backoff_seconds=5,
-              max_total_recovery_sleep_seconds=10,
-          )
-          try:
-              result=s13c.run_step13c_reliability_recovery(
-                  req,
-                  env=env,
-                  stop_requested=lambda: False,
-                  clock=lambda: probe,
-              )
-              latest=result.get('latest_supervisor') or {}
-              sessions=latest.get('sessions') or latest.get('session_history') or []
-              summary={
-                  'status':result.get('status'),
-                  'health':result.get('health'),
-                  'recovery_summary':result.get('recovery_summary'),
-                  'attempt_history':result.get('attempt_history'),
-                  'final_state':{k:(result.get('final_controller_state_for_restart_handoff') or {}).get(k) for k in ('circuit_state','consecutive_failure_count','last_failure_at_utc','next_refresh_due_at_utc','circuit_open_until_utc')},
-                  'latest_supervisor_status':latest.get('status'),
-                  'latest_supervisor_health':latest.get('health'),
-                  'sessions':sessions,
-              }
-              print('FULL_CHAIN_POST_COOLDOWN_RESULT',json.dumps(summary,sort_keys=True,default=str),flush=True)
-          except Exception as exc:
-              print('FULL_CHAIN_POST_COOLDOWN_EXCEPTION',type(exc).__name__,str(exc),flush=True)
-              traceback.print_exc()
-          print('STEP19D_FULL_CHAIN_POST_COOLDOWN_DIAGNOSTIC_COMPLETE')
+              season=2026, initial_slate_date='2026-08-29', slate_timezone='America/New_York',
+              rollover_policy='stop', max_supervisor_sessions=1, max_supervisor_runtime_seconds=300,
+              max_total_intersession_sleep_seconds=0, scheduler_cycles_per_session=1,
+              scheduler_sleep_budget_seconds_per_session=0, initial_previous_state=state,
+              controller_policy={'refresh_interval_seconds':int(policy.get('refresh_interval_seconds',60)),'failure_threshold':int(policy.get('failure_threshold',3)),'circuit_cooldown_seconds':int(policy.get('circuit_cooldown_seconds',180)),'provider_attempts':3},
+              refresh_policy={}, qualification_policy={})
+          req=s13c.build_step13c_request(supervisor_request=parent,max_recovery_attempts=2,base_recovery_backoff_seconds=5,max_total_recovery_sleep_seconds=10)
+          result=s13c.run_step13c_reliability_recovery(req,env=env,stop_requested=lambda:False,clock=lambda:probe)
+          final=result.get('final_controller_state_for_restart_handoff') or {}
+          latest=result.get('latest_supervisor') or {}
+          sessions=latest.get('sessions') or latest.get('session_history') or []
+          last=sessions[-1] if sessions else {}
+          summary={'status':result.get('status'),'health':result.get('health'),'circuit':final.get('circuit_state'),'failures':final.get('consecutive_failure_count'),'board_available':last.get('latest_board_available'),'session_health':last.get('health')}
+          print('STEP19E_FULL_CHAIN_RESULT',json.dumps(summary,sort_keys=True,default=str),flush=True)
+          assert result.get('status')=='completed', summary
+          assert result.get('health')=='healthy', summary
+          assert final.get('circuit_state')=='closed', summary
+          assert int(final.get('consecutive_failure_count') or 0)==0, summary
+          assert last.get('latest_board_available') is True, summary
+          assert last.get('health')=='healthy', summary
+          print('STEP19E_REAL_FULL_CHAIN_CLOSED_ZERO_CERTIFIED')
           PY
