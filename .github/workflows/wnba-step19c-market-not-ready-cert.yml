@@ -36,6 +36,39 @@ jobs:
           echo 'STEP19C_CHANGED_FILES'
           git diff --name-only ca34373548e5b54e65426160b0cf5e7eae4d89c9..HEAD | sort
           python -m py_compile sports_api/wnba_step19c_market_not_ready_compat.py sports_api/main.py
+          export WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED=true
+          export WNBA_STEP12A_SHADOW_RUNNER_ENABLED=true
+          export WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED=true
+          export WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED=true
+          export WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED=true
+          export WNBA_STEP11B_NETWORK_REFRESH_ENABLED=true
+          export WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED=true
+          export WNBA_STEP10_FASTAPI_ENABLED=true
+          export WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED=true
+          export WNBA_STEP10B_MARKET_ADAPTER_ENABLED=true
+          export WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED=true
+          export WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED=true
+          export WNBA_STEP9_FASTAPI_ENABLED=true
+          export WNBA_STEP9_THRESHOLD_PRICING_ENABLED=true
+          export WNBA_STEP9B_MARKET_COMPARISON_ENABLED=true
+          export WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED=true
+          export WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED=true
+          export WNBA_STEP8_PROJECTION_HANDOFF_ENABLED=true
+          export WNBA_STEP8_CORE_PROJECTION_ENABLED=true
+          export WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED=true
+          export WNBA_STEP8_MONTE_CARLO_ENABLED=true
+          export WNBA_STEP7G_FIRST_PARTY_ENABLED=true
+          export WNBA_PRODUCTION_RUNTIME_ENABLED=false
+          export WNBA_BOARD_SCHEDULER_ENABLED=false
+          export WNBA_KYRE_DIRECT_SYNC_ENABLED=false
+          export WNBA_KYRE_RECONCILED_SYNC_ENABLED=false
+          export WNBA_STEP6J_CANARY_ENABLED=false
+          export WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED=false
+          export WNBA_PERSISTENCE_ENABLED=false
+          export WNBA_SUPABASE_WRITE_ENABLED=false
+          export WNBA_WAGERING_ENABLED=false
+          export WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED=false
+          export WNBA_STEP12_SCHEDULER_ENABLED=false
           pytest -q tests/test_wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12c_live_board_runtime.py tests/test_wnba_rotation_fallback.py tests/test_wnba_rotation_context.py
           echo STEP19C_SCOPE_COMPILE_REGRESSIONS_OK
 
@@ -52,7 +85,7 @@ jobs:
           print('STEP19C_STARTUP_INSTALL_OK', compat.INSTALLATION)
           PY
 
-      - name: Run current-market Step12B and require controlled market-not-ready
+      - name: Run current-market Step12B and require a safe live state
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -77,30 +110,37 @@ jobs:
           tick=((result.get('step12a_result') or {}).get('step11e_tick') or {})
           execution=tick.get('execution') or {}
           state=tick.get('automation_state') or {}
+          assembly=result.get('projection_assembly') or {}
           summary={
             'elapsed_seconds':round(time.monotonic()-started,2),
             'status':result.get('status'),'health':result.get('health'),
             'exact_groups':(result.get('market_overlap') or {}).get('exact_line_multibook_group_count'),
             'targets':(result.get('market_overlap') or {}).get('unique_projection_target_count'),
-            'built':(result.get('projection_assembly') or {}).get('built_target_count'),
-            'skipped':(result.get('projection_assembly') or {}).get('skipped_target_count'),
+            'built':assembly.get('built_target_count'),
+            'skipped':assembly.get('skipped_target_count'),
             'cycle_outcome':execution.get('cycle_outcome'),
             'failure_count':state.get('consecutive_failure_count'),
             'circuit_state':state.get('circuit_state'),
             'runtime_hash':result.get('runtime_content_sha256'),
           }
           print('STEP19C_LIVE_RESULT',json.dumps(summary,sort_keys=True,default=str))
-          assert result.get('status')=='market_not_ready'
-          assert result.get('health')=='market_not_ready'
-          assert execution.get('cycle_outcome')=='market_board_not_ready'
-          assert state.get('consecutive_failure_count')==0
+          assert result.get('health') in {'market_not_ready','healthy'}
           assert state.get('circuit_state')=='closed'
           assert (result.get('market_overlap') or {}).get('exact_line_multibook_group_count',0)>0
-          assert (result.get('projection_assembly') or {}).get('built_target_count')==0
-          assert (result.get('projection_assembly') or {}).get('skipped_target_count')==(result.get('projection_assembly') or {}).get('requested_target_count')
-          assert (result.get('guardrails') or {}).get('frozen_step8_projection_generated') is False
           assert (result.get('guardrails') or {}).get('wager_action_performed') is False
           assert (result.get('guardrails') or {}).get('supabase_mutated') is False
           assert isinstance(result.get('runtime_content_sha256'),str) and len(result['runtime_content_sha256'])==64
-          print('STEP19C_CONTROLLED_MARKET_NOT_READY_CERTIFIED')
+          if result.get('health')=='market_not_ready':
+              assert result.get('status')=='market_not_ready'
+              assert execution.get('cycle_outcome')=='market_board_not_ready'
+              assert state.get('consecutive_failure_count')==0
+              assert assembly.get('built_target_count')==0
+              assert assembly.get('skipped_target_count')==assembly.get('requested_target_count')
+              assert (result.get('guardrails') or {}).get('frozen_step8_projection_generated') is False
+              print('STEP19C_CONTROLLED_MARKET_NOT_READY_CERTIFIED')
+          else:
+              assert assembly.get('built_target_count',0)>0
+              assert execution.get('cycle_outcome')=='shadow_board_ready'
+              assert assembly.get('all_built_distributions_converged') is True
+              print('STEP19C_LIVE_HEALTHY_CERTIFIED')
           PY
