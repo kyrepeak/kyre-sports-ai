@@ -1,0 +1,273 @@
+name: WNBA Step 19A sportscontent production certification
+
+on:
+  push:
+    branches:
+      - wnba-step19a-sportscontent-market-transport-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  WNBA_WAGERING_ENABLED: "false"
+
+jobs:
+  certify-activate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact Step 19A revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+          python -m pip install pytest
+
+      - name: Compile Step 19A transport and runtime wiring
+        run: |
+          python -m py_compile sports_api/wnba_step19a_draftkings_sportscontent.py
+          python -m py_compile sports_api/wnba_reconciled_direct_sync.py
+          python -m py_compile sports_api/wnba_step6d_direct_integration.py
+          python -m py_compile sports_api/main.py
+          python -m py_compile tests/test_wnba_step19a_draftkings_sportscontent.py
+
+      - name: Run Step 19A deterministic regressions
+        run: pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py
+
+      - name: Prove Step 18A backend parent remains ancestor
+        run: |
+          set -euo pipefail
+          STEP18A_SHA='d5da3830ab2194074f2e077d6b1ea41d4bc98633'
+          git merge-base --is-ancestor "$STEP18A_SHA" HEAD
+          git diff --exit-code "$STEP18A_SHA"..HEAD -- sports_api/wnba_reconciled_direct_sync.py sports_api/wnba_step6d_direct_integration.py
+          echo STEP19A_FROZEN_RECONCILIATION_SOURCES_UNCHANGED_OK
+
+      - name: Live read-only DraftKings sportscontent probe
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from sports_api import wnba_step19a_draftkings_sportscontent as s
+          date=datetime.now(timezone.utc).date().isoformat()
+          snap=s.build_step19a_draftkings_snapshot(
+              date=date,
+              season=datetime.now(timezone.utc).year,
+              env={s.STEP19A_ENABLED_ENV:'true', s.STEP19A_SITE_ENV:'dkusaz'},
+          )
+          offers=snap.get('offers') or []
+          stats={k:0 for k in ('points','rebounds','assists','pra')}
+          sides={k:set() for k in stats}
+          for row in offers:
+              stat=row.get('stat'); side=row.get('side')
+              if stat in stats:
+                  stats[stat]+=1; sides[stat].add(side)
+          assert offers and snap.get('source_events')
+          assert all(stats[k] > 0 for k in stats), stats
+          assert all({'over','under'} <= sides[k] for k in sides), sides
+          assert snap.get('step19a',{}).get('provider_api_key_used') is False
+          print('STEP19A_LIVE_READ_ONLY_PROBE_OK', {'offer_count':len(offers),'event_count':len(snap['source_events']),'stat_counts':stats})
+          PY
+
+      - name: Verify protected Render credential exists
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: test -n "$RENDER_API_KEY"
+
+      - name: Capture current production state and enable guarded Step 19A sync
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          from sports_api import wnba_step17a_production_host_contract as host
+
+          base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode()
+              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+
+          sid=host.EXPECTED_RENDER_SERVICE_ID
+          service=req('GET',f'/services/{sid}')
+          identity=host.validate_render_service_identity(service)
+          deploys=req('GET',f'/services/{sid}/deploys?limit=20')
+          rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
+          previous=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live' and d.get('id'):
+                  previous=d['id']; break
+          if not previous:
+              raise SystemExit('Step 19A could not capture the prior live deployment for rollback')
+
+          current=req('GET',f'/services/{sid}/env-vars') or []
+          prior={}
+          watched={
+              'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true',
+              'WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED':'true',
+              'WNBA_KYRE_DIRECT_SYNC_PROVIDER':'draftkings',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'true',
+              'WNBA_KYRE_RECONCILED_SYNC_MAX_AGE_SECONDS':'120',
+              'WNBA_WAGERING_ENABLED':'false',
+              'WNBA_DEPLOYMENT_REVISION':os.environ['GITHUB_SHA'],
+              'WNBA_RELEASE_ID':'wnba-step19a-sportscontent-market-transport',
+          }
+          rows=current if isinstance(current,list) else ((current or {}).get('items') or (current or {}).get('data') or [])
+          for row in rows:
+              envv=row.get('envVar') if isinstance(row,dict) and isinstance(row.get('envVar'),dict) else row
+              if isinstance(envv,dict):
+                  key=str(envv.get('key') or '')
+                  if key in watched:
+                      prior[key]=envv.get('value')
+          open('/tmp/step19a-prior-env.json','w').write(json.dumps(prior))
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write(f"STEP19A_RENDER_SERVICE_ID={sid}\n")
+              f.write(f"STEP19A_RENDER_URL={identity['url']}\n")
+              f.write(f"STEP19A_ROLLBACK_DEPLOY_ID={previous}\n")
+
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
+          for key,value in watched.items():
+              req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          print('STEP19A_EXISTING_RENDER_HOST_CONFIGURED_NO_NEW_SERVICE',sid)
+          PY
+
+      - name: Deploy exact Step 19A commit
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          sid=os.environ['STEP19A_RENDER_SERVICE_ID']; sha=os.environ['GITHUB_SHA']
+          base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          d=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
+          did=d.get('id')
+          if not did: raise SystemExit('Render returned no Step 19A deploy ID')
+          bad={'build_failed','update_failed','canceled','cancelled','deactivated'}; detail={}
+          for _ in range(180):
+              detail=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(detail.get('status','')).lower()
+              if status=='live': break
+              if status in bad: raise SystemExit(f'Step 19A deploy failed: {status}')
+              time.sleep(5)
+          else: raise SystemExit('Step 19A deploy timed out')
+          if sha.lower() not in json.dumps(detail).lower(): raise SystemExit('Render live deploy does not attest exact Step 19A SHA')
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f: f.write(f"STEP19A_DEPLOY_ID={did}\n")
+          print('STEP19A_EXACT_COMMIT_LIVE',did,sha)
+          PY
+
+      - name: Verify production flags and fail-closed safety
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          url=os.environ['STEP19A_RENDER_URL'].rstrip('/')
+          def get(path):
+              with urllib.request.urlopen(url+path,timeout=30) as r: return json.loads(r.read().decode())
+          last=None
+          for _ in range(36):
+              try:
+                  health=get('/health')
+                  direct=get('/api/v1/wnba/markets/direct/draftkings/status')
+                  guard=get('/api/v1/wnba/markets/direct/draftkings/reconciled-sync-status')
+                  last=(health,direct,guard)
+                  dk=direct.get('draftkings') or {}
+                  if (health.get('status')=='ok' and direct.get('direct_sync_active') is True
+                      and guard.get('reconciled_sync_active') is True
+                      and dk.get('secret_required') is False
+                      and dk.get('authentication_used') is False
+                      and dk.get('dynamic_market_discovery') is True):
+                      break
+              except Exception:
+                  pass
+              time.sleep(5)
+          else:
+              raise SystemExit('Step 19A production status did not become active: '+repr(last))
+          assert direct.get('safety',{}).get('wager_action_supported') is False
+          assert guard.get('safety',{}).get('public_sync_route_exists') is False
+          print('STEP19A_PRODUCTION_FLAGS_AND_SAFETY_OK')
+          PY
+
+      - name: Verify live scheduler consumes the restored market feed
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          url=os.environ['STEP19A_RENDER_URL'].rstrip('/')
+          def get(path):
+              with urllib.request.urlopen(url+path,timeout=30) as r: return json.loads(r.read().decode())
+          first_hash=None; last=None
+          try:
+              initial=get('/api/v1/wnba/consumer/latest')
+              first_hash=(initial.get('snapshot') or {}).get('hash_sha256')
+          except Exception:
+              pass
+          for _ in range(30):
+              try:
+                  runtime=get('/api/v1/wnba/runtime/step17b')
+                  consumer=get('/api/v1/wnba/consumer/latest')
+                  last=(runtime,consumer)
+                  snap=consumer.get('snapshot') or {}
+                  board=consumer.get('board') or {}
+                  current_hash=snap.get('hash_sha256')
+                  runtime_ok=int(runtime.get('success_count') or 0)>=1 and not runtime.get('last_error_class')
+                  advanced=bool(current_hash and (first_hash is None or current_hash != first_hash))
+                  board_safe=(consumer.get('state') in {'ready','unavailable'} and (consumer.get('state')=='ready' or not (consumer.get('cards') or [])))
+                  if runtime_ok and current_hash and board_safe and (advanced or board.get('reason') not in {'provider_transient_not_ready','transient_failure'}):
+                      print('STEP19A_LIVE_MARKET_PIPELINE_OK', {'state':consumer.get('state'),'card_count':len(consumer.get('cards') or []),'snapshot_hash':current_hash[:12]})
+                      break
+              except Exception:
+                  pass
+              time.sleep(10)
+          else:
+              raise SystemExit('Step 19A live scheduler/consumer verification did not converge: '+repr(last))
+          PY
+
+      - name: Roll back production on certification failure
+        if: failure()
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          sid=os.environ.get('STEP19A_RENDER_SERVICE_ID')
+          previous=os.environ.get('STEP19A_ROLLBACK_DEPLOY_ID')
+          if not sid or not previous:
+              print('STEP19A_ROLLBACK_NOT_NEEDED_BEFORE_RENDER_MUTATION')
+              raise SystemExit(0)
+          base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step19a-rollback/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          try:
+              prior=json.load(open('/tmp/step19a-prior-env.json'))
+          except Exception:
+              prior={}
+          watched=('WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED','WNBA_STEP19A_DRAFTKINGS_SITE','WNBA_KYRE_DIRECT_SYNC_ENABLED','WNBA_KYRE_DIRECT_SYNC_PROVIDER','WNBA_KYRE_RECONCILED_SYNC_ENABLED','WNBA_KYRE_RECONCILED_SYNC_MAX_AGE_SECONDS','WNBA_WAGERING_ENABLED','WNBA_DEPLOYMENT_REVISION','WNBA_RELEASE_ID')
+          for key in watched:
+              if key in prior and prior[key] is not None:
+                  req('PUT',f'/services/{sid}/env-vars/{key}',{'value':prior[key]})
+              else:
+                  try: req('DELETE',f'/services/{sid}/env-vars/{key}')
+                  except Exception: pass
+          req('POST',f'/services/{sid}/deploys/{previous}/rollback')
+          print('STEP19A_ROLLBACK_REQUESTED',previous)
+          PY
