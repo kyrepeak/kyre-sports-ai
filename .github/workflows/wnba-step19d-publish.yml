@@ -1,0 +1,74 @@
+name: WNBA Step19D publish immutable image
+
+on:
+  push:
+    branches:
+      - wnba-step19d-publish-20260829
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  APP_CANDIDATE_SHA: fdde4a82b6cf6d0deb3e2b5d38b6dcf3d4cf1b2f
+  RELEASE_ID: wnba-step19d-fdde4a82
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact certified Step19D candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Prove exact revision
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_CANDIDATE_SHA"
+          echo "IMAGE_REPOSITORY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api" >> "$GITHUB_ENV"
+          echo STEP19D_PUBLISH_EXACT_REVISION_OK
+
+      - name: Log in to GHCR
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Buildx builder
+        run: docker buildx create --use --name wnba-step19d-publisher
+
+      - name: Build and push exact immutable image
+        run: |
+          set -euo pipefail
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$APP_CANDIDATE_SHA" \
+            --build-arg WNBA_RELEASE_ID="$RELEASE_ID" \
+            --metadata-file /tmp/step19d-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$IMAGE_REPOSITORY:$RELEASE_ID" \
+            -t "$IMAGE_REPOSITORY:sha-$APP_CANDIDATE_SHA" \
+            --push .
+
+      - name: Prove digest and emit immutable reference
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, re
+          meta=json.load(open('/tmp/step19d-build-metadata.json',encoding='utf-8'))
+          digest=meta.get('containerimage.digest')
+          if not isinstance(digest,str) or not re.fullmatch(r'sha256:[0-9a-f]{64}',digest):
+              raise SystemExit(f'invalid digest: {digest!r}')
+          repo=os.environ['IMAGE_REPOSITORY']; release=os.environ['RELEASE_ID']; sha=os.environ['APP_CANDIDATE_SHA']
+          print('STEP19D_IMAGE_DIGEST',digest)
+          print('STEP19D_IMMUTABLE_IMAGE',f'{repo}@{digest}')
+          print('STEP19D_RELEASE_TAG',f'{repo}:{release}')
+          print('STEP19D_SHA_TAG',f'{repo}:sha-{sha}')
+          PY
+          RELEASE_DIGEST="$(docker buildx imagetools inspect "$IMAGE_REPOSITORY:$RELEASE_ID" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          SHA_DIGEST="$(docker buildx imagetools inspect "$IMAGE_REPOSITORY:sha-$APP_CANDIDATE_SHA" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          test "$RELEASE_DIGEST" = "$SHA_DIGEST"
+          echo "STEP19D_REGISTRY_DIGEST=$RELEASE_DIGEST"
+          echo STEP19D_IMMUTABLE_IMAGE_CERTIFIED
