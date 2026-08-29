@@ -7,8 +7,7 @@ identity reconciliation and two-book safety requirements.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from datetime import datetime
+from collections.abc import Mapping, Sequence
 import math
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -16,7 +15,7 @@ from zoneinfo import ZoneInfo
 import sports_api.wnba_step11_draftkings_provider as _dk
 import sports_api.wnba_step11_fanduel_provider as _fd
 
-MODEL_VERSION = "wnba_step19a_live_provider_compat_v1"
+MODEL_VERSION = "wnba_step19a_live_provider_compat_v2"
 _ET = ZoneInfo("America/New_York")
 
 _ORIGINAL_DK_TEAM_IDENTITY_KEY = _dk._team_identity_key
@@ -24,6 +23,7 @@ _ORIGINAL_FD_TEAM_IDENTITY_KEY = _fd._team_identity_key
 _ORIGINAL_FD_EVENT_DATE = _fd._event_date
 _ORIGINAL_FD_RELEVANT_TAB_IDS = _fd._relevant_tab_ids
 _ORIGINAL_FD_RUNNER_SIDE_LINE = _fd._runner_side_line
+_ORIGINAL_FD_DECLARES_PLAYER_MARKET = _fd._declares_player_market
 
 _FANDUEL_PLAYER_TAB_SLUGS = {
     "player points": "player-points",
@@ -98,12 +98,25 @@ def fanduel_runner_side_line_current(runner: Mapping[str, Any]) -> tuple[str, fl
     return side, round(line, 6)
 
 
+def fanduel_declares_player_market_current(
+    market: Mapping[str, Any],
+    runners: Sequence[Mapping[str, Any]],
+) -> bool:
+    if _ORIGINAL_FD_DECLARES_PLAYER_MARKET(market, runners):
+        return True
+    market_type = _fd._clean(market.get("marketType") or market.get("type")).upper()
+    if market_type.startswith("PLAYER_"):
+        return True
+    return any(runner.get("isPlayerSelection") is True for runner in runners)
+
+
 def install_step19a_live_provider_compat() -> dict[str, Any]:
     _dk._team_identity_key = draftkings_team_identity_key
     _fd._team_identity_key = fanduel_team_identity_key
     _fd._event_date = fanduel_event_date_eastern
     _fd._relevant_tab_ids = fanduel_relevant_tab_slugs
     _fd._runner_side_line = fanduel_runner_side_line_current
+    _fd._declares_player_market = fanduel_declares_player_market_current
     return {
         "installed": True,
         "model_version": MODEL_VERSION,
@@ -111,6 +124,7 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
         "fanduel_eastern_slate_date_installed": True,
         "fanduel_player_tab_slug_transport_installed": True,
         "fanduel_nested_result_side_parser_installed": True,
+        "fanduel_explicit_player_market_evidence_installed": True,
         "frozen_step11a_source_modified": False,
         "frozen_step11c_source_modified": False,
         "frozen_step11d_source_modified": False,
@@ -123,6 +137,7 @@ __all__ = [
     "INSTALLATION",
     "MODEL_VERSION",
     "draftkings_team_identity_key",
+    "fanduel_declares_player_market_current",
     "fanduel_event_date_eastern",
     "fanduel_relevant_tab_slugs",
     "fanduel_runner_side_line_current",
