@@ -28,6 +28,7 @@ from sports_api import wnba_step13c_reliability_recovery as step13c
 from sports_api import wnba_step14c_durable_restart_lease as step14c
 from sports_api import wnba_step16b_production_lifecycle as step16b
 from sports_api import wnba_step17a_production_host_contract as step17a
+from sports_api import wnba_step18a_streamlit_consumer as step18a
 
 SOURCE = "Kyre Sports API WNBA Step 17B controlled always-on runtime"
 SCHEMA_VERSION = "wnba_step_17b_controlled_always_on_v1"
@@ -221,6 +222,8 @@ def run_one_cycle(
     durable_runner = runner or step14c.run_step14c_durable_restart_lease
     kwargs: dict[str, Any] = {}
     if runner is None:
+        if step18a.step18a_streamlit_consumer_enabled(runtime_env):
+            kwargs["step13c_runner"] = step18a.run_step13c_and_capture
         kwargs["runner_kwargs"] = {"stop_requested": stop_requested or (lambda: False)}
     result = durable_runner(
         request,

@@ -179,6 +179,50 @@ def test_step17b_uses_capture_seam_only_when_step18a_gate_is_enabled():
     assert s18a.step18a_streamlit_consumer_enabled(_env(True)) is True
 
 
+def test_step17b_real_step14c_path_injects_capture_wrapper_only_when_enabled():
+    seen = []
+    original = s17b.step14c.run_step14c_durable_restart_lease
+
+    def fake_step14c(request, *, owner_id, env, **kwargs):
+        seen.append(dict(kwargs))
+        return {
+            "status": "completed",
+            "saved_checkpoint_version": 2,
+            "recovered_from_durable_checkpoint": True,
+        }
+
+    try:
+        s17b.step14c.run_step14c_durable_restart_lease = fake_step14c
+        s17b.run_one_cycle(
+            env=_env(False), owner_id="test-owner", slate_date="2026-08-28"
+        )
+        assert "step13c_runner" not in seen[-1]
+        s17b.run_one_cycle(
+            env=_env(True), owner_id="test-owner", slate_date="2026-08-28"
+        )
+        assert seen[-1]["step13c_runner"] is s18a.run_step13c_and_capture
+        assert callable(seen[-1]["runner_kwargs"]["stop_requested"])
+    finally:
+        s17b.step14c.run_step14c_durable_restart_lease = original
+
+
+def test_main_serves_read_only_consumer_get_contract():
+    from fastapi.testclient import TestClient
+    from sports_api.main import app
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/wnba/consumer/latest")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["data_type"] == "wnba_step18a_streamlit_consumer_latest"
+    assert payload["enabled"] is False
+    assert payload["available"] is False
+    assert payload["reason"] == "consumer_disabled"
+    assert payload["semantics"]["read_only_get"] is True
+    assert payload["semantics"]["scheduler_cycle_triggered"] is False
+    assert payload["semantics"]["sportsbook_network_called"] is False
+
+
 if __name__ == "__main__":
     test_default_off_returns_stable_read_only_unavailable_contract()
     setup_function()
@@ -193,4 +237,8 @@ if __name__ == "__main__":
     test_capture_wrapper_returns_original_frozen_step13c_response_unchanged()
     setup_function()
     test_step17b_uses_capture_seam_only_when_step18a_gate_is_enabled()
+    setup_function()
+    test_step17b_real_step14c_path_injects_capture_wrapper_only_when_enabled()
+    setup_function()
+    test_main_serves_read_only_consumer_get_contract()
     print("STEP18A_STREAMLIT_CONSUMER_TESTS_OK")
