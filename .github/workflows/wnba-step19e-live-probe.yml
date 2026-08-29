@@ -1,0 +1,47 @@
+name: WNBA Step19E read-only live probe
+
+on:
+  push:
+    branches: [wnba-step19e-live-probe-20260829]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Probe live runtime and random read search without mutation
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, random, time, urllib.parse, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(path, timeout=25):
+              with urllib.request.urlopen(base+path, timeout=timeout) as r:
+                  return json.loads(r.read().decode())
+          last=None
+          for n in range(1,7):
+              try:
+                  h=get('/health'); dk=get('/api/v1/wnba/markets/direct/draftkings/status'); rt=get('/api/v1/wnba/runtime/step17b'); rel=get('/api/v1/wnba/runtime/step17c/health'); c=get('/api/v1/wnba/consumer/latest')
+                  cr=c.get('runtime') or {}; snap=c.get('snapshot') or {}
+                  last={'probe':n,'health':h.get('status'),'dk_ready':(dk.get('draftkings') or {}).get('ready'),'runtime_running':rt.get('running'),'runtime_success_count':rt.get('success_count'),'runtime_failure_count':rt.get('failure_count'),'step17c_healthy':rel.get('healthy'),'consumer_available':c.get('available'),'consumer_reason':c.get('reason'),'cycle_executed':cr.get('cycle_executed'),'cycle_outcome':cr.get('cycle_outcome'),'circuit_state':cr.get('circuit_state'),'consecutive_failures':cr.get('consecutive_failures'),'snapshot_stale':snap.get('stale')}
+                  print('STEP19E_LIVE_PROBE',json.dumps(last,sort_keys=True),flush=True)
+                  if h.get('status')=='ok' and (dk.get('draftkings') or {}).get('ready') is True and rt.get('running') is True:
+                      try:
+                          teams=get('/api/v1/wnba/teams'); rows=teams.get('teams') or []
+                          schedule=get('/api/v1/wnba/games/today')
+                          if rows:
+                              team=random.SystemRandom().choice(rows); key=str(team.get('team_key') or '')
+                              roster=get('/api/v1/wnba/teams/'+urllib.parse.quote(key,safe='')+'/roster')
+                              players=roster.get('players') or roster.get('roster') or []
+                              print('STEP19E_RANDOM_READ_PROBE',json.dumps({'random_team':team.get('full_name'),'team_key':key,'team_count':len(rows),'today_game_count':len(schedule.get('games') or []),'roster_player_count':len(players) if isinstance(players,list) else None},sort_keys=True),flush=True)
+                      except Exception as exc:
+                          print('STEP19E_RANDOM_READ_PROBE_NOTE',type(exc).__name__,' '.join(str(exc).split())[:240],flush=True)
+              except Exception as exc:
+                  last={'probe':n,'exception':type(exc).__name__,'message':' '.join(str(exc).split())[:240]}
+                  print('STEP19E_LIVE_PROBE',json.dumps(last,sort_keys=True),flush=True)
+              if n < 6: time.sleep(20)
+          print('STEP19E_READ_ONLY_PROBE_COMPLETE',json.dumps(last,sort_keys=True),flush=True)
+          PY
