@@ -128,8 +128,7 @@ jobs:
           for name,rows in [('DraftKings',dkr),('FanDuel',fdr)]:
               stats={str(r.get('stat')) for r in rows}
               assert {'points','rebounds','assists','pra'} <= stats, (name,stats)
-              sides={str(r.get('side')) for r in rows}
-              assert {'over','under'} <= sides, (name,sides)
+              assert all(r.get('over_price') is not None and r.get('under_price') is not None for r in rows), name
           print('STEP19A_LIVE_TWO_PROVIDER_OK', {'slate':slate,'draftkings_records':len(dkr),'fanduel_records':len(fdr)})
           PY
 
