@@ -1,0 +1,67 @@
+name: WNBA Step 18B main candidate certification
+
+on:
+  push:
+    branches:
+      - wnba-step18b-main-cert-test-20260829
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f3436c70621ed4033ba365c1ef0c6053a8cc5a3a
+          fetch-depth: 100
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frontend dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install pytest
+      - name: Run exact Step 18B frontend regressions
+        run: |
+          test "$(git rev-parse HEAD)" = 'f3436c70621ed4033ba365c1ef0c6053a8cc5a3a'
+          python -m py_compile app.py wnba_api_client_v1.py wnba_streamlit_consumer_v1.py wnba_daily_picks_hub_v35.py wnba_step18b_consumer_bridge_v1.py
+          PYTHONPATH=. pytest -q tests/test_wnba_step18b_streamlit_consumer.py
+      - name: Prove one-parent six-file main diff and no backend change
+        run: |
+          set -euo pipefail
+          BASE='f5ce43ebb53f5a199882a85b2cf4fbe7bb320a84'
+          test "$(git rev-list --parents -n1 HEAD | wc -w)" -eq 2
+          test "$(git rev-parse HEAD^)" = "$BASE"
+          test -z "$(git diff --name-only "$BASE" HEAD -- sports_api)"
+          python - <<'PY'
+          import subprocess
+          base='f5ce43ebb53f5a199882a85b2cf4fbe7bb320a84'
+          names=set(subprocess.check_output(['git','diff','--name-only',base,'HEAD']).decode().splitlines())
+          expected={'app.py','wnba_api_client_v1.py','wnba_streamlit_consumer_v1.py','wnba_daily_picks_hub_v35.py','wnba_step18b_consumer_bridge_v1.py','tests/test_wnba_step18b_streamlit_consumer.py'}
+          assert names == expected, sorted(names)
+          print('STEP18B_MAIN_SIX_FILE_DIFF_OK')
+          PY
+      - name: Live-read certified Step 18A consumer until current snapshot is usable
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import time
+          from wnba_api_client_v1 import KyreWNBAAPIClient
+          from wnba_streamlit_consumer_v1 import normalize_consumer_payload
+
+          client=KyreWNBAAPIClient(timeout_seconds=30, attempts=3)
+          last=None
+          for attempt in range(1,9):
+              payload=client.consumer_latest()
+              view=normalize_consumer_payload(payload)
+              last=(view.get('state'),view.get('reason'),(view.get('snapshot') or {}).get('age_seconds'))
+              if view.get('state') in {'ready','unavailable'} and (view.get('snapshot') or {}).get('stale') is False:
+                  print('STEP18B_LIVE_CONSUMER_COMPAT_OK',last)
+                  break
+              time.sleep(15)
+          else:
+              raise SystemExit(f'STEP18B_LIVE_CONSUMER_NOT_CURRENT:{last}')
+          assert view.get('cards') == [] if view.get('state') != 'ready' else len(view.get('cards') or []) >= 1
+          PY
