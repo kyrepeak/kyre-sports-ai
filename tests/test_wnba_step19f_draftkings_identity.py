@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from sports_api import wnba_step11_draftkings_provider as draftkings
+from sports_api import wnba_step11_fanduel_provider as fanduel
 from sports_api import wnba_step19f_draftkings_identity as step19f
 
 
@@ -42,11 +43,22 @@ def test_live_dk_con_dal_event_maps_with_next_day_feed_date() -> None:
         "event_date": "2026-08-31",
         "participants": ["DAL Wings", "CON Sun"],
     }]
-    games = [
-        _game("1022600300", "2026-08-30", "Connecticut Sun", "Dallas Wings"),
-    ]
+    games = [_game("1022600300", "2026-08-30", "Connecticut Sun", "Dallas Wings")]
     mapped = draftkings._event_game_map(events, games, slate_date="2026-08-30")
     assert mapped["34584574"]["game_id"] == "1022600300"
+
+
+def test_fanduel_late_evening_utc_instant_uses_eastern_slate_date() -> None:
+    event = {"openDate": "2026-08-30T01:00:00Z"}
+    assert fanduel._event_date(event) == "2026-08-30"  # frozen pre-Step19F behavior
+    step19f.install_step19f_draftkings_identity()
+    assert fanduel._event_date(event) == "2026-08-29"
+    assert step19f.fanduel_event_date_step19f(event) == "2026-08-29"
+
+
+def test_fanduel_daytime_utc_instant_keeps_same_eastern_date() -> None:
+    step19f.install_step19f_draftkings_identity()
+    assert fanduel._event_date({"startTime": "2026-08-29T18:00:00Z"}) == "2026-08-29"
 
 
 def test_unrelated_event_still_fails_closed() -> None:
