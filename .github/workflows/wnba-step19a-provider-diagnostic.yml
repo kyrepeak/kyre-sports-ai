@@ -1,4 +1,4 @@
-name: WNBA Step19A read-only multibook diagnostic
+name: WNBA Step19A read-only exact-overlap diagnostic
 
 on:
   push:
@@ -13,7 +13,7 @@ env:
   CANDIDATE_SHA: e676f4cbfb64dee64bf73f2dbd8034162d69922e
 
 jobs:
-  diagnose-multibook:
+  diagnose-overlap:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -25,67 +25,49 @@ jobs:
         run: |
           python -m pip install --upgrade pip >/dev/null
           python -m pip install -r sports_api/requirements.txt >/dev/null
-          if [ -f sports_api/requirements-persistence.txt ]; then python -m pip install -r sports_api/requirements-persistence.txt >/dev/null; fi
-      - name: Trace frozen Step11D failure read-only
+      - name: Fetch current bridges and calculate exact overlap
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, os
+          import json
           from datetime import datetime, timezone
-          import sports_api.wnba_step19a_step17b_bridge  # installs process-local Step19A compatibility
+          import sports_api.wnba_step19a_step17b_bridge
           from sports_api import wnba_step11_draftkings_provider as dk
           from sports_api import wnba_step11_fanduel_provider as fd
           from sports_api import wnba_step11_multibook_shadow_board as mb
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
 
           env={
             'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
             'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
             'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
             'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
             'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
           }
           now=datetime.now(timezone.utc); slate='2026-08-29'
-
-          def chain(exc):
-            out=[]; seen=set(); cur=exc
-            while cur is not None and id(cur) not in seen:
-              seen.add(id(cur)); out.append({'type':type(cur).__name__,'message':' '.join(str(cur).split())[:1200]}); cur=cur.__cause__ or cur.__context__
-            return out
-
-          def bridge_summary(result):
-            refresh=result.get('provider_refresh') or {}; attempts=refresh.get('attempts') or []
-            payload=(attempts[0].get('payload') if attempts and isinstance(attempts[0],dict) else {}) or {}
-            summary={
-              'provider':result.get('provider'),'source_summary':result.get('source_summary'),'network':result.get('network'),
-              'attempt_count':len(attempts),'attempt_ok':(attempts[0].get('ok') if attempts and isinstance(attempts[0],dict) else None),
-              'payload_keys':sorted(payload.keys())[:30]
-            }
-            for key in ('records','offers','markets','events'):
-              value=payload.get(key)
-              if isinstance(value,(list,dict,tuple)): summary[key+'_count']=len(value)
-            return summary
-
-          failures=[]
+          d=dk.fetch_step11a_draftkings_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env)
+          f=fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env)
+          dr=s12._payload_records(d,dk.PROVIDER); fr=s12._payload_records(f,fd.PROVIDER)
+          print('CURRENT_RECORD_COUNTS',{'DraftKings':len(dr),'FanDuel':len(fr)})
           try:
-            d=dk.fetch_step11a_draftkings_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env)
-            print('DK_DETAIL',json.dumps(bridge_summary(d),sort_keys=True,default=str))
+            targets,groups=s12._exact_multibook_targets(dr,fr)
           except Exception as exc:
-            failures.append(('dk',chain(exc))); print('DK_FAIL',json.dumps(chain(exc),sort_keys=True))
-          try:
-            f=fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env)
-            print('FD_DETAIL',json.dumps(bridge_summary(f),sort_keys=True,default=str))
-          except Exception as exc:
-            failures.append(('fd',chain(exc))); print('FD_FAIL',json.dumps(chain(exc),sort_keys=True))
-
-          try:
-            result=mb.run_step11d_multibook_shadow_board(season=2026,slate_date=slate,step8_distributions=[],evaluated_at=now,cycle_started_at=now,provider_attempts=1,env=env)
-            print('STEP11D_EMPTY_DISTRIBUTIONS_OK',json.dumps({'shadow_summary':result.get('shadow_summary'),'providers':result.get('providers'),'market_audit':result.get('market_audit')},sort_keys=True,default=str))
-          except Exception as exc:
-            print('STEP11D_EMPTY_DISTRIBUTIONS_FAIL',json.dumps(chain(exc),sort_keys=True))
-            failures.append(('step11d_empty',chain(exc)))
-
-          if failures:
-            print('STEP19A_MULTIBOOK_DIAGNOSTIC_FOUND',json.dumps(failures,sort_keys=True))
-            raise SystemExit(1)
-          print('STEP19A_MULTIBOOK_DIAGNOSTIC_ALL_OK')
+            print('EXACT_OVERLAP_FAILED',type(exc).__name__,' '.join(str(exc).split())[:1000])
+            # Show near-overlap by same game/player/stat ignoring line, never prices/secrets.
+            def key3(r): return (str(r.get('game_id')),int(r.get('player_id')),str(r.get('stat')))
+            d3={key3(r) for r in dr}; f3={key3(r) for r in fr}; common=sorted(d3 & f3)
+            examples=[]
+            for key in common[:30]:
+              dlines=sorted({float(r['line']) for r in dr if key3(r)==key}); flines=sorted({float(r['line']) for r in fr if key3(r)==key})
+              examples.append({'game_id':key[0],'player_id':key[1],'stat':key[2],'draftkings_lines':dlines,'fanduel_lines':flines,'exact_line_overlap':sorted(set(dlines)&set(flines))})
+            print('SAME_PROP_NEAR_OVERLAP_COUNT',len(common))
+            print('SAME_PROP_NEAR_OVERLAP_EXAMPLES',json.dumps(examples,sort_keys=True))
+            raise
+          print('EXACT_OVERLAP_OK',{'groups':len(groups),'targets':len(targets)})
+          print('EXACT_OVERLAP_EXAMPLES',json.dumps(groups[:25],sort_keys=True))
+          # Verify cached bridges also pass Step11D's exact provider integrity checks.
+          dp=mb._verify_bridge(d,provider=dk.PROVIDER); fp=mb._verify_bridge(f,provider=fd.PROVIDER)
+          print('CACHED_BRIDGE_VERIFY_OK',{'dk_records':len(dp.get('records') or []),'fd_records':len(fp.get('records') or [])})
           PY
