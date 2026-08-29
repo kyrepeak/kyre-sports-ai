@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: wnba-step19e-production-release
+  cancel-in-progress: true
+
 env:
   CANDIDATE_SHA: 222550f3d2db46d470e4ba050848a9110920fcab
   ROLLBACK_SHA: a2e1dc6ec2b6c0c8c5e0bd15cd73b24fa9a56ab2
@@ -206,10 +210,10 @@ jobs:
           team=random.SystemRandom().choice(rows)
           key=str(team.get('team_key') or '').strip()
           if not key: raise SystemExit('Random team had no team_key')
-          roster=get('/api/v1/wnba/teams/'+urllib.parse.quote(key,safe=''))
-          # The route above intentionally proves random path routing; use roster endpoint next.
           roster=get('/api/v1/wnba/teams/'+urllib.parse.quote(key,safe='')+'/roster')
-          print('STEP19E_RANDOM_LIVE_SEARCH_CERTIFIED',json.dumps({'random_team':team.get('full_name'),'team_key':key,'team_count':len(rows),'today_game_count':len(schedule.get('games') or []),'roster_player_count':len(roster.get('players') or roster.get('roster') or [])},sort_keys=True),flush=True)
+          player_rows=roster.get('players') or roster.get('roster') or []
+          if not isinstance(player_rows,list): raise SystemExit('Random roster search did not return a list')
+          print('STEP19E_RANDOM_LIVE_SEARCH_CERTIFIED',json.dumps({'random_team':team.get('full_name'),'team_key':key,'team_count':len(rows),'today_game_count':len(schedule.get('games') or []),'roster_player_count':len(player_rows)},sort_keys=True),flush=True)
           PY
 
       - name: Final exact-live Step19E certification
