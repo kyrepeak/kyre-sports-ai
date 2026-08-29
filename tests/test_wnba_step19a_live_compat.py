@@ -50,6 +50,21 @@ def test_fanduel_nested_result_type_and_handicap_form_two_way_line() -> None:
     assert compat.fanduel_runner_side_line_current(under) == ("under", 15.5)
 
 
+def test_fanduel_current_player_evidence_is_explicit_not_fuzzy() -> None:
+    runners = [
+        {"isPlayerSelection": True, "result": {"type": "OVER"}, "handicap": 15.5},
+        {"isPlayerSelection": True, "result": {"type": "UNDER"}, "handicap": 15.5},
+    ]
+    assert compat.fanduel_declares_player_market_current(
+        {"marketType": "PLAYER_D_TOTAL_POINTS_WNBA", "marketName": "Kiki Rice - Points"},
+        runners,
+    ) is True
+    assert compat.fanduel_declares_player_market_current(
+        {"marketType": "TOTAL_POINTS_(OVER/UNDER)", "marketName": "Total Points"},
+        [{"isPlayerSelection": False}],
+    ) is False
+
+
 def test_installation_patches_only_compatibility_helpers() -> None:
     status = compat.install_step19a_live_provider_compat()
     assert status["installed"] is True
@@ -57,6 +72,10 @@ def test_installation_patches_only_compatibility_helpers() -> None:
     assert fd._event_date({"openDate": "2026-08-30T02:00:00.000Z"}) == "2026-08-29"
     assert fd._relevant_tab_ids({"layout": {"tabs": [{"id": 168, "title": "Player Points"}]}}) == ["player-points"]
     assert fd._runner_side_line({"runnerName": "Alyssa Thomas Over", "result": {"type": "OVER"}, "handicap": 20.5}) == ("over", 20.5)
+    assert fd._declares_player_market(
+        {"marketType": "PLAYER_B_TOTAL_REBOUNDS_WNBA", "marketName": "Alyssa Thomas - Rebounds"},
+        [{"isPlayerSelection": True}],
+    ) is True
     assert status["frozen_step11a_source_modified"] is False
     assert status["frozen_step11c_source_modified"] is False
     assert status["frozen_step11d_source_modified"] is False
