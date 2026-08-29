@@ -12,15 +12,17 @@ Certified live differences handled here:
   ``America/New_York``; slate membership therefore uses the Eastern date.
 * FanDuel's event-page endpoint selects player tabs with stable slugs such as
   ``player-points`` rather than the numeric layout card id.
-* FanDuel now exposes Over/Under in ``runner.result.type`` with the threshold in
+* FanDuel exposes Over/Under in ``runner.result.type`` with the threshold in
   ``runner.handicap`` on the live player-prop surface.
-* FanDuel player tabs also contain alternate one-way markets.  Step11C's scope
+* FanDuel player tabs also contain alternate one-way markets. Step11C's scope
   remains exact-line two-way Over/Under props, so only markets carrying a
-  complete parseable O/U pair are treated as identity-bearing player props.
+  complete parseable O/U pair and an explicit player-market surface are treated
+  as identity-bearing player props.
 """
 from __future__ import annotations
 
 import math
+import re
 from collections import defaultdict
 from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
@@ -29,7 +31,7 @@ from sports_api import wnba_step11_draftkings_provider as draftkings
 from sports_api import wnba_step11_fanduel_provider as fanduel
 
 SOURCE = "Kyre Sports API WNBA Step19F strict sportsbook live-surface compatibility"
-MODEL_VERSION = "wnba_step19f_sportsbook_live_surface_v4"
+MODEL_VERSION = "wnba_step19f_sportsbook_live_surface_v5"
 EASTERN = ZoneInfo("America/New_York")
 
 _PROVIDER_TEAM_ALIASES = {
@@ -42,6 +44,16 @@ _FANDUEL_PLAYER_TAB_SLUGS = {
     "player rebounds": "player-rebounds",
     "player combos": "player-combos",
 }
+
+# Live standard FanDuel two-way player totals use market types such as
+# PLAYER_G_TOTAL_POINTS_WNBA. The position/slot token varies, while the exact
+# total-stat surface remains stable. Alternate milestone markets do not match
+# this shape and still fail closed unless they independently satisfy the frozen
+# declaration contract.
+_FANDUEL_STANDARD_PLAYER_TOTAL_TYPE_RE = re.compile(
+    r"^PLAYER_[A-Z0-9]+_TOTAL_[A-Z0-9_()+]+_WNBA$",
+    flags=re.I,
+)
 
 _ORIGINAL_DK_TEAM_IDENTITY_KEY = draftkings._team_identity_key
 _ORIGINAL_FD_EVENT_DATE = fanduel._event_date
@@ -109,13 +121,23 @@ def fanduel_runner_side_line_step19f(runner: Mapping[str, Any]) -> tuple[str, fl
     return side, round(line, 6)
 
 
+def _fanduel_has_explicit_player_surface(
+    market: Mapping[str, Any],
+    runners: Sequence[Mapping[str, Any]],
+) -> bool:
+    if _ORIGINAL_FD_DECLARES_PLAYER_MARKET(market, runners):
+        return True
+    market_type = fanduel._clean(market.get("marketType") or market.get("type"))
+    if _FANDUEL_STANDARD_PLAYER_TOTAL_TYPE_RE.fullmatch(market_type):
+        return True
+    return any(runner.get("isPlayerSelection") is True for runner in runners)
+
+
 def fanduel_declares_player_market_step19f(
     market: Mapping[str, Any],
     runners: Sequence[Mapping[str, Any]],
 ) -> bool:
-    """Declare identity only for the two-way threshold market Step11C supports."""
-    if not _ORIGINAL_FD_DECLARES_PLAYER_MARKET(market, runners):
-        return False
+    """Declare identity only for explicit two-way threshold player markets."""
     lines: dict[float, set[str]] = defaultdict(set)
     for runner in runners:
         parsed = fanduel_runner_side_line_step19f(runner)
@@ -123,7 +145,10 @@ def fanduel_declares_player_market_step19f(
             continue
         side, line = parsed
         lines[line].add(side)
-    return any(sides == {"over", "under"} for sides in lines.values())
+    complete_pair = any(sides == {"over", "under"} for sides in lines.values())
+    if not complete_pair:
+        return False
+    return _fanduel_has_explicit_player_surface(market, runners)
 
 
 def install_step19f_draftkings_identity() -> dict[str, Any]:
