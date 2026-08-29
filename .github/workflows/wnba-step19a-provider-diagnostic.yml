@@ -1,0 +1,150 @@
+name: WNBA Step19A read-only provider diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19a-provider-diagnostic-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  CANDIDATE_SHA: e676f4cbfb64dee64bf73f2dbd8034162d69922e
+
+jobs:
+  diagnose-providers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact Step19A candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Install API dependencies
+        run: |
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          if [ -f sports_api/requirements-persistence.txt ]; then python -m pip install -r sports_api/requirements-persistence.txt >/dev/null; fi
+
+      - name: Run read-only DraftKings and FanDuel provider diagnostics
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import inspect, json, os, traceback
+          from datetime import datetime, timezone
+
+          candidate=os.environ['CANDIDATE_SHA']
+          safe_env={
+              'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true',
+              'WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+              'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
+              'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
+              'WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+              'WNBA_STEP10_FASTAPI_ENABLED':'true',
+              'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true',
+              'WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
+              'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true',
+              'WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+              'WNBA_STEP9_FASTAPI_ENABLED':'true',
+              'WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true',
+              'WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true',
+              'WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true',
+              'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+              'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+              'WNBA_STEP12_SCHEDULER_ENABLED':'false',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
+              'WNBA_STEP6J_CANARY_ENABLED':'false',
+              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false',
+              'WNBA_PERSISTENCE_ENABLED':'false',
+              'WNBA_SUPABASE_WRITE_ENABLED':'false',
+              'WNBA_WAGERING_ENABLED':'false',
+              'WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false',
+              'WNBA_DEPLOYMENT_REVISION':candidate,
+          }
+
+          # Importing the Step19A bridge installs only process-local compatibility shims.
+          import sports_api.wnba_step19a_step17b_bridge as bridge
+          import sports_api.wnba_step11_draftkings_provider as dk
+          import sports_api.wnba_step11_fanduel_provider as fd
+
+          def choose(module, required, preferred_tokens):
+              rows=[]
+              for name,fn in inspect.getmembers(module,inspect.isfunction):
+                  if name.startswith('_'): continue
+                  params=inspect.signature(fn).parameters
+                  if not set(required).issubset(params): continue
+                  score=sum(tok in name.casefold() for tok in preferred_tokens)
+                  rows.append((score,name,fn,str(inspect.signature(fn))))
+              rows.sort(reverse=True,key=lambda x:(x[0],x[1]))
+              print('CANDIDATES',module.__name__,[(r[1],r[3]) for r in rows])
+              if not rows: raise RuntimeError(f'No callable found in {module.__name__} for {required}')
+              return rows[0][1],rows[0][2]
+
+          def summarize(value):
+              if not isinstance(value,dict): return {'type':type(value).__name__}
+              out={'keys':sorted(value.keys())[:30]}
+              for key in ('provider','provider_id','model_version','status','ready','release_id','schema_version'):
+                  if key in value: out[key]=value.get(key)
+              for key in ('records','offers','markets','events','source_events'):
+                  v=value.get(key)
+                  if isinstance(v,(list,tuple,dict)): out[key+'_count']=len(v)
+              return out
+
+          def chain(exc):
+              rows=[]; cur=exc; seen=set()
+              while cur is not None and id(cur) not in seen:
+                  seen.add(id(cur)); rows.append({'type':type(cur).__name__,'message':' '.join(str(cur).split())[:1000]})
+                  cur=cur.__cause__ or cur.__context__
+              return rows
+
+          slate='2026-08-29'; now=datetime.now(timezone.utc)
+          failures=[]
+
+          dk_name,dk_fn=choose(dk,('season','slate_date'),('draftkings','provider','bridge','fetch'))
+          try:
+              kwargs={'season':2026,'slate_date':slate,'env':safe_env}
+              if 'evaluated_at' in inspect.signature(dk_fn).parameters: kwargs['evaluated_at']=now
+              result=dk_fn(**kwargs)
+              print('DRAFTKINGS_PROVIDER_OK',dk_name,json.dumps(summarize(result),sort_keys=True))
+          except Exception as exc:
+              failures.append(('draftkings',dk_name,chain(exc)))
+              print('DRAFTKINGS_PROVIDER_FAILED',dk_name,json.dumps(chain(exc),sort_keys=True))
+
+          fd_name,fd_fn=choose(fd,('season','slate_date'),('fanduel','provider','bridge','fetch'))
+          try:
+              kwargs={'season':2026,'slate_date':slate,'env':safe_env}
+              if 'evaluated_at' in inspect.signature(fd_fn).parameters: kwargs['evaluated_at']=now
+              result=fd_fn(**kwargs)
+              print('FANDUEL_PROVIDER_OK',fd_name,json.dumps(summarize(result),sort_keys=True))
+          except Exception as exc:
+              failures.append(('fanduel',fd_name,chain(exc)))
+              print('FANDUEL_PROVIDER_FAILED',fd_name,json.dumps(chain(exc),sort_keys=True))
+
+          # Also probe FanDuel's anonymous page directly so we can distinguish HTTP drift
+          # from parser/identity drift without performing any mutation.
+          try:
+              url=fd.FANDUEL_BASE_URL+fd.CONTENT_PAGE_PATH
+              params={
+                  '_ak':fd.FANDUEL_PUBLIC_WEB_KEY,
+                  'customPageId':fd.WNBA_CUSTOM_PAGE_ID,
+                  'pbHorizontal':False,
+                  'useCombined':True,
+              }
+              payload=fd._get_json(url,params=params,requester=None,timeout=fd.DEFAULT_TIMEOUT_SECONDS)
+              print('FANDUEL_RAW_CONTENT_PAGE_OK',json.dumps({'top_keys':sorted(payload.keys())[:20],'event_count':len(fd._extract_events(payload))},sort_keys=True))
+          except Exception as exc:
+              failures.append(('fanduel_raw','content_page',chain(exc)))
+              print('FANDUEL_RAW_CONTENT_PAGE_FAILED',json.dumps(chain(exc),sort_keys=True))
+
+          if failures:
+              print('STEP19A_PROVIDER_DIAGNOSTIC_FAILURES',json.dumps(failures,sort_keys=True))
+              raise SystemExit(1)
+          print('STEP19A_PROVIDER_DIAGNOSTIC_ALL_OK')
+          PY
