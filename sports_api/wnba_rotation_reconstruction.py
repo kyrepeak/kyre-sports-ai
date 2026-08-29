@@ -34,7 +34,10 @@ PARTICIPATION_CATEGORIES = {
     "jump_ball",
 }
 PLAYER_TOLERANCE_SECONDS = 1.05
-TEAM_TOLERANCE_SECONDS = 2.1
+# WNBA.com publishes each player's official box minutes to whole-second
+# precision. Across a 12-player active roster, independent half-second rounding
+# can accumulate to six seconds even when every individual player reconciles.
+TEAM_TOLERANCE_SECONDS = 6.1
 MAX_COMBINATIONS = 250_000
 
 
