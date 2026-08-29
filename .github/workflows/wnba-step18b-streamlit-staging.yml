@@ -1,0 +1,97 @@
+name: WNBA Step 18B Streamlit consumer staging
+
+on:
+  push:
+    branches:
+      - wnba-step18b-streamlit-consumer-integration-20260829
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply narrow client and root-wrapper integration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('wnba_api_client_v1.py')
+          text=p.read_text()
+          anchor='''    def readiness(self) -> dict[str, Any]:\n        """Read only the hosted API/Supabase pre-activation safety surface."""\n'''
+          method='''    def consumer_latest(self) -> dict[str, Any]:\n        """Read the certified Step-18A latest-board snapshot; never compute on request."""\n        body = self.get_json("/api/v1/wnba/consumer/latest")\n        if body.get("data_type") != "wnba_step18a_streamlit_consumer_latest":\n            raise KyreWNBAAPIError("WNBA consumer endpoint data_type is invalid.")\n        if body.get("schema_version") != "wnba_step_18a_streamlit_consumer_v1":\n            raise KyreWNBAAPIError("WNBA consumer endpoint schema is invalid.")\n        if not isinstance(body.get("enabled"), bool) or not isinstance(body.get("available"), bool):\n            raise KyreWNBAAPIError("WNBA consumer endpoint availability flags are invalid.")\n        if not isinstance(body.get("board"), dict) or not isinstance(body.get("snapshot"), dict):\n            raise KyreWNBAAPIError("WNBA consumer endpoint board/snapshot shape is invalid.")\n        return body\n\n'''
+          if text.count(anchor)!=1:
+              raise SystemExit('STEP18B_CLIENT_ANCHOR_DRIFT')
+          p.write_text(text.replace(anchor,method+anchor,1))
+
+          p=Path('app.py')
+          text=p.read_text()
+          function_anchor='''def _load_frozen_pre_live_app() -> str:\n'''
+          function='''def _install_step18b_wnba_consumer_bridge() -> dict:\n    """Route frozen Daily Picks to the certified read-only Step-18A consumer."""\n    from wnba_step18b_consumer_bridge_v1 import install_step18b_consumer_bridge\n\n    return install_step18b_consumer_bridge()\n\n\n'''
+          if text.count(function_anchor)!=1:
+              raise SystemExit('STEP18B_APP_FUNCTION_ANCHOR_DRIFT')
+          text=text.replace(function_anchor,function+function_anchor,1)
+          call_anchor='''_STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()\nsource = _load_frozen_pre_live_app()\n'''
+          call_replace='''_STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()\n_STEP18B_WNBA_CONSUMER_BRIDGE = _install_step18b_wnba_consumer_bridge()\nsource = _load_frozen_pre_live_app()\n'''
+          if text.count(call_anchor)!=1:
+              raise SystemExit('STEP18B_APP_CALL_ANCHOR_DRIFT')
+          p.write_text(text.replace(call_anchor,call_replace,1))
+
+          p=Path('tests/test_wnba_step18b_streamlit_consumer.py')
+          text=p.read_text()
+          old='''    def fake_get(path, *, params=None):\n        seen.append((path, params))\n        return _payload()\n\n    monkeypatch.setattr(client, "get_json", fake_get)\n'''
+          new='''    def fake_get(self, path, *, params=None):\n        seen.append((path, params))\n        return _payload()\n\n    monkeypatch.setattr(api.KyreWNBAAPIClient, "get_json", fake_get)\n'''
+          if text.count(old)!=1:
+              raise SystemExit('STEP18B_TEST_MONKEYPATCH_ANCHOR_DRIFT')
+          p.write_text(text.replace(old,new,1))
+          PY
+
+      - name: Install frontend test dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install pytest
+
+      - name: Compile and run Step 18B regressions
+        run: |
+          python -m py_compile wnba_api_client_v1.py wnba_streamlit_consumer_v1.py wnba_daily_picks_hub_v35.py wnba_step18b_consumer_bridge_v1.py app.py
+          PYTHONPATH=. pytest -q tests/test_wnba_step18b_streamlit_consumer.py
+
+      - name: Prove certified backend frozen and frontend-only diff
+        run: |
+          set -euo pipefail
+          FROZEN='d5da3830ab2194074f2e077d6b1ea41d4bc98633'
+          git merge-base --is-ancestor "$FROZEN" HEAD
+          test -z "$(git diff --name-only "$FROZEN" -- sports_api)"
+          python - <<'PY'
+          import subprocess
+          frozen='d5da3830ab2194074f2e077d6b1ea41d4bc98633'
+          names=set(subprocess.check_output(['git','diff','--name-only',frozen,'--','app.py','wnba_api_client_v1.py','wnba_streamlit_consumer_v1.py','wnba_daily_picks_hub_v35.py','wnba_step18b_consumer_bridge_v1.py','tests']).decode().splitlines())
+          expected={
+              'app.py','wnba_api_client_v1.py','wnba_streamlit_consumer_v1.py',
+              'wnba_daily_picks_hub_v35.py','wnba_step18b_consumer_bridge_v1.py',
+              'tests/test_wnba_step18b_streamlit_consumer.py',
+          }
+          if names != expected:
+              raise SystemExit(f'STEP18B_FRONTEND_DIFF_DRIFT:{sorted(names)}')
+          print('STEP18B_FRONTEND_ONLY_DIFF_OK')
+          PY
+
+      - name: Commit only green-tested integration patch
+        run: |
+          if git diff --quiet -- app.py wnba_api_client_v1.py tests/test_wnba_step18b_streamlit_consumer.py; then
+            echo 'No generated patch to commit.'
+            exit 0
+          fi
+          git config user.name 'kyre-step18b-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add app.py wnba_api_client_v1.py tests/test_wnba_step18b_streamlit_consumer.py
+          git commit -m 'Wire Step 18B certified consumer into Streamlit Daily Picks'
+          git push origin HEAD:wnba-step18b-streamlit-consumer-integration-20260829
