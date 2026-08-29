@@ -1,47 +1,173 @@
-name: WNBA Step19E consumer-capture production fix
+name: WNBA Step19F production certification
 
 on:
   push:
     branches: [wnba-step19e-production-release-20260829]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: wnba-step19e-consumer-fix
+  group: wnba-step19f-production-certification
   cancel-in-progress: true
 
 env:
-  CANDIDATE_SHA: 222550f3d2db46d470e4ba050848a9110920fcab
-  ROLLBACK_SHA: a2e1dc6ec2b6c0c8c5e0bd15cd73b24fa9a56ab2
+  CANDIDATE_SHA: 979486478dff7e9698ae8a1c996180c28c327950
+  ROLLBACK_SHA: 222550f3d2db46d470e4ba050848a9110920fcab
   RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
   RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
 
 jobs:
   release:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     environment: wnba-render-staging
     steps:
-      - name: Checkout exact Step19E
+      - name: Checkout exact Step19F candidate
         uses: actions/checkout@v4
         with:
           ref: ${{ env.CANDIDATE_SHA }}
           fetch-depth: 1
 
-      - name: Prove certified candidate
+      - name: Prove Step19F candidate and hosted bootstrap
+        env:
+          WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+          WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+          WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+          WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+          WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+          WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+          WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+          WNBA_STEP10_FASTAPI_ENABLED: 'true'
+          WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+          WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+          WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+          WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+          WNBA_STEP9_FASTAPI_ENABLED: 'true'
+          WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+          WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+          WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+          WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+          WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+          WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+          WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+          WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+          WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+          WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+          WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+          WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+          WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+          WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+          WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+          WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+          WNBA_PERSISTENCE_ENABLED: 'false'
+          WNBA_SUPABASE_WRITE_ENABLED: 'false'
+          WNBA_WAGERING_ENABLED: 'false'
+          WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
         run: |
           python -m pip install -r sports_api/requirements.txt >/dev/null
           python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
           python -m pip install pytest >/dev/null
-          WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED=true WNBA_STEP19A_DRAFTKINGS_SITE=dkusaz WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED=true WNBA_STEP11B_NETWORK_REFRESH_ENABLED=true WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED=true WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED=true WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED=true WNBA_STEP10_FASTAPI_ENABLED=true WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED=true WNBA_STEP10B_MARKET_ADAPTER_ENABLED=true WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED=true WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED=true WNBA_STEP9_FASTAPI_ENABLED=true WNBA_STEP9_THRESHOLD_PRICING_ENABLED=true WNBA_STEP9B_MARKET_COMPARISON_ENABLED=true WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED=true WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED=true WNBA_STEP8_PROJECTION_HANDOFF_ENABLED=true WNBA_STEP8_CORE_PROJECTION_ENABLED=true WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED=true WNBA_STEP8_MONTE_CARLO_ENABLED=true WNBA_STEP7G_FIRST_PARTY_ENABLED=true WNBA_PRODUCTION_RUNTIME_ENABLED=false WNBA_BOARD_SCHEDULER_ENABLED=false WNBA_STEP12_SCHEDULER_ENABLED=false WNBA_KYRE_DIRECT_SYNC_ENABLED=false WNBA_KYRE_RECONCILED_SYNC_ENABLED=false WNBA_PERSISTENCE_ENABLED=false WNBA_SUPABASE_WRITE_ENABLED=false WNBA_WAGERING_ENABLED=false WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED=false python -m pytest -q tests/test_wnba_step19e_cooldown_aware_cycle.py tests/test_wnba_step19d_history_transport_resilience.py tests/test_wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12c_live_board_runtime.py
+          python -m pytest -q \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py \
+            tests/test_wnba_step19d_history_transport_resilience.py \
+            tests/test_wnba_step12b_live_runtime_assembly.py \
+            tests/test_wnba_step12c_live_board_runtime.py
+          python - <<'PY'
+          from sports_api import wnba_step17b_always_on_runtime as s17b
+          from sports_api import wnba_step19e_cooldown_aware_cycle as s19e
+          from sports_api import wnba_step19f_draftkings_identity as s19f
+          import sports_api.api.wnba_step17b_runtime  # installs hosted Step19E/Step19F chain
+          if s17b.run_one_cycle is not s19e.run_one_cycle_step19e:
+              raise SystemExit('hosted Step19E cycle wrapper not installed')
+          print('STEP19F_HOST_BOOTSTRAP_CERTIFIED', s19f.MODEL_VERSION)
+          PY
 
-      - name: Enable consumer capture and deploy exact candidate
+      - name: Read-only live Step12B certification
+        env:
+          WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+          WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+          WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+          WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+          WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+          WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+          WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+          WNBA_STEP10_FASTAPI_ENABLED: 'true'
+          WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+          WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+          WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+          WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+          WNBA_STEP9_FASTAPI_ENABLED: 'true'
+          WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+          WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+          WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+          WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+          WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+          WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+          WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+          WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+          WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+          WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+          WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+          WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+          WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+          WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+          WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+          WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+          WNBA_PERSISTENCE_ENABLED: 'false'
+          WNBA_SUPABASE_WRITE_ENABLED: 'false'
+          WNBA_WAGERING_ENABLED: 'false'
+          WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from sports_api import wnba_step19f_draftkings_identity as s19f
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          s19f.install_step19f_draftkings_identity()
+          req=s12b.build_step12b_request(
+              season=2026,
+              slate_date='2026-08-29',
+              evaluated_at=datetime.now(timezone.utc),
+              previous_state=None,
+              controller_policy={'provider_attempts': 1},
+          )
+          out=s12b.run_step12b_live_runtime_job(req, env=os.environ)
+          discovery=out.get('provider_discovery') or {}
+          dk=discovery.get('draftkings') or {}
+          fd=discovery.get('fanduel') or {}
+          overlap=out.get('market_overlap') or {}
+          runtime=out.get('runtime_summary') or {}
+          checks={
+              'status_healthy': out.get('status') == 'healthy',
+              'health_healthy': out.get('health') == 'healthy',
+              'draftkings_records': int(dk.get('record_count') or 0) > 0,
+              'draftkings_errors_empty': not (dk.get('errors') or []),
+              'fanduel_records': int(fd.get('record_count') or 0) > 0,
+              'fanduel_errors_empty': not (fd.get('errors') or []),
+              'step11_cycle_executed': runtime.get('step11_cycle_executed') is True,
+              'step8_distributions': int(runtime.get('step8_distribution_count') or 0) > 0,
+              'qualified_props': int(runtime.get('qualified_prop_count') or 0) > 0,
+              'top_card': int(runtime.get('top_card_count') or 0) > 0,
+              'multibook_overlap': int(overlap.get('exact_line_multibook_group_count') or 0) > 0,
+              'different_lines_not_blended': overlap.get('different_lines_blended') is False,
+          }
+          print('STEP19F_PRODUCTION_PREFLIGHT',json.dumps(checks,sort_keys=True))
+          failed=[name for name,ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Step19F preflight failed: '+','.join(failed))
+          print('STEP19F_PRODUCTION_PREFLIGHT_CERTIFIED')
+          PY
+
+      - name: Deploy exact Step19F candidate
+        id: deploy
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
           python - <<'PY'
-          import json, os, re, time, urllib.request
+          import json, os, time, urllib.request
           base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['CANDIDATE_SHA']
           h={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
           def req(method,path,body=None):
@@ -52,7 +178,7 @@ jobs:
             'WEB_CONCURRENCY':'1','WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true','WNBA_STEP17B_ALWAYS_ON_ENABLED':'true','WNBA_STEP17B_LOOP_SECONDS':'60','WNBA_STEP17B_EXPECTED_REVISION':sha,'WNBA_STEP17C_MONITORING_ENABLED':'true','WNBA_STEP18A_STREAMLIT_CONSUMER_ENABLED':'true',
             'WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED':'true','WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED':'true','WNBA_STEP14B_DATABASE_READ_ENABLED':'true','WNBA_STEP14B_DATABASE_WRITE_ENABLED':'true','WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED':'true','WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED':'true','WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED':'true','WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED':'true','WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED':'true','WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED':'true','WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED':'true','WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
             'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz','WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true','WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true','WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true','WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
-            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false','WNBA_DEPLOYMENT_REVISION':sha,'WNBA_RELEASE_ID':'wnba-step19e-consumer-fix'
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false','WNBA_DEPLOYMENT_REVISION':sha,'WNBA_RELEASE_ID':'wnba-step19f-production-certified'
           }
           for k,v in desired.items(): req('PUT',f'/services/{sid}/env-vars/{k}',{'value':v})
           out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
@@ -64,10 +190,11 @@ jobs:
               time.sleep(5)
           else: raise SystemExit('deploy timeout')
           if sha.lower() not in json.dumps(d).lower(): raise SystemExit('live sha mismatch')
-          print('STEP19E_CONSUMER_FIX_LIVE',did)
+          print('STEP19F_EXACT_CANDIDATE_LIVE',did)
           PY
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Wait for one safe executed cycle
+      - name: Wait for a genuine safe executed cycle
         run: |
           python - <<'PY'
           import json,time,urllib.request
@@ -75,17 +202,19 @@ jobs:
           def get(p):
               with urllib.request.urlopen(base+p,timeout=40) as r:return json.loads(r.read().decode())
           last=None
-          for i in range(90):
+          for i in range(120):
               c=get('/api/v1/wnba/consumer/latest'); rt=get('/api/v1/wnba/runtime/step17b'); d=get('/api/v1/wnba/markets/direct/draftkings/status')
-              cr=c.get('runtime') or {}; last={'i':i,'available':c.get('available'),'reason':c.get('reason'),'cycle_executed':cr.get('cycle_executed'),'outcome':cr.get('cycle_outcome'),'circuit':cr.get('circuit_state'),'failures':cr.get('consecutive_failures'),'runtime_success':rt.get('success_count'),'runtime_failures':rt.get('failure_count'),'dk_ready':(d.get('draftkings') or {}).get('ready')}
+              cr=c.get('runtime') or {}; dk=d.get('draftkings') or {}
+              last={'i':i,'available':c.get('available'),'reason':c.get('reason'),'cycle_executed':cr.get('cycle_executed'),'outcome':cr.get('cycle_outcome'),'circuit':cr.get('circuit_state'),'failures':cr.get('consecutive_failures'),'runtime_success':rt.get('success_count'),'runtime_failures':rt.get('failure_count'),'runtime_status':rt.get('last_status'),'dk_ready':dk.get('ready')}
               if i%5==0: print('WAIT',json.dumps(last,sort_keys=True),flush=True)
-              if cr.get('cycle_executed') is True and cr.get('circuit_state')=='closed' and cr.get('consecutive_failures')==0 and cr.get('cycle_outcome') in {'shadow_board_ready','market_board_not_ready'}:
-                  print('STEP19E_SAFE_CYCLE_CERTIFIED',json.dumps(last,sort_keys=True)); break
+              safe=(cr.get('cycle_executed') is True and cr.get('circuit_state')=='closed' and cr.get('consecutive_failures')==0 and cr.get('cycle_outcome') in {'shadow_board_ready','market_board_not_ready'} and int(rt.get('success_count') or 0)>=1 and int(rt.get('failure_count') or 0)==0 and rt.get('last_status')=='cycle_completed' and dk.get('ready') is True and c.get('reason')!='provider_transient_not_ready')
+              if safe:
+                  print('STEP19F_SAFE_CYCLE_CERTIFIED',json.dumps(last,sort_keys=True)); break
               time.sleep(10)
-          else: raise SystemExit('no safe cycle '+repr(last))
+          else: raise SystemExit('no safe Step19F cycle '+repr(last))
           PY
 
-      - name: Random live read certification
+      - name: Random live WNBA read certification
         run: |
           python - <<'PY'
           import json,random,urllib.parse,urllib.request
@@ -93,8 +222,62 @@ jobs:
           def get(p):
               with urllib.request.urlopen(base+p,timeout=45) as r:return json.loads(r.read().decode())
           teams=get('/api/v1/wnba/teams'); rows=teams.get('teams') or []
+          games=get('/api/v1/wnba/games/today'); game_rows=games.get('games') or []
           if not rows: raise SystemExit('teams empty')
+          if not game_rows: raise SystemExit('today games empty')
           team=random.SystemRandom().choice(rows); key=team['team_key']
           roster=get('/api/v1/wnba/teams/'+urllib.parse.quote(key,safe='')+'/roster')
-          print('STEP19E_RANDOM_READ_CERTIFIED',json.dumps({'team':team.get('full_name'),'team_count':len(rows),'roster_keys':sorted(roster.keys())},sort_keys=True))
+          print('STEP19F_RANDOM_READ_CERTIFIED',json.dumps({'team':team.get('full_name'),'team_count':len(rows),'today_game_count':len(game_rows),'roster_keys':sorted(roster.keys())},sort_keys=True))
+          PY
+
+      - name: Final production verification
+        run: |
+          python - <<'PY'
+          import json,urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(p):
+              with urllib.request.urlopen(base+p,timeout=45) as r:return json.loads(r.read().decode())
+          root=get('/'); rt=get('/api/v1/wnba/runtime/step17b'); c=get('/api/v1/wnba/consumer/latest'); d=get('/api/v1/wnba/markets/direct/draftkings/status')
+          cr=c.get('runtime') or {}; dk=d.get('draftkings') or {}
+          checks={
+              'api_online': root.get('status')=='online',
+              'runtime_success': int(rt.get('success_count') or 0)>=1,
+              'runtime_zero_failures': int(rt.get('failure_count') or 0)==0,
+              'runtime_cycle_completed': rt.get('last_status')=='cycle_completed',
+              'consumer_cycle_executed': cr.get('cycle_executed') is True,
+              'consumer_circuit_closed': cr.get('circuit_state')=='closed',
+              'consumer_zero_failures': cr.get('consecutive_failures')==0,
+              'provider_transient_bug_absent': c.get('reason')!='provider_transient_not_ready',
+              'draftkings_ready': dk.get('ready') is True,
+          }
+          print('STEP19F_FINAL_CHECKS',json.dumps(checks,sort_keys=True))
+          failed=[name for name,ok in checks.items() if not ok]
+          if failed: raise SystemExit('final production verification failed: '+','.join(failed))
+          print('STEP19F_PRODUCTION_CERTIFIED')
+          PY
+
+      - name: Roll back if post-deploy certification fails
+        if: ${{ failure() && steps.deploy.outputs.deployed == 'true' }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json,os,time,urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['ROLLBACK_SHA']
+          h={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
+          def req(method,path,body=None):
+              r=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=h,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          for k,v in {'WNBA_STEP17B_EXPECTED_REVISION':sha,'WNBA_DEPLOYMENT_REVISION':sha,'WNBA_RELEASE_ID':'wnba-step19e-certified-rollback'}.items():
+              req('PUT',f'/services/{sid}/env-vars/{k}',{'value':v})
+          out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
+          if not did: raise SystemExit('rollback deploy id missing')
+          for _ in range(180):
+              d=req('GET',f'/services/{sid}/deploys/{did}') or {}; s=str(d.get('status','')).lower()
+              if s=='live': break
+              if s in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('rollback failed '+s)
+              time.sleep(5)
+          else: raise SystemExit('rollback timeout')
+          print('STEP19F_ROLLED_BACK',did,sha)
           PY
