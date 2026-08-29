@@ -29,14 +29,29 @@ jobs:
           text=text.replace(import_needle, import_needle+'from sports_api.api.wnba_step18a_consumer import router as wnba_step18a_consumer_router\n',1)
           text=text.replace(include_needle, include_needle+'app.include_router(wnba_step18a_consumer_router)\n',1)
           p.write_text(text)
+          patched=p.read_text()
+          print('STEP18A_MAIN_IMPORT_PRESENT', 'from sports_api.api.wnba_step18a_consumer import router as wnba_step18a_consumer_router' in patched)
+          print('STEP18A_MAIN_INCLUDE_PRESENT', 'app.include_router(wnba_step18a_consumer_router)' in patched)
+          print('STEP18A_MAIN_INCLUDE_INDEX', patched.find('app.include_router(wnba_step18a_consumer_router)'))
           PY
       - name: Install API dependencies
         run: python -m pip install -r sports_api/requirements.txt
-      - name: Print consumer routes
+      - name: Trace standalone router and main app routes
         run: |
           PYTHONPATH=. python - <<'PY'
-          from sports_api.main import app
-          rows=[(getattr(r,'path',None),sorted(getattr(r,'methods',set()) or set()),getattr(r,'name',None)) for r in app.routes if 'consumer' in str(getattr(r,'path',''))]
+          import importlib
+          route_module=importlib.import_module('sports_api.api.wnba_step18a_consumer')
+          router=route_module.router
+          router_rows=[(getattr(r,'path',None),sorted(getattr(r,'methods',set()) or set()),getattr(r,'name',None)) for r in router.routes]
+          print('STEP18A_STANDALONE_ROUTER_ID',id(router))
+          print('STEP18A_STANDALONE_ROUTER_ROUTES',router_rows)
+          import sports_api.main as main
+          print('STEP18A_MAIN_ROUTER_ID',id(getattr(main,'wnba_step18a_consumer_router',None)))
+          print('STEP18A_ROUTER_ID_MATCH',getattr(main,'wnba_step18a_consumer_router',None) is router)
+          all_rows=[(getattr(r,'path',None),sorted(getattr(r,'methods',set()) or set()),getattr(r,'name',None)) for r in main.app.routes]
+          print('STEP18A_APP_ROUTE_COUNT',len(all_rows))
+          print('STEP18A_APP_ROUTE_TAIL',all_rows[-20:])
+          rows=[row for row in all_rows if 'consumer' in str(row[0])]
           print('STEP18A_CONSUMER_ROUTES',rows)
-          print('STEP18A_EXACT_MATCH_COUNT',sum(1 for r in app.routes if getattr(r,'path',None)=='/api/v1/wnba/consumer/latest'))
+          print('STEP18A_EXACT_MATCH_COUNT',sum(1 for row in all_rows if row[0]=='/api/v1/wnba/consumer/latest'))
           PY
