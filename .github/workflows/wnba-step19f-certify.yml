@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: wnba-step19f-identity-certification
+  cancel-in-progress: true
+
 jobs:
   certify:
     runs-on: ubuntu-latest
@@ -79,10 +83,33 @@ jobs:
               controller_policy={'provider_attempts': 1},
           )
           out=s12b.run_step12b_live_runtime_job(req, env=os.environ)
+          discovery=out.get('provider_discovery') or {}
+          dk=discovery.get('draftkings') or {}
+          fd=discovery.get('fanduel') or {}
+          overlap=out.get('market_overlap') or {}
+          runtime=out.get('runtime_summary') or {}
           print('STEP19F_LIVE_STATUS',out.get('status'),out.get('health'))
-          print('STEP19F_PROVIDER_DISCOVERY',json.dumps(out.get('provider_discovery'),sort_keys=True))
-          print('STEP19F_MARKET_OVERLAP',json.dumps(out.get('market_overlap'),sort_keys=True))
-          print('STEP19F_RUNTIME_SUMMARY',json.dumps(out.get('runtime_summary'),sort_keys=True))
-          if out.get('status') not in {'ready','provider_not_ready'}:
-              raise SystemExit('unexpected Step12B status')
+          print('STEP19F_PROVIDER_DISCOVERY',json.dumps(discovery,sort_keys=True))
+          print('STEP19F_MARKET_OVERLAP',json.dumps(overlap,sort_keys=True))
+          print('STEP19F_RUNTIME_SUMMARY',json.dumps(runtime,sort_keys=True))
+
+          checks = {
+              'status_healthy': out.get('status') == 'healthy',
+              'health_healthy': out.get('health') == 'healthy',
+              'draftkings_records': int(dk.get('record_count') or 0) > 0,
+              'draftkings_errors_empty': not (dk.get('errors') or []),
+              'fanduel_records': int(fd.get('record_count') or 0) > 0,
+              'fanduel_errors_empty': not (fd.get('errors') or []),
+              'step11_cycle_executed': runtime.get('step11_cycle_executed') is True,
+              'step8_distributions': int(runtime.get('step8_distribution_count') or 0) > 0,
+              'qualified_props': int(runtime.get('qualified_prop_count') or 0) > 0,
+              'top_card': int(runtime.get('top_card_count') or 0) > 0,
+              'multibook_overlap': int(overlap.get('exact_line_multibook_group_count') or 0) > 0,
+              'different_lines_not_blended': overlap.get('different_lines_blended') is False,
+          }
+          print('STEP19F_LIVE_CHECKS',json.dumps(checks,sort_keys=True))
+          failed=[name for name,ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Step19F live certification failed: '+','.join(failed))
+          print('STEP19F_READ_ONLY_LIVE_CERTIFIED')
           PY
