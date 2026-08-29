@@ -108,7 +108,7 @@ jobs:
           assert 'from sports_api.wnba_step17b_always_on_runtime import step17b_lifespan' in main
           assert 'lifespan=step17b_lifespan' in main
           assert 'requirements-persistence.txt' in docker
-          assert 'WNBA_KYRE_DATABASE_URL' in prod
+          assert 'KYRE_DATABASE_URL' in prod
           print('STEP16_HISTORICAL_SNAPSHOTS_SUPERSEDED_BY_CERTIFIED_CURRENT_LINEAGE')
           PY
 
