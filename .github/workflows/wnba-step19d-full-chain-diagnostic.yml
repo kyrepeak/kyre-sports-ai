@@ -78,10 +78,11 @@ jobs:
         run: |
           python -m pip install -r sports_api/requirements.txt >/dev/null
           python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
-      - name: Reproduce exact Step13C stack from real checkpoint without persistence write
+      - name: Reproduce exact Step13C stack immediately after persisted cooldown without persistence write
         run: |
           python - <<'PY'
           import json, os, traceback
+          from datetime import datetime, timezone, timedelta
           import sports_api.main
           from sports_api import wnba_step14c_durable_restart_lease as s14c
           from sports_api import wnba_step13b_runtime_supervisor as s13b
@@ -92,6 +93,14 @@ jobs:
           state=loaded.get('controller_state_for_restart') if loaded.get('found') else None
           if not isinstance(state,dict): raise SystemExit('missing durable checkpoint')
           policy=state.get('policy') or {}
+          raw=str(state.get('circuit_open_until_utc') or '').strip()
+          if raw.endswith(('Z','z')): raw=raw[:-1]+'+00:00'
+          probe=datetime.now(timezone.utc)
+          if raw:
+              opened=datetime.fromisoformat(raw).astimezone(timezone.utc)
+              if opened>=probe:
+                  probe=opened+timedelta(seconds=1)
+          print('FULL_CHAIN_POST_COOLDOWN_PROBE_AT',probe.isoformat(),flush=True)
           print('FULL_CHAIN_CHECKPOINT',json.dumps({k:state.get(k) for k in ('circuit_state','consecutive_failure_count','last_failure_at_utc','next_refresh_due_at_utc','circuit_open_until_utc','policy')},sort_keys=True,default=str),flush=True)
           parent=s13b.build_step13b_request(
               season=2026,
@@ -120,7 +129,12 @@ jobs:
               max_total_recovery_sleep_seconds=10,
           )
           try:
-              result=s13c.run_step13c_reliability_recovery(req,env=env,stop_requested=lambda: False)
+              result=s13c.run_step13c_reliability_recovery(
+                  req,
+                  env=env,
+                  stop_requested=lambda: False,
+                  clock=lambda: probe,
+              )
               latest=result.get('latest_supervisor') or {}
               sessions=latest.get('sessions') or latest.get('session_history') or []
               summary={
@@ -133,9 +147,9 @@ jobs:
                   'latest_supervisor_health':latest.get('health'),
                   'sessions':sessions,
               }
-              print('FULL_CHAIN_RESULT',json.dumps(summary,sort_keys=True,default=str),flush=True)
+              print('FULL_CHAIN_POST_COOLDOWN_RESULT',json.dumps(summary,sort_keys=True,default=str),flush=True)
           except Exception as exc:
-              print('FULL_CHAIN_EXCEPTION',type(exc).__name__,str(exc),flush=True)
+              print('FULL_CHAIN_POST_COOLDOWN_EXCEPTION',type(exc).__name__,str(exc),flush=True)
               traceback.print_exc()
-          print('STEP19D_FULL_CHAIN_READONLY_DIAGNOSTIC_COMPLETE')
+          print('STEP19D_FULL_CHAIN_POST_COOLDOWN_DIAGNOSTIC_COMPLETE')
           PY
