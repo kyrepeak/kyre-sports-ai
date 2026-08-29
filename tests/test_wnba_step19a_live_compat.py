@@ -30,7 +30,7 @@ def test_fanduel_player_tabs_use_current_public_slugs() -> None:
     assert compat.fanduel_relevant_tab_slugs(document) == ["player-points", "player-assists", "player-rebounds", "player-combos"]
 
 
-def test_fanduel_player_stat_scope_accepts_only_p_r_a_or_pra() -> None:
+def test_fanduel_player_stat_scope_accepts_only_full_game_p_r_a_or_pra() -> None:
     assert compat.fanduel_market_stat_current({"marketType": "PLAYER_D_TOTAL_POINTS_WNBA"}) == "points"
     assert compat.fanduel_market_stat_current({"marketType": "PLAYER_D_TOTAL_REBOUNDS_WNBA"}) == "rebounds"
     assert compat.fanduel_market_stat_current({"marketType": "PLAYER_D_TOTAL_ASSISTS_WNBA"}) == "assists"
@@ -38,6 +38,7 @@ def test_fanduel_player_stat_scope_accepts_only_p_r_a_or_pra() -> None:
     assert compat.fanduel_market_stat_current({"marketType": "PLAYER_D_TOTAL_POINTS_+_ASSISTS_WNBA"}) is None
     assert compat.fanduel_market_stat_current({"marketType": "PLAYER_D_TOTAL_POINTS_+_REBOUNDS_WNBA"}) is None
     assert compat.fanduel_market_stat_current({"marketType": "PLAYER_D_TOTAL_REBOUNDS_+_ASSISTS_WNBA"}) is None
+    assert compat.fanduel_market_stat_current({"marketType": "PLAYER_D_1ST_QUARTER_POINTS_WNBA", "marketName": "Azura Stevens - 1st Qtr"}) is None
 
 
 def test_fanduel_current_player_title_parser_is_exact() -> None:
@@ -57,13 +58,16 @@ def test_fanduel_nested_result_type_and_handicap_form_two_way_line() -> None:
     assert compat.fanduel_runner_side_line_current(under) == ("under", 15.5)
 
 
-def test_fanduel_current_player_evidence_requires_exact_two_way_market() -> None:
+def test_fanduel_current_player_evidence_requires_exact_full_game_two_way_market() -> None:
     assert compat.fanduel_declares_player_market_current(
         {"marketType": "PLAYER_D_TOTAL_POINTS_WNBA", "marketName": "Kiki Rice - Points"}, _ou(15.5)
     ) is True
     assert compat.fanduel_declares_player_market_current(
         {"marketType": "PLAYER_TO_SCORE_35_POINTS_WNBA", "marketName": "To Score 35+"},
         [{"result": {"type": "YES"}, "handicap": 0}, {"result": {"type": "NO"}, "handicap": 0}],
+    ) is False
+    assert compat.fanduel_declares_player_market_current(
+        {"marketType": "PLAYER_D_1ST_QUARTER_POINTS_WNBA", "marketName": "Azura Stevens - 1st Qtr"}, _ou(4.5)
     ) is False
     assert compat.fanduel_declares_player_market_current(
         {"marketType": "TOTAL_POINTS_(OVER/UNDER)", "marketName": "Total Points"}, _ou(179.5)
@@ -77,6 +81,7 @@ def test_installation_patches_only_compatibility_helpers() -> None:
     assert fd._event_date({"openDate": "2026-08-30T02:00:00.000Z"}) == "2026-08-29"
     assert fd._relevant_tab_ids({"layout": {"tabs": [{"id": 168, "title": "Player Points"}]}}) == ["player-points"]
     assert fd._market_stat({"marketType": "PLAYER_B_TOTAL_POINTS_+_ASSISTS_WNBA"}) is None
+    assert fd._market_stat({"marketType": "PLAYER_D_1ST_QUARTER_POINTS_WNBA"}) is None
     assert fd._market_player_name(
         {"marketType": "PLAYER_B_TOTAL_POINTS_+_REBOUNDS_+_ASSISTS_WNBA", "marketName": "Alyssa Thomas - Pts + Reb + Ast"},
         _ou(31.5), "pra",
