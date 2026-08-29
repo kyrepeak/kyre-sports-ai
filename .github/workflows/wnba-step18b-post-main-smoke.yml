@@ -1,0 +1,71 @@
+name: WNBA Step 18B post-main Streamlit smoke
+
+on:
+  push:
+    branches:
+      - wnba-step18b-post-main-smoke-20260829
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f3436c70621ed4033ba365c1ef0c6053a8cc5a3a
+          fetch-depth: 500
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frontend dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Prove exact promoted main revision
+        run: |
+          test "$(git rev-parse HEAD)" = 'f3436c70621ed4033ba365c1ef0c6053a8cc5a3a'
+          python -m py_compile app.py wnba_api_client_v1.py wnba_streamlit_consumer_v1.py wnba_daily_picks_hub_v35.py wnba_step18b_consumer_bridge_v1.py
+      - name: Boot exact Streamlit app and verify health
+        run: |
+          set -euo pipefail
+          streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/step18b-streamlit.log 2>&1 &
+          PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          ok=0
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 5 http://127.0.0.1:8501/_stcore/health >/tmp/health.txt; then
+              ok=1
+              break
+            fi
+            if ! kill -0 "$PID" 2>/dev/null; then
+              echo 'STEP18B_STREAMLIT_PROCESS_EXITED'
+              cat /tmp/step18b-streamlit.log
+              exit 1
+            fi
+            sleep 2
+          done
+          test "$ok" -eq 1
+          grep -qi 'ok' /tmp/health.txt
+          curl -fsS --max-time 10 http://127.0.0.1:8501/ >/tmp/root.html
+          test -s /tmp/root.html
+          echo STEP18B_PROMOTED_MAIN_STREAMLIT_BOOT_OK
+      - name: Live consumer read from exact promoted frontend code
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import time
+          from wnba_api_client_v1 import KyreWNBAAPIClient
+          from wnba_streamlit_consumer_v1 import normalize_consumer_payload
+          client=KyreWNBAAPIClient(timeout_seconds=30,attempts=3)
+          last=None
+          for _ in range(8):
+              payload=client.consumer_latest()
+              view=normalize_consumer_payload(payload)
+              last=(view.get('state'),view.get('reason'),(view.get('snapshot') or {}).get('age_seconds'))
+              if view.get('state') in {'ready','unavailable'} and (view.get('snapshot') or {}).get('stale') is False:
+                  print('STEP18B_PROMOTED_MAIN_LIVE_CONSUMER_OK',last)
+                  break
+              time.sleep(15)
+          else:
+              raise SystemExit(f'STEP18B_PROMOTED_MAIN_LIVE_CONSUMER_NOT_CURRENT:{last}')
+          PY
