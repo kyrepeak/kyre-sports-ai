@@ -1,0 +1,192 @@
+name: WNBA Step19D history resilience certification
+
+on:
+  push:
+    branches:
+      - wnba-step19d-history-resilience-cert-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: fdde4a82b6cf6d0deb3e2b5d38b6dcf3d4cf1b2f
+  WEB_CONCURRENCY: '1'
+  WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED: 'true'
+  WNBA_STEP17B_ALWAYS_ON_ENABLED: 'true'
+  WNBA_STEP17B_LOOP_SECONDS: '60'
+  WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED: 'true'
+  WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: 'true'
+  WNBA_STEP14B_DATABASE_READ_ENABLED: 'true'
+  WNBA_STEP14B_DATABASE_WRITE_ENABLED: 'true'
+  WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED: 'true'
+  WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED: 'true'
+  WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED: 'true'
+  WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED: 'true'
+  WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
+  WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+  WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+  WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+  WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+  WNBA_STEP10_FASTAPI_ENABLED: 'true'
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+  WNBA_STEP9_FASTAPI_ENABLED: 'true'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+  WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_STEP18A_STREAMLIT_CONSUMER_ENABLED: 'true'
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_PERSISTENCE_ENABLED: 'false'
+  WNBA_SUPABASE_WRITE_ENABLED: 'false'
+  WNBA_WAGERING_ENABLED: 'false'
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: wnba-render-staging
+    env:
+      KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+    steps:
+      - name: Checkout exact Step19D app candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+
+      - name: Prove exact revision, compile, and regression contracts
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_CANDIDATE_SHA"
+          python -m py_compile \
+            sports_api/wnba_step19d_history_transport_resilience.py \
+            sports_api/wnba_step19c_market_not_ready_compat.py \
+            sports_api/wnba_rotation_context.py \
+            sports_api/wnba_rotation_reconstruction.py \
+            sports_api/api/__init__.py \
+            sports_api/main.py
+          python -m pytest -q \
+            tests/test_wnba_step19d_history_transport_resilience.py \
+            tests/test_wnba_rotation_context.py \
+            tests/test_wnba_rotation_fallback.py \
+            tests/test_wnba_step12b_live_runtime_assembly.py \
+            tests/test_wnba_step12c_live_board_runtime.py
+          echo STEP19D_SCOPE_COMPILE_REGRESSIONS_OK
+
+      - name: Prove application startup installs Step19D and preserves Step19C
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import sports_api.main
+          from sports_api import wnba_player_opportunity_context as opportunity
+          from sports_api import wnba_rotation_context as rotation
+          from sports_api import wnba_step7g_first_party_history as first_party
+          from sports_api import wnba_step12b_live_runtime_assembly as step12b
+          from sports_api import wnba_step19c_market_not_ready_compat as step19c
+          from sports_api import wnba_step19d_history_transport_resilience as step19d
+
+          assert first_party._request_page_props is step19d._request_page_props_with_bounded_retry
+          assert rotation.get_player_recent_rotation_context is step19d.get_player_recent_rotation_context_step19d
+          assert opportunity.get_player_recent_rotation_context is step19d.get_player_recent_rotation_context_step19d
+          assert step12b.run_step12b_live_runtime_job is step19c.run_step12b_live_runtime_job_step19c
+          assert step19d.INSTALLATION['current_availability_gates_relaxed'] is False
+          assert step19d.INSTALLATION['projection_fabrication_allowed'] is False
+          print('STEP19D_STARTUP_INSTALL_OK')
+          PY
+
+      - name: Reproduce real persisted checkpoint cycle read-only and require circuit recovery
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone, timedelta
+
+          import sports_api.main
+          from sports_api import wnba_step14c_durable_restart_lease as s14c
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+
+          env=dict(os.environ)
+          loaded=s14c.load_step14c_restart_checkpoint(slate_date='2026-08-29',env=env)
+          state=loaded.get('controller_state_for_restart') if loaded.get('found') else None
+          if not isinstance(state,dict):
+              raise SystemExit('No durable controller state found for certification')
+          safe_before={k:state.get(k) for k in ('circuit_state','consecutive_failure_count','last_failure_at_utc','next_refresh_due_at_utc','circuit_open_until_utc','state_content_sha256','policy')}
+          print('STEP19D_PERSISTED_BEFORE',json.dumps(safe_before,sort_keys=True,default=str),flush=True)
+
+          now=datetime.now(timezone.utc)
+          probe_at=now
+          raw_open=state.get('circuit_open_until_utc')
+          if raw_open:
+              text=str(raw_open); text=text[:-1]+'+00:00' if text.endswith(('Z','z')) else text
+              opened=datetime.fromisoformat(text).astimezone(timezone.utc)
+              if opened>=probe_at:
+                  probe_at=opened+timedelta(seconds=1)
+          if (probe_at-now).total_seconds()>240:
+              raise SystemExit('Persisted cooldown unexpectedly exceeds 240 seconds')
+
+          policy=state.get('policy') or {}
+          req=s12.build_step12b_request(
+              season=2026,
+              slate_date='2026-08-29',
+              evaluated_at=probe_at,
+              previous_state=state,
+              controller_policy={
+                  'refresh_interval_seconds':int(policy.get('refresh_interval_seconds',60)),
+                  'failure_threshold':int(policy.get('failure_threshold',3)),
+                  'circuit_cooldown_seconds':int(policy.get('circuit_cooldown_seconds',180)),
+                  'provider_attempts':3,
+              },
+              refresh_policy={},
+              qualification_policy={},
+          )
+          result=s12.run_step12b_live_runtime_job(req,env=env)
+          tick=((result.get('step12a_result') or {}).get('step11e_tick') or {})
+          execution=tick.get('execution') or {}
+          after=tick.get('automation_state') or {}
+          summary={
+              'status':result.get('status'),
+              'health':result.get('health'),
+              'built':(result.get('projection_assembly') or {}).get('built_target_count'),
+              'skipped':(result.get('projection_assembly') or {}).get('skipped_target_count'),
+              'cycle_executed':execution.get('cycle_executed'),
+              'cycle_outcome':execution.get('cycle_outcome'),
+              'skip_reason':execution.get('skip_reason'),
+              'error':execution.get('error'),
+              'circuit_after':after.get('circuit_state'),
+              'failures_after':after.get('consecutive_failure_count'),
+          }
+          print('STEP19D_PERSISTED_REPRO_RESULT',json.dumps(summary,sort_keys=True,default=str),flush=True)
+          assert execution.get('cycle_executed') is True, summary
+          assert execution.get('cycle_outcome') in {'shadow_board_ready','market_board_not_ready'}, summary
+          assert after.get('circuit_state') == 'closed', summary
+          assert after.get('consecutive_failure_count') == 0, summary
+          print('STEP19D_REAL_PERSISTED_CIRCUIT_RECOVERY_CERTIFIED')
+          PY
