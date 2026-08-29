@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
 
+# Refresh marker: post-cooldown production observation.
 jobs:
   observe:
     runs-on: ubuntu-latest
