@@ -1,0 +1,70 @@
+name: WNBA Step19B current target rejection diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19a-provider-diagnostic-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: ca34373548e5b54e65426160b0cf5e7eae4d89c9
+
+jobs:
+  diagnose-targets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 1
+      - name: Install dependencies
+        run: python -m pip install -r sports_api/requirements.txt >/dev/null
+      - name: Trace current exact-line targets through pre-simulation Step8 gates
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          env={
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false'
+          }
+          os.environ.update(env)
+          import sports_api.wnba_step19a_step17b_bridge
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step8_projection_handoff as s8a
+          from sports_api import wnba_step8_official_box_baseline as s8b
+          from sports_api import wnba_step8_context_adjustment as s8c
+          season=2026; slate='2026-08-29'; now=datetime.now(timezone.utc)
+          dkb=dk.fetch_step11a_draftkings_provider_bridge(season=season,slate_date=slate,evaluated_at=now,env=env)
+          fdb=fd.fetch_step11c_fanduel_provider_bridge(season=season,slate_date=slate,evaluated_at=now,env=env)
+          dkr=s12._payload_records(dkb,dk.PROVIDER); fdr=s12._payload_records(fdb,fd.PROVIDER)
+          targets,groups=s12._exact_multibook_targets(dkr,fdr)
+          print('TARGET_DIAGNOSTIC_START',json.dumps({'dk_records':len(dkr),'fd_records':len(fdr),'groups':len(groups),'targets':targets},sort_keys=True))
+          results=[]
+          for game_id,player_id in targets:
+            item={'game_id':game_id,'player_id':player_id}
+            try:
+              handoff=s8a.get_player_game_step8_projection_handoff(player_id,game_id,env=env)
+              item['handoff']='ok'
+              baseline=s8b.build_step8_official_box_baseline(handoff)
+              item['baseline']='ok'
+              adjusted=s8c.build_step8_context_adjusted_projection(handoff,baseline)
+              item['context']='ok'
+            except Exception as exc:
+              item['stage']=('handoff' if 'handoff' not in item else 'baseline' if 'baseline' not in item else 'context')
+              item['error_type']=type(exc).__name__
+              item['error']=' '.join(str(exc).split())[:1800]
+            results.append(item)
+            print('TARGET_DIAGNOSTIC_ROW',json.dumps(item,sort_keys=True,default=str),flush=True)
+          ok=[r for r in results if r.get('context')=='ok']
+          print('TARGET_DIAGNOSTIC_SUMMARY',json.dumps({'target_count':len(results),'pre_sim_ready_count':len(ok),'rows':results},sort_keys=True,default=str))
+          PY
