@@ -1,0 +1,171 @@
+name: WNBA Step 17C live-state diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step17c-postrollback-diagnostic-20260829
+    paths:
+      - .github/workflows/wnba-step17c-live-state-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-live-state:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: wnba-render-staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify current host, configure Step 17C, and capture rollback deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          sid='srv-da84q6ifngtc73bdbm6g'; base='https://api.render.com/v1'
+          step17b='8f6ba0b3e4cd3d07466a2545a870cab7121decfe'
+          step17c='d2d0ef5ec1b45b39c038616c4a6257705333211c'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17c-live-diagnostic/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode()
+              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          deploys=req('GET',f'/services/{sid}/deploys?limit=10')
+          rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
+          previous=None; blob=''
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live' and d.get('id'):
+                  previous=d['id']; blob=json.dumps(d).lower(); break
+          if not previous or step17b not in blob:
+              raise SystemExit('DIAGNOSTIC_REFUSES_NON_STEP17B_START_STATE')
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
+              f.write(f'DIAG_SERVICE_ID={sid}\n')
+              f.write(f'DIAG_ROLLBACK_DEPLOY_ID={previous}\n')
+              f.write(f'DIAG_STEP17C_SHA={step17c}\n')
+          envs={
+              'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
+              'WEB_CONCURRENCY':'1',
+              'WNBA_STEP17B_ALWAYS_ON_ENABLED':'true',
+              'WNBA_STEP17B_LOOP_SECONDS':'60',
+              'WNBA_STEP17B_EXPECTED_REVISION':step17c,
+              'WNBA_STEP17C_MONITORING_ENABLED':'true',
+              'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+              'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+              'WNBA_PERSISTENCE_ENABLED':'false',
+              'WNBA_SUPABASE_WRITE_ENABLED':'false',
+              'WNBA_WAGERING_ENABLED':'false',
+              'WNBA_STEP12_SCHEDULER_ENABLED':'false',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
+              'WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false',
+              'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
+              'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
+              'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
+              'WNBA_STEP10_FASTAPI_ENABLED':'true',
+              'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true',
+              'WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
+              'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true',
+              'WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+              'WNBA_STEP9_FASTAPI_ENABLED':'true',
+              'WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true',
+              'WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true',
+              'WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true',
+              'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+              'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true',
+              'WNBA_STEP8_CORE_PROJECTION_ENABLED':'true',
+              'WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true',
+              'WNBA_STEP8_MONTE_CARLO_ENABLED':'true',
+              'WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+              'WNBA_DEPLOYMENT_REVISION':step17c,
+              'WNBA_RELEASE_ID':'wnba-step17c-live-diagnostic',
+          }
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
+          for key,value in envs.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          print('DIAGNOSTIC_CONFIGURED_EXISTING_SERVICE',sid,'ROLLBACK',previous)
+          PY
+
+      - name: Deploy exact production Step 17C revision
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          sid=os.environ['DIAG_SERVICE_ID']; sha=os.environ['DIAG_STEP17C_SHA']; base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17c-live-diagnostic/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          d=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=d.get('id')
+          if not did: raise SystemExit('NO_DIAGNOSTIC_DEPLOY_ID')
+          bad={'build_failed','update_failed','canceled','cancelled','deactivated'}
+          for _ in range(180):
+              detail=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(detail.get('status','')).lower()
+              if status=='live': break
+              if status in bad: raise SystemExit(f'DIAGNOSTIC_DEPLOY_FAILED:{status}')
+              time.sleep(5)
+          else: raise SystemExit('DIAGNOSTIC_DEPLOY_TIMEOUT')
+          if sha.lower() not in json.dumps(detail).lower(): raise SystemExit('DIAGNOSTIC_REVISION_MISMATCH')
+          print('DIAGNOSTIC_STEP17C_LIVE',did,sha)
+          PY
+
+      - name: Capture sanitized live Step 17B and Step 17C samples
+        run: |
+          python - <<'PY'
+          import json, time, urllib.error, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(path):
+              try:
+                  with urllib.request.urlopen(base+path,timeout=30) as r:
+                      return r.status, json.loads(r.read().decode())
+              except urllib.error.HTTPError as exc:
+                  return exc.code, None
+              except Exception as exc:
+                  return None, {'error_class':type(exc).__name__}
+          status_keys=('enabled','running','role','leadership_acquired','started_at_utc','heartbeat_at_utc','cycle_count','success_count','failure_count','leadership_miss_count','duplicate_lease_skip_count','last_cycle_started_at_utc','last_cycle_finished_at_utc','last_status','last_error_class','last_checkpoint_version','recovered_from_checkpoint')
+          for sample in range(1,25):
+              hc,h=get('/health'); bc,b=get('/api/v1/wnba/runtime/step17b'); cc,c=get('/api/v1/wnba/runtime/step17c')
+              safe_b={k:b.get(k) for k in status_keys} if isinstance(b,dict) and 'error_class' not in b else b
+              safe_c=None
+              if isinstance(c,dict) and 'error_class' not in c:
+                  safe_c={
+                      'monitor_enabled':c.get('monitor_enabled'),'state':c.get('state'),'healthy':c.get('healthy'),'incident_active':c.get('incident_active'),
+                      'incidents':[{'code':x.get('code'),'severity':x.get('severity')} for x in (c.get('incidents') or []) if isinstance(x,dict)],
+                      'ages_seconds':c.get('ages_seconds'),'thresholds_seconds':c.get('thresholds_seconds'),
+                  }
+              else: safe_c=c
+              print('LIVE_SAMPLE',sample,'HEALTH',hc,None if not isinstance(h,dict) else h.get('status'),'STEP17B_HTTP',bc,json.dumps(safe_b,sort_keys=True),'STEP17C_HTTP',cc,json.dumps(safe_c,sort_keys=True))
+              if isinstance(b,dict) and isinstance(c,dict) and b.get('success_count',0)>=2 and c.get('monitor_enabled') is True:
+                  break
+              time.sleep(10)
+          PY
+
+      - name: Restore certified Step 17B host
+        if: always() && env.DIAG_SERVICE_ID != '' && env.DIAG_ROLLBACK_DEPLOY_ID != ''
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          sid=os.environ['DIAG_SERVICE_ID']; previous=os.environ['DIAG_ROLLBACK_DEPLOY_ID']; base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17c-live-diagnostic-rollback/1'}
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode(); r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          restore={
+              'WNBA_STEP17C_MONITORING_ENABLED':'false',
+              'WNBA_STEP17B_EXPECTED_REVISION':'8f6ba0b3e4cd3d07466a2545a870cab7121decfe',
+              'WNBA_DEPLOYMENT_REVISION':'8f6ba0b3e4cd3d07466a2545a870cab7121decfe',
+              'WNBA_RELEASE_ID':'wnba-step17b-controlled-always-on',
+          }
+          for key,value in restore.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          req('POST',f'/services/{sid}/rollback',{'deployId':previous})
+          print('DIAGNOSTIC_ROLLBACK_TO_CERTIFIED_STEP17B_REQUESTED',previous)
+          PY
