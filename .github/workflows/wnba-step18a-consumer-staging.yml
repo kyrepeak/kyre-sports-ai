@@ -1,0 +1,122 @@
+name: WNBA Step 18A Streamlit consumer staging
+
+on:
+  push:
+    branches:
+      - wnba-step18a-streamlit-consumer-contract-20260829
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Step 18A branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply narrow Step 18A integration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('sports_api/wnba_step17b_always_on_runtime.py')
+          text = p.read_text()
+          import_needle = 'from sports_api import wnba_step17a_production_host_contract as step17a\n'
+          import_replacement = import_needle + 'from sports_api import wnba_step18a_streamlit_consumer as step18a\n'
+          if text.count(import_needle) != 1:
+              raise SystemExit('STEP18A_STEP17B_IMPORT_ANCHOR_DRIFT')
+          text = text.replace(import_needle, import_replacement, 1)
+          seam_needle = '''    kwargs: dict[str, Any] = {}\n    if runner is None:\n        kwargs["runner_kwargs"] = {"stop_requested": stop_requested or (lambda: False)}\n'''
+          seam_replacement = '''    kwargs: dict[str, Any] = {}\n    if runner is None:\n        if step18a.step18a_streamlit_consumer_enabled(runtime_env):\n            kwargs["step13c_runner"] = step18a.run_step13c_and_capture\n        kwargs["runner_kwargs"] = {"stop_requested": stop_requested or (lambda: False)}\n'''
+          if text.count(seam_needle) != 1:
+              raise SystemExit('STEP18A_STEP17B_RUNNER_SEAM_ANCHOR_DRIFT')
+          p.write_text(text.replace(seam_needle, seam_replacement, 1))
+
+          p = Path('sports_api/main.py')
+          text = p.read_text()
+          import_needle = 'from sports_api.api.wnba_step17c_reliability import router as wnba_step17c_reliability_router\n'
+          import_replacement = import_needle + 'from sports_api.api.wnba_step18a_consumer import router as wnba_step18a_consumer_router\n'
+          if text.count(import_needle) != 1:
+              raise SystemExit('STEP18A_MAIN_IMPORT_ANCHOR_DRIFT')
+          text = text.replace(import_needle, import_replacement, 1)
+          include_needle = 'app.include_router(wnba_step17c_reliability_router)\n'
+          include_replacement = include_needle + 'app.include_router(wnba_step18a_consumer_router)\n'
+          if text.count(include_needle) != 1:
+              raise SystemExit('STEP18A_MAIN_INCLUDE_ANCHOR_DRIFT')
+          p.write_text(text.replace(include_needle, include_replacement, 1))
+
+          p = Path('tests/test_wnba_step18a_streamlit_consumer.py')
+          text = p.read_text()
+          test_anchor = '\n\nif __name__ == "__main__":\n'
+          addition = '''\n\ndef test_step17b_real_step14c_path_injects_capture_wrapper_only_when_enabled():\n    seen = []\n    original = s17b.step14c.run_step14c_durable_restart_lease\n\n    def fake_step14c(request, *, owner_id, env, **kwargs):\n        seen.append(dict(kwargs))\n        return {\n            "status": "completed",\n            "saved_checkpoint_version": 2,\n            "recovered_from_durable_checkpoint": True,\n        }\n\n    try:\n        s17b.step14c.run_step14c_durable_restart_lease = fake_step14c\n        s17b.run_one_cycle(\n            env=_env(False), owner_id="test-owner", slate_date="2026-08-28"\n        )\n        assert "step13c_runner" not in seen[-1]\n        s17b.run_one_cycle(\n            env=_env(True), owner_id="test-owner", slate_date="2026-08-28"\n        )\n        assert seen[-1]["step13c_runner"] is s18a.run_step13c_and_capture\n        assert callable(seen[-1]["runner_kwargs"]["stop_requested"])\n    finally:\n        s17b.step14c.run_step14c_durable_restart_lease = original\n\n\ndef test_main_exposes_single_read_only_consumer_get_route():\n    from sports_api.main import app\n\n    matches = [\n        route for route in app.routes\n        if getattr(route, "path", None) == "/api/v1/wnba/consumer/latest"\n    ]\n    assert len(matches) == 1\n    assert getattr(matches[0], "methods", set()) == {"GET"}\n'''
+          if text.count(test_anchor) != 1:
+              raise SystemExit('STEP18A_TEST_MAIN_ANCHOR_DRIFT')
+          text = text.replace(test_anchor, addition + test_anchor, 1)
+          call_anchor = '    test_step17b_uses_capture_seam_only_when_step18a_gate_is_enabled()\n    print("STEP18A_STREAMLIT_CONSUMER_TESTS_OK")\n'
+          call_replacement = '    test_step17b_uses_capture_seam_only_when_step18a_gate_is_enabled()\n    setup_function()\n    test_step17b_real_step14c_path_injects_capture_wrapper_only_when_enabled()\n    setup_function()\n    test_main_exposes_single_read_only_consumer_get_route()\n    print("STEP18A_STREAMLIT_CONSUMER_TESTS_OK")\n'
+          if text.count(call_anchor) != 1:
+              raise SystemExit('STEP18A_TEST_CALL_ANCHOR_DRIFT')
+          p.write_text(text.replace(call_anchor, call_replacement, 1))
+          PY
+
+      - name: Install API and persistence dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+
+      - name: Compile and run Step 18A plus frozen-parent regressions
+        run: |
+          python -m py_compile sports_api/wnba_step18a_streamlit_consumer.py
+          python -m py_compile sports_api/api/wnba_step18a_consumer.py
+          python -m py_compile sports_api/wnba_step17b_always_on_runtime.py
+          python -m py_compile sports_api/main.py
+          PYTHONPATH=. python tests/test_wnba_step18a_streamlit_consumer.py
+          PYTHONPATH=. python tests/test_wnba_step17b_always_on_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step17c_production_reliability.py
+          PYTHONPATH=. python tests/test_wnba_step14c_durable_restart_lease.py
+          PYTHONPATH=. python tests/test_wnba_step13c_reliability_recovery.py
+
+      - name: Prove frozen core and exact Step 18A runtime diff
+        run: |
+          set -euo pipefail
+          FROZEN='8448984adc779fb9af7c7a8187b0eaeb67d034c8'
+          git merge-base --is-ancestor "$FROZEN" HEAD
+          test "$(git show "$FROZEN":sports_api/wnba_step14c_durable_restart_lease.py | git hash-object --stdin)" = "$(git hash-object sports_api/wnba_step14c_durable_restart_lease.py)"
+          test "$(git show "$FROZEN":sports_api/wnba_step13c_reliability_recovery.py | git hash-object --stdin)" = "$(git hash-object sports_api/wnba_step13c_reliability_recovery.py)"
+          test "$(git show "$FROZEN":sports_api/wnba_step12c_live_board_runtime.py | git hash-object --stdin)" = "$(git hash-object sports_api/wnba_step12c_live_board_runtime.py)"
+          test "$(git show "$FROZEN":sports_api/Dockerfile | git hash-object --stdin)" = "$(git hash-object sports_api/Dockerfile)"
+          python - <<'PY'
+          import subprocess
+          frozen='8448984adc779fb9af7c7a8187b0eaeb67d034c8'
+          names=set(subprocess.check_output(['git','diff','--name-only',frozen,'--','sports_api','tests']).decode().splitlines())
+          expected={
+              'sports_api/wnba_step18a_streamlit_consumer.py',
+              'sports_api/api/wnba_step18a_consumer.py',
+              'sports_api/wnba_step17b_always_on_runtime.py',
+              'sports_api/main.py',
+              'tests/test_wnba_step18a_streamlit_consumer.py',
+          }
+          if names != expected:
+              raise SystemExit(f'STEP18A_RUNTIME_DIFF_DRIFT:{sorted(names)}')
+          print('STEP18A_EXACT_RUNTIME_DIFF_OK')
+          PY
+
+      - name: Commit only tested integration files
+        run: |
+          if git diff --quiet -- sports_api/wnba_step17b_always_on_runtime.py sports_api/main.py tests/test_wnba_step18a_streamlit_consumer.py; then
+            echo 'No integration patch to commit.'
+            exit 0
+          fi
+          git config user.name 'kyre-step18a-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add sports_api/wnba_step17b_always_on_runtime.py sports_api/main.py tests/test_wnba_step18a_streamlit_consumer.py
+          git commit -m 'Wire Step 18A read-only consumer capture'
+          git push origin HEAD:wnba-step18a-streamlit-consumer-contract-20260829
