@@ -1,0 +1,60 @@
+name: WNBA Step19D read-only live probe
+
+on:
+  push:
+    branches:
+      - wnba-step19d-live-probe-20260829
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read production runtime and consumer only
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(path):
+              with urllib.request.urlopen(base+path,timeout=45) as r:
+                  return json.loads(r.read().decode())
+          health=get('/health')
+          runtime=get('/api/v1/wnba/runtime/step17b')
+          consumer=get('/api/v1/wnba/consumer/latest')
+          direct=get('/api/v1/wnba/markets/direct/draftkings/status')
+          control=consumer.get('runtime') or {}; snap=consumer.get('snapshot') or {}; board=consumer.get('board') or {}; dk=direct.get('draftkings') or {}
+          result={
+            'health':health.get('status'),
+            'step17b_enabled':runtime.get('enabled'),
+            'step17b_running':runtime.get('running'),
+            'step17b_role':runtime.get('role'),
+            'step17b_success_count':runtime.get('success_count'),
+            'step17b_failure_count':runtime.get('failure_count'),
+            'step17b_last_error_class':runtime.get('last_error_class'),
+            'consumer_enabled':consumer.get('enabled'),
+            'consumer_available':consumer.get('available'),
+            'consumer_reason':consumer.get('reason'),
+            'consumer_health':consumer.get('health'),
+            'snapshot_captured_at_utc':snap.get('captured_at_utc'),
+            'snapshot_age_seconds':snap.get('age_seconds'),
+            'snapshot_stale':snap.get('stale'),
+            'snapshot_hash_present':bool(snap.get('snapshot_content_sha256')),
+            'circuit_state':control.get('circuit_state'),
+            'consecutive_failures':control.get('consecutive_failures',control.get('consecutive_failure_count')),
+            'cycle_due':control.get('cycle_due'),
+            'cycle_executed':control.get('cycle_executed'),
+            'cycle_outcome':control.get('cycle_outcome'),
+            'skip_reason':control.get('skip_reason'),
+            'next_refresh_due_at_utc':control.get('next_refresh_due_at_utc'),
+            'circuit_open_until_utc':control.get('circuit_open_until_utc'),
+            'board_available':board.get('available'),
+            'board_reason':board.get('reason'),
+            'dk_ready':dk.get('ready'),
+            'dk_model_version':dk.get('model_version'),
+            'direct_sync_active':direct.get('direct_sync_active'),
+          }
+          print('STEP19D_LIVE_READ_ONLY_PROBE',json.dumps(result,sort_keys=True,default=str))
+          PY
