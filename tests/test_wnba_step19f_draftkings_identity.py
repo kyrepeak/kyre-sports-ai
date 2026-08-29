@@ -119,6 +119,20 @@ def test_fanduel_one_way_alternate_market_is_not_identity_bearing() -> None:
     assert fanduel._declares_player_market(market, runners) is False
 
 
+def test_fanduel_compact_pra_suffix_maps_to_player_name() -> None:
+    step19f.install_step19f_draftkings_identity()
+    market = {
+        "marketName": "Laura Juskaite - Pts + Reb + Ast",
+        "marketType": "PLAYER_G_TOTAL_POINTS_REBOUNDS_ASSISTS_WNBA",
+    }
+    runners = [
+        {"runnerName": "Laura Juskaite Over", "handicap": 15.5, "result": {"type": "OVER"}},
+        {"runnerName": "Laura Juskaite Under", "handicap": 15.5, "result": {"type": "UNDER"}},
+    ]
+    assert fanduel._market_player_name(market, runners, "pra") == "Laura Juskaite"
+    assert fanduel._declares_player_market(market, runners) is True
+
+
 def test_unrelated_event_still_fails_closed() -> None:
     step19f.install_step19f_draftkings_identity()
     events = [{
