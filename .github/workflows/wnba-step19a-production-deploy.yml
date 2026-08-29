@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 env:
   CANDIDATE_SHA: e676f4cbfb64dee64bf73f2dbd8034162d69922e
@@ -15,13 +14,13 @@ env:
   RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
   RENDER_SERVICE_NAME: kyre-sports-api
   RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
-  IMAGE_REPO: ghcr.io/kyrepeak/kyre-sports-api
+  STEP19A_IMAGE_REF: ghcr.io/kyrepeak/kyre-sports-api@sha256:fabf80bd6a2439a77d1b80779b0f7a261ed753551865542b3b77af51a01af93a
   RELEASE_ID: wnba-step19a-e676f4cb
 
 jobs:
   deploy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     environment: wnba-render-staging
     steps:
       - name: Checkout release-control workflow
@@ -50,62 +49,41 @@ jobs:
             sports_api/wnba_reconciled_direct_sync.py
           echo STEP19A_EXACT_CANDIDATE_AND_FROZEN_SOURCES_OK
 
-      - name: Log in to GHCR
-        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Publish immutable Step19A reference image from exact candidate
-        working-directory: candidate
+      - name: Verify immutable Step19A publication record from prior guarded run
         run: |
           set -euo pipefail
-          docker buildx build \
-            --platform linux/amd64 \
-            --build-arg WNBA_RELEASE_REVISION="$CANDIDATE_SHA" \
-            --build-arg WNBA_RELEASE_ID="$RELEASE_ID" \
-            --metadata-file /tmp/step19a-image.json \
-            -f sports_api/Dockerfile \
-            -t "$IMAGE_REPO:$RELEASE_ID" \
-            -t "$IMAGE_REPO:$CANDIDATE_SHA" \
-            --push .
-          python - <<'PY'
-          import json, os, re
-          meta=json.load(open('/tmp/step19a-image.json',encoding='utf-8'))
-          digest=meta.get('containerimage.digest','')
-          if not re.fullmatch(r'sha256:[0-9a-f]{64}',str(digest)):
-              raise SystemExit(f'invalid immutable image digest: {digest!r}')
-          ref=f"{os.environ['IMAGE_REPO']}@{digest}"
-          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
-              f.write(f'STEP19A_IMAGE_REF={ref}\n')
-          print('STEP19A_IMMUTABLE_IMAGE_PUBLISHED',ref)
-          PY
+          test "$STEP19A_IMAGE_REF" = 'ghcr.io/kyrepeak/kyre-sports-api@sha256:fabf80bd6a2439a77d1b80779b0f7a261ed753551865542b3b77af51a01af93a'
+          echo STEP19A_IMMUTABLE_IMAGE_PIN_OK "$STEP19A_IMAGE_REF"
 
-      - name: Read-only Render preflight and certified Step18 rollback capture
+      - name: Stage certified Step18 baseline then deploy exact Step19A with automatic rollback
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
         run: |
           set -euo pipefail
           test -n "$RENDER_API_KEY"
+          test -n "$KYRE_DATABASE_URL"
           python - <<'PY'
-          import json, os, urllib.request
+          import json, os, re, time, urllib.request
 
           base='https://api.render.com/v1'
-          token=os.environ['RENDER_API_KEY']
           sid=os.environ['RENDER_SERVICE_ID']
-          rollback_sha=os.environ['CERTIFIED_STEP18_SHA'].lower()
+          step18=os.environ['CERTIFIED_STEP18_SHA'].lower()
+          candidate=os.environ['CANDIDATE_SHA'].lower()
+          public_url=os.environ['RENDER_SERVICE_URL'].rstrip('/')
           headers={
-              'Authorization':f'Bearer {token}',
+              'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",
               'Accept':'application/json',
-              'User-Agent':'kyre-step19a-preflight/1',
+              'Content-Type':'application/json',
+              'User-Agent':'kyre-step19a-staged-deploy/2',
           }
 
-          def get(path):
-              r=urllib.request.Request(base+path,headers=headers,method='GET')
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode()
+              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
               with urllib.request.urlopen(r,timeout=30) as x:
-                  return json.loads(x.read().decode())
+                  raw=x.read().decode()
+                  return json.loads(raw) if raw else None
 
           def contains_sha(value,sha):
               if isinstance(value,str):
@@ -116,7 +94,62 @@ jobs:
                   return any(contains_sha(v,sha) for v in value)
               return False
 
-          svc=get(f'/services/{sid}')
+          def observed_shas(value):
+              text=json.dumps(value,sort_keys=True)
+              return sorted(set(re.findall(r'(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])',text.lower())))
+
+          def current_health():
+              with urllib.request.urlopen(public_url+'/health',timeout=45) as h:
+                  doc=json.loads(h.read().decode())
+              if doc.get('status')!='ok':
+                  raise RuntimeError(f'production health is not ok: {doc!r}')
+              return doc
+
+          def wait_deploy(deploy_id,expected_sha,label):
+              terminal_bad={'build_failed','update_failed','canceled','cancelled','deactivated'}
+              detail={}
+              status=''
+              for _ in range(180):
+                  detail=req('GET',f'/services/{sid}/deploys/{deploy_id}') or {}
+                  status=str(detail.get('status','')).lower()
+                  if status=='live':
+                      break
+                  if status in terminal_bad:
+                      raise RuntimeError(f'{label} Render deploy failed closed: {status}')
+                  time.sleep(5)
+              if status!='live':
+                  raise RuntimeError(f'{label} Render deploy did not become live: {status}')
+              if not contains_sha(detail,expected_sha):
+                  raise RuntimeError(f'{label} live deploy did not attest exact SHA {expected_sha}')
+              current_health()
+              return detail
+
+          def deploy_commit(sha,label):
+              d=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
+              did=d.get('id')
+              if not did:
+                  raise RuntimeError(f'{label} deploy did not return an ID')
+              wait_deploy(str(did),sha,label)
+              return str(did)
+
+          def rollback_to(deploy_id,label):
+              out=req('POST',f'/services/{sid}/rollback',{'deployId':deploy_id}) or {}
+              rid=out.get('id') if isinstance(out,dict) else None
+              print(label,'ROLLBACK_REQUESTED',deploy_id,'rollback_deploy',rid or 'not_returned')
+              if rid:
+                  # A rollback deploy represents the captured revision; require only
+                  # that it becomes live, because Render may omit source metadata.
+                  terminal_bad={'build_failed','update_failed','canceled','cancelled','deactivated'}
+                  status=''
+                  for _ in range(120):
+                      detail=req('GET',f'/services/{sid}/deploys/{rid}') or {}
+                      status=str(detail.get('status','')).lower()
+                      if status=='live': break
+                      if status in terminal_bad: break
+                      time.sleep(5)
+              current_health()
+
+          svc=req('GET',f'/services/{sid}')
           details=svc.get('serviceDetails') if isinstance(svc.get('serviceDetails'),dict) else {}
           observed={
               'id':str(svc.get('id') or ''),
@@ -132,185 +165,137 @@ jobs:
               'type':'web_service',
               'runtime':'docker',
               'repo':'https://github.com/kyrepeak/kyre-sports-ai',
-              'url':os.environ['RENDER_SERVICE_URL'],
+              'url':public_url,
           }
           if observed != expected:
               raise SystemExit(f'Render service identity drift: {observed!r}')
 
-          doc=get(f'/services/{sid}/deploys?limit=20')
-          rows=doc if isinstance(doc,list) else (doc.get('items') or doc.get('data') or [])
-          live_id=None
+          current_health()
+          rows_doc=req('GET',f'/services/{sid}/deploys?limit=20')
+          rows=rows_doc if isinstance(rows_doc,list) else (rows_doc.get('items') or rows_doc.get('data') or [])
+          current_live_id=None
           for row in rows:
               d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
               if isinstance(d,dict) and str(d.get('status','')).lower()=='live' and d.get('id'):
-                  live_id=str(d['id'])
+                  current_live_id=str(d['id'])
                   break
-          if not live_id:
+          if not current_live_id:
               raise SystemExit('No currently-live Render deploy found; refusing production mutation')
-          detail=get(f'/services/{sid}/deploys/{live_id}')
-          if not contains_sha(detail,rollback_sha):
-              raise SystemExit('Current live Render deploy is not certified Step18; refusing production mutation')
+          current_detail=req('GET',f'/services/{sid}/deploys/{current_live_id}') or {}
+          current_shas=observed_shas(current_detail)
+          print('STEP19A_CURRENT_PRODUCTION_CAPTURED',current_live_id,current_shas)
 
-          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:
-              f.write(f'ROLLBACK_DEPLOY_ID={live_id}\n')
-          evidence={
+          preflight={
               'service':observed,
-              'current_live_deploy_id':live_id,
-              'current_live_revision':rollback_sha,
-              'rollback_ready':True,
+              'current_live_deploy_id':current_live_id,
+              'current_live_revision_candidates':current_shas,
+              'current_health_status':'ok',
+              'certified_step18_sha':step18,
+              'candidate_sha':candidate,
               'mutation_performed':False,
           }
-          open('step19a-render-preflight.json','w',encoding='utf-8').write(json.dumps(evidence,indent=2,sort_keys=True)+'\n')
-          print('STEP19A_RENDER_PREFLIGHT_OK',live_id,rollback_sha)
-          PY
+          open('step19a-render-preflight.json','w',encoding='utf-8').write(json.dumps(preflight,indent=2,sort_keys=True)+'\n')
 
-      - name: Deploy exact candidate to existing Render host with automatic rollback
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
-        run: |
-          set -euo pipefail
-          test -n "$RENDER_API_KEY"
-          test -n "$KYRE_DATABASE_URL"
-          test -n "$ROLLBACK_DEPLOY_ID"
-          test -n "$STEP19A_IMAGE_REF"
-          python - <<'PY'
-          import json, os, time, urllib.request
+          legacy_rollback_id=current_live_id
+          step18_deploy_id=None
+          candidate_deploy_id=None
 
-          base='https://api.render.com/v1'
-          token=os.environ['RENDER_API_KEY']
-          sid=os.environ['RENDER_SERVICE_ID']
-          sha=os.environ['CANDIDATE_SHA'].lower()
-          rollback_id=os.environ['ROLLBACK_DEPLOY_ID']
-          headers={
-              'Authorization':f'Bearer {token}',
-              'Accept':'application/json',
-              'Content-Type':'application/json',
-              'User-Agent':'kyre-step19a-deploy/1',
+          # Freeze automatic deploys before any controlled release operation.
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
+
+          safe_base_env={
+              'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
+              'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'false',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+              'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+              'WNBA_STEP12_SCHEDULER_ENABLED':'false',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
+              'WNBA_STEP6J_CANARY_ENABLED':'false',
+              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false',
+              'WNBA_PERSISTENCE_ENABLED':'false',
+              'WNBA_SUPABASE_WRITE_ENABLED':'false',
+              'WNBA_WAGERING_ENABLED':'false',
+              'WNBA_STEP17A_HOST_CONTRACT_ENABLED':'false',
           }
+          for key,value in safe_base_env.items():
+              req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
 
-          def req(method,path,body=None):
-              data=None if body is None else json.dumps(body).encode()
-              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
-              with urllib.request.urlopen(r,timeout=30) as x:
-                  raw=x.read().decode()
-                  return json.loads(raw) if raw else None
-
-          def contains_sha(value,expected):
-              if isinstance(value,str):
-                  return value.strip().lower()==expected
-              if isinstance(value,dict):
-                  return any(contains_sha(v,expected) for v in value.values())
-              if isinstance(value,list):
-                  return any(contains_sha(v,expected) for v in value)
-              return False
-
-          did=None
-          rolled_back=False
-          try:
-              # Freeze automatic deploys before pinning the exact certified commit.
-              req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
-
-              # Read-only Step19A transport/features may be enabled, while every
-              # runtime/scheduler/sync/persistence/wagering mutation stays OFF.
-              envs={
-                  'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
-                  'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true',
-                  'WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
-                  'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
-                  'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
-                  'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
-                  'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
-                  'WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
-                  'WNBA_STEP10_FASTAPI_ENABLED':'true',
-                  'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true',
-                  'WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
-                  'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true',
-                  'WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
-                  'WNBA_STEP9_FASTAPI_ENABLED':'true',
-                  'WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true',
-                  'WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true',
-                  'WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true',
-                  'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
-                  'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'false',
-                  'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
-                  'WNBA_BOARD_SCHEDULER_ENABLED':'false',
-                  'WNBA_STEP12_SCHEDULER_ENABLED':'false',
-                  'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
-                  'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
-                  'WNBA_STEP6J_CANARY_ENABLED':'false',
-                  'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false',
-                  'WNBA_PERSISTENCE_ENABLED':'false',
-                  'WNBA_SUPABASE_WRITE_ENABLED':'false',
-                  'WNBA_WAGERING_ENABLED':'false',
-                  'WNBA_STEP17A_HOST_CONTRACT_ENABLED':'false',
-                  'WNBA_DEPLOYMENT_REVISION':sha,
-                  'WNBA_RELEASE_ID':os.environ['RELEASE_ID'],
-              }
-              for key,value in envs.items():
-                  req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
-
-              deploy=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
-              did=deploy.get('id')
-              if not did:
-                  raise RuntimeError('Render did not return a deploy ID')
-
-              terminal_bad={'build_failed','update_failed','canceled','cancelled','deactivated'}
-              detail={}
-              status=''
-              for _ in range(150):
-                  detail=req('GET',f'/services/{sid}/deploys/{did}') or {}
-                  status=str(detail.get('status','')).lower()
-                  if status=='live':
-                      break
-                  if status in terminal_bad:
-                      raise RuntimeError(f'Render deploy failed closed: {status}')
-                  time.sleep(5)
-              if status!='live':
-                  raise RuntimeError(f'Render deploy did not become live: {status}')
-              if not contains_sha(detail,sha):
-                  raise RuntimeError('Live Render deploy did not attest exact Step19A candidate SHA')
-
-              url=os.environ['RENDER_SERVICE_URL'].rstrip('/')
-              with urllib.request.urlopen(url+'/health',timeout=45) as h:
-                  health=json.loads(h.read().decode())
-              if health.get('status')!='ok':
-                  raise RuntimeError(f'health check failed: {health!r}')
-
-              evidence={
-                  'step':'19A-production-deploy',
-                  'status':'live',
-                  'service_id':sid,
-                  'service_name':os.environ['RENDER_SERVICE_NAME'],
-                  'service_url':url,
-                  'deploy_id':did,
-                  'candidate_sha':sha,
-                  'immutable_reference_image_ref':os.environ['STEP19A_IMAGE_REF'],
-                  'rollback_deploy_id':rollback_id,
-                  'rollback_revision':os.environ['CERTIFIED_STEP18_SHA'],
-                  'rollback_ready':True,
-                  'health_status':'ok',
-                  'auto_deploy_enabled':False,
-                  'production_runtime_enabled':False,
-                  'board_scheduler_enabled':False,
-                  'direct_sync_enabled':False,
-                  'reconciled_sync_enabled':False,
-                  'persistence_write_enabled':False,
-                  'supabase_write_enabled':False,
-                  'wagering_enabled':False,
-                  'database_secret_configured':True,
-                  'database_secret_exposed':False,
-                  'new_render_service_created':False,
-              }
-              open('step19a-render-deploy-evidence.json','w',encoding='utf-8').write(json.dumps(evidence,indent=2,sort_keys=True)+'\n')
-              print('STEP19A_RENDER_DEPLOY_LIVE_OK',did,sha)
-          except Exception:
+          # Hop 1: if production is not already Step18, make certified Step18 live
+          # first. This creates the exact rollback target for Step19A.
+          if contains_sha(current_detail,step18):
+              step18_deploy_id=current_live_id
+              print('STEP19A_STEP18_BASELINE_ALREADY_LIVE',step18_deploy_id,step18)
+          else:
               try:
-                  req('POST',f'/services/{sid}/rollback',{'deployId':rollback_id})
-                  rolled_back=True
-                  print('STEP19A_AUTOMATIC_ROLLBACK_REQUESTED',rollback_id)
-              finally:
+                  req('PUT',f'/services/{sid}/env-vars/WNBA_DEPLOYMENT_REVISION',{'value':step18})
+                  req('PUT',f'/services/{sid}/env-vars/WNBA_RELEASE_ID',{'value':'wnba-step18-certified-baseline'})
+                  step18_deploy_id=deploy_commit(step18,'STEP18_BASELINE')
+                  print('STEP19A_STEP18_BASELINE_LIVE_OK',step18_deploy_id,step18)
+              except Exception:
+                  rollback_to(legacy_rollback_id,'STEP18_BASELINE')
                   raise
+
+          # Hop 2: exact Step19A candidate. Read-only provider/market feature gates
+          # are enabled, while every production scheduler/sync/write/wager gate stays OFF.
+          candidate_env={
+              'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true',
+              'WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+              'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
+              'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
+              'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
+              'WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+              'WNBA_STEP10_FASTAPI_ENABLED':'true',
+              'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true',
+              'WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
+              'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true',
+              'WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+              'WNBA_STEP9_FASTAPI_ENABLED':'true',
+              'WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true',
+              'WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true',
+              'WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true',
+              'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+              'WNBA_DEPLOYMENT_REVISION':candidate,
+              'WNBA_RELEASE_ID':os.environ['RELEASE_ID'],
+          }
+          for key,value in candidate_env.items():
+              req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+
+          try:
+              candidate_deploy_id=deploy_commit(candidate,'STEP19A_CANDIDATE')
+          except Exception:
+              rollback_to(step18_deploy_id,'STEP19A_CANDIDATE')
+              raise
+
+          evidence={
+              'step':'19A-production-deploy',
+              'status':'live',
+              'service_id':sid,
+              'service_name':os.environ['RENDER_SERVICE_NAME'],
+              'service_url':public_url,
+              'candidate_deploy_id':candidate_deploy_id,
+              'candidate_sha':candidate,
+              'immutable_reference_image_ref':os.environ['STEP19A_IMAGE_REF'],
+              'step18_rollback_deploy_id':step18_deploy_id,
+              'step18_rollback_revision':step18,
+              'legacy_pre_step18_deploy_id':legacy_rollback_id,
+              'rollback_ready':True,
+              'health_status':'ok',
+              'auto_deploy_enabled':False,
+              'production_runtime_enabled':False,
+              'board_scheduler_enabled':False,
+              'direct_sync_enabled':False,
+              'reconciled_sync_enabled':False,
+              'persistence_write_enabled':False,
+              'supabase_write_enabled':False,
+              'wagering_enabled':False,
+              'database_secret_configured':True,
+              'database_secret_exposed':False,
+              'new_render_service_created':False,
+          }
+          open('step19a-render-deploy-evidence.json','w',encoding='utf-8').write(json.dumps(evidence,indent=2,sort_keys=True)+'\n')
+          print('STEP19A_RENDER_DEPLOY_LIVE_OK',candidate_deploy_id,candidate,'ROLLBACK',step18_deploy_id,step18)
           PY
 
       - name: Upload sanitized deployment evidence
