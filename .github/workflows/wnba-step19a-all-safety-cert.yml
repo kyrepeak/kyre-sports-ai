@@ -1,0 +1,108 @@
+name: WNBA Step19A all safety certification
+
+on:
+  push:
+    branches:
+      - wnba-step19a-live-compat-fix-20260829
+    paths:
+      - 'sports_api/**'
+      - 'tests/test_wnba_*.py'
+      - '.github/workflows/wnba-step19a-all-safety-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+
+jobs:
+  full-wnba-safety-gauntlet:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install complete WNBA test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+          python -m pip install pytest
+
+      - name: Compile WNBA API and test surfaces
+        run: |
+          python -m compileall -q sports_api
+          python - <<'PY'
+          from pathlib import Path
+          import py_compile
+          files=sorted(Path('tests').glob('test_wnba_*.py'))
+          assert files, 'No WNBA tests discovered'
+          for path in files:
+              py_compile.compile(str(path), doraise=True)
+          print('WNBA_TEST_FILES_COMPILED', len(files))
+          PY
+
+      - name: Run every deterministic WNBA regression test
+        run: |
+          pytest -q tests/test_wnba_*.py
+
+      - name: Re-run Step19A critical safety spine independently
+        run: |
+          pytest -q \
+            tests/test_wnba_step19a_draftkings_sportscontent.py \
+            tests/test_wnba_step19a_live_compat.py \
+            tests/test_wnba_step19a_scheduler_path.py \
+            tests/test_wnba_step19a_circuit_recovery.py \
+            tests/test_wnba_step19a_consumer_verifier.py
+
+      - name: Prove production mutation switches are OFF
+        run: |
+          python - <<'PY'
+          import os
+          keys=[
+              'WNBA_PRODUCTION_RUNTIME_ENABLED',
+              'WNBA_BOARD_SCHEDULER_ENABLED',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED',
+              'WNBA_STEP6J_CANARY_ENABLED',
+              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED',
+              'WNBA_PERSISTENCE_ENABLED',
+              'WNBA_SUPABASE_WRITE_ENABLED',
+              'WNBA_WAGERING_ENABLED',
+          ]
+          truthy=lambda v:str(v or '').strip().casefold() not in {'','0','false','no','off','disabled'}
+          bad=[k for k in keys if truthy(os.environ.get(k))]
+          assert not bad, bad
+          print('STEP19A_ALL_MUTATION_SWITCHES_OFF')
+          PY
+
+      - name: Prove frozen provider scheduler and reconciliation sources unchanged
+        run: |
+          set -euo pipefail
+          BASE='70aa357df98ef8ce931a249677484fd205f25467'
+          git diff --exit-code "$BASE"..HEAD -- \
+            sports_api/wnba_step11_draftkings_provider.py \
+            sports_api/wnba_step11_fanduel_provider.py \
+            sports_api/wnba_step11_multibook_shadow_board.py \
+            sports_api/wnba_step11_controlled_automation.py \
+            sports_api/wnba_step17b_always_on_runtime.py \
+            sports_api/wnba_step6d_direct_integration.py \
+            sports_api/wnba_reconciled_direct_sync.py
+          echo STEP19A_FULL_GAUNTLET_FROZEN_SOURCES_OK
