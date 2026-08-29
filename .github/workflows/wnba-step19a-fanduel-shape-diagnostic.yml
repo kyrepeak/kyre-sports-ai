@@ -19,28 +19,54 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -r sports_api/requirements.txt
-      - name: Inspect anonymous current FanDuel schema
+      - name: Inspect current FanDuel player-prop tabs
         run: |
           python - <<'PY'
+          from datetime import datetime, timezone
           from sports_api import wnba_step11_fanduel_provider as fd
+
+          target=datetime.now(timezone.utc).date().isoformat()
           content=fd._get_json(fd.FANDUEL_BASE_URL+fd.CONTENT_PAGE_PATH,params={'_ak':fd.FANDUEL_PUBLIC_WEB_KEY,'page':'CUSTOM','customPageId':'wnba','timezone':'America/New_York'},requester=None,timeout=20)
-          events=fd._extract_events(content)
-          print('CONTENT_KEYS',sorted(content.keys()))
-          print('EVENT_COUNT',len(events))
-          for event in events[:3]:
-              eid=fd._event_id(event); print('EVENT',eid,fd._event_name(event),fd._event_date(event))
-              doc=fd._get_json(fd.FANDUEL_BASE_URL+fd.EVENT_PAGE_PATH,params={'_ak':fd.FANDUEL_PUBLIC_WEB_KEY,'eventId':eid},requester=None,timeout=20)
-              print('EVENT_DOC_KEYS',sorted(doc.keys()))
-              layout=doc.get('layout') or {}
-              print('LAYOUT_KEYS',sorted(layout.keys()) if isinstance(layout,dict) else type(layout).__name__)
-              tabs=layout.get('tabs') if isinstance(layout,dict) else None
-              rows=fd._iter_mapping_or_list(tabs)
-              print('TAB_COUNT',len(rows),'RELEVANT_TAB_IDS',fd._relevant_tab_ids(doc))
-              for tab in rows[:30]:
-                  print('TAB',tab.get('id') or tab.get('tabId') or tab.get('_attachment_key'),tab.get('title') or tab.get('name') or tab.get('displayName'))
-              markets=fd._extract_markets(doc)
-              print('BASE_MARKET_COUNT',len(markets))
-              for m in markets[:40]:
-                  runners=fd._iter_mapping_or_list(m.get('runners'))
-                  print('MARKET',m.get('marketId') or m.get('id'),m.get('marketName') or m.get('name'),m.get('marketType') or m.get('type'),'STAT',fd._market_stat(m),'RUNNERS',[(r.get('runnerName') or r.get('name'),r.get('handicap'),r.get('resultType'),r.get('side')) for r in runners[:4]])
+          events=[e for e in fd._extract_events(content) if fd._event_date(e)==target]
+          print('TARGET_DATE',target,'TARGET_EVENT_COUNT',len(events))
+          assert events
+          observed=0
+          parseable=0
+          for event in events:
+              eid=fd._event_id(event)
+              base=fd._get_json(fd.FANDUEL_BASE_URL+fd.EVENT_PAGE_PATH,params={'_ak':fd.FANDUEL_PUBLIC_WEB_KEY,'eventId':eid},requester=None,timeout=20)
+              tabs=fd._relevant_tab_ids(base)
+              print('EVENT',eid,fd._event_name(event),'TABS',tabs)
+              for tab_id in tabs:
+                  doc=fd._get_json(fd.FANDUEL_BASE_URL+fd.EVENT_PAGE_PATH,params={'_ak':fd.FANDUEL_PUBLIC_WEB_KEY,'eventId':eid,'tab':tab_id},requester=None,timeout=20)
+                  markets=fd._extract_markets(doc)
+                  print('TAB',tab_id,'MARKETS',len(markets))
+                  for m in markets[:30]:
+                      stat=fd._market_stat(m)
+                      runners=fd._iter_mapping_or_list(m.get('runners'))
+                      if stat not in fd.SUPPORTED_STATS:
+                          continue
+                      pname=fd._market_player_name(m,runners,stat)
+                      declared=fd._declares_player_market(m,runners)
+                      print('PLAYER_MARKET',{
+                        'market_id':m.get('marketId') or m.get('id'),
+                        'market_name':m.get('marketName') or m.get('name'),
+                        'market_type':m.get('marketType') or m.get('type'),
+                        'status':m.get('marketStatus') or m.get('status'),
+                        'stat':stat,'player_name':pname,'declared_player':declared,
+                      })
+                      for r in runners[:4]:
+                          observed+=1
+                          parsed=fd._runner_side_line(r)
+                          if parsed is not None: parseable+=1
+                          print('RUNNER',{
+                            'name':r.get('runnerName') or r.get('name') or r.get('selectionName'),
+                            'handicap':r.get('handicap'),'line':r.get('line'),
+                            'resultType':r.get('resultType'),'side':r.get('side'),
+                            'status':r.get('runnerStatus') or r.get('status'),
+                            'playerName':r.get('playerName'),'participantName':r.get('participantName'),
+                            'parsed_side_line':parsed,
+                          })
+          print('RUNNER_PARSE_SUMMARY',{'observed':observed,'parseable':parseable})
+          assert observed > 0
           PY
