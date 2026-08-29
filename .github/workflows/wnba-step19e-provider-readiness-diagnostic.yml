@@ -55,29 +55,29 @@ jobs:
           fetch-depth: 1
       - name: Install runtime dependencies
         run: python -m pip install -r sports_api/requirements.txt >/dev/null
-      - name: Run direct Step12B provider discovery trace
+      - name: Inspect offending DraftKings event and slate relation
         run: |
           python - <<'PY'
           import json, os
           from datetime import datetime, timezone
-          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api.wnba_official_reconciliation import parse_official_schedule
 
-          req=s12b.build_step12b_request(
-              season=2026,
-              slate_date='2026-08-29',
-              evaluated_at=datetime.now(timezone.utc),
-              previous_state=None,
-              controller_policy={'provider_attempts': 1},
-          )
-          try:
-              out=s12b.run_step12b_live_runtime_job(req, env=os.environ)
-              print('DIRECT_STATUS', out.get('status'), out.get('health'))
-              print('DIRECT_DISCOVERY', json.dumps(out.get('provider_discovery'), indent=2, sort_keys=True))
-              print('DIRECT_OVERLAP', json.dumps(out.get('market_overlap'), indent=2, sort_keys=True))
-              print('DIRECT_RUNTIME', json.dumps(out.get('runtime_summary'), indent=2, sort_keys=True))
-          except Exception as exc:
-              print('DIRECT_EXCEPTION', type(exc).__name__, str(exc))
-              print('DIRECT_PROVIDER', getattr(exc,'provider',None))
-              print('DIRECT_PROVIDER_DISCOVERY', json.dumps(getattr(exc,'provider_discovery',None), indent=2, sort_keys=True, default=str))
-              raise
+          schedule=dk._get_json(dk.OFFICIAL_SCHEDULE_URL, requester=None, timeout_seconds=15.0)
+          docs=[]
+          for url in dk.FROZEN_DRAFTKINGS_ENDPOINTS:
+              doc=dk._get_json(url, requester=None, timeout_seconds=15.0)
+              docs.append({'url':url,'captured_at_utc':datetime.now(timezone.utc).isoformat(),'document':doc})
+          offers,events,sources=dk._normalize_documents(docs)
+          games=parse_official_schedule(schedule)
+          event_ids={str(o.get('source_event_id') or '').strip() for o in offers}
+          print('EVENT_COUNT',len(events),'OFFER_COUNT',len(offers),'OFFER_EVENT_IDS',sorted(event_ids))
+          for e in events:
+              eid=str(e.get('source_event_id') or '').strip()
+              if eid in event_ids or eid=='34579785':
+                  print('EVENT',json.dumps(e,sort_keys=True))
+                  print('EVENT_OFFER_COUNT',eid,sum(1 for o in offers if str(o.get('source_event_id') or '').strip()==eid))
+          for g in games:
+              if str(g.get('game_date')) in {'2026-08-28','2026-08-29','2026-08-30','2026-08-31','2026-09-01'}:
+                  print('OFFICIAL_GAME',json.dumps({k:g.get(k) for k in ('game_id','game_date','home_team_name','away_team_name')},sort_keys=True))
           PY
