@@ -1,0 +1,74 @@
+name: WNBA Step 19A Step11 provider preflight
+
+on:
+  push:
+    branches:
+      - wnba-step19a-step11-provider-preflight-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r sports_api/requirements.txt
+      - name: Probe frozen Step11 provider seams with Step19A DK adapter
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from sports_api import wnba_step19a_step17b_bridge as bridge
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step19a_draftkings_sportscontent as s19
+
+          now=datetime.now(timezone.utc)
+          env={
+            s19.STEP19A_ENABLED_ENV:'true', s19.STEP19A_SITE_ENV:'dkusaz',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
+            'WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true',
+            'WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true',
+            'WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true',
+            'WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true',
+            'WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true',
+            'WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true',
+            'WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true',
+            'WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true',
+            'WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true',
+            'WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true',
+            'WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true',
+            'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+            'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+            'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
+            'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
+            'WNBA_STEP6J_CANARY_ENABLED':'false',
+            'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false',
+          }
+          slate=now.date().isoformat()
+          d=bridge.fetch_step11a_draftkings_provider_bridge_step19a(season=2026,slate_date=slate,evaluated_at=now,env=env)
+          dp=(d.get('provider_refresh') or {}).get('attempts') or []
+          assert dp and dp[0].get('ok') is True
+          dr=((dp[0].get('payload') or {}).get('records') or [])
+          assert dr, 'Step19A->Step11A produced no records'
+          print('STEP19A_STEP11A_LIVE_OK',len(dr))
+
+          try:
+            f=fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env)
+          except Exception as exc:
+            print('STEP19A_FANDUEL_LIVE_FAILED',type(exc).__name__,str(exc))
+            raise
+          fp=(f.get('provider_refresh') or {}).get('attempts') or []
+          assert fp and fp[0].get('ok') is True
+          fr=((fp[0].get('payload') or {}).get('records') or [])
+          assert fr, 'FanDuel Step11C produced no records'
+          print('STEP19A_FANDUEL_LIVE_OK',len(fr))
+          PY
