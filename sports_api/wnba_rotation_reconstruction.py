@@ -66,7 +66,12 @@ def _player_lookup(players: list[dict[str, Any]]) -> dict[str, list[int]]:
         player_id = player.get("player_id")
         if not isinstance(player_id, int):
             continue
+        # WNBA.com substitution descriptions normally use surnames, but some
+        # official rows use a player's given name (for example ``Xu`` for
+        # Xu Han). Keep first names as an additional identity form while
+        # preserving fail-closed ambiguity handling in _resolve_incoming.
         for form in {
+            _norm_name(player.get("first_name")),
             _norm_name(player.get("last_name")),
             _norm_name(player.get("full_name")),
             _norm_name(player.get("name_initial")),
@@ -103,6 +108,7 @@ def _outgoing_label_matches(
         return False
     value = _norm_name(label)
     return value in {
+        _norm_name(player.get("first_name")),
         _norm_name(player.get("last_name")),
         _norm_name(player.get("full_name")),
         _norm_name(player.get("name_initial")),
