@@ -1,0 +1,91 @@
+name: WNBA Step19H FanDuel transport certification
+
+on:
+  push:
+    branches: [wnba-step19h-fanduel-hosted-transport-20260829]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step19h-fanduel-transport-certify
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Focused regression
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19h_fanduel_hosted_transport.py \
+            tests/test_wnba_step19g_hosted_provider_trace.py \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step11_fanduel_provider.py
+
+      - name: Read-only live FanDuel transport certification
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step19h_fanduel_hosted_transport as s19h
+
+          s19h.install_step19h_fanduel_hosted_transport()
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          bridge=fd.fetch_step11c_fanduel_provider_bridge(
+              season=2026,
+              slate_date=slate,
+              evaluated_at=datetime.now(timezone.utc),
+              env=os.environ,
+          )
+          status=s19h.get_step19h_fanduel_transport_status()
+          events=status.get('events') or []
+          payload=((bridge.get('provider_refresh') or {}).get('attempts') or [{}])[0].get('payload') or {}
+          record_count=len(payload.get('records') or [])
+          summary={
+              'slate':slate,
+              'record_count':record_count,
+              'event_count':len(events),
+              'invalid_json_event_count':status.get('invalid_json_event_count'),
+              'response_shapes':sorted({str(e.get('body_shape')) for e in events}),
+              'content_types':sorted({str(e.get('content_type')) for e in events}),
+          }
+          print('STEP19H_GITHUB_TRANSPORT',json.dumps(summary,sort_keys=True))
+          if record_count <= 0:
+              raise SystemExit('FanDuel live provider returned no records')
+          if not events:
+              raise SystemExit('Step19H captured no FanDuel transport events')
+          if any(e.get('json_decodable') is not True for e in events):
+              raise SystemExit('GitHub FanDuel response was not valid JSON')
+          if any(e.get('body_captured') is not False or e.get('query_captured') is not False for e in events):
+              raise SystemExit('Step19H metadata-only guardrail drift')
+          print('STEP19H_GITHUB_TRANSPORT_CERTIFIED')
+          PY
