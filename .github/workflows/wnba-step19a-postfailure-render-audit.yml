@@ -1,0 +1,78 @@
+name: WNBA Step 19A post-failure Render audit
+
+on:
+  push:
+    branches:
+      - wnba-step19a-market-feed-audit-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    environment: wnba-render-staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify current Render service deploy and non-secret flags
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          sid='srv-da84q6ifngtc73bdbm6g'
+          base='https://api.render.com/v1'
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','User-Agent':'kyre-step19a-audit/1'}
+          def req(path):
+              r=urllib.request.Request(base+path,headers=headers,method='GET')
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode(); return json.loads(raw) if raw else None
+          service=req(f'/services/{sid}')
+          print('SERVICE_ID', service.get('id'))
+          print('SERVICE_NAME', service.get('name'))
+          print('SERVICE_URL', (service.get('serviceDetails') or {}).get('url'))
+          deploys=req(f'/services/{sid}/deploys?limit=10')
+          rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
+          for row in rows[:5]:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if not isinstance(d,dict): continue
+              commit=d.get('commit')
+              if isinstance(commit,dict): commit=commit.get('id') or commit.get('sha')
+              print('DEPLOY', {'id':d.get('id'),'status':d.get('status'),'commit':commit,'createdAt':d.get('createdAt'),'updatedAt':d.get('updatedAt')})
+          envs=req(f'/services/{sid}/env-vars')
+          rows=envs if isinstance(envs,list) else ((envs or {}).get('items') or (envs or {}).get('data') or [])
+          values={}
+          for row in rows:
+              e=row.get('envVar') if isinstance(row,dict) and isinstance(row.get('envVar'),dict) else row
+              if isinstance(e,dict): values[str(e.get('key') or '')]=str(e.get('value') or '')
+          watched=['WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED','WNBA_STEP19A_DRAFTKINGS_SITE','WNBA_KYRE_DIRECT_SYNC_ENABLED','WNBA_KYRE_DIRECT_SYNC_PROVIDER','WNBA_KYRE_RECONCILED_SYNC_ENABLED','WNBA_KYRE_RECONCILED_SYNC_MAX_AGE_SECONDS','WNBA_WAGERING_ENABLED','WNBA_DEPLOYMENT_REVISION','WNBA_RELEASE_ID']
+          for key in watched:
+              val=values.get(key)
+              if key in {'WNBA_DEPLOYMENT_REVISION','WNBA_RELEASE_ID','WNBA_STEP19A_DRAFTKINGS_SITE','WNBA_KYRE_DIRECT_SYNC_PROVIDER','WNBA_KYRE_RECONCILED_SYNC_MAX_AGE_SECONDS'}:
+                  print('FLAG',key,val if val is not None else '<absent>')
+              else:
+                  print('FLAG',key,('<absent>' if val is None else val.lower()))
+          PY
+      - name: Check public production routes
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error
+          base='https://kyre-sports-api.onrender.com'
+          for path in ['/health','/api/v1/wnba/markets/direct/draftkings/status','/api/v1/wnba/markets/direct/draftkings/reconciled-sync-status','/api/v1/wnba/consumer/latest']:
+              try:
+                  with urllib.request.urlopen(base+path,timeout=30) as r:
+                      body=json.loads(r.read().decode())
+                  if path=='/health':
+                      print('PUBLIC',path,{'status':body.get('status')})
+                  elif path.endswith('/status'):
+                      print('PUBLIC',path,{'direct_sync_active':body.get('direct_sync_active'),'reconciled_sync_active':body.get('reconciled_sync_active'),'blockers':body.get('blockers')})
+                  else:
+                      snap=body.get('snapshot') or {}
+                      print('PUBLIC',path,{'state':body.get('state'),'cards':len(body.get('cards') or []),'snapshot_hash':snap.get('hash_sha256')})
+              except Exception as exc:
+                  print('PUBLIC_ERROR',path,type(exc).__name__,str(exc))
+          PY
