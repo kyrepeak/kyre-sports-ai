@@ -14,18 +14,22 @@ Certified live differences handled here:
   ``player-points`` rather than the numeric layout card id.
 * FanDuel now exposes Over/Under in ``runner.result.type`` with the threshold in
   ``runner.handicap`` on the live player-prop surface.
+* FanDuel player tabs also contain alternate one-way markets.  Step11C's scope
+  remains exact-line two-way Over/Under props, so only markets carrying a
+  complete parseable O/U pair are treated as identity-bearing player props.
 """
 from __future__ import annotations
 
 import math
-from typing import Any, Mapping
+from collections import defaultdict
+from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
 from sports_api import wnba_step11_draftkings_provider as draftkings
 from sports_api import wnba_step11_fanduel_provider as fanduel
 
 SOURCE = "Kyre Sports API WNBA Step19F strict sportsbook live-surface compatibility"
-MODEL_VERSION = "wnba_step19f_sportsbook_live_surface_v3"
+MODEL_VERSION = "wnba_step19f_sportsbook_live_surface_v4"
 EASTERN = ZoneInfo("America/New_York")
 
 _PROVIDER_TEAM_ALIASES = {
@@ -43,6 +47,7 @@ _ORIGINAL_DK_TEAM_IDENTITY_KEY = draftkings._team_identity_key
 _ORIGINAL_FD_EVENT_DATE = fanduel._event_date
 _ORIGINAL_FD_RELEVANT_TAB_IDS = fanduel._relevant_tab_ids
 _ORIGINAL_FD_RUNNER_SIDE_LINE = fanduel._runner_side_line
+_ORIGINAL_FD_DECLARES_PLAYER_MARKET = fanduel._declares_player_market
 _INSTALLED = False
 
 
@@ -104,6 +109,23 @@ def fanduel_runner_side_line_step19f(runner: Mapping[str, Any]) -> tuple[str, fl
     return side, round(line, 6)
 
 
+def fanduel_declares_player_market_step19f(
+    market: Mapping[str, Any],
+    runners: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Declare identity only for the two-way threshold market Step11C supports."""
+    if not _ORIGINAL_FD_DECLARES_PLAYER_MARKET(market, runners):
+        return False
+    lines: dict[float, set[str]] = defaultdict(set)
+    for runner in runners:
+        parsed = fanduel_runner_side_line_step19f(runner)
+        if parsed is None:
+            continue
+        side, line = parsed
+        lines[line].add(side)
+    return any(sides == {"over", "under"} for sides in lines.values())
+
+
 def install_step19f_draftkings_identity() -> dict[str, Any]:
     """Install the complete Step19F compatibility set idempotently."""
     global _INSTALLED
@@ -115,6 +137,8 @@ def install_step19f_draftkings_identity() -> dict[str, Any]:
         fanduel._relevant_tab_ids = fanduel_relevant_tab_ids_step19f
     if fanduel._runner_side_line is not fanduel_runner_side_line_step19f:
         fanduel._runner_side_line = fanduel_runner_side_line_step19f
+    if fanduel._declares_player_market is not fanduel_declares_player_market_step19f:
+        fanduel._declares_player_market = fanduel_declares_player_market_step19f
     _INSTALLED = True
     return INSTALLATION
 
@@ -127,6 +151,7 @@ INSTALLATION = {
     "fanduel_slate_timezone": "America/New_York",
     "fanduel_player_tab_slugs": tuple(_FANDUEL_PLAYER_TAB_SLUGS.values()),
     "fanduel_nested_result_type_supported": True,
+    "fanduel_two_way_scope_preserved": True,
     "official_schedule_reconciliation_modified": False,
     "game_uniqueness_relaxed": False,
     "slate_date_bounds_relaxed": False,
@@ -142,6 +167,7 @@ __all__ = [
     "INSTALLATION",
     "MODEL_VERSION",
     "SOURCE",
+    "fanduel_declares_player_market_step19f",
     "fanduel_event_date_step19f",
     "fanduel_relevant_tab_ids_step19f",
     "fanduel_runner_side_line_step19f",
