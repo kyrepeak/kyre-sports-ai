@@ -62,8 +62,7 @@ jobs:
           python -m py_compile sports_api/wnba_step19a_step17b_bridge.py
 
       - name: Run Step19A deterministic regressions
-        run: |
-          pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py tests/test_wnba_step19a_live_compat.py
+        run: pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py tests/test_wnba_step19a_live_compat.py
 
       - name: Run explicit 57-failure circuit recovery certification
         run: pytest -q tests/test_wnba_step19a_circuit_recovery.py
@@ -109,10 +108,9 @@ jobs:
           from datetime import datetime, timezone
           from zoneinfo import ZoneInfo
           import os
-          from sports_api import wnba_step19a_step17b_bridge as bridge  # installs compatibility
+          from sports_api import wnba_step19a_step17b_bridge as bridge
           from sports_api import wnba_step11_draftkings_provider as dk
           from sports_api import wnba_step11_fanduel_provider as fd
-
           now=datetime.now(timezone.utc)
           slate=now.astimezone(ZoneInfo('America/New_York')).date().isoformat()
           env=dict(os.environ)
@@ -123,13 +121,14 @@ jobs:
               assert len(attempts)==1 and attempts[0].get('ok') is True
               return (attempts[0].get('payload') or {}).get('records') or []
           dkr=records(dk_result); fdr=records(fd_result)
-          assert dkr, 'DraftKings bridge returned no live records'
-          assert fdr, 'FanDuel bridge returned no live records'
+          assert dkr and fdr
           for name,rows in [('DraftKings',dkr),('FanDuel',fdr)]:
               stats={str(r.get('stat')) for r in rows}
               assert {'points','rebounds','assists','pra'} <= stats, (name,stats)
               assert all(r.get('over_price') is not None and r.get('under_price') is not None for r in rows), name
-          print('STEP19A_LIVE_TWO_PROVIDER_OK', {'slate':slate,'draftkings_records':len(dkr),'fanduel_records':len(fdr)})
+          common={(str(r['game_id']),int(r['player_id'])) for r in dkr} & {(str(r['game_id']),int(r['player_id'])) for r in fdr}
+          assert common, 'No live DraftKings/FanDuel player identity overlap'
+          print('STEP19A_LIVE_TWO_PROVIDER_OK', {'slate':slate,'draftkings_records':len(dkr),'fanduel_records':len(fdr),'common_players':len(common)})
           PY
 
       - name: Live read-only frozen Step11D two-book board certification
@@ -138,27 +137,62 @@ jobs:
           from datetime import datetime, timezone
           from zoneinfo import ZoneInfo
           import os
-          from sports_api import wnba_step19a_step17b_bridge  # install bridge + live compat
+          from sports_api import wnba_step19a_step17b_bridge
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
           from sports_api import wnba_step11_multibook_shadow_board as step11d
+          from sports_api import wnba_step9_threshold_pricing as pricing
+          from sports_api.wnba_step8_joint_monte_carlo import MODEL_VERSION as STEP8D_MODEL_VERSION, SCHEMA_VERSION as STEP8D_SCHEMA_VERSION
+
           now=datetime.now(timezone.utc)
           slate=now.astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          env=dict(os.environ)
+
+          def provider_records(result):
+              attempts=(result.get('provider_refresh') or {}).get('attempts') or []
+              assert len(attempts)==1 and attempts[0].get('ok') is True
+              return (attempts[0].get('payload') or {}).get('records') or []
+
+          dkr=provider_records(dk.fetch_step11a_draftkings_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env))
+          fdr=provider_records(fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=env))
+          common=sorted({(str(r['game_id']),int(r['player_id'])) for r in dkr} & {(str(r['game_id']),int(r['player_id'])) for r in fdr})
+          assert common, 'Need one current player offered by both books for Step11D cert'
+          game_id, player_id=common[0]
+
+          distribution={
+              'data_type':'joint_player_stat_probability_distribution',
+              'schema_version':STEP8D_SCHEMA_VERSION,
+              'model_version':STEP8D_MODEL_VERSION,
+              'generated_at_utc':now.isoformat(),
+              'game_id':game_id,
+              'player_id':player_id,
+              'team_key':'cert-team',
+              'opponent_team_key':'cert-opponent',
+              'simulation':{'simulations':5_000_000,'batch_size':250_000},
+              'convergence':{'converged':True},
+              'distributions':{
+                  'points':{'probability_mass':[{'value':10,'probability':0.5},{'value':30,'probability':0.5}]},
+                  'rebounds':{'probability_mass':[{'value':2,'probability':0.5},{'value':14,'probability':0.5}]},
+                  'assists':{'probability_mass':[{'value':1,'probability':0.5},{'value':10,'probability':0.5}]},
+                  'points_rebounds_assists':{'probability_mass':[{'value':15,'probability':0.5},{'value':54,'probability':0.5}]},
+              },
+          }
+          surface=dict(distribution); surface.pop('generated_at_utc',None)
+          distribution['result_content_sha256']=pricing._canonical_hash(surface)
+
           result=step11d.run_step11d_multibook_shadow_board(
-              season=2026,
-              slate_date=slate,
-              step8_distributions=[],
-              evaluated_at=now,
-              provider_attempts=1,
-              env=dict(os.environ),
+              season=2026, slate_date=slate, step8_distributions=[distribution],
+              evaluated_at=now, provider_attempts=1, env=env,
           )
           providers=result.get('providers') or []
-          assert len(providers)==2
-          assert all(p.get('succeeded') is True for p in providers), providers
+          assert len(providers)==2 and all(p.get('succeeded') is True for p in providers), providers
           summary=result.get('shadow_summary') or {}
           assert summary.get('successful_provider_count')==2, summary
+          assert int(summary.get('matched_prop_count') or 0) >= 1, summary
           assert result.get('shadow_only') is True
           assert (result.get('guardrails') or {}).get('supabase_mutated') is False
           assert (result.get('guardrails') or {}).get('persistence_mutated') is False
-          print('STEP19A_STEP11D_LIVE_OK', {'slate':slate,'summary':summary})
+          print('STEP19A_STEP11D_LIVE_OK', {'slate':slate,'game_id':game_id,'player_id':player_id,'summary':summary})
           PY
 
       - name: Reassert production and write switches remain OFF
@@ -166,12 +200,7 @@ jobs:
         run: |
           python - <<'PY'
           import os
-          keys=[
-            'WNBA_PRODUCTION_RUNTIME_ENABLED','WNBA_BOARD_SCHEDULER_ENABLED',
-            'WNBA_KYRE_DIRECT_SYNC_ENABLED','WNBA_KYRE_RECONCILED_SYNC_ENABLED',
-            'WNBA_STEP6J_CANARY_ENABLED','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED',
-            'WNBA_PERSISTENCE_ENABLED','WNBA_SUPABASE_WRITE_ENABLED','WNBA_WAGERING_ENABLED',
-          ]
+          keys=['WNBA_PRODUCTION_RUNTIME_ENABLED','WNBA_BOARD_SCHEDULER_ENABLED','WNBA_KYRE_DIRECT_SYNC_ENABLED','WNBA_KYRE_RECONCILED_SYNC_ENABLED','WNBA_STEP6J_CANARY_ENABLED','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED','WNBA_PERSISTENCE_ENABLED','WNBA_SUPABASE_WRITE_ENABLED','WNBA_WAGERING_ENABLED']
           truthy=lambda v:str(v or '').strip().casefold() not in {'','0','false','no','off','disabled'}
           bad=[k for k in keys if truthy(os.environ.get(k))]
           assert not bad, bad
