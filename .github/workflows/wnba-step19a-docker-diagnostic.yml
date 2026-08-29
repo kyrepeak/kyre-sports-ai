@@ -1,0 +1,46 @@
+name: WNBA Step 19A Docker diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19a-docker-diagnostic-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact production Docker image
+        run: |
+          set -euo pipefail
+          docker build \
+            --build-arg WNBA_RELEASE_REVISION="$GITHUB_SHA" \
+            --build-arg WNBA_RELEASE_ID="wnba-step19a-diagnostic" \
+            -f sports_api/Dockerfile \
+            -t "kyre-step19a:$GITHUB_SHA" .
+      - name: Import Step 19A in exact production image
+        run: |
+          docker run --rm \
+            --entrypoint python \
+            "kyre-step19a:$GITHUB_SHA" \
+            -c "import sports_api.main; import sports_api.wnba_step19a_draftkings_sportscontent as s; print('STEP19A_DOCKER_IMPORT_OK', s.MODEL_VERSION)"
+      - name: Boot exact production image and check health
+        run: |
+          set -euo pipefail
+          cid=$(docker run -d -e PORT=8000 -e WEB_CONCURRENCY=1 -p 18000:8000 "kyre-step19a:$GITHUB_SHA")
+          trap 'docker logs "$cid" || true; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18000/health >/tmp/health.json; then
+              cat /tmp/health.json
+              echo STEP19A_DOCKER_HEALTH_OK
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs "$cid"
+          exit 1
