@@ -145,7 +145,7 @@ INSTALLATION = {
     "circuit_force_closed": False,
     "readiness_gates_relaxed": False,
     "projection_fabrication_allowed": False,
-    "provider_logic_modified": True,
+    "provider_logic_modified": False,
     "provider_identity_compatibility": step19f.MODEL_VERSION,
     "durable_lease_ownership_modified": False,
     "cooldown_safety_buffer_seconds": COOLDOWN_SAFETY_BUFFER_SECONDS,
