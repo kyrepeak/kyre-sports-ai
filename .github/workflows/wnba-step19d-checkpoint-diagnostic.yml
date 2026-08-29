@@ -1,0 +1,67 @@
+name: WNBA Step19D durable checkpoint diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19d-checkpoint-diagnostic-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: c32ecbffab4404c965e9d14f2808d92ea58b0d91
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: wnba-render-staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 1
+      - name: Install persistence dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+      - name: Load latest checkpoint read-only and print sanitized failure paths
+        env:
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from collections.abc import Mapping
+          from sports_api import wnba_step17b_always_on_runtime as s17
+          from sports_api import wnba_step14b_database_checkpoint_adapter as s14
+          base={'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],'WEB_CONCURRENCY':'1','WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true','WNBA_STEP17B_ALWAYS_ON_ENABLED':'true','WNBA_STEP17B_LOOP_SECONDS':'60'}
+          env=s17.build_runtime_env(base)
+          result=s14.load_step14b_checkpoint(slate_date='2026-08-29',env=env)
+          assert result.get('found') is True
+          envelope=result.get('checkpoint_envelope') or {}
+          controller=result.get('controller_state_for_restart') or {}
+          print('CHECKPOINT_META',json.dumps({'version':result.get('checkpoint_version'),'checkpoint_id':result.get('checkpoint_id'),'controller_state_sha256':result.get('controller_state_sha256'),'envelope_content_sha256':result.get('envelope_content_sha256')},sort_keys=True))
+          print('CHECKPOINT_CONTROLLER',json.dumps(controller,sort_keys=True,default=str))
+          interesting=[]
+          wanted=('error','provider','outcome','status','health','circuit','failure','reason','exception','attempt')
+          def walk(value,path='root',depth=0):
+              if depth>20: return
+              if isinstance(value,Mapping):
+                  for k,v in value.items():
+                      key=str(k); p=f'{path}.{key}'
+                      if any(token in key.casefold() for token in wanted):
+                          text=json.dumps(v,sort_keys=True,default=str)
+                          if len(text)>1500: text=text[:1500]+'...'
+                          interesting.append((p,text))
+                      walk(v,p,depth+1)
+              elif isinstance(value,list):
+                  for i,v in enumerate(value[:50]): walk(v,f'{path}[{i}]',depth+1)
+          walk(envelope)
+          for path,value in interesting:
+              low=value.casefold()
+              if 'postgres://' in low or 'postgresql://' in low: value='"[REDACTED_DSN]"'
+              print('CHECKPOINT_PATH',path,value)
+          print('CHECKPOINT_DIAGNOSTIC_COMPLETE',len(interesting))
+          PY
