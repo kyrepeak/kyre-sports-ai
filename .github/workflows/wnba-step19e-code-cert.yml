@@ -4,6 +4,39 @@ on:
     branches: [wnba-step19e-cooldown-cert-20260829]
 permissions:
   contents: read
+env:
+  PYTHONPATH: .
+  WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+  WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+  WNBA_STEP10_FASTAPI_ENABLED: 'true'
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+  WNBA_STEP9_FASTAPI_ENABLED: 'true'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+  WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_PERSISTENCE_ENABLED: 'false'
+  WNBA_SUPABASE_WRITE_ENABLED: 'false'
+  WNBA_WAGERING_ENABLED: 'false'
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
 jobs:
   certify:
     runs-on: ubuntu-24.04
@@ -19,16 +52,12 @@ jobs:
           python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
           python -m pip install pytest >/dev/null
       - name: Compile and test exact candidate
-        env:
-          PYTHONPATH: .
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "222550f3d2db46d470e4ba050848a9110920fcab"
           python -m py_compile sports_api/wnba_step19e_cooldown_aware_cycle.py sports_api/api/__init__.py sports_api/api/wnba_step17b_runtime.py sports_api/main.py
           python -m pytest -q tests/test_wnba_step19e_cooldown_aware_cycle.py tests/test_wnba_step19d_history_transport_resilience.py tests/test_wnba_rotation_context.py tests/test_wnba_rotation_fallback.py tests/test_wnba_step12b_live_runtime_assembly.py tests/test_wnba_step12c_live_board_runtime.py
       - name: Prove startup wiring
-        env:
-          PYTHONPATH: .
         run: |
           python - <<'PY'
           import sports_api.main
