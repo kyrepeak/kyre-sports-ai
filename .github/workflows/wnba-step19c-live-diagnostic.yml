@@ -1,0 +1,29 @@
+name: WNBA Step19C live production diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19c-live-diagnostic-20260829
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Print current production runtime state
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          for path in ['/health','/api/v1/wnba/runtime/step17b','/api/v1/wnba/runtime/step17c/health','/api/v1/wnba/consumer/latest','/api/v1/wnba/markets/direct/draftkings/status']:
+              try:
+                  with urllib.request.urlopen(base+path,timeout=35) as r:
+                      obj=json.loads(r.read().decode())
+                  print('LIVE_DIAG',path,json.dumps(obj,sort_keys=True,default=str))
+              except Exception as exc:
+                  print('LIVE_DIAG_ERROR',path,type(exc).__name__,' '.join(str(exc).split())[:300])
+          PY
