@@ -1,9 +1,9 @@
-"""Step 19A bridges the current DraftKings transport into frozen production seams.
+"""Step 19A bridges current sportsbook transports into frozen production seams.
 
 Step 17B intentionally keeps the legacy Step-6D/6I process activation switches
 OFF. Step 11D owns the actual scheduler sportsbook seam and resolves the Step-11A
-DraftKings bridge dynamically. This module patches both seams without editing any
-frozen Step-6/11/17 source file.
+DraftKings bridge dynamically. This module patches current live compatibility
+without editing any frozen Step-6/11/17 source file.
 """
 from __future__ import annotations
 
@@ -19,8 +19,9 @@ import sports_api.wnba_reconciled_direct_sync as _step6i
 import sports_api.wnba_step6d_direct_integration as _step6d
 import sports_api.wnba_step11_draftkings_provider as _step11a
 import sports_api.wnba_step19a_draftkings_sportscontent as _step19a
+import sports_api.wnba_step19a_live_compat as _live_compat
 
-MODEL_VERSION = "wnba_step19a_step17b_bridge_v2"
+MODEL_VERSION = "wnba_step19a_step17b_bridge_v3"
 _ORIGINAL_STEP6D_COLLECTOR = _step6d.collect_kyre_market_feed_step6d
 _ORIGINAL_STEP11A_FETCHER = _step11a.fetch_step11a_draftkings_provider_bridge
 _FROZEN_STAT_ORDER = ("points", "rebounds", "assists", "pra")
@@ -125,6 +126,7 @@ def collect_kyre_market_feed_step19a(
 
 
 def install_step19a_step17b_bridge() -> dict[str, Any]:
+    live_compat = _live_compat.install_step19a_live_provider_compat()
     _step6d.collect_kyre_market_feed_step6d = collect_kyre_market_feed_step19a
     _step11a.fetch_step11a_draftkings_provider_bridge = fetch_step11a_draftkings_provider_bridge_step19a
     return {
@@ -134,8 +136,10 @@ def install_step19a_step17b_bridge() -> dict[str, Any]:
         "legacy_process_gates_required": False,
         "local_step6i_reconciliation_required": True,
         "step11a_current_transport_installed": True,
+        "live_provider_compat": live_compat,
         "frozen_step17b_source_modified": False,
         "frozen_step11a_source_modified": False,
+        "frozen_step11c_source_modified": False,
         "frozen_step11d_source_modified": False,
         "frozen_step6d_source_modified": False,
         "frozen_step6i_source_modified": False,
