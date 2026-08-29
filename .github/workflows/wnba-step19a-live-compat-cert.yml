@@ -62,7 +62,7 @@ jobs:
           python -m py_compile sports_api/wnba_step19a_step17b_bridge.py
 
       - name: Run Step19A deterministic regressions
-        run: pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py tests/test_wnba_step19a_live_compat.py
+        run: pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py tests/test_wnba_step19a_live_compat.py tests/test_wnba_step19a_scheduler_path.py
 
       - name: Run explicit 57-failure circuit recovery certification
         run: pytest -q tests/test_wnba_step19a_circuit_recovery.py
