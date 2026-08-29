@@ -1,0 +1,105 @@
+name: WNBA Step19C persisted-state diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19c-persisted-state-diagnostic-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: 98c8802d34b3ede77ef9264342b326fed1592575
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: wnba-render-staging
+    env:
+      KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+    steps:
+      - name: Checkout exact Step19C candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+
+      - name: Read durable checkpoint and reproduce one post-cooldown Step12B cycle
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone, timedelta
+
+          env={
+            'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
+            'WEB_CONCURRENCY':'1',
+            'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true','WNBA_STEP17B_ALWAYS_ON_ENABLED':'true','WNBA_STEP17B_LOOP_SECONDS':'60',
+            'WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED':'true','WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED':'true','WNBA_STEP14B_DATABASE_READ_ENABLED':'true','WNBA_STEP14B_DATABASE_WRITE_ENABLED':'true','WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED':'true',
+            'WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED':'true','WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED':'true','WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED':'true','WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED':'true',
+            'WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED':'true','WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED':'true','WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false',
+            'WNBA_STEP18A_STREAMLIT_CONSUMER_ENABLED':'true'
+          }
+          os.environ.update(env)
+          import sports_api.main  # installs Step19A/Step19C compat without starting lifespan
+          from sports_api import wnba_step14c_durable_restart_lease as s14c
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+          from sports_api import wnba_step19c_market_not_ready_compat as compat
+
+          assert s12.run_step12b_live_runtime_job is compat.run_step12b_live_runtime_job_step19c
+          loaded=s14c.load_step14c_restart_checkpoint(slate_date='2026-08-29',env=env)
+          state=loaded.get('controller_state_for_restart') if loaded.get('found') else None
+          safe_state={}
+          if isinstance(state,dict):
+              safe_state={k:state.get(k) for k in ('circuit_state','consecutive_failure_count','last_tick_at_utc','last_failure_at_utc','next_refresh_due_at_utc','circuit_open_until_utc','state_content_sha256','policy')}
+          print('PERSISTED_CONTROLLER_STATE',json.dumps(safe_state,sort_keys=True,default=str),flush=True)
+          if not isinstance(state,dict): raise SystemExit('No durable controller state found')
+          policy=state.get('policy') or {}
+          now=datetime.now(timezone.utc)
+          probe_at=now
+          raw_open=state.get('circuit_open_until_utc')
+          if raw_open:
+              text=str(raw_open); text=text[:-1]+'+00:00' if text.endswith(('Z','z')) else text
+              opened=datetime.fromisoformat(text).astimezone(timezone.utc)
+              if opened>=probe_at: probe_at=opened+timedelta(seconds=1)
+          # Keep diagnostic evaluation close to wall time; if stale persisted cooldown is far in the future, fail rather than time-travel deeply.
+          if (probe_at-now).total_seconds()>240:
+              raise SystemExit(f'Persisted cooldown is unexpectedly >240s ahead: {(probe_at-now).total_seconds():.1f}s')
+          req=s12.build_step12b_request(
+              season=2026,slate_date='2026-08-29',evaluated_at=probe_at,previous_state=state,
+              controller_policy={
+                'refresh_interval_seconds':int(policy.get('refresh_interval_seconds',60)),
+                'failure_threshold':int(policy.get('failure_threshold',3)),
+                'circuit_cooldown_seconds':int(policy.get('circuit_cooldown_seconds',180)),
+                'provider_attempts':3,
+              },refresh_policy={},qualification_policy={}
+          )
+          try:
+              result=s12.run_step12b_live_runtime_job(req,env=env)
+          except Exception as exc:
+              print('PERSISTED_STATE_REPRO_EXCEPTION',json.dumps({'type':type(exc).__name__,'message':' '.join(str(exc).split())[:1200]},sort_keys=True),flush=True)
+              raise
+          tick=((result.get('step12a_result') or {}).get('step11e_tick') or {})
+          execution=tick.get('execution') or {}; after=tick.get('automation_state') or {}
+          summary={
+            'evaluated_at':probe_at.isoformat(),'status':result.get('status'),'health':result.get('health'),
+            'built':(result.get('projection_assembly') or {}).get('built_target_count'),'skipped':(result.get('projection_assembly') or {}).get('skipped_target_count'),
+            'cycle_executed':execution.get('cycle_executed'),'cycle_outcome':execution.get('cycle_outcome'),'skip_reason':execution.get('skip_reason'),'error':execution.get('error'),
+            'circuit_after':after.get('circuit_state'),'failures_after':after.get('consecutive_failure_count'),
+          }
+          print('PERSISTED_STATE_REPRO_RESULT',json.dumps(summary,sort_keys=True,default=str),flush=True)
+          print('STEP19C_PERSISTED_STATE_READONLY_DIAGNOSTIC_OK')
+          PY
