@@ -1,0 +1,1 @@
+Run current FanDuel player runner contract diagnostic.
