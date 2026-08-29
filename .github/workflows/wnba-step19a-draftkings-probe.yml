@@ -1,4 +1,4 @@
-name: WNBA Step 19A DraftKings endpoint probe
+name: WNBA Step 19A DraftKings sportscontent probe
 
 on:
   push:
@@ -24,60 +24,82 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install API dependencies
-        run: python -m pip install -r sports_api/requirements.txt
-      - name: Probe current WNBA DraftKings public JSON endpoints without writes
+      - name: Install probe dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install curl_cffi
+      - name: Discover current WNBA DraftKings sportscontent markets without writes
         run: |
           PYTHONPATH=. python - <<'PY'
-          from collections import Counter
           import json
-          import httpx
-          from sports_api.collectors.wnba_draftkings_direct import fetch_draftkings_canonical_feed
+          from curl_cffi import requests as cffi_requests
 
-          candidates=[
-              'https://sportsbook.draftkings.com/sites/US-SB/api/v5/eventgroups/94682?format=json',
-              'https://sportsbook-nash.draftkings.com/sites/US-SB/api/v5/eventgroups/94682?format=json',
-          ]
-          headers={'User-Agent':'Mozilla/5.0 (compatible; kyre-sports-api-market-research/1)','Accept':'application/json','Referer':'https://sportsbook.draftkings.com/leagues/basketball/wnba'}
-          successes=[]
-          with httpx.Client(headers=headers,timeout=20,follow_redirects=True) as client:
-              for url in candidates:
-                  try:
-                      r=client.get(url)
-                      ctype=str(r.headers.get('content-type') or '')
-                      info={'host':httpx.URL(url).host,'status':r.status_code,'content_type':ctype,'bytes':len(r.content)}
-                      if r.status_code==200 and 'json' in ctype.casefold():
-                          body=r.json()
-                          eg=body.get('eventGroup') if isinstance(body,dict) and isinstance(body.get('eventGroup'),dict) else body
-                          events=(eg or {}).get('events') or [] if isinstance(eg,dict) else []
-                          cats=(eg or {}).get('offerCategories') or [] if isinstance(eg,dict) else []
-                          info['event_count']=len(events) if isinstance(events,list) else -1
-                          info['category_count']=len(cats) if isinstance(cats,list) else -1
-                          info['categories']=[
-                              {'id':c.get('offerCategoryId'),'name':c.get('name')}
-                              for c in cats if isinstance(c,dict)
-                          ][:30]
-                          successes.append(url)
-                      print('STEP19A_DK_ENDPOINT',json.dumps(info,sort_keys=True))
-                  except Exception as exc:
-                      print('STEP19A_DK_ENDPOINT_ERROR',httpx.URL(url).host,type(exc).__name__)
+          league_id=94682
+          states=('az','nj','il')
+          success=None
+          league_data=None
+          for state in states:
+              url=f'https://sportsbook-nash.draftkings.com/api/sportscontent/dkus{state}/v1/leagues/{league_id}'
+              try:
+                  r=cffi_requests.get(url,impersonate='chrome120',timeout=20)
+                  info={'site':f'dkus{state}','status':int(r.status_code),'content_type':str(r.headers.get('content-type') or ''),'bytes':len(r.content)}
+                  if r.status_code==200:
+                      data=r.json()
+                      cats=data.get('categories') or [] if isinstance(data,dict) else []
+                      subs=data.get('subcategories') or [] if isinstance(data,dict) else []
+                      info['category_count']=len(cats) if isinstance(cats,list) else -1
+                      info['subcategory_count']=len(subs) if isinstance(subs,list) else -1
+                      success=state
+                      league_data=data
+                  print('STEP19A_SPORTSCONTENT_LEAGUE',json.dumps(info,sort_keys=True))
+                  if success:
+                      break
+              except Exception as exc:
+                  print('STEP19A_SPORTSCONTENT_LEAGUE_ERROR',f'dkus{state}',type(exc).__name__)
+          if not success or not isinstance(league_data,dict):
+              raise SystemExit('STEP19A_NO_WORKING_WNBA_SPORTSCONTENT_LEAGUE_ENDPOINT')
 
-          if not successes:
-              raise SystemExit('STEP19A_NO_WORKING_DRAFTKINGS_WNBA_V5_ENDPOINT')
+          categories=[x for x in (league_data.get('categories') or []) if isinstance(x,dict)]
+          subcategories=[x for x in (league_data.get('subcategories') or []) if isinstance(x,dict)]
+          category_names={str(x.get('id')):str(x.get('name') or '') for x in categories}
+          wanted=[]
+          keywords=('point','rebound','assist','pra','pts + reb + ast','points + rebounds + assists')
+          for sc in subcategories:
+              name=str(sc.get('name') or '')
+              folded=name.casefold()
+              if any(k in folded for k in keywords):
+                  wanted.append({
+                      'category_id':str(sc.get('categoryId') or ''),
+                      'category_name':category_names.get(str(sc.get('categoryId') or ''),''),
+                      'subcategory_id':str(sc.get('id') or ''),
+                      'subcategory_name':name,
+                  })
+          print('STEP19A_WNBA_PROP_DISCOVERY',json.dumps({'site':f'dkus{success}','matches':wanted[:100],'match_count':len(wanted)},sort_keys=True))
+          if not wanted:
+              raise SystemExit('STEP19A_NO_WNBA_PRA_PROP_SUBCATEGORIES_DISCOVERED')
 
-          for target_date in ('2026-08-28','2026-08-29'):
-              for url in successes:
-                  try:
-                      feed=fetch_draftkings_canonical_feed(date=target_date,season=2026,urls=[url])
-                      offers=feed.get('offers') or []
-                      stats=Counter(str(x.get('stat')) for x in offers if isinstance(x,dict))
-                      print('STEP19A_DK_NORMALIZER',json.dumps({
-                          'host':httpx.URL(url).host,
-                          'date':target_date,
-                          'offer_count':len(offers),
-                          'stat_counts':dict(stats),
-                          'source_event_count':len(feed.get('source_events') or []),
-                      },sort_keys=True))
-                  except Exception as exc:
-                      print('STEP19A_DK_NORMALIZER_ERROR',httpx.URL(url).host,target_date,type(exc).__name__,str(exc)[:160])
+          useful=[]
+          for item in wanted:
+              cid=item['category_id']; sid=item['subcategory_id']
+              if not cid or not sid:
+                  continue
+              url=(f'https://sportsbook-nash.draftkings.com/api/sportscontent/dkus{success}/v1/'
+                   f'leagues/{league_id}/categories/{cid}/subcategories/{sid}')
+              try:
+                  r=cffi_requests.get(url,impersonate='chrome120',timeout=20)
+                  if r.status_code!=200:
+                      continue
+                  data=r.json()
+                  events=data.get('events') or [] if isinstance(data,dict) else []
+                  markets=data.get('markets') or [] if isinstance(data,dict) else []
+                  selections=data.get('selections') or [] if isinstance(data,dict) else []
+                  row={**item,'status':200,'event_count':len(events),'market_count':len(markets),'selection_count':len(selections)}
+                  if markets and selections:
+                      useful.append(row)
+                  print('STEP19A_WNBA_PROP_ENDPOINT',json.dumps(row,sort_keys=True))
+              except Exception as exc:
+                  print('STEP19A_WNBA_PROP_ENDPOINT_ERROR',item['subcategory_name'],type(exc).__name__)
+          print('STEP19A_WNBA_USEFUL_PROP_MARKETS',json.dumps({'site':f'dkus{success}','useful':useful[:50],'useful_count':len(useful)},sort_keys=True))
+          if not useful:
+              raise SystemExit('STEP19A_NO_WNBA_PROP_MARKETS_WITH_SELECTIONS')
           PY
