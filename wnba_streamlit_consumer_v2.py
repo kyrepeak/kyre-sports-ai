@@ -66,11 +66,14 @@ def normalize_consumer_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
     cards = board.get("primary_top_cards")
     if not isinstance(cards, list):
         raise WNBAStreamlitConsumerReliabilityError("Primary cards must be an array.")
-    if board.get("top_n_forced") is not False:
-        raise WNBAStreamlitConsumerReliabilityError("Forced or padded top-N board refused.")
     available = board.get("available")
     if not isinstance(available, bool):
         raise WNBAStreamlitConsumerReliabilityError("Board availability must be boolean.")
+    top_n_forced = board.get("top_n_forced")
+    if available and top_n_forced is not False:
+        raise WNBAStreamlitConsumerReliabilityError("Available board must attest that top-N was not forced.")
+    if not available and top_n_forced not in {None, False}:
+        raise WNBAStreamlitConsumerReliabilityError("Unavailable board cannot claim a forced top-N result.")
     if available:
         try:
             displayed = int(board.get("top_card_count"))
