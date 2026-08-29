@@ -18,6 +18,8 @@ Certified live differences handled here:
   remains exact-line two-way Over/Under props, so only markets carrying a
   complete parseable O/U pair and an explicit player-market surface are treated
   as identity-bearing player props.
+* FanDuel's live PRA market title uses the compact suffix ``Pts + Reb + Ast``;
+  the suffix is normalized before official roster identity matching.
 """
 from __future__ import annotations
 
@@ -31,7 +33,7 @@ from sports_api import wnba_step11_draftkings_provider as draftkings
 from sports_api import wnba_step11_fanduel_provider as fanduel
 
 SOURCE = "Kyre Sports API WNBA Step19F strict sportsbook live-surface compatibility"
-MODEL_VERSION = "wnba_step19f_sportsbook_live_surface_v5"
+MODEL_VERSION = "wnba_step19f_sportsbook_live_surface_v6"
 EASTERN = ZoneInfo("America/New_York")
 
 _PROVIDER_TEAM_ALIASES = {
@@ -45,13 +47,13 @@ _FANDUEL_PLAYER_TAB_SLUGS = {
     "player combos": "player-combos",
 }
 
-# Live standard FanDuel two-way player totals use market types such as
-# PLAYER_G_TOTAL_POINTS_WNBA. The position/slot token varies, while the exact
-# total-stat surface remains stable. Alternate milestone markets do not match
-# this shape and still fail closed unless they independently satisfy the frozen
-# declaration contract.
 _FANDUEL_STANDARD_PLAYER_TOTAL_TYPE_RE = re.compile(
     r"^PLAYER_[A-Z0-9]+_TOTAL_[A-Z0-9_()+]+_WNBA$",
+    flags=re.I,
+)
+
+_PRA_TITLE_SUFFIX_RE = re.compile(
+    r"\s*[-–—:]?\s*(?:pts?|points)\s*\+\s*(?:rebs?|rebounds?)\s*\+\s*(?:asts?|assists?)\s*$",
     flags=re.I,
 )
 
@@ -60,6 +62,7 @@ _ORIGINAL_FD_EVENT_DATE = fanduel._event_date
 _ORIGINAL_FD_RELEVANT_TAB_IDS = fanduel._relevant_tab_ids
 _ORIGINAL_FD_RUNNER_SIDE_LINE = fanduel._runner_side_line
 _ORIGINAL_FD_DECLARES_PLAYER_MARKET = fanduel._declares_player_market
+_ORIGINAL_FD_MARKET_PLAYER_NAME = fanduel._market_player_name
 _INSTALLED = False
 
 
@@ -121,6 +124,20 @@ def fanduel_runner_side_line_step19f(runner: Mapping[str, Any]) -> tuple[str, fl
     return side, round(line, 6)
 
 
+def fanduel_market_player_name_step19f(
+    market: Mapping[str, Any],
+    runners: Sequence[Mapping[str, Any]],
+    stat: str,
+) -> str:
+    """Preserve frozen extraction, then normalize the certified live PRA suffix."""
+    candidate = _ORIGINAL_FD_MARKET_PLAYER_NAME(market, runners, stat)
+    if stat != "pra" or not candidate:
+        return candidate
+    stripped = _PRA_TITLE_SUFFIX_RE.sub("", candidate).strip()
+    stripped = re.sub(r"\s*[-–—:]\s*$", "", stripped).strip()
+    return fanduel._clean(stripped or candidate)
+
+
 def _fanduel_has_explicit_player_surface(
     market: Mapping[str, Any],
     runners: Sequence[Mapping[str, Any]],
@@ -162,6 +179,8 @@ def install_step19f_draftkings_identity() -> dict[str, Any]:
         fanduel._relevant_tab_ids = fanduel_relevant_tab_ids_step19f
     if fanduel._runner_side_line is not fanduel_runner_side_line_step19f:
         fanduel._runner_side_line = fanduel_runner_side_line_step19f
+    if fanduel._market_player_name is not fanduel_market_player_name_step19f:
+        fanduel._market_player_name = fanduel_market_player_name_step19f
     if fanduel._declares_player_market is not fanduel_declares_player_market_step19f:
         fanduel._declares_player_market = fanduel_declares_player_market_step19f
     _INSTALLED = True
@@ -177,6 +196,7 @@ INSTALLATION = {
     "fanduel_player_tab_slugs": tuple(_FANDUEL_PLAYER_TAB_SLUGS.values()),
     "fanduel_nested_result_type_supported": True,
     "fanduel_two_way_scope_preserved": True,
+    "fanduel_pra_title_suffix_supported": True,
     "official_schedule_reconciliation_modified": False,
     "game_uniqueness_relaxed": False,
     "slate_date_bounds_relaxed": False,
@@ -194,6 +214,7 @@ __all__ = [
     "SOURCE",
     "fanduel_declares_player_market_step19f",
     "fanduel_event_date_step19f",
+    "fanduel_market_player_name_step19f",
     "fanduel_relevant_tab_ids_step19f",
     "fanduel_runner_side_line_step19f",
     "install_step19f_draftkings_identity",
