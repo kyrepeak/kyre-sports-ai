@@ -1,0 +1,146 @@
+name: WNBA Step19B rotation identity fix certification
+
+on:
+  push:
+    branches:
+      - wnba-step19b-rotation-fix-cert-20260829
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  APP_CANDIDATE_SHA: 631ad9c3f065433557279c6eaa5eadd3b23d5aa3
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Checkout exact fixed app candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.APP_CANDIDATE_SHA }}
+          fetch-depth: 500
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip >/dev/null
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Prove change scope and compile
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_CANDIDATE_SHA"
+          git diff --name-only e676f4cbfb64dee64bf73f2dbd8034162d69922e..HEAD | sort
+          python -m py_compile sports_api/wnba_rotation_reconstruction.py
+          python -m py_compile sports_api/wnba_rotation_context.py
+          echo STEP19B_COMPILE_AND_SCOPE_OK
+
+      - name: Run rotation regression tests
+        run: |
+          set -euo pipefail
+          pytest -q tests/test_wnba_rotation_fallback.py tests/test_wnba_rotation_context.py
+
+      - name: Reconstruct exact historical game that broke production
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.wnba_rotation_reconstruction import reconstruct_game_rotation_rows
+          result=reconstruct_game_rotation_rows('1022600265',2026)
+          away=result['diagnostics']['away']; home=result['diagnostics']['home']
+          assert away['unique_solution'] is True
+          assert home['unique_solution'] is True
+          assert result['away_rows'] and result['home_rows']
+          xu=[r for r in result['away_rows'] if r['PERSON_ID']==1629566]
+          assert xu, 'Xu Han reconstructed stints missing'
+          print('STEP19B_HISTORICAL_ROTATION_FIX_OK',{
+              'away_rows':len(result['away_rows']),
+              'home_rows':len(result['home_rows']),
+              'xu_stints':len(xu),
+              'away_max_delta':away['max_abs_player_delta_seconds'],
+              'home_max_delta':home['max_abs_player_delta_seconds'],
+          })
+          PY
+
+      - name: Re-run exact Step8 projection handoff that previously failed
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          os.environ.update({
+              'WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+              'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true',
+              'WNBA_STEP8_CORE_PROJECTION_ENABLED':'true',
+              'WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true',
+              'WNBA_STEP8_MONTE_CARLO_ENABLED':'true',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+              'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+              'WNBA_STEP12_SCHEDULER_ENABLED':'false',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
+              'WNBA_PERSISTENCE_ENABLED':'false',
+              'WNBA_SUPABASE_WRITE_ENABLED':'false',
+              'WNBA_WAGERING_ENABLED':'false',
+          })
+          import sports_api.wnba_step7g_first_party_integration as integration
+          integration.install_step7g_first_party_integration()
+          from sports_api.wnba_step8_projection_handoff import get_player_game_step8_projection_handoff
+          result=get_player_game_step8_projection_handoff(202664,'1022600295',env=os.environ)
+          assert result
+          print('STEP19B_PREVIOUSLY_FAILING_STEP8_HANDOFF_OK',{
+              'data_type':result.get('data_type'),
+              'model_version':result.get('model_version'),
+              'player_id':result.get('player_id'),
+              'game_id':result.get('game_id'),
+          })
+          PY
+
+      - name: Run full fresh-state Step12B pipeline read-only
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, time
+          from datetime import datetime, timezone
+          import sports_api.wnba_step19a_step17b_bridge
+          from sports_api import wnba_step12b_live_runtime_assembly as s12
+
+          env={
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
+            'WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
+            'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true',
+            'WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true',
+            'WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
+            'WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false'
+          }
+          request=s12.build_step12b_request(
+              season=2026,
+              slate_date='2026-08-29',
+              evaluated_at=datetime.now(timezone.utc),
+              previous_state=None,
+              controller_policy={'provider_attempts':3,'refresh_interval_seconds':60,'failure_threshold':3,'circuit_cooldown_seconds':180},
+              refresh_policy={},qualification_policy={},
+          )
+          started=time.monotonic()
+          result=s12.run_step12b_live_runtime_job(request,env=env)
+          tick=((result.get('step12a_result') or {}).get('step11e_tick') or {})
+          execution=tick.get('execution') or {}; state=tick.get('automation_state') or {}
+          summary={
+              'elapsed_seconds':round(time.monotonic()-started,2),
+              'status':result.get('status'),'health':result.get('health'),
+              'market_overlap':result.get('market_overlap'),
+              'projection_assembly':result.get('projection_assembly'),
+              'cycle_outcome':execution.get('cycle_outcome'),
+              'cycle_error':execution.get('error'),
+              'circuit_state':state.get('circuit_state'),
+              'consecutive_failure_count':state.get('consecutive_failure_count'),
+          }
+          print('STEP19B_FULL_STEP12B_SUMMARY',json.dumps(summary,sort_keys=True,default=str))
+          if execution.get('cycle_outcome')=='provider_transient_not_ready':
+              raise SystemExit('Step19B full pipeline still reports provider transient failure')
+          if result.get('health') not in {'healthy','market_not_ready'}:
+              raise SystemExit('Step19B full pipeline did not reach acceptable health')
+          print('STEP19B_FULL_READONLY_PIPELINE_OK')
+          PY
