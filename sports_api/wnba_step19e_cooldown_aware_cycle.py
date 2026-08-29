@@ -2,8 +2,12 @@
 
 This compatibility layer prevents the always-on Step17B host from starting an
 expensive frozen scheduler cycle a moment before the durable Step11E circuit
-cooldown expires. It does not change controller state, provider health,
-projection readiness, simulation logic, or durable persistence ownership.
+cooldown expires. It does not change controller state, projection readiness,
+simulation logic, or durable persistence ownership.
+
+Step19F is installed here before the always-on cycle runs. Step19F only adds a
+strict, certified DraftKings display-team alias needed to reconcile the live
+sportscontent event to the unchanged official WNBA schedule identity.
 
 The preflight reads the certified Step14C restart checkpoint. When that
 checkpoint says the controller circuit is open until a future timestamp, the
@@ -18,12 +22,16 @@ from typing import Any, Callable, Mapping
 
 from sports_api import wnba_step14c_durable_restart_lease as step14c
 from sports_api import wnba_step17b_always_on_runtime as step17b
+from sports_api import wnba_step19f_draftkings_identity as step19f
 
 SOURCE = "Kyre Sports API WNBA Step 19E cooldown-aware Step17B cycle preflight"
 MODEL_VERSION = "wnba_step19e_cooldown_aware_step17b_preflight_v1"
 COOLDOWN_SAFETY_BUFFER_SECONDS = 1.0
 WAIT_POLL_SECONDS = 0.25
 MAX_COOLDOWN_WAIT_SECONDS = 300.0
+
+# Install the strict provider identity compatibility before any hosted cycle.
+step19f.install_step19f_draftkings_identity()
 
 _ORIGINAL_RUN_ONE_CYCLE = step17b.run_one_cycle
 _INSTALLED = False
@@ -137,7 +145,8 @@ INSTALLATION = {
     "circuit_force_closed": False,
     "readiness_gates_relaxed": False,
     "projection_fabrication_allowed": False,
-    "provider_logic_modified": False,
+    "provider_logic_modified": True,
+    "provider_identity_compatibility": step19f.MODEL_VERSION,
     "durable_lease_ownership_modified": False,
     "cooldown_safety_buffer_seconds": COOLDOWN_SAFETY_BUFFER_SECONDS,
     "max_cooldown_wait_seconds": MAX_COOLDOWN_WAIT_SECONDS,
