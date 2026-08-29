@@ -139,6 +139,19 @@ class KyreWNBAAPIClient:
             raise KyreWNBAAPIError("player_id must be positive.")
         return self.get_json(f"/api/v1/wnba/players/{pid}/game-log", params={"season": int(season)})
 
+    def consumer_latest(self) -> dict[str, Any]:
+        """Read the certified Step-18A latest-board snapshot; never compute on request."""
+        body = self.get_json("/api/v1/wnba/consumer/latest")
+        if body.get("data_type") != "wnba_step18a_streamlit_consumer_latest":
+            raise KyreWNBAAPIError("WNBA consumer endpoint data_type is invalid.")
+        if body.get("schema_version") != "wnba_step_18a_streamlit_consumer_v1":
+            raise KyreWNBAAPIError("WNBA consumer endpoint schema is invalid.")
+        if not isinstance(body.get("enabled"), bool) or not isinstance(body.get("available"), bool):
+            raise KyreWNBAAPIError("WNBA consumer endpoint availability flags are invalid.")
+        if not isinstance(body.get("board"), dict) or not isinstance(body.get("snapshot"), dict):
+            raise KyreWNBAAPIError("WNBA consumer endpoint board/snapshot shape is invalid.")
+        return body
+
     def readiness(self) -> dict[str, Any]:
         """Read only the hosted API/Supabase pre-activation safety surface."""
         health = self.health()

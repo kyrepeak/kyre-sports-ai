@@ -115,6 +115,13 @@ def _install_step7f_wnba_api_bridge() -> dict:
         }
 
 
+def _install_step18b_wnba_consumer_bridge() -> dict:
+    """Route frozen Daily Picks to the certified read-only Step-18A consumer."""
+    from wnba_step18b_consumer_bridge_v1 import install_step18b_consumer_bridge
+
+    return install_step18b_consumer_bridge()
+
+
 def _load_frozen_pre_live_app() -> str:
     try:
         return subprocess.check_output(
@@ -130,6 +137,7 @@ def _load_frozen_pre_live_app() -> str:
 _purge_live_runtime_state()
 _refresh_pra_presentation_route()
 _STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()
+_STEP18B_WNBA_CONSUMER_BRIDGE = _install_step18b_wnba_consumer_bridge()
 source = _load_frozen_pre_live_app()
 
 # Guard against accidentally pointing this wrapper at a checkpoint that already

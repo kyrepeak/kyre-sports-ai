@@ -167,11 +167,11 @@ def test_client_consumer_latest_uses_only_certified_get_path(monkeypatch):
     client = api.KyreWNBAAPIClient()
     seen = []
 
-    def fake_get(path, *, params=None):
+    def fake_get(self, path, *, params=None):
         seen.append((path, params))
         return _payload()
 
-    monkeypatch.setattr(client, "get_json", fake_get)
+    monkeypatch.setattr(api.KyreWNBAAPIClient, "get_json", fake_get)
     result = client.consumer_latest()
     assert result["data_type"] == consumer.EXPECTED_DATA_TYPE
     assert seen == [("/api/v1/wnba/consumer/latest", None)]
