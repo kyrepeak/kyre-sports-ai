@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 import sports_api.wnba_step11_draftkings_provider as _dk
 import sports_api.wnba_step11_fanduel_provider as _fd
 
-MODEL_VERSION = "wnba_step19a_live_provider_compat_v3"
+MODEL_VERSION = "wnba_step19a_live_provider_compat_v4"
 _ET = ZoneInfo("America/New_York")
 
 _ORIGINAL_DK_TEAM_IDENTITY_KEY = _dk._team_identity_key
@@ -24,6 +24,7 @@ _ORIGINAL_FD_EVENT_DATE = _fd._event_date
 _ORIGINAL_FD_RELEVANT_TAB_IDS = _fd._relevant_tab_ids
 _ORIGINAL_FD_RUNNER_SIDE_LINE = _fd._runner_side_line
 _ORIGINAL_FD_DECLARES_PLAYER_MARKET = _fd._declares_player_market
+_ORIGINAL_FD_MARKET_STAT = _fd._market_stat
 
 _FANDUEL_PLAYER_TAB_SLUGS = {
     "player points": "player-points",
@@ -76,6 +77,23 @@ def fanduel_relevant_tab_slugs(document: Mapping[str, Any]) -> list[str]:
     return slugs[: _fd.MAX_RELEVANT_TABS_PER_EVENT]
 
 
+def fanduel_market_stat_current(market: Mapping[str, Any]) -> str | None:
+    market_type = _fd._clean(market.get("marketType") or market.get("type")).upper()
+    if not market_type.startswith("PLAYER_"):
+        return _ORIGINAL_FD_MARKET_STAT(market)
+    present = {
+        "points": "POINTS" in market_type,
+        "rebounds": "REBOUNDS" in market_type,
+        "assists": "ASSISTS" in market_type,
+    }
+    active = [stat for stat, enabled in present.items() if enabled]
+    if len(active) == 3:
+        return "pra"
+    if len(active) == 1:
+        return active[0]
+    return None
+
+
 def fanduel_runner_side_line_current(runner: Mapping[str, Any]) -> tuple[str, float] | None:
     legacy = _ORIGINAL_FD_RUNNER_SIDE_LINE(runner)
     if legacy is not None:
@@ -121,6 +139,7 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
     _fd._team_identity_key = fanduel_team_identity_key
     _fd._event_date = fanduel_event_date_eastern
     _fd._relevant_tab_ids = fanduel_relevant_tab_slugs
+    _fd._market_stat = fanduel_market_stat_current
     _fd._runner_side_line = fanduel_runner_side_line_current
     _fd._declares_player_market = fanduel_declares_player_market_current
     return {
@@ -129,6 +148,7 @@ def install_step19a_live_provider_compat() -> dict[str, Any]:
         "draftkings_phoenix_alias_installed": True,
         "fanduel_eastern_slate_date_installed": True,
         "fanduel_player_tab_slug_transport_installed": True,
+        "fanduel_supported_stat_scope_installed": True,
         "fanduel_nested_result_side_parser_installed": True,
         "fanduel_two_way_player_market_evidence_installed": True,
         "frozen_step11a_source_modified": False,
@@ -145,6 +165,7 @@ __all__ = [
     "draftkings_team_identity_key",
     "fanduel_declares_player_market_current",
     "fanduel_event_date_eastern",
+    "fanduel_market_stat_current",
     "fanduel_relevant_tab_slugs",
     "fanduel_runner_side_line_current",
     "fanduel_team_identity_key",
