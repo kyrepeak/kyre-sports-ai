@@ -1,0 +1,69 @@
+name: WNBA Step 17C classification fix staging
+
+on:
+  push:
+    branches:
+      - wnba-step17c-postrollback-diagnostic-20260829
+    paths:
+      - .github/workflows/wnba-step17c-classification-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: wnba-step17c-postrollback-diagnostic-20260829
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Apply exact Step 17C classification fix and regression
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          module=Path('sports_api/wnba_step17c_production_reliability.py')
+          text=module.read_text()
+          old='''        leadership_misses = int(status.get("leadership_miss_count") or 0)\n        if leadership_misses > 0 and leadership:\n            incident("historical_leadership_miss", "warning", f"Current process recorded {leadership_misses} prior leadership miss(es).")\n\n'''
+          if text.count(old) != 1:
+              raise SystemExit('Step 17C historical-leadership warning anchor mismatch')
+          text=text.replace(old, '''        # A prior leadership miss is expected during a safe Render rolling handoff:\n        # the old process can still own the PostgreSQL advisory lock while the new\n        # process starts. Keep leadership_miss_count in the sanitized snapshot for\n        # auditability, but classify current health from current ownership/freshness.\n\n''', 1)
+          module.write_text(text)
+
+          test=Path('tests/test_wnba_step17c_production_reliability.py')
+          t=test.read_text()
+          anchor='''def test_startup_window_is_degraded_not_falsely_critical():\n'''
+          regression='''def test_historical_handoff_leadership_miss_does_not_degrade_recovered_current_leader():\n    report = _report(_status(leadership_miss_count=1))\n    assert report["state"] == "healthy"\n    assert report["healthy"] is True\n    assert report["incident_active"] is False\n    assert report["incidents"] == []\n    assert report["step17b"]["leadership_miss_count"] == 1\n\n\n'''
+          if t.count(anchor) != 1:
+              raise SystemExit('Step 17C regression insertion anchor mismatch')
+          t=t.replace(anchor, regression+anchor, 1)
+          call_anchor='''    test_startup_window_is_degraded_not_falsely_critical()\n'''
+          if t.count(call_anchor) != 1:
+              raise SystemExit('Step 17C regression call anchor mismatch')
+          t=t.replace(call_anchor, '''    test_historical_handoff_leadership_miss_does_not_degrade_recovered_current_leader()\n'''+call_anchor, 1)
+          test.write_text(t)
+          PY
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+      - name: Run Step 17C and certified parent regressions
+        run: |
+          python -m py_compile sports_api/wnba_step17c_production_reliability.py tests/test_wnba_step17c_production_reliability.py
+          PYTHONPATH=. python tests/test_wnba_step17c_production_reliability.py
+          PYTHONPATH=. python tests/test_wnba_step17b_always_on_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step14c_durable_restart_lease.py
+          PYTHONPATH=. python tests/test_wnba_step14b_database_checkpoint_adapter.py
+          PYTHONPATH=. python tests/test_wnba_step13c_reliability_recovery.py
+      - name: Commit only tested module and regression
+        run: |
+          test "$(git diff --name-only | sort | tr '\n' ' ')" = 'sports_api/wnba_step17c_production_reliability.py tests/test_wnba_step17c_production_reliability.py '
+          git config user.name 'kyre-step17c-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add sports_api/wnba_step17c_production_reliability.py tests/test_wnba_step17c_production_reliability.py
+          git commit -m 'Classify recovered rolling handoff as healthy'
+          git push origin HEAD:wnba-step17c-postrollback-diagnostic-20260829
