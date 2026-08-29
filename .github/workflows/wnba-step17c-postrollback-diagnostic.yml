@@ -1,0 +1,82 @@
+name: WNBA Step 17C post-rollback diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step17c-postrollback-diagnostic-20260829
+    paths:
+      - .github/workflows/wnba-step17c-postrollback-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: wnba-render-staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read current Render deployment and sanitized runtime status
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.error, urllib.request
+
+          service_id='srv-da84q6ifngtc73bdbm6g'
+          expected_step17b='8f6ba0b3e4cd3d07466a2545a870cab7121decfe'
+          render_url='https://kyre-sports-api.onrender.com'
+          headers={
+              'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",
+              'Accept':'application/json',
+              'User-Agent':'kyre-step17c-postrollback-diagnostic/1',
+          }
+          def get_render(path):
+              req=urllib.request.Request('https://api.render.com/v1'+path,headers=headers,method='GET')
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read().decode(); return json.loads(raw) if raw else None
+          def get_public(path):
+              try:
+                  with urllib.request.urlopen(render_url+path,timeout=30) as r:
+                      return r.status, json.loads(r.read().decode())
+              except urllib.error.HTTPError as exc:
+                  return exc.code, None
+
+          deploys=get_render(f'/services/{service_id}/deploys?limit=10')
+          rows=deploys if isinstance(deploys,list) else ((deploys or {}).get('items') or (deploys or {}).get('data') or [])
+          live=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live':
+                  live=d; break
+          if not live:
+              raise SystemExit('NO_LIVE_RENDER_DEPLOY')
+          live_blob=json.dumps(live).lower()
+          print('LIVE_DEPLOY_ID', live.get('id'))
+          print('LIVE_IS_CERTIFIED_STEP17B', expected_step17b in live_blob)
+          if expected_step17b not in live_blob:
+              raise SystemExit('POSTROLLBACK_HOST_NOT_ON_CERTIFIED_STEP17B')
+
+          health_code,health=get_public('/health')
+          status_code,status=get_public('/api/v1/wnba/runtime/step17b')
+          step17c_code,_=get_public('/api/v1/wnba/runtime/step17c')
+          print('HEALTH_HTTP',health_code,'HEALTH_STATUS',None if not isinstance(health,dict) else health.get('status'))
+          print('STEP17B_HTTP',status_code)
+          print('STEP17C_HTTP',step17c_code)
+          if not isinstance(status,dict):
+              raise SystemExit('STEP17B_STATUS_UNAVAILABLE')
+          safe_keys=(
+              'enabled','running','role','leadership_acquired','started_at_utc','heartbeat_at_utc',
+              'cycle_count','success_count','failure_count','leadership_miss_count',
+              'duplicate_lease_skip_count','last_cycle_finished_at_utc','last_status',
+              'last_error_class','last_checkpoint_version','recovered_from_checkpoint',
+              'database_secret_exposed','legacy_production_switches_enabled','new_render_service_created',
+          )
+          safe={k:status.get(k) for k in safe_keys}
+          print('STEP17B_SANITIZED_STATUS',json.dumps(safe,sort_keys=True))
+          print('LIKELY_STEP17C_PERMANENT_WARNING', bool((safe.get('leadership_miss_count') or 0) > 0 and safe.get('leadership_acquired') is True))
+          PY
