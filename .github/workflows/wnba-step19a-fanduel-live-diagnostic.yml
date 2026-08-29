@@ -11,12 +11,6 @@ permissions:
 
 env:
   PYTHONPATH: .
-  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: "true"
-  WNBA_STEP10_FASTAPI_ENABLED: "true"
-  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
-  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
-  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
-  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
   WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
   WNBA_BOARD_SCHEDULER_ENABLED: "false"
   WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
@@ -35,95 +29,47 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: python -m pip install -r sports_api/requirements.txt
-      - name: Inspect tab metadata and query variants
+      - name: Inspect current FanDuel player runner contract
         run: |
           python - <<'PY'
           from datetime import datetime, timezone
           from zoneinfo import ZoneInfo
-          import hashlib
           import json
           from sports_api import wnba_step11_fanduel_provider as fd
-          from sports_api.wnba_step7g_first_party_rosters import get_first_party_current_players_dataset
 
           now = datetime.now(timezone.utc)
-          target_et = now.astimezone(ZoneInfo("America/New_York")).date().isoformat()
-          common = {"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "page": "CUSTOM", "customPageId": fd.WNBA_CUSTOM_PAGE_ID, "timezone": "America/New_York"}
-          content = fd._get_json(fd.FANDUEL_BASE_URL + fd.CONTENT_PAGE_PATH, params=common, requester=None, timeout=15.0)
+          target = now.astimezone(ZoneInfo("America/New_York")).date().isoformat()
+          content = fd._get_json(
+              fd.FANDUEL_BASE_URL + fd.CONTENT_PAGE_PATH,
+              params={"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "page": "CUSTOM", "customPageId": fd.WNBA_CUSTOM_PAGE_ID, "timezone": "America/New_York"},
+              requester=None, timeout=15.0,
+          )
           events = fd._extract_events(content)
-          roster = fd._roster_index(get_first_party_current_players_dataset(2026, current_roster_only=True)["players"])
-
-          def et_day(event):
-              raw = event.get("openDate") or event.get("startTime") or event.get("startEventDate")
+          event = None
+          for row in events:
+              raw = row.get("openDate") or row.get("startTime") or row.get("startEventDate")
               try:
-                  return fd._utc(raw, "event time").astimezone(ZoneInfo("America/New_York")).date().isoformat()
+                  day = fd._utc(raw, "event time").astimezone(ZoneInfo("America/New_York")).date().isoformat()
               except Exception:
-                  return None
-
-          today = [e for e in events if et_day(e) == target_et and len(fd._event_participants(e)) == 2]
-          print("FD_ET_TARGETS", json.dumps([{"id": fd._event_id(e), "name": fd._event_name(e), "utc_day": fd._event_date(e), "et_day": et_day(e)} for e in today], sort_keys=True))
-          assert today, "Need one current ET-date WNBA event"
-
-          # One live event is enough to discover the query contract safely.
-          event = today[0]
+                  continue
+              if day == target and len(fd._event_participants(row)) == 2:
+                  event = row; break
+          assert event is not None
           eid = fd._event_id(event)
-          event_url = fd.FANDUEL_BASE_URL + fd.EVENT_PAGE_PATH
-          base = fd._get_json(event_url, params={"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "eventId": eid}, requester=None, timeout=15.0)
-          layout = base.get("layout") or {}
-          tabs = fd._iter_mapping_or_list(layout.get("tabs") if isinstance(layout, dict) else None)
-          player_tabs = [t for t in tabs if "player" in str(t.get("title") or t.get("name") or t.get("displayName") or "").casefold()]
-          print("FD_LAYOUT_KEYS", sorted(layout.keys()) if isinstance(layout, dict) else [])
-          print("FD_PLAYER_TAB_OBJECTS", json.dumps(player_tabs, sort_keys=True, default=str))
+          url = fd.FANDUEL_BASE_URL + fd.EVENT_PAGE_PATH
 
-          def summarize(label, params):
-              try:
-                  doc = fd._get_json(event_url, params=params, requester=None, timeout=15.0)
-              except Exception as exc:
-                  print("FD_QUERY_FAIL", json.dumps({"label": label, "params": params, "type": type(exc).__name__, "message": " ".join(str(exc).split())[:500]}, sort_keys=True))
-                  return
+          for slug in ("player-points", "player-assists", "player-rebounds", "player-combos"):
+              doc = fd._get_json(url, params={"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "eventId": eid, "tab": slug}, requester=None, timeout=15.0)
               markets = fd._extract_markets(doc)
-              rows = []
-              declared = 0
-              roster_match = 0
-              complete = 0
-              for m in markets:
-                  stat = fd._market_stat(m)
-                  runners = fd._iter_mapping_or_list(m.get("runners"))
-                  if fd._declares_player_market(m, runners):
-                      declared += 1
-                  if not stat:
-                      continue
-                  player = fd._market_player_name(m, runners, stat)
-                  is_roster = bool(player and fd._name_key(player) in roster)
-                  if is_roster:
-                      roster_match += 1
-                  sides = {x[0] for x in (fd._runner_side_line(r) for r in runners) if x is not None}
-                  if is_roster and sides == {"over", "under"}:
-                      complete += 1
-                  if len(rows) < 5:
-                      rows.append({"name": m.get("marketName") or m.get("name"), "type": m.get("marketType") or m.get("type"), "stat": stat, "player": player, "roster": is_roster, "sides": sorted(sides)})
-              digest = hashlib.sha256(json.dumps(markets, sort_keys=True, default=str).encode()).hexdigest()[:16]
-              print("FD_QUERY_RESULT", json.dumps({"label": label, "params": params, "market_count": len(markets), "declared_player": declared, "roster_matched": roster_match, "complete_two_side": complete, "markets_hash": digest, "samples": rows}, sort_keys=True, default=str))
-
-          base_params = {"_ak": fd.FANDUEL_PUBLIC_WEB_KEY, "eventId": eid}
-          summarize("base", base_params)
-
-          # Derive candidates from the live tab metadata instead of hard-coding one guess.
-          for tab in player_tabs:
-              title = str(tab.get("title") or tab.get("name") or tab.get("displayName") or "").strip()
-              tab_id = tab.get("id") if tab.get("id") is not None else tab.get("tabId")
-              candidate_values = []
-              for key in ("id", "tabId", "slug", "name", "title", "displayName", "type", "key", "value"):
-                  value = tab.get(key)
-                  if value is not None and str(value).strip() and value not in candidate_values:
-                      candidate_values.append(value)
-              # Also test a conservative title slug because many public sportsbook APIs use it.
-              slug = "-".join(title.casefold().replace("&", "and").split())
-              if slug and slug not in candidate_values:
-                  candidate_values.append(slug)
-              for value in candidate_values:
-                  for param_name in ("tab", "tabId"):
-                      p = dict(base_params); p[param_name] = value
-                      summarize(f"{title}|{param_name}={value}", p)
-              # Keep the diagnostic bounded: Player Points is representative of transport semantics.
-              break
+              player_markets = [m for m in markets if str(m.get("marketType") or m.get("type") or "").startswith("PLAYER_")]
+              print("FD_SLUG_SUMMARY", json.dumps({"slug": slug, "market_count": len(markets), "player_market_count": len(player_markets), "market_names": [(m.get("marketName") or m.get("name")) for m in player_markets[:8]]}, sort_keys=True, default=str))
+              if player_markets:
+                  market = player_markets[0]
+                  runners = fd._iter_mapping_or_list(market.get("runners"))
+                  print("FD_RAW_PLAYER_MARKET", json.dumps({
+                      "slug": slug,
+                      "market": market,
+                      "runner_side_line_results": [fd._runner_side_line(r) for r in runners],
+                      "declares_player": fd._declares_player_market(market, runners),
+                  }, sort_keys=True, default=str))
           PY
