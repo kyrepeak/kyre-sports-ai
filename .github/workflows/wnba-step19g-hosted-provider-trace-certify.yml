@@ -1,0 +1,132 @@
+name: WNBA Step19G hosted provider trace certification
+
+on:
+  push:
+    branches: [wnba-step19g-hosted-provider-trace-20260829]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step19g-hosted-provider-trace-certify
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Focused frozen regression
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19g_hosted_provider_trace.py \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py \
+            tests/test_wnba_step12b_live_runtime_assembly.py \
+            tests/test_wnba_step12c_live_board_runtime.py
+
+      - name: Prove hosted import binding
+        run: |
+          python - <<'PY'
+          import sports_api.main
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step17b_always_on_runtime as s17b
+          from sports_api import wnba_step19e_cooldown_aware_cycle as s19e
+          from sports_api import wnba_step19f_draftkings_identity as s19f
+          from sports_api import wnba_step19g_hosted_provider_trace as s19g
+          checks = {
+              'step19e_cycle_active': s17b.run_one_cycle is s19e.run_one_cycle_step19e,
+              'step19g_trace_active': s12b.run_step12b_live_runtime_job is s19g.run_step12b_with_hosted_trace,
+              'fanduel_slug_active': fd._relevant_tab_ids is s19f.fanduel_relevant_tab_ids_step19f,
+              'fanduel_runner_active': fd._runner_side_line is s19f.fanduel_runner_side_line_step19f,
+          }
+          print('STEP19G_HOST_BINDING', checks)
+          failed=[k for k,v in checks.items() if not v]
+          if failed: raise SystemExit('host binding failed: '+','.join(failed))
+          PY
+
+      - name: Read-only live provider certification
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19g_hosted_provider_trace as s19g
+          s19g.install_step19g_hosted_provider_trace()
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          req=s12b.build_step12b_request(
+              season=2026,
+              slate_date=slate,
+              evaluated_at=datetime.now(timezone.utc),
+              previous_state=None,
+              controller_policy={'provider_attempts': 1},
+          )
+          out=s12b.run_step12b_live_runtime_job(req, env=os.environ)
+          trace=s19g.get_step19g_hosted_provider_trace()
+          latest=trace.get('latest') or {}
+          summary={
+              'slate': slate,
+              'status': out.get('status'),
+              'health': out.get('health'),
+              'draftkings_records': (latest.get('draftkings') or {}).get('record_count'),
+              'fanduel_records': (latest.get('fanduel') or {}).get('record_count'),
+              'cycle_outcome': latest.get('cycle_outcome'),
+              'compatibility': latest.get('compatibility'),
+          }
+          print('STEP19G_LIVE_TRACE_CERTIFICATION', json.dumps(summary, sort_keys=True))
+          if int((latest.get('draftkings') or {}).get('record_count') or 0) <= 0:
+              raise SystemExit('DraftKings live trace has no records')
+          if int((latest.get('fanduel') or {}).get('record_count') or 0) <= 0:
+              raise SystemExit('FanDuel live trace has no records')
+          if not all((latest.get('compatibility') or {}).values()):
+              raise SystemExit('Step19F compatibility not fully active')
+          print('STEP19G_TRACE_CERTIFIED')
+          PY
