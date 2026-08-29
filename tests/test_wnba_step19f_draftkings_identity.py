@@ -60,6 +60,42 @@ def test_fanduel_daytime_utc_instant_keeps_same_eastern_date() -> None:
     assert fanduel._event_date({"startTime": "2026-08-29T18:00:00Z"}) == "2026-08-29"
 
 
+def test_fanduel_player_tabs_use_live_event_page_slugs() -> None:
+    document = {
+        "layout": {
+            "tabs": {
+                "168": {"id": 168, "title": "Player Points"},
+                "169": {"id": 169, "title": "Player Assists"},
+                "170": {"id": 170, "title": "Player Rebounds"},
+                "171": {"id": 171, "title": "Player Combos"},
+                "172": {"id": 172, "title": "Player Threes"},
+                "26": {"id": 26, "title": "1st Quarter"},
+            }
+        }
+    }
+    step19f.install_step19f_draftkings_identity()
+    assert fanduel._relevant_tab_ids(document) == [
+        "player-points",
+        "player-assists",
+        "player-rebounds",
+        "player-combos",
+    ]
+
+
+def test_fanduel_nested_result_type_and_handicap_are_parsed() -> None:
+    step19f.install_step19f_draftkings_identity()
+    over = {"runnerName": "Kia Nurse Over", "handicap": 10.5, "result": {"type": "OVER"}}
+    under = {"runnerName": "Kia Nurse Under", "handicap": 10.5, "result": {"type": "UNDER"}}
+    assert fanduel._runner_side_line(over) == ("over", 10.5)
+    assert fanduel._runner_side_line(under) == ("under", 10.5)
+
+
+def test_fanduel_nested_result_refuses_non_over_under() -> None:
+    step19f.install_step19f_draftkings_identity()
+    runner = {"runnerName": "Kahleah Copper 20+", "handicap": 20, "result": {"type": "YES"}}
+    assert fanduel._runner_side_line(runner) is None
+
+
 def test_unrelated_event_still_fails_closed() -> None:
     step19f.install_step19f_draftkings_identity()
     events = [{
