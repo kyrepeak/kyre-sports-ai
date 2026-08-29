@@ -1,0 +1,43 @@
+name: WNBA Step19E provider readiness diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19e-provider-readiness-diagnostic-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe live WNBA readiness surfaces
+        run: |
+          python - <<'PY'
+          import json, urllib.request, urllib.error
+          base='https://kyre-sports-api.onrender.com'
+          paths=[
+            '/health',
+            '/api/v1/wnba/markets/direct/draftkings/status',
+            '/api/v1/wnba/runtime/step17b',
+            '/api/v1/wnba/runtime/step17c/health',
+            '/api/v1/wnba/consumer/latest',
+          ]
+          for p in paths:
+              print('\n===',p,'===')
+              try:
+                  with urllib.request.urlopen(base+p,timeout=45) as r:
+                      raw=r.read().decode()
+                      print('HTTP',r.status)
+                      try:
+                          obj=json.loads(raw)
+                          print(json.dumps(obj,indent=2,sort_keys=True)[:50000])
+                      except Exception:
+                          print(raw[:50000])
+              except urllib.error.HTTPError as e:
+                  print('HTTP_ERROR',e.code,e.read().decode()[:20000])
+              except Exception as e:
+                  print('ERROR',type(e).__name__,str(e))
+          PY
