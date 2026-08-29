@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from sports_api import wnba_rotation_context as m
+from sports_api import wnba_rotation_reconstruction as rr
 from sports_api.wnba_game_history import WNBAHistoryUpstreamError
 from sports_api.wnba_rotation_reconstruction import WNBARotationReconstructionError
 
@@ -114,6 +115,81 @@ class WNBARotationFallbackTests(unittest.TestCase):
         fallback.side_effect = WNBARotationReconstructionError("ambiguous")
         with self.assertRaisesRegex(m.WNBARotationUpstreamError, "fallback also failed"):
             m.get_game_rotation("1022600204", 2026)
+
+    def test_unique_first_name_can_resolve_official_substitution_label(self):
+        players = [
+            {
+                "player_id": 1629566,
+                "first_name": "Xu",
+                "last_name": "Han",
+                "full_name": "Xu Han",
+                "name_initial": "Han",
+            },
+            {
+                "player_id": 1630384,
+                "first_name": "Raquel",
+                "last_name": "Carrera",
+                "full_name": "Raquel Carrera",
+                "name_initial": "R. Carrera",
+            },
+        ]
+        lookup = rr._player_lookup(players)
+        self.assertEqual(rr._resolve_incoming("Xu", lookup), 1629566)
+        self.assertTrue(rr._outgoing_label_matches("Xu", 1629566, players))
+
+    def test_duplicate_first_name_remains_ambiguous_and_fail_closed(self):
+        players = [
+            {
+                "player_id": 1,
+                "first_name": "Marine",
+                "last_name": "Johannes",
+                "full_name": "Marine Johannes",
+                "name_initial": "M. Johannes",
+            },
+            {
+                "player_id": 2,
+                "first_name": "Marine",
+                "last_name": "Fauthoux",
+                "full_name": "Marine Fauthoux",
+                "name_initial": "M. Fauthoux",
+            },
+        ]
+        lookup = rr._player_lookup(players)
+        self.assertIsNone(rr._resolve_incoming("Marine", lookup))
+
+    def test_xu_substitution_parses_with_person_id_as_outgoing_player(self):
+        players = [
+            {
+                "player_id": 1629566,
+                "first_name": "Xu",
+                "last_name": "Han",
+                "full_name": "Xu Han",
+                "name_initial": "Han",
+            },
+            {
+                "player_id": 1630384,
+                "first_name": "Raquel",
+                "last_name": "Carrera",
+                "full_name": "Raquel Carrera",
+                "name_initial": "R. Carrera",
+            },
+        ]
+        actions = [{
+            "event_category": "substitution",
+            "team_key": "new-york-liberty",
+            "period": 2,
+            "elapsed_game_seconds": 898.0,
+            "description": "SUB: Carrera FOR Xu",
+            "person_id": 1629566,
+            "action_number": 240,
+            "clock": "PT05M02.00S",
+        }]
+        by_period, errors = rr._parse_substitutions(
+            "new-york-liberty", players, actions
+        )
+        self.assertEqual(errors, [])
+        self.assertEqual(by_period[2][0]["incoming_player_id"], 1630384)
+        self.assertEqual(by_period[2][0]["outgoing_player_id"], 1629566)
 
 
 if __name__ == "__main__":
