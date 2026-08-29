@@ -1,4 +1,4 @@
-name: WNBA Step19A release-control diagnostic
+name: WNBA Step19A corrected-lifecycle local proof
 
 on:
   push:
@@ -18,19 +18,46 @@ env:
   RELEASE_ID: wnba-step19a-e676f4cb
 
 jobs:
-  diagnose:
+  local-proof:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: wnba-render-staging
     steps:
-      - name: Confirm exact immutable candidate
+      - name: Confirm production remains healthy Step18 before proof
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
           set -euo pipefail
-          test "$CANDIDATE_SHA" = 'e676f4cbfb64dee64bf73f2dbd8034162d69922e'
-          test "$STEP19A_IMAGE_REF" = 'ghcr.io/kyrepeak/kyre-sports-api@sha256:fabf80bd6a2439a77d1b80779b0f7a261ed753551865542b3b77af51a01af93a'
-          echo STEP19A_DIAGNOSTIC_EXACT_CANDIDATE_OK
+          python - <<'PY'
+          import json, os, re, urllib.request
+          base='https://api.render.com/v1'
+          sid=os.environ['RENDER_SERVICE_ID']
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','User-Agent':'kyre-step19a-local-proof/1'}
+          def get(path):
+              req=urllib.request.Request(base+path,headers=headers,method='GET')
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read().decode(); return json.loads(raw) if raw else None
+          rows_doc=get(f'/services/{sid}/deploys?limit=30')
+          rows=rows_doc if isinstance(rows_doc,list) else ((rows_doc or {}).get('items') or (rows_doc or {}).get('data') or [])
+          live=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live':
+                  live=d; break
+          if not live:
+              raise SystemExit('no live Render deployment found')
+          text=json.dumps(live,sort_keys=True).lower()
+          shas=re.findall(r'(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])',text)
+          if os.environ['CERTIFIED_STEP18_SHA'].lower() not in shas:
+              raise SystemExit(f'production is not exact Step18; observed sanitized shas={sorted(set(shas))}')
+          with urllib.request.urlopen(os.environ['RENDER_SERVICE_URL'].rstrip('/')+'/health',timeout=45) as r:
+              health=json.loads(r.read().decode())
+          if health.get('status')!='ok':
+              raise SystemExit('production health is not ok')
+          print('STEP19A_PRODUCTION_STILL_SAFE_STEP18',live.get('id'))
+          PY
 
-      - name: Read current Render state and prepare sanitized runtime env
+      - name: Prepare current Render environment for no-write local proof
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
@@ -39,132 +66,36 @@ jobs:
           test -n "$RENDER_API_KEY"
           test -n "$KYRE_DATABASE_URL"
           python - <<'PY'
-          import json, os, re, urllib.request
+          import json, os, urllib.request
           from pathlib import Path
-
           base='https://api.render.com/v1'
           sid=os.environ['RENDER_SERVICE_ID']
-          candidate=os.environ['CANDIDATE_SHA'].lower()
-          step18=os.environ['CERTIFIED_STEP18_SHA'].lower()
-          headers={
-              'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",
-              'Accept':'application/json',
-              'User-Agent':'kyre-step19a-readonly-diagnostic/1',
-          }
-
-          def get(path):
-              r=urllib.request.Request(base+path,headers=headers,method='GET')
-              with urllib.request.urlopen(r,timeout=30) as x:
-                  raw=x.read().decode()
-                  return json.loads(raw) if raw else None
-
-          def deploy_obj(row):
-              if isinstance(row,dict) and isinstance(row.get('deploy'),dict):
-                  return row['deploy']
-              return row if isinstance(row,dict) else {}
-
-          def commit_id(d):
-              for key in ('commitId','commit_id'):
-                  value=d.get(key)
-                  if isinstance(value,str) and len(value)==40:
-                      return value.lower()
-              c=d.get('commit')
-              if isinstance(c,dict):
-                  value=c.get('id') or c.get('sha')
-                  if isinstance(value,str) and len(value)==40:
-                      return value.lower()
-              text=json.dumps(d,sort_keys=True).lower()
-              hits=re.findall(r'(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])',text)
-              return hits[0] if hits else None
-
-          def safe_deploy(d):
-              return {
-                  'id':d.get('id'),
-                  'status':d.get('status'),
-                  'commit_id':commit_id(d),
-                  'created_at':d.get('createdAt') or d.get('created_at'),
-                  'updated_at':d.get('updatedAt') or d.get('updated_at'),
-                  'finished_at':d.get('finishedAt') or d.get('finished_at'),
-                  'trigger':d.get('trigger'),
-              }
-
-          svc=get(f'/services/{sid}') or {}
-          rows_doc=get(f'/services/{sid}/deploys?limit=50')
-          rows=rows_doc if isinstance(rows_doc,list) else ((rows_doc or {}).get('items') or (rows_doc or {}).get('data') or [])
-          deploys=[safe_deploy(deploy_obj(r)) for r in rows if deploy_obj(r)]
-          live=next((d for d in deploys if str(d.get('status','')).lower()=='live'),None)
-          candidate_rows=[d for d in deploys if d.get('commit_id')==candidate]
-          step18_rows=[d for d in deploys if d.get('commit_id')==step18]
-
-          events_doc=get(f'/services/{sid}/events?limit=50')
-          erows=events_doc if isinstance(events_doc,list) else ((events_doc or {}).get('items') or (events_doc or {}).get('data') or [])
-          events=[]
-          for row in erows[:50]:
-              e=row.get('event') if isinstance(row,dict) and isinstance(row.get('event'),dict) else row
-              if not isinstance(e,dict):
-                  continue
-              events.append({
-                  'id':e.get('id'),
-                  'type':e.get('type'),
-                  'timestamp':e.get('timestamp') or e.get('createdAt') or e.get('created_at'),
-                  'deploy_id':e.get('deployId') or e.get('deploy_id'),
-              })
-
-          with urllib.request.urlopen(os.environ['RENDER_SERVICE_URL'].rstrip('/')+'/health',timeout=45) as h:
-              health=json.loads(h.read().decode())
-
-          evidence={
-              'mutation_performed':False,
-              'service_id':sid,
-              'service_name':svc.get('name'),
-              'repo':svc.get('repo'),
-              'branch':svc.get('branch'),
-              'auto_deploy':svc.get('autoDeploy'),
-              'current_live':live,
-              'candidate_deploys':candidate_rows,
-              'step18_deploys':step18_rows,
-              'recent_deploys':deploys[:12],
-              'recent_events':events[:20],
-              'health_status':health.get('status'),
-          }
-          Path('step19a-render-diagnostic.json').write_text(json.dumps(evidence,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          print('STEP19A_RENDER_READONLY_STATE',json.dumps({
-              'current_live':live,
-              'candidate_deploys':candidate_rows,
-              'step18_deploys':step18_rows[:3],
-              'health_status':health.get('status'),
-              'auto_deploy':svc.get('autoDeploy'),
-              'branch':svc.get('branch'),
-          },sort_keys=True))
-
-          env_doc=get(f'/services/{sid}/env-vars?limit=100')
-          env_rows=env_doc if isinstance(env_doc,list) else ((env_doc or {}).get('items') or (env_doc or {}).get('data') or [])
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','User-Agent':'kyre-step19a-local-proof/1'}
+          req=urllib.request.Request(base+f'/services/{sid}/env-vars?limit=100',headers=headers,method='GET')
+          with urllib.request.urlopen(req,timeout=30) as r:
+              doc=json.loads(r.read().decode())
+          rows=doc if isinstance(doc,list) else ((doc or {}).get('items') or (doc or {}).get('data') or [])
           values={}
-          for row in env_rows:
+          for row in rows:
               item=row.get('envVar') if isinstance(row,dict) and isinstance(row.get('envVar'),dict) else row
-              if not isinstance(item,dict):
-                  continue
-              k=item.get('key')
-              v=item.get('value')
-              if isinstance(k,str) and v is not None:
-                  values[k]=str(v)
-
-          values['KYRE_DATABASE_URL']=os.environ['KYRE_DATABASE_URL']
-          safe_off={
-              'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'false',
+              if isinstance(item,dict) and isinstance(item.get('key'),str) and item.get('value') is not None:
+                  values[item['key']]=str(item['value'])
+          candidate=os.environ['CANDIDATE_SHA'].lower()
+          values.update({
+              'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
+              'WEB_CONCURRENCY':'1',
+              'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true',
               'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
               'WNBA_BOARD_SCHEDULER_ENABLED':'false',
               'WNBA_STEP12_SCHEDULER_ENABLED':'false',
               'WNBA_KYRE_DIRECT_SYNC_ENABLED':'false',
               'WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false',
-              'WNBA_STEP6J_CANARY_ENABLED':'false',
-              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false',
               'WNBA_PERSISTENCE_ENABLED':'false',
               'WNBA_SUPABASE_WRITE_ENABLED':'false',
               'WNBA_WAGERING_ENABLED':'false',
-              'WNBA_STEP17A_HOST_CONTRACT_ENABLED':'false',
-          }
-          candidate_on={
+              'WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false',
+              'WNBA_STEP6J_CANARY_ENABLED':'false',
+              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false',
               'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true',
               'WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz',
               'WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true',
@@ -184,66 +115,62 @@ jobs:
               'WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true',
               'WNBA_DEPLOYMENT_REVISION':candidate,
               'WNBA_RELEASE_ID':os.environ['RELEASE_ID'],
-          }
-          values.update(safe_off)
-          values.update(candidate_on)
+          })
+          # Boot proof must not start the Step17B database-backed background loop.
+          values['WNBA_STEP17B_ALWAYS_ON_ENABLED']='false'
           for k,v in values.items():
-              if '\n' in k or '\n' in v or '\r' in v:
-                  raise SystemExit(f'unsafe newline in Render env entry {k!r}')
-          Path('/tmp/step19a-render.env').write_text(''.join(f'{k}={v}\n' for k,v in sorted(values.items())),encoding='utf-8')
-          Path('/tmp/step19a-redactions.json').write_text(json.dumps(sorted({v for k,v in values.items() if any(x in k.upper() for x in ('SECRET','TOKEN','KEY','PASSWORD','DATABASE_URL')) and len(v)>=4})),encoding='utf-8')
-          print('STEP19A_RUNTIME_ENV_PREPARED',len(values),'variables; values not printed')
+              if '\n' in k or '\r' in k or '\n' in v or '\r' in v:
+                  raise SystemExit(f'unsafe newline in environment entry {k!r}')
+          Path('/tmp/step19a-proof.env').write_text(''.join(f'{k}={v}\n' for k,v in sorted(values.items())),encoding='utf-8')
+          print('STEP19A_NO_WRITE_LOCAL_ENV_READY',len(values),'variables; values hidden')
           PY
 
-      - name: Pull and boot exact Step19A image without touching Render
+      - name: Pull exact immutable candidate
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
           docker pull "$STEP19A_IMAGE_REF" >/dev/null
-          docker run -d --name step19a-local-smoke --env-file /tmp/step19a-render.env -p 18000:8000 "$STEP19A_IMAGE_REF" >/tmp/step19a-container-id
+          test "$(docker image inspect "$STEP19A_IMAGE_REF" --format '{{index .RepoDigests 0}}' | sed 's#.*@##')" = 'sha256:fabf80bd6a2439a77d1b80779b0f7a261ed753551865542b3b77af51a01af93a'
+          echo STEP19A_EXACT_IMAGE_DIGEST_LOCAL_OK
+
+      - name: Prove Step17B production startup contract without starting its loop
+        run: |
+          set -euo pipefail
+          docker run --rm --env-file /tmp/step19a-proof.env \
+            -e WNBA_STEP17B_ALWAYS_ON_ENABLED=true \
+            "$STEP19A_IMAGE_REF" \
+            python -c "import os; from sports_api.wnba_step17b_always_on_runtime import validate_step17b_startup; d=validate_step17b_startup(os.environ); assert d['database_secret_configured'] is True and d['web_concurrency']==1; print('STEP19A_STEP17B_STARTUP_CONTRACT_OK_NO_LOOP_STARTED')"
+
+      - name: Prove Step16B binding is safe and non-executing
+        run: |
+          set -euo pipefail
+          docker run --rm --env-file /tmp/step19a-proof.env \
+            "$STEP19A_IMAGE_REF" \
+            python -c "import os; from sports_api.wnba_step16b_production_lifecycle import build_step16b_lifecycle_status; d=build_step16b_lifecycle_status(os.environ); assert d['enabled'] is True and d['status']=='bound_not_executed' and d['database_connected'] is False and d['runtime_executed'] is False and d['background_task_started'] is False and d['production_activation'] is False; print('STEP19A_STEP16B_SAFE_BINDING_OK')"
+
+      - name: Boot exact candidate with background runtime disabled
+        run: |
+          set -euo pipefail
+          docker run -d --name step19a-proof --env-file /tmp/step19a-proof.env -p 18000:8000 "$STEP19A_IMAGE_REF" >/dev/null
           ok=false
           for i in $(seq 1 36); do
-            if curl -fsS --max-time 5 http://127.0.0.1:18000/health >/tmp/step19a-health.json 2>/dev/null; then
-              ok=true
-              break
-            fi
-            if ! docker inspect -f '{{.State.Running}}' step19a-local-smoke 2>/dev/null | grep -qx true; then
-              break
-            fi
+            if curl -fsS --max-time 5 http://127.0.0.1:18000/health >/tmp/health.json 2>/dev/null; then ok=true; break; fi
+            if ! docker inspect -f '{{.State.Running}}' step19a-proof 2>/dev/null | grep -qx true; then break; fi
             sleep 5
           done
           if [ "$ok" != true ]; then
-            docker logs step19a-local-smoke >/tmp/step19a-raw.log 2>&1 || true
-            python - <<'PY'
-          import json
-          from pathlib import Path
-          text=Path('/tmp/step19a-raw.log').read_text(encoding='utf-8',errors='replace')[-20000:]
-          for value in json.loads(Path('/tmp/step19a-redactions.json').read_text(encoding='utf-8')):
-              text=text.replace(value,'***REDACTED***')
-          print('STEP19A_LOCAL_IMAGE_BOOT_FAILED')
-          print(text)
-          PY
+            docker logs step19a-proof 2>&1 | tail -200
             exit 1
           fi
           python - <<'PY'
           import json
-          d=json.load(open('/tmp/step19a-health.json',encoding='utf-8'))
-          if d.get('status')!='ok':
-              raise SystemExit(f'local candidate health not ok: {d!r}')
-          print('STEP19A_LOCAL_IMMUTABLE_IMAGE_HEALTH_OK')
+          d=json.load(open('/tmp/health.json',encoding='utf-8'))
+          assert d.get('status')=='ok', d
+          print('STEP19A_EXACT_CANDIDATE_LOCAL_HEALTH_OK')
           PY
 
-      - name: Clean local diagnostic container
+      - name: Clean local proof container
         if: always()
-        run: docker rm -f step19a-local-smoke >/dev/null 2>&1 || true
-
-      - name: Upload read-only diagnostic evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: wnba-step19a-readonly-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
-          path: step19a-render-diagnostic.json
-          if-no-files-found: warn
-          retention-days: 30
+        run: docker rm -f step19a-proof >/dev/null 2>&1 || true
