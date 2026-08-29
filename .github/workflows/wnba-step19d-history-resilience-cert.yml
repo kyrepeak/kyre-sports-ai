@@ -81,6 +81,7 @@ jobs:
         run: |
           python -m pip install -r sports_api/requirements.txt >/dev/null
           python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
 
       - name: Prove exact revision, compile, and regression contracts
         run: |
