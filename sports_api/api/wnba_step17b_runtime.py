@@ -22,6 +22,7 @@ from sports_api import wnba_step20b_runtime_acceleration as _step20b_accel
 from sports_api import wnba_step20b_optional_workload_compat as _step20b_workload
 from sports_api import wnba_step20b_monte_carlo_acceleration as _step20b_mc
 from sports_api import wnba_step20b_monte_carlo_cdf_compat as _step20b_mc_cdf
+from sports_api import wnba_step20b_step4w_cycle_cache as _step20b_step4w_cache
 from sports_api import wnba_step20b_rollover_stage_trace as _step20b
 from sports_api.runtime_fingerprint import get_runtime_build_identity
 
@@ -42,6 +43,10 @@ _step20b_mc_cdf.install_step20b_monte_carlo_cdf_compat()
 # Install the semantics-preserving Step8D accelerator before the diagnostic
 # trace wraps Step8D, so the trace measures the accelerated implementation.
 _step20b_mc.install_step20b_monte_carlo_acceleration()
+# Reuse only successful exact Step4W calls inside one Step12B cycle. Install
+# before the diagnostic trace so tracing remains the outer observer while the
+# Step7G-protected provider aliases themselves remain untouched.
+_step20b_step4w_cache.install_step20b_step4w_cycle_cache()
 _step20b.install_step20b_rollover_stage_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
@@ -103,6 +108,7 @@ def _full_probe_worker() -> None:
         workload = _step20b_workload.installation_status()
         monte_carlo = _step20b_mc.installation_status()
         monte_carlo_cdf = _step20b_mc_cdf.installation_status()
+        step4w_cache = _step20b_step4w_cache.installation_status()
         _set_full_probe(
             status="returned",
             elapsed_seconds=round(time.perf_counter() - started, 3),
@@ -119,6 +125,7 @@ def _full_probe_worker() -> None:
             optional_workload_compat=workload,
             monte_carlo_acceleration=monte_carlo,
             monte_carlo_cdf_compat=monte_carlo_cdf,
+            step4w_cycle_cache=step4w_cache,
         )
     except Exception as exc:
         _set_full_probe(
@@ -130,6 +137,7 @@ def _full_probe_worker() -> None:
             optional_workload_compat=_step20b_workload.installation_status(),
             monte_carlo_acceleration=_step20b_mc.installation_status(),
             monte_carlo_cdf_compat=_step20b_mc_cdf.installation_status(),
+            step4w_cycle_cache=_step20b_step4w_cache.installation_status(),
         )
 
 
@@ -198,6 +206,11 @@ def step20b_monte_carlo_cdf_compat_status():
     return _step20b_mc_cdf.installation_status()
 
 
+@router.get("/step20b-step4w-cycle-cache")
+def step20b_step4w_cycle_cache_status():
+    return _step20b_step4w_cache.installation_status()
+
+
 @router.get("/step20b-rollover-stage-trace")
 def step20b_rollover_stage_trace_status():
     return _step20b.installation_status()
@@ -229,6 +242,7 @@ def step20b_player_opportunity_probe(
             "data_type": "wnba_step20b_player_opportunity_probe",
             "trace_model_version": _step20b.MODEL_VERSION,
             "acceleration_model_version": _step20b_accel.MODEL_VERSION,
+            "step4w_cycle_cache_model_version": _step20b_step4w_cache.MODEL_VERSION,
             "monte_carlo_acceleration_model_version": _step20b_mc.MODEL_VERSION,
             "monte_carlo_cdf_compat_model_version": _step20b_mc_cdf.MODEL_VERSION,
             "status": "returned",
@@ -289,6 +303,7 @@ def step20b_full_runtime_probe_status(
         }
         result["monte_carlo_acceleration"] = _step20b_mc.installation_status()
         result["monte_carlo_cdf_compat"] = _step20b_mc_cdf.installation_status()
+        result["step4w_cycle_cache"] = _step20b_step4w_cache.installation_status()
     result.pop("started_at_monotonic", None)
     return result
 
