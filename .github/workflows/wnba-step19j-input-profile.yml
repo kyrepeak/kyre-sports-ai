@@ -71,6 +71,14 @@ jobs:
           from sports_api import wnba_player_opportunity_context as opp
 
           s19i.install_step19i_official_slate_transport()
+          step7g=s12b.step8a.step7g_integration
+          installed=step7g.install_step7g_first_party_integration(os.environ)
+          if installed.get('installed') is not True:
+              raise SystemExit('Step7G did not install before profiling')
+          # Profiling only: prevent the per-handoff idempotent installer from
+          # interpreting timing wrappers as unknown overrides.
+          step7g.install_step7g_first_party_integration=lambda env=None: dict(installed)
+
           totals=defaultdict(float); counts=defaultdict(int)
           def timed(name, fn):
               def wrapper(*args, **kwargs):
