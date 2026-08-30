@@ -82,14 +82,12 @@ jobs:
                       print('STEP19J_INPUT_STAGE',json.dumps({'stage':name,'call':counts[name],'seconds':round(elapsed,3)},sort_keys=True),flush=True)
               return wrapper
 
-          # Drill into Step 4V opportunity.
           opp.get_player_recent_rotation_context=timed('opportunity_rotation',opp.get_player_recent_rotation_context)
           opp.get_player_recent_event_feature_context=timed('opportunity_event_features',opp.get_player_recent_event_feature_context)
           opp.get_player_role_context_dataset=timed('opportunity_role_optional',opp.get_player_role_context_dataset)
           opp.get_lineups_dataset=timed('opportunity_lineups_optional',opp.get_lineups_dataset)
           opp.get_team_availability_context_dataset=timed('opportunity_team_availability_optional',opp.get_team_availability_context_dataset)
 
-          # Drill into Step 4W snapshot. These globals are looked up at call time.
           snap.get_player_opportunity_context=timed('snapshot_player_opportunity',snap.get_player_opportunity_context)
           snap.get_game_rest_travel_context=timed('snapshot_rest_travel',snap.get_game_rest_travel_context)
           snap.get_game_availability_context_dataset=timed('snapshot_game_availability',snap.get_game_availability_context_dataset)
@@ -103,14 +101,14 @@ jobs:
           slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
           evaluated=datetime.now(timezone.utc)
           dk_bridge,_=s12b._fetch_provider_bridge(provider=s12b.draftkings.PROVIDER,fetcher=s12b.draftkings.fetch_step11a_draftkings_provider_bridge,season=2026,slate_date=slate,evaluated_at=evaluated,attempts=1,requester=None,roster_loader=None,env=os.environ)
-          fd_bridge,_=s12b._fetch_provider_bridge(provider=s12b.fanduel.PROVIDER,fetcher=s12b.fanduel.fetch_step11c_fanduel_provider_bridge,season=2026,slate_date=slate,evaluated_at=evaluated,attempts=1,requester=None,roster_loader=None,env=os.environ)
-          targets,_=s12b._exact_multibook_targets(s12b._payload_records(dk_bridge,s12b.draftkings.PROVIDER),s12b._payload_records(fd_bridge,s12b.fanduel.PROVIDER))
-          if not targets: raise SystemExit('no live projection targets')
-          game_id,player_id=targets[0]
+          dk_records=s12b._payload_records(dk_bridge,s12b.draftkings.PROVIDER)
+          if not dk_records: raise SystemExit('no current DraftKings player-prop records')
+          row=dk_records[0]
+          game_id=str(row['game_id']); player_id=int(row['player_id'])
           start=time.perf_counter()
           handoff=s12b.step8a.get_player_game_step8_projection_handoff(player_id,game_id,env=os.environ)
           elapsed=time.perf_counter()-start
-          summary={'target_count':len(targets),'handoff_seconds':round(elapsed,3),'ready':handoff.get('readiness') in {'READY','READY_WITH_WARNINGS'},'stage_totals_seconds':{k:round(v,3) for k,v in sorted(totals.items())},'stage_call_counts':{k:int(v) for k,v in sorted(counts.items())}}
+          summary={'handoff_seconds':round(elapsed,3),'ready':handoff.get('readiness') in {'READY','READY_WITH_WARNINGS'},'stage_totals_seconds':{k:round(v,3) for k,v in sorted(totals.items())},'stage_call_counts':{k:int(v) for k,v in sorted(counts.items())}}
           print('STEP19J_INPUT_PROFILE_SUMMARY',json.dumps(summary,sort_keys=True),flush=True)
           print('STEP19J_INPUT_PROFILE_CERTIFIED')
           PY
