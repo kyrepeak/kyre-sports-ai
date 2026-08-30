@@ -1,0 +1,143 @@
+name: WNBA Step19M FanDuel line-move certification
+
+on:
+  push:
+    branches:
+      - wnba-step19m-fanduel-line-move-20260830
+    paths:
+      - '.github/workflows/wnba-step19m-fanduel-line-move-certify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+      WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+      WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Compile Step19M
+        run: |
+          python -m py_compile sports_api/wnba_step19m_fanduel_line_move.py sports_api/api/wnba_step17b_runtime.py
+
+      - name: Frozen FanDuel regression stays frozen in isolated process
+        run: |
+          python -m pytest -q tests/test_wnba_step11_fanduel_provider.py
+
+      - name: Step19M exact race and fail-closed tests
+        run: |
+          python -m pytest -q tests/test_wnba_step19m_fanduel_line_move.py
+
+      - name: Step19 compatibility regression wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19l_fanduel_identity_trace.py \
+            tests/test_wnba_step19k_market_not_ready.py \
+            tests/test_wnba_step19j_runtime_acceleration.py \
+            tests/test_wnba_step19i_official_slate_transport.py \
+            tests/test_wnba_step19h_fanduel_hosted_transport.py \
+            tests/test_wnba_step19g_hosted_provider_trace.py \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py
+
+      - name: Prove hosted wrapper order and strict guardrails
+        run: |
+          python - <<'PY'
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19h_fanduel_hosted_transport as h
+          from sports_api import wnba_step19k_market_not_ready as k
+          from sports_api import wnba_step19l_fanduel_identity_trace as l
+          from sports_api import wnba_step19m_fanduel_line_move as m
+          import sports_api.api.wnba_step17b_runtime
+
+          assert fd.fetch_step11c_fanduel_provider_bridge is l.fetch_step11c_with_identity_trace
+          assert l._UPSTREAM_FETCH_STEP11C is h.fetch_step11c_with_transport_probe
+          assert fd._market_identity_surface is m.market_identity_surface_step19m
+          assert m._UPSTREAM_IDENTITY_SURFACE is l.market_identity_surface_step19l
+          assert s12b.run_step12b_live_runtime_job is k.run_step12b_market_not_ready_compatible
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          guards=m.installation_status()['guardrails']
+          required_true=('same_market_line_move_allowed','newest_complete_market_copy_selected_by_frozen_step11c','same_selection_ids_required','same_runner_side_identity_required','same_market_name_and_type_required','same_player_identity_required')
+          required_false=('selection_id_change_allowed','runner_side_change_allowed','market_type_change_allowed','player_identity_change_allowed','different_lines_blended','exact_line_matching_modified','official_game_reconciliation_modified','official_roster_reconciliation_modified','projection_logic_modified','monte_carlo_simulation_count_modified','readiness_relaxed','provider_retry_policy_modified','controller_state_modified','persistence_modified','wagering_enabled')
+          assert all(guards[key] is True for key in required_true)
+          assert all(guards[key] is False for key in required_false)
+          print('STEP19M_HOST_CHAIN_CERTIFIED')
+          PY
+
+      - name: Live FanDuel stress after repair
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step11_multibook_shadow_board as mb
+          from sports_api import wnba_step19l_fanduel_identity_trace as l
+          from sports_api import wnba_step19m_fanduel_line_move as m
+          import sports_api.api.wnba_step17b_runtime
+
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          counts=[]
+          for attempt in range(1,17):
+              bridge=fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=datetime.now(timezone.utc),env=os.environ)
+              payload=mb._verify_bridge(bridge,provider=fd.PROVIDER)
+              count=len(payload.get('records') or [])
+              counts.append(count)
+              print('STEP19M_LIVE_ATTEMPT',json.dumps({'attempt':attempt,'records':count},sort_keys=True),flush=True)
+              time.sleep(0.5)
+          trace=l.get_step19l_fanduel_identity_trace()
+          summary={'slate':slate,'record_counts':counts,'identity_errors':trace.get('identity_error_count'),'repair_calls':m.installation_status().get('identity_surface_call_count')}
+          print('STEP19M_LIVE_STRESS',json.dumps(summary,sort_keys=True))
+          if any(count <= 0 for count in counts): raise SystemExit('live FanDuel repair lost records')
+          if int(trace.get('identity_error_count') or 0) != 0: raise SystemExit('live FanDuel identity error remained')
+          print('STEP19M_LIVE_STRESS_CERTIFIED')
+          PY
