@@ -103,6 +103,7 @@ jobs:
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
           g=n.installation_status()['guardrails']
+          assert g['requires_preinstalled_step19k'] is True
           assert g['draftkings_verified_nonempty_required'] is True
           assert g['all_fanduel_attempts_must_match'] is True
           for key in ('identity_failure_reclassified','transport_failure_reclassified','upstream_failure_reclassified','landing_page_failure_reclassified','fanduel_bridge_fabricated','different_lines_blended','fake_projection_created','monte_carlo_simulation_count_modified','projection_math_modified','provider_transport_modified','readiness_relaxed','persistence_modified','wagering_enabled'):
