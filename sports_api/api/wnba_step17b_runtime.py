@@ -4,6 +4,7 @@ from sports_api.wnba_step17b_always_on_runtime import get_step17b_status
 from sports_api import wnba_step19e_cooldown_aware_cycle as _step19e
 from sports_api import wnba_step19g_hosted_provider_trace as _step19g
 from sports_api import wnba_step19h_fanduel_hosted_transport as _step19h
+from sports_api import wnba_step19i_official_slate_transport as _step19i
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -11,6 +12,7 @@ from sports_api import wnba_step19h_fanduel_hosted_transport as _step19h
 _step19e.install_step19e_cooldown_aware_cycle()
 _step19g.install_step19g_hosted_provider_trace()
 _step19h.install_step19h_fanduel_hosted_transport()
+_step19i.install_step19i_official_slate_transport()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
 
@@ -30,3 +32,9 @@ def step19g_provider_trace_status():
 def step19h_fanduel_transport_status():
     """Return metadata-only diagnostics for hosted FanDuel GET responses."""
     return _step19h.get_step19h_fanduel_transport_status()
+
+
+@router.get("/step19i-official-slate-transport")
+def step19i_official_slate_transport_status():
+    """Return non-sensitive installation status for the Step19I slate repair."""
+    return _step19i.installation_status()
