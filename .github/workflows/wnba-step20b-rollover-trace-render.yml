@@ -11,12 +11,11 @@ on:
       - 'sports_api/wnba_step20b_optional_workload_compat.py'
       - 'sports_api/wnba_step20b_monte_carlo_acceleration.py'
       - 'sports_api/wnba_step20b_rollover_stage_trace.py'
-      - 'sports_api/wnba_step20b_step4w_cache.py'
+      - 'sports_api/wnba_step20b_step4w_cycle_cache.py'
       - 'tests/test_wnba_step20b_runtime_acceleration.py'
       - 'tests/test_wnba_step20b_optional_workload_compat.py'
       - 'tests/test_wnba_step20b_monte_carlo_acceleration.py'
       - 'tests/test_wnba_step20b_rollover_stage_trace.py'
-      - 'tests/test_wnba_step20b_step4w_cache.py'
 
 permissions:
   contents: read
@@ -57,7 +56,6 @@ jobs:
           python -m pytest -q tests/test_wnba_step20b_optional_workload_compat.py
           python -m pytest -q tests/test_wnba_step20b_monte_carlo_acceleration.py
           python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
-          python -m pytest -q tests/test_wnba_step20b_step4w_cache.py
           python -m pytest -q tests/test_wnba_step8_joint_monte_carlo.py
           python -m pytest -q \
             tests/test_wnba_step19n_fanduel_empty_market.py \
@@ -70,7 +68,7 @@ jobs:
           from sports_api import wnba_step20b_runtime_acceleration as a
           from sports_api import wnba_step20b_optional_workload_compat as w
           from sports_api import wnba_step20b_monte_carlo_acceleration as m
-          from sports_api import wnba_step20b_step4w_cache as c4w
+          from sports_api import wnba_step20b_step4w_cycle_cache as c4w
           from sports_api import wnba_step8_joint_monte_carlo as step8d
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
@@ -96,11 +94,15 @@ jobs:
           assert wg['workload_values_fabricated'] is False
           c4=c4w.installation_status()
           assert c4['installed'] is True
+          assert c4['all_bindings_active'] is True
           c4g=c4['guardrails']
           assert c4g['cache_scope'] == 'single_step12b_call_only'
+          assert c4g['cache_cleared_after_every_cycle'] is True
           assert c4g['cached_values_returned_by_deepcopy'] is True
-          assert c4g['exceptions_cached'] is False
-          assert c4g['missing_values_fabricated'] is False
+          assert c4g['raised_exceptions_cached'] is False
+          assert c4g['optional_unavailable_results_cached'] is False
+          assert c4g['exact_call_arguments_are_cache_key'] is True
+          assert c4g['step7g_protected_provider_aliases_modified'] is False
           assert c4g['projection_math_modified'] is False
           assert c4g['readiness_relaxed'] is False
           assert c4g['monte_carlo_simulation_count_modified'] is False
