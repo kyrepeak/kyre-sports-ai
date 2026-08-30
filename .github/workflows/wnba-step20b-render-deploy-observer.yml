@@ -1,0 +1,59 @@
+name: WNBA Step20B Render deploy observer
+
+on:
+  push:
+    branches:
+      - wnba-step20b-render-deploy-observer-20260830
+    paths:
+      - '.github/workflows/wnba-step20b-render-deploy-observer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: wnba-render-staging
+    env:
+      RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
+      RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+      EXPECTED_SHA: 6e58a8fc831975bcb4a3a9dabb0e6ae307e9a60c
+    steps:
+      - name: Read latest Render deploys and public runtime surfaces
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json'}
+          def api(path):
+              req=urllib.request.Request(base+path,headers=headers)
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read().decode(); return json.loads(raw) if raw else None
+          deploys=api(f'/services/{sid}/deploys?limit=10') or []
+          rows=[]
+          for item in deploys[:10]:
+              d=item.get('deploy') if isinstance(item,dict) and isinstance(item.get('deploy'),dict) else item
+              rows.append({
+                  'id':d.get('id') if isinstance(d,dict) else None,
+                  'status':d.get('status') if isinstance(d,dict) else None,
+                  'commit':(d.get('commit') or {}).get('id') if isinstance(d,dict) and isinstance(d.get('commit'),dict) else d.get('commitId') if isinstance(d,dict) else None,
+                  'createdAt':d.get('createdAt') if isinstance(d,dict) else None,
+                  'updatedAt':d.get('updatedAt') if isinstance(d,dict) else None,
+                  'finishedAt':d.get('finishedAt') if isinstance(d,dict) else None,
+              })
+          print('STEP20B_RENDER_DEPLOYS',json.dumps(rows,sort_keys=True),flush=True)
+          public=os.environ['RENDER_SERVICE_URL']
+          def get(path):
+              try:
+                  req=urllib.request.Request(public+path,headers={'User-Agent':'kyre-step20b-observer/1.0'})
+                  with urllib.request.urlopen(req,timeout=30) as r:
+                      return {'http':r.status,'body':json.loads(r.read().decode())}
+              except Exception as exc:
+                  return {'error_type':type(exc).__name__,'error':str(exc)[:300]}
+          for path in ('/api/v1/wnba/runtime/step17b','/api/v1/wnba/runtime/step20b-render-inflight-trace','/api/v1/wnba/runtime/step20b-shared-input-cache'):
+              print('STEP20B_RENDER_SURFACE',path,json.dumps(get(path),sort_keys=True),flush=True)
+          PY
