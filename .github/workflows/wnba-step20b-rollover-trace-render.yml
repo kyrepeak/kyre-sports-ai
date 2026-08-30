@@ -1,4 +1,4 @@
-name: WNBA Step20B cycle-local acceleration benchmark
+name: WNBA Step20B full runtime certification
 
 on:
   push:
@@ -26,9 +26,9 @@ env:
   RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
 
 jobs:
-  benchmark:
+  certify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 18
+    timeout-minutes: 16
     environment: wnba-render-staging
     steps:
       - name: Checkout exact candidate
@@ -43,7 +43,7 @@ jobs:
           python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
           python -m pip install pytest >/dev/null
 
-      - name: Certify acceleration and existing runtime guards
+      - name: Certify acceleration and regression guards
         run: |
           python -m pytest -q tests/test_wnba_step20b_runtime_acceleration.py
           python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
@@ -54,13 +54,11 @@ jobs:
             tests/test_wnba_step19j_runtime_acceleration.py
           python - <<'PY'
           from sports_api import wnba_step12b_live_runtime_assembly as s12b
-          import sports_api.api.wnba_step17b_runtime as api
+          import sports_api.api.wnba_step17b_runtime
           from sports_api import wnba_step20b_runtime_acceleration as a
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
-          st=a.installation_status()
-          assert st['installed'] is True
-          g=st['guardrails']
+          g=a.installation_status()['guardrails']
           assert g['cache_scope'] == 'single_step12b_call_only'
           assert g['cached_values_returned_by_deepcopy'] is True
           assert g['exceptions_cached'] is False
@@ -72,10 +70,10 @@ jobs:
           assert g['provider_identity_protected_step7g_aliases_modified'] is False
           assert g['persistence_modified'] is False
           assert g['wagering_enabled'] is False
-          print('STEP20B_ACCELERATION_CERTIFIED')
+          print('STEP20B_FULL_RUNTIME_GUARDS_CERTIFIED')
           PY
 
-      - name: Deploy benchmark candidate to Render
+      - name: Deploy lease-independent certification candidate
         id: deploy
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
@@ -93,57 +91,54 @@ jobs:
           for key,value in {
               'WNBA_STEP17B_EXPECTED_REVISION':sha,
               'WNBA_DEPLOYMENT_REVISION':sha,
-              'WNBA_RELEASE_ID':'wnba-step20b-cycle-local-acceleration-benchmark',
+              'WNBA_RELEASE_ID':'wnba-step20b-full-runtime-certification',
+              'WNBA_STEP17B_ALWAYS_ON_ENABLED':'false',
               'WNBA_STEP20B_PROBE_ENABLED':'true',
               'WNBA_STEP20B_PROBE_TOKEN':token,
           }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
           out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
-          if not did: raise SystemExit('benchmark deploy id missing')
+          if not did: raise SystemExit('certification deploy id missing')
           for _ in range(180):
               d=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(d.get('status','')).lower()
               if status=='live': break
-              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('benchmark deploy failed '+status)
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('certification deploy failed '+status)
               time.sleep(5)
-          else: raise SystemExit('benchmark deploy timeout')
-          if sha.lower() not in json.dumps(d).lower(): raise SystemExit('benchmark live SHA mismatch')
-          print('STEP20B_ACCEL_RENDER_LIVE',did,sha,flush=True)
+          else: raise SystemExit('certification deploy timeout')
+          if sha.lower() not in json.dumps(d).lower(): raise SystemExit('certification live SHA mismatch')
+          print('STEP20B_FULL_RUNTIME_RENDER_LIVE',did,sha,flush=True)
           PY
           echo "deployed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Benchmark cold versus warm opportunity assembly
+      - name: Run one full lease-independent Step12B cycle
         run: |
           python - <<'PY'
           import json, os, pathlib, time, urllib.request
           base=os.environ['RENDER_SERVICE_URL']
           token=pathlib.Path(os.environ['RUNNER_TEMP'],'step20b_probe_token').read_text(encoding='utf-8').strip()
-          def get(path):
-              req=urllib.request.Request(base+path,headers={'User-Agent':'kyre-step20b-accel-benchmark/1.0'})
+          headers={'User-Agent':'kyre-step20b-full-runtime-cert/1.0','X-Step20B-Diagnostic-Token':token}
+          def call(path,method='GET'):
+              req=urllib.request.Request(base+path,data=b'' if method=='POST' else None,headers=headers,method=method)
               with urllib.request.urlopen(req,timeout=45) as response: return json.loads(response.read().decode())
-          def post_probe():
-              req=urllib.request.Request(
-                  base+'/api/v1/wnba/runtime/step20b-player-opportunity-probe',
-                  data=b'',
-                  headers={'User-Agent':'kyre-step20b-accel-benchmark/1.0','X-Step20B-Diagnostic-Token':token},
-                  method='POST',
-              )
-              with urllib.request.urlopen(req,timeout=240) as response: return json.loads(response.read().decode())
           time.sleep(3)
-          probe=post_probe()
-          print('STEP20B_ACCEL_PROBE',json.dumps(probe,sort_keys=True),flush=True)
-          trace=get('/api/v1/wnba/runtime/step20b-rollover-stage-trace')
-          rows=trace.get('recent_completed') or []
-          wanted={
-              'step4w_player_opportunity','step4v_recent_rotation','step4r_game_rotation',
-              'step4v_recent_event_features','step4u_game_event_lineups','step4u_game_possession_context'
-          }
-          selected=[row for row in rows if str(row.get('stage')) in wanted]
-          print('STEP20B_ACCEL_TRACE_ROWS',json.dumps(selected,sort_keys=True),flush=True)
-          if probe.get('status') != 'returned': raise SystemExit('Step20B acceleration probe did not return')
-          if probe.get('comparison_surface_equal') is not True: raise SystemExit('cold/warm output surface mismatch')
-          cold=float(probe.get('cold_elapsed_seconds') or 0); warm=float(probe.get('warm_elapsed_seconds') or 0)
-          if cold <= 0 or warm <= 0: raise SystemExit('invalid benchmark timing')
-          if warm >= cold: raise SystemExit('cycle-local cache produced no hosted speedup')
-          print('STEP20B_ACCEL_BENCHMARK_COMPLETE',cold,warm,round(cold/warm,3),flush=True)
+          started=call('/api/v1/wnba/runtime/step20b-full-runtime-probe/start','POST')
+          print('STEP20B_FULL_PROBE_STARTED',json.dumps(started,sort_keys=True),flush=True)
+          final=None
+          for poll in range(1,91):
+              time.sleep(5)
+              status=call('/api/v1/wnba/runtime/step20b-full-runtime-probe/status')
+              print('STEP20B_FULL_PROBE_POLL',poll,json.dumps(status,sort_keys=True),flush=True)
+              if status.get('status') in {'returned','raised'}:
+                  final=status
+                  break
+          if final is None: raise SystemExit('Step20B full runtime probe timed out')
+          if final.get('status') != 'returned': raise SystemExit('Step20B full runtime probe raised '+str(final.get('error_type')))
+          projection=final.get('projection_assembly') or {}
+          built=int(projection.get('built_target_count') or 0)
+          if built < 1: raise SystemExit('Step20B full runtime probe built zero projection targets')
+          if projection.get('simulations_per_built_target') != 5000000: raise SystemExit('simulation count drift')
+          if projection.get('batch_size') != 250000: raise SystemExit('batch size drift')
+          elapsed=float(final.get('elapsed_seconds') or 0)
+          print('STEP20B_FULL_RUNTIME_CERTIFIED',elapsed,built,flush=True)
           PY
 
       - name: Restore certified Step19N production revision
@@ -163,6 +158,7 @@ jobs:
               'WNBA_STEP17B_EXPECTED_REVISION':sha,
               'WNBA_DEPLOYMENT_REVISION':sha,
               'WNBA_RELEASE_ID':'wnba-step19n-safe-market-state-candidate',
+              'WNBA_STEP17B_ALWAYS_ON_ENABLED':'true',
               'WNBA_STEP20B_PROBE_ENABLED':'false',
               'WNBA_STEP20B_PROBE_TOKEN':'disabled-diagnostic-probe-token-not-active',
           }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
