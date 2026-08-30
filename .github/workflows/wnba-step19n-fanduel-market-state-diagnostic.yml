@@ -1,0 +1,195 @@
+name: WNBA Step19N FanDuel market-state diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19n-fanduel-market-state-20260830
+    paths:
+      - '.github/workflows/wnba-step19n-fanduel-market-state-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+      WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+      WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+
+      - name: Sample FanDuel market availability without logging payloads
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from collections import defaultdict
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step11_multibook_shadow_board as mb
+          from sports_api import wnba_step19l_fanduel_identity_trace as trace
+          import sports_api.api.wnba_step17b_runtime  # install H/I/K/L/M compatibility chain
+
+          slate = datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date()
+          content_url = fd.FANDUEL_BASE_URL + fd.CONTENT_PAGE_PATH
+          event_url = fd.FANDUEL_BASE_URL + fd.EVENT_PAGE_PATH
+          common = {
+              '_ak': fd.FANDUEL_PUBLIC_WEB_KEY,
+              'page': 'CUSTOM',
+              'customPageId': fd.WNBA_CUSTOM_PAGE_ID,
+              'timezone': 'America/New_York',
+          }
+
+          def summarize_market(market):
+              stat = fd._market_stat(market)
+              runners = fd._iter_mapping_or_list(market.get('runners'))
+              declared = fd._declares_player_market(market, runners)
+              status = fd._clean(market.get('marketStatus') or market.get('status')).casefold()
+              sides_by_line = defaultdict(set)
+              active_runner_count = 0
+              for runner in runners:
+                  runner_status = fd._clean(runner.get('runnerStatus') or runner.get('status')).casefold()
+                  if runner_status and runner_status not in {'active','open'}:
+                      continue
+                  parsed = fd._runner_side_line(runner)
+                  if parsed is None:
+                      continue
+                  active_runner_count += 1
+                  side, line = parsed
+                  sides_by_line[round(float(line), 6)].add(str(side))
+              complete_pairs = sum(1 for sides in sides_by_line.values() if sides == {'over','under'})
+              return stat, declared, status, active_runner_count, complete_pairs
+
+          samples=[]
+          for sample in range(1,7):
+              row={
+                  'sample': sample,
+                  'target_events': 0,
+                  'documents': 0,
+                  'raw_markets': 0,
+                  'supported_stat_markets': 0,
+                  'declared_player_markets': 0,
+                  'open_supported_player_markets': 0,
+                  'active_side_line_runners': 0,
+                  'complete_two_way_pairs': 0,
+                  'provider_status': None,
+                  'provider_records': None,
+                  'provider_error_type': None,
+                  'provider_error_message': None,
+                  'identity_error_count': None,
+              }
+              try:
+                  landing=fd._get_json(content_url,params=common,requester=None,timeout=fd.DEFAULT_TIMEOUT_SECONDS)
+                  events=[]
+                  for event in fd._extract_events(landing):
+                      day=fd._event_date(event)
+                      if day is None or day == slate:
+                          events.append(event)
+                  row['target_events']=len(events)
+                  docs=[]
+                  for event in events:
+                      eid=fd._event_id(event)
+                      if not eid:
+                          continue
+                      base=fd._get_json(event_url,params={'_ak':fd.FANDUEL_PUBLIC_WEB_KEY,'eventId':eid},requester=None,timeout=fd.DEFAULT_TIMEOUT_SECONDS)
+                      docs.append(base)
+                      for tab in fd._relevant_tab_ids(base):
+                          docs.append(fd._get_json(event_url,params={'_ak':fd.FANDUEL_PUBLIC_WEB_KEY,'eventId':eid,'tab':tab},requester=None,timeout=fd.DEFAULT_TIMEOUT_SECONDS))
+                  row['documents']=len(docs)
+                  for doc in docs:
+                      markets=fd._extract_markets(doc)
+                      row['raw_markets'] += len(markets)
+                      for market in markets:
+                          stat,declared,status,runner_count,pairs=summarize_market(market)
+                          if stat not in fd.SUPPORTED_STATS:
+                              continue
+                          row['supported_stat_markets'] += 1
+                          if declared:
+                              row['declared_player_markets'] += 1
+                          if declared and (not status or status in {'open','active'}):
+                              row['open_supported_player_markets'] += 1
+                              row['active_side_line_runners'] += runner_count
+                              row['complete_two_way_pairs'] += pairs
+              except Exception as exc:
+                  row['scan_error_type']=type(exc).__name__
+                  row['scan_error_message']=' '.join(str(exc).split())[:240]
+
+              try:
+                  bridge=fd.fetch_step11c_fanduel_provider_bridge(
+                      season=2026,
+                      slate_date=slate.isoformat(),
+                      evaluated_at=datetime.now(timezone.utc),
+                      env=os.environ,
+                  )
+                  payload=mb._verify_bridge(bridge,provider=fd.PROVIDER)
+                  row['provider_status']='ready'
+                  row['provider_records']=len(payload.get('records') or [])
+              except Exception as exc:
+                  row['provider_status']='error'
+                  row['provider_error_type']=type(exc).__name__
+                  row['provider_error_message']=' '.join(str(exc).split())[:300]
+              row['identity_error_count']=trace.get_step19l_fanduel_identity_trace().get('identity_error_count')
+              samples.append(row)
+              print('STEP19N_MARKET_STATE_SAMPLE',json.dumps(row,sort_keys=True),flush=True)
+              time.sleep(3)
+
+          classification={
+              'all_transport_reached_events': all(int(x.get('target_events') or 0)>0 and not x.get('scan_error_type') for x in samples),
+              'any_complete_two_way_pair': any(int(x.get('complete_two_way_pairs') or 0)>0 for x in samples),
+              'any_provider_ready': any(x.get('provider_status')=='ready' for x in samples),
+              'all_provider_errors_are_no_complete_records': all(
+                  x.get('provider_status')=='ready' or (
+                      x.get('provider_error_type')=='WNBAStep11FanDuelProviderNotReadyError'
+                      and x.get('provider_error_message')=='Step 11C produced no complete official-identity two-way FanDuel records.'
+                  )
+                  for x in samples
+              ),
+              'identity_error_seen': any(int(x.get('identity_error_count') or 0)>0 for x in samples),
+          }
+          print('STEP19N_MARKET_STATE_SUMMARY',json.dumps(classification,sort_keys=True),flush=True)
+          PY
