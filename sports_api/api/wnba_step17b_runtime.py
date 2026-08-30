@@ -1,6 +1,11 @@
-from fastapi import APIRouter
+import hmac
+import os
+import time
+
+from fastapi import APIRouter, Header, HTTPException
 
 from sports_api.wnba_step17b_always_on_runtime import get_step17b_status
+from sports_api import wnba_projection_input_snapshot as _step4w
 from sports_api import wnba_step19e_cooldown_aware_cycle as _step19e
 from sports_api import wnba_step19g_hosted_provider_trace as _step19g
 from sports_api import wnba_step19h_fanduel_hosted_transport as _step19h
@@ -42,6 +47,28 @@ _step19n.install_step19n_fanduel_empty_market()
 _step20b.install_step20b_rollover_stage_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
+
+_STEP20B_PROBE_ENABLED_ENV = "WNBA_STEP20B_PROBE_ENABLED"
+_STEP20B_PROBE_TOKEN_ENV = "WNBA_STEP20B_PROBE_TOKEN"
+_STEP20B_PROBE_PLAYER_ID = 203825
+_STEP20B_PROBE_SEASON = 2026
+
+
+def _truthy(value: object) -> bool:
+    return str(value or "").strip().casefold() not in {
+        "", "0", "false", "no", "off", "disabled"
+    }
+
+
+def _authorize_step20b_probe(token: str | None) -> None:
+    if not _truthy(os.environ.get(_STEP20B_PROBE_ENABLED_ENV)):
+        raise HTTPException(status_code=404, detail="Not found")
+    expected = str(os.environ.get(_STEP20B_PROBE_TOKEN_ENV) or "")
+    supplied = str(token or "")
+    if len(expected) < 32:
+        raise HTTPException(status_code=503, detail="Diagnostic probe is not configured")
+    if not supplied or not hmac.compare_digest(supplied, expected):
+        raise HTTPException(status_code=403, detail="Forbidden")
 
 
 @router.get("/step17b")
@@ -101,6 +128,51 @@ def step19n_fanduel_empty_market_status():
 def step20b_rollover_stage_trace_status():
     """Return sanitized in-flight timing for the current projection assembly."""
     return _step20b.installation_status()
+
+
+@router.post("/step20b-player-opportunity-probe")
+def step20b_player_opportunity_probe(
+    x_step20b_diagnostic_token: str | None = Header(
+        default=None,
+        alias="X-Step20B-Diagnostic-Token",
+    ),
+):
+    """Run one fixed, token-gated Step4V opportunity probe on diagnostic deploys only."""
+    _authorize_step20b_probe(x_step20b_diagnostic_token)
+    started = time.perf_counter()
+    try:
+        result = _step4w.get_player_opportunity_context(
+            _STEP20B_PROBE_PLAYER_ID,
+            _STEP20B_PROBE_SEASON,
+            season_type="Regular Season",
+            last_n_games=5,
+            include_current_availability=True,
+        )
+        return {
+            "data_type": "wnba_step20b_player_opportunity_probe",
+            "model_version": _step20b.MODEL_VERSION,
+            "status": "returned",
+            "player_id": _STEP20B_PROBE_PLAYER_ID,
+            "season": _STEP20B_PROBE_SEASON,
+            "elapsed_seconds": round(time.perf_counter() - started, 3),
+            "result_summary": {
+                "data_type": result.get("data_type") if isinstance(result, dict) else None,
+                "latest_observed_team_key": result.get("latest_observed_team_key") if isinstance(result, dict) else None,
+                "requested_last_n_games": result.get("requested_last_n_games") if isinstance(result, dict) else None,
+                "components": result.get("components") if isinstance(result, dict) else None,
+            },
+        }
+    except Exception as exc:
+        return {
+            "data_type": "wnba_step20b_player_opportunity_probe",
+            "model_version": _step20b.MODEL_VERSION,
+            "status": "raised",
+            "player_id": _STEP20B_PROBE_PLAYER_ID,
+            "season": _STEP20B_PROBE_SEASON,
+            "elapsed_seconds": round(time.perf_counter() - started, 3),
+            "error_type": type(exc).__name__,
+            "error_message": str(exc)[:1000],
+        }
 
 
 @router.get("/build")
