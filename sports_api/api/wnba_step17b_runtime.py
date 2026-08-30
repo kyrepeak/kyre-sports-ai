@@ -10,6 +10,7 @@ from sports_api import wnba_step19k_market_not_ready as _step19k
 from sports_api import wnba_step19l_fanduel_identity_trace as _step19l
 from sports_api import wnba_step19m_fanduel_line_move as _step19m
 from sports_api import wnba_step19n_fanduel_empty_market as _step19n
+from sports_api import wnba_step20b_fanduel_period_filter as _step20b_period
 from sports_api import wnba_step20b_shared_input_cache as _step20b
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
@@ -32,6 +33,10 @@ _step19l.install_step19l_fanduel_identity_trace()
 # changes are quote state, while market/player/selection/side identity stays
 # immutable and fail-closed. Step19L remains inside this surface for diagnostics.
 _step19m.install_step19m_fanduel_line_move()
+# Step20B keeps the FanDuel collector on its certified full-game scope. Explicit
+# quarter/half player markets are unsupported rather than having their period
+# suffix stripped or their player identity relaxed.
+_step20b_period.install_step20b_fanduel_period_filter()
 # Step19N classifies only the exact post-fetch FanDuel
 # no-complete-two-way-records subtype as market availability. All transport,
 # upstream, landing, and identity failures remain provider failures.
@@ -95,6 +100,12 @@ def step19m_fanduel_line_move_status():
 def step19n_fanduel_empty_market_status():
     """Return non-sensitive status for exact FanDuel empty-market classification."""
     return _step19n.installation_status()
+
+
+@router.get("/step20b-fanduel-period-filter")
+def step20b_fanduel_period_filter_status():
+    """Return non-sensitive full-game FanDuel market-scope filter status."""
+    return _step20b_period.installation_status()
 
 
 @router.get("/step20b-shared-input-cache")
