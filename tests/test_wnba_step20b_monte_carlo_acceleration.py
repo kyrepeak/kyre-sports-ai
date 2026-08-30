@@ -3,9 +3,11 @@ from __future__ import annotations
 import time
 
 import numpy as np
+import pytest
 
 from sports_api import wnba_step8_joint_monte_carlo as step8d
 from sports_api import wnba_step20b_monte_carlo_acceleration as accel
+from sports_api import wnba_step20b_monte_carlo_cdf_compat as cdf_compat
 
 
 SAFE_ENV = {
@@ -149,8 +151,6 @@ def test_accelerated_mapping_is_faster_than_frozen_mapping_on_same_draws():
         accelerated_counts = candidate
 
     assert np.array_equal(accelerated_counts, frozen_counts)
-    # Keep this deliberately loose for shared CI runners. The optimization
-    # removes an O(draws*3) transcendental transform, so it should not regress.
     assert accelerated_best < frozen_best
 
 
@@ -168,6 +168,68 @@ def test_installer_only_rebinds_step8d_simulator(monkeypatch):
     assert guards["same_latent_gaussian_draws"] is True
     assert guards["same_marginal_cdf_tables"] is True
     assert guards["same_discrete_count_mapping_required"] is True
+    assert guards["simulations_modified"] is False
+    assert guards["batch_size_modified"] is False
+    assert guards["projection_math_modified"] is False
+    assert guards["readiness_relaxed"] is False
+
+
+def test_frozen_cdf_tail_roundoff_is_capped_without_changing_searchsorted_mapping():
+    raw = np.asarray(
+        [0.05, 0.40, 0.90, 1.0 + np.finfo(np.float64).eps, 1.0],
+        dtype=np.float64,
+    )
+    canonical, changed = cdf_compat._canonicalize_frozen_cdf(raw)
+
+    assert changed is True
+    assert canonical[-2] == 1.0
+    assert canonical[-1] == 1.0
+    assert np.all(np.diff(canonical) >= 0.0)
+
+    uniforms = np.linspace(0.0, 1.0, 200_001, dtype=np.float64)
+    frozen = np.searchsorted(raw, uniforms, side="left")
+    repaired = np.searchsorted(canonical, uniforms, side="left")
+    assert np.array_equal(repaired, frozen)
+
+    thresholds = cdf_compat._latent_threshold_table_compatible(raw)
+    normals = np.linspace(-8.0, 8.0, 250_001, dtype=np.float64)
+    frozen_from_normals = np.searchsorted(
+        raw, step8d._standard_normal_cdf(normals), side="left"
+    )
+    accelerated_from_normals = np.searchsorted(thresholds, normals, side="left")
+    assert np.array_equal(accelerated_from_normals, frozen_from_normals)
+
+
+def test_cdf_compat_still_rejects_genuine_in_domain_decrease():
+    raw = np.asarray([0.10, 0.80, 0.79, 1.0], dtype=np.float64)
+    with pytest.raises(step8d.WNBAStep8MonteCarloUpstreamError):
+        cdf_compat._canonicalize_frozen_cdf(raw)
+
+
+def test_cdf_compat_still_rejects_out_of_tolerance_overshoot():
+    raw = np.asarray(
+        [0.10, 0.80, 1.0 + 10.0 * cdf_compat.CDF_ROUNDOFF_TOLERANCE, 1.0],
+        dtype=np.float64,
+    )
+    with pytest.raises(step8d.WNBAStep8MonteCarloUpstreamError):
+        cdf_compat._canonicalize_frozen_cdf(raw)
+
+
+def test_cdf_compat_installer_only_rebinds_accelerator_threshold_helper(monkeypatch):
+    monkeypatch.setattr(accel, "_latent_threshold_table", cdf_compat._ORIGINAL_LATENT_THRESHOLD_TABLE)
+    monkeypatch.setattr(cdf_compat, "_INSTALLED", False)
+    simulator_before = step8d.simulate_step8_joint_distribution
+
+    status = cdf_compat.install_step20b_monte_carlo_cdf_compat()
+
+    assert accel._latent_threshold_table is cdf_compat._latent_threshold_table_compatible
+    assert step8d.simulate_step8_joint_distribution is simulator_before
+    assert status["installed"] is True
+    assert status["binding_active"] is True
+    guards = status["guardrails"]
+    assert guards["only_values_above_one_within_roundoff_tolerance_capped"] is True
+    assert guards["genuine_in_domain_decreases_accepted"] is False
+    assert guards["frozen_searchsorted_mapping_verified"] is True
     assert guards["simulations_modified"] is False
     assert guards["batch_size_modified"] is False
     assert guards["projection_math_modified"] is False
