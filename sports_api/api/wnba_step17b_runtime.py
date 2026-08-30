@@ -11,6 +11,7 @@ from sports_api import wnba_step19l_fanduel_identity_trace as _step19l
 from sports_api import wnba_step19m_fanduel_line_move as _step19m
 from sports_api import wnba_step19n_fanduel_empty_market as _step19n
 from sports_api import wnba_step20b_rollover_stage_trace as _step20b
+from sports_api.runtime_fingerprint import get_runtime_build_identity
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -100,3 +101,9 @@ def step19n_fanduel_empty_market_status():
 def step20b_rollover_stage_trace_status():
     """Return sanitized in-flight timing for the current projection assembly."""
     return _step20b.installation_status()
+
+
+@router.get("/build")
+def runtime_build_identity():
+    """Return the running process's source-byte identity, not a provider SHA claim."""
+    return get_runtime_build_identity()
