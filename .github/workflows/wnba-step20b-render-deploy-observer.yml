@@ -49,11 +49,11 @@ jobs:
           public=os.environ['RENDER_SERVICE_URL']
           def get(path):
               try:
-                  req=urllib.request.Request(public+path,headers={'User-Agent':'kyre-step20b-observer/1.0'})
+                  req=urllib.request.Request(public+path,headers={'User-Agent':'kyre-step20b-observer/1.1'})
                   with urllib.request.urlopen(req,timeout=30) as r:
                       return {'http':r.status,'body':json.loads(r.read().decode())}
               except Exception as exc:
                   return {'error_type':type(exc).__name__,'error':str(exc)[:300]}
-          for path in ('/api/v1/wnba/runtime/step17b','/api/v1/wnba/runtime/step20b-render-inflight-trace','/api/v1/wnba/runtime/step20b-shared-input-cache'):
+          for path in ('/api/v1/wnba/runtime/step17b','/api/v1/wnba/runtime/step20b-render-inflight-trace','/api/v1/wnba/runtime/step20b-shared-input-cache','/api/v1/wnba/runtime/step19j-runtime-acceleration'):
               print('STEP20B_RENDER_SURFACE',path,json.dumps(get(path),sort_keys=True),flush=True)
           PY
