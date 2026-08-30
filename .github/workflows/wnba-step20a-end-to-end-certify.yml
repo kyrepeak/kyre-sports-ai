@@ -19,11 +19,40 @@ env:
   STEP19_FREEZE_SHA: 733155d93e1e1657f56fb3d1aac9694d2c54c945
   STEP19_PROD_SHA: aaf8b8a5425ea6e1b0ab33e6c42f35c95e8905ab
   RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+  WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+  WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+  WNBA_STEP10_FASTAPI_ENABLED: 'true'
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+  WNBA_STEP9_FASTAPI_ENABLED: 'true'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+  WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+  WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+  WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+  WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
   WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
   WNBA_BOARD_SCHEDULER_ENABLED: 'false'
   WNBA_STEP12_SCHEDULER_ENABLED: 'false'
   WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
   WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
   WNBA_PERSISTENCE_ENABLED: 'false'
   WNBA_SUPABASE_WRITE_ENABLED: 'false'
   WNBA_WAGERING_ENABLED: 'false'
@@ -97,17 +126,22 @@ jobs:
             tests/test_wnba_step10_refresh_controller.py \
             tests/test_wnba_step10_live_market_board.py
 
-      - name: Multibook runtime and consumer regression wall
+      - name: Frozen sportsbook-provider regression wall in clean processes
         run: |
-          python -m pytest -q \
-            tests/test_wnba_step11_draftkings_provider.py \
-            tests/test_wnba_step11_fanduel_provider.py \
-            tests/test_wnba_step11_multibook_shadow_board.py \
-            tests/test_wnba_step11_controlled_automation.py \
-            tests/test_wnba_step12_shadow_runner.py \
-            tests/test_wnba_step12b_live_runtime_assembly.py \
-            tests/test_wnba_step12c_live_board_runtime.py \
-            tests/test_wnba_step18a_streamlit_consumer.py
+          # Each frozen provider layer is intentionally a separate Python process.
+          # Step19 compatibility uses process-local monkeypatches and must not
+          # contaminate the frozen contract tests that precede it.
+          python -m pytest -q tests/test_wnba_step11_draftkings_provider.py
+          python -m pytest -q tests/test_wnba_step11_fanduel_provider.py
+          python -m pytest -q tests/test_wnba_step11_multibook_shadow_board.py
+          python -m pytest -q tests/test_wnba_step11_controlled_automation.py
+
+      - name: Frozen runtime and consumer regression wall in clean processes
+        run: |
+          python -m pytest -q tests/test_wnba_step12_shadow_runner.py
+          python -m pytest -q tests/test_wnba_step12b_live_runtime_assembly.py
+          python -m pytest -q tests/test_wnba_step12c_live_board_runtime.py
+          python -m pytest -q tests/test_wnba_step18a_streamlit_consumer.py
 
       - name: Step19 production-compatibility regression wall
         run: |
@@ -151,10 +185,9 @@ jobs:
 
       - name: Prove deterministic end-to-end board and consumer seams
         run: |
-          python -m pytest -q \
-            tests/test_wnba_step12b_live_runtime_assembly.py::Tests::test_full_frozen_runtime_reuses_each_provider_bridge_once \
-            tests/test_wnba_step12c_live_board_runtime.py \
-            tests/test_wnba_step18a_streamlit_consumer.py::test_capture_exposes_already_computed_board_and_freshness_without_recompute
+          python -m pytest -q tests/test_wnba_step12b_live_runtime_assembly.py::Tests::test_full_frozen_runtime_reuses_each_provider_bridge_once
+          python -m pytest -q tests/test_wnba_step12c_live_board_runtime.py
+          python -m pytest -q tests/test_wnba_step18a_streamlit_consumer.py::test_capture_exposes_already_computed_board_and_freshness_without_recompute
           echo STEP20A_DETERMINISTIC_FULL_CHAIN_CERTIFIED
 
   current-live-witness:
@@ -175,8 +208,6 @@ jobs:
 
           last=None
           safe_not_ready_seen=0
-          # 84 * 15s = 21 minutes. This intentionally spans the Eastern-date rollover
-          # when Step20A starts near midnight ET, without waiting indefinitely.
           for poll in range(1,85):
               try:
                   rt=get('/api/v1/wnba/runtime/step17b')
@@ -228,7 +259,6 @@ jobs:
               if poll % 4 == 0:
                   print('STEP20A_LIVE_WAIT',json.dumps(last,sort_keys=True),flush=True)
 
-              # Real provider failures remain terminal; Step20A never hides them as market state.
               if runtime_failures > 0:
                   raise SystemExit('STEP20A_PROVIDER_OR_RUNTIME_FAILURE '+json.dumps(last,sort_keys=True))
               if identity_errors > 0:
