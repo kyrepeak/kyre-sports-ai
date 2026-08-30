@@ -1,0 +1,116 @@
+name: WNBA Step19J input profile
+
+on:
+  push:
+    branches: [wnba-step19j-step8-runtime-20260830]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step19j-input-profile
+  cancel-in-progress: true
+
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+      - name: Profile one live target input assembly
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from collections import defaultdict
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19i_official_slate_transport as s19i
+          from sports_api import wnba_projection_input_snapshot as snap
+          from sports_api import wnba_player_opportunity_context as opp
+
+          s19i.install_step19i_official_slate_transport()
+          totals=defaultdict(float); counts=defaultdict(int)
+          def timed(name, fn):
+              def wrapper(*args, **kwargs):
+                  start=time.perf_counter()
+                  try: return fn(*args, **kwargs)
+                  finally:
+                      elapsed=time.perf_counter()-start
+                      totals[name]+=elapsed; counts[name]+=1
+                      print('STEP19J_INPUT_STAGE',json.dumps({'stage':name,'call':counts[name],'seconds':round(elapsed,3)},sort_keys=True),flush=True)
+              return wrapper
+
+          # Drill into Step 4V opportunity.
+          opp.get_player_recent_rotation_context=timed('opportunity_rotation',opp.get_player_recent_rotation_context)
+          opp.get_player_recent_event_feature_context=timed('opportunity_event_features',opp.get_player_recent_event_feature_context)
+          opp.get_player_role_context_dataset=timed('opportunity_role_optional',opp.get_player_role_context_dataset)
+          opp.get_lineups_dataset=timed('opportunity_lineups_optional',opp.get_lineups_dataset)
+          opp.get_team_availability_context_dataset=timed('opportunity_team_availability_optional',opp.get_team_availability_context_dataset)
+
+          # Drill into Step 4W snapshot. These globals are looked up at call time.
+          snap.get_player_opportunity_context=timed('snapshot_player_opportunity',snap.get_player_opportunity_context)
+          snap.get_game_rest_travel_context=timed('snapshot_rest_travel',snap.get_game_rest_travel_context)
+          snap.get_game_availability_context_dataset=timed('snapshot_game_availability',snap.get_game_availability_context_dataset)
+          snap.get_player_shot_chart_dataset=timed('snapshot_player_shot',snap.get_player_shot_chart_dataset)
+          snap.get_opponent_defense_by_shot_zone_dataset=timed('snapshot_opponent_zone',snap.get_opponent_defense_by_shot_zone_dataset)
+          snap.get_player_advanced_stats_dataset=timed('snapshot_player_advanced',snap.get_player_advanced_stats_dataset)
+          snap.get_team_advanced_stats_dataset=timed('snapshot_team_advanced',snap.get_team_advanced_stats_dataset)
+          snap.get_game_whistle_context=timed('snapshot_whistle',snap.get_game_whistle_context)
+          snap.get_matchup_source_status=timed('snapshot_matchup_status',snap.get_matchup_source_status)
+
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          evaluated=datetime.now(timezone.utc)
+          dk_bridge,_=s12b._fetch_provider_bridge(provider=s12b.draftkings.PROVIDER,fetcher=s12b.draftkings.fetch_step11a_draftkings_provider_bridge,season=2026,slate_date=slate,evaluated_at=evaluated,attempts=1,requester=None,roster_loader=None,env=os.environ)
+          fd_bridge,_=s12b._fetch_provider_bridge(provider=s12b.fanduel.PROVIDER,fetcher=s12b.fanduel.fetch_step11c_fanduel_provider_bridge,season=2026,slate_date=slate,evaluated_at=evaluated,attempts=1,requester=None,roster_loader=None,env=os.environ)
+          targets,_=s12b._exact_multibook_targets(s12b._payload_records(dk_bridge,s12b.draftkings.PROVIDER),s12b._payload_records(fd_bridge,s12b.fanduel.PROVIDER))
+          if not targets: raise SystemExit('no live projection targets')
+          game_id,player_id=targets[0]
+          start=time.perf_counter()
+          handoff=s12b.step8a.get_player_game_step8_projection_handoff(player_id,game_id,env=os.environ)
+          elapsed=time.perf_counter()-start
+          summary={'target_count':len(targets),'handoff_seconds':round(elapsed,3),'ready':handoff.get('readiness') in {'READY','READY_WITH_WARNINGS'},'stage_totals_seconds':{k:round(v,3) for k,v in sorted(totals.items())},'stage_call_counts':{k:int(v) for k,v in sorted(counts.items())}}
+          print('STEP19J_INPUT_PROFILE_SUMMARY',json.dumps(summary,sort_keys=True),flush=True)
+          print('STEP19J_INPUT_PROFILE_CERTIFIED')
+          PY
