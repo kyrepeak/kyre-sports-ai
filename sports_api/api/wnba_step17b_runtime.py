@@ -20,6 +20,7 @@ from sports_api import wnba_step19m_fanduel_line_move as _step19m
 from sports_api import wnba_step19n_fanduel_empty_market as _step19n
 from sports_api import wnba_step20b_runtime_acceleration as _step20b_accel
 from sports_api import wnba_step20b_optional_workload_compat as _step20b_workload
+from sports_api import wnba_step20b_monte_carlo_acceleration as _step20b_mc
 from sports_api import wnba_step20b_rollover_stage_trace as _step20b
 from sports_api.runtime_fingerprint import get_runtime_build_identity
 
@@ -34,6 +35,9 @@ _step19m.install_step19m_fanduel_line_move()
 _step19n.install_step19n_fanduel_empty_market()
 _step20b_accel.install_step20b_runtime_acceleration()
 _step20b_workload.install_step20b_optional_workload_compat()
+# Install the semantics-preserving Step8D accelerator before the diagnostic
+# trace wraps Step8D, so the trace measures the accelerated implementation.
+_step20b_mc.install_step20b_monte_carlo_acceleration()
 _step20b.install_step20b_rollover_stage_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
@@ -93,6 +97,7 @@ def _full_probe_worker() -> None:
         summary = result.get("runtime_summary") if isinstance(result, dict) else None
         accel = _step20b_accel.installation_status()
         workload = _step20b_workload.installation_status()
+        monte_carlo = _step20b_mc.installation_status()
         _set_full_probe(
             status="returned",
             elapsed_seconds=round(time.perf_counter() - started, 3),
@@ -107,6 +112,7 @@ def _full_probe_worker() -> None:
             runtime_summary=summary,
             acceleration_last_cycle=accel.get("last_cycle"),
             optional_workload_compat=workload,
+            monte_carlo_acceleration=monte_carlo,
         )
     except Exception as exc:
         _set_full_probe(
@@ -116,6 +122,7 @@ def _full_probe_worker() -> None:
             error_message=str(exc)[:1500],
             acceleration_last_cycle=_step20b_accel.installation_status().get("last_cycle"),
             optional_workload_compat=_step20b_workload.installation_status(),
+            monte_carlo_acceleration=_step20b_mc.installation_status(),
         )
 
 
@@ -174,6 +181,11 @@ def step20b_optional_workload_compat_status():
     return _step20b_workload.installation_status()
 
 
+@router.get("/step20b-monte-carlo-acceleration")
+def step20b_monte_carlo_acceleration_status():
+    return _step20b_mc.installation_status()
+
+
 @router.get("/step20b-rollover-stage-trace")
 def step20b_rollover_stage_trace_status():
     return _step20b.installation_status()
@@ -205,6 +217,7 @@ def step20b_player_opportunity_probe(
             "data_type": "wnba_step20b_player_opportunity_probe",
             "trace_model_version": _step20b.MODEL_VERSION,
             "acceleration_model_version": _step20b_accel.MODEL_VERSION,
+            "monte_carlo_acceleration_model_version": _step20b_mc.MODEL_VERSION,
             "status": "returned",
             "player_id": _STEP20B_PROBE_PLAYER_ID,
             "season": _STEP20B_PROBE_SEASON,
@@ -261,6 +274,7 @@ def step20b_full_runtime_probe_status(
             "active_calls": active,
             "recent_completed_tail": recent[-8:],
         }
+        result["monte_carlo_acceleration"] = _step20b_mc.installation_status()
     result.pop("started_at_monotonic", None)
     return result
 
