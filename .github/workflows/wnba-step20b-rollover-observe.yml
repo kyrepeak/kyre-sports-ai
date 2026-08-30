@@ -1,0 +1,65 @@
+name: WNBA Step20B rollover runtime observer
+
+on:
+  push:
+    branches:
+      - wnba-step20b-rollover-runtime-diagnostic-20260830
+    paths:
+      - '.github/workflows/wnba-step20b-rollover-observe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Observe current production runtime and compatibility chain
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          paths={
+            'step17b':'/api/v1/wnba/runtime/step17b',
+            'consumer':'/api/v1/wnba/consumer/latest',
+            'dk':'/api/v1/wnba/markets/direct/draftkings/status',
+            'g':'/api/v1/wnba/runtime/step19g-provider-trace',
+            'h':'/api/v1/wnba/runtime/step19h-fanduel-transport',
+            'i':'/api/v1/wnba/runtime/step19i-official-slate-transport',
+            'j':'/api/v1/wnba/runtime/step19j-runtime-acceleration',
+            'k':'/api/v1/wnba/runtime/step19k-market-not-ready',
+            'l':'/api/v1/wnba/runtime/step19l-fanduel-identity-trace',
+            'm':'/api/v1/wnba/runtime/step19m-fanduel-line-move',
+            'n':'/api/v1/wnba/runtime/step19n-fanduel-empty-market',
+          }
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'User-Agent':'kyre-step20b-observer/1.0'})
+              with urllib.request.urlopen(req,timeout=45) as response:
+                  return json.loads(response.read().decode())
+          for sample in range(1,4):
+              out={}
+              for name,path in paths.items():
+                  try: out[name]=get(path)
+                  except Exception as exc: out[name]={'observer_error':type(exc).__name__,'message':str(exc)}
+              rt=out.get('step17b') or {}; c=out.get('consumer') or {}; j=out.get('j') or {}; g=out.get('g') or {}
+              summary={
+                'sample':sample,
+                'runtime':{
+                  'cycle_count':rt.get('cycle_count'),'success_count':rt.get('success_count'),'failure_count':rt.get('failure_count'),
+                  'duplicate_lease_skip_count':rt.get('duplicate_lease_skip_count'),'last_status':rt.get('last_status'),
+                  'last_cycle_started_at_utc':rt.get('last_cycle_started_at_utc'),'last_cycle_finished_at_utc':rt.get('last_cycle_finished_at_utc'),
+                  'last_slate_date':rt.get('last_slate_date'),'heartbeat_at_utc':rt.get('heartbeat_at_utc'),
+                },
+                'consumer':{'available':c.get('available'),'reason':c.get('reason'),'runtime':c.get('runtime')},
+                'step19j':{'cycle_count':j.get('cycle_count'),'last_cycle':j.get('last_cycle'),'hits':j.get('total_rest_context_hits'),'misses':j.get('total_rest_context_misses')},
+                'step19g':{'call_count':g.get('call_count'),'latest':g.get('latest')},
+                'step19h':{'invalid_json_event_count':(out.get('h') or {}).get('invalid_json_event_count'),'event_count':(out.get('h') or {}).get('event_count')},
+                'step19l':{'identity_error_count':(out.get('l') or {}).get('identity_error_count')},
+                'step19n':{'transformed_count':(out.get('n') or {}).get('transformed_count'),'latest':(out.get('n') or {}).get('latest')},
+                'dk':out.get('dk'),
+              }
+              print('STEP20B_RUNTIME_OBSERVATION',json.dumps(summary,sort_keys=True),flush=True)
+              if sample<3: time.sleep(30)
+          PY
