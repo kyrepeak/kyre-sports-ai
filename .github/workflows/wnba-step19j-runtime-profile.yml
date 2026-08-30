@@ -1,128 +1,13 @@
 name: WNBA Step19J runtime profile
 
 on:
-  push:
-    branches: [wnba-step19j-step8-runtime-20260830]
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: wnba-step19j-runtime-profile
-  cancel-in-progress: true
-
 jobs:
   profile:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
-      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
-      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
-      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
-      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
-      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
-      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
-      WNBA_STEP10_FASTAPI_ENABLED: 'true'
-      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
-      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
-      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
-      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
-      WNBA_STEP9_FASTAPI_ENABLED: 'true'
-      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
-      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
-      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
-      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
-      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
-      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
-      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
-      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
-      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
-      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
-      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
-      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
-      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
-      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
-      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
-      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
-      WNBA_PERSISTENCE_ENABLED: 'false'
-      WNBA_SUPABASE_WRITE_ENABLED: 'false'
-      WNBA_WAGERING_ENABLED: 'false'
-      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Install dependencies
-        run: |
-          python -m pip install -r sports_api/requirements.txt >/dev/null
-          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
-
-      - name: Profile one exact live Step12B cycle
-        run: |
-          python - <<'PY'
-          import json, os, time
-          from collections import defaultdict
-          from datetime import datetime, timezone
-          from zoneinfo import ZoneInfo
-          from sports_api import wnba_step12b_live_runtime_assembly as s12b
-          from sports_api import wnba_step19i_official_slate_transport as s19i
-
-          s19i.install_step19i_official_slate_transport()
-          totals=defaultdict(float)
-          counts=defaultdict(int)
-
-          def timed(name, fn):
-              def wrapper(*args, **kwargs):
-                  start=time.perf_counter()
-                  try:
-                      return fn(*args, **kwargs)
-                  finally:
-                      elapsed=time.perf_counter()-start
-                      totals[name]+=elapsed
-                      counts[name]+=1
-                      print('STEP19J_STAGE',json.dumps({'stage':name,'call':counts[name],'seconds':round(elapsed,3)},sort_keys=True),flush=True)
-              return wrapper
-
-          s12b._fetch_provider_bridge=timed('provider_bridge',s12b._fetch_provider_bridge)
-          s12b._exact_multibook_targets=timed('exact_multibook_targets',s12b._exact_multibook_targets)
-          s12b.step8a.get_player_game_step8_projection_handoff=timed('step8a_handoff',s12b.step8a.get_player_game_step8_projection_handoff)
-          s12b.step8b.build_step8_official_box_baseline=timed('step8b_baseline',s12b.step8b.build_step8_official_box_baseline)
-          s12b.step8c.build_step8_context_adjusted_projection=timed('step8c_adjustment',s12b.step8c.build_step8_context_adjusted_projection)
-          s12b.step8d.simulate_step8_joint_distribution=timed('step8d_5m_simulation',s12b.step8d.simulate_step8_joint_distribution)
-          s12b.step12a.run_step12a_shadow_job=timed('step12a_shadow_job',s12b.step12a.run_step12a_shadow_job)
-
-          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
-          req=s12b.build_step12b_request(
-              season=2026,
-              slate_date=slate,
-              evaluated_at=datetime.now(timezone.utc),
-              previous_state=None,
-              controller_policy={'provider_attempts':1},
-          )
-          overall=time.perf_counter()
-          out=s12b.run_step12b_live_runtime_job(req,env=os.environ)
-          overall=time.perf_counter()-overall
-          discovery=out.get('provider_discovery') or {}
-          overlap=out.get('market_overlap') or {}
-          runtime=out.get('runtime_summary') or {}
-          summary={
-              'slate':slate,
-              'overall_seconds':round(overall,3),
-              'draftkings_records':int((discovery.get('draftkings') or {}).get('record_count') or 0),
-              'fanduel_records':int((discovery.get('fanduel') or {}).get('record_count') or 0),
-              'exact_line_groups':int(overlap.get('exact_line_multibook_group_count') or 0),
-              'unique_projection_targets':int(overlap.get('unique_projection_target_count') or 0),
-              'built_distributions':int(runtime.get('step8_distribution_count') or 0),
-              'stage_totals_seconds':{k:round(v,3) for k,v in sorted(totals.items())},
-              'stage_call_counts':{k:int(v) for k,v in sorted(counts.items())},
-          }
-          print('STEP19J_PROFILE_SUMMARY',json.dumps(summary,sort_keys=True),flush=True)
-          if out.get('status')!='healthy' or out.get('health')!='healthy':
-              raise SystemExit('profile cycle was not healthy')
-          if summary['built_distributions'] <= 0:
-              raise SystemExit('profile built no Step8 distributions')
-          print('STEP19J_PROFILE_CERTIFIED')
-          PY
+      - run: echo 'Whole-cycle profile completed in run 33286889956; retained for audit only.'
