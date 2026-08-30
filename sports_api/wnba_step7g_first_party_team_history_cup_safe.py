@@ -61,7 +61,9 @@ def install_exact_cup_exclusion() -> None:
     """Install the exact-ID and transient-transport overlay in this process.
 
     The guards refuse to overwrite unknown third-party patches. Repeated calls
-    are idempotent.
+    are idempotent. The expensive Step 4J team-history cache is invalidated only
+    when this call actually changes an adapter seam; a no-op reinstall preserves
+    still-valid cached official data.
     """
     current_marker = base._regular_season_marker
     if current_marker not in {
@@ -78,9 +80,15 @@ def install_exact_cup_exclusion() -> None:
             "Step 7G Cup-safe overlay refuses to replace an unknown box-score loader override."
         )
 
+    marker_changed = current_marker is _ORIGINAL_REGULAR_SEASON_MARKER
+    loader_changed = current_loader is _ORIGINAL_BOX_LOADER
     base._regular_season_marker = _cup_safe_regular_season_marker
     base.get_first_party_game_box_score_dataset = _retrying_box_loader
-    base._CACHE.clear()
+    if marker_changed or loader_changed:
+        # A real seam transition can change which rows/transport are valid, so
+        # existing derived history must be discarded. Repeated idempotent
+        # installs must not throw away a valid TTL-bounded official-data cache.
+        base._CACHE.clear()
 
 
 def restore_base_marker_for_tests() -> None:
