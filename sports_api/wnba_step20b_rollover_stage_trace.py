@@ -1,10 +1,11 @@
 """WNBA Step20B: sanitized in-flight stage trace for rollover projection assembly.
 
 This diagnostic wraps the high-level Step8 call boundaries used by Step12B and
-selected Step8A/Step4W input-construction boundaries beneath the handoff. It
-deliberately does not patch any frozen Step7G/source seam. Arguments, return
-values, exceptions, ordering, projections, simulations, provider behavior,
-readiness, persistence, and wagering remain unchanged.
+identity-safe Step8A/Step4W input-construction boundaries beneath the handoff.
+Step4W optional components are timed through its dispatcher rather than by
+replacing Step7G-protected provider aliases. Arguments, return values,
+exceptions, ordering, projections, simulations, provider behavior, readiness,
+persistence, and wagering remain unchanged.
 """
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ from datetime import datetime, timezone
 from functools import wraps
 import threading
 import time
+import traceback
 from typing import Any, Callable, Mapping
 
 from sports_api import wnba_step8_projection_handoff as step8a
@@ -25,7 +27,22 @@ from sports_api import wnba_step8_joint_monte_carlo as step8d
 from sports_api import wnba_step12b_live_runtime_assembly as step12b
 
 SOURCE = "Kyre Sports API WNBA Step20B rollover in-flight stage trace"
-MODEL_VERSION = "wnba_step20b_rollover_stage_trace_v3"
+MODEL_VERSION = "wnba_step20b_rollover_stage_trace_v4"
+
+# Step7G identity-guards these Step4W aliases. Never wrap them here: doing so
+# makes the next Step7G install/revalidation look like an unknown override.
+_STEP7G_PROTECTED_STEP4W_ATTRS: tuple[str, ...] = (
+    "get_player_shot_chart_dataset",
+    "get_opponent_defense_by_shot_zone_dataset",
+    "get_player_advanced_stats_dataset",
+    "get_team_advanced_stats_dataset",
+    "get_game_whistle_context",
+)
+
+# The Step4W optional dispatcher receives every optional component call,
+# including the protected providers above, so it gives us per-component timing
+# without changing any protected provider identity.
+_OPTIONAL_DISPATCH_STAGE = "step4w_optional_component_dispatch"
 
 _STAGE_TARGETS: tuple[tuple[str, Any, str], ...] = (
     ("step8a_handoff", step8a, "get_player_game_step8_projection_handoff"),
@@ -33,12 +50,7 @@ _STAGE_TARGETS: tuple[tuple[str, Any, str], ...] = (
     ("step4x_snapshot_build", step4x, "get_player_game_projection_input_snapshot"),
     ("step4w_player_opportunity", step4w, "get_player_opportunity_context"),
     ("step4w_rest_travel", step4w, "get_game_rest_travel_context"),
-    ("step4w_game_availability", step4w, "get_game_availability_context_dataset"),
-    ("step4w_player_shot_chart", step4w, "get_player_shot_chart_dataset"),
-    ("step4w_opponent_zone_defense", step4w, "get_opponent_defense_by_shot_zone_dataset"),
-    ("step4w_player_advanced", step4w, "get_player_advanced_stats_dataset"),
-    ("step4w_team_advanced", step4w, "get_team_advanced_stats_dataset"),
-    ("step4w_game_whistle_context", step4w, "get_game_whistle_context"),
+    (_OPTIONAL_DISPATCH_STAGE, step4w, "_optional_component"),
     ("step4w_matchup_source_status", step4w, "get_matchup_source_status"),
     ("step8b_baseline", step8b, "build_step8_official_box_baseline"),
     ("step8c_context_adjustment", step8c, "build_step8_context_adjusted_projection"),
@@ -85,11 +97,18 @@ def _int_or_none(value: Any) -> int | None:
         return None
 
 
+def _event_stage(stage: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
+    if stage != _OPTIONAL_DISPATCH_STAGE:
+        return stage
+    raw = args[0] if args else kwargs.get("name")
+    name = str(raw).strip() if raw is not None else "unknown"
+    safe_name = "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in name)
+    return f"step4w_optional_{safe_name or 'unknown'}"
+
+
 def _explicit_call_shape(stage: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, Any]:
     game_id: str | None = None
     player_id: int | None = None
-    variant: str | None = None
-    subject_key: str | None = None
 
     if stage == "projection_distribution_total":
         game_id = str(kwargs.get("game_id") or "") or None
@@ -102,30 +121,13 @@ def _explicit_call_shape(stage: str, args: tuple[Any, ...], kwargs: dict[str, An
     elif stage == "step4w_player_opportunity":
         p = args[0] if args else kwargs.get("player_id")
         player_id = _int_or_none(p)
-    elif stage in {"step4w_rest_travel", "step4w_game_availability", "step4w_game_whistle_context"}:
+    elif stage == "step4w_rest_travel":
         g = args[0] if args else kwargs.get("game_id")
         game_id = str(g) if g is not None else None
-    elif stage == "step4w_player_shot_chart":
-        p = args[0] if args else kwargs.get("player_id")
-        player_id = _int_or_none(p)
-        variant = "vs_opponent" if kwargs.get("opponent_team_key") else "recent"
-    elif stage == "step4w_player_advanced":
-        player_id = _int_or_none(kwargs.get("player_id"))
-    elif stage in {"step4w_opponent_zone_defense", "step4w_team_advanced"}:
-        if stage == "step4w_opponent_zone_defense":
-            raw_key = args[0] if args else kwargs.get("team_key")
-        else:
-            raw_key = kwargs.get("team_key")
-        subject_key = str(raw_key) if raw_key is not None else None
     elif stage in {"step8b_baseline", "step8c_context_adjustment", "step8d_monte_carlo_5m"} and args:
         game_id, player_id = _ids_from_mapping(args[0])
 
-    result: dict[str, Any] = {"game_id": game_id, "player_id": player_id}
-    if variant is not None:
-        result["variant"] = variant
-    if subject_key is not None:
-        result["subject_key"] = subject_key
-    return result
+    return {"game_id": game_id, "player_id": player_id}
 
 
 def _parent_for_thread_locked(thread_id: int) -> dict[str, Any] | None:
@@ -135,6 +137,24 @@ def _parent_for_thread_locked(thread_id: int) -> dict[str, Any] | None:
     return None
 
 
+def _error_metadata(exc: BaseException) -> dict[str, Any]:
+    frames = traceback.extract_tb(exc.__traceback__)
+    tail = [
+        {
+            "file": str(frame.filename).replace("\\", "/").rsplit("/", 1)[-1],
+            "line": int(frame.lineno),
+            "function": str(frame.name),
+        }
+        for frame in frames[-8:]
+    ]
+    return {
+        "error_type": type(exc).__name__,
+        "error_message": str(exc)[:1000],
+        "error_repr": repr(exc)[:1000],
+        "traceback_tail": tail,
+    }
+
+
 def _make_wrapper(stage: str, upstream: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(upstream)
     def traced(*args: Any, **kwargs: Any) -> Any:
@@ -142,7 +162,9 @@ def _make_wrapper(stage: str, upstream: Callable[..., Any]) -> Callable[..., Any
         started_perf = time.perf_counter()
         started_utc = _now()
         thread_id = threading.get_ident()
-        explicit_shape = _explicit_call_shape(stage, args, kwargs)
+        event_stage = _event_stage(stage, args, kwargs)
+        explicit_shape = _explicit_call_shape(event_stage, args, kwargs)
+
         with _LOCK:
             parent = _parent_for_thread_locked(thread_id)
             parent_sequence = parent.get("sequence") if parent is not None else None
@@ -154,35 +176,41 @@ def _make_wrapper(stage: str, upstream: Callable[..., Any]) -> Callable[..., Any
                     safe_shape["player_id"] = parent.get("player_id")
             _SEQUENCE += 1
             sequence = _SEQUENCE
-            _COUNTS[stage] = int(_COUNTS.get(stage, 0)) + 1
+            _COUNTS[event_stage] = int(_COUNTS.get(event_stage, 0)) + 1
             active = {
                 "sequence": sequence,
                 "parent_sequence": parent_sequence,
-                "stage": stage,
+                "stage": event_stage,
                 "started_at_utc": started_utc,
                 **safe_shape,
                 "_thread_id": thread_id,
             }
             _ACTIVE_STACK.append(active)
+
         status = "returned"
-        error_type: str | None = None
+        error: dict[str, Any] = {
+            "error_type": None,
+            "error_message": None,
+            "error_repr": None,
+            "traceback_tail": [],
+        }
         try:
             return upstream(*args, **kwargs)
         except Exception as exc:
             status = "raised"
-            error_type = type(exc).__name__
+            error = _error_metadata(exc)
             raise
         finally:
             elapsed = round(time.perf_counter() - started_perf, 3)
             event = {
                 "sequence": sequence,
                 "parent_sequence": parent_sequence,
-                "stage": stage,
+                "stage": event_stage,
                 "started_at_utc": started_utc,
                 "finished_at_utc": _now(),
                 "elapsed_seconds": elapsed,
                 "status": status,
-                "error_type": error_type,
+                **error,
                 **safe_shape,
             }
             with _LOCK:
@@ -226,10 +254,17 @@ def installation_status() -> dict[str, Any]:
         recent = deepcopy(list(_COMPLETED))
         counts = deepcopy(_COUNTS)
         installed = bool(_INSTALLED)
+
     active_bindings = {}
     for stage, module, attr in _STAGE_TARGETS:
         wrapper = _WRAPPERS.get(stage)
         active_bindings[stage] = bool(wrapper is not None and getattr(module, attr) is wrapper)
+
+    protected_attrs_in_targets = [
+        attr
+        for _, module, attr in _STAGE_TARGETS
+        if module is step4w and attr in _STEP7G_PROTECTED_STEP4W_ATTRS
+    ]
     return {
         "data_type": "wnba_step20b_rollover_stage_trace_status",
         "source": SOURCE,
@@ -238,6 +273,8 @@ def installation_status() -> dict[str, Any]:
         "installed": installed,
         "all_stage_wrappers_active": installed and all(active_bindings.values()),
         "active_bindings": active_bindings,
+        "protected_step7g_step4w_bindings_untouched": not protected_attrs_in_targets,
+        "protected_step7g_step4w_bindings_wrapped": protected_attrs_in_targets,
         "active_calls": active,
         "call_counts": counts,
         "recent_completed": recent[-100:],
