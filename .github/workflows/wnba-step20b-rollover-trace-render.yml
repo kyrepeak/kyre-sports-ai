@@ -8,8 +8,12 @@ on:
       - '.github/workflows/wnba-step20b-rollover-trace-render.yml'
       - 'sports_api/api/wnba_step17b_runtime.py'
       - 'sports_api/wnba_step20b_runtime_acceleration.py'
+      - 'sports_api/wnba_step20b_optional_workload_compat.py'
+      - 'sports_api/wnba_step20b_monte_carlo_acceleration.py'
       - 'sports_api/wnba_step20b_rollover_stage_trace.py'
       - 'tests/test_wnba_step20b_runtime_acceleration.py'
+      - 'tests/test_wnba_step20b_optional_workload_compat.py'
+      - 'tests/test_wnba_step20b_monte_carlo_acceleration.py'
       - 'tests/test_wnba_step20b_rollover_stage_trace.py'
 
 permissions:
@@ -46,7 +50,10 @@ jobs:
       - name: Certify acceleration and regression guards
         run: |
           python -m pytest -q tests/test_wnba_step20b_runtime_acceleration.py
+          python -m pytest -q tests/test_wnba_step20b_optional_workload_compat.py
+          python -m pytest -q tests/test_wnba_step20b_monte_carlo_acceleration.py
           python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
+          python -m pytest -q tests/test_wnba_step8_joint_monte_carlo.py
           python -m pytest -q \
             tests/test_wnba_step19n_fanduel_empty_market.py \
             tests/test_wnba_step19m_fanduel_line_move.py \
@@ -56,6 +63,9 @@ jobs:
           from sports_api import wnba_step12b_live_runtime_assembly as s12b
           import sports_api.api.wnba_step17b_runtime
           from sports_api import wnba_step20b_runtime_acceleration as a
+          from sports_api import wnba_step20b_optional_workload_compat as w
+          from sports_api import wnba_step20b_monte_carlo_acceleration as m
+          from sports_api import wnba_step8_joint_monte_carlo as step8d
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
           g=a.installation_status()['guardrails']
@@ -70,6 +80,28 @@ jobs:
           assert g['provider_identity_protected_step7g_aliases_modified'] is False
           assert g['persistence_modified'] is False
           assert g['wagering_enabled'] is False
+          ws=w.installation_status()
+          assert ws['installed'] is True
+          wg=ws['guardrails']
+          assert wg['required_schedule_rest_travel_data_relaxed'] is False
+          assert wg['optional_historical_workload_only'] is True
+          ms=m.installation_status()
+          assert ms['installed'] is True
+          current=step8d.simulate_step8_joint_distribution
+          assert current is m.simulate_step8_joint_distribution_accelerated or getattr(current,'__wrapped__',None) is m.simulate_step8_joint_distribution_accelerated
+          mg=ms['guardrails']
+          assert mg['same_pcg64_random_stream'] is True
+          assert mg['same_latent_gaussian_draws'] is True
+          assert mg['same_marginal_cdf_tables'] is True
+          assert mg['same_discrete_count_mapping_required'] is True
+          assert mg['normal_cdf_approximation_inverted_once_not_replaced'] is True
+          assert mg['simulations_modified'] is False
+          assert mg['batch_size_modified'] is False
+          assert mg['projection_math_modified'] is False
+          assert mg['readiness_relaxed'] is False
+          assert mg['sportsbook_transport_modified'] is False
+          assert mg['persistence_modified'] is False
+          assert mg['wagering_enabled'] is False
           print('STEP20B_FULL_RUNTIME_GUARDS_CERTIFIED')
           PY
 
@@ -136,9 +168,6 @@ jobs:
                   if sha in json.dumps(detail,sort_keys=True,default=str).lower():
                       did=possible
 
-          # Render can return an accepted/nested response without a top-level ID,
-          # especially while env-var updates are coalescing deploy work. Resolve
-          # the exact target by full commit SHA instead of guessing the newest ID.
           for attempt in range(45):
               if did:
                   break
@@ -148,9 +177,6 @@ jobs:
                   did=None
               if did:
                   break
-              # Retry the explicit candidate request only if no exact-SHA deploy
-              # has appeared. This is safe because every accepted deploy is later
-              # verified against the full candidate SHA before use.
               if attempt in {14,29}:
                   try:
                       retry=request_candidate()
@@ -203,8 +229,11 @@ jobs:
           if built < 1: raise SystemExit('Step20B full runtime probe built zero projection targets')
           if projection.get('simulations_per_built_target') != 5000000: raise SystemExit('simulation count drift')
           if projection.get('batch_size') != 250000: raise SystemExit('batch size drift')
+          mc=final.get('monte_carlo_acceleration') or {}
+          if mc.get('installed') is not True: raise SystemExit('Step20B Monte Carlo acceleration not installed')
+          if int(mc.get('call_count') or 0) < built: raise SystemExit('Step20B Monte Carlo acceleration did not execute for every built target')
           elapsed=float(final.get('elapsed_seconds') or 0)
-          print('STEP20B_FULL_RUNTIME_CERTIFIED',elapsed,built,flush=True)
+          print('STEP20B_FULL_RUNTIME_CERTIFIED',elapsed,built,int(mc.get('call_count') or 0),flush=True)
           PY
 
       - name: Restore certified Step19N production revision
