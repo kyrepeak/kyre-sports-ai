@@ -11,10 +11,12 @@ on:
       - 'sports_api/wnba_step20b_optional_workload_compat.py'
       - 'sports_api/wnba_step20b_monte_carlo_acceleration.py'
       - 'sports_api/wnba_step20b_rollover_stage_trace.py'
+      - 'sports_api/wnba_step20b_step4w_cache.py'
       - 'tests/test_wnba_step20b_runtime_acceleration.py'
       - 'tests/test_wnba_step20b_optional_workload_compat.py'
       - 'tests/test_wnba_step20b_monte_carlo_acceleration.py'
       - 'tests/test_wnba_step20b_rollover_stage_trace.py'
+      - 'tests/test_wnba_step20b_step4w_cache.py'
 
 permissions:
   contents: read
@@ -32,7 +34,7 @@ env:
 jobs:
   certify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 16
+    timeout-minutes: 30
     environment: wnba-render-staging
     outputs:
       diagnostic_summary_b64: ${{ steps.full_probe.outputs.diagnostic_summary_b64 }}
@@ -55,6 +57,7 @@ jobs:
           python -m pytest -q tests/test_wnba_step20b_optional_workload_compat.py
           python -m pytest -q tests/test_wnba_step20b_monte_carlo_acceleration.py
           python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
+          python -m pytest -q tests/test_wnba_step20b_step4w_cache.py
           python -m pytest -q tests/test_wnba_step8_joint_monte_carlo.py
           python -m pytest -q \
             tests/test_wnba_step19n_fanduel_empty_market.py \
@@ -67,6 +70,7 @@ jobs:
           from sports_api import wnba_step20b_runtime_acceleration as a
           from sports_api import wnba_step20b_optional_workload_compat as w
           from sports_api import wnba_step20b_monte_carlo_acceleration as m
+          from sports_api import wnba_step20b_step4w_cache as c4w
           from sports_api import wnba_step8_joint_monte_carlo as step8d
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
@@ -90,6 +94,20 @@ jobs:
           assert wg['required_schedule_rest_travel_failures_relaxed'] is False
           assert wg['unavailable_metrics_are_none_not_zero'] is True
           assert wg['workload_values_fabricated'] is False
+          c4=c4w.installation_status()
+          assert c4['installed'] is True
+          c4g=c4['guardrails']
+          assert c4g['cache_scope'] == 'single_step12b_call_only'
+          assert c4g['cached_values_returned_by_deepcopy'] is True
+          assert c4g['exceptions_cached'] is False
+          assert c4g['missing_values_fabricated'] is False
+          assert c4g['projection_math_modified'] is False
+          assert c4g['readiness_relaxed'] is False
+          assert c4g['monte_carlo_simulation_count_modified'] is False
+          assert c4g['monte_carlo_batch_size_modified'] is False
+          assert c4g['sportsbook_transport_modified'] is False
+          assert c4g['persistence_modified'] is False
+          assert c4g['wagering_enabled'] is False
           ms=m.installation_status()
           assert ms['installed'] is True
           current=step8d.simulate_step8_joint_distribution
@@ -234,7 +252,10 @@ jobs:
           started=call('/api/v1/wnba/runtime/step20b-full-runtime-probe/start','POST')
           print('STEP20B_FULL_PROBE_STARTED',json.dumps(started,sort_keys=True),flush=True)
           final=None
-          for poll in range(1,91):
+          # The certified Step20B runtime budget is <600s. Observe slightly past
+          # that boundary so a 500-599s valid cycle can return, then enforce the
+          # 600s budget explicitly below instead of failing the harness at ~455s.
+          for poll in range(1,126):
               time.sleep(5)
               status=call('/api/v1/wnba/runtime/step20b-full-runtime-probe/status')
               print('STEP20B_FULL_PROBE_POLL',poll,json.dumps(status,sort_keys=True),flush=True)
@@ -276,7 +297,7 @@ jobs:
           }
           publish(summary)
 
-          if final is None: raise SystemExit('Step20B full runtime probe timed out')
+          if final is None: raise SystemExit('Step20B full runtime probe did not return inside the 625s observation window')
           if final.get('status') != 'returned': raise SystemExit('Step20B full runtime probe raised '+str(final.get('error_type')))
           built=int(projection.get('built_target_count') or 0)
           if built < 1: raise SystemExit('Step20B full runtime probe built zero projection targets')
@@ -285,6 +306,8 @@ jobs:
           if mc.get('installed') is not True: raise SystemExit('Step20B Monte Carlo acceleration not installed')
           if int(mc.get('call_count') or 0) < built: raise SystemExit('Step20B Monte Carlo acceleration did not execute for every built target')
           elapsed=float(final.get('elapsed_seconds') or 0)
+          if elapsed >= 600:
+              raise SystemExit(f'Step20B full runtime exceeded certified runtime budget: {elapsed:.3f}s >= 600s')
           print('STEP20B_FULL_RUNTIME_CERTIFIED',elapsed,built,int(mc.get('call_count') or 0),flush=True)
           PY
 
