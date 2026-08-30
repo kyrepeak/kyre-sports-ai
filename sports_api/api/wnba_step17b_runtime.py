@@ -19,6 +19,7 @@ from sports_api import wnba_step19l_fanduel_identity_trace as _step19l
 from sports_api import wnba_step19m_fanduel_line_move as _step19m
 from sports_api import wnba_step19n_fanduel_empty_market as _step19n
 from sports_api import wnba_step20b_runtime_acceleration as _step20b_accel
+from sports_api import wnba_step20b_optional_workload_compat as _step20b_workload
 from sports_api import wnba_step20b_rollover_stage_trace as _step20b
 from sports_api.runtime_fingerprint import get_runtime_build_identity
 
@@ -32,6 +33,7 @@ _step19l.install_step19l_fanduel_identity_trace()
 _step19m.install_step19m_fanduel_line_move()
 _step19n.install_step19n_fanduel_empty_market()
 _step20b_accel.install_step20b_runtime_acceleration()
+_step20b_workload.install_step20b_optional_workload_compat()
 _step20b.install_step20b_rollover_stage_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
@@ -90,6 +92,7 @@ def _full_probe_worker() -> None:
         market = result.get("market_overlap") if isinstance(result, dict) else None
         summary = result.get("runtime_summary") if isinstance(result, dict) else None
         accel = _step20b_accel.installation_status()
+        workload = _step20b_workload.installation_status()
         _set_full_probe(
             status="returned",
             elapsed_seconds=round(time.perf_counter() - started, 3),
@@ -103,6 +106,7 @@ def _full_probe_worker() -> None:
             },
             runtime_summary=summary,
             acceleration_last_cycle=accel.get("last_cycle"),
+            optional_workload_compat=workload,
         )
     except Exception as exc:
         _set_full_probe(
@@ -111,6 +115,7 @@ def _full_probe_worker() -> None:
             error_type=type(exc).__name__,
             error_message=str(exc)[:1500],
             acceleration_last_cycle=_step20b_accel.installation_status().get("last_cycle"),
+            optional_workload_compat=_step20b_workload.installation_status(),
         )
 
 
@@ -162,6 +167,11 @@ def step19n_fanduel_empty_market_status():
 @router.get("/step20b-runtime-acceleration")
 def step20b_runtime_acceleration_status():
     return _step20b_accel.installation_status()
+
+
+@router.get("/step20b-optional-workload-compat")
+def step20b_optional_workload_compat_status():
+    return _step20b_workload.installation_status()
 
 
 @router.get("/step20b-rollover-stage-trace")
