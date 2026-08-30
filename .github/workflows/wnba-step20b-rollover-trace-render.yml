@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 16
     environment: wnba-render-staging
+    outputs:
+      diagnostic_summary_b64: ${{ steps.full_probe.outputs.diagnostic_summary_b64 }}
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v4
@@ -205,15 +207,29 @@ jobs:
           echo "deployed=true" >> "$GITHUB_OUTPUT"
 
       - name: Run one full lease-independent Step12B cycle
+        id: full_probe
         run: |
           python - <<'PY'
-          import json, os, pathlib, time, urllib.request
+          import base64, json, os, pathlib, time, urllib.request
           base=os.environ['RENDER_SERVICE_URL']
           token=pathlib.Path(os.environ['RUNNER_TEMP'],'step20b_probe_token').read_text(encoding='utf-8').strip()
           headers={'User-Agent':'kyre-step20b-full-runtime-cert/1.0','X-Step20B-Diagnostic-Token':token}
           def call(path,method='GET'):
               req=urllib.request.Request(base+path,data=b'' if method=='POST' else None,headers=headers,method=method)
               with urllib.request.urlopen(req,timeout=45) as response: return json.loads(response.read().decode())
+          def safe_call(path):
+              try:
+                  value=call(path)
+                  return value if isinstance(value,dict) else {}
+              except Exception as exc:
+                  return {'diagnostic_fetch_error_type':type(exc).__name__,'diagnostic_fetch_error_message':str(exc)[:240]}
+          def publish(summary):
+              raw=json.dumps(summary,sort_keys=True,separators=(',',':'))
+              encoded=base64.b64encode(raw.encode()).decode()
+              with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as fh:
+                  fh.write('diagnostic_summary_b64='+encoded+'\n')
+              print('STEP20B_COMPACT_DIAGNOSTIC',raw,flush=True)
+
           time.sleep(3)
           started=call('/api/v1/wnba/runtime/step20b-full-runtime-probe/start','POST')
           print('STEP20B_FULL_PROBE_STARTED',json.dumps(started,sort_keys=True),flush=True)
@@ -225,14 +241,47 @@ jobs:
               if status.get('status') in {'returned','raised'}:
                   final=status
                   break
+
+          trace=safe_call('/api/v1/wnba/runtime/step20b-rollover-stage-trace')
+          mc=(final or {}).get('monte_carlo_acceleration') or safe_call('/api/v1/wnba/runtime/step20b-monte-carlo-acceleration')
+          workload=(final or {}).get('optional_workload_compat') or safe_call('/api/v1/wnba/runtime/step20b-optional-workload-compat')
+          recent=trace.get('recent_completed') or []
+          active=trace.get('active_calls') or []
+          projection=(final or {}).get('projection_assembly') or {}
+          summary={
+              'status':(final or {}).get('status') or 'timeout',
+              'elapsed_seconds':(final or {}).get('elapsed_seconds') or (final or {}).get('elapsed_seconds_now'),
+              'error_type':(final or {}).get('error_type'),
+              'error_message':str((final or {}).get('error_message') or '')[:800],
+              'projection':{
+                  'built_target_count':projection.get('built_target_count'),
+                  'simulations_per_built_target':projection.get('simulations_per_built_target'),
+                  'batch_size':projection.get('batch_size'),
+              },
+              'trace':{
+                  'call_counts':trace.get('call_counts') or {},
+                  'active_calls':active[-8:],
+                  'recent_completed_tail':recent[-12:],
+              },
+              'monte_carlo':{
+                  'installed':mc.get('installed'),
+                  'binding_active':mc.get('binding_active'),
+                  'call_count':mc.get('call_count'),
+                  'guardrails':mc.get('guardrails') or {},
+              },
+              'optional_workload':{
+                  'installed':workload.get('installed'),
+                  'guardrails':workload.get('guardrails') or {},
+              },
+          }
+          publish(summary)
+
           if final is None: raise SystemExit('Step20B full runtime probe timed out')
           if final.get('status') != 'returned': raise SystemExit('Step20B full runtime probe raised '+str(final.get('error_type')))
-          projection=final.get('projection_assembly') or {}
           built=int(projection.get('built_target_count') or 0)
           if built < 1: raise SystemExit('Step20B full runtime probe built zero projection targets')
           if projection.get('simulations_per_built_target') != 5000000: raise SystemExit('simulation count drift')
           if projection.get('batch_size') != 250000: raise SystemExit('batch size drift')
-          mc=final.get('monte_carlo_acceleration') or {}
           if mc.get('installed') is not True: raise SystemExit('Step20B Monte Carlo acceleration not installed')
           if int(mc.get('call_count') or 0) < built: raise SystemExit('Step20B Monte Carlo acceleration did not execute for every built target')
           elapsed=float(final.get('elapsed_seconds') or 0)
@@ -329,4 +378,24 @@ jobs:
           else: raise SystemExit('restore deploy timeout')
           if sha not in json.dumps(d,sort_keys=True,default=str).lower(): raise SystemExit('restore live SHA mismatch')
           print('STEP20B_STEP19N_RESTORED',did,sha,flush=True)
+          PY
+
+  diagnostic-summary:
+    needs: certify
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Print compact Step20B diagnostic
+        env:
+          DIAGNOSTIC_SUMMARY_B64: ${{ needs.certify.outputs.diagnostic_summary_b64 }}
+        run: |
+          python - <<'PY'
+          import base64, json, os
+          raw=str(os.environ.get('DIAGNOSTIC_SUMMARY_B64') or '').strip()
+          if not raw:
+              print('STEP20B_COMPACT_DIAGNOSTIC_UNAVAILABLE')
+          else:
+              decoded=base64.b64decode(raw).decode('utf-8')
+              payload=json.loads(decoded)
+              print('STEP20B_COMPACT_DIAGNOSTIC_FINAL',json.dumps(payload,sort_keys=True))
           PY
