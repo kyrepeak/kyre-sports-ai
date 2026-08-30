@@ -19,7 +19,7 @@ That exact state means there is no usable FanDuel two-way player-prop market to
 build, not that transport or official identity failed. It is converted to the
 existing closed-circuit ``market_board_not_ready`` cadence without fabricating a
 FanDuel bridge, projection, line, or consensus. Every other provider failure is
-returned byte-for-byte by object identity from the upstream wrapper.
+returned unchanged by object identity from the upstream wrapper.
 """
 from __future__ import annotations
 
@@ -301,14 +301,14 @@ def run_step12b_fanduel_empty_market_compatible(*args: Any, **kwargs: Any) -> An
 
 
 def install_step19n_fanduel_empty_market() -> dict[str, Any]:
+    """Install only after Step19K is already the active Step12B wrapper."""
     global _INSTALLED, _UPSTREAM_RUN_STEP12B
-    step19k.install_step19k_market_not_ready()
     current = step12b.run_step12b_live_runtime_job
     if current is run_step12b_fanduel_empty_market_compatible:
         _INSTALLED = True
         return installation_status()
     if current is not step19k.run_step12b_market_not_ready_compatible:
-        raise RuntimeError("Step19N refuses to replace an unknown Step12B override.")
+        raise RuntimeError("Step19N requires the already-installed Step19K Step12B wrapper.")
     _UPSTREAM_RUN_STEP12B = current
     step12b.run_step12b_live_runtime_job = run_step12b_fanduel_empty_market_compatible
     _INSTALLED = True
@@ -334,6 +334,7 @@ def installation_status() -> dict[str, Any]:
         "transformed_count": count,
         "last_transform": latest,
         "guardrails": {
+            "requires_preinstalled_step19k": True,
             "draftkings_verified_nonempty_required": True,
             "exact_fanduel_error_type_required": fanduel.WNBAStep11FanDuelProviderNotReadyError.__name__,
             "exact_fanduel_error_message_required": FANDUEL_EMPTY_MARKET_MESSAGE,
