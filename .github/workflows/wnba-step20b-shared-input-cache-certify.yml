@@ -149,15 +149,27 @@ jobs:
         run: |
           python - <<'PY'
           import json, time
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
           from sports_api import wnba_step12b_live_runtime_assembly as s12b
           import sports_api.api.wnba_step17b_runtime
+
+          now=datetime.now(timezone.utc)
+          slate=now.astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          request=s12b.build_step12b_request(
+              season=2026,
+              slate_date=slate,
+              evaluated_at=now.isoformat(),
+          )
           started=time.perf_counter()
-          result=s12b.run_step12b_live_runtime_job()
+          result=s12b.run_step12b_live_runtime_job(request)
           elapsed=time.perf_counter()-started
           status=result.get('status')
-          outcome=(result.get('controller') or {}).get('cycle_outcome') or result.get('cycle_outcome')
+          execution=(((result.get('step12a_result') or {}).get('step11e_tick') or {}).get('execution') or {})
+          outcome=execution.get('cycle_outcome') or result.get('cycle_outcome')
           print('STEP20B_LIVE_PREFLIGHT',json.dumps({
               'seconds':round(elapsed,3),
+              'slate':slate,
               'status':status,
               'cycle_outcome':outcome,
               'projection_count':len(result.get('projections') or []),
