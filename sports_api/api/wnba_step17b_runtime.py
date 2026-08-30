@@ -7,6 +7,7 @@ from sports_api import wnba_step19h_fanduel_hosted_transport as _step19h
 from sports_api import wnba_step19i_official_slate_transport as _step19i
 from sports_api import wnba_step19j_runtime_acceleration as _step19j
 from sports_api import wnba_step19k_market_not_ready as _step19k
+from sports_api import wnba_step19l_fanduel_identity_trace as _step19l
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -18,10 +19,14 @@ _step19i.install_step19i_official_slate_transport()
 # Step19J wraps the already-installed Step19G trace chain so provider diagnostics
 # remain active while a private per-cycle context memo is in scope.
 _step19j.install_step19j_runtime_acceleration()
-# Step19K is deliberately outermost. It transforms only the proven
+# Step19K is deliberately outermost on Step12B. It transforms only the proven
 # no-exact-same-line Step12B condition into the existing closed-circuit
 # market_not_ready controller semantics. Every other exception remains fatal.
 _step19k.install_step19k_market_not_ready()
+# Step19L observes the complete already-installed FanDuel fetch chain only. It
+# does not alter any provider result or exception and is used to capture the
+# intermittent hosted identity error that direct GitHub stress cannot reproduce.
+_step19l.install_step19l_fanduel_identity_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
 
@@ -59,3 +64,9 @@ def step19j_runtime_acceleration_status():
 def step19k_market_not_ready_status():
     """Return non-sensitive exact-line market readiness compatibility status."""
     return _step19k.installation_status()
+
+
+@router.get("/step19l-fanduel-identity-trace")
+def step19l_fanduel_identity_trace_status():
+    """Return sanitized cumulative hosted FanDuel identity-error diagnostics."""
+    return _step19l.get_step19l_fanduel_identity_trace()
