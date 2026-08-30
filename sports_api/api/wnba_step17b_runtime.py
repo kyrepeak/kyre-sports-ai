@@ -243,6 +243,14 @@ def step20b_full_runtime_probe_status(
         result = deepcopy(_FULL_PROBE)
     if result.get("status") == "running" and result.get("started_at_monotonic") is not None:
         result["elapsed_seconds_now"] = round(time.perf_counter() - float(result["started_at_monotonic"]), 3)
+        trace = _step20b.installation_status()
+        active = trace.get("active_calls") or []
+        recent = trace.get("recent_completed") or []
+        result["trace_progress"] = {
+            "call_counts": trace.get("call_counts") or {},
+            "active_calls": active,
+            "recent_completed_tail": recent[-8:],
+        }
     result.pop("started_at_monotonic", None)
     return result
 
