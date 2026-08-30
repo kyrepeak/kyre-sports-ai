@@ -21,8 +21,19 @@ mandatory for production simulation.
 No Points projection formulas, minutes, matchup factors, Monte Carlo distribution,
 calibration, no-vig math, sanity quarantine or production ranking are changed.
 PRA, Rebounds, Assists, Spread, MLB and NFL remain untouched.
+
+Presentation cleanup
+--------------------
+Historical Points wrappers each emit their own release/audit caption before
+delegating to the previous layer. On mobile those banners can fill multiple
+screens and make the page look stuck before the real cards appear. This shim
+suppresses only those internal ``Points V1.9.8.*`` release captions during the
+Points render. Real card captions, warnings, errors and all model/market logic
+continue through unchanged.
 """
 from __future__ import annotations
+
+import streamlit as st
 
 import wnba_points_hub_v198434 as presentation
 
@@ -40,8 +51,31 @@ ui = base.ui
 points = base.points
 
 
+def _is_internal_points_release_caption(body) -> bool:
+    """Match only the stacked historical Points release/audit banners."""
+    try:
+        text = str(body or "")
+    except Exception:
+        return False
+    return "Points V1.9.8." in text
+
+
 def render_wnba_points_hub(section_header=None, status_info=None, team_logo=None, h=None):
-    return presentation.render_wnba_points_hub(section_header, status_info, team_logo, h)
+    # Keep the presentation/model chain exactly the same. Only filter the
+    # historical version banners while this route renders, then restore the
+    # Streamlit callable even if a nested layer stops or raises.
+    original_caption = st.caption
+
+    def _points_caption(body, *args, **kwargs):
+        if _is_internal_points_release_caption(body):
+            return None
+        return original_caption(body, *args, **kwargs)
+
+    st.caption = _points_caption
+    try:
+        return presentation.render_wnba_points_hub(section_header, status_info, team_logo, h)
+    finally:
+        st.caption = original_caption
 
 
 def __getattr__(name):
