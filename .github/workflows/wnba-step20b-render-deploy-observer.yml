@@ -21,7 +21,7 @@ jobs:
       RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
       EXPECTED_SHA: 6e58a8fc831975bcb4a3a9dabb0e6ae307e9a60c
     steps:
-      - name: Read latest Render deploys and public runtime surfaces
+      - name: Read Render source config, deploys, and runtime surfaces
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
@@ -33,6 +33,27 @@ jobs:
               req=urllib.request.Request(base+path,headers=headers)
               with urllib.request.urlopen(req,timeout=30) as r:
                   raw=r.read().decode(); return json.loads(raw) if raw else None
+
+          svc=api(f'/services/{sid}') or {}
+          details=svc.get('serviceDetails') or {}
+          safe={
+              'id':svc.get('id'),
+              'name':svc.get('name'),
+              'type':svc.get('type'),
+              'repo':svc.get('repo'),
+              'branch':svc.get('branch'),
+              'rootDir':svc.get('rootDir'),
+              'autoDeploy':svc.get('autoDeploy'),
+              'runtime':details.get('runtime'),
+              'buildCommand':details.get('buildCommand'),
+              'startCommand':details.get('startCommand'),
+              'dockerfilePath':details.get('dockerfilePath'),
+              'dockerContext':details.get('dockerContext'),
+              'image':details.get('image'),
+              'pullRequestPreviewsEnabled':details.get('pullRequestPreviewsEnabled'),
+          }
+          print('STEP20B_RENDER_SERVICE_CONFIG',json.dumps(safe,sort_keys=True),flush=True)
+
           deploys=api(f'/services/{sid}/deploys?limit=10') or []
           rows=[]
           for item in deploys[:10]:
@@ -46,14 +67,15 @@ jobs:
                   'finishedAt':d.get('finishedAt') if isinstance(d,dict) else None,
               })
           print('STEP20B_RENDER_DEPLOYS',json.dumps(rows,sort_keys=True),flush=True)
+
           public=os.environ['RENDER_SERVICE_URL']
           def get(path):
               try:
-                  req=urllib.request.Request(public+path,headers={'User-Agent':'kyre-step20b-observer/1.1'})
+                  req=urllib.request.Request(public+path,headers={'User-Agent':'kyre-step20b-observer/1.2'})
                   with urllib.request.urlopen(req,timeout=30) as r:
                       return {'http':r.status,'body':json.loads(r.read().decode())}
               except Exception as exc:
                   return {'error_type':type(exc).__name__,'error':str(exc)[:300]}
-          for path in ('/api/v1/wnba/runtime/step17b','/api/v1/wnba/runtime/step20b-render-inflight-trace','/api/v1/wnba/runtime/step20b-shared-input-cache','/api/v1/wnba/runtime/step19j-runtime-acceleration'):
+          for path in ('/api/v1/wnba/runtime/step17b','/api/v1/wnba/runtime/step20b-render-inflight-trace','/api/v1/wnba/runtime/step20b-shared-input-cache','/api/v1/wnba/runtime/step20b-fanduel-period-filter','/api/v1/wnba/runtime/step19j-runtime-acceleration'):
               print('STEP20B_RENDER_SURFACE',path,json.dumps(get(path),sort_keys=True),flush=True)
           PY
