@@ -1,11 +1,14 @@
 import hmac
 import os
+import threading
 import time
+from copy import deepcopy
 
 from fastapi import APIRouter, Header, HTTPException
 
-from sports_api.wnba_step17b_always_on_runtime import get_step17b_status
 from sports_api import wnba_projection_input_snapshot as _step4w
+from sports_api import wnba_step12b_live_runtime_assembly as _step12b
+from sports_api import wnba_step17b_always_on_runtime as _step17b
 from sports_api import wnba_step19e_cooldown_aware_cycle as _step19e
 from sports_api import wnba_step19g_hosted_provider_trace as _step19g
 from sports_api import wnba_step19h_fanduel_hosted_transport as _step19h
@@ -19,33 +22,16 @@ from sports_api import wnba_step20b_runtime_acceleration as _step20b_accel
 from sports_api import wnba_step20b_rollover_stage_trace as _step20b
 from sports_api.runtime_fingerprint import get_runtime_build_identity
 
-# Install only after the frozen scheduler/runtime dependency graph is fully
-# imported. This avoids API-package bootstrap cycles while still interposing
-# before the FastAPI lifespan starts Step17B.
 _step19e.install_step19e_cooldown_aware_cycle()
 _step19g.install_step19g_hosted_provider_trace()
 _step19h.install_step19h_fanduel_hosted_transport()
 _step19i.install_step19i_official_slate_transport()
-# Step19J wraps the already-installed Step19G trace chain so provider diagnostics
-# remain active while a private per-cycle context memo is in scope.
 _step19j.install_step19j_runtime_acceleration()
-# Step19K transforms only the proven no-exact-same-line Step12B condition into
-# the existing closed-circuit market_not_ready controller semantics.
 _step19k.install_step19k_market_not_ready()
-# Step19L observes the complete already-installed FanDuel fetch chain only. It
-# keeps a cumulative sanitized history of identity errors and re-raises them.
 _step19l.install_step19l_fanduel_identity_trace()
-# Step19M fixes the precise hosted line-move bug captured by Step19L: threshold
-# changes are quote state, while market/player/selection/side identity stays
-# immutable and fail-closed. Step19L remains inside this surface for diagnostics.
 _step19m.install_step19m_fanduel_line_move()
-# Step19N is the outermost pre-Step20B Step12B wrapper. It classifies only the
-# exact post-fetch FanDuel no-complete-two-way-records subtype as availability.
 _step19n.install_step19n_fanduel_empty_market()
-# Step20B acceleration adds one-call-only memoization for exact observed game
-# context. It installs before the trace so diagnostics can time cache misses/hits.
 _step20b_accel.install_step20b_runtime_acceleration()
-# Step20B trace is diagnostic-only and does not alter return values or math.
 _step20b.install_step20b_rollover_stage_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
@@ -54,12 +40,13 @@ _STEP20B_PROBE_ENABLED_ENV = "WNBA_STEP20B_PROBE_ENABLED"
 _STEP20B_PROBE_TOKEN_ENV = "WNBA_STEP20B_PROBE_TOKEN"
 _STEP20B_PROBE_PLAYER_ID = 203825
 _STEP20B_PROBE_SEASON = 2026
+_FULL_PROBE_LOCK = threading.RLock()
+_FULL_PROBE: dict = {"status": "idle"}
+_FULL_PROBE_THREAD: threading.Thread | None = None
 
 
 def _truthy(value: object) -> bool:
-    return str(value or "").strip().casefold() not in {
-        "", "0", "false", "no", "off", "disabled"
-    }
+    return str(value or "").strip().casefold() not in {"", "0", "false", "no", "off", "disabled"}
 
 
 def _authorize_step20b_probe(token: str | None) -> None:
@@ -83,9 +70,53 @@ def _run_fixed_opportunity_probe() -> dict:
     )
 
 
+def _set_full_probe(**changes) -> None:
+    with _FULL_PROBE_LOCK:
+        _FULL_PROBE.update(deepcopy(changes))
+
+
+def _full_probe_worker() -> None:
+    started = time.perf_counter()
+    _set_full_probe(status="running", started_at_monotonic=started, error_type=None, error_message=None)
+    try:
+        runtime_env = _step17b.build_runtime_env(os.environ)
+        slate_date = _step17b._slate_date()
+        request = _step12b.build_step12b_request(
+            season=_STEP20B_PROBE_SEASON,
+            slate_date=slate_date,
+        )
+        result = _step12b.run_step12b_live_runtime_job(request, env=runtime_env)
+        projection = result.get("projection_assembly") if isinstance(result, dict) else None
+        market = result.get("market_overlap") if isinstance(result, dict) else None
+        summary = result.get("runtime_summary") if isinstance(result, dict) else None
+        accel = _step20b_accel.installation_status()
+        _set_full_probe(
+            status="returned",
+            elapsed_seconds=round(time.perf_counter() - started, 3),
+            slate_date=slate_date,
+            result_status=result.get("status") if isinstance(result, dict) else None,
+            result_health=result.get("health") if isinstance(result, dict) else None,
+            projection_assembly=projection,
+            market_overlap={
+                "exact_line_multibook_group_count": (market or {}).get("exact_line_multibook_group_count"),
+                "unique_projection_target_count": (market or {}).get("unique_projection_target_count"),
+            },
+            runtime_summary=summary,
+            acceleration_last_cycle=accel.get("last_cycle"),
+        )
+    except Exception as exc:
+        _set_full_probe(
+            status="raised",
+            elapsed_seconds=round(time.perf_counter() - started, 3),
+            error_type=type(exc).__name__,
+            error_message=str(exc)[:1500],
+            acceleration_last_cycle=_step20b_accel.installation_status().get("last_cycle"),
+        )
+
+
 @router.get("/step17b")
 def step17b_runtime_status():
-    return get_step17b_status()
+    return _step17b.get_step17b_status()
 
 
 @router.get("/step19g-provider-trace")
@@ -130,7 +161,6 @@ def step19n_fanduel_empty_market_status():
 
 @router.get("/step20b-runtime-acceleration")
 def step20b_runtime_acceleration_status():
-    """Return non-sensitive cycle-local cache status for the Step20B candidate."""
     return _step20b_accel.installation_status()
 
 
@@ -141,27 +171,20 @@ def step20b_rollover_stage_trace_status():
 
 @router.post("/step20b-player-opportunity-probe")
 def step20b_player_opportunity_probe(
-    x_step20b_diagnostic_token: str | None = Header(
-        default=None,
-        alias="X-Step20B-Diagnostic-Token",
-    ),
+    x_step20b_diagnostic_token: str | None = Header(default=None, alias="X-Step20B-Diagnostic-Token"),
 ):
-    """Compare cold/warm fixed Step4V calls inside one private cache scope."""
     _authorize_step20b_probe(x_step20b_diagnostic_token)
     try:
         with _step20b_accel.cycle_local_cache_scope() as cache:
             cold_started = time.perf_counter()
             cold = _run_fixed_opportunity_probe()
             cold_elapsed = round(time.perf_counter() - cold_started, 3)
-
             warm_started = time.perf_counter()
             warm = _run_fixed_opportunity_probe()
             warm_elapsed = round(time.perf_counter() - warm_started, 3)
             stats = _step20b_accel.cache_stats(cache)
-
         comparable = (
-            isinstance(cold, dict)
-            and isinstance(warm, dict)
+            isinstance(cold, dict) and isinstance(warm, dict)
             and cold.get("data_type") == warm.get("data_type")
             and cold.get("player_id") == warm.get("player_id")
             and cold.get("latest_observed_team_key") == warm.get("latest_observed_team_key")
@@ -181,24 +204,47 @@ def step20b_player_opportunity_probe(
             "speedup_ratio": round(cold_elapsed / warm_elapsed, 3) if warm_elapsed > 0 else None,
             "comparison_surface_equal": comparable,
             "cache": stats,
-            "result_summary": {
-                "data_type": cold.get("data_type"),
-                "latest_observed_team_key": cold.get("latest_observed_team_key"),
-                "requested_last_n_games": cold.get("requested_last_n_games"),
-                "components": cold.get("components"),
-            },
         }
     except Exception as exc:
         return {
             "data_type": "wnba_step20b_player_opportunity_probe",
-            "trace_model_version": _step20b.MODEL_VERSION,
-            "acceleration_model_version": _step20b_accel.MODEL_VERSION,
             "status": "raised",
-            "player_id": _STEP20B_PROBE_PLAYER_ID,
-            "season": _STEP20B_PROBE_SEASON,
             "error_type": type(exc).__name__,
             "error_message": str(exc)[:1000],
         }
+
+
+@router.post("/step20b-full-runtime-probe/start")
+def step20b_full_runtime_probe_start(
+    x_step20b_diagnostic_token: str | None = Header(default=None, alias="X-Step20B-Diagnostic-Token"),
+):
+    global _FULL_PROBE_THREAD
+    _authorize_step20b_probe(x_step20b_diagnostic_token)
+    with _FULL_PROBE_LOCK:
+        if _FULL_PROBE.get("status") == "running":
+            return deepcopy(_FULL_PROBE)
+        _FULL_PROBE.clear()
+        _FULL_PROBE.update({"status": "starting"})
+        _FULL_PROBE_THREAD = threading.Thread(
+            target=_full_probe_worker,
+            name="wnba-step20b-full-runtime-probe",
+            daemon=True,
+        )
+        _FULL_PROBE_THREAD.start()
+        return deepcopy(_FULL_PROBE)
+
+
+@router.get("/step20b-full-runtime-probe/status")
+def step20b_full_runtime_probe_status(
+    x_step20b_diagnostic_token: str | None = Header(default=None, alias="X-Step20B-Diagnostic-Token"),
+):
+    _authorize_step20b_probe(x_step20b_diagnostic_token)
+    with _FULL_PROBE_LOCK:
+        result = deepcopy(_FULL_PROBE)
+    if result.get("status") == "running" and result.get("started_at_monotonic") is not None:
+        result["elapsed_seconds_now"] = round(time.perf_counter() - float(result["started_at_monotonic"]), 3)
+    result.pop("started_at_monotonic", None)
+    return result
 
 
 @router.get("/build")
