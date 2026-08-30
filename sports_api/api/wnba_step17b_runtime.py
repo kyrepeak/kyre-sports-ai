@@ -10,6 +10,7 @@ from sports_api import wnba_step19k_market_not_ready as _step19k
 from sports_api import wnba_step19l_fanduel_identity_trace as _step19l
 from sports_api import wnba_step19m_fanduel_line_move as _step19m
 from sports_api import wnba_step19n_fanduel_empty_market as _step19n
+from sports_api import wnba_step20b_rollover_stage_trace as _step20b
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -35,6 +36,9 @@ _step19m.install_step19m_fanduel_line_move()
 # post-fetch FanDuel no-complete-two-way-records subtype as market availability.
 # All transport, upstream, landing, and identity failures remain provider failures.
 _step19n.install_step19n_fanduel_empty_market()
+# Step20B is diagnostic-only and wraps component callables used inside the
+# already-installed Step12B chain. It does not alter the Step12B wrapper order.
+_step20b.install_step20b_rollover_stage_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
 
@@ -90,3 +94,9 @@ def step19m_fanduel_line_move_status():
 def step19n_fanduel_empty_market_status():
     """Return non-sensitive status for exact FanDuel empty-market classification."""
     return _step19n.installation_status()
+
+
+@router.get("/step20b-rollover-stage-trace")
+def step20b_rollover_stage_trace_status():
+    """Return sanitized in-flight timing for the current projection assembly."""
+    return _step20b.installation_status()
