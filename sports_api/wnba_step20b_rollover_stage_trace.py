@@ -3,7 +3,9 @@
 This diagnostic wraps the high-level Step8 call boundaries used by Step12B and
 identity-safe Step8A/Step4W input-construction boundaries beneath the handoff.
 Step4W optional components are timed through its dispatcher rather than by
-replacing Step7G-protected provider aliases. Arguments, return values,
+replacing Step7G-protected provider aliases. V5 also traces safe Step4V, Step4R,
+Step4U, and Step4N boundaries so slow observed-data construction can be split
+without touching protected first-party seams. Arguments, return values,
 exceptions, ordering, projections, simulations, provider behavior, readiness,
 persistence, and wagering remain unchanged.
 """
@@ -18,16 +20,20 @@ import time
 import traceback
 from typing import Any, Callable, Mapping
 
-from sports_api import wnba_step8_projection_handoff as step8a
-from sports_api import wnba_model_input_readiness as step4x
+from sports_api import wnba_player_event_features as step4u
+from sports_api import wnba_player_opportunity_context as step4v
 from sports_api import wnba_projection_input_snapshot as step4w
+from sports_api import wnba_rotation_context as step4r
+from sports_api import wnba_schedule_context as step4n
+from sports_api import wnba_model_input_readiness as step4x
+from sports_api import wnba_step8_projection_handoff as step8a
 from sports_api import wnba_step8_official_box_baseline as step8b
 from sports_api import wnba_step8_context_adjustment as step8c
 from sports_api import wnba_step8_joint_monte_carlo as step8d
 from sports_api import wnba_step12b_live_runtime_assembly as step12b
 
 SOURCE = "Kyre Sports API WNBA Step20B rollover in-flight stage trace"
-MODEL_VERSION = "wnba_step20b_rollover_stage_trace_v4"
+MODEL_VERSION = "wnba_step20b_rollover_stage_trace_v5"
 
 # Step7G identity-guards these Step4W aliases. Never wrap them here: doing so
 # makes the next Step7G install/revalidation look like an unknown override.
@@ -49,7 +55,14 @@ _STAGE_TARGETS: tuple[tuple[str, Any, str], ...] = (
     ("step8a_readiness_gate", step8a, "get_player_game_model_input_readiness"),
     ("step4x_snapshot_build", step4x, "get_player_game_projection_input_snapshot"),
     ("step4w_player_opportunity", step4w, "get_player_opportunity_context"),
+    ("step4v_recent_rotation", step4v, "get_player_recent_rotation_context"),
+    ("step4r_game_rotation", step4r, "get_game_rotation"),
+    ("step4v_recent_event_features", step4v, "get_player_recent_event_feature_context"),
+    ("step4u_game_event_lineups", step4u, "get_game_event_lineups"),
+    ("step4u_game_possession_context", step4u, "get_game_possession_event_context"),
     ("step4w_rest_travel", step4w, "get_game_rest_travel_context"),
+    ("step4n_team_rest_travel", step4n, "get_team_rest_travel_context"),
+    ("step4n_observed_workload", step4n, "_observed_workload"),
     (_OPTIONAL_DISPATCH_STAGE, step4w, "_optional_component"),
     ("step4w_matchup_source_status", step4w, "get_matchup_source_status"),
     ("step8b_baseline", step8b, "build_step8_official_box_baseline"),
@@ -63,7 +76,7 @@ _INSTALLED = False
 _UPSTREAM: dict[str, Callable[..., Any]] = {}
 _WRAPPERS: dict[str, Callable[..., Any]] = {}
 _COUNTS: dict[str, int] = {}
-_COMPLETED: deque[dict[str, Any]] = deque(maxlen=200)
+_COMPLETED: deque[dict[str, Any]] = deque(maxlen=300)
 _ACTIVE_STACK: list[dict[str, Any]] = []
 _SEQUENCE = 0
 
@@ -118,10 +131,15 @@ def _explicit_call_shape(stage: str, args: tuple[Any, ...], kwargs: dict[str, An
         g = args[1] if len(args) > 1 else kwargs.get("game_id")
         player_id = _int_or_none(p)
         game_id = str(g) if g is not None else None
-    elif stage == "step4w_player_opportunity":
+    elif stage in {"step4w_player_opportunity", "step4v_recent_rotation", "step4v_recent_event_features"}:
         p = args[0] if args else kwargs.get("player_id")
         player_id = _int_or_none(p)
-    elif stage == "step4w_rest_travel":
+    elif stage in {
+        "step4w_rest_travel",
+        "step4r_game_rotation",
+        "step4u_game_event_lineups",
+        "step4u_game_possession_context",
+    }:
         g = args[0] if args else kwargs.get("game_id")
         game_id = str(g) if g is not None else None
     elif stage in {"step8b_baseline", "step8c_context_adjustment", "step8d_monte_carlo_5m"} and args:
@@ -277,7 +295,7 @@ def installation_status() -> dict[str, Any]:
         "protected_step7g_step4w_bindings_wrapped": protected_attrs_in_targets,
         "active_calls": active,
         "call_counts": counts,
-        "recent_completed": recent[-100:],
+        "recent_completed": recent[-150:],
         "guardrails": {
             "diagnostic_only": True,
             "frozen_step7g_source_seams_patched": False,
