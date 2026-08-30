@@ -1,0 +1,177 @@
+name: WNBA Step20B shared Step8A input cache certification
+
+on:
+  push:
+    branches:
+      - wnba-step20b-step8a-shared-input-cache-20260830
+    paths:
+      - 'sports_api/wnba_step20b_shared_input_cache.py'
+      - 'sports_api/api/wnba_step17b_runtime.py'
+      - 'tests/test_wnba_step20b_shared_input_cache.py'
+      - '.github/workflows/wnba-step20b-shared-input-cache-certify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step20b-shared-input-cache-certification
+  cancel-in-progress: true
+
+env:
+  WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+  WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+  WNBA_STEP10_FASTAPI_ENABLED: 'true'
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+  WNBA_STEP9_FASTAPI_ENABLED: 'true'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+  WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+  WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+  WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+  WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_PERSISTENCE_ENABLED: 'false'
+  WNBA_SUPABASE_WRITE_ENABLED: 'false'
+  WNBA_WAGERING_ENABLED: 'false'
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Step20B exact cache semantics
+        run: python -m pytest -q tests/test_wnba_step20b_shared_input_cache.py
+
+      - name: Frozen Step7G integration wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step7g_first_party_integration.py \
+            tests/test_wnba_step7g_first_party_rosters.py \
+            tests/test_wnba_step7g_schedule_context.py \
+            tests/test_wnba_step7g_cup_exclusion.py
+
+      - name: Frozen Step8 projection wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_core_projection.py \
+            tests/test_wnba_step8_context_adjustment.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_projection_handoff.py
+
+      - name: Step19 runtime compatibility wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19j_runtime_acceleration.py \
+            tests/test_wnba_step19k_market_not_ready.py \
+            tests/test_wnba_step19l_fanduel_identity_trace.py \
+            tests/test_wnba_step19m_fanduel_line_move.py \
+            tests/test_wnba_step19n_fanduel_empty_market.py
+
+      - name: Prove exact hosted wrapper chain and frozen safety
+        run: |
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19j_runtime_acceleration as j
+          from sports_api import wnba_step19n_fanduel_empty_market as n
+          from sports_api import wnba_step20b_shared_input_cache as b
+          from sports_api import wnba_step7g_first_party_integration as g
+          import sports_api.api.wnba_step17b_runtime
+
+          assert s12b.run_step12b_live_runtime_job is b.run_step12b_with_shared_input_cache
+          assert b._UPSTREAM_RUN_STEP12B is n.run_step12b_fanduel_empty_market_compatible
+          assert b.installation_status()['installed'] is True
+          assert b.installation_status()['upstream_step19n_preserved'] is True
+          assert all(b.installation_status()['helper_seams'].values())
+          assert j.installation_status()['game_rest_cycle_cache_active'] is True
+          assert g.get_step7g_first_party_status()['all_core_seams_installed'] is True
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          guards=b.installation_status()['guardrails']
+          for key in (
+              'frozen_step7g_public_provider_seams_modified',
+              'player_coverage_modified',
+              'exact_line_matching_modified',
+              'different_lines_blended',
+              'monte_carlo_simulation_count_modified',
+              'monte_carlo_batch_size_modified',
+              'projection_math_modified',
+              'readiness_relaxed',
+              'sportsbook_transport_modified',
+              'controller_state_modified',
+              'durable_lease_policy_modified',
+              'persistence_modified',
+              'wagering_enabled',
+          ):
+              assert guards[key] is False, key
+          assert guards['exceptions_cached'] is False
+          assert guards['cache_cleared_after_every_cycle'] is True
+          assert guards['cached_values_returned_by_deepcopy'] is True
+          print('STEP20B_HOSTED_CHAIN_CERTIFIED')
+          PY
+
+      - name: Read-only live provider preflight
+        run: |
+          python - <<'PY'
+          import json, time
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          import sports_api.api.wnba_step17b_runtime
+          started=time.perf_counter()
+          result=s12b.run_step12b_live_runtime_job()
+          elapsed=time.perf_counter()-started
+          status=result.get('status')
+          outcome=(result.get('controller') or {}).get('cycle_outcome') or result.get('cycle_outcome')
+          print('STEP20B_LIVE_PREFLIGHT',json.dumps({
+              'seconds':round(elapsed,3),
+              'status':status,
+              'cycle_outcome':outcome,
+              'projection_count':len(result.get('projections') or []),
+          },sort_keys=True))
+          if status not in {'market_not_ready','shadow_board_ready','ready'}:
+              raise SystemExit('Unexpected live Step12B status: '+repr(status))
+          b=__import__('sports_api.wnba_step20b_shared_input_cache',fromlist=['installation_status'])
+          latest=b.installation_status().get('last_cycle') or {}
+          print('STEP20B_CACHE_LIVE',json.dumps(latest,sort_keys=True))
+          assert latest.get('status') == 'returned'
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          print('STEP20B_READ_ONLY_LIVE_PREFLIGHT_CERTIFIED')
+          PY
+
+      - name: Certification marker
+        run: echo STEP20B_SHARED_INPUT_CACHE_CERTIFIED
