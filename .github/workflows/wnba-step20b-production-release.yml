@@ -1,0 +1,230 @@
+name: WNBA Step20B guarded production release
+
+on:
+  push:
+    branches:
+      - wnba-step20b-production-release-20260830
+    paths:
+      - '.github/workflows/wnba-step20b-production-release.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step20b-production-release
+  cancel-in-progress: true
+
+env:
+  CANDIDATE_SHA: ${{ github.sha }}
+  CERTIFIED_STEP20B_SHA: 5472860a40ffb8077e24258489582bf46ca89ba3
+  ROLLBACK_SHA: aaf8b8a5425ea6e1b0ab33e6c42f35c95e8905ab
+  RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
+  RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact Step20B release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 0
+
+      - name: Prove release commit has no production-code drift
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          python - <<'PY'
+          import os, subprocess
+          base=os.environ['CERTIFIED_STEP20B_SHA']
+          allowed={'.github/workflows/wnba-step20b-production-release.yml'}
+          changed=set(filter(None,subprocess.check_output(['git','diff','--name-only',base+'..HEAD'],text=True).splitlines()))
+          print('STEP20B_RELEASE_DIFF',sorted(changed))
+          if changed != allowed:
+              raise SystemExit('Unexpected production-code drift: '+repr(sorted(changed)))
+          print('STEP20B_RELEASE_NO_CODE_DRIFT_CERTIFIED')
+          PY
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Exact Step20B and Step19 regression wall
+        env:
+          WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+          WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+          WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+          WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+          WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+          WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+          WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+          WNBA_STEP10_FASTAPI_ENABLED: 'true'
+          WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+          WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+          WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+          WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+          WNBA_STEP9_FASTAPI_ENABLED: 'true'
+          WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+          WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+          WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+          WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+          WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+          WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+          WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+          WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+          WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+          WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+          WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+          WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+          WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+          WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
+          WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+          WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+          WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+          WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+          WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+          WNBA_STEP6J_CANARY_ENABLED: 'false'
+          WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+          WNBA_PERSISTENCE_ENABLED: 'false'
+          WNBA_SUPABASE_WRITE_ENABLED: 'false'
+          WNBA_WAGERING_ENABLED: 'false'
+          WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+        run: |
+          python -m pytest -q tests/test_wnba_step20b_shared_input_cache.py tests/test_wnba_step20b_fanduel_period_filter.py
+          python -m pytest -q tests/test_wnba_step11_fanduel_provider.py
+          python -m pytest -q \
+            tests/test_wnba_step19j_runtime_acceleration.py \
+            tests/test_wnba_step19k_market_not_ready.py \
+            tests/test_wnba_step19l_fanduel_identity_trace.py \
+            tests/test_wnba_step19m_fanduel_line_move.py \
+            tests/test_wnba_step19n_fanduel_empty_market.py
+          python - <<'PY'
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step20b_fanduel_period_filter as p
+          from sports_api import wnba_step20b_shared_input_cache as b
+          import sports_api.api.wnba_step17b_runtime
+          assert fd._market_stat is p.market_stat_full_game_only_step20b
+          assert s12b.run_step12b_live_runtime_job is b.run_step12b_with_shared_input_cache
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          assert p.installation_status()['market_stat_filter_active'] is True
+          assert b.installation_status()['installed'] is True
+          print('STEP20B_RELEASE_HOST_CHAIN_CERTIFIED')
+          PY
+
+      - name: Deploy exact Step20B candidate to Render
+        id: deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['CANDIDATE_SHA']
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
+          def req(method,path,body=None):
+              request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode(); return json.loads(raw) if raw else None
+          desired={
+            'WEB_CONCURRENCY':'1','WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true','WNBA_STEP17B_ALWAYS_ON_ENABLED':'true','WNBA_STEP17B_LOOP_SECONDS':'60','WNBA_STEP17B_EXPECTED_REVISION':sha,'WNBA_STEP17C_MONITORING_ENABLED':'true','WNBA_STEP18A_STREAMLIT_CONSUMER_ENABLED':'true',
+            'WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED':'true','WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED':'true','WNBA_STEP14B_DATABASE_READ_ENABLED':'true','WNBA_STEP14B_DATABASE_WRITE_ENABLED':'true','WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED':'true','WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED':'true','WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED':'true','WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED':'true','WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED':'true','WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED':'true','WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED':'true','WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED':'true','WNBA_STEP12A_SHADOW_RUNNER_ENABLED':'true',
+            'WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED':'true','WNBA_STEP19A_DRAFTKINGS_SITE':'dkusaz','WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED':'true','WNBA_STEP11B_NETWORK_REFRESH_ENABLED':'true','WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED':'true','WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED':'true','WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED':'true','WNBA_STEP10_FASTAPI_ENABLED':'true','WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED':'true','WNBA_STEP10B_MARKET_ADAPTER_ENABLED':'true','WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED':'true','WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED':'true','WNBA_STEP9_FASTAPI_ENABLED':'true','WNBA_STEP9_THRESHOLD_PRICING_ENABLED':'true','WNBA_STEP9B_MARKET_COMPARISON_ENABLED':'true','WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED':'true','WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED':'true','WNBA_STEP8_PROJECTION_HANDOFF_ENABLED':'true','WNBA_STEP8_CORE_PROJECTION_ENABLED':'true','WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED':'true','WNBA_STEP8_MONTE_CARLO_ENABLED':'true','WNBA_STEP7G_FIRST_PARTY_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false','WNBA_BOARD_SCHEDULER_ENABLED':'false','WNBA_STEP12_SCHEDULER_ENABLED':'false','WNBA_KYRE_DIRECT_SYNC_ENABLED':'false','WNBA_KYRE_RECONCILED_SYNC_ENABLED':'false','WNBA_STEP6J_CANARY_ENABLED':'false','WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED':'false','WNBA_PERSISTENCE_ENABLED':'false','WNBA_SUPABASE_WRITE_ENABLED':'false','WNBA_WAGERING_ENABLED':'false','WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED':'false','WNBA_DEPLOYMENT_REVISION':sha,'WNBA_RELEASE_ID':'wnba-step20b-shared-input-cache-candidate'
+          }
+          for key,value in desired.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
+          if not did: raise SystemExit('deploy id missing')
+          for _ in range(180):
+              deploy=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(deploy.get('status','')).lower()
+              if status=='live': break
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('deploy failed '+status)
+              time.sleep(5)
+          else: raise SystemExit('deploy timeout')
+          if sha.lower() not in json.dumps(deploy).lower(): raise SystemExit('live SHA mismatch')
+          print('STEP20B_RENDER_CANDIDATE_LIVE',did,sha)
+          PY
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Certify repeated scheduler cycles and Step20A Gate B
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'User-Agent':'kyre-step20b-release/1.0'})
+              with urllib.request.urlopen(req,timeout=45) as response: return json.loads(response.read().decode())
+          seen_cycles=set(); board_certified=False; last=None
+          for poll in range(1,161):
+              try:
+                  rt=get('/api/v1/wnba/runtime/step17b')
+                  cache=get('/api/v1/wnba/runtime/step20b-shared-input-cache')
+                  period=get('/api/v1/wnba/runtime/step20b-fanduel-period-filter')
+                  c=get('/api/v1/wnba/consumer/latest')
+                  h=get('/api/v1/wnba/runtime/step19h-fanduel-transport')
+                  l=get('/api/v1/wnba/runtime/step19l-fanduel-identity-trace')
+              except Exception as exc:
+                  if poll%6==0: print('STEP20B_WAIT_HTTP',poll,type(exc).__name__,str(exc),flush=True)
+                  time.sleep(10); continue
+              if period.get('market_stat_filter_active') is not True or cache.get('installed') is not True:
+                  time.sleep(10); continue
+              if int(rt.get('failure_count') or 0)>0: raise SystemExit('Step17B runtime failure after Step20B deploy')
+              if int(h.get('invalid_json_event_count') or 0)>0: raise SystemExit('FanDuel invalid JSON after Step20B deploy')
+              if int(l.get('identity_error_count') or 0)>0: raise SystemExit('FanDuel identity error after Step20B deploy')
+              latest=cache.get('last_cycle') or {}
+              if latest.get('status')=='returned':
+                  secs=float(latest.get('elapsed_seconds') or latest.get('seconds') or 0)
+                  if secs<=0 or secs>=600: raise SystemExit('Step20B scheduler cycle exceeded runtime budget: '+repr(secs))
+                  cycle_no=latest.get('cycle_number')
+                  if cycle_no is not None: seen_cycles.add(int(cycle_no))
+              cr=c.get('runtime') or {}; board=c.get('board') or {}; cards=board.get('primary_top_cards') or []
+              if c.get('available') is True and c.get('reason')=='board_ready' and cr.get('cycle_outcome')=='shadow_board_ready' and int(board.get('qualified_prop_count') or 0)>0 and len(cards)>0:
+                  for idx,card in enumerate(cards,1):
+                      model=(card or {}).get('model') or {}
+                      if int(model.get('simulations') or 0)!=5_000_000: raise SystemExit(f'card {idx} simulation count invalid')
+                      if model.get('converged') is not True: raise SystemExit(f'card {idx} not converged')
+                  board_certified=True
+              last={'poll':poll,'successes':rt.get('success_count'),'runtime_status':rt.get('last_status'),'seen_cycles':sorted(seen_cycles),'last_cycle_seconds':latest.get('elapsed_seconds'),'cache_hits':latest.get('total_hits'),'consumer_available':c.get('available'),'consumer_reason':c.get('reason'),'cycle_outcome':cr.get('cycle_outcome'),'qualified_props':board.get('qualified_prop_count'),'top_cards':len(cards),'board_certified':board_certified}
+              if poll%6==0: print('STEP20B_RENDER_WAIT',json.dumps(last,sort_keys=True),flush=True)
+              if len(seen_cycles)>=2 and int(rt.get('success_count') or 0)>=2 and board_certified:
+                  print('STEP20B_REPEATED_SCHEDULER_CERTIFIED',json.dumps(last,sort_keys=True),flush=True)
+                  print('STEP20A_GATE_B_RECERTIFIED',flush=True)
+                  break
+              time.sleep(10)
+          else:
+              raise SystemExit('Step20B production certification window expired: '+json.dumps(last,sort_keys=True))
+          PY
+
+      - name: Final Step20B production marker
+        run: echo STEP20B_PRODUCTION_AND_GATE_B_CERTIFIED
+
+      - name: Roll back on certification failure
+        if: ${{ failure() && steps.deploy.outputs.deployed == 'true' }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['ROLLBACK_SHA']
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
+          def req(method,path,body=None):
+              request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode(); return json.loads(raw) if raw else None
+          for key,value in {'WNBA_STEP17B_EXPECTED_REVISION':sha,'WNBA_DEPLOYMENT_REVISION':sha,'WNBA_RELEASE_ID':'wnba-step19n-safe-market-state-candidate'}.items():
+              req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
+          if not did: raise SystemExit('rollback deploy id missing')
+          for _ in range(180):
+              deploy=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(deploy.get('status','')).lower()
+              if status=='live': break
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('rollback failed '+status)
+              time.sleep(5)
+          else: raise SystemExit('rollback timeout')
+          if sha.lower() not in json.dumps(deploy).lower(): raise SystemExit('rollback SHA mismatch')
+          print('STEP20B_ROLLBACK_COMPLETE',did,sha)
+          PY
