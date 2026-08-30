@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
 
 from sports_api import wnba_step11_fanduel_provider as fanduel
 from sports_api import wnba_step20b_fanduel_period_filter as period_filter
@@ -30,7 +29,7 @@ class Step20BFanDuelPeriodFilterTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertTrue(period_filter.is_explicit_period_market({"marketName": name}))
 
-    def test_normal_full_game_market_delegates_to_frozen_recognizer(self) -> None:
+    def test_normal_full_game_market_delegates_to_certified_step19f(self) -> None:
         markets = (
             {"marketName": "Napheesa Collier", "marketType": "Player Points"},
             {"marketName": "Napheesa Collier", "marketType": "Player Rebounds"},
@@ -38,33 +37,46 @@ class Step20BFanDuelPeriodFilterTests(unittest.TestCase):
         )
         for market in markets:
             with self.subTest(market=market):
-                expected = period_filter._ORIGINAL_MARKET_STAT(market)
+                expected = period_filter._CERTIFIED_UPSTREAM_MARKET_STAT(market)
                 self.assertIsNotNone(expected)
                 self.assertEqual(
                     period_filter.market_stat_full_game_only_step20b(market),
                     expected,
                 )
 
+    def test_step19f_two_stat_combo_exclusion_remains_in_force(self) -> None:
+        market = {
+            "marketName": "Napheesa Collier - Pts + Reb",
+            "marketType": "Player Points",
+        }
+        # Frozen base recognition alone would see a supported stat token, while
+        # Step19F deliberately excludes this two-stat combo from P/R/A/PRA.
+        self.assertIsNotNone(period_filter._FROZEN_BASE_MARKET_STAT(market))
+        self.assertIsNone(period_filter._CERTIFIED_UPSTREAM_MARKET_STAT(market))
+        self.assertIsNone(period_filter.market_stat_full_game_only_step20b(market))
+
     def test_period_words_inside_unrelated_name_are_not_false_positive(self) -> None:
         market = {"marketName": "Alex Quarterman", "marketType": "Player Points"}
         self.assertFalse(period_filter.is_explicit_period_market(market))
         self.assertEqual(
             period_filter.market_stat_full_game_only_step20b(market),
-            period_filter._ORIGINAL_MARKET_STAT(market),
+            period_filter._CERTIFIED_UPSTREAM_MARKET_STAT(market),
         )
 
     def test_installer_is_exact_and_guardrails_do_not_relax_identity(self) -> None:
         saved = fanduel._market_stat
         saved_installed = period_filter._INSTALLED
         try:
-            fanduel._market_stat = period_filter._ORIGINAL_MARKET_STAT
+            fanduel._market_stat = period_filter._CERTIFIED_UPSTREAM_MARKET_STAT
             period_filter._INSTALLED = False
             status = period_filter.install_step20b_fanduel_period_filter()
             self.assertTrue(status["installed"])
             self.assertTrue(status["market_stat_filter_active"])
+            self.assertTrue(status["certified_step19f_upstream_preserved"])
             guards = status["guardrails"]
             self.assertEqual(guards["scope"], "explicit_quarter_and_half_markets_only")
-            self.assertTrue(guards["full_game_market_stat_delegated_to_frozen_helper"])
+            self.assertTrue(guards["full_game_market_stat_delegated_to_step19f"])
+            self.assertTrue(guards["step19f_two_stat_combo_filter_preserved"])
             for key in (
                 "player_identity_modified",
                 "roster_identity_relaxed",
@@ -90,7 +102,7 @@ class Step20BFanDuelPeriodFilterTests(unittest.TestCase):
         try:
             fanduel._market_stat = lambda _market: "points"
             period_filter._INSTALLED = False
-            with self.assertRaisesRegex(RuntimeError, "unknown FanDuel market-stat override"):
+            with self.assertRaisesRegex(RuntimeError, "unknown override"):
                 period_filter.install_step20b_fanduel_period_filter()
         finally:
             fanduel._market_stat = saved
