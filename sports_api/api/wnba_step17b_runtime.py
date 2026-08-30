@@ -8,6 +8,7 @@ from sports_api import wnba_step19i_official_slate_transport as _step19i
 from sports_api import wnba_step19j_runtime_acceleration as _step19j
 from sports_api import wnba_step19k_market_not_ready as _step19k
 from sports_api import wnba_step19l_fanduel_identity_trace as _step19l
+from sports_api import wnba_step19m_fanduel_line_move as _step19m
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -24,9 +25,12 @@ _step19j.install_step19j_runtime_acceleration()
 # market_not_ready controller semantics. Every other exception remains fatal.
 _step19k.install_step19k_market_not_ready()
 # Step19L observes the complete already-installed FanDuel fetch chain only. It
-# does not alter any provider result or exception and is used to capture the
-# intermittent hosted identity error that direct GitHub stress cannot reproduce.
+# keeps a cumulative sanitized history of identity errors and re-raises them.
 _step19l.install_step19l_fanduel_identity_trace()
+# Step19M fixes the precise hosted line-move bug captured by Step19L: threshold
+# changes are quote state, while market/player/selection/side identity stays
+# immutable and fail-closed. Step19L remains inside this surface for diagnostics.
+_step19m.install_step19m_fanduel_line_move()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
 
@@ -70,3 +74,9 @@ def step19k_market_not_ready_status():
 def step19l_fanduel_identity_trace_status():
     """Return sanitized cumulative hosted FanDuel identity-error diagnostics."""
     return _step19l.get_step19l_fanduel_identity_trace()
+
+
+@router.get("/step19m-fanduel-line-move")
+def step19m_fanduel_line_move_status():
+    """Return non-sensitive status for the strict same-market line-move repair."""
+    return _step19m.installation_status()
