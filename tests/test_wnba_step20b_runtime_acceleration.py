@@ -10,6 +10,7 @@ from sports_api import wnba_player_event_features as event_features
 from sports_api import wnba_projection_input_snapshot as projection_snapshot
 from sports_api import wnba_rotation_context as rotation
 from sports_api import wnba_step20b_runtime_acceleration as accel
+from sports_api import wnba_step20b_step4w_cycle_cache as step4w_cache
 
 
 def test_rotation_cache_is_exact_deepcopy_and_scope_local(monkeypatch):
@@ -303,3 +304,129 @@ def test_upstream_page_cache_hit_is_not_promoted_across_ttls(monkeypatch):
         ("https://www.wnba.com/game/y", 30),
         ("https://www.wnba.com/game/y", 4),
     ]
+
+
+def test_step4w_optional_dispatch_caches_only_successful_exact_results(monkeypatch):
+    calls = []
+
+    class OptionalUnavailable(RuntimeError):
+        pass
+
+    def upstream(name, func, *args, exceptions, **kwargs):
+        calls.append((name, args, kwargs))
+        if name == "missing":
+            return None, {"requested": True, "available": False, "error": "missing", "component": name}
+        return {"component": name, "nested": {"value": 1}}, {
+            "requested": True,
+            "available": True,
+            "error": None,
+            "component": name,
+        }
+
+    monkeypatch.setitem(step4w_cache._UPSTREAM_HELPERS, "_optional_component", upstream)
+    with step4w_cache.cycle_local_cache_scope() as cache:
+        first = step4w_cache.optional_component_step20b(
+            "player_vs_opponent_shot_chart",
+            lambda: None,
+            1629483,
+            2026,
+            exceptions=(OptionalUnavailable,),
+            opponent_team_key="NY",
+        )
+        first[0]["nested"]["value"] = 99
+        second = step4w_cache.optional_component_step20b(
+            "player_vs_opponent_shot_chart",
+            lambda: None,
+            1629483,
+            2026,
+            exceptions=(OptionalUnavailable,),
+            opponent_team_key="NY",
+        )
+        step4w_cache.optional_component_step20b(
+            "missing",
+            lambda: None,
+            1629483,
+            2026,
+            exceptions=(OptionalUnavailable,),
+        )
+        step4w_cache.optional_component_step20b(
+            "missing",
+            lambda: None,
+            1629483,
+            2026,
+            exceptions=(OptionalUnavailable,),
+        )
+        stats = step4w_cache.cache_stats(cache)
+
+    assert second[0]["nested"]["value"] == 1
+    assert [row[0] for row in calls].count("player_vs_opponent_shot_chart") == 1
+    assert [row[0] for row in calls].count("missing") == 2
+    assert stats["hits"]["optional_component"] == 1
+    assert stats["misses"]["optional_component"] == 1
+
+
+def test_step4w_required_cache_is_exact_and_cycle_local(monkeypatch):
+    calls = []
+
+    def upstream(game_id, season, *, include_observed_workload=True):
+        calls.append((game_id, season, include_observed_workload))
+        return {"game_id": game_id, "nested": {"value": 1}}
+
+    monkeypatch.setitem(step4w_cache._UPSTREAM_HELPERS, "get_game_rest_travel_context", upstream)
+    with step4w_cache.cycle_local_cache_scope() as cache:
+        first = step4w_cache.get_game_rest_travel_context_step20b(
+            "1022600297", 2026, include_observed_workload=True
+        )
+        first["nested"]["value"] = 99
+        second = step4w_cache.get_game_rest_travel_context_step20b(
+            "1022600297", 2026, include_observed_workload=True
+        )
+        step4w_cache.get_game_rest_travel_context_step20b(
+            "1022600297", 2026, include_observed_workload=False
+        )
+        stats = step4w_cache.cache_stats(cache)
+
+    with step4w_cache.cycle_local_cache_scope():
+        step4w_cache.get_game_rest_travel_context_step20b(
+            "1022600297", 2026, include_observed_workload=True
+        )
+
+    assert second == {"game_id": "1022600297", "nested": {"value": 1}}
+    assert calls == [
+        ("1022600297", 2026, True),
+        ("1022600297", 2026, False),
+        ("1022600297", 2026, True),
+    ]
+    assert stats["hits"]["rest_travel"] == 1
+    assert stats["misses"]["rest_travel"] == 2
+
+
+def test_step4w_cycle_cache_installer_preserves_step7g_protected_aliases():
+    protected = {
+        name: getattr(projection_snapshot, name)
+        for name in (
+            "get_player_shot_chart_dataset",
+            "get_opponent_defense_by_shot_zone_dataset",
+            "get_player_advanced_stats_dataset",
+            "get_team_advanced_stats_dataset",
+            "get_game_whistle_context",
+        )
+    }
+
+    status = step4w_cache.install_step20b_step4w_cycle_cache()
+
+    assert status["installed"] is True
+    assert status["all_bindings_active"] is True
+    assert status["guardrails"]["cache_scope"] == "single_step12b_call_only"
+    assert status["guardrails"]["cached_values_returned_by_deepcopy"] is True
+    assert status["guardrails"]["raised_exceptions_cached"] is False
+    assert status["guardrails"]["optional_unavailable_results_cached"] is False
+    assert status["guardrails"]["step7g_protected_provider_aliases_modified"] is False
+    assert status["guardrails"]["projection_math_modified"] is False
+    assert status["guardrails"]["readiness_relaxed"] is False
+    assert status["guardrails"]["monte_carlo_simulation_count_modified"] is False
+    assert status["guardrails"]["monte_carlo_batch_size_modified"] is False
+    assert status["guardrails"]["sportsbook_transport_modified"] is False
+    assert status["guardrails"]["persistence_modified"] is False
+    assert status["guardrails"]["wagering_enabled"] is False
+    assert {name: getattr(projection_snapshot, name) for name in protected} == protected
