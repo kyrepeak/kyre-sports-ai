@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 
-# Refresh marker: post-cooldown production observation.
+# Refresh marker: Step19I pre-deploy baseline observation 2026-08-30.
 jobs:
   observe:
     runs-on: ubuntu-latest
