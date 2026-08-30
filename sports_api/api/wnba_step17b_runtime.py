@@ -6,6 +6,7 @@ from sports_api import wnba_step19g_hosted_provider_trace as _step19g
 from sports_api import wnba_step19h_fanduel_hosted_transport as _step19h
 from sports_api import wnba_step19i_official_slate_transport as _step19i
 from sports_api import wnba_step19j_runtime_acceleration as _step19j
+from sports_api import wnba_step19k_market_not_ready as _step19k
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -14,10 +15,13 @@ _step19e.install_step19e_cooldown_aware_cycle()
 _step19g.install_step19g_hosted_provider_trace()
 _step19h.install_step19h_fanduel_hosted_transport()
 _step19i.install_step19i_official_slate_transport()
-# Step19J must be last: it wraps the already-installed Step19G trace chain so
-# provider diagnostics remain active while a private per-cycle context memo is
-# in scope.
+# Step19J wraps the already-installed Step19G trace chain so provider diagnostics
+# remain active while a private per-cycle context memo is in scope.
 _step19j.install_step19j_runtime_acceleration()
+# Step19K is deliberately outermost. It transforms only the proven
+# no-exact-same-line Step12B condition into the existing closed-circuit
+# market_not_ready controller semantics. Every other exception remains fatal.
+_step19k.install_step19k_market_not_ready()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
 
@@ -49,3 +53,9 @@ def step19i_official_slate_transport_status():
 def step19j_runtime_acceleration_status():
     """Return non-sensitive cycle-local runtime acceleration status."""
     return _step19j.installation_status()
+
+
+@router.get("/step19k-market-not-ready")
+def step19k_market_not_ready_status():
+    """Return non-sensitive exact-line market readiness compatibility status."""
+    return _step19k.installation_status()
