@@ -1,0 +1,160 @@
+name: WNBA Step20B guarded rollover stage trace
+
+on:
+  push:
+    branches:
+      - wnba-step20b-rollover-runtime-diagnostic-20260830
+    paths:
+      - '.github/workflows/wnba-step20b-rollover-trace-render.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step20b-rollover-stage-trace
+  cancel-in-progress: true
+
+env:
+  CANDIDATE_SHA: ${{ github.sha }}
+  ROLLBACK_SHA: aaf8b8a5425ea6e1b0ab33e6c42f35c95e8905ab
+  RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
+  RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout exact diagnostic candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Certify trace is semantics-neutral
+        run: |
+          python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
+          python -m pytest -q \
+            tests/test_wnba_step19n_fanduel_empty_market.py \
+            tests/test_wnba_step19m_fanduel_line_move.py \
+            tests/test_wnba_step19k_market_not_ready.py \
+            tests/test_wnba_step19j_runtime_acceleration.py
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step20b_rollover_stage_trace as t
+          import sports_api.api.wnba_step17b_runtime
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          st=t.installation_status()
+          assert st['all_stage_wrappers_active'] is True
+          g=st['guardrails']
+          assert g['diagnostic_only'] is True
+          for key in ('arguments_modified','return_values_modified','exceptions_reclassified','execution_order_modified','projection_math_modified','monte_carlo_simulation_count_modified','monte_carlo_batch_size_modified','sportsbook_transport_modified','readiness_relaxed','persistence_modified','wagering_enabled'):
+              assert g[key] is False, key
+          print('STEP20B_TRACE_SEMANTICS_NEUTRAL_CERTIFIED')
+          PY
+
+      - name: Deploy exact diagnostic candidate to Render
+        id: deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['CANDIDATE_SHA']
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
+          def req(method,path,body=None):
+              request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode(); return json.loads(raw) if raw else None
+          for key,value in {
+              'WNBA_STEP17B_EXPECTED_REVISION':sha,
+              'WNBA_DEPLOYMENT_REVISION':sha,
+              'WNBA_RELEASE_ID':'wnba-step20b-rollover-stage-trace',
+          }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
+          if not did: raise SystemExit('diagnostic deploy id missing')
+          for _ in range(180):
+              d=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(d.get('status','')).lower()
+              if status=='live': break
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('diagnostic deploy failed '+status)
+              time.sleep(5)
+          else: raise SystemExit('diagnostic deploy timeout')
+          if sha.lower() not in json.dumps(d).lower(): raise SystemExit('diagnostic live SHA mismatch')
+          print('STEP20B_TRACE_RENDER_LIVE',did,sha,flush=True)
+          PY
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Observe in-flight rollover stages
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'User-Agent':'kyre-step20b-stage-trace/1.0'})
+              with urllib.request.urlopen(req,timeout=45) as response: return json.loads(response.read().decode())
+          max_stage={}; last_seq=0
+          for poll in range(1,37):
+              try:
+                  rt=get('/api/v1/wnba/runtime/step17b')
+                  tr=get('/api/v1/wnba/runtime/step20b-rollover-stage-trace')
+                  j=get('/api/v1/wnba/runtime/step19j-runtime-acceleration')
+              except Exception as exc:
+                  print('STEP20B_TRACE_HTTP_WAIT',poll,type(exc).__name__,str(exc),flush=True); time.sleep(10); continue
+              active=tr.get('active_call')
+              recent=tr.get('recent_completed') or []
+              for ev in recent:
+                  seq=int(ev.get('sequence') or 0)
+                  if seq<=last_seq: continue
+                  stage=str(ev.get('stage')); elapsed=float(ev.get('elapsed_seconds') or 0)
+                  if elapsed > float((max_stage.get(stage) or {}).get('elapsed_seconds') or -1): max_stage[stage]=ev
+              if recent: last_seq=max(last_seq,max(int(ev.get('sequence') or 0) for ev in recent))
+              summary={
+                'poll':poll,'runtime_status':rt.get('last_status'),'runtime_cycles':rt.get('cycle_count'),'runtime_successes':rt.get('success_count'),'runtime_failures':rt.get('failure_count'),
+                'active':active,'call_counts':tr.get('call_counts'),'step19j_hits':j.get('total_rest_context_hits'),'step19j_misses':j.get('total_rest_context_misses'),'step19j_last_cycle':j.get('last_cycle'),
+              }
+              print('STEP20B_TRACE_SAMPLE',json.dumps(summary,sort_keys=True),flush=True)
+              if int(rt.get('success_count') or 0)>0 or int(rt.get('failure_count') or 0)>0:
+                  # Keep two extra samples only if cycle completed quickly is unnecessary; final completed events already persist.
+                  break
+              time.sleep(10)
+          print('STEP20B_TRACE_STAGE_MAXIMA',json.dumps(max_stage,sort_keys=True),flush=True)
+          print('STEP20B_TRACE_DIAGNOSTIC_COMPLETE',flush=True)
+          PY
+
+      - name: Restore certified Step19N production revision
+        if: always() && steps.deploy.outputs.deployed == 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['ROLLBACK_SHA']
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
+          def req(method,path,body=None):
+              request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode(); return json.loads(raw) if raw else None
+          for key,value in {
+              'WNBA_STEP17B_EXPECTED_REVISION':sha,
+              'WNBA_DEPLOYMENT_REVISION':sha,
+              'WNBA_RELEASE_ID':'wnba-step19n-safe-market-state-candidate',
+          }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+          out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
+          if not did: raise SystemExit('restore deploy id missing')
+          for _ in range(180):
+              d=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(d.get('status','')).lower()
+              if status=='live': break
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('restore deploy failed '+status)
+              time.sleep(5)
+          else: raise SystemExit('restore deploy timeout')
+          if sha.lower() not in json.dumps(d).lower(): raise SystemExit('restore live SHA mismatch')
+          print('STEP20B_STEP19N_RESTORED',did,sha,flush=True)
+          PY
