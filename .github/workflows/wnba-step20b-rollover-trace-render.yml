@@ -6,6 +6,8 @@ on:
       - wnba-step20b-rollover-runtime-diagnostic-20260830
     paths:
       - '.github/workflows/wnba-step20b-rollover-trace-render.yml'
+      - 'sports_api/wnba_step20b_rollover_stage_trace.py'
+      - 'tests/test_wnba_step20b_rollover_stage_trace.py'
 
 permissions:
   contents: read
@@ -54,12 +56,14 @@ jobs:
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
           st=t.installation_status()
           assert st['all_stage_wrappers_active'] is True
+          assert st['protected_step7g_step4w_bindings_untouched'] is True
+          assert st['protected_step7g_step4w_bindings_wrapped'] == []
           g=st['guardrails']
           assert g['diagnostic_only'] is True
           assert g['frozen_step7g_source_seams_patched'] is False
           for key in ('arguments_modified','return_values_modified','exceptions_reclassified','execution_order_modified','projection_math_modified','monte_carlo_simulation_count_modified','monte_carlo_batch_size_modified','sportsbook_transport_modified','readiness_relaxed','persistence_modified','wagering_enabled'):
               assert g[key] is False, key
-          print('STEP20B_TRACE_SEMANTICS_NEUTRAL_CERTIFIED')
+          print('STEP20B_TRACE_V4_IDENTITY_SAFE_CERTIFIED')
           PY
 
       - name: Deploy exact diagnostic candidate to Render
@@ -78,7 +82,7 @@ jobs:
           for key,value in {
               'WNBA_STEP17B_EXPECTED_REVISION':sha,
               'WNBA_DEPLOYMENT_REVISION':sha,
-              'WNBA_RELEASE_ID':'wnba-step20b-rollover-stage-trace-v2',
+              'WNBA_RELEASE_ID':'wnba-step20b-rollover-stage-trace-v4',
           }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
           out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
           if not did: raise SystemExit('diagnostic deploy id missing')
@@ -99,7 +103,7 @@ jobs:
           import json, time, urllib.request
           base='https://kyre-sports-api.onrender.com'
           def get(path):
-              req=urllib.request.Request(base+path,headers={'User-Agent':'kyre-step20b-stage-trace-v2/1.0'})
+              req=urllib.request.Request(base+path,headers={'User-Agent':'kyre-step20b-stage-trace-v4/1.0'})
               with urllib.request.urlopen(req,timeout=45) as response: return json.loads(response.read().decode())
           max_stage={}; last_seq=0
           for poll in range(1,37):
