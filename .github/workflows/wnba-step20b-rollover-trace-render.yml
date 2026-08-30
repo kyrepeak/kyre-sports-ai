@@ -80,12 +80,39 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, pathlib, secrets, time, urllib.request
-          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['CANDIDATE_SHA']
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['CANDIDATE_SHA'].lower()
           headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
           def req(method,path,body=None):
               request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
               with urllib.request.urlopen(request,timeout=30) as response:
                   raw=response.read().decode(); return json.loads(raw) if raw else None
+          def walk(value):
+              if isinstance(value, dict):
+                  yield value
+                  for child in value.values():
+                      yield from walk(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from walk(child)
+          def deploy_id(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if isinstance(did,str) and did.startswith('dep-'):
+                      return did
+              return None
+          def deploy_for_sha(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if not isinstance(did,str) or not did.startswith('dep-'):
+                      continue
+                  if sha in json.dumps(row,sort_keys=True,default=str).lower():
+                      return did
+              return None
+          def recent_for_sha():
+              return deploy_for_sha(req('GET',f'/services/{sid}/deploys?limit=20') or [])
+          def request_candidate():
+              return req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
+
           token=secrets.token_hex(32)
           pathlib.Path(os.environ['RUNNER_TEMP'],'step20b_probe_token').write_text(token,encoding='utf-8')
           for key,value in {
@@ -96,15 +123,54 @@ jobs:
               'WNBA_STEP20B_PROBE_ENABLED':'true',
               'WNBA_STEP20B_PROBE_TOKEN':token,
           }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
-          out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
-          if not did: raise SystemExit('certification deploy id missing')
+
+          out=request_candidate()
+          did=deploy_for_sha(out)
+          if did is None:
+              possible=deploy_id(out)
+              if possible:
+                  try:
+                      detail=req('GET',f'/services/{sid}/deploys/{possible}') or {}
+                  except Exception:
+                      detail={}
+                  if sha in json.dumps(detail,sort_keys=True,default=str).lower():
+                      did=possible
+
+          # Render can return an accepted/nested response without a top-level ID,
+          # especially while env-var updates are coalescing deploy work. Resolve
+          # the exact target by full commit SHA instead of guessing the newest ID.
+          for attempt in range(45):
+              if did:
+                  break
+              try:
+                  did=recent_for_sha()
+              except Exception:
+                  did=None
+              if did:
+                  break
+              # Retry the explicit candidate request only if no exact-SHA deploy
+              # has appeared. This is safe because every accepted deploy is later
+              # verified against the full candidate SHA before use.
+              if attempt in {14,29}:
+                  try:
+                      retry=request_candidate()
+                      did=deploy_for_sha(retry) or deploy_id(retry)
+                      if did:
+                          detail=req('GET',f'/services/{sid}/deploys/{did}') or {}
+                          if sha not in json.dumps(detail,sort_keys=True,default=str).lower():
+                              did=None
+                  except Exception:
+                      did=None
+              time.sleep(2)
+          if not did: raise SystemExit('certification exact-SHA deploy could not be resolved')
+
           for _ in range(180):
               d=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(d.get('status','')).lower()
               if status=='live': break
               if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('certification deploy failed '+status)
               time.sleep(5)
           else: raise SystemExit('certification deploy timeout')
-          if sha.lower() not in json.dumps(d).lower(): raise SystemExit('certification live SHA mismatch')
+          if sha not in json.dumps(d,sort_keys=True,default=str).lower(): raise SystemExit('certification live SHA mismatch')
           print('STEP20B_FULL_RUNTIME_RENDER_LIVE',did,sha,flush=True)
           PY
           echo "deployed=true" >> "$GITHUB_OUTPUT"
@@ -148,12 +214,39 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, time, urllib.request
-          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['ROLLBACK_SHA']
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['ROLLBACK_SHA'].lower()
           headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
           def req(method,path,body=None):
               request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
               with urllib.request.urlopen(request,timeout=30) as response:
                   raw=response.read().decode(); return json.loads(raw) if raw else None
+          def walk(value):
+              if isinstance(value, dict):
+                  yield value
+                  for child in value.values():
+                      yield from walk(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from walk(child)
+          def deploy_id(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if isinstance(did,str) and did.startswith('dep-'):
+                      return did
+              return None
+          def deploy_for_sha(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if not isinstance(did,str) or not did.startswith('dep-'):
+                      continue
+                  if sha in json.dumps(row,sort_keys=True,default=str).lower():
+                      return did
+              return None
+          def recent_for_sha():
+              return deploy_for_sha(req('GET',f'/services/{sid}/deploys?limit=20') or [])
+          def request_restore():
+              return req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
+
           for key,value in {
               'WNBA_STEP17B_EXPECTED_REVISION':sha,
               'WNBA_DEPLOYMENT_REVISION':sha,
@@ -162,14 +255,46 @@ jobs:
               'WNBA_STEP20B_PROBE_ENABLED':'false',
               'WNBA_STEP20B_PROBE_TOKEN':'disabled-diagnostic-probe-token-not-active',
           }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
-          out=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}; did=out.get('id')
-          if not did: raise SystemExit('restore deploy id missing')
+
+          out=request_restore()
+          did=deploy_for_sha(out)
+          if did is None:
+              possible=deploy_id(out)
+              if possible:
+                  try:
+                      detail=req('GET',f'/services/{sid}/deploys/{possible}') or {}
+                  except Exception:
+                      detail={}
+                  if sha in json.dumps(detail,sort_keys=True,default=str).lower():
+                      did=possible
+          for attempt in range(45):
+              if did:
+                  break
+              try:
+                  did=recent_for_sha()
+              except Exception:
+                  did=None
+              if did:
+                  break
+              if attempt in {14,29}:
+                  try:
+                      retry=request_restore()
+                      did=deploy_for_sha(retry) or deploy_id(retry)
+                      if did:
+                          detail=req('GET',f'/services/{sid}/deploys/{did}') or {}
+                          if sha not in json.dumps(detail,sort_keys=True,default=str).lower():
+                              did=None
+                  except Exception:
+                      did=None
+              time.sleep(2)
+          if not did: raise SystemExit('restore exact-SHA deploy could not be resolved')
+
           for _ in range(180):
               d=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(d.get('status','')).lower()
               if status=='live': break
               if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('restore deploy failed '+status)
               time.sleep(5)
           else: raise SystemExit('restore deploy timeout')
-          if sha.lower() not in json.dumps(d).lower(): raise SystemExit('restore live SHA mismatch')
+          if sha not in json.dumps(d,sort_keys=True,default=str).lower(): raise SystemExit('restore live SHA mismatch')
           print('STEP20B_STEP19N_RESTORED',did,sha,flush=True)
           PY
