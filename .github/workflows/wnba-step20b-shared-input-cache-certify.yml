@@ -6,8 +6,10 @@ on:
       - wnba-step20b-step8a-shared-input-cache-20260830
     paths:
       - 'sports_api/wnba_step20b_shared_input_cache.py'
+      - 'sports_api/wnba_step20b_fanduel_period_filter.py'
       - 'sports_api/api/wnba_step17b_runtime.py'
       - 'tests/test_wnba_step20b_shared_input_cache.py'
+      - 'tests/test_wnba_step20b_fanduel_period_filter.py'
       - '.github/workflows/wnba-step20b-shared-input-cache-certify.yml'
   workflow_dispatch:
 
@@ -74,11 +76,14 @@ jobs:
           python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
           python -m pip install pytest >/dev/null
 
-      - name: Step20B exact cache semantics
-        run: python -m pytest -q tests/test_wnba_step20b_shared_input_cache.py
-
-      - name: Frozen Step7G integration wall
+      - name: Step20B exact cache and market-scope semantics
         run: |
+          python -m pytest -q tests/test_wnba_step20b_shared_input_cache.py
+          python -m pytest -q tests/test_wnba_step20b_fanduel_period_filter.py
+
+      - name: Frozen FanDuel and Step7G regression wall
+        run: |
+          python -m pytest -q tests/test_wnba_step11_fanduel_provider.py
           python -m pytest -q \
             tests/test_wnba_step7g_first_party_integration.py \
             tests/test_wnba_step7g_first_party_rosters.py \
@@ -106,13 +111,17 @@ jobs:
       - name: Prove exact hosted wrapper chain and frozen safety
         run: |
           python - <<'PY'
+          from sports_api import wnba_step11_fanduel_provider as fd
           from sports_api import wnba_step12b_live_runtime_assembly as s12b
           from sports_api import wnba_step19j_runtime_acceleration as j
           from sports_api import wnba_step19n_fanduel_empty_market as n
+          from sports_api import wnba_step20b_fanduel_period_filter as p
           from sports_api import wnba_step20b_shared_input_cache as b
           from sports_api import wnba_step7g_first_party_integration as g
           import sports_api.api.wnba_step17b_runtime
 
+          assert fd._market_stat is p.market_stat_full_game_only_step20b
+          assert p.installation_status()['market_stat_filter_active'] is True
           assert s12b.run_step12b_live_runtime_job is b.run_step12b_with_shared_input_cache
           assert b._UPSTREAM_RUN_STEP12B is n.run_step12b_fanduel_empty_market_compatible
           assert b.installation_status()['installed'] is True
@@ -122,26 +131,31 @@ jobs:
           assert g.get_step7g_first_party_status()['all_core_seams_installed'] is True
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
-          guards=b.installation_status()['guardrails']
-          for key in (
-              'frozen_step7g_public_provider_seams_modified',
-              'player_coverage_modified',
-              'exact_line_matching_modified',
-              'different_lines_blended',
-              'monte_carlo_simulation_count_modified',
-              'monte_carlo_batch_size_modified',
-              'projection_math_modified',
-              'readiness_relaxed',
-              'sportsbook_transport_modified',
-              'controller_state_modified',
-              'durable_lease_policy_modified',
-              'persistence_modified',
-              'wagering_enabled',
-          ):
-              assert guards[key] is False, key
-          assert guards['exceptions_cached'] is False
-          assert guards['cache_cleared_after_every_cycle'] is True
-          assert guards['cached_values_returned_by_deepcopy'] is True
+          for guards in (p.installation_status()['guardrails'], b.installation_status()['guardrails']):
+              for key in (
+                  'exact_line_matching_modified',
+                  'different_lines_blended',
+                  'monte_carlo_simulation_count_modified',
+                  'monte_carlo_batch_size_modified',
+                  'projection_math_modified',
+                  'readiness_relaxed',
+                  'persistence_modified',
+                  'wagering_enabled',
+              ):
+                  assert guards[key] is False, key
+          bguards=b.installation_status()['guardrails']
+          assert bguards['player_coverage_modified'] is False
+          assert bguards['sportsbook_transport_modified'] is False
+          assert bguards['controller_state_modified'] is False
+          assert bguards['durable_lease_policy_modified'] is False
+          assert bguards['exceptions_cached'] is False
+          assert bguards['cache_cleared_after_every_cycle'] is True
+          assert bguards['cached_values_returned_by_deepcopy'] is True
+          pguards=p.installation_status()['guardrails']
+          assert pguards['player_identity_modified'] is False
+          assert pguards['roster_identity_relaxed'] is False
+          assert pguards['sportsbook_transport_modified'] is False
+          assert pguards['price_logic_modified'] is False
           print('STEP20B_HOSTED_CHAIN_CERTIFIED')
           PY
 
@@ -152,6 +166,7 @@ jobs:
           from datetime import datetime, timezone
           from zoneinfo import ZoneInfo
           from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19l_fanduel_identity_trace as l
           import sports_api.api.wnba_step17b_runtime
 
           now=datetime.now(timezone.utc)
@@ -173,9 +188,12 @@ jobs:
               'status':status,
               'cycle_outcome':outcome,
               'projection_count':len(result.get('projections') or []),
+              'fd_identity_errors':l.get_step19l_fanduel_identity_trace().get('identity_error_count'),
           },sort_keys=True))
           if status not in {'market_not_ready','shadow_board_ready','ready'}:
               raise SystemExit('Unexpected live Step12B status: '+repr(status))
+          if int(l.get_step19l_fanduel_identity_trace().get('identity_error_count') or 0) != 0:
+              raise SystemExit('FanDuel identity error survived Step20B full-game market filter')
           b=__import__('sports_api.wnba_step20b_shared_input_cache',fromlist=['installation_status'])
           latest=b.installation_status().get('last_cycle') or {}
           print('STEP20B_CACHE_LIVE',json.dumps(latest,sort_keys=True))
