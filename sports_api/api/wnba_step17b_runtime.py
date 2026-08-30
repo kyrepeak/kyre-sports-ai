@@ -12,6 +12,7 @@ from sports_api import wnba_step19m_fanduel_line_move as _step19m
 from sports_api import wnba_step19n_fanduel_empty_market as _step19n
 from sports_api import wnba_step20b_fanduel_period_filter as _step20b_period
 from sports_api import wnba_step20b_shared_input_cache as _step20b
+from sports_api import wnba_step20b_render_inflight_trace as _step20b_trace
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -45,6 +46,9 @@ _step19n.install_step19n_fanduel_empty_market()
 # one Step12B call private deep-copy memos for shared Step8A helper inputs, then
 # discards every memo in finally before the next scheduler cycle.
 _step20b.install_step20b_shared_input_cache()
+# Diagnostic-only private Step12B orchestration timing. This leaves the Step20B
+# Step12B wrapper itself outermost and does not touch official-data/provider seams.
+_step20b_trace.install_step20b_render_inflight_trace()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
 
@@ -112,3 +116,9 @@ def step20b_fanduel_period_filter_status():
 def step20b_shared_input_cache_status():
     """Return non-sensitive cycle-local Step8A shared-input cache diagnostics."""
     return _step20b.installation_status()
+
+
+@router.get("/step20b-render-inflight-trace")
+def step20b_render_inflight_trace_status():
+    """Return semantics-neutral in-flight Step12B/Step8 timing diagnostics."""
+    return _step20b_trace.installation_status()
