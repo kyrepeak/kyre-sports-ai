@@ -1,0 +1,50 @@
+name: WNBA Step20B optional workload compatibility tests
+
+on:
+  push:
+    branches:
+      - wnba-step20b-rollover-runtime-diagnostic-20260830
+    paths:
+      - '.github/workflows/wnba-step20b-workload-compat-tests.yml'
+      - 'sports_api/wnba_step20b_optional_workload_compat.py'
+      - 'sports_api/api/wnba_step17b_runtime.py'
+      - 'tests/test_wnba_step20b_optional_workload_compat.py'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Certify optional workload fail-soft boundary
+        run: |
+          python -m pytest -q tests/test_wnba_step20b_optional_workload_compat.py
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step20b_optional_workload_compat as compat
+          status = compat.install_step20b_optional_workload_compat()
+          assert status['binding_active'] is True
+          guards = status['guardrails']
+          assert guards['first_party_not_found_only'] is True
+          assert guards['other_observed_workload_exceptions_reraised'] is True
+          assert guards['required_schedule_rest_travel_failures_relaxed'] is False
+          assert guards['unavailable_metrics_are_none_not_zero'] is True
+          assert guards['workload_values_fabricated'] is False
+          assert guards['projection_math_modified'] is False
+          assert guards['readiness_relaxed'] is False
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          print('STEP20B_OPTIONAL_WORKLOAD_COMPAT_CERTIFIED')
+          PY
