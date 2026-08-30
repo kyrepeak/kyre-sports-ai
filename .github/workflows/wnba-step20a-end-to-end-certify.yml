@@ -1,0 +1,273 @@
+name: WNBA Step20A end-to-end graduation certification
+
+on:
+  push:
+    branches:
+      - wnba-step20a-end-to-end-certification-20260830
+    paths:
+      - '.github/workflows/wnba-step20a-end-to-end-certify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step20a-end-to-end-certification
+  cancel-in-progress: true
+
+env:
+  STEP19_FREEZE_SHA: 733155d93e1e1657f56fb3d1aac9694d2c54c945
+  STEP19_PROD_SHA: aaf8b8a5425ea6e1b0ab33e6c42f35c95e8905ab
+  RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_PERSISTENCE_ENABLED: 'false'
+  WNBA_SUPABASE_WRITE_ENABLED: 'false'
+  WNBA_WAGERING_ENABLED: 'false'
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+
+jobs:
+  deterministic-full-chain:
+    name: deterministic full-chain graduation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Step20A head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove Step20A contains no production code drift
+        run: |
+          git cat-file -e "$STEP19_FREEZE_SHA^{commit}"
+          python - <<'PY'
+          import os, subprocess
+          base=os.environ['STEP19_FREEZE_SHA']
+          allowed={
+              'checkpoints/WNBA_STEP20A_END_TO_END_CERTIFICATION_20260830.md',
+              '.github/workflows/wnba-step20a-end-to-end-certify.yml',
+          }
+          changed=set(filter(None,subprocess.check_output(['git','diff','--name-only',base+'..HEAD'],text=True).splitlines()))
+          print('STEP20A_DIFF',sorted(changed))
+          if changed != allowed:
+              raise SystemExit('Step20A contains unexpected production drift: '+repr(sorted(changed)))
+          print('STEP20A_NO_CODE_DRIFT_CERTIFIED')
+          PY
+
+      - name: Verify graduation checkpoint
+        run: |
+          grep -F "$STEP19_FREEZE_SHA" checkpoints/WNBA_STEP20A_END_TO_END_CERTIFICATION_20260830.md
+          grep -F '5,000,000 simulations per built target' checkpoints/WNBA_STEP20A_END_TO_END_CERTIFICATION_20260830.md
+          grep -F 'SportsGameOdds is not used' checkpoints/WNBA_STEP20A_END_TO_END_CERTIFICATION_20260830.md
+          grep -F 'Different sportsbook lines are never blended' checkpoints/WNBA_STEP20A_END_TO_END_CERTIFICATION_20260830.md
+          echo STEP20A_CHECKPOINT_CERTIFIED
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Official-input and projection regression wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step7g_first_party_integration.py \
+            tests/test_wnba_step7g_first_party_rosters.py \
+            tests/test_wnba_step7g_schedule_context.py \
+            tests/test_wnba_step7g_cup_exclusion.py \
+            tests/test_wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_core_projection.py \
+            tests/test_wnba_step8_context_adjustment.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_projection_handoff.py
+
+      - name: Pricing consensus ranking and live-market regression wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step9_threshold_pricing.py \
+            tests/test_wnba_step9_sportsbook_market_comparison.py \
+            tests/test_wnba_step9_multisportsbook_consensus.py \
+            tests/test_wnba_step9_qualification_ranking.py \
+            tests/test_wnba_step10_live_market_input.py \
+            tests/test_wnba_step10_market_adapters.py \
+            tests/test_wnba_step10_market_snapshot.py \
+            tests/test_wnba_step10_refresh_controller.py \
+            tests/test_wnba_step10_live_market_board.py
+
+      - name: Multibook runtime and consumer regression wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step11_draftkings_provider.py \
+            tests/test_wnba_step11_fanduel_provider.py \
+            tests/test_wnba_step11_multibook_shadow_board.py \
+            tests/test_wnba_step11_controlled_automation.py \
+            tests/test_wnba_step12_shadow_runner.py \
+            tests/test_wnba_step12b_live_runtime_assembly.py \
+            tests/test_wnba_step12c_live_board_runtime.py \
+            tests/test_wnba_step18a_streamlit_consumer.py
+
+      - name: Step19 production-compatibility regression wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19g_hosted_provider_trace.py \
+            tests/test_wnba_step19h_fanduel_hosted_transport.py \
+            tests/test_wnba_step19i_official_slate_transport.py \
+            tests/test_wnba_step19j_runtime_acceleration.py \
+            tests/test_wnba_step19k_market_not_ready.py \
+            tests/test_wnba_step19l_fanduel_identity_trace.py \
+            tests/test_wnba_step19m_fanduel_line_move.py \
+            tests/test_wnba_step19n_fanduel_empty_market.py
+
+      - name: Prove frozen model and runtime invariants
+        run: |
+          python - <<'PY'
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19h_fanduel_hosted_transport as h
+          from sports_api import wnba_step19k_market_not_ready as k
+          from sports_api import wnba_step19l_fanduel_identity_trace as l
+          from sports_api import wnba_step19m_fanduel_line_move as m
+          from sports_api import wnba_step19n_fanduel_empty_market as n
+          import sports_api.api.wnba_step17b_runtime
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          assert fd.fetch_step11c_fanduel_provider_bridge is l.fetch_step11c_with_identity_trace
+          assert l._UPSTREAM_FETCH_STEP11C is h.fetch_step11c_with_transport_probe
+          assert fd._market_identity_surface is m.market_identity_surface_step19m
+          assert s12b.run_step12b_live_runtime_job is n.run_step12b_fanduel_empty_market_compatible
+          assert n._UPSTREAM_RUN_STEP12B is k.run_step12b_market_not_ready_compatible
+          mg=m.installation_status()['guardrails']; ng=n.installation_status()['guardrails']
+          for key in ('selection_id_change_allowed','runner_side_change_allowed','market_type_change_allowed','player_identity_change_allowed','different_lines_blended','exact_line_matching_modified','projection_logic_modified','monte_carlo_simulation_count_modified','readiness_relaxed','provider_retry_policy_modified','controller_state_modified','persistence_modified','wagering_enabled'):
+              assert mg[key] is False, key
+          for key in ('identity_failure_reclassified','transport_failure_reclassified','upstream_failure_reclassified','landing_page_failure_reclassified','fanduel_bridge_fabricated','different_lines_blended','fake_projection_created','monte_carlo_simulation_count_modified','projection_math_modified','provider_transport_modified','readiness_relaxed','persistence_modified','wagering_enabled'):
+              assert ng[key] is False, key
+          print('STEP20A_FROZEN_INVARIANTS_CERTIFIED')
+          PY
+
+      - name: Prove deterministic end-to-end board and consumer seams
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step12b_live_runtime_assembly.py::Tests::test_full_frozen_runtime_reuses_each_provider_bridge_once \
+            tests/test_wnba_step12c_live_board_runtime.py \
+            tests/test_wnba_step18a_streamlit_consumer.py::test_capture_exposes_already_computed_board_and_freshness_without_recompute
+          echo STEP20A_DETERMINISTIC_FULL_CHAIN_CERTIFIED
+
+  current-live-witness:
+    name: genuine current-live board witness
+    needs: deterministic-full-chain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - name: Watch production for a genuine ranked multibook board
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request
+          base='https://kyre-sports-api.onrender.com'
+          def get(path):
+              req=urllib.request.Request(base+path,headers={'User-Agent':'kyre-step20a-cert/1.0'})
+              with urllib.request.urlopen(req,timeout=45) as response:
+                  return json.loads(response.read().decode())
+
+          last=None
+          safe_not_ready_seen=0
+          # 84 * 15s = 21 minutes. This intentionally spans the Eastern-date rollover
+          # when Step20A starts near midnight ET, without waiting indefinitely.
+          for poll in range(1,85):
+              try:
+                  rt=get('/api/v1/wnba/runtime/step17b')
+                  c=get('/api/v1/wnba/consumer/latest')
+                  dk=get('/api/v1/wnba/markets/direct/draftkings/status')
+                  g=get('/api/v1/wnba/runtime/step19g-provider-trace')
+                  h=get('/api/v1/wnba/runtime/step19h-fanduel-transport')
+                  l=get('/api/v1/wnba/runtime/step19l-fanduel-identity-trace')
+              except Exception as exc:
+                  if poll % 4 == 0:
+                      print('STEP20A_LIVE_HTTP_WAIT',poll,type(exc).__name__,str(exc),flush=True)
+                  time.sleep(15)
+                  continue
+
+              d=dk.get('draftkings') or {}
+              latest=g.get('latest') or {}
+              gd=latest.get('draftkings') or {}; gf=latest.get('fanduel') or {}
+              cr=c.get('runtime') or {}
+              board=c.get('board') or {}
+              cards=board.get('primary_top_cards') or []
+              qualified=int(board.get('qualified_prop_count') or 0)
+              top_count=int(board.get('top_card_count') or len(cards) or 0)
+              identity_errors=int(l.get('identity_error_count') or 0)
+              invalid_json=int(h.get('invalid_json_event_count') or 0)
+              runtime_failures=int(rt.get('failure_count') or 0)
+              cycle_outcome=(cr.get('cycle_outcome') or latest.get('cycle_outcome'))
+              circuit=cr.get('circuit_state')
+              consecutive=int(cr.get('consecutive_failures') or 0)
+              last={
+                  'poll':poll,
+                  'runtime_cycles':rt.get('cycle_count'),
+                  'runtime_successes':rt.get('success_count'),
+                  'runtime_failures':runtime_failures,
+                  'runtime_status':rt.get('last_status'),
+                  'consumer_available':c.get('available'),
+                  'consumer_reason':c.get('reason'),
+                  'cycle_outcome':cycle_outcome,
+                  'circuit':circuit,
+                  'consecutive_failures':consecutive,
+                  'dk_ready':d.get('ready'),
+                  'dk_records':gd.get('record_count'),
+                  'fd_records':gf.get('record_count'),
+                  'fd_identity_errors':identity_errors,
+                  'fd_invalid_json':invalid_json,
+                  'qualified_props':qualified,
+                  'top_cards':top_count,
+                  'slate_date':latest.get('slate_date'),
+              }
+              if poll % 4 == 0:
+                  print('STEP20A_LIVE_WAIT',json.dumps(last,sort_keys=True),flush=True)
+
+              # Real provider failures remain terminal; Step20A never hides them as market state.
+              if runtime_failures > 0:
+                  raise SystemExit('STEP20A_PROVIDER_OR_RUNTIME_FAILURE '+json.dumps(last,sort_keys=True))
+              if identity_errors > 0:
+                  raise SystemExit('STEP20A_FANDUEL_IDENTITY_FAILURE '+json.dumps(last,sort_keys=True))
+              if invalid_json > 0:
+                  raise SystemExit('STEP20A_FANDUEL_TRANSPORT_FAILURE '+json.dumps(last,sort_keys=True))
+
+              if cycle_outcome == 'market_board_not_ready':
+                  safe_not_ready_seen += 1
+                  if cr and (circuit != 'closed' or consecutive != 0):
+                      raise SystemExit('STEP20A_UNSAFE_MARKET_NOT_READY '+json.dumps(last,sort_keys=True))
+
+              live_ready=(
+                  d.get('ready') is True
+                  and int(gd.get('record_count') or 0) > 0
+                  and int(gf.get('record_count') or 0) > 0
+                  and latest.get('cycle_outcome') == 'shadow_board_ready'
+                  and c.get('available') is True
+                  and c.get('reason') == 'board_ready'
+                  and cycle_outcome == 'shadow_board_ready'
+                  and (not cr or (circuit == 'closed' and consecutive == 0))
+                  and qualified > 0
+                  and top_count > 0
+                  and len(cards) > 0
+              )
+              if live_ready:
+                  for idx,card in enumerate(cards,1):
+                      model=(card or {}).get('model') or {}
+                      if int(model.get('simulations') or 0) != 5_000_000:
+                          raise SystemExit(f'STEP20A_CARD_{idx}_SIMULATION_COUNT_INVALID '+json.dumps(model,sort_keys=True))
+                      if model.get('converged') is not True:
+                          raise SystemExit(f'STEP20A_CARD_{idx}_NOT_CONVERGED '+json.dumps(model,sort_keys=True))
+                  print('STEP20A_CURRENT_LIVE_FULL_CHAIN_CERTIFIED',json.dumps(last,sort_keys=True),flush=True)
+                  print('STEP20A_GRADUATION_GATE_A_AND_B_CERTIFIED',flush=True)
+                  break
+
+              time.sleep(15)
+          else:
+              print('STEP20A_SAFE_MARKET_NOT_READY_OBSERVATIONS',safe_not_ready_seen,flush=True)
+              print('STEP20A_LAST_SAFE_LIVE_STATE',json.dumps(last,sort_keys=True),flush=True)
+              raise SystemExit('STEP20A_LIVE_BOARD_PENDING: deterministic chain is certified, but no genuine current exact-line ranked board appeared in the bounded window')
+          PY
