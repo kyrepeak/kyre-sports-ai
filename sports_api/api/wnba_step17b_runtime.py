@@ -9,6 +9,7 @@ from sports_api import wnba_step19j_runtime_acceleration as _step19j
 from sports_api import wnba_step19k_market_not_ready as _step19k
 from sports_api import wnba_step19l_fanduel_identity_trace as _step19l
 from sports_api import wnba_step19m_fanduel_line_move as _step19m
+from sports_api import wnba_step19n_fanduel_empty_market as _step19n
 
 # Install only after the frozen scheduler/runtime dependency graph is fully
 # imported. This avoids API-package bootstrap cycles while still interposing
@@ -20,9 +21,8 @@ _step19i.install_step19i_official_slate_transport()
 # Step19J wraps the already-installed Step19G trace chain so provider diagnostics
 # remain active while a private per-cycle context memo is in scope.
 _step19j.install_step19j_runtime_acceleration()
-# Step19K is deliberately outermost on Step12B. It transforms only the proven
-# no-exact-same-line Step12B condition into the existing closed-circuit
-# market_not_ready controller semantics. Every other exception remains fatal.
+# Step19K transforms only the proven no-exact-same-line Step12B condition into
+# the existing closed-circuit market_not_ready controller semantics.
 _step19k.install_step19k_market_not_ready()
 # Step19L observes the complete already-installed FanDuel fetch chain only. It
 # keeps a cumulative sanitized history of identity errors and re-raises them.
@@ -31,6 +31,10 @@ _step19l.install_step19l_fanduel_identity_trace()
 # changes are quote state, while market/player/selection/side identity stays
 # immutable and fail-closed. Step19L remains inside this surface for diagnostics.
 _step19m.install_step19m_fanduel_line_move()
+# Step19N is the outermost Step12B wrapper. It classifies only the exact
+# post-fetch FanDuel no-complete-two-way-records subtype as market availability.
+# All transport, upstream, landing, and identity failures remain provider failures.
+_step19n.install_step19n_fanduel_empty_market()
 
 router = APIRouter(prefix="/api/v1/wnba/runtime", tags=["wnba-runtime"])
 
@@ -80,3 +84,9 @@ def step19l_fanduel_identity_trace_status():
 def step19m_fanduel_line_move_status():
     """Return non-sensitive status for the strict same-market line-move repair."""
     return _step19m.installation_status()
+
+
+@router.get("/step19n-fanduel-empty-market")
+def step19n_fanduel_empty_market_status():
+    """Return non-sensitive status for exact FanDuel empty-market classification."""
+    return _step19n.installation_status()
