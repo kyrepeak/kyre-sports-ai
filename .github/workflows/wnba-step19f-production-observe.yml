@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 
-# Refresh marker: Step19I pre-deploy baseline observation 2026-08-30.
+# Refresh marker: Step19I live scheduler observation 2026-08-30.
 jobs:
   observe:
     runs-on: ubuntu-latest
@@ -19,7 +19,8 @@ jobs:
           python - <<'PY'
           import json, urllib.request
           base='https://kyre-sports-api.onrender.com'
-          for path in ['/health','/api/v1/wnba/runtime/step17b','/api/v1/wnba/consumer/latest','/api/v1/wnba/markets/direct/draftkings/status']:
+          paths=['/health','/api/v1/wnba/runtime/step17b','/api/v1/wnba/consumer/latest','/api/v1/wnba/markets/direct/draftkings/status','/api/v1/wnba/runtime/step19g-provider-trace','/api/v1/wnba/runtime/step19h-fanduel-transport','/api/v1/wnba/runtime/step19i-official-slate-transport']
+          for path in paths:
               try:
                   with urllib.request.urlopen(base+path,timeout=45) as r:
                       value=json.loads(r.read().decode())
