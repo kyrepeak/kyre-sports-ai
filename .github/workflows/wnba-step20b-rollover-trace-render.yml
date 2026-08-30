@@ -83,8 +83,11 @@ jobs:
           ws=w.installation_status()
           assert ws['installed'] is True
           wg=ws['guardrails']
-          assert wg['required_schedule_rest_travel_data_relaxed'] is False
-          assert wg['optional_historical_workload_only'] is True
+          assert wg['first_party_not_found_only'] is True
+          assert wg['other_observed_workload_exceptions_reraised'] is True
+          assert wg['required_schedule_rest_travel_failures_relaxed'] is False
+          assert wg['unavailable_metrics_are_none_not_zero'] is True
+          assert wg['workload_values_fabricated'] is False
           ms=m.installation_status()
           assert ms['installed'] is True
           current=step8d.simulate_step8_joint_distribution
