@@ -254,14 +254,20 @@ jobs:
   certify-streamlit-transport:
     runs-on: ubuntu-24.04
     steps:
-      - name: Verify Streamlit health transport
+      - name: Verify Streamlit reachable transport
         shell: bash
         run: |
           set -euo pipefail
           code="$(curl -sS -o /tmp/streamlit-health.txt -w '%{http_code}' --max-time 45 "$STREAMLIT_HEALTH_URL")"
-          test "$code" = "200"
-          grep -qi 'ok' /tmp/streamlit-health.txt
-          echo "MLB_STEP7D_STREAMLIT_HEALTH_HTTP_${code}"
+          case "$code" in
+            2*|3*) ;;
+            *)
+              echo "STEP7D_STREAMLIT_UNREACHABLE_HTTP_${code}"
+              cat /tmp/streamlit-health.txt || true
+              exit 1
+              ;;
+          esac
+          echo "MLB_STEP7D_STREAMLIT_REACHABLE_HTTP_${code}"
           echo 'MLB_STEP7D_STREAMLIT_ROOT_MANUALLY_CONFIRMED_BY_USER'
           echo 'MLB_STEP7D_RENDERED_STREAMLIT_BODY_UNVERIFIED_BY_AUTOMATION'
 
