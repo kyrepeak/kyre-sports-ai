@@ -19,91 +19,98 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Trace deeper FanDuel player-hits navigation
+      - name: Probe linked and hidden player-total surfaces
         run: |
           python - <<'PY'
           from datetime import datetime, timezone
           import json
 
           from sports_api.collectors.mlb_fanduel_player_props import (
+              FANDUEL_FDX_BASE_URL,
               PLAYER_HITS,
-              PROP_TABS,
+              _get_json,
               _provider_market_type,
               _rows,
               collect_live_mlb_player_props,
               fetch_fanduel_event_prop_tab,
               market_family,
           )
-          from sports_api.collectors.mlb_fanduel_direct import fetch_fanduel_event_page
+          from sports_api.collectors.mlb_fanduel_direct import (
+              FANDUEL_BASE_URL,
+              FANDUEL_HEADERS,
+              FANDUEL_PUBLIC_WEB_KEY,
+          )
 
           snapshot = collect_live_mlb_player_props(now_utc=datetime.now(timezone.utc), max_events=4)
           event_ids = sorted({str(row.get('source_event_id')) for row in snapshot.get('props', []) if row.get('source_event_id')})
           assert event_ids, snapshot
           event_id = event_ids[0]
-          print('EVENT_ID', event_id)
-          print('SNAPSHOT', json.dumps({
-              'matched_games':snapshot.get('matched_game_count'),
-              'prop_count':snapshot.get('prop_count'),
-              'contract_unavailable':snapshot.get('contract_unavailable_market_counts'),
-          }, sort_keys=True))
+          batter = fetch_fanduel_event_prop_tab(event_id, 'batter-props')
+          layout = batter.get('layout') or {}
+          cards = layout.get('cards') or {}
+          batter_card = cards.get('253') or cards.get(253) or {}
+          card_market_types = list(batter_card.get('marketTypes') or []) if isinstance(batter_card, dict) else []
+          hit_card_types = [str(x) for x in card_market_types if 'HIT' in str(x).upper()]
+          print('BATTER_CARD_HIT_MARKET_TYPES', json.dumps(hit_card_types, sort_keys=True))
+          print('BATTER_CARD_DISPLAY', json.dumps((batter_card.get('display') or []) if isinstance(batter_card,dict) else [], sort_keys=True, default=str))
 
-          def compact(value, depth=0):
-              if depth > 3:
-                  return '<depth>'
-              if isinstance(value, dict):
-                  return {str(k):compact(v, depth+1) for k,v in list(value.items())[:40]}
-              if isinstance(value, list):
-                  return [compact(v, depth+1) for v in value[:20]]
-              if isinstance(value, str):
-                  return value[:500]
-              return value
+          attachments = batter.get('attachments') or {}
+          markets = _rows(attachments.get('markets')) if isinstance(attachments, dict) else []
+          linked_ids = []
+          for market in markets:
+              ptype = _provider_market_type(market)
+              if market_family(ptype) != PLAYER_HITS:
+                  continue
+              for assoc in market.get('associatedMarkets') or []:
+                  if isinstance(assoc, dict) and assoc.get('externalMarketId'):
+                      linked_ids.append(str(assoc['externalMarketId']))
+          linked_ids = sorted(set(linked_ids))[:2]
+          print('LINKED_EXTERNAL_MARKET_IDS', linked_ids)
 
-          def scan(obj, path='root', depth=0):
-              if depth > 8:
-                  return
-              if isinstance(obj, dict):
-                  for k,v in obj.items():
-                      kp = f'{path}.{k}'
-                      key_low = str(k).lower()
-                      if any(t in key_low for t in ('tab','nav','group','coupon','market','section','page','link','route')) and not isinstance(v,(dict,list)):
-                          print('META', kp, repr(v)[:600])
-                      scan(v, kp, depth+1)
-              elif isinstance(obj, list):
-                  for i,v in enumerate(obj[:100]):
-                      scan(v, f'{path}[{i}]', depth+1)
-              elif isinstance(obj, str):
-                  low = obj.lower()
-                  if 'total hits' in low or 'record a hit' in low or '2+ hits' in low or 'batter' in low or 'player prop' in low:
-                      print('MATCH', path, repr(obj)[:800])
-
-          default = fetch_fanduel_event_page(event_id)
-          print('DEFAULT_ROOT_KEYS', sorted(default))
-          print('DEFAULT_ATTACH_KEYS', sorted((default.get('attachments') or {}).keys()))
-          scan({k:v for k,v in default.items() if k != 'attachments'}, 'default')
-
-          for tab in PROP_TABS:
-              payload = fetch_fanduel_event_prop_tab(event_id, tab)
-              attachments = payload.get('attachments') or {}
-              print('TAB', tab, 'ROOT_KEYS', sorted(payload), 'ATTACH_KEYS', sorted(attachments) if isinstance(attachments,dict) else [])
-              scan({k:v for k,v in payload.items() if k != 'attachments'}, f'tab.{tab}')
-              markets = _rows(attachments.get('markets')) if isinstance(attachments, dict) else []
-              types = sorted({_provider_market_type(m) for m in markets if 'HIT' in _provider_market_type(m)})
-              print('HIT_TYPES', tab, types)
-              for market in markets:
-                  ptype = _provider_market_type(market)
-                  if market_family(ptype) != PLAYER_HITS:
+          hidden_tabs = ['player-totals','batter-totals','player-hits','hits','player-props','all-props','all']
+          for tab in hidden_tabs:
+              try:
+                  payload = _get_json(
+                      f'{FANDUEL_BASE_URL}/sbapi/event-page',
+                      {'_ak':FANDUEL_PUBLIC_WEB_KEY,'eventId':event_id,'tab':tab},
+                      headers=FANDUEL_HEADERS,
+                      timeout=15,
+                  )
+              except Exception as exc:
+                  print('TAB_PROBE', tab, 'ERROR', type(exc).__name__, str(exc)[:200])
+                  continue
+              a = payload.get('attachments') or {}
+              ms = _rows(a.get('markets')) if isinstance(a,dict) else []
+              hit_types = sorted({_provider_market_type(m) for m in ms if 'HIT' in _provider_market_type(m)})
+              two_way_hit = []
+              for m in ms:
+                  ptype = _provider_market_type(m)
+                  if 'HIT' not in ptype:
                       continue
-                  print('HIT_MARKET_LINKAGE', json.dumps({
-                      'tab':tab,
-                      'market_id':str(market.get('marketId') or market.get('_attachment_key') or ''),
-                      'market_type':ptype,
-                      'market_name':market.get('marketName'),
-                      'betting_type':market.get('bettingType'),
-                      'leg_types':market.get('legTypes'),
-                      'associated_markets':compact(market.get('associatedMarkets')),
-                      'sgm_market':market.get('sgmMarket'),
-                      'sort_priority':market.get('sortPriority'),
-                  }, sort_keys=True, default=str))
+                  runners = _rows(m.get('runners'))
+                  roles = sorted({str((r.get('result') or {}).get('type') or '').upper() for r in runners if isinstance(r,dict)})
+                  if len(runners) == 2 and roles == ['OVER','UNDER']:
+                      two_way_hit.append(ptype)
+              print('TAB_PROBE', tab, 'MARKETS', len(ms), 'HIT_TYPES', hit_types, 'TWO_WAY_HIT_TYPES', sorted(set(two_way_hit)))
 
-          print('MLB_STEP8D_DEEP_HIT_NAVIGATION_PROBE_COMPLETE')
+          candidate_paths = [
+              f'/v1/live/event/{event_id}',
+              f'/v1/live/event/{event_id}/markets',
+          ]
+          for ext in linked_ids:
+              candidate_paths += [
+                  f'/v1/live/market/{ext}',
+                  f'/v1/live/markets/{ext}',
+                  f'/v1/market/{ext}',
+              ]
+          for path in candidate_paths:
+              try:
+                  payload = _get_json(FANDUEL_FDX_BASE_URL + path, headers=FANDUEL_HEADERS, timeout=15)
+                  text = json.dumps(payload, sort_keys=True, default=str)
+                  hitish = 'TOTAL_HITS' in text.upper() or 'OVER' in text.upper() and 'UNDER' in text.upper() and 'HIT' in text.upper()
+                  print('FDX_PROBE', path, 'OK', 'ROOT_KEYS', sorted(payload), 'HITISH_TWO_WAY_SIGNAL', hitish, 'SIZE', len(text))
+              except Exception as exc:
+                  print('FDX_PROBE', path, 'ERROR', type(exc).__name__, str(exc)[:220])
+
+          print('MLB_STEP8D_LINKED_HIDDEN_SURFACE_PROBE_COMPLETE')
           PY
