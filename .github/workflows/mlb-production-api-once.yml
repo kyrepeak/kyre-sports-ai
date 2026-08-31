@@ -1,0 +1,53 @@
+name: MLB production API one-shot diagnostic
+
+on:
+  push:
+    branches:
+      - mlb-live-odds-release-20260831
+    paths:
+      - .github/workflows/mlb-production-api-once.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot-render-response:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Snapshot deployed Render endpoint
+        shell: bash
+        run: |
+          set -u
+          python - <<'PY'
+          from __future__ import annotations
+          import json
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          base = 'https://kyre-sports-api.onrender.com/api/v1/mlb/odds'
+          query = urllib.parse.urlencode({'max_events': 30, 'fully_priced_only': 'true'})
+          url = f'{base}?{query}'
+          req = urllib.request.Request(
+              url,
+              headers={'Accept': 'application/json', 'User-Agent': 'KyreSportsOneShot/1.0'},
+              method='GET',
+          )
+          result = {'url': url}
+          try:
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  result['http_status'] = int(response.status)
+                  raw = response.read(200_000)
+                  result['body'] = raw.decode('utf-8', errors='replace')[:5000]
+          except urllib.error.HTTPError as exc:
+              result['http_status'] = int(exc.code)
+              result['body'] = exc.read(200_000).decode('utf-8', errors='replace')[:5000]
+              result['error_type'] = type(exc).__name__
+          except Exception as exc:
+              result['error_type'] = type(exc).__name__
+              result['error'] = str(exc)
+          print(json.dumps(result, indent=2, sort_keys=True))
+          print('MLB_PRODUCTION_ONE_SHOT_COMPLETE')
+          PY
