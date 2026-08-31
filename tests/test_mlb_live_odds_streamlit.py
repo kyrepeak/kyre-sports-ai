@@ -90,12 +90,13 @@ def test_build_game_cards_formats_core_markets():
     assert card["total"] == {"line": "9", "over": "-120", "under": "-102"}
 
 
-def test_format_helpers():
+def test_format_helpers_keep_signs_market_appropriate():
     assert ui.format_american_odds(105) == "+105"
     assert ui.format_american_odds(-110) == "-110"
-    assert ui.format_line(1.5) == "+1.5"
-    assert ui.format_line(-1.5) == "-1.5"
+    assert ui.format_line(1.5, signed=True) == "+1.5"
+    assert ui.format_line(-1.5, signed=True) == "-1.5"
     assert ui.format_line(9.0) == "9"
+    assert ui.format_line(8.5) == "8.5"
 
 
 def test_isolated_streamlit_page_renders_odds_cards():
