@@ -1,4 +1,4 @@
-"""V2.1.7 confirmed-lineup guard + Steps 5.2 through 5.10 market control layers.
+"""V2.1.7 confirmed-lineup guard + Steps 5.2 through 5.10B market control layers.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
@@ -7,8 +7,11 @@ probability, edge, price-discipline, movement, price-health, and shadow-policy
 context. Step 5.9 adds the controlled price-aware Final Card eligibility gate.
 Step 5.10 adds a deterministic game-level canary controller capped at 25% of the
 priced slate, with production defaults OFF/0% and exact rollback when disabled.
-No layer changes model math, Pick Strength, ranking math, V2.1.7 risk logic,
-persistence, wagering, or WNBA behavior.
+Step 5.10B adds explicit session-scoped Streamlit URL control for live frontend
+verification when no host environment control surface is available; explicit
+host Step 5.10 environment values always take precedence. No layer changes model
+math, Pick Strength, ranking math, V2.1.7 risk logic, persistence, wagering, or
+WNBA behavior.
 """
 from __future__ import annotations
 
@@ -21,10 +24,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
-from mlb_daily_game_picks_price_gate_canary_v1 import install_price_gate_canary_layer
+from mlb_daily_game_picks_price_gate_canary_streamlit_v1 import install_streamlit_session_canary_layer
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.10 BOUNDED CANARY"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.10B STREAMLIT SESSION CANARY"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -167,11 +170,12 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
 
-    # Step 5.10 runs strictly downstream of certified Step 5.9. Its canary defaults
-    # OFF/0%, uses deterministic official-game cohorts, hard-caps enrollment at 25%,
-    # and returns to the exact Step 5.9 baseline when disabled. The controller does
-    # not infer that an external Streamlit host has set the activation environment.
-    install_price_gate_canary_layer(games_df)
+    # Step 5.10B runs strictly downstream of certified Step 5.10. Explicit host
+    # environment control always wins; otherwise an explicit URL query can arm
+    # only the current Streamlit browser session. The underlying Step 5.10 cohort
+    # remains game-atomic, deterministic, capped at 25%, and removing the query
+    # parameters returns the exact OFF/0% host/default path.
+    install_streamlit_session_canary_layer(games_df)
 
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
