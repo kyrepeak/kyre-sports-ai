@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import unittest
 from unittest.mock import patch
 
+from sports_api import wnba_step7g_release_freeze as step7g
 from sports_api import wnba_step11_draftkings_provider as dk
 from sports_api import wnba_step11_fanduel_provider as fd
 from sports_api import wnba_step11_multibook_shadow_board as step11d
@@ -42,6 +43,18 @@ class Step20BMarketReplayTests(unittest.TestCase):
         self.assertFalse(guards["sportsbook_transport_modified"])
         self.assertFalse(guards["persistence_modified"])
         self.assertFalse(guards["wagering_enabled"])
+
+    def test_step8a_accepts_only_the_audited_far_future_injury_warnings(self):
+        self.assertTrue(
+            {
+                "injury_report_game_present",
+                "injury_report_submission_complete",
+            }.issubset(step7g.ALLOWED_NON_BLOCKING_WARNING_IDS)
+        )
+        self.assertNotIn(
+            "new_unreviewed_warning",
+            step7g.ALLOWED_NON_BLOCKING_WARNING_IDS,
+        )
 
     def test_replay_requires_explicit_gate(self):
         with self.assertRaises(RuntimeError):
