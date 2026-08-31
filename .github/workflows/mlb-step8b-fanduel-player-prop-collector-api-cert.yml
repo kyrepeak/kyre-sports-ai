@@ -1,0 +1,128 @@
+name: MLB Step8B FanDuel player prop collector + API certification
+
+on:
+  push:
+    branches:
+      - mlb-step8b-fanduel-player-prop-collector-api
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step8b-fanduel-player-prop-collector-api-cert
+  cancel-in-progress: false
+
+jobs:
+  discover-live-fanduel-player-prop-shape:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Inspect live FanDuel MLB player-prop payload shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+
+          from sports_api.collectors.mlb_fanduel_direct import (
+              fetch_fanduel_event_page,
+              fetch_fanduel_mlb_landing,
+          )
+
+          def rows(value):
+              if isinstance(value, dict):
+                  out = []
+                  for key, item in value.items():
+                      if isinstance(item, dict):
+                          row = dict(item)
+                          row.setdefault('_attachment_key', str(key))
+                          out.append(row)
+                  return out
+              if isinstance(value, list):
+                  return [dict(item) for item in value if isinstance(item, dict)]
+              return []
+
+          def event_id(event):
+              return str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '').strip()
+
+          landing = fetch_fanduel_mlb_landing(timeout=25)
+          attachments = landing.get('attachments') or {}
+          print('LANDING_ATTACHMENT_KEYS', sorted(attachments) if isinstance(attachments, dict) else type(attachments).__name__)
+          events = rows(attachments.get('events') if isinstance(attachments, dict) else None)
+          now = datetime.now(timezone.utc)
+          upcoming = []
+          for event in events:
+              name = str(event.get('name') or event.get('eventName') or event.get('displayName') or '')
+              open_date = str(event.get('openDate') or '')
+              if ' @ ' not in name or not open_date:
+                  continue
+              try:
+                  dt = datetime.fromisoformat(open_date.replace('Z', '+00:00')).astimezone(timezone.utc)
+              except Exception:
+                  continue
+              if dt > now:
+                  upcoming.append((dt, event))
+          upcoming.sort(key=lambda item: item[0])
+          if not upcoming:
+              raise SystemExit('STEP8B_NO_UPCOMING_FANDUEL_MLB_EVENT_FOR_DISCOVERY')
+
+          matched_any = False
+          for _, event in upcoming[:5]:
+              eid = event_id(event)
+              page = fetch_fanduel_event_page(eid, timeout=25)
+              att = page.get('attachments') or {}
+              print('EVENT', eid, str(event.get('name') or event.get('eventName') or ''))
+              print('EVENT_ATTACHMENT_KEYS', sorted(att) if isinstance(att, dict) else type(att).__name__)
+              if not isinstance(att, dict):
+                  continue
+              markets = rows(att.get('markets'))
+              print('MARKET_COUNT', len(markets))
+              candidates = []
+              for market in markets:
+                  name = str(market.get('marketName') or market.get('name') or market.get('displayName') or '')
+                  key = name.casefold()
+                  if any(token in key for token in ('strikeout', 'hits', 'hit ', ' rbi', 'rbi ', 'runs +', 'runs and', 'runs &')):
+                      candidates.append(market)
+              print('PLAYER_PROP_LIKE_MARKET_COUNT', len(candidates))
+              for market in candidates[:40]:
+                  matched_any = True
+                  name = str(market.get('marketName') or market.get('name') or market.get('displayName') or '')
+                  print('MARKET_META', json.dumps({
+                      'name': name,
+                      'market_id': market.get('marketId') or market.get('_attachment_key'),
+                      'status': market.get('marketStatus') or market.get('status'),
+                      'in_play': market.get('inPlay'),
+                      'market_time': market.get('marketTime'),
+                      'keys': sorted(market),
+                  }, sort_keys=True, default=str))
+                  runners = rows(market.get('runners'))
+                  for runner in runners[:8]:
+                      print('RUNNER_META', json.dumps({
+                          'runner_name': runner.get('runnerName') or runner.get('name'),
+                          'handicap': runner.get('handicap'),
+                          'selection_id': runner.get('selectionId'),
+                          'runner_id': runner.get('runnerId') or runner.get('id') or runner.get('_attachment_key'),
+                          'participant_id': runner.get('participantId'),
+                          'participant': runner.get('participant'),
+                          'result': runner.get('result'),
+                          'status': runner.get('runnerStatus'),
+                          'keys': sorted(runner),
+                      }, sort_keys=True, default=str))
+              if candidates:
+                  break
+
+          if not matched_any:
+              print('STEP8B_NO_PLAYER_PROP_LIKE_MARKETS_CURRENTLY_PUBLISHED')
+          print('MLB_STEP8B_LIVE_FANDUEL_SHAPE_DISCOVERY_COMPLETE')
+          PY
