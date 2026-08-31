@@ -1,23 +1,26 @@
 """WNBA Step20B certification-only deterministic market replay.
 
 This module exists only to remove current sportsbook market availability from the
-Step20B *runtime certification* path.  It does not modify the live DraftKings or
+Step20B *runtime certification* path. It does not modify the live DraftKings or
 FanDuel providers, exact-line matching, projection readiness, or projection math.
 
-The replay is anchored to a game/player target that was observed in the prior live
-Step12B diagnostic run.  Stat/line/price fields are deterministic certification
-placeholders whose only purpose is to recreate one exact-line two-book target.
-They are not historical sportsbook quotes and must never be interpreted as betting
-advice or live market data.
+The certification target is a real scheduled WNBA game/player identity. Stat,
+line, and price fields are deterministic certification placeholders whose only
+purpose is to recreate one exact-line two-book target. They are not historical
+sportsbook quotes and must never be interpreted as betting advice or live market
+data.
 
-Only provider fetchers are replayed.  Step12B still invokes its real frozen
+Only provider fetchers are replayed. Step12B still invokes its real frozen
 projection loader, including the certified 5,000,000-draw Step8D Monte Carlo path.
 The module is default-OFF and requires an explicit certification environment gate.
+The target is separately configurable so a certification target can be rotated
+when a previously valid pregame game becomes live/final. Readiness remains fully
+authoritative and is never replayed or relaxed.
 """
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import os
 from typing import Any, Mapping
 
@@ -27,13 +30,20 @@ from sports_api import wnba_step11_multibook_shadow_board as step11d
 from sports_api import wnba_step11_release_freeze as release
 
 SOURCE = "Kyre Sports API WNBA Step20B certification-only market replay"
-MODEL_VERSION = "wnba_step20b_market_replay_v1"
+MODEL_VERSION = "wnba_step20b_market_replay_v2"
 STEP20B_MARKET_REPLAY_ENABLED_ENV = "WNBA_STEP20B_MARKET_REPLAY_ENABLED"
+STEP20B_REPLAY_SLATE_DATE_ENV = "WNBA_STEP20B_REPLAY_SLATE_DATE"
+STEP20B_REPLAY_GAME_ID_ENV = "WNBA_STEP20B_REPLAY_GAME_ID"
+STEP20B_REPLAY_PLAYER_ID_ENV = "WNBA_STEP20B_REPLAY_PLAYER_ID"
 
-# This identity was observed in the prior live Step12B runtime trace.  Quote
-# fields below are deliberately synthetic certification placeholders.
-REPLAY_GAME_ID = "1022600300"
-REPLAY_PLAYER_ID = 1629501
+# Default certification target: first scheduled game after the 2026 World Cup
+# break, with a current Atlanta player. The identity is real; quote fields are
+# deliberately synthetic certification placeholders. Environment overrides let
+# certification rotate to another real scheduled pregame target without changing
+# code or weakening the real Step4X/Step8A readiness gate.
+REPLAY_SLATE_DATE = "2026-09-17"
+REPLAY_GAME_ID = "1022600301"
+REPLAY_PLAYER_ID = 1628277
 REPLAY_STAT = "points"
 REPLAY_LINE = 20.5
 REPLAY_OVER_PRICE = -110
@@ -73,6 +83,51 @@ def _utc(value: Any) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def replay_target(env: Mapping[str, str] | None = None) -> dict[str, Any]:
+    """Resolve and validate the certification target only.
+
+    This function does not inspect or alter projection readiness. The resolved
+    identity is subsequently sent through the unchanged real Step4W/Step4X/Step8
+    path, which remains free to reject it.
+    """
+    source = os.environ if env is None else env
+    slate_date = str(source.get(STEP20B_REPLAY_SLATE_DATE_ENV) or REPLAY_SLATE_DATE).strip()
+    game_id = str(source.get(STEP20B_REPLAY_GAME_ID_ENV) or REPLAY_GAME_ID).strip()
+    player_raw = str(source.get(STEP20B_REPLAY_PLAYER_ID_ENV) or REPLAY_PLAYER_ID).strip()
+
+    try:
+        parsed_date = date.fromisoformat(slate_date)
+    except ValueError as exc:
+        raise ValueError("Step20B replay slate date must be YYYY-MM-DD.") from exc
+    if parsed_date.isoformat() != slate_date:
+        raise ValueError("Step20B replay slate date must be canonical YYYY-MM-DD.")
+    if len(game_id) != 10 or not game_id.isdigit():
+        raise ValueError("Step20B replay game_id must be exactly 10 numeric digits.")
+    try:
+        player_id = int(player_raw)
+    except ValueError as exc:
+        raise ValueError("Step20B replay player_id must be a positive integer.") from exc
+    if player_id <= 0:
+        raise ValueError("Step20B replay player_id must be a positive integer.")
+
+    overridden = any(
+        str(source.get(key) or "").strip()
+        for key in (
+            STEP20B_REPLAY_SLATE_DATE_ENV,
+            STEP20B_REPLAY_GAME_ID_ENV,
+            STEP20B_REPLAY_PLAYER_ID_ENV,
+        )
+    )
+    return {
+        "slate_date": slate_date,
+        "game_id": game_id,
+        "player_id": player_id,
+        "stat": REPLAY_STAT,
+        "line": REPLAY_LINE,
+        "configured_by_environment": bool(overridden),
+    }
+
+
 def _guardrails() -> dict[str, Any]:
     # These values describe the *replayed frozen provider bridge contract*.
     # No sportsbook network request is performed by this replay module itself.
@@ -98,14 +153,14 @@ def _guardrails() -> dict[str, Any]:
     }
 
 
-def _record(provider: str, captured_at: str) -> dict[str, Any]:
+def _record(provider: str, captured_at: str, target: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "game_id": REPLAY_GAME_ID,
-        "player_id": REPLAY_PLAYER_ID,
-        "player_name": f"Step20B Replay Player {REPLAY_PLAYER_ID}",
+        "game_id": target["game_id"],
+        "player_id": target["player_id"],
+        "player_name": f"Step20B Replay Player {target['player_id']}",
         "sportsbook": provider,
-        "stat": REPLAY_STAT,
-        "line": REPLAY_LINE,
+        "stat": target["stat"],
+        "line": target["line"],
         "over_price": REPLAY_OVER_PRICE,
         "under_price": REPLAY_UNDER_PRICE,
         "market_captured_at": captured_at,
@@ -117,12 +172,20 @@ def _bridge(
     *,
     slate_date: str,
     evaluated_at: datetime,
+    env: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
+    target = replay_target(env)
+    if str(slate_date) != target["slate_date"]:
+        raise ValueError(
+            "Step20B replay provider slate_date must match the configured replay target "
+            f"({target['slate_date']})."
+        )
+
     captured = evaluated_at.isoformat()
     payload = {
         "provider": provider,
         "price_format": "american",
-        "records": [_record(provider, captured)],
+        "records": [_record(provider, captured, target)],
     }
     if provider == draftkings.PROVIDER:
         result: dict[str, Any] = {
@@ -170,10 +233,11 @@ def _bridge(
     result["guardrails"] = _guardrails()
     result["replay_metadata"] = {
         "certification_only": True,
-        "target_identity_from_prior_live_step12b": True,
+        "target_identity_is_rotatable_configuration": True,
         "quote_values_are_deterministic_certification_placeholders": True,
         "sportsbook_network_performed_during_replay_invocation": False,
         "projection_loader_injected": False,
+        "readiness_replayed_or_relaxed": False,
     }
     surface = {
         key: value for key, value in result.items()
@@ -204,6 +268,7 @@ def draftkings_replay_fetcher(
             draftkings.PROVIDER,
             slate_date=slate_date,
             evaluated_at=_utc(evaluated_at),
+            env=env,
         )
     )
 
@@ -227,25 +292,24 @@ def fanduel_replay_fetcher(
             fanduel.PROVIDER,
             slate_date=slate_date,
             evaluated_at=_utc(evaluated_at),
+            env=env,
         )
     )
 
 
 def installation_status(env: Mapping[str, str] | None = None) -> dict[str, Any]:
+    target = replay_target(env)
     return {
         "source": SOURCE,
         "model_version": MODEL_VERSION,
         "enabled": market_replay_enabled(env),
-        "target": {
-            "game_id": REPLAY_GAME_ID,
-            "player_id": REPLAY_PLAYER_ID,
-            "stat": REPLAY_STAT,
-            "line": REPLAY_LINE,
-        },
+        "target": target,
         "guardrails": {
             "default_off": True,
             "certification_only": True,
-            "target_identity_from_prior_live_step12b": True,
+            "target_identity_from_prior_live_step12b": False,
+            "target_identity_rotatable_without_code_change": True,
+            "target_slate_date_must_match_provider_request": True,
             "quote_values_are_deterministic_certification_placeholders": True,
             "live_provider_bindings_modified": False,
             "exact_line_logic_modified": False,
@@ -254,6 +318,7 @@ def installation_status(env: Mapping[str, str] | None = None) -> dict[str, Any]:
             "batch_size_modified": False,
             "projection_math_modified": False,
             "readiness_relaxed": False,
+            "readiness_replayed": False,
             "sportsbook_transport_modified": False,
             "persistence_modified": False,
             "wagering_enabled": False,
@@ -266,10 +331,15 @@ __all__ = [
     "REPLAY_GAME_ID",
     "REPLAY_LINE",
     "REPLAY_PLAYER_ID",
+    "REPLAY_SLATE_DATE",
     "REPLAY_STAT",
     "STEP20B_MARKET_REPLAY_ENABLED_ENV",
+    "STEP20B_REPLAY_GAME_ID_ENV",
+    "STEP20B_REPLAY_PLAYER_ID_ENV",
+    "STEP20B_REPLAY_SLATE_DATE_ENV",
     "draftkings_replay_fetcher",
     "fanduel_replay_fetcher",
     "installation_status",
     "market_replay_enabled",
+    "replay_target",
 ]
