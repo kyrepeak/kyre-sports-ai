@@ -1,0 +1,402 @@
+name: WNBA Step20B replay runtime certification
+
+on:
+  push:
+    branches:
+      - wnba-step20b-replay-cert-20260831
+    paths:
+      - '.github/workflows/wnba-step20b-replay-runtime-cert.yml'
+      - 'sports_api/wnba_step20b_market_replay.py'
+      - 'sports_api/api/wnba_step20b_replay_runtime.py'
+      - 'sports_api/main.py'
+      - 'sports_api/wnba_step20b_runtime_acceleration.py'
+      - 'sports_api/wnba_step20b_optional_workload_compat.py'
+      - 'sports_api/wnba_step20b_monte_carlo_acceleration.py'
+      - 'sports_api/wnba_step20b_monte_carlo_cdf_compat.py'
+      - 'sports_api/wnba_step20b_rollover_stage_trace.py'
+      - 'sports_api/wnba_step20b_step4w_cycle_cache.py'
+      - 'tests/test_wnba_step20b_market_replay.py'
+      - 'tests/test_wnba_step20b_reconstruction_cache.py'
+      - 'tests/test_wnba_step20b_runtime_acceleration.py'
+      - 'tests/test_wnba_step20b_monte_carlo_acceleration.py'
+      - 'tests/test_wnba_step20b_rollover_stage_trace.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step20b-replay-runtime-certification
+  cancel-in-progress: true
+
+env:
+  CANDIDATE_SHA: ${{ github.sha }}
+  ROLLBACK_SHA: aaf8b8a5425ea6e1b0ab33e6c42f35c95e8905ab
+  RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
+  RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: wnba-render-staging
+    outputs:
+      diagnostic_summary_b64: ${{ steps.full_probe.outputs.diagnostic_summary_b64 }}
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 1
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Certify replay isolation and frozen runtime guards
+        run: |
+          python -m pytest -q tests/test_wnba_step20b_market_replay.py
+          python -m pytest -q tests/test_wnba_step20b_reconstruction_cache.py
+          python -m pytest -q tests/test_wnba_step20b_runtime_acceleration.py
+          python -m pytest -q tests/test_wnba_step20b_optional_workload_compat.py
+          python -m pytest -q tests/test_wnba_step20b_monte_carlo_acceleration.py
+          python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
+          python -m pytest -q tests/test_wnba_step8_joint_monte_carlo.py
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          import sports_api.api.wnba_step17b_runtime
+          from sports_api import wnba_step20b_market_replay as replay
+          from sports_api import wnba_step20b_runtime_acceleration as a
+          from sports_api import wnba_step20b_optional_workload_compat as w
+          from sports_api import wnba_step20b_monte_carlo_acceleration as m
+          from sports_api import wnba_step20b_step4w_cycle_cache as c4w
+          from sports_api import wnba_step8_joint_monte_carlo as step8d
+
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          rg=replay.installation_status({})['guardrails']
+          assert rg['default_off'] is True
+          assert rg['certification_only'] is True
+          assert rg['live_provider_bindings_modified'] is False
+          assert rg['exact_line_logic_modified'] is False
+          assert rg['projection_loader_injected'] is False
+          assert rg['simulations_modified'] is False
+          assert rg['batch_size_modified'] is False
+          assert rg['projection_math_modified'] is False
+          assert rg['readiness_relaxed'] is False
+          assert rg['sportsbook_transport_modified'] is False
+          assert rg['persistence_modified'] is False
+          assert rg['wagering_enabled'] is False
+
+          g=a.installation_status()['guardrails']
+          assert g['cache_scope'] == 'single_step12b_call_only'
+          assert g['cached_values_returned_by_deepcopy'] is True
+          assert g['exceptions_cached'] is False
+          assert g['projection_math_modified'] is False
+          assert g['readiness_relaxed'] is False
+          assert g['monte_carlo_simulation_count_modified'] is False
+          assert g['monte_carlo_batch_size_modified'] is False
+          assert g['sportsbook_transport_modified'] is False
+          assert g['persistence_modified'] is False
+          assert g['wagering_enabled'] is False
+
+          ws=w.installation_status()
+          assert ws['installed'] is True
+          wg=ws['guardrails']
+          assert wg['first_party_not_found_only'] is True
+          assert wg['other_observed_workload_exceptions_reraised'] is True
+          assert wg['required_schedule_rest_travel_failures_relaxed'] is False
+          assert wg['unavailable_metrics_are_none_not_zero'] is True
+          assert wg['workload_values_fabricated'] is False
+
+          c4=c4w.installation_status()
+          assert c4['installed'] is True
+          assert c4['all_bindings_active'] is True
+          c4g=c4['guardrails']
+          assert c4g['cache_scope'] == 'single_step12b_call_only'
+          assert c4g['cached_values_returned_by_deepcopy'] is True
+          assert c4g['raised_exceptions_cached'] is False
+          assert c4g['readiness_result_cached'] is False
+          assert c4g['projection_math_modified'] is False
+          assert c4g['readiness_relaxed'] is False
+          assert c4g['monte_carlo_simulation_count_modified'] is False
+          assert c4g['monte_carlo_batch_size_modified'] is False
+
+          ms=m.installation_status()
+          assert ms['installed'] is True
+          current=step8d.simulate_step8_joint_distribution
+          assert current is m.simulate_step8_joint_distribution_accelerated or getattr(current,'__wrapped__',None) is m.simulate_step8_joint_distribution_accelerated
+          mg=ms['guardrails']
+          assert mg['simulations_modified'] is False
+          assert mg['batch_size_modified'] is False
+          assert mg['projection_math_modified'] is False
+          assert mg['readiness_relaxed'] is False
+          assert mg['sportsbook_transport_modified'] is False
+          assert mg['persistence_modified'] is False
+          assert mg['wagering_enabled'] is False
+          print('STEP20B_REPLAY_FULL_RUNTIME_GUARDS_CERTIFIED')
+          PY
+
+      - name: Deploy replay certification candidate
+        id: deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, secrets, time, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['CANDIDATE_SHA'].lower()
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
+          def req(method,path,body=None):
+              request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode(); return json.loads(raw) if raw else None
+          def walk(value):
+              if isinstance(value, dict):
+                  yield value
+                  for child in value.values(): yield from walk(child)
+              elif isinstance(value, list):
+                  for child in value: yield from walk(child)
+          def deploy_id(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if isinstance(did,str) and did.startswith('dep-'): return did
+              return None
+          def deploy_for_sha(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if isinstance(did,str) and did.startswith('dep-') and sha in json.dumps(row,sort_keys=True,default=str).lower(): return did
+              return None
+          def recent_for_sha():
+              return deploy_for_sha(req('GET',f'/services/{sid}/deploys?limit=20') or [])
+          def request_candidate():
+              return req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
+
+          token=secrets.token_hex(32)
+          pathlib.Path(os.environ['RUNNER_TEMP'],'step20b_probe_token').write_text(token,encoding='utf-8')
+          for key,value in {
+              'WNBA_STEP17B_EXPECTED_REVISION':sha,
+              'WNBA_DEPLOYMENT_REVISION':sha,
+              'WNBA_RELEASE_ID':'wnba-step20b-replay-runtime-certification',
+              'WNBA_STEP17B_ALWAYS_ON_ENABLED':'false',
+              'WNBA_STEP20B_PROBE_ENABLED':'true',
+              'WNBA_STEP20B_PROBE_TOKEN':token,
+              'WNBA_STEP20B_MARKET_REPLAY_ENABLED':'true',
+          }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+
+          out=request_candidate(); did=deploy_for_sha(out)
+          if did is None:
+              possible=deploy_id(out)
+              if possible:
+                  try: detail=req('GET',f'/services/{sid}/deploys/{possible}') or {}
+                  except Exception: detail={}
+                  if sha in json.dumps(detail,sort_keys=True,default=str).lower(): did=possible
+          for attempt in range(45):
+              if did: break
+              try: did=recent_for_sha()
+              except Exception: did=None
+              if did: break
+              if attempt in {14,29}:
+                  try:
+                      retry=request_candidate(); did=deploy_for_sha(retry) or deploy_id(retry)
+                      if did:
+                          detail=req('GET',f'/services/{sid}/deploys/{did}') or {}
+                          if sha not in json.dumps(detail,sort_keys=True,default=str).lower(): did=None
+                  except Exception: did=None
+              time.sleep(2)
+          if not did: raise SystemExit('replay certification exact-SHA deploy could not be resolved')
+
+          for _ in range(180):
+              d=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(d.get('status','')).lower()
+              if status=='live': break
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('replay certification deploy failed '+status)
+              time.sleep(5)
+          else: raise SystemExit('replay certification deploy timeout')
+          if sha not in json.dumps(d,sort_keys=True,default=str).lower(): raise SystemExit('replay certification live SHA mismatch')
+          print('STEP20B_REPLAY_RUNTIME_RENDER_LIVE',did,sha,flush=True)
+          PY
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run one real Step12B cycle with replayed market input
+        id: full_probe
+        run: |
+          python - <<'PY'
+          import base64, json, os, pathlib, time, urllib.request
+          base=os.environ['RENDER_SERVICE_URL']
+          token=pathlib.Path(os.environ['RUNNER_TEMP'],'step20b_probe_token').read_text(encoding='utf-8').strip()
+          headers={'User-Agent':'kyre-step20b-replay-runtime-cert/1.0','X-Step20B-Diagnostic-Token':token}
+          def call(path,method='GET'):
+              req=urllib.request.Request(base+path,data=b'' if method=='POST' else None,headers=headers,method=method)
+              with urllib.request.urlopen(req,timeout=45) as response: return json.loads(response.read().decode())
+          def safe_call(path):
+              try:
+                  value=call(path); return value if isinstance(value,dict) else {}
+              except Exception as exc:
+                  return {'diagnostic_fetch_error_type':type(exc).__name__,'diagnostic_fetch_error_message':str(exc)[:240]}
+          def publish(summary):
+              raw=json.dumps(summary,sort_keys=True,separators=(',',':'))
+              encoded=base64.b64encode(raw.encode()).decode()
+              with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as fh: fh.write('diagnostic_summary_b64='+encoded+'\n')
+              print('STEP20B_REPLAY_COMPACT_DIAGNOSTIC',raw,flush=True)
+
+          time.sleep(3)
+          replay_status=call('/api/v1/wnba/runtime/step20b-market-replay')
+          guards=(replay_status.get('guardrails') or {})
+          if replay_status.get('enabled') is not True: raise SystemExit('Step20B replay gate not enabled on candidate')
+          if guards.get('projection_loader_injected') is not False: raise SystemExit('projection loader replay drift')
+          if guards.get('simulations_modified') is not False or guards.get('batch_size_modified') is not False: raise SystemExit('simulation contract replay drift')
+
+          started=call('/api/v1/wnba/runtime/step20b-replay-runtime-probe/start','POST')
+          print('STEP20B_REPLAY_PROBE_STARTED',json.dumps(started,sort_keys=True),flush=True)
+          final=None
+          for poll in range(1,126):
+              time.sleep(5)
+              status=call('/api/v1/wnba/runtime/step20b-replay-runtime-probe/status')
+              print('STEP20B_REPLAY_PROBE_POLL',poll,json.dumps(status,sort_keys=True),flush=True)
+              if status.get('status') in {'returned','raised'}:
+                  final=status; break
+
+          trace=safe_call('/api/v1/wnba/runtime/step20b-rollover-stage-trace')
+          mc=(final or {}).get('monte_carlo_acceleration') or safe_call('/api/v1/wnba/runtime/step20b-monte-carlo-acceleration')
+          workload=(final or {}).get('optional_workload_compat') or safe_call('/api/v1/wnba/runtime/step20b-optional-workload-compat')
+          step4w=(final or {}).get('step4w_cycle_cache') or safe_call('/api/v1/wnba/runtime/step20b-step4w-cycle-cache')
+          projection=(final or {}).get('projection_assembly') or {}
+          market=(final or {}).get('market_overlap') or {}
+          summary={
+              'status':(final or {}).get('status') or 'timeout',
+              'elapsed_seconds':(final or {}).get('elapsed_seconds') or (final or {}).get('elapsed_seconds_now'),
+              'error_type':(final or {}).get('error_type'),
+              'error_message':str((final or {}).get('error_message') or '')[:800],
+              'replay':(final or {}).get('replay') or replay_status,
+              'market_overlap':market,
+              'projection':{
+                  'built_target_count':projection.get('built_target_count'),
+                  'simulations_per_built_target':projection.get('simulations_per_built_target'),
+                  'batch_size':projection.get('batch_size'),
+              },
+              'trace':{
+                  'call_counts':trace.get('call_counts') or {},
+                  'active_calls':(trace.get('active_calls') or [])[-8:],
+                  'recent_completed_tail':(trace.get('recent_completed') or [])[-12:],
+              },
+              'monte_carlo':{
+                  'installed':mc.get('installed'),
+                  'binding_active':mc.get('binding_active'),
+                  'call_count':mc.get('call_count'),
+                  'guardrails':mc.get('guardrails') or {},
+              },
+              'optional_workload':{'installed':workload.get('installed'),'guardrails':workload.get('guardrails') or {}},
+              'step4w_cycle_cache':step4w,
+          }
+          publish(summary)
+
+          if final is None: raise SystemExit('Step20B replay probe did not return inside the 625s observation window')
+          if final.get('status') != 'returned': raise SystemExit('Step20B replay probe raised '+str(final.get('error_type'))+': '+str(final.get('error_message')))
+          built=int(projection.get('built_target_count') or 0)
+          if built < 1: raise SystemExit('Step20B replay probe built zero projection targets')
+          if market.get('exact_line_multibook_group_count') != 1: raise SystemExit('replay exact-line group drift')
+          if market.get('unique_projection_target_count') != 1: raise SystemExit('replay unique target drift')
+          if projection.get('simulations_per_built_target') != 5000000: raise SystemExit('simulation count drift')
+          if projection.get('batch_size') != 250000: raise SystemExit('batch size drift')
+          if mc.get('installed') is not True: raise SystemExit('Step20B Monte Carlo acceleration not installed')
+          if int(mc.get('call_count') or 0) < built: raise SystemExit('Step20B Monte Carlo acceleration did not execute for every built target')
+          elapsed=float(final.get('elapsed_seconds') or 0)
+          if elapsed >= 600: raise SystemExit(f'Step20B replay runtime exceeded certified runtime budget: {elapsed:.3f}s >= 600s')
+          print('STEP20B_REPLAY_RUNTIME_CERTIFIED',elapsed,built,int(mc.get('call_count') or 0),flush=True)
+          PY
+
+      - name: Restore certified Step19N production revision
+        if: always() && steps.deploy.outputs.deployed == 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          base='https://api.render.com/v1'; sid=os.environ['RENDER_SERVICE_ID']; sha=os.environ['ROLLBACK_SHA'].lower()
+          headers={'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",'Accept':'application/json','Content-Type':'application/json'}
+          def req(method,path,body=None):
+              request=urllib.request.Request(base+path,data=None if body is None else json.dumps(body).encode(),headers=headers,method=method)
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode(); return json.loads(raw) if raw else None
+          def walk(value):
+              if isinstance(value, dict):
+                  yield value
+                  for child in value.values(): yield from walk(child)
+              elif isinstance(value, list):
+                  for child in value: yield from walk(child)
+          def deploy_id(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if isinstance(did,str) and did.startswith('dep-'): return did
+              return None
+          def deploy_for_sha(value):
+              for row in walk(value):
+                  did=row.get('id')
+                  if isinstance(did,str) and did.startswith('dep-') and sha in json.dumps(row,sort_keys=True,default=str).lower(): return did
+              return None
+          def recent_for_sha():
+              return deploy_for_sha(req('GET',f'/services/{sid}/deploys?limit=20') or [])
+          def request_restore():
+              return req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'}) or {}
+
+          for key,value in {
+              'WNBA_STEP17B_EXPECTED_REVISION':sha,
+              'WNBA_DEPLOYMENT_REVISION':sha,
+              'WNBA_RELEASE_ID':'wnba-step19n-safe-market-state-candidate',
+              'WNBA_STEP17B_ALWAYS_ON_ENABLED':'true',
+              'WNBA_STEP20B_PROBE_ENABLED':'false',
+              'WNBA_STEP20B_PROBE_TOKEN':'disabled-diagnostic-probe-token-not-active',
+              'WNBA_STEP20B_MARKET_REPLAY_ENABLED':'false',
+          }.items(): req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+
+          out=request_restore(); did=deploy_for_sha(out)
+          if did is None:
+              possible=deploy_id(out)
+              if possible:
+                  try: detail=req('GET',f'/services/{sid}/deploys/{possible}') or {}
+                  except Exception: detail={}
+                  if sha in json.dumps(detail,sort_keys=True,default=str).lower(): did=possible
+          for attempt in range(45):
+              if did: break
+              try: did=recent_for_sha()
+              except Exception: did=None
+              if did: break
+              if attempt in {14,29}:
+                  try:
+                      retry=request_restore(); did=deploy_for_sha(retry) or deploy_id(retry)
+                      if did:
+                          detail=req('GET',f'/services/{sid}/deploys/{did}') or {}
+                          if sha not in json.dumps(detail,sort_keys=True,default=str).lower(): did=None
+                  except Exception: did=None
+              time.sleep(2)
+          if not did: raise SystemExit('restore exact-SHA deploy could not be resolved')
+
+          for _ in range(180):
+              d=req('GET',f'/services/{sid}/deploys/{did}') or {}; status=str(d.get('status','')).lower()
+              if status=='live': break
+              if status in {'build_failed','update_failed','canceled','cancelled','deactivated'}: raise SystemExit('restore deploy failed '+status)
+              time.sleep(5)
+          else: raise SystemExit('restore deploy timeout')
+          if sha not in json.dumps(d,sort_keys=True,default=str).lower(): raise SystemExit('restore live SHA mismatch')
+          print('STEP20B_REPLAY_STEP19N_RESTORED',did,sha,flush=True)
+          PY
+
+  diagnostic-summary:
+    needs: certify
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Print compact Step20B replay diagnostic
+        env:
+          DIAGNOSTIC_SUMMARY_B64: ${{ needs.certify.outputs.diagnostic_summary_b64 }}
+        run: |
+          python - <<'PY'
+          import base64, json, os
+          raw=str(os.environ.get('DIAGNOSTIC_SUMMARY_B64') or '').strip()
+          if not raw:
+              print('STEP20B_REPLAY_COMPACT_DIAGNOSTIC_UNAVAILABLE')
+          else:
+              decoded=base64.b64decode(raw).decode('utf-8')
+              payload=json.loads(decoded)
+              print('STEP20B_REPLAY_COMPACT_DIAGNOSTIC_FINAL',json.dumps(payload,sort_keys=True))
+          PY
