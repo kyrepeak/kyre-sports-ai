@@ -1,0 +1,215 @@
+name: MLB Step1 real live market probe
+
+on:
+  push:
+    branches:
+      - mlb-live-market-build-20260831
+    paths:
+      - '.github/workflows/mlb-step1-live-market-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step1-live-market-probe
+  cancel-in-progress: true
+
+jobs:
+  probe-live-mlb-market:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+      MLB_WAGERING_ENABLED: "false"
+      MLB_PERSISTENCE_WRITES_ENABLED: "false"
+      MLB_MARKET_REPLAY_ENABLED: "false"
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assert isolated read-only MLB probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP1_ISOLATION_OK'
+
+      - name: Probe FanDuel public MLB market surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          from datetime import datetime, timezone
+          import json
+          import os
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          BASE = 'https://api.sportsbook.fanduel.com'
+          PUBLIC_WEB_KEY = 'FhMFpcPWXMeyZxOx'
+          REPORT = 'mlb-step1-live-market-probe.json'
+          HEADERS = {
+              'Accept': 'application/json, text/plain, */*',
+              'User-Agent': 'Mozilla/5.0 (compatible; KyreSportsAPI-MLB-Step1/1.0; read-only)',
+              'Origin': 'https://sportsbook.fanduel.com',
+              'Referer': 'https://sportsbook.fanduel.com/',
+              'x-sportsbook-region': 'NJ',
+          }
+
+          def get_json(path: str, params: dict[str, str]) -> dict:
+              url = BASE + path + '?' + urlencode(params)
+              request = Request(url, headers=HEADERS, method='GET')
+              with urlopen(request, timeout=25) as response:
+                  status = int(getattr(response, 'status', 0) or 0)
+                  if status != 200:
+                      raise RuntimeError(f'FanDuel GET returned HTTP {status}')
+                  raw = response.read(20_000_001)
+              if len(raw) > 20_000_000:
+                  raise RuntimeError('FanDuel response exceeded 20 MB safety limit')
+              payload = json.loads(raw.decode('utf-8'))
+              if not isinstance(payload, dict):
+                  raise RuntimeError('FanDuel response was not a JSON object')
+              return payload
+
+          def rows(value):
+              if isinstance(value, dict):
+                  result = []
+                  for key, item in value.items():
+                      if isinstance(item, dict):
+                          row = dict(item)
+                          row.setdefault('_attachment_key', str(key))
+                          result.append(row)
+                  return result
+              if isinstance(value, list):
+                  return [dict(item) for item in value if isinstance(item, dict)]
+              return []
+
+          def event_id(event: dict) -> str:
+              return str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '').strip()
+
+          def event_name(event: dict) -> str:
+              return str(event.get('name') or event.get('eventName') or event.get('displayName') or '').strip()
+
+          def market_name(market: dict) -> str:
+              return str(
+                  market.get('marketName')
+                  or market.get('name')
+                  or market.get('marketType')
+                  or market.get('displayName')
+                  or ''
+              ).strip()
+
+          now = datetime.now(timezone.utc)
+          content_params = {
+              '_ak': PUBLIC_WEB_KEY,
+              'page': 'CUSTOM',
+              'customPageId': 'mlb',
+              'timezone': 'America/New_York',
+          }
+          content = get_json('/sbapi/content-managed-page', content_params)
+          attachments = content.get('attachments') or {}
+          if not isinstance(attachments, dict):
+              raise RuntimeError('FanDuel MLB landing page had no attachments object')
+          events = rows(attachments.get('events'))
+          if not events:
+              raise RuntimeError('FanDuel MLB landing page exposed zero events')
+
+          event_evidence = []
+          total_markets = 0
+          total_open_markets = 0
+          sampled_market_names = []
+          sampled_runner_count = 0
+
+          for event in events[:5]:
+              eid = event_id(event)
+              if not eid:
+                  continue
+              event_doc = get_json('/sbapi/event-page', {'_ak': PUBLIC_WEB_KEY, 'eventId': eid})
+              event_attachments = event_doc.get('attachments') or {}
+              markets = rows(event_attachments.get('markets')) if isinstance(event_attachments, dict) else []
+              open_markets = []
+              for market in markets:
+                  status = str(market.get('marketStatus') or market.get('status') or '').strip().casefold()
+                  if not status or status in {'open', 'active'}:
+                      open_markets.append(market)
+                  label = market_name(market)
+                  if label and label not in sampled_market_names and len(sampled_market_names) < 30:
+                      sampled_market_names.append(label)
+                  runners = market.get('runners')
+                  if isinstance(runners, list):
+                      sampled_runner_count += len([r for r in runners if isinstance(r, dict)])
+                  elif isinstance(runners, dict):
+                      sampled_runner_count += len([r for r in runners.values() if isinstance(r, dict)])
+              total_markets += len(markets)
+              total_open_markets += len(open_markets)
+              event_evidence.append({
+                  'event_id': eid,
+                  'event_name': event_name(event),
+                  'market_count': len(markets),
+                  'open_market_count': len(open_markets),
+              })
+
+          report = {
+              'data_type': 'mlb_step1_real_live_market_probe_v1',
+              'evaluated_at_utc': now.isoformat(),
+              'provider': 'FanDuel',
+              'transport': 'anonymous_public_get_only',
+              'landing_event_count': len(events),
+              'sampled_event_count': len(event_evidence),
+              'sampled_total_market_count': total_markets,
+              'sampled_open_market_count': total_open_markets,
+              'sampled_runner_count': sampled_runner_count,
+              'sampled_market_names': sampled_market_names,
+              'events': event_evidence,
+              'replay_enabled': False,
+              'production_runtime_enabled': False,
+              'wagering_enabled': False,
+              'persistence_writes_enabled': False,
+              'authentication_used': False,
+              'cookies_used': False,
+              'http_methods': ['GET'],
+              'certification_result': 'GREEN' if total_open_markets > 0 else 'NO_OPEN_MLB_MARKETS',
+          }
+          with open(REPORT, 'w', encoding='utf-8') as fh:
+              json.dump(report, fh, indent=2, sort_keys=True)
+              fh.write('\n')
+          print(json.dumps(report, indent=2, sort_keys=True))
+          if total_open_markets <= 0:
+              raise SystemExit('MLB_STEP1_NO_OPEN_MARKETS')
+          print('MLB_STEP1_REAL_LIVE_MARKET_GREEN')
+          PY
+
+      - name: Upload MLB Step 1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step1-live-market-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-step1-live-market-probe.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert read-only isolation
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP1_READ_ONLY_SAFETY_REASSERTED'
