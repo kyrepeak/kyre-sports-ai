@@ -24,10 +24,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
-from mlb_daily_game_picks_step6g_controlled_graduation_v1 import install_step6g_controlled_graduation_layer
+from mlb_daily_game_picks_step7a_api_integration_v1 import install_step7a_daily_game_picks_api_integration
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6G GRADUATED 25% PRODUCTION"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6G GRADUATED 25% PRODUCTION + STEP 7A API"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -173,7 +173,7 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     # Step 6G keeps the Step 6D 25% runtime exposure and exact rollback controls
     # unchanged, and changes only the cohort's production status from canary to
     # graduated after consuming the certified Step 6F permission.
-    install_step6g_controlled_graduation_layer(games_df)
+    install_step7a_daily_game_picks_api_integration(games_df)
 
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
