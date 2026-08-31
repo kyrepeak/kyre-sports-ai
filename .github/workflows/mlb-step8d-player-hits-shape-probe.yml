@@ -1,0 +1,97 @@
+name: MLB Step8D temporary player hits shape probe
+
+on:
+  push:
+    branches:
+      - mlb-step8d-player-hits-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect live player-hits market shapes safely
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+
+          from sports_api.collectors.mlb_fanduel_player_props import (
+              PLAYER_HITS,
+              PROP_TABS,
+              _active_player_runners,
+              _provider_market_type,
+              _rows,
+              _runner_role,
+              collect_live_mlb_player_props,
+              fetch_fanduel_event_prop_tab,
+              market_family,
+          )
+
+          snapshot = collect_live_mlb_player_props(now_utc=datetime.now(timezone.utc), max_events=4)
+          print(json.dumps({
+              'marker':'STEP8D_HIT_SHAPE_PROBE_SNAPSHOT',
+              'matched_games':snapshot.get('matched_game_count'),
+              'prop_count':snapshot.get('prop_count'),
+              'contract_unavailable':snapshot.get('contract_unavailable_market_counts'),
+          }, sort_keys=True))
+
+          event_ids = sorted({
+              str(row.get('source_event_id'))
+              for row in snapshot.get('props', [])
+              if row.get('source_event_id')
+          })
+          print('EVENT_IDS', event_ids)
+          seen = set()
+          for event_id in event_ids:
+              for tab in PROP_TABS:
+                  payload = fetch_fanduel_event_prop_tab(event_id, tab)
+                  attachments = payload.get('attachments') or {}
+                  markets = _rows(attachments.get('markets')) if isinstance(attachments, dict) else []
+                  for market in markets:
+                      provider_type = _provider_market_type(market)
+                      if market_family(provider_type) != PLAYER_HITS:
+                          continue
+                      market_id = str(market.get('marketId') or market.get('id') or market.get('_attachment_key') or '')
+                      key = (event_id, tab, market_id)
+                      if key in seen:
+                          continue
+                      seen.add(key)
+                      runners = _active_player_runners(market)
+                      safe_runners = []
+                      for runner in runners:
+                          result = runner.get('result') or {}
+                          win = runner.get('winRunnerOdds') or {}
+                          display = win.get('americanDisplayOdds') or {} if isinstance(win, dict) else {}
+                          safe_runners.append({
+                              'role':_runner_role(runner),
+                              'handicap':runner.get('handicap'),
+                              'result_handicap':result.get('handicap') if isinstance(result, dict) else None,
+                              'result_keys':sorted(result) if isinstance(result, dict) else [],
+                              'selection_id':str(runner.get('selectionId') or ''),
+                              'american_odds':display.get('americanOddsInt') if isinstance(display, dict) else None,
+                              'runner_keys':sorted(runner),
+                          })
+                      print(json.dumps({
+                          'event_id':event_id,
+                          'tab':tab,
+                          'market_id':market_id,
+                          'provider_market_type':provider_type,
+                          'market_status':market.get('marketStatus') or market.get('status'),
+                          'in_play':market.get('inPlay'),
+                          'market_keys':sorted(market),
+                          'active_player_runner_count':len(runners),
+                          'roles':sorted({_runner_role(r) for r in runners}),
+                          'runners':safe_runners,
+                      }, sort_keys=True, default=str))
+          print('MLB_STEP8D_PLAYER_HITS_SHAPE_PROBE_COMPLETE')
+          PY
