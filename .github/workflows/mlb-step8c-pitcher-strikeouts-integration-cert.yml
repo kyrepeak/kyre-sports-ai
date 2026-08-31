@@ -107,9 +107,30 @@ jobs:
           assert 'win_prob' not in build_source
           assert 'fair_odds' not in build_source
           assert '_grade_line' not in source
-          assert 'sportsbook_price_model_input": False' in source
-          assert 'probability_impact": False' in source
-          assert 'line_grading_impact": False' in source
+
+          fallback = module.build_pitcher_strikeout_integration([], {})
+          protected_false = (
+              'model_math_impact',
+              'projection_impact',
+              'simulation_impact',
+              'probability_impact',
+              'line_grading_impact',
+              'history_adjustment_impact',
+              'ranking_impact',
+              'selection_impact',
+              'fair_odds_impact',
+              'sportsbook_price_model_input',
+              'production_exposure_impact',
+              'streamlit_presentation_impact',
+              'wagering_impact',
+              'durable_persistence',
+              'wnba_impact',
+          )
+          for key in protected_false:
+              assert fallback.get(key) is False, (key, fallback.get(key))
+          assert fallback['player_name_matching_used'] is False
+          assert fallback['fuzzy_matching_allowed'] is False
+          assert fallback['preexisting_pitcher_model_preserved'] is True
           print('MLB_STEP8C_PURE_EXACT_ID_POST_MODEL_BOUNDARY_OK')
           PY
 
