@@ -1,0 +1,148 @@
+name: MLB Step5.1 official game ID join certification
+
+on:
+  push:
+    branches:
+      - mlb-step5-1-official-game-id-join
+    paths:
+      - 'sports_api/mlb_official_game_id_join_v1.py'
+      - 'tests/test_mlb_official_game_id_join_v1.py'
+      - '.github/workflows/mlb-step5-1-official-game-id-join-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP5_1_BASE_SHA: a9dd6df48d594c7b67e53521e55cfd201dbabe16
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+
+jobs:
+  certify-exact-official-id-join:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert additive MLB-only change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP5_1_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP5_1_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          allowed='^(sports_api/mlb_official_game_id_join_v1.py|tests/test_mlb_official_game_id_join_v1.py|\.github/workflows/mlb-step5-1-official-game-id-join-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP5_1_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          echo 'MLB_STEP5_1_CHANGE_SCOPE_OK'
+
+      - name: Assert no heuristic fallback exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('sports_api/mlb_official_game_id_join_v1.py')
+          source=p.read_text(encoding='utf-8')
+          forbidden=('difflib','SequenceMatcher','fuzzywuzzy','rapidfuzz','away_team','home_team','scheduled_start','game_date')
+          bad=[token for token in forbidden if token in source]
+          if bad:
+              raise SystemExit('STEP5_1_HEURISTIC_FALLBACK_TOKEN_PRESENT: '+','.join(bad))
+          required=(
+              'MODEL_GAME_ID_FIELD = "game_pk"',
+              'MARKET_GAME_ID_FIELD = "official_game_id"',
+              'MATCH_METHOD = "official_mlb_game_id_exact"',
+              '"fallback_matching_used": False',
+          )
+          missing=[token for token in required if token not in source]
+          if missing:
+              raise SystemExit('STEP5_1_EXACT_ID_CONTRACT_MISSING: '+','.join(missing))
+          print('MLB_STEP5_1_NO_FUZZY_FALLBACK_OK')
+          PY
+
+      - name: Run deterministic exact-ID regression suite
+        run: python -m pytest -q tests/test_mlb_official_game_id_join_v1.py
+
+      - name: Certify exact join against current production MLB identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          from sports_api.mlb_official_game_id_join_v1 import join_model_games_to_markets
+
+          req=urllib.request.Request(
+              os.environ['PRODUCTION_ODDS_URL'],
+              headers={'Accept':'application/json','User-Agent':'KyreSportsStep5-1Cert/1.0'},
+              method='GET',
+          )
+          with urllib.request.urlopen(req, timeout=35) as response:
+              status=int(response.status)
+              payload=json.loads(response.read(2_000_000).decode('utf-8'))
+          if status != 200:
+              raise SystemExit(f'STEP5_1_PRODUCTION_HTTP_{status}')
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('STEP5_1_BAD_PRODUCTION_DATA_TYPE')
+          games=payload.get('games') or []
+          if not games:
+              raise SystemExit('STEP5_1_NO_CURRENT_PRODUCTION_MARKET_GAMES')
+
+          # Identity stubs use the exact official IDs returned by production.
+          # No market values are fabricated or transformed here.
+          model_identity_rows=[{'game_pk': game.get('official_game_id')} for game in reversed(games)]
+          joined=join_model_games_to_markets(model_identity_rows, games)
+          if joined.get('matched_count') != len(games):
+              raise SystemExit('STEP5_1_LIVE_ID_JOIN_COUNT_MISMATCH')
+          if joined.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP5_1_FALLBACK_WAS_USED')
+          if joined.get('unmatched_model_game_ids') or joined.get('unmatched_market_game_ids'):
+              raise SystemExit('STEP5_1_LIVE_ID_JOIN_HAS_UNMATCHED_VALID_IDS')
+
+          # Prove that a different ID cannot be rescued by any team/name heuristic.
+          first=games[0]
+          original=int(first['official_game_id'])
+          wrong=original + 90_000_000
+          mismatch=join_model_games_to_markets(
+              [{'game_pk': wrong, 'away_team':'same-name', 'home_team':'same-name'}],
+              [{'official_game_id': original, 'away_team':{'name':'same-name'}, 'home_team':{'name':'same-name'}}],
+          )
+          if mismatch.get('matched_count') != 0:
+              raise SystemExit('STEP5_1_FALSE_POSITIVE_ON_WRONG_ID')
+
+          evidence={
+              'certification_result':'GREEN',
+              'http_status':status,
+              'production_game_count':len(games),
+              'matched_count':joined.get('matched_count'),
+              'match_method':joined.get('match_method'),
+              'fallback_matching_used':joined.get('fallback_matching_used'),
+              'model_game_id_field':joined.get('model_game_id_field'),
+              'market_game_id_field':joined.get('market_game_id_field'),
+              'production_source':payload.get('source'),
+              'production_transport':payload.get('transport'),
+              'collected_at_utc':payload.get('collected_at_utc'),
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP5_1_OFFICIAL_GAME_ID_JOIN_GREEN')
+          PY
