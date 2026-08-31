@@ -6,13 +6,14 @@ Spread result by exact official MLB game ID plus the model result's away/home
 team identity. It never changes projection, simulation, probability, ranking,
 selection, history adjustment, fair odds, or production exposure.
 
-Bad or incomplete evidence is never fabricated. A caller can simply retain the
-frozen Spread V15.6 presentation for any result that does not have a proven
-exact-ID context.
+Bad, incomplete, or stale evidence is never fabricated. A caller can simply
+retain the frozen Spread V15.6 presentation for any result that does not have a
+proven exact-ID context.
 """
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import datetime, timezone
 import math
 from typing import Any, Mapping
 
@@ -25,6 +26,7 @@ EXPECTED_SOURCE = "FanDuel"
 MATCH_METHOD = "official_mlb_game_id_exact"
 API_CONNECTED = "API_RUN_LINE_CONTEXT_AVAILABLE"
 FALLBACK = "FROZEN_SPREAD_PRESENTATION_FALLBACK"
+DEFAULT_MAX_SNAPSHOT_AGE_SECONDS = 60.0
 
 
 def _mapping(value: Any) -> dict[str, Any]:
@@ -58,6 +60,22 @@ def _american_odds(value: Any) -> int | None:
     return int(number)
 
 
+def _utc_datetime(value: Any) -> datetime | None:
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = str(value or "").strip()
+        if not text:
+            return None
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except Exception:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
 def build_spread_api_state(payload: Mapping[str, Any] | None) -> dict[str, Any]:
     """Validate one API payload and retain only exact, usable Run Line contexts."""
     body = deepcopy(_mapping(payload))
@@ -71,6 +89,8 @@ def build_spread_api_state(payload: Mapping[str, Any] | None) -> dict[str, Any]:
         failures.append("unexpected_api_schema_version")
     if body.get("source") != EXPECTED_SOURCE:
         failures.append("unexpected_api_source")
+    if _utc_datetime(body.get("collected_at_utc")) is None:
+        failures.append("invalid_or_missing_collected_at_utc")
 
     games = body.get("games")
     if not isinstance(games, list):
@@ -138,6 +158,9 @@ def build_spread_api_state(payload: Mapping[str, Any] | None) -> dict[str, Any]:
         "usable_run_line_game_count": len(contexts),
         "unusable_game_ids": sorted(set(unusable_game_ids)),
         "contexts_by_game_id": contexts,
+        "snapshot_age_seconds": None,
+        "feed_fresh": None,
+        "max_snapshot_age_seconds": DEFAULT_MAX_SNAPSHOT_AGE_SECONDS,
         "frozen_spread_fallback_preserved": True,
         "model_math_impact": False,
         "simulation_impact": False,
@@ -153,6 +176,47 @@ def build_spread_api_state(payload: Mapping[str, Any] | None) -> dict[str, Any]:
     }
 
 
+def enforce_spread_api_freshness(
+    api_state: Mapping[str, Any] | None,
+    *,
+    as_of_utc: datetime | str | None = None,
+    max_age_seconds: float = DEFAULT_MAX_SNAPSHOT_AGE_SECONDS,
+) -> dict[str, Any]:
+    """Fail the display claim closed when the API snapshot is stale or unparseable."""
+    state = deepcopy(_mapping(api_state))
+    failures = list(state.get("failures") or [])
+
+    max_age = _finite_number(max_age_seconds)
+    if max_age is None or max_age < 0:
+        raise ValueError("max_age_seconds must be a finite non-negative number")
+
+    collected = _utc_datetime(state.get("collected_at_utc"))
+    as_of = _utc_datetime(as_of_utc) if as_of_utc is not None else datetime.now(timezone.utc)
+    if as_of is None:
+        raise ValueError("as_of_utc must be a parseable datetime")
+
+    age: float | None = None
+    fresh = False
+    if collected is None:
+        if "invalid_or_missing_collected_at_utc" not in failures:
+            failures.append("invalid_or_missing_collected_at_utc")
+    else:
+        age = max(0.0, (as_of - collected).total_seconds())
+        fresh = age <= max_age
+        if not fresh:
+            failures.append("api_snapshot_stale")
+
+    if failures:
+        state["integration_status"] = FALLBACK
+        state["api_integration_active"] = False
+    state["snapshot_age_seconds"] = age
+    state["feed_fresh"] = fresh and not failures
+    state["max_snapshot_age_seconds"] = max_age
+    state["failures"] = failures
+    state["frozen_spread_fallback_preserved"] = True
+    return state
+
+
 def spread_api_context_for_result(
     result: Mapping[str, Any] | None,
     api_state: Mapping[str, Any] | None,
@@ -161,6 +225,8 @@ def spread_api_context_for_result(
     row = deepcopy(_mapping(result))
     state = deepcopy(_mapping(api_state))
     if state.get("api_integration_active") is not True:
+        return None
+    if state.get("feed_fresh") is False:
         return None
     if state.get("match_method") != MATCH_METHOD or state.get("fallback_matching_used") is not False:
         return None
@@ -206,6 +272,8 @@ def spread_api_context_for_result(
         "live_fanduel_odds": live_odds,
         "line_match": line_match,
         "collected_at_utc": state.get("collected_at_utc"),
+        "snapshot_age_seconds": state.get("snapshot_age_seconds"),
+        "feed_fresh": state.get("feed_fresh"),
         "display_only": True,
         "model_math_impact": False,
         "simulation_impact": False,
@@ -223,10 +291,12 @@ def spread_api_context_for_result(
 __all__ = [
     "API_CONNECTED",
     "DATA_TYPE",
+    "DEFAULT_MAX_SNAPSHOT_AGE_SECONDS",
     "FALLBACK",
     "MATCH_METHOD",
     "RESULT_DATA_TYPE",
     "SCHEMA_VERSION",
     "build_spread_api_state",
+    "enforce_spread_api_freshness",
     "spread_api_context_for_result",
 ]
