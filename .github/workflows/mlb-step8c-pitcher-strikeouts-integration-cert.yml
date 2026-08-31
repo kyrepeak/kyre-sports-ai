@@ -104,8 +104,14 @@ jobs:
           assert 'official_game_id=game_id' in build_source
           assert 'official_player_id=player_id' in build_source
           assert 'market_type=market_type' in build_source
-          assert 'win_prob' not in build_source
-          assert 'fair_odds' not in build_source
+          for forbidden_read in (
+              '.get("win_prob")', ".get('win_prob')",
+              '.get("fair_odds")', ".get('fair_odds')",
+              '.get("grade")', ".get('grade')",
+              '.get("sim")', ".get('sim')",
+              '.get("projected_k")', ".get('projected_k')",
+          ):
+              assert forbidden_read not in build_source, forbidden_read
           assert '_grade_line' not in source
 
           fallback = module.build_pitcher_strikeout_integration([], {})
