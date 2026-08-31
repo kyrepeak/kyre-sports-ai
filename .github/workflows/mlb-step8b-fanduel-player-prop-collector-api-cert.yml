@@ -27,20 +27,30 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Correlate FanDuel FDX player map with prop identities
+      - name: Prove name-free FanDuel player to MLBAM reconciliation
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
           import re
+          from datetime import datetime, timezone
           from urllib.parse import urlencode
           from urllib.request import Request, urlopen
-          from urllib.error import HTTPError, URLError
+          from zoneinfo import ZoneInfo
+
+          from sports_api.collectors.mlb_fanduel_direct import (
+              fetch_fanduel_mlb_landing,
+              fetch_mlb_schedule,
+              parse_fanduel_matchup,
+              reconcile_official_game,
+          )
 
           WEB_KEY='FhMFpcPWXMeyZxOx'
           SB='https://api.sportsbook.fanduel.com'
           FDX='https://fdx-api.sportsbook.fanduel.com/api'
+          MLB='https://statsapi.mlb.com/api/v1'
+          EASTERN=ZoneInfo('America/New_York')
           HEADERS={
               'Accept':'application/json, text/plain, */*',
               'User-Agent':'Mozilla/5.0 (compatible; KyreSportsAPI-MLB/1.0; read-only)',
@@ -50,118 +60,161 @@ jobs:
           }
           UUID_RE=re.compile(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}')
 
-          def get_json(url, params=None):
+          def get_json(url, params=None, headers=None):
               if params:
                   url += ('&' if '?' in url else '?') + urlencode(params)
-              req=Request(url,headers=HEADERS,method='GET')
+              req=Request(url,headers=dict(headers or HEADERS),method='GET')
               with urlopen(req,timeout=25) as r:
                   raw=r.read(20_000_001)
                   print('GET',url.split('?')[0],'STATUS',getattr(r,'status',None),'BYTES',len(raw))
               if len(raw)>20_000_000: raise RuntimeError('response too large')
               return json.loads(raw.decode('utf-8'))
 
-          def walk(value):
+          def rows(value):
               if isinstance(value,dict):
-                  yield value
-                  for v in value.values(): yield from walk(v)
-              elif isinstance(value,list):
-                  for v in value: yield from walk(v)
+                  return [dict(v, _attachment_key=str(k)) for k,v in value.items() if isinstance(v,dict)]
+              if isinstance(value,list):
+                  return [dict(v) for v in value if isinstance(v,dict)]
+              return []
 
-          def scalar_strings(value):
-              out=set()
-              if isinstance(value,dict):
-                  for k,v in value.items():
-                      out.add(str(k))
-                      if isinstance(v,(str,int,float)) and not isinstance(v,bool): out.add(str(v))
-                      else: out |= scalar_strings(v)
-              elif isinstance(value,list):
-                  for v in value: out |= scalar_strings(v)
-              return out
+          def iso_utc(value):
+              text=str(value).replace('Z','+00:00')
+              return datetime.fromisoformat(text).astimezone(timezone.utc)
 
-          def embedded_uuids(value):
-              result=set()
-              for s in scalar_strings(value): result.update(x.casefold() for x in UUID_RE.findall(s))
-              return result
+          def official_team(game,side):
+              team=(((game.get('teams') or {}).get(side) or {}).get('team') or {})
+              return int(team['id']), str(team.get('name') or '')
 
-          landing=get_json(SB+'/sbapi/content-managed-page',{
-              '_ak':WEB_KEY,'page':'CUSTOM','customPageId':'mlb','timezone':'America/New_York'
-          })
-          events=[]; seen=set()
-          for d in walk(landing):
-              eid=d.get('eventId') or d.get('id')
-              name=d.get('name') or d.get('eventName') or d.get('displayName')
-              if eid is None or not isinstance(name,str) or ' @ ' not in name: continue
-              if str(eid) in seen: continue
-              seen.add(str(eid)); events.append((str(eid),name))
-          print('MLB_EVENT_CANDIDATES',len(events))
-          if not events: raise SystemExit('STEP8B_NO_FANDUEL_MLB_EVENTS')
+          def fdx_uuid_from_image(value):
+              hits=UUID_RE.findall(str(value or ''))
+              return hits[0].casefold() if len(hits)==1 else None
 
-          success=None
-          for eid,name in events[:16]:
-              try: players=get_json(f'{FDX}/v1/live/event/{eid}/players')
-              except (HTTPError,URLError,TimeoutError,ValueError) as exc:
-                  print('FDX_PLAYERS_ERROR',eid,type(exc).__name__,str(exc)[:160]); continue
-              pmap=players.get('playerMap') if isinstance(players,dict) else None
-              if isinstance(pmap,dict) and pmap:
-                  success=(eid,name,players); break
-          if success is None: raise SystemExit('STEP8B_NO_NONEMPTY_FDX_PLAYER_MAP')
+          def pos_bucket(value):
+              p=str(value or '').strip().upper()
+              if p in {'SP','RP','P'}: return 'P'
+              if p in {'LF','CF','RF','OF'}: return 'OF'
+              return p
 
-          eid,name,players=success
-          pmap=players['playerMap']
-          print('FDX_EVENT',eid,name)
-          print('FDX_EVENT_OBJECT',json.dumps(players.get('event'),sort_keys=True)[:5000])
-          print('PLAYER_MAP_COUNT',len(pmap))
-          for i,(key,row) in enumerate(list(pmap.items())[:12]):
-              print('PLAYER_MAP_ENTRY',i,'KEY',key,'VALUE',json.dumps(row,sort_keys=True)[:3500])
+          landing=fetch_fanduel_mlb_landing()
+          attachments=landing.get('attachments') or {}
+          events=rows(attachments.get('events'))
+          now=datetime.now(timezone.utc)
+          candidates=[]
+          for event in events:
+              name=str(event.get('name') or event.get('eventName') or '')
+              start=str(event.get('openDate') or '')
+              eid=str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '')
+              if not eid or ' @ ' not in name or not start: continue
+              try: start_dt=iso_utc(start)
+              except Exception: continue
+              if start_dt <= now: continue
+              candidates.append((start_dt,eid,name,event))
+          candidates.sort(key=lambda x:x[0])
+          print('PREGAME_CANDIDATES',len(candidates))
+          if not candidates: raise SystemExit('STEP8B_NO_PREGAME_FANDUEL_MLB_EVENTS')
 
-          nf_objects=[]
-          for d in walk(players):
-              if 'nfId' in d or 'selectionId' in d or 'selectionIds' in d:
-                  nf_objects.append(d)
-          print('NF_SELECTION_OBJECT_COUNT',len(nf_objects))
-          for i,d in enumerate(nf_objects[:30]):
-              print('NF_SELECTION_OBJECT',i,json.dumps(d,sort_keys=True)[:4500])
+          proven=[]
+          attempted=0
+          for start_dt,eid,name,event in candidates[:12]:
+              attempted += 1
+              away_fd,home_fd=parse_fanduel_matchup(name)
+              slate_date=start_dt.astimezone(EASTERN).date().isoformat()
+              schedule=fetch_mlb_schedule(slate_date)
+              official_game,method=reconcile_official_game(
+                  schedule,away_team=away_fd,home_team=home_fd,sportsbook_start_utc=str(event.get('openDate'))
+              )
+              game_pk=int(official_game['gamePk'])
+              away_id,away_name=official_team(official_game,'away')
+              home_id,home_name=official_team(official_game,'home')
+              players=get_json(f'{FDX}/v1/live/event/{eid}/players')
+              pmap=players.get('playerMap') or {}
+              fdx_event=players.get('event') or {}
+              away_abbr=str(((fdx_event.get('awayTeam') or {}).get('abbrName') or '')).upper()
+              home_abbr=str(((fdx_event.get('homeTeam') or {}).get('abbrName') or '')).upper()
+              side_team={away_abbr:away_id,home_abbr:home_id}
+              print('EVENT_BRIDGE',eid,'GAME_PK',game_pk,'METHOD',method,'SIDES',side_team)
 
-          prop=get_json(SB+'/sbapi/event-page',{'_ak':WEB_KEY,'eventId':eid,'tab':'pitcher-props'})
-          player_uuids=embedded_uuids(players)
-          prop_uuids=embedded_uuids(prop)
-          shared_embedded=sorted(player_uuids & prop_uuids)
-          print('PLAYER_EMBEDDED_UUID_COUNT',len(player_uuids))
-          print('PROP_EMBEDDED_UUID_COUNT',len(prop_uuids))
-          print('SHARED_EMBEDDED_UUID_COUNT',len(shared_embedded))
-          print('SHARED_EMBEDDED_UUID_SAMPLE',shared_embedded[:40])
+              rosters={}
+              for team_id in (away_id,home_id):
+                  roster=get_json(
+                      f'{MLB}/teams/{team_id}/roster',
+                      {'rosterType':'active','date':slate_date},
+                      {'Accept':'application/json','User-Agent':HEADERS['User-Agent']},
+                  )
+                  rosters[team_id]=[x for x in roster.get('roster') or [] if isinstance(x,dict)]
+                  print('OFFICIAL_ROSTER',team_id,'COUNT',len(rosters[team_id]))
 
-          # Locate any prop objects carrying shared UUIDs and show only scalar metadata.
-          shown=0
-          for d in walk(prop):
-              joined=' '.join(str(v) for v in d.values() if isinstance(v,(str,int,float)))
-              hits=sorted(set(x.casefold() for x in UUID_RE.findall(joined)) & set(shared_embedded))
-              if not hits: continue
-              safe={k:v for k,v in d.items() if isinstance(v,(str,int,float,bool,type(None)))}
-              print('PROP_SHARED_UUID_OBJECT','UUIDS',hits,'DATA',json.dumps(safe,sort_keys=True)[:3500])
-              shown+=1
-              if shown>=20: break
+              prop=get_json(SB+'/sbapi/event-page',{'_ak':WEB_KEY,'eventId':eid,'tab':'pitcher-props'})
+              markets=rows(((prop.get('attachments') or {}).get('markets')))
+              runners=[]
+              for market in markets:
+                  for runner in rows(market.get('runners')):
+                      if runner.get('isPlayerSelection') is True:
+                          r=dict(runner); r['_market_id']=str(market.get('marketId') or market.get('_attachment_key') or '')
+                          r['_market_name']=str(market.get('marketName') or market.get('name') or '')
+                          runners.append(r)
+              print('PLAYER_PROP_RUNNERS',len(runners))
 
-          # Check direct overlap between FanDuel selection ids exposed by FDX and the prop board.
-          fdx_selection_ids=set()
-          for d in walk(players):
-              for key in ('selectionId','selectionIds'):
-                  value=d.get(key)
-                  if isinstance(value,(str,int)): fdx_selection_ids.add(str(value))
-                  elif isinstance(value,list):
-                      fdx_selection_ids.update(str(x) for x in value if isinstance(x,(str,int)))
-          prop_scalars=scalar_strings(prop)
-          shared_selection=sorted(fdx_selection_ids & prop_scalars)
-          print('FDX_SELECTION_ID_COUNT',len(fdx_selection_ids))
-          print('SHARED_SELECTION_ID_COUNT',len(shared_selection))
-          print('SHARED_SELECTION_ID_SAMPLE',shared_selection[:50])
+              by_headshot={}
+              for provider_key,row in pmap.items():
+                  if not isinstance(row,dict): continue
+                  h=fdx_uuid_from_image(row.get('image'))
+                  if h: by_headshot.setdefault(h,[]).append((str(provider_key),row))
 
-          identity_keys=set()
-          for d in walk(players):
-              for k in d:
-                  low=str(k).casefold()
-                  if any(token in low for token in ('mlb','external','person','participant','player','nfid','selection','id','headshot')):
-                      identity_keys.add(str(k))
-          print('FDX_IDENTITY_KEYS',sorted(identity_keys))
-          print('MLB_STEP8B_FDX_PROP_IDENTITY_CORRELATION_COMPLETE')
+              event_proven=[]
+              for runner in runners:
+                  h=fdx_uuid_from_image(runner.get('logo'))
+                  matches=by_headshot.get(h) or []
+                  if len(matches)!=1: continue
+                  provider_key,fdx_player=matches[0]
+                  selection_id=str(runner.get('selectionId') or '')
+                  selection_ids={str(x) for x in fdx_player.get('selectionIds') or []}
+                  if selection_id not in selection_ids: continue
+                  team_abbr=str(fdx_player.get('team') or '').upper()
+                  team_id=side_team.get(team_abbr)
+                  jersey=str(fdx_player.get('number') or '').strip()
+                  if team_id is None or not jersey: continue
+                  official_matches=[]
+                  for roster_row in rosters.get(team_id,[]):
+                      if str(roster_row.get('jerseyNumber') or '').strip()!=jersey: continue
+                      fpos=pos_bucket(fdx_player.get('position'))
+                      opos=pos_bucket(((roster_row.get('position') or {}).get('abbreviation')))
+                      if fpos and opos and fpos!=opos: continue
+                      person=roster_row.get('person') or {}
+                      try: person_id=int(person.get('id'))
+                      except (TypeError,ValueError): continue
+                      official_matches.append((person_id,opos))
+                  if len(official_matches)!=1: continue
+                  person_id,official_pos=official_matches[0]
+                  event_proven.append({
+                      'official_game_id':game_pk,
+                      'official_player_id':person_id,
+                      'provider_player_key':provider_key,
+                      'headshot_uuid':h,
+                      'selection_id':selection_id,
+                      'team_abbr':team_abbr,
+                      'jersey_number':jersey,
+                      'fanduel_position':str(fdx_player.get('position') or ''),
+                      'official_position':official_pos,
+                      'market_id':runner['_market_id'],
+                      'market_name':runner['_market_name'],
+                      'handicap':runner.get('handicap'),
+                  })
+              # Deduplicate repeated ladder selections to identity proof records.
+              identity_keys={
+                  (x['official_game_id'],x['official_player_id'],x['provider_player_key'],x['headshot_uuid'])
+                  for x in event_proven
+              }
+              print('NAME_FREE_PROVEN_PLAYER_IDENTITIES',len(identity_keys))
+              for row in event_proven[:12]: print('PROVEN_RUNNER',json.dumps(row,sort_keys=True))
+              proven.extend(event_proven)
+              if event_proven: break
+
+          print('EVENTS_ATTEMPTED',attempted)
+          print('TOTAL_PROVEN_RUNNERS',len(proven))
+          if not proven: raise SystemExit('STEP8B_NAME_FREE_MLBAM_BRIDGE_NOT_PROVEN')
+          # Hard assertion: proof rows contain no player-name field at all.
+          if any(any('name' in k.casefold() for k in row) for row in proven):
+              raise SystemExit('STEP8B_PROOF_ACCIDENTALLY_DEPENDS_ON_PLAYER_NAME_FIELD')
+          print('MLB_STEP8B_NAME_FREE_MLBAM_IDENTITY_BRIDGE_PROVEN')
           PY
