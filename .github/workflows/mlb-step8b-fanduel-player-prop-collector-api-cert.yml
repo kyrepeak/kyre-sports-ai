@@ -27,111 +27,83 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Inspect two-way strikeouts and hidden player metadata
+      - name: Trace public FanDuel player-stats client route
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          from datetime import datetime, timezone
-          import json
           import re
+          from urllib.parse import urljoin
+          from urllib.request import Request, urlopen
 
-          from sports_api.collectors.mlb_fanduel_direct import (
-              FANDUEL_BASE_URL,
-              FANDUEL_HEADERS,
-              FANDUEL_PUBLIC_WEB_KEY,
-              _get_json,
-              fetch_fanduel_mlb_landing,
+          ROOT = 'https://sportsbook.fanduel.com/'
+          HEADERS = {
+              'Accept': 'text/html,application/xhtml+xml,application/javascript,text/javascript,*/*',
+              'User-Agent': 'Mozilla/5.0 (compatible; KyreSportsAPI-MLB/1.0; read-only)',
+          }
+          MAX_ASSET_BYTES = 8_000_000
+          MAX_ASSETS = 80
+          TERMS = (
+              'last 5', 'last5', 'playerstats', 'player-stats', 'player stats',
+              'playertrend', 'player-trend', 'performance trend', 'headshots/',
+              'fdx-api', 'isplayerselection', 'selectionid',
           )
 
-          def rows(value):
-              if isinstance(value, dict):
-                  out=[]
-                  for key,item in value.items():
-                      if isinstance(item,dict):
-                          row=dict(item); row.setdefault('_attachment_key',str(key)); out.append(row)
-                  return out
-              if isinstance(value,list):
-                  return [dict(item) for item in value if isinstance(item,dict)]
-              return []
+          def get(url, limit=MAX_ASSET_BYTES):
+              req = Request(url, headers=HEADERS, method='GET')
+              with urlopen(req, timeout=25) as response:
+                  raw = response.read(limit + 1)
+              if len(raw) > limit:
+                  return ''
+              return raw.decode('utf-8', errors='ignore')
 
-          def eid(event):
-              return str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '').strip()
+          html = get(ROOT, 2_000_000)
+          print('HOME_HTML_BYTES', len(html.encode('utf-8')))
+          srcs = []
+          for value in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', html, flags=re.I):
+              url = urljoin(ROOT, value)
+              if url not in srcs:
+                  srcs.append(url)
+          print('SCRIPT_COUNT', len(srcs))
+          for url in srcs[:MAX_ASSETS]:
+              print('SCRIPT_URL', url)
 
-          def playerish_keys(value, path='root', out=None, depth=0):
-              if out is None: out=[]
-              if depth > 8 or len(out) > 200: return out
-              if isinstance(value,dict):
-                  interesting={k:v for k,v in value.items() if any(token in str(k).casefold() for token in ('player','participant','person','entity','competitor'))}
-                  if interesting:
-                      out.append((path, {str(k):v for k,v in interesting.items() if not isinstance(v,(dict,list))}))
-                  for k,v in value.items():
-                      playerish_keys(v, f'{path}.{k}', out, depth+1)
-              elif isinstance(value,list):
-                  for i,v in enumerate(value[:100]): playerish_keys(v, f'{path}[{i}]', out, depth+1)
-              return out
+          hits = 0
+          endpoint_candidates = set()
+          for index, url in enumerate(srcs[:MAX_ASSETS]):
+              try:
+                  text = get(url)
+              except Exception as exc:
+                  print('SCRIPT_FETCH_ERROR', index, type(exc).__name__, str(exc)[:200])
+                  continue
+              low = text.casefold()
+              matched = [term for term in TERMS if term in low]
+              if not matched:
+                  continue
+              print('SCRIPT_MATCH', index, url, 'TERMS', matched)
+              for term in matched:
+                  pos = low.find(term)
+                  if pos < 0:
+                      continue
+                  start = max(0, pos - 900)
+                  end = min(len(text), pos + 1800)
+                  snippet = text[start:end].replace('\n', ' ')
+                  print('CONTEXT', term, snippet[:2700])
+                  hits += 1
+                  if hits >= 40:
+                      break
+              # Pull bounded URL/path-like strings from matching bundles.
+              for candidate in re.findall(r'["\'](https?://[^"\']+|/[^"\']{3,180})["\']', text):
+                  key = candidate.casefold()
+                  if any(token in key for token in ('stat', 'player', 'trend', 'fdx', 'performance')):
+                      endpoint_candidates.add(candidate[:240])
+              if hits >= 40:
+                  break
 
-          landing=fetch_fanduel_mlb_landing(timeout=25)
-          att=landing.get('attachments') or {}
-          events=rows(att.get('events') if isinstance(att,dict) else None)
-          now=datetime.now(timezone.utc); upcoming=[]
-          for event in events:
-              name=str(event.get('name') or event.get('eventName') or '')
-              open_date=str(event.get('openDate') or '')
-              if ' @ ' not in name or not open_date: continue
-              try: start=datetime.fromisoformat(open_date.replace('Z','+00:00')).astimezone(timezone.utc)
-              except Exception: continue
-              if start>now: upcoming.append((start,event))
-          upcoming.sort(key=lambda x:x[0])
-          if not upcoming: raise SystemExit('STEP8B_NO_UPCOMING_FANDUEL_MLB_EVENT_FOR_DISCOVERY')
-
-          event=upcoming[0][1]; event_id=eid(event)
-          url=f'{FANDUEL_BASE_URL}/sbapi/event-page'
-          print('EVENT',event_id,str(event.get('name') or event.get('eventName') or ''))
-
-          pitcher=_get_json(url,{'_ak':FANDUEL_PUBLIC_WEB_KEY,'eventId':event_id,'tab':'pitcher-props'},headers=FANDUEL_HEADERS,timeout=25)
-          pa=pitcher.get('attachments') or {}; pm=rows(pa.get('markets') if isinstance(pa,dict) else None)
-          print('PITCHER_MARKET_COUNT',len(pm))
-          for market in pm:
-              runners=rows(market.get('runners'))
-              print('PITCHER_MARKET',json.dumps({
-                  'id':market.get('marketId') or market.get('_attachment_key'),
-                  'name':market.get('marketName') or market.get('name'),
-                  'type':market.get('marketType') or market.get('type'),
-                  'status':market.get('marketStatus') or market.get('status'),
-                  'runner_count':len(runners),
-                  'runners':[{
-                      'name':r.get('runnerName') or r.get('name'),
-                      'handicap':r.get('handicap'),
-                      'result':r.get('result'),
-                      'selection_id':r.get('selectionId'),
-                      'logo':r.get('logo'),
-                      'keys':sorted(r),
-                  } for r in runners[:8]],
-              },sort_keys=True,default=str))
-
-          batter=_get_json(url,{'_ak':FANDUEL_PUBLIC_WEB_KEY,'eventId':event_id,'tab':'batter-props'},headers=FANDUEL_HEADERS,timeout=25)
-          ba=batter.get('attachments') or {}; bm=rows(ba.get('markets') if isinstance(ba,dict) else None)
-          first_logo=None
-          for market in bm:
-              for r in rows(market.get('runners')):
-                  logo=str(r.get('logo') or '')
-                  if '/headshots/mlb/' in logo:
-                      first_logo=logo; break
-              if first_logo: break
-          uuid_match=re.search(r'/headshots/mlb/[^/]+/([^/]+)/',first_logo or '')
-          uuid=uuid_match.group(1) if uuid_match else None
-          print('SAMPLE_HEADSHOT_UUID',uuid)
-          print('BATTER_DOC_KEYS',sorted(batter))
-          print('BATTER_ATTACHMENT_KEYS',sorted(ba) if isinstance(ba,dict) else [])
-          hidden=playerish_keys(batter)
-          print('PLAYERISH_METADATA_COUNT',len(hidden))
-          for path,data in hidden[:100]:
-              if data:
-                  print('PLAYERISH_METADATA',path,json.dumps(data,sort_keys=True,default=str)[:4000])
-          if uuid:
-              raw=json.dumps(batter,sort_keys=True,default=str)
-              print('UUID_OCCURRENCES',raw.count(uuid))
-
-          print('MLB_STEP8B_TWO_WAY_AND_IDENTITY_METADATA_DISCOVERY_COMPLETE')
+          print('MATCH_CONTEXT_COUNT', hits)
+          for candidate in sorted(endpoint_candidates)[:100]:
+              print('ENDPOINT_CANDIDATE', candidate)
+          if hits == 0:
+              print('STEP8B_PLAYER_STATS_ROUTE_NOT_DISCOVERED_IN_STATIC_ASSETS')
+          print('MLB_STEP8B_PLAYER_STATS_CLIENT_RECON_COMPLETE')
           PY
