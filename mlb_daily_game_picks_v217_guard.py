@@ -1,21 +1,14 @@
-"""V2.1.7 confirmed-lineup guard + Steps 5.2/5.3/5.4/5.5/5.6/5.7/5.8/5.9 market presentation.
+"""V2.1.7 confirmed-lineup guard + Steps 5.2 through 5.10 market control layers.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
-confirmed official MLB batting order. Step 5.2 adds the read-only exact-ID FanDuel
-Moneyline/Run Line/Total board. Step 5.3 derives raw implied probability, hold,
-and proportional two-way no-vig market probability from those exact prices only.
-Step 5.4 compares the unchanged production model probability to that certified
-market context for display-only edge, fair odds, and EV. Step 5.5 separates model
-handicap edge from actual price edge after vig and exposes the model's zero-EV price
-limit. Step 5.6 tracks only ephemeral exact-identity FanDuel observations to show
-snapshot age and real line/price movement without durable persistence. Step 5.7
-combines those certified facts into display-only price health, snapshot freshness,
-and same-line edge-retention/zero-EV crossing context. Step 5.8 adds a SHADOW-ONLY
-actionability policy. Step 5.9 adds an explicit feature-flagged price-aware Final
-Card eligibility gate for certified full-game markets only. Its production default
-is OFF; when explicitly enabled it filters eligibility only and never changes
-model math, Pick Strength, ranking math, risk logic, persistence, wagering, or WNBA.
+confirmed official MLB batting order. Steps 5.2-5.8 add exact-ID FanDuel market,
+probability, edge, price-discipline, movement, price-health, and shadow-policy
+context. Step 5.9 adds the controlled price-aware Final Card eligibility gate.
+Step 5.10 adds a deterministic game-level canary controller capped at 25% of the
+priced slate, with production defaults OFF/0% and exact rollback when disabled.
+No layer changes model math, Pick Strength, ranking math, V2.1.7 risk logic,
+persistence, wagering, or WNBA behavior.
 """
 from __future__ import annotations
 
@@ -28,10 +21,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
-from mlb_daily_game_picks_controlled_price_gate_v1 import install_controlled_price_gate_layer
+from mlb_daily_game_picks_price_gate_canary_v1 import install_price_gate_canary_layer
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.9 CONTROLLED PRICE GATE"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.10 BOUNDED CANARY"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -174,13 +167,11 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
 
-    # Step 5.9 runs strictly downstream of certified Step 5.8. Production default
-    # is OFF. Only an explicit environment activation can allow the certified
-    # full-game price gate to filter Final Card eligibility. Player props remain
-    # unchanged until a certified exact prop-price feed exists. Even when active,
-    # Step 5.9 does not mutate model probability, projections, Pick Strength,
-    # ranking math, V2.1.7 risk logic, persistence, wagering, or WNBA.
-    install_controlled_price_gate_layer(games_df)
+    # Step 5.10 runs strictly downstream of certified Step 5.9. Its canary defaults
+    # OFF/0%, uses deterministic official-game cohorts, hard-caps enrollment at 25%,
+    # and returns to the exact Step 5.9 baseline when disabled. The controller does
+    # not infer that an external Streamlit host has set the activation environment.
+    install_price_gate_canary_layer(games_df)
 
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
