@@ -1,0 +1,93 @@
+name: MLB Step5.10B Streamlit live probe
+
+on:
+  push:
+    branches:
+      - mlb-step5-10b-host-canary-verification
+    paths:
+      - '.github/workflows/mlb-step5-10b-streamlit-live-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-streamlit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install probe dependencies
+        run: python -m pip install --disable-pip-version-check -q requests selenium
+
+      - name: Probe public Streamlit app and rendered UI
+        shell: bash
+        env:
+          STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, time
+          import requests
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.common.by import By
+
+          base = os.environ['STREAMLIT_URL'].rstrip('/')
+          out = {'base_url': base}
+          for suffix, key in [('/', 'root'), ('/_stcore/health', 'health')]:
+              try:
+                  r = requests.get(base + suffix, timeout=35, allow_redirects=True, headers={'User-Agent':'KyreSportsMLBStep5-10B/1.0'})
+                  out[key] = {
+                      'status': r.status_code,
+                      'final_url': r.url,
+                      'content_type': r.headers.get('content-type'),
+                      'server': r.headers.get('server'),
+                      'body_prefix': r.text[:160].replace('\n',' '),
+                  }
+              except Exception as exc:
+                  out[key] = {'error': f'{type(exc).__name__}: {exc}'}
+
+          options = Options()
+          options.add_argument('--headless=new')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('--window-size=1440,1800')
+          driver = webdriver.Chrome(options=options)
+          try:
+              driver.get(base)
+              deadline = time.time() + 90
+              body = ''
+              while time.time() < deadline:
+                  try:
+                      body = driver.find_element(By.TAG_NAME, 'body').text
+                  except Exception:
+                      body = ''
+                  low = body.lower()
+                  if 'mlb' in low and ('daily' in low or 'step 5.10' in low or 'price-gate' in low or 'final card' in low):
+                      break
+                  time.sleep(2)
+              out['browser'] = {
+                  'title': driver.title,
+                  'current_url': driver.current_url,
+                  'body_length': len(body),
+                  'contains_mlb': 'mlb' in body.lower(),
+                  'contains_step5_10': 'step 5.10' in body.lower(),
+                  'contains_bounded_canary': 'bounded canary' in body.lower(),
+                  'contains_final_card': 'final card' in body.lower(),
+                  'body_preview': body[:2500],
+              }
+          finally:
+              driver.quit()
+
+          print(json.dumps(out, indent=2, sort_keys=True))
+          if out.get('health', {}).get('status') != 200:
+              raise SystemExit('STEP5_10B_STREAMLIT_HEALTH_NOT_200')
+          if not out.get('browser', {}).get('contains_mlb'):
+              raise SystemExit('STEP5_10B_STREAMLIT_MLB_UI_NOT_OBSERVED')
+          print('MLB_STEP5_10B_STREAMLIT_LIVE_PROBE_GREEN')
+          PY
