@@ -1,0 +1,154 @@
+name: MLB Step4 Streamlit live odds certification
+
+on:
+  push:
+    branches:
+      - mlb-live-market-build-20260831
+    paths:
+      - app.py
+      - mlb_live_odds_streamlit_v1.py
+      - sports_api/api/mlb.py
+      - sports_api/collectors/mlb_fanduel_direct.py
+      - tests/test_mlb_fanduel_direct.py
+      - tests/test_mlb_odds_api.py
+      - tests/test_mlb_live_odds_streamlit.py
+      - .github/workflows/mlb-step4-streamlit-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+  MLB_PERSISTENCE_WRITES_ENABLED: "false"
+  MLB_MARKET_REPLAY_ENABLED: "false"
+
+jobs:
+  certify-streamlit-live-odds:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Streamlit API and test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -q -r requirements.txt -r sports_api/requirements.txt pytest
+
+      - name: Assert isolated read-only MLB UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP4_ISOLATION_OK'
+
+      - name: Run collector API and Streamlit regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q \
+            tests/test_mlb_fanduel_direct.py \
+            tests/test_mlb_odds_api.py \
+            tests/test_mlb_live_odds_streamlit.py
+
+      - name: Certify live API payload transforms into Streamlit cards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from fastapi import FastAPI
+          from fastapi.testclient import TestClient
+
+          import mlb_live_odds_streamlit_v1 as ui
+          from sports_api.api.mlb import router
+
+          app = FastAPI()
+          app.include_router(router)
+          with TestClient(app) as client:
+              response = client.get(
+                  '/api/v1/mlb/odds',
+                  params={'max_events': 30, 'fully_priced_only': 'true'},
+              )
+
+          if response.status_code != 200:
+              raise SystemExit(f'MLB_STEP4_ENDPOINT_HTTP_{response.status_code}: {response.text}')
+          payload = response.json()
+          cards = ui.build_game_cards(payload)
+
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('MLB_STEP4_BAD_API_DATA_TYPE')
+          if payload.get('source') != 'FanDuel':
+              raise SystemExit('MLB_STEP4_BAD_SOURCE')
+          if payload.get('http_methods') != ['GET']:
+              raise SystemExit('MLB_STEP4_NON_GET_TRANSPORT')
+          if int(payload.get('game_count') or 0) <= 0:
+              raise SystemExit('MLB_STEP4_NO_LIVE_GAMES')
+          if len(cards) != int(payload.get('game_count') or 0):
+              raise SystemExit('MLB_STEP4_CARD_COUNT_MISMATCH')
+          for card in cards:
+              if not card.get('official_game_id'):
+                  raise SystemExit('MLB_STEP4_CARD_MISSING_GAME_ID')
+              if card.get('moneyline', {}).get('away') == '—':
+                  raise SystemExit('MLB_STEP4_CARD_MISSING_MONEYLINE')
+              if card.get('run_line', {}).get('away_line') == '—':
+                  raise SystemExit('MLB_STEP4_CARD_MISSING_RUN_LINE')
+              if card.get('total', {}).get('line') == '—':
+                  raise SystemExit('MLB_STEP4_CARD_MISSING_TOTAL')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'streamlit_route': 'MLB Live Odds',
+              'api_endpoint': '/api/v1/mlb/odds',
+              'source': payload.get('source'),
+              'transport': payload.get('transport'),
+              'http_methods': payload.get('http_methods'),
+              'game_count': payload.get('game_count'),
+              'card_count': len(cards),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'cards': cards[:5],
+              'replay_enabled': False,
+              'production_runtime_enabled': False,
+              'wagering_enabled': False,
+              'persistence_writes_enabled': False,
+          }
+          with open('mlb-step4-streamlit-cert.json', 'w', encoding='utf-8') as fh:
+              json.dump(evidence, fh, indent=2, sort_keys=True)
+              fh.write('\n')
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP4_STREAMLIT_GREEN')
+          PY
+
+      - name: Upload MLB Step 4 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step4-streamlit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-step4-streamlit-cert.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Re-assert read-only isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP4_READ_ONLY_SAFETY_REASSERTED'
