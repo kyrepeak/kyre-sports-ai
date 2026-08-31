@@ -1,4 +1,4 @@
-"""V2.1.7 confirmed-lineup guard + Steps 5.2/5.3/5.4/5.5/5.6/5.7 market presentation.
+"""V2.1.7 confirmed-lineup guard + Steps 5.2/5.3/5.4/5.5/5.6/5.7/5.8 market presentation.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
@@ -11,8 +11,10 @@ handicap edge from actual price edge after vig and exposes the model's zero-EV p
 limit. Step 5.6 tracks only ephemeral exact-identity FanDuel observations to show
 snapshot age and real line/price movement without durable persistence. Step 5.7
 combines those certified facts into display-only price health, snapshot freshness,
-and same-line edge-retention/zero-EV crossing context. No production probability,
-simulation, ranking, selection, persistence, wagering, or Pick Strength changes.
+and same-line edge-retention/zero-EV crossing context. Step 5.8 adds a SHADOW-ONLY
+actionability policy that says what a future execution gate would do without
+actually changing model math, Pick Strength, ranking, selection, risk logic,
+persistence, wagering, or WNBA behavior.
 """
 from __future__ import annotations
 
@@ -25,10 +27,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
-from mlb_daily_game_picks_price_health_v1 import install_price_health_layer
+from mlb_daily_game_picks_actionability_shadow_v1 import install_actionability_shadow_layer
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.7 PRICE HEALTH"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.8 ACTIONABILITY SHADOW"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -171,14 +173,13 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
 
-    # Step 5.7 runs strictly downstream of certified Step 5.6. It combines the
-    # exact current FanDuel price, zero-EV limit, snapshot age, and safe same-line
-    # movement into display-only price-health and edge-retention context. The
-    # freshness bands do not gate or modify Final Card behavior. Any upstream
-    # identity/timestamp/price/reconciliation problem fails closed without changing
-    # model values, Pick Strength, ranking, selection, V2.1.7 risk behavior,
-    # persistence, or wagering.
-    install_price_health_layer(games_df)
+    # Step 5.8 runs strictly downstream of certified Step 5.7. It converts price
+    # health into a future-policy answer (playable / refresh / reprice / wait /
+    # pass), but only in shadow. Activation is explicitly disabled. Any upstream
+    # identity, freshness, line-comparability, or EV reconciliation problem fails
+    # closed without changing model values, Pick Strength, ranking, selection,
+    # V2.1.7 risk behavior, persistence, wagering, or WNBA.
+    install_actionability_shadow_layer(games_df)
 
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
