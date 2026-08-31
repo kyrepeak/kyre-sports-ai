@@ -1,0 +1,164 @@
+name: MLB Step2 live collector certification
+
+on:
+  push:
+    branches:
+      - mlb-live-market-build-20260831
+    paths:
+      - 'sports_api/collectors/mlb_fanduel_direct.py'
+      - 'tests/test_mlb_fanduel_direct.py'
+      - '.github/workflows/mlb-step2-live-collector-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step2-live-collector-cert
+  cancel-in-progress: true
+
+jobs:
+  certify-live-collector:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+      MLB_WAGERING_ENABLED: "false"
+      MLB_PERSISTENCE_WRITES_ENABLED: "false"
+      MLB_MARKET_REPLAY_ENABLED: "false"
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependency
+        shell: bash
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert isolated read-only MLB collector
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP2_ISOLATION_OK'
+
+      - name: Run MLB collector regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_mlb_fanduel_direct.py
+
+      - name: Certify real FanDuel odds against official MLB schedule
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          from datetime import datetime, timezone
+          import json
+
+          from sports_api.collectors.mlb_fanduel_direct import collect_live_mlb_game_odds
+
+          report = collect_live_mlb_game_odds(
+              now_utc=datetime.now(timezone.utc),
+              max_events=30,
+          )
+
+          if report.get('transport') != 'anonymous_public_get_only':
+              raise SystemExit('MLB_STEP2_BAD_TRANSPORT')
+          if report.get('http_methods') != ['GET']:
+              raise SystemExit('MLB_STEP2_NON_GET_TRANSPORT')
+          if int(report.get('matched_game_count') or 0) <= 0:
+              raise SystemExit('MLB_STEP2_NO_OFFICIAL_SCHEDULE_MATCHES')
+          if int(report.get('fully_priced_game_count') or 0) <= 0:
+              raise SystemExit('MLB_STEP2_NO_FULLY_PRICED_GAMES')
+
+          fully_priced = [g for g in report.get('games') or [] if g.get('fully_priced') is True]
+          for game in fully_priced:
+              if not isinstance(game.get('official_game_id'), int) or game['official_game_id'] <= 0:
+                  raise SystemExit('MLB_STEP2_INVALID_OFFICIAL_GAME_ID')
+              if not game.get('sportsbook_event_id'):
+                  raise SystemExit('MLB_STEP2_MISSING_SPORTSBOOK_EVENT_ID')
+              if game.get('official_schedule_match') not in {'teams_exact', 'teams_and_nearest_start'}:
+                  raise SystemExit('MLB_STEP2_BAD_SCHEDULE_MATCH_METHOD')
+              markets = game.get('markets') or {}
+              for key in ('moneyline', 'run_line', 'total'):
+                  if key not in markets:
+                      raise SystemExit(f'MLB_STEP2_MISSING_{key.upper()}')
+              ml = markets['moneyline']
+              rl = markets['run_line']
+              total = markets['total']
+              for field in ('away_odds', 'home_odds'):
+                  if not isinstance(ml.get(field), int):
+                      raise SystemExit(f'MLB_STEP2_BAD_MONEYLINE_{field.upper()}')
+              for field in ('away_odds', 'home_odds'):
+                  if not isinstance(rl.get(field), int):
+                      raise SystemExit(f'MLB_STEP2_BAD_RUNLINE_{field.upper()}')
+              for field in ('over_odds', 'under_odds'):
+                  if not isinstance(total.get(field), int):
+                      raise SystemExit(f'MLB_STEP2_BAD_TOTAL_{field.upper()}')
+              if not isinstance(rl.get('away_line'), (int, float)) or not isinstance(rl.get('home_line'), (int, float)):
+                  raise SystemExit('MLB_STEP2_BAD_RUN_LINES')
+              if not isinstance(total.get('line'), (int, float)):
+                  raise SystemExit('MLB_STEP2_BAD_TOTAL_LINE')
+
+          evidence = {
+              'data_type': report.get('data_type'),
+              'schema_version': report.get('schema_version'),
+              'collected_at_utc': report.get('collected_at_utc'),
+              'provider': report.get('provider'),
+              'transport': report.get('transport'),
+              'http_methods': report.get('http_methods'),
+              'landing_event_count': report.get('landing_event_count'),
+              'candidate_pregame_event_count': report.get('candidate_pregame_event_count'),
+              'matched_game_count': report.get('matched_game_count'),
+              'fully_priced_game_count': report.get('fully_priced_game_count'),
+              'official_schedule_dates': report.get('official_schedule_dates'),
+              'games': fully_priced[:5],
+              'rejected_event_count': len(report.get('rejected_events') or []),
+              'replay_enabled': False,
+              'production_runtime_enabled': False,
+              'wagering_enabled': False,
+              'persistence_writes_enabled': False,
+              'authentication_used': False,
+              'cookies_used': False,
+              'certification_result': 'GREEN',
+          }
+          with open('mlb-step2-live-collector-cert.json', 'w', encoding='utf-8') as fh:
+              json.dump(evidence, fh, indent=2, sort_keys=True)
+              fh.write('\n')
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP2_LIVE_COLLECTOR_GREEN')
+          PY
+
+      - name: Upload MLB Step 2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step2-live-collector-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-step2-live-collector-cert.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert read-only isolation
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP2_READ_ONLY_SAFETY_REASSERTED'
