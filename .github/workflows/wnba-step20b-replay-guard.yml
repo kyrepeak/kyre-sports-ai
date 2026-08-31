@@ -1,0 +1,87 @@
+name: WNBA Step20B replay guard
+
+on:
+  push:
+    branches:
+      - wnba-step20b-replay-cert-20260831
+    paths:
+      - '.github/workflows/wnba-step20b-replay-guard.yml'
+      - 'sports_api/wnba_step20b_market_replay.py'
+      - 'sports_api/api/wnba_step20b_replay_runtime.py'
+      - 'sports_api/main.py'
+      - 'tests/test_wnba_step20b_market_replay.py'
+      - 'sports_api/wnba_step20b_runtime_acceleration.py'
+      - 'sports_api/wnba_step20b_step4w_cycle_cache.py'
+      - 'tests/test_wnba_step20b_reconstruction_cache.py'
+      - 'tests/test_wnba_step20b_step2_exact_reuse_timing.py'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Certify replay isolation and Step20B regression guards
+        run: |
+          python -m pytest -q tests/test_wnba_step20b_market_replay.py
+          python -m pytest -q tests/test_wnba_step20b_reconstruction_cache.py
+          python -m pytest -q tests/test_wnba_step20b_step2_exact_reuse_timing.py
+          python -m pytest -q tests/test_wnba_step20b_runtime_acceleration.py
+          python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step20b_market_replay as replay
+          from sports_api import wnba_step20b_runtime_acceleration as accel
+          from sports_api import wnba_step20b_step4w_cycle_cache as c4w
+          import sports_api.main as main
+
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          assert replay.market_replay_enabled({}) is False
+          status = replay.installation_status({})
+          rg = status['guardrails']
+          assert rg['default_off'] is True
+          assert rg['certification_only'] is True
+          assert rg['target_identity_from_prior_live_step12b'] is True
+          assert rg['quote_values_are_deterministic_certification_placeholders'] is True
+          assert rg['live_provider_bindings_modified'] is False
+          assert rg['exact_line_logic_modified'] is False
+          assert rg['projection_loader_injected'] is False
+          assert rg['simulations_modified'] is False
+          assert rg['batch_size_modified'] is False
+          assert rg['projection_math_modified'] is False
+          assert rg['readiness_relaxed'] is False
+          assert rg['sportsbook_transport_modified'] is False
+          assert rg['persistence_modified'] is False
+          assert rg['wagering_enabled'] is False
+
+          paths = {route.path for route in main.app.routes}
+          assert '/api/v1/wnba/runtime/step20b-replay-runtime-probe/start' in paths
+          assert '/api/v1/wnba/runtime/step20b-replay-runtime-probe/status' in paths
+
+          ag = accel.install_step20b_runtime_acceleration()['guardrails']
+          assert ag['projection_math_modified'] is False
+          assert ag['readiness_relaxed'] is False
+          assert ag['monte_carlo_simulation_count_modified'] is False
+          assert ag['monte_carlo_batch_size_modified'] is False
+          c4g = c4w.install_step20b_step4w_cycle_cache()['guardrails']
+          assert c4g['projection_math_modified'] is False
+          assert c4g['readiness_relaxed'] is False
+          assert c4g['monte_carlo_simulation_count_modified'] is False
+          assert c4g['monte_carlo_batch_size_modified'] is False
+          print('STEP20B_REPLAY_GUARDS_CERTIFIED')
+          PY
