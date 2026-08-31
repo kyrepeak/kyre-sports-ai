@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Probe FanDuel FDX live player identity map
+      - name: Correlate FanDuel FDX player map with prop identities
         shell: bash
         run: |
           set -euo pipefail
@@ -48,6 +48,7 @@ jobs:
               'Referer':'https://sportsbook.fanduel.com/',
               'x-sportsbook-region':'NJ',
           }
+          UUID_RE=re.compile(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}')
 
           def get_json(url, params=None):
               if params:
@@ -56,101 +57,111 @@ jobs:
               with urlopen(req,timeout=25) as r:
                   raw=r.read(20_000_001)
                   print('GET',url.split('?')[0],'STATUS',getattr(r,'status',None),'BYTES',len(raw))
-              if len(raw)>20_000_000:
-                  raise RuntimeError('response too large')
+              if len(raw)>20_000_000: raise RuntimeError('response too large')
               return json.loads(raw.decode('utf-8'))
 
           def walk(value):
               if isinstance(value,dict):
                   yield value
-                  for v in value.values():
-                      yield from walk(v)
+                  for v in value.values(): yield from walk(v)
               elif isinstance(value,list):
-                  for v in value:
-                      yield from walk(v)
+                  for v in value: yield from walk(v)
 
-          def strings(value):
+          def scalar_strings(value):
               out=set()
               if isinstance(value,dict):
                   for k,v in value.items():
-                      if isinstance(v,(str,int,float)) and not isinstance(v,bool):
-                          out.add(str(v))
-                      else:
-                          out |= strings(v)
+                      out.add(str(k))
+                      if isinstance(v,(str,int,float)) and not isinstance(v,bool): out.add(str(v))
+                      else: out |= scalar_strings(v)
               elif isinstance(value,list):
-                  for v in value: out |= strings(v)
+                  for v in value: out |= scalar_strings(v)
               return out
 
-          landing=get_json(
-              SB+'/sbapi/content-managed-page',
-              {'_ak':WEB_KEY,'page':'CUSTOM','customPageId':'mlb','timezone':'America/New_York'}
-          )
-          events=[]
-          seen=set()
+          def embedded_uuids(value):
+              result=set()
+              for s in scalar_strings(value): result.update(x.casefold() for x in UUID_RE.findall(s))
+              return result
+
+          landing=get_json(SB+'/sbapi/content-managed-page',{
+              '_ak':WEB_KEY,'page':'CUSTOM','customPageId':'mlb','timezone':'America/New_York'
+          })
+          events=[]; seen=set()
           for d in walk(landing):
               eid=d.get('eventId') or d.get('id')
               name=d.get('name') or d.get('eventName') or d.get('displayName')
-              if eid is None or not isinstance(name,str) or ' @ ' not in name:
-                  continue
-              key=str(eid)
-              if key in seen: continue
-              seen.add(key); events.append((key,name))
+              if eid is None or not isinstance(name,str) or ' @ ' not in name: continue
+              if str(eid) in seen: continue
+              seen.add(str(eid)); events.append((str(eid),name))
           print('MLB_EVENT_CANDIDATES',len(events))
-          print('MLB_EVENT_SAMPLE',events[:8])
-          if not events:
-              raise SystemExit('STEP8B_NO_FANDUEL_MLB_EVENTS')
+          if not events: raise SystemExit('STEP8B_NO_FANDUEL_MLB_EVENTS')
 
           success=None
           for eid,name in events[:16]:
-              try:
-                  players=get_json(f'{FDX}/v1/live/event/{eid}/players')
+              try: players=get_json(f'{FDX}/v1/live/event/{eid}/players')
               except (HTTPError,URLError,TimeoutError,ValueError) as exc:
-                  print('FDX_PLAYERS_ERROR',eid,name,type(exc).__name__,str(exc)[:180])
-                  continue
-              success=(eid,name,players)
-              break
-          if success is None:
-              raise SystemExit('STEP8B_FDX_PLAYERS_ENDPOINT_UNREACHABLE_FOR_CANDIDATES')
+                  print('FDX_PLAYERS_ERROR',eid,type(exc).__name__,str(exc)[:160]); continue
+              pmap=players.get('playerMap') if isinstance(players,dict) else None
+              if isinstance(pmap,dict) and pmap:
+                  success=(eid,name,players); break
+          if success is None: raise SystemExit('STEP8B_NO_NONEMPTY_FDX_PLAYER_MAP')
 
           eid,name,players=success
+          pmap=players['playerMap']
           print('FDX_EVENT',eid,name)
-          print('FDX_TOP_TYPE',type(players).__name__)
-          if isinstance(players,dict): print('FDX_TOP_KEYS',sorted(players.keys()))
+          print('FDX_EVENT_OBJECT',json.dumps(players.get('event'),sort_keys=True)[:5000])
+          print('PLAYER_MAP_COUNT',len(pmap))
+          for i,(key,row) in enumerate(list(pmap.items())[:12]):
+              print('PLAYER_MAP_ENTRY',i,'KEY',key,'VALUE',json.dumps(row,sort_keys=True)[:3500])
 
-          interesting=[]
+          nf_objects=[]
           for d in walk(players):
-              keys={str(k).casefold() for k in d.keys()}
-              if any(any(token in k for token in ('player','participant','person','external','mlb','headshot','team','id')) for k in keys):
-                  interesting.append(d)
-          print('FDX_INTERESTING_OBJECTS',len(interesting))
-          for i,d in enumerate(interesting[:20]):
+              if 'nfId' in d or 'selectionId' in d or 'selectionIds' in d:
+                  nf_objects.append(d)
+          print('NF_SELECTION_OBJECT_COUNT',len(nf_objects))
+          for i,d in enumerate(nf_objects[:30]):
+              print('NF_SELECTION_OBJECT',i,json.dumps(d,sort_keys=True)[:4500])
+
+          prop=get_json(SB+'/sbapi/event-page',{'_ak':WEB_KEY,'eventId':eid,'tab':'pitcher-props'})
+          player_uuids=embedded_uuids(players)
+          prop_uuids=embedded_uuids(prop)
+          shared_embedded=sorted(player_uuids & prop_uuids)
+          print('PLAYER_EMBEDDED_UUID_COUNT',len(player_uuids))
+          print('PROP_EMBEDDED_UUID_COUNT',len(prop_uuids))
+          print('SHARED_EMBEDDED_UUID_COUNT',len(shared_embedded))
+          print('SHARED_EMBEDDED_UUID_SAMPLE',shared_embedded[:40])
+
+          # Locate any prop objects carrying shared UUIDs and show only scalar metadata.
+          shown=0
+          for d in walk(prop):
+              joined=' '.join(str(v) for v in d.values() if isinstance(v,(str,int,float)))
+              hits=sorted(set(x.casefold() for x in UUID_RE.findall(joined)) & set(shared_embedded))
+              if not hits: continue
               safe={k:v for k,v in d.items() if isinstance(v,(str,int,float,bool,type(None)))}
-              print('FDX_OBJECT',i,json.dumps(safe,sort_keys=True)[:2500])
+              print('PROP_SHARED_UUID_OBJECT','UUIDS',hits,'DATA',json.dumps(safe,sort_keys=True)[:3500])
+              shown+=1
+              if shown>=20: break
 
-          prop=get_json(
-              SB+'/sbapi/event-page',
-              {'_ak':WEB_KEY,'eventId':eid,'tab':'pitcher-props'}
-          )
-          pstrings=strings(players)
-          qstrings=strings(prop)
-          uuid_re=re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
-          shared_uuids=sorted(x for x in (pstrings & qstrings) if uuid_re.match(x))
-          shared_numeric=sorted(
-              (x for x in (pstrings & qstrings) if x.isdigit() and 4 <= len(x) <= 12),
-              key=lambda x:(len(x),x)
-          )
-          print('SHARED_UUID_COUNT',len(shared_uuids))
-          print('SHARED_UUID_SAMPLE',shared_uuids[:30])
-          print('SHARED_NUMERIC_COUNT',len(shared_numeric))
-          print('SHARED_NUMERIC_SAMPLE',shared_numeric[:50])
+          # Check direct overlap between FanDuel selection ids exposed by FDX and the prop board.
+          fdx_selection_ids=set()
+          for d in walk(players):
+              for key in ('selectionId','selectionIds'):
+                  value=d.get(key)
+                  if isinstance(value,(str,int)): fdx_selection_ids.add(str(value))
+                  elif isinstance(value,list):
+                      fdx_selection_ids.update(str(x) for x in value if isinstance(x,(str,int)))
+          prop_scalars=scalar_strings(prop)
+          shared_selection=sorted(fdx_selection_ids & prop_scalars)
+          print('FDX_SELECTION_ID_COUNT',len(fdx_selection_ids))
+          print('SHARED_SELECTION_ID_COUNT',len(shared_selection))
+          print('SHARED_SELECTION_ID_SAMPLE',shared_selection[:50])
 
-          # Explicitly inspect key names that could establish an official external identity.
           identity_keys=set()
           for d in walk(players):
               for k in d:
                   low=str(k).casefold()
-                  if any(token in low for token in ('mlb','external','person','participant','player','id','headshot')):
+                  if any(token in low for token in ('mlb','external','person','participant','player','nfid','selection','id','headshot')):
                       identity_keys.add(str(k))
           print('FDX_IDENTITY_KEYS',sorted(identity_keys))
-          print('MLB_STEP8B_FDX_PLAYER_IDENTITY_PROBE_COMPLETE')
+          print('MLB_STEP8B_FDX_PROP_IDENTITY_CORRELATION_COMPLETE')
           PY
