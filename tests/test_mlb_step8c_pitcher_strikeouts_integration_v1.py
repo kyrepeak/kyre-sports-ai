@@ -157,6 +157,24 @@ def test_invalid_result_identity_is_isolated_when_unrelated_exact_row_is_usable(
     assert 1 in integration["attachments_by_result_index"]
 
 
+def test_fractional_numeric_ids_are_rejected_instead_of_truncated_into_exact_match():
+    state = _fresh_state(_prop(game=1001, player=2001))
+    results = [
+        _result(game=1001.9, player=2001),
+        _result(game=1001, player=2001.8),
+        _result(game="1001", player="2001", name="Serialized Exact IDs"),
+    ]
+    integration = build_pitcher_strikeout_integration(results, state)
+
+    assert integration["integration_status"] == INTEGRATED
+    assert integration["invalid_result_count"] == 2
+    assert integration["valid_exact_identity_count"] == 1
+    assert integration["attached_count"] == 1
+    assert 2 in integration["attachments_by_result_index"]
+    assert 0 not in integration["attachments_by_result_index"]
+    assert 1 not in integration["attachments_by_result_index"]
+
+
 def test_duplicate_exact_pitcher_result_identity_globally_fails_closed():
     state = _fresh_state(_prop())
     results = [_result(name="First"), _result(name="Second")]
