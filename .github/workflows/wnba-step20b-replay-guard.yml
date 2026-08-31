@@ -6,9 +6,11 @@ on:
       - wnba-step20b-replay-cert-20260831
     paths:
       - '.github/workflows/wnba-step20b-replay-guard.yml'
+      - 'sports_api/wnba_step7g_release_freeze.py'
       - 'sports_api/wnba_step20b_market_replay.py'
       - 'sports_api/api/wnba_step20b_replay_runtime.py'
       - 'sports_api/main.py'
+      - 'tests/test_wnba_step8_projection_handoff.py'
       - 'tests/test_wnba_step20b_market_replay.py'
       - 'sports_api/wnba_step20b_runtime_acceleration.py'
       - 'sports_api/wnba_step20b_step4w_cycle_cache.py'
@@ -37,12 +39,14 @@ jobs:
 
       - name: Certify replay isolation and Step20B regression guards
         run: |
+          python -m pytest -q tests/test_wnba_step8_projection_handoff.py
           python -m pytest -q tests/test_wnba_step20b_market_replay.py
           python -m pytest -q tests/test_wnba_step20b_reconstruction_cache.py
           python -m pytest -q tests/test_wnba_step20b_step2_exact_reuse_timing.py
           python -m pytest -q tests/test_wnba_step20b_runtime_acceleration.py
           python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
           python - <<'PY'
+          from sports_api import wnba_step7g_release_freeze as step7g
           from sports_api import wnba_step12b_live_runtime_assembly as s12b
           from sports_api import wnba_step20b_market_replay as replay
           from sports_api import wnba_step20b_runtime_acceleration as accel
@@ -52,6 +56,11 @@ jobs:
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
           assert replay.market_replay_enabled({}) is False
+          assert {
+              'injury_report_game_present',
+              'injury_report_submission_complete',
+          }.issubset(step7g.ALLOWED_NON_BLOCKING_WARNING_IDS)
+          assert 'new_unreviewed_warning' not in step7g.ALLOWED_NON_BLOCKING_WARNING_IDS
           status = replay.installation_status({})
           rg = status['guardrails']
           assert rg['default_off'] is True
