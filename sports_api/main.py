@@ -102,6 +102,7 @@ from sports_api.api.wnba_step8_projection import router as wnba_step8_projection
 from sports_api.api.wnba_step9_market_board import router as wnba_step9_market_board_router
 from sports_api.api.wnba_step10_live_market_board import router as wnba_step10_live_market_board_router
 from sports_api.api.wnba_step17b_runtime import router as wnba_step17b_runtime_router
+from sports_api.api.wnba_step20b_replay_runtime import router as wnba_step20b_replay_runtime_router
 from sports_api.api.wnba_step17c_reliability import router as wnba_step17c_reliability_router
 from sports_api.api.wnba_step18a_consumer import router as wnba_step18a_consumer_router
 from sports_api.api.wnba_team_history import router as wnba_team_history_router
@@ -199,6 +200,7 @@ app.include_router(wnba_step8_projection_router)
 app.include_router(wnba_step9_market_board_router)
 app.include_router(wnba_step10_live_market_board_router)
 app.include_router(wnba_step17b_runtime_router)
+app.include_router(wnba_step20b_replay_runtime_router)
 app.include_router(wnba_step17c_reliability_router)
 app.include_router(wnba_step18a_consumer_router)
 app.include_router(wnba_team_history_router)
