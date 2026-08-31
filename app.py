@@ -19,6 +19,8 @@ Contracts
 - Step 7F installs an API-first read-only WNBA schedule bridge above the frozen
   replay. It preserves the exact V2.5 schedule frame contract and falls back to
   the original direct schedule transport if the hosted API cannot be consumed.
+- MLB Step 4 adds one isolated read-only Live Odds sidebar route after the real
+  Streamlit page config completes; existing MLB model routes remain untouched.
 - No production projection, probability, Monte Carlo, calibration, ranking,
   qualification, sportsbook pricing, scheduler or write logic is changed here.
 - Historical ``wnba_live_*`` source files may remain in the repository as an
@@ -126,6 +128,41 @@ def _load_frozen_pre_live_app() -> str:
         with urllib.request.urlopen(RAW_URL, timeout=15) as response:
             return response.read().decode("utf-8")
 
+
+# Streamlit requires set_page_config to be the first UI command. The historical
+# frozen shell owns that call, so install a narrow wrapper around the genuine
+# function and add the new sidebar route only *after* page config succeeds.
+_REAL_SET_PAGE_CONFIG = getattr(st, "_kyre_real_set_page_config", None)
+if not callable(_REAL_SET_PAGE_CONFIG):
+    _REAL_SET_PAGE_CONFIG = st.set_page_config
+    setattr(st, "_kyre_real_set_page_config", _REAL_SET_PAGE_CONFIG)
+_MLB_LIVE_ODDS_PAGE_CONFIG_HOOK_RAN = False
+
+
+def _set_page_config_with_mlb_live_odds(*args, **kwargs):
+    global _MLB_LIVE_ODDS_PAGE_CONFIG_HOOK_RAN
+    result = _REAL_SET_PAGE_CONFIG(*args, **kwargs)
+    if _MLB_LIVE_ODDS_PAGE_CONFIG_HOOK_RAN:
+        return result
+    _MLB_LIVE_ODDS_PAGE_CONFIG_HOOK_RAN = True
+
+    if st.session_state.get("ks_mlb_live_odds_route") is True:
+        from mlb_live_odds_streamlit_v1 import render_mlb_live_odds_page
+
+        render_mlb_live_odds_page()
+        st.stop()
+
+    if st.sidebar.button(
+        "⚾ MLB Live Odds",
+        key="ks_mlb_live_odds_launch",
+        use_container_width=True,
+    ):
+        st.session_state["ks_mlb_live_odds_route"] = True
+        st.rerun()
+    return result
+
+
+st.set_page_config = _set_page_config_with_mlb_live_odds
 
 _purge_live_runtime_state()
 _refresh_pra_presentation_route()
