@@ -23,6 +23,8 @@ Contracts
   Streamlit page config completes; existing MLB model routes remain untouched.
 - MLB Step 7B redirects only the frozen Spread V15.6 presentation import to the
   additive V15.7 exact-ID FanDuel Run Line API context wrapper.
+- MLB Step 7C redirects only the frozen Moneyline V16.3 presentation boundary to
+  the additive V16.4 exact-ID FanDuel Moneyline API context wrapper.
 - No production projection, probability, Monte Carlo, calibration, ranking,
   qualification, sportsbook pricing, scheduler or write logic is changed here.
 - Historical ``wnba_live_*`` source files may remain in the repository as an
@@ -150,6 +152,38 @@ def _install_step18c_wnba_consumer_bridge() -> dict:
         return {"installed": True, "fail_closed": True, "error_type": type(exc).__name__, "legacy_daily_picks_compute_fallback": False}
 
 
+def _install_mlb_moneyline_step7c_route() -> dict:
+    """Install only the V16.4 Moneyline presentation alias; fail open to V16.3."""
+    for name in ("mlb_moneyline_hub_v164", "mlb_moneyline_hub_v163"):
+        sys.modules.pop(name, None)
+    importlib.invalidate_caches()
+    try:
+        import mlb_moneyline_hub_v164 as moneyline_v164
+
+        prior = getattr(moneyline_v164, "prior", None)
+        if prior is None or not hasattr(prior, "render_moneyline_hub"):
+            raise RuntimeError("Moneyline V16.4 frozen V16.3 base failed to initialize.")
+        sys.modules["mlb_moneyline_hub_v163"] = moneyline_v164
+        return {
+            "installed": True,
+            "model_version": getattr(moneyline_v164, "MODEL_VERSION", "V16.4"),
+            "frozen_v163_fallback_preserved": True,
+        }
+    except Exception as exc:
+        sys.modules.pop("mlb_moneyline_hub_v164", None)
+        sys.modules.pop("mlb_moneyline_hub_v163", None)
+        importlib.invalidate_caches()
+        import mlb_moneyline_hub_v163 as frozen_v163
+
+        sys.modules["mlb_moneyline_hub_v163"] = frozen_v163
+        return {
+            "installed": False,
+            "model_version": getattr(frozen_v163, "MODEL_VERSION", "V16.3"),
+            "error_type": type(exc).__name__,
+            "frozen_v163_fallback_preserved": True,
+        }
+
+
 def _load_frozen_pre_live_app() -> str:
     try:
         return subprocess.check_output(
@@ -201,6 +235,7 @@ _purge_live_runtime_state()
 _refresh_pra_presentation_route()
 _STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()
 _STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()
+_STEP7C_MLB_MONEYLINE_ROUTE = _install_mlb_moneyline_step7c_route()
 source = _load_frozen_pre_live_app()
 
 # Step 7B changes only the MLB Spread presentation import inside the frozen
