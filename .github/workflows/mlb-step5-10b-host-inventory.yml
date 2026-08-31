@@ -1,0 +1,97 @@
+name: MLB Step5.10B host inventory
+
+on:
+  push:
+    branches:
+      - mlb-step5-10b-host-canary-verification
+    paths:
+      - '.github/workflows/mlb-step5-10b-host-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory-render-hosts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: wnba-render-staging
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install HTTP client
+        run: python -m pip install --disable-pip-version-check -q httpx
+      - name: Read sanitized Render host inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY"
+          python - <<'PY'
+          import json, os
+          import httpx
+
+          api_key = os.environ['RENDER_API_KEY']
+          owner_id = (os.environ.get('RENDER_OWNER_ID') or '').strip()
+          headers = {
+              'Accept': 'application/json',
+              'Authorization': f'Bearer {api_key}',
+              'User-Agent': 'KyreSportsMLBStep5-10B/1.0',
+          }
+          with httpx.Client(base_url='https://api.render.com', headers=headers, timeout=25.0) as client:
+              params = {'limit': 100}
+              if owner_id:
+                  params['ownerId'] = owner_id
+              response = client.get('/v1/services', params=params)
+              response.raise_for_status()
+              raw = response.json()
+              rows = raw if isinstance(raw, list) else raw.get('items', raw.get('data', [])) if isinstance(raw, dict) else []
+              services = []
+              for wrapped in rows:
+                  service = wrapped.get('service') if isinstance(wrapped, dict) and isinstance(wrapped.get('service'), dict) else wrapped
+                  if not isinstance(service, dict):
+                      continue
+                  sid = str(service.get('id') or '').strip()
+                  if not sid:
+                      continue
+                  env_response = client.get(f'/v1/services/{sid}/env-vars', params={'limit': 100})
+                  env_response.raise_for_status()
+                  env_raw = env_response.json()
+                  env_rows = env_raw if isinstance(env_raw, list) else env_raw.get('items', env_raw.get('data', [])) if isinstance(env_raw, dict) else []
+                  env = {}
+                  for item in env_rows:
+                      row = item.get('envVar') if isinstance(item, dict) and isinstance(item.get('envVar'), dict) else item
+                      if isinstance(row, dict):
+                          key = str(row.get('key') or row.get('name') or '').strip()
+                          if key:
+                              env[key] = str(row.get('value') or '')
+                  details = service.get('serviceDetails') if isinstance(service.get('serviceDetails'), dict) else {}
+                  repo = service.get('repo')
+                  if isinstance(repo, dict):
+                      repo_value = repo.get('url') or repo.get('name')
+                  else:
+                      repo_value = repo
+                  services.append({
+                      'service_id': sid,
+                      'service_name': service.get('name'),
+                      'service_type': service.get('type'),
+                      'service_url': details.get('url') or service.get('url'),
+                      'runtime': details.get('runtime') or details.get('env'),
+                      'repo': repo_value,
+                      'branch': service.get('branch'),
+                      'root_dir': service.get('rootDir'),
+                      'auto_deploy': service.get('autoDeploy'),
+                      'mlb_step5_9_gate': env.get('MLB_STEP5_9_PRICE_GATE_ENABLED'),
+                      'mlb_step5_10_canary_enabled': env.get('MLB_STEP5_10_CANARY_ENABLED'),
+                      'mlb_step5_10_canary_percent': env.get('MLB_STEP5_10_CANARY_PERCENT'),
+                      'has_python_entry_hint': any(k in env for k in ('PYTHON_VERSION','PORT')),
+                      'wnba_runtime_present': 'WNBA_PRODUCTION_RUNTIME_ENABLED' in env,
+                  })
+          print(json.dumps({'service_count': len(services), 'services': services, 'secret_values_returned': False}, indent=2, sort_keys=True))
+          PY
