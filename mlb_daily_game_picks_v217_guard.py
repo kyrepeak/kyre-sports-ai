@@ -1,15 +1,17 @@
-"""V2.1.7 confirmed-lineup guard + Steps 5.2 through 5.10B market control layers.
+"""V2.1.7 confirmed-lineup guard + certified Step 5 + Step 6A production canary.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
-confirmed official MLB batting order. Steps 5.2-5.8 add exact-ID FanDuel market,
-probability, edge, price-discipline, movement, price-health, and shadow-policy
-context. Step 5.9 adds the controlled price-aware Final Card eligibility gate.
-Step 5.10 adds a deterministic game-level canary controller capped at 25% of the
-priced slate, with production defaults OFF/0% and exact rollback when disabled.
-Step 5.10B adds explicit session-scoped Streamlit URL control for live frontend
-verification when no host environment control surface is available; explicit
-host Step 5.10 environment values always take precedence. No layer changes model
+confirmed official MLB batting order. Steps 5.2-5.10B provide the frozen exact-ID
+FanDuel market, probability, edge, price, movement, health, actionability, gate,
+bounded-canary, and Streamlit verification controls certified by Step 5.11.
+
+Step 6A is strictly downstream of that frozen checkpoint. It intentionally turns
+on a repository-default 10% production cohort for full-game price-certified MLB
+markets, while preserving the Step 5.10 deterministic game-level selector and
+Step 5.9 eligibility gate. A global kill switch, explicit host controls, and an
+exact session rollback remain available. Player props remain price-gate pass-
+through until a certified exact prop-price feed exists. No layer changes model
 math, Pick Strength, ranking math, V2.1.7 risk logic, persistence, wagering, or
 WNBA behavior.
 """
@@ -24,10 +26,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
-from mlb_daily_game_picks_price_gate_canary_streamlit_v1 import install_streamlit_session_canary_layer
+from mlb_daily_game_picks_step6a_production_canary_v1 import install_step6a_production_canary_layer
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.10B STREAMLIT SESSION CANARY"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6A PRODUCTION CANARY"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -170,12 +172,13 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
 
-    # Step 5.10B runs strictly downstream of certified Step 5.10. Explicit host
-    # environment control always wins; otherwise an explicit URL query can arm
-    # only the current Streamlit browser session. The underlying Step 5.10 cohort
-    # remains game-atomic, deterministic, capped at 25%, and removing the query
-    # parameters returns the exact OFF/0% host/default path.
-    install_streamlit_session_canary_layer(games_df)
+    # Step 6A runs strictly downstream of the Step 5.11 frozen checkpoint. It
+    # supplies only the controlled activation policy: repository default ON at
+    # 10%, hard-capped at 10%, with host kill switch/controls and an exact
+    # session rollback. The certified Step 5.10 cohort hashing, Step 5.9 gate,
+    # V2.1.7 selector, player-prop passthrough, and protected model/risk behavior
+    # remain unchanged.
+    install_step6a_production_canary_layer(games_df)
 
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
