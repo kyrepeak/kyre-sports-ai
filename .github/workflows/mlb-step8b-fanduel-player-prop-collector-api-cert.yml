@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Trace public FanDuel player-stats client route
+      - name: Extract FanDuel participant-statistics request signature
         shell: bash
         run: |
           set -euo pipefail
@@ -36,74 +36,50 @@ jobs:
           from urllib.parse import urljoin
           from urllib.request import Request, urlopen
 
-          ROOT = 'https://sportsbook.fanduel.com/'
-          HEADERS = {
-              'Accept': 'text/html,application/xhtml+xml,application/javascript,text/javascript,*/*',
-              'User-Agent': 'Mozilla/5.0 (compatible; KyreSportsAPI-MLB/1.0; read-only)',
-          }
-          MAX_ASSET_BYTES = 8_000_000
-          MAX_ASSETS = 80
-          TERMS = (
-              'last 5', 'last5', 'playerstats', 'player-stats', 'player stats',
-              'playertrend', 'player-trend', 'performance trend', 'headshots/',
-              'fdx-api', 'isplayerselection', 'selectionid',
+          ROOT='https://sportsbook.fanduel.com/'
+          HEADERS={'User-Agent':'Mozilla/5.0 (compatible; KyreSportsAPI-MLB/1.0; read-only)','Accept':'text/html,application/javascript,*/*'}
+          NEEDLES=(
+              '/participant-statistics',
+              '/api/v1/see-more-players',
+              'FDX_API',
+              'participantStatistics',
+              'participant-statistics',
+              'recentPerformance',
+              'lastFiveStatCard',
           )
 
-          def get(url, limit=MAX_ASSET_BYTES):
-              req = Request(url, headers=HEADERS, method='GET')
-              with urlopen(req, timeout=25) as response:
-                  raw = response.read(limit + 1)
-              if len(raw) > limit:
-                  return ''
-              return raw.decode('utf-8', errors='ignore')
+          def get(url,limit=12_000_000):
+              req=Request(url,headers=HEADERS,method='GET')
+              with urlopen(req,timeout=25) as r: raw=r.read(limit+1)
+              if len(raw)>limit: return ''
+              return raw.decode('utf-8',errors='ignore')
 
-          html = get(ROOT, 2_000_000)
-          print('HOME_HTML_BYTES', len(html.encode('utf-8')))
-          srcs = []
-          for value in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']', html, flags=re.I):
-              url = urljoin(ROOT, value)
-              if url not in srcs:
-                  srcs.append(url)
-          print('SCRIPT_COUNT', len(srcs))
-          for url in srcs[:MAX_ASSETS]:
-              print('SCRIPT_URL', url)
-
-          hits = 0
-          endpoint_candidates = set()
-          for index, url in enumerate(srcs[:MAX_ASSETS]):
-              try:
-                  text = get(url)
+          html=get(ROOT,2_000_000)
+          scripts=[]
+          for src in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',html,flags=re.I):
+              url=urljoin(ROOT,src)
+              if url not in scripts: scripts.append(url)
+          print('SCRIPT_COUNT',len(scripts))
+          found=0
+          for url in scripts:
+              try: text=get(url)
               except Exception as exc:
-                  print('SCRIPT_FETCH_ERROR', index, type(exc).__name__, str(exc)[:200])
-                  continue
-              low = text.casefold()
-              matched = [term for term in TERMS if term in low]
-              if not matched:
-                  continue
-              print('SCRIPT_MATCH', index, url, 'TERMS', matched)
-              for term in matched:
-                  pos = low.find(term)
-                  if pos < 0:
-                      continue
-                  start = max(0, pos - 900)
-                  end = min(len(text), pos + 1800)
-                  snippet = text[start:end].replace('\n', ' ')
-                  print('CONTEXT', term, snippet[:2700])
-                  hits += 1
-                  if hits >= 40:
-                      break
-              # Pull bounded URL/path-like strings from matching bundles.
-              for candidate in re.findall(r'["\'](https?://[^"\']+|/[^"\']{3,180})["\']', text):
-                  key = candidate.casefold()
-                  if any(token in key for token in ('stat', 'player', 'trend', 'fdx', 'performance')):
-                      endpoint_candidates.add(candidate[:240])
-              if hits >= 40:
-                  break
-
-          print('MATCH_CONTEXT_COUNT', hits)
-          for candidate in sorted(endpoint_candidates)[:100]:
-              print('ENDPOINT_CANDIDATE', candidate)
-          if hits == 0:
-              print('STEP8B_PLAYER_STATS_ROUTE_NOT_DISCOVERED_IN_STATIC_ASSETS')
-          print('MLB_STEP8B_PLAYER_STATS_CLIENT_RECON_COMPLETE')
+                  print('FETCH_ERROR',url,type(exc).__name__,str(exc)[:160]); continue
+              low=text.casefold()
+              for needle in NEEDLES:
+                  start_pos=0
+                  while True:
+                      pos=low.find(needle.casefold(),start_pos)
+                      if pos<0: break
+                      left=max(0,pos-4500); right=min(len(text),pos+6500)
+                      print('SIGNATURE_CONTEXT',needle,'SCRIPT',url)
+                      print(text[left:right].replace('\n',' ')[:11000])
+                      found+=1
+                      start_pos=pos+len(needle)
+                      if found>=30: break
+                  if found>=30: break
+              if found>=30: break
+          print('SIGNATURE_CONTEXT_COUNT',found)
+          if found==0: raise SystemExit('STEP8B_PARTICIPANT_STATISTICS_SIGNATURE_NOT_FOUND')
+          print('MLB_STEP8B_PARTICIPANT_STATISTICS_SIGNATURE_DISCOVERY_COMPLETE')
           PY
