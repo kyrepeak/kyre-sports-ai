@@ -21,6 +21,8 @@ Contracts
   the original direct schedule transport if the hosted API cannot be consumed.
 - MLB Live Odds adds one isolated read-only sidebar route after the real
   Streamlit page config completes; existing MLB model routes remain untouched.
+- MLB Step 7B redirects only the frozen Spread V15.6 presentation import to the
+  additive V15.7 exact-ID FanDuel Run Line API context wrapper.
 - No production projection, probability, Monte Carlo, calibration, ranking,
   qualification, sportsbook pricing, scheduler or write logic is changed here.
 - Historical ``wnba_live_*`` source files may remain in the repository as an
@@ -200,6 +202,18 @@ _refresh_pra_presentation_route()
 _STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()
 _STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()
 source = _load_frozen_pre_live_app()
+
+# Step 7B changes only the MLB Spread presentation import inside the frozen
+# pre-live wrapper. The frozen wrapper still owns the historical V15.5 alias and
+# clears V15.x modules before import, while this outer boundary clears V15.7 on
+# every rerun so Streamlit cannot retain a stale API presentation wrapper.
+_SPREAD_ROUTE_OLD = "    import mlb_spread_hub_v156 as spread_v156"
+_SPREAD_ROUTE_NEW = "    import mlb_spread_hub_v157 as spread_v156"
+if _SPREAD_ROUTE_OLD not in source:
+    raise RuntimeError("Could not locate frozen MLB Spread V15.6 presentation seam.")
+sys.modules.pop("mlb_spread_hub_v157", None)
+importlib.invalidate_caches()
+source = source.replace(_SPREAD_ROUTE_OLD, _SPREAD_ROUTE_NEW, 1)
 
 # Guard against accidentally pointing this wrapper at a checkpoint that already
 # contained the retired page.

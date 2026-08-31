@@ -1,0 +1,342 @@
+name: MLB Step7B Spread API integration certification
+
+on:
+  push:
+    branches:
+      - mlb-step7b-spread-api-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step7b-spread-api-integration-cert
+  cancel-in-progress: false
+
+env:
+  STEP7B_BASE_SHA: 6389e864212d53bc6e973a0f91e5ece89a633169
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+
+jobs:
+  certify-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert Step7B narrow MLB Spread presentation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP7B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(app.py|sports_api/mlb_step7b_spread_api_integration_v1.py|mlb_spread_hub_v157.py|tests/test_mlb_step7b_spread_api_integration_v1.py|\.github/workflows/mlb-step7b-spread-api-integration-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP7B_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP7B_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP7B_NARROW_SPREAD_SCOPE_OK'
+
+      - name: Prove Step5 Step6 Step7A and Spread V15.6 internals remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP7B_BASE_SHA"...HEAD -- \
+            mlb_daily_game_picks_v217.py \
+            mlb_daily_game_picks_v217_guard.py \
+            mlb_daily_game_picks_live_market_context_v1.py \
+            mlb_daily_game_picks_market_probability_v1.py \
+            mlb_daily_game_picks_model_market_edge_v1.py \
+            mlb_daily_game_picks_price_discipline_v1.py \
+            mlb_daily_game_picks_market_movement_v1.py \
+            mlb_daily_game_picks_price_health_v1.py \
+            mlb_daily_game_picks_actionability_shadow_v1.py \
+            mlb_daily_game_picks_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_price_gate_canary_v1.py \
+            mlb_daily_game_picks_step6d_production_expansion_v1.py \
+            mlb_daily_game_picks_step6g_controlled_graduation_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_market_probability_v1.py \
+            sports_api/mlb_model_market_edge_v1.py \
+            sports_api/mlb_price_discipline_v1.py \
+            sports_api/mlb_market_movement_v1.py \
+            sports_api/mlb_price_health_v1.py \
+            sports_api/mlb_actionability_shadow_v1.py \
+            sports_api/mlb_controlled_price_gate_v1.py \
+            sports_api/mlb_price_gate_canary_v1.py \
+            sports_api/mlb_step6a_production_canary_v1.py \
+            sports_api/mlb_step6b_canary_monitor_v1.py \
+            sports_api/mlb_step6c_evidence_gate_v1.py \
+            sports_api/mlb_step6d_production_expansion_v1.py \
+            sports_api/mlb_step6e_25pct_stability_monitor_v1.py \
+            sports_api/mlb_step6f_production_graduation_gate_v1.py \
+            sports_api/mlb_step6g_controlled_graduation_v1.py \
+            sports_api/mlb_step6_final_freeze_v1.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            mlb_spread_hub_v156.py \
+            mlb_spread_hub_v155.py \
+            spread_hub_v154.py \
+            spread_hub_v153.py \
+            spread_hub_v152.py \
+            spread_history.py
+          echo 'MLB_STEP7B_FROZEN_INTERNALS_BYTE_IDENTICAL'
+
+      - name: Prove app change is only the approved Spread V15.7 replay seam
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          base_sha = '6389e864212d53bc6e973a0f91e5ece89a633169'
+          base = subprocess.check_output(['git','show',f'{base_sha}:app.py'], text=True)
+
+          old_contract = (
+              '- MLB Live Odds adds one isolated read-only sidebar route after the real\n'
+              '  Streamlit page config completes; existing MLB model routes remain untouched.\n'
+          )
+          new_contract = old_contract + (
+              '- MLB Step 7B redirects only the frozen Spread V15.6 presentation import to the\n'
+              '  additive V15.7 exact-ID FanDuel Run Line API context wrapper.\n'
+          )
+          if old_contract not in base:
+              raise SystemExit('STEP7B_APP_CONTRACT_ANCHOR_MISSING')
+          expected = base.replace(old_contract, new_contract, 1)
+
+          anchor = 'source = _load_frozen_pre_live_app()\n\n# Guard against accidentally pointing this wrapper at a checkpoint that already\n'
+          block = '''source = _load_frozen_pre_live_app()\n\n# Step 7B changes only the MLB Spread presentation import inside the frozen\n# pre-live wrapper. The frozen wrapper still owns the historical V15.5 alias and\n# clears V15.x modules before import, while this outer boundary clears V15.7 on\n# every rerun so Streamlit cannot retain a stale API presentation wrapper.\n_SPREAD_ROUTE_OLD = "    import mlb_spread_hub_v156 as spread_v156"\n_SPREAD_ROUTE_NEW = "    import mlb_spread_hub_v157 as spread_v156"\nif _SPREAD_ROUTE_OLD not in source:\n    raise RuntimeError("Could not locate frozen MLB Spread V15.6 presentation seam.")\nsys.modules.pop("mlb_spread_hub_v157", None)\nimportlib.invalidate_caches()\nsource = source.replace(_SPREAD_ROUTE_OLD, _SPREAD_ROUTE_NEW, 1)\n\n# Guard against accidentally pointing this wrapper at a checkpoint that already\n'''
+          if anchor not in expected:
+              raise SystemExit('STEP7B_APP_REPLAY_ANCHOR_MISSING')
+          expected = expected.replace(anchor, block, 1)
+
+          actual = Path('app.py').read_text()
+          if actual != expected:
+              raise SystemExit('STEP7B_APP_CHANGED_OUTSIDE_APPROVED_SPREAD_SEAM')
+
+          frozen = subprocess.check_output(['git','show','235d7ddc47de93657910a1f0cf9928f2a9f0f758:app.py'], text=True)
+          if frozen.count('    import mlb_spread_hub_v156 as spread_v156') != 1:
+              raise SystemExit('STEP7B_FROZEN_SPREAD_IMPORT_NOT_UNIQUE')
+          print('MLB_STEP7B_APP_SPREAD_SEAM_EXACT')
+          PY
+
+      - name: Prove V15.7 wrapper is presentation-only over frozen V15.6
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('mlb_spread_hub_v157.py').read_text()
+          required = (
+              'import mlb_spread_hub_v156 as prior',
+              'frozen_cards = prior.base._render_cards',
+              'prior.base._render_cards = cards_with_api_context',
+              'prior.base._render_cards = frozen_cards',
+              'return prior.render_spread_hub',
+          )
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit('STEP7B_PRESENTATION_WRAPPER_CONTRACT_MISSING:' + ','.join(missing))
+          forbidden = ('_scan_game =', '_select', 'history_adjustment =', 'cover =', 'fair_odds =')
+          bad = [token for token in forbidden if token in text]
+          if bad:
+              raise SystemExit('STEP7B_FORBIDDEN_MODEL_MUTATION_SURFACE:' + ','.join(bad))
+          print('MLB_STEP7B_PRESENTATION_ONLY_WRAPPER_OK')
+          PY
+
+      - name: Compile Step7B Python
+        run: |
+          python -m py_compile \
+            app.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py
+
+      - name: Run full frozen MLB regression plus Step7A and Step7B
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py
+
+  certify-live-spread-api-boundary:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install live certification dependencies
+        run: python -m pip install --disable-pip-version-check -q requests
+
+      - name: Certify live Kyre Sports API to Spread Run Line contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timezone
+          import json, os
+          import requests
+
+          from sports_api.mlb_step6d_production_expansion_v1 import CERTIFIED_STEP6C_PERMISSION, resolve_step6d_production_expansion
+          from sports_api.mlb_step6g_controlled_graduation_v1 import CERTIFIED_STEP6F_DECISION, resolve_step6g_controlled_graduation
+          from sports_api.mlb_step7b_spread_api_integration_v1 import API_CONNECTED, FALLBACK, build_spread_api_state, spread_api_context_for_result
+
+          url = os.environ['PRODUCTION_ODDS_URL']
+          response = requests.get(url, timeout=45, headers={'Accept':'application/json','User-Agent':'KyreSportsStep7BCert/1.0','Cache-Control':'no-cache'})
+          response.raise_for_status()
+          payload = response.json()
+          state = build_spread_api_state(payload)
+          games = payload.get('games')
+          if not isinstance(games, list) or not games:
+              raise RuntimeError('STEP7B_EMPTY_OR_INVALID_API_SLATE')
+          if state.get('integration_status') != API_CONNECTED or state.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7B_API_STATE_NOT_GREEN:' + json.dumps(state, sort_keys=True))
+          if state.get('usable_run_line_game_count') != len(games) or state.get('unusable_game_ids'):
+              raise RuntimeError('STEP7B_RUN_LINE_COVERAGE_NOT_COMPLETE:' + json.dumps(state, sort_keys=True))
+          game_ids = [int(game['official_game_id']) for game in games]
+          if len(game_ids) != len(set(game_ids)):
+              raise RuntimeError('STEP7B_DUPLICATE_OFFICIAL_GAME_IDS')
+
+          checked_sides = 0
+          for game in games:
+              gid = int(game['official_game_id'])
+              market = game['markets']['run_line']
+              for side, team_id, model_line, expected_odds in (
+                  ('away', 101, float(market['away_line']), int(market['away_odds'])),
+                  ('home', 202, float(market['home_line']), int(market['home_odds'])),
+              ):
+                  result = {
+                      'game_pk':gid,
+                      'team_id':team_id,
+                      'away_team_id':101,
+                      'home_team_id':202,
+                      'line':model_line,
+                      'team':'Synthetic model identity',
+                      'cover':0.60,
+                  }
+                  before = deepcopy(result)
+                  context = spread_api_context_for_result(result, state)
+                  if context is None:
+                      raise RuntimeError(f'STEP7B_EXACT_CONTEXT_MISSING_{gid}_{side}')
+                  if context.get('selected_side') != side or context.get('line_match') is not True:
+                      raise RuntimeError(f'STEP7B_SIDE_OR_LINE_MATCH_FAILED_{gid}_{side}')
+                  if float(context.get('live_fanduel_line')) != model_line or int(context.get('live_fanduel_odds')) != expected_odds:
+                      raise RuntimeError(f'STEP7B_LIVE_MARKET_VALUE_MISMATCH_{gid}_{side}')
+                  if result != before:
+                      raise RuntimeError('STEP7B_RESULT_MUTATED')
+                  checked_sides += 1
+
+          wrong = {'game_pk':max(game_ids)+999999,'team_id':101,'away_team_id':101,'home_team_id':202,'line':1.5}
+          if spread_api_context_for_result(wrong, state) is not None:
+              raise RuntimeError('STEP7B_WRONG_OFFICIAL_ID_ATTACHED')
+
+          bad_payload = deepcopy(payload)
+          bad_payload['games'] = [deepcopy(games[0]), deepcopy(games[0])]
+          bad = build_spread_api_state(bad_payload)
+          if bad.get('integration_status') != FALLBACK or bad.get('api_integration_active') is not False:
+              raise RuntimeError('STEP7B_DUPLICATE_ID_FALLBACK_FAILED')
+
+          missing_payload = deepcopy(payload)
+          missing_payload['games'] = [deepcopy(games[0])]
+          missing_payload['games'][0]['markets']['run_line']['away_odds'] = None
+          missing = build_spread_api_state(missing_payload)
+          if missing.get('integration_status') != FALLBACK or missing.get('contexts_by_game_id'):
+              raise RuntimeError('STEP7B_MISSING_PRICE_FALLBACK_FAILED')
+
+          collected = str(payload.get('collected_at_utc') or '')
+          if not collected:
+              raise RuntimeError('STEP7B_MISSING_COLLECTION_TIME')
+          collected_dt = datetime.fromisoformat(collected.replace('Z','+00:00')).astimezone(timezone.utc)
+          age = max(0.0, (datetime.now(timezone.utc) - collected_dt).total_seconds())
+          if age > 60.0:
+              raise RuntimeError(f'STEP7B_STALE_API_FEED_{age:.3f}s')
+
+          rollout = resolve_step6d_production_expansion({}, permission=CERTIFIED_STEP6C_PERMISSION)
+          graduation = resolve_step6g_controlled_graduation(rollout, permission=CERTIFIED_STEP6F_DECISION)
+          if rollout.get('effective_percent') != 25.0 or graduation.get('graduation_status') != 'GRADUATED_PRODUCTION_ACTIVE':
+              raise RuntimeError('STEP7B_STEP6_PRODUCTION_STATE_DRIFT')
+
+          print('STEP7B_LIVE_SPREAD_API=' + json.dumps({
+              'games':len(games),
+              'usable_run_line_games':state.get('usable_run_line_game_count'),
+              'exact_sides_checked':checked_sides,
+              'fallback_matching_used':state.get('fallback_matching_used'),
+              'feed_age_seconds':round(age,3),
+              'integration_status':state.get('integration_status'),
+              'duplicate_failure_path':bad.get('integration_status'),
+              'missing_price_failure_path':missing.get('integration_status'),
+              'step6_status':graduation.get('graduation_status'),
+              'effective_percent':rollout.get('effective_percent'),
+          }, sort_keys=True))
+          PY
+
+      - name: Certify Streamlit transport remains healthy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, requests
+          root = os.environ['STREAMLIT_URL'].rstrip('/')
+          checks = {}
+          for label, url in (
+              ('root', root),
+              ('rollback', root + '/?mlb_step6d_rollback=1'),
+              ('status', root + '/api/v2/app/status'),
+          ):
+              r = requests.get(url, timeout=45, headers={'User-Agent':'KyreSportsStep7BTransport/1.0'})
+              checks[label] = r.status_code
+              if r.status_code != 200:
+                  raise RuntimeError(f'STEP7B_STREAMLIT_{label.upper()}_{r.status_code}')
+              if label == 'status':
+                  try:
+                      checks['streamlit_version'] = r.json().get('streamlitVersion')
+                  except Exception:
+                      checks['streamlit_version'] = None
+          checks['rendered_ui_verified'] = False
+          print('STEP7B_STREAMLIT_TRANSPORT=' + json.dumps(checks, sort_keys=True))
+          print('MLB_STEP7B_SPREAD_API_INTEGRATION_GREEN')
+          PY
