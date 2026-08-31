@@ -102,7 +102,7 @@ jobs:
           assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER == 'MLB_STEP7F_FINAL_API_INTEGRATION_FREEZE_GREEN'
           assert m['stage_chain'] == list(STEP7_STAGE_CHAIN)
           assert m['certification_markers'] == list(STEP7_CERTIFICATION_MARKERS)
-          assert m['merged_pull_requests'] == list(STEP7_MERGED_PULL_REQUESTS) == [24,25,26,27,28]
+          assert m['merged_pull_requests'] == list(STEP7_MERGED_PULL_REQUESTS) == [24, 25, 26, 27, 28]
           assert len(m['stage_chain']) == 5
           assert len(m['certification_markers']) == 5
           assert m['read_only_freeze'] is True
@@ -131,26 +131,27 @@ jobs:
           print('MLB_STEP7F_FINAL_FREEZE_MANIFEST_OK')
           PY
 
-      - name: Prove active presentation wrappers enforce freshness before display context
+      - name: Prove active presentation wrappers consume freshness-enforced states
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
+
           requirements = {
               'mlb_spread_hub_v157.py': (
-                  'enforce_spread_api_freshness(build_spread_api_state(response.json()))',
-                  'state.get("feed_fresh") is True',
+                  'state = enforce_spread_api_freshness(build_spread_api_state(response.json()))',
+                  'state.get("integration_status") == API_CONNECTED and state.get("feed_fresh") is True',
                   'spread_api_context_for_result(result, state)',
               ),
               'mlb_moneyline_hub_v164.py': (
-                  'enforce_moneyline_api_freshness(build_moneyline_api_state(response.json()))',
-                  'state.get("feed_fresh") is True',
+                  'state = enforce_moneyline_api_freshness(build_moneyline_api_state(response.json()))',
+                  'if state.get("integration_status") != API_CONNECTED:',
                   'moneyline_api_context_for_result(result, state)',
               ),
               'mlb_totals_hub_v174.py': (
-                  'enforce_total_api_freshness(build_total_api_state(response.json()))',
-                  'state.get("feed_fresh") is True',
+                  'state = enforce_total_api_freshness(build_total_api_state(response.json()))',
+                  'state.get("integration_status") == API_CONNECTED and state.get("feed_fresh") is True',
                   'total_api_context_for_result(result, state)',
               ),
           }
@@ -158,7 +159,21 @@ jobs:
               text = Path(path).read_text()
               missing = [token for token in tokens if token not in text]
               if missing:
-                  raise SystemExit(f'STEP7F_FRESHNESS_PRESENTATION_SEAM_MISSING_{path}:' + ','.join(missing))
+                  raise SystemExit(
+                      f'STEP7F_FRESHNESS_PRESENTATION_SEAM_MISSING_{path}:' + ','.join(missing)
+                  )
+
+          # V16.4 intentionally gates on the post-enforcement integration status.
+          # Prove the frozen enforcer itself marks stale/failing states unavailable.
+          moneyline_contract = Path('sports_api/mlb_step7c_moneyline_api_integration_v1.py').read_text()
+          for token in (
+              'failures.append("api_snapshot_stale")',
+              'state["integration_status"] = FALLBACK',
+              'state["api_integration_active"] = False',
+              'state["feed_fresh"] = fresh and not failures',
+          ):
+              if token not in moneyline_contract:
+                  raise SystemExit('STEP7F_MONEYLINE_FRESHNESS_ENFORCER_CONTRACT_MISSING:' + token)
           print('MLB_STEP7F_ACTIVE_PRESENTATION_FRESHNESS_GATES_OK')
           PY
 
@@ -220,7 +235,8 @@ jobs:
           python - <<'PY'
           from copy import deepcopy
           from datetime import datetime, timedelta, timezone
-          import json, os
+          import json
+          import os
           import requests
 
           from sports_api.mlb_live_market_context_v1 import attach_live_market_context
@@ -280,7 +296,11 @@ jobs:
           )
           response.raise_for_status()
           payload = response.json()
-          if payload.get('data_type') != 'mlb_live_odds_api_response_v1' or payload.get('schema_version') != 1 or payload.get('source') != 'FanDuel':
+          if (
+              payload.get('data_type') != 'mlb_live_odds_api_response_v1'
+              or payload.get('schema_version') != 1
+              or payload.get('source') != 'FanDuel'
+          ):
               raise RuntimeError('STEP7F_BAD_LIVE_API_CONTRACT')
           games = payload.get('games')
           if not isinstance(games, list) or not games:
@@ -292,20 +312,32 @@ jobs:
           collected_text = str(payload.get('collected_at_utc') or '')
           if not collected_text:
               raise RuntimeError('STEP7F_MISSING_COLLECTION_TIME')
-          collected = datetime.fromisoformat(collected_text.replace('Z','+00:00')).astimezone(timezone.utc)
+          collected = datetime.fromisoformat(collected_text.replace('Z', '+00:00')).astimezone(timezone.utc)
           feed_age = max(0.0, (datetime.now(timezone.utc) - collected).total_seconds())
           if feed_age > 60.0:
               raise RuntimeError(f'STEP7F_LIVE_FEED_STALE_{feed_age:.3f}s')
 
           rollout = resolve_step6d_production_expansion({}, permission=CERTIFIED_STEP6C_PERMISSION)
-          graduation = resolve_step6g_controlled_graduation(rollout, permission=CERTIFIED_STEP6F_DECISION)
+          graduation = resolve_step6g_controlled_graduation(
+              rollout,
+              permission=CERTIFIED_STEP6F_DECISION,
+          )
           step6_freeze = validate_final_step6_runtime(rollout, graduation)
-          if step6_freeze.get('freeze_eligible') is not True or step6_freeze.get('freeze_status') != STEP6_FINAL_FREEZE_STATUS:
+          if (
+              step6_freeze.get('freeze_eligible') is not True
+              or step6_freeze.get('freeze_status') != STEP6_FINAL_FREEZE_STATUS
+          ):
               raise RuntimeError('STEP7F_STEP6_FINAL_FREEZE_DRIFT:' + json.dumps(step6_freeze, sort_keys=True))
-          if rollout.get('effective_percent') != 25.0 or graduation.get('graduation_status') != 'GRADUATED_PRODUCTION_ACTIVE':
+          if (
+              rollout.get('effective_percent') != 25.0
+              or graduation.get('graduation_status') != 'GRADUATED_PRODUCTION_ACTIVE'
+          ):
               raise RuntimeError('STEP7F_STEP6_PRODUCTION_STATE_DRIFT')
 
-          live = attach_live_market_context([{'game_pk': gid} for gid in reversed(game_ids)], games)
+          live = attach_live_market_context(
+              [{'game_pk': gid} for gid in reversed(game_ids)],
+              games,
+          )
           live['available'] = True
           live['api_data_type'] = payload.get('data_type')
           live['collected_at_utc'] = payload.get('collected_at_utc')
@@ -353,7 +385,9 @@ jobs:
           if total.get('usable_game_total_game_count') != len(games) or total.get('unusable_game_ids'):
               raise RuntimeError('STEP7F_STEP7D_LIVE_COVERAGE_INCOMPLETE')
 
-          spread_checks = moneyline_checks = total_checks = 0
+          spread_checks = 0
+          moneyline_checks = 0
+          total_checks = 0
           for game in games:
               gid = int(game['official_game_id'])
               run_line = game['markets']['run_line']
@@ -399,7 +433,11 @@ jobs:
                       raise RuntimeError(f'STEP7F_STEP7C_EXACT_CONTEXT_FAILED_{gid}_{side}')
                   if int(context['live_fanduel_odds']) != expected_odds:
                       raise RuntimeError(f'STEP7F_STEP7C_VALUE_MISMATCH_{gid}_{side}')
-                  if context.get('fallback_matching_used') is not False or context.get('display_only') is not True or context.get('sportsbook_price_model_input') is not False:
+                  if (
+                      context.get('fallback_matching_used') is not False
+                      or context.get('display_only') is not True
+                      or context.get('sportsbook_price_model_input') is not False
+                  ):
                       raise RuntimeError(f'STEP7F_STEP7C_DISPLAY_CONTRACT_FAILED_{gid}_{side}')
                   if result != before:
                       raise RuntimeError('STEP7F_STEP7C_RESULT_MUTATED')
@@ -413,18 +451,31 @@ jobs:
                   raise RuntimeError(f'STEP7F_STEP7D_EXACT_CONTEXT_FAILED_{gid}')
               if float(context['live_fanduel_total_line']) != float(total_market['line']):
                   raise RuntimeError(f'STEP7F_STEP7D_LINE_MISMATCH_{gid}')
-              if int(context['live_fanduel_over_odds']) != int(total_market['over_odds']) or int(context['live_fanduel_under_odds']) != int(total_market['under_odds']):
+              if (
+                  int(context['live_fanduel_over_odds']) != int(total_market['over_odds'])
+                  or int(context['live_fanduel_under_odds']) != int(total_market['under_odds'])
+              ):
                   raise RuntimeError(f'STEP7F_STEP7D_PRICE_MISMATCH_{gid}')
-              if context.get('fallback_matching_used') is not False or context.get('display_only') is not True or context.get('sportsbook_price_model_input') is not False:
+              if (
+                  context.get('fallback_matching_used') is not False
+                  or context.get('display_only') is not True
+                  or context.get('sportsbook_price_model_input') is not False
+              ):
                   raise RuntimeError(f'STEP7F_STEP7D_DISPLAY_CONTRACT_FAILED_{gid}')
               if result != before:
                   raise RuntimeError('STEP7F_STEP7D_RESULT_MUTATED')
               total_checks += 1
 
           wrong_gid = max(game_ids) + 999999
-          if spread_api_context_for_result({'game_pk':wrong_gid,'team_id':101,'away_team_id':101,'home_team_id':202,'line':1.5}, spread) is not None:
+          if spread_api_context_for_result(
+              {'game_pk':wrong_gid,'team_id':101,'away_team_id':101,'home_team_id':202,'line':1.5},
+              spread,
+          ) is not None:
               raise RuntimeError('STEP7F_STEP7B_WRONG_ID_ATTACHED')
-          if moneyline_api_context_for_result({'game_pk':wrong_gid,'team_id':101,'away_team_id':101,'home_team_id':202}, moneyline) is not None:
+          if moneyline_api_context_for_result(
+              {'game_pk':wrong_gid,'team_id':101,'away_team_id':101,'home_team_id':202},
+              moneyline,
+          ) is not None:
               raise RuntimeError('STEP7F_STEP7C_WRONG_ID_ATTACHED')
           if total_api_context_for_result({'game_pk':wrong_gid}, total) is not None:
               raise RuntimeError('STEP7F_STEP7D_WRONG_ID_ATTACHED')
@@ -442,7 +493,9 @@ jobs:
               raise RuntimeError('STEP7F_STEP7D_DUPLICATE_FAIL_CLOSED_FAILED')
 
           stale_payload = deepcopy(payload)
-          stale_payload['collected_at_utc'] = (datetime.now(timezone.utc) - timedelta(seconds=120)).isoformat()
+          stale_payload['collected_at_utc'] = (
+              datetime.now(timezone.utc) - timedelta(seconds=120)
+          ).isoformat()
           spread_stale = enforce_spread_api_freshness(build_spread_api_state(stale_payload))
           moneyline_stale = enforce_moneyline_api_freshness(build_moneyline_api_state(stale_payload))
           total_stale = enforce_total_api_freshness(build_total_api_state(stale_payload))
