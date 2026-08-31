@@ -1,0 +1,63 @@
+name: MLB Step5.3 route diagnostic
+
+on:
+  push:
+    branches:
+      - mlb-step5-3-market-probability-layer
+    paths:
+      - ".github/workflows/mlb-step5-3-route-diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trace-mlb-daily-picks-route:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Trace frozen app ancestry for MLB Daily Picks imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import re
+          import subprocess
+
+          sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          seen = set()
+          print("STEP5_3_ROUTE_TRACE_START", sha)
+          for depth in range(30):
+              if sha in seen:
+                  print("LOOP", sha)
+                  break
+              seen.add(sha)
+              try:
+                  text = subprocess.check_output(["git", "show", f"{sha}:app.py"], text=True, stderr=subprocess.STDOUT)
+              except subprocess.CalledProcessError as exc:
+                  print("NO_APP", sha, exc.output[:300])
+                  break
+              hits = [line.strip() for line in text.splitlines() if "mlb_daily_game_picks" in line]
+              if hits:
+                  print(f"DEPTH={depth} SHA={sha} MLB_DAILY_PICKS_HITS={len(hits)}")
+                  for line in hits:
+                      print("HIT", line)
+              candidates = re.findall(r'(?:(?:PREVIOUS|FROZEN)[A-Z0-9_]*COMMIT|BASE_COMMIT)\s*=\s*[\"\']([0-9a-f]{40})[\"\']', text)
+              next_sha = None
+              for candidate in candidates:
+                  if candidate != sha:
+                      next_sha = candidate
+                      break
+              if not next_sha:
+                  print("TRACE_END_NO_PARENT_AT", sha)
+                  break
+              print(f"PARENT depth={depth} {sha} -> {next_sha}")
+              sha = next_sha
+          print("STEP5_3_ROUTE_TRACE_COMPLETE")
+          PY
