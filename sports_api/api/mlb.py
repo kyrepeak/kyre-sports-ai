@@ -5,6 +5,7 @@ import httpx
 from fastapi import APIRouter, HTTPException, Query
 
 from sports_api.collectors.mlb_fanduel_direct import collect_live_mlb_game_odds
+from sports_api.collectors.mlb_fanduel_player_props import collect_live_mlb_player_props
 
 router = APIRouter(prefix="/api/v1/mlb", tags=["mlb"])
 
@@ -116,6 +117,53 @@ def get_mlb_odds(
         "game_count": len(games),
         "rejected_event_count": len(snapshot.get("rejected_events") or []),
         "games": games,
+    }
+
+
+@router.get("/player-props")
+def get_mlb_player_props(
+    max_events: int = Query(
+        default=30,
+        ge=1,
+        le=50,
+        description="Maximum number of upcoming FanDuel MLB events to inspect for player props.",
+    ),
+):
+    """Return contract-compliant FanDuel MLB player props with exact MLBAM identity.
+
+    The endpoint never derives player identity from a name and never fabricates an
+    Under price for FanDuel's one-way 1+/2+/3+ threshold boards.
+    """
+    try:
+        snapshot = collect_live_mlb_player_props(
+            now_utc=datetime.now(timezone.utc),
+            max_events=max_events,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="MLB live player-prop collection failed.",
+        ) from exc
+
+    props = [prop for prop in snapshot.get("props", []) if isinstance(prop, dict)]
+    return {
+        "data_type": "mlb_player_prop_api_response_v1",
+        "schema_version": 1,
+        "source": snapshot.get("provider"),
+        "collected_at_utc": snapshot.get("collected_at_utc"),
+        "transport": snapshot.get("transport"),
+        "http_methods": snapshot.get("http_methods"),
+        "sportsbook_region": snapshot.get("sportsbook_region"),
+        "landing_event_count": snapshot.get("landing_event_count"),
+        "candidate_pregame_event_count": snapshot.get("candidate_pregame_event_count"),
+        "matched_game_count": snapshot.get("matched_game_count"),
+        "prop_count": len(props),
+        "contract_unavailable_market_counts": snapshot.get("contract_unavailable_market_counts"),
+        "rejected_prop_count": snapshot.get("rejected_prop_count"),
+        "rejected_event_count": snapshot.get("rejected_event_count"),
+        "player_name_matching_used": False,
+        "fuzzy_matching_used": False,
+        "props": props,
     }
 
 
