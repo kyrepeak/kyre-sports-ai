@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Inspect live FanDuel MLB player-prop card references
+      - name: Inspect live FanDuel MLB player-prop card definitions
         shell: bash
         run: |
           set -euo pipefail
@@ -40,7 +40,7 @@ jobs:
               fetch_fanduel_mlb_landing,
           )
 
-          TARGET_TABS = {'123', '248', '253', '350', '386'}
+          TARGET_IDS = {'123', '248', '253', '350', '386'}
 
           def rows(value):
               if isinstance(value, dict):
@@ -55,25 +55,28 @@ jobs:
                   return [dict(item) for item in value if isinstance(item, dict)]
               return []
 
+          def row_id(row):
+              return str(row.get('id') or row.get('cardId') or row.get('_attachment_key') or '').strip()
+
           def eid(event):
               return str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '').strip()
 
-          def shallow(value, depth=0):
-              if depth >= 3:
+          def safe(value, depth=0):
+              if depth >= 5:
                   if isinstance(value, dict):
-                      return {'_keys': sorted(value)[:30]}
+                      return {'_keys': sorted(value)[:50]}
                   if isinstance(value, list):
                       return {'_list_len': len(value)}
                   return value
               if isinstance(value, dict):
                   result = {}
-                  for key, item in list(value.items())[:40]:
-                      if key in {'runners', 'winRunnerOdds', 'previousWinRunnerOdds'}:
+                  for key, item in list(value.items())[:80]:
+                      if key in {'winRunnerOdds', 'previousWinRunnerOdds'}:
                           continue
-                      result[str(key)] = shallow(item, depth + 1)
+                      result[str(key)] = safe(item, depth + 1)
                   return result
               if isinstance(value, list):
-                  return [shallow(item, depth + 1) for item in value[:20]]
+                  return [safe(item, depth + 1) for item in value[:40]]
               return value
 
           landing = fetch_fanduel_mlb_landing(timeout=25)
@@ -96,32 +99,28 @@ jobs:
           if not upcoming:
               raise SystemExit('STEP8B_NO_UPCOMING_FANDUEL_MLB_EVENT_FOR_DISCOVERY')
 
-          found = False
+          found = set()
           for _, event in upcoming[:5]:
               event_id = eid(event)
               doc = fetch_fanduel_event_page(event_id, timeout=25)
               layout = doc.get('layout') or {}
-              tabs = rows(layout.get('tabs') if isinstance(layout, dict) else None)
+              cards_raw = layout.get('cards') if isinstance(layout, dict) else None
+              cards = rows(cards_raw)
               print('EVENT', event_id, str(event.get('name') or event.get('eventName') or ''))
-              print('LAYOUT_KEYS', sorted(layout) if isinstance(layout, dict) else [])
-              for tab in tabs:
-                  tab_id = str(tab.get('id') or tab.get('tabId') or tab.get('_attachment_key') or '').strip()
-                  title = str(tab.get('title') or tab.get('name') or '').strip()
-                  if tab_id not in TARGET_TABS:
+              print('LAYOUT_CARD_CONTAINER', type(cards_raw).__name__, 'COUNT', len(cards))
+              print('LAYOUT_CARD_IDS', [row_id(card) for card in cards])
+              for card in cards:
+                  cid = row_id(card)
+                  if cid not in TARGET_IDS:
                       continue
-                  found = True
-                  cards = tab.get('cards')
-                  print('TARGET_TAB', json.dumps({
-                      'id': tab_id,
-                      'title': title,
-                      'card_container_type': type(cards).__name__,
-                      'card_count': len(cards) if isinstance(cards, (list, dict)) else None,
-                  }, sort_keys=True))
-                  print('TARGET_TAB_CARDS', json.dumps(shallow(cards), sort_keys=True, default=str))
-              if found:
+                  found.add(cid)
+                  print('TARGET_CARD', cid, json.dumps(safe(card), sort_keys=True, default=str))
+              if found == TARGET_IDS:
                   break
 
-          if not found:
-              raise SystemExit('STEP8B_TARGET_PLAYER_PROP_TABS_NOT_FOUND')
-          print('MLB_STEP8B_FANDUEL_CARD_REFERENCE_DISCOVERY_COMPLETE')
+          print('TARGET_CARD_IDS_FOUND', sorted(found))
+          missing = TARGET_IDS - found
+          if missing:
+              raise SystemExit('STEP8B_MISSING_CARD_DEFINITIONS_' + '_'.join(sorted(missing)))
+          print('MLB_STEP8B_FANDUEL_CARD_DEFINITION_DISCOVERY_COMPLETE')
           PY
