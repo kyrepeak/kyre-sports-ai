@@ -33,7 +33,7 @@ def live_state(**overrides):
 
 def step6_state(**overrides):
     base = {
-        "data_type": "mlb_step6g_controlled_graduation_presentation_v1",
+        "data_type": "mlb_step6g_controlled_graduation_v1",
         "graduated_production_active": True,
         "production_exposure_changed": False,
         "same_step5_10_cohort": True,
