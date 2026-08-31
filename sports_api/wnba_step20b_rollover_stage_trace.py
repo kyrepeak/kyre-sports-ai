@@ -315,3 +315,5 @@ def installation_status() -> dict[str, Any]:
 
 
 __all__ = ["MODEL_VERSION", "SOURCE", "install_step20b_rollover_stage_trace", "installation_status"]
+
+# Step20B certification trigger: runtime semantics intentionally unchanged.
