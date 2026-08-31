@@ -25,6 +25,8 @@ Contracts
   additive V15.7 exact-ID FanDuel Run Line API context wrapper.
 - MLB Step 7C redirects only the frozen Moneyline V16.3 presentation boundary to
   the additive V16.4 exact-ID FanDuel Moneyline API context wrapper.
+- MLB Step 7E redirects only the frozen Totals V17.3 presentation boundary to
+  the additive V17.4 exact-ID FanDuel Game Total API context wrapper.
 - No production projection, probability, Monte Carlo, calibration, ranking,
   qualification, sportsbook pricing, scheduler or write logic is changed here.
 - Historical ``wnba_live_*`` source files may remain in the repository as an
@@ -184,6 +186,38 @@ def _install_mlb_moneyline_step7c_route() -> dict:
         }
 
 
+def _install_mlb_totals_step7e_route() -> dict:
+    """Install only the V17.4 Totals presentation alias; fail open to V17.3."""
+    for name in ("mlb_totals_hub_v174", "mlb_totals_hub_v173"):
+        sys.modules.pop(name, None)
+    importlib.invalidate_caches()
+    try:
+        import mlb_totals_hub_v174 as totals_v174
+
+        prior = getattr(totals_v174, "prior", None)
+        if prior is None or not hasattr(prior, "render_totals_hub"):
+            raise RuntimeError("Totals V17.4 frozen V17.3 base failed to initialize.")
+        sys.modules["mlb_totals_hub_v173"] = totals_v174
+        return {
+            "installed": True,
+            "model_version": getattr(totals_v174, "MODEL_VERSION", "V17.4"),
+            "frozen_v173_fallback_preserved": True,
+        }
+    except Exception as exc:
+        sys.modules.pop("mlb_totals_hub_v174", None)
+        sys.modules.pop("mlb_totals_hub_v173", None)
+        importlib.invalidate_caches()
+        import mlb_totals_hub_v173 as frozen_v173
+
+        sys.modules["mlb_totals_hub_v173"] = frozen_v173
+        return {
+            "installed": False,
+            "model_version": getattr(frozen_v173, "MODEL_VERSION", "V17.3"),
+            "error_type": type(exc).__name__,
+            "frozen_v173_fallback_preserved": True,
+        }
+
+
 def _load_frozen_pre_live_app() -> str:
     try:
         return subprocess.check_output(
@@ -236,6 +270,7 @@ _refresh_pra_presentation_route()
 _STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()
 _STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()
 _STEP7C_MLB_MONEYLINE_ROUTE = _install_mlb_moneyline_step7c_route()
+_STEP7E_MLB_TOTALS_ROUTE = _install_mlb_totals_step7e_route()
 source = _load_frozen_pre_live_app()
 
 # Step 7B changes only the MLB Spread presentation import inside the frozen

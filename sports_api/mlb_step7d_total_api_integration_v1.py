@@ -232,7 +232,7 @@ def total_api_context_for_result(
     state = deepcopy(_mapping(api_state))
     if state.get("api_integration_active") is not True:
         return None
-    if state.get("feed_fresh") is False:
+    if state.get("feed_fresh") is not True:
         return None
     if state.get("match_method") != MATCH_METHOD or state.get("fallback_matching_used") is not False:
         return None
