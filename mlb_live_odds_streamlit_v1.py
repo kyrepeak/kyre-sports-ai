@@ -71,7 +71,8 @@ def format_american_odds(value: Any) -> str:
     return f"+{number}" if number > 0 else str(number)
 
 
-def format_line(value: Any) -> str:
+def format_line(value: Any, *, signed: bool = False) -> str:
+    """Format a market line, adding a plus sign only for signed spread/run lines."""
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -80,7 +81,7 @@ def format_line(value: Any) -> str:
         number_text = str(int(number))
     else:
         number_text = f"{number:g}"
-    return f"+{number_text}" if number > 0 else number_text
+    return f"+{number_text}" if signed and number > 0 else number_text
 
 
 def _team_name(game: Mapping[str, Any], side: str) -> str:
@@ -136,9 +137,9 @@ def build_game_cards(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
                     "home": format_american_odds(moneyline.get("home_odds")),
                 },
                 "run_line": {
-                    "away_line": format_line(run_line.get("away_line")),
+                    "away_line": format_line(run_line.get("away_line"), signed=True),
                     "away_odds": format_american_odds(run_line.get("away_odds")),
-                    "home_line": format_line(run_line.get("home_line")),
+                    "home_line": format_line(run_line.get("home_line"), signed=True),
                     "home_odds": format_american_odds(run_line.get("home_odds")),
                 },
                 "total": {
