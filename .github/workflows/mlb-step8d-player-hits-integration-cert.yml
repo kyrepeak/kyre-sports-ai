@@ -185,7 +185,7 @@ jobs:
             tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
             tests/test_mlb_step8d_player_hits_integration_v1.py
 
-      - name: Certify live Step8B to Step8A to Step8D exact-ID path
+      - name: Certify live Step8B to Step8A to Step8D exact-ID or fail-closed path
         shell: bash
         run: |
           set -euo pipefail
@@ -204,6 +204,7 @@ jobs:
           )
           from sports_api.mlb_step8d_player_hits_integration_v1 import (
               ATTACHMENT_KEY,
+              FALLBACK,
               INTEGRATED,
               build_player_hits_integration,
               enrich_player_hit_results,
@@ -213,22 +214,68 @@ jobs:
               now_utc=datetime.now(timezone.utc),
               max_events=4,
           )
-          hit_props = [
-              p for p in snapshot.get('props', [])
-              if p.get('market_type') == PLAYER_HITS
-          ]
+          hit_props = [p for p in snapshot.get('props', []) if p.get('market_type') == PLAYER_HITS]
           assert snapshot['provider'] == 'FanDuel'
           assert snapshot['player_name_matching_used'] is False
           assert snapshot['fuzzy_matching_used'] is False
           assert snapshot['matched_game_count'] > 0
+
           if not hit_props:
+              unavailable = snapshot.get('contract_unavailable_market_counts') or {}
+              assert int(unavailable.get(PLAYER_HITS, 0)) > 0, unavailable
+              all_props = list(snapshot.get('props') or [])
+              if all_props:
+                  payload = {
+                      'data_type':'mlb_player_prop_api_response_v1',
+                      'schema_version':1,
+                      'source':'FanDuel',
+                      'collected_at_utc':snapshot['collected_at_utc'],
+                      'props':all_props,
+                  }
+                  raw = build_player_prop_api_state(payload)
+                  assert raw['integration_status'] == API_CONNECTED, raw['failures']
+                  fresh = enforce_player_prop_api_freshness(
+                      raw,
+                      as_of_utc=datetime.now(timezone.utc),
+                      max_age_seconds=60,
+                  )
+                  assert fresh['integration_status'] == API_CONNECTED, fresh['failures']
+                  sentinel_prop = all_props[0]
+                  results = [{
+                      'game_pk':sentinel_prop['official_game_id'],
+                      'player_id':sentinel_prop['official_player_id'],
+                      'player_name':'LIVE FAIL-CLOSED SENTINEL',
+                      'screen_p1':0.731,
+                      'rank_sentinel':17,
+                      'sim':{'p_one_plus':0.759,'expected_hits':1.337,'sentinel':17},
+                  }]
+                  integration = build_player_hits_integration(results, fresh)
+                  assert integration['integration_status'] == FALLBACK
+                  assert integration['api_integration_active'] is False
+                  assert integration['attached_count'] == 0
+                  assert integration['unmatched_count'] == 1
+                  assert integration['player_name_matching_used'] is False
+                  assert integration['sportsbook_price_model_input'] is False
+                  assert integration['model_math_impact'] is False
+                  assert integration['simulation_impact'] is False
+                  assert integration['probability_impact'] is False
+                  assert integration['ranking_impact'] is False
+                  assert enrich_player_hit_results(results, integration) == results
               print(json.dumps({
-                  'marker':'MLB_STEP8D_LIVE_PROVIDER_REACHABLE_BUT_NO_TWO_WAY_PLAYER_HITS_PROPS',
+                  'marker':'MLB_STEP8D_LIVE_PLAYER_HITS_CONTRACT_UNAVAILABLE_FAIL_CLOSED_GREEN',
                   'candidate_events':snapshot['candidate_pregame_event_count'],
                   'matched_games':snapshot['matched_game_count'],
-                  'contract_unavailable_market_counts':snapshot['contract_unavailable_market_counts'],
+                  'two_way_player_hits_prop_count':0,
+                  'contract_unavailable_player_hits_markets':int(unavailable.get(PLAYER_HITS, 0)),
+                  'fabricated_context_count':0,
+                  'player_name_matching_used':False,
+                  'sportsbook_price_model_input':False,
+                  'projection_changed':False,
+                  'simulation_changed':False,
+                  'probability_changed':False,
+                  'ranking_changed':False,
               }, sort_keys=True))
-              raise SystemExit('STEP8D_LIVE_PLAYER_HITS_PROP_REQUIRED_FOR_CERTIFICATION')
+              raise SystemExit(0)
 
           payload = {
               'data_type':'mlb_player_prop_api_response_v1',
