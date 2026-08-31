@@ -6,7 +6,8 @@ existing Top-5 cards. The Kyre Sports API is presentation context only: no live
 price changes projection, simulation, cover probability, history adjustment,
 ranking, selection, fair odds, or any other model output.
 
-If the API request or contract cannot be proven, V15.6.4 renders normally.
+If the API request, contract, or snapshot freshness cannot be proven, V15.6.4
+renders normally.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from sports_api.mlb_step7b_spread_api_integration_v1 import (
     API_CONNECTED,
     FALLBACK,
     build_spread_api_state,
+    enforce_spread_api_freshness,
     spread_api_context_for_result,
 )
 
@@ -63,7 +65,7 @@ def _cached_spread_api_state(base_url: str) -> dict[str, Any]:
             },
         )
         response.raise_for_status()
-        state = build_spread_api_state(response.json())
+        state = enforce_spread_api_freshness(build_spread_api_state(response.json()))
         state["http_status"] = int(response.status_code)
         return state
     except Exception as exc:
@@ -75,6 +77,7 @@ def _cached_spread_api_state(base_url: str) -> dict[str, Any]:
             "source": "FanDuel",
             "match_method": "official_mlb_game_id_exact",
             "fallback_matching_used": False,
+            "feed_fresh": False,
             "frozen_spread_fallback_preserved": True,
             "model_math_impact": False,
             "simulation_impact": False,
@@ -134,6 +137,8 @@ def _market_strip_html(results: list[Mapping[str, Any]], state: Mapping[str, Any
         )
 
     collected = escape(str(state.get("collected_at_utc") or "timestamp unavailable"))
+    age = state.get("snapshot_age_seconds")
+    age_text = "age unavailable" if age is None else f"{float(age):.1f}s old"
     status = escape(str(state.get("integration_status") or FALLBACK).replace("_", " "))
     return (
         '<style>'
@@ -148,8 +153,9 @@ def _market_strip_html(results: list[Mapping[str, Any]], state: Mapping[str, Any
         '<div class="ks157-head"><span>STEP 7B • LIVE FANDUEL RUN LINE • EXACT MLB GAME ID</span>'
         f'<span>{status}</span></div>'
         + "".join(rows)
-        + f'<div class="ks157-foot">Snapshot {collected} • display-only API context. '
+        + f'<div class="ks157-foot">Snapshot {collected} • {escape(age_text)} • display-only API context. '
         'A live line move is shown, never substituted into the frozen V15.6 model. '
+        'Snapshots older than 60 seconds fail back to the frozen presentation. '
         'No API evidence changes projection, probability, simulation, H2H adjustment, ranking, selection, or fair odds.</div></div>'
     )
 
@@ -177,13 +183,13 @@ def render_spread_hub(games_df, section_header, status_info, team_logo, h):
 
     prior.base._render_cards = cards_with_api_context
     try:
-        if state.get("integration_status") == API_CONNECTED:
+        if state.get("integration_status") == API_CONNECTED and state.get("feed_fresh") is True:
             st.caption(
-                "🔗 MLB Spread Step 7B • Kyre Sports API exact-ID FanDuel Run Line context is active above the existing Top-5 cards • model math unchanged."
+                "🔗 MLB Spread Step 7B • fresh Kyre Sports API exact-ID FanDuel Run Line context is active above the existing Top-5 cards • model math unchanged."
             )
         else:
             st.caption(
-                "⚪ MLB Spread Step 7B • API market context unavailable, so the frozen V15.6.4 Spread presentation remains authoritative and unchanged."
+                "⚪ MLB Spread Step 7B • API market context is unavailable or stale, so the frozen V15.6.4 Spread presentation remains authoritative and unchanged."
             )
         return prior.render_spread_hub(games_df, section_header, status_info, team_logo, h)
     finally:
