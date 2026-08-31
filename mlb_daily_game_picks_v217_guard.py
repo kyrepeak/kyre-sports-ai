@@ -1,9 +1,11 @@
-"""V2.1.7 confirmed-lineup membership guard.
+"""V2.1.7 confirmed-lineup membership guard + Step 5.2 market context hook.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
-confirmed official MLB batting order. Presentation/selection guard only. No
-production probability, simulation or Pick Strength changes.
+confirmed official MLB batting order. Step 5.2 adds only a read-only FanDuel
+Moneyline/Run Line/Total presentation overlay after the certified Step 5.1 exact
+official-game-ID join succeeds. Presentation/selection guard only. No production
+probability, simulation or Pick Strength changes.
 """
 from __future__ import annotations
 
@@ -16,9 +18,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
+from mlb_daily_game_picks_live_market_context_v1 import install_live_market_context
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.2 LIVE MARKET CONTEXT"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -160,6 +163,12 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     previous._risk_context_v217 = _risk_context_v217_guard
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
+
+    # Step 5.2 is presentation-only. It reads the live FanDuel board and attaches
+    # ML/RL/Total context only through the certified Step 5.1 exact-ID join.
+    # Any API/schema/identity problem fails closed and leaves the V2.1.7 card intact.
+    install_live_market_context(games_df)
+
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
     )
