@@ -35,7 +35,7 @@ jobs:
       - name: Install focused certification dependencies
         run: python -m pip install --disable-pip-version-check -q pytest requests
 
-      - name: Assert certification-only MLB change scope
+      - name: Assert certification-only change scope
         shell: bash
         run: |
           set -euo pipefail
@@ -51,7 +51,7 @@ jobs:
           fi
           echo 'MLB_STEP5_11_CERT_ONLY_SCOPE_OK'
 
-      - name: Prove entire Step 5 runtime is byte-for-byte frozen
+      - name: Prove complete Step 5 runtime is frozen
         shell: bash
         run: |
           set -euo pipefail
@@ -67,7 +67,7 @@ jobs:
             sports_api/mlb_controlled_price_gate_v1.py
             sports_api/mlb_price_gate_canary_v1.py
             sports_api/mlb_streamlit_canary_control_v1.py
-            mlb_daily_game_picks_market_context_v1.py
+            mlb_daily_game_picks_live_market_context_v1.py
             mlb_daily_game_picks_market_probability_v1.py
             mlb_daily_game_picks_model_market_edge_v1.py
             mlb_daily_game_picks_price_discipline_v1.py
@@ -87,7 +87,7 @@ jobs:
           git diff --exit-code "$STEP5_11_BASE_SHA"...HEAD -- "${frozen_paths[@]}"
           echo 'MLB_STEP5_11_RUNTIME_BYTE_FREEZE_OK'
 
-      - name: Assert final Step 5 safety and route contracts
+      - name: Assert final safety, rollback, and active-route contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -102,8 +102,8 @@ jobs:
           step510b = Path('mlb_daily_game_picks_price_gate_canary_streamlit_v1.py').read_text(encoding='utf-8')
           canary_core = Path('sports_api/mlb_price_gate_canary_v1.py').read_text(encoding='utf-8')
           session_core = Path('sports_api/mlb_streamlit_canary_control_v1.py').read_text(encoding='utf-8')
+          combined = canary_core + '\n' + step510 + '\n' + session_core + '\n' + step510b + '\n' + guard
 
-          # Final freeze must leave production defaults OFF/0% and retain exact rollback.
           required = (
               'MAX_CANARY_PERCENT = 25.0',
               'MLB_STEP5_10_CANARY_ENABLED',
@@ -122,7 +122,6 @@ jobs:
               'session_only',
               'install_streamlit_session_canary_layer(games_df)',
           )
-          combined = canary_core + '\n' + step510 + '\n' + session_core + '\n' + step510b + '\n' + guard
           missing = [token for token in required if token not in combined]
           if missing:
               raise SystemExit('STEP5_11_FINAL_CONTRACT_TOKEN_MISSING: ' + ' | '.join(missing))
@@ -130,29 +129,32 @@ jobs:
           if 'from mlb_daily_game_picks_price_gate_canary_streamlit_v1 import install_streamlit_session_canary_layer' not in guard:
               raise SystemExit('STEP5_11_ACTIVE_STEP5_10B_GUARD_IMPORT_MISSING')
 
-          forbidden = (
-              'difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz',
-              'sqlite3', 'psycopg', 'sqlalchemy', 'INSERT INTO', 'requests.post(',
+          exact_id = Path('sports_api/mlb_official_game_id_join_v1.py').read_text(encoding='utf-8')
+          for token in ('difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz'):
+              if token in exact_id:
+                  raise SystemExit('STEP5_11_EXACT_ID_FUZZY_FALLBACK_PRESENT: ' + token)
+          if '"fallback_matching_used": False' not in exact_id:
+              raise SystemExit('STEP5_11_EXACT_ID_FALLBACK_CONTRACT_MISSING')
+
+          step5_core_paths = (
+              'sports_api/mlb_official_game_id_join_v1.py',
+              'sports_api/mlb_live_market_context_v1.py',
+              'sports_api/mlb_market_probability_v1.py',
+              'sports_api/mlb_model_market_edge_v1.py',
+              'sports_api/mlb_price_discipline_v1.py',
+              'sports_api/mlb_market_movement_v1.py',
+              'sports_api/mlb_price_health_v1.py',
+              'sports_api/mlb_actionability_shadow_v1.py',
+              'sports_api/mlb_controlled_price_gate_v1.py',
+              'sports_api/mlb_price_gate_canary_v1.py',
+              'sports_api/mlb_streamlit_canary_control_v1.py',
           )
-          step5_sources = [
-              Path('sports_api/mlb_official_game_id_join_v1.py'),
-              Path('sports_api/mlb_live_market_context_v1.py'),
-              Path('sports_api/mlb_market_probability_v1.py'),
-              Path('sports_api/mlb_model_market_edge_v1.py'),
-              Path('sports_api/mlb_price_discipline_v1.py'),
-              Path('sports_api/mlb_market_movement_v1.py'),
-              Path('sports_api/mlb_price_health_v1.py'),
-              Path('sports_api/mlb_actionability_shadow_v1.py'),
-              Path('sports_api/mlb_controlled_price_gate_v1.py'),
-              Path('sports_api/mlb_price_gate_canary_v1.py'),
-              Path('sports_api/mlb_streamlit_canary_control_v1.py'),
-          ]
-          source = '\n'.join(path.read_text(encoding='utf-8') for path in step5_sources)
+          source = '\n'.join(Path(path).read_text(encoding='utf-8') for path in step5_core_paths)
+          forbidden = ('sqlite3', 'psycopg', 'sqlalchemy', 'INSERT INTO', 'requests.post(')
           bad = [token for token in forbidden if token in source]
           if bad:
-              raise SystemExit('STEP5_11_FORBIDDEN_FUZZY_WRITE_OR_PERSISTENCE_TOKEN: ' + ' | '.join(bad))
+              raise SystemExit('STEP5_11_WRITE_OR_PERSISTENCE_PATH_PRESENT: ' + ' | '.join(bad))
 
-          # The frozen app ancestry must still replace the old Daily Picks import with the guard.
           ancestor = subprocess.check_output(
               ['git', 'show', '6fb976a9e20c96eb68b71ad0d3511e3be1734292:app.py'],
               text=True,
@@ -165,10 +167,9 @@ jobs:
           if route_missing:
               raise SystemExit('STEP5_11_ACTIVE_ROUTE_ANCESTRY_DRIFT: ' + ' | '.join(route_missing))
 
-          # No production runtime path changed from the certified base.
           changed = subprocess.check_output(['git', 'diff', '--name-only', f'{base}...HEAD'], text=True).splitlines()
           if changed != ['.github/workflows/mlb-step5-11-final-freeze-cert.yml']:
-              raise SystemExit('STEP5_11_NOT_A_ZERO_RUNTIME_DELTA')
+              raise SystemExit('STEP5_11_NOT_ZERO_RUNTIME_DELTA')
 
           print('MLB_STEP5_11_FINAL_SAFETY_AND_ROUTE_CONTRACTS_OK')
           PY
@@ -188,7 +189,7 @@ jobs:
             tests/test_mlb_price_gate_canary_v1.py \
             tests/test_mlb_price_gate_canary_streamlit_v1.py
 
-      - name: Certify live end-to-end Step 5 chain and frontend transport
+      - name: Certify live end-to-end Step 5 chain and Streamlit transport
         shell: bash
         run: |
           set -euo pipefail
@@ -244,14 +245,10 @@ jobs:
               raise SystemExit(f'{label}_FAILED: {last_error}')
 
           status, payload = fetch_json(os.environ['PRODUCTION_ODDS_URL'], 'STEP5_11_ODDS_FETCH')
-          if status != 200:
-              raise SystemExit(f'STEP5_11_PRODUCTION_HTTP_{status}')
-          if payload.get('source') != 'FanDuel':
-              raise SystemExit('STEP5_11_SOURCE_NOT_FANDUEL')
-          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
-              raise SystemExit('STEP5_11_BAD_PRODUCTION_DATA_TYPE')
-          if payload.get('schema_version') != 1:
-              raise SystemExit('STEP5_11_BAD_PRODUCTION_SCHEMA')
+          if status != 200 or payload.get('source') != 'FanDuel':
+              raise SystemExit('STEP5_11_BAD_PRODUCTION_SOURCE_OR_STATUS')
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1' or payload.get('schema_version') != 1:
+              raise SystemExit('STEP5_11_BAD_PRODUCTION_CONTRACT')
           if payload.get('transport') != 'anonymous_public_get_only':
               raise SystemExit('STEP5_11_BAD_PRODUCTION_TRANSPORT')
           collected_at = payload.get('collected_at_utc')
@@ -262,42 +259,31 @@ jobs:
           game_ids = [int(game['official_game_id']) for game in games]
           identity_rows = [{'game_pk': game_id} for game_id in reversed(game_ids)]
 
-          # Step 5.1: exact official game ID only.
           step51 = join_model_games_to_markets(identity_rows, games)
-          if step51.get('matched_count') != len(games):
-              raise SystemExit('STEP5_11_STEP5_1_JOIN_COUNT_MISMATCH')
-          if step51.get('fallback_matching_used') is not False:
-              raise SystemExit('STEP5_11_STEP5_1_FALLBACK_USED')
+          if step51.get('matched_count') != len(games) or step51.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP5_11_STEP5_1_EXACT_JOIN_FAILED')
           if step51.get('unmatched_model_game_ids') or step51.get('unmatched_market_game_ids'):
               raise SystemExit('STEP5_11_STEP5_1_UNMATCHED_IDS')
 
-          # Steps 5.2 and 5.3: exact-ID market attachment + no-vig market probabilities.
           step52 = attach_live_market_context(identity_rows, games)
           step53 = derive_market_probability_contexts(step52)
-          if step52.get('attached_count') != len(games):
-              raise SystemExit('STEP5_11_STEP5_2_ATTACH_COUNT_MISMATCH')
-          if step53.get('derived_context_count') != len(games):
-              raise SystemExit('STEP5_11_STEP5_3_CONTEXT_COUNT_MISMATCH')
+          if step52.get('attached_count') != len(games) or step53.get('derived_context_count') != len(games):
+              raise SystemExit('STEP5_11_STEP5_2_3_COUNT_MISMATCH')
           if step53.get('fallback_matching_used') is not False:
               raise SystemExit('STEP5_11_STEP5_3_FALLBACK_USED')
 
-          # Step 5.10 bounded game-atomic cohort and exact rollback.
           cohort = select_canary_game_ids(game_ids, enabled=True, requested_percent=25)
           over_cap = select_canary_game_ids(game_ids, enabled=True, requested_percent=100)
           rollback = select_canary_game_ids(game_ids, enabled=False, requested_percent=25)
           expected_games = int(math.floor(len(set(game_ids)) * MAX_CANARY_PERCENT / 100.0))
-          if cohort['selected_game_count'] != expected_games:
-              raise SystemExit('STEP5_11_CANARY_SIZE_MISMATCH')
-          if cohort['realized_percent'] > MAX_CANARY_PERCENT + 1e-12:
-              raise SystemExit('STEP5_11_CANARY_EXCEEDS_CAP')
+          if cohort['selected_game_count'] != expected_games or cohort['realized_percent'] > MAX_CANARY_PERCENT + 1e-12:
+              raise SystemExit('STEP5_11_CANARY_BOUND_FAILED')
           if over_cap['selected_game_ids'] != cohort['selected_game_ids']:
               raise SystemExit('STEP5_11_ABOVE_CAP_CHANGED_COHORT')
           if rollback['selected_game_ids']:
-              raise SystemExit('STEP5_11_ROLLBACK_NOT_EMPTY')
+              raise SystemExit('STEP5_11_CANARY_ROLLBACK_NOT_EMPTY')
           selected_games = set(cohort['selected_game_ids'])
 
-          # Step 5.10B session control: explicit query may arm up to the existing cap;
-          # query removal returns exact OFF/0% and explicit host control wins.
           base_config = {
               'enabled': False,
               'requested_percent': 0.0,
@@ -329,11 +315,11 @@ jobs:
 
           checks = 0
           line_bearing = 0
-          positive_shadow = 0
-          nonpositive_shadow = 0
-          canary_enrolled_checks = 0
-          canary_allow = 0
-          canary_block = 0
+          shadow_playable = 0
+          shadow_nonplayable = 0
+          enrolled_checks = 0
+          enrolled_allow = 0
+          enrolled_block = 0
           nonenrolled_passthrough = 0
           rollback_passthrough = 0
 
@@ -341,7 +327,7 @@ jobs:
               game_id = int(game['official_game_id'])
               context = (step53.get('contexts_by_game_id') or {}).get(game_id)
               if not context:
-                  raise SystemExit(f'STEP5_11_MISSING_MARKET_CONTEXT_{game_id}')
+                  raise SystemExit(f'STEP5_11_MISSING_CONTEXT_{game_id}')
               away = str(game.get('away_team') or f'AWAY_{game_id}')
               home = str(game.get('home_team') or f'HOME_{game_id}')
               scenarios = [
@@ -352,10 +338,7 @@ jobs:
                   ('Total', 'Over ' + str(context['total'].get('line')), context['total']['over']),
                   ('Total', 'Under ' + str(context['total'].get('line')), context['total']['under']),
               ]
-
               for market, side_text, side_block in scenarios:
-                  # Freeze certification exercises the complete downstream policy using a
-                  # deterministic model probability 2pp above the current no-vig market.
                   no_vig = float(side_block['no_vig_probability'])
                   model_p = min(0.90, max(0.10, no_vig + 0.02))
                   candidate = {
@@ -366,8 +349,6 @@ jobs:
                       'name': None,
                       'team': None,
                   }
-
-                  # Steps 5.4 -> 5.9.
                   edge = model_market_edge(candidate, context, away_team=away, home_team=home)
                   price = price_discipline_context(edge)
                   observation = build_market_observation(price, collected_at_utc=collected_at)
@@ -376,66 +357,56 @@ jobs:
                   shadow = actionability_shadow_context(health)
 
                   if shadow['shadow_status'].startswith('SHADOW_PLAYABLE'):
-                      positive_shadow += 1
+                      shadow_playable += 1
                   else:
-                      nonpositive_shadow += 1
+                      shadow_nonplayable += 1
 
-                  # Exact Step 5.9 OFF path must always preserve Final Card eligibility.
                   gate_off = controlled_price_gate(shadow, activation_requested=False)
                   if gate_off['gate_status'] != 'CONTROL_DISABLED' or gate_off['final_card_price_eligible'] is not True:
-                      raise SystemExit(f'STEP5_11_GATE_OFF_NOT_PASSTHROUGH_{game_id}_{market}')
+                      raise SystemExit(f'STEP5_11_ROLLBACK_CHANGED_{game_id}_{market}')
                   rollback_passthrough += 1
 
                   enrolled = game_id in selected_games
                   gate = controlled_price_gate(shadow, activation_requested=enrolled)
                   if enrolled:
-                      canary_enrolled_checks += 1
+                      enrolled_checks += 1
                       if shadow['shadow_status'].startswith('SHADOW_PLAYABLE'):
                           if gate['gate_status'] != 'GATE_ALLOW' or gate['final_card_price_eligible'] is not True:
-                              raise SystemExit(f'STEP5_11_CANARY_ALLOW_MISMATCH_{game_id}_{market}')
-                          canary_allow += 1
+                              raise SystemExit(f'STEP5_11_ALLOW_MISMATCH_{game_id}_{market}')
+                          enrolled_allow += 1
                       else:
                           if gate['gate_status'] != 'GATE_BLOCK' or gate['final_card_price_eligible'] is not False:
-                              raise SystemExit(f'STEP5_11_CANARY_BLOCK_MISMATCH_{game_id}_{market}')
-                          canary_block += 1
+                              raise SystemExit(f'STEP5_11_BLOCK_MISMATCH_{game_id}_{market}')
+                          enrolled_block += 1
                   else:
                       if gate['gate_status'] != 'CONTROL_DISABLED' or gate['final_card_price_eligible'] is not True:
                           raise SystemExit(f'STEP5_11_NONENROLLED_CHANGED_{game_id}_{market}')
                       nonenrolled_passthrough += 1
 
-                  for obj_name, obj in (
-                      ('edge', edge), ('price', price), ('movement', movement),
-                      ('health', health), ('shadow', shadow), ('gate', gate),
-                  ):
-                      for flag in ('model_math_impact', 'pick_strength_impact', 'ranking_math_impact', 'risk_logic_impact', 'wagering_impact'):
-                          if flag in obj and obj.get(flag) is not False:
-                              raise SystemExit(f'STEP5_11_PROTECTED_IMPACT_DRIFT_{obj_name}_{flag}_{game_id}_{market}')
-                      if 'durable_persistence' in obj and obj.get('durable_persistence') is not False:
-                          raise SystemExit(f'STEP5_11_PERSISTENCE_DRIFT_{obj_name}_{game_id}_{market}')
+                  for flag in ('model_math_impact', 'pick_strength_impact', 'ranking_math_impact', 'risk_logic_impact', 'wagering_impact'):
+                      if gate.get(flag) is not False:
+                          raise SystemExit(f'STEP5_11_PROTECTED_IMPACT_DRIFT_{flag}_{game_id}_{market}')
+                  if gate.get('durable_persistence') is not False:
+                      raise SystemExit(f'STEP5_11_PERSISTENCE_DRIFT_{game_id}_{market}')
 
                   checks += 1
                   if market in {'Run Line', 'Total'}:
                       line_bearing += 1
 
           expected_checks = len(games) * 6
-          if checks != expected_checks:
+          if checks != expected_checks or rollback_passthrough != expected_checks:
               raise SystemExit('STEP5_11_LIVE_CHAIN_COVERAGE_MISMATCH')
           if line_bearing != len(games) * 4:
               raise SystemExit('STEP5_11_LINE_BEARING_COVERAGE_MISMATCH')
-          if rollback_passthrough != expected_checks:
-              raise SystemExit('STEP5_11_ROLLBACK_COVERAGE_MISMATCH')
-          if canary_enrolled_checks != cohort['selected_game_count'] * 6:
+          if enrolled_checks != cohort['selected_game_count'] * 6:
               raise SystemExit('STEP5_11_CANARY_ATOMICITY_MISMATCH')
-          if canary_allow + canary_block != canary_enrolled_checks:
-              raise SystemExit('STEP5_11_CANARY_PARTITION_MISMATCH')
-          if nonenrolled_passthrough + canary_enrolled_checks != expected_checks:
+          if enrolled_allow + enrolled_block != enrolled_checks:
+              raise SystemExit('STEP5_11_CANARY_POLICY_PARTITION_MISMATCH')
+          if nonenrolled_passthrough + enrolled_checks != expected_checks:
               raise SystemExit('STEP5_11_CANARY_COHORT_PARTITION_MISMATCH')
-          if positive_shadow + nonpositive_shadow != expected_checks:
+          if shadow_playable + shadow_nonplayable != expected_checks:
               raise SystemExit('STEP5_11_SHADOW_PARTITION_MISMATCH')
 
-          # Public Streamlit transport, explicit session-canary URL, rollback URL,
-          # and app status must all stay reachable. This deliberately does not
-          # overclaim browser-rendered UI automation.
           streamlit = os.environ['STREAMLIT_URL'].rstrip('/')
           root_status, root, root_url = fetch_text(streamlit + '/', 'STEP5_11_STREAMLIT_ROOT')
           canary_status, canary_root, canary_url = fetch_text(
@@ -463,13 +434,13 @@ jobs:
               'step5_3_derived_context_count': step53.get('derived_context_count'),
               'step5_4_through_5_9_live_observations_verified': checks,
               'line_bearing_checks_verified': line_bearing,
-              'shadow_playable_count': positive_shadow,
-              'shadow_nonplayable_count': nonpositive_shadow,
+              'shadow_playable_count': shadow_playable,
+              'shadow_nonplayable_count': shadow_nonplayable,
               'canary_game_count': cohort['selected_game_count'],
               'canary_realized_percent': cohort['realized_percent'],
-              'canary_enrolled_checks': canary_enrolled_checks,
-              'canary_allow_count': canary_allow,
-              'canary_block_count': canary_block,
+              'canary_enrolled_checks': enrolled_checks,
+              'canary_allow_count': enrolled_allow,
+              'canary_block_count': enrolled_block,
               'nonenrolled_passthrough_verified': nonenrolled_passthrough,
               'rollback_passthrough_verified': rollback_passthrough,
               'max_canary_percent': MAX_CANARY_PERCENT,
