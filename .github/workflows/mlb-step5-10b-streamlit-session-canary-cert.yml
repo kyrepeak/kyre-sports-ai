@@ -1,0 +1,308 @@
+name: MLB Step5.10B Streamlit session-canary certification
+
+on:
+  push:
+    branches:
+      - mlb-step5-10b-streamlit-session-canary
+    paths:
+      - 'sports_api/mlb_streamlit_canary_control_v1.py'
+      - 'mlb_daily_game_picks_price_gate_canary_streamlit_v1.py'
+      - 'mlb_daily_game_picks_v217_guard.py'
+      - 'tests/test_mlb_price_gate_canary_streamlit_v1.py'
+      - '.github/workflows/mlb-step5-10b-streamlit-session-canary-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP5_10B_BASE_SHA: b5eaa4378ddff30d11629aea9d263ae91a484b32
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+
+jobs:
+  certify-step5-10b:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert additive MLB-only change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP5_10B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP5_10B_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          allowed='^(sports_api/mlb_streamlit_canary_control_v1.py|mlb_daily_game_picks_price_gate_canary_streamlit_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_price_gate_canary_streamlit_v1.py|\.github/workflows/mlb-step5-10b-streamlit-session-canary-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP5_10B_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          echo 'MLB_STEP5_10B_CHANGE_SCOPE_OK'
+
+      - name: Prove Step5.10, Step5.9, and V2.1.7 selector are frozen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP5_10B_BASE_SHA"...HEAD -- \
+            sports_api/mlb_price_gate_canary_v1.py \
+            mlb_daily_game_picks_price_gate_canary_v1.py \
+            sports_api/mlb_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_v217.py
+          echo 'MLB_STEP5_10B_STEP5_10_STEP5_9_SELECTOR_FROZEN'
+
+      - name: Prove protected V2.1.7 risk and lineup functions are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast
+          import os
+          import subprocess
+          from pathlib import Path
+
+          base = subprocess.check_output(
+              ['git', 'show', f'{os.environ["STEP5_10B_BASE_SHA"]}:mlb_daily_game_picks_v217_guard.py'],
+              text=True,
+          )
+          head = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          protected = {
+              '_safe_int', '_norm', '_lineup_members_bulk', '_official_snapshots_v217',
+              '_player_lineup_guard', '_risk_context_v217_guard',
+          }
+          def dumps(source):
+              tree = ast.parse(source)
+              return {
+                  node.name: ast.dump(node, include_attributes=False)
+                  for node in tree.body
+                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in protected
+              }
+          if dumps(base) != dumps(head) or set(dumps(head)) != protected:
+              raise SystemExit('STEP5_10B_PROTECTED_V217_FUNCTION_DRIFT')
+          print('MLB_STEP5_10B_V217_RISK_FUNCTIONS_FROZEN')
+          PY
+
+      - name: Assert session-only control contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/mlb_streamlit_canary_control_v1.py').read_text(encoding='utf-8')
+          presentation = Path('mlb_daily_game_picks_price_gate_canary_streamlit_v1.py').read_text(encoding='utf-8')
+          guard = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          combined = core + '\n' + presentation + '\n' + guard
+
+          forbidden = (
+              'difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz',
+              'sqlite3', 'psycopg', 'sqlalchemy', 'INSERT INTO', 'requests.post(',
+              'st.query_params.clear(', 'st.query_params.from_dict(',
+          )
+          if any(token in combined for token in forbidden):
+              raise SystemExit('STEP5_10B_FORBIDDEN_MATCHER_WRITE_OR_QUERY_MUTATION')
+
+          required = (
+              'mlb_step5_10b_canary',
+              'mlb_step5_10b_percent',
+              'HOST_ENV',
+              'STREAMLIT_QUERY_SESSION',
+              'DEFAULT_OFF',
+              'host_env_precedence',
+              'exact_query_rollback',
+              'session_only',
+              'step510.canary_rollout_config = streamlit_canary_rollout_config',
+              'install_streamlit_session_canary_layer(games_df)',
+              'remove query parameters for exact rollback',
+              'No model, Pick Strength, ranking-math, risk, persistence, wagering, or WNBA changes',
+          )
+          missing = [token for token in required if token not in combined]
+          if missing:
+              raise SystemExit('STEP5_10B_CONTRACT_TOKEN_MISSING: ' + ' | '.join(missing))
+
+          protected_false = (
+              '"model_math_impact": False',
+              '"pick_strength_impact": False',
+              '"ranking_math_impact": False',
+              '"risk_logic_impact": False',
+              '"wagering_impact": False',
+              '"durable_persistence": False',
+              '"wnba_impact": False',
+          )
+          missing_false = [token for token in protected_false if token not in core and token not in presentation]
+          if missing_false:
+              raise SystemExit('STEP5_10B_PROTECTED_FALSE_FLAG_MISSING: ' + ' | '.join(missing_false))
+
+          if 'from mlb_daily_game_picks_price_gate_canary_streamlit_v1 import install_streamlit_session_canary_layer' not in guard:
+              raise SystemExit('STEP5_10B_ACTIVE_GUARD_IMPORT_MISSING')
+          print('MLB_STEP5_10B_SESSION_ONLY_CONTRACT_OK')
+          PY
+
+      - name: Compile Step5.10B Python files
+        run: |
+          python -m py_compile \
+            sports_api/mlb_streamlit_canary_control_v1.py \
+            mlb_daily_game_picks_price_gate_canary_streamlit_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py
+
+      - name: Run deterministic Step5.10B regression suite
+        run: python -m pytest -q tests/test_mlb_price_gate_canary_streamlit_v1.py
+
+      - name: Certify current live slate, session canary, rollback, and Streamlit transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import math
+          import os
+          import time
+          import urllib.request
+
+          from sports_api.mlb_price_gate_canary_v1 import MAX_CANARY_PERCENT, select_canary_game_ids
+          from sports_api.mlb_streamlit_canary_control_v1 import resolve_streamlit_canary_config
+
+          def fetch_json(url, label):
+              last_error = None
+              for attempt in range(1, 4):
+                  try:
+                      req = urllib.request.Request(
+                          url,
+                          headers={'Accept': 'application/json', 'User-Agent': 'KyreSportsStep5-10B/1.0'},
+                          method='GET',
+                      )
+                      with urllib.request.urlopen(req, timeout=45) as response:
+                          return int(response.status), json.loads(response.read(2_000_000).decode('utf-8'))
+                  except Exception as exc:
+                      last_error = exc
+                      print(f'{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}')
+                      if attempt < 3:
+                          time.sleep(4)
+              raise SystemExit(f'{label}_FAILED: {last_error}')
+
+          def fetch_text(url, label):
+              last_error = None
+              for attempt in range(1, 4):
+                  try:
+                      req = urllib.request.Request(
+                          url,
+                          headers={'Accept': 'text/html,*/*', 'User-Agent': 'KyreSportsStep5-10B/1.0'},
+                          method='GET',
+                      )
+                      with urllib.request.urlopen(req, timeout=45) as response:
+                          return int(response.status), response.read(1_000_000).decode('utf-8', errors='replace')
+                  except Exception as exc:
+                      last_error = exc
+                      print(f'{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}')
+                      if attempt < 3:
+                          time.sleep(4)
+              raise SystemExit(f'{label}_FAILED: {last_error}')
+
+          status, payload = fetch_json(os.environ['PRODUCTION_ODDS_URL'], 'STEP5_10B_ODDS_FETCH')
+          if status != 200 or payload.get('source') != 'FanDuel' or payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('STEP5_10B_BAD_PRODUCTION_ODDS_PAYLOAD')
+          games = payload.get('games') or []
+          if not games:
+              raise SystemExit('STEP5_10B_EMPTY_LIVE_SLATE')
+          game_ids = [int(game['official_game_id']) for game in games]
+
+          base = {
+              'enabled': False,
+              'requested_percent': 0.0,
+              'config_valid': True,
+              'production_default_enabled': False,
+              'production_default_percent': 0.0,
+          }
+          armed = resolve_streamlit_canary_config(
+              base,
+              host_env_present=False,
+              query_enabled_value='1',
+              query_percent_value='25',
+          )
+          cohort = select_canary_game_ids(
+              game_ids,
+              enabled=armed['enabled'],
+              requested_percent=armed['requested_percent'],
+          )
+          expected = int(math.floor(len(set(game_ids)) * MAX_CANARY_PERCENT / 100.0))
+          if cohort['selected_game_count'] != expected:
+              raise SystemExit('STEP5_10B_LIVE_COHORT_SIZE_MISMATCH')
+          if cohort['effective_percent'] > MAX_CANARY_PERCENT:
+              raise SystemExit('STEP5_10B_LIVE_COHORT_EXCEEDS_CAP')
+
+          rollback_config = resolve_streamlit_canary_config(base, host_env_present=False)
+          rollback = select_canary_game_ids(
+              game_ids,
+              enabled=rollback_config['enabled'],
+              requested_percent=rollback_config['requested_percent'],
+          )
+          if rollback['selected_game_ids']:
+              raise SystemExit('STEP5_10B_QUERY_REMOVAL_ROLLBACK_NOT_EXACT')
+
+          host_base = dict(base)
+          host_base.update({'enabled': True, 'requested_percent': 10.0})
+          host = resolve_streamlit_canary_config(
+              host_base,
+              host_env_present=True,
+              query_enabled_value='1',
+              query_percent_value='25',
+          )
+          if host['control_source'] != 'HOST_ENV' or host['requested_percent'] != 10.0:
+              raise SystemExit('STEP5_10B_HOST_PRECEDENCE_FAILED')
+
+          streamlit_root_status, root = fetch_text(os.environ['STREAMLIT_URL'].rstrip('/') + '/', 'STEP5_10B_STREAMLIT_ROOT')
+          streamlit_health_status, health = fetch_text(os.environ['STREAMLIT_URL'].rstrip('/') + '/_stcore/health', 'STEP5_10B_STREAMLIT_HEALTH')
+          if streamlit_root_status != 200 or streamlit_health_status != 200:
+              raise SystemExit('STEP5_10B_STREAMLIT_TRANSPORT_NOT_200')
+          if '<html' not in root.lower() or 'streamlit' not in root.lower():
+              raise SystemExit('STEP5_10B_STREAMLIT_ROOT_NOT_RECOGNIZED')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'production_game_count': len(games),
+              'source': payload.get('source'),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'query_control_source': armed['control_source'],
+              'query_canary_requested_percent': armed['requested_percent'],
+              'query_canary_effective_percent': cohort['effective_percent'],
+              'query_canary_selected_game_count': cohort['selected_game_count'],
+              'query_canary_selected_game_ids': cohort['selected_game_ids'],
+              'query_canary_realized_percent': cohort['realized_percent'],
+              'query_removed_rollback_selected_game_count': rollback['selected_game_count'],
+              'host_env_precedence_verified': True,
+              'streamlit_root_http_status': streamlit_root_status,
+              'streamlit_health_http_status': streamlit_health_status,
+              'streamlit_transport_verified': True,
+              'rendered_streamlit_ui_verified': False,
+              'step5_10_changed': False,
+              'step5_9_changed': False,
+              'model_math_changed': False,
+              'pick_strength_changed': False,
+              'ranking_math_changed': False,
+              'risk_logic_changed': False,
+              'durable_persistence_added': False,
+              'wagering_changed': False,
+              'wnba_changed': False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP5_10B_STREAMLIT_SESSION_CANARY_GREEN')
+          PY
