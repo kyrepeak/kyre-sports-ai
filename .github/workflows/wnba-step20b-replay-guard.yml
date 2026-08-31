@@ -73,12 +73,12 @@ jobs:
           assert '/api/v1/wnba/runtime/step20b-replay-runtime-probe/start' in paths
           assert '/api/v1/wnba/runtime/step20b-replay-runtime-probe/status' in paths
 
-          ag = accel.install_step20b_runtime_acceleration()['guardrails']
+          ag = accel.installation_status()['guardrails']
           assert ag['projection_math_modified'] is False
           assert ag['readiness_relaxed'] is False
           assert ag['monte_carlo_simulation_count_modified'] is False
           assert ag['monte_carlo_batch_size_modified'] is False
-          c4g = c4w.install_step20b_step4w_cycle_cache()['guardrails']
+          c4g = c4w.installation_status()['guardrails']
           assert c4g['projection_math_modified'] is False
           assert c4g['readiness_relaxed'] is False
           assert c4g['monte_carlo_simulation_count_modified'] is False
