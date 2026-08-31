@@ -48,13 +48,13 @@ def test_reconstruction_cache_reuses_exact_sources_and_returns_deepcopy(monkeypa
 
     with accel.cycle_local_cache_scope() as cache:
         first = accel.reconstruct_event_context_step20b(_pbp(), _rotation())
-        first[0]["rows"][0]["marker"] = 999
+        first["rows"][0]["marker"] = 999
         second = accel.reconstruct_event_context_step20b(_pbp(), _rotation())
         changed = accel.reconstruct_event_context_step20b(_pbp(marker=2), _rotation())
         stats = accel.cache_stats(cache)
 
-    assert second[0]["rows"][0]["marker"] == 1
-    assert changed[0]["rows"][0]["marker"] == 2
+    assert second["rows"][0]["marker"] == 1
+    assert changed["rows"][0]["marker"] == 2
     assert len(calls) == 2
     assert stats["entries"]["event_reconstruction"] == 2
     assert stats["stats"]["event_reconstruction"] == {"hits": 1, "misses": 2}
