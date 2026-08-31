@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Inspect live player-hits market shapes safely
+      - name: Trace deeper FanDuel player-hits navigation
         run: |
           python - <<'PY'
           from datetime import datetime, timezone
@@ -28,70 +28,82 @@ jobs:
           from sports_api.collectors.mlb_fanduel_player_props import (
               PLAYER_HITS,
               PROP_TABS,
-              _active_player_runners,
               _provider_market_type,
               _rows,
-              _runner_role,
               collect_live_mlb_player_props,
               fetch_fanduel_event_prop_tab,
               market_family,
           )
+          from sports_api.collectors.mlb_fanduel_direct import fetch_fanduel_event_page
 
           snapshot = collect_live_mlb_player_props(now_utc=datetime.now(timezone.utc), max_events=4)
-          print(json.dumps({
-              'marker':'STEP8D_HIT_SHAPE_PROBE_SNAPSHOT',
+          event_ids = sorted({str(row.get('source_event_id')) for row in snapshot.get('props', []) if row.get('source_event_id')})
+          assert event_ids, snapshot
+          event_id = event_ids[0]
+          print('EVENT_ID', event_id)
+          print('SNAPSHOT', json.dumps({
               'matched_games':snapshot.get('matched_game_count'),
               'prop_count':snapshot.get('prop_count'),
               'contract_unavailable':snapshot.get('contract_unavailable_market_counts'),
           }, sort_keys=True))
 
-          event_ids = sorted({
-              str(row.get('source_event_id'))
-              for row in snapshot.get('props', [])
-              if row.get('source_event_id')
-          })
-          print('EVENT_IDS', event_ids)
-          seen = set()
-          for event_id in event_ids:
-              for tab in PROP_TABS:
-                  payload = fetch_fanduel_event_prop_tab(event_id, tab)
-                  attachments = payload.get('attachments') or {}
-                  markets = _rows(attachments.get('markets')) if isinstance(attachments, dict) else []
-                  for market in markets:
-                      provider_type = _provider_market_type(market)
-                      if market_family(provider_type) != PLAYER_HITS:
-                          continue
-                      market_id = str(market.get('marketId') or market.get('id') or market.get('_attachment_key') or '')
-                      key = (event_id, tab, market_id)
-                      if key in seen:
-                          continue
-                      seen.add(key)
-                      runners = _active_player_runners(market)
-                      safe_runners = []
-                      for runner in runners:
-                          result = runner.get('result') or {}
-                          win = runner.get('winRunnerOdds') or {}
-                          display = win.get('americanDisplayOdds') or {} if isinstance(win, dict) else {}
-                          safe_runners.append({
-                              'role':_runner_role(runner),
-                              'handicap':runner.get('handicap'),
-                              'result_handicap':result.get('handicap') if isinstance(result, dict) else None,
-                              'result_keys':sorted(result) if isinstance(result, dict) else [],
-                              'selection_id':str(runner.get('selectionId') or ''),
-                              'american_odds':display.get('americanOddsInt') if isinstance(display, dict) else None,
-                              'runner_keys':sorted(runner),
-                          })
-                      print(json.dumps({
-                          'event_id':event_id,
-                          'tab':tab,
-                          'market_id':market_id,
-                          'provider_market_type':provider_type,
-                          'market_status':market.get('marketStatus') or market.get('status'),
-                          'in_play':market.get('inPlay'),
-                          'market_keys':sorted(market),
-                          'active_player_runner_count':len(runners),
-                          'roles':sorted({_runner_role(r) for r in runners}),
-                          'runners':safe_runners,
-                      }, sort_keys=True, default=str))
-          print('MLB_STEP8D_PLAYER_HITS_SHAPE_PROBE_COMPLETE')
+          def compact(value, depth=0):
+              if depth > 3:
+                  return '<depth>'
+              if isinstance(value, dict):
+                  return {str(k):compact(v, depth+1) for k,v in list(value.items())[:40]}
+              if isinstance(value, list):
+                  return [compact(v, depth+1) for v in value[:20]]
+              if isinstance(value, str):
+                  return value[:500]
+              return value
+
+          def scan(obj, path='root', depth=0):
+              if depth > 8:
+                  return
+              if isinstance(obj, dict):
+                  for k,v in obj.items():
+                      kp = f'{path}.{k}'
+                      key_low = str(k).lower()
+                      if any(t in key_low for t in ('tab','nav','group','coupon','market','section','page','link','route')) and not isinstance(v,(dict,list)):
+                          print('META', kp, repr(v)[:600])
+                      scan(v, kp, depth+1)
+              elif isinstance(obj, list):
+                  for i,v in enumerate(obj[:100]):
+                      scan(v, f'{path}[{i}]', depth+1)
+              elif isinstance(obj, str):
+                  low = obj.lower()
+                  if 'total hits' in low or 'record a hit' in low or '2+ hits' in low or 'batter' in low or 'player prop' in low:
+                      print('MATCH', path, repr(obj)[:800])
+
+          default = fetch_fanduel_event_page(event_id)
+          print('DEFAULT_ROOT_KEYS', sorted(default))
+          print('DEFAULT_ATTACH_KEYS', sorted((default.get('attachments') or {}).keys()))
+          scan({k:v for k,v in default.items() if k != 'attachments'}, 'default')
+
+          for tab in PROP_TABS:
+              payload = fetch_fanduel_event_prop_tab(event_id, tab)
+              attachments = payload.get('attachments') or {}
+              print('TAB', tab, 'ROOT_KEYS', sorted(payload), 'ATTACH_KEYS', sorted(attachments) if isinstance(attachments,dict) else [])
+              scan({k:v for k,v in payload.items() if k != 'attachments'}, f'tab.{tab}')
+              markets = _rows(attachments.get('markets')) if isinstance(attachments, dict) else []
+              types = sorted({_provider_market_type(m) for m in markets if 'HIT' in _provider_market_type(m)})
+              print('HIT_TYPES', tab, types)
+              for market in markets:
+                  ptype = _provider_market_type(market)
+                  if market_family(ptype) != PLAYER_HITS:
+                      continue
+                  print('HIT_MARKET_LINKAGE', json.dumps({
+                      'tab':tab,
+                      'market_id':str(market.get('marketId') or market.get('_attachment_key') or ''),
+                      'market_type':ptype,
+                      'market_name':market.get('marketName'),
+                      'betting_type':market.get('bettingType'),
+                      'leg_types':market.get('legTypes'),
+                      'associated_markets':compact(market.get('associatedMarkets')),
+                      'sgm_market':market.get('sgmMarket'),
+                      'sort_priority':market.get('sortPriority'),
+                  }, sort_keys=True, default=str))
+
+          print('MLB_STEP8D_DEEP_HIT_NAVIGATION_PROBE_COMPLETE')
           PY
