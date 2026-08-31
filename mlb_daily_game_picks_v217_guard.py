@@ -1,4 +1,4 @@
-"""V2.1.7 confirmed-lineup guard + certified Step 5 + Step 6A production canary.
+"""V2.1.7 confirmed-lineup guard + certified Step 5 + Step 6D production expansion.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
@@ -6,14 +6,15 @@ confirmed official MLB batting order. Steps 5.2-5.10B provide the frozen exact-I
 FanDuel market, probability, edge, price, movement, health, actionability, gate,
 bounded-canary, and Streamlit verification controls certified by Step 5.11.
 
-Step 6A is strictly downstream of that frozen checkpoint. It intentionally turns
-on a repository-default 10% production cohort for full-game price-certified MLB
-markets, while preserving the Step 5.10 deterministic game-level selector and
-Step 5.9 eligibility gate. A global kill switch, explicit host controls, and an
-exact session rollback remain available. Player props remain price-gate pass-
-through until a certified exact prop-price feed exists. No layer changes model
-math, Pick Strength, ranking math, V2.1.7 risk logic, persistence, wagering, or
-WNBA behavior.
+Step 6D is strictly downstream of the Step 6A 10% activation, Step 6B monitor,
+and Step 6C evidence gate. It consumes the certified GREEN Step 6C permission
+and intentionally expands the repository-default full-game production cohort to
+25%, while preserving the Step 5.10 deterministic game-level selector and Step
+5.9 eligibility gate. A global kill switch, explicit host controls, and exact
+session rollback remain available. Player props remain price-gate pass-through
+until a certified exact prop-price feed exists. No layer changes model math,
+Pick Strength, ranking math, V2.1.7 risk logic, persistence, wagering, or WNBA
+behavior.
 """
 from __future__ import annotations
 
@@ -26,10 +27,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
-from mlb_daily_game_picks_step6a_production_canary_v1 import install_step6a_production_canary_layer
+from mlb_daily_game_picks_step6d_production_expansion_v1 import install_step6d_production_expansion_layer
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6A PRODUCTION CANARY"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6D 25% PRODUCTION EXPANSION"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -172,13 +173,13 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
 
-    # Step 6A runs strictly downstream of the Step 5.11 frozen checkpoint. It
-    # supplies only the controlled activation policy: repository default ON at
-    # 10%, hard-capped at 10%, with host kill switch/controls and an exact
-    # session rollback. The certified Step 5.10 cohort hashing, Step 5.9 gate,
-    # V2.1.7 selector, player-prop passthrough, and protected model/risk behavior
-    # remain unchanged.
-    install_step6a_production_canary_layer(games_df)
+    # Step 6D runs strictly downstream of the frozen Step 5 checkpoint and the
+    # certified Step 6C evidence permission. It changes only rollout exposure:
+    # repository default ON at 25%, hard-capped at 25%, with host kill switch,
+    # host controls, and exact session rollback. The Step 5.10 cohort hashing,
+    # Step 5.9 price gate, V2.1.7 selector, player-prop passthrough, and all
+    # protected model/risk behavior remain unchanged.
+    install_step6d_production_expansion_layer(games_df)
 
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
