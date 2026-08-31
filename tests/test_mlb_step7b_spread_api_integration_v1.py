@@ -7,6 +7,7 @@ from sports_api.mlb_step7b_spread_api_integration_v1 import (
     FALLBACK,
     MATCH_METHOD,
     build_spread_api_state,
+    enforce_spread_api_freshness,
     spread_api_context_for_result,
 )
 
@@ -70,6 +71,50 @@ def test_healthy_payload_exposes_exact_run_line_context_only():
     assert state["contexts_by_game_id"][880001]["away_odds"] == -175
     assert state["contexts_by_game_id"][880001]["home_line"] == -1.5
     assert state["contexts_by_game_id"][880001]["home_odds"] == 145
+
+
+def test_fresh_snapshot_remains_active_and_records_age():
+    state = build_spread_api_state(payload(api_game()))
+    fresh = enforce_spread_api_freshness(
+        state,
+        as_of_utc="2026-08-31T18:40:30+00:00",
+        max_age_seconds=60,
+    )
+    assert fresh["integration_status"] == API_CONNECTED
+    assert fresh["api_integration_active"] is True
+    assert fresh["feed_fresh"] is True
+    assert fresh["snapshot_age_seconds"] == 30.0
+    context = spread_api_context_for_result(spread_result(), fresh)
+    assert context is not None
+    assert context["feed_fresh"] is True
+    assert context["snapshot_age_seconds"] == 30.0
+
+
+def test_stale_snapshot_fails_back_and_cannot_attach_to_result():
+    state = build_spread_api_state(payload(api_game()))
+    stale = enforce_spread_api_freshness(
+        state,
+        as_of_utc="2026-08-31T18:41:01+00:00",
+        max_age_seconds=60,
+    )
+    assert stale["integration_status"] == FALLBACK
+    assert stale["api_integration_active"] is False
+    assert stale["feed_fresh"] is False
+    assert stale["snapshot_age_seconds"] == 61.0
+    assert "api_snapshot_stale" in stale["failures"]
+    assert spread_api_context_for_result(spread_result(), stale) is None
+
+
+def test_missing_or_invalid_collection_time_fails_closed():
+    body = payload(api_game())
+    body["collected_at_utc"] = "not-a-time"
+    state = build_spread_api_state(body)
+    assert state["integration_status"] == FALLBACK
+    assert state["api_integration_active"] is False
+    assert "invalid_or_missing_collected_at_utc" in state["failures"]
+    guarded = enforce_spread_api_freshness(state, as_of_utc="2026-08-31T18:40:30+00:00")
+    assert guarded["feed_fresh"] is False
+    assert spread_api_context_for_result(spread_result(), guarded) is None
 
 
 def test_contexts_are_keyed_by_official_id_not_api_order():
