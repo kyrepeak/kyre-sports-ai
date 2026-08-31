@@ -1,0 +1,133 @@
+name: MLB Step5.10B GitHub deployment inventory
+
+on:
+  push:
+    branches:
+      - mlb-step5-10b-host-canary-verification
+    paths:
+      - '.github/workflows/mlb-step5-10b-github-deployment-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+  deployments: read
+  statuses: read
+
+jobs:
+  inspect-github-deployment-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Read sanitized deployment and status metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          STEP5_10_MAIN_SHA: b5eaa4378ddff30d11629aea9d263ae91a484b32
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, urllib.request, urllib.parse
+
+          token = os.environ['GH_TOKEN']
+          repo = os.environ['REPO']
+          sha = os.environ['STEP5_10_MAIN_SHA']
+          headers = {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': f'Bearer {token}',
+              'X-GitHub-Api-Version': '2022-11-28',
+              'User-Agent': 'KyreSportsMLBStep5-10B/1.0',
+          }
+
+          def get(path):
+              req = urllib.request.Request('https://api.github.com' + path, headers=headers, method='GET')
+              with urllib.request.urlopen(req, timeout=25) as response:
+                  return int(response.status), json.loads(response.read(4_000_000).decode('utf-8'))
+
+          dep_status, deployments = get(f'/repos/{repo}/deployments?per_page=100')
+          check_status, checks = get(f'/repos/{repo}/commits/{sha}/check-runs?per_page=100')
+          status_status, statuses = get(f'/repos/{repo}/commits/{sha}/status')
+          actions_status, actions = get(f'/repos/{repo}/actions/runs?head_sha={sha}&per_page=100')
+
+          dep_out = []
+          for dep in deployments if isinstance(deployments, list) else []:
+              dep_id = dep.get('id')
+              latest_state = None
+              environment_url = None
+              target_url = None
+              if dep_id:
+                  try:
+                      _, dep_statuses = get(f'/repos/{repo}/deployments/{dep_id}/statuses?per_page=100')
+                      if isinstance(dep_statuses, list) and dep_statuses:
+                          latest = dep_statuses[0]
+                          latest_state = latest.get('state')
+                          environment_url = latest.get('environment_url')
+                          target_url = latest.get('target_url')
+                  except Exception as exc:
+                      latest_state = f'UNAVAILABLE:{type(exc).__name__}'
+              dep_out.append({
+                  'id': dep_id,
+                  'ref': dep.get('ref'),
+                  'sha': dep.get('sha'),
+                  'environment': dep.get('environment'),
+                  'description': dep.get('description'),
+                  'creator_login': (dep.get('creator') or {}).get('login') if isinstance(dep.get('creator'), dict) else None,
+                  'latest_state': latest_state,
+                  'environment_url': environment_url,
+                  'target_url': target_url,
+                  'created_at': dep.get('created_at'),
+                  'updated_at': dep.get('updated_at'),
+              })
+
+          checks_out = []
+          for check in (checks.get('check_runs') or []) if isinstance(checks, dict) else []:
+              app = check.get('app') if isinstance(check.get('app'), dict) else {}
+              checks_out.append({
+                  'name': check.get('name'),
+                  'status': check.get('status'),
+                  'conclusion': check.get('conclusion'),
+                  'details_url': check.get('details_url'),
+                  'external_id': check.get('external_id'),
+                  'app_name': app.get('name'),
+                  'app_slug': app.get('slug'),
+              })
+
+          statuses_out = []
+          for item in (statuses.get('statuses') or []) if isinstance(statuses, dict) else []:
+              statuses_out.append({
+                  'state': item.get('state'),
+                  'context': item.get('context'),
+                  'description': item.get('description'),
+                  'target_url': item.get('target_url'),
+                  'creator_login': (item.get('creator') or {}).get('login') if isinstance(item.get('creator'), dict) else None,
+              })
+
+          actions_out = []
+          for run in (actions.get('workflow_runs') or []) if isinstance(actions, dict) else []:
+              actions_out.append({
+                  'id': run.get('id'),
+                  'name': run.get('name'),
+                  'event': run.get('event'),
+                  'status': run.get('status'),
+                  'conclusion': run.get('conclusion'),
+                  'html_url': run.get('html_url'),
+                  'head_branch': run.get('head_branch'),
+              })
+
+          evidence = {
+              'deployment_http_status': dep_status,
+              'check_runs_http_status': check_status,
+              'combined_status_http_status': status_status,
+              'actions_http_status': actions_status,
+              'main_sha_inspected': sha,
+              'deployments': dep_out,
+              'check_runs': checks_out,
+              'commit_statuses': statuses_out,
+              'workflow_runs': actions_out,
+              'secrets_returned': False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP5_10B_GITHUB_DEPLOYMENT_INVENTORY_COMPLETE')
+          PY
