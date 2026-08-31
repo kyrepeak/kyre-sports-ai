@@ -1,12 +1,13 @@
-"""V2.1.7 confirmed-lineup guard + Steps 5.2/5.3 live market presentation.
+"""V2.1.7 confirmed-lineup guard + Steps 5.2/5.3/5.4 market presentation.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
 confirmed official MLB batting order. Step 5.2 adds the read-only exact-ID FanDuel
 Moneyline/Run Line/Total board. Step 5.3 derives raw implied probability, hold,
 and proportional two-way no-vig market probability from those exact prices only.
-Presentation/selection guard only. No production probability, simulation, ranking,
-selection, persistence, wagering, or Pick Strength changes.
+Step 5.4 compares the unchanged production model probability to that certified
+market context for display-only edge, fair odds, and EV. No production probability,
+simulation, ranking, selection, persistence, wagering, or Pick Strength changes.
 """
 from __future__ import annotations
 
@@ -19,10 +20,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
-from mlb_daily_game_picks_market_probability_v1 import install_market_probability_layer
+from mlb_daily_game_picks_model_market_edge_v1 import install_model_market_edge_layer
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.3 NO-VIG MARKET PROBABILITY"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 5.4 MODEL-MARKET EDGE"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -165,11 +166,11 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
 
-    # Step 5.3 runs on top of Step 5.2's certified exact-ID FanDuel context. It
-    # derives implied/hold/no-vig market probabilities for display only. Any
-    # transport/schema/identity/probability problem fails closed; model values,
-    # Pick Strength and the V2.1.7 selection/risk guard are left untouched.
-    install_market_probability_layer(games_df)
+    # Step 5.4 runs strictly downstream of the certified Step 5.3 exact-ID FanDuel
+    # no-vig context. It adds comparison-only model edge, model fair odds and EV
+    # for Moneyline/Run Line/Total. Any identity/side/price issue fails closed and
+    # leaves model values, Pick Strength, ranking and the V2.1.7 risk guard intact.
+    install_model_market_edge_layer(games_df)
 
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
