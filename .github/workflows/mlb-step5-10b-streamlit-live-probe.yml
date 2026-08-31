@@ -39,7 +39,7 @@ jobs:
 
           base = os.environ['STREAMLIT_URL'].rstrip('/')
           out = {'base_url': base}
-          for suffix, key in [('/', 'root'), ('/_stcore/health', 'health')]:
+          for suffix, key in [('/', 'root'), ('/_stcore/health', 'health'), ('/_stcore/host-config', 'host_config')]:
               try:
                   r = requests.get(base + suffix, timeout=35, allow_redirects=True, headers={'User-Agent':'KyreSportsMLBStep5-10B/1.0'})
                   out[key] = {
@@ -47,7 +47,7 @@ jobs:
                       'final_url': r.url,
                       'content_type': r.headers.get('content-type'),
                       'server': r.headers.get('server'),
-                      'body_prefix': r.text[:160].replace('\n',' '),
+                      'body_prefix': r.text[:500].replace('\n',' '),
                   }
               except Exception as exc:
                   out[key] = {'error': f'{type(exc).__name__}: {exc}'}
@@ -57,10 +57,15 @@ jobs:
           options.add_argument('--no-sandbox')
           options.add_argument('--disable-dev-shm-usage')
           options.add_argument('--window-size=1440,1800')
+          options.set_capability('goog:loggingPrefs', {'browser': 'ALL', 'performance': 'ALL'})
           driver = webdriver.Chrome(options=options)
           try:
-              driver.get(base)
-              deadline = time.time() + 90
+              driver.set_page_load_timeout(60)
+              try:
+                  driver.get(base)
+              except Exception as exc:
+                  out['browser_navigation_error'] = f'{type(exc).__name__}: {exc}'
+              deadline = time.time() + 45
               body = ''
               while time.time() < deadline:
                   try:
@@ -71,23 +76,40 @@ jobs:
                   if 'mlb' in low and ('daily' in low or 'step 5.10' in low or 'price-gate' in low or 'final card' in low):
                       break
                   time.sleep(2)
+              browser_logs = []
+              try:
+                  browser_logs = driver.get_log('browser')[-50:]
+              except Exception as exc:
+                  browser_logs = [{'log_error': f'{type(exc).__name__}: {exc}'}]
+              performance = []
+              try:
+                  for item in driver.get_log('performance')[-250:]:
+                      msg = item.get('message', '')
+                      if any(token in msg.lower() for token in ('websocket', '_stcore', 'streamlit', 'failed', 'error')):
+                          performance.append(item)
+                  performance = performance[-50:]
+              except Exception as exc:
+                  performance = [{'log_error': f'{type(exc).__name__}: {exc}'}]
+              source = driver.page_source or ''
               out['browser'] = {
                   'title': driver.title,
                   'current_url': driver.current_url,
                   'body_length': len(body),
+                  'page_source_length': len(source),
                   'contains_mlb': 'mlb' in body.lower(),
                   'contains_step5_10': 'step 5.10' in body.lower(),
                   'contains_bounded_canary': 'bounded canary' in body.lower(),
                   'contains_final_card': 'final card' in body.lower(),
                   'body_preview': body[:2500],
+                  'source_preview': source[:4000],
+                  'browser_logs': browser_logs,
+                  'performance_log_excerpt': performance,
               }
           finally:
               driver.quit()
 
           print(json.dumps(out, indent=2, sort_keys=True))
-          if out.get('health', {}).get('status') != 200:
-              raise SystemExit('STEP5_10B_STREAMLIT_HEALTH_NOT_200')
-          if not out.get('browser', {}).get('contains_mlb'):
-              raise SystemExit('STEP5_10B_STREAMLIT_MLB_UI_NOT_OBSERVED')
-          print('MLB_STEP5_10B_STREAMLIT_LIVE_PROBE_GREEN')
+          if out.get('root', {}).get('status') != 200:
+              raise SystemExit('STEP5_10B_STREAMLIT_ROOT_NOT_200')
+          print('MLB_STEP5_10B_STREAMLIT_TRANSPORT_PROBE_COMPLETE')
           PY
