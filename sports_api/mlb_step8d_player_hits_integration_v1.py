@@ -32,14 +32,14 @@ def _mapping(value: Any) -> dict[str, Any]:
 
 
 def _positive_int(value: Any) -> int | None:
-    """Accept only positive integer IDs or digit-only serialized integer IDs."""
+    """Accept only positive integer IDs or ASCII-decimal serialized integer IDs."""
     if isinstance(value, bool):
         return None
     if isinstance(value, int):
         return value if value > 0 else None
     if isinstance(value, str):
         text = value.strip()
-        if text.isdigit():
+        if text.isascii() and text.isdecimal():
             parsed = int(text)
             return parsed if parsed > 0 else None
     return None
@@ -253,8 +253,11 @@ def enrich_player_hit_results(
             continue
         if isinstance(raw_index, int):
             index = raw_index
-        elif isinstance(raw_index, str) and raw_index.strip().isdigit():
-            index = int(raw_index.strip())
+        elif isinstance(raw_index, str):
+            text = raw_index.strip()
+            if not (text.isascii() and text.isdecimal()):
+                continue
+            index = int(text)
         else:
             continue
         if index < 0 or index >= len(rows):
