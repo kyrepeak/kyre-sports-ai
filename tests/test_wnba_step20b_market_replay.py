@@ -30,6 +30,7 @@ class Step20BMarketReplayTests(unittest.TestCase):
         guards = status["guardrails"]
         self.assertTrue(guards["default_off"])
         self.assertTrue(guards["certification_only"])
+        self.assertFalse(guards["target_identity_from_prior_live_step12b"])
         self.assertTrue(guards["target_identity_rotatable_without_code_change"])
         self.assertTrue(guards["target_slate_date_must_match_provider_request"])
         self.assertFalse(guards["projection_loader_injected"])
