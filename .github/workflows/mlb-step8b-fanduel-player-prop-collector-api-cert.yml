@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Inspect live FanDuel MLB player-prop tab payload shape
+      - name: Inspect live FanDuel MLB player-prop card references
         shell: bash
         run: |
           set -euo pipefail
@@ -36,13 +36,11 @@ jobs:
           import json
 
           from sports_api.collectors.mlb_fanduel_direct import (
-              FANDUEL_BASE_URL,
-              FANDUEL_HEADERS,
-              FANDUEL_PUBLIC_WEB_KEY,
-              _get_json,
               fetch_fanduel_event_page,
               fetch_fanduel_mlb_landing,
           )
+
+          TARGET_TABS = {'123', '248', '253', '350', '386'}
 
           def rows(value):
               if isinstance(value, dict):
@@ -57,40 +55,30 @@ jobs:
                   return [dict(item) for item in value if isinstance(item, dict)]
               return []
 
-          def event_id(event):
+          def eid(event):
               return str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '').strip()
 
-          def tab_rows(document):
-              layout = document.get('layout') or {}
-              if not isinstance(layout, dict):
-                  return []
-              return rows(layout.get('tabs'))
-
-          def tab_id(tab):
-              return str(tab.get('id') or tab.get('tabId') or tab.get('_attachment_key') or '').strip()
-
-          def tab_title(tab):
-              return str(tab.get('title') or tab.get('name') or tab.get('displayName') or '').strip()
-
-          def relevant_tab(tab):
-              title = tab_title(tab).casefold()
-              return any(token in title for token in (
-                  'player', 'strikeout', 'hits', 'runs', 'rbi', 'combo', 'props', 'batter', 'pitcher'
-              ))
-
-          def prop_like_market(market):
-              text = ' '.join(str(market.get(key) or '') for key in (
-                  'marketName', 'name', 'displayName', 'marketType', 'type'
-              )).casefold()
-              return any(token in text for token in (
-                  'strikeout', 'hits', 'hit ', ' rbi', 'rbi ', 'runs +', 'runs and', 'runs &',
-                  'hits + runs', 'hits runs rbi', 'player hit', 'player strikeout'
-              ))
+          def shallow(value, depth=0):
+              if depth >= 3:
+                  if isinstance(value, dict):
+                      return {'_keys': sorted(value)[:30]}
+                  if isinstance(value, list):
+                      return {'_list_len': len(value)}
+                  return value
+              if isinstance(value, dict):
+                  result = {}
+                  for key, item in list(value.items())[:40]:
+                      if key in {'runners', 'winRunnerOdds', 'previousWinRunnerOdds'}:
+                          continue
+                      result[str(key)] = shallow(item, depth + 1)
+                  return result
+              if isinstance(value, list):
+                  return [shallow(item, depth + 1) for item in value[:20]]
+              return value
 
           landing = fetch_fanduel_mlb_landing(timeout=25)
-          attachments = landing.get('attachments') or {}
-          print('LANDING_ATTACHMENT_KEYS', sorted(attachments) if isinstance(attachments, dict) else type(attachments).__name__)
-          events = rows(attachments.get('events') if isinstance(attachments, dict) else None)
+          att = landing.get('attachments') or {}
+          events = rows(att.get('events') if isinstance(att, dict) else None)
           now = datetime.now(timezone.utc)
           upcoming = []
           for event in events:
@@ -99,90 +87,41 @@ jobs:
               if ' @ ' not in name or not open_date:
                   continue
               try:
-                  dt = datetime.fromisoformat(open_date.replace('Z', '+00:00')).astimezone(timezone.utc)
+                  start = datetime.fromisoformat(open_date.replace('Z', '+00:00')).astimezone(timezone.utc)
               except Exception:
                   continue
-              if dt > now:
-                  upcoming.append((dt, event))
+              if start > now:
+                  upcoming.append((start, event))
           upcoming.sort(key=lambda item: item[0])
           if not upcoming:
               raise SystemExit('STEP8B_NO_UPCOMING_FANDUEL_MLB_EVENT_FOR_DISCOVERY')
 
-          found_relevant_tab = False
-          found_player_market = False
+          found = False
           for _, event in upcoming[:5]:
-              eid = event_id(event)
-              base = fetch_fanduel_event_page(eid, timeout=25)
-              print('EVENT', eid, str(event.get('name') or event.get('eventName') or ''))
-              tabs = tab_rows(base)
-              print('TAB_COUNT', len(tabs))
+              event_id = eid(event)
+              doc = fetch_fanduel_event_page(event_id, timeout=25)
+              layout = doc.get('layout') or {}
+              tabs = rows(layout.get('tabs') if isinstance(layout, dict) else None)
+              print('EVENT', event_id, str(event.get('name') or event.get('eventName') or ''))
+              print('LAYOUT_KEYS', sorted(layout) if isinstance(layout, dict) else [])
               for tab in tabs:
-                  print('TAB_META', json.dumps({
-                      'id': tab_id(tab),
-                      'title': tab_title(tab),
-                      'keys': sorted(tab),
-                  }, sort_keys=True, default=str))
-
-              relevant = [tab for tab in tabs if tab_id(tab) and relevant_tab(tab)]
-              print('RELEVANT_TAB_COUNT', len(relevant))
-              if relevant:
-                  found_relevant_tab = True
-
-              for tab in relevant[:12]:
-                  tid = tab_id(tab)
-                  title = tab_title(tab)
-                  doc = _get_json(
-                      f'{FANDUEL_BASE_URL}/sbapi/event-page',
-                      {'_ak': FANDUEL_PUBLIC_WEB_KEY, 'eventId': eid, 'tab': tid},
-                      headers=FANDUEL_HEADERS,
-                      timeout=25,
-                  )
-                  att = doc.get('attachments') or {}
-                  markets = rows(att.get('markets') if isinstance(att, dict) else None)
-                  candidates = [market for market in markets if prop_like_market(market)]
-                  print('TAB_RESULT', json.dumps({
-                      'tab_id': tid,
-                      'tab_title': title,
-                      'market_count': len(markets),
-                      'prop_like_market_count': len(candidates),
-                      'attachment_keys': sorted(att) if isinstance(att, dict) else [],
+                  tab_id = str(tab.get('id') or tab.get('tabId') or tab.get('_attachment_key') or '').strip()
+                  title = str(tab.get('title') or tab.get('name') or '').strip()
+                  if tab_id not in TARGET_TABS:
+                      continue
+                  found = True
+                  cards = tab.get('cards')
+                  print('TARGET_TAB', json.dumps({
+                      'id': tab_id,
+                      'title': title,
+                      'card_container_type': type(cards).__name__,
+                      'card_count': len(cards) if isinstance(cards, (list, dict)) else None,
                   }, sort_keys=True))
-                  for market in candidates[:30]:
-                      found_player_market = True
-                      runners = rows(market.get('runners'))
-                      print('MARKET_META', json.dumps({
-                          'tab_title': title,
-                          'name': market.get('marketName') or market.get('name'),
-                          'market_type': market.get('marketType') or market.get('type'),
-                          'market_id': market.get('marketId') or market.get('_attachment_key'),
-                          'event_id': market.get('eventId'),
-                          'player_id': market.get('playerId'),
-                          'participant_id': market.get('participantId'),
-                          'player_name': market.get('playerName'),
-                          'participant_name': market.get('participantName'),
-                          'status': market.get('marketStatus') or market.get('status'),
-                          'keys': sorted(market),
-                      }, sort_keys=True, default=str))
-                      for runner in runners[:8]:
-                          print('RUNNER_META', json.dumps({
-                              'runner_name': runner.get('runnerName') or runner.get('name'),
-                              'handicap': runner.get('handicap'),
-                              'selection_id': runner.get('selectionId'),
-                              'runner_id': runner.get('runnerId') or runner.get('id') or runner.get('_attachment_key'),
-                              'player_id': runner.get('playerId'),
-                              'participant_id': runner.get('participantId'),
-                              'player_name': runner.get('playerName'),
-                              'participant_name': runner.get('participantName'),
-                              'result': runner.get('result'),
-                              'status': runner.get('runnerStatus'),
-                              'keys': sorted(runner),
-                          }, sort_keys=True, default=str))
-              if found_player_market:
+                  print('TARGET_TAB_CARDS', json.dumps(shallow(cards), sort_keys=True, default=str))
+              if found:
                   break
 
-          if not found_relevant_tab:
-              print('STEP8B_NO_RELEVANT_PLAYER_PROP_TAB_CURRENTLY_PUBLISHED')
-          if not found_player_market:
-              print('STEP8B_NO_PLAYER_PROP_LIKE_MARKETS_IN_RELEVANT_TABS')
-          print('MLB_STEP8B_LIVE_FANDUEL_TAB_DISCOVERY_COMPLETE')
+          if not found:
+              raise SystemExit('STEP8B_TARGET_PLAYER_PROP_TABS_NOT_FOUND')
+          print('MLB_STEP8B_FANDUEL_CARD_REFERENCE_DISCOVERY_COMPLETE')
           PY
