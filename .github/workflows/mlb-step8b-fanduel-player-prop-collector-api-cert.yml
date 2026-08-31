@@ -13,102 +13,242 @@ concurrency:
   group: mlb-step8b-fanduel-player-prop-collector-api-cert
   cancel-in-progress: false
 
+env:
+  STEP8B_BASE_SHA: 01d3716df9f6c873db4450b863c9fcf924f07826
+
 jobs:
-  discover-live-fanduel-player-prop-shape:
+  certify-player-prop-collector-api:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Inventory live FanDuel MLB player-prop market shapes
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx
+
+      - name: Assert Step8B four-file MLB-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP8B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/collectors/mlb_fanduel_player_props.py|sports_api/api/mlb.py|tests/test_mlb_step8b_fanduel_player_prop_collector_api.py|\.github/workflows/mlb-step8b-fanduel-player-prop-collector-api-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP8B_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 4 ]; then
+            echo "STEP8B_EXPECTED_EXACTLY_FOUR_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP8B_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP8B_FOUR_FILE_SCOPE_OK'
+
+      - name: Prove frozen Step8A and preexisting model/presentation paths are untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP8B_BASE_SHA"...HEAD -- \
+            app.py \
+            sports_api/main.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
+            sports_api/mlb_step7d_total_api_integration_v1.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_totals_hub_v174.py
+          echo 'MLB_STEP8B_FROZEN_PREEXISTING_PATHS_BYTE_IDENTICAL'
+
+      - name: Assert read-only exact-identity implementation contract
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
-          from datetime import datetime, timezone
-          from urllib.parse import urlencode
-          from urllib.request import Request, urlopen
+          import inspect
+          from pathlib import Path
+          from sports_api.collectors import mlb_fanduel_player_props as module
 
-          from sports_api.collectors.mlb_fanduel_direct import fetch_fanduel_mlb_landing
-
-          WEB_KEY='FhMFpcPWXMeyZxOx'
-          SB='https://api.sportsbook.fanduel.com'
-          HEADERS={
-              'Accept':'application/json, text/plain, */*',
-              'User-Agent':'Mozilla/5.0 (compatible; KyreSportsAPI-MLB/1.0; read-only)',
-              'Origin':'https://sportsbook.fanduel.com',
-              'Referer':'https://sportsbook.fanduel.com/',
-              'x-sportsbook-region':'NJ',
+          assert module.SOURCE == 'FanDuel'
+          assert module.TRANSPORT == 'anonymous_public_get_only'
+          assert module.HTTP_METHODS == ['GET']
+          assert module.SUPPORTED_MARKET_TYPES == {
+              'pitcher_strikeouts', 'player_hits', 'hits_runs_rbi'
           }
-
-          def get_json(url,params=None):
-              if params: url += '?' + urlencode(params)
-              req=Request(url,headers=HEADERS,method='GET')
-              with urlopen(req,timeout=25) as r: raw=r.read(20_000_001)
-              if len(raw)>20_000_000: raise RuntimeError('response too large')
-              return json.loads(raw.decode('utf-8'))
-
-          def rows(value):
-              if isinstance(value,dict):
-                  return [dict(v,_attachment_key=str(k)) for k,v in value.items() if isinstance(v,dict)]
-              if isinstance(value,list): return [dict(v) for v in value if isinstance(v,dict)]
-              return []
-
-          landing=fetch_fanduel_mlb_landing()
-          events=rows(((landing.get('attachments') or {}).get('events')))
-          now=datetime.now(timezone.utc)
-          chosen=[]
-          for event in events:
-              name=str(event.get('name') or '')
-              eid=str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '')
-              start=str(event.get('openDate') or '')
-              if not eid or ' @ ' not in name or not start: continue
-              try:
-                  dt=datetime.fromisoformat(start.replace('Z','+00:00')).astimezone(timezone.utc)
-              except Exception: continue
-              if dt>now: chosen.append((dt,eid,name))
-          chosen.sort()
-          if not chosen: raise SystemExit('STEP8B_NO_PREGAME_EVENT')
-
-          found_two_way={}
-          for _,eid,name in chosen[:6]:
-              print('EVENT',eid,name)
-              for tab in ('pitcher-props','batter-props','player-combos'):
-                  payload=get_json(SB+'/sbapi/event-page',{'_ak':WEB_KEY,'eventId':eid,'tab':tab})
-                  markets=rows(((payload.get('attachments') or {}).get('markets')))
-                  print('TAB',tab,'MARKETS',len(markets))
-                  for market in markets:
-                      runners=[r for r in rows(market.get('runners')) if str(r.get('runnerStatus') or '').upper() in {'','ACTIVE'}]
-                      if not any(r.get('isPlayerSelection') is True for r in runners): continue
-                      roles=[]; handicaps=[]
-                      for runner in runners:
-                          result=runner.get('result') or {}
-                          roles.append(str(result.get('type') or ''))
-                          handicaps.append(runner.get('handicap'))
-                      code=(market.get('marketType') or market.get('marketTypeCode') or market.get('type') or '')
-                      mname=str(market.get('marketName') or market.get('name') or '')
-                      two_way=(len(runners)==2 and sorted(x.upper() for x in roles)==['OVER','UNDER'])
-                      if two_way:
-                          key=(tab,str(code),mname)
-                          found_two_way[key]=(roles,handicaps,str(market.get('marketId') or market.get('_attachment_key') or ''))
-                      print('MARKET_SHAPE',json.dumps({
-                          'tab':tab,'market_type':code,'market_name':mname,
-                          'runner_count':len(runners),'roles':roles,'handicaps':handicaps,
-                          'two_way_over_under':two_way,
-                      },sort_keys=True)[:1800])
-              if found_two_way: break
-
-          print('TWO_WAY_PLAYER_MARKET_COUNT',len(found_two_way))
-          for key,value in found_two_way.items():
-              print('TWO_WAY_PLAYER_MARKET',json.dumps({'tab':key[0],'market_type':key[1],'market_name':key[2],'roles':value[0],'handicaps':value[1],'market_id':value[2]},sort_keys=True))
-          if not found_two_way: raise SystemExit('STEP8B_NO_TWO_WAY_PLAYER_MARKETS_OBSERVED')
-          print('MLB_STEP8B_LIVE_MARKET_SHAPE_INVENTORY_COMPLETE')
+          source = Path('sports_api/collectors/mlb_fanduel_player_props.py').read_text()
+          for token in ('difflib', 'SequenceMatcher', 'Levenshtein', 'rapidfuzz', 'fuzzywuzzy'):
+              assert token not in source, token
+          identity_source = inspect.getsource(module.reconcile_fanduel_player_to_mlbam)
+          assert '.get("name")' not in identity_source
+          assert ".get('name')" not in identity_source
+          assert 'jerseyNumber' in identity_source
+          assert 'position' in identity_source
+          assert 'def fetch_fanduel_event_prop_tab(' in source
+          assert 'def fetch_fanduel_event_players(' in source
+          assert 'def fetch_mlb_active_roster(' in source
+          assert 'method="GET"' in source
+          assert 'method="POST"' not in source
+          api_text = Path('sports_api/api/mlb.py').read_text()
+          assert '@router.get("/player-props")' in api_text
+          assert 'mlb_player_prop_api_response_v1' in api_text
+          print('MLB_STEP8B_READ_ONLY_EXACT_IDENTITY_CONTRACT_OK')
           PY
+
+      - name: Compile Step8B Python
+        run: |
+          python -m py_compile \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/api/mlb.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py
+
+      - name: Run Step8B targeted tests
+        run: python -m pytest -q tests/test_mlb_step8b_fanduel_player_prop_collector_api.py
+
+      - name: Run complete certified MLB regression through Step8B
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py
+
+      - name: Certify bounded live FanDuel exact-ID player prop path
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+
+          from sports_api.collectors.mlb_fanduel_player_props import (
+              HITS_RUNS_RBI,
+              PITCHER_STRIKEOUTS,
+              PLAYER_HITS,
+              collect_live_mlb_player_props,
+          )
+          from sports_api.mlb_step8a_player_prop_api_contract_v1 import (
+              API_CONNECTED,
+              build_player_prop_api_state,
+              enforce_player_prop_api_freshness,
+          )
+
+          snapshot = collect_live_mlb_player_props(
+              now_utc=datetime.now(timezone.utc),
+              max_events=4,
+          )
+          assert snapshot['provider'] == 'FanDuel'
+          assert snapshot['transport'] == 'anonymous_public_get_only'
+          assert snapshot['http_methods'] == ['GET']
+          assert snapshot['player_name_matching_used'] is False
+          assert snapshot['fuzzy_matching_used'] is False
+          assert snapshot['candidate_pregame_event_count'] > 0
+          assert snapshot['matched_game_count'] > 0
+
+          props = snapshot['props']
+          if not props:
+              print(json.dumps({
+                  'marker':'MLB_STEP8B_LIVE_PROVIDER_REACHABLE_BUT_NO_CONTRACT_COMPLIANT_PROPS',
+                  'candidate_events':snapshot['candidate_pregame_event_count'],
+                  'matched_games':snapshot['matched_game_count'],
+                  'contract_unavailable_market_counts':snapshot['contract_unavailable_market_counts'],
+                  'rejected_prop_count':snapshot['rejected_prop_count'],
+                  'rejected_event_count':snapshot['rejected_event_count'],
+              }, sort_keys=True))
+              raise SystemExit('STEP8B_LIVE_CONTRACT_PROP_REQUIRED_FOR_CERTIFICATION')
+
+          identities=set()
+          for prop in props:
+              assert prop['sportsbook'] == 'FanDuel'
+              assert int(prop['official_game_id']) > 0
+              assert int(prop['official_player_id']) > 0
+              assert prop['market_type'] in {PITCHER_STRIKEOUTS, PLAYER_HITS, HITS_RUNS_RBI}
+              assert float(prop['line']) > 0
+              assert int(prop['over_odds']) != 0
+              assert int(prop['under_odds']) != 0
+              assert prop['source_event_id']
+              assert prop['source_market_id']
+              identity=(prop['official_game_id'],prop['official_player_id'],prop['market_type'])
+              assert identity not in identities
+              identities.add(identity)
+
+          payload={
+              'data_type':'mlb_player_prop_api_response_v1',
+              'schema_version':1,
+              'source':'FanDuel',
+              'collected_at_utc':snapshot['collected_at_utc'],
+              'props':props,
+          }
+          state=build_player_prop_api_state(payload)
+          assert state['integration_status'] == API_CONNECTED, state['failures']
+          fresh=enforce_player_prop_api_freshness(
+              state,
+              as_of_utc=datetime.now(timezone.utc),
+              max_age_seconds=60,
+          )
+          assert fresh['integration_status'] == API_CONNECTED, fresh['failures']
+          assert fresh['feed_fresh'] is True
+          assert fresh['usable_player_prop_count'] == len(props)
+
+          print(json.dumps({
+              'marker':'MLB_STEP8B_LIVE_EXACT_ID_PLAYER_PROPS_GREEN',
+              'candidate_events':snapshot['candidate_pregame_event_count'],
+              'matched_games':snapshot['matched_game_count'],
+              'prop_count':len(props),
+              'market_types':sorted({p['market_type'] for p in props}),
+              'contract_unavailable_market_counts':snapshot['contract_unavailable_market_counts'],
+              'rejected_prop_count':snapshot['rejected_prop_count'],
+              'rejected_event_count':snapshot['rejected_event_count'],
+              'player_name_matching_used':False,
+              'fuzzy_matching_used':False,
+              'step8a_contract_active':True,
+              'feed_fresh':True,
+          }, sort_keys=True))
+          PY
+
+  certification-marker:
+    runs-on: ubuntu-24.04
+    needs:
+      - certify-player-prop-collector-api
+    steps:
+      - name: Emit Step8B green marker
+        run: echo 'MLB_STEP8B_FANDUEL_PLAYER_PROP_COLLECTOR_API_GREEN'
