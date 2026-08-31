@@ -4,7 +4,7 @@ This module is a pure, read-only adapter between the frozen Step 8A player-prop
 contract and the pre-existing MLB Pitcher Strikeouts model result objects.
 
 It deliberately does not fetch data, run projections, grade a line, calculate a
-probability, alter Monte Carlo output, rank candidates, or choose a side. FanDuel
+probability, alter simulation output, rank candidates, or choose a side. FanDuel
 line/price data is attached only as display/context metadata after a result has
 already been identified by exact official MLB game ID + official MLB player ID.
 Player names are never compared or used as fallback identity.
