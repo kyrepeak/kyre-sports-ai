@@ -27,20 +27,43 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Inspect live FanDuel MLB player-prop card definitions
+      - name: Load live FanDuel MLB player-prop slug attachments
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from datetime import datetime, timezone
+          import hashlib
           import json
 
           from sports_api.collectors.mlb_fanduel_direct import (
-              fetch_fanduel_event_page,
+              FANDUEL_BASE_URL,
+              FANDUEL_HEADERS,
+              FANDUEL_PUBLIC_WEB_KEY,
+              _get_json,
               fetch_fanduel_mlb_landing,
           )
 
-          TARGET_IDS = {'123', '248', '253', '350', '386'}
+          SLUGS = (
+              'pitcher-props',
+              'batter-props',
+              'player-combos',
+              'hits-runs',
+              'hits-and-runs',
+              'moonshots',
+          )
+          TARGET_TYPES = {
+              'PITCHER_D_STRIKEOUTS',
+              'PLAYER_PROPS',
+              'PLAYER_TO_RECORD_A_HIT',
+              'PLAYER_TO_RECORD_2+_HITS',
+              'PLAYER_TO_RECORD_3+_HITS',
+              'PLAYER_TO_RECORD_4+_HITS',
+              'PLAYER_TO_RECORD_1+_HITS+RUNS+RBIS',
+              'PLAYER_TO_RECORD_2+_HITS+RUNS+RBIS',
+              'PLAYER_TO_RECORD_3+_HITS+RUNS+RBIS',
+              'PLAYER_TO_RECORD_4+_HITS+RUNS+RBIS',
+          }
 
           def rows(value):
               if isinstance(value, dict):
@@ -55,29 +78,8 @@ jobs:
                   return [dict(item) for item in value if isinstance(item, dict)]
               return []
 
-          def row_id(row):
-              return str(row.get('id') or row.get('cardId') or row.get('_attachment_key') or '').strip()
-
           def eid(event):
               return str(event.get('eventId') or event.get('id') or event.get('_attachment_key') or '').strip()
-
-          def safe(value, depth=0):
-              if depth >= 5:
-                  if isinstance(value, dict):
-                      return {'_keys': sorted(value)[:50]}
-                  if isinstance(value, list):
-                      return {'_list_len': len(value)}
-                  return value
-              if isinstance(value, dict):
-                  result = {}
-                  for key, item in list(value.items())[:80]:
-                      if key in {'winRunnerOdds', 'previousWinRunnerOdds'}:
-                          continue
-                      result[str(key)] = safe(item, depth + 1)
-                  return result
-              if isinstance(value, list):
-                  return [safe(item, depth + 1) for item in value[:40]]
-              return value
 
           landing = fetch_fanduel_mlb_landing(timeout=25)
           att = landing.get('attachments') or {}
@@ -99,28 +101,55 @@ jobs:
           if not upcoming:
               raise SystemExit('STEP8B_NO_UPCOMING_FANDUEL_MLB_EVENT_FOR_DISCOVERY')
 
-          found = set()
-          for _, event in upcoming[:5]:
-              event_id = eid(event)
-              doc = fetch_fanduel_event_page(event_id, timeout=25)
-              layout = doc.get('layout') or {}
-              cards_raw = layout.get('cards') if isinstance(layout, dict) else None
-              cards = rows(cards_raw)
-              print('EVENT', event_id, str(event.get('name') or event.get('eventName') or ''))
-              print('LAYOUT_CARD_CONTAINER', type(cards_raw).__name__, 'COUNT', len(cards))
-              print('LAYOUT_CARD_IDS', [row_id(card) for card in cards])
-              for card in cards:
-                  cid = row_id(card)
-                  if cid not in TARGET_IDS:
-                      continue
-                  found.add(cid)
-                  print('TARGET_CARD', cid, json.dumps(safe(card), sort_keys=True, default=str))
-              if found == TARGET_IDS:
-                  break
+          event = upcoming[0][1]
+          event_id = eid(event)
+          print('EVENT', event_id, str(event.get('name') or event.get('eventName') or ''))
+          url = f'{FANDUEL_BASE_URL}/sbapi/event-page'
+          found_target = False
+          for slug in SLUGS:
+              doc = _get_json(
+                  url,
+                  {'_ak': FANDUEL_PUBLIC_WEB_KEY, 'eventId': event_id, 'tab': slug},
+                  headers=FANDUEL_HEADERS,
+                  timeout=25,
+              )
+              raw = json.dumps(doc, sort_keys=True, default=str).encode()
+              attachments = doc.get('attachments') or {}
+              markets = rows(attachments.get('markets') if isinstance(attachments, dict) else None)
+              target = [m for m in markets if str(m.get('marketType') or m.get('type') or '') in TARGET_TYPES]
+              print('SLUG_RESULT', json.dumps({
+                  'slug': slug,
+                  'hash': hashlib.sha256(raw).hexdigest()[:16],
+                  'market_count': len(markets),
+                  'target_market_count': len(target),
+                  'target_types': sorted({str(m.get('marketType') or m.get('type') or '') for m in target}),
+              }, sort_keys=True))
+              for market in target[:30]:
+                  found_target = True
+                  runners = rows(market.get('runners'))
+                  print('TARGET_MARKET', json.dumps({
+                      'slug': slug,
+                      'market_id': market.get('marketId') or market.get('_attachment_key'),
+                      'market_name': market.get('marketName') or market.get('name'),
+                      'market_type': market.get('marketType') or market.get('type'),
+                      'status': market.get('marketStatus') or market.get('status'),
+                      'in_play': market.get('inPlay'),
+                      'market_keys': sorted(market),
+                      'runners': [{
+                          'runner_name': r.get('runnerName') or r.get('name'),
+                          'handicap': r.get('handicap'),
+                          'selection_id': r.get('selectionId'),
+                          'result': r.get('result'),
+                          'is_player_selection': r.get('isPlayerSelection'),
+                          'logo': r.get('logo'),
+                          'secondary_logo': r.get('secondaryLogo'),
+                          'player_id': r.get('playerId'),
+                          'participant_id': r.get('participantId'),
+                          'runner_keys': sorted(r),
+                      } for r in runners[:6]],
+                  }, sort_keys=True, default=str))
 
-          print('TARGET_CARD_IDS_FOUND', sorted(found))
-          missing = TARGET_IDS - found
-          if missing:
-              raise SystemExit('STEP8B_MISSING_CARD_DEFINITIONS_' + '_'.join(sorted(missing)))
-          print('MLB_STEP8B_FANDUEL_CARD_DEFINITION_DISCOVERY_COMPLETE')
+          if not found_target:
+              raise SystemExit('STEP8B_PLAYER_PROP_SLUG_ATTACHMENTS_NOT_LOADED')
+          print('MLB_STEP8B_FANDUEL_PLAYER_PROP_SLUG_LOAD_COMPLETE')
           PY
