@@ -1,0 +1,289 @@
+name: MLB Step8A player prop API contract certification
+
+on:
+  push:
+    branches:
+      - mlb-step8a-player-prop-api-contract
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step8a-player-prop-api-contract-cert
+  cancel-in-progress: false
+
+env:
+  STEP8A_BASE_SHA: eddc39f30850395139defa5bff4f000c781beace
+
+jobs:
+  certify-player-prop-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert Step8A is a three-file additive MLB-only contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP8A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step8a_player_prop_api_contract_v1.py|tests/test_mlb_step8a_player_prop_api_contract_v1.py|\.github/workflows/mlb-step8a-player-prop-api-contract-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP8A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP8A_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP8A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP8A_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove all pre-Step8 runtime and collector files are frozen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP8A_BASE_SHA"...HEAD -- \
+            app.py \
+            sports_api/main.py \
+            sports_api/api \
+            sports_api/collectors \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
+            sports_api/mlb_step7d_total_api_integration_v1.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_totals_hub_v174.py
+          echo 'MLB_STEP8A_PREEXISTING_RUNTIME_BYTE_IDENTICAL'
+
+      - name: Assert exact player identity and display-only contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from sports_api.mlb_step8a_player_prop_api_contract_v1 import (
+              API_CONNECTED,
+              EXPECTED_API_DATA_TYPE,
+              EXPECTED_SOURCE,
+              FALLBACK,
+              HITS_RUNS_RBI,
+              MATCH_METHOD,
+              PITCHER_STRIKEOUTS,
+              PLAYER_HITS,
+              SUPPORTED_MARKET_TYPES,
+          )
+
+          assert EXPECTED_API_DATA_TYPE == 'mlb_player_prop_api_response_v1'
+          assert EXPECTED_SOURCE == 'FanDuel'
+          assert MATCH_METHOD == 'official_mlb_game_id_player_id_market_exact'
+          assert API_CONNECTED == 'API_PLAYER_PROP_CONTEXT_AVAILABLE'
+          assert FALLBACK == 'PLAYER_PROP_API_CONTEXT_UNAVAILABLE'
+          assert SUPPORTED_MARKET_TYPES == {
+              PITCHER_STRIKEOUTS,
+              PLAYER_HITS,
+              HITS_RUNS_RBI,
+          }
+
+          text = Path('sports_api/mlb_step8a_player_prop_api_contract_v1.py').read_text()
+          required = (
+              'official_game_id',
+              'official_player_id',
+              'contexts_by_exact_identity',
+              'player_name_matching_used',
+              'fuzzy_matching_allowed',
+              'duplicate_exact_prop_identity',
+              'feed_fresh',
+              'sportsbook_price_model_input',
+              'preexisting_presentation_preserved',
+          )
+          for token in required:
+              assert token in text, token
+          forbidden = (
+              'difflib',
+              'SequenceMatcher',
+              'Levenshtein',
+              'rapidfuzz',
+              'fuzzywuzzy',
+          )
+          for token in forbidden:
+              assert token not in text, token
+          assert 'def player_prop_context_for_identity(' in text
+          assert 'player_name_matching_used": False' in text
+          assert 'fuzzy_matching_allowed": False' in text
+          assert 'sportsbook_price_model_input": False' in text
+          print('MLB_STEP8A_EXACT_IDENTITY_DISPLAY_ONLY_CONTRACT_OK')
+          PY
+
+      - name: Compile Step8A Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py
+
+      - name: Run complete certified MLB regression through Step8A
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py
+
+      - name: Certify synthetic fail-closed identity boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          import json
+
+          from sports_api.mlb_step8a_player_prop_api_contract_v1 import (
+              API_CONNECTED,
+              FALLBACK,
+              PITCHER_STRIKEOUTS,
+              PLAYER_HITS,
+              build_player_prop_api_state,
+              enforce_player_prop_api_freshness,
+              player_prop_context_for_identity,
+          )
+
+          def prop(game, player, market, *, line=5.5, over=-110, under=-110, name='Display Name'):
+              return {
+                  'official_game_id': game,
+                  'official_player_id': player,
+                  'player_name': name,
+                  'market_type': market,
+                  'line': line,
+                  'over_odds': over,
+                  'under_odds': under,
+                  'sportsbook': 'FanDuel',
+              }
+
+          payload = {
+              'data_type':'mlb_player_prop_api_response_v1',
+              'schema_version':1,
+              'source':'FanDuel',
+              'collected_at_utc':'2026-08-31T20:00:00Z',
+              'props':[
+                  prop(1001, 2001, PITCHER_STRIKEOUTS, line=6.5, over=105, under=-125, name='Same Name'),
+                  prop(1001, 2002, PLAYER_HITS, line=1.5, over=-120, under=100, name='Same Name'),
+                  prop(1002, 2003, PLAYER_HITS, line=1.5, over=None, under=-105),
+              ],
+          }
+          original = deepcopy(payload)
+          raw = build_player_prop_api_state(payload)
+          assert payload == original
+          assert raw['integration_status'] == API_CONNECTED
+          assert raw['usable_player_prop_count'] == 2
+          assert raw['unusable_player_prop_count'] == 1
+          assert raw['feed_fresh'] is None
+          assert player_prop_context_for_identity(
+              raw,
+              official_game_id=1001,
+              official_player_id=2001,
+              market_type=PITCHER_STRIKEOUTS,
+          ) is None
+
+          fresh = enforce_player_prop_api_freshness(
+              raw,
+              as_of_utc='2026-08-31T20:00:20Z',
+              max_age_seconds=60,
+          )
+          exact = player_prop_context_for_identity(
+              fresh,
+              official_game_id=1001,
+              official_player_id=2001,
+              market_type=PITCHER_STRIKEOUTS,
+          )
+          assert exact is not None
+          assert exact['line'] == 6.5 and exact['over_odds'] == 105 and exact['under_odds'] == -125
+          assert exact['sportsbook_price_model_input'] is False
+          assert exact['display_only'] is True
+          assert player_prop_context_for_identity(
+              fresh,
+              official_game_id=1001,
+              official_player_id=9999,
+              market_type=PITCHER_STRIKEOUTS,
+          ) is None
+
+          duplicate_payload = deepcopy(payload)
+          duplicate_payload['props'] = [
+              prop(1001, 2001, PITCHER_STRIKEOUTS),
+              prop(1001, 2001, PITCHER_STRIKEOUTS),
+          ]
+          duplicate = build_player_prop_api_state(duplicate_payload)
+          assert duplicate['integration_status'] == FALLBACK
+          assert 'duplicate_exact_prop_identity' in duplicate['failures']
+
+          stale = enforce_player_prop_api_freshness(
+              raw,
+              as_of_utc='2026-08-31T21:00:00Z',
+              max_age_seconds=60,
+          )
+          assert stale['integration_status'] == FALLBACK
+          assert stale['feed_fresh'] is False
+          assert 'api_snapshot_stale' in stale['failures']
+
+          print(json.dumps({
+              'marker':'MLB_STEP8A_SYNTHETIC_PLAYER_PROP_BOUNDARY_GREEN',
+              'exact_identity_fields':['official_game_id','official_player_id','market_type'],
+              'usable_contexts':fresh['usable_player_prop_count'],
+              'isolated_incomplete_rows':fresh['unusable_player_prop_count'],
+              'unproven_freshness_blocked':True,
+              'duplicate_fallback':duplicate['integration_status'],
+              'stale_fallback':stale['integration_status'],
+              'player_name_matching_used':False,
+              'fuzzy_matching_used':False,
+          }, sort_keys=True))
+          PY
+
+  certification-marker:
+    runs-on: ubuntu-24.04
+    needs:
+      - certify-player-prop-contract
+    steps:
+      - name: Emit Step8A green marker
+        run: echo 'MLB_STEP8A_PLAYER_PROP_API_CONTRACT_GREEN'
