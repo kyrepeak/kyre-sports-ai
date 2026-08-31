@@ -35,11 +35,21 @@ def _mapping(value: Any) -> dict[str, Any]:
 
 
 def _positive_int(value: Any) -> int | None:
+    """Accept only exact positive integer IDs or digit-only serialized IDs.
+
+    Deliberately reject floats and other coercible numeric objects so values such
+    as ``1001.9`` can never be truncated into a different official identity.
+    """
     if isinstance(value, bool):
         return None
-    try:
-        parsed = int(value)
-    except Exception:
+    if isinstance(value, int):
+        parsed = value
+    elif isinstance(value, str):
+        text = value.strip()
+        if not text or not text.isascii() or not text.isdigit():
+            return None
+        parsed = int(text)
+    else:
         return None
     return parsed if parsed > 0 else None
 
