@@ -1,0 +1,131 @@
+name: MLB Step2 live market shape diagnostic
+
+on:
+  push:
+    branches:
+      - mlb-live-market-build-20260831
+    paths:
+      - '.github/workflows/mlb-step2-market-shape.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step2-market-shape
+  cancel-in-progress: true
+
+jobs:
+  inspect-live-shape:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+      MLB_WAGERING_ENABLED: "false"
+      MLB_PERSISTENCE_WRITES_ENABLED: "false"
+      MLB_MARKET_REPLAY_ENABLED: "false"
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Inspect exact FanDuel MLB market fields
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          python - <<'PY'
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+          import json
+
+          BASE='https://api.sportsbook.fanduel.com'
+          KEY='FhMFpcPWXMeyZxOx'
+          HEADERS={
+              'Accept':'application/json, text/plain, */*',
+              'User-Agent':'Mozilla/5.0 (compatible; KyreSportsAPI-MLB-Step2/1.0; read-only)',
+              'Origin':'https://sportsbook.fanduel.com',
+              'Referer':'https://sportsbook.fanduel.com/',
+              'x-sportsbook-region':'NJ',
+          }
+
+          def get(path, params):
+              req=Request(BASE+path+'?'+urlencode(params), headers=HEADERS, method='GET')
+              with urlopen(req, timeout=25) as r:
+                  return json.loads(r.read().decode())
+
+          def rows(v):
+              if isinstance(v, dict):
+                  out=[]
+                  for k,x in v.items():
+                      if isinstance(x, dict):
+                          y=dict(x); y.setdefault('_attachment_key', str(k)); out.append(y)
+                  return out
+              if isinstance(v, list):
+                  return [dict(x) for x in v if isinstance(x, dict)]
+              return []
+
+          landing=get('/sbapi/content-managed-page', {
+              '_ak':KEY,'page':'CUSTOM','customPageId':'mlb','timezone':'America/New_York'
+          })
+          events=rows((landing.get('attachments') or {}).get('events'))
+          game=None
+          for e in events:
+              name=str(e.get('name') or e.get('eventName') or e.get('displayName') or '')
+              if ' @ ' in name:
+                  game=e; break
+          if not game:
+              raise SystemExit('NO_REAL_MLB_GAME_EVENT')
+          eid=str(game.get('eventId') or game.get('id') or game.get('_attachment_key') or '')
+          doc=get('/sbapi/event-page', {'_ak':KEY,'eventId':eid})
+          att=doc.get('attachments') or {}
+          markets=rows(att.get('markets'))
+          runners_by_id={str(r.get('runnerId') or r.get('id') or r.get('_attachment_key') or ''):r for r in rows(att.get('runners'))}
+          wanted=[]
+          for m in markets:
+              name=str(m.get('marketName') or m.get('name') or m.get('marketType') or m.get('displayName') or '')
+              low=name.casefold().strip()
+              if low in {'moneyline','run line','total runs','total'} or ('run line' in low and 'inning' not in low) or (low.startswith('total') and 'inning' not in low):
+                  item={'market':m,'resolved_runners':[]}
+                  mr=m.get('runners')
+                  if isinstance(mr, list):
+                      for r in mr:
+                          if isinstance(r, dict):
+                              item['resolved_runners'].append(r)
+                          else:
+                              rr=runners_by_id.get(str(r))
+                              if rr: item['resolved_runners'].append(rr)
+                  elif isinstance(mr, dict):
+                      item['resolved_runners']=[dict(r) for r in mr.values() if isinstance(r,dict)]
+                  # Some FanDuel payloads link runners through marketId only.
+                  mid=str(m.get('marketId') or m.get('id') or m.get('_attachment_key') or '')
+                  if not item['resolved_runners']:
+                      for r in runners_by_id.values():
+                          if str(r.get('marketId') or '') == mid:
+                              item['resolved_runners'].append(r)
+                  wanted.append(item)
+              if len(wanted) >= 8:
+                  break
+          out={
+              'event':game,
+              'event_attachment_keys':sorted(att.keys()),
+              'runner_attachment_count':len(runners_by_id),
+              'selected':wanted,
+          }
+          print('MLB_STEP2_SHAPE_BEGIN')
+          print(json.dumps(out, indent=2, sort_keys=True))
+          print('MLB_STEP2_SHAPE_END')
+          if not wanted:
+              raise SystemExit('NO_CORE_GAME_MARKETS_FOUND')
+          PY
