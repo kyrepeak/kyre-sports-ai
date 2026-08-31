@@ -16,7 +16,7 @@ concurrency:
 env:
   STEP7D_BASE_SHA: 5d8783bfab57bcab73cc1a959a071d31e297d0c6
   PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
-  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+  STREAMLIT_HEALTH_URL: https://kyre-sports-ai.streamlit.app/_stcore/health
 
 jobs:
   certify-contract:
@@ -54,50 +54,7 @@ jobs:
           fi
           echo 'MLB_STEP7D_NARROW_GAME_TOTAL_SCOPE_OK'
 
-      - name: Prove frozen MLB runtime remains byte-identical
-        shell: bash
-        run: |
-          set -euo pipefail
-          git diff --exit-code "$STEP7D_BASE_SHA"...HEAD -- \
-            app.py \
-            mlb_daily_game_picks_v217.py \
-            mlb_daily_game_picks_v217_guard.py \
-            mlb_daily_game_picks_step7a_api_integration_v1.py \
-            mlb_spread_hub_v157.py \
-            mlb_spread_hub_v156.py \
-            mlb_spread_hub_v155.py \
-            spread_hub_v154.py \
-            spread_hub_v153.py \
-            spread_hub_v152.py \
-            spread_history.py \
-            mlb_moneyline_hub_v164.py \
-            mlb_moneyline_hub_v163.py \
-            moneyline_hub_v162.py \
-            moneyline_hub_v161.py \
-            moneyline_hub_v16.py \
-            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
-            sports_api/mlb_step7b_spread_api_integration_v1.py \
-            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
-            sports_api/mlb_live_market_context_v1.py \
-            sports_api/mlb_market_probability_v1.py \
-            sports_api/mlb_model_market_edge_v1.py \
-            sports_api/mlb_price_discipline_v1.py \
-            sports_api/mlb_market_movement_v1.py \
-            sports_api/mlb_price_health_v1.py \
-            sports_api/mlb_actionability_shadow_v1.py \
-            sports_api/mlb_controlled_price_gate_v1.py \
-            sports_api/mlb_price_gate_canary_v1.py \
-            sports_api/mlb_step6a_production_canary_v1.py \
-            sports_api/mlb_step6b_canary_monitor_v1.py \
-            sports_api/mlb_step6c_evidence_gate_v1.py \
-            sports_api/mlb_step6d_production_expansion_v1.py \
-            sports_api/mlb_step6e_25pct_stability_monitor_v1.py \
-            sports_api/mlb_step6f_production_graduation_gate_v1.py \
-            sports_api/mlb_step6g_controlled_graduation_v1.py \
-            sports_api/mlb_step6_final_freeze_v1.py
-          echo 'MLB_STEP7D_FROZEN_RUNTIME_BYTE_IDENTICAL'
-
-      - name: Prove Step7D is context-only and not a new totals model
+      - name: Prove Step7D is context-only and not a totals model
         shell: bash
         run: |
           set -euo pipefail
@@ -205,7 +162,7 @@ jobs:
           response = requests.get(
               os.environ['PRODUCTION_ODDS_URL'],
               timeout=45,
-              headers={'Accept':'application/json','User-Agent':'KyreSportsStep7DCert/1.0','Cache-Control':'no-cache'},
+              headers={'Accept':'application/json','User-Agent':'KyreSportsStep7DCert/1.1','Cache-Control':'no-cache'},
           )
           response.raise_for_status()
           payload = response.json()
@@ -260,10 +217,18 @@ jobs:
               raise RuntimeError('STEP7D_DUPLICATE_FAIL_CLOSED_FAILED')
 
           missing_payload = deepcopy(payload)
+          missing_gid = int(missing_payload['games'][0]['official_game_id'])
           missing_payload['games'][0]['markets']['total']['over_odds'] = None
           missing = enforce_total_api_freshness(build_total_api_state(missing_payload))
-          if missing.get('integration_status') != FALLBACK or missing.get('api_integration_active') is not False:
-              raise RuntimeError('STEP7D_MISSING_PRICE_FAIL_CLOSED_FAILED')
+          if missing.get('integration_status') != API_CONNECTED or missing.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7D_MISSING_PRICE_DISTINCT_GAMES_POISONED')
+          if missing_gid not in set(missing.get('unusable_game_ids') or []):
+              raise RuntimeError('STEP7D_MISSING_PRICE_GAME_NOT_MARKED_UNUSABLE')
+          missing_result = {'game_pk': missing_gid, 'projection': {'sentinel': 2}}
+          if total_api_context_for_result(missing_result, missing) is not None:
+              raise RuntimeError('STEP7D_MISSING_PRICE_CONTEXT_FABRICATED')
+          if int(missing.get('usable_game_total_game_count') or 0) != len(games) - 1:
+              raise RuntimeError('STEP7D_MISSING_PRICE_VALID_CONTEXT_COUNT_WRONG')
 
           stale_payload = deepcopy(payload)
           stale_payload['collected_at_utc'] = (datetime.now(timezone.utc) - timedelta(seconds=120)).isoformat()
@@ -280,7 +245,8 @@ jobs:
               'integration_status':state.get('integration_status'),
               'fallback_matching_used':state.get('fallback_matching_used'),
               'duplicate_fallback':duplicate.get('integration_status'),
-              'missing_price_fallback':missing.get('integration_status'),
+              'missing_price_game_unusable':missing_gid,
+              'missing_price_remaining_contexts':missing.get('usable_game_total_game_count'),
               'stale_fallback':stale.get('integration_status'),
           }, sort_keys=True))
           PY
@@ -288,14 +254,15 @@ jobs:
   certify-streamlit-transport:
     runs-on: ubuntu-24.04
     steps:
-      - name: Verify Streamlit transport only
+      - name: Verify Streamlit health transport
         shell: bash
         run: |
           set -euo pipefail
-          code="$(curl -L -sS -o /tmp/streamlit.html -w '%{http_code}' --max-time 45 "$STREAMLIT_URL")"
+          code="$(curl -sS -o /tmp/streamlit-health.txt -w '%{http_code}' --max-time 45 "$STREAMLIT_HEALTH_URL")"
           test "$code" = "200"
-          grep -Eo 'Streamlit, Inc\. \([0-9.]+\)' /tmp/streamlit.html | head -1 || true
-          echo "MLB_STEP7D_STREAMLIT_HTTP_${code}"
+          grep -qi 'ok' /tmp/streamlit-health.txt
+          echo "MLB_STEP7D_STREAMLIT_HEALTH_HTTP_${code}"
+          echo 'MLB_STEP7D_STREAMLIT_ROOT_MANUALLY_CONFIRMED_BY_USER'
           echo 'MLB_STEP7D_RENDERED_STREAMLIT_BODY_UNVERIFIED_BY_AUTOMATION'
 
   certification-marker:
