@@ -19,6 +19,13 @@ row ordering, missing-game behavior, aggregation, and exception semantics while
 reading the exact prefetched values from the cycle-local cache. Worker threads
 receive a copy of the active ContextVar so the cache remains cycle-local.
 
+The event-lineup and possession readers both reconstruct the same event/rotation
+join for a historical game. Step20B now content-addresses that lower-level join
+inside the same cycle so identical source payloads build once, concurrent
+consumers wait for the one builder, and every consumer receives a deep copy.
+Source-content changes produce a new fingerprint automatically; failed builds
+remain uncached and therefore preserve the frozen retry/exception behavior.
+
 A freshly fetched WNBA.com page may also be shared across TTL surfaces only while
 its age satisfies the *requesting* surface's TTL. An older upstream cache hit is
 never promoted across TTLs. Every stored value and cache hit is deep-copied,
@@ -35,6 +42,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
 from copy import deepcopy
 from datetime import datetime, timezone
+import hashlib
 import threading
 import time
 from typing import Any, Callable
@@ -47,12 +55,13 @@ from sports_api import wnba_step7g_first_party_history as first_party
 from sports_api import wnba_step12b_live_runtime_assembly as step12b
 
 SOURCE = "Kyre Sports API WNBA Step20B bounded cold-path + cycle-local observed-context acceleration"
-MODEL_VERSION = "wnba_step20b_bounded_cold_path_observed_context_v2"
+MODEL_VERSION = "wnba_step20b_bounded_cold_path_observed_context_v3"
 PREFETCH_MAX_WORKERS = 3
 
 _ORIGINAL_GAME_ROTATION = rotation.get_game_rotation
 _ORIGINAL_EVENT_LINEUP_ROTATION = event_lineup.get_game_rotation
 _ORIGINAL_EVENT_SOURCES = event_lineup._sources
+_ORIGINAL_EVENT_JOIN = event_lineup._join
 _ORIGINAL_PLAYER_EVENT_LINEUPS = event_features.get_game_event_lineups
 _ORIGINAL_PLAYER_POSSESSIONS = event_features.get_game_possession_event_context
 _ORIGINAL_GAME_PLAYER_EVENT_FEATURES = event_features.get_game_player_event_features
@@ -76,6 +85,7 @@ _ACTIVE_CACHE: ContextVar[dict[str, Any] | None] = ContextVar(
 _CACHE_NAMES = (
     "rotation",
     "sources",
+    "event_reconstruction",
     "event_lineups",
     "possessions",
     "game_player_event_features",
@@ -87,6 +97,19 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _empty_reconstruction_timing() -> dict[str, Any]:
+    return {
+        "build_count": 0,
+        "reuse_count": 0,
+        "wait_count": 0,
+        "build_ms": 0.0,
+        "reuse_ms": 0.0,
+        "wait_ms": 0.0,
+        "max_build_ms": 0.0,
+        "last_build_ms": 0.0,
+    }
+
+
 def _new_cache() -> dict[str, Any]:
     return {
         **{name: {} for name in _CACHE_NAMES},
@@ -94,6 +117,8 @@ def _new_cache() -> dict[str, Any]:
             name: {"hits": 0, "misses": 0}
             for name in _CACHE_NAMES
         },
+        "event_reconstruction_inflight": {},
+        "event_reconstruction_timing_ms": _empty_reconstruction_timing(),
         "prefetch": {
             "rotation_batches": 0,
             "rotation_games_submitted": 0,
@@ -114,6 +139,17 @@ def _record_prefetch(cache: dict[str, Any], batch_key: str, games_key: str, coun
         prefetch = cache["prefetch"]
         prefetch[batch_key] = int(prefetch.get(batch_key, 0)) + 1
         prefetch[games_key] = int(prefetch.get(games_key, 0)) + int(count)
+
+
+def _record_reconstruction_timing(cache: dict[str, Any], outcome: str, elapsed_ms: float) -> None:
+    row = cache["event_reconstruction_timing_ms"]
+    count_key = f"{outcome}_count"
+    ms_key = f"{outcome}_ms"
+    row[count_key] = int(row.get(count_key, 0)) + 1
+    row[ms_key] = round(float(row.get(ms_key, 0.0)) + float(elapsed_ms), 3)
+    if outcome == "build":
+        row["max_build_ms"] = round(max(float(row.get("max_build_ms", 0.0)), float(elapsed_ms)), 3)
+        row["last_build_ms"] = round(float(elapsed_ms), 3)
 
 
 def _cached_call(
@@ -148,6 +184,82 @@ def _cached_call(
             # but if it occurs, keep the first successful exact value.
             _record(cache, cache_name, "hits")
         return deepcopy(bucket[key])
+
+
+def _event_reconstruction_fingerprint(
+    play_by_play: Mapping[str, Any],
+    rotation_context: Mapping[str, Any],
+) -> tuple[str, str, str]:
+    """Content-address the exact deterministic inputs consumed by ``_join``."""
+    payload = repr((play_by_play, rotation_context)).encode("utf-8")
+    digest = hashlib.sha256(payload).hexdigest()
+    game_id = str(play_by_play.get("game_id") or rotation_context.get("game_id") or "")
+    season = str(play_by_play.get("season") or rotation_context.get("season") or "")
+    return game_id, season, digest
+
+
+def reconstruct_event_context_step20b(
+    play_by_play: dict[str, Any],
+    rotation_context: dict[str, Any],
+) -> Any:
+    """Build one exact event→lineup reconstruction per source fingerprint/cycle."""
+    cache = _ACTIVE_CACHE.get()
+    if cache is None:
+        return _ORIGINAL_EVENT_JOIN(play_by_play, rotation_context)
+
+    fingerprint = _event_reconstruction_fingerprint(play_by_play, rotation_context)
+    call_started = time.perf_counter()
+
+    while True:
+        with _LOCK:
+            bucket = cache["event_reconstruction"]
+            if fingerprint in bucket:
+                _record(cache, "event_reconstruction", "hits")
+                elapsed_ms = (time.perf_counter() - call_started) * 1000.0
+                _record_reconstruction_timing(cache, "reuse", elapsed_ms)
+                return deepcopy(bucket[fingerprint])
+
+            inflight = cache["event_reconstruction_inflight"].get(fingerprint)
+            if inflight is None:
+                inflight = threading.Event()
+                cache["event_reconstruction_inflight"][fingerprint] = inflight
+                builder = True
+            else:
+                builder = False
+
+        if builder:
+            break
+
+        wait_started = time.perf_counter()
+        inflight.wait()
+        wait_ms = (time.perf_counter() - wait_started) * 1000.0
+        with _LOCK:
+            _record_reconstruction_timing(cache, "wait", wait_ms)
+        # The builder may have raised. In that case there is deliberately no
+        # cached value; this waiter loops and becomes the next authoritative
+        # builder rather than memoizing the failed outcome.
+
+    build_started = time.perf_counter()
+    try:
+        value = _ORIGINAL_EVENT_JOIN(play_by_play, rotation_context)
+        stored = deepcopy(value)
+    except Exception:
+        with _LOCK:
+            current = cache["event_reconstruction_inflight"].pop(fingerprint, None)
+            if current is not None:
+                current.set()
+        raise
+
+    build_ms = (time.perf_counter() - build_started) * 1000.0
+    with _LOCK:
+        bucket = cache["event_reconstruction"]
+        bucket[fingerprint] = stored
+        _record(cache, "event_reconstruction", "misses")
+        _record_reconstruction_timing(cache, "build", build_ms)
+        current = cache["event_reconstruction_inflight"].pop(fingerprint, None)
+        if current is not None:
+            current.set()
+        return deepcopy(bucket[fingerprint])
 
 
 def get_game_rotation_step20b(
@@ -472,6 +584,8 @@ def cache_stats(cache: Mapping[str, Any] | None = None) -> dict[str, Any]:
             "active": False,
             "entries": {name: 0 for name in _CACHE_NAMES},
             "stats": {name: {"hits": 0, "misses": 0} for name in _CACHE_NAMES},
+            "event_reconstruction_timing_ms": _empty_reconstruction_timing(),
+            "event_reconstruction_inflight": 0,
             "prefetch": {
                 "rotation_batches": 0,
                 "rotation_games_submitted": 0,
@@ -488,6 +602,12 @@ def cache_stats(cache: Mapping[str, Any] | None = None) -> dict[str, Any]:
                 for name in _CACHE_NAMES
             },
             "stats": deepcopy(dict(source.get("stats") or {})),
+            "event_reconstruction_timing_ms": deepcopy(
+                dict(source.get("event_reconstruction_timing_ms") or {})
+            ),
+            "event_reconstruction_inflight": len(
+                source.get("event_reconstruction_inflight") or {}
+            ),
             "prefetch": deepcopy(dict(source.get("prefetch") or {})),
         }
 
@@ -549,6 +669,7 @@ def install_step20b_runtime_acceleration() -> dict[str, Any]:
         (rotation, "get_game_rotation", _ORIGINAL_GAME_ROTATION, get_game_rotation_step20b),
         (event_lineup, "get_game_rotation", _ORIGINAL_EVENT_LINEUP_ROTATION, get_game_rotation_step20b),
         (event_lineup, "_sources", _ORIGINAL_EVENT_SOURCES, get_event_sources_step20b),
+        (event_lineup, "_join", _ORIGINAL_EVENT_JOIN, reconstruct_event_context_step20b),
         (event_features, "get_game_event_lineups", _ORIGINAL_PLAYER_EVENT_LINEUPS, get_game_event_lineups_step20b),
         (event_features, "get_game_possession_event_context", _ORIGINAL_PLAYER_POSSESSIONS, get_game_possession_event_context_step20b),
         (event_features, "get_game_player_event_features", _ORIGINAL_GAME_PLAYER_EVENT_FEATURES, get_game_player_event_features_step20b),
@@ -585,6 +706,7 @@ def installation_status() -> dict[str, Any]:
         "rotation_module": rotation.get_game_rotation is get_game_rotation_step20b,
         "event_lineup_rotation_alias": event_lineup.get_game_rotation is get_game_rotation_step20b,
         "event_lineup_sources": event_lineup._sources is get_event_sources_step20b,
+        "event_reconstruction": event_lineup._join is reconstruct_event_context_step20b,
         "player_event_lineups": event_features.get_game_event_lineups is get_game_event_lineups_step20b,
         "player_possessions": event_features.get_game_possession_event_context is get_game_possession_event_context_step20b,
         "game_player_event_features": event_features.get_game_player_event_features is get_game_player_event_features_step20b,
@@ -615,6 +737,11 @@ def installation_status() -> dict[str, Any]:
             "bounded_historical_prefetch": True,
             "historical_prefetch_max_workers": PREFETCH_MAX_WORKERS,
             "frozen_recent_context_functions_remain_authoritative": True,
+            "lower_level_event_lineup_possession_reconstruction_reuse": True,
+            "event_reconstruction_exact_source_content_fingerprint": True,
+            "event_reconstruction_one_builder_waiters": True,
+            "event_reconstruction_timing_uses_monotonic_clock": True,
+            "event_reconstruction_timing_unit": "milliseconds",
             "first_party_cross_ttl_reuse_requires_fresh_fetch": True,
             "requesting_surface_ttl_is_respected": True,
             "upstream_timeout_values_modified": False,
@@ -645,6 +772,7 @@ __all__ = [
     "get_player_recent_rotation_context_step20b",
     "install_step20b_runtime_acceleration",
     "installation_status",
+    "reconstruct_event_context_step20b",
     "request_first_party_page_props_step20b",
     "run_step12b_with_observed_context_cache",
 ]
