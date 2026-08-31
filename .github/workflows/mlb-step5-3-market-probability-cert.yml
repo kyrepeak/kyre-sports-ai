@@ -1,0 +1,294 @@
+name: MLB Step5.3 market probability certification
+
+on:
+  push:
+    branches:
+      - mlb-step5-3-market-probability-layer
+    paths:
+      - "sports_api/mlb_market_probability_v1.py"
+      - "mlb_daily_game_picks_market_probability_v1.py"
+      - "mlb_daily_game_picks_v217_guard.py"
+      - "tests/test_mlb_market_probability_v1.py"
+      - ".github/workflows/mlb-step5-3-market-probability-cert.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP5_3_BASE_SHA: 4d27bc2d5be12534049fcc3d4b52b787c1ed4a71
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+
+jobs:
+  certify-market-probability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert additive MLB-only change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP5_3_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP5_3_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          allowed='^(sports_api/mlb_market_probability_v1.py|mlb_daily_game_picks_market_probability_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_market_probability_v1.py|\.github/workflows/mlb-step5-3-market-probability-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP5_3_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          echo 'MLB_STEP5_3_CHANGE_SCOPE_OK'
+
+      - name: Prove V2.1.7 risk and lineup functions are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast
+          import subprocess
+          from pathlib import Path
+
+          base = subprocess.check_output(
+              ['git', 'show', f'{__import__("os").environ["STEP5_3_BASE_SHA"]}:mlb_daily_game_picks_v217_guard.py'],
+              text=True,
+          )
+          head = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          protected = {
+              '_safe_int',
+              '_norm',
+              '_lineup_members_bulk',
+              '_official_snapshots_v217',
+              '_player_lineup_guard',
+              '_risk_context_v217_guard',
+          }
+
+          def dumps(source):
+              tree = ast.parse(source)
+              out = {}
+              for node in tree.body:
+                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in protected:
+                      out[node.name] = ast.dump(node, include_attributes=False)
+              return out
+
+          base_dump = dumps(base)
+          head_dump = dumps(head)
+          if base_dump != head_dump or set(head_dump) != protected:
+              raise SystemExit('STEP5_3_PROTECTED_V217_FUNCTION_DRIFT')
+          print('MLB_STEP5_3_V217_RISK_FUNCTIONS_FROZEN')
+          PY
+
+      - name: Assert probability layer is presentation-only and exact-ID downstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/mlb_market_probability_v1.py').read_text(encoding='utf-8')
+          presentation = Path('mlb_daily_game_picks_market_probability_v1.py').read_text(encoding='utf-8')
+          guard = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          combined = core + '\n' + presentation + '\n' + guard
+
+          forbidden_matchers = ('difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz')
+          bad_matchers = [token for token in forbidden_matchers if token in combined]
+          if bad_matchers:
+              raise SystemExit('STEP5_3_HEURISTIC_MATCHER_PRESENT: ' + ','.join(bad_matchers))
+
+          forbidden_writes = (
+              'c["probability"] =', "c['probability'] =",
+              'c["score"] =', "c['score'] =",
+              'c["projection"] =', "c['projection'] =",
+              'candidate["probability"] =', "candidate['probability'] =",
+              'candidate["score"] =', "candidate['score'] =",
+              'candidate["projection"] =', "candidate['projection'] =",
+          )
+          bad_writes = [token for token in forbidden_writes if token in presentation or token in guard]
+          if bad_writes:
+              raise SystemExit('STEP5_3_PRODUCTION_FIELD_WRITE_PRESENT: ' + ','.join(bad_writes))
+
+          required = (
+              'proportional_two_way_no_vig',
+              'step52.install_live_market_context(games_df, payload=payload)',
+              'derive_market_probability_contexts(step52_state)',
+              'install_market_probability_layer(games_df)',
+              'model probability and Pick Strength unchanged',
+          )
+          missing = [token for token in required if token not in combined]
+          if missing:
+              raise SystemExit('STEP5_3_CONTRACT_TOKEN_MISSING: ' + ' | '.join(missing))
+
+          if 'from mlb_daily_game_picks_market_probability_v1 import install_market_probability_layer' not in guard:
+              raise SystemExit('STEP5_3_ACTIVE_GUARD_IMPORT_MISSING')
+
+          print('MLB_STEP5_3_PRESENTATION_ONLY_CONTRACT_OK')
+          PY
+
+      - name: Prove frozen app ancestry still routes Daily Picks to active V2.1.7 guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          ancestor = subprocess.check_output(
+              ['git', 'show', '6fb976a9e20c96eb68b71ad0d3511e3be1734292:app.py'],
+              text=True,
+          )
+          required = (
+              'old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"',
+              'new = "from mlb_daily_game_picks_v217_guard import render_daily_game_picks"',
+          )
+          missing = [token for token in required if token not in ancestor]
+          if missing:
+              raise SystemExit('STEP5_3_ACTIVE_ROUTE_ANCESTRY_DRIFT: ' + ' | '.join(missing))
+          print('MLB_STEP5_3_ACTIVE_ROUTE_CONFIRMED')
+          PY
+
+      - name: Compile Step5.3 Python files
+        run: |
+          python -m py_compile \
+            sports_api/mlb_market_probability_v1.py \
+            mlb_daily_game_picks_market_probability_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            tests/test_mlb_market_probability_v1.py
+
+      - name: Run deterministic no-vig regression suite
+        run: python -m pytest -q tests/test_mlb_market_probability_v1.py
+
+      - name: Certify live FanDuel implied hold and no-vig derivation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import math
+          import os
+          import urllib.request
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_market_probability_v1 import derive_market_probability_contexts
+
+          req = urllib.request.Request(
+              os.environ['PRODUCTION_ODDS_URL'],
+              headers={
+                  'Accept': 'application/json',
+                  'User-Agent': 'KyreSportsStep5-3Cert/1.0',
+              },
+              method='GET',
+          )
+          with urllib.request.urlopen(req, timeout=35) as response:
+              status = int(response.status)
+              payload = json.loads(response.read(2_000_000).decode('utf-8'))
+
+          if status != 200:
+              raise SystemExit(f'STEP5_3_PRODUCTION_HTTP_{status}')
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('STEP5_3_BAD_PRODUCTION_DATA_TYPE')
+          if payload.get('schema_version') != 1:
+              raise SystemExit('STEP5_3_BAD_PRODUCTION_SCHEMA')
+          if payload.get('source') != 'FanDuel':
+              raise SystemExit('STEP5_3_BAD_PRODUCTION_SOURCE')
+
+          games = payload.get('games') or []
+          if not games:
+              raise SystemExit('STEP5_3_NO_CURRENT_PRODUCTION_MARKET_GAMES')
+
+          model_rows = [{'game_pk': game.get('official_game_id')} for game in reversed(games)]
+          step52 = attach_live_market_context(model_rows, games)
+          if step52.get('exact_id_matched_count') != len(games):
+              raise SystemExit('STEP5_3_STEP52_EXACT_ID_MATCH_COUNT_MISMATCH')
+          if step52.get('attached_count') != len(games):
+              raise SystemExit('STEP5_3_STEP52_ATTACH_COUNT_MISMATCH')
+          if step52.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP5_3_STEP52_FALLBACK_WAS_USED')
+
+          step53 = derive_market_probability_contexts(step52)
+          if step53.get('derived_context_count') != len(games):
+              raise SystemExit('STEP5_3_DERIVED_COUNT_MISMATCH')
+          if step53.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP5_3_FALLBACK_WAS_USED')
+          if step53.get('probability_method') != 'proportional_two_way_no_vig':
+              raise SystemExit('STEP5_3_METHOD_DRIFT')
+          if step53.get('unusable_game_ids'):
+              raise SystemExit('STEP5_3_UNUSABLE_LIVE_CONTEXT')
+
+          contexts = step53.get('contexts_by_game_id') or {}
+
+          def implied(odds):
+              value = float(odds)
+              return 100.0 / (value + 100.0) if value > 0 else (-value) / ((-value) + 100.0)
+
+          def check_pair(game_id, market_name, raw_left_odds, raw_right_odds, derived_market, left_name, right_name):
+              left_raw = implied(raw_left_odds)
+              right_raw = implied(raw_right_odds)
+              total = left_raw + right_raw
+              left = derived_market.get(left_name) or {}
+              right = derived_market.get(right_name) or {}
+              checks = [
+                  math.isclose(float(left.get('implied_probability')), left_raw, rel_tol=0.0, abs_tol=1e-12),
+                  math.isclose(float(right.get('implied_probability')), right_raw, rel_tol=0.0, abs_tol=1e-12),
+                  math.isclose(float(left.get('no_vig_probability')), left_raw / total, rel_tol=0.0, abs_tol=1e-12),
+                  math.isclose(float(right.get('no_vig_probability')), right_raw / total, rel_tol=0.0, abs_tol=1e-12),
+                  math.isclose(float(left.get('no_vig_probability')) + float(right.get('no_vig_probability')), 1.0, rel_tol=0.0, abs_tol=1e-12),
+                  math.isclose(float(derived_market.get('hold_probability')), total - 1.0, rel_tol=0.0, abs_tol=1e-12),
+                  left.get('odds') == raw_left_odds,
+                  right.get('odds') == raw_right_odds,
+              ]
+              if not all(checks):
+                  raise SystemExit(f'STEP5_3_{market_name.upper()}_PROBABILITY_DRIFT_{game_id}')
+
+          for game in games:
+              game_id = int(game['official_game_id'])
+              context = contexts.get(game_id)
+              if not context:
+                  raise SystemExit(f'STEP5_3_MISSING_CONTEXT_{game_id}')
+              markets = game.get('markets') or {}
+              ml = markets.get('moneyline') or {}
+              rl = markets.get('run_line') or {}
+              total = markets.get('total') or {}
+
+              check_pair(game_id, 'moneyline', ml.get('away_odds'), ml.get('home_odds'), context['moneyline'], 'away', 'home')
+              check_pair(game_id, 'run_line', rl.get('away_odds'), rl.get('home_odds'), context['run_line'], 'away', 'home')
+              check_pair(game_id, 'total', total.get('over_odds'), total.get('under_odds'), context['total'], 'over', 'under')
+
+              if context['run_line']['away'].get('line') != rl.get('away_line'):
+                  raise SystemExit(f'STEP5_3_RUN_LINE_AWAY_LINE_DRIFT_{game_id}')
+              if context['run_line']['home'].get('line') != rl.get('home_line'):
+                  raise SystemExit(f'STEP5_3_RUN_LINE_HOME_LINE_DRIFT_{game_id}')
+              if context['total'].get('line') != total.get('line'):
+                  raise SystemExit(f'STEP5_3_TOTAL_LINE_DRIFT_{game_id}')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'http_status': status,
+              'production_game_count': len(games),
+              'exact_id_matched_count': step52.get('exact_id_matched_count'),
+              'step5_2_attached_count': step52.get('attached_count'),
+              'derived_context_count': step53.get('derived_context_count'),
+              'probability_method': step53.get('probability_method'),
+              'production_source': payload.get('source'),
+              'production_transport': payload.get('transport'),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'markets_derived': ['moneyline', 'run_line', 'total'],
+              'model_math_changed': False,
+              'pick_strength_changed': False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP5_3_MARKET_PROBABILITY_GREEN')
+          PY
