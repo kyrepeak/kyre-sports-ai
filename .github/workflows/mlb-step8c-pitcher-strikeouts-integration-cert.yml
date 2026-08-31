@@ -1,0 +1,287 @@
+name: MLB Step8C pitcher strikeouts integration certification
+
+on:
+  push:
+    branches:
+      - mlb-step8c-pitcher-strikeouts-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step8c-pitcher-strikeouts-integration-cert
+  cancel-in-progress: false
+
+env:
+  STEP8C_BASE_SHA: d965d2a2a1ab0586c7c481b8b53d34d5733adb68
+
+jobs:
+  certify-pitcher-strikeouts-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx
+
+      - name: Assert Step8C three-file additive MLB-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP8C_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py|tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py|\.github/workflows/mlb-step8c-pitcher-strikeouts-integration-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP8C_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP8C_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP8C_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP8C_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove pitcher model Step8A Step8B and presentation are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP8C_BASE_SHA"...HEAD -- \
+            app.py \
+            'mlb_pitcher_k_hub_v*.py' \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
+            sports_api/mlb_step7d_total_api_integration_v1.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_totals_hub_v174.py
+          echo 'MLB_STEP8C_PITCHER_MODEL_AND_PREEXISTING_RUNTIME_BYTE_IDENTICAL'
+
+      - name: Assert pure exact-ID post-model integration boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import inspect
+          from pathlib import Path
+          from sports_api import mlb_step8c_pitcher_strikeouts_integration_v1 as module
+
+          assert module.DATA_TYPE == 'mlb_step8c_pitcher_strikeouts_integration_v1'
+          assert module.ATTACHMENT_KEY == 'step8c_pitcher_strikeouts_context'
+          source = Path('sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py').read_text()
+          for token in ('requests', 'httpx', 'urllib', 'numpy', 'np.', 'random', 'Monte Carlo', 'difflib', 'SequenceMatcher', 'Levenshtein', 'rapidfuzz', 'fuzzywuzzy'):
+              assert token not in source, token
+          identity_source = inspect.getsource(module._result_identity)
+          assert 'game_pk' in identity_source
+          assert 'player_id' in identity_source
+          assert 'player_name' not in identity_source
+          assert 'team' not in identity_source
+          build_source = inspect.getsource(module.build_pitcher_strikeout_integration)
+          assert 'player_prop_context_for_identity' in build_source
+          assert 'official_game_id=game_id' in build_source
+          assert 'official_player_id=player_id' in build_source
+          assert 'market_type=market_type' in build_source
+          assert 'win_prob' not in build_source
+          assert 'fair_odds' not in build_source
+          assert '_grade_line' not in source
+          assert 'sportsbook_price_model_input": False' in source
+          assert 'probability_impact": False' in source
+          assert 'line_grading_impact": False' in source
+          print('MLB_STEP8C_PURE_EXACT_ID_POST_MODEL_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step8C Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py
+
+      - name: Run Step8C targeted tests
+        run: python -m pytest -q tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py
+
+      - name: Run complete certified MLB regression through Step8C
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py
+
+      - name: Certify live Step8B to Step8A to Step8C exact-ID path
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+
+          from sports_api.collectors.mlb_fanduel_player_props import (
+              PITCHER_STRIKEOUTS,
+              collect_live_mlb_player_props,
+          )
+          from sports_api.mlb_step8a_player_prop_api_contract_v1 import (
+              API_CONNECTED,
+              build_player_prop_api_state,
+              enforce_player_prop_api_freshness,
+          )
+          from sports_api.mlb_step8c_pitcher_strikeouts_integration_v1 import (
+              ATTACHMENT_KEY,
+              INTEGRATED,
+              build_pitcher_strikeout_integration,
+              enrich_pitcher_strikeout_results,
+          )
+
+          snapshot = collect_live_mlb_player_props(
+              now_utc=datetime.now(timezone.utc),
+              max_events=4,
+          )
+          pitcher_props = [
+              p for p in snapshot.get('props', [])
+              if p.get('market_type') == PITCHER_STRIKEOUTS
+          ]
+          assert snapshot['provider'] == 'FanDuel'
+          assert snapshot['player_name_matching_used'] is False
+          assert snapshot['fuzzy_matching_used'] is False
+          assert snapshot['matched_game_count'] > 0
+          if not pitcher_props:
+              print(json.dumps({
+                  'marker':'MLB_STEP8C_LIVE_PROVIDER_REACHABLE_BUT_NO_TWO_WAY_PITCHER_K_PROPS',
+                  'candidate_events':snapshot['candidate_pregame_event_count'],
+                  'matched_games':snapshot['matched_game_count'],
+                  'contract_unavailable_market_counts':snapshot['contract_unavailable_market_counts'],
+              }, sort_keys=True))
+              raise SystemExit('STEP8C_LIVE_PITCHER_STRIKEOUT_PROP_REQUIRED_FOR_CERTIFICATION')
+
+          payload = {
+              'data_type':'mlb_player_prop_api_response_v1',
+              'schema_version':1,
+              'source':'FanDuel',
+              'collected_at_utc':snapshot['collected_at_utc'],
+              'props':pitcher_props,
+          }
+          raw = build_player_prop_api_state(payload)
+          assert raw['integration_status'] == API_CONNECTED, raw['failures']
+          fresh = enforce_player_prop_api_freshness(
+              raw,
+              as_of_utc=datetime.now(timezone.utc),
+              max_age_seconds=60,
+          )
+          assert fresh['integration_status'] == API_CONNECTED, fresh['failures']
+          assert fresh['feed_fresh'] is True
+
+          # Synthetic already-modeled rows: projection/simulation values are fixed
+          # sentinels. Display names intentionally disagree with FanDuel metadata.
+          results = []
+          for i, prop in enumerate(pitcher_props):
+              results.append({
+                  'game_pk':prop['official_game_id'],
+                  'player_id':prop['official_player_id'],
+                  'player_name':f'INTENTIONALLY DIFFERENT DISPLAY {i}',
+                  'projected_k':6.000 + i / 1000.0,
+                  'projected_ip':5.5,
+                  'sim':{'mean':6.25,'median':6.0,'mode':6,'sentinel':i},
+                  'grade':{'line':99.5,'side':'UNDER','win_prob':0.12345,'sentinel':i},
+              })
+
+          integration = build_pitcher_strikeout_integration(results, fresh)
+          assert integration['integration_status'] == INTEGRATED, integration['failures']
+          assert integration['attached_count'] == len(pitcher_props)
+          assert integration['unmatched_count'] == 0
+          assert integration['player_name_matching_used'] is False
+          assert integration['sportsbook_price_model_input'] is False
+          assert integration['model_math_impact'] is False
+          assert integration['simulation_impact'] is False
+          assert integration['probability_impact'] is False
+          assert integration['line_grading_impact'] is False
+          assert integration['ranking_impact'] is False
+
+          enriched = enrich_pitcher_strikeout_results(results, integration)
+          assert len(enriched) == len(results)
+          for i, (before, after) in enumerate(zip(results, enriched)):
+              context = after[ATTACHMENT_KEY]
+              stripped = dict(after)
+              stripped.pop(ATTACHMENT_KEY)
+              assert stripped == before
+              assert after['projected_k'] == before['projected_k']
+              assert after['sim'] == before['sim']
+              assert after['grade'] == before['grade']
+              assert context['official_game_id'] == before['game_pk']
+              assert context['official_player_id'] == before['player_id']
+              assert context['line'] == pitcher_props[i]['line']
+              assert context['over_odds'] == pitcher_props[i]['over_odds']
+              assert context['under_odds'] == pitcher_props[i]['under_odds']
+              assert context['player_name_matching_used'] is False
+              assert context['display_only'] is True
+
+          print(json.dumps({
+              'marker':'MLB_STEP8C_LIVE_EXACT_ID_PITCHER_STRIKEOUT_INTEGRATION_GREEN',
+              'candidate_events':snapshot['candidate_pregame_event_count'],
+              'matched_games':snapshot['matched_game_count'],
+              'pitcher_prop_count':len(pitcher_props),
+              'attached_count':integration['attached_count'],
+              'player_name_matching_used':False,
+              'sportsbook_price_model_input':False,
+              'projection_changed':False,
+              'simulation_changed':False,
+              'probability_changed':False,
+              'line_grading_changed':False,
+              'ranking_changed':False,
+              'step8a_contract_active':True,
+              'feed_fresh':True,
+          }, sort_keys=True))
+          PY
+
+  certification-marker:
+    runs-on: ubuntu-24.04
+    needs:
+      - certify-pitcher-strikeouts-integration
+    steps:
+      - name: Emit Step8C green marker
+        run: echo 'MLB_STEP8C_PITCHER_STRIKEOUTS_INTEGRATION_GREEN'
