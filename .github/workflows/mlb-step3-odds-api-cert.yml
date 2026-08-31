@@ -1,0 +1,175 @@
+name: MLB Step3 live odds API certification
+
+on:
+  push:
+    branches:
+      - mlb-live-market-build-20260831
+    paths:
+      - 'sports_api/api/mlb.py'
+      - 'sports_api/collectors/mlb_fanduel_direct.py'
+      - 'tests/test_mlb_fanduel_direct.py'
+      - 'tests/test_mlb_odds_api.py'
+      - '.github/workflows/mlb-step3-odds-api-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step3-odds-api-cert
+  cancel-in-progress: true
+
+jobs:
+  certify-live-odds-api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+      MLB_WAGERING_ENABLED: "false"
+      MLB_PERSISTENCE_WRITES_ENABLED: "false"
+      MLB_MARKET_REPLAY_ENABLED: "false"
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API and test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt pytest
+
+      - name: Assert isolated read-only MLB API
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP3_ISOLATION_OK'
+
+      - name: Run MLB collector and endpoint regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_mlb_fanduel_direct.py tests/test_mlb_odds_api.py
+
+      - name: Certify real live odds through FastAPI endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from fastapi import FastAPI
+          from fastapi.testclient import TestClient
+
+          from sports_api.api.mlb import router
+
+          app = FastAPI()
+          app.include_router(router)
+
+          with TestClient(app) as client:
+              response = client.get(
+                  '/api/v1/mlb/odds',
+                  params={'max_events': 30, 'fully_priced_only': 'true'},
+              )
+
+          if response.status_code != 200:
+              raise SystemExit(f'MLB_STEP3_ENDPOINT_HTTP_{response.status_code}: {response.text}')
+
+          payload = response.json()
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('MLB_STEP3_BAD_DATA_TYPE')
+          if payload.get('schema_version') != 1:
+              raise SystemExit('MLB_STEP3_BAD_SCHEMA_VERSION')
+          if payload.get('source') != 'FanDuel':
+              raise SystemExit('MLB_STEP3_BAD_SOURCE')
+          if payload.get('transport') != 'anonymous_public_get_only':
+              raise SystemExit('MLB_STEP3_BAD_TRANSPORT')
+          if payload.get('http_methods') != ['GET']:
+              raise SystemExit('MLB_STEP3_NON_GET_TRANSPORT')
+          if payload.get('fully_priced_only') is not True:
+              raise SystemExit('MLB_STEP3_FILTER_NOT_ACTIVE')
+          if int(payload.get('game_count') or 0) <= 0:
+              raise SystemExit('MLB_STEP3_NO_LIVE_ODDS_GAMES')
+
+          games = payload.get('games') or []
+          for game in games:
+              if not isinstance(game.get('official_game_id'), int) or game['official_game_id'] <= 0:
+                  raise SystemExit('MLB_STEP3_INVALID_OFFICIAL_GAME_ID')
+              if game.get('fully_priced') is not True:
+                  raise SystemExit('MLB_STEP3_PARTIAL_GAME_LEAKED_THROUGH_FILTER')
+              if game.get('sportsbook') != 'FanDuel':
+                  raise SystemExit('MLB_STEP3_BAD_GAME_SPORTSBOOK')
+              markets = game.get('markets') or {}
+              if not all(key in markets for key in ('moneyline', 'run_line', 'total')):
+                  raise SystemExit('MLB_STEP3_MISSING_CORE_MARKET')
+              if not isinstance(markets['moneyline'].get('away_odds'), int):
+                  raise SystemExit('MLB_STEP3_BAD_AWAY_MONEYLINE')
+              if not isinstance(markets['moneyline'].get('home_odds'), int):
+                  raise SystemExit('MLB_STEP3_BAD_HOME_MONEYLINE')
+              if not isinstance(markets['run_line'].get('away_line'), (int, float)):
+                  raise SystemExit('MLB_STEP3_BAD_AWAY_RUN_LINE')
+              if not isinstance(markets['run_line'].get('home_line'), (int, float)):
+                  raise SystemExit('MLB_STEP3_BAD_HOME_RUN_LINE')
+              if not isinstance(markets['total'].get('line'), (int, float)):
+                  raise SystemExit('MLB_STEP3_BAD_TOTAL_LINE')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'endpoint': '/api/v1/mlb/odds',
+              'data_type': payload.get('data_type'),
+              'schema_version': payload.get('schema_version'),
+              'source': payload.get('source'),
+              'transport': payload.get('transport'),
+              'http_methods': payload.get('http_methods'),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'candidate_pregame_event_count': payload.get('candidate_pregame_event_count'),
+              'matched_game_count': payload.get('matched_game_count'),
+              'fully_priced_game_count': payload.get('fully_priced_game_count'),
+              'game_count': payload.get('game_count'),
+              'rejected_event_count': payload.get('rejected_event_count'),
+              'games': games[:5],
+              'replay_enabled': False,
+              'production_runtime_enabled': False,
+              'wagering_enabled': False,
+              'persistence_writes_enabled': False,
+          }
+          with open('mlb-step3-odds-api-cert.json', 'w', encoding='utf-8') as fh:
+              json.dump(evidence, fh, indent=2, sort_keys=True)
+              fh.write('\n')
+
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP3_LIVE_ODDS_API_GREEN')
+          PY
+
+      - name: Upload MLB Step 3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step3-odds-api-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-step3-odds-api-cert.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert read-only isolation
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_STEP3_READ_ONLY_SAFETY_REASSERTED'
