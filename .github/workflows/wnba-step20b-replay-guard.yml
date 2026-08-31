@@ -56,7 +56,9 @@ jobs:
           rg = status['guardrails']
           assert rg['default_off'] is True
           assert rg['certification_only'] is True
-          assert rg['target_identity_from_prior_live_step12b'] is True
+          assert rg['target_identity_from_prior_live_step12b'] is False
+          assert rg['target_identity_rotatable_without_code_change'] is True
+          assert rg['target_slate_date_must_match_provider_request'] is True
           assert rg['quote_values_are_deterministic_certification_placeholders'] is True
           assert rg['live_provider_bindings_modified'] is False
           assert rg['exact_line_logic_modified'] is False
@@ -65,9 +67,16 @@ jobs:
           assert rg['batch_size_modified'] is False
           assert rg['projection_math_modified'] is False
           assert rg['readiness_relaxed'] is False
+          assert rg['readiness_replayed'] is False
           assert rg['sportsbook_transport_modified'] is False
           assert rg['persistence_modified'] is False
           assert rg['wagering_enabled'] is False
+
+          target = status['target']
+          assert target['slate_date'] == replay.REPLAY_SLATE_DATE
+          assert target['game_id'] == replay.REPLAY_GAME_ID
+          assert target['player_id'] == replay.REPLAY_PLAYER_ID
+          assert replay_api._replay_slate_date({}) == replay.REPLAY_SLATE_DATE
 
           paths = {getattr(route, 'path', None) for route in replay_api.router.routes}
           assert '/api/v1/wnba/runtime/step20b-replay-runtime-probe/start' in paths
