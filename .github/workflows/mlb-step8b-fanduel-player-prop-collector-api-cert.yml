@@ -27,59 +27,130 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Extract FanDuel participant-statistics request signature
+      - name: Probe FanDuel FDX live player identity map
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
+          import json
           import re
-          from urllib.parse import urljoin
+          from urllib.parse import urlencode
           from urllib.request import Request, urlopen
+          from urllib.error import HTTPError, URLError
 
-          ROOT='https://sportsbook.fanduel.com/'
-          HEADERS={'User-Agent':'Mozilla/5.0 (compatible; KyreSportsAPI-MLB/1.0; read-only)','Accept':'text/html,application/javascript,*/*'}
-          NEEDLES=(
-              '/participant-statistics',
-              '/api/v1/see-more-players',
-              'FDX_API',
-              'participantStatistics',
-              'participant-statistics',
-              'recentPerformance',
-              'lastFiveStatCard',
-          )
+          WEB_KEY='FhMFpcPWXMeyZxOx'
+          SB='https://api.sportsbook.fanduel.com'
+          FDX='https://fdx-api.sportsbook.fanduel.com/api'
+          HEADERS={
+              'Accept':'application/json, text/plain, */*',
+              'User-Agent':'Mozilla/5.0 (compatible; KyreSportsAPI-MLB/1.0; read-only)',
+              'Origin':'https://sportsbook.fanduel.com',
+              'Referer':'https://sportsbook.fanduel.com/',
+              'x-sportsbook-region':'NJ',
+          }
 
-          def get(url,limit=12_000_000):
+          def get_json(url, params=None):
+              if params:
+                  url += ('&' if '?' in url else '?') + urlencode(params)
               req=Request(url,headers=HEADERS,method='GET')
-              with urlopen(req,timeout=25) as r: raw=r.read(limit+1)
-              if len(raw)>limit: return ''
-              return raw.decode('utf-8',errors='ignore')
+              with urlopen(req,timeout=25) as r:
+                  raw=r.read(20_000_001)
+                  print('GET',url.split('?')[0],'STATUS',getattr(r,'status',None),'BYTES',len(raw))
+              if len(raw)>20_000_000:
+                  raise RuntimeError('response too large')
+              return json.loads(raw.decode('utf-8'))
 
-          html=get(ROOT,2_000_000)
-          scripts=[]
-          for src in re.findall(r'<script[^>]+src=["\']([^"\']+)["\']',html,flags=re.I):
-              url=urljoin(ROOT,src)
-              if url not in scripts: scripts.append(url)
-          print('SCRIPT_COUNT',len(scripts))
-          found=0
-          for url in scripts:
-              try: text=get(url)
-              except Exception as exc:
-                  print('FETCH_ERROR',url,type(exc).__name__,str(exc)[:160]); continue
-              low=text.casefold()
-              for needle in NEEDLES:
-                  start_pos=0
-                  while True:
-                      pos=low.find(needle.casefold(),start_pos)
-                      if pos<0: break
-                      left=max(0,pos-4500); right=min(len(text),pos+6500)
-                      print('SIGNATURE_CONTEXT',needle,'SCRIPT',url)
-                      print(text[left:right].replace('\n',' ')[:11000])
-                      found+=1
-                      start_pos=pos+len(needle)
-                      if found>=30: break
-                  if found>=30: break
-              if found>=30: break
-          print('SIGNATURE_CONTEXT_COUNT',found)
-          if found==0: raise SystemExit('STEP8B_PARTICIPANT_STATISTICS_SIGNATURE_NOT_FOUND')
-          print('MLB_STEP8B_PARTICIPANT_STATISTICS_SIGNATURE_DISCOVERY_COMPLETE')
+          def walk(value):
+              if isinstance(value,dict):
+                  yield value
+                  for v in value.values():
+                      yield from walk(v)
+              elif isinstance(value,list):
+                  for v in value:
+                      yield from walk(v)
+
+          def strings(value):
+              out=set()
+              if isinstance(value,dict):
+                  for k,v in value.items():
+                      if isinstance(v,(str,int,float)) and not isinstance(v,bool):
+                          out.add(str(v))
+                      else:
+                          out |= strings(v)
+              elif isinstance(value,list):
+                  for v in value: out |= strings(v)
+              return out
+
+          landing=get_json(
+              SB+'/sbapi/content-managed-page',
+              {'_ak':WEB_KEY,'page':'CUSTOM','customPageId':'mlb','timezone':'America/New_York'}
+          )
+          events=[]
+          seen=set()
+          for d in walk(landing):
+              eid=d.get('eventId') or d.get('id')
+              name=d.get('name') or d.get('eventName') or d.get('displayName')
+              if eid is None or not isinstance(name,str) or ' @ ' not in name:
+                  continue
+              key=str(eid)
+              if key in seen: continue
+              seen.add(key); events.append((key,name))
+          print('MLB_EVENT_CANDIDATES',len(events))
+          print('MLB_EVENT_SAMPLE',events[:8])
+          if not events:
+              raise SystemExit('STEP8B_NO_FANDUEL_MLB_EVENTS')
+
+          success=None
+          for eid,name in events[:16]:
+              try:
+                  players=get_json(f'{FDX}/v1/live/event/{eid}/players')
+              except (HTTPError,URLError,TimeoutError,ValueError) as exc:
+                  print('FDX_PLAYERS_ERROR',eid,name,type(exc).__name__,str(exc)[:180])
+                  continue
+              success=(eid,name,players)
+              break
+          if success is None:
+              raise SystemExit('STEP8B_FDX_PLAYERS_ENDPOINT_UNREACHABLE_FOR_CANDIDATES')
+
+          eid,name,players=success
+          print('FDX_EVENT',eid,name)
+          print('FDX_TOP_TYPE',type(players).__name__)
+          if isinstance(players,dict): print('FDX_TOP_KEYS',sorted(players.keys()))
+
+          interesting=[]
+          for d in walk(players):
+              keys={str(k).casefold() for k in d.keys()}
+              if any(any(token in k for token in ('player','participant','person','external','mlb','headshot','team','id')) for k in keys):
+                  interesting.append(d)
+          print('FDX_INTERESTING_OBJECTS',len(interesting))
+          for i,d in enumerate(interesting[:20]):
+              safe={k:v for k,v in d.items() if isinstance(v,(str,int,float,bool,type(None)))}
+              print('FDX_OBJECT',i,json.dumps(safe,sort_keys=True)[:2500])
+
+          prop=get_json(
+              SB+'/sbapi/event-page',
+              {'_ak':WEB_KEY,'eventId':eid,'tab':'pitcher-props'}
+          )
+          pstrings=strings(players)
+          qstrings=strings(prop)
+          uuid_re=re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+          shared_uuids=sorted(x for x in (pstrings & qstrings) if uuid_re.match(x))
+          shared_numeric=sorted(
+              (x for x in (pstrings & qstrings) if x.isdigit() and 4 <= len(x) <= 12),
+              key=lambda x:(len(x),x)
+          )
+          print('SHARED_UUID_COUNT',len(shared_uuids))
+          print('SHARED_UUID_SAMPLE',shared_uuids[:30])
+          print('SHARED_NUMERIC_COUNT',len(shared_numeric))
+          print('SHARED_NUMERIC_SAMPLE',shared_numeric[:50])
+
+          # Explicitly inspect key names that could establish an official external identity.
+          identity_keys=set()
+          for d in walk(players):
+              for k in d:
+                  low=str(k).casefold()
+                  if any(token in low for token in ('mlb','external','person','participant','player','id','headshot')):
+                      identity_keys.add(str(k))
+          print('FDX_IDENTITY_KEYS',sorted(identity_keys))
+          print('MLB_STEP8B_FDX_PLAYER_IDENTITY_PROBE_COMPLETE')
           PY
