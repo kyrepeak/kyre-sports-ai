@@ -47,7 +47,7 @@ jobs:
           from sports_api import wnba_step20b_market_replay as replay
           from sports_api import wnba_step20b_runtime_acceleration as accel
           from sports_api import wnba_step20b_step4w_cycle_cache as c4w
-          import sports_api.main as main
+          from sports_api.api import wnba_step20b_replay_runtime as replay_api
 
           assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
           assert s12b.CERTIFIED_BATCH_SIZE == 250_000
@@ -69,7 +69,7 @@ jobs:
           assert rg['persistence_modified'] is False
           assert rg['wagering_enabled'] is False
 
-          paths = {route.path for route in main.app.routes}
+          paths = {getattr(route, 'path', None) for route in replay_api.router.routes}
           assert '/api/v1/wnba/runtime/step20b-replay-runtime-probe/start' in paths
           assert '/api/v1/wnba/runtime/step20b-replay-runtime-probe/status' in paths
 
