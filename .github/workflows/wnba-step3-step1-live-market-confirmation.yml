@@ -1,0 +1,250 @@
+name: WNBA Step3 Step1 real live market confirmation
+
+on:
+  push:
+    branches:
+      - wnba-step20b-replay-cert-20260831
+    paths:
+      - '.github/workflows/wnba-step3-step1-live-market-confirmation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step3-step1-live-market-confirmation
+  cancel-in-progress: true
+
+jobs:
+  confirm-live-market:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+      WNBA_BOARD_SCHEDULER_ENABLED: "false"
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+      WNBA_STEP6J_CANARY_ENABLED: "false"
+      WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: "true"
+      WNBA_STEP20B_MARKET_REPLAY_ENABLED: "false"
+      WNBA_STEP20B_CERT_REPLAY_ENABLED: "false"
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt >/dev/null
+
+      - name: Assert live-provider isolation and replay OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP20B_MARKET_REPLAY_ENABLED" = 'false'
+          test "$WNBA_STEP20B_CERT_REPLAY_ENABLED" = 'false'
+          python - <<'PY'
+          from sports_api import wnba_step20b_market_replay as replay
+          assert replay.market_replay_enabled({}) is False
+          print('STEP3_STEP1_REPLAY_CONFIRMED_OFF')
+          PY
+
+      - name: Probe real DraftKings and FanDuel player-points markets
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from __future__ import annotations
+
+          from datetime import datetime, timedelta, timezone
+          from zoneinfo import ZoneInfo
+          import json
+          import os
+
+          import httpx
+
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api.wnba_official_reconciliation import parse_official_schedule
+          from sports_api.wnba_step7g_first_party_rosters import get_first_party_current_players_dataset
+
+          REPORT = 'step3-step1-live-market-confirmation.json'
+          now = datetime.now(timezone.utc)
+          today_et = now.astimezone(ZoneInfo('America/New_York')).date()
+          horizon = today_et + timedelta(days=30)
+
+          # One official schedule read is used only to choose real upcoming slate dates.
+          response = httpx.get(
+              dk.OFFICIAL_SCHEDULE_URL,
+              timeout=20.0,
+              follow_redirects=False,
+              headers={'Accept': 'application/json', 'User-Agent': 'KyreSportsAPI-Step3-Step1/1.0'},
+          )
+          response.raise_for_status()
+          games = parse_official_schedule(response.json())
+          slate_dates = sorted({
+              str(game.get('game_date'))
+              for game in games
+              if game.get('game_date')
+              and today_et.isoformat() <= str(game.get('game_date')) <= horizon.isoformat()
+          })
+          # Provider surfaces are current-market surfaces; probing the nearest real slates
+          # is sufficient and keeps the certification bounded/read-only.
+          slate_dates = slate_dates[:6]
+
+          env = dict(os.environ)
+          forbidden_true = [
+              'WNBA_PRODUCTION_RUNTIME_ENABLED',
+              'WNBA_BOARD_SCHEDULER_ENABLED',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED',
+              'WNBA_STEP6J_CANARY_ENABLED',
+              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED',
+              'WNBA_STEP20B_MARKET_REPLAY_ENABLED',
+              'WNBA_STEP20B_CERT_REPLAY_ENABLED',
+          ]
+          assert all(str(env.get(key, '')).strip().casefold() in {'', '0', 'false', 'no', 'off', 'disabled'} for key in forbidden_true)
+
+          roster_dataset = get_first_party_current_players_dataset(2026, current_roster_only=True)
+          assert isinstance(roster_dataset, dict) and isinstance(roster_dataset.get('players'), list) and roster_dataset['players']
+          roster_loader = lambda _: roster_dataset
+
+          providers = [
+              ('draftkings', dk.fetch_step11a_draftkings_provider_bridge),
+              ('fanduel', fd.fetch_step11c_fanduel_provider_bridge),
+          ]
+          attempts = []
+          confirmations = []
+
+          for slate_date in slate_dates:
+              for provider_name, fetcher in providers:
+                  row = {'provider': provider_name, 'slate_date': slate_date}
+                  try:
+                      result = fetcher(
+                          season=2026,
+                          slate_date=slate_date,
+                          evaluated_at=now,
+                          roster_loader=roster_loader,
+                          timeout_seconds=20.0,
+                          env=env,
+                      )
+                      guards = result.get('guardrails') or {}
+                      network = result.get('network') or {}
+                      assert guards.get('sportsbook_network_fetch_performed') is True
+                      assert guards.get('official_wnba_network_fetch_performed') is True
+                      assert guards.get('sportsbook_http_methods') == ['GET']
+                      assert guards.get('authentication_used') is False
+                      assert guards.get('cookies_used') is False
+                      assert guards.get('wager_action_performed') is False
+                      assert guards.get('persistence_mutated') is False
+                      assert guards.get('production_runtime_enabled') is False
+                      assert network.get('http_methods') == ['GET']
+                      assert network.get('authentication_used') is False
+                      assert network.get('cookies_used') is False
+
+                      refresh = result.get('provider_refresh') or {}
+                      provider_attempts = refresh.get('attempts') or []
+                      payload = provider_attempts[0].get('payload') if provider_attempts and isinstance(provider_attempts[0], dict) else None
+                      records = payload.get('records') if isinstance(payload, dict) else []
+                      points = [r for r in (records or []) if isinstance(r, dict) and str(r.get('stat', '')).casefold() == 'points']
+                      row.update({
+                          'status': 'ok',
+                          'network_get_count': network.get('sportsbook_get_count'),
+                          'two_way_record_count': (result.get('identity') or {}).get('two_way_record_count'),
+                          'points_record_count': len(points),
+                      })
+                      attempts.append(row)
+                      for market in points[:20]:
+                          confirmations.append({
+                              'provider': provider_name,
+                              'slate_date': slate_date,
+                              'game_id': market.get('game_id'),
+                              'player_id': market.get('player_id'),
+                              'player_name': market.get('player_name'),
+                              'stat': market.get('stat'),
+                              'line': market.get('line'),
+                              'over_price': market.get('over_price'),
+                              'under_price': market.get('under_price'),
+                              'market_captured_at': market.get('market_captured_at'),
+                          })
+                  except Exception as exc:
+                      row.update({
+                          'status': 'not_confirmed',
+                          'error_type': type(exc).__name__,
+                          'error': str(exc)[:800],
+                      })
+                      attempts.append(row)
+
+          report = {
+              'data_type': 'wnba_step3_step1_real_live_market_confirmation_v1',
+              'evaluated_at_utc': now.isoformat(),
+              'today_eastern': today_et.isoformat(),
+              'horizon_eastern': horizon.isoformat(),
+              'candidate_slate_dates': slate_dates,
+              'replay_enabled': False,
+              'production_runtime_enabled': False,
+              'providers': ['draftkings', 'fanduel'],
+              'attempts': attempts,
+              'live_player_points_confirmations': confirmations,
+              'live_player_points_confirmation_count': len(confirmations),
+              'certification_result': 'GREEN' if confirmations else 'WAITING_NO_REAL_LIVE_PLAYER_POINTS_MARKET',
+          }
+          with open(REPORT, 'w', encoding='utf-8') as fh:
+              json.dump(report, fh, indent=2, sort_keys=True)
+              fh.write('\n')
+
+          print(json.dumps(report, indent=2, sort_keys=True))
+          summary = os.environ.get('GITHUB_STEP_SUMMARY')
+          if summary:
+              with open(summary, 'a', encoding='utf-8') as fh:
+                  fh.write('## WNBA Step 3 / Step 1 — real live market confirmation\n\n')
+                  fh.write(f"**Result:** {report['certification_result']}\n\n")
+                  fh.write(f"**Real player-points records confirmed:** {len(confirmations)}\n\n")
+                  fh.write(f"**Replay:** OFF\n\n")
+                  fh.write(f"**Candidate slates:** {', '.join(slate_dates) if slate_dates else 'none'}\n")
+
+          if not confirmations:
+              raise SystemExit('STEP3_STEP1_WAITING_NO_REAL_LIVE_PLAYER_POINTS_MARKET')
+          print('STEP3_STEP1_REAL_LIVE_MARKET_GREEN')
+          PY
+
+      - name: Upload Step 1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step3-step1-live-market-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step3-step1-live-market-confirmation.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert replay and production remain OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP20B_MARKET_REPLAY_ENABLED" = 'false'
+          test "$WNBA_STEP20B_CERT_REPLAY_ENABLED" = 'false'
+          echo 'STEP3_STEP1_SAFETY_REASSERTED'
