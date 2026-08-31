@@ -1,7 +1,7 @@
 """Step20B certification-only replay runtime probe.
 
 The replay endpoint is protected by the existing Step20B diagnostic token and a
-separate default-OFF replay gate.  It injects only deterministic DraftKings and
+separate default-OFF replay gate. It injects only deterministic DraftKings and
 FanDuel provider bridges into frozen Step12B; the production provider bindings and
 the Step8 projection loader remain untouched.
 """
@@ -37,6 +37,11 @@ def _set_probe(**changes: Any) -> None:
         _REPLAY_PROBE.update(deepcopy(changes))
 
 
+def _replay_slate_date(runtime_env: Mapping[str, str]) -> str:
+    """Return the configured certification slate, never the wall-clock slate."""
+    return str(replay.replay_target(runtime_env)["slate_date"])
+
+
 def _run_replay_job(
     runtime_env: Mapping[str, str],
     *,
@@ -44,7 +49,7 @@ def _run_replay_job(
 ) -> dict[str, Any]:
     """Run frozen Step12B with replayed provider fetchers only.
 
-    Deliberately do not pass ``projection_loader``.  This is the certification
+    Deliberately do not pass ``projection_loader``. This is the certification
     invariant that forces Step12B through the real frozen Step8A→8D path.
     """
     request = step12b.build_step12b_request(
@@ -72,7 +77,7 @@ def _worker() -> None:
         runtime_env = base._step17b.build_runtime_env(os.environ)
         runtime_env = dict(runtime_env)
         runtime_env[replay.STEP20B_MARKET_REPLAY_ENABLED_ENV] = "true"
-        slate_date = base._step17b._slate_date()
+        slate_date = _replay_slate_date(runtime_env)
         result = _run_replay_job(runtime_env, slate_date=slate_date)
         projection = result.get("projection_assembly") if isinstance(result, dict) else None
         market = result.get("market_overlap") if isinstance(result, dict) else None
@@ -180,4 +185,4 @@ def step20b_replay_runtime_probe_status(
     return result
 
 
-__all__ = ["router", "_run_replay_job"]
+__all__ = ["router", "_replay_slate_date", "_run_replay_job"]
