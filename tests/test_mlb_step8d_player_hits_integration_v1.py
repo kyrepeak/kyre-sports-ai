@@ -312,3 +312,29 @@ def test_fractional_attachment_index_cannot_redirect_context_to_another_row():
 
     enriched = enrich_player_hit_results([_result()], integration)
     assert ATTACHMENT_KEY not in enriched[0]
+
+
+def test_unicode_digit_ids_are_isolated_instead_of_raising():
+    state = _fresh_state(_prop())
+    rows = [
+        _result(game="²", player=2001, name="Bad game id"),
+        _result(game=1001, player="²", name="Bad player id"),
+        _result(game="1001", player="2001", name="Good ASCII ids"),
+    ]
+
+    integration = build_player_hits_integration(rows, state)
+
+    assert integration["invalid_result_count"] == 2
+    assert integration["valid_exact_identity_count"] == 1
+    assert integration["attached_count"] == 1
+    assert set(integration["attachments_by_result_index"]) == {2}
+
+
+def test_unicode_digit_attachment_index_is_ignored_instead_of_raising():
+    state = _fresh_state(_prop())
+    integration = build_player_hits_integration([_result()], state)
+    context = integration["attachments_by_result_index"].pop(0)
+    integration["attachments_by_result_index"]["²"] = context
+
+    enriched = enrich_player_hit_results([_result()], integration)
+    assert ATTACHMENT_KEY not in enriched[0]
