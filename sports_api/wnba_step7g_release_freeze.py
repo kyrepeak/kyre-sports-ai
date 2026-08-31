@@ -33,10 +33,16 @@ REQUIRED_RELEASE_DEFAULT_CHECKS = (
     "officiating_context_coverage",
 )
 
+# These are the only warning IDs Step 8A may accept from an otherwise startable
+# Step-4X readiness report. The two injury-report warnings are intentionally
+# non-blocking only outside the near-tip hard-block horizon; Step 4X still turns
+# the same conditions into blockers when the game is close enough to tip.
 ALLOWED_NON_BLOCKING_WARNING_IDS = frozenset(
     {
         "optional_starter_bench_role",
         "optional_five_player_lineups",
+        "injury_report_game_present",
+        "injury_report_submission_complete",
     }
 )
 
