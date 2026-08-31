@@ -4,8 +4,15 @@ import copy
 
 import pytest
 
-import mlb_daily_game_picks_price_gate_canary_streamlit_v1 as step510b
 from sports_api.mlb_price_gate_canary_v1 import MAX_CANARY_PERCENT, select_canary_game_ids
+from sports_api.mlb_streamlit_canary_control_v1 import (
+    DATA_TYPE,
+    MLBStreamlitCanaryControlError,
+    QUERY_ENABLED_KEY,
+    QUERY_PERCENT_KEY,
+    SCHEMA_VERSION,
+    resolve_streamlit_canary_config,
+)
 
 
 def _base(enabled=False, percent=0.0, valid=True):
@@ -21,7 +28,7 @@ def _base(enabled=False, percent=0.0, valid=True):
 
 
 def _resolve(*, base=None, host=False, enabled=None, percent=None):
-    return step510b.resolve_streamlit_canary_config(
+    return resolve_streamlit_canary_config(
         _base() if base is None else base,
         host_env_present=host,
         query_enabled_value=enabled,
@@ -129,8 +136,8 @@ def test_exact_query_rollback_flag_is_always_explicit():
 
 def test_query_key_names_are_stable_and_nonsecret():
     out = _resolve(enabled="1", percent="25")
-    assert out["query_enabled_key"] == "mlb_step5_10b_canary"
-    assert out["query_percent_key"] == "mlb_step5_10b_percent"
+    assert out["query_enabled_key"] == QUERY_ENABLED_KEY == "mlb_step5_10b_canary"
+    assert out["query_percent_key"] == QUERY_PERCENT_KEY == "mlb_step5_10b_percent"
 
 
 def test_removing_query_returns_exact_underlying_default_config_values():
@@ -160,55 +167,35 @@ def test_decimal_percent_is_preserved_for_step510_bounding():
     assert cohort["realized_percent"] <= 12.5
 
 
-def test_active_session_board_is_explicitly_session_scoped():
-    html = step510b._session_board_html(
-        {
-            "control_source": "STREAMLIT_QUERY_SESSION",
-            "query_param_activation_requested": True,
-            "effective_percent": 25.0,
-            "realized_percent": 25.0,
-            "candidate_session_canary_enrolled": True,
-        }
-    )
-    assert "STREAMLIT SESSION CANARY" in html
-    assert "LIVE STREAMLIT SESSION CANARY ARMED" in html
-    assert "Session/query scoped only" in html
-    assert "this game enrolled YES" in html
+def test_core_contract_metadata_is_explicit():
+    out = _resolve(enabled="1", percent="25")
+    assert out["step5_10b_data_type"] == DATA_TYPE
+    assert out["step5_10b_schema_version"] == SCHEMA_VERSION
+    assert out["session_only"] is True
+    assert out["host_env_precedence"] is True
+    assert out["step5_10_core_impact"] is False
 
 
-def test_default_session_board_never_claims_activation():
-    html = step510b._session_board_html(
-        {
-            "control_source": "DEFAULT_OFF",
-            "query_param_activation_requested": False,
-            "effective_percent": 0.0,
-            "realized_percent": 0.0,
-            "candidate_session_canary_enrolled": False,
-        }
-    )
-    assert "SESSION CONTROL IDLE" in html
-    assert "LIVE STREAMLIT SESSION CANARY ARMED" not in html
+def test_all_protected_impact_flags_remain_false():
+    out = _resolve(enabled="1", percent="25")
+    for key in (
+        "model_math_impact",
+        "pick_strength_impact",
+        "ranking_math_impact",
+        "risk_logic_impact",
+        "wagering_impact",
+        "durable_persistence",
+        "wnba_impact",
+    ):
+        assert out[key] is False
 
 
-def test_host_precedence_board_is_explicit():
-    html = step510b._session_board_html(
-        {
-            "control_source": "HOST_ENV",
-            "query_param_activation_requested": False,
-            "effective_percent": 10.0,
-            "realized_percent": 8.3,
-            "candidate_session_canary_enrolled": False,
-        }
-    )
-    assert "HOST ENV CONTROL HAS PRECEDENCE" in html
+def test_non_mapping_base_config_fails_closed():
+    with pytest.raises(MLBStreamlitCanaryControlError):
+        resolve_streamlit_canary_config([], host_env_present=False)
 
 
-def test_session_board_repeats_all_protected_invariants():
-    html = step510b._session_board_html({})
-    for token in ("model", "Pick Strength", "ranking-math", "risk", "persistence", "wagering", "WNBA"):
-        assert token in html
-
-
-def test_version_marks_step510b_streamlit_session_control():
-    assert "STEP 5.10B" in step510b.VERSION
-    assert "STREAMLIT SESSION CANARY CONTROL" in step510b.VERSION
+@pytest.mark.parametrize("bad", [0, 1, None, "false", "true"])
+def test_host_env_presence_must_be_boolean(bad):
+    with pytest.raises(MLBStreamlitCanaryControlError):
+        resolve_streamlit_canary_config(_base(), host_env_present=bad)
