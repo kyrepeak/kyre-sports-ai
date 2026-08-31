@@ -1,0 +1,97 @@
+name: MLB Step5.10B control-surface inventory
+
+on:
+  push:
+    branches:
+      - mlb-step5-10b-host-canary-verification
+    paths:
+      - '.github/workflows/mlb-step5-10b-control-surface-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  deployments: read
+
+jobs:
+  inspect-control-surfaces:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Read sanitized environment and Actions variable metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, urllib.error, urllib.parse, urllib.request
+
+          token = os.environ['GH_TOKEN']
+          repo = os.environ['REPO']
+          headers = {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': f'Bearer {token}',
+              'X-GitHub-Api-Version': '2022-11-28',
+              'User-Agent': 'KyreSportsMLBStep5-10B/1.0',
+          }
+
+          def get(path):
+              req = urllib.request.Request('https://api.github.com' + path, headers=headers, method='GET')
+              try:
+                  with urllib.request.urlopen(req, timeout=25) as response:
+                      return {'status': int(response.status), 'data': json.loads(response.read(4_000_000).decode('utf-8'))}
+              except urllib.error.HTTPError as exc:
+                  return {'status': int(exc.code), 'data': None}
+              except Exception as exc:
+                  return {'status': None, 'error': type(exc).__name__, 'data': None}
+
+          env_result = get(f'/repos/{repo}/environments?per_page=100')
+          repo_vars_result = get(f'/repos/{repo}/actions/variables?per_page=100')
+          repo_secrets_result = get(f'/repos/{repo}/actions/secrets?per_page=100')
+
+          environments = []
+          raw_envs = (env_result.get('data') or {}).get('environments', []) if isinstance(env_result.get('data'), dict) else []
+          for env in raw_envs:
+              name = str(env.get('name') or '')
+              quoted = urllib.parse.quote(name, safe='')
+              vars_result = get(f'/repos/{repo}/environments/{quoted}/variables?per_page=100') if name else {'status': None, 'data': None}
+              secrets_result = get(f'/repos/{repo}/environments/{quoted}/secrets?per_page=100') if name else {'status': None, 'data': None}
+              variables = []
+              raw_vars = (vars_result.get('data') or {}).get('variables', []) if isinstance(vars_result.get('data'), dict) else []
+              for var in raw_vars:
+                  variables.append({'name': var.get('name'), 'value': var.get('value')})
+              secret_names = []
+              raw_secrets = (secrets_result.get('data') or {}).get('secrets', []) if isinstance(secrets_result.get('data'), dict) else []
+              for secret in raw_secrets:
+                  secret_names.append(secret.get('name'))
+              environments.append({
+                  'name': name,
+                  'variables_http_status': vars_result.get('status'),
+                  'variables': variables,
+                  'secrets_http_status': secrets_result.get('status'),
+                  'secret_names_only': sorted(x for x in secret_names if x),
+              })
+
+          repo_variables = []
+          raw_repo_vars = (repo_vars_result.get('data') or {}).get('variables', []) if isinstance(repo_vars_result.get('data'), dict) else []
+          for var in raw_repo_vars:
+              repo_variables.append({'name': var.get('name'), 'value': var.get('value')})
+
+          repo_secret_names = []
+          raw_repo_secrets = (repo_secrets_result.get('data') or {}).get('secrets', []) if isinstance(repo_secrets_result.get('data'), dict) else []
+          for secret in raw_repo_secrets:
+              repo_secret_names.append(secret.get('name'))
+
+          print(json.dumps({
+              'environments_http_status': env_result.get('status'),
+              'environments': environments,
+              'repo_variables_http_status': repo_vars_result.get('status'),
+              'repo_variables': repo_variables,
+              'repo_secrets_http_status': repo_secrets_result.get('status'),
+              'repo_secret_names_only': sorted(x for x in repo_secret_names if x),
+              'secret_values_returned': False,
+          }, indent=2, sort_keys=True))
+          print('MLB_STEP5_10B_CONTROL_SURFACE_INVENTORY_COMPLETE')
+          PY
