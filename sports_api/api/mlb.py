@@ -1,8 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query
+
+from sports_api.collectors.mlb_fanduel_direct import collect_live_mlb_game_odds
 
 router = APIRouter(prefix="/api/v1/mlb", tags=["mlb"])
 
@@ -61,6 +63,58 @@ def get_mlb_games_today(
         "source": "MLB Stats API",
         "date": target_date,
         "game_count": len(games),
+        "games": games,
+    }
+
+
+@router.get("/odds")
+def get_mlb_odds(
+    max_events: int = Query(
+        default=30,
+        ge=1,
+        le=50,
+        description="Maximum number of upcoming FanDuel MLB events to inspect.",
+    ),
+    fully_priced_only: bool = Query(
+        default=True,
+        description="When true, return only games with moneyline, run line, and total pricing.",
+    ),
+):
+    """Return read-only live FanDuel MLB game odds reconciled to official MLB game IDs."""
+
+    try:
+        snapshot = collect_live_mlb_game_odds(
+            now_utc=datetime.now(timezone.utc),
+            max_events=max_events,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="MLB live odds collection failed.",
+        ) from exc
+
+    all_games = [game for game in snapshot.get("games", []) if isinstance(game, dict)]
+    games = (
+        [game for game in all_games if game.get("fully_priced") is True]
+        if fully_priced_only
+        else all_games
+    )
+
+    return {
+        "data_type": "mlb_live_odds_api_response_v1",
+        "schema_version": 1,
+        "source": snapshot.get("provider"),
+        "transport": snapshot.get("transport"),
+        "http_methods": snapshot.get("http_methods"),
+        "sportsbook_region": snapshot.get("sportsbook_region"),
+        "collected_at_utc": snapshot.get("collected_at_utc"),
+        "fully_priced_only": fully_priced_only,
+        "landing_event_count": snapshot.get("landing_event_count"),
+        "candidate_pregame_event_count": snapshot.get("candidate_pregame_event_count"),
+        "matched_game_count": snapshot.get("matched_game_count"),
+        "fully_priced_game_count": snapshot.get("fully_priced_game_count"),
+        "game_count": len(games),
+        "rejected_event_count": len(snapshot.get("rejected_events") or []),
         "games": games,
     }
 
