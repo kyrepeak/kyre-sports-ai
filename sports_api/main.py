@@ -5,7 +5,7 @@ import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integrat
 # Step 6I interposes reconciliation before the Step 6D runtime write hook.
 import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  # noqa: F401
 
-from sports_api.mlb_step16b_production_lifecycle_v1 import step16b_lifespan
+from sports_api.mlb_step17b_always_on_runtime_v1 import step17b_lifespan
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
 from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
@@ -32,6 +32,7 @@ from sports_api.api.mlb_roster_status import router as mlb_roster_status_router
 from sports_api.api.mlb_slate_verification import router as mlb_slate_verification_router
 from sports_api.api.mlb_starting_pitchers import router as mlb_starting_pitchers_router
 from sports_api.api.mlb_stats import router as mlb_stats_router
+from sports_api.api.mlb_step17b_runtime import router as mlb_step17b_runtime_router
 from sports_api.api.mlb_team_analytics import router as mlb_team_analytics_router
 from sports_api.api.wnba import router as wnba_router
 from sports_api.api.wnba_advanced import router as wnba_advanced_router
@@ -94,7 +95,7 @@ app = FastAPI(
     title="Kyre Sports API",
     description="Sports data and analytics API for the Kyre Sports AI Streamlit app.",
     version="0.1.0",
-    lifespan=step16b_lifespan,
+    lifespan=step17b_lifespan,
 )
 
 app.include_router(health_router)
@@ -124,6 +125,7 @@ app.include_router(mlb_hit_environment_context_router)
 app.include_router(mlb_hit_defense_context_router)
 app.include_router(mlb_batted_ball_context_router)
 app.include_router(mlb_park_factor_context_router)
+app.include_router(mlb_step17b_runtime_router)
 app.include_router(wnba_router)
 app.include_router(wnba_advanced_router)
 app.include_router(wnba_availability_router)
