@@ -5,6 +5,7 @@ import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integrat
 # Step 6I interposes reconciliation before the Step 6D runtime write hook.
 import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  # noqa: F401
 
+from sports_api.mlb_step16b_production_lifecycle_v1 import step16b_lifespan
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
 from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
@@ -93,6 +94,7 @@ app = FastAPI(
     title="Kyre Sports API",
     description="Sports data and analytics API for the Kyre Sports AI Streamlit app.",
     version="0.1.0",
+    lifespan=step16b_lifespan,
 )
 
 app.include_router(health_router)
