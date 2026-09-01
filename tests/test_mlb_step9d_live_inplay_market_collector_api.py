@@ -219,7 +219,13 @@ def test_router_live_odds_response_and_exact_id_404(monkeypatch):
         event_fetcher=lambda event_id: _event_page(),
         schedule_fetcher=lambda slate_date: _schedule(),
     )
-    monkeypatch.setattr(mlb_api, "collect_inplay_mlb_game_odds", lambda **kwargs: deepcopy(snapshot))
+
+    def fake_collect(**kwargs):
+        out = deepcopy(snapshot)
+        out["requested_official_game_id"] = kwargs.get("official_game_id")
+        return out
+
+    monkeypatch.setattr(mlb_api, "collect_inplay_mlb_game_odds", fake_collect)
 
     payload = mlb_api.get_mlb_live_odds(
         official_game_id=GAME_ID,
@@ -237,7 +243,13 @@ def test_router_live_odds_response_and_exact_id_404(monkeypatch):
     empty = deepcopy(snapshot)
     empty["games"] = []
     empty["matched_inplay_game_count"] = 0
-    monkeypatch.setattr(mlb_api, "collect_inplay_mlb_game_odds", lambda **kwargs: deepcopy(empty))
+
+    def fake_empty(**kwargs):
+        out = deepcopy(empty)
+        out["requested_official_game_id"] = kwargs.get("official_game_id")
+        return out
+
+    monkeypatch.setattr(mlb_api, "collect_inplay_mlb_game_odds", fake_empty)
     with pytest.raises(HTTPException) as excinfo:
         mlb_api.get_mlb_live_odds(
             official_game_id=GAME_ID,
