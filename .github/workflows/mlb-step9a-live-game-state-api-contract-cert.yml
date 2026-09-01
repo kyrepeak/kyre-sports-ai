@@ -1,0 +1,314 @@
+name: MLB Step9A live game state API contract certification
+
+on:
+  push:
+    branches:
+      - mlb-step9a-live-game-state-api-contract
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step9a-live-game-state-api-contract-cert
+  cancel-in-progress: false
+
+env:
+  STEP9A_BASE_SHA: 48f24be3395f822a72b8b348ba2697507ad3c0bd
+
+jobs:
+  certify-live-game-state-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step9A exact three-file contract-only MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP9A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step9a_live_game_state_api_contract_v1.py|tests/test_mlb_step9a_live_game_state_api_contract_v1.py|\.github/workflows/mlb-step9a-live-game-state-api-contract-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP9A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP9A_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP9A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP9A_THREE_FILE_CONTRACT_ONLY_SCOPE_OK'
+
+      - name: Prove complete Step8 and V19 live runtime are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP9A_BASE_SHA"...HEAD -- \
+            app.py \
+            engine.py \
+            spread_engine.py \
+            history.py \
+            live_game_hub_v18.py \
+            live_game_hub_v182.py \
+            live_game_hub_v19.py \
+            live_game_hub_v192.py \
+            live_game_hub_v1921.py \
+            mlb_live_hub_v193.py \
+            live_odds_feed.py \
+            mlb_schedule_v32.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            sports_api/mlb_step8d_player_hits_integration_v1.py \
+            sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py \
+            mlb_pitcher_k_hub_v1017.py \
+            mlb_hit_hub_v1315.py \
+            mlb_hrrbi_hub_v115.py \
+            mlb_spread_hub_v157.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_totals_hub_v174.py
+          echo 'MLB_STEP9A_PREEXISTING_STEP8_AND_V19_RUNTIME_BYTE_IDENTICAL'
+
+      - name: Assert pure exact-game-ID read-only contract boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import inspect
+          from pathlib import Path
+          from sports_api import mlb_step9a_live_game_state_api_contract_v1 as module
+
+          assert module.DATA_TYPE == 'mlb_step9a_live_game_state_api_contract_v1'
+          assert module.CONTEXT_DATA_TYPE == 'mlb_step9a_live_game_state_context_v1'
+          assert module.EXPECTED_API_DATA_TYPE == 'mlb_live_game_state_api_response_v1'
+          assert module.EXPECTED_SOURCE == 'MLB Stats API'
+          assert module.MATCH_METHOD == 'official_mlb_game_id_exact'
+          assert module.DEFAULT_MAX_SNAPSHOT_AGE_SECONDS == 20.0
+          assert module.SUPPORTED_STATES == frozenset({'PREGAME','LIVE','DELAYED','FINAL'})
+
+          source = Path('sports_api/mlb_step9a_live_game_state_api_contract_v1.py').read_text()
+          for forbidden in (
+              'import requests', 'import httpx', 'import urllib', 'import pandas',
+              'import numpy', 'import streamlit', 'random.', 'Monte Carlo',
+              'SequenceMatcher', 'Levenshtein', 'rapidfuzz', 'fuzzywuzzy',
+          ):
+              assert forbidden not in source, forbidden
+
+          accessor = inspect.getsource(module.live_game_state_for_official_game_id)
+          assert 'official_game_id' in accessor
+          assert 'away_team' not in accessor
+          assert 'home_team' not in accessor
+          assert 'batter' not in accessor
+          assert 'pitcher' not in accessor
+
+          state = module.build_live_game_state_api_state(None)
+          assert state['production_endpoint_added'] is False
+          assert state['live_state_collection_added'] is False
+          assert state['preexisting_v19_live_model_preserved'] is True
+          assert state['preexisting_direct_transport_preserved'] is True
+          assert state['team_name_matching_used'] is False
+          assert state['player_name_matching_used'] is False
+          assert state['fuzzy_matching_allowed'] is False
+          assert state['synthetic_game_id_allowed'] is False
+          assert state['unverified_game_id_allowed'] is False
+          for key in module.PROTECTED_FALSE_FLAGS:
+              assert state[key] is False, key
+          print('MLB_STEP9A_PURE_EXACT_GAME_ID_READ_ONLY_CONTRACT_OK')
+          PY
+
+      - name: Prove frozen Step8 prerequisite remains valid
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step8_final_freeze_v1 import (
+              FINAL_FREEZE_STATUS,
+              STEP8_CERTIFICATION_MARKERS,
+              STEP8G_BASE_MAIN_SHA,
+              validate_final_step8_certification,
+          )
+          state = validate_final_step8_certification(
+              STEP8_CERTIFICATION_MARKERS,
+              runtime_base_sha=STEP8G_BASE_MAIN_SHA,
+          )
+          assert state['freeze_eligible'] is True
+          assert state['freeze_status'] == FINAL_FREEZE_STATUS
+          assert state['failures'] == []
+          print('MLB_STEP9A_STEP8_FINAL_FREEZE_PREREQUISITE_OK')
+          PY
+
+      - name: Compile Step9A Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py
+
+      - name: Run Step9A targeted tests
+        run: python -m pytest -q tests/test_mlb_step9a_live_game_state_api_contract_v1.py
+
+      - name: Run complete certified MLB regression through Step9A
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py
+
+      - name: Certify synthetic exact-ID and freshness boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timedelta, timezone
+          import json
+
+          from sports_api.mlb_step9a_live_game_state_api_contract_v1 import (
+              API_CONNECTED,
+              FALLBACK,
+              build_live_game_state_api_state,
+              enforce_live_game_state_api_freshness,
+              live_game_state_for_official_game_id,
+          )
+
+          now = datetime.now(timezone.utc)
+          payload = {
+              'data_type':'mlb_live_game_state_api_response_v1',
+              'schema_version':1,
+              'source':'MLB Stats API',
+              'collected_at_utc':now.isoformat(),
+              'games':[
+                  {
+                      'official_game_id':823340,
+                      'status':'In Progress',
+                      'state':'LIVE',
+                      'away_team':'DISPLAY AWAY',
+                      'home_team':'DISPLAY HOME',
+                      'away_runs':2,
+                      'home_runs':3,
+                      'inning':'Top 7th',
+                      'inning_state':'Top',
+                      'balls':1,
+                      'strikes':2,
+                      'outs':1,
+                      'batter_id':694973,
+                      'batter':'INTENTIONALLY DIFFERENT DISPLAY BATTER',
+                      'pitcher_id':657277,
+                      'pitcher':'INTENTIONALLY DIFFERENT DISPLAY PITCHER',
+                      'recent_plays':[],
+                  }
+              ],
+          }
+          before = deepcopy(payload)
+          raw = build_live_game_state_api_state(payload)
+          assert payload == before
+          assert raw['integration_status'] == API_CONNECTED
+          assert raw['feed_fresh'] is None
+          assert live_game_state_for_official_game_id(raw, official_game_id=823340) is None
+
+          fresh = enforce_live_game_state_api_freshness(raw, as_of_utc=now, max_age_seconds=20)
+          assert fresh['integration_status'] == API_CONNECTED
+          assert fresh['feed_fresh'] is True
+          context = live_game_state_for_official_game_id(fresh, official_game_id=823340)
+          assert context is not None
+          assert context['official_game_id'] == 823340
+          assert context['team_name_matching_used'] is False
+          assert context['player_name_matching_used'] is False
+          assert context['fuzzy_matching_allowed'] is False
+          assert context['synthetic_game_id_allowed'] is False
+          assert context['sportsbook_price_model_input'] is False
+          assert live_game_state_for_official_game_id(fresh, official_game_id=823341) is None
+          assert live_game_state_for_official_game_id(fresh, official_game_id=823340.0) is None
+          assert live_game_state_for_official_game_id(fresh, official_game_id='８２３３４０') is None
+
+          stale_payload = deepcopy(payload)
+          stale_payload['collected_at_utc'] = (now - timedelta(seconds=21)).isoformat()
+          stale = enforce_live_game_state_api_freshness(
+              build_live_game_state_api_state(stale_payload),
+              as_of_utc=now,
+              max_age_seconds=20,
+          )
+          assert stale['integration_status'] == FALLBACK
+          assert stale['feed_fresh'] is False
+          assert live_game_state_for_official_game_id(stale, official_game_id=823340) is None
+
+          duplicate_payload = deepcopy(payload)
+          duplicate_payload['games'].append(deepcopy(duplicate_payload['games'][0]))
+          duplicate = build_live_game_state_api_state(duplicate_payload)
+          assert duplicate['integration_status'] == FALLBACK
+          assert 'duplicate_exact_official_game_id' in duplicate['failures']
+
+          print(json.dumps({
+              'marker':'MLB_STEP9A_SYNTHETIC_EXACT_ID_FRESHNESS_GREEN',
+              'exact_game_id_context':True,
+              'unproven_freshness_blocked':True,
+              'wrong_game_id_blocked':True,
+              'fractional_game_id_blocked':True,
+              'unicode_game_id_blocked':True,
+              'stale_snapshot_blocked':True,
+              'duplicate_game_id_blocked':True,
+              'team_name_matching_used':False,
+              'player_name_matching_used':False,
+              'fuzzy_matching_allowed':False,
+              'synthetic_game_id_allowed':False,
+              'production_endpoint_added':False,
+              'live_state_collection_added':False,
+              'v19_model_changed':False,
+          }, sort_keys=True))
+          PY
+
+      - name: Final Step9A certification marker
+        run: echo 'MLB_STEP9A_LIVE_GAME_STATE_API_CONTRACT_GREEN'
