@@ -170,7 +170,12 @@ def _optional_text(value: Any, field: str, *, max_length: int = 256) -> str | No
 def _optional_utc_z(value: Any, field: str) -> str | None:
     if value is None:
         return None
-    if not isinstance(value, str) or not value.endswith("Z"):
+    if (
+        not isinstance(value, str)
+        or not value.endswith("Z")
+        or "T" not in value
+        or " " in value
+    ):
         raise MLBStep12BLiveRuntimeAssemblyError(
             f"{field} must be UTC RFC3339 ending in Z or None"
         )
@@ -323,9 +328,7 @@ def assemble_live_runtime_shadow(
             f"Step 12A shadow runtime validation failed: {cycle_validation.get('failures')}"
         )
 
-    provider_game_ids = sorted(
-        {int(row["official_game_id"]) for row in snapshots}
-    )
+    provider_game_ids = sorted({int(row["official_game_id"]) for row in snapshots})
     official_ids = sorted(official_game_ids)
     unmatched_official_ids = sorted(official_game_ids - set(provider_game_ids))
 
