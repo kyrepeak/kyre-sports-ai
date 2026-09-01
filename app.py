@@ -271,6 +271,16 @@ _STEP7F_WNBA_API_BRIDGE = _install_step7f_wnba_api_bridge()
 _STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()
 _STEP7C_MLB_MONEYLINE_ROUTE = _install_mlb_moneyline_step7c_route()
 _STEP7E_MLB_TOTALS_ROUTE = _install_mlb_totals_step7e_route()
+try:
+    from mlb_step9c_live_state_consumer_v1 import install_step9c_live_state_consumer
+
+    _STEP9C_MLB_LIVE_STATE_CONSUMER = install_step9c_live_state_consumer()
+except Exception as exc:
+    _STEP9C_MLB_LIVE_STATE_CONSUMER = {
+        "installed": False,
+        "error_type": type(exc).__name__,
+        "legacy_direct_mlb_live_feed_preserved": True,
+    }
 source = _load_frozen_pre_live_app()
 
 # Step 7B changes only the MLB Spread presentation import inside the frozen
