@@ -4,19 +4,8 @@ from fastapi import FastAPI
 import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integration  # noqa: F401
 # Step 6I interposes reconciliation before the Step 6D runtime write hook.
 import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  # noqa: F401
-# Step 19A replaces only the obsolete DraftKings public GET transport while
-# preserving the frozen Step 6I official-reconciliation write guard.
-import sports_api.wnba_step19a_draftkings_sportscontent as _wnba_step19a_draftkings_sportscontent  # noqa: F401
-# Step 7G is default-OFF and, when explicitly enabled, installs certified
-# first-party WNBA core-data seams before readiness/projection routers bind them.
-import sports_api.wnba_step7g_first_party_integration as _wnba_step7g_first_party_integration  # noqa: F401
-# Step 19C preserves all certified Step-8 readiness blockers while converting
-# the all-target-not-ready pregame state into a controlled market-not-ready result.
-import sports_api.wnba_step19c_market_not_ready_compat as _wnba_step19c_market_not_ready_compat  # noqa: F401
-# Step 17B composes the frozen Step-16B lifecycle and, only when explicitly
-# enabled, starts one PostgreSQL-leader-controlled durable scheduler loop.
-from sports_api.wnba_step17b_always_on_runtime import step17b_lifespan
 
+from sports_api.mlb_step16b_production_lifecycle_v1 import step16b_lifespan
 from sports_api.api.health import router as health_router
 from sports_api.api.mlb import router as mlb_router
 from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
@@ -98,12 +87,6 @@ from sports_api.api.wnba_step6r_supabase_storage import router as wnba_step6r_su
 from sports_api.api.wnba_step6t_canary_evidence import router as wnba_step6t_canary_evidence_router
 from sports_api.api.wnba_step6u_activation_bridge import router as wnba_step6u_activation_bridge_router
 from sports_api.api.wnba_step6w_final_certification import router as wnba_step6w_final_certification_router
-from sports_api.api.wnba_step8_projection import router as wnba_step8_projection_router
-from sports_api.api.wnba_step9_market_board import router as wnba_step9_market_board_router
-from sports_api.api.wnba_step10_live_market_board import router as wnba_step10_live_market_board_router
-from sports_api.api.wnba_step17b_runtime import router as wnba_step17b_runtime_router
-from sports_api.api.wnba_step17c_reliability import router as wnba_step17c_reliability_router
-from sports_api.api.wnba_step18a_consumer import router as wnba_step18a_consumer_router
 from sports_api.api.wnba_team_history import router as wnba_team_history_router
 from sports_api.api.wnba_tracking import router as wnba_tracking_router
 
@@ -111,7 +94,7 @@ app = FastAPI(
     title="Kyre Sports API",
     description="Sports data and analytics API for the Kyre Sports AI Streamlit app.",
     version="0.1.0",
-    lifespan=step17b_lifespan,
+    lifespan=step16b_lifespan,
 )
 
 app.include_router(health_router)
@@ -195,12 +178,6 @@ app.include_router(wnba_step6r_supabase_storage_router)
 app.include_router(wnba_step6t_canary_evidence_router)
 app.include_router(wnba_step6u_activation_bridge_router)
 app.include_router(wnba_step6w_final_certification_router)
-app.include_router(wnba_step8_projection_router)
-app.include_router(wnba_step9_market_board_router)
-app.include_router(wnba_step10_live_market_board_router)
-app.include_router(wnba_step17b_runtime_router)
-app.include_router(wnba_step17c_reliability_router)
-app.include_router(wnba_step18a_consumer_router)
 app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
 
