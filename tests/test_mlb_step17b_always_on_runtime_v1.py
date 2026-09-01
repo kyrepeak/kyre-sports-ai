@@ -86,7 +86,9 @@ def test_step17b_requires_all_durable_gates():
 def test_step17b_requires_secret_postgres_url_but_never_returns_it():
     report = s17b.validate_step17b_startup(_env())
     assert report["database_secret_configured"] is True
-    assert "secret" not in str(report).lower()
+    rendered = str(report).lower()
+    assert "user:secret@example.invalid" not in rendered
+    assert "postgresql://" not in rendered
 
     bad = _env()
     bad["KYRE_DATABASE_URL"] = "https://example.invalid/db"
@@ -331,4 +333,6 @@ def test_status_is_sanitized_and_defensive_copy():
     second = s17b.get_step17b_status()
     assert second["role"] != "tampered"
     assert "KYRE_DATABASE_URL" not in second
-    assert "secret" not in str(second).lower()
+    rendered = str(second).lower()
+    assert "user:secret@example.invalid" not in rendered
+    assert "postgresql://" not in rendered
