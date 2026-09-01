@@ -1,0 +1,57 @@
+name: MLB Step9D FanDuel in-play probe once
+
+on:
+  push:
+    branches:
+      - mlb-step9d-live-inplay-market-collector-api
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe public FanDuel MLB payload
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from sports_api.collectors.mlb_fanduel_direct import fetch_fanduel_mlb_landing, fetch_fanduel_event_page, _rows, _event_name, _event_id
+
+          now = datetime.now(timezone.utc)
+          landing = fetch_fanduel_mlb_landing()
+          attachments = landing.get('attachments') or {}
+          events = _rows(attachments.get('events'))
+          print('NOW', now.isoformat())
+          print('LANDING_EVENT_COUNT', len(events))
+          candidates=[]
+          for e in events:
+              name=_event_name(e)
+              if ' @ ' not in name:
+                  continue
+              candidates.append(e)
+          print('MLB_MATCHUP_EVENT_COUNT', len(candidates))
+          for e in candidates[:20]:
+              print('EVENT', {'id':_event_id(e),'name':_event_name(e),'openDate':e.get('openDate'),'eventStatus':e.get('eventStatus'),'inPlay':e.get('inPlay')})
+          for e in candidates[:8]:
+              eid=_event_id(e)
+              try:
+                  page=fetch_fanduel_event_page(eid)
+              except Exception as exc:
+                  print('EVENT_PAGE_ERROR', eid, type(exc).__name__, str(exc)[:240])
+                  continue
+              att=page.get('attachments') or {}
+              markets=_rows(att.get('markets')) if isinstance(att,dict) else []
+              core=[]
+              for m in markets:
+                  name=str(m.get('marketName') or m.get('name') or m.get('displayName') or '')
+                  if name in {'Moneyline','Run Line','Total Runs'} or 'Moneyline' in name or 'Run Line' in name or 'Total' in name:
+                      core.append({'name':name,'status':m.get('marketStatus') or m.get('status'),'inPlay':m.get('inPlay'),'marketTime':m.get('marketTime'),'id':m.get('marketId')})
+              print('CORE_MARKETS', {'event_id':eid,'event':_event_name(e),'count':len(core),'markets':core[:20]})
+          print('MLB_STEP9D_FANDUEL_PROBE_COMPLETE')
+          PY
