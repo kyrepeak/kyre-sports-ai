@@ -1,0 +1,424 @@
+name: MLB Step11C multi-provider shadow board certification
+
+on:
+  push:
+    branches:
+      - mlb-step11c-multi-provider-shadow-board
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-multi-provider-shadow-board:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      STEP11C_BASE_SHA: 05aa8b6299f6300146666bcbb1601158d0ce364d
+      API_BASE_URL: https://kyre-sports-api.onrender.com
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step11C is exactly three-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP11C_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step11c_multi_provider_shadow_board_v1.py|tests/test_mlb_step11c_multi_provider_shadow_board_v1.py|\.github/workflows/mlb-step11c-multi-provider-shadow-board-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP11C_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP11C_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP11C_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP11C_BASE_SHA"...HEAD
+          echo 'MLB_STEP11C_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove frozen runtime Step10 Step11A and Step11B remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP11C_BASE_SHA"...HEAD -- \
+            app.py \
+            engine.py \
+            history.py \
+            spread_engine.py \
+            live_game_hub_v182.py \
+            live_game_hub_v19.py \
+            live_game_hub_v191.py \
+            live_game_hub_v192.py \
+            live_game_hub_v1921.py \
+            mlb_live_hub_v193.py \
+            live_odds_feed.py \
+            mlb_step9c_live_state_consumer_v1.py \
+            mlb_step9e_live_market_consumer_v1.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py \
+            sports_api/database/mlb_live_snapshot_recovery.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11a_provider_contract_v1.py \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py
+          echo 'MLB_STEP11C_FROZEN_RUNTIME_STEP10_STEP11A_STEP11B_BYTE_IDENTICAL'
+
+      - name: Assert Step11C shadow-board boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step9_final_freeze_v1 import PROTECTED_INVARIANTS
+          from sports_api.mlb_step11a_provider_contract_v1 import (
+              CONTRACT_STATUS as STEP11A_STATUS,
+              FINAL_CERTIFICATION_MARKER as STEP11A_MARKER,
+          )
+          from sports_api.collectors.mlb_draftkings_provider import (
+              ADAPTER_STATUS as STEP11B_STATUS,
+              FINAL_CERTIFICATION_MARKER as STEP11B_MARKER,
+          )
+          from sports_api.mlb_step11c_multi_provider_shadow_board_v1 import (
+              BOARD_STATUS,
+              FINAL_CERTIFICATION_MARKER,
+              STEP11C_BASE_MAIN_SHA,
+              SUPPORTED_PROVIDERS,
+              shadow_board_manifest,
+          )
+
+          m = shadow_board_manifest()
+          assert STEP11C_BASE_MAIN_SHA == '05aa8b6299f6300146666bcbb1601158d0ce364d'
+          assert m['step11c_base_main_sha'] == STEP11C_BASE_MAIN_SHA
+          assert m['board_status'] == BOARD_STATUS
+          assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER
+          assert m['step11a_contract_status_required'] == STEP11A_STATUS
+          assert m['step11a_final_certification_marker_required'] == STEP11A_MARKER
+          assert m['step11b_adapter_status_required'] == STEP11B_STATUS
+          assert m['step11b_final_certification_marker_required'] == STEP11B_MARKER
+          assert tuple(m['supported_providers']) == SUPPORTED_PROVIDERS
+          for key in [
+              'exact_official_game_id_only',
+              'exact_record_duplicate_deduplication_allowed',
+              'shadow_board_only',
+          ]:
+              assert m[key] is True, key
+          for key in [
+              'ambiguous_provider_slot_selection_allowed',
+              'cross_provider_event_id_join_allowed',
+              'team_name_join_allowed',
+              'player_name_join_allowed',
+              'fuzzy_matching_allowed',
+              'synthetic_game_id_allowed',
+              'price_fabrication_allowed',
+              'fallback_price_fabrication_allowed',
+              'best_price_selection_enabled',
+              'provider_consensus_enabled',
+              'provider_failover_enabled',
+              'provider_weighting_enabled',
+              'network_io_added_by_step11c',
+              'production_api_wiring_added_by_step11c',
+              'production_runtime_wiring_added_by_step11c',
+              'persistence_schema_changed_by_step11c',
+              'production_database_writes_enabled',
+          ]:
+              assert m[key] is False, key
+          for key, value in PROTECTED_INVARIANTS.items():
+              assert value is False and m[key] is False, key
+          print('MLB_STEP11C_MULTI_PROVIDER_SHADOW_BOARD_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step11C Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step11c_multi_provider_shadow_board_v1.py \
+            tests/test_mlb_step11c_multi_provider_shadow_board_v1.py
+
+      - name: Run Step11C targeted tests
+        run: python -m pytest -q tests/test_mlb_step11c_multi_provider_shadow_board_v1.py
+
+      - name: Run complete certified MLB regression through Step11C
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py \
+            tests/test_mlb_step9b_live_game_state_collector_api.py \
+            tests/test_mlb_step9c_live_state_consumer_v1.py \
+            tests/test_mlb_step9d_live_inplay_market_collector_api.py \
+            tests/test_mlb_step9e_live_market_consumer_v1.py \
+            tests/test_mlb_step9_final_freeze_v1.py \
+            tests/test_mlb_step9g_postfreeze_handoff_v1.py \
+            tests/test_mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            tests/test_mlb_step10b_live_snapshot_store.py \
+            tests/test_mlb_step10c_live_snapshot_recovery.py \
+            tests/test_mlb_step10_final_persistence_freeze_v1.py \
+            tests/test_mlb_step11a_provider_contract_v1.py \
+            tests/test_mlb_step11b_draftkings_provider.py \
+            tests/test_mlb_step11c_multi_provider_shadow_board_v1.py
+
+      - name: Certify FanDuel plus DraftKings shadow board and unchanged production boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib
+          import json
+          import os
+          import requests
+
+          from sports_api.mlb_step10_final_persistence_freeze_v1 import (
+              FINAL_CERTIFICATION_MARKER as STEP10_MARKER,
+              FINAL_FREEZE_STATUS as STEP10_STATUS,
+          )
+          from sports_api.mlb_step11a_provider_contract_v1 import (
+              build_market_provider_game_snapshot,
+          )
+          from sports_api.collectors.mlb_draftkings_provider import (
+              normalize_draftkings_game_document,
+          )
+          from sports_api.mlb_step11c_multi_provider_shadow_board_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              build_multi_provider_shadow_board,
+              validate_multi_provider_shadow_board,
+          )
+
+          base = os.environ['API_BASE_URL'].rstrip('/')
+          headers = {
+              'Accept': 'application/json',
+              'User-Agent': 'KyreSportsMLBStep11CShadowBoardCertification/1.0',
+              'Cache-Control': 'no-cache',
+          }
+
+          def z_now():
+              return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+          def canonical_z(value):
+              parsed = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+              return parsed.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+          games_response = requests.get(
+              base + '/api/v1/mlb/games/today', timeout=120, headers=headers
+          )
+          games_response.raise_for_status()
+          games_payload = games_response.json()
+
+          odds_response = requests.get(
+              base + '/api/v1/mlb/odds',
+              params={'max_events': 30, 'fully_priced_only': 'true'},
+              timeout=120,
+              headers=headers,
+          )
+          odds_response.raise_for_status()
+          odds_payload = odds_response.json()
+          assert odds_payload.get('source') == 'FanDuel'
+
+          production_games = [
+              game for game in (odds_payload.get('games') or [])
+              if isinstance(game, dict) and game.get('fully_priced') is True
+          ]
+
+          if production_games:
+              game = production_games[0]
+              gamepk = int(game['official_game_id'])
+              collected = canonical_z(odds_payload['collected_at_utc'])
+              observed_dt = datetime.now(timezone.utc)
+              collected_dt = datetime.fromisoformat(collected.replace('Z', '+00:00'))
+              if observed_dt < collected_dt:
+                  observed_dt = collected_dt
+              observed = observed_dt.isoformat().replace('+00:00', 'Z')
+              source_hash = hashlib.sha256(
+                  json.dumps(odds_payload, sort_keys=True, separators=(',', ':')).encode()
+              ).hexdigest()
+              fanduel_snapshot = build_market_provider_game_snapshot(
+                  provider_key='fanduel',
+                  provider_name='FanDuel',
+                  provider_event_id=str(game['sportsbook_event_id']),
+                  official_game_id=gamepk,
+                  observed_at_utc=observed,
+                  source_collected_at_utc=collected,
+                  market_phase='PREGAME',
+                  transport=str(odds_payload.get('transport') or 'anonymous_public_get_only'),
+                  source_payload_sha256=source_hash,
+                  markets=game['markets'],
+                  source_complete=True,
+                  exact_official_game_id_verified=True,
+                  fuzzy_matching_used=False,
+                  synthetic_game_id_used=False,
+                  price_fabrication_used=False,
+                  step10_final_freeze_status=STEP10_STATUS,
+                  step10_final_certification_marker=STEP10_MARKER,
+              )
+              fanduel_source = 'production'
+          else:
+              gamepk = 999001
+              observed = z_now()
+              fanduel_markets = {
+                  'moneyline': {
+                      'market_id': 'fd-ml', 'market_time_utc': None,
+                      'away_odds': 110, 'home_odds': -130,
+                      'away_selection_id': 'fd-a1', 'home_selection_id': 'fd-h1',
+                  },
+                  'run_line': {
+                      'market_id': 'fd-rl', 'market_time_utc': None,
+                      'away_line': 1.5, 'away_odds': -105,
+                      'home_line': -1.5, 'home_odds': -115,
+                      'away_selection_id': 'fd-a2', 'home_selection_id': 'fd-h2',
+                  },
+                  'total': {
+                      'market_id': 'fd-tot', 'market_time_utc': None,
+                      'line': 8.5, 'over_odds': -110, 'under_odds': -110,
+                      'over_selection_id': 'fd-o', 'under_selection_id': 'fd-u',
+                  },
+              }
+              fanduel_snapshot = build_market_provider_game_snapshot(
+                  provider_key='fanduel', provider_name='FanDuel',
+                  provider_event_id='fd-cert-event', official_game_id=gamepk,
+                  observed_at_utc=observed, source_collected_at_utc=observed,
+                  market_phase='PREGAME', transport='certification_fixture',
+                  source_payload_sha256=hashlib.sha256(b'fd-cert').hexdigest(),
+                  markets=fanduel_markets, source_complete=True,
+                  exact_official_game_id_verified=True, fuzzy_matching_used=False,
+                  synthetic_game_id_used=False, price_fabrication_used=False,
+                  step10_final_freeze_status=STEP10_STATUS,
+                  step10_final_certification_marker=STEP10_MARKER,
+              )
+              fanduel_source = 'fixture_no_production_fully_priced_game'
+
+          dk_event = 'dk-cert-event'
+          dk_document = {
+              'events': [{'id': dk_event}],
+              'markets': [
+                  {'id': 'dk-m1', 'eventId': dk_event, 'name': 'Moneyline', 'status': 'OPEN', 'inPlay': False},
+                  {'id': 'dk-m2', 'eventId': dk_event, 'name': 'Run Line', 'status': 'OPEN', 'inPlay': False},
+                  {'id': 'dk-m3', 'eventId': dk_event, 'name': 'Total Runs', 'status': 'OPEN', 'inPlay': False},
+              ],
+              'selections': [
+                  {'id': 'dk-a1', 'marketId': 'dk-m1', 'side': 'away', 'oddsAmerican': 115},
+                  {'id': 'dk-h1', 'marketId': 'dk-m1', 'side': 'home', 'oddsAmerican': -135},
+                  {'id': 'dk-a2', 'marketId': 'dk-m2', 'side': 'away', 'points': 1.5, 'oddsAmerican': -110},
+                  {'id': 'dk-h2', 'marketId': 'dk-m2', 'side': 'home', 'points': -1.5, 'oddsAmerican': -110},
+                  {'id': 'dk-o3', 'marketId': 'dk-m3', 'side': 'over', 'points': 8.5, 'oddsAmerican': -105},
+                  {'id': 'dk-u3', 'marketId': 'dk-m3', 'side': 'under', 'points': 8.5, 'oddsAmerican': -115},
+              ],
+          }
+          draftkings_snapshot = normalize_draftkings_game_document(
+              dk_document,
+              provider_event_id=dk_event,
+              official_game_id=gamepk,
+              event_gamepk_map={dk_event: gamepk},
+              market_phase='PREGAME',
+              observed_at_utc=observed,
+              source_collected_at_utc=observed,
+          )
+
+          assembled_dt = datetime.now(timezone.utc)
+          observed_dt = datetime.fromisoformat(observed.replace('Z', '+00:00'))
+          if assembled_dt < observed_dt:
+              assembled_dt = observed_dt
+          assembled = assembled_dt.isoformat().replace('+00:00', 'Z')
+          board = build_multi_provider_shadow_board(
+              [fanduel_snapshot, draftkings_snapshot], assembled_at_utc=assembled
+          )
+          validation = validate_multi_provider_shadow_board(board)
+          assert validation['board_valid'] is True, validation
+          assert board['provider_keys_present'] == ['fanduel', 'draftkings']
+          assert board['game_phase_group_count'] == 1
+          assert board['dual_provider_game_phase_group_count'] == 1
+          group = board['game_phase_groups'][0]
+          assert group['official_game_id'] == gamepk
+          assert group['provider_count'] == 2
+          assert group['market_overlap_count'] == 3
+          assert board['provider_consensus_used'] is False
+          assert board['provider_failover_used'] is False
+          assert board['best_price_selection_used'] is False
+          assert board['price_fabrication_used'] is False
+          assert board['network_io_performed'] is False
+          assert board['production_runtime_wiring'] is False
+          assert board['production_database_writes'] is False
+
+          evidence = {
+              'production_schedule_game_count': games_payload.get('game_count', 0),
+              'production_fanduel_fully_priced_game_count': odds_payload.get('game_count', 0),
+              'fanduel_shadow_source': fanduel_source,
+              'shadow_board_provider_count': group['provider_count'],
+              'shadow_board_market_overlap_count': group['market_overlap_count'],
+              'live_draftkings_network_calls': 0,
+              'fake_prices_built': 0,
+              'provider_consensus_enabled': False,
+              'provider_failover_enabled': False,
+              'best_price_selection_enabled': False,
+              'production_runtime_changes': 0,
+              'production_database_writes': 0,
+          }
+          print(json.dumps(evidence, sort_keys=True))
+          print('MLB_STEP11C_FANDUEL_DRAFTKINGS_SAME_GAMEPK_SHADOW_BOARD_GREEN')
+          print('MLB_STEP11C_THREE_CORE_MARKET_OVERLAP_GREEN')
+          print('MLB_STEP11C_ZERO_PRICE_FABRICATION_GREEN')
+          print('MLB_STEP11C_ZERO_PROVIDER_CONSENSUS_GREEN')
+          print('MLB_STEP11C_ZERO_PROVIDER_FAILOVER_GREEN')
+          print('MLB_STEP11C_ZERO_BEST_PRICE_SELECTION_GREEN')
+          print('MLB_STEP11C_ZERO_PRODUCTION_RUNTIME_WIRING_GREEN')
+          print('MLB_STEP11C_ZERO_PRODUCTION_DATABASE_WRITES_GREEN')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
