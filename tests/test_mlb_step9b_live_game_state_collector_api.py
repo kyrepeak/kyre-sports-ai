@@ -350,7 +350,7 @@ def test_collector_payload_passes_step9a_contract_and_exact_context_lookup():
     assert context["official_game_id"] == GAME_LIVE
     assert context["batter_id"] == BATTER_ID
     assert live_game_state_for_official_game_id(
-        state, official_game_id=GAME_LIVE + 1
+        state, official_game_id=GAME_LIVE + 999999
     ) is None
 
 
