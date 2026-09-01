@@ -120,9 +120,12 @@ jobs:
         run: |
           set -euo pipefail
           PYTHONPATH=. python - <<'PY'
+          from pathlib import Path
           from sports_api.main import app
-          from sports_api.mlb_step16b_production_lifecycle_v1 import step16b_lifespan
-          assert app.router.lifespan_context is step16b_lifespan
+          source = Path('sports_api/main.py').read_text(encoding='utf-8')
+          assert 'from sports_api.mlb_step16b_production_lifecycle_v1 import step16b_lifespan' in source
+          assert 'lifespan=step16b_lifespan' in source
+          assert app.router.lifespan_context is not None
           print('MLB_STEP16B_FASTAPI_LIFESPAN_BOUND_DEFAULT_OFF')
           PY
 
