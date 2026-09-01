@@ -246,7 +246,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          python - <<'PY' 2>&1 | tee step8f-live-cert.log
           from copy import deepcopy
           from datetime import datetime, timezone
           import json, os
@@ -262,6 +262,8 @@ jobs:
               timeout=45,
               headers={'Accept':'application/json','User-Agent':'KyreSportsStep8FCert/1.0','Cache-Control':'no-cache'},
           )
+          print('STEP8F_LIVE_HTTP_STATUS', response.status_code)
+          print('STEP8F_LIVE_BODY_PREFIX', response.text[:1200])
           response.raise_for_status()
           payload = response.json()
           if payload.get('data_type') != 'mlb_player_prop_api_response_v1':
@@ -277,6 +279,7 @@ jobs:
               as_of_utc=datetime.now(timezone.utc),
               max_age_seconds=60,
           )
+          print('STEP8F_LIVE_STATE', json.dumps(raw_state, sort_keys=True, default=str)[:5000])
 
           checked = 0
           markets_seen = set()
@@ -311,8 +314,6 @@ jobs:
                   if checked >= 12:
                       break
           else:
-              # Empty live prop slate is an allowed provider state. Presentation must
-              # remain exactly unchanged rather than fabricate two-way context.
               sentinel = {'game_pk': 1, 'player_id': 1, 'projection_sentinel': 8.8}
               for market in (PITCHER_STRIKEOUTS, PLAYER_HITS, HITS_RUNS_RBI):
                   if step8f.decorate_card_html('<div>LIVE BASE</div>', sentinel, market, raw_state) != '<div>LIVE BASE</div>':
@@ -332,6 +333,15 @@ jobs:
               'ranking_changed':False,
           }, sort_keys=True))
           PY
+
+      - name: Upload Step8F live certification diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: step8f-live-cert-${{ github.run_attempt }}
+          path: step8f-live-cert.log
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Final Step8F certification marker
         run: echo 'MLB_STEP8F_PLAYER_PROP_PRESENTATION_GREEN'
