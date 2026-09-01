@@ -1,0 +1,148 @@
+name: MLB Step15A live PostgreSQL preflight certification
+
+on:
+  push:
+    branches:
+      - mlb-step15a-live-postgresql-preflight
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-live-postgresql-preflight:
+    runs-on: ubuntu-24.04
+    env:
+      STEP15A_BASE_SHA: ac90d1261b31f15225a9e0cbb42c986c055bdf09
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Assert Step15A is exactly three-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP15A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step15a_live_postgresql_preflight_v1.py|tests/test_mlb_step15a_live_postgresql_preflight_v1.py|\.github/workflows/mlb-step15a-live-postgresql-preflight-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP15A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP15A_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP15A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP15A_BASE_SHA"...HEAD
+          numstat="$(git diff --numstat "$STEP15A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$numstat"
+          if printf '%s\n' "$numstat" | awk '$2 != 0 { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'STEP15A_DELETIONS_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP15A_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove frozen Step14 and production paths remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP15A_BASE_SHA"...HEAD -- \
+            app.py engine.py history.py spread_engine.py \
+            live_game_hub_v182.py live_game_hub_v19.py live_game_hub_v191.py \
+            live_game_hub_v192.py live_game_hub_v1921.py mlb_live_hub_v193.py live_odds_feed.py \
+            sports_api/main.py sports_api/api/mlb.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11_final_provider_expansion_freeze_v1.py \
+            sports_api/mlb_step12_final_runtime_freeze_v1.py \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            sports_api/mlb_step13b_runtime_supervisor_v1.py \
+            sports_api/mlb_step13c_reliability_recovery_v1.py \
+            sports_api/mlb_step13_final_scheduler_freeze_v1.py \
+            sports_api/mlb_step14a_persistence_contract_v1.py \
+            sports_api/sql/mlb_step14a_persistence_schema.sql \
+            sports_api/mlb_step14b_database_checkpoint_adapter_v1.py \
+            sports_api/requirements-mlb-step14b-persistence.txt \
+            sports_api/mlb_step14c_durable_restart_lease_v1.py \
+            sports_api/sql/mlb_step14c_runtime_lease_schema.sql \
+            sports_api/mlb_step14_final_persistence_freeze_v1.py
+          echo 'MLB_STEP15A_FROZEN_PARENT_AND_PRODUCTION_PATHS_BYTE_IDENTICAL'
+
+      - name: Prove exact Step14D source blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$STEP15A_BASE_SHA:sports_api/mlb_step14_final_persistence_freeze_v1.py")" = '8d346c2fb3abf71742c048d5489ac88124b990b6'
+          echo 'MLB_STEP15A_STEP14D_SOURCE_BLOB_EXACT'
+
+      - name: Compile Step15A Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step15a_live_postgresql_preflight_v1.py \
+            tests/test_mlb_step15a_live_postgresql_preflight_v1.py
+
+      - name: Run Step15A targeted tests
+        run: python -m pytest -q tests/test_mlb_step15a_live_postgresql_preflight_v1.py
+
+      - name: Run complete MLB regression including Step15A
+        run: python -m pytest -q tests/test_mlb_*.py
+
+      - name: Certify Step15A read-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api import mlb_step15a_live_postgresql_preflight_v1 as step15a
+
+          manifest = step15a.live_postgresql_preflight_manifest()
+          assert manifest['runtime_mode'] == 'SHADOW_ONLY'
+          assert manifest['step15a_base_main_sha'] == 'ac90d1261b31f15225a9e0cbb42c986c055bdf09'
+          assert manifest['step14d_source_blob_sha'] == '8d346c2fb3abf71742c048d5489ac88124b990b6'
+          assert manifest['live_database_connection_allowed'] is True
+          assert manifest['live_database_metadata_reads_allowed'] is True
+          assert manifest['live_database_writes_allowed'] is False
+          assert manifest['schema_auto_apply_allowed'] is False
+          assert manifest['checkpoint_smoke_write_allowed'] is False
+          assert manifest['lease_smoke_write_allowed'] is False
+          assert manifest['runtime_cycle_execution_allowed'] is False
+          assert manifest['retry_execution_allowed'] is False
+          assert manifest['restart_execution_allowed'] is False
+          assert manifest['production_runtime_activation_allowed'] is False
+          assert manifest['production_scheduler_activation_allowed'] is False
+          assert manifest['actionable_output_allowed'] is False
+          assert manifest['provider_network_calls_allowed'] is False
+          assert manifest['sportsbook_network_calls_allowed'] is False
+          assert manifest['future_step15b_live_persistence_smoke_required'] is True
+          assert manifest['final_certification_marker'] == 'MLB_STEP15A_LIVE_POSTGRESQL_PREFLIGHT_GREEN'
+          print('STEP15A_LIVE_DATABASE_WRITES=0')
+          print('STEP15A_CHECKPOINT_WRITES=0')
+          print('STEP15A_LEASE_OPERATIONS=0')
+          print('STEP15A_RUNTIME_EXECUTIONS=0')
+          print('STEP15A_PROVIDER_NETWORK_CALLS=0')
+          print('STEP15A_SPORTSBOOK_NETWORK_CALLS=0')
+          print('STEP15A_PRODUCTION_ACTIVATION=0')
+          print(step15a.FINAL_CERTIFICATION_MARKER)
+          PY
+
+      - name: Final Step15A certification marker
+        run: echo 'MLB_STEP15A_LIVE_POSTGRESQL_PREFLIGHT_GREEN'
