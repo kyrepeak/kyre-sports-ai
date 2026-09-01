@@ -148,9 +148,17 @@ jobs:
           git worktree remove /tmp/mlb-step16a-parent --force
 
       - name: Run current MLB regression excluding frozen Step16A snapshot guards
-        run: >-
-          python -m pytest -q tests/test_mlb_*.py
-          --ignore=tests/test_mlb_step16a_production_activation_contract_v1.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=()
+          for path in tests/test_mlb_*.py; do
+            if [ "$path" != "tests/test_mlb_step16a_production_activation_contract_v1.py" ]; then
+              files+=("$path")
+            fi
+          done
+          test "${#files[@]}" -gt 0
+          python -m pytest -q "${files[@]}"
 
       - name: Certify Step16B packaging lifecycle contract
         run: PYTHONPATH=. python -m sports_api.tools.mlb_step16b_production_packaging_lifecycle_cert
