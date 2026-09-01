@@ -1,0 +1,71 @@
+{
+  "data_type": "mlb_step15b_live_adapter_transaction_smoke_evidence",
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-01T20:44:30Z",
+  "supabase_project": {
+    "ref": "jqajcdckalsfizbvngiu",
+    "database_name": "postgres",
+    "postgres_version": "17.6",
+    "postgres_engine": "17",
+    "primary": true
+  },
+  "frozen_lineage": {
+    "step15a_merge_sha": "4242f2c2a3b3465b38f0e80b041d0ee4d8f6ab20",
+    "step15a_source_blob_sha": "9000c54df1a9d1bac4aeb143e354fc554129725c",
+    "step15a_final_marker": "MLB_STEP15A_LIVE_POSTGRESQL_PREFLIGHT_GREEN",
+    "step14d_source_blob_sha": "8d346c2fb3abf71742c048d5489ac88124b990b6"
+  },
+  "execution_boundary": {
+    "live_database_used": true,
+    "frozen_adapter_sql_semantics_executed_live": true,
+    "python_psycopg_adapter_connected_directly": false,
+    "connected_supabase_sql_surface_used": true,
+    "single_explicit_transaction_used": true,
+    "transaction_rolled_back": true,
+    "production_scheduler_started": false,
+    "global_persistence_runtime_started": false,
+    "background_worker_started": false,
+    "public_persistence_api_exposed": false,
+    "provider_calls": 0,
+    "sportsbook_calls": 0,
+    "production_activation": 0
+  },
+  "smoke_scope": {
+    "slate_date": "2026-01-15",
+    "checkpoint_key": "mlb:runtime:2026:regular-season:2026-01-15",
+    "lease_key": "mlb:runtime:2026:regular-season:2026-01-15:scheduler-lease"
+  },
+  "checkpoint_smoke": {
+    "baseline_all_step14_tables_empty": true,
+    "version_1_created": true,
+    "load_round_trip_exact": true,
+    "idempotent_repeat_history_rows": 1,
+    "version_2_advanced": true,
+    "history_rows_after_advance": 2,
+    "stale_cas_rejected": true,
+    "stale_transaction_rolled_back": true,
+    "history_rows_after_stale_attempt": 2,
+    "stale_history_row_survived": false,
+    "stale_expected_version": 1,
+    "current_version_during_stale_attempt": 2
+  },
+  "lease_smoke": {
+    "initial_acquire_generation": 1,
+    "duplicate_active_acquire_rows": 0,
+    "owner_a_renew_succeeded": true,
+    "wrong_owner_renew_rows": 0,
+    "test_only_expiry_forced": true,
+    "takeover_generation": 2,
+    "stale_owner_release_rows": 0,
+    "current_owner_release_succeeded": true
+  },
+  "cleanup": {
+    "cleanup_method": "outer_transaction_rollback",
+    "live_step14_tables_returned_to_empty_state": true,
+    "checkpoint_history_rows_after_cleanup": 0,
+    "checkpoint_heads_rows_after_cleanup": 0,
+    "lease_rows_after_cleanup": 0,
+    "marker": "MLB_STEP15B_LIVE_TRANSACTION_SMOKE_EXECUTED"
+  },
+  "evidence_content_sha256": "e167582075d845b807505a3988fad35fb1a29a7aa3e18de5eb843971aba30af7"
+}
