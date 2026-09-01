@@ -1,0 +1,90 @@
+name: MLB Step9C mapping fallback fix one-shot
+
+on:
+  push:
+    branches: [mlb-step9c-live-state-consumer-integration]
+    paths: [.github/workflows/mlb-step9c-mapping-fallback-fix-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mlb-step9c-live-state-consumer-integration
+          fetch-depth: 0
+      - name: Harden mapping fallback and add regression
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('mlb_step9c_live_state_consumer_v1.py')
+          text = p.read_text()
+          old = '''    def state_api_first(feed):
+              if isinstance(feed, Mapping) and TAG in feed:
+                  context = feed.get(TAG)
+                  meta = _CURRENT_GAME.get()
+                  if isinstance(context, Mapping) and isinstance(meta, Mapping):
+                      return _state_from_context(context, meta, v19_module=v19)
+                  raise RuntimeError("Step 9C tagged state missing exact selected-game metadata")
+              return legacy_state(feed)
+          '''
+          new = '''    def state_api_first(feed):
+              if isinstance(feed, Mapping) and TAG in feed:
+                  context = feed.get(TAG)
+                  meta = _CURRENT_GAME.get()
+                  try:
+                      if isinstance(context, Mapping) and isinstance(meta, Mapping):
+                          return _state_from_context(context, meta, v19_module=v19)
+                      raise RuntimeError("Step 9C tagged state missing exact selected-game metadata")
+                  except Exception as exc:
+                      game_id = _strict_positive_int(
+                          context.get("official_game_id") if isinstance(context, Mapping) else None
+                      )
+                      _LAST_STATUS.update({
+                          "api_used": False,
+                          "legacy_fallback_used": True,
+                          "failure": type(exc).__name__,
+                      })
+                      if game_id is not None:
+                          return legacy_state(legacy_feed(game_id))
+                      raise
+              return legacy_state(feed)
+          '''
+          if old not in text:
+              raise SystemExit('STEP9C_STATE_WRAPPER_SEAM_NOT_FOUND')
+          p.write_text(text.replace(old, new, 1))
+
+          t = Path('tests/test_mlb_step9c_live_state_consumer_v1.py')
+          tests = t.read_text()
+          anchor = '''def test_raw_legacy_feed_state_parser_is_preserved(monkeypatch):
+          '''
+          addition = '''def test_mapping_exception_falls_back_to_direct_feed(monkeypatch):
+              fake, calls = _fake_v19(monkeypatch)
+              monkeypatch.setattr(step9c, "_certified_context", lambda game_id, game_date=None: _context(game_id))
+              monkeypatch.setattr(step9c, "_state_from_context", lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("mapping")))
+              step9c.install_step9c_live_state_consumer()
+              result = fake._render_selected(_game(), None)
+              assert result == {"legacy_state": {"legacy": True, "game_pk": GAME_ID}}
+              assert calls["feed"] == [GAME_ID]
+              assert step9c.consumer_status()["legacy_fallback_used"] is True
+              assert step9c.consumer_status()["failure"] == "ValueError"
+
+
+          '''
+          if anchor not in tests:
+              raise SystemExit('STEP9C_TEST_ANCHOR_NOT_FOUND')
+          if 'test_mapping_exception_falls_back_to_direct_feed' not in tests:
+              t.write_text(tests.replace(anchor, addition + anchor, 1))
+          PY
+          git diff --check
+      - name: Commit mapping fallback hardening
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mlb_step9c_live_state_consumer_v1.py tests/test_mlb_step9c_live_state_consumer_v1.py
+          git commit -m "Harden MLB Step 9C direct fallback"
+          git push origin HEAD:mlb-step9c-live-state-consumer-integration
