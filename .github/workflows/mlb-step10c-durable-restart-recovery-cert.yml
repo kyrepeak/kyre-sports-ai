@@ -1,0 +1,343 @@
+name: MLB Step10C durable restart recovery certification
+
+on:
+  push:
+    branches:
+      - mlb-step10c-durable-restart-recovery
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP10C_BASE_SHA: 97efc7da1fef517b7dc1f6d17a04375d505622f3
+  API_BASE_URL: https://kyre-sports-api.onrender.com
+
+jobs:
+  certify-durable-restart-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step10C is exactly three-file recovery-only MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP10C_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/database/mlb_live_snapshot_recovery.py|tests/test_mlb_step10c_live_snapshot_recovery.py|\.github/workflows/mlb-step10c-durable-restart-recovery-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP10C_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP10C_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP10C_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP10C_BASE_SHA"...HEAD
+          echo 'MLB_STEP10C_THREE_FILE_RECOVERY_ONLY_SCOPE_OK'
+
+      - name: Prove frozen MLB runtime and Steps10A-10B remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP10C_BASE_SHA"...HEAD -- \
+            app.py \
+            engine.py \
+            history.py \
+            spread_engine.py \
+            live_game_hub_v182.py \
+            live_game_hub_v19.py \
+            live_game_hub_v191.py \
+            live_game_hub_v192.py \
+            live_game_hub_v1921.py \
+            mlb_live_hub_v193.py \
+            live_odds_feed.py \
+            mlb_step9c_live_state_consumer_v1.py \
+            mlb_step9e_live_market_consumer_v1.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py
+          echo 'MLB_STEP10C_FROZEN_RUNTIME_AND_STEPS10A_10B_BYTE_IDENTICAL'
+
+      - name: Assert Step10C recovery boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.database.mlb_live_snapshot_recovery import (
+              FINAL_CERTIFICATION_MARKER,
+              RECOVERY_STATUS,
+              STEP10C_BASE_MAIN_SHA,
+              recovery_manifest,
+          )
+
+          m = recovery_manifest()
+          assert STEP10C_BASE_MAIN_SHA == '97efc7da1fef517b7dc1f6d17a04375d505622f3'
+          assert m['step10c_base_main_sha'] == STEP10C_BASE_MAIN_SHA
+          assert m['recovery_status'] == RECOVERY_STATUS
+          assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER
+          assert m['existing_file_backed_store_required'] is True
+          assert m['read_only_database_open'] is True
+          assert m['sqlite_integrity_check_required'] is True
+          assert m['append_only_triggers_verified'] is True
+          assert m['record_contract_reverified'] is True
+          assert m['payload_sha256_reverified'] is True
+          assert m['fresh_process_restart_supported'] is True
+          assert m['recovery_mutates_database'] is False
+          assert m['production_runtime_wiring_added_by_step10c'] is False
+          assert m['automatic_production_writes_enabled'] is False
+          assert m['persisted_snapshot_as_model_input_allowed'] is False
+          assert m['persisted_snapshot_as_sportsbook_input_allowed'] is False
+          print('MLB_STEP10C_RECOVERY_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step10C Python
+        run: |
+          python -m py_compile \
+            sports_api/database/mlb_live_snapshot_recovery.py \
+            tests/test_mlb_step10c_live_snapshot_recovery.py
+
+      - name: Run Step10C targeted tests
+        run: python -m pytest -q tests/test_mlb_step10c_live_snapshot_recovery.py
+
+      - name: Run complete certified MLB regression through Step10C
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py \
+            tests/test_mlb_step9b_live_game_state_collector_api.py \
+            tests/test_mlb_step9c_live_state_consumer_v1.py \
+            tests/test_mlb_step9d_live_inplay_market_collector_api.py \
+            tests/test_mlb_step9e_live_market_consumer_v1.py \
+            tests/test_mlb_step9_final_freeze_v1.py \
+            tests/test_mlb_step9g_postfreeze_handoff_v1.py \
+            tests/test_mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            tests/test_mlb_step10b_live_snapshot_store.py \
+            tests/test_mlb_step10c_live_snapshot_recovery.py
+
+      - name: Certify real production snapshot across fresh-process restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import sqlite3
+          import subprocess
+          import sys
+          import tempfile
+
+          import requests
+
+          from sports_api.mlb_step9g_postfreeze_handoff_v1 import (
+              FINAL_CERTIFICATION_MARKER as STEP9G_MARKER,
+              HANDOFF_STATUS as STEP9G_STATUS,
+          )
+          from sports_api.mlb_step10a_live_snapshot_persistence_contract_v1 import (
+              build_live_snapshot_persistence_record,
+          )
+          from sports_api.database.mlb_live_snapshot_store import (
+              TABLE_NAME,
+              append_live_snapshot,
+              count_live_snapshots,
+          )
+          from sports_api.database.mlb_live_snapshot_recovery import (
+              FINAL_CERTIFICATION_MARKER,
+              verify_persisted_live_snapshot_store,
+          )
+
+          base = os.environ['API_BASE_URL'].rstrip('/')
+          headers = {
+              'Accept': 'application/json',
+              'User-Agent': 'KyreSportsMLBStep10CRestartCertification/1.0',
+              'Cache-Control': 'no-cache',
+          }
+          observed = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+          state_response = requests.get(
+              f'{base}/api/v1/mlb/live-game-state',
+              params={'max_games': 30},
+              timeout=120,
+              headers=headers,
+          )
+          state_response.raise_for_status()
+          state_payload = state_response.json()
+          assert state_payload['data_type'] == 'mlb_live_game_state_api_response_v1'
+          assert state_payload['schema_version'] == 1
+          assert state_payload.get('fuzzy_matching_used') is False
+          assert state_payload.get('synthetic_game_id_used') is False
+          state_games = state_payload.get('games') or []
+          assert state_games, 'production live-state endpoint returned no games for Step10C certification'
+
+          row = state_games[0]
+          payload_json = json.dumps(row, sort_keys=True, separators=(',', ':'))
+          record = build_live_snapshot_persistence_record(
+              snapshot_kind='live_game_state',
+              official_game_id=row['official_game_id'],
+              observed_at_utc=observed,
+              source_data_type=state_payload['data_type'],
+              source_schema_version=state_payload['schema_version'],
+              payload_sha256=hashlib.sha256(payload_json.encode('utf-8')).hexdigest(),
+              source_complete=True,
+              step9g_handoff_status=STEP9G_STATUS,
+              step9g_handoff_marker=STEP9G_MARKER,
+          )
+
+          with tempfile.TemporaryDirectory() as tmp:
+              db_path = Path(tmp) / 'mlb_step10c_cert.sqlite3'
+              inserted = append_live_snapshot(
+                  path=db_path,
+                  record=record,
+                  source_payload_json=payload_json,
+              )
+              assert inserted['inserted'] is True
+              duplicate = append_live_snapshot(
+                  path=db_path,
+                  record=record,
+                  source_payload_json=payload_json,
+              )
+              assert duplicate['inserted'] is False
+              assert duplicate['idempotent_duplicate'] is True
+              assert count_live_snapshots(path=db_path) == 1
+
+              before_hash = hashlib.sha256(db_path.read_bytes()).hexdigest()
+              child_code = """
+          import json
+          import sys
+          from sports_api.database.mlb_live_snapshot_recovery import verify_persisted_live_snapshot_store
+          result = verify_persisted_live_snapshot_store(path=sys.argv[1])
+          print(json.dumps({
+              'row_count': result['row_count'],
+              'record_keys': result['record_keys'],
+              'fingerprint': result['verified_content_fingerprint_sha256'],
+              'recovery_verified': result['recovery_verified'],
+              'database_opened_read_only': result['database_opened_read_only'],
+              'sqlite_integrity_check': result['sqlite_integrity_check'],
+          }, sort_keys=True))
+          """
+              child = subprocess.run(
+                  [sys.executable, '-c', child_code, str(db_path)],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              )
+              child_result = json.loads(child.stdout)
+              assert child_result['row_count'] == 1
+              assert child_result['record_keys'] == [record['record_key']]
+              assert child_result['recovery_verified'] is True
+              assert child_result['database_opened_read_only'] is True
+              assert child_result['sqlite_integrity_check'] == 'ok'
+              after_hash = hashlib.sha256(db_path.read_bytes()).hexdigest()
+              assert before_hash == after_hash
+
+              parent_result = verify_persisted_live_snapshot_store(path=db_path)
+              assert parent_result['row_count'] == 1
+              assert parent_result['record_keys'] == [record['record_key']]
+              assert parent_result['verified_content_fingerprint_sha256'] == child_result['fingerprint']
+              assert parent_result['snapshots'][0]['source_payload'] == row
+
+              with sqlite3.connect(db_path) as conn:
+                  try:
+                      conn.execute(
+                          f'UPDATE {TABLE_NAME} SET source_complete=0 WHERE record_key=?',
+                          (record['record_key'],),
+                      )
+                  except sqlite3.IntegrityError as exc:
+                      assert 'APPEND_ONLY_UPDATE_FORBIDDEN' in str(exc)
+                  else:
+                      raise AssertionError('append-only UPDATE trigger did not survive restart')
+
+                  try:
+                      conn.execute(
+                          f'DELETE FROM {TABLE_NAME} WHERE record_key=?',
+                          (record['record_key'],),
+                      )
+                  except sqlite3.IntegrityError as exc:
+                      assert 'APPEND_ONLY_DELETE_FORBIDDEN' in str(exc)
+                  else:
+                      raise AssertionError('append-only DELETE trigger did not survive restart')
+
+          evidence = {
+              'state_game_count': state_payload.get('game_count'),
+              'ephemeral_rows_written': 1,
+              'idempotent_duplicate_rows_written': 0,
+              'fresh_python_process_restart_verified': True,
+              'read_only_restart_preserved_database_bytes': True,
+              'sqlite_integrity_check_green': True,
+              'append_only_triggers_survived_restart': True,
+              'production_database_writes_performed': 0,
+          }
+          print(json.dumps(evidence, sort_keys=True))
+          print('MLB_STEP10C_REAL_LIVE_STATE_PERSISTED_BEFORE_RESTART_GREEN')
+          print('MLB_STEP10C_FRESH_PROCESS_RECOVERY_GREEN')
+          print('MLB_STEP10C_READ_ONLY_VERIFICATION_GREEN')
+          print('MLB_STEP10C_APPEND_ONLY_GUARDS_SURVIVE_RESTART_GREEN')
+          print('MLB_STEP10C_ZERO_PRODUCTION_DATABASE_WRITES_GREEN')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
