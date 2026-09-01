@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from sports_api.collectors.mlb_fanduel_direct import collect_live_mlb_game_odds
 from sports_api.collectors.mlb_fanduel_player_props import collect_live_mlb_player_props
+from sports_api.collectors.mlb_live_game_state import collect_live_mlb_game_state
 
 router = APIRouter(prefix="/api/v1/mlb", tags=["mlb"])
 
@@ -164,6 +165,68 @@ def get_mlb_player_props(
         "player_name_matching_used": False,
         "fuzzy_matching_used": False,
         "props": props,
+    }
+
+
+@router.get("/live-game-state")
+def get_mlb_live_game_state(
+    date: str | None = Query(
+        default=None,
+        description="MLB slate date in YYYY-MM-DD format. Defaults to today's Arizona date.",
+    ),
+    official_game_id: int | None = Query(
+        default=None,
+        ge=1,
+        description="Optional exact official MLB gamePk. No team-name matching is performed.",
+    ),
+    max_games: int = Query(
+        default=30,
+        ge=1,
+        le=50,
+        description="Maximum official MLB games to inspect when no exact gamePk is supplied.",
+    ),
+):
+    """Return read-only official MLB live game state keyed only by exact gamePk."""
+    target_date = date or datetime.now(ARIZONA_TZ).date().isoformat()
+    try:
+        snapshot = collect_live_mlb_game_state(
+            slate_date=target_date,
+            official_game_id=official_game_id,
+            now_utc=datetime.now(timezone.utc),
+            max_games=max_games,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="MLB live game state collection failed.",
+        ) from exc
+
+    games = [game for game in snapshot.get("games", []) if isinstance(game, dict)]
+    if official_game_id is not None and not games:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Official MLB game {official_game_id} was not found with usable live state on {target_date}.",
+        )
+
+    return {
+        "data_type": "mlb_live_game_state_api_response_v1",
+        "schema_version": 1,
+        "source": snapshot.get("provider"),
+        "transport": snapshot.get("transport"),
+        "http_methods": snapshot.get("http_methods"),
+        "collected_at_utc": snapshot.get("collected_at_utc"),
+        "slate_date": snapshot.get("slate_date"),
+        "requested_official_game_id": snapshot.get("requested_official_game_id"),
+        "schedule_game_count": snapshot.get("schedule_game_count"),
+        "candidate_game_count": snapshot.get("candidate_game_count"),
+        "detailed_feed_count": snapshot.get("detailed_feed_count"),
+        "game_count": len(games),
+        "rejected_game_count": snapshot.get("rejected_game_count"),
+        "team_name_matching_used": False,
+        "player_name_matching_used": False,
+        "fuzzy_matching_used": False,
+        "synthetic_game_id_used": False,
+        "games": games,
     }
 
 
