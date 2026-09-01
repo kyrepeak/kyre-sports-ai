@@ -26,8 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install API dependency
-        run: python -m pip install --disable-pip-version-check -q httpx
+      - name: Install API dependencies
+        run: python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
       - name: Read current Render service and deploy metadata
         shell: bash
         run: |
