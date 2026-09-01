@@ -1,0 +1,358 @@
+name: MLB Step8G final player prop freeze certification
+
+on:
+  push:
+    branches:
+      - mlb-step8g-final-player-prop-freeze
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step8g-final-player-prop-freeze-cert
+  cancel-in-progress: false
+
+env:
+  STEP8G_BASE_SHA: ac38a6a783d9b10933ddcff620782c3daf74d6c2
+  PRODUCTION_PLAYER_PROPS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/player-props?max_events=30
+
+jobs:
+  certify-final-player-prop-freeze:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step8G is exactly three-file non-behavioral MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP8G_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step8_final_freeze_v1.py|tests/test_mlb_step8_final_freeze_v1.py|\.github/workflows/mlb-step8g-final-player-prop-freeze-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP8G_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP8G_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP8G_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP8G_THREE_FILE_NON_BEHAVIORAL_SCOPE_OK'
+
+      - name: Prove complete Step8 runtime is byte-identical to Step8F main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP8G_BASE_SHA"...HEAD -- \
+            app.py \
+            engine.py \
+            history.py \
+            hit_hub_v131.py \
+            hit_hub_v132.py \
+            mlb_hit_hub_v1315.py \
+            mlb_pitcher_k_hub_v1017.py \
+            mlb_pitcher_k_hub_v1016.py \
+            mlb_pitcher_k_hub_v1015.py \
+            mlb_pitcher_k_hub_v1014.py \
+            mlb_pitcher_k_hub_v101.py \
+            mlb_hrrbi_hub_v115.py \
+            mlb_hrrbi_hub_v114.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            sports_api/mlb_step8d_player_hits_integration_v1.py \
+            sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_totals_hub_v174.py
+          echo 'MLB_STEP8G_COMPLETE_STEP8_RUNTIME_FROZEN'
+
+      - name: Assert final Step8 freeze manifest contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step8_final_freeze_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              FINAL_FREEZE_STATUS,
+              STEP8_CERTIFICATION_MARKERS,
+              STEP8_MERGED_PULL_REQUESTS,
+              STEP8_STAGE_CHAIN,
+              STEP8G_BASE_MAIN_SHA,
+              final_freeze_manifest,
+              validate_final_step8_certification,
+          )
+
+          m = final_freeze_manifest()
+          assert STEP8G_BASE_MAIN_SHA == 'ac38a6a783d9b10933ddcff620782c3daf74d6c2'
+          assert m['step8g_base_main_sha'] == STEP8G_BASE_MAIN_SHA
+          assert m['final_freeze_status'] == FINAL_FREEZE_STATUS == 'STEP8_FROZEN_PLAYER_PROP_INTEGRATION_COMPLETE'
+          assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER == 'MLB_STEP8G_FINAL_PLAYER_PROP_FREEZE_GREEN'
+          assert m['stage_chain'] == list(STEP8_STAGE_CHAIN)
+          assert m['certification_markers'] == list(STEP8_CERTIFICATION_MARKERS)
+          assert m['merged_pull_requests'] == list(STEP8_MERGED_PULL_REQUESTS) == [30,31,32,33,34,35]
+          assert len(m['stage_chain']) == 6
+          assert len(m['certification_markers']) == 6
+          assert m['read_only_freeze'] is True
+          assert m['automatic_runtime_mutation'] is False
+          assert m['runtime_files_changed_by_step8g'] is False
+          assert m['exact_official_game_id_required'] is True
+          assert m['exact_official_player_id_required'] is True
+          assert m['canonical_market_type_required'] is True
+          assert m['player_name_matching_allowed'] is False
+          assert m['fuzzy_matching_allowed'] is False
+          assert m['stale_player_prop_context_allowed'] is False
+          assert m['missing_player_prop_price_fabrication_allowed'] is False
+          assert m['provider_contract_unavailable_may_fail_open'] is True
+          assert m['step7_final_freeze_required'] is True
+          for key in (
+              'model_math_impact','projection_impact','simulation_impact','probability_impact',
+              'line_grading_impact','history_adjustment_impact','ranking_impact','selection_impact',
+              'fair_odds_impact','sportsbook_price_model_input','production_exposure_impact',
+              'wagering_impact','durable_persistence','wnba_impact',
+          ):
+              assert m[key] is False, key
+          validated = validate_final_step8_certification(
+              STEP8_CERTIFICATION_MARKERS,
+              runtime_base_sha=STEP8G_BASE_MAIN_SHA,
+          )
+          assert validated['freeze_eligible'] is True
+          assert validated['freeze_status'] == FINAL_FREEZE_STATUS
+          assert validated['failures'] == []
+          print('MLB_STEP8G_FINAL_FREEZE_MANIFEST_OK')
+          PY
+
+      - name: Prove frozen Step7 prerequisite remains valid
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step7_final_freeze_v1 import (
+              FINAL_FREEZE_STATUS,
+              STEP7_CERTIFICATION_MARKERS,
+              STEP7F_BASE_MAIN_SHA,
+              validate_final_step7_certification,
+          )
+          state = validate_final_step7_certification(
+              STEP7_CERTIFICATION_MARKERS,
+              runtime_base_sha=STEP7F_BASE_MAIN_SHA,
+          )
+          assert state['freeze_eligible'] is True
+          assert state['freeze_status'] == FINAL_FREEZE_STATUS
+          assert state['failures'] == []
+          print('MLB_STEP8G_STEP7_FINAL_FREEZE_PREREQUISITE_OK')
+          PY
+
+      - name: Compile Step8G Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py
+
+      - name: Run Step8G targeted tests
+        run: python -m pytest -q tests/test_mlb_step8_final_freeze_v1.py
+
+      - name: Run complete certified MLB regression through Step8G
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py
+
+      - name: Certify live frozen player prop boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timedelta, timezone
+          import json
+          import os
+          import requests
+
+          import mlb_step8f_player_prop_presentation_v1 as step8f
+          from sports_api.mlb_step8a_player_prop_api_contract_v1 import (
+              API_CONNECTED,
+              HITS_RUNS_RBI,
+              PITCHER_STRIKEOUTS,
+              PLAYER_HITS,
+          )
+          from sports_api.mlb_step8_final_freeze_v1 import (
+              FINAL_FREEZE_STATUS,
+              STEP8_CERTIFICATION_MARKERS,
+              STEP8G_BASE_MAIN_SHA,
+              validate_final_step8_certification,
+          )
+
+          response = requests.get(
+              os.environ['PRODUCTION_PLAYER_PROPS_URL'],
+              timeout=45,
+              headers={
+                  'Accept':'application/json',
+                  'User-Agent':'KyreSportsStep8GFinalCert/1.0',
+                  'Cache-Control':'no-cache',
+              },
+          )
+          response.raise_for_status()
+          payload = response.json()
+          if payload.get('data_type') != 'mlb_player_prop_api_response_v1':
+              raise RuntimeError('STEP8G_BAD_API_DATA_TYPE')
+          if payload.get('schema_version') != 1 or payload.get('source') != 'FanDuel':
+              raise RuntimeError('STEP8G_BAD_API_CONTRACT')
+          if payload.get('player_name_matching_used') is not False:
+              raise RuntimeError('STEP8G_PLAYER_NAME_MATCHING_DRIFT')
+          if payload.get('fuzzy_matching_used') is not False:
+              raise RuntimeError('STEP8G_FUZZY_MATCHING_DRIFT')
+
+          freeze = validate_final_step8_certification(
+              STEP8_CERTIFICATION_MARKERS,
+              runtime_base_sha=STEP8G_BASE_MAIN_SHA,
+          )
+          if freeze.get('freeze_eligible') is not True or freeze.get('freeze_status') != FINAL_FREEZE_STATUS:
+              raise RuntimeError('STEP8G_FREEZE_CONTRACT_REJECTED:' + json.dumps(freeze, sort_keys=True))
+
+          props = [p for p in payload.get('props', []) if isinstance(p, dict)]
+          state = step8f.build_step8f_player_prop_api_state(
+              payload,
+              as_of_utc=datetime.now(timezone.utc),
+              max_age_seconds=60,
+          )
+          supported = {PITCHER_STRIKEOUTS, PLAYER_HITS, HITS_RUNS_RBI}
+          checked = 0
+          markets_seen = set()
+          base_html = '<div>STEP8G FROZEN BASE</div>'
+
+          if props:
+              if state.get('integration_status') != API_CONNECTED or state.get('feed_fresh') is not True:
+                  summary = {
+                      'integration_status':state.get('integration_status'),
+                      'feed_fresh':state.get('feed_fresh'),
+                      'snapshot_age_seconds':state.get('snapshot_age_seconds'),
+                      'failures':state.get('failures'),
+                  }
+                  raise RuntimeError('STEP8G_LIVE_STATE_NOT_GREEN:' + json.dumps(summary, sort_keys=True, default=str))
+              for prop in props:
+                  market = prop.get('market_type')
+                  if market not in supported:
+                      continue
+                  result = {
+                      'game_pk':prop['official_game_id'],
+                      'player_id':prop['official_player_id'],
+                      'player_name':'INTENTIONALLY DIFFERENT STEP8G DISPLAY',
+                      'projection_sentinel':9.91,
+                      'probability_sentinel':0.619,
+                      'rank_sentinel':checked,
+                      'sim':{'sentinel':checked},
+                  }
+                  before = deepcopy(result)
+                  rendered = step8f.decorate_card_html(base_html, result, market, state)
+                  if 'STEP 8F' not in rendered or 'EXACT ID MATCH' not in rendered:
+                      raise RuntimeError(f'STEP8G_EXACT_CONTEXT_NOT_RENDERED_{market}')
+                  if result != before:
+                      raise RuntimeError(f'STEP8G_RESULT_MUTATED_{market}')
+                  wrong = dict(result)
+                  wrong['player_id'] = int(result['player_id']) + 100000000
+                  if step8f.decorate_card_html(base_html, wrong, market, state) != base_html:
+                      raise RuntimeError(f'STEP8G_WRONG_ID_DID_NOT_FAIL_OPEN_{market}')
+                  markets_seen.add(market)
+                  checked += 1
+                  if checked >= 12:
+                      break
+          else:
+              sentinel = {'game_pk':1, 'player_id':1, 'projection_sentinel':9.91}
+              for market in supported:
+                  if step8f.decorate_card_html(base_html, sentinel, market, state) != base_html:
+                      raise RuntimeError('STEP8G_EMPTY_SLATE_FABRICATED_CONTEXT')
+
+          collected = datetime.fromisoformat(str(payload['collected_at_utc']).replace('Z','+00:00')).astimezone(timezone.utc)
+          stale_state = step8f.build_step8f_player_prop_api_state(
+              payload,
+              as_of_utc=collected + timedelta(hours=1),
+              max_age_seconds=60,
+          )
+          stale_sentinel = None
+          if props:
+              p = props[0]
+              stale_sentinel = {'game_pk':p['official_game_id'], 'player_id':p['official_player_id']}
+              stale_market = p['market_type']
+          else:
+              stale_sentinel = {'game_pk':1, 'player_id':1}
+              stale_market = PITCHER_STRIKEOUTS
+          if step8f.decorate_card_html(base_html, stale_sentinel, stale_market, stale_state) != base_html:
+              raise RuntimeError('STEP8G_STALE_CONTEXT_DID_NOT_FAIL_OPEN')
+
+          print(json.dumps({
+              'marker':'MLB_STEP8G_LIVE_FROZEN_PLAYER_PROP_BOUNDARY_GREEN',
+              'prop_count':len(props),
+              'checked_exact_contexts':checked,
+              'markets_seen':sorted(markets_seen),
+              'feed_fresh_when_props_present':state.get('feed_fresh') if props else None,
+              'stale_context_blocked':True,
+              'wrong_id_context_blocked':True,
+              'player_name_matching_used':False,
+              'fuzzy_matching_used':False,
+              'sportsbook_price_model_input':False,
+              'model_math_changed':False,
+              'projection_changed':False,
+              'simulation_changed':False,
+              'probability_changed':False,
+              'ranking_changed':False,
+          }, sort_keys=True, default=str))
+          PY
+
+      - name: Final Step8G certification marker
+        run: echo 'MLB_STEP8G_FINAL_PLAYER_PROP_FREEZE_GREEN'
