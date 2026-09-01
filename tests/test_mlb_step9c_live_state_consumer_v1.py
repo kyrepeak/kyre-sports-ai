@@ -303,6 +303,18 @@ def test_serialized_ascii_integer_identity_is_allowed(monkeypatch):
     assert calls["feed"] == []
 
 
+def test_mapping_exception_falls_back_to_direct_feed(monkeypatch):
+    fake, calls = _fake_v19(monkeypatch)
+    monkeypatch.setattr(step9c, "_certified_context", lambda game_id, game_date=None: _context(game_id))
+    monkeypatch.setattr(step9c, "_state_from_context", lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("mapping")))
+    step9c.install_step9c_live_state_consumer()
+    result = fake._render_selected(_game(), None)
+    assert result == {"legacy_state": {"legacy": True, "game_pk": GAME_ID}}
+    assert calls["feed"] == [GAME_ID]
+    assert step9c.consumer_status()["legacy_fallback_used"] is True
+    assert step9c.consumer_status()["failure"] == "ValueError"
+
+
 def test_raw_legacy_feed_state_parser_is_preserved(monkeypatch):
     fake, calls = _fake_v19(monkeypatch)
     step9c.install_step9c_live_state_consumer()
