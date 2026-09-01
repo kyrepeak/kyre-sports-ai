@@ -1,0 +1,62 @@
+name: MLB Step15B live adapter smoke certification
+
+on:
+  push:
+    branches: [main, mlb-step15b-live-adapter-transaction-smoke]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-step15b:
+    runs-on: ubuntu-24.04
+    env:
+      STEP15B_BASE_SHA: 4242f2c2a3b3465b38f0e80b041d0ee4d8f6ab20
+      MLB_STEP15B_LIVE_ADAPTER_SMOKE_ENABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+      - name: Verify additive Step15B scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP15B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          test "$count" -eq 5
+          allowed='^(sports_api/mlb_step15b_live_adapter_transaction_smoke_v1.py|tests/test_mlb_step15b_live_adapter_transaction_smoke_v1.py|sports_api/tools/mlb_step15b_live_adapter_transaction_smoke_cert.py|sports_api/certification/mlb_step15b_live_adapter_transaction_smoke_evidence.json|\.github/workflows/mlb-step15b-live-adapter-transaction-smoke-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          test -z "$bad"
+          git diff --check "$STEP15B_BASE_SHA"...HEAD
+          test -z "$(git diff --numstat "$STEP15B_BASE_SHA"...HEAD | awk '$2 != 0 {print}')"
+          echo MLB_STEP15B_FIVE_FILE_ADDITIVE_SCOPE_OK
+      - name: Verify frozen parent files unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP15B_BASE_SHA"...HEAD -- sports_api/mlb_step14a_persistence_contract_v1.py sports_api/mlb_step14b_database_checkpoint_adapter_v1.py sports_api/mlb_step14c_durable_restart_lease_v1.py sports_api/mlb_step14_final_persistence_freeze_v1.py sports_api/mlb_step15a_live_postgresql_preflight_v1.py sports_api/main.py sports_api/api/mlb.py app.py
+          test "$(git rev-parse "$STEP15B_BASE_SHA:sports_api/mlb_step15a_live_postgresql_preflight_v1.py")" = 9000c54df1a9d1bac4aeb143e354fc554129725c
+          test "$(git rev-parse "$STEP15B_BASE_SHA:sports_api/mlb_step14_final_persistence_freeze_v1.py")" = 8d346c2fb3abf71742c048d5489ac88124b990b6
+          echo MLB_STEP15B_FROZEN_PARENTS_EXACT
+      - name: Compile Step15B
+        run: python -m py_compile sports_api/mlb_step15b_live_adapter_transaction_smoke_v1.py sports_api/tools/mlb_step15b_live_adapter_transaction_smoke_cert.py tests/test_mlb_step15b_live_adapter_transaction_smoke_v1.py
+      - name: Run Step15B tests
+        run: python -m pytest -q tests/test_mlb_step15b_live_adapter_transaction_smoke_v1.py
+      - name: Run full MLB regression
+        run: python -m pytest -q tests/test_mlb_*.py
+      - name: Validate evidence and boundary
+        run: python -m sports_api.tools.mlb_step15b_live_adapter_transaction_smoke_cert
+      - name: Final marker
+        run: echo MLB_STEP15B_LIVE_ADAPTER_TRANSACTION_SMOKE_GREEN
