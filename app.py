@@ -285,6 +285,20 @@ sys.modules.pop("mlb_spread_hub_v157", None)
 importlib.invalidate_caches()
 source = source.replace(_SPREAD_ROUTE_OLD, _SPREAD_ROUTE_NEW, 1)
 
+# Step 8F installs only after the frozen pre-live shell has rebuilt the three
+# current player-prop presentation chains. It patches final card renderers only;
+# every projection/model/ranking function remains owned by the frozen modules.
+_STEP8F_ROUTE_OLD = "_install_hrrbi_final_route()\n_install_mlb_spread_card_route()"
+_STEP8F_ROUTE_NEW = (
+    "_install_hrrbi_final_route()\n"
+    "from mlb_step8f_player_prop_presentation_v1 import install_step8f_player_prop_presentation\n"
+    "_STEP8F_MLB_PLAYER_PROP_PRESENTATION = install_step8f_player_prop_presentation()\n"
+    "_install_mlb_spread_card_route()"
+)
+if _STEP8F_ROUTE_OLD not in source:
+    raise RuntimeError("Could not locate frozen MLB Step 8F player-prop presentation seam.")
+source = source.replace(_STEP8F_ROUTE_OLD, _STEP8F_ROUTE_NEW, 1)
+
 # Guard against accidentally pointing this wrapper at a checkpoint that already
 # contained the retired page.
 if "Live Games" in source or "wnba_live_" in source:
