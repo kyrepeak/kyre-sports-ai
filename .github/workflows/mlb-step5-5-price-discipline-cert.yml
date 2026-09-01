@@ -1,0 +1,392 @@
+name: MLB Step5.5 price-discipline certification
+
+on:
+  push:
+    branches:
+      - mlb-step5-5-value-grade-playable-price
+    paths:
+      - "sports_api/mlb_price_discipline_v1.py"
+      - "mlb_daily_game_picks_price_discipline_v1.py"
+      - "mlb_daily_game_picks_v217_guard.py"
+      - "tests/test_mlb_price_discipline_v1.py"
+      - ".github/workflows/mlb-step5-5-price-discipline-cert.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP5_5_BASE_SHA: da4a07ceeeb4fe7c689a7945cbec3ee7ca6dd9a8
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+
+jobs:
+  certify-price-discipline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert additive MLB-only change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP5_5_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP5_5_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          allowed='^(sports_api/mlb_price_discipline_v1.py|mlb_daily_game_picks_price_discipline_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_price_discipline_v1.py|\.github/workflows/mlb-step5-5-price-discipline-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP5_5_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          echo 'MLB_STEP5_5_CHANGE_SCOPE_OK'
+
+      - name: Prove Step5.4 implementation is byte-for-byte unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP5_5_BASE_SHA"...HEAD -- \
+            sports_api/mlb_model_market_edge_v1.py \
+            mlb_daily_game_picks_model_market_edge_v1.py
+          echo 'MLB_STEP5_5_STEP5_4_FROZEN'
+
+      - name: Prove V2.1.7 risk and lineup functions are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast
+          import os
+          import subprocess
+          from pathlib import Path
+
+          base = subprocess.check_output(
+              ['git', 'show', f'{os.environ["STEP5_5_BASE_SHA"]}:mlb_daily_game_picks_v217_guard.py'],
+              text=True,
+          )
+          head = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          protected = {
+              '_safe_int',
+              '_norm',
+              '_lineup_members_bulk',
+              '_official_snapshots_v217',
+              '_player_lineup_guard',
+              '_risk_context_v217_guard',
+          }
+
+          def dumps(source):
+              tree = ast.parse(source)
+              out = {}
+              for node in tree.body:
+                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in protected:
+                      out[node.name] = ast.dump(node, include_attributes=False)
+              return out
+
+          base_dump = dumps(base)
+          head_dump = dumps(head)
+          if base_dump != head_dump or set(head_dump) != protected:
+              raise SystemExit('STEP5_5_PROTECTED_V217_FUNCTION_DRIFT')
+          print('MLB_STEP5_5_V217_RISK_FUNCTIONS_FROZEN')
+          PY
+
+      - name: Assert comparison-only price-discipline contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/mlb_price_discipline_v1.py').read_text(encoding='utf-8')
+          presentation = Path('mlb_daily_game_picks_price_discipline_v1.py').read_text(encoding='utf-8')
+          guard = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          combined = core + '\n' + presentation + '\n' + guard
+
+          forbidden_matchers = ('difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz')
+          bad_matchers = [token for token in forbidden_matchers if token in combined]
+          if bad_matchers:
+              raise SystemExit('STEP5_5_HEURISTIC_MATCHER_PRESENT: ' + ','.join(bad_matchers))
+
+          forbidden_writes = (
+              'c["probability"] =', "c['probability'] =",
+              'c["score"] =', "c['score'] =",
+              'c["projection"] =', "c['projection'] =",
+              'candidate["probability"] =', "candidate['probability'] =",
+              'candidate["score"] =', "candidate['score'] =",
+              'candidate["projection"] =', "candidate['projection'] =",
+          )
+          bad_writes = [token for token in forbidden_writes if token in presentation or token in guard]
+          if bad_writes:
+              raise SystemExit('STEP5_5_PRODUCTION_FIELD_WRITE_PRESENT: ' + ','.join(bad_writes))
+
+          required = (
+              'import mlb_daily_game_picks_model_market_edge_v1 as step54',
+              'step54.install_model_market_edge_layer(games_df, payload=payload)',
+              'price_discipline_context(',
+              'market_raw_break_even_probability',
+              'vig_drag_probability',
+              'pricing_margin_probability',
+              'zero_ev_american_price_limit',
+              'selection_impact',
+              'ranking_impact',
+              'wagering_impact',
+              'install_price_discipline_layer(games_df)',
+              'Pick Strength',
+          )
+          missing = [token for token in required if token not in combined]
+          if missing:
+              raise SystemExit('STEP5_5_CONTRACT_TOKEN_MISSING: ' + ' | '.join(missing))
+
+          if 'from mlb_daily_game_picks_price_discipline_v1 import install_price_discipline_layer' not in guard:
+              raise SystemExit('STEP5_5_ACTIVE_GUARD_IMPORT_MISSING')
+
+          print('MLB_STEP5_5_COMPARISON_ONLY_CONTRACT_OK')
+          PY
+
+      - name: Prove frozen app ancestry still routes Daily Picks to active V2.1.7 guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          ancestor = subprocess.check_output(
+              ['git', 'show', '6fb976a9e20c96eb68b71ad0d3511e3be1734292:app.py'],
+              text=True,
+          )
+          required = (
+              'old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"',
+              'new = "from mlb_daily_game_picks_v217_guard import render_daily_game_picks"',
+          )
+          missing = [token for token in required if token not in ancestor]
+          if missing:
+              raise SystemExit('STEP5_5_ACTIVE_ROUTE_ANCESTRY_DRIFT: ' + ' | '.join(missing))
+          print('MLB_STEP5_5_ACTIVE_ROUTE_CONFIRMED')
+          PY
+
+      - name: Compile Step5.5 Python files
+        run: |
+          python -m py_compile \
+            sports_api/mlb_price_discipline_v1.py \
+            mlb_daily_game_picks_price_discipline_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            tests/test_mlb_price_discipline_v1.py
+
+      - name: Run deterministic price-discipline regression suite
+        run: python -m pytest -q tests/test_mlb_price_discipline_v1.py
+
+      - name: Certify live FanDuel price-discipline derivation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import math
+          import os
+          import urllib.request
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_market_probability_v1 import derive_market_probability_contexts
+          from sports_api.mlb_model_market_edge_v1 import model_market_edge
+          from sports_api.mlb_price_discipline_v1 import (
+              MLBPriceDisciplineError,
+              american_odds_implied_probability,
+              price_discipline_context,
+          )
+
+          req = urllib.request.Request(
+              os.environ['PRODUCTION_ODDS_URL'],
+              headers={
+                  'Accept': 'application/json',
+                  'User-Agent': 'KyreSportsStep5-5Cert/1.0',
+              },
+              method='GET',
+          )
+          with urllib.request.urlopen(req, timeout=35) as response:
+              status = int(response.status)
+              payload = json.loads(response.read(2_000_000).decode('utf-8'))
+
+          if status != 200:
+              raise SystemExit(f'STEP5_5_PRODUCTION_HTTP_{status}')
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('STEP5_5_BAD_PRODUCTION_DATA_TYPE')
+          if payload.get('schema_version') != 1:
+              raise SystemExit('STEP5_5_BAD_PRODUCTION_SCHEMA')
+          if payload.get('source') != 'FanDuel':
+              raise SystemExit('STEP5_5_BAD_PRODUCTION_SOURCE')
+          games = payload.get('games') or []
+          if not games:
+              raise SystemExit('STEP5_5_NO_CURRENT_PRODUCTION_MARKET_GAMES')
+
+          model_rows = [{'game_pk': game.get('official_game_id')} for game in reversed(games)]
+          step52 = attach_live_market_context(model_rows, games)
+          step53 = derive_market_probability_contexts(step52)
+          if step52.get('attached_count') != len(games):
+              raise SystemExit('STEP5_5_STEP52_ATTACH_COUNT_MISMATCH')
+          if step53.get('derived_context_count') != len(games):
+              raise SystemExit('STEP5_5_STEP53_DERIVED_COUNT_MISMATCH')
+          if step53.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP5_5_STEP53_FALLBACK_WAS_USED')
+
+          derived_count = 0
+          positive_price_cases = 0
+          negative_price_cases = 0
+          identity_checks = 0
+
+          def profit_per_unit(odds):
+              odds = float(odds)
+              return odds / 100.0 if odds > 0 else 100.0 / (-odds)
+
+          for game in games:
+              game_id = int(game['official_game_id'])
+              context = (step53.get('contexts_by_game_id') or {}).get(game_id)
+              if not context:
+                  raise SystemExit(f'STEP5_5_MISSING_STEP53_CONTEXT_{game_id}')
+
+              away = str(game.get('away_team') or f'AWAY_{game_id}')
+              home = str(game.get('home_team') or f'HOME_{game_id}')
+              scenarios = [
+                  ('Moneyline', 'away', 'Away', context['moneyline']['away']),
+                  ('Moneyline', 'home', 'Home', context['moneyline']['home']),
+                  ('Run Line', 'away', 'Away', context['run_line']['away']),
+                  ('Run Line', 'home', 'Home', context['run_line']['home']),
+                  ('Total', 'over', 'Over ' + str(context['total'].get('line')), context['total']['over']),
+                  ('Total', 'under', 'Under ' + str(context['total'].get('line')), context['total']['under']),
+              ]
+
+              for index, (market, selected_side, side_text, side_block) in enumerate(scenarios):
+                  odds = float(side_block['odds'])
+                  raw_break_even = american_odds_implied_probability(odds)
+                  delta = 0.02 if index % 2 == 0 else -0.02
+                  model_p = min(0.95, max(0.05, raw_break_even + delta))
+                  if math.isclose(model_p, raw_break_even, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_SYNTHETIC_PRICE_MARGIN_COLLAPSED_{game_id}_{market}_{selected_side}')
+
+                  candidate = {
+                      'game_pk': game_id,
+                      'market': market,
+                      'probability': model_p,
+                      'side': side_text,
+                      'name': None,
+                      'team': None,
+                  }
+                  edge = model_market_edge(candidate, context, away_team=away, home_team=home)
+                  price = price_discipline_context(edge)
+
+                  no_vig = float(side_block['no_vig_probability'])
+                  expected_handicap_edge = model_p - no_vig
+                  expected_vig_drag = raw_break_even - no_vig
+                  expected_price_margin = model_p - raw_break_even
+                  expected_ev = model_p * profit_per_unit(odds) - (1.0 - model_p)
+
+                  if price.get('selected_side') != selected_side:
+                      raise SystemExit(f'STEP5_5_SIDE_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(price['model_probability']), model_p, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_MODEL_PROBABILITY_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(price['market_no_vig_probability']), no_vig, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_NO_VIG_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(price['market_raw_break_even_probability']), raw_break_even, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_RAW_BREAK_EVEN_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(price['handicap_edge_probability']), expected_handicap_edge, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_HANDICAP_EDGE_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(price['vig_drag_probability']), expected_vig_drag, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_VIG_DRAG_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(price['pricing_margin_probability']), expected_price_margin, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_PRICE_MARGIN_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(price['expected_value_per_unit']), expected_ev, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_5_EV_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(
+                      float(price['handicap_edge_probability']) - float(price['vig_drag_probability']),
+                      float(price['pricing_margin_probability']),
+                      rel_tol=0.0,
+                      abs_tol=1e-12,
+                  ):
+                      raise SystemExit(f'STEP5_5_EDGE_IDENTITY_DRIFT_{game_id}_{market}_{selected_side}')
+                  if float(price['zero_ev_american_price_limit']) != float(edge['model_fair_american_odds']):
+                      raise SystemExit(f'STEP5_5_ZERO_EV_LIMIT_DRIFT_{game_id}_{market}_{selected_side}')
+                  if price.get('comparison_only') is not True:
+                      raise SystemExit(f'STEP5_5_COMPARISON_ONLY_FLAG_DRIFT_{game_id}_{market}_{selected_side}')
+                  if price.get('selection_impact') is not False or price.get('ranking_impact') is not False or price.get('wagering_impact') is not False:
+                      raise SystemExit(f'STEP5_5_IMPACT_FLAG_DRIFT_{game_id}_{market}_{selected_side}')
+
+                  expected_positive = expected_ev > 1e-12
+                  expected_negative = expected_ev < -1e-12
+                  expected_status = 'POSITIVE_VALUE' if expected_positive else 'NEGATIVE_VALUE' if expected_negative else 'BREAK_EVEN'
+                  if price.get('current_price_status') != expected_status:
+                      raise SystemExit(f'STEP5_5_STATUS_DRIFT_{game_id}_{market}_{selected_side}')
+                  if bool(price.get('positive_expected_value')) != expected_positive:
+                      raise SystemExit(f'STEP5_5_POSITIVE_VALUE_FLAG_DRIFT_{game_id}_{market}_{selected_side}')
+                  if bool(price.get('current_price_meets_model_fair_limit')) != (not expected_negative):
+                      raise SystemExit(f'STEP5_5_FAIR_LIMIT_FLAG_DRIFT_{game_id}_{market}_{selected_side}')
+
+                  positive_price_cases += int(expected_positive)
+                  negative_price_cases += int(expected_negative)
+                  identity_checks += 1
+                  derived_count += 1
+
+              player_prop = {
+                  'game_pk': game_id,
+                  'market': 'Home Run',
+                  'probability': 0.25,
+                  'side': 'Over 0.5',
+                  'name': 'Synthetic Player',
+              }
+              try:
+                  edge = model_market_edge(player_prop, context, away_team=away, home_team=home)
+              except Exception:
+                  pass
+              else:
+                  try:
+                      price_discipline_context(edge)
+                  except MLBPriceDisciplineError:
+                      pass
+                  else:
+                      raise SystemExit(f'STEP5_5_PLAYER_PROP_SHOULD_FAIL_CLOSED_{game_id}')
+
+          expected_count = len(games) * 6
+          if derived_count != expected_count:
+              raise SystemExit('STEP5_5_LIVE_DERIVED_COUNT_MISMATCH')
+          if positive_price_cases == 0 or negative_price_cases == 0:
+              raise SystemExit('STEP5_5_PRICE_SIGN_COVERAGE_MISSING')
+          if identity_checks != expected_count:
+              raise SystemExit('STEP5_5_EDGE_IDENTITY_COVERAGE_MISSING')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'http_status': status,
+              'production_game_count': len(games),
+              'step5_2_attached_count': step52.get('attached_count'),
+              'step5_3_derived_context_count': step53.get('derived_context_count'),
+              'step5_5_price_checks_verified': derived_count,
+              'positive_price_cases': positive_price_cases,
+              'negative_price_cases': negative_price_cases,
+              'edge_identity_checks': identity_checks,
+              'markets_checked': ['moneyline', 'run_line', 'total'],
+              'production_source': payload.get('source'),
+              'production_transport': payload.get('transport'),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'step5_4_changed': False,
+              'model_math_changed': False,
+              'pick_strength_changed': False,
+              'ranking_changed': False,
+              'selection_changed': False,
+              'risk_logic_changed': False,
+              'wagering_changed': False,
+              'player_prop_price_fabricated': False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP5_5_PRICE_DISCIPLINE_GREEN')
+          PY

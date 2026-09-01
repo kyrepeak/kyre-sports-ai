@@ -1,0 +1,347 @@
+name: MLB Step13C reliability recovery certification
+
+on:
+  push:
+    branches:
+      - mlb-step13c-reliability-recovery
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP13C_BASE_SHA: 7895eb6699630025fd49698e4b7fc2d3ff013fb6
+
+jobs:
+  certify-reliability-recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step13C is exactly three-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP13C_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step13c_reliability_recovery_v1.py|tests/test_mlb_step13c_reliability_recovery_v1.py|\.github/workflows/mlb-step13c-reliability-recovery-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP13C_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP13C_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP13C_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP13C_BASE_SHA"...HEAD
+          numstat="$(git diff --numstat "$STEP13C_BASE_SHA"...HEAD)"
+          printf '%s\n' "$numstat"
+          if printf '%s\n' "$numstat" | awk '$2 != 0 { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'STEP13C_DELETIONS_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP13C_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove Step13B Step13A Step12 and frozen production paths remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP13C_BASE_SHA"...HEAD -- \
+            app.py engine.py history.py spread_engine.py \
+            live_game_hub_v182.py live_game_hub_v19.py live_game_hub_v191.py \
+            live_game_hub_v192.py live_game_hub_v1921.py mlb_live_hub_v193.py live_odds_feed.py \
+            mlb_step9c_live_state_consumer_v1.py mlb_step9e_live_market_consumer_v1.py \
+            sports_api/main.py sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py \
+            sports_api/database/mlb_live_snapshot_recovery.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11a_provider_contract_v1.py \
+            sports_api/mlb_step11c_multi_provider_shadow_board_v1.py \
+            sports_api/mlb_step11d_provider_consensus_failover_shadow_policy_v1.py \
+            sports_api/mlb_step11_final_provider_expansion_freeze_v1.py \
+            sports_api/mlb_step12a_shadow_runtime_runner_v1.py \
+            sports_api/mlb_step12b_live_runtime_assembly_v1.py \
+            sports_api/mlb_step12c_live_board_runtime_v1.py \
+            sports_api/mlb_step12_final_runtime_freeze_v1.py \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            sports_api/mlb_step13b_runtime_supervisor_v1.py
+          echo 'MLB_STEP13C_PARENT_AND_PRODUCTION_PATHS_BYTE_IDENTICAL'
+
+      - name: Assert Step13C recovery is plan-only with no execution network or persistence machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='sports_api/mlb_step13c_reliability_recovery_v1.py'
+          forbidden='(^|[^A-Za-z])(requests|httpx|urllib|socket|threading|multiprocessing|subprocess|apscheduler|sqlalchemy|psycopg|supabase)([^A-Za-z]|$)|time\.sleep|asyncio\.create_task|os\.system|Popen\('
+          if grep -Ein "$forbidden" "$file"; then
+            echo 'STEP13C_FORBIDDEN_EXECUTION_NETWORK_OR_PERSISTENCE_MACHINERY'
+            exit 1
+          fi
+          echo 'MLB_STEP13C_PLAN_ONLY_SAFETY_OK'
+
+      - name: Compile Step13C Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step13c_reliability_recovery_v1.py \
+            tests/test_mlb_step13c_reliability_recovery_v1.py
+
+      - name: Run Step13C targeted tests
+        run: python -m pytest -q tests/test_mlb_step13c_reliability_recovery_v1.py
+
+      - name: Run complete MLB regression including Step13C
+        run: python -m pytest -q tests/test_mlb_*.py
+
+      - name: Certify bounded retries cooldowns stuck recovery and failure isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step12_final_runtime_freeze_v1 import final_runtime_freeze_manifest
+          from sports_api.mlb_step13a_bounded_scheduler_v1 import (
+              bounded_scheduler_manifest,
+              build_bounded_scheduler_tick,
+          )
+          from sports_api.mlb_step13b_runtime_supervisor_v1 import build_runtime_supervision
+          from sports_api.mlb_step13c_reliability_recovery_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              RUNTIME_MODE,
+              STEP13C_BASE_MAIN_SHA,
+              MLBStep13CDuplicateRecoveryError,
+              acquire_process_local_recovery_token,
+              build_recovery_decision,
+              build_recovery_state,
+              reliability_recovery_manifest,
+              release_process_local_recovery_token,
+              validate_recovery_decision,
+          )
+
+          anchor = '2026-09-01T19:10:00Z'
+          step12 = final_runtime_freeze_manifest()
+          step13a = bounded_scheduler_manifest()
+          manifest = reliability_recovery_manifest()
+
+          assert STEP13C_BASE_MAIN_SHA == '7895eb6699630025fd49698e4b7fc2d3ff013fb6'
+          assert RUNTIME_MODE == 'SHADOW_ONLY'
+          assert manifest['bounded_retry_authorization_enabled'] is True
+          assert manifest['exponential_cooldown_policy_enabled'] is True
+          assert manifest['stuck_cycle_restart_authorization_enabled'] is True
+          assert manifest['scheduler_state_mutation_performed_by_step13c'] is False
+          assert manifest['retry_execution_performed_by_step13c'] is False
+          assert manifest['network_io_added_by_step13c'] is False
+          assert manifest['production_scheduler_activation_enabled'] is False
+
+          permit = build_bounded_scheduler_tick(
+              evaluated_at_utc=anchor,
+              scheduler_anchor_utc=anchor,
+              scheduler_state=None,
+              step12_final_manifest=step12,
+              scheduler_enabled=True,
+          )
+          active_state = {
+              'last_granted_slot_utc': permit['permit_slot_utc'],
+              'active_cycle_id': permit['permit_cycle_id'],
+              'active_cycle_slot_utc': permit['permit_slot_utc'],
+          }
+          active_tick = build_bounded_scheduler_tick(
+              evaluated_at_utc='2026-09-01T19:10:30Z',
+              scheduler_anchor_utc=anchor,
+              scheduler_state=active_state,
+              step12_final_manifest=step12,
+              scheduler_enabled=True,
+          )
+          base_observation = {
+              'cycle_id': permit['permit_cycle_id'],
+              'cycle_slot_utc': permit['permit_slot_utc'],
+              'started_at_utc': anchor,
+              'finished_at_utc': None,
+              'outcome': None,
+              'failure_code': None,
+          }
+
+          failure_observation = dict(base_observation)
+          failure_observation.update({
+              'finished_at_utc': '2026-09-01T19:10:40Z',
+              'outcome': 'FAILURE',
+              'failure_code': 'PROVIDER.TIMEOUT',
+          })
+          failed = build_runtime_supervision(
+              active_tick,
+              observed_at_utc='2026-09-01T19:11:00Z',
+              cycle_observation=failure_observation,
+              step13a_manifest=step13a,
+          )
+          first = build_recovery_decision(
+              failed,
+              evaluated_at_utc='2026-09-01T19:13:00Z',
+          )
+          assert first['retry_authorized'] is True
+          assert first['restart_authorized'] is True
+          assert first['recovery_attempt_number'] == 1
+          assert first['cooldown_seconds'] == 15
+          assert first['recovery_action'] == 'RETRY_SAME_CYCLE_AFTER_COOLDOWN'
+          assert validate_recovery_decision(first)['recovery_decision_valid'] is True
+
+          second_state = build_recovery_state(
+              cycle_id=failed['cycle_id'],
+              attempts_used=1,
+          )
+          second = build_recovery_decision(
+              failed,
+              evaluated_at_utc='2026-09-01T19:13:00Z',
+              recovery_state=second_state,
+          )
+          assert second['recovery_attempt_number'] == 2
+          assert second['cooldown_seconds'] == 30
+
+          exhausted_state = build_recovery_state(
+              cycle_id=failed['cycle_id'],
+              attempts_used=3,
+          )
+          exhausted = build_recovery_decision(
+              failed,
+              evaluated_at_utc='2026-09-01T19:13:00Z',
+              recovery_state=exhausted_state,
+          )
+          assert exhausted['retry_authorized'] is False
+          assert exhausted['restart_authorized'] is False
+          assert exhausted['recovery_action'] == 'RECOVERY_EXHAUSTED_RELEASE'
+          assert exhausted['scheduler_state_release_authorized'] is True
+
+          fatal_observation = dict(failure_observation)
+          fatal_observation['failure_code'] = 'MODEL.INTEGRITY'
+          fatal = build_runtime_supervision(
+              active_tick,
+              observed_at_utc='2026-09-01T19:11:00Z',
+              cycle_observation=fatal_observation,
+              step13a_manifest=step13a,
+          )
+          fatal_decision = build_recovery_decision(
+              fatal,
+              evaluated_at_utc='2026-09-01T19:13:00Z',
+          )
+          assert fatal_decision['recoverable_failure'] is False
+          assert fatal_decision['retry_authorized'] is False
+          assert fatal_decision['recovery_action'] == 'TERMINAL_FAILURE_RELEASE'
+
+          stuck_inside = build_runtime_supervision(
+              active_tick,
+              observed_at_utc='2026-09-01T19:12:01Z',
+              cycle_observation=base_observation,
+              step13a_manifest=step13a,
+          )
+          inside_decision = build_recovery_decision(
+              stuck_inside,
+              evaluated_at_utc='2026-09-01T19:12:01Z',
+          )
+          assert inside_decision['recovery_action'] == 'WAIT_STUCK_GRACE'
+          assert inside_decision['restart_authorized'] is False
+
+          stuck_after = build_runtime_supervision(
+              active_tick,
+              observed_at_utc='2026-09-01T19:12:31Z',
+              cycle_observation=base_observation,
+              step13a_manifest=step13a,
+          )
+          stuck_decision = build_recovery_decision(
+              stuck_after,
+              evaluated_at_utc='2026-09-01T19:13:00Z',
+          )
+          assert stuck_decision['recovery_action'] == 'STUCK_RESTART_AFTER_COOLDOWN'
+          assert stuck_decision['restart_authorized'] is True
+          assert stuck_decision['stuck_cycle_release_authorized'] is True
+          assert stuck_decision['stuck_cycle_released'] is False
+
+          success_observation = dict(base_observation)
+          success_observation.update({
+              'finished_at_utc': '2026-09-01T19:10:40Z',
+              'outcome': 'SUCCESS',
+          })
+          completed = build_runtime_supervision(
+              active_tick,
+              observed_at_utc='2026-09-01T19:11:00Z',
+              cycle_observation=success_observation,
+              step13a_manifest=step13a,
+          )
+          completion = build_recovery_decision(
+              completed,
+              evaluated_at_utc='2026-09-01T19:13:00Z',
+          )
+          assert completion['recovery_action'] == 'TERMINAL_SUCCESS_RELEASE'
+          assert completion['scheduler_state_release_authorized'] is True
+          assert completion['retry_authorized'] is False
+
+          registry = set()
+          token = acquire_process_local_recovery_token(first, active_registry=registry)
+          duplicate_refused = False
+          try:
+              acquire_process_local_recovery_token(first, active_registry=registry)
+          except MLBStep13CDuplicateRecoveryError:
+              duplicate_refused = True
+          assert duplicate_refused is True
+          release_process_local_recovery_token(token, active_registry=registry)
+          assert not registry
+
+          for record in (
+              first,
+              second,
+              exhausted,
+              fatal_decision,
+              inside_decision,
+              stuck_decision,
+              completion,
+          ):
+              assert record['runtime_mode'] == 'SHADOW_ONLY'
+              assert record['scheduler_state_mutated'] is False
+              assert record['retry_executed'] is False
+              assert record['restart_executed'] is False
+              assert record['runtime_cycle_executed'] is False
+              assert record['network_io_performed'] is False
+              assert record['provider_network_calls'] == 0
+              assert record['production_database_writes'] == 0
+              assert record['production_scheduler_activation'] is False
+              assert record['actionable_output_enabled'] is False
+
+          print('STEP13C_RECOVERABLE_RETRY_CASES=2')
+          print('STEP13C_RECOVERY_EXHAUSTED_CASES=1')
+          print('STEP13C_NONRECOVERABLE_FAIL_CLOSED_CASES=1')
+          print('STEP13C_STUCK_GRACE_WAIT_CASES=1')
+          print('STEP13C_STUCK_RESTART_CASES=1')
+          print('STEP13C_TERMINAL_RELEASE_CASES=1')
+          print('STEP13C_DUPLICATE_RECOVERY_TOKENS_REFUSED=1')
+          print('STEP13C_PROVIDER_NETWORK_CALLS=0')
+          print('STEP13C_PRODUCTION_DB_WRITES=0')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
+
+      - name: Final Step13C certification marker
+        run: echo 'MLB_STEP13C_RELIABILITY_RECOVERY_GREEN'

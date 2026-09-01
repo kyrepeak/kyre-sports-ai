@@ -1,9 +1,17 @@
-"""V2.1.7 confirmed-lineup membership guard.
+"""V2.1.7 confirmed-lineup guard + certified Step 5 + Step 6G graduation.
 
 Extends the V2.1.7 decision layer so hitter props are not merely gated on whether
 a team posted nine hitters; the selected hitter must actually appear in that
-confirmed official MLB batting order. Presentation/selection guard only. No
-production probability, simulation or Pick Strength changes.
+confirmed official MLB batting order. Steps 5.2-5.10B provide the frozen exact-ID
+FanDuel market, probability, edge, price, movement, health, actionability, gate,
+bounded-cohort, and Streamlit verification controls certified by Step 5.11.
+
+Step 6G is downstream of the certified Step 6D 25% activation, Step 6E stability
+window, and Step 6F graduation gate. It retires the canary label for the existing
+25% full-game cohort without changing exposure, cohort hashing, eligibility,
+selection, or rollback behavior. Player props remain outside the full-game price
+gate. Protected model, ranking, risk, persistence, and WNBA behavior remain
+unchanged.
 """
 from __future__ import annotations
 
@@ -16,9 +24,10 @@ import mlb_daily_game_picks_v217 as previous
 import mlb_daily_game_picks_v212 as live
 import mlb_daily_game_picks_v2123 as riskfix
 import slate_lineup_v204 as lineup_data
+from mlb_daily_game_picks_step7a_api_integration_v1 import install_step7a_daily_game_picks_api_integration
 
 controller = previous.controller
-VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD"
+VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6G GRADUATED 25% PRODUCTION + STEP 7A API"
 
 _BASE_OFFICIAL = live._official_snapshots
 _BASE_V217_RISK = previous._risk_context_v217
@@ -160,6 +169,12 @@ def render_daily_game_picks(games_df, section_header=None, status_info=None, tea
     previous._risk_context_v217 = _risk_context_v217_guard
     riskfix._risk_context = _risk_context_v217_guard
     live._risk_context = _risk_context_v217_guard
+
+    # Step 6G keeps the Step 6D 25% runtime exposure and exact rollback controls
+    # unchanged, and changes only the cohort's production status from canary to
+    # graduated after consuming the certified Step 6F permission.
+    install_step7a_daily_game_picks_api_integration(games_df)
+
     return previous.render_daily_game_picks(
         games_df, section_header, status_info, team_logo, h
     )

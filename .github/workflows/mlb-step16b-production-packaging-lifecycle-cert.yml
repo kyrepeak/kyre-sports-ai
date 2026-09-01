@@ -1,0 +1,187 @@
+name: MLB Step16B production packaging lifecycle certification
+
+on:
+  push:
+    branches:
+      - main
+      - mlb-step16b-production-packaging-lifecycle
+    paths:
+      - sports_api/Dockerfile
+      - sports_api/main.py
+      - sports_api/production.env.example
+      - sports_api/mlb_step16b_production_lifecycle_v1.py
+      - sports_api/mlb_step16b_packaging_lifecycle_contract_v1.py
+      - sports_api/certification/mlb_step16b_production_packaging_lifecycle_evidence.json
+      - sports_api/tools/mlb_step16b_production_packaging_lifecycle_cert.py
+      - tests/test_mlb_step16b_production_packaging_lifecycle_v1.py
+      - .github/workflows/mlb-step16b-production-packaging-lifecycle-cert.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - sports_api/Dockerfile
+      - sports_api/main.py
+      - sports_api/production.env.example
+      - sports_api/mlb_step16b_production_lifecycle_v1.py
+      - sports_api/mlb_step16b_packaging_lifecycle_contract_v1.py
+      - sports_api/certification/mlb_step16b_production_packaging_lifecycle_evidence.json
+      - sports_api/tools/mlb_step16b_production_packaging_lifecycle_cert.py
+      - tests/test_mlb_step16b_production_packaging_lifecycle_v1.py
+      - .github/workflows/mlb-step16b-production-packaging-lifecycle-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP16B_BASE_SHA: 9d4685760bc6b2d7c0391bcb092583a127283d67
+  STEP16A_FROZEN_SHA: c5ad6047224aaf014cec13f5efa6e5cd650da939
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_PRODUCTION_SCHEDULER_ENABLED: "false"
+  MLB_ACTIONABLE_OUTPUT_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+  MLB_SUPABASE_REST_WRITE_ENABLED: "false"
+  MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED: "false"
+
+jobs:
+  certify-step16b:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assert production remains OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          test "$MLB_SUPABASE_REST_WRITE_ENABLED" = false
+          test "$MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED" = false
+          test -z "${KYRE_DATABASE_URL:-}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test and persistence dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Verify exact nine-file Step16B scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$STEP16B_BASE_SHA" HEAD
+          changed="$(git diff --name-only "$STEP16B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          test "$count" -eq 9
+          allowed='^(sports_api/Dockerfile|sports_api/main.py|sports_api/production.env.example|sports_api/mlb_step16b_production_lifecycle_v1.py|sports_api/mlb_step16b_packaging_lifecycle_contract_v1.py|sports_api/certification/mlb_step16b_production_packaging_lifecycle_evidence.json|sports_api/tools/mlb_step16b_production_packaging_lifecycle_cert.py|tests/test_mlb_step16b_production_packaging_lifecycle_v1.py|\.github/workflows/mlb-step16b-production-packaging-lifecycle-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          test -z "$bad"
+          test -z "$(git diff --name-status "$STEP16B_BASE_SHA"...HEAD | awk '$1 == "D" {print}')"
+          git diff --check "$STEP16B_BASE_SHA"...HEAD
+          echo MLB_STEP16B_NINE_FILE_SCOPE_OK
+
+      - name: Verify frozen parents and model surfaces unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP16B_BASE_SHA"...HEAD -- \
+            sports_api/mlb_step16a_production_activation_contract_v1.py \
+            sports_api/mlb_step15_final_live_persistence_release_freeze_v1.py \
+            sports_api/mlb_step14c_durable_restart_lease_v1.py \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            sports_api/mlb_step13b_runtime_supervisor_v1.py \
+            sports_api/mlb_step13c_reliability_recovery_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/api/mlb.py app.py
+          git merge-base --is-ancestor "$STEP16A_FROZEN_SHA" HEAD
+          test "$(git rev-parse HEAD:sports_api/mlb_step16a_production_activation_contract_v1.py)" = a8ce0bfef0918fd471c383964ccbf0f99f13611f
+          test "$(git rev-parse HEAD:sports_api/mlb_step15_final_live_persistence_release_freeze_v1.py)" = 2ba73d80704054a5de8da4ea6daab8b9537bc7e0
+          test "$(git rev-parse HEAD:sports_api/mlb_step14c_durable_restart_lease_v1.py)" = 2ea48e2badc73750f96cc8d3b5ef3927fb40a08e
+          echo MLB_STEP16B_FROZEN_PARENTS_EXACT
+
+      - name: Compile Step16B
+        run: |
+          python -m py_compile sports_api/mlb_step16b_production_lifecycle_v1.py \
+            sports_api/mlb_step16b_packaging_lifecycle_contract_v1.py \
+            sports_api/tools/mlb_step16b_production_packaging_lifecycle_cert.py \
+            tests/test_mlb_step16b_production_packaging_lifecycle_v1.py \
+            sports_api/main.py
+          python -m json.tool sports_api/certification/mlb_step16b_production_packaging_lifecycle_evidence.json >/dev/null
+
+      - name: Verify FastAPI lifecycle binding boots default-OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from pathlib import Path
+          from sports_api.main import app
+          source = Path('sports_api/main.py').read_text(encoding='utf-8')
+          assert 'from sports_api.mlb_step16b_production_lifecycle_v1 import step16b_lifespan' in source
+          assert 'lifespan=step16b_lifespan' in source
+          assert app.router.lifespan_context is not None
+          print('MLB_STEP16B_FASTAPI_LIFESPAN_BOUND_DEFAULT_OFF')
+          PY
+
+      - name: Run Step16B targeted tests
+        run: python -m pytest -q tests/test_mlb_step16b_production_packaging_lifecycle_v1.py
+
+      - name: Run frozen Step16A guards at exact certified parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/mlb-step16a-parent
+          git worktree add --detach /tmp/mlb-step16a-parent "$STEP16A_FROZEN_SHA"
+          (
+            cd /tmp/mlb-step16a-parent
+            PYTHONPATH=. python -m pytest -q tests/test_mlb_step16a_production_activation_contract_v1.py
+          )
+          git worktree remove /tmp/mlb-step16a-parent --force
+
+      - name: Run current MLB regression excluding frozen Step16A snapshot guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=()
+          for path in tests/test_mlb_*.py; do
+            if [ "$path" != "tests/test_mlb_step16a_production_activation_contract_v1.py" ]; then
+              files+=("$path")
+            fi
+          done
+          test "${#files[@]}" -gt 0
+          python -m pytest -q "${files[@]}"
+
+      - name: Certify Step16B packaging lifecycle contract
+        run: PYTHONPATH=. python -m sports_api.tools.mlb_step16b_production_packaging_lifecycle_cert
+
+      - name: Upload Step16B certification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step16b-production-packaging-lifecycle-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-step16b-production-packaging-lifecycle-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production remains OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          test "$MLB_SUPABASE_REST_WRITE_ENABLED" = false
+          test "$MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED" = false
+          test -z "${KYRE_DATABASE_URL:-}"
+
+      - name: Final marker
+        run: echo MLB_STEP16B_PRODUCTION_PACKAGING_LIFECYCLE_GREEN

@@ -1,0 +1,164 @@
+name: MLB live odds clean release certification
+
+on:
+  push:
+    branches:
+      - mlb-live-odds-release-20260831
+    paths:
+      - app.py
+      - mlb_live_odds_streamlit_v1.py
+      - sports_api/api/mlb.py
+      - sports_api/collectors/mlb_fanduel_direct.py
+      - tests/test_mlb_live_odds_streamlit.py
+      - .github/workflows/mlb-live-odds-release-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+  MLB_PERSISTENCE_WRITES_ENABLED: "false"
+  MLB_MARKET_REPLAY_ENABLED: "false"
+
+jobs:
+  certify-clean-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Streamlit API and test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -q -r requirements.txt -r sports_api/requirements.txt pytest
+
+      - name: Verify certified MLB core identity and current-main safeguards
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object sports_api/collectors/mlb_fanduel_direct.py)" = "411a78a35a63302f58114740726006cd61ff457a"
+          test "$(git hash-object sports_api/api/mlb.py)" = "db4785be9d6c87710681033f88ca8fd707d2a3c2"
+          test "$(git hash-object mlb_live_odds_streamlit_v1.py)" = "f4b3689b17a62f2693458ecb1cd79dffd2e99f82"
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('app.py').read_text(encoding='utf-8')
+          required = (
+              '_STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()',
+              'def _set_page_config_with_mlb_live_odds',
+              'st.set_page_config = _set_page_config_with_mlb_live_odds',
+              '"⚾ MLB Live Odds"',
+              'render_mlb_live_odds_page',
+          )
+          for needle in required:
+              if needle not in source:
+                  raise SystemExit(f'MLB_RELEASE_MISSING_GUARD_OR_HOOK: {needle}')
+          print('MLB_RELEASE_CORE_IDENTITY_AND_WNBA_GUARD_OK')
+          PY
+
+      - name: Assert read-only release isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_RELEASE_ISOLATION_OK'
+
+      - name: Run clean-release Streamlit regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_mlb_live_odds_streamlit.py
+
+      - name: Certify fresh live FanDuel odds through release API and UI transform
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+          import json
+          from fastapi import FastAPI
+          from fastapi.testclient import TestClient
+          import mlb_live_odds_streamlit_v1 as ui
+          from sports_api.api.mlb import router
+
+          app = FastAPI()
+          app.include_router(router)
+          with TestClient(app) as client:
+              response = client.get(
+                  '/api/v1/mlb/odds',
+                  params={'max_events': 30, 'fully_priced_only': 'true'},
+              )
+          if response.status_code != 200:
+              raise SystemExit(f'MLB_RELEASE_ENDPOINT_HTTP_{response.status_code}: {response.text}')
+
+          payload = response.json()
+          cards = ui.build_game_cards(payload)
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('MLB_RELEASE_BAD_DATA_TYPE')
+          if payload.get('source') != 'FanDuel':
+              raise SystemExit('MLB_RELEASE_BAD_SOURCE')
+          if payload.get('transport') != 'anonymous_public_get_only':
+              raise SystemExit('MLB_RELEASE_BAD_TRANSPORT')
+          if payload.get('http_methods') != ['GET']:
+              raise SystemExit('MLB_RELEASE_NON_GET_TRANSPORT')
+          if int(payload.get('game_count') or 0) <= 0:
+              raise SystemExit('MLB_RELEASE_NO_LIVE_ODDS_GAMES')
+          if len(cards) != int(payload.get('game_count') or 0):
+              raise SystemExit('MLB_RELEASE_CARD_COUNT_MISMATCH')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'branch': 'mlb-live-odds-release-20260831',
+              'api_endpoint': '/api/v1/mlb/odds',
+              'streamlit_route': 'MLB Live Odds',
+              'source': payload.get('source'),
+              'transport': payload.get('transport'),
+              'http_methods': payload.get('http_methods'),
+              'game_count': payload.get('game_count'),
+              'card_count': len(cards),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'cards': cards[:5],
+              'step18c_guard_preserved': True,
+              'replay_enabled': False,
+              'production_runtime_enabled': False,
+              'wagering_enabled': False,
+              'persistence_writes_enabled': False,
+          }
+          with open('mlb-live-odds-release-cert.json', 'w', encoding='utf-8') as fh:
+              json.dump(evidence, fh, indent=2, sort_keys=True)
+              fh.write('\n')
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_LIVE_ODDS_CLEAN_RELEASE_GREEN')
+          PY
+
+      - name: Upload clean release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-live-odds-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-live-odds-release-cert.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Re-assert read-only isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$MLB_WAGERING_ENABLED" = 'false'
+          test "$MLB_PERSISTENCE_WRITES_ENABLED" = 'false'
+          test "$MLB_MARKET_REPLAY_ENABLED" = 'false'
+          echo 'MLB_RELEASE_READ_ONLY_SAFETY_REASSERTED'

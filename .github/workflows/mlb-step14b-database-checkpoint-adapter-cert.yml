@@ -1,0 +1,428 @@
+name: MLB Step14B database checkpoint adapter certification
+
+on:
+  push:
+    branches:
+      - mlb-step14b-database-checkpoint-adapter
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP14B_BASE_SHA: 3dae5181571dbfea45f6f0db87e916d25e971170
+
+jobs:
+  certify-database-checkpoint-adapter:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Assert Step14B is exactly four-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP14B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step14b_database_checkpoint_adapter_v1.py|sports_api/requirements-mlb-step14b-persistence.txt|tests/test_mlb_step14b_database_checkpoint_adapter_v1.py|\.github/workflows/mlb-step14b-database-checkpoint-adapter-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP14B_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 4 ]; then
+            echo "STEP14B_EXPECTED_EXACTLY_FOUR_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP14B_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP14B_BASE_SHA"...HEAD
+          numstat="$(git diff --numstat "$STEP14B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$numstat"
+          if printf '%s\n' "$numstat" | awk '$2 != 0 { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'STEP14B_DELETIONS_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP14B_FOUR_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove Step14A Step13 and frozen production paths remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP14B_BASE_SHA"...HEAD -- \
+            app.py engine.py history.py spread_engine.py \
+            live_game_hub_v182.py live_game_hub_v19.py live_game_hub_v191.py \
+            live_game_hub_v192.py live_game_hub_v1921.py mlb_live_hub_v193.py live_odds_feed.py \
+            sports_api/main.py sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py \
+            sports_api/database/mlb_live_snapshot_recovery.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11a_provider_contract_v1.py \
+            sports_api/mlb_step11c_multi_provider_shadow_board_v1.py \
+            sports_api/mlb_step11d_provider_consensus_failover_shadow_policy_v1.py \
+            sports_api/mlb_step11_final_provider_expansion_freeze_v1.py \
+            sports_api/mlb_step12a_shadow_runtime_runner_v1.py \
+            sports_api/mlb_step12b_live_runtime_assembly_v1.py \
+            sports_api/mlb_step12c_live_board_runtime_v1.py \
+            sports_api/mlb_step12_final_runtime_freeze_v1.py \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            sports_api/mlb_step13b_runtime_supervisor_v1.py \
+            sports_api/mlb_step13c_reliability_recovery_v1.py \
+            sports_api/mlb_step13_final_scheduler_freeze_v1.py \
+            sports_api/mlb_step14a_persistence_contract_v1.py \
+            sports_api/sql/mlb_step14a_persistence_schema.sql
+          echo 'MLB_STEP14B_ALL_FROZEN_PARENT_AND_PRODUCTION_PATHS_BYTE_IDENTICAL'
+
+      - name: Prove exact Step14A source and SQL blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$STEP14B_BASE_SHA:sports_api/mlb_step14a_persistence_contract_v1.py")" = '373996a35959e5ad2252325062b250ddffd4286c'
+          test "$(git rev-parse "$STEP14B_BASE_SHA:sports_api/sql/mlb_step14a_persistence_schema.sql")" = '969c88c529486c8cde54f7928919e2a393a0f588'
+          echo 'MLB_STEP14B_STEP14A_SOURCE_BLOBS_EXACT'
+
+      - name: Assert adapter has no provider runtime background or schema-auto-apply machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='sports_api/mlb_step14b_database_checkpoint_adapter_v1.py'
+          if grep -Ein '^[[:space:]]*(from|import)[[:space:]]+(requests|httpx|urllib|socket|threading|multiprocessing|apscheduler|supabase)([[:space:].]|$)' "$file"; then
+            echo 'STEP14B_FORBIDDEN_PROVIDER_OR_BACKGROUND_IMPORT'
+            exit 1
+          fi
+          if grep -Ein 'time\.sleep|asyncio\.create_task|threading\.Thread|multiprocessing\.|os\.system|Popen\(' "$file"; then
+            echo 'STEP14B_FORBIDDEN_BACKGROUND_EXECUTION'
+            exit 1
+          fi
+          if grep -Ein 'CREATE[[:space:]]+(TABLE|SCHEMA)' "$file"; then
+            echo 'STEP14B_SCHEMA_AUTO_APPLY_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP14B_ISOLATED_POSTGRES_ADAPTER_SAFETY_OK'
+
+      - name: Assert isolated persistence dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -E '^psycopg\[binary\]>=' sports_api/requirements-mlb-step14b-persistence.txt
+          if grep -Ei 'requests|httpx|supabase' sports_api/requirements-mlb-step14b-persistence.txt; then
+            echo 'STEP14B_REQUIREMENT_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP14B_PSYCOPG3_REQUIREMENT_OK'
+
+      - name: Compile Step14B Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step14b_database_checkpoint_adapter_v1.py \
+            tests/test_mlb_step14b_database_checkpoint_adapter_v1.py
+
+      - name: Run Step14B targeted tests
+        run: python -m pytest -q tests/test_mlb_step14b_database_checkpoint_adapter_v1.py
+
+      - name: Run complete MLB regression including Step14B
+        run: python -m pytest -q tests/test_mlb_*.py
+
+      - name: Certify isolated checkpoint save load CAS and idempotency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+
+          from sports_api.mlb_step12_final_runtime_freeze_v1 import final_runtime_freeze_manifest
+          from sports_api.mlb_step13a_bounded_scheduler_v1 import (
+              bounded_scheduler_manifest,
+              build_bounded_scheduler_tick,
+          )
+          from sports_api.mlb_step13b_runtime_supervisor_v1 import build_runtime_supervision
+          from sports_api.mlb_step13c_reliability_recovery_v1 import build_recovery_decision
+          from sports_api.mlb_step14a_persistence_contract_v1 import build_step14a_checkpoint_envelope
+          from sports_api.mlb_step14b_database_checkpoint_adapter_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              STEP14A_MERGE_SHA,
+              STEP14A_SOURCE_BLOB_SHA,
+              STEP14A_SQL_SOURCE_BLOB_SHA,
+              STEP14B_BASE_MAIN_SHA,
+              MLBStep14BDatabaseConflictError,
+              checkpoint_id_for_envelope,
+              database_checkpoint_adapter_manifest,
+              load_step14b_checkpoint,
+              save_step14b_checkpoint,
+              validate_database_checkpoint_adapter_manifest,
+              validate_step14b_adapter_result,
+              verify_step14b_database_schema,
+          )
+
+          ENV = {
+              'MLB_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED': 'true',
+              'MLB_STEP14B_DATABASE_READ_ENABLED': 'true',
+              'MLB_STEP14B_DATABASE_WRITE_ENABLED': 'true',
+              'MLB_PRODUCTION_RUNTIME_ENABLED': 'false',
+              'MLB_PRODUCTION_SCHEDULER_ENABLED': 'false',
+              'MLB_STEP14C_DURABLE_RESTART_ENABLED': 'false',
+              'MLB_STEP14C_DISTRIBUTED_LEASE_ENABLED': 'false',
+              'MLB_ACTIONABLE_OUTPUT_ENABLED': 'false',
+              'MLB_WAGERING_ENABLED': 'false',
+              'MLB_SUPABASE_REST_WRITE_ENABLED': 'false',
+          }
+
+          def envelope(at_utc, created_utc):
+              tick = build_bounded_scheduler_tick(
+                  evaluated_at_utc=at_utc,
+                  scheduler_anchor_utc='2026-09-01T00:00:00Z',
+                  scheduler_state=None,
+                  step12_final_manifest=final_runtime_freeze_manifest(),
+                  scheduler_enabled=True,
+                  interval_seconds=30,
+              )
+              supervision = build_runtime_supervision(
+                  tick,
+                  observed_at_utc=at_utc,
+                  cycle_observation=None,
+                  step13a_manifest=bounded_scheduler_manifest(),
+              )
+              decision = build_recovery_decision(
+                  supervision,
+                  evaluated_at_utc=at_utc,
+              )
+              return build_step14a_checkpoint_envelope(
+                  recovery_decision=decision,
+                  scheduler_state={
+                      'last_granted_slot_utc': tick['permit_slot_utc'],
+                      'active_cycle_id': tick['permit_cycle_id'],
+                      'active_cycle_slot_utc': tick['permit_slot_utc'],
+                  },
+                  slate_date='2026-09-01',
+                  created_at_utc=created_utc,
+              )
+
+          def head_row(envlp, version):
+              cid = checkpoint_id_for_envelope(envlp)
+              return (
+                  version, cid, envlp['envelope_content_sha256'],
+                  version, cid, envlp['checkpoint_key'], envlp['slate_date'],
+                  envlp['step13d_merge_sha'], envlp['step13d_source_blob_sha'],
+                  envlp['step13d_freeze_manifest_sha256'],
+                  envlp['source_reliability_sha256'],
+                  envlp['source_supervision_sha256'],
+                  envlp['cycle_id'], envlp['cycle_slot_utc'],
+                  envlp['scheduler_state_sha256'],
+                  envlp['recovery_state_sha256'],
+                  envlp['recovery_handoff_sha256'],
+                  envlp['envelope_content_sha256'], deepcopy(envlp),
+              )
+
+          class Cursor:
+              def __init__(self, steps):
+                  self.steps = list(steps)
+                  self.current = None
+                  self.rowcount = -1
+              def execute(self, sql, params=None):
+                  step = self.steps.pop(0)
+                  expected = step.get('contains')
+                  if expected and expected not in sql:
+                      raise AssertionError((expected, sql))
+                  self.current = step
+                  self.rowcount = step.get('rowcount', -1)
+              def fetchone(self):
+                  return None if self.current is None else self.current.get('fetchone')
+              def close(self):
+                  pass
+
+          class Connection:
+              def __init__(self, steps):
+                  self.cursor_obj = Cursor(steps)
+                  self.commits = 0
+                  self.rollbacks = 0
+              def cursor(self):
+                  return self.cursor_obj
+              def commit(self):
+                  self.commits += 1
+              def rollback(self):
+                  self.rollbacks += 1
+              def close(self):
+                  pass
+
+          def factory(steps, box):
+              def open_connection():
+                  box['conn'] = Connection(steps)
+                  return box['conn']
+              return open_connection
+
+          assert STEP14B_BASE_MAIN_SHA == '3dae5181571dbfea45f6f0db87e916d25e971170'
+          assert STEP14A_MERGE_SHA == STEP14B_BASE_MAIN_SHA
+          assert STEP14A_SOURCE_BLOB_SHA == '373996a35959e5ad2252325062b250ddffd4286c'
+          assert STEP14A_SQL_SOURCE_BLOB_SHA == '969c88c529486c8cde54f7928919e2a393a0f588'
+
+          manifest = database_checkpoint_adapter_manifest()
+          assert validate_database_checkpoint_adapter_manifest(manifest)['manifest_valid'] is True
+          assert manifest['runtime_mode'] == 'SHADOW_ONLY'
+          assert manifest['postgresql_database_read_allowed'] is True
+          assert manifest['postgresql_database_write_allowed'] is True
+          assert manifest['append_only_checkpoint_history_required'] is True
+          assert manifest['atomic_head_compare_and_swap_required'] is True
+          assert manifest['persistence_runtime_enabled'] is False
+          assert manifest['durable_restart_recovery_allowed'] is False
+          assert manifest['durable_distributed_lease_allowed'] is False
+          assert manifest['production_activation_allowed'] is False
+
+          schema_box = {}
+          schema = verify_step14b_database_schema(
+              env={**ENV, 'MLB_STEP14B_DATABASE_WRITE_ENABLED': 'false'},
+              connection_factory=factory(
+                  [{'contains': 'to_regclass', 'fetchone': (True, True)}],
+                  schema_box,
+              ),
+              generated_at_utc='2026-09-01T12:00:01Z',
+          )
+          assert schema['tables_present'] is True
+          assert schema['database_write_performed'] is False
+          assert schema_box['conn'].commits == 0
+
+          first = envelope('2026-09-01T12:00:00Z', '2026-09-01T12:00:05Z')
+          create_box = {}
+          created = save_step14b_checkpoint(
+              checkpoint_envelope=first,
+              expected_head_version=0,
+              env=ENV,
+              connection_factory=factory(
+                  [
+                      {'contains': 'to_regclass', 'fetchone': (True, True)},
+                      {'contains': 'FOR UPDATE OF h', 'fetchone': None},
+                      {'contains': 'INSERT INTO kyre_runtime.mlb_runtime_checkpoints', 'rowcount': 1},
+                      {'contains': 'INSERT INTO kyre_runtime.mlb_runtime_checkpoint_heads', 'rowcount': 1},
+                  ],
+                  create_box,
+              ),
+              generated_at_utc='2026-09-01T12:00:06Z',
+          )
+          assert created['status'] == 'created'
+          assert created['checkpoint_version'] == 1
+          assert create_box['conn'].commits == 1
+          assert validate_step14b_adapter_result(created)['result_valid'] is True
+
+          load_box = {}
+          loaded = load_step14b_checkpoint(
+              slate_date='2026-09-01',
+              env={**ENV, 'MLB_STEP14B_DATABASE_WRITE_ENABLED': 'false'},
+              connection_factory=factory(
+                  [
+                      {'contains': 'to_regclass', 'fetchone': (True, True)},
+                      {'contains': 'JOIN kyre_runtime.mlb_runtime_checkpoints', 'fetchone': head_row(first, 1)},
+                  ],
+                  load_box,
+              ),
+              generated_at_utc='2026-09-01T12:00:07Z',
+          )
+          assert loaded['status'] == 'loaded'
+          assert loaded['scheduler_state_for_restart'] == first['scheduler_state']
+          assert loaded['recovery_state_for_restart'] == first['recovery_state']
+          assert loaded['recovery_handoff_for_restart'] == first['recovery_handoff']
+          assert load_box['conn'].commits == 0
+
+          second = envelope('2026-09-01T12:00:30Z', '2026-09-01T12:00:35Z')
+          advance_box = {}
+          advanced = save_step14b_checkpoint(
+              checkpoint_envelope=second,
+              expected_head_version=1,
+              env=ENV,
+              connection_factory=factory(
+                  [
+                      {'contains': 'to_regclass', 'fetchone': (True, True)},
+                      {'contains': 'FOR UPDATE OF h', 'fetchone': head_row(first, 1)},
+                      {'contains': 'INSERT INTO kyre_runtime.mlb_runtime_checkpoints', 'rowcount': 1},
+                      {'contains': 'UPDATE kyre_runtime.mlb_runtime_checkpoint_heads', 'rowcount': 1},
+                  ],
+                  advance_box,
+              ),
+              generated_at_utc='2026-09-01T12:00:36Z',
+          )
+          assert advanced['status'] == 'advanced'
+          assert advanced['checkpoint_version'] == 2
+          assert advance_box['conn'].commits == 1
+
+          idempotent_box = {}
+          idem = save_step14b_checkpoint(
+              checkpoint_envelope=second,
+              expected_head_version=0,
+              env=ENV,
+              connection_factory=factory(
+                  [
+                      {'contains': 'to_regclass', 'fetchone': (True, True)},
+                      {'contains': 'FOR UPDATE OF h', 'fetchone': head_row(second, 2)},
+                  ],
+                  idempotent_box,
+              ),
+          )
+          assert idem['status'] == 'idempotent'
+          assert idem['checkpoint_version'] == 2
+          assert idempotent_box['conn'].commits == 0
+
+          conflict_box = {}
+          try:
+              save_step14b_checkpoint(
+                  checkpoint_envelope=first,
+                  expected_head_version=1,
+                  env=ENV,
+                  connection_factory=factory(
+                      [
+                          {'contains': 'to_regclass', 'fetchone': (True, True)},
+                          {'contains': 'FOR UPDATE OF h', 'fetchone': head_row(second, 2)},
+                      ],
+                      conflict_box,
+                  ),
+              )
+          except MLBStep14BDatabaseConflictError:
+              pass
+          else:
+              raise AssertionError('CAS conflict was not raised')
+          assert conflict_box['conn'].commits == 0
+          assert conflict_box['conn'].rollbacks >= 1
+
+          print('STEP14B_STEP14A_FROZEN_PARENT=1')
+          print('STEP14B_SCHEMA_PROBE_READ_ONLY=1')
+          print('STEP14B_CHECKPOINT_CREATE=1')
+          print('STEP14B_CHECKPOINT_LOAD=1')
+          print('STEP14B_CHECKPOINT_ADVANCE=1')
+          print('STEP14B_IDEMPOTENT_SAVE=1')
+          print('STEP14B_CAS_CONFLICT_FAIL_CLOSED=1')
+          print('STEP14B_LIVE_DATABASE_CONNECTIONS=0')
+          print('STEP14B_PROVIDER_NETWORK_CALLS=0')
+          print('STEP14B_SPORTSBOOK_NETWORK_CALLS=0')
+          print('STEP14B_RUNTIME_EXECUTIONS=0')
+          print('STEP14B_RETRY_EXECUTIONS=0')
+          print('STEP14B_RESTART_EXECUTIONS=0')
+          print('STEP14B_DURABLE_LEASES=0')
+          print('STEP14B_PRODUCTION_ACTIVATION=0')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
+
+      - name: Final Step14B certification marker
+        run: echo 'MLB_STEP14B_DATABASE_CHECKPOINT_ADAPTER_GREEN'
