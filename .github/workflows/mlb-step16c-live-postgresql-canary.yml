@@ -8,14 +8,12 @@ on:
       - sports_api/mlb_step16c_live_postgresql_canary_v1.py
       - sports_api/tools/mlb_step16c_live_postgresql_canary.py
       - tests/test_mlb_step16c_live_postgresql_canary_v1.py
-      - .github/workflows/mlb-step16c-live-postgresql-canary.yml
   pull_request:
     branches: [main]
     paths:
       - sports_api/mlb_step16c_live_postgresql_canary_v1.py
       - sports_api/tools/mlb_step16c_live_postgresql_canary.py
       - tests/test_mlb_step16c_live_postgresql_canary_v1.py
-      - .github/workflows/mlb-step16c-live-postgresql-canary.yml
   workflow_dispatch:
 
 permissions:
