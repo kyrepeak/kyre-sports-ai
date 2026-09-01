@@ -1,0 +1,337 @@
+name: MLB Step8F player prop presentation certification
+
+on:
+  push:
+    branches:
+      - mlb-step8f-player-prop-presentation-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step8f-player-prop-presentation-cert
+  cancel-in-progress: false
+
+env:
+  STEP8F_BASE_SHA: 03c5cda93c6e462020a33e8f7f32dc5f2a07c5ec
+  PRODUCTION_PLAYER_PROPS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/player-props?max_events=30
+
+jobs:
+  certify-player-prop-presentation:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step8F four-file narrow MLB presentation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP8F_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(app.py|mlb_step8f_player_prop_presentation_v1.py|tests/test_mlb_step8f_player_prop_presentation_v1.py|\.github/workflows/mlb-step8f-player-prop-presentation-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP8F_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 4 ]; then
+            echo "STEP8F_EXPECTED_EXACTLY_FOUR_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP8F_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP8F_FOUR_FILE_NARROW_PRESENTATION_SCOPE_OK'
+
+      - name: Prove all preexisting MLB model and Step8 contracts are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP8F_BASE_SHA"...HEAD -- \
+            engine.py \
+            history.py \
+            hit_hub_v131.py \
+            hit_hub_v132.py \
+            mlb_hit_hub_v1315.py \
+            mlb_pitcher_k_hub_v1017.py \
+            mlb_pitcher_k_hub_v1016.py \
+            mlb_pitcher_k_hub_v1015.py \
+            mlb_pitcher_k_hub_v1014.py \
+            mlb_pitcher_k_hub_v101.py \
+            mlb_hrrbi_hub_v115.py \
+            mlb_hrrbi_hub_v114.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            sports_api/mlb_step8d_player_hits_integration_v1.py \
+            sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
+            sports_api/mlb_step7d_total_api_integration_v1.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_totals_hub_v174.py
+          echo 'MLB_STEP8F_PREEXISTING_MLB_RUNTIME_AND_STEP8_CONTRACTS_BYTE_IDENTICAL'
+
+      - name: Prove app change is additive frozen-shell presentation routing only
+        shell: bash
+        run: |
+          set -euo pipefail
+          read additions deletions path <<EOF
+          $(git diff --numstat "$STEP8F_BASE_SHA"...HEAD -- app.py)
+          EOF
+          test "$path" = "app.py"
+          test "$additions" = "14"
+          test "$deletions" = "0"
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          text = Path('app.py').read_text()
+          required = (
+              '_STEP8F_ROUTE_OLD = "_install_hrrbi_final_route()\\n_install_mlb_spread_card_route()"',
+              'from mlb_step8f_player_prop_presentation_v1 import install_step8f_player_prop_presentation',
+              '_STEP8F_MLB_PLAYER_PROP_PRESENTATION = install_step8f_player_prop_presentation()',
+              'source = source.replace(_STEP8F_ROUTE_OLD, _STEP8F_ROUTE_NEW, 1)',
+          )
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit('STEP8F_APP_ROUTE_CONTRACT_MISSING:' + ','.join(missing))
+
+          frozen = subprocess.check_output(
+              ['git','show','235d7ddc47de93657910a1f0cf9928f2a9f0f758:app.py'], text=True
+          )
+          marker = '_install_hrrbi_final_route()\n_install_mlb_spread_card_route()'
+          if frozen.count(marker) != 1:
+              raise SystemExit('STEP8F_FROZEN_PRESENTATION_SEAM_NOT_UNIQUE')
+          injected = marker.replace(
+              '_install_mlb_spread_card_route()',
+              'from mlb_step8f_player_prop_presentation_v1 import install_step8f_player_prop_presentation\n'
+              '_STEP8F_MLB_PLAYER_PROP_PRESENTATION = install_step8f_player_prop_presentation()\n'
+              '_install_mlb_spread_card_route()',
+          )
+          compile(frozen.replace(marker, injected, 1), '<step8f-frozen-preflight>', 'exec')
+          print('MLB_STEP8F_APP_ADDITIVE_FROZEN_PRESENTATION_ROUTE_OK')
+          PY
+
+      - name: Assert pure post-model exact-ID presentation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import inspect
+          from pathlib import Path
+          import mlb_step8f_player_prop_presentation_v1 as module
+
+          assert module.DATA_TYPE == 'mlb_step8f_player_prop_presentation_integration_v1'
+          source = Path('mlb_step8f_player_prop_presentation_v1.py').read_text()
+          context_source = inspect.getsource(module._context_for_result)
+          installer_source = inspect.getsource(module.install_step8f_player_prop_presentation)
+
+          for forbidden in (
+              'numpy', 'np.', 'random', 'Monte Carlo', 'simulate_', 'monte(',
+              'projection =', 'probability =', 'fair_odds =', 'confidence =',
+              'SequenceMatcher', 'Levenshtein', 'rapidfuzz', 'fuzzywuzzy',
+          ):
+              assert forbidden not in source, forbidden
+          for forbidden_read in (
+              '.get("player_name")', ".get('player_name')",
+              '.get("team")', ".get('team')",
+              '.get("projection")', ".get('projection')",
+              '.get("sim")', ".get('sim')",
+              '.get("confidence")', ".get('confidence')",
+              '.get("rank")', ".get('rank')",
+          ):
+              assert forbidden_read not in context_source, forbidden_read
+
+          for token in (
+              'build_pitcher_strikeout_integration',
+              'enrich_pitcher_strikeout_results',
+              'build_player_hits_integration',
+              'enrich_player_hit_results',
+              'build_hits_runs_rbi_integration',
+              'enrich_hits_runs_rbi_results',
+          ):
+              assert token in context_source, token
+          for token in (
+              '_wrap_pitcher_card(pitcher)',
+              '_wrap_hit_card(hits)',
+              '_wrap_hrrbi_card(hrrbi)',
+              '_wrap_renderer(pitcher, "render_pitcher_k_hub", PITCHER_STRIKEOUTS)',
+              '_wrap_renderer(hits, "render_hit_hub", PLAYER_HITS)',
+              '_wrap_renderer(hrrbi, "render_hrrbi_hub", HITS_RUNS_RBI)',
+          ):
+              assert token in installer_source, token
+
+          fallback = module._fallback_state('cert')
+          for key in (
+              'model_math_impact','projection_impact','simulation_impact','probability_impact',
+              'line_grading_impact','history_adjustment_impact','ranking_impact','selection_impact',
+              'fair_odds_impact','sportsbook_price_model_input','production_exposure_impact',
+              'wagering_impact','durable_persistence','wnba_impact',
+          ):
+              assert fallback[key] is False, key
+          assert fallback['player_name_matching_used'] is False
+          assert fallback['fuzzy_matching_allowed'] is False
+          print('MLB_STEP8F_PURE_POST_MODEL_EXACT_ID_PRESENTATION_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step8F Python
+        run: |
+          python -m py_compile \
+            app.py \
+            mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py
+
+      - name: Run Step8F targeted tests
+        run: python -m pytest -q tests/test_mlb_step8f_player_prop_presentation_v1.py
+
+      - name: Run complete certified MLB regression through Step8F
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py
+
+      - name: Certify live API to Step8F exact-ID or unchanged fallback path
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timezone
+          import json, os
+          import requests
+
+          import mlb_step8f_player_prop_presentation_v1 as step8f
+          from sports_api.mlb_step8a_player_prop_api_contract_v1 import (
+              API_CONNECTED, HITS_RUNS_RBI, PITCHER_STRIKEOUTS, PLAYER_HITS,
+          )
+
+          response = requests.get(
+              os.environ['PRODUCTION_PLAYER_PROPS_URL'],
+              timeout=45,
+              headers={'Accept':'application/json','User-Agent':'KyreSportsStep8FCert/1.0','Cache-Control':'no-cache'},
+          )
+          response.raise_for_status()
+          payload = response.json()
+          if payload.get('data_type') != 'mlb_player_prop_api_response_v1':
+              raise RuntimeError('STEP8F_BAD_API_DATA_TYPE')
+          if payload.get('source') != 'FanDuel':
+              raise RuntimeError('STEP8F_BAD_API_SOURCE')
+          if payload.get('player_name_matching_used') is not False or payload.get('fuzzy_matching_used') is not False:
+              raise RuntimeError('STEP8F_PROVIDER_MATCHING_CONTRACT_DRIFT')
+
+          props = [p for p in payload.get('props', []) if isinstance(p, dict)]
+          raw_state = step8f.build_step8f_player_prop_api_state(
+              payload,
+              as_of_utc=datetime.now(timezone.utc),
+              max_age_seconds=60,
+          )
+
+          checked = 0
+          markets_seen = set()
+          if props:
+              if raw_state.get('integration_status') != API_CONNECTED or raw_state.get('feed_fresh') is not True:
+                  raise RuntimeError('STEP8F_LIVE_STATE_NOT_GREEN:' + json.dumps(raw_state, sort_keys=True, default=str))
+              for prop in props:
+                  market = prop.get('market_type')
+                  if market not in {PITCHER_STRIKEOUTS, PLAYER_HITS, HITS_RUNS_RBI}:
+                      continue
+                  markets_seen.add(market)
+                  result = {
+                      'game_pk': prop['official_game_id'],
+                      'player_id': prop['official_player_id'],
+                      'player_name': 'INTENTIONALLY DIFFERENT LIVE DISPLAY',
+                      'projection_sentinel': 8.8,
+                      'probability_sentinel': 0.612,
+                      'rank_sentinel': checked,
+                      'sim': {'sentinel': checked},
+                  }
+                  before = deepcopy(result)
+                  html = step8f.decorate_card_html('<div>LIVE BASE</div>', result, market, raw_state)
+                  if 'STEP 8F' not in html or 'EXACT ID MATCH' not in html:
+                      raise RuntimeError(f'STEP8F_LIVE_EXACT_CONTEXT_NOT_RENDERED_{market}')
+                  if result != before:
+                      raise RuntimeError(f'STEP8F_LIVE_RESULT_MUTATED_{market}')
+                  wrong = dict(result)
+                  wrong['player_id'] = int(result['player_id']) + 100000000
+                  if step8f.decorate_card_html('<div>LIVE BASE</div>', wrong, market, raw_state) != '<div>LIVE BASE</div>':
+                      raise RuntimeError(f'STEP8F_LIVE_WRONG_ID_DID_NOT_FAIL_OPEN_{market}')
+                  checked += 1
+                  if checked >= 12:
+                      break
+          else:
+              # Empty live prop slate is an allowed provider state. Presentation must
+              # remain exactly unchanged rather than fabricate two-way context.
+              sentinel = {'game_pk': 1, 'player_id': 1, 'projection_sentinel': 8.8}
+              for market in (PITCHER_STRIKEOUTS, PLAYER_HITS, HITS_RUNS_RBI):
+                  if step8f.decorate_card_html('<div>LIVE BASE</div>', sentinel, market, raw_state) != '<div>LIVE BASE</div>':
+                      raise RuntimeError('STEP8F_EMPTY_SLATE_FABRICATED_CONTEXT')
+
+          print(json.dumps({
+              'marker':'MLB_STEP8F_LIVE_EXACT_ID_OR_UNCHANGED_FALLBACK_GREEN',
+              'prop_count':len(props),
+              'checked_exact_contexts':checked,
+              'markets_seen':sorted(markets_seen),
+              'player_name_matching_used':False,
+              'fuzzy_matching_used':False,
+              'sportsbook_price_model_input':False,
+              'projection_changed':False,
+              'simulation_changed':False,
+              'probability_changed':False,
+              'ranking_changed':False,
+          }, sort_keys=True))
+          PY
+
+      - name: Final Step8F certification marker
+        run: echo 'MLB_STEP8F_PLAYER_PROP_PRESENTATION_GREEN'
