@@ -20,8 +20,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY sports_api/requirements.txt /app/sports_api/requirements.txt
+COPY sports_api/requirements-mlb-step14b-persistence.txt /app/sports_api/requirements-mlb-step14b-persistence.txt
 RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir -r /app/sports_api/requirements.txt
+    && python -m pip install --no-cache-dir -r /app/sports_api/requirements.txt \
+    && python -m pip install --no-cache-dir -r /app/sports_api/requirements-mlb-step14b-persistence.txt
 
 COPY sports_api /app/sports_api
 
