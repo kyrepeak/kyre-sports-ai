@@ -1,0 +1,63 @@
+{
+  "activation_boundary": {
+    "actionable_output_started": false,
+    "automatic_restart_activation_started": false,
+    "background_worker_started": false,
+    "global_persistence_autostart_started": false,
+    "production_runtime_started": false,
+    "production_scheduler_started": false,
+    "provider_calls_started": false,
+    "public_persistence_api_started": false,
+    "secrets_written_to_repository": false,
+    "sportsbook_calls_started": false,
+    "supabase_rest_write_started": false,
+    "wagering_started": false
+  },
+  "blocking_requirements": [
+    "docker_install_mlb_persistence_requirements",
+    "deployment_secret_manager_supply_kyre_database_url",
+    "declare_mlb_activation_switches_default_off",
+    "bind_frozen_step13_to_step15_runtime_into_explicit_application_lifecycle"
+  ],
+  "data_type": "mlb_step16a_production_activation_readiness_evidence",
+  "deployment_files": {
+    "sports_api/Dockerfile": "e06eed5c3b9d65c238e47b3fd2fde1529a785fdf",
+    "sports_api/README.md": "4f93bb2c1890a1c65ff7b6c7cc21bb857a39f5b5",
+    "sports_api/main.py": "4816cc7eff7ae140c503f6fa7c1e97f5f0074192",
+    "sports_api/production.env.example": "6962aa11e75906691869d2ed04d2bf50822821c8",
+    "sports_api/requirements-mlb-step14b-persistence.txt": "46331822d0a55f5a4983d289c73a45ea9745ca89",
+    "sports_api/requirements.txt": "84e666d78549778a84f216e80d2bb979c1f6160a"
+  },
+  "evidence_content_sha256": "faf001523cbd4185633aacfa053d78b886e659c22c9bc584c9d40b167c8d3964",
+  "existing_deployment_contract": {
+    "container_runtime": true,
+    "default_web_concurrency": 2,
+    "deployment_replica_count": 1,
+    "hosted_staging_provider": "render",
+    "persistent_volume_root": "/var/lib/kyre-sports-api",
+    "uvicorn_entrypoint": "sports_api.main:app"
+  },
+  "frozen_parent": {
+    "step15_release_id": "mlb_step15_live_supabase_persistence_2026_regular_season_frozen_v1",
+    "step15_release_manifest_sha256": "d5c184988de8db66af6ef2c4e158dd8016a3403f968d42296f41dfa69bf83ada",
+    "step15c_certified_main_sha": "a67d415e5e1d8614d632fd34cfa09d551792a71f",
+    "step15c_final_marker": "MLB_STEP15C_FINAL_LIVE_PERSISTENCE_FREEZE_GREEN",
+    "step15c_source_blob_sha": "2ba73d80704054a5de8da4ea6daab8b9537bc7e0"
+  },
+  "observed_at_utc": "2026-09-01T21:06:30+00:00",
+  "readiness_findings": {
+    "docker_installs_base_requirements": true,
+    "docker_installs_mlb_persistence_requirements": false,
+    "fastapi_startup_binds_step13_to_step15_runtime": false,
+    "live_step15_release_frozen": true,
+    "live_step15_schema_certified": true,
+    "live_step15_transactions_certified": true,
+    "mlb_production_runtime_default_off": false,
+    "mlb_production_scheduler_default_off": false,
+    "persistence_requirement": "psycopg[binary]>=3.2,<4",
+    "persistence_requirement_defined": true,
+    "production_activation_ready": false,
+    "production_env_declares_kyre_database_url": false
+  },
+  "schema_version": "mlb_step_16a_production_activation_readiness_evidence_v1"
+}
