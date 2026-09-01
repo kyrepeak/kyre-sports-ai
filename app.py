@@ -281,6 +281,17 @@ except Exception as exc:
         "error_type": type(exc).__name__,
         "legacy_direct_mlb_live_feed_preserved": True,
     }
+try:
+    from mlb_step9e_live_market_consumer_v1 import install_step9e_live_market_consumer
+
+    _STEP9E_MLB_LIVE_MARKET_CONSUMER = install_step9e_live_market_consumer()
+except Exception as exc:
+    _STEP9E_MLB_LIVE_MARKET_CONSUMER = {
+        "installed": False,
+        "error_type": type(exc).__name__,
+        "legacy_odds_api_io_fallback_preserved": True,
+        "v1922_market_sync_function_preserved": True,
+    }
 source = _load_frozen_pre_live_app()
 
 # Step 7B changes only the MLB Spread presentation import inside the frozen
