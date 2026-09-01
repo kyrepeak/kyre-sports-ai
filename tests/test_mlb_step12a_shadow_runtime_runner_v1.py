@@ -33,6 +33,7 @@ BASE_SHA = "388c79480e916f7d9123b4f6deef6b6938ac8d2b"
 ASSEMBLED = "2026-09-01T18:20:00Z"
 EVALUATED = "2026-09-01T18:20:30Z"
 GAMEPK = 777001
+_DEFAULT = object()
 
 
 def _markets(prefix: str, *, total_line: float = 8.5, away_rl: float = 1.5):
@@ -99,8 +100,8 @@ def _snapshot(
     )
 
 
-def _cycle(snapshots=None, **kwargs):
-    if snapshots is None:
+def _cycle(snapshots=_DEFAULT, **kwargs):
+    if snapshots is _DEFAULT:
         snapshots = [_snapshot("fanduel"), _snapshot("draftkings")]
     args = {
         "assembled_at_utc": ASSEMBLED,
