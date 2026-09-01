@@ -7,7 +7,6 @@ on:
     paths:
       - sports_api/mlb_step16d_controlled_production_activation_v1.py
       - sports_api/tools/mlb_step16d_controlled_production_activation.py
-      - sports_api/production.env.example
       - tests/test_mlb_step16d_controlled_production_activation_v1.py
       - .github/workflows/mlb-step16d-controlled-production-activation-cert.yml
   workflow_dispatch:
@@ -48,7 +47,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Assert exact Step16C parent and five-file Step16D scope
+      - name: Assert exact Step16C parent and four-file Step16D scope
         shell: bash
         run: |
           set -euo pipefail
@@ -57,17 +56,20 @@ jobs:
           changed="$(git diff --name-only "$STEP16D_BASE_SHA"...HEAD)"
           printf '%s\n' "$changed"
           count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
-          test "$count" -eq 5
-          allowed='^(sports_api/mlb_step16d_controlled_production_activation_v1.py|sports_api/tools/mlb_step16d_controlled_production_activation.py|sports_api/production.env.example|tests/test_mlb_step16d_controlled_production_activation_v1.py|\.github/workflows/mlb-step16d-controlled-production-activation-cert.yml)$'
+          test "$count" -eq 4
+          allowed='^(sports_api/mlb_step16d_controlled_production_activation_v1.py|sports_api/tools/mlb_step16d_controlled_production_activation.py|tests/test_mlb_step16d_controlled_production_activation_v1.py|\.github/workflows/mlb-step16d-controlled-production-activation-cert.yml)$'
           bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
           test -z "$bad"
           test -z "$(git diff --name-status "$STEP16D_BASE_SHA"...HEAD | awk '$1 == "D" {print}')"
 
-      - name: Assert frozen MLB runtime and model surfaces unchanged
+      - name: Assert frozen MLB runtime packaging and model surfaces unchanged
         shell: bash
         run: |
           set -euo pipefail
           git diff --exit-code "$STEP16D_BASE_SHA"...HEAD -- \
+            sports_api/production.env.example \
+            sports_api/Dockerfile \
+            sports_api/main.py \
             sports_api/mlb_step16c_live_postgresql_canary_v1.py \
             sports_api/mlb_step16b_production_lifecycle_v1.py \
             sports_api/mlb_step16b_packaging_lifecycle_contract_v1.py \
