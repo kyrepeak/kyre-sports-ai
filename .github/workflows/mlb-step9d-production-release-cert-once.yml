@@ -80,14 +80,12 @@ jobs:
           git show "$CERTIFIED_SHA":tests/test_mlb_step9d_live_inplay_market_collector_api.py > /tmp/test_mlb_step9d_release.py
           PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q /tmp/test_mlb_step9d_release.py
 
-      - name: Exercise existing and new FastAPI route contracts locally
+      - name: Exercise existing and new MLB router contracts locally
         run: |
           python - <<'PY'
-          from fastapi.testclient import TestClient
           import sports_api.api.mlb as mlb_api
-          from sports_api.main import app
 
-          paths = {getattr(route, 'path', None) for route in app.routes}
+          paths = {getattr(route, 'path', None) for route in mlb_api.router.routes}
           for required in (
               '/api/v1/mlb/odds',
               '/api/v1/mlb/player-props',
@@ -96,7 +94,7 @@ jobs:
           ):
               assert required in paths, required
           assert callable(mlb_api.get_mlb_live_odds)
-          print('MLB_STEP9D_RELEASE_FASTAPI_ROUTES_OK')
+          print('MLB_STEP9D_RELEASE_MLB_ROUTER_ROUTES_OK')
           PY
 
       - name: Probe real FanDuel release collector fail-closed boundary
