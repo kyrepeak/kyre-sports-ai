@@ -16,7 +16,7 @@ jobs:
         with:
           ref: mlb-step9c-live-state-consumer-integration
           fetch-depth: 0
-      - name: Harden mapping fallback and add regression
+      - name: Repair mapping fallback with exact indentation
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -29,57 +29,41 @@ jobs:
           end = text.find(end_marker, start if start >= 0 else 0)
           if start < 0 or end < 0 or end <= start:
               raise SystemExit('STEP9C_STATE_WRAPPER_BOUNDARY_NOT_FOUND')
-          new = '''    def state_api_first(feed):
-              if isinstance(feed, Mapping) and TAG in feed:
-                  context = feed.get(TAG)
-                  meta = _CURRENT_GAME.get()
-                  try:
-                      if isinstance(context, Mapping) and isinstance(meta, Mapping):
-                          return _state_from_context(context, meta, v19_module=v19)
-                      raise RuntimeError("Step 9C tagged state missing exact selected-game metadata")
-                  except Exception as exc:
-                      game_id = _strict_positive_int(
-                          context.get("official_game_id") if isinstance(context, Mapping) else None
-                      )
-                      _LAST_STATUS.update({
-                          "api_used": False,
-                          "legacy_fallback_used": True,
-                          "failure": type(exc).__name__,
-                      })
-                      if game_id is not None:
-                          return legacy_state(legacy_feed(game_id))
-                      raise
-              return legacy_state(feed)
 
-          '''.replace('              ', '        ')
+          lines = [
+              '    def state_api_first(feed):',
+              '        if isinstance(feed, Mapping) and TAG in feed:',
+              '            context = feed.get(TAG)',
+              '            meta = _CURRENT_GAME.get()',
+              '            try:',
+              '                if isinstance(context, Mapping) and isinstance(meta, Mapping):',
+              '                    return _state_from_context(context, meta, v19_module=v19)',
+              '                raise RuntimeError("Step 9C tagged state missing exact selected-game metadata")',
+              '            except Exception as exc:',
+              '                game_id = _strict_positive_int(',
+              '                    context.get("official_game_id") if isinstance(context, Mapping) else None',
+              '                )',
+              '                _LAST_STATUS.update({',
+              '                    "api_used": False,',
+              '                    "legacy_fallback_used": True,',
+              '                    "failure": type(exc).__name__,',
+              '                })',
+              '                if game_id is not None:',
+              '                    return legacy_state(legacy_feed(game_id))',
+              '                raise',
+              '        return legacy_state(feed)',
+              '',
+              '',
+          ]
+          new = '\n'.join(lines)
           p.write_text(text[:start] + new + text[end:])
-
-          t = Path('tests/test_mlb_step9c_live_state_consumer_v1.py')
-          tests = t.read_text()
-          anchor = 'def test_raw_legacy_feed_state_parser_is_preserved(monkeypatch):\n'
-          addition = '''def test_mapping_exception_falls_back_to_direct_feed(monkeypatch):
-              fake, calls = _fake_v19(monkeypatch)
-              monkeypatch.setattr(step9c, "_certified_context", lambda game_id, game_date=None: _context(game_id))
-              monkeypatch.setattr(step9c, "_state_from_context", lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("mapping")))
-              step9c.install_step9c_live_state_consumer()
-              result = fake._render_selected(_game(), None)
-              assert result == {"legacy_state": {"legacy": True, "game_pk": GAME_ID}}
-              assert calls["feed"] == [GAME_ID]
-              assert step9c.consumer_status()["legacy_fallback_used"] is True
-              assert step9c.consumer_status()["failure"] == "ValueError"
-
-
-          '''.replace('              ', '    ')
-          if anchor not in tests:
-              raise SystemExit('STEP9C_TEST_ANCHOR_NOT_FOUND')
-          if 'test_mapping_exception_falls_back_to_direct_feed' not in tests:
-              t.write_text(tests.replace(anchor, addition + anchor, 1))
           PY
+          python -m py_compile mlb_step9c_live_state_consumer_v1.py tests/test_mlb_step9c_live_state_consumer_v1.py
           git diff --check
-      - name: Commit mapping fallback hardening
+      - name: Commit repaired runtime
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mlb_step9c_live_state_consumer_v1.py tests/test_mlb_step9c_live_state_consumer_v1.py
-          git commit -m "Harden MLB Step 9C direct fallback"
+          git add mlb_step9c_live_state_consumer_v1.py
+          git commit -m "Repair MLB Step 9C mapping fallback indentation"
           git push origin HEAD:mlb-step9c-live-state-consumer-integration
