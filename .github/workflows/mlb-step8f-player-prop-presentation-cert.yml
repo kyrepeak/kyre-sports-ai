@@ -279,13 +279,13 @@ jobs:
               as_of_utc=datetime.now(timezone.utc),
               max_age_seconds=60,
           )
-          print('STEP8F_LIVE_STATE', json.dumps(raw_state, sort_keys=True, default=str)[:5000])
+          print('STEP8F_LIVE_STATE', str(raw_state)[:5000])
 
           checked = 0
           markets_seen = set()
           if props:
               if raw_state.get('integration_status') != API_CONNECTED or raw_state.get('feed_fresh') is not True:
-                  raise RuntimeError('STEP8F_LIVE_STATE_NOT_GREEN:' + json.dumps(raw_state, sort_keys=True, default=str))
+                  raise RuntimeError('STEP8F_LIVE_STATE_NOT_GREEN:' + str(raw_state)[:5000])
               for prop in props:
                   market = prop.get('market_type')
                   if market not in {PITCHER_STRIKEOUTS, PLAYER_HITS, HITS_RUNS_RBI}:
