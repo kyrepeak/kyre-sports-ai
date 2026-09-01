@@ -208,6 +208,11 @@ def test_invalid_database_path_rejected(bad):
         initialize_live_snapshot_store(bad)
 
 
+def test_in_memory_database_is_rejected_because_adapter_requires_file_backing():
+    with pytest.raises(MLBLiveSnapshotStoreError, match="file-backed"):
+        initialize_live_snapshot_store(":memory:")
+
+
 @pytest.mark.parametrize(
     "bad",
     ["2026-09-01T16:50:01", "2026-09-01T09:50:01-07:00", "bad-time"],
