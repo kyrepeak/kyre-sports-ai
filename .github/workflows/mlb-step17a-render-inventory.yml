@@ -35,7 +35,7 @@ jobs:
           headers={
               'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",
               'Accept':'application/json',
-              'User-Agent':'kyre-mlb-step17a-inventory/1',
+              'User-Agent':'kyre-mlb-step17a-inventory/2',
           }
 
           def get(path):
@@ -55,17 +55,25 @@ jobs:
                   if not isinstance(row,dict):
                       continue
                   svc=row.get('service') if isinstance(row.get('service'),dict) else row
-                  details=svc.get('serviceDetails') if isinstance(svc.get('serviceDetails'),dict) else {}
+                  sid=svc.get('id')
+                  full=get(f'/services/{sid}') if sid else svc
+                  if isinstance(full,dict) and isinstance(full.get('service'),dict):
+                      full=full['service']
+                  details=full.get('serviceDetails') if isinstance(full.get('serviceDetails'),dict) else {}
                   services.append({
-                      'id':svc.get('id'),
-                      'name':svc.get('name'),
-                      'type':svc.get('type'),
+                      'id':full.get('id'),
+                      'name':full.get('name'),
+                      'type':full.get('type'),
                       'runtime':details.get('runtime') or details.get('env'),
-                      'url':details.get('url') or svc.get('url'),
+                      'url':details.get('url') or full.get('url'),
                       'region':details.get('region'),
                       'plan':details.get('plan'),
-                      'repo':svc.get('repo'),
-                      'branch':svc.get('branch'),
+                      'repo':full.get('repo'),
+                      'branch':full.get('branch'),
+                      'auto_deploy':full.get('autoDeploy'),
+                      'root_dir':full.get('rootDir'),
+                      'health_check_path':details.get('healthCheckPath'),
+                      'num_instances':details.get('numInstances'),
                   })
                   if row.get('cursor'):
                       cursor=row.get('cursor')
