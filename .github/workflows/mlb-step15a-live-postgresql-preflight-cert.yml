@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - mlb-step15a-live-postgresql-preflight
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
