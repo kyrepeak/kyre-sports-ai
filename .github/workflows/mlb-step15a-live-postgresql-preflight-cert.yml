@@ -3,6 +3,7 @@ name: MLB Step15A live PostgreSQL preflight certification
 on:
   push:
     branches:
+      - main
       - mlb-step15a-live-postgresql-preflight
   pull_request:
     branches:
