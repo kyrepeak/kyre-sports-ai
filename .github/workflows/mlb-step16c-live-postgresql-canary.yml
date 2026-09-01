@@ -1,0 +1,119 @@
+name: MLB Step16C live PostgreSQL canary
+
+on:
+  push:
+    branches:
+      - mlb-step16c-live-postgresql-canary
+    paths:
+      - sports_api/mlb_step16c_live_postgresql_canary_v1.py
+      - sports_api/tools/mlb_step16c_live_postgresql_canary.py
+      - tests/test_mlb_step16c_live_postgresql_canary_v1.py
+      - .github/workflows/mlb-step16c-live-postgresql-canary.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - sports_api/mlb_step16c_live_postgresql_canary_v1.py
+      - sports_api/tools/mlb_step16c_live_postgresql_canary.py
+      - tests/test_mlb_step16c_live_postgresql_canary_v1.py
+      - .github/workflows/mlb-step16c-live-postgresql-canary.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_PRODUCTION_SCHEDULER_ENABLED: "false"
+  MLB_ACTIONABLE_OUTPUT_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+  MLB_SUPABASE_REST_WRITE_ENABLED: "false"
+  MLB_STEP16C_LIVE_POSTGRESQL_CANARY_ENABLED: "true"
+  MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED: "true"
+  MLB_STEP14C_DURABLE_RESTART_LEASE_ENABLED: "true"
+  MLB_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: "true"
+  MLB_STEP14B_DATABASE_READ_ENABLED: "true"
+  MLB_STEP14B_DATABASE_WRITE_ENABLED: "true"
+
+jobs:
+  certify-and-canary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+      MLB_STEP16C_CANARY_OWNER_ID: step16c-gha-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assert frozen Step16C parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor eb0ea430caea02f90b6367b8bc0ea28f698246bf HEAD
+          git diff --check eb0ea430caea02f90b6367b8bc0ea28f698246bf...HEAD
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          test "$MLB_SUPABASE_REST_WRITE_ENABLED" = false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API, test, and PostgreSQL dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Compile Step16C
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step16c_live_postgresql_canary_v1.py \
+            sports_api/tools/mlb_step16c_live_postgresql_canary.py \
+            tests/test_mlb_step16c_live_postgresql_canary_v1.py
+
+      - name: Run Step16C targeted tests
+        run: python -m pytest -q tests/test_mlb_step16c_live_postgresql_canary_v1.py
+
+      - name: Re-run Step16B targeted guards unchanged
+        run: python -m pytest -q tests/test_mlb_step16b_production_packaging_lifecycle_v1.py
+
+      - name: Require secret-manager database URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${KYRE_DATABASE_URL:-}"
+          case "$KYRE_DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *) echo "KYRE_DATABASE_URL is not PostgreSQL"; exit 1 ;;
+          esac
+
+      - name: Execute one-shot packaged lifecycle canary
+        run: PYTHONPATH=. python -m sports_api.tools.mlb_step16c_live_postgresql_canary
+
+      - name: Upload Step16C live evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step16c-live-postgresql-canary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-step16c-live-postgresql-canary.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production remains OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          test "$MLB_SUPABASE_REST_WRITE_ENABLED" = false
+
+      - name: Final marker
+        run: echo MLB_STEP16C_LIVE_POSTGRESQL_CANARY_GREEN
