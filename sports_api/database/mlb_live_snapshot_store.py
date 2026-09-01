@@ -95,7 +95,9 @@ def _database_path(path: str | Path) -> str:
     if not isinstance(path, str) or not path.strip():
         raise MLBLiveSnapshotStoreError("database path must be a non-empty string or Path")
     if path == ":memory:":
-        return path
+        raise MLBLiveSnapshotStoreError(
+            "in-memory SQLite is not supported; use a file-backed path"
+        )
     resolved = Path(path).expanduser()
     resolved.parent.mkdir(parents=True, exist_ok=True)
     return str(resolved)
@@ -113,9 +115,8 @@ def initialize_live_snapshot_store(path: str | Path) -> dict[str, Any]:
     """Create the append-only schema. Safe to call repeatedly."""
     connection = _connect(path)
     try:
-        if _database_path(path) != ":memory:":
-            connection.execute("PRAGMA journal_mode = WAL")
-            connection.execute("PRAGMA synchronous = FULL")
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA synchronous = FULL")
         connection.executescript(
             f"""
             CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
