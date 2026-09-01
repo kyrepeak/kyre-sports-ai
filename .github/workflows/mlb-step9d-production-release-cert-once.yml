@@ -1,0 +1,123 @@
+name: MLB Step9D production release certification one-shot
+
+on:
+  push:
+    branches:
+      - mlb-step9d-production-control-20260901
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  LIVE_BASE_SHA: bc86ada81142e81851a16fcecf40ce3f8906d9be
+  TARGET_SHA: dbcbd03fa26a18fe50d04682118983b3752692ae
+  CERTIFIED_SHA: cdb6e0692d35e13817835115ae8c4b3b60946c42
+
+jobs:
+  certify-minimal-release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact production release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert exact two-file additive release
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$LIVE_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          expected=$'sports_api/api/mlb.py\nsports_api/collectors/mlb_fanduel_inplay.py'
+          if [ "$changed" != "$expected" ]; then
+            echo 'STEP9D_RELEASE_SCOPE_MISMATCH'
+            exit 1
+          fi
+          read a1 d1 p1 <<<"$(git diff --numstat "$LIVE_BASE_SHA"...HEAD -- sports_api/api/mlb.py)"
+          read a2 d2 p2 <<<"$(git diff --numstat "$LIVE_BASE_SHA"...HEAD -- sports_api/collectors/mlb_fanduel_inplay.py)"
+          test "$a1" = 67 && test "$d1" = 0
+          test "$a2" = 254 && test "$d2" = 0
+          git diff --check "$LIVE_BASE_SHA"...HEAD
+          echo 'MLB_STEP9D_RELEASE_EXACT_TWO_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Verify certified runtime blob hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:sports_api/api/mlb.py)" = '2530b940b15a49132677125ee9ba7cdff43c8285'
+          test "$(git rev-parse HEAD:sports_api/collectors/mlb_fanduel_inplay.py)" = 'fe24a299625abd8e945d1ce7a3a380188c24a9df'
+          echo 'MLB_STEP9D_RELEASE_CERTIFIED_BLOBS_OK'
+
+      - name: Prove all preexisting production runtime files are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$LIVE_BASE_SHA"...HEAD -- \
+            app.py \
+            sports_api/main.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py
+          echo 'MLB_STEP9D_PREEXISTING_PRODUCTION_RUNTIME_FROZEN'
+
+      - name: Compile exact release
+        run: python -m py_compile sports_api/api/mlb.py sports_api/collectors/mlb_fanduel_inplay.py sports_api/main.py
+
+      - name: Run certified Step9D tests against release runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "$CERTIFIED_SHA":tests/test_mlb_step9d_live_inplay_market_collector_api.py > /tmp/test_mlb_step9d_release.py
+          PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q /tmp/test_mlb_step9d_release.py
+
+      - name: Exercise existing and new FastAPI route contracts locally
+        run: |
+          python - <<'PY'
+          from fastapi.testclient import TestClient
+          import sports_api.api.mlb as mlb_api
+          from sports_api.main import app
+
+          paths = {getattr(route, 'path', None) for route in app.routes}
+          for required in (
+              '/api/v1/mlb/odds',
+              '/api/v1/mlb/player-props',
+              '/api/v1/mlb/live-game-state',
+              '/api/v1/mlb/live-odds',
+          ):
+              assert required in paths, required
+          assert callable(mlb_api.get_mlb_live_odds)
+          print('MLB_STEP9D_RELEASE_FASTAPI_ROUTES_OK')
+          PY
+
+      - name: Probe real FanDuel release collector fail-closed boundary
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from sports_api.collectors.mlb_fanduel_inplay import collect_inplay_mlb_game_odds
+          snapshot = collect_inplay_mlb_game_odds(now_utc=datetime.now(timezone.utc), max_events=30)
+          assert snapshot['provider'] == 'FanDuel'
+          assert snapshot['market_phase'] == 'IN_PLAY'
+          assert snapshot['http_methods'] == ['GET']
+          assert snapshot['fuzzy_matching_used'] is False
+          assert snapshot['synthetic_game_id_used'] is False
+          print('STEP9D_RELEASE_REAL_FANDUEL', {
+              'landing_event_count': snapshot['landing_event_count'],
+              'candidate_started_event_count': snapshot['candidate_started_event_count'],
+              'matched_inplay_game_count': snapshot['matched_inplay_game_count'],
+              'fully_priced_game_count': snapshot['fully_priced_game_count'],
+          })
+          print('MLB_STEP9D_RELEASE_REAL_BOUNDARY_OK')
+          PY
+
+      - name: Final release certification marker
+        run: echo 'MLB_STEP9D_PRODUCTION_RELEASE_GREEN'
