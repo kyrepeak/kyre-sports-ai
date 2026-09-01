@@ -1,0 +1,57 @@
+name: MLB Step9D router patch once
+
+on:
+  push:
+    branches:
+      - mlb-step9d-live-inplay-market-collector-api
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mlb-step9d-live-inplay-market-collector-api
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply additive live-odds route patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('sports_api/api/mlb.py')
+          text = path.read_text()
+          old_import = 'from sports_api.collectors.mlb_fanduel_direct import collect_live_mlb_game_odds\n'
+          new_import = old_import + 'from sports_api.collectors.mlb_fanduel_inplay import collect_inplay_mlb_game_odds\n'
+          if 'collect_inplay_mlb_game_odds' not in text:
+              if old_import not in text:
+                  raise SystemExit('STEP9D_IMPORT_ANCHOR_MISSING')
+              text = text.replace(old_import, new_import, 1)
+
+          anchor = '\n\n@router.get("/player-props")\n'
+          endpoint = '''\n\n@router.get("/live-odds")\ndef get_mlb_live_odds(\n    official_game_id: int | None = Query(\n        default=None,\n        ge=1,\n        description="Optional exact official MLB gamePk. No downstream team-name matching is performed.",\n    ),\n    max_events: int = Query(\n        default=30,\n        ge=1,\n        le=50,\n        description="Maximum already-started FanDuel MLB events to inspect for OPEN in-play markets.",\n    ),\n    fully_priced_only: bool = Query(\n        default=True,\n        description="When true, return only in-play games with moneyline, run line, and total pricing.",\n    ),\n):\n    """Return read-only FanDuel in-play MLB markets keyed by exact official gamePk."""\n    try:\n        snapshot = collect_inplay_mlb_game_odds(\n            now_utc=datetime.now(timezone.utc),\n            official_game_id=official_game_id,\n            max_events=max_events,\n        )\n    except Exception as exc:\n        raise HTTPException(\n            status_code=502,\n            detail="MLB in-play odds collection failed.",\n        ) from exc\n\n    all_games = [game for game in snapshot.get("games", []) if isinstance(game, dict)]\n    games = (\n        [game for game in all_games if game.get("fully_priced") is True]\n        if fully_priced_only\n        else all_games\n    )\n    if official_game_id is not None and not games:\n        raise HTTPException(\n            status_code=404,\n            detail=f"Official MLB game {official_game_id} has no usable OPEN FanDuel in-play markets right now.",\n        )\n\n    return {\n        "data_type": "mlb_inplay_odds_api_response_v1",\n        "schema_version": 1,\n        "source": snapshot.get("provider"),\n        "transport": snapshot.get("transport"),\n        "http_methods": snapshot.get("http_methods"),\n        "sportsbook_region": snapshot.get("sportsbook_region"),\n        "market_phase": "IN_PLAY",\n        "collected_at_utc": snapshot.get("collected_at_utc"),\n        "requested_official_game_id": snapshot.get("requested_official_game_id"),\n        "fully_priced_only": fully_priced_only,\n        "landing_event_count": snapshot.get("landing_event_count"),\n        "candidate_started_event_count": snapshot.get("candidate_started_event_count"),\n        "matched_inplay_game_count": snapshot.get("matched_inplay_game_count"),\n        "fully_priced_game_count": snapshot.get("fully_priced_game_count"),\n        "game_count": len(games),\n        "rejected_event_count": len(snapshot.get("rejected_events") or []),\n        "fuzzy_matching_used": False,\n        "synthetic_game_id_used": False,\n        "games": games,\n    }\n'''
+          if '@router.get("/live-odds")' not in text:
+              if anchor not in text:
+                  raise SystemExit('STEP9D_ENDPOINT_ANCHOR_MISSING')
+              text = text.replace(anchor, endpoint + anchor, 1)
+          path.write_text(text)
+          PY
+          python -m py_compile sports_api/api/mlb.py sports_api/collectors/mlb_fanduel_inplay.py
+          git diff --check
+          git diff -- sports_api/api/mlb.py
+      - name: Commit source patch only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sports_api/api/mlb.py
+          if git diff --cached --quiet; then
+            echo STEP9D_ROUTER_ALREADY_PATCHED
+            exit 0
+          fi
+          git commit -m "Add MLB Step 9D live in-play odds API route"
+          git push origin HEAD:mlb-step9d-live-inplay-market-collector-api
