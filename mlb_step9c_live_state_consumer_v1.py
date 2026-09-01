@@ -277,26 +277,26 @@ def install_step9c_live_state_consumer() -> dict[str, Any]:
     fetch_live_feed_api_first._step9c_wrapper = True
 
     def state_api_first(feed):
-    if isinstance(feed, Mapping) and TAG in feed:
-        context = feed.get(TAG)
-        meta = _CURRENT_GAME.get()
-        try:
-            if isinstance(context, Mapping) and isinstance(meta, Mapping):
-          return _state_from_context(context, meta, v19_module=v19)
-            raise RuntimeError("Step 9C tagged state missing exact selected-game metadata")
-        except Exception as exc:
-            game_id = _strict_positive_int(
-          context.get("official_game_id") if isinstance(context, Mapping) else None
-            )
-            _LAST_STATUS.update({
-          "api_used": False,
-          "legacy_fallback_used": True,
-          "failure": type(exc).__name__,
-            })
-            if game_id is not None:
-          return legacy_state(legacy_feed(game_id))
-            raise
-    return legacy_state(feed)
+        if isinstance(feed, Mapping) and TAG in feed:
+            context = feed.get(TAG)
+            meta = _CURRENT_GAME.get()
+            try:
+                if isinstance(context, Mapping) and isinstance(meta, Mapping):
+                    return _state_from_context(context, meta, v19_module=v19)
+                raise RuntimeError("Step 9C tagged state missing exact selected-game metadata")
+            except Exception as exc:
+                game_id = _strict_positive_int(
+                    context.get("official_game_id") if isinstance(context, Mapping) else None
+                )
+                _LAST_STATUS.update({
+                    "api_used": False,
+                    "legacy_fallback_used": True,
+                    "failure": type(exc).__name__,
+                })
+                if game_id is not None:
+                    return legacy_state(legacy_feed(game_id))
+                raise
+        return legacy_state(feed)
 
     state_api_first._step9c_legacy = legacy_state
     state_api_first._step9c_wrapper = True
