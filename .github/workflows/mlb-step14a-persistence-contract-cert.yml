@@ -1,0 +1,226 @@
+name: MLB Step14A persistence contract certification
+
+on:
+  push:
+    branches:
+      - mlb-step14a-persistence-contract
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP14A_BASE_SHA: e0c79e2ccb9e34846ed4499f29878853e7e1114a
+
+jobs:
+  certify-persistence-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step14A is exactly four-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP14A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step14a_persistence_contract_v1.py|sports_api/sql/mlb_step14a_persistence_schema.sql|tests/test_mlb_step14a_persistence_contract_v1.py|\.github/workflows/mlb-step14a-persistence-contract-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP14A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 4 ]; then
+            echo "STEP14A_EXPECTED_EXACTLY_FOUR_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP14A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP14A_BASE_SHA"...HEAD
+          numstat="$(git diff --numstat "$STEP14A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$numstat"
+          if printf '%s\n' "$numstat" | awk '$2 != 0 { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'STEP14A_DELETIONS_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP14A_FOUR_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove Step13 and frozen production paths remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP14A_BASE_SHA"...HEAD -- \
+            app.py engine.py history.py spread_engine.py \
+            live_game_hub_v182.py live_game_hub_v19.py live_game_hub_v191.py \
+            live_game_hub_v192.py live_game_hub_v1921.py mlb_live_hub_v193.py live_odds_feed.py \
+            sports_api/main.py sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py \
+            sports_api/database/mlb_live_snapshot_recovery.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11a_provider_contract_v1.py \
+            sports_api/mlb_step11c_multi_provider_shadow_board_v1.py \
+            sports_api/mlb_step11d_provider_consensus_failover_shadow_policy_v1.py \
+            sports_api/mlb_step11_final_provider_expansion_freeze_v1.py \
+            sports_api/mlb_step12a_shadow_runtime_runner_v1.py \
+            sports_api/mlb_step12b_live_runtime_assembly_v1.py \
+            sports_api/mlb_step12c_live_board_runtime_v1.py \
+            sports_api/mlb_step12_final_runtime_freeze_v1.py \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            sports_api/mlb_step13b_runtime_supervisor_v1.py \
+            sports_api/mlb_step13c_reliability_recovery_v1.py \
+            sports_api/mlb_step13_final_scheduler_freeze_v1.py
+          echo 'MLB_STEP14A_ALL_FROZEN_PARENT_AND_PRODUCTION_PATHS_BYTE_IDENTICAL'
+
+      - name: Prove exact Step13D frozen source blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$STEP14A_BASE_SHA:sports_api/mlb_step13_final_scheduler_freeze_v1.py")" = 'b53400fe205717ca075231f841b4ca7aabed90bc'
+          echo 'MLB_STEP14A_STEP13D_SOURCE_BLOB_EXACT'
+
+      - name: Assert Step14A adds no runtime network or database client machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='sports_api/mlb_step14a_persistence_contract_v1.py'
+          forbidden='(^|[^A-Za-z])(requests|httpx|urllib|socket|threading|multiprocessing|subprocess|apscheduler|sqlalchemy|psycopg|supabase)([^A-Za-z]|$)|time\.sleep|asyncio\.create_task|os\.system|Popen\('
+          if grep -Ein "$forbidden" "$file"; then
+            echo 'STEP14A_FORBIDDEN_RUNTIME_NETWORK_OR_DATABASE_CLIENT_MACHINERY'
+            exit 1
+          fi
+          echo 'MLB_STEP14A_NONRUNTIME_CONTRACT_SAFETY_OK'
+
+      - name: Assert SQL is DDL-only and defines no durable lease
+        shell: bash
+        run: |
+          set -euo pipefail
+          sql='sports_api/sql/mlb_step14a_persistence_schema.sql'
+          grep -F 'CREATE TABLE IF NOT EXISTS kyre_runtime.mlb_runtime_checkpoints' "$sql"
+          grep -F 'CREATE TABLE IF NOT EXISTS kyre_runtime.mlb_runtime_checkpoint_heads' "$sql"
+          if grep -Ein '^\s*(INSERT|UPDATE|DELETE|TRUNCATE|DROP)\b' "$sql"; then
+            echo 'STEP14A_SQL_RUNTIME_MUTATION_FORBIDDEN'
+            exit 1
+          fi
+          if grep -F 'CREATE TABLE IF NOT EXISTS kyre_runtime.mlb_runtime_leases' "$sql"; then
+            echo 'STEP14A_DURABLE_LEASE_TABLE_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP14A_SQL_DDL_ONLY_NO_LEASE_OK'
+
+      - name: Compile Step14A Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step14a_persistence_contract_v1.py \
+            tests/test_mlb_step14a_persistence_contract_v1.py
+
+      - name: Run Step14A targeted tests
+        run: python -m pytest -q tests/test_mlb_step14a_persistence_contract_v1.py
+
+      - name: Run complete MLB regression including Step14A
+        run: python -m pytest -q tests/test_mlb_*.py
+
+      - name: Certify Step14A durable checkpoint contract boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step12_final_runtime_freeze_v1 import final_runtime_freeze_manifest
+          from sports_api.mlb_step13a_bounded_scheduler_v1 import bounded_scheduler_manifest, build_bounded_scheduler_tick
+          from sports_api.mlb_step13b_runtime_supervisor_v1 import build_runtime_supervision
+          from sports_api.mlb_step13c_reliability_recovery_v1 import build_recovery_decision
+          from sports_api.mlb_step14a_persistence_contract_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              STEP14A_BASE_MAIN_SHA,
+              STEP13D_SOURCE_BLOB_SHA,
+              build_step14a_checkpoint_envelope,
+              build_step14a_schema_manifest,
+              persistence_contract_manifest,
+              validate_step14a_checkpoint_envelope,
+          )
+
+          assert STEP14A_BASE_MAIN_SHA == 'e0c79e2ccb9e34846ed4499f29878853e7e1114a'
+          assert STEP13D_SOURCE_BLOB_SHA == 'b53400fe205717ca075231f841b4ca7aabed90bc'
+          manifest = persistence_contract_manifest()
+          assert manifest['runtime_mode'] == 'SHADOW_ONLY'
+          assert manifest['schema_definition_allowed'] is True
+          assert manifest['durable_checkpoint_envelope_allowed'] is True
+          assert manifest['database_read_allowed'] is False
+          assert manifest['database_write_allowed'] is False
+          assert manifest['persistence_runtime_enabled'] is False
+          assert manifest['durable_restart_recovery_allowed'] is False
+          assert manifest['durable_distributed_lease_allowed'] is False
+          assert manifest['production_activation_allowed'] is False
+
+          tick = build_bounded_scheduler_tick(
+              evaluated_at_utc='2026-09-01T12:00:00Z',
+              scheduler_anchor_utc='2026-09-01T00:00:00Z',
+              scheduler_state=None,
+              step12_final_manifest=final_runtime_freeze_manifest(),
+              scheduler_enabled=True,
+              interval_seconds=30,
+          )
+          supervision = build_runtime_supervision(
+              tick,
+              observed_at_utc='2026-09-01T12:00:00Z',
+              cycle_observation=None,
+              step13a_manifest=bounded_scheduler_manifest(),
+          )
+          decision = build_recovery_decision(
+              supervision,
+              evaluated_at_utc='2026-09-01T12:00:00Z',
+          )
+          scheduler_state = {
+              'last_granted_slot_utc': tick['permit_slot_utc'],
+              'active_cycle_id': tick['permit_cycle_id'],
+              'active_cycle_slot_utc': tick['permit_slot_utc'],
+          }
+          envelope = build_step14a_checkpoint_envelope(
+              recovery_decision=decision,
+              scheduler_state=scheduler_state,
+              slate_date='2026-09-01',
+              created_at_utc='2026-09-01T12:00:05Z',
+          )
+          assert validate_step14a_checkpoint_envelope(envelope)['envelope_valid'] is True
+          schema = build_step14a_schema_manifest()
+          assert schema['lease_table_defined'] is False
+          assert schema['database_write_allowed'] is False
+          assert schema['durable_restart_recovery_allowed'] is False
+
+          print('STEP14A_STEP13D_FROZEN_PARENT=1')
+          print('STEP14A_CHECKPOINT_ENVELOPE_VALID=1')
+          print('STEP14A_APPEND_ONLY_SCHEMA_DEFINED=1')
+          print('STEP14A_DATABASE_READS=0')
+          print('STEP14A_DATABASE_WRITES=0')
+          print('STEP14A_DURABLE_LEASES=0')
+          print('STEP14A_RUNTIME_EXECUTIONS=0')
+          print('STEP14A_PROVIDER_NETWORK_CALLS=0')
+          print('STEP14A_PRODUCTION_ACTIVATION=0')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
+
+      - name: Final Step14A certification marker
+        run: echo 'MLB_STEP14A_PERSISTENCE_CONTRACT_GREEN'
