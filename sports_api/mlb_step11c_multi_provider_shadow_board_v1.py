@@ -1,14 +1,4 @@
-"""MLB Step 11C — multi-provider normalization shadow board.
-
-Step 11A froze the provider-neutral game-market snapshot contract and Step 11B
-added a shadow-only DraftKings adapter. Step 11C combines already-certified
-FanDuel and DraftKings Step 11A snapshots into one deterministic, read-only
-shadow board keyed only by exact official MLB gamePk plus market phase.
-
-This layer deliberately does *not* choose a best price, compute consensus,
-fail over between books, call a network, write persistence, or feed sportsbook
-prices into model math. It is a comparison/visibility boundary only.
-"""
+"""MLB Step 11C — deterministic FanDuel + DraftKings shadow board."""
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -42,21 +32,17 @@ SCHEMA_VERSION = 1
 STEP11C_BASE_MAIN_SHA = "05aa8b6299f6300146666bcbb1601158d0ce364d"
 BOARD_STATUS = "STEP11C_MULTI_PROVIDER_SHADOW_BOARD_READY"
 FINAL_CERTIFICATION_MARKER = "MLB_STEP11C_MULTI_PROVIDER_SHADOW_BOARD_GREEN"
-
 SUPPORTED_PROVIDERS = ("fanduel", "draftkings")
-PROVIDER_NAMES = {
-    "fanduel": "FanDuel",
-    "draftkings": "DraftKings",
-}
+PROVIDER_NAMES = {"fanduel": "FanDuel", "draftkings": "DraftKings"}
 MAX_INPUT_SNAPSHOTS = 500
+_PROVIDER_ORDER = {key: i for i, key in enumerate(SUPPORTED_PROVIDERS)}
 
 
 class MLBMultiProviderShadowBoardError(ValueError):
-    """Step 11C input violates the certified shadow-board boundary."""
+    pass
 
 
 def shadow_board_manifest() -> dict[str, Any]:
-    """Return the immutable Step 11C behavior boundary."""
     return {
         "data_type": DATA_TYPE,
         "schema_version": SCHEMA_VERSION,
@@ -104,9 +90,7 @@ def shadow_board_manifest() -> dict[str, Any]:
 
 def _utc_z(value: Any, field: str) -> tuple[str, datetime]:
     if not isinstance(value, str) or not value.endswith("Z"):
-        raise MLBMultiProviderShadowBoardError(
-            f"{field} must be UTC RFC3339 ending in Z"
-        )
+        raise MLBMultiProviderShadowBoardError(f"{field} must be UTC RFC3339 ending in Z")
     try:
         parsed = datetime.fromisoformat(value[:-1] + "+00:00")
     except ValueError as exc:
@@ -117,97 +101,65 @@ def _utc_z(value: Any, field: str) -> tuple[str, datetime]:
     return parsed.isoformat().replace("+00:00", "Z"), parsed
 
 
-def _canonical_json(value: Any) -> str:
-    return json.dumps(
-        value,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    )
+def _hash(value: Any) -> str:
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
-def _sha256(value: Any) -> str:
-    return hashlib.sha256(_canonical_json(value).encode("utf-8")).hexdigest()
+def _provider_rank(key: Any) -> int:
+    return _PROVIDER_ORDER[str(key)]
 
 
-def _normalize_source_snapshot(
-    snapshot: Any,
-    *,
-    assembled_at: datetime,
-) -> dict[str, Any]:
+def _normalize_snapshot(snapshot: Any, assembled_at: datetime) -> dict[str, Any]:
     if not isinstance(snapshot, Mapping):
-        raise MLBMultiProviderShadowBoardError(
-            "every source snapshot must be a mapping"
-        )
-
+        raise MLBMultiProviderShadowBoardError("every source snapshot must be a mapping")
     validation = validate_market_provider_game_snapshot(snapshot)
     if validation.get("snapshot_valid") is not True:
         raise MLBMultiProviderShadowBoardError(
             f"invalid Step 11A source snapshot: {validation.get('failures')}"
         )
-
-    normalized = deepcopy(dict(snapshot))
-    provider_key = normalized.get("provider_key")
-    if provider_key not in SUPPORTED_PROVIDERS:
-        raise MLBMultiProviderShadowBoardError(
-            f"unsupported provider_key: {provider_key!r}"
-        )
-    if normalized.get("provider_name") != PROVIDER_NAMES[provider_key]:
-        raise MLBMultiProviderShadowBoardError(
-            f"provider_name mismatch for {provider_key}"
-        )
-
-    _, observed_at = _utc_z(
-        normalized.get("observed_at_utc"), "source_snapshot.observed_at_utc"
-    )
-    if observed_at > assembled_at:
+    row = deepcopy(dict(snapshot))
+    key = row.get("provider_key")
+    if key not in SUPPORTED_PROVIDERS:
+        raise MLBMultiProviderShadowBoardError(f"unsupported provider_key: {key!r}")
+    if row.get("provider_name") != PROVIDER_NAMES[key]:
+        raise MLBMultiProviderShadowBoardError(f"provider_name mismatch for {key}")
+    _, observed = _utc_z(row.get("observed_at_utc"), "source_snapshot.observed_at_utc")
+    if observed > assembled_at:
         raise MLBMultiProviderShadowBoardError(
             "source snapshot observed_at_utc cannot be after assembled_at_utc"
         )
-    return normalized
+    return row
 
 
-def _provider_view(snapshot: Mapping[str, Any]) -> dict[str, Any]:
+def _provider_view(row: Mapping[str, Any]) -> dict[str, Any]:
     return {
-        "provider_key": snapshot["provider_key"],
-        "provider_name": snapshot["provider_name"],
-        "provider_event_id": snapshot["provider_event_id"],
-        "record_key": snapshot["record_key"],
-        "snapshot_sha256": snapshot["snapshot_sha256"],
-        "observed_at_utc": snapshot["observed_at_utc"],
-        "source_collected_at_utc": snapshot["source_collected_at_utc"],
-        "transport": snapshot["transport"],
-        "source_payload_sha256": snapshot["source_payload_sha256"],
-        "source_complete": snapshot["source_complete"],
-        "market_count": snapshot["market_count"],
-        "fully_priced": snapshot["fully_priced"],
-        "market_availability": deepcopy(snapshot["market_availability"]),
-        "markets": deepcopy(snapshot["markets"]),
+        key: deepcopy(row[key])
+        for key in (
+            "provider_key", "provider_name", "provider_event_id", "record_key",
+            "snapshot_sha256", "observed_at_utc", "source_collected_at_utc",
+            "transport", "source_payload_sha256", "source_complete", "market_count",
+            "fully_priced", "market_availability", "markets",
+        )
     }
 
 
-def _market_view(
-    market_name: str,
-    providers: Sequence[Mapping[str, Any]],
-) -> dict[str, Any]:
-    rows: list[dict[str, Any]] = []
-    for snapshot in providers:
-        market = snapshot["markets"].get(market_name)
-        if market is None:
+def _market_view(name: str, providers: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    rows = []
+    for row in providers:
+        if name not in row["markets"]:
             continue
-        rows.append(
-            {
-                "provider_key": snapshot["provider_key"],
-                "provider_name": snapshot["provider_name"],
-                "provider_event_id": snapshot["provider_event_id"],
-                "record_key": snapshot["record_key"],
-                "observed_at_utc": snapshot["observed_at_utc"],
-                "market": deepcopy(market),
-            }
-        )
-    rows.sort(key=lambda row: row["provider_key"])
+        rows.append({
+            "provider_key": row["provider_key"],
+            "provider_name": row["provider_name"],
+            "provider_event_id": row["provider_event_id"],
+            "record_key": row["record_key"],
+            "observed_at_utc": row["observed_at_utc"],
+            "market": deepcopy(row["markets"][name]),
+        })
+    rows.sort(key=lambda row: _provider_rank(row["provider_key"]))
     return {
-        "market_name": market_name,
+        "market_name": name,
         "provider_count": len(rows),
         "provider_keys": [row["provider_key"] for row in rows],
         "cross_provider_overlap": len(rows) > 1,
@@ -220,125 +172,76 @@ def build_multi_provider_shadow_board(
     *,
     assembled_at_utc: str,
 ) -> dict[str, Any]:
-    """Build a deterministic shadow board from current certified provider records.
-
-    One distinct current record per provider/gamePk/phase is allowed. Repeated
-    copies of the exact same record_key are harmless and deduplicated for board
-    views. Two different record_keys for the same provider/gamePk/phase are
-    rejected rather than choosing a "latest" record implicitly.
-    """
-    if not isinstance(source_snapshots, Sequence) or isinstance(
-        source_snapshots, (str, bytes)
-    ):
-        raise MLBMultiProviderShadowBoardError(
-            "source_snapshots must be a sequence"
-        )
+    if not isinstance(source_snapshots, Sequence) or isinstance(source_snapshots, (str, bytes)):
+        raise MLBMultiProviderShadowBoardError("source_snapshots must be a sequence")
     if not source_snapshots:
-        raise MLBMultiProviderShadowBoardError(
-            "source_snapshots must not be empty"
-        )
+        raise MLBMultiProviderShadowBoardError("source_snapshots must not be empty")
     if len(source_snapshots) > MAX_INPUT_SNAPSHOTS:
         raise MLBMultiProviderShadowBoardError(
             f"at most {MAX_INPUT_SNAPSHOTS} source snapshots are allowed"
         )
 
     assembled, assembled_dt = _utc_z(assembled_at_utc, "assembled_at_utc")
-    normalized_inputs = [
-        _normalize_source_snapshot(snapshot, assembled_at=assembled_dt)
-        for snapshot in source_snapshots
-    ]
-    normalized_inputs.sort(
-        key=lambda row: (
-            int(row["official_game_id"]),
-            str(row["market_phase"]),
-            str(row["provider_key"]),
-            str(row["record_key"]),
-        )
-    )
+    inputs = [_normalize_snapshot(row, assembled_dt) for row in source_snapshots]
+    inputs.sort(key=lambda row: (
+        int(row["official_game_id"]),
+        str(row["market_phase"]),
+        _provider_rank(row["provider_key"]),
+        str(row["record_key"]),
+    ))
 
-    seen_record_keys: set[str] = set()
-    slot_record_keys: dict[tuple[int, str, str], str] = {}
-    unique_snapshots: list[dict[str, Any]] = []
-    exact_duplicate_count = 0
-
-    for snapshot in normalized_inputs:
-        record_key = str(snapshot["record_key"])
-        slot = (
-            int(snapshot["official_game_id"]),
-            str(snapshot["market_phase"]),
-            str(snapshot["provider_key"]),
-        )
-        previous_slot_record = slot_record_keys.get(slot)
-
-        if record_key in seen_record_keys:
-            if previous_slot_record not in (None, record_key):
-                raise MLBMultiProviderShadowBoardError(
-                    "duplicate record_key conflicts with provider slot"
-                )
-            exact_duplicate_count += 1
+    seen_keys: set[str] = set()
+    slots: dict[tuple[int, str, str], str] = {}
+    unique: list[dict[str, Any]] = []
+    duplicates = 0
+    for row in inputs:
+        record_key = str(row["record_key"])
+        slot = (int(row["official_game_id"]), str(row["market_phase"]), str(row["provider_key"]))
+        previous = slots.get(slot)
+        if record_key in seen_keys:
+            if previous not in (None, record_key):
+                raise MLBMultiProviderShadowBoardError("duplicate record_key conflicts with provider slot")
+            duplicates += 1
             continue
-
-        if previous_slot_record is not None and previous_slot_record != record_key:
+        if previous is not None and previous != record_key:
             raise MLBMultiProviderShadowBoardError(
-                "multiple distinct current snapshots for the same "
-                "provider/gamePk/market_phase are ambiguous"
+                "multiple distinct current snapshots for the same provider/gamePk/market_phase are ambiguous"
             )
+        seen_keys.add(record_key)
+        slots[slot] = record_key
+        unique.append(row)
 
-        seen_record_keys.add(record_key)
-        slot_record_keys[slot] = record_key
-        unique_snapshots.append(snapshot)
+    grouped: dict[tuple[int, str], list[dict[str, Any]]] = {}
+    for row in unique:
+        grouped.setdefault((int(row["official_game_id"]), str(row["market_phase"])), []).append(row)
 
-    groups: dict[tuple[int, str], list[dict[str, Any]]] = {}
-    for snapshot in unique_snapshots:
-        group_key = (
-            int(snapshot["official_game_id"]),
-            str(snapshot["market_phase"]),
-        )
-        groups.setdefault(group_key, []).append(snapshot)
+    groups = []
+    for (game_id, phase), providers in sorted(grouped.items()):
+        providers.sort(key=lambda row: _provider_rank(row["provider_key"]))
+        keys = [row["provider_key"] for row in providers]
+        market_views = [_market_view(name, providers) for name in SUPPORTED_CORE_MARKETS]
+        groups.append({
+            "official_game_id": game_id,
+            "market_phase": phase,
+            "provider_count": len(providers),
+            "provider_keys": keys,
+            "all_supported_providers_present": set(keys) == set(SUPPORTED_PROVIDERS),
+            "fully_priced_provider_count": sum(row["fully_priced"] is True for row in providers),
+            "all_present_providers_fully_priced": all(row["fully_priced"] is True for row in providers),
+            "market_overlap_count": sum(row["cross_provider_overlap"] for row in market_views),
+            "providers": [_provider_view(row) for row in providers],
+            "market_views": market_views,
+        })
 
-    group_rows: list[dict[str, Any]] = []
-    for (game_id, phase), providers in sorted(
-        groups.items(), key=lambda item: (item[0][0], item[0][1])
-    ):
-        providers.sort(key=lambda row: str(row["provider_key"]))
-        provider_keys = [str(row["provider_key"]) for row in providers]
-        market_views = [
-            _market_view(market_name, providers)
-            for market_name in SUPPORTED_CORE_MARKETS
-        ]
-        group_rows.append(
-            {
-                "official_game_id": game_id,
-                "market_phase": phase,
-                "provider_count": len(providers),
-                "provider_keys": provider_keys,
-                "all_supported_providers_present": set(provider_keys)
-                == set(SUPPORTED_PROVIDERS),
-                "fully_priced_provider_count": sum(
-                    1 for row in providers if row["fully_priced"] is True
-                ),
-                "all_present_providers_fully_priced": all(
-                    row["fully_priced"] is True for row in providers
-                ),
-                "market_overlap_count": sum(
-                    1 for row in market_views if row["cross_provider_overlap"]
-                ),
-                "providers": [_provider_view(row) for row in providers],
-                "market_views": market_views,
-            }
-        )
-
-    provider_input_counts = {
-        key: sum(1 for row in normalized_inputs if row["provider_key"] == key)
+    input_counts = {
+        key: sum(row["provider_key"] == key for row in inputs)
         for key in SUPPORTED_PROVIDERS
     }
-    provider_unique_counts = {
-        key: sum(1 for row in unique_snapshots if row["provider_key"] == key)
+    unique_counts = {
+        key: sum(row["provider_key"] == key for row in unique)
         for key in SUPPORTED_PROVIDERS
     }
-    provider_keys_present = [
-        key for key in SUPPORTED_PROVIDERS if provider_unique_counts[key] > 0
-    ]
+    present = [key for key in SUPPORTED_PROVIDERS if unique_counts[key] > 0]
 
     board: dict[str, Any] = {
         "data_type": DATA_TYPE,
@@ -346,24 +249,20 @@ def build_multi_provider_shadow_board(
         "board_status": BOARD_STATUS,
         "assembled_at_utc": assembled,
         "supported_provider_keys": list(SUPPORTED_PROVIDERS),
-        "provider_keys_present": provider_keys_present,
-        "input_snapshot_count": len(normalized_inputs),
-        "unique_snapshot_count": len(unique_snapshots),
-        "exact_duplicate_count": exact_duplicate_count,
-        "unique_game_count": len(
-            {int(row["official_game_id"]) for row in unique_snapshots}
-        ),
-        "game_phase_group_count": len(group_rows),
+        "provider_keys_present": present,
+        "input_snapshot_count": len(inputs),
+        "unique_snapshot_count": len(unique),
+        "exact_duplicate_count": duplicates,
+        "unique_game_count": len({int(row["official_game_id"]) for row in unique}),
+        "game_phase_group_count": len(groups),
         "dual_provider_game_phase_group_count": sum(
-            1 for row in group_rows if row["all_supported_providers_present"]
+            row["all_supported_providers_present"] for row in groups
         ),
-        "provider_input_counts": provider_input_counts,
-        "provider_unique_counts": provider_unique_counts,
-        "source_record_keys": [
-            str(row["record_key"]) for row in normalized_inputs
-        ],
-        "source_snapshots": deepcopy(normalized_inputs),
-        "game_phase_groups": group_rows,
+        "provider_input_counts": input_counts,
+        "provider_unique_counts": unique_counts,
+        "source_record_keys": [str(row["record_key"]) for row in inputs],
+        "source_snapshots": deepcopy(inputs),
+        "game_phase_groups": groups,
         "cross_provider_event_id_join_used": False,
         "team_name_join_used": False,
         "player_name_join_used": False,
@@ -381,15 +280,11 @@ def build_multi_provider_shadow_board(
         "persisted_snapshot_as_model_input": False,
         "persisted_snapshot_as_sportsbook_input": False,
     }
-    board["board_sha256"] = _sha256(board)
+    board["board_sha256"] = _hash(board)
     return board
 
 
-def validate_multi_provider_shadow_board(
-    board: Mapping[str, Any] | None,
-) -> dict[str, Any]:
-    """Fail closed and non-mutatingly rebuild the full Step 11C board."""
-    failures: list[str] = []
+def validate_multi_provider_shadow_board(board: Mapping[str, Any] | None) -> dict[str, Any]:
     if not isinstance(board, Mapping):
         return {
             "data_type": DATA_TYPE,
@@ -397,20 +292,17 @@ def validate_multi_provider_shadow_board(
             "board_valid": False,
             "failures": ["STEP11C_BOARD_NOT_MAPPING"],
         }
-
+    failures: list[str] = []
     try:
         rebuilt = build_multi_provider_shadow_board(
             board.get("source_snapshots"),
             assembled_at_utc=board.get("assembled_at_utc"),
         )
     except Exception as exc:
-        failures.append(
-            f"STEP11C_REBUILD_FAILED:{type(exc).__name__}:{exc}"
-        )
+        failures.append(f"STEP11C_REBUILD_FAILED:{type(exc).__name__}:{exc}")
     else:
         if dict(board) != rebuilt:
             failures.append("STEP11C_BOARD_EXACT_CONTRACT_MISMATCH")
-
     return {
         "data_type": DATA_TYPE,
         "schema_version": SCHEMA_VERSION,
@@ -420,16 +312,9 @@ def validate_multi_provider_shadow_board(
 
 
 __all__ = [
-    "DATA_TYPE",
-    "SCHEMA_VERSION",
-    "STEP11C_BASE_MAIN_SHA",
-    "BOARD_STATUS",
-    "FINAL_CERTIFICATION_MARKER",
-    "SUPPORTED_PROVIDERS",
-    "PROVIDER_NAMES",
-    "MAX_INPUT_SNAPSHOTS",
-    "MLBMultiProviderShadowBoardError",
-    "shadow_board_manifest",
-    "build_multi_provider_shadow_board",
+    "DATA_TYPE", "SCHEMA_VERSION", "STEP11C_BASE_MAIN_SHA", "BOARD_STATUS",
+    "FINAL_CERTIFICATION_MARKER", "SUPPORTED_PROVIDERS", "PROVIDER_NAMES",
+    "MAX_INPUT_SNAPSHOTS", "MLBMultiProviderShadowBoardError",
+    "shadow_board_manifest", "build_multi_provider_shadow_board",
     "validate_multi_provider_shadow_board",
 ]
