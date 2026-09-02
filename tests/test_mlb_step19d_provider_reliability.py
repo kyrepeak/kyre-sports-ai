@@ -367,13 +367,16 @@ def test_future_provider_snapshot_fails_closed_without_retry():
     assert result["retry_count"] == 0
 
 
-def test_small_future_clock_skew_is_allowed():
+def test_small_future_clock_skew_cannot_bypass_step19b_timestamp_guard():
     future = NOW + timedelta(seconds=4)
     result = _collect(
         fanduel_game_collector=lambda **_: _fd_game_collection(collected_at=future),
         clock_skew_tolerance_seconds=5,
     )
-    assert result["collection_status"] == "ok"
+    assert result["collection_status"] == "empty"
+    assert _provider(result, "fanduel")["status"] == "healthy"
+    assert result["market_feed"]["game_market_snapshot_count"] == 0
+    assert result["market_feed"]["rejected_record_count"] == 1
 
 
 def test_missing_provider_timestamp_fails_closed():
