@@ -54,12 +54,15 @@ def test_v165_collapses_live_board_and_keeps_details_optional():
     assert "<details" not in source
 
 
-def test_step7c_api_context_stays_display_only_and_exact_id():
+def test_step7c_api_context_stays_display_only_exact_id_and_non_wagering():
     source = _text("mlb_moneyline_hub_v165.py")
     assert 'f"{root}/api/v1/mlb/odds"' in source
     assert "moneyline_api_context_for_result" in source
     assert "display-only" in source
-    assert "wager" not in source.lower()
+    # The inherited Step 7C safety contract should explicitly report wagering
+    # impact as false; the presentation wrapper must never enable it.
+    assert '"wagering_impact": False' in source
+    assert '"wagering_impact": True' not in source
 
 
 def test_clean_ui_does_not_implement_model_math():
