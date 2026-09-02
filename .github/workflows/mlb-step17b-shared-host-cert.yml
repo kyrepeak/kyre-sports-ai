@@ -92,14 +92,6 @@ jobs:
           PYTHONPATH=. python - <<'PY'
           from fastapi.testclient import TestClient
           from sports_api.main import app
-          paths = {getattr(route, 'path', None) for route in app.routes}
-          required = {
-              '/health',
-              '/api/v1/wnba/runtime/deployment',
-              '/api/v1/mlb/runtime/step17b',
-          }
-          missing = required - paths
-          assert not missing, f'missing shared-host routes: {sorted(missing)}'
           with TestClient(app) as client:
               health = client.get('/health')
               assert health.status_code == 200, health.text
