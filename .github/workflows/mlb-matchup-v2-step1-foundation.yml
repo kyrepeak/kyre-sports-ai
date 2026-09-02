@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   certify:
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-v2-step1-foundation'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
