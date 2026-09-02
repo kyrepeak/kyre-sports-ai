@@ -25,6 +25,7 @@ import mlb_matchup_player_v31 as step8
 import mlb_matchup_player_v32 as step9
 import mlb_matchup_player_v33 as step10
 import mlb_matchup_player_v34 as step11
+import mlb_matchup_probability_v1 as raw_probability
 
 VERSION = "MLB Matchup Intelligence V2 Step 12 FINAL"
 V2_INTELLIGENCE_LABEL = "🧠 Matchup Intelligence V2 — complete"
@@ -66,8 +67,49 @@ def _fmt_odds(value: Any) -> str:
         return "—"
 
 
+def _build_step11_fallback(games_df, simulations: int | None = None) -> dict[str, Any] | None:
+    """Build the Step 11 raw profile from the certified public engines.
+
+    The Step 11 presentation wrapper historically referenced a private Step 2 helper
+    name that does not exist in the deployed module. The final runtime therefore
+    rebuilds the exact Steps 1-10 inputs using their real helper names and calls the
+    public raw probability engine directly. This preserves the Step 11 math while
+    removing the brittle cross-wrapper private-attribute dependency.
+    """
+    foundation = step1._build_foundation(games_df)
+    if not foundation:
+        return None
+    hitter = step2._build_profile(games_df)
+    starter = step3._build_step3(games_df)
+    platoon = step4._build_step4(games_df)
+    pitch = step5._build_step5(games_df)
+    batted = step6._build_step6(games_df)
+    environment = step7._build_step7(games_df)
+    bullpen = step8._build_step8(games_df)
+    opportunity = step9._build_step9(games_df)
+    recent = step10._build_step10(games_df)
+    kwargs = {}
+    if simulations is not None:
+        kwargs["simulations"] = int(simulations)
+    return raw_probability.build_probability_profile(
+        foundation,
+        hitter,
+        starter,
+        platoon,
+        pitch,
+        batted,
+        environment,
+        bullpen,
+        opportunity,
+        recent,
+        **kwargs,
+    )
+
+
 def _build_step12(games_df, simulations: int | None = None, persist: bool = True) -> dict[str, Any] | None:
-    raw = step11._build_step11(games_df, simulations=simulations)
+    # Do not call step11._build_step11 here: the final runtime uses the public-engine
+    # bridge above so a private wrapper-name mismatch cannot crash Streamlit.
+    raw = _build_step11_fallback(games_df, simulations=simulations)
     if not raw:
         return None
     return calibration.build_final_intelligence(raw, persist=persist)
@@ -197,9 +239,9 @@ def render_player_layer(games_df, section_header=None, status_info=None, team_lo
         step9._render_step9(games_df)
         step10._render_step10(games_df)
 
-        # Step 11 is expensive (5M simulations). Build it once, then feed the same
-        # immutable raw object to both Step 11 presentation and Step 12 finalization.
-        raw = step11._build_step11(games_df)
+        # Step 11 is expensive (5M simulations). Build it once from the certified
+        # public engines. Avoid direct step11._build_step11 private-wrapper coupling.
+        raw = _build_step11_fallback(games_df)
         _render_step11_profile(raw)
         final = calibration.build_final_intelligence(raw, persist=True) if raw else None
         _render_step12_profile(final)
