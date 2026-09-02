@@ -21,6 +21,9 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to Cleanup Step 1.
+    # Later additive presentation layers have their own dedicated workflow.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step1-picker'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
