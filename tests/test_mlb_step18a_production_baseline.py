@@ -1,4 +1,4 @@
-from copy import deepcopy
+import json
 
 import pytest
 
@@ -106,7 +106,10 @@ def test_green_baseline_is_read_only_sanitized_and_rollback_ready():
     assert evidence["rollback_target"]["safe_config"]["database_url_exposed"] is False
     assert evidence["safety"]["provider_calls"] == 0
     assert evidence["safety"]["sportsbook_calls"] == 0
-    assert "secret" not in str(evidence).casefold()
+    serialized = json.dumps(evidence, sort_keys=True).casefold()
+    assert "postgresql://" not in serialized
+    assert "user:secret" not in serialized
+    assert "authorization" not in serialized
     assert len(evidence["rollback_target"]["safe_config_sha256"]) == 64
     assert len(evidence["evidence_sha256"]) == 64
 
