@@ -1,0 +1,181 @@
+name: MLB Step17B controlled Render activation
+
+on:
+  push:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - .github/workflows/mlb-step17b-render-controlled-activation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mlb-step17b-render-controlled-activation
+  cancel-in-progress: false
+
+jobs:
+  activate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: wnba-render-staging
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout activation operator branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q -r sports_api/requirements.txt
+          python -m pip install -q -r sports_api/requirements-mlb-step14b-persistence.txt
+          python -m pip install -q pytest
+
+      - name: Prove all Step 17B production prerequisites are GREEN
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+
+          expected = {
+              33578176749: {
+                  'name': 'MLB Step17B shared-host WNBA+MLB certification',
+                  'head_sha': 'ece3cd2d15d091728fdbe30be774dd9c15e4fe8e',
+              },
+              33580359097: {
+                  'name': 'MLB Step17B production Render preflight v2',
+                  'head_sha': '7eb64ac2d689d831eef9d177be713af4755782fc',
+              },
+              33580404723: {
+                  'name': 'MLB Step17B Render activation v2 certification',
+                  'head_sha': '4a4987b069806830a57bf96480d3db06766dd9b5',
+              },
+          }
+          for run_id, contract in expected.items():
+              request = urllib.request.Request(
+                  f'https://api.github.com/repos/kyrepeak/kyre-sports-ai/actions/runs/{run_id}',
+                  headers={
+                      'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+                      'Accept': 'application/vnd.github+json',
+                      'User-Agent': 'kyre-mlb-step17b-live-activation/1',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  run = json.load(response)
+              assert run['status'] == 'completed', (run_id, run['status'])
+              assert run['conclusion'] == 'success', (run_id, run['conclusion'])
+              assert run['name'] == contract['name'], (run_id, run['name'])
+              assert run['head_sha'] == contract['head_sha'], (run_id, run['head_sha'])
+              print(f'Prerequisite run {run_id} GREEN: {run["name"]}')
+          print('MLB_STEP17B_ALL_PRODUCTION_PREREQUISITES_GREEN')
+          PY
+
+      - name: Prove certified runtime payload remains byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          certified=ece3cd2d15d091728fdbe30be774dd9c15e4fe8e
+          git cat-file -e "$certified^{commit}"
+          git diff --exit-code "$certified" HEAD -- \
+            sports_api/main.py \
+            sports_api/api/mlb_step17b_runtime.py \
+            sports_api/mlb_step17b_always_on_runtime_v1.py \
+            tests/test_mlb_step17b_always_on_runtime_v1.py \
+            sports_api/Dockerfile
+
+      - name: Re-certify activation and runtime code immediately before mutation
+        run: |
+          python -m py_compile sports_api/tools/mlb_step17b_render_activation.py
+          python -m py_compile sports_api/tools/mlb_step17b_render_activation_v2.py
+          python -m pytest -q tests/test_mlb_step17b_render_activation.py
+          python -m pytest -q tests/test_mlb_step17b_render_activation_v2.py
+          python -m pytest -q tests/test_mlb_step17b_always_on_runtime_v1.py
+
+      - name: Execute controlled Render activation and restart-recovery proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY"
+          mkdir -p .step17b-live
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from sports_api.tools.mlb_step17b_render_activation_v2 import activate
+
+          evidence = activate()
+          Path('.step17b-live/activation.json').write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print('MLB_STEP17B_LIVE_RESTART_RECOVERY_GREEN')
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          PY
+
+      - name: Validate sanitized live activation evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          evidence = json.loads(Path('.step17b-live/activation.json').read_text(encoding='utf-8'))
+          assert evidence['state'] == 'mlb_step17b_live_restart_recovery_green'
+          assert evidence['activation_complete'] is True
+          assert evidence['certified_candidate']['revision'] == 'ece3cd2d15d091728fdbe30be774dd9c15e4fe8e'
+          assert evidence['certified_candidate']['certification_run_id'] == 33578176749
+          assert evidence['render']['service_id'] == 'srv-da84q6ifngtc73bdbm6g'
+          assert evidence['render']['deployed_revision'] == 'ece3cd2d15d091728fdbe30be774dd9c15e4fe8e'
+          assert evidence['render']['auto_deploy'] == 'no'
+          assert evidence['wnba']['pre_activation_health'] == 'ok'
+          assert evidence['wnba']['post_activation_health'] == 'ok'
+          assert evidence['wnba']['post_restart_health'] == 'ok'
+          assert evidence['wnba']['continuity_gate'] == 'network_free_step5s_deployment_contract'
+          assert evidence['wnba']['upstream_schedule_called'] is False
+          mlb = evidence['mlb_step17b']
+          assert mlb['enabled'] is True
+          assert mlb['running'] is True
+          assert mlb['role'] == 'leader'
+          assert mlb['leadership_acquired'] is True
+          assert mlb['checkpoint_version_after_restart'] > mlb['checkpoint_version_before_restart']
+          assert mlb['recovered_from_checkpoint'] is True
+          assert mlb['provider_calls'] == 0
+          assert mlb['sportsbook_calls'] == 0
+          safety = evidence['safety']
+          assert safety['existing_render_service_reused'] is True
+          assert safety['new_render_service_created'] is False
+          assert safety['auto_deploy_enabled'] is False
+          assert safety['wnba_off_switches_preserved'] is True
+          assert safety['legacy_mlb_production_runtime_started'] is False
+          assert safety['legacy_mlb_production_scheduler_started'] is False
+          assert safety['actionable_output_enabled'] is False
+          assert safety['wagering_enabled'] is False
+          assert safety['provider_calls'] == 0
+          assert safety['sportsbook_calls'] == 0
+          assert safety['render_api_key_returned'] is False
+          assert safety['database_secret_returned'] is False
+          assert safety['upstream_wnba_schedule_called'] is False
+          assert evidence['rollback']['required'] is False
+          assert evidence['rollback']['performed'] is False
+          print('MLB_STEP17B_SANITIZED_LIVE_EVIDENCE_VALIDATED')
+          PY
+
+      - name: Upload sanitized Step 17B live evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step17b-live-restart-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step17b-live/activation.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Final GREEN marker
+        run: echo MLB_STEP17B_CONTROLLED_RENDER_ACTIVATION_GREEN
