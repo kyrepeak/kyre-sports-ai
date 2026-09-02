@@ -117,13 +117,12 @@ ui.render_mlb_live_odds_page()
     assert any("San Diego Padres @ Cincinnati Reds" in value for value in markdown_values)
 
 
-def test_app_hook_waits_until_real_page_config_before_sidebar_ui():
-    source = Path("app.py").read_text(encoding="utf-8")
-    wrapper = source.index("def _set_page_config_with_mlb_live_odds")
-    real_call = source.index("_REAL_SET_PAGE_CONFIG(*args, **kwargs)", wrapper)
-    sidebar = source.index("st.sidebar.button", real_call)
-    assignment = source.index("st.set_page_config = _set_page_config_with_mlb_live_odds", sidebar)
+def test_lazy_router_waits_until_page_config_before_sidebar_ui():
+    source = Path("streamlit_memory_lazy_router_v1.py").read_text(encoding="utf-8")
+    render_app = source.index("def render_app()")
+    page_config = source.index("st.set_page_config(", render_app)
+    sidebar = source.index("st.sidebar.button", page_config)
 
-    assert wrapper < real_call < sidebar < assignment
+    assert render_app < page_config < sidebar
     assert "ks_mlb_live_odds_route" in source
     assert "render_mlb_live_odds_page" in source
