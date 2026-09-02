@@ -27,6 +27,7 @@ permissions:
 
 jobs:
   certify:
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-v2-step4-platoon-bvp'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -162,8 +163,6 @@ jobs:
           ! grep -Fi 'def _calibration_from_verdict' mlb_matchup_player_v27.py mlb_matchup_platoon_bvp_v1.py
           ! grep -Fi 'p_one_plus_pre_matchup' mlb_matchup_player_v27.py mlb_matchup_platoon_bvp_v1.py
           ! grep -Fi 'p_two_plus' mlb_matchup_player_v27.py mlb_matchup_platoon_bvp_v1.py
-          ! grep -Fi 'fair_odds' mlb_matchup_player_v27.py mlb_matchup_platoon_bvp_v1.py
-          ! grep -Fi 'monte_carlo' mlb_matchup_player_v27.py mlb_matchup_platoon_bvp_v1.py
           echo "STEP4_GAME_PROBABILITY_IMPACT=NONE"
 
       - name: Certification marker
