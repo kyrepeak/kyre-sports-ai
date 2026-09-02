@@ -8,12 +8,16 @@ on:
       - sports_api/mlb_step20b_production_release_certification_v1.py
       - tests/test_mlb_step20b_production_release_certification_v1.py
       - .github/workflows/mlb-step20b-production-release-cert.yml
+      - .github/workflows/mlb-step15a-live-postgresql-preflight-cert.yml
+      - .github/workflows/mlb-step15b-live-adapter-transaction-smoke-cert.yml
   pull_request:
     branches: [main]
     paths:
       - sports_api/mlb_step20b_production_release_certification_v1.py
       - tests/test_mlb_step20b_production_release_certification_v1.py
       - .github/workflows/mlb-step20b-production-release-cert.yml
+      - .github/workflows/mlb-step15a-live-postgresql-preflight-cert.yml
+      - .github/workflows/mlb-step15b-live-adapter-transaction-smoke-cert.yml
   workflow_dispatch:
 
 permissions:
@@ -46,7 +50,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prove exact three-file additive Step20B scope
+      - name: Prove exact five-file additive Step20B and CI-isolation scope
         shell: bash
         run: |
           set -euo pipefail
@@ -56,13 +60,41 @@ jobs:
           git diff --check "$STEP20B_BASE_SHA"...HEAD
           changed="$(git diff --name-only "$STEP20B_BASE_SHA"...HEAD)"
           printf '%s\n' "$changed"
-          expected='^(sports_api/mlb_step20b_production_release_certification_v1.py|tests/test_mlb_step20b_production_release_certification_v1.py|\.github/workflows/mlb-step20b-production-release-cert.yml)$'
+          expected='^(sports_api/mlb_step20b_production_release_certification_v1.py|tests/test_mlb_step20b_production_release_certification_v1.py|\.github/workflows/mlb-step20b-production-release-cert.yml|\.github/workflows/mlb-step15a-live-postgresql-preflight-cert.yml|\.github/workflows/mlb-step15b-live-adapter-transaction-smoke-cert.yml)$'
           bad="$(printf '%s\n' "$changed" | grep -Ev "$expected" || true)"
           test -z "$bad"
           count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
-          test "$count" -eq 3
+          test "$count" -eq 5
           test -z "$(git diff --name-status "$STEP20B_BASE_SHA"...HEAD | awk '$1 == "D" {print}')"
           echo MLB_STEP20B_EXACT_SCOPE_OK
+
+      - name: Prove historical Step15 PR checks are path-isolated
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          checks = {
+              '.github/workflows/mlb-step15a-live-postgresql-preflight-cert.yml': (
+                  'sports_api/mlb_step15a_live_postgresql_preflight_v1.py',
+                  'tests/test_mlb_step15a_live_postgresql_preflight_v1.py',
+              ),
+              '.github/workflows/mlb-step15b-live-adapter-transaction-smoke-cert.yml': (
+                  'sports_api/mlb_step15b_live_adapter_transaction_smoke_v1.py',
+                  'tests/test_mlb_step15b_live_adapter_transaction_smoke_v1.py',
+                  'sports_api/tools/mlb_step15b_live_adapter_transaction_smoke_cert.py',
+                  'sports_api/certification/mlb_step15b_live_adapter_transaction_smoke_evidence.json',
+              ),
+          }
+          for path, required in checks.items():
+              text = Path(path).read_text(encoding='utf-8')
+              assert 'pull_request:' in text, path
+              assert 'paths:' in text, path
+              for item in required:
+                  assert item in text, (path, item)
+              assert 'mlb_step20b_production_release_certification_v1.py' not in text, path
+          print('MLB_STEP20B_HISTORICAL_CI_PATH_ISOLATION_OK')
+          PY
 
       - name: Prove frozen production activation and rollback boundaries unchanged
         shell: bash
