@@ -1,0 +1,149 @@
+name: MLB Step18B production observability certification
+
+on:
+  push:
+    branches:
+      - mlb-step18b-production-observability
+    paths:
+      - .github/workflows/mlb-step18b-production-observability-cert.yml
+      - sports_api/tools/mlb_step18b_production_observability.py
+      - tests/test_mlb_step18b_production_observability.py
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step18b-production-observability-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q -r sports_api/requirements.txt
+          python -m pip install -q pytest
+
+      - name: Prove Step 18B starts from merged Step 18A baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 60f8917e4f963f733759f60b82d7dcf468f776cf HEAD
+          git cat-file -e ece3cd2d15d091728fdbe30be774dd9c15e4fe8e^{commit}
+          echo MLB_STEP18B_LINEAGE_BASELINE_OK
+
+      - name: Run Step 18B fail-closed observability tests
+        run: PYTHONPATH=. pytest -q tests/test_mlb_step18b_production_observability.py
+
+      - name: Observe live shared-host runtime using GET only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .step18b-observability
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+
+          import httpx
+
+          from sports_api.tools.mlb_step18b_production_observability import (
+              CERTIFIED_LOOP_SECONDS,
+              FINAL_MARKER,
+              build_production_observability,
+          )
+
+          SERVICE_URL = 'https://kyre-sports-api.onrender.com'
+
+          def get_json_retry(path, *, timeout_seconds=240.0):
+              deadline = time.monotonic() + timeout_seconds
+              last = 'not attempted'
+              with httpx.Client(
+                  timeout=30.0,
+                  follow_redirects=True,
+                  headers={'user-agent': 'kyre-mlb-step18b-observer/1'},
+              ) as client:
+                  while True:
+                      try:
+                          response = client.get(SERVICE_URL + path)
+                          if response.status_code == 200:
+                              body = response.json()
+                              if isinstance(body, dict):
+                                  return body
+                              last = 'non-object JSON'
+                          else:
+                              last = f'HTTP {response.status_code}'
+                      except Exception as exc:
+                          last = f'{type(exc).__name__}: {exc}'
+                      if time.monotonic() >= deadline:
+                          raise AssertionError(f'read-only hosted observation failed for {path}: {last}')
+                      time.sleep(5)
+
+          # GET-only. /health may wake a sleeping Render Free service, but no state is mutated.
+          health = get_json_retry('/health')
+          wnba = get_json_retry('/api/v1/wnba/runtime/deployment')
+          mlb = get_json_retry('/api/v1/mlb/runtime/step17b')
+
+          report = build_production_observability(
+              status=mlb,
+              health=health,
+              wnba=wnba,
+              configured_loop_seconds=CERTIFIED_LOOP_SECONDS,
+          )
+          output = Path('.step18b-observability/mlb-step18b-production-observability.json')
+          output.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(report, indent=2, sort_keys=True))
+          assert report['healthy'] is True, f"critical Step 18B incident(s): {report['incidents']}"
+          assert report['semantics']['render_mutation_performed'] is False
+          assert report['semantics']['provider_network_called'] is False
+          assert report['semantics']['sportsbook_network_called'] is False
+          assert report['semantics']['database_write_performed'] is False
+          print(FINAL_MARKER)
+          PY
+
+      - name: Validate sanitized observability evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.step18b-observability/mlb-step18b-production-observability.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          text = path.read_text(encoding='utf-8').casefold()
+          assert data['healthy'] is True
+          assert data['critical_incident_count'] == 0
+          assert data['semantics']['read_only'] is True
+          assert 'postgresql://' not in text
+          assert 'authorization' not in text
+          assert 'render_api_key' not in text
+          print('MLB_STEP18B_EVIDENCE_SANITIZED')
+          PY
+
+      - name: Upload certification evidence
+        if: github.event_name != 'schedule'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step18b-production-observability-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step18b-observability/mlb-step18b-production-observability.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Final GREEN marker
+        run: echo MLB_STEP18B_PRODUCTION_OBSERVABILITY_GREEN
