@@ -23,6 +23,9 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to its original branch.
+    # Later additive presentation layers carry their own dedicated certification.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step7-visual-polish'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
