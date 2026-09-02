@@ -3,8 +3,18 @@ name: MLB Step15B live adapter smoke certification
 on:
   push:
     branches: [main, mlb-step15b-live-adapter-transaction-smoke]
+    paths:
+      - sports_api/mlb_step15b_live_adapter_transaction_smoke_v1.py
+      - tests/test_mlb_step15b_live_adapter_transaction_smoke_v1.py
+      - sports_api/tools/mlb_step15b_live_adapter_transaction_smoke_cert.py
+      - sports_api/certification/mlb_step15b_live_adapter_transaction_smoke_evidence.json
   pull_request:
     branches: [main]
+    paths:
+      - sports_api/mlb_step15b_live_adapter_transaction_smoke_v1.py
+      - tests/test_mlb_step15b_live_adapter_transaction_smoke_v1.py
+      - sports_api/tools/mlb_step15b_live_adapter_transaction_smoke_cert.py
+      - sports_api/certification/mlb_step15b_live_adapter_transaction_smoke_evidence.json
   workflow_dispatch:
 
 permissions:
