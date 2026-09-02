@@ -1,0 +1,223 @@
+name: MLB Step19B live market feed certification
+
+on:
+  push:
+    branches:
+      - mlb-step19b-live-market-feed
+    paths:
+      - sports_api/collectors/mlb_live_market_feed.py
+      - tests/test_mlb_step19b_live_market_feed.py
+      - .github/workflows/mlb-step19b-live-market-feed-cert.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - sports_api/collectors/mlb_live_market_feed.py
+      - tests/test_mlb_step19b_live_market_feed.py
+      - .github/workflows/mlb-step19b-live-market-feed-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step19b-live-market-feed-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  STEP19B_BASE_SHA: 9324b1e0daac20a948ccf8c452aa801adf36adf0
+  STEP16A_FROZEN_SHA: c5ad6047224aaf014cec13f5efa6e5cd650da939
+  STEP16B_FROZEN_SHA: eb0ea430caea02f90b6367b8bc0ea28f698246bf
+  STEP17A_FROZEN_SHA: 1d30fc71e86ed4234d3c38e5d4ed813b0e967635
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_PRODUCTION_SCHEDULER_ENABLED: "false"
+  MLB_ACTIONABLE_OUTPUT_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+
+jobs:
+  certify-live-market-feed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove exact three-file Step19B scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$STEP19B_BASE_SHA" HEAD
+          git diff --check "$STEP19B_BASE_SHA"...HEAD
+          changed="$(git diff --name-only "$STEP19B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          expected='^(sports_api/collectors/mlb_live_market_feed.py|tests/test_mlb_step19b_live_market_feed.py|\.github/workflows/mlb-step19b-live-market-feed-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$expected" || true)"
+          test -z "$bad"
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          test "$count" -eq 3
+          test -z "$(git diff --name-status "$STEP19B_BASE_SHA"...HEAD | awk '$1 == "D" {print}')"
+          echo 'MLB_STEP19B_EXACT_SCOPE_OK'
+
+      - name: Prove frozen production provider and Step19A boundaries unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          git diff --exit-code "$STEP19B_BASE_SHA"...HEAD -- \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_official_slate.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/tools/mlb_step18a_production_baseline.py \
+            sports_api/tools/mlb_step18b_production_observability.py \
+            sports_api/tools/mlb_step18c_incident_response.py \
+            sports_api/tools/mlb_step18d_final_production_freeze.py
+          echo 'MLB_STEP19B_FROZEN_BOUNDARIES_OK'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests httpx
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Compile Step19B surface
+        run: |
+          python -m py_compile \
+            sports_api/collectors/mlb_live_market_feed.py \
+            tests/test_mlb_step19b_live_market_feed.py
+
+      - name: Run Step19B fail-closed tests
+        run: PYTHONPATH=. python -m pytest -q tests/test_mlb_step19b_live_market_feed.py
+
+      - name: Revalidate historical snapshot guards at their exact frozen commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$STEP16A_FROZEN_SHA^{commit}"
+          git cat-file -e "$STEP16B_FROZEN_SHA^{commit}"
+          git cat-file -e "$STEP17A_FROZEN_SHA^{commit}"
+
+          rm -rf /tmp/mlb-step16a-frozen /tmp/mlb-step16b-frozen /tmp/mlb-step17a-frozen
+
+          git worktree add --detach /tmp/mlb-step16a-frozen "$STEP16A_FROZEN_SHA"
+          (
+            cd /tmp/mlb-step16a-frozen
+            PYTHONPATH=. python -m pytest -q tests/test_mlb_step16a_production_activation_contract_v1.py
+          )
+          git worktree remove /tmp/mlb-step16a-frozen --force
+
+          git worktree add --detach /tmp/mlb-step16b-frozen "$STEP16B_FROZEN_SHA"
+          (
+            cd /tmp/mlb-step16b-frozen
+            PYTHONPATH=. python -m pytest -q tests/test_mlb_step16b_production_packaging_lifecycle_v1.py
+          )
+          git worktree remove /tmp/mlb-step16b-frozen --force
+
+          git worktree add --detach /tmp/mlb-step17a-frozen "$STEP17A_FROZEN_SHA"
+          (
+            cd /tmp/mlb-step17a-frozen
+            PYTHONPATH=. python -m pytest -q tests/test_mlb_step17a_production_host_contract_v1.py
+          )
+          git worktree remove /tmp/mlb-step17a-frozen --force
+
+          echo 'MLB_STEP19B_HISTORICAL_SNAPSHOT_GUARDS_OK'
+
+      - name: Run current MLB regression excluding historical snapshot-only guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=()
+          for path in tests/test_mlb_*.py; do
+            case "$path" in
+              tests/test_mlb_step16a_production_activation_contract_v1.py|\
+              tests/test_mlb_step16b_production_packaging_lifecycle_v1.py|\
+              tests/test_mlb_step17a_production_host_contract_v1.py)
+                continue
+                ;;
+            esac
+            files+=("$path")
+          done
+          test "${#files[@]}" -gt 0
+          PYTHONPATH=. python -m pytest -q "${files[@]}"
+
+      - name: Read-only live FanDuel market-feed smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .step19b
+          PYTHONPATH=. python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          from sports_api.collectors.mlb_live_market_feed import collect_live_mlb_market_feed
+
+          feed = collect_live_mlb_market_feed(
+              now_utc=datetime.now(timezone.utc),
+              max_events=3,
+              include_fanduel_game_odds=True,
+              include_fanduel_player_props=True,
+              include_draftkings=False,
+          )
+          statuses = {row['surface']: row for row in feed['provider_surface_statuses']}
+          assert statuses['fanduel_game_odds']['status'] == 'success', statuses
+          assert statuses['fanduel_player_props']['status'] == 'success', statuses
+          assert feed['game_market_snapshot_count'] > 0, feed
+          assert 'fanduel' in feed['providers_with_data']
+          assert feed['network_reads_only'] is True
+          assert feed['http_methods'] == ['GET']
+          assert feed['new_step19b_identity_matching'] is False
+          assert feed['price_fabrication_used'] is False
+          assert feed['production_runtime_wiring'] is False
+          assert feed['production_database_writes'] is False
+          assert feed['model_probability_mutation'] is False
+          assert feed['projection_mutation'] is False
+          assert feed['actionable_output'] is False
+          assert feed['wagering'] is False
+
+          evidence = {
+              'marker': 'MLB_STEP19B_LIVE_MARKET_FEED_GREEN',
+              'collected_at_utc': feed['collected_at_utc'],
+              'providers_with_data': feed['providers_with_data'],
+              'game_market_snapshot_count': feed['game_market_snapshot_count'],
+              'player_prop_count': feed['player_prop_count'],
+              'successful_surface_count': feed['successful_surface_count'],
+              'error_surface_count': feed['error_surface_count'],
+              'rejected_record_count': feed['rejected_record_count'],
+              'sportsbook_network_reads': True,
+              'http_methods': feed['http_methods'],
+              'production_mutations': 0,
+              'persistence_writes': 0,
+              'model_probability_mutations': 0,
+              'projection_mutations': 0,
+              'actionable_output': False,
+              'wagering': False,
+          }
+          Path('.step19b/mlb-step19b-live-market-feed-evidence.json').write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP19B_LIVE_MARKET_FEED_GREEN')
+          PY
+
+      - name: Upload Step19B evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step19b-live-market-feed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step19b/mlb-step19b-live-market-feed-evidence.json
+          if-no-files-found: error
+          retention-days: 90
