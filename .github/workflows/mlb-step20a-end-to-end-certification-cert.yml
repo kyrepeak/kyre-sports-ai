@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - mlb-step20a-end-to-end-certification
+      - mlb-step20a-schedule-gap-cert-fix
     paths:
       - sports_api/mlb_step20a_end_to_end_certification_v1.py
       - tests/test_mlb_step20a_end_to_end_certification_v1.py
@@ -187,16 +188,16 @@ jobs:
           set -euo pipefail
           mkdir -p .step20a
           PYTHONPATH=. python - <<'PY'
-          from datetime import datetime, timedelta, timezone
+          from datetime import date, datetime, timezone
           import json
           import os
           from pathlib import Path
-          from zoneinfo import ZoneInfo
 
           import psycopg
+          import requests
 
           from sports_api.collectors.mlb_event_player_identity import build_mlb_event_player_identity_registry
-          from sports_api.collectors.mlb_official_slate import collect_official_mlb_slate
+          from sports_api.collectors.mlb_official_slate import SCHEDULE_URL, collect_official_mlb_slate
           from sports_api.collectors.mlb_provider_reliability import collect_reliable_mlb_market_feed
           from sports_api.mlb_step19e_production_persistence_validation_v1 import (
               build_step19e_checkpoint_envelope,
@@ -228,15 +229,65 @@ jobs:
           assert feed['not_ready_surface_count'] == 0, feed
           assert feed['rejected_record_count'] == 0, feed
 
-          eastern_date = now.astimezone(ZoneInfo('America/New_York')).date()
+          market_rows = feed['game_market_snapshots']
+          market_game_ids = sorted({int(row['official_game_id']) for row in market_rows})
+          assert market_game_ids, feed
+
+          schedule_lookup = requests.get(
+              SCHEDULE_URL,
+              params={
+                  'sportId': 1,
+                  'gamePks': ','.join(str(game_id) for game_id in market_game_ids),
+                  'hydrate': 'team,probablePitcher',
+              },
+              timeout=10,
+          )
+          assert schedule_lookup.status_code == 200, schedule_lookup.status_code
+          schedule_payload = schedule_lookup.json()
+          assert isinstance(schedule_payload, dict), schedule_payload
+          date_entries = schedule_payload.get('dates')
+          assert isinstance(date_entries, list), schedule_payload
+
+          resolved_game_dates = {}
+          for date_entry in date_entries:
+              assert isinstance(date_entry, dict), date_entry
+              entry_games = date_entry.get('games')
+              assert isinstance(entry_games, list), date_entry
+              entry_date = date_entry.get('date')
+              for game in entry_games:
+                  assert isinstance(game, dict), game
+                  game_pk = game.get('gamePk')
+                  assert isinstance(game_pk, int) and not isinstance(game_pk, bool) and game_pk > 0, game
+                  if game_pk not in market_game_ids:
+                      continue
+                  raw_date = game.get('officialDate') or entry_date
+                  assert isinstance(raw_date, str) and raw_date, game
+                  canonical_date = date.fromisoformat(raw_date).isoformat()
+                  assert canonical_date == raw_date, game
+                  previous = resolved_game_dates.get(game_pk)
+                  assert previous in {None, canonical_date}, (game_pk, previous, canonical_date)
+                  resolved_game_dates[game_pk] = canonical_date
+
+          assert set(resolved_game_dates) == set(market_game_ids), {
+              'expected_game_ids': market_game_ids,
+              'resolved_game_dates': resolved_game_dates,
+          }
+          slate_dates = sorted(set(resolved_game_dates.values()))
+          assert len(slate_dates) == 1, {
+              'reason': 'max_events=1 must resolve to exactly one official slate date',
+              'market_game_ids': market_game_ids,
+              'resolved_game_dates': resolved_game_dates,
+          }
+          checkpoint_date = slate_dates[0]
+
           official_games = {}
-          slate_dates = []
-          for offset in (0, 1):
-              slate_date = (eastern_date + timedelta(days=offset)).isoformat()
+          for slate_date in slate_dates:
               slate = collect_official_mlb_slate(slate_date=slate_date)
-              slate_dates.append(slate_date)
               for game in slate['games']:
                   official_games[game['game_pk']] = game
+          missing_market_game_ids = sorted(set(market_game_ids) - set(official_games))
+          assert not missing_market_game_ids, missing_market_game_ids
+
           combined_slate = {
               'sport': 'MLB',
               'slate_date': ','.join(slate_dates),
@@ -254,7 +305,7 @@ jobs:
 
           checkpoint_now = datetime.now(timezone.utc)
           envelope = build_step19e_checkpoint_envelope(
-              checkpoint_date=eastern_date.isoformat(),
+              checkpoint_date=checkpoint_date,
               official_slate=combined_slate,
               reliable_market_collection=reliable,
               identity_registry=registry,
@@ -274,7 +325,7 @@ jobs:
           )
           assert saved['status'] == 'saved', saved
           recovered = recover_step19e_live_data(
-              checkpoint_date=eastern_date.isoformat(),
+              checkpoint_date=checkpoint_date,
               env=safe_env,
               now_utc=datetime.now(timezone.utc),
               max_checkpoint_age_seconds=300,
@@ -304,6 +355,7 @@ jobs:
               'marker': FINAL_CERTIFICATION_MARKER,
               'certified_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
               'step20a_base_main_sha': '52e497ff9a3282918cbee8aca8926e9168443325',
+              'checkpoint_date': checkpoint_date,
               'checkpoint_version': recovered['checkpoint_version'],
               'checkpoint_id': recovered['checkpoint_id'],
               'checkpoint_envelope_sha256': recovered['envelope_content_sha256'],
@@ -311,6 +363,10 @@ jobs:
               'provider_status': provider['status'],
               'network_attempt_count': provider['network_attempt_count'],
               'retry_count': reliable['retry_count'],
+              'official_schedule_resolution_method': 'exact_gamePks',
+              'official_schedule_lookup_count': 1,
+              'official_slate_dates': slate_dates,
+              'market_official_game_ids': market_game_ids,
               'official_game_count': certification['official_game_count'],
               'market_game_snapshot_count': certification['market_game_snapshot_count'],
               'verified_event_identity_count': certification['verified_event_identity_count'],
