@@ -1,3 +1,4 @@
+# Triggered after the exact certified MLB runtime graft landed on the preserved WNBA host.
 name: MLB Step17B shared-host WNBA+MLB certification
 
 on:
