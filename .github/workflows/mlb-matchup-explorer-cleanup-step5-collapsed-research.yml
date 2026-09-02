@@ -23,6 +23,9 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to its original branch.
+    # Later additive Matchup presentation layers have their own freeze workflow.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step5-collapsed-research'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
