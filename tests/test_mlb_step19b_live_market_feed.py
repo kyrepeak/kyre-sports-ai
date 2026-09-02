@@ -18,7 +18,10 @@ from sports_api.mlb_step10_final_persistence_freeze_v1 import (
     FINAL_CERTIFICATION_MARKER as STEP10_MARKER,
     FINAL_FREEZE_STATUS as STEP10_STATUS,
 )
-from sports_api.mlb_step11a_provider_contract_v1 import build_market_provider_game_snapshot
+from sports_api.mlb_step11a_provider_contract_v1 import (
+    build_market_provider_game_snapshot,
+    validate_market_provider_game_snapshot,
+)
 
 NOW = datetime(2026, 9, 2, 3, 30, tzinfo=timezone.utc)
 
@@ -184,6 +187,7 @@ def test_collects_fanduel_game_odds_into_provider_neutral_snapshot():
     assert snapshot["markets"]["total"]["line"] == 8.5
     assert snapshot["price_fabrication_used"] is False
     assert snapshot["fuzzy_matching_used"] is False
+    assert validate_market_provider_game_snapshot(snapshot)["snapshot_valid"] is True
 
 
 def test_collects_exact_fanduel_player_prop_identity():
