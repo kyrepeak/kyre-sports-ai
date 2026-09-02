@@ -1,0 +1,122 @@
+name: MLB Matchup unified intelligence freeze certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mlb_matchup_hub_v27.py'
+      - 'mlb_matchup_hub_v29.py'
+      - 'mlb_matchup_player_v23.py'
+      - 'tests/test_mlb_matchup_unified_intelligence_v1.py'
+      - '.github/workflows/mlb-matchup-unified-intelligence-v1.yml'
+      - '.github/workflows/mlb-matchup-explorer-clean-ui-v1.yml'
+  push:
+    branches: ['mlb-matchup-unified-intelligence-v1']
+    paths:
+      - 'mlb_matchup_hub_v27.py'
+      - 'mlb_matchup_hub_v29.py'
+      - 'mlb_matchup_player_v23.py'
+      - 'tests/test_mlb_matchup_unified_intelligence_v1.py'
+      - '.github/workflows/mlb-matchup-unified-intelligence-v1.yml'
+      - '.github/workflows/mlb-matchup-explorer-clean-ui-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact presentation-only scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-matchup-explorer-clean-ui-v1.yml' \
+            '.github/workflows/mlb-matchup-unified-intelligence-v1.yml' \
+            'mlb_matchup_hub_v27.py' \
+            'mlb_matchup_hub_v29.py' \
+            'mlb_matchup_player_v23.py' \
+            'tests/test_mlb_matchup_unified_intelligence_v1.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected Matchup unified-intelligence scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+
+      - name: Prove working Moneyline page is frozen
+        run: |
+          for path in \
+            mlb_moneyline_hub_v164.py \
+            mlb_moneyline_hub_v165.py \
+            tests/test_mlb_moneyline_clean_ui_v1.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen Moneyline boundary changed: $path"
+              exit 1
+            fi
+          done
+          echo "MONEYLINE_PAGE_FREEZE=PASS"
+
+      - name: Prove prior Matchup presentation and model chain are frozen
+        run: |
+          for path in \
+            mlb_matchup_hub_v28.py \
+            mlb_matchup_player_v22.py \
+            mlb_matchup_player_v21.py \
+            mlb_matchup_player_v20.py \
+            mlb_matchup_player_v19.py \
+            mlb_matchup_player_v18.py \
+            mlb_matchup_player_v15.py \
+            mlb_matchup_hub_v14.py \
+            mlb_matchup_hub_v13.py \
+            mlb_matchup_hub_v12.py \
+            mlb_matchup_rankings_v21.py \
+            spread_engine.py \
+            spread_history.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen Matchup boundary changed: $path"
+              exit 1
+            fi
+          done
+          echo "MATCHUP_MODEL_AND_UI_BASELINE_FREEZE=PASS"
+
+      - name: Verify historical certification routing isolation
+        run: |
+          grep -F "github.head_ref == 'mlb-matchup-explorer-clean-ui-v1'" .github/workflows/mlb-matchup-explorer-clean-ui-v1.yml
+          echo "HISTORICAL_MATCHUP_CI_ISOLATION=PASS"
+
+      - name: Compile unified presentation boundary
+        run: |
+          python -m py_compile \
+            mlb_matchup_hub_v27.py \
+            mlb_matchup_hub_v29.py \
+            mlb_matchup_player_v23.py \
+            tests/test_mlb_matchup_unified_intelligence_v1.py
+
+      - name: Run unified Matchup UI regression tests
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_unified_intelligence_v1.py
+
+      - name: Certification marker
+        run: echo "MLB_MATCHUP_UNIFIED_INTELLIGENCE_V1_GREEN"
