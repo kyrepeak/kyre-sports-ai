@@ -1,0 +1,47 @@
+{
+  "data_type": "mlb_step18c_incident_response_certification_evidence",
+  "state": "green",
+  "cert_run_id": 33582257574,
+  "certified_head_sha": "c97020762bb70e05adc9b7c77894ee4b1e4c5053",
+  "step18b_merged_main_sha": "ae66134026297516aac4e6936b8ac9d8e2302481",
+  "certified_render_rollback_revision": "ece3cd2d15d091728fdbe30be774dd9c15e4fe8e",
+  "live_observation": {
+    "state": "healthy",
+    "critical_incident_count": 0,
+    "warning_incident_count": 0,
+    "heartbeat_age_seconds": 52.094,
+    "last_completed_cycle_age_seconds": 52.094,
+    "success_count": 23,
+    "failure_count": 0,
+    "last_checkpoint_version": 24,
+    "recovered_from_checkpoint": true,
+    "role": "leader",
+    "provider_calls": 0,
+    "sportsbook_calls": 0
+  },
+  "response_plan": {
+    "response_state": "healthy",
+    "disposition": "no_action",
+    "page_operator": false,
+    "rollback_recommended": false,
+    "automatic_rollback_performed": false,
+    "execution_mode": "manual_only"
+  },
+  "safety": {
+    "render_mutation_performed": false,
+    "github_mutation_performed_by_planner": false,
+    "database_write_performed": false,
+    "provider_network_called": false,
+    "sportsbook_network_called": false,
+    "model_run": false,
+    "projection_run": false,
+    "monte_carlo_run": false,
+    "wager_action_performed": false
+  },
+  "artifact": {
+    "id": 9828784733,
+    "name": "mlb-step18c-incident-response-33582257574-1",
+    "digest": "sha256:765a98c78230294f759ff69b76de99df3c859733c4468611ef573fa960250e42"
+  },
+  "final_marker": "MLB_STEP18C_INCIDENT_RESPONSE_GREEN"
+}
