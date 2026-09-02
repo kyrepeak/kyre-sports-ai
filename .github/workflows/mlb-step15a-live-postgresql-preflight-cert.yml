@@ -5,9 +5,15 @@ on:
     branches:
       - main
       - mlb-step15a-live-postgresql-preflight
+    paths:
+      - sports_api/mlb_step15a_live_postgresql_preflight_v1.py
+      - tests/test_mlb_step15a_live_postgresql_preflight_v1.py
   pull_request:
     branches:
       - main
+    paths:
+      - sports_api/mlb_step15a_live_postgresql_preflight_v1.py
+      - tests/test_mlb_step15a_live_postgresql_preflight_v1.py
   workflow_dispatch:
 
 permissions:
