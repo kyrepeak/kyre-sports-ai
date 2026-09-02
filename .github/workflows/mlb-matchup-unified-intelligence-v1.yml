@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   certify:
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-unified-intelligence-v1'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
