@@ -1,31 +1,28 @@
-name: MLB Matchup Explorer cleanup Step 2 game cards certification
+name: MLB Matchup Explorer cleanup Step 3 roster groups certification
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step1-picker.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step3-roster-groups.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v43.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py'
+      - 'mlb_matchup_hub_v44.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step3_roster_groups.py'
   push:
-    branches: ['mlb-matchup-explorer-cleanup-step2-game-cards']
+    branches: ['mlb-matchup-explorer-cleanup-step3-roster-groups']
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step1-picker.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step3-roster-groups.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v43.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py'
+      - 'mlb_matchup_hub_v44.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step3_roster_groups.py'
 
 permissions:
   contents: read
 
 jobs:
   certify:
-    # Historical exact-scope certification belongs only to its original branch.
-    # Later additive Matchup presentation layers have their own freeze workflow.
-    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step2-game-cards'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,29 +41,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Assert exact cleanup Step 2 scope
+      - name: Assert exact cleanup Step 3 scope
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
-            '.github/workflows/mlb-matchup-explorer-cleanup-step1-picker.yml' \
             '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step3-roster-groups.yml' \
             'mlb_matchup_hub_v27.py' \
-            'mlb_matchup_hub_v43.py' \
-            'tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py' | sort)"
+            'mlb_matchup_hub_v44.py' \
+            'tests/test_mlb_matchup_explorer_cleanup_step3_roster_groups.py' | sort)"
           if [ "$actual" != "$expected" ]; then
-            echo "Unexpected Matchup Explorer cleanup Step 2 scope"
+            echo "Unexpected Matchup Explorer cleanup Step 3 scope"
             echo "--- expected ---"
             echo "$expected"
             echo "--- actual ---"
             echo "$actual"
             exit 1
           fi
-          echo "CLEANUP_STEP2_EXACT_FIVE_FILE_SCOPE=PASS"
+          echo "CLEANUP_STEP3_EXACT_FIVE_FILE_SCOPE=PASS"
 
-      - name: Prove Step 1, V2 model and legacy ranking chain are frozen
+      - name: Prove Steps 1-2, V2 model and ranking chain are frozen
         run: |
           for path in \
+            mlb_matchup_hub_v43.py \
             mlb_matchup_hub_v42.py \
             mlb_matchup_hub_v41.py \
             mlb_matchup_player_v35.py \
@@ -79,7 +77,7 @@ jobs:
               exit 1
             fi
           done
-          echo "MATCHUP_STEP1_AND_V2_FREEZE=PASS"
+          echo "MATCHUP_STEPS1_2_AND_V2_FREEZE=PASS"
 
       - name: Prove Moneyline page is untouched
         run: |
@@ -98,12 +96,12 @@ jobs:
         run: |
           python -m py_compile \
             mlb_matchup_hub_v27.py \
-            mlb_matchup_hub_v43.py \
-            tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py
+            mlb_matchup_hub_v44.py \
+            tests/test_mlb_matchup_explorer_cleanup_step3_roster_groups.py
 
-      - name: Run cleanup Step 2 regression tests
+      - name: Run cleanup Step 3 regression tests
         run: |
-          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step3_roster_groups.py
 
       - name: Certification marker
-        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP2_GAME_CARDS_GREEN"
+        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP3_ROSTER_GROUPS_GREEN"
