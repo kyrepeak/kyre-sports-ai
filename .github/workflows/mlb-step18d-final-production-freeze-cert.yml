@@ -1,0 +1,264 @@
+name: MLB Step18D final production freeze certification
+
+on:
+  push:
+    branches:
+      - mlb-step18d-final-production-freeze
+      - main
+    paths:
+      - .github/workflows/mlb-step18d-final-production-freeze-cert.yml
+      - sports_api/tools/mlb_step18d_final_production_freeze.py
+      - tests/test_mlb_step18d_final_production_freeze.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step18d-final-production-freeze-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  certify-final-freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: wnba-render-staging
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q -r sports_api/requirements.txt
+          python -m pip install -q pytest
+
+      - name: Prove exact Step 18 lineage and three-file freeze scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor a72fd55f38056f32158bf182f3dc041e5b92b1b1 HEAD
+          git cat-file -e ece3cd2d15d091728fdbe30be774dd9c15e4fe8e^{commit}
+          python - <<'PY'
+          import subprocess
+          expected = {
+              '.github/workflows/mlb-step18d-final-production-freeze-cert.yml',
+              'sports_api/tools/mlb_step18d_final_production_freeze.py',
+              'tests/test_mlb_step18d_final_production_freeze.py',
+          }
+          changed = set(
+              subprocess.check_output(
+                  ['git', 'diff', '--name-only', 'a72fd55f38056f32158bf182f3dc041e5b92b1b1', 'HEAD']
+              ).decode().splitlines()
+          )
+          if changed != expected:
+              raise SystemExit(f'MLB_STEP18D_SCOPE_DRIFT:{sorted(changed)}')
+          print('MLB_STEP18D_EXACT_SCOPE_OK')
+          PY
+
+      - name: Compile complete Step 18 hardening chain
+        run: |
+          python -m py_compile \
+            sports_api/tools/mlb_step18a_production_baseline.py \
+            sports_api/tools/mlb_step18b_production_observability.py \
+            sports_api/tools/mlb_step18c_incident_response.py \
+            sports_api/tools/mlb_step18d_final_production_freeze.py
+
+      - name: Run complete Step 18 fail-closed regression suite
+        run: |
+          PYTHONPATH=. pytest -q \
+            tests/test_mlb_step18a_production_baseline.py \
+            tests/test_mlb_step18b_production_observability.py \
+            tests/test_mlb_step18c_incident_response.py \
+            tests/test_mlb_step18d_final_production_freeze.py
+
+      - name: Build final certificate from live production using read-only calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY"
+          mkdir -p .step18d-final
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import os
+          import subprocess
+          import time
+          from pathlib import Path
+
+          import httpx
+
+          from sports_api.tools.mlb_step18a_production_baseline import (
+              EXPECTED_RENDER_SERVICE_ID,
+              EXPECTED_RENDER_SERVICE_NAME,
+              EXPECTED_SERVICE_URL,
+              validate_production_baseline,
+          )
+          from sports_api.tools.mlb_step18b_production_observability import (
+              CERTIFIED_LOOP_SECONDS,
+              build_production_observability,
+          )
+          from sports_api.tools.mlb_step18c_incident_response import build_incident_response_plan
+          from sports_api.tools.mlb_step18d_final_production_freeze import (
+              FINAL_MARKER,
+              build_final_production_freeze,
+          )
+          from sports_api.wnba_render_provisioning import RenderAPIClient, resolve_owner_id
+          from sports_api.tools import wnba_step7c_render_free_deploy as step7c
+
+          def clean(value):
+              if value is None:
+                  return None
+              text = str(value).strip()
+              return text or None
+
+          def truthy(value):
+              return str(value or '').strip().casefold() not in {'', '0', 'false', 'no', 'off', 'disabled'}
+
+          def env_map(rows):
+              result = {}
+              for row in rows:
+                  if not isinstance(row, dict):
+                      continue
+                  key = clean(row.get('key'))
+                  if key and row.get('value') is not None:
+                      result[key] = str(row['value'])
+              return result
+
+          def get_json_retry(path, *, timeout_seconds=240.0):
+              deadline = time.monotonic() + timeout_seconds
+              last = 'not attempted'
+              with httpx.Client(
+                  timeout=30.0,
+                  follow_redirects=True,
+                  headers={'user-agent': 'kyre-mlb-step18d-final-freeze/1'},
+              ) as client:
+                  while True:
+                      try:
+                          response = client.get(EXPECTED_SERVICE_URL + path)
+                          if response.status_code == 200:
+                              body = response.json()
+                              if isinstance(body, dict):
+                                  return body
+                              last = 'non-object JSON'
+                          else:
+                              last = f'HTTP {response.status_code}'
+                      except Exception as exc:
+                          last = f'{type(exc).__name__}: {exc}'
+                      if time.monotonic() >= deadline:
+                          raise AssertionError(f'read-only production read failed for {path}: {last}')
+                      time.sleep(5)
+
+          key = clean(os.environ.get('RENDER_API_KEY'))
+          assert key and len(key) >= 20, 'Render credential missing'
+
+          # Render API usage is read-only: resolve owner, list/get service, list env vars.
+          with RenderAPIClient(api_key=key, timeout_seconds=30.0) as render:
+              owner = resolve_owner_id(render, clean(os.environ.get('RENDER_OWNER_ID')))
+              matches = render.list_services(owner, EXPECTED_RENDER_SERVICE_NAME)
+              assert len(matches) == 1, f'expected exactly one {EXPECTED_RENDER_SERVICE_NAME}; found {len(matches)}'
+              service_id = clean(matches[0].get('id'))
+              assert service_id == EXPECTED_RENDER_SERVICE_ID, f'Render service identity drift: {service_id!r}'
+              service = render.get_service(service_id)
+              values = env_map(render.list_env_vars(service_id))
+
+          # Preserve the WNBA shared-host safety contract before certifying MLB Step 18.
+          assert values.get('WNBA_KYRE_DURABLE_STORAGE_BACKEND') == 'supabase', 'WNBA durable backend drift'
+          for name in step7c.OFF_SWITCHES:
+              assert not truthy(values.get(name)), f'WNBA safety switch unexpectedly enabled: {name}'
+
+          health = get_json_retry('/health')
+          wnba = get_json_retry('/api/v1/wnba/runtime/deployment')
+          mlb = get_json_retry('/api/v1/mlb/runtime/step17b')
+
+          baseline = validate_production_baseline(
+              service=service,
+              env=values,
+              health=health,
+              wnba=wnba,
+              mlb=mlb,
+          )
+          observability = build_production_observability(
+              status=mlb,
+              health=health,
+              wnba=wnba,
+              configured_loop_seconds=CERTIFIED_LOOP_SECONDS,
+          )
+          response_plan = build_incident_response_plan(observability)
+          certificate = build_final_production_freeze(
+              baseline=baseline,
+              observability=observability,
+              response_plan=response_plan,
+          )
+
+          assert certificate['state'] == 'green'
+          assert certificate['step18_complete'] is True
+          assert certificate['live_state']['critical_incident_count'] == 0
+          assert certificate['live_state']['warning_incident_count'] == 0
+          assert certificate['live_state']['response_disposition'] == 'no_action'
+          assert certificate['frozen_invariants']['render_mutation_performed'] is False
+          assert certificate['frozen_invariants']['provider_network_called'] is False
+          assert certificate['frozen_invariants']['sportsbook_network_called'] is False
+          assert certificate['frozen_invariants']['wager_action_performed'] is False
+
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+          evidence = {
+              'repository_head_sha': head,
+              'repository_ref': os.environ.get('GITHUB_REF'),
+              'github_event_name': os.environ.get('GITHUB_EVENT_NAME'),
+              'baseline': baseline,
+              'observability': observability,
+              'response_plan': response_plan,
+              'final_certificate': certificate,
+          }
+          path = Path('.step18d-final/mlb-step18d-final-production-freeze-evidence.json')
+          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(certificate, indent=2, sort_keys=True))
+          print(FINAL_MARKER)
+          PY
+
+      - name: Validate final evidence is sanitized and immutable-in-policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.step18d-final/mlb-step18d-final-production-freeze-evidence.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          text = path.read_text(encoding='utf-8').casefold()
+          cert = data['final_certificate']
+          assert cert['state'] == 'green'
+          assert cert['step18_complete'] is True
+          assert cert['recovery_policy']['rollback_execution_mode'] == 'manual_only'
+          assert cert['frozen_invariants']['automatic_rollback_performed'] is False
+          assert cert['frozen_invariants']['database_write_performed'] is False
+          assert cert['frozen_invariants']['actionable_output_enabled'] is False
+          assert cert['frozen_invariants']['wagering_enabled'] is False
+          assert 'postgresql://' not in text
+          assert 'authorization' not in text
+          assert 'render_api_key' not in text
+          print('MLB_STEP18D_FINAL_EVIDENCE_SANITIZED')
+          PY
+
+      - name: Upload final Step 18 certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step18d-final-production-freeze-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step18d-final/mlb-step18d-final-production-freeze-evidence.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Final Step 18 GREEN marker
+        run: |
+          echo MLB_STEP18D_FINAL_PRODUCTION_FREEZE_GREEN
+          echo MLB_STEP18_COMPLETE_GREEN
