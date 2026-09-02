@@ -1,0 +1,99 @@
+name: MLB Matchup V2 runtime Step 11 bridge hotfix certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/mlb-matchup-v2-runtime-step11-bridge-hotfix.yml'
+      - 'mlb_matchup_player_v35.py'
+      - 'tests/test_mlb_matchup_v2_runtime_step11_bridge_hotfix.py'
+  push:
+    branches: ['mlb-matchup-v2-runtime-step11-bridge-hotfix']
+    paths:
+      - '.github/workflows/mlb-matchup-v2-runtime-step11-bridge-hotfix.yml'
+      - 'mlb_matchup_player_v35.py'
+      - 'tests/test_mlb_matchup_v2_runtime_step11_bridge_hotfix.py'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact runtime hotfix scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-matchup-v2-runtime-step11-bridge-hotfix.yml' \
+            'mlb_matchup_player_v35.py' \
+            'tests/test_mlb_matchup_v2_runtime_step11_bridge_hotfix.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected runtime hotfix scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "RUNTIME_HOTFIX_EXACT_THREE_FILE_SCOPE=PASS"
+
+      - name: Prove certified probability and calibration engines remain frozen
+        run: |
+          for path in \
+            mlb_matchup_probability_v1.py \
+            mlb_matchup_calibration_v1.py \
+            mlb_matchup_player_v34.py \
+            mlb_matchup_hub_v40.py \
+            mlb_matchup_hub_v41.py \
+            mlb_matchup_hub_v27.py \
+            history.py \
+            mlb_matchup_rankings_v21.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen probability/calibration boundary changed: $path"
+              exit 1
+            fi
+          done
+          echo "PROBABILITY_CALIBRATION_AND_RANKINGS_FREEZE=PASS"
+
+      - name: Compile runtime bridge
+        run: |
+          python -m py_compile \
+            mlb_matchup_player_v35.py \
+            tests/test_mlb_matchup_v2_runtime_step11_bridge_hotfix.py
+
+      - name: Run runtime bridge regression tests
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_matchup_v2_runtime_step11_bridge_hotfix.py \
+            tests/test_mlb_matchup_v2_step12_calibration_final_intelligence.py
+
+      - name: Prove runtime-safe Step 11 bridge
+        run: |
+          grep -F 'getattr(step11, "_build_step11", None)' mlb_matchup_player_v35.py
+          grep -F 'def _build_step11_fallback' mlb_matchup_player_v35.py
+          grep -F 'import mlb_matchup_probability_v1 as raw_probability' mlb_matchup_player_v35.py
+          grep -F 'raw_probability.build_probability_profile' mlb_matchup_player_v35.py
+          grep -F 'PROBABILITY_IMPACT = "ACTIVE_FINAL_V2"' mlb_matchup_player_v35.py
+          echo "STEP11_RUNTIME_BRIDGE_SAFE=PASS"
+
+      - name: Certification marker
+        run: echo "MLB_MATCHUP_V2_RUNTIME_STEP11_BRIDGE_HOTFIX_GREEN"
