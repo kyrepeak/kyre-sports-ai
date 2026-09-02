@@ -1,0 +1,110 @@
+name: MLB Step17B Render activation operator certification
+
+on:
+  push:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - sports_api/tools/mlb_step17b_render_activation.py
+      - tests/test_mlb_step17b_render_activation.py
+      - .github/workflows/mlb-step17b-render-activation-operator-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  certify-operator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout operator branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q -r sports_api/requirements.txt
+          python -m pip install -q -r sports_api/requirements-mlb-step14b-persistence.txt
+          python -m pip install -q pytest
+
+      - name: Prove certified shared-host run identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          run_id = 33578176749
+          expected = 'ece3cd2d15d091728fdbe30be774dd9c15e4fe8e'
+          req = urllib.request.Request(
+              f'https://api.github.com/repos/kyrepeak/kyre-sports-ai/actions/runs/{run_id}',
+              headers={
+                  'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+                  'Accept': 'application/vnd.github+json',
+                  'User-Agent': 'kyre-mlb-step17b-operator-cert/1',
+              },
+          )
+          with urllib.request.urlopen(req, timeout=30) as response:
+              run = json.load(response)
+          assert run['head_sha'] == expected, run['head_sha']
+          assert run['conclusion'] == 'success', run['conclusion']
+          assert run['name'] == 'MLB Step17B shared-host WNBA+MLB certification', run['name']
+          print('Certified shared-host run identity verified.')
+          PY
+
+      - name: Prove certified runtime files remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          certified=ece3cd2d15d091728fdbe30be774dd9c15e4fe8e
+          git cat-file -e "$certified^{commit}"
+          git diff --exit-code "$certified" HEAD -- \
+            sports_api/main.py \
+            sports_api/api/mlb_step17b_runtime.py \
+            sports_api/mlb_step17b_always_on_runtime_v1.py \
+            tests/test_mlb_step17b_always_on_runtime_v1.py \
+            sports_api/Dockerfile
+
+      - name: Compile activation operator
+        run: |
+          python -m py_compile sports_api/tools/mlb_step17b_render_activation.py
+          python -m py_compile tests/test_mlb_step17b_render_activation.py
+
+      - name: Run activation-operator unit tests
+        run: python -m pytest -q tests/test_mlb_step17b_render_activation.py
+
+      - name: Re-run certified Step 17B runtime tests
+        run: python -m pytest -q tests/test_mlb_step17b_always_on_runtime_v1.py
+
+      - name: Enforce operator safety scope
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('sports_api/tools/mlb_step17b_render_activation.py').read_text(encoding='utf-8')
+          forbidden = (
+              'create_service(',
+              'create_registry_credential(',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED": "true',
+              'MLB_PRODUCTION_RUNTIME_ENABLED": "true',
+              'MLB_PRODUCTION_SCHEDULER_ENABLED": "true',
+              'MLB_ACTIONABLE_OUTPUT_ENABLED": "true',
+              'MLB_WAGERING_ENABLED": "true',
+          )
+          for token in forbidden:
+              assert token not in text, token
+          assert 'CERTIFIED_REVISION = "ece3cd2d15d091728fdbe30be774dd9c15e4fe8e"' in text
+          assert 'EXPECTED_SERVICE_ID = "srv-da84q6ifngtc73bdbm6g"' in text
+          assert '_rollback(' in text
+          assert 'original_environment_restored' in text
+          print('Activation operator safety scope verified; no live credential was available to this job.')
+          PY
+
+      - name: Final marker
+        run: echo MLB_STEP17B_RENDER_ACTIVATION_OPERATOR_GREEN
