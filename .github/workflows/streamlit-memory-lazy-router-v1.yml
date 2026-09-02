@@ -1,0 +1,76 @@
+name: Streamlit memory lazy-router certification
+
+on:
+  push:
+    branches:
+      - streamlit-memory-lazy-router-v1
+    paths:
+      - app.py
+      - streamlit_memory_lazy_router_v1.py
+      - tests/test_streamlit_memory_lazy_router_v1.py
+      - tests/test_mlb_live_odds_streamlit.py
+      - .github/workflows/streamlit-memory-lazy-router-v1.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - app.py
+      - streamlit_memory_lazy_router_v1.py
+      - tests/test_streamlit_memory_lazy_router_v1.py
+      - tests/test_mlb_live_odds_streamlit.py
+      - .github/workflows/streamlit-memory-lazy-router-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Compile memory-safe entrypoint
+        run: |
+          python -m py_compile \
+            app.py \
+            streamlit_memory_lazy_router_v1.py \
+            tests/test_streamlit_memory_lazy_router_v1.py
+
+      - name: Prove app bootstrap has no historical replay
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path("app.py").read_text(encoding="utf-8")
+          forbidden = ("subprocess", "urllib", "exec(", "FROZEN_PRE_LIVE_COMMIT")
+          bad = [token for token in forbidden if token in text]
+          if bad:
+              raise SystemExit(f"historical wrapper replay returned: {bad}")
+          if "streamlit_memory_lazy_router_v1" not in text:
+              raise SystemExit("lazy router is not the Streamlit bootstrap")
+          print("STREAMLIT_BOOTSTRAP_LAZY_ROUTER=PASS")
+          PY
+
+      - name: Run lazy-router regression tests
+        run: |
+          pytest -q \
+            tests/test_streamlit_memory_lazy_router_v1.py \
+            tests/test_mlb_live_odds_streamlit.py
+
+      - name: Certification marker
+        run: |
+          echo "STREAMLIT_MEMORY_LAZY_ROUTER_V1_GREEN"
