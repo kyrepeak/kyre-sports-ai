@@ -1,0 +1,13 @@
+name: WNBA Step19J runtime profile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Whole-cycle profile completed in run 33286889956; retained for audit only.'

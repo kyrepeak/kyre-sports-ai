@@ -1,0 +1,55 @@
+{
+  "activation_boundary": {
+    "automatic_restart_activation_started": false,
+    "background_worker_started": false,
+    "global_persistence_autostart_started": false,
+    "production_runtime_started": false,
+    "public_persistence_api_started": false,
+    "scheduler_started": false,
+    "secrets_written_to_repository": false,
+    "supabase_rest_write_started": false,
+    "wagering_started": false
+  },
+  "blocking_requirements": [
+    "docker_install_persistence_requirements",
+    "deployment_secret_manager_supply_kyre_database_url",
+    "bind_frozen_step13_to_step15_runtime_into_explicit_application_lifecycle"
+  ],
+  "data_type": "wnba_step16a_production_activation_readiness_evidence",
+  "deployment_files": {
+    "sports_api/Dockerfile": "e06eed5c3b9d65c238e47b3fd2fde1529a785fdf",
+    "sports_api/README.md": "4f93bb2c1890a1c65ff7b6c7cc21bb857a39f5b5",
+    "sports_api/main.py": "3735590ad639126ea768103ef234604691362be3",
+    "sports_api/production.env.example": "6962aa11e75906691869d2ed04d2bf50822821c8",
+    "sports_api/requirements-persistence.txt": "46331822d0a55f5a4983d289c73a45ea9745ca89",
+    "sports_api/requirements.txt": "84e666d78549778a84f216e80d2bb979c1f6160a"
+  },
+  "evidence_content_sha256": "9cf0f80ee2fcf45b1dcf06ca2076ee300cb2f87091135b2da824df8584f8ba97",
+  "existing_deployment_contract": {
+    "container_runtime": true,
+    "default_web_concurrency": 2,
+    "deployment_replica_count": 1,
+    "hosted_staging_provider": "render",
+    "persistent_volume_root": "/var/lib/kyre-sports-api",
+    "production_runtime_default_off": true,
+    "uvicorn_entrypoint": "sports_api.main:app"
+  },
+  "frozen_parent": {
+    "step15_release_content_sha256": "537df3ec10999071941597e71f4e6361e246db98b17c13a3a31a944f9b8e9a2b",
+    "step15_release_id": "wnba_step15_live_supabase_persistence_2026_regular_season_frozen_v1",
+    "step15c_certified_sha": "5e24210d7aef90143ba016e368cd49d3ee1a7f19"
+  },
+  "observed_at_utc": "2026-08-28T19:46:00+00:00",
+  "readiness_findings": {
+    "docker_installs_base_requirements": true,
+    "docker_installs_persistence_requirements": false,
+    "fastapi_startup_binds_step13_to_step15_runtime": false,
+    "live_step15_schema_certified": true,
+    "live_step15_transactions_certified": true,
+    "persistence_requirement": "psycopg[binary]>=3.2,<4",
+    "persistence_requirement_defined": true,
+    "production_activation_ready": false,
+    "production_env_declares_kyre_database_url": false
+  },
+  "schema_version": "wnba_step_16a_production_activation_readiness_evidence_v1"
+}

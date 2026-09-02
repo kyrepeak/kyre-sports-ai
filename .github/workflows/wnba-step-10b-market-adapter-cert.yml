@@ -1,0 +1,155 @@
+name: WNBA Step 10B market adapter certification
+
+on:
+  push:
+    branches:
+      - wnba-step10b-market-adapters-20260828
+    paths:
+      - sports_api/wnba_step10_market_adapters.py
+      - tests/test_wnba_step10_market_adapters.py
+      - sports_api/tools/wnba_step10b_market_adapter_cert.py
+      - .github/workflows/wnba-step-10b-market-adapter-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Step 10B branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 60
+
+      - name: Assert production OFF and isolated Step 10 gates ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED" = 'true'
+          test "$WNBA_STEP10B_MARKET_ADAPTER_ENABLED" = 'true'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 10B certification surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step10_live_market_input.py
+          python -m py_compile sports_api/wnba_step10_market_adapters.py
+          python -m py_compile tests/test_wnba_step10_market_adapters.py
+          python -m py_compile sports_api/tools/wnba_step10b_market_adapter_cert.py
+
+      - name: Run Step 10B market adapter guards
+        run: PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+
+      - name: Run frozen Step 10A guards
+        run: PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run inherited frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 10A head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP10A_FROZEN_SHA='4a8f822684c1d56d1ef062f0db25d5f671409def'
+          git merge-base --is-ancestor "$STEP10A_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP10A_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only Step 10B files changed after frozen Step 10A
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP10A_FROZEN_SHA='4a8f822684c1d56d1ef062f0db25d5f671409def'
+          git diff --name-only "$STEP10A_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step10_market_adapters.py|\
+              tests/test_wnba_step10_market_adapters.py|\
+              sports_api/tools/wnba_step10b_market_adapter_cert.py|\
+              .github/workflows/wnba-step-10b-market-adapter-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step10A file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify frozen Step 10A and Step 10B release constants
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step10_live_market_input as s10a
+          from sports_api import wnba_step10_market_adapters as s10b
+          assert s10a.RELEASE_ID == 'wnba_step10a_live_market_input_2026_regular_season_v1'
+          assert s10a.SCHEMA_VERSION == 'wnba_step_10a_live_market_input_v1'
+          assert s10a.MODEL_VERSION == 'wnba_step10a_strict_live_market_normalization_2026_regular_v1'
+          assert s10b.STEP10A_FROZEN_HEAD_SHA == '4a8f822684c1d56d1ef062f0db25d5f671409def'
+          assert s10b.SCHEMA_VERSION == 'wnba_step_10b_market_adapter_v1'
+          assert s10b.MODEL_VERSION == 'wnba_step10b_strict_provider_adapter_2026_regular_v1'
+          assert s10b.RELEASE_ID == 'wnba_step10b_market_adapter_2026_regular_season_v1'
+          assert s10b.step10b_market_adapter_enabled({}) is False
+          assert s10b.SUPPORTED_ADAPTERS == ('flat_two_way_v1', 'outcomes_two_way_v1')
+          print('STEP10B_RELEASE_CONTRACT_STATIC_GUARDS_OK')
+          PY
+
+      - name: Certify frozen Step 10B market adapters
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step10b_market_adapter_cert
+
+      - name: Upload Step 10B certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step10b-market-adapter-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step10b-market-adapter-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

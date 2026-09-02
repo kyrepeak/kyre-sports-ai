@@ -1,0 +1,191 @@
+name: WNBA Step19K market-not-ready certification
+
+on:
+  push:
+    branches: [wnba-step19k-market-not-ready-20260830]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step19k-market-not-ready-certify
+  cancel-in-progress: true
+
+env:
+  WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+  WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+  WNBA_STEP10_FASTAPI_ENABLED: 'true'
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+  WNBA_STEP9_FASTAPI_ENABLED: 'true'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+  WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+  WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+  WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+  WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+  WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_PERSISTENCE_ENABLED: 'false'
+  WNBA_SUPABASE_WRITE_ENABLED: 'false'
+  WNBA_WAGERING_ENABLED: 'false'
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Compile compatibility modules
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step19k_market_not_ready.py \
+            sports_api/wnba_step19j_runtime_acceleration.py \
+            sports_api/api/wnba_step17b_runtime.py
+
+      - name: Frozen Step11-13 regression wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step11_controlled_automation.py \
+            tests/test_wnba_step12b_live_runtime_assembly.py \
+            tests/test_wnba_step12c_live_board_runtime.py \
+            tests/test_wnba_step13a_bounded_scheduler.py
+
+      - name: Step19 regression wall
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19k_market_not_ready.py \
+            tests/test_wnba_step19j_runtime_acceleration.py \
+            tests/test_wnba_step19i_official_slate_transport.py \
+            tests/test_wnba_step19h_fanduel_hosted_transport.py \
+            tests/test_wnba_step19g_hosted_provider_trace.py \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py
+
+      - name: Hosted import proves exact wrapper order and safety
+        run: |
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19j_runtime_acceleration as j
+          from sports_api import wnba_step19k_market_not_ready as k
+          import sports_api.api.wnba_step17b_runtime
+          assert s12b.run_step12b_live_runtime_job is k.run_step12b_market_not_ready_compatible
+          assert k._UPSTREAM_RUN_STEP12B is j.run_step12b_with_cycle_local_context
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+          guards=k.installation_status()['guardrails']
+          assert guards['exact_line_overlap_required'] is True
+          assert guards['different_lines_blended'] is False
+          assert guards['fake_projection_created'] is False
+          assert guards['readiness_relaxed'] is False
+          assert guards['wagering_enabled'] is False
+          print('STEP19K_HOST_CHAIN_CERTIFIED')
+          PY
+
+      - name: Live provider proof and Step12B market-state classification
+        run: |
+          python - <<'PY'
+          import json,os,time
+          from datetime import datetime,timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step11_draftkings_provider as dk
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step11_multibook_shadow_board as mb
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19k_market_not_ready as k
+          import sports_api.api.wnba_step17b_runtime
+
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          now=datetime.now(timezone.utc)
+          d=dk.fetch_step11a_draftkings_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=os.environ)
+          f=fd.fetch_step11c_fanduel_provider_bridge(season=2026,slate_date=slate,evaluated_at=now,env=os.environ)
+          dp=mb._verify_bridge(d,provider=dk.PROVIDER); fp=mb._verify_bridge(f,provider=fd.PROVIDER)
+          drec=dp.get('records') or []; frec=fp.get('records') or []
+          if not drec or not frec:
+              raise SystemExit('live provider proof requires non-empty records from both books')
+          dkeys={(str(r['game_id']),int(r['player_id']),str(r['stat']).casefold(),round(float(r['line']),6)) for r in drec}
+          fkeys={(str(r['game_id']),int(r['player_id']),str(r['stat']).casefold(),round(float(r['line']),6)) for r in frec}
+          overlap=dkeys & fkeys
+          req=s12b.build_step12b_request(season=2026,slate_date=slate,evaluated_at=datetime.now(timezone.utc),previous_state=None,controller_policy={'provider_attempts':1})
+          started=time.perf_counter()
+          out=s12b.run_step12b_live_runtime_job(req,env=os.environ)
+          elapsed=time.perf_counter()-started
+          tick=((out.get('step12a_result') or {}).get('step11e_tick') or {})
+          exe=tick.get('execution') or {}; state=tick.get('automation_state') or {}
+          summary={
+            'slate':slate,'dk_records':len(drec),'fd_records':len(frec),
+            'exact_overlap_count':len(overlap),'seconds':round(elapsed,3),
+            'status':out.get('status'),'health':out.get('health'),
+            'cycle_outcome':exe.get('cycle_outcome'),'circuit_state':state.get('circuit_state'),
+            'consecutive_failure_count':state.get('consecutive_failure_count'),
+            'built_target_count':(out.get('projection_assembly') or {}).get('built_target_count'),
+            'transformed_count':k.installation_status().get('transformed_count'),
+          }
+          print('STEP19K_LIVE_CLASSIFICATION',json.dumps(summary,sort_keys=True))
+          if overlap:
+              if out.get('status') not in {'healthy','market_not_ready'}:
+                  raise SystemExit('live exact-overlap path returned unexpected status')
+          else:
+              if out.get('status')!='market_not_ready' or out.get('health')!='market_not_ready':
+                  raise SystemExit('no-overlap market did not become market_not_ready')
+              if exe.get('cycle_outcome')!='market_board_not_ready':
+                  raise SystemExit('no-overlap market did not use native market-board outcome')
+              if state.get('circuit_state')!='closed' or int(state.get('consecutive_failure_count') or 0)!=0:
+                  raise SystemExit('no-overlap market incorrectly damaged provider circuit state')
+              if int((out.get('projection_assembly') or {}).get('built_target_count') or 0)!=0:
+                  raise SystemExit('no-overlap market unexpectedly built a projection')
+              if k.installation_status().get('transformed_count',0)<1:
+                  raise SystemExit('Step19K did not record the live transformation')
+          print('STEP19K_LIVE_CLASSIFICATION_CERTIFIED')
+          PY
+
+      - name: Live Step12C board contract does not crash on no-overlap market
+        run: |
+          python - <<'PY'
+          import json,os
+          from datetime import datetime,timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step12c_live_board_runtime as s12c
+          import sports_api.api.wnba_step17b_runtime
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          req=s12c.build_step12c_request(season=2026,slate_date=slate,evaluated_at=datetime.now(timezone.utc),previous_state=None,controller_policy={'provider_attempts':1})
+          out=s12c.run_step12c_live_board_job(req,env=os.environ)
+          board=out.get('board') or {}; runtime=out.get('runtime') or {}
+          summary={'status':out.get('status'),'health':out.get('health'),'board_available':board.get('available'),'board_reason':board.get('reason'),'cycle_outcome':runtime.get('cycle_outcome'),'circuit_state':runtime.get('circuit_state'),'consecutive_failures':runtime.get('consecutive_failures')}
+          print('STEP19K_STEP12C_LIVE',json.dumps(summary,sort_keys=True))
+          if runtime.get('cycle_outcome')=='market_board_not_ready':
+              if board.get('available') is not False or board.get('reason')!='market_board_not_ready':
+                  raise SystemExit('Step12C market-not-ready board contract drift')
+              if runtime.get('circuit_state')!='closed' or int(runtime.get('consecutive_failures') or 0)!=0:
+                  raise SystemExit('Step12C market-not-ready circuit contract drift')
+          print('STEP19K_STEP12C_CERTIFIED')
+          PY

@@ -1,0 +1,222 @@
+name: WNBA Step 17A production host contract
+
+on:
+  push:
+    branches:
+      - wnba-step17a-production-host-contract-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  STEP16E_SHA: 5becd6af4fc8ce20a458c3bcb738dbff8312c8d7
+  WNBA_STEP17A_HOST_CONTRACT_ENABLED: "true"
+  WNBA_STEP17A_EXPECTED_REVISION: 5becd6af4fc8ce20a458c3bcb738dbff8312c8d7
+  WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED: "true"
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+
+jobs:
+  certify-and-attach-existing-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout Step 17A certification branch
+        uses: actions/checkout@v4
+
+      - name: Checkout exact frozen Step 16E release
+        uses: actions/checkout@v4
+        with:
+          ref: 5becd6af4fc8ce20a458c3bcb738dbff8312c8d7
+          path: frozen-step16e
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install certification dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Run Step 17A fail-closed tests
+        env:
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+        run: |
+          test -n "$KYRE_DATABASE_URL"
+          PYTHONPATH=. python tests/test_wnba_step17a_production_host_contract.py
+          python - <<'PY'
+          import os
+          from sports_api import wnba_step17a_production_host_contract as s
+          r=s.validate_host_contract(os.environ, build_revision=s.STEP16E_FROZEN_SHA)
+          assert r['scheduler_enabled'] is False
+          print('STEP17A_FAIL_CLOSED_CONTRACT_OK')
+          PY
+
+      - name: Prove frozen source checkout is exact Step 16E SHA
+        working-directory: frozen-step16e
+        run: |
+          test "$(git rev-parse HEAD)" = "$STEP16E_SHA"
+          test "$(git hash-object sports_api/Dockerfile)" = '324defd214f334c372f3b0b2dcafd958c962a6aa'
+
+      - name: Log in to GHCR
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish immutable reference image from frozen Step 16E
+        working-directory: frozen-step16e
+        env:
+          IMAGE_REPO: ghcr.io/kyrepeak/kyre-sports-api
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$STEP16E_SHA" \
+            --build-arg WNBA_RELEASE_ID="wnba-step16e-final-production-freeze" \
+            --metadata-file /tmp/step17a-image.json \
+            -f sports_api/Dockerfile \
+            -t "$IMAGE_REPO:step16e-$STEP16E_SHA" \
+            --push .
+          python - <<'PY'
+          import json, os, re
+          m=json.load(open('/tmp/step17a-image.json', encoding='utf-8'))
+          d=m.get('containerimage.digest','')
+          assert re.fullmatch(r'sha256:[0-9a-f]{64}', d), d
+          ref=f"ghcr.io/kyrepeak/kyre-sports-api@{d}"
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f: f.write(f"STEP17A_IMAGE_REF={ref}\n")
+          print('STEP17A_IMMUTABLE_REFERENCE_IMAGE_PUBLISHED', ref)
+          PY
+
+      - name: Deploy exact frozen commit to verified existing Render Docker host
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+        run: |
+          test -n "$RENDER_API_KEY"
+          test -n "$KYRE_DATABASE_URL"
+          PYTHONPATH=. python - <<'PY'
+          import json, os, time, urllib.request
+          from sports_api import wnba_step17a_production_host_contract as contract
+
+          token=os.environ['RENDER_API_KEY']
+          image=os.environ['STEP17A_IMAGE_REF']
+          sha=os.environ['STEP16E_SHA']
+          base='https://api.render.com/v1'
+          headers={'Authorization':f'Bearer {token}','Accept':'application/json','Content-Type':'application/json','User-Agent':'kyre-step17a/3'}
+
+          def req(method,path,body=None):
+              data=None if body is None else json.dumps(body).encode()
+              r=urllib.request.Request(base+path,data=data,headers=headers,method=method)
+              with urllib.request.urlopen(r,timeout=30) as x:
+                  raw=x.read().decode()
+                  return json.loads(raw) if raw else None
+
+          sid=contract.EXPECTED_RENDER_SERVICE_ID
+          svc=req('GET',f'/services/{sid}')
+          identity=contract.validate_render_service_identity(svc)
+          print('STEP17A_EXISTING_HOST_IDENTITY_OK', identity['id'], identity['name'], identity['runtime'])
+
+          # Capture the currently-live deploy so a post-deploy health failure can roll back.
+          deploy_rows=req('GET',f'/services/{sid}/deploys?limit=20')
+          rows=deploy_rows if isinstance(deploy_rows,list) else (deploy_rows.get('items') or deploy_rows.get('data') or [])
+          previous_live=None
+          for row in rows:
+              d=row.get('deploy') if isinstance(row,dict) and isinstance(row.get('deploy'),dict) else row
+              if isinstance(d,dict) and str(d.get('status','')).lower()=='live' and d.get('id'):
+                  previous_live=d.get('id'); break
+
+          # Freeze automatic deploys before pinning the certified commit.
+          req('PATCH',f'/services/{sid}',{'autoDeploy':'no'})
+
+          envs={
+            'KYRE_DATABASE_URL':os.environ['KYRE_DATABASE_URL'],
+            'WNBA_STEP17A_HOST_CONTRACT_ENABLED':'true',
+            'WNBA_STEP17A_EXPECTED_REVISION':sha,
+            'WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED':'true',
+            'WNBA_PRODUCTION_RUNTIME_ENABLED':'false',
+            'WNBA_BOARD_SCHEDULER_ENABLED':'false',
+            'WNBA_PERSISTENCE_ENABLED':'false',
+            'WNBA_SUPABASE_WRITE_ENABLED':'false',
+            'WNBA_WAGERING_ENABLED':'false',
+            'WNBA_STEP12_SCHEDULER_ENABLED':'false',
+            'WNBA_DEPLOYMENT_REVISION':sha,
+            'WNBA_RELEASE_ID':'wnba-step16e-final-production-freeze',
+          }
+          for key,value in envs.items():
+              req('PUT',f'/services/{sid}/env-vars/{key}',{'value':value})
+
+          deploy=None
+          did=None
+          try:
+              deploy=req('POST',f'/services/{sid}/deploys',{'commitId':sha,'clearCache':'do_not_clear'})
+              did=(deploy or {}).get('id')
+              if not did:
+                  raise RuntimeError('Render did not return a deploy ID')
+              terminal_bad={'build_failed','update_failed','canceled','cancelled','deactivated'}
+              status=''
+              detail={}
+              for _ in range(120):
+                  detail=req('GET',f'/services/{sid}/deploys/{did}') or {}
+                  status=str(detail.get('status','')).lower()
+                  if status=='live': break
+                  if status in terminal_bad:
+                      raise RuntimeError(f'Render deploy failed closed: {status}')
+                  time.sleep(5)
+              if status!='live':
+                  raise RuntimeError(f'Render deploy did not become live: {status}')
+
+              def contains_sha(value):
+                  if isinstance(value,str): return value.strip().lower()==sha
+                  if isinstance(value,dict): return any(contains_sha(v) for v in value.values())
+                  if isinstance(value,list): return any(contains_sha(v) for v in value)
+                  return False
+              if not contains_sha(detail):
+                  raise RuntimeError('live Render deploy did not attest the exact Step-16E commit SHA')
+
+              svc=req('GET',f'/services/{sid}')
+              identity=contract.validate_render_service_identity(svc)
+              url=identity['url'].rstrip('/')
+              with urllib.request.urlopen(url+'/health',timeout=30) as h:
+                  health=json.loads(h.read().decode())
+              if health.get('status')!='ok':
+                  raise RuntimeError(f'health check failed: {health}')
+          except Exception:
+              if previous_live and did:
+                  try:
+                      req('POST',f'/services/{sid}/rollback',{'deployId':previous_live})
+                      print('STEP17A_AUTOMATIC_ROLLBACK_REQUESTED',previous_live)
+                  except Exception:
+                      print('STEP17A_ROLLBACK_REQUEST_FAILED')
+              raise
+
+          evidence={
+            'step':'17A','status':'certified',
+            'service_id':identity['id'],'service_name':identity['name'],'service_url':identity['url'],
+            'service_runtime':identity['runtime'],'service_repository':identity['repo'],
+            'deploy_method':'specific_git_commit_docker_build','deploy_id':did,'deploy_status':'live',
+            'frozen_step16e_sha':sha,'dockerfile_blob_sha':contract.STEP16E_DOCKERFILE_BLOB_SHA,
+            'immutable_reference_image_ref':image,'health_status':'ok','auto_deploy_enabled':False,
+            'scheduler_enabled':False,'production_runtime_enabled':False,
+            'database_secret_configured':True,'database_secret_exposed':False,
+            'new_render_service_created':False,
+          }
+          open('step17a-render-evidence.json','w',encoding='utf-8').write(json.dumps(evidence,indent=2,sort_keys=True))
+          print('STEP17A_EXISTING_RENDER_HOST_LIVE_OK', identity['id'], did, sha)
+          PY
+
+      - name: Upload sanitized Step 17A evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step17a-production-host-contract-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step17a-render-evidence.json
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,129 @@
+name: WNBA Step 8B neutral deterministic core cert
+
+on:
+  push:
+    branches:
+      - wnba-step8-projection-contract-20260828
+    paths:
+      - '.github/workflows/wnba-step-8b-core-projection-cert.yml'
+      - 'sports_api/wnba_step8_core_projection.py'
+      - 'sports_api/tools/wnba_step8b_core_projection_cert.py'
+      - 'tests/test_wnba_step8_core_projection.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step8b-core-projection-cert
+  cancel-in-progress: true
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout Step 8 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert production OFF and isolated Step 8 flags
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'true'
+          test "$WNBA_STEP8_PROJECTION_HANDOFF_ENABLED" = 'true'
+          test "$WNBA_STEP8_CORE_PROJECTION_ENABLED" = 'true'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 8B core surface
+        shell: bash
+        run: |
+          python -m py_compile sports_api/wnba_step8_core_projection.py
+          python -m py_compile sports_api/tools/wnba_step8b_core_projection_cert.py
+          python -m py_compile tests/test_wnba_step8_core_projection.py
+          python -m py_compile sports_api/wnba_step8_official_box_baseline.py
+          python -m py_compile sports_api/wnba_step8_projection_handoff.py
+
+      - name: Run Step 8B core and inherited regressions
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+
+      - name: Prove certified Step 8A boundary unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8A_CERTIFIED_SHA='82c75e57ec00d7daafa7d688e6f2658df8711176'
+          git fetch origin wnba-step8-projection-contract-20260828 --depth=150
+          git cat-file -e "$STEP8A_CERTIFIED_SHA^{commit}"
+          git diff --exit-code "$STEP8A_CERTIFIED_SHA" -- \
+            sports_api/wnba_step8_projection_handoff.py \
+            tests/test_wnba_step8_projection_handoff.py \
+            sports_api/tools/wnba_step8a_projection_handoff_cert.py \
+            sports_api/wnba_step7g_release_freeze.py \
+            sports_api/wnba_step7g_first_party_integration.py \
+            sports_api/wnba_projection_input_snapshot.py \
+            sports_api/wnba_model_input_readiness.py
+
+      - name: Prove live-certified Step 8B official-box baseline unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8B_BASELINE_CERTIFIED_SHA='0540950f30b84763902c6f14d212189fd438bfc3'
+          git cat-file -e "$STEP8B_BASELINE_CERTIFIED_SHA^{commit}"
+          git diff --exit-code "$STEP8B_BASELINE_CERTIFIED_SHA" -- \
+            sports_api/wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_official_box_baseline.py \
+            sports_api/tools/wnba_step8b_official_box_baseline_cert.py \
+            .github/workflows/wnba-step-8b-official-box-baseline-cert.yml
+
+      - name: Certify live neutral deterministic Step 8B core
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step8b_core_projection_cert
+
+      - name: Upload sanitized Step 8B core evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step8b-core-projection-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step8b-core-projection-cert.json
+          if-no-files-found: warn
+          retention-days: 60
+
+      - name: Re-assert production OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

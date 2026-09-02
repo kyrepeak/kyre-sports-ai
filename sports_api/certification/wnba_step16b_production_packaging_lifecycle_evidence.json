@@ -1,0 +1,52 @@
+{
+  "activation_boundary": {
+    "automatic_restart_activation": false,
+    "global_persistence_autostart_activated": false,
+    "production_canary_executed": false,
+    "production_runtime_activated": false,
+    "public_persistence_api_exposed": false,
+    "scheduler_started": false,
+    "supabase_rest_write_path_enabled": false,
+    "wagering_enabled": false
+  },
+  "blocker_resolution": {
+    "all_step16a_packaging_lifecycle_blockers_closed": true,
+    "deployment_secret_manager_contract_declares_kyre_database_url": true,
+    "docker_installs_persistence_requirements": true,
+    "fastapi_lifespan_binds_frozen_step14c_runner": true,
+    "kyre_database_url_value_committed": false
+  },
+  "data_type": "wnba_step16b_production_packaging_lifecycle_evidence",
+  "deployment_files": {
+    "sports_api/Dockerfile": "324defd214f334c372f3b0b2dcafd958c962a6aa",
+    "sports_api/main.py": "fe0e9b8595db6712157c1ee114c9a805b789f6ed",
+    "sports_api/production.env.example": "7a707d49f073836017f6560f6a741c47d24fd1db",
+    "sports_api/requirements-persistence.txt": "46331822d0a55f5a4983d289c73a45ea9745ca89",
+    "sports_api/requirements.txt": "84e666d78549778a84f216e80d2bb979c1f6160a",
+    "sports_api/wnba_step16b_production_lifecycle.py": "265812f8a5cee31514f0cc13ca1d45c5a45836f8"
+  },
+  "evidence_content_sha256": "4b8cc7e179725aab5a50c6e0edd3d7e3215d2f16be1d487bc28e9f20edab1fa1",
+  "frozen_parent": {
+    "step15_release_content_sha256": "537df3ec10999071941597e71f4e6361e246db98b17c13a3a31a944f9b8e9a2b",
+    "step15_release_id": "wnba_step15_live_supabase_persistence_2026_regular_season_frozen_v1",
+    "step15c_certified_sha": "5e24210d7aef90143ba016e368cd49d3ee1a7f19",
+    "step16a_certified_sha": "4ea88aa9a54f5110a03e9e4374219ed15ab30def",
+    "step16a_contract_content_sha256": "2d8c373dded7eb971d6d6bf6b4a5c9bdfc7bd19de5ddcf1ef83158a0b7d2000e",
+    "step16a_contract_id": "wnba_step16a_production_activation_readiness_2026_regular_v1"
+  },
+  "lifecycle_contract": {
+    "background_daemon_started": false,
+    "background_task_started": false,
+    "background_thread_started": false,
+    "database_connection_during_lifespan": false,
+    "database_secret_required_only_when_enabled": true,
+    "default_enabled": false,
+    "explicit_gate_required": true,
+    "psycopg3_packaged": true,
+    "runtime_runner_bound_only_when_enabled": true,
+    "runtime_runner_executed_during_lifespan": false,
+    "step16c_live_canary_still_required": true
+  },
+  "observed_at_utc": "2026-08-28T19:58:00+00:00",
+  "schema_version": "wnba_step_16b_production_packaging_lifecycle_evidence_v1"
+}

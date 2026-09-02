@@ -1,0 +1,94 @@
+name: WNBA Step20B Step2 exact-reuse guard
+
+on:
+  push:
+    branches:
+      - wnba-step20b-rollover-runtime-diagnostic-20260830
+      - wnba-step20b-reconstruction-cache-20260831
+    paths:
+      - '.github/workflows/wnba-step20b-step2-exact-reuse-guard.yml'
+      - 'sports_api/wnba_step20b_step4w_cycle_cache.py'
+      - 'sports_api/wnba_step20b_runtime_acceleration.py'
+      - 'tests/test_wnba_step20b_step2_exact_reuse_timing.py'
+      - 'tests/test_wnba_step20b_reconstruction_cache.py'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Certify Step2 exact reuse and live millisecond timing
+        run: |
+          python -m pytest -q tests/test_wnba_step20b_reconstruction_cache.py
+          python -m pytest -q tests/test_wnba_step20b_step2_exact_reuse_timing.py
+          python -m pytest -q tests/test_wnba_step20b_runtime_acceleration.py
+          python -m pytest -q tests/test_wnba_step20b_rollover_stage_trace.py
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step20b_step4w_cycle_cache as c4w
+          from sports_api import wnba_step20b_runtime_acceleration as accel
+
+          assert s12b.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == 250_000
+
+          acceleration = accel.install_step20b_runtime_acceleration()
+          assert acceleration['installed'] is True
+          assert acceleration['all_bindings_active'] is True
+          assert acceleration['bindings']['event_reconstruction'] is True
+          ag = acceleration['guardrails']
+          assert ag['lower_level_event_lineup_possession_reconstruction_reuse'] is True
+          assert ag['event_reconstruction_exact_source_content_fingerprint'] is True
+          assert ag['event_reconstruction_one_builder_waiters'] is True
+          assert ag['event_reconstruction_timing_uses_monotonic_clock'] is True
+          assert ag['event_reconstruction_timing_unit'] == 'milliseconds'
+          assert ag['projection_math_modified'] is False
+          assert ag['readiness_relaxed'] is False
+          assert ag['monte_carlo_simulation_count_modified'] is False
+          assert ag['monte_carlo_batch_size_modified'] is False
+          assert ag['sportsbook_transport_modified'] is False
+          assert ag['persistence_modified'] is False
+          assert ag['wagering_enabled'] is False
+
+          status = c4w.install_step20b_step4w_cycle_cache()
+          assert status['installed'] is True
+          assert status['all_bindings_active'] is True
+          assert status['bindings']['projection_snapshot'] is True
+          g = status['guardrails']
+          assert g['cache_scope'] == 'single_step12b_call_only'
+          assert g['cached_values_returned_by_deepcopy'] is True
+          assert g['raised_exceptions_cached'] is False
+          assert g['optional_unavailable_results_cached'] is False
+          assert g['exact_call_arguments_are_cache_key'] is True
+          assert g['full_step4w_snapshot_reuse_enabled'] is True
+          assert g['full_snapshot_cache_scope'] == 'single_step12b_call_exact_arguments_only'
+          assert g['readiness_result_cached'] is False
+          assert g['step8a_handoff_result_cached'] is False
+          assert g['freshness_recomputed_by_step4x_on_every_readiness_call'] is True
+          assert g['timing_uses_monotonic_clock'] is True
+          assert g['timing_unit'] == 'milliseconds'
+          assert g['timing_changes_execution'] is False
+          assert g['step7g_protected_provider_aliases_modified'] is False
+          assert g['projection_math_modified'] is False
+          assert g['readiness_relaxed'] is False
+          assert g['monte_carlo_simulation_count_modified'] is False
+          assert g['monte_carlo_batch_size_modified'] is False
+          assert g['sportsbook_transport_modified'] is False
+          assert g['persistence_modified'] is False
+          assert g['wagering_enabled'] is False
+          print('STEP20B_RECONSTRUCTION_CACHE_AND_EXACT_REUSE_GUARDS_CERTIFIED')
+          PY

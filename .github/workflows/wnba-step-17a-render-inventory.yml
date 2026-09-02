@@ -1,0 +1,88 @@
+name: WNBA Step 17A read-only Render inventory
+
+on:
+  push:
+    branches:
+      - wnba-step17a-production-host-contract-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: wnba-render-staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inventory Render services without mutation
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY"
+          python - <<'PY'
+          import json, os, urllib.parse, urllib.request
+
+          base='https://api.render.com/v1'
+          headers={
+              'Authorization':f"Bearer {os.environ['RENDER_API_KEY']}",
+              'Accept':'application/json',
+              'User-Agent':'kyre-step17a-inventory/1',
+          }
+
+          def get(path):
+              req=urllib.request.Request(base+path,headers=headers,method='GET')
+              with urllib.request.urlopen(req,timeout=30) as resp:
+                  return json.loads(resp.read().decode())
+
+          services=[]
+          path='/services?limit=100'
+          seen=set()
+          while path and path not in seen:
+              seen.add(path)
+              doc=get(path)
+              rows=doc if isinstance(doc,list) else (doc.get('items') or doc.get('data') or [])
+              cursor=None
+              for row in rows:
+                  if not isinstance(row,dict):
+                      continue
+                  svc=row.get('service') if isinstance(row.get('service'),dict) else row
+                  details=svc.get('serviceDetails') if isinstance(svc.get('serviceDetails'),dict) else {}
+                  image=svc.get('image') if isinstance(svc.get('image'),dict) else {}
+                  services.append({
+                      'id':svc.get('id'),
+                      'name':svc.get('name'),
+                      'type':svc.get('type'),
+                      'runtime':details.get('runtime') or details.get('env'),
+                      'url':details.get('url') or svc.get('url'),
+                      'region':details.get('region'),
+                      'plan':details.get('plan'),
+                      'image_path':image.get('imagePath') or image.get('imageUrl') or image.get('ref'),
+                      'repo':svc.get('repo'),
+                      'branch':svc.get('branch'),
+                  })
+                  if row.get('cursor'):
+                      cursor=row.get('cursor')
+              if cursor:
+                  path='/services?limit=100&cursor='+urllib.parse.quote(str(cursor),safe='')
+              else:
+                  path=None
+
+          print('STEP17A_RENDER_SERVICE_COUNT',len(services))
+          for i,svc in enumerate(services,1):
+              print('STEP17A_RENDER_SERVICE',i,json.dumps(svc,sort_keys=True))
+          with open('step17a-render-inventory.json','w',encoding='utf-8') as f:
+              json.dump({'service_count':len(services),'services':services,'mutation_performed':False},f,indent=2,sort_keys=True)
+          PY
+
+      - name: Upload sanitized inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step17a-render-inventory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step17a-render-inventory.json
+          if-no-files-found: error
+          retention-days: 7

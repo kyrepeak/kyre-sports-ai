@@ -1,0 +1,113 @@
+name: WNBA Step 7G Step 4J team-history certification
+
+on:
+  push:
+    branches:
+      - wnba-step7g-step4j-team-history-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-step4j-team-history-cert.yml'
+      - 'sports_api/wnba_step7g_first_party_team_history.py'
+      - 'sports_api/wnba_step7g_first_party_team_history_cup_safe.py'
+      - 'sports_api/tools/wnba_step7g_step4j_team_history_cert.py'
+      - 'sports_api/tools/wnba_step7g_step4j_cup_exclusion_cert.py'
+      - 'tests/test_wnba_step7g_team_history.py'
+      - 'tests/test_wnba_step7g_cup_exclusion.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-step4j-team-history-cert
+  cancel-in-progress: false
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout isolated Step 7G Step 4J branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert every production switch is OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile isolated adapter certification and tests
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step7g_first_party_team_history.py \
+            sports_api/wnba_step7g_first_party_team_history_cup_safe.py \
+            sports_api/tools/wnba_step7g_step4j_team_history_cert.py \
+            sports_api/tools/wnba_step7g_step4j_cup_exclusion_cert.py \
+            tests/test_wnba_step7g_team_history.py \
+            tests/test_wnba_step7g_cup_exclusion.py
+
+      - name: Run fail-closed Step 4J adapter regressions
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step7g_team_history.py
+          PYTHONPATH=. python tests/test_wnba_step7g_cup_exclusion.py
+
+      - name: Prove frozen Step 4J and Step 4N files are unchanged from main
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          git diff --exit-code origin/main -- \
+            sports_api/wnba_team_history.py \
+            sports_api/wnba_schedule.py \
+            sports_api/wnba_schedule_context.py
+
+      - name: Run live 2026 Toronto Step 4J first-party certification
+        shell: bash
+        run: python -m sports_api.tools.wnba_step7g_step4j_team_history_cert
+
+      - name: Run live exact 2026 Commissioner's Cup exclusion certification
+        shell: bash
+        run: python -m sports_api.tools.wnba_step7g_step4j_cup_exclusion_cert
+
+      - name: Upload sanitized certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-step4j-team-history-cert-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            step7g-step4j-team-history-cert.json
+            step7g-step4j-cup-exclusion-cert.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert every production switch is still OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

@@ -1,0 +1,156 @@
+name: WNBA Step19A all safety certification
+
+on:
+  push:
+    branches:
+      - wnba-step19a-live-compat-fix-20260829
+    paths:
+      - 'sports_api/**'
+      - 'tests/test_wnba_*.py'
+      - '.github/workflows/wnba-step19a-all-safety-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: "true"
+  WNBA_STEP19A_DRAFTKINGS_SITE: "dkusaz"
+  WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+  WNBA_STEP11B_NETWORK_REFRESH_ENABLED: "true"
+  WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: "true"
+  WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: "true"
+  WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: "true"
+  WNBA_STEP10_FASTAPI_ENABLED: "true"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+
+jobs:
+  full-wnba-safety-gauntlet:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install complete WNBA test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+          python -m pip install pytest
+
+      - name: Compile WNBA API and test surfaces
+        run: |
+          python -m compileall -q sports_api
+          python - <<'PY'
+          from pathlib import Path
+          import py_compile
+          files=sorted(Path('tests').glob('test_wnba_*.py'))
+          assert files, 'No WNBA tests discovered'
+          for path in files:
+              py_compile.compile(str(path), doraise=True)
+          print('WNBA_TEST_FILES_COMPILED', len(files))
+          PY
+
+      - name: Run current WNBA regressions in isolated processes
+        shell: bash
+        run: |
+          set -uo pipefail
+          failed=0
+          count=0
+          for f in tests/test_wnba_*.py; do
+            case "$f" in
+              tests/test_wnba_step16a_production_activation_contract.py|tests/test_wnba_step16b_production_packaging_lifecycle.py)
+                echo "HISTORICAL_SNAPSHOT_SUPERSEDED $f"
+                continue
+                ;;
+            esac
+            count=$((count + 1))
+            echo "===== ISOLATED WNBA REGRESSION: $f ====="
+            if ! pytest -q "$f"; then
+              failed=1
+            fi
+          done
+          echo "CURRENT_WNBA_TEST_FILES_EXECUTED=$count"
+          exit "$failed"
+
+      - name: Certify superseding deployment lineage for historical Step16 snapshots
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          main=Path('sports_api/main.py').read_text(encoding='utf-8')
+          docker=Path('sports_api/Dockerfile').read_text(encoding='utf-8')
+          prod=Path('sports_api/production.env.example').read_text(encoding='utf-8')
+          assert 'from sports_api.wnba_step17b_always_on_runtime import step17b_lifespan' in main
+          assert 'lifespan=step17b_lifespan' in main
+          assert 'requirements-persistence.txt' in docker
+          assert 'KYRE_DATABASE_URL' in prod
+          print('STEP16_HISTORICAL_SNAPSHOTS_SUPERSEDED_BY_CERTIFIED_CURRENT_LINEAGE')
+          PY
+
+      - name: Re-run Step19A critical safety spine independently
+        run: |
+          pytest -q tests/test_wnba_step19a_draftkings_sportscontent.py
+          pytest -q tests/test_wnba_step19a_live_compat.py
+          pytest -q tests/test_wnba_step19a_scheduler_path.py
+          pytest -q tests/test_wnba_step19a_circuit_recovery.py
+          pytest -q tests/test_wnba_step19a_consumer_verifier.py
+
+      - name: Prove production mutation switches are OFF
+        run: |
+          python - <<'PY'
+          import os
+          keys=[
+              'WNBA_PRODUCTION_RUNTIME_ENABLED',
+              'WNBA_BOARD_SCHEDULER_ENABLED',
+              'WNBA_KYRE_DIRECT_SYNC_ENABLED',
+              'WNBA_KYRE_RECONCILED_SYNC_ENABLED',
+              'WNBA_STEP6J_CANARY_ENABLED',
+              'WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED',
+              'WNBA_PERSISTENCE_ENABLED',
+              'WNBA_SUPABASE_WRITE_ENABLED',
+              'WNBA_WAGERING_ENABLED',
+          ]
+          truthy=lambda v:str(v or '').strip().casefold() not in {'','0','false','no','off','disabled'}
+          bad=[k for k in keys if truthy(os.environ.get(k))]
+          assert not bad, bad
+          print('STEP19A_ALL_MUTATION_SWITCHES_OFF')
+          PY
+
+      - name: Prove frozen provider scheduler and reconciliation sources unchanged
+        run: |
+          set -euo pipefail
+          BASE='70aa357df98ef8ce931a249677484fd205f25467'
+          git diff --exit-code "$BASE"..HEAD -- \
+            sports_api/wnba_step11_draftkings_provider.py \
+            sports_api/wnba_step11_fanduel_provider.py \
+            sports_api/wnba_step11_multibook_shadow_board.py \
+            sports_api/wnba_step11_controlled_automation.py \
+            sports_api/wnba_step17b_always_on_runtime.py \
+            sports_api/wnba_step6d_direct_integration.py \
+            sports_api/wnba_reconciled_direct_sync.py
+          echo STEP19A_FULL_GAUNTLET_FROZEN_SOURCES_OK

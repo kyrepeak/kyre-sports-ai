@@ -1,0 +1,186 @@
+name: WNBA Step 11E controlled automation final freeze certification
+
+on:
+  push:
+    branches:
+      - wnba-step11e-controlled-automation-freeze-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+      WNBA_BOARD_SCHEDULER_ENABLED: "false"
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+      WNBA_STEP6J_CANARY_ENABLED: "false"
+      WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: "true"
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: "true"
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: "true"
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: "true"
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: "true"
+      WNBA_STEP10_FASTAPI_ENABLED: "true"
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+      WNBA_STEP9_FASTAPI_ENABLED: "true"
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+    steps:
+      - name: Checkout Step 11E branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 220
+
+      - name: Assert controlled gate ON and production scheduler sync OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED" = 'true'
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 11E final surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step11_release_freeze.py
+          python -m py_compile sports_api/wnba_step11_controlled_automation.py
+          python -m py_compile tests/test_wnba_step11_controlled_automation.py
+          python -m py_compile sports_api/tools/wnba_step11e_controlled_automation_cert.py
+
+      - name: Run Step 11E controlled automation guards
+        run: PYTHONPATH=. python tests/test_wnba_step11_controlled_automation.py
+
+      - name: Run frozen Step 11D 11C 11B 11A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step11_multibook_shadow_board.py
+          PYTHONPATH=. python tests/test_wnba_step11_fanduel_provider.py
+          PYTHONPATH=. python tests/test_wnba_step11_network_refresh_orchestrator.py
+          PYTHONPATH=. python tests/test_wnba_step11_draftkings_provider.py
+
+      - name: Run frozen Step 10 guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 11D head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP11D_FROZEN_SHA='61c57370529cbcfa0802a83e61fc45f15303b006'
+          git merge-base --is-ancestor "$STEP11D_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP11D_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only Step 11E files changed after frozen Step 11D
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP11D_FROZEN_SHA='61c57370529cbcfa0802a83e61fc45f15303b006'
+          git diff --name-only "$STEP11D_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step11_release_freeze.py|\
+              sports_api/wnba_step11_controlled_automation.py|\
+              tests/test_wnba_step11_controlled_automation.py|\
+              sports_api/tools/wnba_step11e_controlled_automation_cert.py|\
+              .github/workflows/wnba-step-11e-controlled-automation-freeze-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step11D file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify final frozen lineage and safety contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step11_release_freeze as freeze
+          from sports_api import wnba_step11_controlled_automation as s11e
+          assert freeze.BRANCH == 'wnba-step11e-controlled-automation-freeze-20260828'
+          assert freeze.STEP11D_FROZEN_SHA == '61c57370529cbcfa0802a83e61fc45f15303b006'
+          assert freeze.STEP11C_FROZEN_SHA == 'd33422b3b3807afa256ab6dca56ddea4fef24933'
+          assert freeze.STEP11B_FROZEN_SHA == '26072ea38f3d540dc5771405e5c9df728a15f4ff'
+          assert freeze.STEP11A_FROZEN_SHA == '695e7b45bd74fcb70c4f4fa6a886b4a054d06810'
+          assert freeze.STEP10_FROZEN_SHA == '4341d178aa65806e9bc001c8759eccb4a003ea63'
+          assert freeze.STEP9_FROZEN_SHA == 'bd228921ea993c8c74b6454ae56cee94711b0e94'
+          assert freeze.STEP8_FROZEN_SHA == '8faf468b770f7a31244914df75390fc788f859a1'
+          assert freeze.SPORTSBOOKS == ('DraftKings', 'FanDuel')
+          assert freeze.SPORTSBOOK_HTTP_METHODS == ('GET',)
+          assert freeze.DEFAULT_ENABLED is False
+          assert freeze.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert freeze.BACKGROUND_SCHEDULER_ALLOWED is False
+          assert freeze.PUBLIC_FASTAPI_ACTIVATION_ALLOWED is False
+          assert all(value is False for value in freeze.SAFETY_CONTRACT.values())
+          assert s11e.step11e_controlled_automation_enabled({}) is False
+          print('STEP11_FINAL_FROZEN_LINEAGE_AND_SAFETY_OK')
+          PY
+
+      - name: Certify Step 11E and final Step 11 freeze
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step11e_controlled_automation_cert
+
+      - name: Upload final Step 11 certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step11-final-freeze-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step11e-final-controlled-automation-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production scheduler sync OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

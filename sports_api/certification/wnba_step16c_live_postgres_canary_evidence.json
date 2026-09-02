@@ -1,0 +1,81 @@
+{
+  "canary_scope": {
+    "checkpoint_id": "55555555-5555-4555-8555-555555555555",
+    "checkpoint_key": "wnba:runtime:2026:regular-season:2026-01-16",
+    "database_role": "postgres",
+    "lease_key": "wnba:runtime:2026:regular-season:2026-01-16:scheduler-lease",
+    "owner_id": "step16c-canary-owner-a",
+    "slate_date": "2026-01-16",
+    "transaction_mode": "BEGIN -> lease/checkpoint canary -> verification SELECT -> ROLLBACK"
+  },
+  "data_type": "wnba_step16c_live_postgres_canary_evidence",
+  "evidence_content_sha256": "48463e66cf35c4cd47192436267f08d76d2e980f8f5f8b5d7b7fbc72b47e5810",
+  "execution_boundary": {
+    "automatic_restart_activation_started": false,
+    "background_worker_started": false,
+    "bound_step14c_python_runner_canary_required_in_github_actions": true,
+    "bound_step14c_python_runner_executed_live": false,
+    "deployed_fastapi_container_connected_live": false,
+    "direct_python_psycopg_live_connection": false,
+    "frozen_step14b_step14c_sql_semantics_exercised_live": true,
+    "github_actions_live_database_credentials_used": false,
+    "global_persistence_runtime_started": false,
+    "live_postgresql_used": true,
+    "production_scheduler_started": false,
+    "public_persistence_api_exposed": false,
+    "supabase_management_sql_used": true,
+    "supabase_rest_write_enabled": false,
+    "wagering_enabled": false
+  },
+  "frozen_lineage": {
+    "step14b_adapter_blob_sha": "4b03996c63362795a440c8388642e17bdb6c6e3b",
+    "step14c_runtime_blob_sha": "080d792ef06b6802f4bb99ec9acc7ddef8c78695",
+    "step15_release_content_sha256": "537df3ec10999071941597e71f4e6361e246db98b17c13a3a31a944f9b8e9a2b",
+    "step15c_certified_sha": "5e24210d7aef90143ba016e368cd49d3ee1a7f19",
+    "step16a_certified_sha": "4ea88aa9a54f5110a03e9e4374219ed15ab30def",
+    "step16a_contract_content_sha256": "2d8c373dded7eb971d6d6bf6b4a5c9bdfc7bd19de5ddcf1ef83158a0b7d2000e",
+    "step16b_certified_sha": "f898ca410c10db59f635888166d1666a952d8bd7",
+    "step16b_contract_content_sha256": "bcc79487cacf86bfb65e94ad0de2b8906c2bca1546ec1afd76ddc413ad30dd1e",
+    "step16b_contract_id": "wnba_step16b_production_packaging_lifecycle_2026_regular_v1"
+  },
+  "live_results": {
+    "baseline_checkpoint_head_rows": 0,
+    "baseline_checkpoint_rows": 0,
+    "baseline_lease_rows": 0,
+    "canary_checkpoint_absent_after_rollback": true,
+    "canary_head_absent_after_rollback": true,
+    "canary_lease_absent_after_rollback": true,
+    "checkpoint_head_rows_inside_canary": 1,
+    "checkpoint_load_round_trip_exact": true,
+    "checkpoint_rows_inside_canary": 1,
+    "duplicate_active_acquire_rows": 0,
+    "initial_fencing_generation": 1,
+    "lease_rows_after_release_inside_canary": 0,
+    "loaded_controller_state_sha256": "4c0758c6cce74a93ca7c9d4c62f94fd5e569e6a4e8034f5dde4515a40ff9d70f",
+    "loaded_envelope_sha256": "97a9b26d9e5e668a748d99558ba7d5702283aa5b372747d6c153dee0fc086791",
+    "owner_release_rows": 1,
+    "owner_renew_rows": 1,
+    "post_rollback_checkpoint_head_rows": 0,
+    "post_rollback_checkpoint_rows": 0,
+    "post_rollback_lease_rows": 0,
+    "transaction_rolled_back": true,
+    "wrong_owner_renew_rows": 0
+  },
+  "observed_at_utc": "2026-08-28T20:07:50+00:00",
+  "phase_boundary": {
+    "controlled_production_activation_not_authorized": true,
+    "deployed_container_direct_psycopg_canary_not_certified": true,
+    "step16c_bound_runner_path_pending_ci_certification": true,
+    "step16c_live_database_canary_complete": true,
+    "step16d_not_started": true
+  },
+  "schema_version": "wnba_step_16c_live_postgres_canary_evidence_v1",
+  "supabase_project": {
+    "name": "kyre-sports-ai-wnba",
+    "postgres_engine": "17",
+    "postgres_version": "17.6",
+    "ref": "jqajcdckalsfizbvngiu",
+    "region": "us-west-1",
+    "status": "ACTIVE_HEALTHY"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "access_boundary": {
+    "anon_schema_create": false,
+    "anon_schema_usage": false,
+    "authenticated_schema_create": false,
+    "authenticated_schema_usage": false,
+    "kyre_runtime_security_advisor_finding_count": 0,
+    "non_postgres_table_grant_count": 0,
+    "postgres_schema_create": true,
+    "postgres_schema_usage": true,
+    "schema_acl_explicit_entries": 0,
+    "service_role_schema_create": false,
+    "service_role_schema_usage": false
+  },
+  "activation_boundary": {
+    "automatic_restart_activated": false,
+    "background_daemon_started": false,
+    "background_thread_started": false,
+    "global_persistence_runtime_activated": false,
+    "production_runtime_activated": false,
+    "public_persistence_api_exposed": false,
+    "supabase_rest_write_path_enabled": false,
+    "wagering_enabled": false
+  },
+  "data_type": "wnba_step15a_live_postgres_preflight_evidence",
+  "evidence_content_sha256": "2469c85f7de238cb61f435b5c429f4f7c38b6a2417d19e60bc03047f29573ee8",
+  "frozen_lineage": {
+    "step14_release_content_sha256": "70082ab06a58ddee4dce567626ff83bc64e67bf89f04e5f402d820a414b25e59",
+    "step14_release_id": "wnba_step14_durable_persistence_restart_lease_2026_regular_season_frozen_v1",
+    "step14a_sql_schema_sha256": "308042f8196607a477158d348ba6e03e090267910cba749491534131b490a2eb",
+    "step14c_lease_sql_schema_sha256": "49376bd4de581606819dc70ace6d462aadb77e641b0344bcde61c69f5a03b5bb",
+    "step14d_frozen_sha": "d5a7378d94fb1aa51a6bc5fbf5e5c0384f34a9d6"
+  },
+  "live_schema": {
+    "all_tables_empty_at_certification": true,
+    "required_check_constraints_present": true,
+    "required_foreign_key_present": true,
+    "required_indexes_present": true,
+    "required_unique_constraints_present": true,
+    "schema_name": "kyre_runtime",
+    "tables": {
+      "wnba_runtime_checkpoint_heads": {
+        "column_count": 5,
+        "constraint_count": 4,
+        "index_count": 1,
+        "row_count": 0
+      },
+      "wnba_runtime_checkpoints": {
+        "column_count": 15,
+        "constraint_count": 11,
+        "index_count": 5,
+        "row_count": 0
+      },
+      "wnba_runtime_leases": {
+        "column_count": 8,
+        "constraint_count": 5,
+        "index_count": 2,
+        "row_count": 0
+      }
+    }
+  },
+  "migration": {
+    "applied": true,
+    "name": "wnba_step15a_install_frozen_step14_persistence_schema",
+    "version": "20260828191445"
+  },
+  "observed_at_utc": "2026-08-28T19:15:27.576000+00:00",
+  "schema_version": "wnba_step_15a_live_postgres_preflight_evidence_v1",
+  "supabase_project": {
+    "name": "kyre-sports-ai-wnba",
+    "postgres_engine": "17",
+    "postgres_version": "17.6.1.165",
+    "ref": "jqajcdckalsfizbvngiu",
+    "region": "us-west-1",
+    "status": "ACTIVE_HEALTHY"
+  }
+}

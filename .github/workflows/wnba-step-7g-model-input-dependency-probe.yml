@@ -1,0 +1,87 @@
+name: WNBA Step 7G real model-input dependency probe
+
+on:
+  push:
+    branches:
+      - wnba-step7g-official-data-preflight-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-model-input-dependency-probe.yml'
+      - 'sports_api/tools/wnba_step7g_model_input_dependency_probe.py'
+      - 'sports_api/wnba_rotation_context.py'
+      - 'sports_api/wnba_rotation_reconstruction.py'
+      - 'sports_api/wnba_event_lineup_context.py'
+      - 'sports_api/wnba_player_event_features.py'
+      - 'sports_api/wnba_player_opportunity_context.py'
+      - 'sports_api/wnba_projection_input_snapshot.py'
+      - 'sports_api/wnba_model_input_readiness.py'
+      - 'sports_api/wnba_schedule_context.py'
+      - 'sports_api/wnba_step7g_first_party_history.py'
+      - 'sports_api/wnba_step7g_first_party_schedule.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-model-input-dependency-probe
+  cancel-in-progress: false
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated Step 7G diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Verify every production activation switch is OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile real model-input dependency probe
+        run: python -m py_compile sports_api/tools/wnba_step7g_model_input_dependency_probe.py
+
+      - name: Run real Step 4X dependency probe OFF-only
+        shell: bash
+        run: python -m sports_api.tools.wnba_step7g_model_input_dependency_probe
+
+      - name: Upload sanitized dependency evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-model-input-dependency-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-model-input-dependency-probe.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert every production activation switch is still OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

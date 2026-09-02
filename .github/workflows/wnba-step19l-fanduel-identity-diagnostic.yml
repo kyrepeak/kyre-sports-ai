@@ -1,0 +1,155 @@
+name: WNBA Step19L FanDuel identity diagnostic
+
+on:
+  push:
+    branches:
+      - wnba-step19l-fanduel-identity-20260830
+    paths:
+      - '.github/workflows/wnba-step19l-fanduel-identity-diagnostic.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED: 'true'
+      WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED: 'true'
+      WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+
+      - name: Stress FanDuel official identity reconciliation
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          from collections import Counter
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+
+          from sports_api import wnba_step11_fanduel_provider as fd
+          import sports_api.api.wnba_step17b_runtime  # installs certified Step19 compatibility chain
+
+          slate = datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          original_surface = fd._market_identity_surface
+          identity_errors = Counter()
+          drift_field_sets = Counter()
+          drift_examples = []
+          successes = 0
+          other_errors = Counter()
+
+          for attempt in range(1, 25):
+              seen = {}
+
+              def traced_surface(market):
+                  surface = original_surface(market)
+                  market_id = str(surface.get('market_id') or '')
+                  previous = seen.get(market_id)
+                  if market_id and previous is not None and previous != surface:
+                      fields = tuple(sorted(
+                          key for key in set(previous) | set(surface)
+                          if previous.get(key) != surface.get(key)
+                      ))
+                      drift_field_sets[fields] += 1
+                      if len(drift_examples) < 12:
+                          runner_prev = previous.get('runners') or []
+                          runner_now = surface.get('runners') or []
+                          prev_lines = sorted({str((r.get('handicap'), r.get('line'))) for r in runner_prev})
+                          now_lines = sorted({str((r.get('handicap'), r.get('line'))) for r in runner_now})
+                          prev_ids = sorted(str(r.get('selection_id') or '') for r in runner_prev)
+                          now_ids = sorted(str(r.get('selection_id') or '') for r in runner_now)
+                          drift_examples.append({
+                              'market_id_sha12': __import__('hashlib').sha256(market_id.encode()).hexdigest()[:12],
+                              'changed_fields': fields,
+                              'runner_count_before': len(runner_prev),
+                              'runner_count_after': len(runner_now),
+                              'line_shapes_changed': prev_lines != now_lines,
+                              'selection_ids_changed': prev_ids != now_ids,
+                          })
+                  if market_id:
+                      seen[market_id] = surface
+                  return surface
+
+              fd._market_identity_surface = traced_surface
+              try:
+                  result = fd.fetch_step11c_fanduel_provider_bridge(
+                      season=2026,
+                      slate_date=slate,
+                      evaluated_at=datetime.now(timezone.utc),
+                      env=os.environ,
+                  )
+                  successes += 1
+                  record_count = len((((result.get('provider_refresh') or {}).get('attempts') or [{}])[0].get('payload') or {}).get('records') or [])
+                  print('STEP19L_ATTEMPT_OK', json.dumps({'attempt': attempt, 'records': record_count, 'drift_events': sum(drift_field_sets.values())}, sort_keys=True), flush=True)
+              except fd.WNBAStep11FanDuelProviderIdentityError as exc:
+                  message = ' '.join(str(exc).split())
+                  identity_errors[message] += 1
+                  print('STEP19L_IDENTITY_ERROR', json.dumps({'attempt': attempt, 'message': message}, sort_keys=True), flush=True)
+              except Exception as exc:
+                  label = f'{type(exc).__name__}: {" ".join(str(exc).split())[:240]}'
+                  other_errors[label] += 1
+                  print('STEP19L_OTHER_ERROR', json.dumps({'attempt': attempt, 'error': label}, sort_keys=True), flush=True)
+              finally:
+                  fd._market_identity_surface = original_surface
+              time.sleep(1)
+
+          summary = {
+              'slate': slate,
+              'attempts': 24,
+              'successes': successes,
+              'identity_error_count': sum(identity_errors.values()),
+              'identity_errors': dict(identity_errors),
+              'market_identity_drift_count': sum(drift_field_sets.values()),
+              'drift_field_sets': {'|'.join(fields): count for fields, count in drift_field_sets.items()},
+              'drift_examples': drift_examples,
+              'other_errors': dict(other_errors),
+          }
+          print('STEP19L_DIAGNOSTIC_SUMMARY', json.dumps(summary, sort_keys=True), flush=True)
+          if sum(identity_errors.values()) == 0 and sum(drift_field_sets.values()) == 0:
+              raise SystemExit('diagnostic did not reproduce identity failure or duplicate-market identity drift')
+          PY
