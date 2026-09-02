@@ -1,0 +1,170 @@
+name: MLB Step17B production Render preflight
+
+on:
+  push:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - .github/workflows/mlb-step17b-render-preflight.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step17b-render-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: wnba-render-staging
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -q -r sports_api/requirements.txt
+
+      - name: Verify live Render host is safe for Step 17B handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY"
+          mkdir -p .step17b-preflight
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          import httpx
+
+          from sports_api.wnba_render_provisioning import RenderAPIClient, resolve_owner_id
+          from sports_api.tools import wnba_step7c_render_free_deploy as step7c
+
+          EXPECTED_SERVICE_ID = 'srv-da84q6ifngtc73bdbm6g'
+          SERVICE_URL = 'https://kyre-sports-api.onrender.com'
+          FROZEN_FALSE = (
+              'MLB_PRODUCTION_RUNTIME_ENABLED',
+              'MLB_PRODUCTION_SCHEDULER_ENABLED',
+              'MLB_ACTIONABLE_OUTPUT_ENABLED',
+              'MLB_WAGERING_ENABLED',
+              'MLB_SUPABASE_REST_WRITE_ENABLED',
+              'MLB_STEP16C_LIVE_POSTGRESQL_CANARY_ENABLED',
+              'MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_ENABLED',
+              'MLB_STEP16E_FINAL_PRODUCTION_FREEZE_ENABLED',
+          )
+
+          def clean(v):
+              if v is None:
+                  return None
+              s = str(v).strip()
+              return s or None
+
+          def truthy(v):
+              return str(v or '').strip().casefold() not in {'', '0', 'false', 'no', 'off', 'disabled'}
+
+          def env_map(rows):
+              out = {}
+              for row in rows:
+                  if not isinstance(row, dict):
+                      continue
+                  key = clean(row.get('key'))
+                  if key and row.get('value') is not None:
+                      out[key] = str(row['value'])
+              return out
+
+          key = clean(os.environ.get('RENDER_API_KEY'))
+          assert key and len(key) >= 20, 'Render credential missing'
+          with RenderAPIClient(api_key=key, timeout_seconds=30.0) as client:
+              owner = resolve_owner_id(client, clean(os.environ.get('RENDER_OWNER_ID')))
+              matches = client.list_services(owner, step7c.SERVICE_NAME)
+              assert len(matches) == 1, f'expected one {step7c.SERVICE_NAME} service; found {len(matches)}'
+              sid = clean(matches[0].get('id'))
+              assert sid == EXPECTED_SERVICE_ID, f'Render service identity drift: {sid!r}'
+              service = client.get_service(sid)
+              details = service.get('serviceDetails') if isinstance(service.get('serviceDetails'), dict) else {}
+              assert clean(service.get('repo')) == step7c.SOURCE_REPOSITORY, 'Render repo drift'
+              assert (clean(service.get('autoDeploy')) or 'no').casefold() in {'no', 'false', 'off'}, 'auto deploy must remain off'
+              assert (clean(details.get('runtime') or details.get('env')) or '').casefold() == 'docker', 'Render runtime is not Docker'
+              assert (clean(details.get('plan')) or '').casefold() == 'free', 'Render plan drifted from Free'
+              assert not isinstance(details.get('disk'), dict), 'unexpected persistent Render disk'
+              values = env_map(client.list_env_vars(sid))
+
+          assert values.get('WNBA_KYRE_DURABLE_STORAGE_BACKEND') == 'supabase', 'WNBA durable backend drift'
+          for name in step7c.OFF_SWITCHES:
+              assert not truthy(values.get(name)), f'WNBA safety switch unexpectedly enabled: {name}'
+          assert not truthy(values.get('MLB_STEP17B_ALWAYS_ON_ENABLED')), 'MLB Step17B is already enabled unexpectedly'
+          for name in FROZEN_FALSE:
+              assert not truthy(values.get(name)), f'frozen MLB switch unexpectedly enabled: {name}'
+
+          db = clean(values.get('KYRE_DATABASE_URL'))
+          parsed = urlsplit(db or '')
+          db_ready = bool(db and parsed.scheme.casefold() in {'postgres', 'postgresql'} and parsed.hostname and parsed.path not in {'', '/'})
+          assert db_ready, 'Render is missing a valid protected PostgreSQL KYRE_DATABASE_URL'
+
+          with httpx.Client(timeout=30.0, follow_redirects=True) as http:
+              health_resp = http.get(SERVICE_URL + '/health')
+              health_resp.raise_for_status()
+              health = health_resp.json()
+              assert isinstance(health, dict) and health.get('status') == 'ok', 'live /health is not ok'
+              wnba_resp = http.get(SERVICE_URL + '/api/v1/wnba/games/today?season=2026')
+              wnba_resp.raise_for_status()
+              wnba = wnba_resp.json()
+              assert isinstance(wnba, dict) and wnba.get('season') == 2026 and isinstance(wnba.get('games'), list), 'live WNBA smoke failed'
+
+          evidence = {
+              'state': 'mlb_step17b_render_preflight_green',
+              'mutation_performed': False,
+              'service': {
+                  'id': EXPECTED_SERVICE_ID,
+                  'name': step7c.SERVICE_NAME,
+                  'url': SERVICE_URL,
+                  'repo': step7c.SOURCE_REPOSITORY,
+                  'branch': clean(service.get('branch')),
+                  'auto_deploy': clean(service.get('autoDeploy')),
+                  'runtime': clean(details.get('runtime') or details.get('env')),
+                  'plan': clean(details.get('plan')),
+              },
+              'database': {
+                  'postgresql_configured': True,
+                  'secret_exposed': False,
+              },
+              'current_runtime': {
+                  'mlb_step17b_enabled': False,
+                  'web_concurrency': clean(values.get('WEB_CONCURRENCY')),
+                  'expected_revision_present': bool(clean(values.get('MLB_STEP17B_EXPECTED_REVISION'))),
+              },
+              'wnba_smoke': {
+                  'health': 'ok',
+                  'season': 2026,
+                  'game_count': wnba.get('game_count'),
+              },
+              'safety': {
+                  'wnba_off_switches_preserved': True,
+                  'frozen_mlb_switches_off': True,
+                  'render_secret_exposed': False,
+                  'database_secret_exposed': False,
+                  'render_mutation_performed': False,
+              },
+          }
+          Path('.step17b-preflight/render-preflight.json').write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print('MLB_STEP17B_RENDER_PREFLIGHT_GREEN')
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload sanitized preflight evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step17b-render-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step17b-preflight/render-preflight.json
+          if-no-files-found: error
+          retention-days: 30
