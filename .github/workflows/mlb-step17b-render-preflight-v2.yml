@@ -160,7 +160,7 @@ jobs:
               'current_runtime': {
                   'mlb_step17b_enabled': False,
                   'web_concurrency': clean(values.get('WEB_CONCURRENCY')),
-                  'expected_revision_present': bool(clean(values.get('MLB_STEP17B_EXPECTED_REVISION')),
+                  'expected_revision_present': bool(clean(values.get('MLB_STEP17B_EXPECTED_REVISION'))),
               },
               'wnba_continuity': {
                   'health': 'ok',
