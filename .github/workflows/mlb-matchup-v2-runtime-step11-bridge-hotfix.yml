@@ -88,10 +88,12 @@ jobs:
 
       - name: Prove runtime-safe Step 11 bridge
         run: |
-          grep -F 'getattr(step11, "_build_step11", None)' mlb_matchup_player_v35.py
           grep -F 'def _build_step11_fallback' mlb_matchup_player_v35.py
+          grep -F 'hitter = step2._build_profile(games_df)' mlb_matchup_player_v35.py
+          ! grep -F 'hitter = step2._build_step2(games_df)' mlb_matchup_player_v35.py
           grep -F 'import mlb_matchup_probability_v1 as raw_probability' mlb_matchup_player_v35.py
           grep -F 'raw_probability.build_probability_profile' mlb_matchup_player_v35.py
+          grep -F 'raw = _build_step11_fallback(games_df)' mlb_matchup_player_v35.py
           grep -F 'PROBABILITY_IMPACT = "ACTIVE_FINAL_V2"' mlb_matchup_player_v35.py
           echo "STEP11_RUNTIME_BRIDGE_SAFE=PASS"
 
