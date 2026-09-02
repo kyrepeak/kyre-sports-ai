@@ -192,7 +192,6 @@ jobs:
           import json
           import os
           from pathlib import Path
-          from zoneinfo import ZoneInfo
 
           import psycopg
           import requests
@@ -274,9 +273,13 @@ jobs:
               'resolved_game_dates': resolved_game_dates,
           }
           slate_dates = sorted(set(resolved_game_dates.values()))
-          assert slate_dates, resolved_game_dates
+          assert len(slate_dates) == 1, {
+              'reason': 'max_events=1 must resolve to exactly one official slate date',
+              'market_game_ids': market_game_ids,
+              'resolved_game_dates': resolved_game_dates,
+          }
+          checkpoint_date = slate_dates[0]
 
-          eastern_date = now.astimezone(ZoneInfo('America/New_York')).date()
           official_games = {}
           for slate_date in slate_dates:
               slate = collect_official_mlb_slate(slate_date=slate_date)
@@ -302,7 +305,7 @@ jobs:
 
           checkpoint_now = datetime.now(timezone.utc)
           envelope = build_step19e_checkpoint_envelope(
-              checkpoint_date=eastern_date.isoformat(),
+              checkpoint_date=checkpoint_date,
               official_slate=combined_slate,
               reliable_market_collection=reliable,
               identity_registry=registry,
@@ -322,7 +325,7 @@ jobs:
           )
           assert saved['status'] == 'saved', saved
           recovered = recover_step19e_live_data(
-              checkpoint_date=eastern_date.isoformat(),
+              checkpoint_date=checkpoint_date,
               env=safe_env,
               now_utc=datetime.now(timezone.utc),
               max_checkpoint_age_seconds=300,
@@ -352,6 +355,7 @@ jobs:
               'marker': FINAL_CERTIFICATION_MARKER,
               'certified_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
               'step20a_base_main_sha': '52e497ff9a3282918cbee8aca8926e9168443325',
+              'checkpoint_date': checkpoint_date,
               'checkpoint_version': recovered['checkpoint_version'],
               'checkpoint_id': recovered['checkpoint_id'],
               'checkpoint_envelope_sha256': recovered['envelope_content_sha256'],
