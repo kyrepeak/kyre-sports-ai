@@ -1,0 +1,165 @@
+name: MLB Matchup V2 Step 3 starting pitcher quality certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/mlb-matchup-v2-step2-hitter-profile.yml'
+      - '.github/workflows/mlb-matchup-v2-step3-starting-pitcher-quality.yml'
+      - 'mlb_matchup_pitcher_profile_v1.py'
+      - 'mlb_matchup_hub_v27.py'
+      - 'mlb_matchup_hub_v32.py'
+      - 'mlb_matchup_player_v26.py'
+      - 'tests/test_mlb_matchup_v2_step3_starting_pitcher_quality.py'
+  push:
+    branches: ['mlb-matchup-v2-step3-starting-pitcher-quality']
+    paths:
+      - '.github/workflows/mlb-matchup-v2-step2-hitter-profile.yml'
+      - '.github/workflows/mlb-matchup-v2-step3-starting-pitcher-quality.yml'
+      - 'mlb_matchup_pitcher_profile_v1.py'
+      - 'mlb_matchup_hub_v27.py'
+      - 'mlb_matchup_hub_v32.py'
+      - 'mlb_matchup_player_v26.py'
+      - 'tests/test_mlb_matchup_v2_step3_starting_pitcher_quality.py'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact V2 Step 3 bounded scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-matchup-v2-step2-hitter-profile.yml' \
+            '.github/workflows/mlb-matchup-v2-step3-starting-pitcher-quality.yml' \
+            'mlb_matchup_pitcher_profile_v1.py' \
+            'mlb_matchup_hub_v27.py' \
+            'mlb_matchup_hub_v32.py' \
+            'mlb_matchup_player_v26.py' \
+            'tests/test_mlb_matchup_v2_step3_starting_pitcher_quality.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected Matchup V2 Step 3 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "STEP3_EXACT_SEVEN_FILE_SCOPE=PASS"
+
+      - name: Prove certified Steps 1-2 implementations remain frozen
+        run: |
+          for path in \
+            mlb_matchup_hub_v30.py \
+            mlb_matchup_player_v24.py \
+            mlb_matchup_hitter_profile_v1.py \
+            mlb_matchup_hub_v31.py \
+            mlb_matchup_player_v25.py \
+            tests/test_mlb_matchup_v2_step1_foundation.py \
+            tests/test_mlb_matchup_v2_step2_hitter_profile.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Certified prior-step implementation changed: $path"
+              exit 1
+            fi
+          done
+          echo "STEPS1_2_IMPLEMENTATION_FREEZE=PASS"
+
+      - name: Verify prior V2 certification jobs are isolated
+        run: |
+          grep -F "github.head_ref == 'mlb-matchup-v2-step1-foundation'" .github/workflows/mlb-matchup-v2-step1-foundation.yml
+          grep -F "github.head_ref == 'mlb-matchup-v2-step2-hitter-profile'" .github/workflows/mlb-matchup-v2-step2-hitter-profile.yml
+          echo "PRIOR_V2_CI_ISOLATION=PASS"
+
+      - name: Prove Moneyline remains frozen
+        run: |
+          for path in \
+            mlb_moneyline_hub_v164.py \
+            mlb_moneyline_hub_v165.py \
+            tests/test_mlb_moneyline_clean_ui_v1.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen Moneyline boundary changed: $path"
+              exit 1
+            fi
+          done
+          echo "MONEYLINE_FREEZE=PASS"
+
+      - name: Prove frozen V1 Matchup presentation and model chain unchanged
+        run: |
+          for path in \
+            mlb_matchup_hub_v29.py \
+            mlb_matchup_player_v23.py \
+            mlb_matchup_hub_v28.py \
+            mlb_matchup_player_v22.py \
+            mlb_matchup_player_v21.py \
+            mlb_matchup_player_v20.py \
+            mlb_matchup_player_v19.py \
+            mlb_matchup_player_v18.py \
+            mlb_matchup_player_v15.py \
+            mlb_matchup_hub_v14.py \
+            mlb_matchup_hub_v13.py \
+            mlb_matchup_hub_v12.py \
+            mlb_matchup_rankings_v21.py \
+            spread_engine.py \
+            spread_history.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen Matchup V1 boundary changed: $path"
+              exit 1
+            fi
+          done
+          echo "MATCHUP_V1_FREEZE=PASS"
+
+      - name: Compile V2 Step 3 boundary
+        run: |
+          python -m py_compile \
+            mlb_matchup_pitcher_profile_v1.py \
+            mlb_matchup_hub_v27.py \
+            mlb_matchup_hub_v32.py \
+            mlb_matchup_player_v26.py \
+            tests/test_mlb_matchup_v2_step3_starting_pitcher_quality.py
+
+      - name: Run V2 Step 3 regression tests
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_v2_step3_starting_pitcher_quality.py
+
+      - name: Prove Step 3 required data and no game probability math
+        run: |
+          grep -F 'PROBABILITY_IMPACT = "NONE"' mlb_matchup_player_v26.py
+          grep -F 'STEP3_ROLE = "STARTER_QUALITY_CONTEXT_ONLY"' mlb_matchup_player_v26.py
+          grep -F '"type": "pitcher"' mlb_matchup_pitcher_profile_v1.py
+          grep -F '"xera"' mlb_matchup_pitcher_profile_v1.py
+          grep -F '"xba_allowed"' mlb_matchup_pitcher_profile_v1.py
+          grep -F 'calculate_fip' mlb_matchup_pitcher_profile_v1.py
+          grep -F 'tto_profile_from_frame' mlb_matchup_pitcher_profile_v1.py
+          ! grep -Fi 'def _simulate' mlb_matchup_player_v26.py mlb_matchup_pitcher_profile_v1.py
+          ! grep -Fi 'def _calibration_from_verdict' mlb_matchup_player_v26.py mlb_matchup_pitcher_profile_v1.py
+          ! grep -Fi 'p_one_plus_pre_matchup' mlb_matchup_player_v26.py mlb_matchup_pitcher_profile_v1.py
+          ! grep -Fi 'p_two_plus' mlb_matchup_player_v26.py mlb_matchup_pitcher_profile_v1.py
+          ! grep -Fi 'fair_odds' mlb_matchup_player_v26.py mlb_matchup_pitcher_profile_v1.py
+          ! grep -Fi 'monte_carlo' mlb_matchup_player_v26.py mlb_matchup_pitcher_profile_v1.py
+          echo "STEP3_GAME_PROBABILITY_IMPACT=NONE"
+
+      - name: Certification marker
+        run: echo "MLB_MATCHUP_V2_STEP3_STARTING_PITCHER_QUALITY_GREEN"
