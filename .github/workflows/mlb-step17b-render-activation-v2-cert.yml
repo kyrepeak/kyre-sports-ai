@@ -1,0 +1,92 @@
+name: MLB Step17B Render activation v2 certification
+
+on:
+  push:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - sports_api/tools/mlb_step17b_render_activation_v2.py
+      - tests/test_mlb_step17b_render_activation_v2.py
+      - .github/workflows/mlb-step17b-render-activation-v2-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  certify-v2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q -r sports_api/requirements.txt
+          python -m pip install -q -r sports_api/requirements-mlb-step14b-persistence.txt
+          python -m pip install -q pytest
+
+      - name: Prove original activation operator certification is green
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          run_id = 33580178203
+          req = urllib.request.Request(
+              f'https://api.github.com/repos/kyrepeak/kyre-sports-ai/actions/runs/{run_id}',
+              headers={
+                  'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+                  'Accept': 'application/vnd.github+json',
+                  'User-Agent': 'kyre-mlb-step17b-v2-cert/1',
+              },
+          )
+          with urllib.request.urlopen(req, timeout=30) as response:
+              run = json.load(response)
+          assert run['conclusion'] == 'success', run['conclusion']
+          assert run['name'] == 'MLB Step17B Render activation operator certification', run['name']
+          print('Original Step 17B activation operator certification verified green.')
+          PY
+
+      - name: Compile v1 and v2 operators
+        run: |
+          python -m py_compile sports_api/tools/mlb_step17b_render_activation.py
+          python -m py_compile sports_api/tools/mlb_step17b_render_activation_v2.py
+
+      - name: Run v1 activation tests
+        run: python -m pytest -q tests/test_mlb_step17b_render_activation.py
+
+      - name: Run v2 network-free continuity tests
+        run: python -m pytest -q tests/test_mlb_step17b_render_activation_v2.py
+
+      - name: Re-run Step 17B runtime tests
+        run: python -m pytest -q tests/test_mlb_step17b_always_on_runtime_v1.py
+
+      - name: Enforce v2 scope
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('sports_api/tools/mlb_step17b_render_activation_v2.py').read_text(encoding='utf-8')
+          assert 'mlb_step17b_render_activation as base' in text
+          assert '/api/v1/wnba/runtime/deployment' in text
+          assert '/api/v1/wnba/games/today' not in text
+          assert 'base._verify_wnba = verify_wnba_network_free' in text
+          assert 'base._verify_wnba = original' in text
+          assert 'base.activate(env=env)' in text
+          forbidden = ('create_service(', 'put_env_var(', 'trigger_deploy(')
+          for token in forbidden:
+              assert token not in text, token
+          print('V2 is a continuity-check wrapper only; v1 mutation/rollback transaction remains authoritative.')
+          PY
+
+      - name: Final marker
+        run: echo MLB_STEP17B_RENDER_ACTIVATION_V2_GREEN
