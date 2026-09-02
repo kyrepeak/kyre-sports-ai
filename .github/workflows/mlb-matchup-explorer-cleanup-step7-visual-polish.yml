@@ -1,31 +1,28 @@
-name: MLB Matchup Explorer cleanup Step 6 mobile controls certification
+name: MLB Matchup Explorer cleanup Step 7 visual polish certification
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step5-collapsed-research.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step6-mobile-controls.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step7-visual-polish.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v47.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step6_mobile_controls.py'
+      - 'mlb_matchup_hub_v48.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step7_visual_polish.py'
   push:
-    branches: ['mlb-matchup-explorer-cleanup-step6-mobile-controls']
+    branches: ['mlb-matchup-explorer-cleanup-step7-visual-polish']
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step5-collapsed-research.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step6-mobile-controls.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step7-visual-polish.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v47.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step6_mobile_controls.py'
+      - 'mlb_matchup_hub_v48.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step7_visual_polish.py'
 
 permissions:
   contents: read
 
 jobs:
   certify:
-    # Historical exact-scope certification belongs only to its original branch.
-    # Later additive Matchup presentation layers have their own freeze workflow.
-    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step6-mobile-controls'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,29 +41,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Assert exact cleanup Step 6 scope
+      - name: Assert exact cleanup Step 7 scope
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
-            '.github/workflows/mlb-matchup-explorer-cleanup-step5-collapsed-research.yml' \
             '.github/workflows/mlb-matchup-explorer-cleanup-step6-mobile-controls.yml' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step7-visual-polish.yml' \
             'mlb_matchup_hub_v27.py' \
-            'mlb_matchup_hub_v47.py' \
-            'tests/test_mlb_matchup_explorer_cleanup_step6_mobile_controls.py' | sort)"
+            'mlb_matchup_hub_v48.py' \
+            'tests/test_mlb_matchup_explorer_cleanup_step7_visual_polish.py' | sort)"
           if [ "$actual" != "$expected" ]; then
-            echo "Unexpected Matchup Explorer cleanup Step 6 scope"
+            echo "Unexpected Matchup Explorer cleanup Step 7 scope"
             echo "--- expected ---"
             echo "$expected"
             echo "--- actual ---"
             echo "$actual"
             exit 1
           fi
-          echo "CLEANUP_STEP6_EXACT_FIVE_FILE_SCOPE=PASS"
+          echo "CLEANUP_STEP7_EXACT_FIVE_FILE_SCOPE=PASS"
 
-      - name: Prove Steps 1-5, V2 model and ranking chain are frozen
+      - name: Prove Steps 1-6, V2 model and ranking chain are frozen
         run: |
           for path in \
+            mlb_matchup_hub_v47.py \
             mlb_matchup_hub_v46.py \
             mlb_matchup_hub_v45.py \
             mlb_matchup_hub_v44.py \
@@ -84,7 +82,7 @@ jobs:
               exit 1
             fi
           done
-          echo "MATCHUP_STEPS1_5_AND_V2_FREEZE=PASS"
+          echo "MATCHUP_STEPS1_6_AND_V2_FREEZE=PASS"
 
       - name: Prove Moneyline page is untouched
         run: |
@@ -103,12 +101,12 @@ jobs:
         run: |
           python -m py_compile \
             mlb_matchup_hub_v27.py \
-            mlb_matchup_hub_v47.py \
-            tests/test_mlb_matchup_explorer_cleanup_step6_mobile_controls.py
+            mlb_matchup_hub_v48.py \
+            tests/test_mlb_matchup_explorer_cleanup_step7_visual_polish.py
 
-      - name: Run cleanup Step 6 regression tests
+      - name: Run cleanup Step 7 regression tests
         run: |
-          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step6_mobile_controls.py
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step7_visual_polish.py
 
       - name: Certification marker
-        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP6_MOBILE_CONTROLS_GREEN"
+        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP7_VISUAL_POLISH_GREEN"
