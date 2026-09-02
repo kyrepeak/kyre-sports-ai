@@ -27,8 +27,10 @@ def test_step5_wraps_step4_and_certified_final_v2_without_rebuilding_math():
 def test_step5_keeps_player_hero_above_deep_research():
     source = _text("mlb_matchup_hub_v46.py")
     hero_pos = source.index("hero_slot = st.empty()")
-    render_hero_pos = source.index("step4._render_hero(hero_slot, context, None)")
-    current_pos = source.index("current.render_matchup_hub")
+    render_hero_pos = source.index("step4._render_hero(hero_slot, context, None)", hero_pos)
+    # The empty-data guard also calls current.render_matchup_hub earlier in the function.
+    # Verify the actual deep-render call that follows the hero instead of that guard.
+    current_pos = source.index("current.render_matchup_hub", render_hero_pos)
     assert hero_pos < render_hero_pos < current_pos
     assert "Final result stays up top." in source
 
