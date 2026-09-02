@@ -1,0 +1,187 @@
+name: MLB Step19A official slate certification
+
+on:
+  push:
+    branches:
+      - mlb-step19a-official-slate
+    paths:
+      - sports_api/collectors/mlb_official_slate.py
+      - tests/test_mlb_step19a_official_slate.py
+      - .github/workflows/mlb-step19a-official-slate-cert.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - sports_api/collectors/mlb_official_slate.py
+      - tests/test_mlb_step19a_official_slate.py
+      - .github/workflows/mlb-step19a-official-slate-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step19a-official-slate-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  STEP19A_BASE_SHA: e3fc9f58beae938919332808e1edb7ae511f57ef
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_PRODUCTION_SCHEDULER_ENABLED: "false"
+  MLB_ACTIONABLE_OUTPUT_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+
+jobs:
+  certify-official-slate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove exact three-file Step19A scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$STEP19A_BASE_SHA" HEAD
+          git diff --check "$STEP19A_BASE_SHA"...HEAD
+          changed="$(git diff --name-only "$STEP19A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          expected='^(sports_api/collectors/mlb_official_slate.py|tests/test_mlb_step19a_official_slate.py|\.github/workflows/mlb-step19a-official-slate-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$expected" || true)"
+          test -z "$bad"
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          test "$count" -eq 3
+          test -z "$(git diff --name-status "$STEP19A_BASE_SHA"...HEAD | awk '$1 == "D" {print}')"
+          echo 'MLB_STEP19A_EXACT_SCOPE_OK'
+
+      - name: Prove Step18 production and sportsbook boundaries unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          git diff --exit-code "$STEP19A_BASE_SHA"...HEAD -- \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel.py \
+            sports_api/collectors/mlb_circa.py \
+            sports_api/tools/mlb_step18a_production_baseline.py \
+            sports_api/tools/mlb_step18b_production_observability.py \
+            sports_api/tools/mlb_step18c_incident_response.py \
+            sports_api/tools/mlb_step18d_final_production_freeze.py
+          echo 'MLB_STEP19A_FROZEN_BOUNDARIES_OK'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Compile Step19A surface
+        run: |
+          python -m py_compile \
+            sports_api/collectors/mlb_official_slate.py \
+            tests/test_mlb_step19a_official_slate.py
+
+      - name: Run Step19A fail-closed tests
+        run: PYTHONPATH=. python -m pytest -q tests/test_mlb_step19a_official_slate.py
+
+      - name: Run current MLB regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=()
+          for path in tests/test_mlb_*.py; do
+            files+=("$path")
+          done
+          test "${#files[@]}" -gt 0
+          PYTHONPATH=. python -m pytest -q "${files[@]}"
+
+      - name: Read-only live MLB Stats API smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .step19a
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+
+          from sports_api.collectors.mlb_official_slate import collect_official_mlb_slate
+
+          last = None
+          for attempt in range(1, 4):
+              try:
+                  slate = collect_official_mlb_slate(
+                      slate_date='2026-09-01',
+                      timeout_seconds=20.0,
+                  )
+                  break
+              except Exception as exc:
+                  last = exc
+                  if attempt == 3:
+                      raise
+                  time.sleep(3)
+          else:
+              raise AssertionError(last)
+
+          assert slate['sport'] == 'MLB'
+          assert slate['slate_date'] == '2026-09-01'
+          assert slate['source'] == 'MLB Stats API'
+          assert slate['game_count'] > 0
+          ids = [game['game_pk'] for game in slate['games']]
+          assert len(ids) == len(set(ids))
+          assert all(game['away_team']['id'] > 0 for game in slate['games'])
+          assert all(game['home_team']['id'] > 0 for game in slate['games'])
+          assert all(game['status'] in {
+              'scheduled', 'in_progress', 'delayed', 'suspended',
+              'postponed', 'cancelled', 'final', 'unknown'
+          } for game in slate['games'])
+
+          evidence = {
+              'marker': 'MLB_STEP19A_OFFICIAL_SLATE_GREEN',
+              'slate_date': slate['slate_date'],
+              'source': slate['source'],
+              'game_count': slate['game_count'],
+              'game_pks': ids,
+              'postponed_count': sum(game['is_postponed'] for game in slate['games']),
+              'cancelled_count': sum(game['is_cancelled'] for game in slate['games']),
+              'probable_pitcher_slots_present': sum(
+                  game['away_probable_pitcher'] is not None
+                  for game in slate['games']
+              ) + sum(
+                  game['home_probable_pitcher'] is not None
+                  for game in slate['games']
+              ),
+              'sportsbook_calls': 0,
+              'production_mutations': 0,
+              'persistence_writes': 0,
+              'actionable_output': False,
+              'wagering': False,
+          }
+          Path('.step19a/mlb-step19a-official-slate-evidence.json').write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP19A_OFFICIAL_SLATE_GREEN')
+          PY
+
+      - name: Upload Step19A evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step19a-official-slate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step19a/mlb-step19a-official-slate-evidence.json
+          if-no-files-found: error
+          retention-days: 90
