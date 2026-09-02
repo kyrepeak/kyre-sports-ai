@@ -42,7 +42,7 @@ jobs:
           test -n "$RENDER_API_KEY"
           mkdir -p .step17b-preflight
           python - <<'PY'
-          import json, os
+          import json, os, time
           from pathlib import Path
           from urllib.parse import urlsplit
           import httpx
@@ -82,6 +82,26 @@ jobs:
                       out[key] = str(row['value'])
               return out
 
+          def get_json_retry(path, timeout_seconds=180.0):
+              deadline = time.monotonic() + timeout_seconds
+              last = 'not attempted'
+              with httpx.Client(timeout=30.0, follow_redirects=True, headers={'user-agent': 'kyre-mlb-step17b-render-preflight/2'}) as http:
+                  while True:
+                      try:
+                          response = http.get(SERVICE_URL + path)
+                          if response.status_code == 200:
+                              body = response.json()
+                              if isinstance(body, dict):
+                                  return body
+                              last = 'non-object JSON'
+                          else:
+                              last = f'HTTP {response.status_code}'
+                      except Exception as exc:
+                          last = f'{type(exc).__name__}: {exc}'
+                      if time.monotonic() >= deadline:
+                          raise AssertionError(f'hosted verification failed for {path}: {last}')
+                      time.sleep(5)
+
           key = clean(os.environ.get('RENDER_API_KEY'))
           assert key and len(key) >= 20, 'Render credential missing'
           with RenderAPIClient(api_key=key, timeout_seconds=30.0) as client:
@@ -111,15 +131,10 @@ jobs:
           db_ready = bool(db and parsed.scheme.casefold() in {'postgres', 'postgresql'} and parsed.hostname and parsed.path not in {'', '/'})
           assert db_ready, 'Render is missing a valid protected PostgreSQL KYRE_DATABASE_URL'
 
-          with httpx.Client(timeout=30.0, follow_redirects=True) as http:
-              health_resp = http.get(SERVICE_URL + '/health')
-              health_resp.raise_for_status()
-              health = health_resp.json()
-              assert isinstance(health, dict) and health.get('status') == 'ok', 'live /health is not ok'
-              wnba_resp = http.get(SERVICE_URL + '/api/v1/wnba/games/today?season=2026')
-              wnba_resp.raise_for_status()
-              wnba = wnba_resp.json()
-              assert isinstance(wnba, dict) and wnba.get('season') == 2026 and isinstance(wnba.get('games'), list), 'live WNBA smoke failed'
+          health = get_json_retry('/health')
+          assert health.get('status') == 'ok', 'live /health is not ok'
+          wnba = get_json_retry('/api/v1/wnba/games/today?season=2026')
+          assert wnba.get('season') == 2026 and isinstance(wnba.get('games'), list), 'live WNBA smoke failed'
 
           evidence = {
               'state': 'mlb_step17b_render_preflight_green',
