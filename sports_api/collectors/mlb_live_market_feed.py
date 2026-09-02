@@ -192,11 +192,6 @@ def _fanduel_game_snapshot(
     validation = validate_market_provider_game_snapshot(snapshot)
     if validation.get("snapshot_valid") is not True:
         raise MLBLiveMarketFeedError(f"FanDuel Step11A snapshot validation failed: {validation.get('failures')}")
-    snapshot["identity_provenance"] = {
-        "reused_existing_collector": "sports_api.collectors.mlb_fanduel_direct",
-        "official_schedule_match": match_method,
-        "new_step19b_identity_matching": False,
-    }
     return snapshot
 
 
