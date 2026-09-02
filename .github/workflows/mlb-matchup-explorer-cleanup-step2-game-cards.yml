@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step1-picker.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml'
       - 'mlb_matchup_hub_v27.py'
       - 'mlb_matchup_hub_v43.py'
@@ -11,6 +12,7 @@ on:
   push:
     branches: ['mlb-matchup-explorer-cleanup-step2-game-cards']
     paths:
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step1-picker.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml'
       - 'mlb_matchup_hub_v27.py'
       - 'mlb_matchup_hub_v43.py'
@@ -44,6 +46,7 @@ jobs:
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step1-picker.yml' \
             '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml' \
             'mlb_matchup_hub_v27.py' \
             'mlb_matchup_hub_v43.py' \
@@ -56,7 +59,7 @@ jobs:
             echo "$actual"
             exit 1
           fi
-          echo "CLEANUP_STEP2_EXACT_FOUR_FILE_SCOPE=PASS"
+          echo "CLEANUP_STEP2_EXACT_FIVE_FILE_SCOPE=PASS"
 
       - name: Prove Step 1, V2 model and legacy ranking chain are frozen
         run: |
