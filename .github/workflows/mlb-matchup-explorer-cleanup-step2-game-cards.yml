@@ -1,0 +1,103 @@
+name: MLB Matchup Explorer cleanup Step 2 game cards certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml'
+      - 'mlb_matchup_hub_v27.py'
+      - 'mlb_matchup_hub_v43.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py'
+  push:
+    branches: ['mlb-matchup-explorer-cleanup-step2-game-cards']
+    paths:
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml'
+      - 'mlb_matchup_hub_v27.py'
+      - 'mlb_matchup_hub_v43.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py'
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact cleanup Step 2 scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step2-game-cards.yml' \
+            'mlb_matchup_hub_v27.py' \
+            'mlb_matchup_hub_v43.py' \
+            'tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected Matchup Explorer cleanup Step 2 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CLEANUP_STEP2_EXACT_FOUR_FILE_SCOPE=PASS"
+
+      - name: Prove Step 1, V2 model and legacy ranking chain are frozen
+        run: |
+          for path in \
+            mlb_matchup_hub_v42.py \
+            mlb_matchup_hub_v41.py \
+            mlb_matchup_player_v35.py \
+            mlb_matchup_probability_v1.py \
+            mlb_matchup_calibration_v1.py \
+            mlb_matchup_rankings_v21.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen Matchup boundary changed: $path"
+              exit 1
+            fi
+          done
+          echo "MATCHUP_STEP1_AND_V2_FREEZE=PASS"
+
+      - name: Prove Moneyline page is untouched
+        run: |
+          for path in \
+            mlb_moneyline_hub_v164.py \
+            mlb_moneyline_hub_v165.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen Moneyline presentation changed: $path"
+              exit 1
+            fi
+          done
+          echo "MONEYLINE_PAGE_FREEZE=PASS"
+
+      - name: Compile cleanup presentation
+        run: |
+          python -m py_compile \
+            mlb_matchup_hub_v27.py \
+            mlb_matchup_hub_v43.py \
+            tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py
+
+      - name: Run cleanup Step 2 regression tests
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step2_game_cards.py
+
+      - name: Certification marker
+        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP2_GAME_CARDS_GREEN"
