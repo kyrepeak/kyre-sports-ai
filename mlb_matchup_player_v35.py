@@ -68,17 +68,18 @@ def _fmt_odds(value: Any) -> str:
 
 
 def _build_step11_fallback(games_df, simulations: int | None = None) -> dict[str, Any] | None:
-    """Build the certified Step 11 raw profile without relying on a private wrapper attribute.
+    """Build the Step 11 raw profile from the certified public engines.
 
-    Streamlit can retain a stale imported wrapper module across a hot reload. If that
-    happens, `mlb_matchup_player_v34` may be present while its private `_build_step11`
-    attribute is not. Reconstruct the same Step 11 input stack here and call the public
-    raw probability engine directly so the deployed app fails safe instead of crashing.
+    The Step 11 presentation wrapper historically referenced a private Step 2 helper
+    name that does not exist in the deployed module. The final runtime therefore
+    rebuilds the exact Steps 1-10 inputs using their real helper names and calls the
+    public raw probability engine directly. This preserves the Step 11 math while
+    removing the brittle cross-wrapper private-attribute dependency.
     """
     foundation = step1._build_foundation(games_df)
     if not foundation:
         return None
-    hitter = step2._build_step2(games_df)
+    hitter = step2._build_profile(games_df)
     starter = step3._build_step3(games_df)
     platoon = step4._build_step4(games_df)
     pitch = step5._build_step5(games_df)
@@ -106,8 +107,9 @@ def _build_step11_fallback(games_df, simulations: int | None = None) -> dict[str
 
 
 def _build_step12(games_df, simulations: int | None = None, persist: bool = True) -> dict[str, Any] | None:
-    builder = getattr(step11, "_build_step11", None)  # runtime-safe equivalent of step11._build_step11
-    raw = builder(games_df, simulations=simulations) if callable(builder) else _build_step11_fallback(games_df, simulations=simulations)
+    # Do not call step11._build_step11 here: the final runtime uses the public-engine
+    # bridge above so a private wrapper-name mismatch cannot crash Streamlit.
+    raw = _build_step11_fallback(games_df, simulations=simulations)
     if not raw:
         return None
     return calibration.build_final_intelligence(raw, persist=persist)
@@ -237,11 +239,9 @@ def render_player_layer(games_df, section_header=None, status_info=None, team_lo
         step9._render_step9(games_df)
         step10._render_step10(games_df)
 
-        # Step 11 is expensive (5M simulations). Build it once, then feed the same
-        # immutable raw object to both Step 11 presentation and Step 12 finalization.
-        # The getattr bridge is the runtime-safe equivalent of step11._build_step11.
-        builder = getattr(step11, "_build_step11", None)
-        raw = builder(games_df) if callable(builder) else _build_step11_fallback(games_df)
+        # Step 11 is expensive (5M simulations). Build it once from the certified
+        # public engines. Avoid direct step11._build_step11 private-wrapper coupling.
+        raw = _build_step11_fallback(games_df)
         _render_step11_profile(raw)
         final = calibration.build_final_intelligence(raw, persist=True) if raw else None
         _render_step12_profile(final)
