@@ -1,33 +1,32 @@
-name: MLB Matchup V2 Step 8 bullpen path certification
+name: MLB Matchup V2 Step 9 plate appearance opportunity certification
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - '.github/workflows/mlb-matchup-v2-step7-park-weather-defense.yml'
       - '.github/workflows/mlb-matchup-v2-step8-bullpen-path.yml'
-      - 'mlb_matchup_bullpen_v1.py'
+      - '.github/workflows/mlb-matchup-v2-step9-plate-appearance-opportunity.yml'
+      - 'mlb_matchup_opportunity_v1.py'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v37.py'
-      - 'mlb_matchup_player_v31.py'
-      - 'tests/test_mlb_matchup_v2_step8_bullpen_path.py'
+      - 'mlb_matchup_hub_v38.py'
+      - 'mlb_matchup_player_v32.py'
+      - 'tests/test_mlb_matchup_v2_step9_plate_appearance_opportunity.py'
   push:
-    branches: ['mlb-matchup-v2-step8-bullpen-path']
+    branches: ['mlb-matchup-v2-step9-plate-appearance-opportunity']
     paths:
-      - '.github/workflows/mlb-matchup-v2-step7-park-weather-defense.yml'
       - '.github/workflows/mlb-matchup-v2-step8-bullpen-path.yml'
-      - 'mlb_matchup_bullpen_v1.py'
+      - '.github/workflows/mlb-matchup-v2-step9-plate-appearance-opportunity.yml'
+      - 'mlb_matchup_opportunity_v1.py'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v37.py'
-      - 'mlb_matchup_player_v31.py'
-      - 'tests/test_mlb_matchup_v2_step8_bullpen_path.py'
+      - 'mlb_matchup_hub_v38.py'
+      - 'mlb_matchup_player_v32.py'
+      - 'tests/test_mlb_matchup_v2_step9_plate_appearance_opportunity.py'
 
 permissions:
   contents: read
 
 jobs:
   certify:
-    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-v2-step8-bullpen-path'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -46,29 +45,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Assert exact V2 Step 8 bounded scope
+      - name: Assert exact V2 Step 9 bounded scope
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
-            '.github/workflows/mlb-matchup-v2-step7-park-weather-defense.yml' \
             '.github/workflows/mlb-matchup-v2-step8-bullpen-path.yml' \
-            'mlb_matchup_bullpen_v1.py' \
+            '.github/workflows/mlb-matchup-v2-step9-plate-appearance-opportunity.yml' \
+            'mlb_matchup_opportunity_v1.py' \
             'mlb_matchup_hub_v27.py' \
-            'mlb_matchup_hub_v37.py' \
-            'mlb_matchup_player_v31.py' \
-            'tests/test_mlb_matchup_v2_step8_bullpen_path.py' | sort)"
+            'mlb_matchup_hub_v38.py' \
+            'mlb_matchup_player_v32.py' \
+            'tests/test_mlb_matchup_v2_step9_plate_appearance_opportunity.py' | sort)"
           if [ "$actual" != "$expected" ]; then
-            echo "Unexpected Matchup V2 Step 8 scope"
+            echo "Unexpected Matchup V2 Step 9 scope"
             echo "--- expected ---"
             echo "$expected"
             echo "--- actual ---"
             echo "$actual"
             exit 1
           fi
-          echo "STEP8_EXACT_SEVEN_FILE_SCOPE=PASS"
+          echo "STEP9_EXACT_SEVEN_FILE_SCOPE=PASS"
 
-      - name: Prove certified Steps 1-7 implementations remain frozen
+      - name: Prove certified Steps 1-8 implementations remain frozen
         run: |
           for path in \
             mlb_matchup_hub_v30.py \
@@ -91,20 +90,24 @@ jobs:
             mlb_matchup_environment_v1.py \
             mlb_matchup_hub_v36.py \
             mlb_matchup_player_v30.py \
+            mlb_matchup_bullpen_v1.py \
+            mlb_matchup_hub_v37.py \
+            mlb_matchup_player_v31.py \
             tests/test_mlb_matchup_v2_step1_foundation.py \
             tests/test_mlb_matchup_v2_step2_hitter_profile.py \
             tests/test_mlb_matchup_v2_step3_starting_pitcher_quality.py \
             tests/test_mlb_matchup_v2_step4_platoon_bvp.py \
             tests/test_mlb_matchup_v2_step5_pitch_mix.py \
             tests/test_mlb_matchup_v2_step6_batted_ball_quality.py \
-            tests/test_mlb_matchup_v2_step7_park_weather_defense.py
+            tests/test_mlb_matchup_v2_step7_park_weather_defense.py \
+            tests/test_mlb_matchup_v2_step8_bullpen_path.py
           do
             if ! git diff --quiet origin/main...HEAD -- "$path"; then
               echo "Certified prior-step implementation changed: $path"
               exit 1
             fi
           done
-          echo "STEPS1_7_IMPLEMENTATION_FREEZE=PASS"
+          echo "STEPS1_8_IMPLEMENTATION_FREEZE=PASS"
 
       - name: Verify prior V2 certification jobs are isolated
         run: |
@@ -115,6 +118,7 @@ jobs:
           grep -F "github.head_ref == 'mlb-matchup-v2-step5-pitch-mix'" .github/workflows/mlb-matchup-v2-step5-pitch-mix.yml
           grep -F "github.head_ref == 'mlb-matchup-v2-step6-batted-ball-quality'" .github/workflows/mlb-matchup-v2-step6-batted-ball-quality.yml
           grep -F "github.head_ref == 'mlb-matchup-v2-step7-park-weather-defense'" .github/workflows/mlb-matchup-v2-step7-park-weather-defense.yml
+          grep -F "github.head_ref == 'mlb-matchup-v2-step8-bullpen-path'" .github/workflows/mlb-matchup-v2-step8-bullpen-path.yml
           echo "PRIOR_V2_CI_ISOLATION=PASS"
 
       - name: Prove Moneyline remains frozen
@@ -157,37 +161,36 @@ jobs:
           done
           echo "MATCHUP_V1_FREEZE=PASS"
 
-      - name: Compile V2 Step 8 boundary
+      - name: Compile V2 Step 9 boundary
         run: |
           python -m py_compile \
-            mlb_matchup_bullpen_v1.py \
+            mlb_matchup_opportunity_v1.py \
             mlb_matchup_hub_v27.py \
-            mlb_matchup_hub_v37.py \
-            mlb_matchup_player_v31.py \
-            tests/test_mlb_matchup_v2_step8_bullpen_path.py
+            mlb_matchup_hub_v38.py \
+            mlb_matchup_player_v32.py \
+            tests/test_mlb_matchup_v2_step9_plate_appearance_opportunity.py
 
-      - name: Run V2 Step 8 regression tests
+      - name: Run V2 Step 9 regression tests
         run: |
-          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_v2_step8_bullpen_path.py
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_v2_step9_plate_appearance_opportunity.py
 
-      - name: Prove Step 8 bullpen context and no game probability implementation
+      - name: Prove Step 9 opportunity-only boundary
         run: |
-          grep -F 'PROBABILITY_IMPACT = "NONE"' mlb_matchup_player_v31.py
-          grep -F 'STEP8_ROLE = "BULLPEN_PATH_CONTEXT_ONLY"' mlb_matchup_player_v31.py
-          grep -F 'RELIEVER_MAX_STARTS = 3' mlb_matchup_bullpen_v1.py
-          grep -F 'RELIEVER_MAX_START_SHARE = 0.35' mlb_matchup_bullpen_v1.py
-          grep -F 'WORKLOAD_DAYS = 3' mlb_matchup_bullpen_v1.py
-          grep -F 'def fatigue_status' mlb_matchup_bullpen_v1.py
-          grep -F 'def bullpen_quality_score' mlb_matchup_bullpen_v1.py
-          grep -F 'def starter_to_bullpen_exposure' mlb_matchup_bullpen_v1.py
-          grep -F 'Baseball Savant expected statistics' mlb_matchup_bullpen_v1.py
-          ! grep -Fi 'def _simulate' mlb_matchup_player_v31.py mlb_matchup_bullpen_v1.py
-          ! grep -Fi 'def _calibration_from_verdict' mlb_matchup_player_v31.py mlb_matchup_bullpen_v1.py
-          ! grep -Fi 'p_one_plus_pre_matchup =' mlb_matchup_player_v31.py mlb_matchup_bullpen_v1.py
-          ! grep -Fi 'p_two_plus =' mlb_matchup_player_v31.py mlb_matchup_bullpen_v1.py
-          ! grep -Fi 'def fair_odds' mlb_matchup_player_v31.py mlb_matchup_bullpen_v1.py
-          ! grep -Fi 'def monte_carlo' mlb_matchup_player_v31.py mlb_matchup_bullpen_v1.py
-          echo "STEP8_GAME_PROBABILITY_IMPACT=NONE"
+          grep -F 'PROBABILITY_IMPACT = "NONE"' mlb_matchup_player_v32.py
+          grep -F 'STEP9_ROLE = "PLATE_APPEARANCE_OPPORTUNITY_ONLY"' mlb_matchup_player_v32.py
+          grep -F 'RECENT_GAMES = 10' mlb_matchup_opportunity_v1.py
+          grep -F 'LOCATION_MIN_GAMES = 12' mlb_matchup_opportunity_v1.py
+          grep -F 'MIN_HITTER_PA_FOR_AB_RATIO = 50' mlb_matchup_opportunity_v1.py
+          grep -F 'def slot_pa_from_team_total' mlb_matchup_opportunity_v1.py
+          grep -F 'def opportunity_from_team_volume' mlb_matchup_opportunity_v1.py
+          grep -F 'Home ninth-inning non-batting risk is absorbed empirically' mlb_matchup_opportunity_v1.py
+          ! grep -Fi 'def _simulate' mlb_matchup_player_v32.py mlb_matchup_opportunity_v1.py
+          ! grep -Fi 'def _calibration_from_verdict' mlb_matchup_player_v32.py mlb_matchup_opportunity_v1.py
+          ! grep -Fi 'p_one_plus_pre_matchup =' mlb_matchup_player_v32.py mlb_matchup_opportunity_v1.py
+          ! grep -Fi 'p_two_plus =' mlb_matchup_player_v32.py mlb_matchup_opportunity_v1.py
+          ! grep -Fi 'def fair_odds' mlb_matchup_player_v32.py mlb_matchup_opportunity_v1.py
+          ! grep -Fi 'def monte_carlo' mlb_matchup_player_v32.py mlb_matchup_opportunity_v1.py
+          echo "STEP9_GAME_PROBABILITY_IMPACT=NONE"
 
       - name: Certification marker
-        run: echo "MLB_MATCHUP_V2_STEP8_BULLPEN_PATH_GREEN"
+        run: echo "MLB_MATCHUP_V2_STEP9_PLATE_APPEARANCE_OPPORTUNITY_GREEN"
