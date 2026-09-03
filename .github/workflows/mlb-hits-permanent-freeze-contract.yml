@@ -36,6 +36,7 @@ jobs:
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
             '.github/workflows/mlb-hits-permanent-freeze-contract.yml' \
+            '.github/workflows/mlb-hits-step1-strength-evidence-summary.yml' \
             'mlb_hits_freeze_manifest_v1.json' | sort)"
           if [ "$actual" != "$expected" ]; then
             echo "Unexpected MLB Hits freeze-contract creation scope"
