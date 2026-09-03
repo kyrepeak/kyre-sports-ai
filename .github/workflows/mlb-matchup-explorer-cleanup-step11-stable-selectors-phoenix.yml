@@ -1,31 +1,28 @@
-name: MLB Matchup Explorer cleanup Step 10 mobile layout certification
+name: MLB Matchup Explorer cleanup Step 11 stable selectors Phoenix certification
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step9-player-spotlight.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step10-mobile-layout.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step11-stable-selectors-phoenix.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v50.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step10_mobile_layout.py'
+      - 'mlb_matchup_hub_v51.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step11_stable_selectors_phoenix.py'
   push:
-    branches: ['mlb-matchup-explorer-cleanup-step10-mobile-layout']
+    branches: ['mlb-matchup-explorer-cleanup-step11-stable-selectors-phoenix']
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step9-player-spotlight.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step10-mobile-layout.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step11-stable-selectors-phoenix.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v50.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step10_mobile_layout.py'
+      - 'mlb_matchup_hub_v51.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step11_stable_selectors_phoenix.py'
 
 permissions:
   contents: read
 
 jobs:
   certify:
-    # Historical exact-scope certification belongs only to Cleanup Step 10.
-    # Later additive presentation wrappers carry their own dedicated workflow.
-    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step10-mobile-layout'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,31 +41,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Assert exact cleanup Step 10 scope
+      - name: Assert exact cleanup Step 11 scope
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
-            '.github/workflows/mlb-matchup-explorer-cleanup-step9-player-spotlight.yml' \
             '.github/workflows/mlb-matchup-explorer-cleanup-step10-mobile-layout.yml' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step11-stable-selectors-phoenix.yml' \
             'mlb_matchup_hub_v27.py' \
-            'mlb_matchup_hub_v50.py' \
-            'tests/test_mlb_matchup_explorer_cleanup_step10_mobile_layout.py' | sort)"
+            'mlb_matchup_hub_v51.py' \
+            'tests/test_mlb_matchup_explorer_cleanup_step11_stable_selectors_phoenix.py' | sort)"
           if [ "$actual" != "$expected" ]; then
-            echo "Unexpected Matchup Explorer cleanup Step 10 scope"
+            echo "Unexpected Matchup Explorer cleanup Step 11 scope"
             echo "--- expected ---"
             echo "$expected"
             echo "--- actual ---"
             echo "$actual"
             exit 1
           fi
-          echo "CLEANUP_STEP10_EXACT_FIVE_FILE_SCOPE=PASS"
+          echo "CLEANUP_STEP11_EXACT_FIVE_FILE_SCOPE=PASS"
 
-      - name: Prove Steps 1-9, V2 model, router and rankings are frozen
+      - name: Prove Steps 1-10, V2 model, router and rankings are frozen
         run: |
           for path in \
             streamlit_memory_lazy_router_v1.py \
             streamlit_memory_lazy_router_v2.py \
+            mlb_matchup_hub_v50.py \
             mlb_matchup_hub_v49.py \
             mlb_matchup_hub_v48.py \
             mlb_matchup_hub_v47.py \
@@ -89,7 +87,7 @@ jobs:
               exit 1
             fi
           done
-          echo "MATCHUP_STEPS1_9_AND_V2_FREEZE=PASS"
+          echo "MATCHUP_STEPS1_10_AND_V2_FREEZE=PASS"
 
       - name: Prove Moneyline page is untouched
         run: |
@@ -108,12 +106,12 @@ jobs:
         run: |
           python -m py_compile \
             mlb_matchup_hub_v27.py \
-            mlb_matchup_hub_v50.py \
-            tests/test_mlb_matchup_explorer_cleanup_step10_mobile_layout.py
+            mlb_matchup_hub_v51.py \
+            tests/test_mlb_matchup_explorer_cleanup_step11_stable_selectors_phoenix.py
 
-      - name: Run cleanup Step 10 regression tests
+      - name: Run cleanup Step 11 regression tests
         run: |
-          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step10_mobile_layout.py
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step11_stable_selectors_phoenix.py
 
       - name: Certification marker
-        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP10_MOBILE_LAYOUT_GREEN"
+        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP11_STABLE_SELECTORS_PHOENIX_GREEN"
