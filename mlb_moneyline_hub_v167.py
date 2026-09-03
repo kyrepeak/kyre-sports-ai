@@ -12,8 +12,8 @@ from __future__ import annotations
 import json
 from html import escape
 from typing import Any, Mapping
-from urllib.request import Request, urlopen
 from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 import streamlit as st
 import mlb_moneyline_hub_v166 as prior
@@ -59,16 +59,18 @@ def _ip(value: Any) -> float | None:
         return None
     try:
         whole, _, frac = text.partition(".")
-        return float(whole) + {"0": 0.0, "1": 1 / 3, "2": 2 / 3}.get(frac, float(f"0.{frac}"))
-    except Exception:
+        if frac in {"0", "1", "2"}:
+            return float(whole) + {"0": 0.0, "1": 1 / 3, "2": 2 / 3}[frac]
+        return float(value)
+    except (TypeError, ValueError):
         return _f(value)
 
 
 def _json(url: str) -> dict[str, Any] | None:
     try:
         req = Request(url, headers={"User-Agent": "KyreSportsAI/16.7"})
-        with urlopen(req, timeout=8) as r:
-            data = json.loads(r.read().decode("utf-8"))
+        with urlopen(req, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
         return data if isinstance(data, dict) else None
     except Exception:
         return None
@@ -82,8 +84,8 @@ def _game_feed(game_pk: int) -> dict[str, Any] | None:
 @st.cache_data(ttl=600, show_spinner=False)
 def _stats(person_id: int) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     base = "https://statsapi.mlb.com/api/v1/people/{}/stats?{}"
-    season_q = urlencode({"stats":"season","group":"pitching","season":SEASON})
-    log_q = urlencode({"stats":"gameLog","group":"pitching","season":SEASON})
+    season_q = urlencode({"stats": "season", "group": "pitching", "season": SEASON})
+    log_q = urlencode({"stats": "gameLog", "group": "pitching", "season": SEASON})
     season_data = _json(base.format(int(person_id), season_q)) or {}
     log_data = _json(base.format(int(person_id), log_q)) or {}
     season = None
@@ -116,7 +118,8 @@ def _probables(game_pk: int) -> dict[str, dict[str, Any]]:
 
 
 def _fip(s: Mapping[str, Any]) -> float | None:
-    hr, bb, hbp, so, ip = _f(s.get("homeRuns")), _f(s.get("baseOnBalls")), _f(s.get("hitByPitch")) or 0, _f(s.get("strikeOuts")), _ip(s.get("inningsPitched"))
+    hr = _f(s.get("homeRuns")); bb = _f(s.get("baseOnBalls")); hbp = _f(s.get("hitByPitch")) or 0
+    so = _f(s.get("strikeOuts")); ip = _ip(s.get("inningsPitched"))
     if None in (hr, bb, so, ip) or ip <= 0:
         return None
     return ((13 * hr) + 3 * (bb + hbp) - 2 * so) / ip + 3.10
@@ -145,20 +148,22 @@ def _quality(s: Mapping[str, Any] | None, recent: Mapping[str, Any]) -> tuple[fl
     if not s:
         return None, {}
     era, whip, fip = _f(s.get("era")), _f(s.get("whip")), _fip(s)
-    so9, bb9, hr9 = _rate(s, "strikeOuts", "inningsPitched", 9), _rate(s, "baseOnBalls", "inningsPitched", 9), _rate(s, "homeRuns", "inningsPitched", 9)
+    so9 = _rate(s, "strikeOuts", "inningsPitched", 9)
+    bb9 = _rate(s, "baseOnBalls", "inningsPitched", 9)
+    hr9 = _rate(s, "homeRuns", "inningsPitched", 9)
     bf, so, bb = _f(s.get("battersFaced")), _f(s.get("strikeOuts")), _f(s.get("baseOnBalls"))
     kp = so / bf * 100 if so is not None and bf and bf > 0 else None
     bp = bb / bf * 100 if bb is not None and bf and bf > 0 else None
-    m = {"era":era,"whip":whip,"fip":fip,"so9":so9,"bb9":bb9,"hr9":hr9,"k_pct":kp,"bb_pct":bp,"ip":_ip(s.get("inningsPitched")),"recent":recent}
-    c: list[float] = []
-    if era is not None: c.append(max(0,min(100,100-era*18)))
-    if whip is not None: c.append(max(0,min(100,100-max(0,whip-.85)*90)))
-    if fip is not None: c.append(max(0,min(100,100-fip*18)))
-    if so9 is not None: c.append(max(0,min(100,so9*10)))
-    if bb9 is not None: c.append(max(0,min(100,100-bb9*22)))
-    if hr9 is not None: c.append(max(0,min(100,100-hr9*30)))
-    if recent.get("era") is not None: c.append(max(0,min(100,100-float(recent["era"])*15)))
-    return (sum(c)/len(c), m) if len(c) >= 4 else (None, m)
+    metrics = {"era": era, "whip": whip, "fip": fip, "so9": so9, "bb9": bb9, "hr9": hr9, "k_pct": kp, "bb_pct": bp, "ip": _ip(s.get("inningsPitched")), "recent": recent}
+    components: list[float] = []
+    if era is not None: components.append(max(0, min(100, 100 - era * 18)))
+    if whip is not None: components.append(max(0, min(100, 100 - max(0, whip - .85) * 90))
+    if fip is not None: components.append(max(0, min(100, 100 - fip * 18)))
+    if so9 is not None: components.append(max(0, min(100, so9 * 10)))
+    if bb9 is not None: components.append(max(0, min(100, 100 - bb9 * 22)))
+    if hr9 is not None: components.append(max(0, min(100, 100 - hr9 * 30)))
+    if recent.get("era") is not None: components.append(max(0, min(100, 100 - float(recent["era"]) * 15)))
+    return (sum(components) / len(components), metrics) if len(components) >= 4 else (None, metrics)
 
 
 def _grade(diff: float | None) -> tuple[str, str]:
@@ -172,21 +177,25 @@ def _grade(diff: float | None) -> tuple[str, str]:
 
 def _ctx(result: Mapping[str, Any]) -> dict[str, Any]:
     pk = _i(result.get("game_pk"))
-    if not pk: return {"grade":"DATA LIMITED / PENDING","grade_cls":"limited","reason":"No verified MLB game PK available."}
+    if not pk:
+        return {"grade": "DATA LIMITED / PENDING", "grade_cls": "limited", "reason": "No verified MLB game PK available."}
     probs = _probables(pk)
-    if not probs: return {"grade":"DATA LIMITED / PENDING","grade_cls":"limited","reason":"Official MLB probable-starter data unavailable."}
+    if not probs:
+        return {"grade": "DATA LIMITED / PENDING", "grade_cls": "limited", "reason": "Official MLB probable-starter data unavailable."}
     blocks: dict[str, Any] = {}
     for side in ("away", "home"):
         p = probs.get(side)
-        if not p: blocks[side] = {"name":"TBD","score":None,"metrics":{},"recent":{}}; continue
+        if not p:
+            blocks[side] = {"name": "TBD", "score": None, "metrics": {}, "recent": {}}
+            continue
         season, logs = _stats(p["id"])
         rec = _recent(logs)
         score, metrics = _quality(season, rec)
-        blocks[side] = {"id":p["id"],"name":p["name"],"score":score,"metrics":metrics,"recent":rec}
-    a, h = blocks["away"], blocks["home"]
-    edge = h["score"] - a["score"] if a.get("score") is not None and h.get("score") is not None else None
+        blocks[side] = {"id": p["id"], "name": p["name"], "score": score, "metrics": metrics, "recent": rec}
+    away, home = blocks["away"], blocks["home"]
+    edge = home["score"] - away["score"] if away.get("score") is not None and home.get("score") is not None else None
     grade, grade_cls = _grade(edge)
-    return {"grade":grade,"grade_cls":grade_cls,"away":a,"home":h,"edge":edge,"reason":"" if edge is not None else "Both starters need sufficient official MLB evidence before grading."}
+    return {"grade": grade, "grade_cls": grade_cls, "away": away, "home": home, "edge": edge, "reason": "" if edge is not None else "Both starters need sufficient official MLB evidence before grading."}
 
 
 def _fmt(v: Any, d: int = 2, suffix: str = "") -> str:
@@ -196,15 +205,16 @@ def _fmt(v: Any, d: int = 2, suffix: str = "") -> str:
 def _html(c: Mapping[str, Any]) -> str:
     def block(p: Mapping[str, Any], home: bool) -> str:
         m, r = p.get("metrics") or {}, p.get("recent") or {}
+        score = "N/A" if p.get("score") is None else f"{float(p.get('score')):.0f}/100"
         return (f'<div class="ml167-pitcher {"home" if home else ""}"><b>{escape(str(p.get("name") or "TBD"))}</b>'
-                f'<small>Evidence score {"N/A" if p.get("score") is None else f"{float(p.get("score")):.0f}/100"}</small>'
-                f'<div class="ml167-stats"><div class="ml167-stat"><b>{_fmt(m.get("era"))}</b><span>ERA</span></div><div class="ml167-stat"><b>{_fmt(m.get("whip"))}</b><span>WHIP</span></div><div class="ml167-stat"><b>{_fmt(m.get("fip"))}</b><span>FIP</span></div><div class="ml167-stat"><b>{_fmt(m.get("k_pct"),1,"%")} </b><span>K%</span></div></div>'
+                f'<small>Evidence score {score}</small>'
+                f'<div class="ml167-stats"><div class="ml167-stat"><b>{_fmt(m.get("era"))}</b><span>ERA</span></div><div class="ml167-stat"><b>{_fmt(m.get("whip"))}</b><span>WHIP</span></div><div class="ml167-stat"><b>{_fmt(m.get("fip"))}</b><span>FIP</span></div><div class="ml167-stat"><b>{_fmt(m.get("k_pct"),1,"%")}</b><span>K%</span></div></div>'
                 f'<div class="ml167-stats"><div class="ml167-stat"><b>{_fmt(m.get("bb_pct"),1,"%")}</b><span>BB%</span></div><div class="ml167-stat"><b>{_fmt(m.get("hr9"))}</b><span>HR/9</span></div><div class="ml167-stat"><b>{_fmt(r.get("era"))}</b><span>L5 ERA</span></div><div class="ml167-stat"><b>{_fmt(r.get("ip"),1)}</b><span>L5 IP</span></div></div></div>')
     edge = c.get("edge")
     label = "HOME STARTER EDGE" if edge is not None and edge > 0 else "AWAY STARTER EDGE" if edge is not None and edge < 0 else "STARTER QUALITY NEUTRAL"
     value = f"{abs(float(edge)):.1f} pts" if edge is not None else "N/A"
     pill_cls = "edge" if edge is not None and edge > 0 else "away" if edge is not None and edge < 0 else "neutral"
-    return (f'<div class="ml167-step2"><div class="ml167-step2-head"><span class="ml167-step2-title">STEP 2 • STARTING PITCHER QUALITY</span><span class="ml167-grade {escape(str(c.get("grade_cls"))) }">{escape(str(c.get("grade")))}</span></div>'
+    return (f'<div class="ml167-step2"><div class="ml167-step2-head"><span class="ml167-step2-title">STEP 2 • STARTING PITCHER QUALITY</span><span class="ml167-grade {escape(str(c.get("grade_cls") or "limited"))}">{escape(str(c.get("grade") or "DATA LIMITED / PENDING"))}</span></div>'
             f'<div class="ml167-pitchers">{block(c.get("away") or {},False)}{block(c.get("home") or {},True)}</div>'
             f'<span class="ml167-pill {pill_cls}">{escape(label)} • {escape(value)}</span><span class="ml167-pill neutral">xERA • N/A unless officially supplied</span>'
             f'<div class="ml167-source">Official MLB Stats API • {SEASON} season + last 5 logged appearances. Evidence-only: no Moneyline probability adjustment. {escape(str(c.get("reason") or ""))}</div></div>')
@@ -212,31 +222,44 @@ def _html(c: Mapping[str, Any]) -> str:
 
 def _inject(card: str, html: str) -> str:
     text = str(card or "")
-    if not html or "ks-pick-card" not in text or "ml167-step2" in text: return text
+    if not html or "ks-pick-card" not in text or "ml167-step2" in text:
+        return text
     return text[:-6] + html + "</div>" if text.endswith("</div>") else text + html
 
 
+# Critical recursion fix: capture the original frozen V16.6 factory BEFORE patching it.
+_FROZEN_CARD_FACTORY = prior._card_renderer_with_step1
+
+
 def _renderer(original, rows, lineups):
-    step1 = prior._card_renderer_with_step1(original, rows, lineups)
+    step1 = _FROZEN_CARD_FACTORY(original, rows, lineups)
+
     def wrapped(results, status_info, team_logo, h):
-        ordered, cursor = list(results or [])[:5], {"i":0}
+        ordered = list(results or [])[:5]
+        cursor = {"i": 0}
         original_markdown = st.markdown
+
         def capture(body: Any, *args: Any, **kwargs: Any):
             text = str(body or "")
             if "ks-pick-card" in text and cursor["i"] < len(ordered):
                 text = _inject(text, _html(_ctx(ordered[cursor["i"]])))
                 cursor["i"] += 1
             return original_markdown(text, *args, **kwargs)
+
         st.markdown = capture
-        try: return step1(results, status_info, team_logo, h)
-        finally: st.markdown = original_markdown
+        try:
+            return step1(results, status_info, team_logo, h)
+        finally:
+            st.markdown = original_markdown
+
     return wrapped
 
 
 def render_moneyline_hub(games_df, section_header, status_info, team_logo, h):
-    """Render frozen V16.6 plus Step 2 starter-quality evidence."""
+    """Render frozen V16.6 plus presentation-only Step 2 starter evidence."""
+    st.markdown(_STEP2_CSS, unsafe_allow_html=True)
     original_factory = prior._card_renderer_with_step1
-    prior._card_renderer_with_step1 = lambda original, rows, lineups: _renderer(original, rows, lineups)
+    prior._card_renderer_with_step1 = _renderer
     try:
         return prior.render_moneyline_hub(games_df, section_header, status_info, team_logo, h)
     finally:
