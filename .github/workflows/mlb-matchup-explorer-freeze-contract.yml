@@ -1,0 +1,117 @@
+name: MLB Matchup Explorer permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-matchup-explorer-step18-hard-freeze']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert Step 18 exact scope
+        if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-step18-hard-freeze'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step17-deep-research-performance.yml' \
+            '.github/workflows/mlb-matchup-explorer-freeze-contract.yml' \
+            'mlb_matchup_explorer_freeze_manifest_v1.json' \
+            'mlb_matchup_hub_v27.py' \
+            'mlb_matchup_hub_v58.py' \
+            'tests/test_mlb_matchup_explorer_step18_hard_freeze.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected Matchup Explorer Step 18 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "STEP18_EXACT_SIX_FILE_SCOPE=PASS"
+
+      - name: Enforce permanent frozen-file manifest
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifest = json.loads(pathlib.Path('mlb_matchup_explorer_freeze_manifest_v1.json').read_text())
+          base = manifest['baseline_commit']
+
+          def rev(spec):
+              return subprocess.check_output(['git', 'rev-parse', spec], text=True).strip()
+
+          failures = []
+          for path in manifest['baseline_paths']:
+              try:
+                  expected = rev(f'{base}:{path}')
+                  actual = rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing frozen path: {path}')
+                  continue
+              if expected != actual:
+                  failures.append(f'frozen baseline changed: {path} expected={expected} actual={actual}')
+
+          for path, expected in manifest['exact_blobs'].items():
+              try:
+                  actual = rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing exact-frozen path: {path}')
+                  continue
+              if expected != actual:
+                  failures.append(f'exact frozen blob changed: {path} expected={expected} actual={actual}')
+
+          if failures:
+              print('\n'.join(failures))
+              sys.exit(1)
+          print('MATCHUP_EXPLORER_PERMANENT_FREEZE_MANIFEST=PASS')
+          PY
+
+      - name: Compile current presentation
+        run: |
+          python -m py_compile \
+            mlb_matchup_hub_v27.py \
+            mlb_matchup_hub_v58.py \
+            tests/test_mlb_matchup_explorer_step18_hard_freeze.py
+          PYTHONPATH=. python -c "import mlb_matchup_hub_v58"
+
+      - name: Run frozen identity and performance contracts
+        run: |
+          # Historical steps keep all behavioral tests. Only their old assertions
+          # that they must still own the compatibility router are excluded, because
+          # an additive wrapper is expected to advance that router.
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_matchup_explorer_cleanup_step16_tight_cards_identity.py \
+            -k 'not router_points_to_step16_presentation'
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_matchup_explorer_cleanup_step17_deep_research_performance.py \
+            -k 'not router_points_to_step17_performance_layer'
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_matchup_explorer_step18_hard_freeze.py
+
+      - name: Certification marker
+        run: echo "MLB_MATCHUP_EXPLORER_STEP18_HARD_FREEZE_GREEN"
