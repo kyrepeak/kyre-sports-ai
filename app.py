@@ -1,11 +1,12 @@
-"""Kyre Sports AI Streamlit entrypoint — clean presentation router.
+"""Kyre Sports AI Streamlit entrypoint — additive clean presentation router.
 
-The V2 presentation shell wraps the frozen streamlit_memory_lazy_router_v1
-bootstrap; it does not replay the historical app-wrapper chain.
+Router V3 preserves the frozen `streamlit_memory_lazy_router_v2` shell and its
+`streamlit_memory_lazy_router_v1` bootstrap, changing only the MLB 1+ Hit
+presentation route to UI V13.16. Matchup Explorer remains frozen.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v2 import render_app
+from streamlit_memory_lazy_router_v3 import render_app
 
 
 render_app()
