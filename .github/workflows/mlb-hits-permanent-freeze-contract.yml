@@ -1,0 +1,101 @@
+name: MLB Hits permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-hits-step1-freeze-contract']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert freeze-contract creation scope
+        if: github.event_name == 'push' || github.head_ref == 'mlb-hits-step1-freeze-contract'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-hits-permanent-freeze-contract.yml' \
+            'mlb_hits_freeze_manifest_v1.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected MLB Hits freeze-contract creation scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "MLB_HITS_FREEZE_CREATION_SCOPE=PASS"
+
+      - name: Enforce permanent Hits frozen-file manifest
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifest = json.loads(pathlib.Path('mlb_hits_freeze_manifest_v1.json').read_text())
+          base = manifest['baseline_commit']
+
+          def rev(spec):
+              return subprocess.check_output(['git', 'rev-parse', spec], text=True).strip()
+
+          failures = []
+          for path in manifest['baseline_paths']:
+              try:
+                  expected = rev(f'{base}:{path}')
+                  actual = rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing frozen Hits path: {path}')
+                  continue
+              if expected != actual:
+                  failures.append(f'frozen Hits baseline changed: {path} expected={expected} actual={actual}')
+
+          for path, expected in manifest['exact_blobs'].items():
+              try:
+                  actual = rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing exact-frozen Hits path: {path}')
+                  continue
+              if expected != actual:
+                  failures.append(f'exact frozen Hits blob changed: {path} expected={expected} actual={actual}')
+
+          if failures:
+              print('\n'.join(failures))
+              sys.exit(1)
+          print('MLB_HITS_PERMANENT_FREEZE_MANIFEST=PASS')
+          PY
+
+      - name: Compile frozen Hits presentation
+        run: |
+          python -m py_compile mlb_hit_hub_v1316.py streamlit_memory_lazy_router_v3.py
+          PYTHONPATH=. python -c "import mlb_hit_hub_v1316; import streamlit_memory_lazy_router_v3"
+
+      - name: Run frozen Hits presentation contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_hits_step1_strength_evidence_summary.py \
+            -k 'not app_activates_additive_router_v3 and not router_changes_only_hits_route_and_delegates_everything_else'
+
+      - name: Certification marker
+        run: echo "MLB_HITS_STEP1_PERMANENT_FREEZE_GREEN"
