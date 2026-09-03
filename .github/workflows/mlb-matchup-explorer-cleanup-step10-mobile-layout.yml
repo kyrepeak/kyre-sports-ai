@@ -23,6 +23,9 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to Cleanup Step 10.
+    # Later additive presentation wrappers carry their own dedicated workflow.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step10-mobile-layout'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
