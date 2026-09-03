@@ -21,6 +21,9 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to Cleanup Step 8.
+    # Later additive route layers have their own dedicated certification.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step8-dev-diagnostics'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
