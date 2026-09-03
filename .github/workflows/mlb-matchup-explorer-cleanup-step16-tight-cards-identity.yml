@@ -23,6 +23,8 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to Cleanup Step 16.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step16-tight-cards-identity'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
