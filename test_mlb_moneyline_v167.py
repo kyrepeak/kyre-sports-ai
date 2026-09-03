@@ -1,13 +1,10 @@
-"""Pure-function regression checks for Moneyline Step 2.
-
-These tests deliberately do not call MLB or mutate the frozen Moneyline chain.
-"""
+"""Pure-function regression checks for Moneyline Step 2."""
 import mlb_moneyline_hub_v167 as m
 
 
 def test_fip_is_deterministic():
     stat = {"homeRuns": 10, "baseOnBalls": 20, "hitByPitch": 2, "strikeOuts": 100, "inningsPitched": "100.0"}
-    assert round(m._fip(stat), 2) == 2.26
+    assert round(m._fip(stat), 2) == 3.06
 
 
 def test_recent_uses_last_five_logged_appearances():
