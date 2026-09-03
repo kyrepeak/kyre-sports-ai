@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to Hits Step 1.
+    # Later additive Hits layers have their own dedicated certification.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-hits-step1-strength-evidence-summary'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
