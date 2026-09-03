@@ -120,11 +120,14 @@ def test_step12_is_presentation_only():
         "_build_step12(",
         "5_000_000",
         "np.random",
-        "monte_carlo",
+        "def _run_monte_carlo",
         "render_daily_rankings(",
         "mlb_moneyline",
     ):
         assert forbidden not in source
+    # Reading the certified convergence flag for display is allowed; the wrapper
+    # must not execute or reimplement the simulation itself.
+    assert "monte_carlo_converged" in source
 
 
 def test_historical_step11_workflow_is_scoped_to_original_branch():
