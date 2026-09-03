@@ -1,0 +1,97 @@
+name: MLB Moneyline Step 1 game identity certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-moneyline-step1-game-identity']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact five-file scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-moneyline-step1-game-identity.yml' \
+            'app.py' \
+            'mlb_moneyline_hub_v166.py' \
+            'streamlit_memory_lazy_router_v4.py' \
+            'tests/test_mlb_moneyline_step1_game_identity.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected MLB Moneyline Step 1 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "MLB_MONEYLINE_STEP1_EXACT_SCOPE=PASS"
+
+      - name: Freeze prior Moneyline model and presentation chain
+        run: |
+          for path in \
+            moneyline_hub_v16.py \
+            moneyline_hub_v161.py \
+            moneyline_hub_v162.py \
+            mlb_moneyline_hub_v163.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_moneyline_hub_v165.py \
+            spread_engine.py \
+            spread_history.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py
+          do
+            before="$(git rev-parse origin/main:$path)"
+            after="$(git rev-parse HEAD:$path)"
+            if [ "$before" != "$after" ]; then
+              echo "Frozen Moneyline path changed: $path"
+              exit 1
+            fi
+          done
+          echo "MLB_MONEYLINE_PRIOR_CHAIN_FROZEN=PASS"
+
+      - name: Verify frozen Hits and Matchup Explorer runtime are untouched
+        run: |
+          changed="$(git diff --name-only origin/main...HEAD)"
+          if echo "$changed" | grep -E '^(mlb_hit_hub_v1316\.py|streamlit_memory_lazy_router_v3\.py|mlb_hits_freeze_manifest_v1\.json|mlb_matchup_|mlb_matchup_explorer_freeze_manifest_v1\.json)' ; then
+            echo "Frozen Hits or Matchup Explorer runtime changed"
+            exit 1
+          fi
+          echo "HITS_AND_MATCHUP_EXPLORER_FROZEN=PASS"
+
+      - name: Compile additive Moneyline presentation
+        run: |
+          python -m py_compile \
+            app.py \
+            streamlit_memory_lazy_router_v4.py \
+            mlb_moneyline_hub_v166.py \
+            tests/test_mlb_moneyline_step1_game_identity.py
+          PYTHONPATH=. python -c "import mlb_moneyline_hub_v166; import streamlit_memory_lazy_router_v4"
+
+      - name: Run Moneyline Step 1 regression tests
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_moneyline_step1_game_identity.py
+
+      - name: Certification marker
+        run: echo "MLB_MONEYLINE_STEP1_GAME_IDENTITY_GREEN"
