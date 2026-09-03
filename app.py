@@ -1,7 +1,8 @@
 """Kyre Sports AI Streamlit entrypoint — additive clean presentation router.
 
-Router V3 preserves the frozen V2/V1 routing contract and changes only the MLB
-1+ Hit presentation route to UI V13.16. Matchup Explorer remains frozen.
+Router V3 preserves the frozen `streamlit_memory_lazy_router_v2` shell and its
+`streamlit_memory_lazy_router_v1` bootstrap, changing only the MLB 1+ Hit
+presentation route to UI V13.16. Matchup Explorer remains frozen.
 """
 from __future__ import annotations
 
