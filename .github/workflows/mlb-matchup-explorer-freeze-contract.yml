@@ -101,9 +101,16 @@ jobs:
 
       - name: Run frozen identity and performance contracts
         run: |
+          # Historical steps keep all behavioral tests. Only their old assertions
+          # that they must still own the compatibility router are excluded, because
+          # an additive wrapper is expected to advance that router.
           PYTHONPATH=. python -m pytest -q \
             tests/test_mlb_matchup_explorer_cleanup_step16_tight_cards_identity.py \
+            -k 'not router_points_to_step16_presentation'
+          PYTHONPATH=. python -m pytest -q \
             tests/test_mlb_matchup_explorer_cleanup_step17_deep_research_performance.py \
+            -k 'not router_points_to_step17_performance_layer'
+          PYTHONPATH=. python -m pytest -q \
             tests/test_mlb_matchup_explorer_step18_hard_freeze.py
 
       - name: Certification marker
