@@ -1,7 +1,7 @@
-"""KYRE Streamlit router V4 — additive MLB Moneyline Step 2 route.
+"""KYRE Streamlit router V4 — additive MLB Moneyline Step 1 route.
 
 Router V3 remains frozen. This wrapper changes only MLB `Moneyline` from the
-historical V16.4 compatibility route to additive Moneyline UI V16.7. The frozen
+historical V16.4 compatibility route to additive Moneyline UI V16.6. The frozen
 Hits V13.16 route, Matchup Explorer route, and every other market continue through
 Router V3/V2/V1 unchanged.
 """
@@ -11,7 +11,7 @@ import streamlit as st
 import streamlit_memory_lazy_router_v3 as prior
 
 frozen = prior.frozen
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V4 • Moneyline Step 2"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V4 • Moneyline Step 1"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v3"
 _BASE_MLB_ROUTE = prior._BASE_RENDER_MLB
 
@@ -22,7 +22,7 @@ def _render_mlb_v4_base(market: str) -> None:
 
     games_df, day = frozen._load_mlb_schedule()
     st.caption(f"⚾ MLB • {day} • lazy route: {market}")
-    mod = frozen._import("mlb_moneyline_hub_v167")
+    mod = frozen._import("mlb_moneyline_hub_v166")
     mod.render_moneyline_hub(
         games_df,
         frozen.section_header,
