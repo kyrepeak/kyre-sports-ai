@@ -1,0 +1,93 @@
+name: MLB Hits Step 1 strength + evidence summary
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-hits-step1-strength-evidence-summary']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact five-file scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-hits-step1-strength-evidence-summary.yml' \
+            'app.py' \
+            'mlb_hit_hub_v1316.py' \
+            'streamlit_memory_lazy_router_v3.py' \
+            'tests/test_mlb_hits_step1_strength_evidence_summary.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected MLB Hits Step 1 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "MLB_HITS_STEP1_EXACT_SCOPE=PASS"
+
+      - name: Freeze certified Hits model and prior UI
+        run: |
+          for path in \
+            engine.py \
+            history.py \
+            hit_hub_v131.py \
+            mlb_hit_hub_v133.py \
+            mlb_hit_hub_v1314.py \
+            mlb_hit_hub_v1315.py; do
+            before="$(git rev-parse origin/main:$path)"
+            after="$(git rev-parse HEAD:$path)"
+            if [ "$before" != "$after" ]; then
+              echo "Frozen Hits path changed: $path"
+              exit 1
+            fi
+          done
+          echo "MLB_HITS_MODEL_AND_PRIOR_UI_FROZEN=PASS"
+
+      - name: Verify Matchup Explorer frozen paths are untouched
+        run: |
+          changed="$(git diff --name-only origin/main...HEAD)"
+          if echo "$changed" | grep -E '^(mlb_matchup_|mlb_moneyline_hub_v16[45]\.py|streamlit_memory_lazy_router_v[12]\.py|mlb_matchup_explorer_freeze_manifest_v1\.json$)' ; then
+            echo "Frozen Matchup Explorer boundary changed"
+            exit 1
+          fi
+          echo "MATCHUP_EXPLORER_BOUNDARY_UNTOUCHED=PASS"
+
+      - name: Compile additive Hits presentation
+        run: |
+          python -m py_compile \
+            app.py \
+            streamlit_memory_lazy_router_v3.py \
+            mlb_hit_hub_v1316.py \
+            tests/test_mlb_hits_step1_strength_evidence_summary.py
+          PYTHONPATH=. python -c "import mlb_hit_hub_v1316; import streamlit_memory_lazy_router_v3"
+
+      - name: Run focused regression tests
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_hits_step1_strength_evidence_summary.py
+
+      - name: Certification marker
+        run: echo "MLB_HITS_STEP1_STRENGTH_EVIDENCE_SUMMARY_GREEN"
