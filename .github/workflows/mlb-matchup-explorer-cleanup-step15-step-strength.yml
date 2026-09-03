@@ -1,30 +1,28 @@
-name: MLB Matchup Explorer cleanup Step 14 selection lock certification
+name: MLB Matchup Explorer cleanup Step 15 step strength certification
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step13-scouting-card-hotfix.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step14-selection-lock.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step15-step-strength.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v54.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step14_selection_lock.py'
+      - 'mlb_matchup_hub_v55.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step15_step_strength.py'
   push:
-    branches: ['mlb-matchup-explorer-cleanup-step14-selection-lock']
+    branches: ['mlb-matchup-explorer-cleanup-step15-step-strength']
     paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step13-scouting-card-hotfix.yml'
       - '.github/workflows/mlb-matchup-explorer-cleanup-step14-selection-lock.yml'
+      - '.github/workflows/mlb-matchup-explorer-cleanup-step15-step-strength.yml'
       - 'mlb_matchup_hub_v27.py'
-      - 'mlb_matchup_hub_v54.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step14_selection_lock.py'
+      - 'mlb_matchup_hub_v55.py'
+      - 'tests/test_mlb_matchup_explorer_cleanup_step15_step_strength.py'
 
 permissions:
   contents: read
 
 jobs:
   certify:
-    # Historical exact-scope certification belongs only to Cleanup Step 14.
-    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step14-selection-lock'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -43,31 +41,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Assert exact cleanup Step 14 scope
+      - name: Assert exact cleanup Step 15 scope
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
-            '.github/workflows/mlb-matchup-explorer-cleanup-step13-scouting-card-hotfix.yml' \
             '.github/workflows/mlb-matchup-explorer-cleanup-step14-selection-lock.yml' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step15-step-strength.yml' \
             'mlb_matchup_hub_v27.py' \
-            'mlb_matchup_hub_v54.py' \
-            'tests/test_mlb_matchup_explorer_cleanup_step14_selection_lock.py' | sort)"
+            'mlb_matchup_hub_v55.py' \
+            'tests/test_mlb_matchup_explorer_cleanup_step15_step_strength.py' | sort)"
           if [ "$actual" != "$expected" ]; then
-            echo "Unexpected Matchup Explorer cleanup Step 14 scope"
+            echo "Unexpected Matchup Explorer cleanup Step 15 scope"
             echo "--- expected ---"
             echo "$expected"
             echo "--- actual ---"
             echo "$actual"
             exit 1
           fi
-          echo "CLEANUP_STEP14_EXACT_FIVE_FILE_SCOPE=PASS"
+          echo "CLEANUP_STEP15_EXACT_FIVE_FILE_SCOPE=PASS"
 
-      - name: Prove Step 13, V2 model, router and rankings are frozen
+      - name: Prove Step 14, V2 model, router and rankings are frozen
         run: |
           for path in \
             streamlit_memory_lazy_router_v1.py \
             streamlit_memory_lazy_router_v2.py \
+            mlb_matchup_hub_v54.py \
             mlb_matchup_hub_v53.py \
             mlb_matchup_hub_v52.py \
             mlb_matchup_hub_v51.py \
@@ -104,7 +103,7 @@ jobs:
               exit 1
             fi
           done
-          echo "MATCHUP_STEP13_AND_V2_MODEL_FREEZE=PASS"
+          echo "MATCHUP_STEP14_AND_V2_MODEL_FREEZE=PASS"
 
       - name: Prove Moneyline page is untouched
         run: |
@@ -119,17 +118,17 @@ jobs:
           done
           echo "MONEYLINE_PAGE_FREEZE=PASS"
 
-      - name: Compile and import selection-lock presentation
+      - name: Compile and import step-strength presentation
         run: |
           python -m py_compile \
             mlb_matchup_hub_v27.py \
-            mlb_matchup_hub_v54.py \
-            tests/test_mlb_matchup_explorer_cleanup_step14_selection_lock.py
-          PYTHONPATH=. python -c "import mlb_matchup_hub_v54"
+            mlb_matchup_hub_v55.py \
+            tests/test_mlb_matchup_explorer_cleanup_step15_step_strength.py
+          PYTHONPATH=. python -c "import mlb_matchup_hub_v55"
 
-      - name: Run cleanup Step 14 regression tests
+      - name: Run cleanup Step 15 regression tests
         run: |
-          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step14_selection_lock.py
+          PYTHONPATH=. python -m pytest -q tests/test_mlb_matchup_explorer_cleanup_step15_step_strength.py
 
       - name: Certification marker
-        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP14_SELECTION_LOCK_GREEN"
+        run: echo "MLB_MATCHUP_EXPLORER_CLEANUP_STEP15_STEP_STRENGTH_GREEN"
