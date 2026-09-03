@@ -29,12 +29,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Assert exact five-file scope
+      - name: Assert exact six-file scope
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
             '.github/workflows/mlb-hits-step1-strength-evidence-summary.yml' \
+            '.github/workflows/mlb-matchup-explorer-cleanup-step8-dev-diagnostics.yml' \
             'app.py' \
             'mlb_hit_hub_v1316.py' \
             'streamlit_memory_lazy_router_v3.py' \
@@ -67,14 +68,14 @@ jobs:
           done
           echo "MLB_HITS_MODEL_AND_PRIOR_UI_FROZEN=PASS"
 
-      - name: Verify Matchup Explorer frozen paths are untouched
+      - name: Verify Matchup Explorer runtime is untouched
         run: |
           changed="$(git diff --name-only origin/main...HEAD)"
           if echo "$changed" | grep -E '^(mlb_matchup_|mlb_moneyline_hub_v16[45]\.py|streamlit_memory_lazy_router_v[12]\.py|mlb_matchup_explorer_freeze_manifest_v1\.json$)' ; then
-            echo "Frozen Matchup Explorer boundary changed"
+            echo "Frozen Matchup Explorer runtime boundary changed"
             exit 1
           fi
-          echo "MATCHUP_EXPLORER_BOUNDARY_UNTOUCHED=PASS"
+          echo "MATCHUP_EXPLORER_RUNTIME_UNTOUCHED=PASS"
 
       - name: Compile additive Hits presentation
         run: |
