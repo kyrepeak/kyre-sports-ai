@@ -23,6 +23,8 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to its original branch.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-matchup-explorer-cleanup-step12-scouting-card'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
