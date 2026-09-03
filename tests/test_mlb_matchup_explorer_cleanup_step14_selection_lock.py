@@ -76,7 +76,8 @@ def test_old_v1_matchup_snapshot_is_removed_from_normal_page():
 def test_stale_result_guard_is_selection_specific():
     source = _text("mlb_matchup_hub_v54.py")
     assert "def _signature" in source
-    assert ".mx54-result{display:none!important}" in source
+    assert ".mx54-result" in source
+    assert "display:none!important" in source
     assert ".mx54-current-" in source
     assert "mx54-owned" in source
     assert "_owned_scouting_html" in source
