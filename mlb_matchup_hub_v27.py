@@ -1,6 +1,6 @@
 """Compatibility entrypoint for the current MLB Matchup Explorer presentation."""
 from __future__ import annotations
 
-from mlb_matchup_hub_v51 import FROZEN_MATCHUP_CHAIN, VERSION, render_matchup_hub
+from mlb_matchup_hub_v52 import FROZEN_MATCHUP_CHAIN, VERSION, render_matchup_hub
 
 __all__ = ["FROZEN_MATCHUP_CHAIN", "VERSION", "render_matchup_hub"]
