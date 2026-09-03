@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   certify:
+    # Historical exact-scope certification belongs only to Moneyline Step 1.
+    # Future additive Moneyline steps have their own dedicated workflow.
+    if: github.event_name == 'push' || github.head_ref == 'mlb-moneyline-step1-game-identity'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
