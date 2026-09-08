@@ -191,7 +191,7 @@ def test_build_engine_handles_mixed_fcs_fbs(monkeypatch):
         {"team": "Miami (FL)", "team_slug": "miami-fl", "division_context": "FBS"},
     )
 
-    assert out["model_ready"] is True
+    assert out["model_ready"] is True, out
     assert out["away_division"] == "FCS"
     assert out["home_division"] == "FBS"
     assert out["mixed_division"] is True
