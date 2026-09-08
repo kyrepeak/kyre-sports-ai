@@ -1,21 +1,22 @@
-"""Kyre Sports AI Streamlit entrypoint — College Football Step 1.
+"""Kyre Sports AI Streamlit entrypoint — College Football Step 2.
 
-Router V23 preserves the frozen Router V22/V21/V20/V19/V18/V17/V16/V15/V14/V13/V12/V11/V10/V9/V8/V7/V6/V5/V4/V3/V2
-chain down to the `streamlit_memory_lazy_router_v1` bootstrap.
+Router V24 preserves the frozen Router V23/V22/.../V2 chain down to the
+`streamlit_memory_lazy_router_v1` bootstrap.
 
-Additive Step 1 change:
-- adds College Football as a fourth sport,
-- exposes Moneyline, Over/Under, and Game Total page foundations,
+Additive Step 2 change:
+- preserves the frozen College Football Step 1 section/page foundation,
+- adds NCAA FBS schedule + stable game identity through new versioned modules,
+- adds ESPN venue/status enrichment without changing betting-model math,
 - keeps every existing MLB/WNBA/NFL route unchanged.
 
-Deployment heartbeat: STREAMLIT_MAIN_V23_CFB_STEP1_2026-09-08T06:40Z.
+Deployment heartbeat: STREAMLIT_MAIN_V24_CFB_STEP2_2026-09-08T07:30Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v23 import render_app
+from streamlit_memory_lazy_router_v24 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V23_CFB_STEP1_2026-09-08T06:40Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V24_CFB_STEP2_2026-09-08T07:30Z"
 
 
 render_app()
