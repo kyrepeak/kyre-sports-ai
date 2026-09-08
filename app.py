@@ -1,23 +1,24 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB Step 7 Over/Under Foundation.
+"""Kyre Sports AI Streamlit entrypoint — CFB Step 8 Over/Under Model V1.
 
-Router V31 preserves the permanently frozen Router V30/V29/.../V2 chain down
+Router V32 preserves the permanently frozen Router V31/V30/.../V2 chain down
 to the streamlit_memory_lazy_router_v1 bootstrap.
 
-Additive Step 7 change:
-- preserves permanently frozen CFB Steps 1-6,
+Additive Step 8 change:
+- preserves permanently frozen CFB Steps 1-7,
 - preserves College Football Moneyline Step 6 unchanged,
-- advances only College Football -> Over/Under to its dedicated foundation,
-- keeps the Over/Under model/ranking OFF until Steps 8-9,
+- advances only College Football -> Over/Under to raw projected-total modeling,
+- keeps sportsbook/market projection weight at 0%,
+- keeps Top-5/final ranking OFF until Step 9,
 - keeps Game Total, MLB, WNBA, and NFL unchanged.
 
-Deployment heartbeat: STREAMLIT_MAIN_V31_CFB_STEP7_2026-09-08T17:05Z.
+Deployment heartbeat: STREAMLIT_MAIN_V32_CFB_STEP8_2026-09-08T17:20Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v31 import render_app
+from streamlit_memory_lazy_router_v32 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V31_CFB_STEP7_2026-09-08T17:05Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V32_CFB_STEP8_2026-09-08T17:20Z"
 
 
 render_app()
