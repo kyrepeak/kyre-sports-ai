@@ -143,6 +143,175 @@ def _cross_division_games(
     }
 
 
+
+
+def _espn_record_summary(competitor: Mapping[str, Any]) -> str:
+    for record in competitor.get("records") or []:
+        if not isinstance(record, dict):
+            continue
+        if str(record.get("name") or "").lower() in {"overall", "total"}:
+            summary = str(record.get("summary") or "").strip()
+            if summary:
+                return summary
+    for record in competitor.get("records") or []:
+        if isinstance(record, dict):
+            summary = str(record.get("summary") or "").strip()
+            if summary:
+                return summary
+    return ""
+
+
+def _espn_rank(competitor: Mapping[str, Any]) -> int | None:
+    try:
+        value = int((competitor.get("curatedRank") or {}).get("current"))
+    except Exception:
+        return None
+    return value if 0 < value < 99 else None
+
+
+def _espn_schedule_games(
+    payload: Mapping[str, Any],
+    requested_day: str,
+) -> list[dict[str, Any]]:
+    """Convert ESPN's FBS-scoped scoreboard into stable fallback identities."""
+    games: list[dict[str, Any]] = []
+    for event in payload.get("events") or []:
+        if not isinstance(event, dict):
+            continue
+        competitions = event.get("competitions") or []
+        if not competitions or not isinstance(competitions[0], dict):
+            continue
+        comp = competitions[0]
+
+        sides: dict[str, dict[str, Any]] = {}
+        for competitor in comp.get("competitors") or []:
+            if isinstance(competitor, dict):
+                side = str(competitor.get("homeAway") or "").lower()
+                if side in {"home", "away"}:
+                    sides[side] = competitor
+        away = sides.get("away") or {}
+        home = sides.get("home") or {}
+        if not away or not home:
+            continue
+
+        raw_date = str(event.get("date") or comp.get("date") or "").strip()
+        try:
+            dt = datetime.fromisoformat(raw_date.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            kickoff = dt.astimezone(frozen._ET)
+        except Exception:
+            continue
+        game_day = kickoff.date().isoformat()
+        if game_day != requested_day:
+            continue
+
+        away_team = away.get("team") or {}
+        home_team = home.get("team") or {}
+        away_name = str(
+            away_team.get("location")
+            or away_team.get("shortDisplayName")
+            or away_team.get("displayName")
+            or "Away"
+        ).strip()
+        home_name = str(
+            home_team.get("location")
+            or home_team.get("shortDisplayName")
+            or home_team.get("displayName")
+            or "Home"
+        ).strip()
+        away_slug = str(away_team.get("slug") or frozen._slug(away_name)).strip()
+        home_slug = str(home_team.get("slug") or frozen._slug(home_name)).strip()
+        event_id = str(event.get("id") or "").strip()
+        if not event_id or not away_slug or not home_slug:
+            continue
+
+        status_type = (event.get("status") or {}).get("type") or {}
+        status = str(
+            status_type.get("description")
+            or status_type.get("detail")
+            or status_type.get("shortDetail")
+            or "Status unavailable"
+        ).strip()
+
+        broadcast_names: list[str] = []
+        for broadcast in comp.get("broadcasts") or []:
+            if isinstance(broadcast, dict):
+                for name in broadcast.get("names") or []:
+                    if str(name).strip():
+                        broadcast_names.append(str(name).strip())
+        broadcast = ", ".join(dict.fromkeys(broadcast_names)) or "Broadcast unavailable"
+
+        venue = str((comp.get("venue") or {}).get("fullName") or "Venue unavailable").strip()
+        kickoff_text = kickoff.strftime("%I:%M %p").lstrip("0") + " ET"
+
+        games.append({
+            "game_id": event_id,
+            "identity_key": f"espn:{event_id}",
+            "identity_fingerprint": f"espn:{event_id}",
+            "game_date": game_day,
+            "kickoff_et": kickoff_text,
+            "kickoff_iso": kickoff.isoformat(),
+            "away_team": away_name,
+            "away_team_slug": away_slug,
+            "away_conference": "Conference unavailable",
+            "away_rank": _espn_rank(away),
+            "away_record_summary": _espn_record_summary(away),
+            "home_team": home_name,
+            "home_team_slug": home_slug,
+            "home_conference": "Conference unavailable",
+            "home_rank": _espn_rank(home),
+            "home_record_summary": _espn_record_summary(home),
+            "venue": venue,
+            "status": status,
+            "broadcast": broadcast,
+            "neutral_site": bool(comp.get("neutralSite")),
+            "ncaa_url": "",
+            "espn_event_id": event_id,
+            "schedule_source": "ESPN FBS scoreboard verified fallback",
+            "enrichment_source": "ESPN College Football scoreboard",
+            "identity_verified": True,
+            "date_matches_query": True,
+            "mixed_division_supplement": True,
+            "identity_provider": "ESPN",
+        })
+
+    games.sort(key=lambda g: (str(g.get("kickoff_iso")), str(g.get("game_id"))))
+    return games
+
+
+def _game_matches_existing(
+    candidate: Mapping[str, Any],
+    existing: list[dict[str, Any]],
+) -> bool:
+    candidate_home = _side_keys_with_parenthetical_alias(candidate, "home")
+    candidate_away = _side_keys_with_parenthetical_alias(candidate, "away")
+    for game in existing:
+        home = _side_keys_with_parenthetical_alias(game, "home")
+        away = _side_keys_with_parenthetical_alias(game, "away")
+        home_match = bool(candidate_home & home) or frozen._names_overlap(candidate_home, home)
+        away_match = bool(candidate_away & away) or frozen._names_overlap(candidate_away, away)
+        if home_match and away_match:
+            return True
+    return False
+
+
+def _supplement_with_espn_fallback(
+    games: list[dict[str, Any]],
+    espn_payload: Mapping[str, Any],
+    requested_day: str,
+) -> tuple[list[dict[str, Any]], int]:
+    out = [dict(g) for g in games]
+    added = 0
+    for candidate in _espn_schedule_games(espn_payload, requested_day):
+        if _game_matches_existing(candidate, out):
+            continue
+        out.append(candidate)
+        added += 1
+    out.sort(key=lambda g: (str(g.get("kickoff_iso")), str(g.get("game_id"))))
+    return out, added
+
+
 def _merge_primary_and_crossovers(
     primary: list[dict[str, Any]],
     crossovers: list[dict[str, Any]],
@@ -189,7 +358,18 @@ def load_with_diagnostics(target_date: Any) -> tuple[list[dict[str, Any]], dict[
 
     games, merge_diag = _merge_primary_and_crossovers(primary, crossovers)
 
-    # Enrich every merged game from the already-fetched ESPN FBS payload.
+    # If NCAA's current persisted schedule query is stale/empty, or if it
+    # misses an FBS-scoped event, use ESPN groups=80 as an explicit verified
+    # fallback identity. This is a schedule completeness fallback only.
+    espn_fallback_added = 0
+    if espn_payload:
+        games, espn_fallback_added = _supplement_with_espn_fallback(
+            games,
+            espn_payload,
+            requested_day,
+        )
+
+    # Enrich NCAA-identity games from the already-fetched ESPN payload.
     espn_matches = 0
     if games and espn_payload:
         espn_matches = frozen._enrich_with_espn(
@@ -216,6 +396,7 @@ def load_with_diagnostics(target_date: Any) -> tuple[list[dict[str, Any]], dict[
         "venue_missing": venue_missing,
         "attempts": attempts,
         "primary_fbs_games": len(primary),
+        "espn_fallback_added": espn_fallback_added,
         **crossover_diag,
         **merge_diag,
     }
@@ -247,6 +428,8 @@ __all__ = [
     "MODEL_VERSION",
     "NCAA_FCS_DIVISION",
     "_cross_division_games",
+    "_espn_schedule_games",
+    "_supplement_with_espn_fallback",
     "_fetch_espn_fbs_payload",
     "_fetch_ncaa_division_payload",
     "_matches_espn_fbs_event",
