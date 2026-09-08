@@ -67,9 +67,14 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           text=Path("app.py").read_text(encoding="utf-8")
-          if "streamlit_memory_lazy_router_v7" not in text:
-              raise SystemExit("Router V7 is not the Streamlit bootstrap")
+          match=re.search(r"from streamlit_memory_lazy_router_v(\\d+) import render_app", text)
+          if not match or int(match.group(1)) < 7:
+              raise SystemExit("Moneyline bootstrap regressed below Router V7")
+          router=Path(f"streamlit_memory_lazy_router_v{match.group(1)}.py")
+          if not router.exists():
+              raise SystemExit(f"active router file missing: {router}")
           if "streamlit_memory_lazy_router_v1" not in text:
               raise SystemExit("lazy-router bootstrap lineage marker missing")
           print("MLB_MONEYLINE_STEP4_BOOTSTRAP=PASS")
