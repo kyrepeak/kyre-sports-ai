@@ -254,7 +254,7 @@ jobs:
                   raise SystemExit(f"Step 6 final probability crossed firewall: {token}")
 
           import re
-          match = re.search(r"from streamlit_memory_lazy_router_v(\\d+) import render_app", app)
+          match = re.search(r"from streamlit_memory_lazy_router_v(\d+) import render_app", app)
           if not match or int(match.group(1)) < 30:
               raise SystemExit("app.py regressed below frozen Router V30")
           current = int(match.group(1))
