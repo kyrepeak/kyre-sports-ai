@@ -18,7 +18,7 @@ from __future__ import annotations
 from html.parser import HTMLParser
 import re
 from typing import Any, Mapping
-from urllib.parse import urljoin, urlparse
+from urllib.parse import unquote, urljoin, urlparse
 
 import streamlit as st
 
@@ -139,8 +139,23 @@ def _candidate_score(
     if conf and re.search(rf"\b{re.escape(conf)}\b", extract, flags=re.I):
         score += 3.0
 
-    if any(term in lower_title for term in ("disambiguation", "season", "history of")):
-        score -= 4.0
+    if lower_title.endswith(" football"):
+        score += 5.0
+    if any(
+        term in lower_title
+        for term in (
+            "disambiguation",
+            "season",
+            "history of",
+            "rivalry",
+            "football game",
+            "championship game",
+            "series",
+            "stadium",
+            "list of",
+        )
+    ):
+        score -= 10.0
     return score
 
 
@@ -201,12 +216,47 @@ def _wikipedia_candidates(
     return ranked, attempts
 
 
-def _page_image(page: Mapping[str, Any]) -> str:
+def _logo_url_score(url: str, team_name: str) -> float:
+    parsed = urlparse(_safe_http_url(url))
+    text = unquote(parsed.path).lower()
+    team_tokens = _tokens(team_name)
+    path_tokens = _tokens(text)
+    score = 0.0
+    if "logo" in text:
+        score += 8.0
+    if any(term in text for term in ("wordmark", "brand", "athletic-mark", "primary-mark", "secondary-mark")):
+        score += 5.0
+    score += 2.5 * len(team_tokens & path_tokens)
+    if text.endswith(".svg"):
+        score += 2.0
+    if any(
+        term in text
+        for term in (
+            "photo",
+            "gallery",
+            "player",
+            "stadium",
+            "civil_war",
+            "game_",
+            "presto",
+            "article",
+            "story",
+        )
+    ):
+        score -= 8.0
+    return score
+
+
+def _page_image(page: Mapping[str, Any], team_name: str) -> str:
     for key in ("original", "thumbnail"):
         obj = page.get(key) or {}
         if isinstance(obj, Mapping):
             url = _safe_http_url(obj.get("source"))
-            if url and "upload.wikimedia.org" in urlparse(url).netloc.lower():
+            if (
+                url
+                and "upload.wikimedia.org" in urlparse(url).netloc.lower()
+                and _logo_url_score(url, team_name) >= 5.0
+            ):
                 return url
     return ""
 
@@ -253,7 +303,7 @@ def _best_official_url(page: Mapping[str, Any]) -> str:
         ((float(_official_url_score(url)), url) for url in links),
         reverse=True,
     )
-    if not ranked or ranked[0][0] < 4.0:
+    if not ranked or ranked[0][0] < 8.0:
         return ""
     return ranked[0][1]
 
@@ -365,14 +415,19 @@ def _official_page_logo(
     parser.feed(html)
 
     ranked = sorted(parser.image_candidates, reverse=True)
-    for _, raw in ranked:
+    for parser_score, raw in ranked:
         url = _safe_http_url(urljoin(official_url, raw))
-        if url and any(urlparse(url).path.lower().endswith(ext) for ext in _IMAGE_EXTENSIONS):
+        if (
+            url
+            and parser_score >= 4.0
+            and any(urlparse(url).path.lower().endswith(ext) for ext in _IMAGE_EXTENSIONS)
+            and _logo_url_score(url, team_name) >= 3.0
+        ):
             return url, attempts
 
     for raw in parser.meta_images:
         url = _safe_http_url(urljoin(official_url, raw))
-        if url:
+        if url and _logo_url_score(url, team_name) >= 5.0:
             return url, attempts
     return "", attempts
 
@@ -386,6 +441,8 @@ def _commons_score(
     team_tokens = _tokens(team_name)
     title_tokens = _tokens(title)
     overlap = len(team_tokens & title_tokens)
+    if not overlap:
+        return -999.0
     score = float(overlap * 4)
     if "logo" in lower:
         score += 7.0
@@ -466,7 +523,7 @@ def resolve_team_logo(
                     "provider_attempts": wiki_attempts + official_attempts,
                 }
 
-        wiki_logo = _page_image(best)
+        wiki_logo = _page_image(best, team_name)
         if wiki_logo:
             return {
                 "logo": wiki_logo,
