@@ -11,21 +11,23 @@ import streamlit_memory_lazy_router_v5 as frozen_router
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V6 • Moneyline Step 3"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v5"
+_BASE_MLB_ROUTE = frozen_router._render_mlb_v5_base
+_FROZEN = frozen_router.frozen_router.frozen
 
 
 def _render_mlb_v6_base(market: str) -> None:
     if market != "Moneyline":
-        return frozen_router._render_mlb_v5_base(market)
+        return _BASE_MLB_ROUTE(market)
 
-    games_df, day = frozen_router.frozen_router.frozen._load_mlb_schedule()
+    games_df, day = _FROZEN._load_mlb_schedule()
     st.caption(f"⚾ MLB • {day} • lazy route: {market}")
-    mod = frozen_router.frozen_router.frozen._import("mlb_moneyline_hub_v168")
+    mod = _FROZEN._import("mlb_moneyline_hub_v168")
     mod.render_moneyline_hub(
         games_df,
-        frozen_router.frozen_router.frozen.section_header,
-        frozen_router.frozen_router.frozen.status_info,
-        frozen_router.frozen_router.frozen.team_logo,
-        frozen_router.frozen_router.frozen.h,
+        _FROZEN.section_header,
+        _FROZEN.status_info,
+        _FROZEN.team_logo,
+        _FROZEN.h,
     )
 
 
