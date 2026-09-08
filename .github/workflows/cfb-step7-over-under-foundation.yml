@@ -210,7 +210,6 @@ jobs:
               'TEAM_DATA_PROVIDER = "cfb_team_data_v2"',
               'root._import("cfb_over_under_hub_v1")',
               'FROZEN_ROUTER = "streamlit_memory_lazy_router_v30"',
-              'from streamlit_memory_lazy_router_v31 import render_app',
               'Step 8 owns the first Over/Under model',
               'Step 9 owns slate ranking',
           ]
@@ -234,6 +233,18 @@ jobs:
           for token in forbidden:
               if token in hub:
                   raise SystemExit(f"Step 7 crossed model/market boundary: {token}")
+
+          import re
+          match = re.search(r"from streamlit_memory_lazy_router_v(\d+) import render_app", app)
+          if not match or int(match.group(1)) < 31:
+              raise SystemExit("app.py regressed below frozen Router V31")
+          current = int(match.group(1))
+          for version in range(current, 31, -1):
+              source = Path(f"streamlit_memory_lazy_router_v{version}.py").read_text(encoding="utf-8")
+              if f"import streamlit_memory_lazy_router_v{version - 1} as prior" not in source:
+                  raise SystemExit(
+                      f"Router V{version} does not preserve additive chain to frozen Router V31"
+                  )
 
           print("CFB_STEP7_OVER_UNDER_FIREWALL=PASS")
           PY
