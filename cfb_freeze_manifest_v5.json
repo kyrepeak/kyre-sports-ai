@@ -1,0 +1,38 @@
+{
+  "version": 5,
+  "policy": "Every completed College Football runtime step is immutable. Future CFB work must be additive through new versioned modules/routers and preserve all frozen prior CFB contracts.",
+  "completed_steps": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "exact_blobs": {
+    "cfb_hub_v1.py": "f5bded2de4de81507dec3d8887853de57154d51a",
+    "streamlit_memory_lazy_router_v23.py": "7ce1c82acbd79976285b129a7747aa6458865095",
+    "cfb_schedule_v1.py": "30379330a7f2f38f922c7083c1109c95eaf01b11",
+    "cfb_hub_v2.py": "fda4338b97e2c23090888810866ae61d67c6c572",
+    "streamlit_memory_lazy_router_v24.py": "5d972f10f23e8c3d2900ed483297fb398d0a8fab",
+    "cfb_team_data_v1.py": "146963ce5fe51409a84c8681ffab90d2512d4950",
+    "cfb_hub_v3.py": "aba38cb05493e4b64d1d5aedaa7d14ff3dcd6822",
+    "streamlit_memory_lazy_router_v25.py": "0e4fa9ec61efa85ecce0bf1a71ebb57588a04570",
+    "cfb_moneyline_hub_v1.py": "60f486512ce78b3688c0d41a0d5cefb47a3d7f22",
+    "streamlit_memory_lazy_router_v26.py": "7b3010adb31deca3962da1bdbf5505f591d64e58",
+    "cfb_moneyline_model_v1.py": "fe8f14fd10a56373c05a2d86b76e4154b8dad6ba",
+    "cfb_moneyline_hub_v2.py": "5e4f6df41f2845b3817362e4fb108d9b10515360",
+    "streamlit_memory_lazy_router_v27.py": "73fee1aacb51b860ebd466457c3a774e7c71f1ee"
+  },
+  "step1_merge_commit": "f55bb82288ab8361bb1d0493d5ad23c8f51af827",
+  "step1_freeze_merge_commit": "1fb445eb8dd2259bdd9abf497fb4c8a63ab691d4",
+  "step2_merge_commit": "5dea6349b09a84191e5bfda885986529a8b06783",
+  "step2_freeze_merge_commit": "28d7087ca6435bbc407931c7a13a1fa2e51c6825",
+  "step3_merge_commit": "6879411383b9ac08b1bc498b51d277f9c7eff45d",
+  "protected_existing_contracts": [
+    "mlb_hits_freeze_manifest_v7.json",
+    "mlb_moneyline_freeze_manifest_v13.json",
+    "mlb_matchup_explorer_freeze_manifest_v1.json"
+  ],
+  "step4_merge_commit": "52bd68966a98d50cca60aef4a94e0905aefa8a8f",
+  "step5_merge_commit": "f444ad1951460fe010a4fe21cb9ec8a33f6cf37f"
+}
