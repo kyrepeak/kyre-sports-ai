@@ -83,14 +83,18 @@ def test_official_scoreboard_games_receive_authoritative_markers():
     assert diag["raw_contests"] == 1
 
 
-def test_authoritative_ncaa_identity_wins_over_duplicate_fallback():
-    official = [_game("100", "Ohio St.", "Texas")]
+def test_authoritative_ncaa_slate_is_atomic_when_available():
+    official = [
+        _game("100", "Ohio St.", "Texas"),
+        _game("101", "Arizona St.", "Texas A&M", "2026-09-12T12:05:00-04:00"),
+    ]
     fallback = [
         {
-            **_game("espn-1", "Ohio St.", "Texas"),
+            **_game("espn-1", "Ohio State", "Texas"),
             "identity_key": "espn:401000001",
         },
-        _game("101", "Arizona St.", "Texas A&M", "2026-09-12T12:05:00-04:00"),
+        _game("espn-2", "Arizona State", "Texas A&M", "2026-09-12T12:05:00-04:00"),
+        _game("espn-3", "Western Kentucky", "Georgia", "2026-09-12T12:10:00-04:00"),
     ]
 
     out, diag = schedule._merge_authoritative_scoreboard(
@@ -99,10 +103,24 @@ def test_authoritative_ncaa_identity_wins_over_duplicate_fallback():
     )
 
     assert len(out) == 2
-    assert out[0]["identity_key"] == "ncaa:100"
-    assert {g["home_team"] for g in out} == {"Texas", "Texas A&M"}
-    assert diag["fallback_games_added"] == 1
-    assert diag["fallback_duplicates_suppressed"] == 1
+    assert [g["identity_key"] for g in out] == ["ncaa:100", "ncaa:101"]
+    assert diag["fallback_games_added"] == 0
+    assert diag["fallback_duplicates_suppressed"] == 3
+    assert diag["fallback_mode"] == 0
+
+
+def test_fallback_is_used_only_when_official_scoreboard_is_empty():
+    fallback = [
+        _game("200", "Oklahoma", "Michigan"),
+        _game("201", "Oregon", "Oklahoma St.", "2026-09-12T12:05:00-04:00"),
+    ]
+
+    out, diag = schedule._merge_authoritative_scoreboard([], fallback)
+
+    assert len(out) == 2
+    assert diag["official_scoreboard_games"] == 0
+    assert diag["fallback_games_added"] == 2
+    assert diag["fallback_mode"] == 1
 
 
 def test_hotfix_is_schedule_only():
