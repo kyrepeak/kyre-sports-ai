@@ -1,0 +1,223 @@
+name: CFB O/U Intelligence V2 Upgrade Step 2 permanent freeze
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['cfb-ou-upgrade-step2-permanent-freeze']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact freeze scope
+        if: github.event_name == 'push' || github.head_ref == 'cfb-ou-upgrade-step2-permanent-freeze'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-over-under-upgrade-step2-permanent-freeze.yml' \
+            'cfb_over_under_upgrade_freeze_manifest_v2.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected CFB O/U Upgrade Step 2 freeze scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_OU_UPGRADE_STEP2_FREEZE_SCOPE=PASS"
+
+      - name: Enforce original CFB Steps 1 through 12 freeze
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          base_manifest = json.loads(pathlib.Path("cfb_freeze_manifest_v12.json").read_text())
+          for path, expected in (base_manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen base path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"original frozen CFB path changed: {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("ORIGINAL_CFB_STEPS_1_12_FROZEN=PASS")
+          PY
+
+      - name: Enforce Upgrade Step 1 permanent freeze
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          expected_manifest_blob = "8dc5ddbf06744953b5e6689eefcdfb92e0c116fe"
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if rev("HEAD:cfb_over_under_upgrade_freeze_manifest_v1.json") != expected_manifest_blob:
+              failures.append("Upgrade Step 1 freeze manifest changed")
+
+          manifest = json.loads(
+              pathlib.Path("cfb_over_under_upgrade_freeze_manifest_v1.json").read_text()
+          )
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen Upgrade Step 1 path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"Upgrade Step 1 frozen blob changed: {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("CFB_OU_UPGRADE_STEP1_PERMANENT_FREEZE=PASS")
+          PY
+
+      - name: Enforce Upgrade Steps 1 and 2 exact blobs
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifest = json.loads(
+              pathlib.Path("cfb_over_under_upgrade_freeze_manifest_v2.json").read_text()
+          )
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if manifest.get("version") != 2:
+              failures.append("upgrade freeze version changed")
+          if manifest.get("completed_upgrade_steps") != [1, 2]:
+              failures.append("completed upgrade steps changed")
+
+          step2 = manifest.get("step2_contract") or {}
+          required_true = [
+              "ap_rank_active",
+              "coaches_poll_active",
+              "cfp_rank_when_released_active",
+              "conference_context_active",
+              "overall_record_active",
+              "home_road_records_active",
+              "recent_form_active",
+              "fbs_support_active",
+              "fcs_support_active",
+              "presentation_only",
+          ]
+          for key in required_true:
+              if step2.get(key) is not True:
+                  failures.append(f"Step 2 contract lost {key}")
+
+          required_false = [
+              "custom_power_rating_active",
+              "projection_math_changed",
+              "selection_math_changed",
+              "top5_ranking_math_changed",
+              "analysis_line_behavior_changed",
+              "sportsbook_input_added",
+              "market_probability_input_added",
+              "edge_or_ev_added",
+              "monte_carlo_added",
+          ]
+          for key in required_false:
+              if step2.get(key) is not False:
+                  failures.append(f"Step 2 contract changed {key}")
+
+          for key in ("projection_weight", "selection_weight", "ranking_selection_weight"):
+              if step2.get(key) != 0.0:
+                  failures.append(f"Step 2 nonzero model weight: {key}")
+
+          if step2.get("next_upgrade_step") != 3:
+              failures.append("Step 2 next-upgrade handoff changed")
+
+          required_ranks = {
+              "total_offense",
+              "scoring_offense",
+              "passing_offense",
+              "rushing_offense",
+              "total_defense",
+              "scoring_defense",
+              "passing_defense",
+              "rushing_defense",
+          }
+          if set(step2.get("ncaa_category_ranks") or []) != required_ranks:
+              failures.append("Step 2 NCAA category-rank contract changed")
+
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing Upgrade Step 1/2 path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"Upgrade Step 1/2 blob changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_OU_UPGRADE_STEP2_PERMANENTLY_FROZEN=PASS")
+          PY
+
+      - name: Verify active runtime and regressions
+        run: |
+          grep -F 'from streamlit_memory_lazy_router_v38 import render_app' app.py
+          python -m py_compile \
+            cfb_over_under_rankings_v1.py \
+            cfb_over_under_matchup_ui_v2.py \
+            streamlit_memory_lazy_router_v38.py
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_over_under_upgrade_step2_rankings.py \
+            tests/test_cfb_over_under_upgrade_step2_ui.py \
+            tests/test_streamlit_memory_lazy_router_v38.py \
+            tests/test_cfb_over_under_upgrade_step1.py \
+            tests/test_streamlit_memory_lazy_router_v37.py \
+            tests/test_cfb_step9_over_under_final_v1.py \
+            tests/test_cfb_step9_over_under_hub_v3.py \
+            tests/test_streamlit_memory_lazy_router_v36.py
+
+      - name: Freeze marker
+        run: echo "CFB_OU_UPGRADE_STEP2_PERMANENT_FREEZE_GREEN"
