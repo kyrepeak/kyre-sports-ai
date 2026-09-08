@@ -73,7 +73,7 @@ jobs:
           from pathlib import Path
           import re
           text=Path("app.py").read_text(encoding="utf-8")
-          match=re.search(r"from streamlit_memory_lazy_router_v(\\d+) import render_app", text)
+          match=re.search(r"from streamlit_memory_lazy_router_v(\d+) import render_app", text)
           if not match or int(match.group(1)) < 6:
               raise SystemExit("Moneyline bootstrap regressed below Router V6")
           router=Path(f"streamlit_memory_lazy_router_v{match.group(1)}.py")
