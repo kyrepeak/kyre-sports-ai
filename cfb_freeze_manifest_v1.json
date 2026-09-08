@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "policy": "Every completed College Football runtime step is immutable. Future CFB work must be additive through new versioned modules/routers and preserve all frozen prior CFB contracts.",
+  "completed_steps": [
+    1
+  ],
+  "exact_blobs": {
+    "cfb_hub_v1.py": "f5bded2de4de81507dec3d8887853de57154d51a",
+    "streamlit_memory_lazy_router_v23.py": "7ce1c82acbd79976285b129a7747aa6458865095"
+  },
+  "step1_merge_commit": "f55bb82288ab8361bb1d0493d5ad23c8f51af827",
+  "protected_existing_contracts": [
+    "mlb_hits_freeze_manifest_v7.json",
+    "mlb_moneyline_freeze_manifest_v13.json",
+    "mlb_matchup_explorer_freeze_manifest_v1.json"
+  ]
+}
