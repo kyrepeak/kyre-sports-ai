@@ -293,7 +293,7 @@ def _external_links(page: Mapping[str, Any]) -> list[str]:
     return out
 
 
-def _official_url_score(url: str) -> float:
+def _official_url_score(url: str, team_identity: str = "") -> float:
     parsed = urlparse(url)
     host = parsed.netloc.lower().removeprefix("www.")
     lower = url.lower()
@@ -309,6 +309,13 @@ def _official_url_score(url: str) -> float:
         score += 5.0
     if any(word in host for word in ("hurricanes", "gators", "rattlers", "sooners", "longhorns", "tigers", "bulldogs")):
         score += 3.0
+    identity_tokens = {
+        token for token in _tokens(team_identity)
+        if len(token) >= 4 and token not in {"football"}
+    }
+    host_key = re.sub(r"[^a-z0-9]+", "", host)
+    if any(token in host_key for token in identity_tokens):
+        score += 8.0
     if parsed.path in ("", "/"):
         score += 1.0
     return score
@@ -318,8 +325,10 @@ def _best_official_url(page: Mapping[str, Any]) -> str:
     links = _external_links(page)
     if not links:
         return ""
+    title = _clean(page.get("title"))
+    identity = title[:-9].strip() if title.lower().endswith(" football") else title
     ranked = sorted(
-        ((float(_official_url_score(url)), url) for url in links),
+        ((float(_official_url_score(url, identity)), url) for url in links),
         reverse=True,
     )
     if not ranked or ranked[0][0] < 8.0:
@@ -503,14 +512,55 @@ def _commons_score(
 def _commons_logo(
     team_name: str,
 ) -> tuple[str, list[dict[str, Any]]]:
-    payload, attempts = schedule_v1._fetch_json_with_fallback(
+    attempts: list[dict[str, Any]] = []
+
+    direct_titles = [
+        f"File:{team_name} logo.svg",
+        f"File:{team_name} logo.png",
+        f"File:{team_name} wordmark.svg",
+        f"File:{team_name} athletics logo.svg",
+    ]
+    direct_payload, direct_attempts = schedule_v1._fetch_json_with_fallback(
+        COMMONS_API,
+        {
+            "action": "query",
+            "titles": "|".join(direct_titles),
+            "prop": "imageinfo",
+            "iiprop": "url|mime",
+            "iiurlwidth": 600,
+            "redirects": 1,
+            "format": "json",
+            "formatversion": 2,
+        },
+        f"Wikimedia Commons direct CFB logo lookup: {team_name}",
+    )
+    attempts.extend(direct_attempts)
+
+    direct_ranked = sorted(
+        (
+            (_commons_score(page, team_name), page)
+            for page in _pages(direct_payload)
+            if not page.get("missing")
+        ),
+        key=lambda item: item[0],
+        reverse=True,
+    )
+    for score, page in direct_ranked:
+        if score < 8.0:
+            continue
+        info = (page.get("imageinfo") or [{}])[0] or {}
+        url = _safe_http_url(info.get("thumburl") or info.get("url"))
+        if url:
+            return url, attempts
+
+    payload, search_attempts = schedule_v1._fetch_json_with_fallback(
         COMMONS_API,
         {
             "action": "query",
             "generator": "search",
-            "gsrsearch": f"{team_name} logo football",
+            "gsrsearch": f"{team_name} logo",
             "gsrnamespace": 6,
-            "gsrlimit": 15,
+            "gsrlimit": 25,
             "prop": "imageinfo",
             "iiprop": "url|mime",
             "iiurlwidth": 600,
@@ -519,6 +569,7 @@ def _commons_logo(
         },
         f"Wikimedia Commons CFB logo search: {team_name}",
     )
+    attempts.extend(search_attempts)
     ranked = sorted(
         (
             (_commons_score(page, team_name), page)
