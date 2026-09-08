@@ -1,0 +1,293 @@
+name: College Football NCAA-scoreboard completeness certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['fix/cfb-official-scoreboard-slate-completeness']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact hotfix scope
+        if: github.event_name == 'push' || github.head_ref == 'fix/cfb-official-scoreboard-slate-completeness'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-mixed-division-hotfix.yml' \
+            '.github/workflows/cfb-scoreboard-completeness-hotfix.yml' \
+            'app.py' \
+            'cfb_moneyline_hub_v4.py' \
+            'cfb_schedule_v3.py' \
+            'streamlit_memory_lazy_router_v29.py' \
+            'tests/test_cfb_scoreboard_completeness_hotfix.py' \
+            'tests/test_streamlit_memory_lazy_router_v29.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected CFB scoreboard-completeness scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_SCOREBOARD_COMPLETENESS_SCOPE=PASS"
+
+      - name: Enforce frozen CFB Steps 1 through 5
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v5.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen CFB Steps 1-5 changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEPS_1_5_FROZEN=PASS")
+          PY
+
+      - name: Enforce frozen mixed-division hotfix
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_mixed_division_freeze_manifest_v1.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen mixed-division path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen mixed-division blob changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_MIXED_DIVISION_FREEZE=PASS")
+          PY
+
+      - name: Enforce protected MLB contracts
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifests = [
+              "mlb_hits_freeze_manifest_v7.json",
+              "mlb_moneyline_freeze_manifest_v13.json",
+              "mlb_matchup_explorer_freeze_manifest_v1.json",
+          ]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              base = m["baseline_commit"]
+              for path in m.get("baseline_paths", []):
+                  try:
+                      expected = rev(f"{base}:{path}")
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing frozen path {path}")
+                      continue
+                  if expected != actual:
+                      failures.append(f"{name}: frozen baseline changed {path}")
+              for path, expected in m.get("exact_blobs", {}).items():
+                  try:
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing exact-frozen path {path}")
+                      continue
+                  if actual != expected:
+                      failures.append(f"{name}: exact frozen blob changed {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_SCOREBOARD_EXISTING_MLB_FREEZES=PASS")
+          PY
+
+      - name: Compile hotfix
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_schedule_v3.py \
+            cfb_moneyline_hub_v4.py \
+            streamlit_memory_lazy_router_v29.py \
+            tests/test_cfb_scoreboard_completeness_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v29.py
+          PYTHONPATH=. python -c "import cfb_schedule_v3; import cfb_moneyline_hub_v4; import streamlit_memory_lazy_router_v29"
+
+      - name: Run hotfix + frozen regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_scoreboard_completeness_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v29.py \
+            tests/test_cfb_mixed_division_hotfix.py \
+            tests/test_cfb_moneyline_mixed_division_wrapper.py \
+            tests/test_streamlit_memory_lazy_router_v28.py \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py \
+            tests/test_cfb_step4_moneyline_page_ui.py \
+            tests/test_streamlit_memory_lazy_router_v26.py \
+            tests/test_cfb_step3_team_data_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v25.py \
+            tests/test_cfb_step2_schedule_identity.py \
+            tests/test_streamlit_memory_lazy_router_v24.py \
+            tests/test_cfb_step1_hub_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v23.py \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Prove data-only additive boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          schedule = Path("cfb_schedule_v3.py").read_text(encoding="utf-8")
+          hub = Path("cfb_moneyline_hub_v4.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v29.py").read_text(encoding="utf-8")
+          app = Path("app.py").read_text(encoding="utf-8")
+
+          required = [
+              'FROZEN_SCHEDULE = "cfb_schedule_v2"',
+              'NCAA_SCOREBOARD_DIVISION = 11',
+              'NCAA_SCOREBOARD_HASH = "7287cda610a9326931931080cb3a604828febe6fe3c9016a7e4a36db99efdb7c"',
+              'FROZEN_CFB_MONEYLINE_HUB = "cfb_moneyline_hub_v3"',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v28"',
+              'root._import("cfb_moneyline_hub_v4")',
+          ]
+          combined = schedule + "\n" + hub + "\n" + router
+          for token in required:
+              if token not in combined:
+                  raise SystemExit(f"missing hotfix marker: {token}")
+
+          forbidden = [
+              "def win_probability",
+              "fair_moneyline =",
+              "expected_value =",
+              "np.random",
+              "def simulate",
+              "moneyline_price =",
+          ]
+          for token in forbidden:
+              if token in schedule:
+                  raise SystemExit(f"scoreboard hotfix crossed data boundary: {token}")
+
+          if "streamlit_memory_lazy_router_v29" not in app:
+              raise SystemExit("app.py is not booting Router V29")
+
+          print("CFB_SCOREBOARD_DATA_ONLY_BOUNDARY=PASS")
+          PY
+
+      - name: Live Sept 12 official slate smoke test
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import time
+          import cfb_schedule_v3 as schedule
+
+          games = []
+          diag = {}
+          for _ in range(3):
+              schedule.clear_schedule_cache()
+              games, diag = schedule.load_with_diagnostics("2026-09-12")
+              if games:
+                  break
+              time.sleep(3)
+
+          print("LIVE_DIAG", diag)
+          print("LIVE_COUNT", len(games))
+          print("LIVE_MATCHUPS", [f"{g.get('away_team')} @ {g.get('home_team')}" for g in games[:80]])
+
+          if len(games) < 10:
+              raise SystemExit(f"Sept 12 FBS slate is still incomplete: {len(games)} games")
+
+          normalized = [
+              (
+                  str(g.get("away_team") or "").lower(),
+                  str(g.get("home_team") or "").lower(),
+              )
+              for g in games
+          ]
+
+          required = [
+              ("oklahoma", "michigan"),
+              ("arizona st", "texas a&m"),
+              ("oregon", "oklahoma st"),
+              ("ohio st", "texas"),
+          ]
+
+          for away_need, home_need in required:
+              if not any(
+                  away_need in away and home_need in home
+                  for away, home in normalized
+              ):
+                  raise SystemExit(
+                      f"Missing Sept 12 matchup: {away_need} @ {home_need}"
+                  )
+
+          if int(diag.get("official_scoreboard_games") or 0) < 10:
+              raise SystemExit("Current NCAA scoreboard did not provide a complete official slate")
+
+          print("CFB_SEPT12_OFFICIAL_SLATE_SMOKE=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_SCOREBOARD_COMPLETENESS_GREEN"
