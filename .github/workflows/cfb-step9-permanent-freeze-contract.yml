@@ -1,0 +1,305 @@
+name: College Football Step 9 permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['cfb-step9-freeze-contract']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert Step 9 freeze creation scope
+        if: github.event_name == 'push' || github.head_ref == 'cfb-step9-freeze-contract'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-step9-permanent-freeze-contract.yml' \
+            'cfb_freeze_manifest_v9.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected College Football Step 9 freeze scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_STEP9_FREEZE_SCOPE=PASS"
+
+      - name: Pin prior and current CFB freeze manifests
+        run: |
+          python - <<'PY'
+          import subprocess
+          import sys
+
+          expected = {
+              "cfb_freeze_manifest_v8.json": "78138ecc2c4518c492731b7cd634ac947f41ded7",
+              "cfb_freeze_manifest_v9.json": "0f7eed88de6046a6e125c32bbaab199720ff5caf",
+          }
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for path, blob in expected.items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  actual = None
+              if actual != blob:
+                  failures.append(f"{path} changed expected={blob} actual={actual}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP9_MANIFEST_PINS=PASS")
+          PY
+
+      - name: Enforce College Football Steps 1 through 9 exact blobs
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v9.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if m.get("version") != 9:
+              failures.append("freeze manifest version mismatch")
+          if m.get("completed_steps") != [1,2,3,4,5,6,7,8,9]:
+              failures.append("completed_steps mismatch")
+          if m.get("step9_merge_commit") != "8477f70b15dcab70756ddd333c1180d70c48759d":
+              failures.append("Step 9 merge commit mismatch")
+
+          sections = m.get("completed_sections") or {}
+          if sections.get("moneyline") is not True:
+              failures.append("Moneyline completion contract changed")
+          if sections.get("over_under") is not True:
+              failures.append("Over/Under was not marked complete at Step 9")
+          if sections.get("game_total") is not False:
+              failures.append("Game Total completion contract changed")
+
+          contract = m.get("step9_contract") or {}
+          expected_contract = {
+              "market": "Over/Under",
+              "section_complete": True,
+              "final_model_version": "CFB OVER/UNDER FINAL V1 • STEP 9 SELECTION + RANKING",
+              "minimum_selection_probability": 0.55,
+              "minimum_selection_reliability": 0.72,
+              "minimum_selection_coverage": 0.70,
+              "pass_allowed": True,
+              "forced_pick_allowed": False,
+              "manual_per_game_analysis_lines": True,
+              "analysis_line_projection_weight": 0,
+              "sportsbook_total_input": False,
+              "sportsbook_price_input": False,
+              "market_implied_probability_input": False,
+              "edge_or_ev_active": False,
+              "final_selection_active": True,
+              "slate_ranking_active": True,
+              "empirical_calibration_claimed": False,
+              "monte_carlo_active": False,
+              "pregame_only": True,
+              "next_section": "Game Total",
+              "next_step": 10,
+          }
+          for key, expected in expected_contract.items():
+              if contract.get(key) != expected:
+                  failures.append(
+                      f"Step 9 contract changed: {key} expected={expected!r} actual={contract.get(key)!r}"
+                  )
+
+          required_step9 = {
+              "cfb_over_under_final_v1.py",
+              "cfb_over_under_slate_v1.py",
+              "cfb_over_under_hub_v3.py",
+              "streamlit_memory_lazy_router_v33.py",
+          }
+          if not required_step9.issubset(set(m.get("exact_blobs", {}))):
+              failures.append("Step 9 exact frozen paths missing")
+
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen CFB blob changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP9_EXACT_FREEZE=PASS")
+          PY
+
+      - name: Enforce protected MLB contracts
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifests = [
+              "mlb_hits_freeze_manifest_v7.json",
+              "mlb_moneyline_freeze_manifest_v13.json",
+              "mlb_matchup_explorer_freeze_manifest_v1.json",
+          ]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              base = m["baseline_commit"]
+
+              for path in m.get("baseline_paths", []):
+                  try:
+                      expected = rev(f"{base}:{path}")
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing frozen path {path}")
+                      continue
+                  if expected != actual:
+                      failures.append(f"{name}: frozen baseline changed {path}")
+
+              for path, expected in m.get("exact_blobs", {}).items():
+                  try:
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing exact-frozen path {path}")
+                      continue
+                  if actual != expected:
+                      failures.append(f"{name}: exact frozen blob changed {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP9_EXISTING_MLB_FREEZES=PASS")
+          PY
+
+      - name: Compile frozen Step 9
+        run: |
+          python -m py_compile \
+            cfb_over_under_final_v1.py \
+            cfb_over_under_slate_v1.py \
+            cfb_over_under_hub_v3.py \
+            streamlit_memory_lazy_router_v33.py \
+            tests/test_cfb_step9_over_under_final_v1.py \
+            tests/test_cfb_step9_over_under_slate_v1.py \
+            tests/test_cfb_step9_over_under_hub_v3.py \
+            tests/test_streamlit_memory_lazy_router_v33.py
+
+      - name: Run frozen Step 9 contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_step9_over_under_final_v1.py \
+            tests/test_cfb_step9_over_under_slate_v1.py \
+            tests/test_cfb_step9_over_under_hub_v3.py \
+            tests/test_streamlit_memory_lazy_router_v33.py \
+            tests/test_cfb_step8_over_under_model_v1.py \
+            tests/test_cfb_step8_over_under_hub_v2.py \
+            tests/test_streamlit_memory_lazy_router_v32.py \
+            tests/test_cfb_step7_over_under_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v31.py \
+            tests/test_cfb_step6_moneyline_final_v1.py \
+            tests/test_cfb_step6_moneyline_slate_v1.py \
+            tests/test_streamlit_memory_lazy_router_v30.py \
+            tests/test_cfb_scoreboard_completeness_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v29.py \
+            tests/test_cfb_mixed_division_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v28.py \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Lock Step 9 Over-Under final-ranking contract
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_final_v1 as final
+
+          assert final.MODEL_VERSION == "CFB OVER/UNDER FINAL V1 • STEP 9 SELECTION + RANKING"
+          assert final.MIN_SELECTION_PROBABILITY == 0.55
+          assert final.MIN_SELECTION_RELIABILITY == 0.72
+          assert final.MIN_SELECTION_COVERAGE == 0.70
+          assert final.ANALYSIS_LINE_PROJECTION_WEIGHT == 0.0
+
+          game = {
+              "identity_key": "ncaa:test",
+              "away_team": "Away",
+              "home_team": "Home",
+          }
+          raw = {
+              "ready": True,
+              "analysis_line": 50.5,
+              "projected_total": 55.0,
+              "projected_away_points": 26.0,
+              "projected_home_points": 29.0,
+              "over_probability": 0.61,
+              "under_probability": 0.39,
+              "push_probability": 0.0,
+              "reliability": 0.86,
+              "feature_coverage": {"score": 0.90},
+              "confidence": "HIGH",
+          }
+          out = final.synthesize(game, raw)
+
+          assert out["ready"] is True
+          assert out["selection"] == "OVER"
+          assert out["selection_ready"] is True
+          assert out["rank_eligible"] is True
+          assert out["analysis_line_projection_weight"] == 0.0
+          assert out["sportsbook_input_used"] is False
+          assert out["market_price_used"] is False
+          assert out["market_probability_used"] is False
+          assert out["edge_or_ev_used"] is False
+          assert out["monte_carlo_used"] is False
+          assert out["empirical_calibration_claimed"] is False
+
+          weak = dict(raw)
+          weak["over_probability"] = 0.53
+          weak["under_probability"] = 0.47
+          passed = final.synthesize(game, weak)
+          assert passed["selection"] == "PASS"
+          assert passed["rank_eligible"] is False
+
+          print("CFB_STEP9_OVER_UNDER_FINAL_FROZEN=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_STEP9_PERMANENT_FREEZE_GREEN"
