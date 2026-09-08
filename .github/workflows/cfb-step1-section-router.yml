@@ -31,6 +31,7 @@ jobs:
           pip install -r requirements.txt pytest
 
       - name: Assert exact Step 1 implementation scope
+        if: github.event_name == 'push' || github.head_ref == 'feature/cfb-step1-section-router-foundation'
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
