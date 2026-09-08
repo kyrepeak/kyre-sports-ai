@@ -51,6 +51,8 @@ jobs:
                   print("TABLE", label, "rows", len(table), "url", url)
                   first = next(iter(table.values()), {})
                   print("HEADERS", label, json.dumps(first.get("headers") or []))
+                  print("TEAMS", label, json.dumps([v.get("team") for v in list(table.values())[:40]]))
+                  print("DIAG", label, json.dumps({k:diag.get(k) for k in ("rows","field_size","pages")}))
                   for profile in targets:
                       hit = pace._lookup(table, profile)
                       if hit:
@@ -61,4 +63,11 @@ jobs:
                               "headers":hit.get("headers"),
                               "row":hit.get("row"),
                           }))
+              if len(red) == 2:
+                  off_url = "https://www.ncaa.com" + next(path for label,path in red if "offense" in label.lower())
+                  def_url = "https://www.ncaa.com" + next(path for label,path in red if "defense" in label.lower())
+                  off_table, _ = engine._load_category_table.__wrapped__(off_url, f"NCAA {division} RZ offense overlap")
+                  def_table, _ = engine._load_category_table.__wrapped__(def_url, f"NCAA {division} RZ defense overlap")
+                  overlap = sorted(set(off_table).intersection(def_table))
+                  print("OVERLAP", division, json.dumps([off_table[k].get("team") for k in overlap]))
           PY
