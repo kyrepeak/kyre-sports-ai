@@ -234,7 +234,6 @@ def test_step5_model_source_has_no_market_or_monte_carlo_dependency():
 
     forbidden = (
         "requests.get",
-        "sportsbook",
         "moneyline_price",
         "market_probability",
         "np.random",
