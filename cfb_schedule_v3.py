@@ -84,24 +84,32 @@ def _merge_authoritative_scoreboard(
     official: list[dict[str, Any]],
     fallback: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
-    """Prefer NCAA scoreboard identity, supplement only missing fallback games."""
-    out = [dict(g) for g in official]
-    fallback_added = 0
-    fallback_duplicates = 0
+    """Use the complete NCAA scoreboard when available; otherwise fail over.
 
-    for candidate in fallback:
-        if frozen._game_matches_existing(candidate, out):
-            fallback_duplicates += 1
-            continue
-        out.append(dict(candidate))
-        fallback_added += 1
+    The current NCAA FBS scoreboard already includes FBS-vs-FCS crossover
+    contests. Mixing name-based ESPN fallback rows into a non-empty official
+    slate can duplicate abbreviations such as "Western Ky." / "Western
+    Kentucky", so V3 treats the official date-scoped scoreboard as atomic.
+    """
+    if official:
+        out = [dict(g) for g in official]
+        out.sort(key=lambda g: (str(g.get("kickoff_iso")), str(g.get("game_id"))))
+        return out, {
+            "official_scoreboard_games": len(official),
+            "fallback_games_seen": len(fallback),
+            "fallback_games_added": 0,
+            "fallback_duplicates_suppressed": len(fallback),
+            "fallback_mode": 0,
+        }
 
+    out = [dict(g) for g in fallback]
     out.sort(key=lambda g: (str(g.get("kickoff_iso")), str(g.get("game_id"))))
     return out, {
-        "official_scoreboard_games": len(official),
+        "official_scoreboard_games": 0,
         "fallback_games_seen": len(fallback),
-        "fallback_games_added": fallback_added,
-        "fallback_duplicates_suppressed": fallback_duplicates,
+        "fallback_games_added": len(fallback),
+        "fallback_duplicates_suppressed": 0,
+        "fallback_mode": 1,
     }
 
 
