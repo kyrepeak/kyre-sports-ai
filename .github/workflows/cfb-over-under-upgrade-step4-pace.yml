@@ -1,0 +1,310 @@
+name: CFB O/U Upgrade Step 4 pace
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['cfb-ou-upgrade-step4-pace']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact additive Step 4 scope
+        if: github.event_name == 'push' || github.head_ref == 'cfb-ou-upgrade-step4-pace'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-over-under-upgrade-step4-pace.yml' \
+            'app.py' \
+            'cfb_over_under_matchup_ui_v4.py' \
+            'cfb_over_under_pace_engine_v1.py' \
+            'cfb_over_under_slate_v3.py' \
+            'streamlit_memory_lazy_router_v44.py' \
+            'tests/test_cfb_over_under_upgrade_step4_pace_engine.py' \
+            'tests/test_cfb_over_under_upgrade_step4_slate.py' \
+            'tests/test_cfb_over_under_upgrade_step4_ui_router.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected CFB O/U Upgrade Step 4 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_OU_UPGRADE_STEP4_SCOPE=PASS"
+
+      - name: Enforce original CFB Steps 1 through 12 freeze
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures=[]
+          if rev("HEAD:cfb_freeze_manifest_v12.json") != "3ff2a727967e80dddbe03f747d9f32090cc39539":
+              failures.append("CFB Step-12 freeze manifest changed")
+          manifest=json.loads(pathlib.Path("cfb_freeze_manifest_v12.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen CFB path changed: {path}")
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("ORIGINAL_CFB_STEPS_1_12_FROZEN=PASS")
+          PY
+
+      - name: Enforce O/U Upgrade Steps 1 through 3 freeze
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures=[]
+          if rev("HEAD:cfb_over_under_upgrade_freeze_manifest_v3.json") != "7c3408833b931fbb9d2e41e6660ebdf4f975f723":
+              failures.append("O/U Upgrade Step 3 freeze manifest changed")
+          manifest=json.loads(pathlib.Path("cfb_over_under_upgrade_freeze_manifest_v3.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen upgrade path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen Upgrade Step 1-3 path changed: {path}")
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("CFB_OU_UPGRADE_STEPS_1_3_FROZEN=PASS")
+          PY
+
+      - name: Enforce logo hotfix V1 through V4 freeze
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures=[]
+          manifest=json.loads(pathlib.Path("cfb_over_under_logo_hotfix_freeze_manifest_v4.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen logo path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen logo V1-V4 path changed: {path}")
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("CFB_OU_LOGO_HOTFIX_V1_V4_FROZEN=PASS")
+          PY
+
+      - name: Compile Step 4
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_over_under_pace_engine_v1.py \
+            cfb_over_under_slate_v3.py \
+            cfb_over_under_matchup_ui_v4.py \
+            streamlit_memory_lazy_router_v44.py \
+            tests/test_cfb_over_under_upgrade_step4_pace_engine.py \
+            tests/test_cfb_over_under_upgrade_step4_slate.py \
+            tests/test_cfb_over_under_upgrade_step4_ui_router.py
+          PYTHONPATH=. python -c "import cfb_over_under_pace_engine_v1; import cfb_over_under_slate_v3; import cfb_over_under_matchup_ui_v4; import streamlit_memory_lazy_router_v44"
+
+      - name: Run Step 4 and frozen regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_over_under_upgrade_step4_pace_engine.py \
+            tests/test_cfb_over_under_upgrade_step4_slate.py \
+            tests/test_cfb_over_under_upgrade_step4_ui_router.py \
+            tests/test_cfb_over_under_multisource_logo_resolver_v2.py \
+            tests/test_cfb_over_under_multisource_logo_hotfix_v4.py \
+            tests/test_cfb_over_under_logo_recursion_hotfix_v3.py \
+            tests/test_cfb_over_under_upgrade_step3_engine.py \
+            tests/test_cfb_over_under_upgrade_step3_slate.py \
+            tests/test_cfb_over_under_upgrade_step3_ui.py \
+            tests/test_streamlit_memory_lazy_router_v39.py
+
+      - name: Live NCAA pace tables are discoverable
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_pace_engine_v1 as pace
+
+          pace.clear_pace_engine_cache()
+          for division in ("FBS", "FCS"):
+              bundle, diag = pace._load_pace_division(division)
+              print(
+                  division,
+                  "total_rows", len(bundle.get("total_offense") or {}),
+                  "top_rows", len(bundle.get("time_of_possession") or {}),
+                  "baseline_plays", bundle.get("baseline_plays_per_game"),
+                  "baseline_spp", bundle.get("baseline_seconds_per_play"),
+                  "categories", diag.get("categories"),
+              )
+              if len(bundle.get("total_offense") or {}) < 50:
+                  raise SystemExit(f"{division} Total Offense pace table too small")
+              if not bundle.get("baseline_plays_per_game"):
+                  raise SystemExit(f"{division} plays/game baseline missing")
+              if "time_of_possession" not in (diag.get("categories") or {}):
+                  raise SystemExit(f"{division} Time of Possession category not discovered")
+          print("LIVE_NCAA_PACE_TABLES=PASS")
+          PY
+
+      - name: Live Florida A&M at Miami Step 4 analysis
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v3 as slate
+
+          games, diag = schedule.load_with_diagnostics("2026-09-10")
+          game = next(
+              g for g in games
+              if "Florida A&M" in str(g.get("away_team"))
+              and "Miami" in str(g.get("home_team"))
+          )
+          try:
+              slate.analyze_game.clear()
+          except Exception:
+              pass
+
+          result = slate.analyze_game(game, "2026-09-10", 50.5)
+          pace = result.get("pace_engine") or {}
+          raw = result.get("raw") or {}
+
+          print("PACE", json.dumps({
+              "away_division": pace.get("away_division"),
+              "home_division": pace.get("home_division"),
+              "mixed_division": pace.get("mixed_division"),
+              "away_plays_pg": (pace.get("away") or {}).get("plays_per_game"),
+              "home_plays_pg": (pace.get("home") or {}).get("plays_per_game"),
+              "away_seconds_per_play": (pace.get("away") or {}).get("seconds_per_offensive_play"),
+              "home_seconds_per_play": (pace.get("home") or {}).get("seconds_per_offensive_play"),
+              "expected_combined_plays": pace.get("expected_combined_plays"),
+              "pace_label": pace.get("pace_label"),
+              "pace_adjustment": pace.get("total_points_adjustment"),
+              "coverage": pace.get("coverage"),
+              "sample_factor": pace.get("sample_factor"),
+          }, indent=2))
+
+          if not raw.get("ready"):
+              raise SystemExit(f"Step 4 selected-game raw output not ready: {raw}")
+          if not pace.get("model_ready"):
+              raise SystemExit(f"Step 4 pace engine not ready: {pace.get('reason')}")
+          if not raw.get("upgrade_step4_applied"):
+              raise SystemExit("Step 4 pace adjustment did not apply")
+          expected=float(pace.get("expected_combined_plays") or 0.0)
+          if not (100.0 <= expected <= 180.0):
+              raise SystemExit(f"expected combined plays out of bounds: {expected}")
+          if abs(float(pace.get("total_points_adjustment") or 0.0)) > 2.750001:
+              raise SystemExit("pace adjustment exceeded certified cap")
+          if float(raw.get("analysis_line_pace_weight") or 0.0) != 0.0:
+              raise SystemExit("analysis line leaked into pace engine")
+          if pace.get("expected_combined_possessions") is not None:
+              raise SystemExit("Step 4 invented direct possession count")
+          print("LIVE_FAMU_MIAMI_STEP4_PACE=PASS")
+          PY
+
+      - name: Live hero retains logos and adds pace panel
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v3 as slate
+          import cfb_over_under_matchup_ui_v4 as ui
+
+          games, _ = schedule.load_with_diagnostics("2026-09-10")
+          game = next(
+              g for g in games
+              if "Florida A&M" in str(g.get("away_team"))
+              and "Miami" in str(g.get("home_team"))
+          )
+          result = slate.analyze_game(game, "2026-09-10", 50.5)
+          html = ui._hero_v4(
+              game,
+              result.get("away") or {},
+              result.get("home") or {},
+          )
+          if "UPGRADE STEP 4" not in html or "Expected combined plays" not in html:
+              raise SystemExit("Step 4 pace panel missing from active hero")
+          if "TEAM LOGOS VERIFIED" not in html:
+              raise SystemExit("multi-source logo hero was not preserved")
+          print("LIVE_STEP4_HERO_LOGOS_AND_PACE=PASS")
+          PY
+
+      - name: Prove Step 4 model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          pace = Path("cfb_over_under_pace_engine_v1.py").read_text(encoding="utf-8")
+          slate = Path("cfb_over_under_slate_v3.py").read_text(encoding="utf-8")
+          ui = Path("cfb_over_under_matchup_ui_v4.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v44.py").read_text(encoding="utf-8")
+          app = Path("app.py").read_text(encoding="utf-8")
+          combined = pace + "\n" + slate + "\n" + ui + "\n" + router + "\n" + app
+
+          required = [
+              'FROZEN_STEP3_ENGINE = "cfb_over_under_matchup_engine_v1"',
+              'MAX_TOTAL_PACE_ADJUSTMENT = 2.75',
+              'ANALYSIS_LINE_PACE_WEIGHT = 0.0',
+              '"direct_possessions_available": False',
+              'FROZEN_UPGRADE = "cfb_over_under_matchup_ui_v3_logo_hotfix_v4"',
+              'root._import("cfb_over_under_matchup_ui_v4")',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v43"',
+              'from streamlit_memory_lazy_router_v44 import render_app',
+          ]
+          for token in required:
+              if token not in combined:
+                  raise SystemExit(f"missing Step 4 marker: {token}")
+
+          forbidden = [
+              "sportsbook_api",
+              "market_implied",
+              "expected_value",
+              "np.random",
+              "import random",
+              "monte_carlo(",
+          ]
+          lower = combined.lower()
+          for token in forbidden:
+              if token.lower() in lower:
+                  raise SystemExit(f"Step 4 crossed model firewall: {token}")
+
+          print("CFB_OU_UPGRADE_STEP4_FIREWALL=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_OU_UPGRADE_STEP4_PACE_GREEN"
