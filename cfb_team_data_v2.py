@@ -120,11 +120,12 @@ def _repair_profile(
     if key is None:
         return dict(frozen_profile), False
 
-    # Require actual FCS evidence for the side. A cross-division opponent can
-    # appear in a future FCS contest without itself being an FCS member.
+    # FCS membership must be proven by the NCAA FCS team-stat universe.
+    # Merely appearing in a division-12 contest is insufficient because the
+    # FBS opponent is also present in that contest ledger.
     side_games = list(ledgers.get(key) or [])
     side_stats = dict(fcs_stats.get(side) or {})
-    if not side_games and not side_stats:
+    if not side_stats:
         return dict(frozen_profile), False
 
     profile = frozen._build_profile(
