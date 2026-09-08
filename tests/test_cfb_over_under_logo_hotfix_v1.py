@@ -132,6 +132,8 @@ def test_resolve_visuals_uses_summary_if_scoreboard_is_incomplete(monkeypatch):
 def test_no_event_match_returns_empty_instead_of_guessing():
     game = _game()
     game["away_team"] = "Alabama"
+    game["away_team_slug"] = "alabama"
     game["home_team"] = "Auburn"
+    game["home_team_slug"] = "auburn"
     out = logos._extract_from_scoreboard({"events": [_event()]}, game)
     assert out == {"away": {}, "home": {}}
