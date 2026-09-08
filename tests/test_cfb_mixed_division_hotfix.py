@@ -409,3 +409,60 @@ def test_stats_only_repair_uses_published_game_count_and_scoring_without_fake_re
     assert repaired["recent_ppg"] is None
     assert repaired["sos_opponent_win_pct"] is None
     assert repaired["data_quality"]["grade"] == "LIMITED"
+
+
+def test_fbs_opponent_in_fcs_ledger_is_not_mislabeled_without_fcs_stat_membership():
+    game = {
+        "home_team": "Miami",
+        "home_team_slug": "miami",
+        "home_conference": "acc",
+        "home_rank": 7,
+    }
+    ledgers = {
+        "miami": [
+            _team_game(
+                "2026-09-10",
+                "Florida A&M",
+                "florida-am",
+                "home",
+                45,
+                6,
+                "W",
+            )
+        ]
+    }
+    meta = {
+        "miami": {
+            "team": "Miami",
+            "team_slug": "miami",
+            "conference": "acc",
+            "schedule_rank": 7,
+        }
+    }
+    frozen_profile = {
+        "team": "Miami",
+        "team_slug": "miami",
+        "conference": "acc",
+        "ap_rank": 7,
+        "rank_source": "NCAA AP rankings",
+        "official_stats": {
+            "scoring_offense": {"value_numeric": 45.0},
+            "scoring_defense": {"value_numeric": 6.0},
+        },
+        "data_quality": {"grade": "CHECK"},
+    }
+
+    repaired, ok = team_data._repair_profile(
+        "home",
+        game,
+        frozen_profile,
+        ledgers,
+        meta,
+        {"home": {}},
+    )
+
+    assert ok is False
+    assert repaired == frozen_profile
+    assert repaired["ap_rank"] == 7
+    assert repaired["rank_source"] == "NCAA AP rankings"
+    assert "division_context" not in repaired
