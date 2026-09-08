@@ -1,0 +1,91 @@
+name: MLB Hits Router V22 root-route certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['fix/mlb-hits-router-root-v22']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Enforce frozen Hits Steps 1-5 plus strict hotfix
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+          m=json.loads(pathlib.Path('mlb_hits_freeze_manifest_v6.json').read_text())
+          base=m['baseline_commit']
+          def rev(spec):
+              return subprocess.check_output(['git','rev-parse',spec], text=True).strip()
+          bad=[]
+          for p in m['baseline_paths']:
+              try:
+                  if rev(f'{base}:{p}') != rev(f'HEAD:{p}'):
+                      bad.append(f'frozen baseline changed: {p}')
+              except subprocess.CalledProcessError:
+                  bad.append(f'missing frozen path: {p}')
+          for p,expected in m['exact_blobs'].items():
+              try:
+                  actual=rev(f'HEAD:{p}')
+              except subprocess.CalledProcessError:
+                  bad.append(f'missing exact-frozen path: {p}')
+                  continue
+              if actual != expected:
+                  bad.append(f'exact frozen blob changed: {p}')
+          if bad:
+              print('\n'.join(bad)); sys.exit(1)
+          print('MLB_HITS_V22_FREEZE_BOUNDARY=PASS')
+          PY
+
+      - name: Compile Router V22
+        run: |
+          python -m py_compile \
+            app.py \
+            streamlit_memory_lazy_router_v22.py \
+            tests/test_streamlit_memory_lazy_router_v22.py
+          PYTHONPATH=. python -c "import streamlit_memory_lazy_router_v22"
+
+      - name: Prove bootstrap and actual root interception
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          app=Path('app.py').read_text()
+          router=Path('streamlit_memory_lazy_router_v22.py').read_text()
+          if 'streamlit_memory_lazy_router_v22' not in app:
+              raise SystemExit('app.py is not booting Router V22')
+          if 'root_router._render_mlb_v3 = _render_mlb_v22_root' not in router:
+              raise SystemExit('V22 is not patching the actual Router V3 Hits boundary')
+          if '_import("mlb_hit_hub_v1321")' not in router:
+              raise SystemExit('V22 is not routing Hits to V13.21')
+          print('MLB_HITS_V22_ROOT_INTERCEPT=PASS')
+          PY
+
+      - name: Run focused regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py \
+            tests/test_streamlit_memory_lazy_router_v21.py
+
+      - name: Certification marker
+        run: echo "MLB_HITS_ROUTER_V22_ROOT_ROUTE_GREEN"
