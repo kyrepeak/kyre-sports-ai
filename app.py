@@ -1,25 +1,26 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB Step 12 Final.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U Upgrade Step 1.
 
-Router V36 preserves the permanently frozen Router V35/V34/.../V2 chain down
+Router V37 preserves the permanently frozen Router V36/V35/.../V2 chain down
 to the streamlit_memory_lazy_router_v1 bootstrap.
 
-Additive Step 12 change:
-- preserves permanently frozen CFB Steps 1-11,
+Additive Over/Under Intelligence V2 Step 1 change:
+- preserves permanently frozen CFB Steps 1-12,
 - preserves College Football Moneyline Step 6 unchanged,
-- preserves College Football Over/Under Step 9 unchanged,
-- completes College Football -> Game Total with final synthesis + Top-5,
-- completes the full College Football Steps 1-12 build,
-- keeps sportsbook/market inputs, EV, betting picks, and Monte Carlo out of Game Total,
+- preserves College Football Game Total Step 12 unchanged,
+- preserves frozen College Football Over/Under Step 8 projection and Step 9 final logic,
+- upgrades only the Over/Under matchup presentation with college team logos and a
+  compact matchup header for kickoff, stadium, TV, status, and site,
+- keeps logo metadata at 0% model/projection/selection weight,
 - keeps MLB, WNBA, and NFL unchanged.
 
-Deployment heartbeat: STREAMLIT_MAIN_V36_CFB_STEP12_2026-09-08T19:28Z.
+Deployment heartbeat: STREAMLIT_MAIN_V37_CFB_OU_UPGRADE_STEP1_2026-09-08T19:46Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v36 import render_app
+from streamlit_memory_lazy_router_v37 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V36_CFB_STEP12_2026-09-08T19:28Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V37_CFB_OU_UPGRADE_STEP1_2026-09-08T19:46Z"
 
 
 render_app()
