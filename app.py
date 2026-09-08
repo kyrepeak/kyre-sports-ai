@@ -1,31 +1,25 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U Upgrade Step 3.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U ESPN logo hotfix.
 
-Router V39 preserves the permanently frozen Router V38/V37/.../V2 chain down
-to the streamlit_memory_lazy_router_v1 bootstrap.
+Router V40 preserves the permanently frozen Router V39/V38/... chain.
 
-Additive Over/Under Intelligence V2 Step 3 change:
-- preserves permanently frozen CFB Steps 1-12,
-- preserves permanently frozen O/U Upgrade Steps 1-2,
-- preserves College Football Moneyline Step 6 unchanged,
-- preserves College Football Game Total Step 12 unchanged,
-- keeps the frozen Step-9 qualification/ranking rules unchanged,
-- activates a bounded offense-vs-defense matchup adjustment before Step-9 synthesis,
-- compares scoring, total yards, passing, rushing, third down, red zone,
-  sack pressure, and turnover pressure,
-- requires minimum evidence coverage and refuses mixed FBS/FCS rank-pool adjustments,
-- caps incremental adjustment at +/-3.5 projected points per team,
-- keeps the analysis line at exactly 0% matchup/projection weight,
-- does not add sportsbook price, market probability, EV, or Monte Carlo,
-- keeps MLB, WNBA, and NFL unchanged.
+Additive hotfix:
+- preserves original CFB Steps 1-12,
+- preserves O/U Upgrade Steps 1-3,
+- changes only presentation-time college team-logo resolution,
+- adds safe ESPN alias matching for names such as Miami (FL) / Miami and
+  Florida A&M / Florida A&M Rattlers,
+- falls back to verified ESPN event summary and ESPN team-id logo CDN,
+- keeps all projection, probability, selection, ranking, reliability,
+  sportsbook, EV, and simulation behavior unchanged.
 
-Deployment heartbeat: STREAMLIT_MAIN_V39_CFB_OU_UPGRADE_STEP3_2026-09-08T20:23Z.
+Deployment heartbeat: STREAMLIT_MAIN_V40_CFB_OU_ESPN_LOGO_HOTFIX_2026-09-08T20:42Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v39 import render_app
+from streamlit_memory_lazy_router_v40 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V39_CFB_OU_UPGRADE_STEP3_2026-09-08T20:23Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V40_CFB_OU_ESPN_LOGO_HOTFIX_2026-09-08T20:42Z"
 
 
 render_app()
