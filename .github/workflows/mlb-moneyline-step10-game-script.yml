@@ -1,0 +1,96 @@
+name: MLB Moneyline Step 10 game-script certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['feature/mlb-moneyline-step10-game-script']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Verify frozen Moneyline Steps 1-9 boundary
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifest=json.loads(pathlib.Path("mlb_moneyline_freeze_manifest_v10.json").read_text())
+          failures=[]
+          for path,expected in manifest["exact_blobs"].items():
+              try:
+                  actual=subprocess.check_output(["git","rev-parse",f"HEAD:{path}"],text=True).strip()
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen path: {path}")
+                  continue
+              if actual!=expected:
+                  failures.append(
+                      f"frozen Moneyline Steps 1-9 changed: {path} expected={expected} actual={actual}"
+                  )
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("MLB_MONEYLINE_STEPS_1_9_BOUNDARY=PASS")
+          PY
+
+      - name: Compile Step 10 route and synthesis layer
+        run: |
+          python -m py_compile \
+            app.py \
+            mlb_moneyline_hub_v176.py \
+            streamlit_memory_lazy_router_v14.py \
+            tests/test_mlb_moneyline_step10_game_script.py \
+            tests/test_streamlit_memory_lazy_router_v14.py
+          PYTHONPATH=. python -c "import mlb_moneyline_hub_v176; import streamlit_memory_lazy_router_v14"
+
+      - name: Prove additive app bootstrap
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text=Path("app.py").read_text(encoding="utf-8")
+          match=re.search(r"from streamlit_memory_lazy_router_v(\d+) import render_app", text)
+          if not match or int(match.group(1)) < 14:
+              raise SystemExit("Moneyline bootstrap regressed below Router V14")
+          router=Path(f"streamlit_memory_lazy_router_v{match.group(1)}.py")
+          if not router.exists():
+              raise SystemExit(f"active router file missing: {router}")
+          if "streamlit_memory_lazy_router_v1" not in text:
+              raise SystemExit("lazy-router bootstrap lineage marker missing")
+          print("MLB_MONEYLINE_STEP10_BOOTSTRAP=PASS")
+          PY
+
+      - name: Run Step 10 focused contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_moneyline_step10_game_script.py \
+            tests/test_streamlit_memory_lazy_router_v14.py \
+            tests/test_mlb_moneyline_step9_recent_form.py \
+            tests/test_streamlit_memory_lazy_router_v13.py \
+            tests/test_mlb_moneyline_step8_defense_baserunning.py \
+            tests/test_mlb_moneyline_step5l_live_mode.py
+
+      - name: Certification marker
+        run: echo "MLB_MONEYLINE_STEP10_GAME_SCRIPT_GREEN"
