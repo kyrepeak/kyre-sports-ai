@@ -100,12 +100,20 @@ def strict_rank_results(
         item["_strict_no_tough"] = strict_ctx
         out.append(item)
 
+    frozen_meta = dict(frozen_meta or {})
     meta = {
         "version": VERSION,
-        "frozen_step5_meta": dict(frozen_meta or {}),
+        "frozen_step5_meta": frozen_meta,
         "frozen_step5_qualified_count": len(frozen_rows),
         "strict_tough_excluded": len(excluded),
         "strict_visible_count": len(out),
+        "visible_count": len(out),
+        "step4_qualified_count": int(frozen_meta.get("step4_qualified_count") or 0),
+        "hard_tough_starters_excluded": int(frozen_meta.get("hard_tough_starters_excluded") or 0),
+        "finalists_evaluated": int(frozen_meta.get("finalists_evaluated") or 0),
+        "tough_excluded": int(frozen_meta.get("tough_excluded") or 0),
+        "probability_excluded": int(frozen_meta.get("probability_excluded") or 0),
+        "opportunity_excluded": int(frozen_meta.get("opportunity_excluded") or 0),
         "backfilled_tough": 0,
         "probability_impact": False,
         "simulation_impact": False,
