@@ -244,8 +244,33 @@ jobs:
               raise SystemExit("Recovered crossover identity is not verified")
           if not target.get("mixed_division_supplement"):
               raise SystemExit("Recovered game is missing crossover-supplement marker")
-          if not str(target.get("identity_key") or "").startswith("ncaa:"):
-              raise SystemExit("Recovered game did not preserve NCAA contest identity")
+          identity = str(target.get("identity_key") or "")
+          if not (identity.startswith("ncaa:") or identity.startswith("espn:")):
+              raise SystemExit("Recovered game has no certified NCAA/ESPN identity")
+
+          import cfb_team_data_v2 as team_data
+          import cfb_moneyline_model_v1 as moneyline_model
+
+          team_data.clear_team_data_cache()
+          profiles, team_diag = team_data.load_matchup_team_data(
+              target,
+              "2026-09-10",
+          )
+          away = profiles.get("away") or {}
+          home = profiles.get("home") or {}
+          away_grade = str((away.get("data_quality") or {}).get("grade") or "CHECK")
+          home_grade = str((home.get("data_quality") or {}).get("grade") or "CHECK")
+          output = moneyline_model.project_matchup(target, away, home)
+
+          print("LIVE_TEAM_DIAG", team_diag)
+          print("LIVE_AWAY_GRADE", away_grade, away.get("record_text"), away.get("ppg"), away.get("points_allowed_pg"))
+          print("LIVE_HOME_GRADE", home_grade, home.get("record_text"), home.get("ppg"), home.get("points_allowed_pg"))
+          print("LIVE_MODEL_READY", output.get("ready"), output.get("reasons"))
+
+          if away_grade == "CHECK" or home_grade == "CHECK":
+              raise SystemExit("Recovered game still has CHECK team-data profile")
+          if not output.get("ready"):
+              raise SystemExit("Frozen Step-5 Moneyline Model V1 is still gated for recovered game")
 
           print("CFB_SEPT10_FAMU_MIAMI_LIVE_SMOKE=PASS")
           PY
