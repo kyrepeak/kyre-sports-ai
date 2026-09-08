@@ -69,7 +69,7 @@ def test_resolve_team_logo_uses_wikipedia_when_official_unavailable(monkeypatch)
         "title": "Miami Hurricanes football",
         "_logo_score": 20.0,
         "fullurl": "https://en.wikipedia.org/wiki/Miami_Hurricanes_football",
-        "original": {"source": "https://upload.wikimedia.org/miami.svg"},
+        "original": {"source": "https://upload.wikimedia.org/Miami_Hurricanes_logo.svg"},
         "extlinks": [{"url": "https://miamihurricanes.com/sports/football"}],
     }
     monkeypatch.setattr(logos, "_wikipedia_candidates", lambda *a, **k: ([page], []))
@@ -78,7 +78,7 @@ def test_resolve_team_logo_uses_wikipedia_when_official_unavailable(monkeypatch)
 
     out = logos.resolve_team_logo.__wrapped__("Miami (FL)", "miami-fl", "ACC")
     assert out["logo_provider"] == "wikipedia_pageimage"
-    assert out["logo"] == "https://upload.wikimedia.org/miami.svg"
+    assert out["logo"] == "https://upload.wikimedia.org/Miami_Hurricanes_logo.svg"
 
 
 def test_resolve_team_logo_uses_commons_as_last_fallback(monkeypatch):
