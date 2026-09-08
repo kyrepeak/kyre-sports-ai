@@ -37,6 +37,7 @@ jobs:
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
             '.github/workflows/cfb-step1-permanent-freeze-contract.yml' \
+            '.github/workflows/cfb-step1-section-router.yml' \
             'cfb_freeze_manifest_v1.json' | sort)"
           if [ "$actual" != "$expected" ]; then
             echo "Unexpected College Football Step 1 freeze scope"
