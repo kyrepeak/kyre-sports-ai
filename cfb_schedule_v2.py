@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import re
 from typing import Any, Mapping
 
 import streamlit as st
@@ -80,13 +81,34 @@ def _fetch_espn_fbs_payload(
     )
 
 
+def _side_keys_with_parenthetical_alias(
+    game: Mapping[str, Any],
+    side: str,
+) -> set[str]:
+    keys = set(frozen._game_name_keys(game, side))
+    raw = str(game.get(f"{side}_team") or "")
+    base = re.sub(r"\s*\([^)]*\)\s*$", "", raw).strip()
+    if base and base != raw:
+        alias = frozen._name_key(base)
+        if alias:
+            keys.add(alias)
+    return keys
+
+
 def _matches_espn_fbs_event(
     game: Mapping[str, Any],
     espn_rows: list[dict[str, Any]],
 ) -> bool:
-    home_keys = frozen._game_name_keys(game, "home")
-    away_keys = frozen._game_name_keys(game, "away")
+    # Parenthetical NCAA qualifiers such as "Miami (FL)" are explicit aliases,
+    # not fuzzy matching. This keeps Miami (FL) -> ESPN "Miami" valid without
+    # introducing broad nickname guessing.
+    home_keys = _side_keys_with_parenthetical_alias(game, "home")
+    away_keys = _side_keys_with_parenthetical_alias(game, "away")
     for row in espn_rows:
+        if (home_keys & (row.get("home_names") or set())) and (
+            away_keys & (row.get("away_names") or set())
+        ):
+            return True
         if frozen._names_overlap(home_keys, row.get("home_names") or set()) and frozen._names_overlap(
             away_keys, row.get("away_names") or set()
         ):
@@ -228,6 +250,7 @@ __all__ = [
     "_fetch_espn_fbs_payload",
     "_fetch_ncaa_division_payload",
     "_matches_espn_fbs_event",
+    "_side_keys_with_parenthetical_alias",
     "_merge_primary_and_crossovers",
     "_ncaa_params_for_division",
     "clear_schedule_cache",
