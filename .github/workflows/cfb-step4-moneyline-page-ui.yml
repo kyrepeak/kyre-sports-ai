@@ -202,8 +202,15 @@ jobs:
               if token in hub:
                   raise SystemExit(f"Step 4 crossed Moneyline model boundary: {token}")
 
-          if "streamlit_memory_lazy_router_v26" not in app:
-              raise SystemExit("app.py is not booting Router V26")
+          import re
+          match = re.search(r"from streamlit_memory_lazy_router_v(\d+) import render_app", app)
+          if not match or int(match.group(1)) < 26:
+              raise SystemExit("app.py regressed below frozen Router V26")
+          current = int(match.group(1))
+          for version in range(current, 26, -1):
+              source = Path(f"streamlit_memory_lazy_router_v{version}.py").read_text(encoding="utf-8")
+              if f"import streamlit_memory_lazy_router_v{version - 1} as prior" not in source:
+                  raise SystemExit(f"Router V{version} does not preserve additive chain to V26")
 
           print("CFB_STEP4_MONEYLINE_UI_BOUNDARY=PASS")
           PY
