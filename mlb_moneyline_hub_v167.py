@@ -169,7 +169,7 @@ def _quality(s: Mapping[str, Any] | None, recent: Mapping[str, Any]) -> tuple[fl
     metrics = {"era": era, "whip": whip, "fip": fip, "so9": so9, "bb9": bb9, "hr9": hr9, "k_pct": kp, "bb_pct": bp, "ip": _ip(s.get("inningsPitched")), "recent": recent}
     components: list[float] = []
     if era is not None: components.append(max(0, min(100, 100 - era * 18)))
-    if whip is not None: components.append(max(0, min(100, 100 - max(0, whip - .85) * 90))
+    if whip is not None: components.append(max(0, min(100, 100 - max(0, whip - .85) * 90)))
     if fip is not None: components.append(max(0, min(100, 100 - fip * 18)))
     if so9 is not None: components.append(max(0, min(100, so9 * 10)))
     if bb9 is not None: components.append(max(0, min(100, 100 - bb9 * 22)))
