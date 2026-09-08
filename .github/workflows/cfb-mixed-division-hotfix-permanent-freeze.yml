@@ -1,0 +1,240 @@
+name: College Football mixed-division hotfix permanent freeze
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['cfb-mixed-division-hotfix-freeze']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert freeze creation scope
+        if: github.event_name == 'push' || github.head_ref == 'cfb-mixed-division-hotfix-freeze'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-mixed-division-hotfix-permanent-freeze.yml' \
+            'cfb_mixed_division_freeze_manifest_v1.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected CFB mixed-division freeze scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_MIXED_DIVISION_FREEZE_SCOPE=PASS"
+
+      - name: Enforce frozen CFB Steps 1 through 5
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v5.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if m.get("version") != 5 or m.get("completed_steps") != [1,2,3,4,5]:
+              failures.append("CFB freeze V5 metadata changed")
+
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen CFB Steps 1-5 changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEPS_1_5_FROZEN=PASS")
+          PY
+
+      - name: Enforce mixed-division hotfix exact blobs
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_mixed_division_freeze_manifest_v1.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if m.get("version") != 1:
+              failures.append("mixed-division freeze manifest version mismatch")
+          if m.get("baseline_commit") != "3f28da75a008911a068cb97bcfb2d42f1d6aaaa0":
+              failures.append("mixed-division baseline commit mismatch")
+          if m.get("certified_pr") != 178:
+              failures.append("mixed-division certified PR mismatch")
+
+          required = {
+              "cfb_schedule_v2.py",
+              "cfb_team_data_v2.py",
+              "cfb_moneyline_hub_v3.py",
+              "streamlit_memory_lazy_router_v28.py",
+          }
+          if set(m.get("exact_blobs", {})) != required:
+              failures.append("mixed-division exact path set mismatch")
+
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing hotfix path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen hotfix blob changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_MIXED_DIVISION_EXACT_FREEZE=PASS")
+          PY
+
+      - name: Enforce protected MLB contracts
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifests = [
+              "mlb_hits_freeze_manifest_v7.json",
+              "mlb_moneyline_freeze_manifest_v13.json",
+              "mlb_matchup_explorer_freeze_manifest_v1.json",
+          ]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              base = m["baseline_commit"]
+
+              for path in m.get("baseline_paths", []):
+                  try:
+                      expected = rev(f"{base}:{path}")
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing frozen path {path}")
+                      continue
+                  if expected != actual:
+                      failures.append(f"{name}: frozen baseline changed {path}")
+
+              for path, expected in m.get("exact_blobs", {}).items():
+                  try:
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing exact-frozen path {path}")
+                      continue
+                  if actual != expected:
+                      failures.append(f"{name}: exact frozen blob changed {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_MIXED_DIVISION_EXISTING_MLB_FREEZES=PASS")
+          PY
+
+      - name: Compile frozen hotfix
+        run: |
+          python -m py_compile \
+            cfb_schedule_v2.py \
+            cfb_team_data_v2.py \
+            cfb_moneyline_hub_v3.py \
+            streamlit_memory_lazy_router_v28.py \
+            tests/test_cfb_mixed_division_hotfix.py \
+            tests/test_cfb_moneyline_mixed_division_wrapper.py \
+            tests/test_streamlit_memory_lazy_router_v28.py
+
+      - name: Run hotfix regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_mixed_division_hotfix.py \
+            tests/test_cfb_moneyline_mixed_division_wrapper.py \
+            tests/test_streamlit_memory_lazy_router_v28.py \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py \
+            tests/test_cfb_step4_moneyline_page_ui.py \
+            tests/test_streamlit_memory_lazy_router_v26.py \
+            tests/test_cfb_step3_team_data_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v25.py \
+            tests/test_cfb_step2_schedule_identity.py \
+            tests/test_streamlit_memory_lazy_router_v24.py \
+            tests/test_cfb_step1_hub_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v23.py \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Lock concurrency and division-safety boundaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          hub = Path("cfb_moneyline_hub_v3.py").read_text(encoding="utf-8")
+          team = Path("cfb_team_data_v2.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v28.py").read_text(encoding="utf-8")
+
+          for token in ("prior.schedule =", "prior.team_data =", "setattr(prior"):
+              if token in hub:
+                  raise SystemExit(f"provider-mutation regression: {token}")
+
+          required = [
+              "schedule_v2.load_with_diagnostics",
+              "team_data_v2.load_matchup_team_data",
+              "if not side_stats:",
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v27"',
+          ]
+          combined = hub + "\n" + team + "\n" + router
+          for token in required:
+              if token not in combined:
+                  raise SystemExit(f"missing frozen safety marker: {token}")
+
+          print("CFB_MIXED_DIVISION_SAFETY_BOUNDARIES=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_MIXED_DIVISION_PERMANENT_FREEZE_GREEN"
