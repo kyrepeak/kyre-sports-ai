@@ -247,17 +247,33 @@ def _logo_url_score(url: str, team_name: str) -> float:
     return score
 
 
+def _is_wikimedia_logo_url(url: str, team_name: str) -> bool:
+    safe = _safe_http_url(url)
+    if not safe:
+        return False
+    path = unquote(urlparse(safe).path).lower()
+    path_tokens = _tokens(path)
+    team_tokens = _tokens(team_name)
+    if not (team_tokens & path_tokens):
+        return False
+    logo_marker = any(
+        term in path
+        for term in ("logo", "wordmark", "primary-mark", "secondary-mark", "athletic-mark")
+    )
+    vector_mark = path.endswith(".svg")
+    return bool(logo_marker or vector_mark)
+
+
 def _page_image(page: Mapping[str, Any], team_name: str) -> str:
     team_tokens = _tokens(team_name)
     for key in ("original", "thumbnail"):
         obj = page.get(key) or {}
         if isinstance(obj, Mapping):
             url = _safe_http_url(obj.get("source"))
-            path_tokens = _tokens(unquote(urlparse(url).path)) if url else set()
             if (
                 url
                 and "upload.wikimedia.org" in urlparse(url).netloc.lower()
-                and bool(team_tokens & path_tokens)
+                and _is_wikimedia_logo_url(url, team_name)
                 and _logo_url_score(url, team_name) >= 5.0
             ):
                 return url
@@ -405,21 +421,19 @@ def _wikipedia_html_logo(
         if not url:
             continue
         host = urlparse(url).netloc.lower()
-        path_tokens = _tokens(unquote(urlparse(url).path))
         if (
             ("wikimedia.org" in host or "wikipedia.org" in host)
-            and bool(team_tokens & path_tokens)
+            and _is_wikimedia_logo_url(url, team_name)
             and _logo_url_score(url, team_name) >= 5.0
         ):
             return url, attempts
 
     for raw in parser.meta_images:
         url = _safe_http_url(urljoin(page_url, raw))
-        path_tokens = _tokens(unquote(urlparse(url).path)) if url else set()
         if (
             url
             and "wikimedia.org" in urlparse(url).netloc.lower()
-            and bool(team_tokens & path_tokens)
+            and _is_wikimedia_logo_url(url, team_name)
             and _logo_url_score(url, team_name) >= 5.0
         ):
             return url, attempts
