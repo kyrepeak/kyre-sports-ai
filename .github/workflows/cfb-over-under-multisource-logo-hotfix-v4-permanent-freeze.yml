@@ -1,0 +1,151 @@
+name: CFB O/U multi-source logo hotfix V4 permanent freeze
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['cfb-ou-multisource-logo-hotfix-v4-permanent-freeze']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact freeze scope
+        if: github.event_name == 'push' || github.head_ref == 'cfb-ou-multisource-logo-hotfix-v4-permanent-freeze'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-over-under-multisource-logo-hotfix-v4-permanent-freeze.yml' \
+            'cfb_over_under_logo_hotfix_freeze_manifest_v4.json' | sort)"
+          test "$actual" = "$expected"
+          echo "CFB_OU_MULTISOURCE_LOGO_V4_FREEZE_SCOPE=PASS"
+
+      - name: Enforce previous V3 hotfix freeze
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if rev("HEAD:cfb_over_under_logo_hotfix_freeze_manifest_v3.json") != "f07c05ac5947ca5a6e23ae5633545e8f1fbe1724":
+              failures.append("V3 logo freeze manifest changed")
+
+          manifest = json.loads(pathlib.Path("cfb_over_under_logo_hotfix_freeze_manifest_v3.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing prior frozen path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"prior frozen path changed: {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("CFB_OU_LOGO_HOTFIX_V1_V3_FROZEN=PASS")
+          PY
+
+      - name: Enforce V4 exact blobs and contract
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          manifest = json.loads(pathlib.Path("cfb_over_under_logo_hotfix_freeze_manifest_v4.json").read_text())
+          failures = []
+
+          if manifest.get("version") != 4:
+              failures.append("V4 freeze version changed")
+          if manifest.get("completed_hotfixes") != [1, 2, 3, 4]:
+              failures.append("V4 completed hotfix list changed")
+
+          c = manifest.get("hotfix4_contract") or {}
+          required_true = [
+              "side_independent_resolution",
+              "official_team_domain_preference",
+              "wikipedia_site_chrome_rejected",
+              "generic_team_photos_rejected",
+              "wrong_team_wikimedia_assets_rejected",
+              "verified_football_page_mascot_identity_used_for_commons",
+              "direct_commons_file_lookup_active",
+              "florida_am_non_espn_fallback_certified",
+              "miami_non_espn_fallback_certified",
+              "mixed_fbs_fcs_coverage_sample_certified",
+              "presentation_only",
+          ]
+          for key in required_true:
+              if c.get(key) is not True:
+                  failures.append(f"V4 contract lost {key}")
+
+          if c.get("provider_order") != [
+              "espn",
+              "official_athletics",
+              "wikipedia_wikimedia",
+              "wikimedia_commons",
+          ]:
+              failures.append("V4 provider order changed")
+
+          required_false = [
+              "projection_math_changed",
+              "probability_math_changed",
+              "selection_math_changed",
+              "top5_ranking_math_changed",
+              "reliability_changed",
+              "sportsbook_input_added",
+              "market_probability_input_added",
+              "edge_or_ev_added",
+              "monte_carlo_added",
+          ]
+          for key in required_false:
+              if c.get(key) is not False:
+                  failures.append(f"unexpected V4 model change: {key}")
+
+          if c.get("next_upgrade_step") != 4:
+              failures.append("next upgrade step changed")
+
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing V4 frozen path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"V4 frozen blob changed: {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("CFB_OU_MULTISOURCE_LOGO_HOTFIX_V4_PERMANENTLY_FROZEN=PASS")
+          PY
+
+      - name: Verify runtime and regressions
+        run: |
+          grep -F 'from streamlit_memory_lazy_router_v43 import render_app' app.py
+          python -m py_compile             cfb_over_under_logo_resolver_v2.py             cfb_over_under_matchup_ui_v3_logo_hotfix_v4.py             streamlit_memory_lazy_router_v43.py
+          PYTHONPATH=. python -m pytest -q             tests/test_cfb_over_under_multisource_logo_resolver_v2.py             tests/test_cfb_over_under_multisource_logo_hotfix_v4.py             tests/test_cfb_over_under_logo_recursion_hotfix_v3.py             tests/test_cfb_over_under_upgrade_step3_ui.py
+
+      - name: Freeze marker
+        run: echo "CFB_OU_MULTISOURCE_LOGO_HOTFIX_V4_PERMANENT_FREEZE_GREEN"
