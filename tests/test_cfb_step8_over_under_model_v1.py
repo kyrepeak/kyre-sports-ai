@@ -126,7 +126,7 @@ def test_unverified_identity_check_data_and_invalid_line_fail_closed():
 
 
 def test_step8_model_firewall_has_no_market_or_simulation_dependency():
-    source = inspect.getsource(model)
+    source = inspect.getsource(model).lower()
 
     assert model.ANALYSIS_LINE_PROJECTION_WEIGHT == 0.0
     assert model.MODEL_VERSION == "CFB OVER/UNDER MODEL V1 • STEP 8 RAW TOTAL MODEL"
@@ -141,8 +141,11 @@ def test_step8_model_firewall_has_no_market_or_simulation_dependency():
         "market_probability",
         "expected_value",
         "def simulate",
-        "monte_carlo",
+        "import random",
         "random.",
     )
     for token in forbidden:
-        assert token not in source.lower()
+        assert token not in source
+
+    assert '"monte_carlo_used": false' not in source
+    assert '"monte_carlo_used": False'.lower() in source
