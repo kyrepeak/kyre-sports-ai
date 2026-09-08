@@ -164,3 +164,42 @@ def test_resolve_visuals_can_fill_both_when_espn_is_empty(monkeypatch):
     )
     assert out["away"]["logo"].endswith("florida-a-m.svg")
     assert out["home"]["logo"].endswith("miami-fl.svg")
+
+
+def test_page_image_rejects_game_photo_and_wrong_team_logo():
+    oregon_photo = {
+        "original": {
+            "source": "https://upload.wikimedia.org/wikipedia/commons/9/90/2017-11-25_Civil_War_07.jpg"
+        }
+    }
+    wrong_harvard = {
+        "original": {
+            "source": "https://upload.wikimedia.org/wikipedia/commons/a/af/Dartmouth_College_Big_Green_logo.svg"
+        }
+    }
+    miami_logo = {
+        "original": {
+            "source": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Miami_Hurricanes_logo.svg"
+        }
+    }
+
+    assert logos._page_image(oregon_photo, "Oregon") == ""
+    assert logos._page_image(wrong_harvard, "Harvard") == ""
+    assert logos._page_image(miami_logo, "Miami (FL)").endswith("Miami_Hurricanes_logo.svg")
+
+
+def test_candidate_score_penalizes_rivalry_page():
+    team_page = {
+        "title": "Harvard Crimson football",
+        "extract": "The Harvard Crimson football team competes in the Ivy League.",
+    }
+    rivalry_page = {
+        "title": "Harvard–Dartmouth football rivalry",
+        "extract": "The Harvard–Dartmouth football rivalry is an annual series.",
+    }
+
+    assert logos._candidate_score(team_page, "Harvard", "Ivy") > logos._candidate_score(
+        rivalry_page,
+        "Harvard",
+        "Ivy",
+    )
