@@ -126,17 +126,29 @@ def _fip(s: Mapping[str, Any]) -> float | None:
 
 
 def _recent(logs: list[dict[str, Any]], n: int = 5) -> dict[str, Any]:
-    rows = [x for x in logs if _ip(x.get("inningsPitched")) is not None][-n:]
+    eligible = [x for x in logs if _ip(x.get("inningsPitched")) is not None]
+    starts = [x for x in eligible if (_i(x.get("gamesStarted")) or 0) > 0]
+    rows = (starts if starts else eligible)[-n:]
+    basis = "starts" if starts else "appearances"
     if not rows:
-        return {"starts": 0, "ip": None, "era": None, "whip": None, "fip": None}
+        return {"starts": 0, "ip": None, "era": None, "whip": None, "fip": None, "basis": "none"}
     ip = sum(_ip(x.get("inningsPitched")) or 0 for x in rows)
+    if ip <= 0:
+        return {"starts": len(rows), "ip": ip, "era": None, "whip": None, "fip": None, "basis": basis}
     er = sum(_f(x.get("earnedRuns")) or 0 for x in rows)
     h = sum(_f(x.get("hits")) or 0 for x in rows)
     bb = sum(_f(x.get("baseOnBalls")) or 0 for x in rows)
     hr = sum(_f(x.get("homeRuns")) or 0 for x in rows)
     hbp = sum(_f(x.get("hitByPitch")) or 0 for x in rows)
     so = sum(_f(x.get("strikeOuts")) or 0 for x in rows)
-    return {"starts": len(rows), "ip": ip, "era": er * 9 / ip, "whip": (h + bb) / ip, "fip": ((13 * hr) + 3 * (bb + hbp) - 2 * so) / ip + 3.10}
+    return {
+        "starts": len(rows),
+        "ip": ip,
+        "era": er * 9 / ip,
+        "whip": (h + bb) / ip,
+        "fip": ((13 * hr) + 3 * (bb + hbp) - 2 * so) / ip + 3.10,
+        "basis": basis,
+    }
 
 
 def _rate(s: Mapping[str, Any], num: str, den: str, scale: float = 1) -> float | None:
@@ -217,7 +229,7 @@ def _html(c: Mapping[str, Any]) -> str:
     return (f'<div class="ml167-step2"><div class="ml167-step2-head"><span class="ml167-step2-title">STEP 2 • STARTING PITCHER QUALITY</span><span class="ml167-grade {escape(str(c.get("grade_cls") or "limited"))}">{escape(str(c.get("grade") or "DATA LIMITED / PENDING"))}</span></div>'
             f'<div class="ml167-pitchers">{block(c.get("away") or {},False)}{block(c.get("home") or {},True)}</div>'
             f'<span class="ml167-pill {pill_cls}">{escape(label)} • {escape(value)}</span><span class="ml167-pill neutral">xERA • N/A unless officially supplied</span>'
-            f'<div class="ml167-source">Official MLB Stats API • {SEASON} season + last 5 logged appearances. Evidence-only: no Moneyline probability adjustment. {escape(str(c.get("reason") or ""))}</div></div>')
+            f'<div class="ml167-source">Official MLB Stats API • {SEASON} season + last 5 starts when identified (logged appearances fallback). Evidence-only: no Moneyline probability adjustment. {escape(str(c.get("reason") or ""))}</div></div>')
 
 
 def _inject(card: str, html: str) -> str:
