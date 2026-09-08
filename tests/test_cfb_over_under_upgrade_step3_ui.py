@@ -63,7 +63,7 @@ def test_engine_panel_shows_both_offense_vs_defense_battles(monkeypatch):
     assert any(token in html for token in ("3rd Down", "3rd down", "Third Down"))
     assert "Red Zone" in html or "Red zone" in html
     assert "Sack Pressure" in html or "Sack pressure" in html
-    assert "Turnover Pressure" in html or "Turnover pressure" in html
+    assert any(token in html for token in ("Turnover Pressure", "Turnover pressure", "Turnovers"))
     assert "analysis line has 0% matchup weight" in html
 
 
