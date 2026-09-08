@@ -73,7 +73,7 @@ def _starter_strip(context: Mapping[str, Any] | None) -> str:
         f'<span><b>{escape(_fmt(profile.get("fip")))}</b>FIP</span>'
         f'<span><b>{escape(_fmt(profile.get("whip")))}</b>WHIP</span>'
         f'<span><b>{escape(_fmt(profile.get("h9")))}</b>H/9</span>'
-        f'<span><b>{escape(_pct(profile.get("xba_allowed")))}</b>xBA allowed</span>'
+        f'<span><b>{escape(_fmt(profile.get("xba_allowed"),3))}</b>xBA allowed</span>'
         f'<span><b>{escape(_fmt(recent5.get("era")))}</b>L5 ERA</span>'
         '</div>'
         '<div class="hit1320-foot">'
@@ -93,14 +93,9 @@ def _inject_starter(card: str, strip: str) -> str:
     text = str(card or "")
     if not strip or "hit1320-starter" in text:
         return text
-    marker = '<div class="hit1319-strip">'
-    idx = text.find(marker)
-    if idx >= 0:
-        # Put Step 5 immediately after the frozen Step 4 strip.
-        end = text.find("</div>", idx)
-        if end >= 0:
-            end += len("</div>")
-            return text[:end] + strip + text[end:]
+    # Step 4 already sits immediately before the Step 3 profile. Inserting
+    # before Step 3 guarantees Step 5 lands after the complete frozen Step 4
+    # block without parsing nested div boundaries.
     marker = '<div class="hit1318-profile">'
     idx = text.find(marker)
     if idx >= 0:
