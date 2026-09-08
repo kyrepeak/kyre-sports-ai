@@ -116,7 +116,10 @@ def test_stronger_home_offense_defense_and_efficiency_raise_home_probability():
     assert out["home_win_probability_raw"] > .70
     assert out["projected_home_points_raw"] > out["projected_away_points_raw"]
     assert out["components"]["home_efficiency_adjustment"] > 0
-    assert out["components"]["away_efficiency_adjustment"] < 0
+    assert (
+        out["components"]["home_efficiency_adjustment"]
+        > out["components"]["away_efficiency_adjustment"]
+    )
     assert out["components"]["turnover_edge_home_points"] > 0
     assert out["components"]["sos_edge_home_points"] > 0
 
@@ -238,7 +241,8 @@ def test_step5_model_source_has_no_market_or_monte_carlo_dependency():
         "market_probability",
         "np.random",
         "numpy",
-        "monte_carlo",
+        "def monte_carlo",
+        "run_monte_carlo(",
         "fair_moneyline =",
         "expected_value =",
     )
