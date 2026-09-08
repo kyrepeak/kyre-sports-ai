@@ -266,7 +266,39 @@ def _lookup(
     table: Mapping[str, Mapping[str, Any]],
     profile: Mapping[str, Any],
 ) -> dict[str, Any]:
-    return step3._lookup_team(table, profile)
+    """Identity-safe pace lookup.
+
+    Step 4 fails closed rather than allowing a short school name such as
+    "Florida" to satisfy "Florida A&M". Exact canonical aliases are preferred.
+    A fuzzy containment fallback is allowed only when the strings are very
+    similar in length and the match is unique.
+    """
+    keys = frozen_team._team_keys(
+        _clean(profile.get("team")),
+        _clean(profile.get("team_slug")),
+    )
+    for key in keys:
+        if key in table:
+            return dict(table[key])
+
+    candidates: list[tuple[float, Mapping[str, Any]]] = []
+    for table_key, item in table.items():
+        for key in keys:
+            if len(table_key) < 5 or len(key) < 5:
+                continue
+            if table_key not in key and key not in table_key:
+                continue
+            ratio = min(len(table_key), len(key)) / max(len(table_key), len(key))
+            if ratio >= 0.82:
+                candidates.append((ratio, item))
+                break
+
+    if not candidates:
+        return {}
+    candidates.sort(key=lambda pair: pair[0], reverse=True)
+    if len(candidates) > 1 and abs(candidates[0][0] - candidates[1][0]) < 1e-9:
+        return {}
+    return dict(candidates[0][1])
 
 
 def _profile_division_hint(profile: Mapping[str, Any]) -> str:
