@@ -1,0 +1,315 @@
+name: College Football Step 11 permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['cfb-step11-freeze-contract']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert Step 11 freeze creation scope
+        if: github.event_name == 'push' || github.head_ref == 'cfb-step11-freeze-contract'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-step11-permanent-freeze-contract.yml' \
+            'cfb_freeze_manifest_v11.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected College Football Step 11 freeze scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_STEP11_FREEZE_SCOPE=PASS"
+
+      - name: Pin prior and current CFB freeze manifests
+        run: |
+          python - <<'PY'
+          import subprocess
+          import sys
+
+          expected = {
+              "cfb_freeze_manifest_v10.json": "9812901768db49ced11259629eff783526406f13",
+              "cfb_freeze_manifest_v11.json": "c6c218bb57a60d5b6d7a81e5d71ce8a11c4f2951",
+          }
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for path, blob in expected.items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  actual = None
+              if actual != blob:
+                  failures.append(f"{path} changed expected={blob} actual={actual}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP11_MANIFEST_PINS=PASS")
+          PY
+
+      - name: Enforce College Football Steps 1 through 11 exact blobs
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v11.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if m.get("version") != 11:
+              failures.append("freeze manifest version mismatch")
+          if m.get("completed_steps") != [1,2,3,4,5,6,7,8,9,10,11]:
+              failures.append("completed_steps mismatch")
+          if m.get("step11_merge_commit") != "2386cd12bbe6bc34222d361bbaa81e68214c3d14":
+              failures.append("Step 11 merge commit mismatch")
+
+          sections = m.get("completed_sections") or {}
+          if sections.get("moneyline") is not True:
+              failures.append("Moneyline completion contract changed")
+          if sections.get("over_under") is not True:
+              failures.append("Over/Under completion contract changed")
+          if sections.get("game_total") is not False:
+              failures.append("Game Total incorrectly marked complete at Step 11")
+
+          contract = m.get("step11_contract") or {}
+          expected_contract = {
+              "market": "Game Total",
+              "model_version": "CFB GAME TOTAL MODEL V1 • STEP 11 DISTRIBUTION",
+              "projected_combined_total_active": True,
+              "median_or_mode_active": True,
+              "exact_total_probability_active": True,
+              "total_band_probability_active": True,
+              "percentile_distribution_active": True,
+              "structural_interval_80_active": True,
+              "structural_interval_90_active": True,
+              "distribution_method": "analytic_discretized_normal_structural",
+              "distribution_support": "integer totals 0-140",
+              "sportsbook_total_input": False,
+              "sportsbook_price_input": False,
+              "market_implied_probability_input": False,
+              "edge_or_ev_active": False,
+              "final_pick_active": False,
+              "slate_ranking_active": False,
+              "empirical_calibration_claimed": False,
+              "monte_carlo_active": False,
+              "pregame_only": True,
+              "next_final_step": 12,
+          }
+          for key, expected in expected_contract.items():
+              if contract.get(key) != expected:
+                  failures.append(
+                      f"Step 11 contract changed: {key} expected={expected!r} actual={contract.get(key)!r}"
+                  )
+
+          required_step11 = {
+              "cfb_game_total_model_v1.py",
+              "cfb_game_total_hub_v2.py",
+              "streamlit_memory_lazy_router_v35.py",
+          }
+          if not required_step11.issubset(set(m.get("exact_blobs", {}))):
+              failures.append("Step 11 exact frozen paths missing")
+
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen CFB blob changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP11_EXACT_FREEZE=PASS")
+          PY
+
+      - name: Enforce protected MLB contracts
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifests = [
+              "mlb_hits_freeze_manifest_v7.json",
+              "mlb_moneyline_freeze_manifest_v13.json",
+              "mlb_matchup_explorer_freeze_manifest_v1.json",
+          ]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              base = m["baseline_commit"]
+
+              for path in m.get("baseline_paths", []):
+                  try:
+                      expected = rev(f"{base}:{path}")
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing frozen path {path}")
+                      continue
+                  if expected != actual:
+                      failures.append(f"{name}: frozen baseline changed {path}")
+
+              for path, expected in m.get("exact_blobs", {}).items():
+                  try:
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing exact-frozen path {path}")
+                      continue
+                  if actual != expected:
+                      failures.append(f"{name}: exact frozen blob changed {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP11_EXISTING_MLB_FREEZES=PASS")
+          PY
+
+      - name: Compile frozen Step 11
+        run: |
+          python -m py_compile \
+            cfb_game_total_model_v1.py \
+            cfb_game_total_hub_v2.py \
+            streamlit_memory_lazy_router_v35.py \
+            tests/test_cfb_step11_game_total_model_v1.py \
+            tests/test_cfb_step11_game_total_hub_v2.py \
+            tests/test_streamlit_memory_lazy_router_v35.py
+
+      - name: Run frozen Step 11 contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_step11_game_total_model_v1.py \
+            tests/test_cfb_step11_game_total_hub_v2.py \
+            tests/test_streamlit_memory_lazy_router_v35.py \
+            tests/test_cfb_step10_game_total_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v34.py \
+            tests/test_cfb_step9_over_under_final_v1.py \
+            tests/test_cfb_step9_over_under_slate_v1.py \
+            tests/test_cfb_step9_over_under_hub_v3.py \
+            tests/test_streamlit_memory_lazy_router_v33.py \
+            tests/test_cfb_step8_over_under_model_v1.py \
+            tests/test_cfb_step8_over_under_hub_v2.py \
+            tests/test_streamlit_memory_lazy_router_v32.py \
+            tests/test_cfb_step7_over_under_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v31.py \
+            tests/test_cfb_step6_moneyline_final_v1.py \
+            tests/test_cfb_step6_moneyline_slate_v1.py \
+            tests/test_streamlit_memory_lazy_router_v30.py \
+            tests/test_cfb_scoreboard_completeness_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v29.py \
+            tests/test_cfb_mixed_division_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v28.py \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Lock Step 11 Game Total distribution contract
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_game_total_model_v1 as model
+
+          assert model.MODEL_VERSION == "CFB GAME TOTAL MODEL V1 • STEP 11 DISTRIBUTION"
+
+          game = {
+              "identity_verified": True,
+              "date_matches_query": True,
+              "status": "Scheduled",
+              "away_team": "Away",
+              "home_team": "Home",
+          }
+          away = {
+              "record": {"games": 4},
+              "ppg": 34.0,
+              "points_allowed_pg": 18.0,
+              "recent_ppg": 35.0,
+              "recent_points_allowed_pg": 17.0,
+              "official_stats": {},
+              "data_quality": {"grade": "READY"},
+          }
+          home = {
+              "record": {"games": 4},
+              "ppg": 29.0,
+              "points_allowed_pg": 14.0,
+              "recent_ppg": 30.0,
+              "recent_points_allowed_pg": 13.0,
+              "official_stats": {},
+              "data_quality": {"grade": "READY"},
+          }
+
+          out = model.project_distribution(game, away, home)
+          assert out["ready"] is True
+          assert out["projected_combined_total_ready"] is True
+          assert out["distribution_ready"] is True
+          assert out["median_or_mode_ready"] is True
+          assert out["exact_total_probability_ready"] is True
+          assert out["total_band_probability_ready"] is True
+          assert out["percentile_distribution_ready"] is True
+          assert out["sportsbook_input_used"] is False
+          assert out["market_price_used"] is False
+          assert out["market_probability_used"] is False
+          assert out["edge_or_ev_used"] is False
+          assert out["final_pick_ready"] is False
+          assert out["slate_ranking_ready"] is False
+          assert out["monte_carlo_used"] is False
+          assert out["empirical_calibration_claimed"] is False
+
+          mass = sum(row["probability"] for row in out["distribution"])
+          assert abs(mass - 1.0) < 1e-12
+          band_mass = sum(row["probability"] for row in out["standard_bands"])
+          assert abs(band_mass - 1.0) < 1e-12
+
+          p = out["percentiles"]
+          assert p["p10"] <= p["p25"] <= p["p50"] <= p["p75"] <= p["p90"]
+
+          print("CFB_STEP11_GAME_TOTAL_DISTRIBUTION_FROZEN=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_STEP11_PERMANENT_FREEZE_GREEN"
