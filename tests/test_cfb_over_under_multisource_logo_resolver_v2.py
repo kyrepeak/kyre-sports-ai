@@ -203,3 +203,23 @@ def test_candidate_score_penalizes_rivalry_page():
         "Harvard",
         "Ivy",
     )
+
+
+def test_wikipedia_html_logo_rejects_site_wordmark(monkeypatch):
+    html = '''
+    <html><body>
+      <img class="mw-logo-wordmark" src="/static/images/mobile/copyright/wikipedia-wordmark-en-25.svg">
+      <img alt="Notre Dame Fighting Irish logo" src="//upload.wikimedia.org/Notre_Dame_Fighting_Irish_logo.svg">
+    </body></html>
+    '''
+    monkeypatch.setattr(
+        logos.team_data_v1,
+        "_fetch_text_with_fallback",
+        lambda *a, **k: (html, []),
+    )
+    url, _ = logos._wikipedia_html_logo.__wrapped__(
+        "https://en.wikipedia.org/wiki/Notre_Dame_Fighting_Irish_football",
+        "Notre Dame",
+    )
+    assert "Notre_Dame_Fighting_Irish_logo.svg" in url
+    assert "wikipedia-wordmark" not in url
