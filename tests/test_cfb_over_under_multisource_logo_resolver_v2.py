@@ -223,3 +223,11 @@ def test_wikipedia_html_logo_rejects_site_wordmark(monkeypatch):
     )
     assert "Notre_Dame_Fighting_Irish_logo.svg" in url
     assert "wikipedia-wordmark" not in url
+
+
+def test_wikimedia_logo_guard_rejects_team_photo():
+    photo = "https://thumb.wikimedia.org/wikipedia/en/thumb/3/31/1924-Four-Horsemen-Notre-Dame.jpg/330px-1924-Four-Horsemen-Notre-Dame.jpg"
+    logo = "https://upload.wikimedia.org/wikipedia/commons/2/2f/Notre_Dame_Fighting_Irish_logo.svg"
+
+    assert logos._is_wikimedia_logo_url(photo, "Notre Dame") is False
+    assert logos._is_wikimedia_logo_url(logo, "Notre Dame") is True
