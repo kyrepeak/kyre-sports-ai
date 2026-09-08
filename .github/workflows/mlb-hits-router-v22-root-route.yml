@@ -72,7 +72,7 @@ jobs:
           import re
           app=Path('app.py').read_text()
           router=Path('streamlit_memory_lazy_router_v22.py').read_text()
-          match=re.search(r'from streamlit_memory_lazy_router_v(\\d+) import render_app', app)
+          match=re.search(r'from streamlit_memory_lazy_router_v(\d+) import render_app', app)
           if not match or int(match.group(1)) < 22:
               raise SystemExit('app.py regressed below Router V22')
           current=int(match.group(1))
