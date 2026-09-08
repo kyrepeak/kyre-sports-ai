@@ -145,6 +145,111 @@ def _repair_profile(
     return profile, True
 
 
+
+
+def _games_from_stat_rows(stats: Mapping[str, Mapping[str, Any]]) -> int:
+    """Read the published games-played column from an NCAA team-stat row."""
+    for item in stats.values():
+        headers = [str(x or "").strip().lower() for x in item.get("headers") or []]
+        row = list(item.get("row") or [])
+        for idx, header in enumerate(headers):
+            if header in {"g", "gp", "games", "games played"}:
+                if idx >= len(row):
+                    continue
+                value = frozen._int(row[idx])
+                if value is not None and value > 0:
+                    return int(value)
+    return 0
+
+
+def _record_from_summary(summary: Any, games_hint: int) -> tuple[dict[str, Any], str]:
+    text = frozen._clean(summary)
+    match = __import__("re").fullmatch(r"(\d+)-(\d+)(?:-(\d+))?", text)
+    if match:
+        wins = int(match.group(1))
+        losses = int(match.group(2))
+        ties = int(match.group(3) or 0)
+        games = max(int(games_hint or 0), wins + losses + ties)
+        record = {
+            "wins": wins,
+            "losses": losses,
+            "ties": ties,
+            "games": games,
+        }
+        return record, frozen._record_text(record)
+
+    games = max(0, int(games_hint or 0))
+    return {"games": games}, (
+        f"{games} GAME SAMPLE • W-L UNAVAILABLE" if games else "0-0"
+    )
+
+
+def _stats_only_repair(
+    side: str,
+    game: Mapping[str, Any],
+    frozen_profile: Mapping[str, Any],
+    stats: Mapping[str, Mapping[str, Any]],
+) -> tuple[dict[str, Any], bool]:
+    """Repair a CHECK profile from official NCAA stats + verified event record.
+
+    This path is used when NCAA's season-schedule persisted query is empty but
+    NCAA.com team-stat pages are live. It never invents recent form, splits or
+    SOS; those remain explicitly unavailable.
+    """
+    official = dict(stats or {})
+    scoring_off = official.get("scoring_offense") or {}
+    scoring_def = official.get("scoring_defense") or {}
+    ppg = frozen._float(scoring_off.get("value_numeric"))
+    if ppg is None:
+        ppg = frozen._float(scoring_off.get("value"))
+    allowed = frozen._float(scoring_def.get("value_numeric"))
+    if allowed is None:
+        allowed = frozen._float(scoring_def.get("value"))
+
+    games = _games_from_stat_rows(official)
+    record, record_text = _record_from_summary(
+        game.get(f"{side}_record_summary"),
+        games,
+    )
+    games = int(record.get("games") or 0)
+
+    if games <= 0 or ppg is None or allowed is None:
+        return dict(frozen_profile), False
+
+    profile = dict(frozen_profile)
+    profile.update({
+        "side": side,
+        "team": frozen._clean(game.get(f"{side}_team")) or profile.get("team") or side.title(),
+        "team_slug": frozen._clean(game.get(f"{side}_team_slug")) or profile.get("team_slug") or "",
+        "conference": frozen._clean(
+            game.get(f"{side}_conference") or profile.get("conference")
+        ) or "Conference unavailable",
+        "official_stats": official,
+        "record": record,
+        "record_text": record_text,
+        "ppg": float(ppg),
+        "points_allowed_pg": float(allowed),
+        "point_diff_pg": float(ppg - allowed),
+        "home_record": {},
+        "away_record": {},
+        "neutral_record": {},
+        "recent_form": "—",
+        "recent_record": {},
+        "recent_ppg": None,
+        "recent_points_allowed_pg": None,
+        "recent_point_diff_pg": None,
+        "sos_opponent_win_pct": None,
+        "sos_coverage": 0.0,
+        "completed_games": [],
+        "data_source": (
+            "NCAA.com official team stats + verified ESPN FBS event record • "
+            "schedule-query fallback"
+        ),
+    })
+    profile["data_quality"] = frozen._quality(profile)
+    return profile, True
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def load_matchup_team_data(
     game: Mapping[str, Any],
@@ -208,6 +313,13 @@ def load_matchup_team_data(
         away, ok = _repair_profile(
             "away", game, away_base, ledgers, meta, fcs_stats
         )
+        if not ok:
+            merged_stats = dict(away_base.get("official_stats") or {})
+            if fcs_stats.get("away"):
+                merged_stats.update(fcs_stats["away"])
+            away, ok = _stats_only_repair(
+                "away", game, away_base, merged_stats
+            )
         if ok:
             repaired.append("away")
 
@@ -215,6 +327,13 @@ def load_matchup_team_data(
         home, ok = _repair_profile(
             "home", game, home_base, ledgers, meta, fcs_stats
         )
+        if not ok:
+            merged_stats = dict(home_base.get("official_stats") or {})
+            if fcs_stats.get("home"):
+                merged_stats.update(fcs_stats["home"])
+            home, ok = _stats_only_repair(
+                "home", game, home_base, merged_stats
+            )
         if ok:
             repaired.append("home")
 
@@ -257,6 +376,8 @@ __all__ = [
     "_fcs_categories",
     "_load_fcs_official_stats",
     "_repair_profile",
+    "_stats_only_repair",
+    "_games_from_stat_rows",
     "clear_team_data_cache",
     "load_matchup_team_data",
 ]
