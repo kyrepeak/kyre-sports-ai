@@ -36,6 +36,7 @@ jobs:
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
             '.github/workflows/cfb-step1-section-router.yml' \
+            '.github/workflows/mlb-hits-router-v22-root-route.yml' \
             'app.py' \
             'cfb_hub_v1.py' \
             'streamlit_memory_lazy_router_v23.py' \
