@@ -60,7 +60,7 @@ def test_engine_panel_shows_both_offense_vs_defense_battles(monkeypatch):
     assert "Oklahoma defense" in html
     assert "+2.25" in html
     assert "-0.75" in html
-    assert "3rd Down" in html or "3rd down" in html
+    assert any(token in html for token in ("3rd Down", "3rd down", "Third Down"))
     assert "Red Zone" in html or "Red zone" in html
     assert "Sack Pressure" in html or "Sack pressure" in html
     assert "Turnover Pressure" in html or "Turnover pressure" in html
