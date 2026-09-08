@@ -147,5 +147,4 @@ def test_step8_model_firewall_has_no_market_or_simulation_dependency():
     for token in forbidden:
         assert token not in source
 
-    assert '"monte_carlo_used": false' not in source
-    assert '"monte_carlo_used": False'.lower() in source
+    assert '"monte_carlo_used": false' in source
