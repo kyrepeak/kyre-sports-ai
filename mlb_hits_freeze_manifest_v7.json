@@ -1,0 +1,49 @@
+{
+  "version": 7,
+  "policy": "Every completed MLB 1+ Hit runtime step and certified correctness/routing hotfix is immutable. New work must be additive in a new wrapper and preserve all frozen model, ranking and presentation contracts.",
+  "completed_steps": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "certified_hotfixes": [
+    "strict_no_tough_visible_v1",
+    "router_v22_root_hits_intercept"
+  ],
+  "baseline_commit": "afb2c8024e44a18f42e86d55579bb10344c2c8e1",
+  "baseline_paths": [
+    "engine.py",
+    "history.py",
+    "hit_hub_v131.py",
+    "mlb_hit_hub_v133.py",
+    "mlb_hit_hub_v1314.py",
+    "mlb_hit_hub_v1315.py"
+  ],
+  "exact_blobs": {
+    "mlb_hit_hub_v1316.py": "1732cbb470aa741ef605371d620a974eddc3b11f",
+    "streamlit_memory_lazy_router_v3.py": "83921facc7a0dc719138746cbafc1093b61fd57b",
+    "mlb_hit_hub_v1317.py": "067a754e2fab28dfbe06a16c5827dd5f1e071e95",
+    "streamlit_memory_lazy_router_v17.py": "5fedd8c8cddfd56874c15e1860df8c3ee9efc3ee",
+    "mlb_hit_hitter_profile_v1.py": "84921d49c0d9349bedb6417f2d88350c3653ada1",
+    "mlb_hit_hub_v1318.py": "7501e569096380f1229d5a18bc03124628448eb9",
+    "streamlit_memory_lazy_router_v18.py": "c61cc712457fbddf5a2be2447c19f880a826c61a",
+    "mlb_hit_favorable_ranker_v1.py": "9c88133a54cca93e836597cc136bb4f8eb5bcbf1",
+    "mlb_hit_hub_v1319.py": "f546716515c8de79414465fda7d36cff037b45fc",
+    "streamlit_memory_lazy_router_v19.py": "df6cfdbf4d19e55093651c661e09cd60d57686af",
+    "mlb_hit_starter_vulnerability_v1.py": "fe86318f78fe6c23f858cbb0bc64eaf77ba7b318",
+    "mlb_hit_hub_v1320.py": "35a27ab5edb3f65b5f941a2a80dd2b784ae65d28",
+    "streamlit_memory_lazy_router_v20.py": "94a6cd5998b12a8bc61bc34333d21f77ea575b84",
+    "mlb_hit_strict_no_tough_v1.py": "433178fabc91de5fb1e9ff1ec46c1887f71850ac",
+    "mlb_hit_hub_v1321.py": "1298bb5d960bb2d4b3185edb35e335ce1ec965b5",
+    "streamlit_memory_lazy_router_v21.py": "2a5e82a8c71450b5209bbd1e3b3892bc9ee110fc",
+    "streamlit_memory_lazy_router_v22.py": "08d33ce3d791cc8b1ee57043c98cecd55ec76355"
+  },
+  "step2_merge_commit": "0c58b68b78317a0f2d93d008f27d7e740eeac732",
+  "step3_merge_commit": "b2818794bad50aa4006bef0f659e58c02126756e",
+  "step4_merge_commit": "a4e0635305faa63cfde7ed2f3273bf8054c849b5",
+  "step5_merge_commit": "e49efe0bf0691f839e007b8bb1b6d1cd75f277ce",
+  "strict_no_tough_merge_commit": "9847a34cbe90d71987f053c49e8b637dcf1d3e72",
+  "router_v22_merge_commit": "6cfe5b4d98d9a39e37c23cbecc8adb7269e67ec8"
+}
