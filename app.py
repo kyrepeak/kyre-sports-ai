@@ -1,26 +1,27 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U multi-source logo hotfix V4.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U Upgrade Step 4 pace.
 
-Router V43 preserves the permanently frozen Router V42/V41/... chain.
+Router V44 preserves the permanently frozen Router V43/V42/... chain.
 
-Additive hotfix V4:
+Additive Upgrade Step 4:
 - preserves original CFB Steps 1-12,
 - preserves O/U Upgrade Steps 1-3,
-- preserves logo hotfixes V1-V3,
-- keeps ESPN as the first logo source,
-- fills missing team logos from official athletics websites,
-  Wikipedia/Wikimedia page images, and Wikimedia Commons,
-- resolves each team independently so one failed provider does not blank both sides,
-- keeps all projection, probability, selection, ranking, reliability,
-  sportsbook, EV, and simulation behavior unchanged.
+- preserves multi-source logo hotfixes V1-V4,
+- adds NCAA offensive plays/game,
+- adds NCAA Time of Possession -> seconds/offensive play,
+- computes division-aware expected combined plays with early-sample shrinkage,
+- applies a bounded pace adjustment before unchanged Step-9 final rules,
+- keeps direct possession counts fail-closed instead of inventing drives,
+- keeps analysis-line projection/pace weight at 0%,
+- adds no sportsbook input, market probability, EV, or Monte Carlo.
 
-Deployment heartbeat: STREAMLIT_MAIN_V43_CFB_OU_MULTISOURCE_LOGO_HOTFIX_V4_2026-09-08T21:51Z.
+Deployment heartbeat: STREAMLIT_MAIN_V44_CFB_OU_UPGRADE_STEP4_PACE_2026-09-08T22:26Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v43 import render_app
+from streamlit_memory_lazy_router_v44 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V43_CFB_OU_MULTISOURCE_LOGO_HOTFIX_V4_2026-09-08T21:51Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V44_CFB_OU_UPGRADE_STEP4_PACE_2026-09-08T22:26Z"
 
 
 render_app()
