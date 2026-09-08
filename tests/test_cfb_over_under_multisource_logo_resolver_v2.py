@@ -258,3 +258,26 @@ def test_commons_search_uses_verified_mascot_identity(monkeypatch):
     out = logos.resolve_team_logo.__wrapped__("Notre Dame", "notre-dame", "FBS")
     assert seen["name"] == "Notre Dame Fighting Irish"
     assert out["logo_provider"] == "wikimedia_commons"
+
+
+def test_official_domain_identity_beats_opponent_football_site():
+    own = logos._official_url_score(
+        "https://gobison.com/sports/football",
+        "North Dakota State Bison",
+    )
+    opponent = logos._official_url_score(
+        "https://unipanthers.com/sports/football",
+        "North Dakota State Bison",
+    )
+    assert own > opponent
+
+
+def test_commons_score_prefers_exact_team_logo_over_club_logo():
+    exact = {
+        "title": "File:Notre Dame Fighting Irish logo.svg",
+    }
+    club = {
+        "title": "File:Notre Dame Club Coordination Council Logo.jpg",
+    }
+    identity = "Notre Dame Fighting Irish"
+    assert logos._commons_score(exact, identity) > logos._commons_score(club, identity)
