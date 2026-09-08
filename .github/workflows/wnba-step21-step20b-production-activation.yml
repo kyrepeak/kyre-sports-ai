@@ -1,0 +1,516 @@
+name: WNBA Step21 Step20B production activation
+
+on:
+  push:
+    branches:
+      - wnba-step21-step20b-production-activation-20260908
+    paths:
+      - '.github/workflows/wnba-step21-step20b-production-activation.yml'
+      - 'sports_api/wnba_step21_step20b_production_activation_v1.py'
+      - 'tests/test_wnba_step21_step20b_production_activation_v1.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step21-step20b-production-activation
+  cancel-in-progress: false
+
+env:
+  STEP20B_CANDIDATE_SHA: b2c5b10c05036131dea5dee55370ca6498d3c3d8
+  STEP19N_ROLLBACK_SHA: aaf8b8a5425ea6e1b0ab33e6c42f35c95e8905ab
+  RENDER_SERVICE_ID: srv-da84q6ifngtc73bdbm6g
+  RENDER_SERVICE_URL: https://kyre-sports-api.onrender.com
+
+jobs:
+  activate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    environment: wnba-render-staging
+
+    steps:
+      - name: Checkout Step21 certification branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Assert exact Step21 repository scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/wnba-step21-step20b-production-activation.yml' \
+            'sports_api/wnba_step21_step20b_production_activation_v1.py' \
+            'tests/test_wnba_step21_step20b_production_activation_v1.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected WNBA Step21 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "WNBA_STEP21_SCOPE=PASS"
+
+      - name: Pin exact Step20B production candidate
+        run: |
+          python - <<'PY'
+          import subprocess
+          from sports_api import wnba_step21_step20b_production_activation_v1 as s21
+
+          candidate=s21.STEP20B_CANDIDATE_SHA
+          actual=subprocess.check_output(["git","rev-parse",candidate],text=True).strip()
+          assert actual == candidate
+
+          failures=[]
+          for path,expected in s21.STEP20B_RUNTIME_BLOBS.items():
+              try:
+                  blob=subprocess.check_output(
+                      ["git","rev-parse",f"{candidate}:{path}"],
+                      text=True,
+                  ).strip()
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing {path}")
+                  continue
+              if blob != expected:
+                  failures.append(f"{path}: expected={expected} actual={blob}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("WNBA_STEP21_STEP20B_EXACT_BLOBS=PASS")
+          PY
+
+      - name: Run Step21 and frozen WNBA regressions
+        run: |
+          python -m pytest -q tests/test_wnba_step21_step20b_production_activation_v1.py
+          python -m pytest -q \
+            tests/test_wnba_step20b_step2_exact_reuse_timing.py \
+            tests/test_wnba_step20b_reconstruction_cache.py \
+            tests/test_wnba_step20b_runtime_acceleration.py \
+            tests/test_wnba_step20b_optional_workload_compat.py \
+            tests/test_wnba_step20b_monte_carlo_acceleration.py \
+            tests/test_wnba_step20b_rollover_stage_trace.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step19n_fanduel_empty_market.py \
+            tests/test_wnba_step19m_fanduel_line_move.py \
+            tests/test_wnba_step19k_market_not_ready.py \
+            tests/test_wnba_step19j_runtime_acceleration.py
+          python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step21_step20b_production_activation_v1 as s21
+          assert s12b.CERTIFIED_SIMULATIONS == s21.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12b.CERTIFIED_BATCH_SIZE == s21.CERTIFIED_BATCH_SIZE == 250_000
+          print("WNBA_STEP21_MODEL_WORKLOAD_FROZEN=PASS")
+          PY
+
+      - name: Configure exact Step20B production environment
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+
+          base="https://api.render.com/v1"
+          sid=os.environ["RENDER_SERVICE_ID"]
+          sha=os.environ["STEP20B_CANDIDATE_SHA"]
+          headers={
+              "Authorization":f"Bearer {os.environ['RENDER_API_KEY']}",
+              "Accept":"application/json",
+              "Content-Type":"application/json",
+          }
+          def req(method,path,body=None):
+              request=urllib.request.Request(
+                  base+path,
+                  data=None if body is None else json.dumps(body).encode(),
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode()
+                  return json.loads(raw) if raw else None
+
+          desired={
+              "WEB_CONCURRENCY":"1",
+              "WNBA_STEP17B_ALWAYS_ON_ENABLED":"true",
+              "WNBA_STEP17B_LOOP_SECONDS":"60",
+              "WNBA_STEP17B_EXPECTED_REVISION":sha,
+              "WNBA_STEP17C_MONITORING_ENABLED":"true",
+              "WNBA_STEP18A_STREAMLIT_CONSUMER_ENABLED":"true",
+              "WNBA_STEP16B_DURABLE_LIFECYCLE_ENABLED":"true",
+              "WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED":"true",
+              "WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED":"true",
+              "WNBA_STEP14B_DATABASE_READ_ENABLED":"true",
+              "WNBA_STEP14B_DATABASE_WRITE_ENABLED":"true",
+              "WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED":"true",
+              "WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED":"true",
+              "WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED":"true",
+              "WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED":"true",
+              "WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED":"true",
+              "WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED":"true",
+              "WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED":"true",
+              "WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED":"true",
+              "WNBA_STEP12A_SHADOW_RUNNER_ENABLED":"true",
+              "WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED":"true",
+              "WNBA_STEP19A_DRAFTKINGS_SITE":"dkusaz",
+              "WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED":"true",
+              "WNBA_STEP11B_NETWORK_REFRESH_ENABLED":"true",
+              "WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED":"true",
+              "WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED":"true",
+              "WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED":"true",
+              "WNBA_STEP10_FASTAPI_ENABLED":"true",
+              "WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED":"true",
+              "WNBA_STEP10B_MARKET_ADAPTER_ENABLED":"true",
+              "WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED":"true",
+              "WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED":"true",
+              "WNBA_STEP9_FASTAPI_ENABLED":"true",
+              "WNBA_STEP9_THRESHOLD_PRICING_ENABLED":"true",
+              "WNBA_STEP9B_MARKET_COMPARISON_ENABLED":"true",
+              "WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED":"true",
+              "WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED":"true",
+              "WNBA_STEP8_PROJECTION_HANDOFF_ENABLED":"true",
+              "WNBA_STEP8_CORE_PROJECTION_ENABLED":"true",
+              "WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED":"true",
+              "WNBA_STEP8_MONTE_CARLO_ENABLED":"true",
+              "WNBA_STEP7G_FIRST_PARTY_ENABLED":"true",
+              "WNBA_PRODUCTION_RUNTIME_ENABLED":"false",
+              "WNBA_BOARD_SCHEDULER_ENABLED":"false",
+              "WNBA_STEP12_SCHEDULER_ENABLED":"false",
+              "WNBA_KYRE_DIRECT_SYNC_ENABLED":"false",
+              "WNBA_KYRE_RECONCILED_SYNC_ENABLED":"false",
+              "WNBA_STEP6J_CANARY_ENABLED":"false",
+              "WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED":"false",
+              "WNBA_PERSISTENCE_ENABLED":"false",
+              "WNBA_SUPABASE_WRITE_ENABLED":"false",
+              "WNBA_WAGERING_ENABLED":"false",
+              "WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED":"false",
+              "WNBA_STEP20B_PROBE_ENABLED":"false",
+              "WNBA_STEP20B_PROBE_TOKEN":"disabled-step21-production",
+              "WNBA_DEPLOYMENT_REVISION":sha,
+              "WNBA_RELEASE_ID":"wnba-step21-step20b-optimized-production",
+          }
+          for key,value in desired.items():
+              req("PUT",f"/services/{sid}/env-vars/{key}",{"value":value})
+          print("WNBA_STEP21_ENV_CONFIGURED",len(desired))
+          PY
+
+      - name: Deploy exact Step20B candidate to production
+        id: deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+
+          base="https://api.render.com/v1"
+          sid=os.environ["RENDER_SERVICE_ID"]
+          sha=os.environ["STEP20B_CANDIDATE_SHA"].lower()
+          headers={
+              "Authorization":f"Bearer {os.environ['RENDER_API_KEY']}",
+              "Accept":"application/json",
+              "Content-Type":"application/json",
+          }
+          def req(method,path,body=None):
+              request=urllib.request.Request(
+                  base+path,
+                  data=None if body is None else json.dumps(body).encode(),
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode()
+                  return json.loads(raw) if raw else None
+          def walk(value):
+              if isinstance(value,dict):
+                  yield value
+                  for child in value.values():
+                      yield from walk(child)
+              elif isinstance(value,list):
+                  for child in value:
+                      yield from walk(child)
+          def deploy_id_for_sha(value):
+              for row in walk(value):
+                  did=row.get("id")
+                  if isinstance(did,str) and did.startswith("dep-"):
+                      if sha in json.dumps(row,sort_keys=True,default=str).lower():
+                          return did
+              return None
+
+          out=req("POST",f"/services/{sid}/deploys",{"commitId":sha,"clearCache":"do_not_clear"}) or {}
+          did=deploy_id_for_sha(out)
+          for _ in range(60):
+              if did:
+                  break
+              recent=req("GET",f"/services/{sid}/deploys?limit=20") or []
+              did=deploy_id_for_sha(recent)
+              if did:
+                  break
+              time.sleep(2)
+          if not did:
+              raise SystemExit("Step21 exact candidate deploy could not be resolved")
+
+          for _ in range(240):
+              deploy=req("GET",f"/services/{sid}/deploys/{did}") or {}
+              status=str(deploy.get("status") or "").lower()
+              if status=="live":
+                  break
+              if status in {"build_failed","update_failed","canceled","cancelled","deactivated"}:
+                  raise SystemExit("Step21 production deploy failed "+status)
+              time.sleep(5)
+          else:
+              raise SystemExit("Step21 production deploy timeout")
+
+          if sha not in json.dumps(deploy,sort_keys=True,default=str).lower():
+              raise SystemExit("Step21 live deploy SHA mismatch")
+          print("WNBA_STEP21_STEP20B_RENDER_LIVE",did,sha)
+          with open(os.environ["GITHUB_OUTPUT"],"a",encoding="utf-8") as fh:
+              fh.write("deployed=true\n")
+              fh.write(f"deploy_id={did}\n")
+          PY
+
+      - name: Verify exact live build and Step20B installation
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          from sports_api import wnba_step21_step20b_production_activation_v1 as s21
+
+          base=os.environ["RENDER_SERVICE_URL"]
+          def get(path):
+              req=urllib.request.Request(
+                  base+path,
+                  headers={"User-Agent":"kyre-wnba-step21/1.0"},
+              )
+              with urllib.request.urlopen(req,timeout=45) as response:
+                  return json.loads(response.read().decode())
+
+          for poll in range(1,61):
+              try:
+                  build=get("/api/v1/wnba/runtime/build")
+                  runtime=get("/api/v1/wnba/runtime/step17b")
+                  statuses={
+                      "runtime_acceleration":get("/api/v1/wnba/runtime/step20b-runtime-acceleration"),
+                      "optional_workload":get("/api/v1/wnba/runtime/step20b-optional-workload-compat"),
+                      "monte_carlo":get("/api/v1/wnba/runtime/step20b-monte-carlo-acceleration"),
+                      "monte_carlo_cdf":get("/api/v1/wnba/runtime/step20b-monte-carlo-cdf-compat"),
+                      "step4w_cache":get("/api/v1/wnba/runtime/step20b-step4w-cycle-cache"),
+                  }
+              except Exception as exc:
+                  if poll % 5 == 0:
+                      print("WNBA_STEP21_BUILD_WAIT",poll,type(exc).__name__,str(exc),flush=True)
+                  time.sleep(5)
+                  continue
+
+              provider=str(build.get("provider_reported_commit") or "").lower()
+              installed=all(bool((value or {}).get("installed")) for value in statuses.values())
+              print(
+                  "WNBA_STEP21_BUILD_POLL",
+                  json.dumps({
+                      "poll":poll,
+                      "provider_commit":provider,
+                      "runtime_enabled":runtime.get("enabled"),
+                      "runtime_running":runtime.get("running"),
+                      "runtime_role":runtime.get("role"),
+                      "step20b_installed":installed,
+                  },sort_keys=True),
+                  flush=True,
+              )
+              if (
+                  provider == s21.STEP20B_CANDIDATE_SHA
+                  and runtime.get("enabled") is True
+                  and runtime.get("running") is True
+                  and installed
+              ):
+                  s21.validate_step20b_statuses(statuses)
+                  print("WNBA_STEP21_EXACT_BUILD_AND_ACCELERATION=PASS")
+                  break
+              time.sleep(5)
+          else:
+              raise SystemExit("Step21 exact live build/acceleration did not become ready")
+          PY
+
+      - name: Observe two safe optimized production cycles
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+          from sports_api import wnba_step21_step20b_production_activation_v1 as s21
+
+          base=os.environ["RENDER_SERVICE_URL"]
+          def get(path):
+              req=urllib.request.Request(
+                  base+path,
+                  headers={"User-Agent":"kyre-wnba-step21/1.0"},
+              )
+              with urllib.request.urlopen(req,timeout=45) as response:
+                  return json.loads(response.read().decode())
+
+          last=None
+          for poll in range(1,211):
+              try:
+                  build=get("/api/v1/wnba/runtime/build")
+                  runtime=get("/api/v1/wnba/runtime/step17b")
+                  consumer=get("/api/v1/wnba/consumer/latest")
+                  statuses={
+                      "runtime_acceleration":get("/api/v1/wnba/runtime/step20b-runtime-acceleration"),
+                      "optional_workload":get("/api/v1/wnba/runtime/step20b-optional-workload-compat"),
+                      "monte_carlo":get("/api/v1/wnba/runtime/step20b-monte-carlo-acceleration"),
+                      "monte_carlo_cdf":get("/api/v1/wnba/runtime/step20b-monte-carlo-cdf-compat"),
+                      "step4w_cache":get("/api/v1/wnba/runtime/step20b-step4w-cycle-cache"),
+                  }
+              except Exception as exc:
+                  if poll % 6 == 0:
+                      print("WNBA_STEP21_CYCLE_WAIT_HTTP",poll,type(exc).__name__,str(exc),flush=True)
+                  time.sleep(10)
+                  continue
+
+              elapsed=s21.completed_cycle_seconds(runtime)
+              cr=consumer.get("runtime") or {}
+              last={
+                  "poll":poll,
+                  "role":runtime.get("role"),
+                  "leadership":runtime.get("leadership_acquired"),
+                  "cycles":runtime.get("cycle_count"),
+                  "successes":runtime.get("success_count"),
+                  "failures":runtime.get("failure_count"),
+                  "last_status":runtime.get("last_status"),
+                  "last_cycle_seconds":elapsed,
+                  "consumer_outcome":cr.get("cycle_outcome"),
+                  "consumer_circuit":cr.get("circuit_state"),
+                  "consumer_failures":cr.get("consecutive_failures"),
+              }
+              if poll % 3 == 0:
+                  print("WNBA_STEP21_CYCLE_WAIT",json.dumps(last,sort_keys=True),flush=True)
+
+              if int(runtime.get("failure_count") or 0) > 0:
+                  raise SystemExit("Step21 observed runtime failure "+json.dumps(last,sort_keys=True))
+
+              if (
+                  int(runtime.get("success_count") or 0) >= s21.MIN_SAFE_COMPLETED_CYCLES
+                  and runtime.get("last_status") == "cycle_completed"
+              ):
+                  result=s21.validate_live_activation(
+                      build=build,
+                      runtime=runtime,
+                      statuses=statuses,
+                      consumer=consumer,
+                  )
+                  print("WNBA_STEP21_PRODUCTION_ACTIVATION_GREEN",json.dumps(result,sort_keys=True),flush=True)
+                  break
+              time.sleep(10)
+          else:
+              raise SystemExit("Step21 did not reach two safe completed cycles "+repr(last))
+          PY
+
+      - name: Final production safety check
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          from sports_api import wnba_step21_step20b_production_activation_v1 as s21
+
+          base=os.environ["RENDER_SERVICE_URL"]
+          def get(path):
+              req=urllib.request.Request(base+path,headers={"User-Agent":"kyre-wnba-step21/1.0"})
+              with urllib.request.urlopen(req,timeout=45) as response:
+                  return json.loads(response.read().decode())
+
+          build=get("/api/v1/wnba/runtime/build")
+          runtime=get("/api/v1/wnba/runtime/step17b")
+          consumer=get("/api/v1/wnba/consumer/latest")
+          statuses={
+              "runtime_acceleration":get("/api/v1/wnba/runtime/step20b-runtime-acceleration"),
+              "optional_workload":get("/api/v1/wnba/runtime/step20b-optional-workload-compat"),
+              "monte_carlo":get("/api/v1/wnba/runtime/step20b-monte-carlo-acceleration"),
+              "monte_carlo_cdf":get("/api/v1/wnba/runtime/step20b-monte-carlo-cdf-compat"),
+              "step4w_cache":get("/api/v1/wnba/runtime/step20b-step4w-cycle-cache"),
+          }
+          result=s21.validate_live_activation(
+              build=build,
+              runtime=runtime,
+              statuses=statuses,
+              consumer=consumer,
+          )
+          print("WNBA_STEP21_FINAL_PRODUCTION_CHECK",json.dumps(result,sort_keys=True))
+          print("WNBA_STEP21_STEP20B_PRODUCTION_ACTIVE")
+          PY
+
+      - name: Roll back to exact Step19N on activation failure
+        if: failure() && steps.deploy.outputs.deployed == 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request
+
+          base="https://api.render.com/v1"
+          sid=os.environ["RENDER_SERVICE_ID"]
+          sha=os.environ["STEP19N_ROLLBACK_SHA"].lower()
+          headers={
+              "Authorization":f"Bearer {os.environ['RENDER_API_KEY']}",
+              "Accept":"application/json",
+              "Content-Type":"application/json",
+          }
+          def req(method,path,body=None):
+              request=urllib.request.Request(
+                  base+path,
+                  data=None if body is None else json.dumps(body).encode(),
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  raw=response.read().decode()
+                  return json.loads(raw) if raw else None
+          def walk(value):
+              if isinstance(value,dict):
+                  yield value
+                  for child in value.values():
+                      yield from walk(child)
+              elif isinstance(value,list):
+                  for child in value:
+                      yield from walk(child)
+          def deploy_for_sha(value):
+              for row in walk(value):
+                  did=row.get("id")
+                  if isinstance(did,str) and did.startswith("dep-"):
+                      if sha in json.dumps(row,sort_keys=True,default=str).lower():
+                          return did
+              return None
+
+          for key,value in {
+              "WNBA_STEP17B_EXPECTED_REVISION":sha,
+              "WNBA_DEPLOYMENT_REVISION":sha,
+              "WNBA_RELEASE_ID":"wnba-step19n-safe-market-state-candidate",
+              "WNBA_STEP17B_ALWAYS_ON_ENABLED":"true",
+              "WNBA_STEP20B_PROBE_ENABLED":"false",
+              "WNBA_STEP20B_PROBE_TOKEN":"disabled-diagnostic-probe-token-not-active",
+          }.items():
+              req("PUT",f"/services/{sid}/env-vars/{key}",{"value":value})
+
+          out=req("POST",f"/services/{sid}/deploys",{"commitId":sha,"clearCache":"do_not_clear"}) or {}
+          did=deploy_for_sha(out)
+          for _ in range(60):
+              if did:
+                  break
+              did=deploy_for_sha(req("GET",f"/services/{sid}/deploys?limit=20") or [])
+              if did:
+                  break
+              time.sleep(2)
+          if not did:
+              raise SystemExit("Step21 rollback deploy could not be resolved")
+
+          for _ in range(240):
+              deploy=req("GET",f"/services/{sid}/deploys/{did}") or {}
+              status=str(deploy.get("status") or "").lower()
+              if status=="live":
+                  break
+              if status in {"build_failed","update_failed","canceled","cancelled","deactivated"}:
+                  raise SystemExit("Step21 rollback failed "+status)
+              time.sleep(5)
+          else:
+              raise SystemExit("Step21 rollback timeout")
+          if sha not in json.dumps(deploy,sort_keys=True,default=str).lower():
+              raise SystemExit("Step21 rollback live SHA mismatch")
+          print("WNBA_STEP21_ROLLBACK_STEP19N_RESTORED",did,sha)
+          PY
