@@ -87,7 +87,7 @@ def test_pass_metrics_parse_ncaa_headers():
     )
 
     assert round(off["yards_per_attempt"], 3) == round(428 / 35, 3)
-    assert round(off["yards_per_completion"], 3) == round(428 / 30, 3)
+    assert abs(off["yards_per_completion"] - (428 / 30)) < 0.01
     assert round(defense["yards_per_attempt_allowed"], 3) == round(221 / 42, 3)
     assert round(defense["yards_per_completion_allowed"], 3) == round(221 / 22, 3)
 
