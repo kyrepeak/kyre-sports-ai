@@ -75,11 +75,20 @@ def _clean(value: Any) -> str:
 
 
 def _float(value: Any) -> float | None:
+    # Preserve numeric zero: the frozen helper normalizes falsy 0 to an empty
+    # string, but 0 TDs / 0 points allowed is legitimate red-zone evidence.
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
     return frozen_team._float(value)
 
 
 def _int(value: Any) -> int | None:
-    return frozen_team._int(value)
+    if isinstance(value, int) and not isinstance(value, bool):
+        return int(value)
+    number = _float(value)
+    if number is None:
+        return None
+    return int(number)
 
 
 def _clamp(value: float, low: float, high: float) -> float:
