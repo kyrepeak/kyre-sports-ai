@@ -44,6 +44,8 @@ _FORBIDDEN_OFFICIAL_DOMAINS = (
     "x.com",
     "youtube.com",
     "tiktok.com",
+    "archive.org",
+    "web.archive.org",
 )
 
 _IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".svg")
@@ -147,15 +149,11 @@ def _wikipedia_candidates(
     team_name: str,
     conference: str,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    queries = []
     base = _clean(team_name)
     conf = _clean(conference)
-    if conf:
+    queries = [f"{base} football"]
+    if conf and conf.upper() not in {"FBS", "FCS"}:
         queries.append(f"{base} football {conf}")
-    queries.extend([
-        f"{base} football",
-        f"{base} college football",
-    ])
 
     attempts: list[dict[str, Any]] = []
     found: dict[int, dict[str, Any]] = {}
@@ -191,6 +189,9 @@ def _wikipedia_candidates(
             previous = found.get(pageid)
             if previous is None or page["_logo_score"] > previous.get("_logo_score", -999):
                 found[pageid] = page
+
+        if found and max(float(row.get("_logo_score") or 0.0) for row in found.values()) >= 12.0:
+            break
 
     ranked = sorted(
         found.values(),
@@ -272,6 +273,13 @@ class _LogoHtmlParser(HTMLParser):
         data = {str(k).lower(): _clean(v) for k, v in attrs}
         tag = tag.lower()
 
+        if tag == "link":
+            rel = (data.get("rel") or "").lower()
+            href = data.get("href") or ""
+            if "icon" in rel and href:
+                self.image_candidates.append((3.0, href))
+            return
+
         if tag == "meta":
             prop = (data.get("property") or data.get("name") or "").lower()
             if prop in {"og:image", "og:image:url", "twitter:image", "twitter:image:src"}:
@@ -295,10 +303,50 @@ class _LogoHtmlParser(HTMLParser):
             score += 4.0
         hay_tokens = _tokens(text)
         score += 2.0 * len(self.team_tokens & hay_tokens)
-        if any(term in text for term in ("sprite", "favicon", "pixel", "tracker", "adserver")):
-            score -= 8.0
+        if any(term in text for term in ("sprite", "pixel", "tracker", "adserver", "wayback", "toolbar")):
+            score -= 10.0
+        if "favicon" in text:
+            score -= 2.0
         if score > 0:
             self.image_candidates.append((score, src))
+
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _wikipedia_html_logo(
+    page_url: str,
+    team_name: str,
+) -> tuple[str, list[dict[str, Any]]]:
+    """Parse the football article HTML when the pageimages API has no usable image."""
+    if not _safe_http_url(page_url):
+        return "", []
+    html, attempts = team_data_v1._fetch_text_with_fallback(
+        page_url,
+        f"Wikipedia football article logo: {team_name}",
+    )
+    if not html:
+        return "", attempts
+
+    parser = _LogoHtmlParser(team_name)
+    parser.feed(html)
+
+    ranked = sorted(parser.image_candidates, reverse=True)
+    for score, raw in ranked:
+        if score < 4.0:
+            continue
+        url = _safe_http_url(urljoin(page_url, raw))
+        if not url:
+            continue
+        host = urlparse(url).netloc.lower()
+        if "wikimedia.org" in host or "wikipedia.org" in host:
+            return url, attempts
+
+    for raw in parser.meta_images:
+        url = _safe_http_url(urljoin(page_url, raw))
+        if url and "wikimedia.org" in urlparse(url).netloc.lower():
+            return url, attempts
+
+    return "", attempts
 
 
 @st.cache_data(ttl=86400, show_spinner=False)
@@ -429,6 +477,20 @@ def resolve_team_logo(
                 "provider_attempts": wiki_attempts,
             }
 
+        wiki_html_logo, wiki_html_attempts = _wikipedia_html_logo(
+            _clean(best.get("fullurl")),
+            team_name,
+        )
+        if wiki_html_logo:
+            return {
+                "logo": wiki_html_logo,
+                "source": "Wikipedia / Wikimedia",
+                "logo_provider": "wikipedia_html",
+                "logo_source_url": _clean(best.get("fullurl")),
+                "confidence": "MEDIUM",
+                "provider_attempts": wiki_attempts + wiki_html_attempts,
+            }
+
     commons_logo, commons_attempts = _commons_logo(team_name)
     if commons_logo:
         return {
@@ -492,6 +554,7 @@ def clear_logo_cache() -> None:
     for fn in (
         _wikipedia_candidates,
         _official_page_logo,
+        _wikipedia_html_logo,
         _commons_logo,
         resolve_team_logo,
     ):
@@ -514,6 +577,7 @@ __all__ = [
     "_commons_logo",
     "_page_image",
     "_wikipedia_candidates",
+    "_wikipedia_html_logo",
     "clear_logo_cache",
     "resolve_team_logo",
     "resolve_visuals",
