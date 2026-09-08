@@ -40,6 +40,7 @@ jobs:
             '.github/workflows/cfb-step2-schedule-identity.yml' \
             '.github/workflows/cfb-step3-team-data.yml' \
             '.github/workflows/cfb-step4-moneyline-page-ui.yml' \
+            '.github/workflows/mlb-hits-router-v22-root-route.yml' \
             'app.py' \
             'cfb_moneyline_hub_v1.py' \
             'streamlit_memory_lazy_router_v26.py' \
