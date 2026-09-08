@@ -1,0 +1,41 @@
+name: TEMP CFB O/U Step 5 explosive category diagnostic
+
+on:
+  push:
+    branches: ['cfb-ou-upgrade-step5-explosive']
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Print NCAA explosive-relevant categories
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_team_data_v1 as team
+          import cfb_over_under_matchup_engine_v1 as engine
+
+          for division, url in [
+              ("FBS", team.NCAA_STATS_INDEX),
+              ("FCS", engine.NCAA_FCS_STATS_INDEX),
+          ]:
+              html, attempts = team._fetch_text_with_fallback(url, f"NCAA {division} index")
+              parser = engine._CategoryOptionParser()
+              parser.feed(html or "")
+              print("DIVISION", division, "OPTIONS", len(parser.options))
+              for label, path in parser.options:
+                  low=label.lower()
+                  if any(k in low for k in (
+                      "play", "pass", "rush", "yard", "completion", "touchdown",
+                      "first down", "scoring", "total offense", "total defense"
+                  )):
+                      print(label, "=>", path)
+          PY
