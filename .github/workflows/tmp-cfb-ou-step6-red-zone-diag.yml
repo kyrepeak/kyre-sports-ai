@@ -30,6 +30,23 @@ jobs:
               {"team":"Florida A&M","team_slug":"florida-a-m"},
           ]
 
+          def all_rows(url, provider):
+              found={}
+              first, _ = team._fetch_text_with_fallback(url, provider)
+              pages = team._max_stat_pages(first)
+              for page in range(1, pages+1):
+                  html = first if page == 1 else team._fetch_text_with_fallback(url.rstrip("/") + f"/p{page}", provider+f" p{page}")[0]
+                  headers, rows = team._table_rows(html or "")
+                  team_idx = team._team_cell_index(headers, rows)
+                  for cells in rows:
+                      if team_idx >= len(cells):
+                          continue
+                      name = team._clean(cells[team_idx])
+                      key = team._canonical_name(name)
+                      if key:
+                          found[key]={"team":name,"headers":headers,"row":cells}
+              return found, pages
+
           for division, index in (
               ("FBS", team.NCAA_STATS_INDEX),
               ("FCS", engine.NCAA_FCS_STATS_INDEX),
@@ -48,13 +65,14 @@ jobs:
                   table, diag = engine._load_category_table.__wrapped__(
                       url, f"NCAA {division} {label}"
                   )
-                  print("TABLE", label, "rows", len(table), "url", url)
+                  all_table, all_pages = all_rows(url, f"NCAA {division} {label} all rows")
+                  print("TABLE", label, "ranked_rows", len(table), "all_rows", len(all_table), "pages", all_pages, "url", url)
                   first = next(iter(table.values()), {})
                   print("HEADERS", label, json.dumps(first.get("headers") or []))
                   print("TEAMS", label, json.dumps([v.get("team") for v in list(table.values())[:40]]))
                   print("DIAG", label, json.dumps({k:diag.get(k) for k in ("rows","field_size","pages")}))
                   for profile in targets:
-                      hit = pace._lookup(table, profile)
+                      hit = pace._lookup(all_table, profile)
                       if hit:
                           print("TARGET", label, profile["team"], json.dumps({
                               "team":hit.get("team"),
