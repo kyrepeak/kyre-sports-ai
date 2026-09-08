@@ -5,10 +5,17 @@ chain down to the `streamlit_memory_lazy_router_v1` bootstrap. MLB Moneyline
 remains frozen on V17.8 Step 12. Only MLB 1+ Hit advances to V13.21 strict
 no-TOUGH visible selection; Matchup Explorer and all other markets remain
 unchanged.
+
+Deployment heartbeat: STREAMLIT_MAIN_V21_2026-09-08T05:49Z.
+This no-op marker intentionally changes the entrypoint blob so Streamlit
+Community Cloud receives a fresh source update from main.
 """
 from __future__ import annotations
 
 from streamlit_memory_lazy_router_v21 import render_app
+
+
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V21_2026-09-08T05:49Z"
 
 
 render_app()
