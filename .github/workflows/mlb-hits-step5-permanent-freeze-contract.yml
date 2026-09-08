@@ -1,0 +1,153 @@
+name: MLB Hits Step 5 permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-hits-step5-freeze-contract']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert Step 5 freeze-contract creation scope
+        if: github.event_name == 'push' || github.head_ref == 'mlb-hits-step5-freeze-contract'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-hits-step5-permanent-freeze-contract.yml' \
+            'mlb_hits_freeze_manifest_v5.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected MLB Hits Step 5 freeze-contract creation scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "MLB_HITS_STEP5_FREEZE_CREATION_SCOPE=PASS"
+
+      - name: Enforce permanent Hits Steps 1-5 frozen-file manifest
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifest = json.loads(pathlib.Path('mlb_hits_freeze_manifest_v5.json').read_text())
+          base = manifest['baseline_commit']
+
+          def rev(spec):
+              return subprocess.check_output(['git', 'rev-parse', spec], text=True).strip()
+
+          failures = []
+          for path in manifest['baseline_paths']:
+              try:
+                  expected = rev(f'{base}:{path}')
+                  actual = rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing frozen Hits path: {path}')
+                  continue
+              if expected != actual:
+                  failures.append(f'frozen Hits baseline changed: {path} expected={expected} actual={actual}')
+
+          for path, expected in manifest['exact_blobs'].items():
+              try:
+                  actual = rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing exact-frozen Hits path: {path}')
+                  continue
+              if expected != actual:
+                  failures.append(f'exact frozen Hits blob changed: {path} expected={expected} actual={actual}')
+
+          if failures:
+              print('\n'.join(failures))
+              sys.exit(1)
+
+          if manifest.get('completed_steps') != [1, 2, 3, 4, 5]:
+              raise SystemExit('Hits completed_steps manifest mismatch')
+
+          print('MLB_HITS_STEPS_1_5_PERMANENT_FREEZE_MANIFEST=PASS')
+          PY
+
+      - name: Compile frozen Hits Steps 1-5
+        run: |
+          python -m py_compile \
+            mlb_hit_hub_v1316.py \
+            mlb_hit_hub_v1317.py \
+            mlb_hit_hitter_profile_v1.py \
+            mlb_hit_hub_v1318.py \
+            mlb_hit_favorable_ranker_v1.py \
+            mlb_hit_hub_v1319.py \
+            mlb_hit_starter_vulnerability_v1.py \
+            mlb_hit_hub_v1320.py \
+            streamlit_memory_lazy_router_v3.py \
+            streamlit_memory_lazy_router_v17.py \
+            streamlit_memory_lazy_router_v18.py \
+            streamlit_memory_lazy_router_v19.py \
+            streamlit_memory_lazy_router_v20.py \
+            tests/test_mlb_hits_step1_strength_evidence_summary.py \
+            tests/test_mlb_hits_step2_mobile_top5.py \
+            tests/test_streamlit_memory_lazy_router_v17.py \
+            tests/test_mlb_hits_step3_hitter_profile.py \
+            tests/test_streamlit_memory_lazy_router_v18.py \
+            tests/test_mlb_hits_step4_favorable_ranking.py \
+            tests/test_streamlit_memory_lazy_router_v19.py \
+            tests/test_mlb_hits_step5_starter_vulnerability.py \
+            tests/test_streamlit_memory_lazy_router_v20.py
+
+      - name: Run frozen Hits Steps 1-5 contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_hits_step1_strength_evidence_summary.py \
+            tests/test_mlb_hits_step2_mobile_top5.py \
+            tests/test_streamlit_memory_lazy_router_v17.py \
+            tests/test_mlb_hits_step3_hitter_profile.py \
+            tests/test_streamlit_memory_lazy_router_v18.py \
+            tests/test_mlb_hits_step4_favorable_ranking.py \
+            tests/test_streamlit_memory_lazy_router_v19.py \
+            tests/test_mlb_hits_step5_starter_vulnerability.py \
+            tests/test_streamlit_memory_lazy_router_v20.py \
+            -k 'not app_activates_additive_router_v3 and not router_changes_only_hits_route_and_delegates_everything_else'
+
+      - name: Assert frozen Step 5 starter gate contract
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import mlb_hit_starter_vulnerability_v1 as s
+          assert s.STEP4_SCORE_WEIGHT == 0.72
+          assert s.VULNERABILITY_WEIGHT == 0.28
+          assert s.TOUGH_STARTER_SCORE == 72
+          assert s.MIN_PROFILE_SCORE_FOR_HARD_GATE == 60
+          assert s.MIN_STRENGTH_COVERAGE_FOR_HARD_GATE == 0.60
+          assert s._FROZEN_STEP4_RANKER is not None
+          print("MLB_HITS_STEP5_STARTER_GATE_CONTRACT=PASS")
+          PY
+
+      - name: Certification marker
+        run: |
+          echo "MLB_HITS_STEP1_PERMANENT_FREEZE_GREEN"
+          echo "MLB_HITS_STEP2_PERMANENT_FREEZE_GREEN"
+          echo "MLB_HITS_STEP3_PERMANENT_FREEZE_GREEN"
+          echo "MLB_HITS_STEP4_PERMANENT_FREEZE_GREEN"
+          echo "MLB_HITS_STEP5_PERMANENT_FREEZE_GREEN"
