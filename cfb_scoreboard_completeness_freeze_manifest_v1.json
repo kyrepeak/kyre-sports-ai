@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "policy": "The certified College Football NCAA-scoreboard slate-completeness hotfix is immutable. Future CFB work must be additive through new versioned providers/hubs/routers and preserve all frozen CFB and MLB contracts.",
+  "baseline_commit": "cc985cbab14dcc81a744ae98ef2f91b1280328c2",
+  "certified_pr": 180,
+  "exact_blobs": {
+    "cfb_schedule_v3.py": "17ad7f7c530f1459652a27204279746cae1edce7",
+    "cfb_moneyline_hub_v4.py": "c3e71a012c1e3bad7f35c3bfe629d5d196eb9719",
+    "streamlit_memory_lazy_router_v29.py": "e610a562d05813720691eb69318646151e8cd4a8"
+  },
+  "preserved_contracts": [
+    "cfb_freeze_manifest_v5.json",
+    "cfb_mixed_division_freeze_manifest_v1.json",
+    "mlb_hits_freeze_manifest_v7.json",
+    "mlb_moneyline_freeze_manifest_v13.json",
+    "mlb_matchup_explorer_freeze_manifest_v1.json"
+  ],
+  "guarantees": [
+    "Current NCAA date-scoped FBS scoreboard is authoritative when available",
+    "Healthy official NCAA slates are atomic and are not polluted by fallback duplicates",
+    "Frozen Schedule V2 remains fallback-only when the current official scoreboard is empty",
+    "Sept. 12 2026 live certification recovered the complete official slate with 79 unique NCAA identities",
+    "Frozen College Football Moneyline Model V1 math remains unchanged",
+    "Over/Under and Game Total remain delegated through frozen prior routes"
+  ]
+}
