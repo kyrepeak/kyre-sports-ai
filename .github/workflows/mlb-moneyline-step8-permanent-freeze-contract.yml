@@ -1,0 +1,166 @@
+name: MLB Moneyline Step 8 permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-moneyline-step8-freeze-contract']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert Step 8 freeze-contract creation scope
+        if: github.event_name == 'push' || github.head_ref == 'mlb-moneyline-step8-freeze-contract'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-moneyline-step8-permanent-freeze-contract.yml' \
+            'mlb_moneyline_freeze_manifest_v9.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected MLB Moneyline Step 8 freeze-contract creation scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "MLB_MONEYLINE_STEP8_FREEZE_CREATION_SCOPE=PASS"
+
+      - name: Enforce permanent Moneyline Steps 1-8 frozen-file manifest
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifest=json.loads(pathlib.Path('mlb_moneyline_freeze_manifest_v9.json').read_text())
+          base=manifest['baseline_commit']
+
+          def rev(spec):
+              return subprocess.check_output(['git','rev-parse',spec],text=True).strip()
+
+          failures=[]
+          for path in manifest['baseline_paths']:
+              try:
+                  expected=rev(f'{base}:{path}')
+                  actual=rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing frozen Moneyline path: {path}')
+                  continue
+              if expected!=actual:
+                  failures.append(
+                      f'frozen Moneyline baseline changed: {path} expected={expected} actual={actual}'
+                  )
+
+          for path,expected in manifest['exact_blobs'].items():
+              try:
+                  actual=rev(f'HEAD:{path}')
+              except subprocess.CalledProcessError:
+                  failures.append(f'missing exact-frozen Moneyline path: {path}')
+                  continue
+              if expected!=actual:
+                  failures.append(
+                      f'exact frozen Moneyline blob changed: {path} expected={expected} actual={actual}'
+                  )
+
+          if failures:
+              print('\n'.join(failures))
+              sys.exit(1)
+
+          print('MLB_MONEYLINE_STEPS_1_8_PERMANENT_FREEZE_MANIFEST=PASS')
+          PY
+
+      - name: Compile frozen Moneyline Steps 1-8
+        run: |
+          python -m py_compile \
+            mlb_moneyline_hub_v166.py \
+            mlb_moneyline_hub_v167.py \
+            mlb_moneyline_hub_v168.py \
+            mlb_moneyline_hub_v169.py \
+            mlb_moneyline_hub_v170.py \
+            mlb_moneyline_hub_v171.py \
+            mlb_moneyline_hub_v172.py \
+            mlb_moneyline_hub_v173.py \
+            mlb_moneyline_hub_v174.py \
+            streamlit_memory_lazy_router_v4.py \
+            streamlit_memory_lazy_router_v5.py \
+            streamlit_memory_lazy_router_v6.py \
+            streamlit_memory_lazy_router_v7.py \
+            streamlit_memory_lazy_router_v8.py \
+            streamlit_memory_lazy_router_v9.py \
+            streamlit_memory_lazy_router_v10.py \
+            streamlit_memory_lazy_router_v11.py \
+            streamlit_memory_lazy_router_v12.py \
+            tests/test_mlb_moneyline_step1_game_identity.py \
+            test_mlb_moneyline_v167.py \
+            test_streamlit_memory_lazy_router_v5.py \
+            tests/test_mlb_moneyline_step3_starter_lineup.py \
+            tests/test_streamlit_memory_lazy_router_v6.py \
+            tests/test_mlb_moneyline_step4_offense_quality.py \
+            tests/test_streamlit_memory_lazy_router_v7.py \
+            tests/test_mlb_moneyline_step5_bullpen.py \
+            tests/test_streamlit_memory_lazy_router_v8.py \
+            tests/test_mlb_moneyline_step5l_live_mode.py \
+            tests/test_streamlit_memory_lazy_router_v9.py \
+            tests/test_mlb_moneyline_step6_lineup_strength.py \
+            tests/test_streamlit_memory_lazy_router_v10.py \
+            tests/test_mlb_moneyline_step7_park_weather.py \
+            tests/test_streamlit_memory_lazy_router_v11.py \
+            tests/test_mlb_moneyline_step8_defense_baserunning.py \
+            tests/test_streamlit_memory_lazy_router_v12.py
+          PYTHONPATH=. python -c "import mlb_moneyline_hub_v166; import mlb_moneyline_hub_v167; import mlb_moneyline_hub_v168; import mlb_moneyline_hub_v169; import mlb_moneyline_hub_v170; import mlb_moneyline_hub_v171; import mlb_moneyline_hub_v172; import mlb_moneyline_hub_v173; import mlb_moneyline_hub_v174; import streamlit_memory_lazy_router_v4; import streamlit_memory_lazy_router_v5; import streamlit_memory_lazy_router_v6; import streamlit_memory_lazy_router_v7; import streamlit_memory_lazy_router_v8; import streamlit_memory_lazy_router_v9; import streamlit_memory_lazy_router_v10; import streamlit_memory_lazy_router_v11; import streamlit_memory_lazy_router_v12"
+
+      - name: Run frozen Moneyline Steps 1-8 contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_moneyline_step1_game_identity.py \
+            test_mlb_moneyline_v167.py \
+            test_streamlit_memory_lazy_router_v5.py \
+            tests/test_mlb_moneyline_step3_starter_lineup.py \
+            tests/test_streamlit_memory_lazy_router_v6.py \
+            tests/test_mlb_moneyline_step4_offense_quality.py \
+            tests/test_streamlit_memory_lazy_router_v7.py \
+            tests/test_mlb_moneyline_step5_bullpen.py \
+            tests/test_streamlit_memory_lazy_router_v8.py \
+            tests/test_mlb_moneyline_step5l_live_mode.py \
+            tests/test_streamlit_memory_lazy_router_v9.py \
+            tests/test_mlb_moneyline_step6_lineup_strength.py \
+            tests/test_streamlit_memory_lazy_router_v10.py \
+            tests/test_mlb_moneyline_step7_park_weather.py \
+            tests/test_streamlit_memory_lazy_router_v11.py \
+            tests/test_mlb_moneyline_step8_defense_baserunning.py \
+            tests/test_streamlit_memory_lazy_router_v12.py
+
+      - name: Certification marker
+        run: |
+          echo "MLB_MONEYLINE_STEP1_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP2_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP3_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP4_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP5_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP5L_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP6_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP7_PERMANENT_FREEZE_GREEN"
+          echo "MLB_MONEYLINE_STEP8_PERMANENT_FREEZE_GREEN"
