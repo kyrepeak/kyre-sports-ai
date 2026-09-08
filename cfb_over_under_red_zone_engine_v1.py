@@ -240,8 +240,9 @@ def _metrics(row: Mapping[str, Any], defense: bool = False) -> dict[str, Any]:
     }
 
 
-def _median_positive(values: list[float]) -> float | None:
-    good = [float(v) for v in values if v is not None and v > 0]
+def _median_known(values: list[float]) -> float | None:
+    # Zero is a legitimate red-zone outcome (for example 0 TDs allowed).
+    good = [float(v) for v in values if v is not None and v >= 0]
     return float(median(good)) if good else None
 
 
@@ -279,16 +280,16 @@ def _load_red_zone_division(
     ]
 
     baselines = {
-        "offense_touchdown_rate": _median_positive(
+        "offense_touchdown_rate": _median_known(
             [m.get("touchdown_rate") for m in offense_metrics if m.get("ready")]
         ),
-        "offense_points_per_trip": _median_positive(
+        "offense_points_per_trip": _median_known(
             [m.get("points_per_trip") for m in offense_metrics if m.get("ready")]
         ),
-        "defense_touchdown_rate_allowed": _median_positive(
+        "defense_touchdown_rate_allowed": _median_known(
             [m.get("touchdown_rate") for m in defense_metrics if m.get("ready")]
         ),
-        "defense_points_per_trip_allowed": _median_positive(
+        "defense_points_per_trip_allowed": _median_known(
             [m.get("points_per_trip") for m in defense_metrics if m.get("ready")]
         ),
     }
