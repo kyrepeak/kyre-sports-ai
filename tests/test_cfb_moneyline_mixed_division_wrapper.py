@@ -1,6 +1,8 @@
 """Regression checks for mixed-division CFB Moneyline hotfix wrapper."""
 from __future__ import annotations
 
+import inspect
+
 import cfb_moneyline_hub_v3 as hub
 
 
@@ -9,24 +11,21 @@ def test_wrapper_is_additive_over_frozen_step5():
     assert hub.MARKET == "Moneyline"
 
 
-def test_render_temporarily_swaps_only_data_providers(monkeypatch):
-    original_schedule = hub.prior.schedule
-    original_team_data = hub.prior.team_data
-    seen = {}
+def test_hotfix_render_never_mutates_frozen_provider_globals():
+    source = inspect.getsource(hub)
 
-    def fake_render(*args, **kwargs):
-        seen["schedule"] = hub.prior.schedule
-        seen["team_data"] = hub.prior.team_data
+    assert "schedule_v2.load_with_diagnostics" in source
+    assert "team_data_v2.load_matchup_team_data" in source
+    assert "prior.model.project_matchup" in source
 
-    monkeypatch.setattr(hub.prior, "render_moneyline_hub", fake_render)
-    monkeypatch.setattr(hub.st, "caption", lambda *a, **k: None)
-
-    hub.render_moneyline_hub()
-
-    assert seen["schedule"] is hub.schedule_v2
-    assert seen["team_data"] is hub.team_data_v2
-    assert hub.prior.schedule is original_schedule
-    assert hub.prior.team_data is original_team_data
+    forbidden = (
+        "prior.schedule =",
+        "prior.team_data =",
+        "setattr(prior",
+        "__dict__[",
+    )
+    for token in forbidden:
+        assert token not in source
 
 
 def test_non_moneyline_delegates_to_frozen_hub(monkeypatch):
