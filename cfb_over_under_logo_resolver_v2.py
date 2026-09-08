@@ -356,8 +356,21 @@ class _LogoHtmlParser(HTMLParser):
             score += 4.0
         hay_tokens = _tokens(text)
         score += 2.0 * len(self.team_tokens & hay_tokens)
-        if any(term in text for term in ("sprite", "pixel", "tracker", "adserver", "wayback", "toolbar")):
-            score -= 10.0
+        if any(
+            term in text
+            for term in (
+                "sprite",
+                "pixel",
+                "tracker",
+                "adserver",
+                "wayback",
+                "toolbar",
+                "wikipedia-wordmark",
+                "/static/images/",
+                "wikimedia-button",
+            )
+        ):
+            score -= 12.0
         if "favicon" in text:
             score -= 2.0
         if score > 0:
@@ -383,6 +396,7 @@ def _wikipedia_html_logo(
     parser = _LogoHtmlParser(team_name)
     parser.feed(html)
 
+    team_tokens = _tokens(team_name)
     ranked = sorted(parser.image_candidates, reverse=True)
     for score, raw in ranked:
         if score < 4.0:
@@ -391,12 +405,23 @@ def _wikipedia_html_logo(
         if not url:
             continue
         host = urlparse(url).netloc.lower()
-        if "wikimedia.org" in host or "wikipedia.org" in host:
+        path_tokens = _tokens(unquote(urlparse(url).path))
+        if (
+            ("wikimedia.org" in host or "wikipedia.org" in host)
+            and bool(team_tokens & path_tokens)
+            and _logo_url_score(url, team_name) >= 5.0
+        ):
             return url, attempts
 
     for raw in parser.meta_images:
         url = _safe_http_url(urljoin(page_url, raw))
-        if url and "wikimedia.org" in urlparse(url).netloc.lower():
+        path_tokens = _tokens(unquote(urlparse(url).path)) if url else set()
+        if (
+            url
+            and "wikimedia.org" in urlparse(url).netloc.lower()
+            and bool(team_tokens & path_tokens)
+            and _logo_url_score(url, team_name) >= 5.0
+        ):
             return url, attempts
 
     return "", attempts
