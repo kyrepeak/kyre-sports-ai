@@ -305,3 +305,107 @@ def test_fcs_category_discovery_retargets_frozen_parser():
     assert "scoring_offense" in categories
     assert "scoring_defense" in categories
     assert "/stats/football/fcs/" in categories["scoring_offense"]["url"]
+
+
+def test_espn_fbs_fallback_builds_verified_schedule_identity():
+    payload = {
+        "events": [
+            {
+                **_espn_event(
+                    "402000001",
+                    "Florida A&M Rattlers",
+                    "Florida A&M",
+                    "florida-am-rattlers",
+                    "Miami Hurricanes",
+                    "Miami",
+                    "miami-hurricanes",
+                ),
+                "competitions": [
+                    {
+                        "neutralSite": False,
+                        "venue": {"fullName": "Hard Rock Stadium"},
+                        "broadcasts": [{"names": ["ACC Network"]}],
+                        "competitors": [
+                            {
+                                "homeAway": "away",
+                                "records": [{"name": "overall", "summary": "1-0"}],
+                                "team": {
+                                    "displayName": "Florida A&M Rattlers",
+                                    "location": "Florida A&M",
+                                    "slug": "florida-am-rattlers",
+                                },
+                            },
+                            {
+                                "homeAway": "home",
+                                "curatedRank": {"current": 7},
+                                "records": [{"name": "overall", "summary": "1-0"}],
+                                "team": {
+                                    "displayName": "Miami Hurricanes",
+                                    "location": "Miami",
+                                    "slug": "miami-hurricanes",
+                                },
+                            },
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    games = schedule._espn_schedule_games(payload, "2026-09-10")
+
+    assert len(games) == 1
+    game = games[0]
+    assert game["identity_key"] == "espn:402000001"
+    assert game["identity_verified"] is True
+    assert game["date_matches_query"] is True
+    assert game["away_team"] == "Florida A&M"
+    assert game["home_team"] == "Miami"
+    assert game["away_record_summary"] == "1-0"
+    assert game["home_record_summary"] == "1-0"
+    assert game["home_rank"] == 7
+    assert game["schedule_source"] == "ESPN FBS scoreboard verified fallback"
+
+
+def test_stats_only_repair_uses_published_game_count_and_scoring_without_fake_recent_form():
+    game = {
+        "away_team": "Florida A&M",
+        "away_team_slug": "florida-am-rattlers",
+        "away_record_summary": "1-0",
+    }
+    stats = {
+        "scoring_offense": {
+            "value_numeric": 27.0,
+            "value": "27.0",
+            "headers": ["Rank", "Team", "G", "Pts", "Avg"],
+            "row": ["25", "Florida A&M", "1", "27", "27.0"],
+        },
+        "scoring_defense": {
+            "value_numeric": 20.0,
+            "value": "20.0",
+            "headers": ["Rank", "Team", "G", "Pts", "Avg"],
+            "row": ["30", "Florida A&M", "1", "20", "20.0"],
+        },
+        "total_offense": {
+            "value_numeric": 410.0,
+            "headers": ["Rank", "Team", "G", "YPG"],
+            "row": ["20", "Florida A&M", "1", "410.0"],
+        },
+    }
+
+    repaired, ok = team_data._stats_only_repair(
+        "away",
+        game,
+        {"team": "Florida A&M", "data_quality": {"grade": "CHECK"}},
+        stats,
+    )
+
+    assert ok is True
+    assert repaired["record"]["games"] == 1
+    assert repaired["record_text"] == "1-0"
+    assert repaired["ppg"] == pytest.approx(27.0)
+    assert repaired["points_allowed_pg"] == pytest.approx(20.0)
+    assert repaired["recent_form"] == "—"
+    assert repaired["recent_ppg"] is None
+    assert repaired["sos_opponent_win_pct"] is None
+    assert repaired["data_quality"]["grade"] == "LIMITED"
