@@ -9,8 +9,9 @@ def test_step1_exposes_exact_three_cfb_pages():
 
 def test_step1_is_navigation_foundation_only():
     source = open("cfb_hub_v1.py", encoding="utf-8").read()
-    assert "No College Football probabilities" in source
-    assert "simulations are" in source
+    assert "Step 1 contract" in source
+    assert "projection/model math" in source
+    assert "probabilities, picks, totals, sportsbook prices, or simulations" in source
     forbidden = (
         "numpy",
         "np.random",
