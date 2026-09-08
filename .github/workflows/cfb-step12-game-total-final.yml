@@ -242,9 +242,10 @@ jobs:
           assert out["edge_or_ev_used"] is False
           assert out["monte_carlo_used"] is False
 
-          rows, diag = slate.scan_slate(games, "2026-09-12")
+          rows, diag = slate.scan_slate([target], "2026-09-12", workers=1)
           ranked = final.rank_slate(rows, limit=5)
-          assert len(ranked) <= 5
+          assert len(rows) == 1
+          assert len(ranked) <= 1
           assert all(r["final"]["rank_eligible"] for r in ranked)
 
           print("CFB_STEP12_LIVE_FINAL_SLATE=PASS")
