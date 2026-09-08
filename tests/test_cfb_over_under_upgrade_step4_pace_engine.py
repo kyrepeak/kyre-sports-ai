@@ -63,15 +63,15 @@ def test_discover_time_of_possession_category():
 def test_build_pace_engine_resolves_mixed_fbs_fcs_by_actual_table(monkeypatch):
     fbs = _bundle(
         "FBS",
-        {"miamifl": _row("Miami (FL)", 2, 150)},
-        {"miamifl": _top_row("Miami (FL)", 2, "29:30")},
+        {pace.frozen_team._canonical_name("Miami (FL)"): _row("Miami (FL)", 2, 150)},
+        {pace.frozen_team._canonical_name("Miami (FL)"): _top_row("Miami (FL)", 2, "29:30")},
         baseline_plays=70.0,
         baseline_spp=25.7,
     )
     fcs = _bundle(
         "FCS",
-        {"floridaandm": _row("Florida A&M", 2, 142)},
-        {"floridaandm": _top_row("Florida A&M", 2, "30:30")},
+        {pace.frozen_team._canonical_name("Florida A&M"): _row("Florida A&M", 2, 142)},
+        {pace.frozen_team._canonical_name("Florida A&M"): _top_row("Florida A&M", 2, "30:30")},
         baseline_plays=68.0,
         baseline_spp=26.5,
     )
