@@ -205,6 +205,19 @@ jobs:
           pace = result.get("pace_engine") or {}
           raw = result.get("raw") or {}
 
+          import cfb_over_under_pace_engine_v1 as pace_mod
+          fbs_bundle, _ = pace_mod._load_pace_division("FBS")
+          fcs_bundle, _ = pace_mod._load_pace_division("FCS")
+          away_profile = result.get("away") or {}
+          print("AWAY_PROFILE", json.dumps({
+              "team": away_profile.get("team"),
+              "team_slug": away_profile.get("team_slug"),
+              "division_context": away_profile.get("division_context"),
+              "data_source": away_profile.get("data_source"),
+          }, indent=2))
+          print("AWAY_FBS_MATCH", json.dumps(pace_mod._lookup(fbs_bundle.get("total_offense") or {}, away_profile), indent=2, default=str))
+          print("AWAY_FCS_MATCH", json.dumps(pace_mod._lookup(fcs_bundle.get("total_offense") or {}, away_profile), indent=2, default=str))
+
           print("PACE", json.dumps({
               "away_division": pace.get("away_division"),
               "home_division": pace.get("home_division"),
