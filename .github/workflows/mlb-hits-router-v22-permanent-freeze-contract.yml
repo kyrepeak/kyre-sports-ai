@@ -1,0 +1,103 @@
+name: MLB Hits Router V22 permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-hits-router-v22-freeze-contract']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert freeze creation scope
+        if: github.event_name == 'push' || github.head_ref == 'mlb-hits-router-v22-freeze-contract'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-hits-router-v22-permanent-freeze-contract.yml' \
+            'mlb_hits_freeze_manifest_v7.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected Router V22 freeze scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+
+      - name: Enforce permanent Hits runtime manifest V7
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+          m=json.loads(pathlib.Path('mlb_hits_freeze_manifest_v7.json').read_text())
+          base=m['baseline_commit']
+          def rev(spec):
+              return subprocess.check_output(['git','rev-parse',spec], text=True).strip()
+          bad=[]
+          for p in m['baseline_paths']:
+              try:
+                  if rev(f'{base}:{p}') != rev(f'HEAD:{p}'):
+                      bad.append(f'frozen baseline changed: {p}')
+              except subprocess.CalledProcessError:
+                  bad.append(f'missing frozen path: {p}')
+          for p,expected in m['exact_blobs'].items():
+              try:
+                  actual=rev(f'HEAD:{p}')
+              except subprocess.CalledProcessError:
+                  bad.append(f'missing exact-frozen path: {p}')
+                  continue
+              if actual != expected:
+                  bad.append(f'exact frozen blob changed: {p} expected={expected} actual={actual}')
+          if m.get('completed_steps') != [1,2,3,4,5]:
+              bad.append('completed_steps mismatch')
+          if m.get('certified_hotfixes') != ['strict_no_tough_visible_v1','router_v22_root_hits_intercept']:
+              bad.append('certified_hotfixes mismatch')
+          if bad:
+              print('\n'.join(bad)); sys.exit(1)
+          print('MLB_HITS_ROUTER_V22_FREEZE_MANIFEST=PASS')
+          PY
+
+      - name: Compile frozen Router V22
+        run: |
+          python -m py_compile \
+            streamlit_memory_lazy_router_v22.py \
+            tests/test_streamlit_memory_lazy_router_v22.py
+
+      - name: Run Router V22 + strict contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Lock root interception contract
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import streamlit_memory_lazy_router_v22 as r
+          assert r.ROOT_ROUTE == 'streamlit_memory_lazy_router_v3._render_mlb_v3'
+          assert r._BASE_ROOT_ROUTE is not None
+          print('MLB_HITS_ROUTER_V22_ROOT_ROUTE_FROZEN=PASS')
+          PY
+
+      - name: Certification marker
+        run: echo "MLB_HITS_ROUTER_V22_PERMANENT_FREEZE_GREEN"
