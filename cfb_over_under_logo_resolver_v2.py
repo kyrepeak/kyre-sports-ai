@@ -590,7 +590,15 @@ def resolve_team_logo(
                 "provider_attempts": wiki_attempts + wiki_html_attempts,
             }
 
-    commons_logo, commons_attempts = _commons_logo(team_name)
+    commons_identity = team_name
+    if best:
+        title = _clean(best.get("title"))
+        if title.lower().endswith(" football"):
+            enriched = title[:-9].strip()
+            if enriched:
+                commons_identity = enriched
+
+    commons_logo, commons_attempts = _commons_logo(commons_identity)
     if commons_logo:
         return {
             "logo": commons_logo,
