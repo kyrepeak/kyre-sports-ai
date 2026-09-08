@@ -36,6 +36,7 @@ jobs:
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
+            '.github/workflows/cfb-step6-moneyline-final.yml' \
             '.github/workflows/cfb-step7-over-under-foundation.yml' \
             'app.py' \
             'cfb_over_under_hub_v1.py' \
