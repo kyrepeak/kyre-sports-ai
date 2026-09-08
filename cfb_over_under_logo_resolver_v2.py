@@ -248,13 +248,16 @@ def _logo_url_score(url: str, team_name: str) -> float:
 
 
 def _page_image(page: Mapping[str, Any], team_name: str) -> str:
+    team_tokens = _tokens(team_name)
     for key in ("original", "thumbnail"):
         obj = page.get(key) or {}
         if isinstance(obj, Mapping):
             url = _safe_http_url(obj.get("source"))
+            path_tokens = _tokens(unquote(urlparse(url).path)) if url else set()
             if (
                 url
                 and "upload.wikimedia.org" in urlparse(url).netloc.lower()
+                and bool(team_tokens & path_tokens)
                 and _logo_url_score(url, team_name) >= 5.0
             ):
                 return url
