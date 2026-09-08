@@ -1,0 +1,292 @@
+name: CFB O/U ESPN logo recursion hotfix V3
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['cfb-ou-logo-recursion-hotfix-v3']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact additive hotfix scope
+        if: github.event_name == 'push' || github.head_ref == 'cfb-ou-logo-recursion-hotfix-v3'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-over-under-logo-recursion-hotfix-v3.yml' \
+            'app.py' \
+            'cfb_over_under_matchup_ui_v3_logo_hotfix_v3.py' \
+            'streamlit_memory_lazy_router_v42.py' \
+            'tests/test_cfb_over_under_logo_recursion_hotfix_v3.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected CFB O/U logo recursion hotfix V3 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_OU_LOGO_RECURSION_HOTFIX_V3_SCOPE=PASS"
+
+      - name: Enforce original CFB Steps 1 through 12 freeze
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if rev("HEAD:cfb_freeze_manifest_v12.json") != "3ff2a727967e80dddbe03f747d9f32090cc39539":
+              failures.append("CFB Step-12 freeze manifest changed")
+
+          manifest = json.loads(pathlib.Path("cfb_freeze_manifest_v12.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen CFB path changed: {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("ORIGINAL_CFB_STEPS_1_12_FROZEN=PASS")
+          PY
+
+      - name: Enforce O/U Upgrade Steps 1 through 3 freeze
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if rev("HEAD:cfb_over_under_upgrade_freeze_manifest_v3.json") != "7c3408833b931fbb9d2e41e6660ebdf4f975f723":
+              failures.append("O/U Upgrade Step 3 freeze manifest changed")
+
+          manifest = json.loads(pathlib.Path("cfb_over_under_upgrade_freeze_manifest_v3.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen O/U upgrade path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen O/U Upgrade Step 1-3 path changed: {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("CFB_OU_UPGRADE_STEPS_1_3_FROZEN=PASS")
+          PY
+
+      - name: Enforce logo hotfix V1-V2 freeze
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if rev("HEAD:cfb_over_under_logo_hotfix_freeze_manifest_v2.json") != "9cb574b8171a3dc01c31f9a638777d0b234ed76c":
+              failures.append("logo hotfix V2 freeze manifest changed")
+
+          manifest = json.loads(pathlib.Path("cfb_over_under_logo_hotfix_freeze_manifest_v2.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen logo hotfix path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen logo hotfix V1-V2 path changed: {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+          print("CFB_OU_LOGO_HOTFIX_V1_V2_FROZEN=PASS")
+          PY
+
+      - name: Compile V3 recursion hotfix
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_over_under_matchup_ui_v3_logo_hotfix_v3.py \
+            streamlit_memory_lazy_router_v42.py \
+            tests/test_cfb_over_under_logo_recursion_hotfix_v3.py
+          PYTHONPATH=. python -c "import cfb_over_under_matchup_ui_v3_logo_hotfix_v3; import streamlit_memory_lazy_router_v42"
+
+      - name: Run V3 and frozen regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_over_under_logo_recursion_hotfix_v3.py \
+            tests/test_cfb_over_under_logo_hotfix_v2.py \
+            tests/test_cfb_over_under_logo_hotfix_v1.py \
+            tests/test_cfb_over_under_logo_hotfix_router_v40.py \
+            tests/test_cfb_over_under_upgrade_step3_engine.py \
+            tests/test_cfb_over_under_upgrade_step3_slate.py \
+            tests/test_cfb_over_under_upgrade_step3_ui.py \
+            tests/test_streamlit_memory_lazy_router_v39.py
+
+      - name: Live selected-game Step 3 analysis remains healthy
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v2 as slate
+
+          games, diag = schedule.load_with_diagnostics("2026-09-10")
+          game = next(
+              g for g in games
+              if "Florida A&M" in str(g.get("away_team"))
+              and "Miami" in str(g.get("home_team"))
+          )
+          try:
+              slate.analyze_game.clear()
+          except Exception:
+              pass
+          result = slate.analyze_game(game, "2026-09-10", 50.5)
+          if not (result.get("raw") or {}).get("ready"):
+              raise SystemExit(f"selected-game analysis not ready: {result.get('raw')}")
+          print("LIVE_SELECTED_GAME_STEP3_ANALYSIS=PASS")
+          PY
+
+      - name: Live nested-wrapper recursion reproduction is fixed
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_matchup_ui_v3_logo_hotfix_v3 as ui
+
+          game = {
+              "game_date": "2026-09-10",
+              "away_team": "Florida A&M",
+              "away_team_slug": "florida-a-m",
+              "away_conference": "SWAC",
+              "home_team": "Miami (FL)",
+              "home_team_slug": "miami-fl",
+              "home_conference": "ACC",
+              "kickoff_et": "8:00 PM ET",
+              "venue": "Hard Rock Stadium",
+              "broadcast": "ACCN",
+              "status": "Scheduled",
+              "neutral_site": False,
+              "identity_verified": True,
+              "date_matches_query": True,
+              "identity_key": "ncaa:6604311",
+              "espn_event_id": "",
+          }
+          away = {
+              "team": "Florida A&M",
+              "team_slug": "florida-a-m",
+              "conference": "SWAC",
+              "record_text": "1-1",
+              "ap_rank": None,
+              "rank_source": "NCAA AP rankings — unranked",
+          }
+          home = {
+              "team": "Miami (FL)",
+              "team_slug": "miami-fl",
+              "conference": "ACC",
+              "record_text": "1-0",
+              "ap_rank": 7,
+              "rank_source": "NCAA AP rankings",
+          }
+
+          old_mutable = ui.step1._enhanced_hero
+          old_rankings = ui._FROZEN_STEP2_RANKINGS_PANEL
+          old_engine = ui._FROZEN_STEP3_ENGINE_PANEL
+          ui.step1._enhanced_hero = ui._hero_with_nonrecursive_espn_logos
+          ui._FROZEN_STEP2_RANKINGS_PANEL = lambda *a, **k: ""
+          ui._FROZEN_STEP3_ENGINE_PANEL = lambda *a, **k: ""
+          try:
+              html = ui._hero_with_nonrecursive_espn_logos(game, away, home)
+          finally:
+              ui.step1._enhanced_hero = old_mutable
+              ui._FROZEN_STEP2_RANKINGS_PANEL = old_rankings
+              ui._FROZEN_STEP3_ENGINE_PANEL = old_engine
+
+          if "/50.png" not in html or "/2390.png" not in html:
+              raise SystemExit("V3 nested-wrapper hero missing ESPN logos")
+          if "TEAM LOGOS VERIFIED" not in html:
+              raise SystemExit("V3 nested-wrapper hero did not verify logos")
+
+          print("LIVE_NESTED_WRAPPER_RECURSION_FIXED=PASS")
+          PY
+
+      - name: Prove immutable hero handoff and model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          wrapper = Path("cfb_over_under_matchup_ui_v3_logo_hotfix_v3.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v42.py").read_text(encoding="utf-8")
+          app = Path("app.py").read_text(encoding="utf-8")
+          combined = wrapper + "\n" + router + "\n" + app
+
+          required = [
+              "_FROZEN_STEP1_ENHANCED_HERO = step1._enhanced_hero",
+              "header = _FROZEN_STEP1_ENHANCED_HERO(game, away, home)",
+              'FROZEN_HOTFIX = "cfb_over_under_matchup_ui_v3_logo_hotfix_v2"',
+              'root._import("cfb_over_under_matchup_ui_v3_logo_hotfix_v3")',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v41"',
+              'from streamlit_memory_lazy_router_v42 import render_app',
+          ]
+          for token in required:
+              if token not in combined:
+                  raise SystemExit(f"missing V3 recursion-hotfix marker: {token}")
+
+          forbidden = [
+              "projected_total =",
+              "over_probability =",
+              "under_probability =",
+              "selection_probability =",
+              "rank_slate(",
+              "expected_value",
+              "np.random",
+              "import random",
+          ]
+          lower = wrapper.lower()
+          for token in forbidden:
+              if token.lower() in lower:
+                  raise SystemExit(f"V3 logo wrapper crossed model firewall: {token}")
+
+          print("CFB_OU_LOGO_RECURSION_HOTFIX_V3_FIREWALL=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_OU_ESPN_LOGO_RECURSION_HOTFIX_V3_GREEN"
