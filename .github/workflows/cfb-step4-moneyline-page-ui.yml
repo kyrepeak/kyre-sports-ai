@@ -1,0 +1,211 @@
+name: College Football Step 4 Moneyline-page certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['feature/cfb-step4-moneyline-page-ui']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact Step 4 implementation scope
+        if: github.event_name == 'push' || github.head_ref == 'feature/cfb-step4-moneyline-page-ui'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-step1-section-router.yml' \
+            '.github/workflows/cfb-step2-schedule-identity.yml' \
+            '.github/workflows/cfb-step3-team-data.yml' \
+            '.github/workflows/cfb-step4-moneyline-page-ui.yml' \
+            'app.py' \
+            'cfb_moneyline_hub_v1.py' \
+            'streamlit_memory_lazy_router_v26.py' \
+            'tests/test_cfb_step4_moneyline_page_ui.py' \
+            'tests/test_streamlit_memory_lazy_router_v26.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected College Football Step 4 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_STEP4_SCOPE=PASS"
+
+      - name: Enforce frozen College Football Steps 1 through 3
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v3.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if m.get("version") != 3 or m.get("completed_steps") != [1, 2, 3]:
+              failures.append("CFB freeze V3 metadata changed")
+
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen CFB Steps 1-3 changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEPS_1_3_FROZEN=PASS")
+          PY
+
+      - name: Enforce protected MLB contracts
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifests = [
+              "mlb_hits_freeze_manifest_v7.json",
+              "mlb_moneyline_freeze_manifest_v13.json",
+              "mlb_matchup_explorer_freeze_manifest_v1.json",
+          ]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              base = m["baseline_commit"]
+
+              for path in m.get("baseline_paths", []):
+                  try:
+                      expected = rev(f"{base}:{path}")
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing frozen path {path}")
+                      continue
+                  if expected != actual:
+                      failures.append(f"{name}: frozen baseline changed {path}")
+
+              for path, expected in m.get("exact_blobs", {}).items():
+                  try:
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing exact-frozen path {path}")
+                      continue
+                  if actual != expected:
+                      failures.append(f"{name}: exact frozen blob changed {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP4_EXISTING_MLB_FREEZES=PASS")
+          PY
+
+      - name: Compile College Football Step 4
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_moneyline_hub_v1.py \
+            streamlit_memory_lazy_router_v26.py \
+            tests/test_cfb_step4_moneyline_page_ui.py \
+            tests/test_streamlit_memory_lazy_router_v26.py
+          PYTHONPATH=. python -c "import cfb_moneyline_hub_v1; import streamlit_memory_lazy_router_v26"
+
+      - name: Run College Football Step 4 regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_step4_moneyline_page_ui.py \
+            tests/test_streamlit_memory_lazy_router_v26.py \
+            tests/test_cfb_step3_team_data_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v25.py \
+            tests/test_cfb_step2_schedule_identity.py \
+            tests/test_streamlit_memory_lazy_router_v24.py \
+            tests/test_cfb_step1_hub_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v23.py \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Prove Moneyline-only page and no-model boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          hub = Path("cfb_moneyline_hub_v1.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v26.py").read_text(encoding="utf-8")
+          app = Path("app.py").read_text(encoding="utf-8")
+
+          required = [
+              'FROZEN_CFB_HUB = "cfb_hub_v3"',
+              'MARKET = "Moneyline"',
+              'schedule.load_with_diagnostics',
+              'team_data.load_matchup_team_data',
+              'frozen_v3._team_card',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v25"',
+              'market != MONEYLINE_MARKET',
+              'root._import("cfb_moneyline_hub_v1")',
+          ]
+          combined = hub + "\n" + router
+          for token in required:
+              if token not in combined:
+                  raise SystemExit(f"missing Step 4 marker: {token}")
+
+          forbidden = [
+              "import numpy",
+              "np.random",
+              "def simulate",
+              "def win_probability",
+              "fair_odds =",
+              "fair_moneyline =",
+              "projected_score =",
+              "moneyline_pick =",
+              "sportsbook_line =",
+          ]
+          for token in forbidden:
+              if token in hub:
+                  raise SystemExit(f"Step 4 crossed Moneyline model boundary: {token}")
+
+          if "streamlit_memory_lazy_router_v26" not in app:
+              raise SystemExit("app.py is not booting Router V26")
+
+          print("CFB_STEP4_MONEYLINE_UI_BOUNDARY=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_STEP4_MONEYLINE_PAGE_GREEN"
