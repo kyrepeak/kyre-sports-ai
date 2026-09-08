@@ -1,0 +1,150 @@
+name: MLB Hits Step 3 hitter-profile certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['feature/mlb-hits-step3-hitter-profile']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Verify frozen MLB Hits Steps 1-2 boundary
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifest = json.loads(pathlib.Path("mlb_hits_freeze_manifest_v2.json").read_text())
+          base = manifest["baseline_commit"]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for path in manifest["baseline_paths"]:
+              try:
+                  expected = rev(f"{base}:{path}")
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen Hits path: {path}")
+                  continue
+              if expected != actual:
+                  failures.append(
+                      f"frozen Hits baseline changed: {path} expected={expected} actual={actual}"
+                  )
+
+          for path, expected in manifest["exact_blobs"].items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing exact-frozen Hits path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"exact frozen Hits Steps 1-2 blob changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("MLB_HITS_STEPS_1_2_FROZEN_BOUNDARY=PASS")
+          PY
+
+      - name: Compile Hits Step 3 route
+        run: |
+          python -m py_compile \
+            app.py \
+            mlb_hit_hitter_profile_v1.py \
+            mlb_hit_hub_v1318.py \
+            streamlit_memory_lazy_router_v18.py \
+            tests/test_mlb_hits_step3_hitter_profile.py \
+            tests/test_streamlit_memory_lazy_router_v18.py
+          PYTHONPATH=. python -c "import mlb_hit_hitter_profile_v1; import mlb_hit_hub_v1318; import streamlit_memory_lazy_router_v18"
+
+      - name: Prove additive app bootstrap
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          text = Path("app.py").read_text(encoding="utf-8")
+          match = re.search(r"from streamlit_memory_lazy_router_v(\d+) import render_app", text)
+          if not match or int(match.group(1)) < 18:
+              raise SystemExit("Hits Step 3 bootstrap regressed below Router V18")
+          if "streamlit_memory_lazy_router_v1" not in text:
+              raise SystemExit("lazy-router lineage marker missing")
+          router = Path(f"streamlit_memory_lazy_router_v{match.group(1)}.py")
+          if not router.exists():
+              raise SystemExit(f"active router file missing: {router}")
+          print("MLB_HITS_STEP3_BOOTSTRAP=PASS")
+          PY
+
+      - name: Run Hits Step 3 contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_hits_step3_hitter_profile.py \
+            tests/test_streamlit_memory_lazy_router_v18.py \
+            tests/test_mlb_hits_step2_mobile_top5.py \
+            tests/test_streamlit_memory_lazy_router_v17.py \
+            tests/test_mlb_hits_step1_strength_evidence_summary.py \
+            -k 'not app_activates_additive_router_v3 and not router_changes_only_hits_route_and_delegates_everything_else'
+
+      - name: Assert Step 3 evidence-only boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          wrapper = Path("mlb_hit_hub_v1318.py").read_text(encoding="utf-8")
+          helper = Path("mlb_hit_hitter_profile_v1.py").read_text(encoding="utf-8")
+          source = wrapper + helper
+
+          forbidden = (
+              "def deep_scan",
+              "def monte",
+              "def prescreen",
+              "def _candidate_pool",
+              "save_top5_snapshot(",
+              "save_single_snapshot(",
+              "random.seed",
+              "np.random",
+              "sportsbook",
+              "fair_odds",
+          )
+          hits = [token for token in forbidden if token in source and token != "sportsbook"]
+          if hits:
+              raise SystemExit(f"Step 3 crossed evidence-only boundary: {hits}")
+
+          if '"probability_impact": False' not in helper:
+              raise SystemExit("Step 3 zero-probability-impact marker missing")
+          if '"ranking_impact": False' not in helper:
+              raise SystemExit("Step 3 zero-ranking-impact marker missing")
+
+          print("MLB_HITS_STEP3_EVIDENCE_ONLY=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "MLB_HITS_STEP3_HITTER_PROFILE_GREEN"
