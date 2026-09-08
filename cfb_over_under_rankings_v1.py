@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime
+from html.parser import HTMLParser
 from typing import Any, Mapping
 from urllib.parse import urljoin
 
@@ -102,12 +103,53 @@ def _profile_division(profile: Mapping[str, Any]) -> str:
     return "FCS" if "fcs" in source else "FBS"
 
 
+class _StatCategoryOptionParser(HTMLParser):
+    """Parse NCAA team-stat category options for either FBS or FCS."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._value = ""
+        self._parts: list[str] = []
+        self._in_option = False
+        self.options: list[tuple[str, str]] = []
+
+    def handle_starttag(
+        self,
+        tag: str,
+        attrs: list[tuple[str, str | None]],
+    ) -> None:
+        if tag.lower() != "option":
+            return
+        self._in_option = True
+        self._parts = []
+        self._value = dict(attrs).get("value") or ""
+
+    def handle_data(self, data: str) -> None:
+        if self._in_option:
+            self._parts.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() != "option" or not self._in_option:
+            return
+        label = _clean(" ".join(self._parts))
+        value = _clean(self._value)
+        is_team_stats = (
+            "/stats/football/fbs/" in value
+            or "/stats/football/fcs/" in value
+        )
+        if is_team_stats and label:
+            self.options.append((label, value))
+        self._in_option = False
+        self._parts = []
+        self._value = ""
+
+
 def _discover_supplemental_categories(
     html: str,
 ) -> dict[str, dict[str, str]]:
     if not html:
         return {}
-    parser = frozen_team._OptionParser()
+    parser = _StatCategoryOptionParser()
     parser.feed(html)
     out: dict[str, dict[str, str]] = {}
     for metric, alternatives in _SUPPLEMENTAL_PATTERNS.items():
