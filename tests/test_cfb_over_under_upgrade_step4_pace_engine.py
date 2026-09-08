@@ -194,3 +194,20 @@ def test_apply_to_raw_fails_closed_when_pace_not_ready():
     assert out["upgrade_step4_applied"] is False
     assert out["projected_total"] == 50.0
     assert out["pace_engine_reason"] == "missing pace rows"
+
+
+def test_identity_safe_lookup_does_not_match_florida_am_to_florida():
+    table = {
+        pace.frozen_team._canonical_name("Florida"): _row("Florida", 1, 67),
+        pace.frozen_team._canonical_name("Florida State"): _row("Florida State", 1, 70),
+    }
+    profile = {"team": "Florida A&M", "team_slug": "florida-am"}
+    assert pace._lookup(table, profile) == {}
+
+
+def test_identity_safe_lookup_still_allows_close_unique_alias():
+    table = {
+        "miamifl": _row("Miami (FL)", 2, 150),
+    }
+    profile = {"team": "Miami (FL)", "team_slug": "miami-fl"}
+    assert pace._lookup(table, profile)["team"] == "Miami (FL)"
