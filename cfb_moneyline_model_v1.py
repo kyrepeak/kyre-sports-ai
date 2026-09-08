@@ -171,11 +171,16 @@ def _efficiency_adjustment(
 
 
 def _turnover_margin_per_game(profile: Mapping[str, Any]) -> float | None:
-    total = _official_numeric(profile, "turnover_margin")
-    games = _games(profile)
-    if total is None or games <= 0:
+    """Return NCAA's published turnover-margin rate.
+
+    The frozen Step-3 stat parser stores the final NCAA table column, which is
+    the published per-game/average turnover-margin metric on the current team
+    table. Do not divide it by games again.
+    """
+    value = _official_numeric(profile, "turnover_margin")
+    if value is None:
         return None
-    return total / games
+    return _clamp(value, -5.0, 5.0)
 
 
 def _turnover_edge(
