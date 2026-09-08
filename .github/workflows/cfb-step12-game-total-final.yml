@@ -1,0 +1,254 @@
+name: College Football Step 12 final Game Total certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['feature/cfb-step12-game-total-final']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact Step 12 scope
+        if: github.event_name == 'push' || github.head_ref == 'feature/cfb-step12-game-total-final'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-step12-game-total-final.yml' \
+            'app.py' \
+            'cfb_game_total_final_v1.py' \
+            'cfb_game_total_hub_v3.py' \
+            'cfb_game_total_slate_v1.py' \
+            'streamlit_memory_lazy_router_v36.py' \
+            'tests/test_cfb_step12_game_total_final_v1.py' \
+            'tests/test_cfb_step12_game_total_hub_v3.py' \
+            'tests/test_cfb_step12_game_total_slate_v1.py' \
+            'tests/test_streamlit_memory_lazy_router_v36.py' | sort)"
+          test "$actual" = "$expected"
+
+      - name: Pin Step 11 freeze manifest
+        run: |
+          python - <<'PY'
+          import subprocess
+          expected = "c6c218bb57a60d5b6d7a81e5d71ce8a11c4f2951"
+          actual = subprocess.check_output(
+              ["git", "rev-parse", "HEAD:cfb_freeze_manifest_v11.json"], text=True
+          ).strip()
+          assert actual == expected, (expected, actual)
+          print("CFB_STEP11_MANIFEST_PIN=PASS")
+          PY
+
+      - name: Enforce permanently frozen CFB Steps 1 through 11
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v11.json").read_text())
+          assert m["version"] == 11
+          assert m["completed_steps"] == list(range(1,12))
+          assert m["completed_sections"] == {
+              "moneyline": True,
+              "over_under": True,
+              "game_total": False,
+          }
+          assert m["step11_contract"]["next_final_step"] == 12
+          for path, expected in m["exact_blobs"].items():
+              actual = subprocess.check_output(
+                  ["git", "rev-parse", f"HEAD:{path}"], text=True
+              ).strip()
+              assert actual == expected, (path, expected, actual)
+          print("CFB_STEPS_1_11_FROZEN=PASS")
+          PY
+
+      - name: Enforce protected MLB contracts
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess
+          manifests = [
+              "mlb_hits_freeze_manifest_v7.json",
+              "mlb_moneyline_freeze_manifest_v13.json",
+              "mlb_matchup_explorer_freeze_manifest_v1.json",
+          ]
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              base = m["baseline_commit"]
+              for path in m.get("baseline_paths", []):
+                  expected = subprocess.check_output(
+                      ["git", "rev-parse", f"{base}:{path}"], text=True
+                  ).strip()
+                  actual = subprocess.check_output(
+                      ["git", "rev-parse", f"HEAD:{path}"], text=True
+                  ).strip()
+                  assert actual == expected, (name, path)
+              for path, expected in m.get("exact_blobs", {}).items():
+                  actual = subprocess.check_output(
+                      ["git", "rev-parse", f"HEAD:{path}"], text=True
+                  ).strip()
+                  assert actual == expected, (name, path)
+          print("CFB_STEP12_EXISTING_MLB_FREEZES=PASS")
+          PY
+
+      - name: Compile Step 12
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_game_total_final_v1.py \
+            cfb_game_total_slate_v1.py \
+            cfb_game_total_hub_v3.py \
+            streamlit_memory_lazy_router_v36.py \
+            tests/test_cfb_step12_game_total_final_v1.py \
+            tests/test_cfb_step12_game_total_slate_v1.py \
+            tests/test_cfb_step12_game_total_hub_v3.py \
+            tests/test_streamlit_memory_lazy_router_v36.py
+
+      - name: Run Step 12 and frozen regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_step12_game_total_final_v1.py \
+            tests/test_cfb_step12_game_total_slate_v1.py \
+            tests/test_cfb_step12_game_total_hub_v3.py \
+            tests/test_streamlit_memory_lazy_router_v36.py \
+            tests/test_cfb_step11_game_total_model_v1.py \
+            tests/test_cfb_step11_game_total_hub_v2.py \
+            tests/test_streamlit_memory_lazy_router_v35.py \
+            tests/test_cfb_step10_game_total_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v34.py \
+            tests/test_cfb_step9_over_under_final_v1.py \
+            tests/test_cfb_step9_over_under_slate_v1.py \
+            tests/test_cfb_step9_over_under_hub_v3.py \
+            tests/test_streamlit_memory_lazy_router_v33.py \
+            tests/test_cfb_step8_over_under_model_v1.py \
+            tests/test_cfb_step8_over_under_hub_v2.py \
+            tests/test_streamlit_memory_lazy_router_v32.py \
+            tests/test_cfb_step7_over_under_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v31.py \
+            tests/test_cfb_step6_moneyline_final_v1.py \
+            tests/test_cfb_step6_moneyline_slate_v1.py \
+            tests/test_streamlit_memory_lazy_router_v30.py \
+            tests/test_cfb_scoreboard_completeness_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v29.py \
+            tests/test_cfb_mixed_division_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v28.py \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Prove final Game Total forecast firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          final = Path("cfb_game_total_final_v1.py").read_text()
+          slate = Path("cfb_game_total_slate_v1.py").read_text()
+          hub = Path("cfb_game_total_hub_v3.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v36.py").read_text()
+          app = Path("app.py").read_text()
+
+          required = [
+              'MODEL_VERSION = "CFB GAME TOTAL FINAL V1 • STEP 12 FINAL SYNTHESIS + RANKING"',
+              '"final_forecast_active": True',
+              '"betting_pick_active": False',
+              '"sportsbook_input_used": False',
+              '"market_price_used": False',
+              '"market_probability_used": False',
+              '"edge_or_ev_used": False',
+              '"monte_carlo_used": False',
+              'FROZEN_GAME_TOTAL_HUB = "cfb_game_total_hub_v2"',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v35"',
+              'root._import("cfb_game_total_hub_v3")',
+              'final_model.rank_slate',
+              'slate.scan_slate',
+          ]
+          combined = final + "\n" + slate + "\n" + hub + "\n" + router
+          for token in required:
+              assert token in combined, token
+
+          forbidden = [
+              "sportsbook_price",
+              "sportsbook_total",
+              "analysis_line",
+              "expected_value",
+              "import numpy",
+              "np.random",
+              "import random",
+              "random.",
+              "def simulate",
+          ]
+          lower_final = final.lower()
+          for token in forbidden:
+              assert token.lower() not in lower_final, token
+
+          match = re.search(
+              r"from streamlit_memory_lazy_router_v(\d+) import render_app", app
+          )
+          assert match and int(match.group(1)) >= 36
+          print("CFB_STEP12_FINAL_FIREWALL=PASS")
+          PY
+
+      - name: Live Sept 12 final slate smoke test
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_game_total_final_v1 as final
+          import cfb_game_total_slate_v1 as slate
+          import cfb_schedule_v3 as schedule
+
+          schedule.clear_schedule_cache()
+          games, _ = schedule.load_with_diagnostics("2026-09-12")
+          target = next(
+              (
+                  g for g in games
+                  if "oklahoma" in str(g.get("away_team") or "").lower()
+                  and "michigan" in str(g.get("home_team") or "").lower()
+              ),
+              None,
+          )
+          assert target is not None
+
+          slate.clear_scan_cache()
+          result = slate.analyze_game(target, "2026-09-12")
+          raw = result["raw"]
+          out = result["final"]
+
+          assert raw["ready"] is True
+          assert out["ready"] is True
+          assert out["forecast_status"] in {"QUALIFIED", "PASS"}
+          assert out["projected_combined_total"] == raw["projected_combined_total"]
+          assert out["betting_pick_active"] is False
+          assert out["sportsbook_input_used"] is False
+          assert out["market_probability_used"] is False
+          assert out["edge_or_ev_used"] is False
+          assert out["monte_carlo_used"] is False
+
+          rows, diag = slate.scan_slate(games, "2026-09-12")
+          ranked = final.rank_slate(rows, limit=5)
+          assert len(ranked) <= 5
+          assert all(r["final"]["rank_eligible"] for r in ranked)
+
+          print("CFB_STEP12_LIVE_FINAL_SLATE=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_STEP12_FINAL_GAME_TOTAL_GREEN"
