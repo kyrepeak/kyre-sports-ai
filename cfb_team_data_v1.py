@@ -717,7 +717,11 @@ def _quality(profile: Mapping[str, Any]) -> dict[str, Any]:
     games = int((profile.get("record") or {}).get("games") or 0)
     stat_count = len(profile.get("official_stats") or {})
     sos_coverage = float(profile.get("sos_coverage") or 0.0)
-    ranking_known = profile.get("ap_rank") is not None
+    ranking_known = str(profile.get("rank_source") or "").lower() not in {
+        "",
+        "unranked / unavailable",
+        "ranking unavailable",
+    }
 
     components = {
         "record": games > 0,
@@ -799,7 +803,9 @@ def _build_profile(
         "schedule_rank": schedule_rank,
         "ap_rank": ap_rank,
         "rank_source": "NCAA AP rankings" if ranking else (
-            "NCAA schedule rank snapshot" if schedule_rank is not None else "unranked / unavailable"
+            "NCAA schedule rank snapshot" if schedule_rank is not None else (
+                "NCAA AP rankings — unranked" if rankings else "unranked / unavailable"
+            )
         ),
         "official_stats": dict(official_stats.get(side) or {}),
         "data_source": "NCAA official FBS schedule + NCAA.com team stats/AP rankings",
@@ -850,10 +856,10 @@ def load_matchup_team_data(
     away = _build_profile("away", game, ledgers, meta, stats, rankings)
     home = _build_profile("home", game, ledgers, meta, stats, rankings)
 
-    ready_sides = sum(
-        (away.get("data_quality") or {}).get("grade") == "READY",
-    ) + sum(
-        [(home.get("data_quality") or {}).get("grade") == "READY"]
+    ready_sides = int(
+        (away.get("data_quality") or {}).get("grade") == "READY"
+    ) + int(
+        (home.get("data_quality") or {}).get("grade") == "READY"
     )
 
     diag = {
