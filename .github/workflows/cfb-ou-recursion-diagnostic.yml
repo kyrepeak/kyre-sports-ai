@@ -1,0 +1,50 @@
+name: CFB O/U recursion diagnostic
+
+on:
+  push:
+    branches: ['cfb-ou-recursion-diagnostic']
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run selected matchup Step 3 analysis directly
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import traceback
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v2 as slate
+
+          games, diag = schedule.load_with_diagnostics("2026-09-10")
+          print("games", len(games))
+          game = next(
+              g for g in games
+              if "Florida A&M" in str(g.get("away_team"))
+              and "Miami" in str(g.get("home_team"))
+          )
+          print("game", json.dumps(game, indent=2, default=str))
+          try:
+              slate.analyze_game.clear()
+          except Exception:
+              pass
+          try:
+              result = slate.analyze_game(game, "2026-09-10", 50.5)
+              print("DIRECT_ANALYZE_PASS")
+              print("raw_total", result.get("raw", {}).get("projected_total"))
+              print("applied", result.get("raw", {}).get("upgrade_step3_applied"))
+          except Exception:
+              traceback.print_exc()
+              raise
+          PY
