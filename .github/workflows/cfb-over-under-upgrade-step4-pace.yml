@@ -239,6 +239,13 @@ jobs:
               raise SystemExit(f"Step 4 pace engine not ready: {pace.get('reason')}")
           if not raw.get("upgrade_step4_applied"):
               raise SystemExit("Step 4 pace adjustment did not apply")
+          if pace.get("away_division") != "FCS" or pace.get("home_division") != "FBS":
+              raise SystemExit(
+                  f"pace identity misclassified matchup: away={pace.get('away_division')} "
+                  f"home={pace.get('home_division')}"
+              )
+          if not pace.get("mixed_division"):
+              raise SystemExit("Florida A&M @ Miami must be treated as mixed FCS/FBS pace evidence")
           expected=float(pace.get("expected_combined_plays") or 0.0)
           if not (100.0 <= expected <= 180.0):
               raise SystemExit(f"expected combined plays out of bounds: {expected}")
