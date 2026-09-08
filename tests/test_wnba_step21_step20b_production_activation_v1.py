@@ -49,7 +49,22 @@ def _statuses():
     return {
         "runtime_acceleration": {
             "installed": True,
-            "all_bindings_active": True,
+            "all_bindings_active": False,
+            "bindings": {
+                "rotation_module": True,
+                "event_lineup_rotation_alias": True,
+                "event_lineup_sources": True,
+                "event_reconstruction": True,
+                "player_event_lineups": True,
+                "player_possessions": True,
+                "game_player_event_features": True,
+                "recent_rotation_module": True,
+                "recent_rotation_opportunity_alias": True,
+                "recent_event_feature_module": True,
+                "recent_event_feature_opportunity_alias": True,
+                "first_party_page_props": True,
+                "step12b_wrapper": False,
+            },
             "guardrails": runtime_guards,
         },
         "optional_workload": {
