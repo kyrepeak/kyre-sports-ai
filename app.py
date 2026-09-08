@@ -1,21 +1,23 @@
-"""Kyre Sports AI Streamlit entrypoint — strict no-TOUGH Hits hotfix.
+"""Kyre Sports AI Streamlit entrypoint — Hits root-route correction.
 
-Router V21 preserves the frozen Router V20/V19/V18/V17/V16/V15/V14/V13/V12/V11/V10/V9/V8/V7/V6/V5/V4/V3/V2
-chain down to the `streamlit_memory_lazy_router_v1` bootstrap. MLB Moneyline
-remains frozen on V17.8 Step 12. Only MLB 1+ Hit advances to V13.21 strict
-no-TOUGH visible selection; Matchup Explorer and all other markets remain
-unchanged.
+Router V22 preserves the frozen Router V21/V20/V19/V18/V17/V16/V15/V14/V13/V12/V11/V10/V9/V8/V7/V6/V5/V4/V3/V2
+chain down to the `streamlit_memory_lazy_router_v1` bootstrap.
 
-Deployment heartbeat: STREAMLIT_MAIN_V21_2026-09-08T05:49Z.
-This no-op marker intentionally changes the entrypoint blob so Streamlit
-Community Cloud receives a fresh source update from main.
+Critical routing correction:
+- Router V3 is the first wrapper that directly intercepts MLB 1+ Hit.
+- V22 patches that exact root Hits boundary so current Hits UI V13.21 is
+  reachable in production.
+- Moneyline, Matchup Explorer, and every non-Hits route keep delegating through
+  the frozen chain unchanged.
+
+Deployment heartbeat: STREAMLIT_MAIN_V22_2026-09-08T06:07Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v21 import render_app
+from streamlit_memory_lazy_router_v22 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V21_2026-09-08T05:49Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V22_2026-09-08T06:07Z"
 
 
 render_app()
