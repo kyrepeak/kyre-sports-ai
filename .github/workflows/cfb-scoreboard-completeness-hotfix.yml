@@ -256,7 +256,7 @@ jobs:
           print("LIVE_COUNT", len(games))
           print("LIVE_MATCHUPS", [f"{g.get('away_team')} @ {g.get('home_team')}" for g in games[:80]])
 
-          if len(games) < 10:
+          if len(games) < 50:
               raise SystemExit(f"Sept 12 FBS slate is still incomplete: {len(games)} games")
 
           normalized = [
@@ -283,8 +283,20 @@ jobs:
                       f"Missing Sept 12 matchup: {away_need} @ {home_need}"
                   )
 
-          if int(diag.get("official_scoreboard_games") or 0) < 10:
+          official_count = int(diag.get("official_scoreboard_games") or 0)
+          if official_count < 50:
               raise SystemExit("Current NCAA scoreboard did not provide a complete official slate")
+          if len(games) != official_count:
+              raise SystemExit(
+                  f"Official NCAA slate was polluted by fallback duplicates: "
+                  f"games={len(games)} official={official_count}"
+              )
+          if int(diag.get("fallback_games_added") or 0) != 0:
+              raise SystemExit("Fallback rows were added despite a healthy official NCAA slate")
+
+          identities = [str(g.get("identity_key") or "") for g in games]
+          if len(identities) != len(set(identities)):
+              raise SystemExit("Duplicate game identities remain in Sept 12 slate")
 
           print("CFB_SEPT12_OFFICIAL_SLATE_SMOKE=PASS")
           PY
