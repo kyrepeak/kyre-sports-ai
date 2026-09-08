@@ -159,14 +159,24 @@ def _avg_top_seconds(item: Mapping[str, Any], games: int | None) -> float | None
     return float(total_seconds) / float(games)
 
 
-def _discover_time_of_possession(html: str) -> str:
+def _discover_pace_categories(html: str) -> dict[str, str]:
     parser = step3._CategoryOptionParser()
     parser.feed(html or "")
+    out: dict[str, str] = {}
     for label, path in parser.options:
         lower = _clean(label).lower()
-        if "time of possession" in lower:
-            return urljoin(frozen_team.NCAA_ROOT, path)
-    return ""
+        normalized_path = _clean(path)
+        if "/team/" not in normalized_path:
+            continue
+        if "total offense" in lower and "total_offense" not in out:
+            out["total_offense"] = urljoin(frozen_team.NCAA_ROOT, normalized_path)
+        if "time of possession" in lower and "time_of_possession" not in out:
+            out["time_of_possession"] = urljoin(frozen_team.NCAA_ROOT, normalized_path)
+    return out
+
+
+def _discover_time_of_possession(html: str) -> str:
+    return _discover_pace_categories(html).get("time_of_possession", "")
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -176,9 +186,6 @@ def _load_pace_division(
     division = _clean(division).upper()
     stats_index = NCAA_FCS_STATS_INDEX if division == "FCS" else NCAA_FBS_STATS_INDEX
 
-    tables, step3_diag = step3._load_division_tables(stats_index, division)
-    total_offense = dict(tables.get("total_offense") or {})
-
     attempts: list[dict[str, Any]] = []
     index_html, index_attempts = frozen_team._fetch_text_with_fallback(
         stats_index,
@@ -186,9 +193,22 @@ def _load_pace_division(
     )
     attempts.extend(index_attempts)
 
-    top_url = _discover_time_of_possession(index_html)
+    categories = _discover_pace_categories(index_html)
+    total_url = categories.get("total_offense", "")
+    top_url = categories.get("time_of_possession", "")
+
+    total_offense: dict[str, dict[str, Any]] = {}
     time_of_possession: dict[str, dict[str, Any]] = {}
+    total_diag: dict[str, Any] = {}
     top_diag: dict[str, Any] = {}
+
+    if total_url:
+        total_offense, total_diag = step3._load_category_table(
+            total_url,
+            f"NCAA {division} Total Offense pace",
+        )
+        attempts.extend(total_diag.get("attempts") or [])
+
     if top_url:
         time_of_possession, top_diag = step3._load_category_table(
             top_url,
@@ -222,15 +242,17 @@ def _load_pace_division(
 
     return {
         "division": division,
-        "total_offense": total_offense,
+        "total_offense": dict(total_offense),
         "time_of_possession": dict(time_of_possession),
         "baseline_plays_per_game": baseline_plays,
         "baseline_seconds_per_play": baseline_spp,
         "field_size": len(total_offense),
     }, {
         "division": division,
-        "step3_table_diag": step3_diag,
+        "categories": categories,
+        "total_url": total_url,
         "top_url": top_url,
+        "total_diag": total_diag,
         "top_diag": top_diag,
         "attempts": attempts,
         "total_offense_rows": len(total_offense),
@@ -627,6 +649,7 @@ __all__ = [
     "SAMPLE_GAMES_FULL_WEIGHT",
     "_avg_top_seconds",
     "_clock_seconds",
+    "_discover_pace_categories",
     "_discover_time_of_possession",
     "_games_and_plays",
     "_header_index",
