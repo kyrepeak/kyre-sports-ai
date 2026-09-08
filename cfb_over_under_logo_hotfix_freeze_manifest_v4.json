@@ -1,0 +1,63 @@
+{
+  "version": 4,
+  "scope": "cfb_over_under_logo_hotfix",
+  "policy": "College Football Over/Under team-logo work is presentation-only and additive above permanently frozen CFB Steps 1-12 and O/U Upgrade Steps 1-3. Completed logo hotfix files must not be edited; future work must use new versioned modules and routers.",
+  "baseline_commit": "18a556093501b13a392ebf58e750ea9349dbe0c5",
+  "completed_hotfixes": [1, 2, 3, 4],
+  "exact_blobs": {
+    "cfb_over_under_logo_resolver_v1.py": "e4f47459ad853225ad62f4dd12e1d6bc2a1c6d94",
+    "cfb_over_under_matchup_ui_v3_logo_hotfix_v1.py": "f22972c012458e14fa95f2d78888ed7244827de5",
+    "streamlit_memory_lazy_router_v40.py": "fc4da9f79a1f501a90a97a800bf8ea190e18e382",
+    "cfb_over_under_matchup_ui_v3_logo_hotfix_v2.py": "557360c4d69b57005540be6c38b0b0bcdc6817db",
+    "streamlit_memory_lazy_router_v41.py": "ea4d8b0b989f14067258cd86721fa0afc7a2474b",
+    "cfb_over_under_matchup_ui_v3_logo_hotfix_v3.py": "515607b7c0ca5751793924b3d6b3dce16c5e80f9",
+    "streamlit_memory_lazy_router_v42.py": "7a195d5b09da3e6f559c5646343e48f1ee844cd5",
+    "cfb_over_under_logo_resolver_v2.py": "b60aa651ff4e9d0db74fdb03e6a24d0819a5c8c4",
+    "cfb_over_under_matchup_ui_v3_logo_hotfix_v4.py": "a825d9ebbb9b0b01e89b4e9aed31dab362538700",
+    "streamlit_memory_lazy_router_v43.py": "b43a4f99f62af17932d2257fe76c889e8e7b4f11"
+  },
+  "hotfix4_contract": {
+    "name": "multi-source college team-logo resolver",
+    "frozen_parent_hotfix": "cfb_over_under_matchup_ui_v3_logo_hotfix_v3",
+    "frozen_parent_router": "streamlit_memory_lazy_router_v42",
+    "active_resolver": "cfb_over_under_logo_resolver_v2",
+    "active_ui": "cfb_over_under_matchup_ui_v3_logo_hotfix_v4",
+    "active_router": "streamlit_memory_lazy_router_v43",
+    "provider_order": [
+      "espn",
+      "official_athletics",
+      "wikipedia_wikimedia",
+      "wikimedia_commons"
+    ],
+    "side_independent_resolution": true,
+    "official_team_domain_preference": true,
+    "wikipedia_site_chrome_rejected": true,
+    "generic_team_photos_rejected": true,
+    "wrong_team_wikimedia_assets_rejected": true,
+    "verified_football_page_mascot_identity_used_for_commons": true,
+    "direct_commons_file_lookup_active": true,
+    "florida_am_non_espn_fallback_certified": true,
+    "miami_non_espn_fallback_certified": true,
+    "mixed_fbs_fcs_coverage_sample_certified": true,
+    "coverage_sample": [
+      "Alabama",
+      "Oregon",
+      "Notre Dame",
+      "North Dakota State",
+      "Harvard",
+      "Florida A&M"
+    ],
+    "presentation_only": true,
+    "projection_math_changed": false,
+    "probability_math_changed": false,
+    "selection_math_changed": false,
+    "top5_ranking_math_changed": false,
+    "reliability_changed": false,
+    "sportsbook_input_added": false,
+    "market_probability_input_added": false,
+    "edge_or_ev_added": false,
+    "monte_carlo_added": false,
+    "next_upgrade_step": 4,
+    "next_upgrade_name": "pace / expected possessions"
+  }
+}
