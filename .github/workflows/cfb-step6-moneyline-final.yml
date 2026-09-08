@@ -1,0 +1,307 @@
+name: College Football Step 6 Moneyline-final certification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['feature/cfb-step6-moneyline-final-synthesis']
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact Step 6 scope
+        if: github.event_name == 'push' || github.head_ref == 'feature/cfb-step6-moneyline-final-synthesis'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/cfb-scoreboard-completeness-hotfix.yml' \
+            '.github/workflows/cfb-step6-moneyline-final.yml' \
+            'app.py' \
+            'cfb_moneyline_final_v1.py' \
+            'cfb_moneyline_hub_v5.py' \
+            'cfb_moneyline_slate_v1.py' \
+            'streamlit_memory_lazy_router_v30.py' \
+            'tests/test_cfb_step6_moneyline_final_v1.py' \
+            'tests/test_cfb_step6_moneyline_slate_v1.py' \
+            'tests/test_streamlit_memory_lazy_router_v30.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected College Football Step 6 scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+          echo "CFB_STEP6_SCOPE=PASS"
+
+      - name: Enforce frozen CFB Steps 1 through 5
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v5.json").read_text())
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          if m.get("version") != 5 or m.get("completed_steps") != [1,2,3,4,5]:
+              failures.append("CFB freeze V5 metadata changed")
+
+          for path, expected in m.get("exact_blobs", {}).items():
+              try:
+                  actual = rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(
+                      f"frozen CFB Steps 1-5 changed: {path} expected={expected} actual={actual}"
+                  )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEPS_1_5_FROZEN=PASS")
+          PY
+
+      - name: Enforce certified CFB hotfix freezes
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifests = [
+              "cfb_mixed_division_freeze_manifest_v1.json",
+              "cfb_scoreboard_completeness_freeze_manifest_v1.json",
+          ]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              for path, expected in m.get("exact_blobs", {}).items():
+                  try:
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing frozen path {path}")
+                      continue
+                  if actual != expected:
+                      failures.append(
+                          f"{name}: frozen blob changed {path} expected={expected} actual={actual}"
+                      )
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_CERTIFIED_HOTFIX_FREEZES=PASS")
+          PY
+
+      - name: Enforce protected MLB contracts
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import subprocess
+          import sys
+
+          manifests = [
+              "mlb_hits_freeze_manifest_v7.json",
+              "mlb_moneyline_freeze_manifest_v13.json",
+              "mlb_matchup_explorer_freeze_manifest_v1.json",
+          ]
+
+          def rev(spec):
+              return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
+
+          failures = []
+          for name in manifests:
+              m = json.loads(pathlib.Path(name).read_text())
+              base = m["baseline_commit"]
+
+              for path in m.get("baseline_paths", []):
+                  try:
+                      expected = rev(f"{base}:{path}")
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing frozen path {path}")
+                      continue
+                  if expected != actual:
+                      failures.append(f"{name}: frozen baseline changed {path}")
+
+              for path, expected in m.get("exact_blobs", {}).items():
+                  try:
+                      actual = rev(f"HEAD:{path}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"{name}: missing exact-frozen path {path}")
+                      continue
+                  if actual != expected:
+                      failures.append(f"{name}: exact frozen blob changed {path}")
+
+          if failures:
+              print("\n".join(failures))
+              sys.exit(1)
+
+          print("CFB_STEP6_EXISTING_MLB_FREEZES=PASS")
+          PY
+
+      - name: Compile Step 6
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_moneyline_final_v1.py \
+            cfb_moneyline_slate_v1.py \
+            cfb_moneyline_hub_v5.py \
+            streamlit_memory_lazy_router_v30.py \
+            tests/test_cfb_step6_moneyline_final_v1.py \
+            tests/test_cfb_step6_moneyline_slate_v1.py \
+            tests/test_streamlit_memory_lazy_router_v30.py
+          PYTHONPATH=. python -c "import cfb_moneyline_final_v1; import cfb_moneyline_slate_v1; import cfb_moneyline_hub_v5; import streamlit_memory_lazy_router_v30"
+
+      - name: Run Step 6 + frozen regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_step6_moneyline_final_v1.py \
+            tests/test_cfb_step6_moneyline_slate_v1.py \
+            tests/test_streamlit_memory_lazy_router_v30.py \
+            tests/test_cfb_scoreboard_completeness_hotfix.py \
+            tests/test_streamlit_memory_lazy_router_v29.py \
+            tests/test_cfb_mixed_division_hotfix.py \
+            tests/test_cfb_moneyline_mixed_division_wrapper.py \
+            tests/test_streamlit_memory_lazy_router_v28.py \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py \
+            tests/test_cfb_step4_moneyline_page_ui.py \
+            tests/test_streamlit_memory_lazy_router_v26.py \
+            tests/test_cfb_step3_team_data_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v25.py \
+            tests/test_cfb_step2_schedule_identity.py \
+            tests/test_streamlit_memory_lazy_router_v24.py \
+            tests/test_cfb_step1_hub_foundation.py \
+            tests/test_streamlit_memory_lazy_router_v23.py \
+            tests/test_streamlit_memory_lazy_router_v22.py \
+            tests/test_mlb_hits_strict_no_tough.py
+
+      - name: Prove final-synthesis market firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          final = Path("cfb_moneyline_final_v1.py").read_text(encoding="utf-8")
+          hub = Path("cfb_moneyline_hub_v5.py").read_text(encoding="utf-8")
+          slate = Path("cfb_moneyline_slate_v1.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v30.py").read_text(encoding="utf-8")
+          app = Path("app.py").read_text(encoding="utf-8")
+
+          required = [
+              'CALIBRATION_METHOD = "STRUCTURAL_RELIABILITY_TEMPERATURE_V1"',
+              'MARKET_WEIGHT = 0.0',
+              '"market_probability_used": False',
+              '"empirical_backtest_calibrated": False',
+              '"fair_moneyline_ready": True',
+              'FROZEN_CFB_MONEYLINE_HUB = "cfb_moneyline_hub_v4"',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v29"',
+              'root._import("cfb_moneyline_hub_v5")',
+              'market_price_used": False',
+          ]
+          combined = final + "\n" + hub + "\n" + slate + "\n" + router
+          for token in required:
+              if token not in combined:
+                  raise SystemExit(f"missing Step 6 marker: {token}")
+
+          forbidden = [
+              "requests.",
+              "urllib",
+              "sportsbook_price",
+              "market_probability =",
+              "expected_value",
+              "np.random",
+              "import numpy",
+          ]
+          for token in forbidden:
+              if token in final:
+                  raise SystemExit(f"Step 6 final probability crossed firewall: {token}")
+
+          if "streamlit_memory_lazy_router_v30" not in app:
+              raise SystemExit("app.py is not booting Router V30")
+
+          print("CFB_STEP6_MARKET_FIREWALL=PASS")
+          PY
+
+      - name: Live Sept 12 final-synthesis smoke test
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_moneyline_slate_v1 as slate
+
+          schedule.clear_schedule_cache()
+          games, diag = schedule.load_with_diagnostics("2026-09-12")
+          target = None
+          for game in games:
+              away = str(game.get("away_team") or "").lower()
+              home = str(game.get("home_team") or "").lower()
+              if "oklahoma" in away and "michigan" in home:
+                  target = game
+                  break
+
+          print("LIVE_SCHEDULE_COUNT", len(games))
+          print("LIVE_TARGET", target)
+          if target is None:
+              raise SystemExit("Oklahoma @ Michigan missing from live Sept 12 slate")
+
+          slate.clear_scan_cache()
+          result = slate.analyze_game(target, "2026-09-12")
+          raw = result.get("raw") or {}
+          final = result.get("final") or {}
+          print("LIVE_RAW_READY", raw.get("ready"), raw.get("reasons"))
+          print("LIVE_FINAL", final)
+
+          if not raw.get("ready"):
+              raise SystemExit("Frozen Step-5 raw model is gated on live target")
+          if not final.get("ready"):
+              raise SystemExit("Step-6 final synthesis is gated on live target")
+          p_home = float(final["home_win_probability_final"])
+          p_away = float(final["away_win_probability_final"])
+          if abs((p_home + p_away) - 1.0) > 1e-9:
+              raise SystemExit("Final probabilities do not sum to one")
+          if final.get("market_weight") != 0.0:
+              raise SystemExit("Sportsbook market leaked into final probability")
+          if not final.get("fair_moneyline_ready"):
+              raise SystemExit("Fair model moneyline not ready")
+
+          print("CFB_STEP6_LIVE_FINAL_SYNTHESIS=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo "CFB_STEP6_MONEYLINE_FINAL_GREEN"

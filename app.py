@@ -1,24 +1,23 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB NCAA scoreboard hotfix.
+"""Kyre Sports AI Streamlit entrypoint — CFB Step 6 Moneyline Final.
 
-Router V29 preserves the frozen Router V28/V27/V26/.../V2 chain down to the
+Router V30 preserves the frozen Router V29/V28/V27/.../V2 chain down to the
 `streamlit_memory_lazy_router_v1` bootstrap.
 
-Additive correctness hotfix:
+Additive Step 6 change:
 - preserves permanently frozen CFB Steps 1–5,
-- preserves the frozen mixed-division hotfix,
-- advances only College Football -> Moneyline to current NCAA date-scoped
-  FBS scoreboard completeness,
-- keeps frozen Moneyline Model V1 probability math unchanged,
+- preserves both certified CFB schedule/data hotfixes,
+- advances only College Football -> Moneyline to final structural synthesis,
+- keeps sportsbook probability weight exactly 0%,
 - keeps Over/Under, Game Total, MLB, WNBA, and NFL unchanged.
 
-Deployment heartbeat: STREAMLIT_MAIN_V29_CFB_SCOREBOARD_2026-09-08T15:50Z.
+Deployment heartbeat: STREAMLIT_MAIN_V30_CFB_STEP6_2026-09-08T16:20Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v29 import render_app
+from streamlit_memory_lazy_router_v30 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V29_CFB_SCOREBOARD_2026-09-08T15:50Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V30_CFB_STEP6_2026-09-08T16:20Z"
 
 
 render_app()
