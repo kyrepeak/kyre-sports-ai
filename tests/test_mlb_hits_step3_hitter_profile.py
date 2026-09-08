@@ -68,7 +68,7 @@ def test_build_profile_uses_frozen_hit_sources_and_declares_zero_model_impact(mo
         lambda base, sc: (base, {"grade": "Strong Contact", "reliability": 0.82}),
     )
 
-    out = profile.build_hitter_profile.__wrapped__(123, 0.275)
+    out = profile.build_hitter_profile(123, 0.275)
 
     assert out["season_avg"] == pytest.approx(0.288)
     assert out["xba"] == pytest.approx(0.281)
