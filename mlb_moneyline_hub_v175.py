@@ -342,6 +342,7 @@ def _form_score(l5: Mapping[str,Any],l10: Mapping[str,Any]) -> dict[str,Any]:
 
 def _data_score(payload: Mapping[str,Any],l10: Mapping[str,Any],schedule: Mapping[str,Any],game_date: str) -> int:
     score=0
+    asof_ready=_day(game_date) is not None
     if payload.get("status")=="VERIFIED":
         score+=30
     games=int(l10.get("games") or 0)
@@ -352,9 +353,12 @@ def _data_score(payload: Mapping[str,Any],l10: Mapping[str,Any],schedule: Mappin
         score+=15
     if schedule.get("rest_days") is not None:
         score+=5
-    if _day(game_date) is not None:
+    if asof_ready:
         score+=5
-    return int(_clamp(score,0,100))
+    score=int(_clamp(score,0,100))
+    # Pregame as-of identity is a hard gate, not a cosmetic data-quality bonus.
+    # Without an official selected date we cannot prove current/future results were excluded.
+    return score if asof_ready else min(score,MIN_DATA_SCORE-1)
 
 
 def _team_context(team_id: Any,team_name: Any,game_date: str) -> dict[str,Any]:
