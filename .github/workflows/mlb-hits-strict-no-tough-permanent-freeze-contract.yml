@@ -1,0 +1,110 @@
+name: MLB Hits strict no-TOUGH permanent freeze contract
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: ['mlb-hits-strict-no-tough-freeze-contract']
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert freeze-contract creation scope
+        if: github.event_name == 'push' || github.head_ref == 'mlb-hits-strict-no-tough-freeze-contract'
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-hits-strict-no-tough-permanent-freeze-contract.yml' \
+            'mlb_hits_freeze_manifest_v6.json' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected strict no-TOUGH freeze creation scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+
+      - name: Enforce permanent Hits Steps 1-5 + hotfix manifest
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+          m=json.loads(pathlib.Path('mlb_hits_freeze_manifest_v6.json').read_text())
+          base=m['baseline_commit']
+          def rev(spec):
+              return subprocess.check_output(['git','rev-parse',spec], text=True).strip()
+          bad=[]
+          for p in m['baseline_paths']:
+              try:
+                  if rev(f'{base}:{p}') != rev(f'HEAD:{p}'):
+                      bad.append(f'frozen baseline changed: {p}')
+              except subprocess.CalledProcessError:
+                  bad.append(f'missing frozen path: {p}')
+          for p,expected in m['exact_blobs'].items():
+              try:
+                  actual=rev(f'HEAD:{p}')
+              except subprocess.CalledProcessError:
+                  bad.append(f'missing exact-frozen path: {p}')
+                  continue
+              if actual != expected:
+                  bad.append(f'exact frozen blob changed: {p}')
+          if m.get('completed_steps') != [1,2,3,4,5]:
+              bad.append('completed_steps mismatch')
+          if m.get('certified_hotfixes') != ['strict_no_tough_visible_v1']:
+              bad.append('certified_hotfixes mismatch')
+          if bad:
+              print('\n'.join(bad)); sys.exit(1)
+          print('MLB_HITS_STRICT_NO_TOUGH_FREEZE_MANIFEST=PASS')
+          PY
+
+      - name: Compile frozen hotfix
+        run: |
+          python -m py_compile \
+            mlb_hit_strict_no_tough_v1.py \
+            mlb_hit_hub_v1321.py \
+            streamlit_memory_lazy_router_v21.py \
+            tests/test_mlb_hits_strict_no_tough.py \
+            tests/test_streamlit_memory_lazy_router_v21.py
+
+      - name: Run strict hotfix contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_hits_strict_no_tough.py \
+            tests/test_streamlit_memory_lazy_router_v21.py \
+            tests/test_mlb_hits_step5_starter_vulnerability.py \
+            tests/test_mlb_hits_step4_favorable_ranking.py
+
+      - name: Lock exact no-TOUGH rule
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import mlb_hit_strict_no_tough_v1 as s
+          assert s.STEP2_TOUGH_ERA_MAX == 3.35
+          assert s.STEP2_TOUGH_WHIP_MAX == 1.12
+          assert s.STEP2_TOUGH_K_PCT_MIN == 0.27
+          assert s.certified_step2_starter_grade({'era':3.18,'whip':1.16,'k_pct':.209}) == 'TOUGH'
+          print('MLB_HITS_STRICT_NO_TOUGH_RULE_FROZEN=PASS')
+          PY
+
+      - name: Certification marker
+        run: echo "MLB_HITS_STRICT_NO_TOUGH_PERMANENT_FREEZE_GREEN"
