@@ -1,10 +1,10 @@
-name: College Football Step 4 Moneyline-page certification
+name: College Football Step 5 Moneyline-model certification
 
 on:
   pull_request:
     branches: [main]
   push:
-    branches: ['feature/cfb-step4-moneyline-page-ui']
+    branches: ['feature/cfb-step5-moneyline-model-v1']
 
 permissions:
   contents: read
@@ -30,33 +30,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Assert exact Step 4 implementation scope
-        if: github.event_name == 'push' || github.head_ref == 'feature/cfb-step4-moneyline-page-ui'
+      - name: Assert exact Step 5 implementation scope
+        if: github.event_name == 'push' || github.head_ref == 'feature/cfb-step5-moneyline-model-v1'
         run: |
           git fetch origin main --depth=1
           actual="$(git diff --name-only origin/main...HEAD | sort)"
           expected="$(printf '%s\n' \
-            '.github/workflows/cfb-step1-section-router.yml' \
-            '.github/workflows/cfb-step2-schedule-identity.yml' \
-            '.github/workflows/cfb-step3-team-data.yml' \
             '.github/workflows/cfb-step4-moneyline-page-ui.yml' \
-            '.github/workflows/mlb-hits-router-v22-root-route.yml' \
+            '.github/workflows/cfb-step5-moneyline-model-v1.yml' \
             'app.py' \
-            'cfb_moneyline_hub_v1.py' \
-            'streamlit_memory_lazy_router_v26.py' \
-            'tests/test_cfb_step4_moneyline_page_ui.py' \
-            'tests/test_streamlit_memory_lazy_router_v26.py' | sort)"
+            'cfb_moneyline_hub_v2.py' \
+            'cfb_moneyline_model_v1.py' \
+            'streamlit_memory_lazy_router_v27.py' \
+            'tests/test_cfb_step5_moneyline_model_v1.py' \
+            'tests/test_streamlit_memory_lazy_router_v27.py' | sort)"
           if [ "$actual" != "$expected" ]; then
-            echo "Unexpected College Football Step 4 scope"
+            echo "Unexpected College Football Step 5 scope"
             echo "--- expected ---"
             echo "$expected"
             echo "--- actual ---"
             echo "$actual"
             exit 1
           fi
-          echo "CFB_STEP4_SCOPE=PASS"
+          echo "CFB_STEP5_SCOPE=PASS"
 
-      - name: Enforce frozen College Football Steps 1 through 3
+      - name: Enforce frozen College Football Steps 1 through 4
         run: |
           python - <<'PY'
           import json
@@ -64,14 +62,14 @@ jobs:
           import subprocess
           import sys
 
-          m = json.loads(pathlib.Path("cfb_freeze_manifest_v3.json").read_text())
+          m = json.loads(pathlib.Path("cfb_freeze_manifest_v4.json").read_text())
 
           def rev(spec):
               return subprocess.check_output(["git", "rev-parse", spec], text=True).strip()
 
           failures = []
-          if m.get("version") != 3 or m.get("completed_steps") != [1, 2, 3]:
-              failures.append("CFB freeze V3 metadata changed")
+          if m.get("version") != 4 or m.get("completed_steps") != [1, 2, 3, 4]:
+              failures.append("CFB freeze V4 metadata changed")
 
           for path, expected in m.get("exact_blobs", {}).items():
               try:
@@ -81,14 +79,14 @@ jobs:
                   continue
               if actual != expected:
                   failures.append(
-                      f"frozen CFB Steps 1-3 changed: {path} expected={expected} actual={actual}"
+                      f"frozen CFB Steps 1-4 changed: {path} expected={expected} actual={actual}"
                   )
 
           if failures:
               print("\n".join(failures))
               sys.exit(1)
 
-          print("CFB_STEPS_1_3_FROZEN=PASS")
+          print("CFB_STEPS_1_4_FROZEN=PASS")
           PY
 
       - name: Enforce protected MLB contracts
@@ -136,22 +134,25 @@ jobs:
               print("\n".join(failures))
               sys.exit(1)
 
-          print("CFB_STEP4_EXISTING_MLB_FREEZES=PASS")
+          print("CFB_STEP5_EXISTING_MLB_FREEZES=PASS")
           PY
 
-      - name: Compile College Football Step 4
+      - name: Compile College Football Step 5
         run: |
           python -m py_compile \
             app.py \
-            cfb_moneyline_hub_v1.py \
-            streamlit_memory_lazy_router_v26.py \
-            tests/test_cfb_step4_moneyline_page_ui.py \
-            tests/test_streamlit_memory_lazy_router_v26.py
-          PYTHONPATH=. python -c "import cfb_moneyline_hub_v1; import streamlit_memory_lazy_router_v26"
+            cfb_moneyline_model_v1.py \
+            cfb_moneyline_hub_v2.py \
+            streamlit_memory_lazy_router_v27.py \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py
+          PYTHONPATH=. python -c "import cfb_moneyline_model_v1; import cfb_moneyline_hub_v2; import streamlit_memory_lazy_router_v27"
 
-      - name: Run College Football Step 4 regressions
+      - name: Run College Football Step 5 regressions
         run: |
           PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_step5_moneyline_model_v1.py \
+            tests/test_streamlit_memory_lazy_router_v27.py \
             tests/test_cfb_step4_moneyline_page_ui.py \
             tests/test_streamlit_memory_lazy_router_v26.py \
             tests/test_cfb_step3_team_data_foundation.py \
@@ -163,57 +164,53 @@ jobs:
             tests/test_streamlit_memory_lazy_router_v22.py \
             tests/test_mlb_hits_strict_no_tough.py
 
-      - name: Prove Moneyline-only page and no-model boundary
+      - name: Prove raw model and market firewall
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          hub = Path("cfb_moneyline_hub_v1.py").read_text(encoding="utf-8")
-          router = Path("streamlit_memory_lazy_router_v26.py").read_text(encoding="utf-8")
+          model = Path("cfb_moneyline_model_v1.py").read_text(encoding="utf-8")
+          hub = Path("cfb_moneyline_hub_v2.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v27.py").read_text(encoding="utf-8")
           app = Path("app.py").read_text(encoding="utf-8")
 
           required = [
-              'FROZEN_CFB_HUB = "cfb_hub_v3"',
-              'MARKET = "Moneyline"',
-              'schedule.load_with_diagnostics',
-              'team_data.load_matchup_team_data',
-              'frozen_v3._team_card',
-              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v25"',
-              'market != MONEYLINE_MARKET',
-              'root._import("cfb_moneyline_hub_v1")',
+              'HOME_FIELD_POINTS = 2.5',
+              'MARGIN_LOGISTIC_SCALE = 10.5',
+              'sportsbook_input_used": False',
+              'monte_carlo_used": False',
+              'fair_moneyline_ready": False',
+              'final_pick_ready": False',
+              'UNVERIFIED • ZERO IMPACT',
+              'FROZEN_CFB_MONEYLINE_HUB = "cfb_moneyline_hub_v1"',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v26"',
+              'root._import("cfb_moneyline_hub_v2")',
           ]
-          combined = hub + "\n" + router
+          combined = model + "\n" + hub + "\n" + router
           for token in required:
               if token not in combined:
-                  raise SystemExit(f"missing Step 4 marker: {token}")
+                  raise SystemExit(f"missing Step 5 model marker: {token}")
 
-          forbidden = [
+          forbidden_model = [
               "import numpy",
               "np.random",
+              "import requests",
+              "urllib.request",
               "def simulate",
-              "def win_probability",
-              "fair_odds =",
+              "market_probability =",
+              "moneyline_price =",
+              "expected_value =",
               "fair_moneyline =",
-              "projected_score =",
-              "moneyline_pick =",
-              "sportsbook_line =",
           ]
-          for token in forbidden:
-              if token in hub:
-                  raise SystemExit(f"Step 4 crossed Moneyline model boundary: {token}")
+          for token in forbidden_model:
+              if token in model:
+                  raise SystemExit(f"Step 5 crossed raw-model firewall: {token}")
 
-          import re
-          match = re.search(r"from streamlit_memory_lazy_router_v(\d+) import render_app", app)
-          if not match or int(match.group(1)) < 26:
-              raise SystemExit("app.py regressed below frozen Router V26")
-          current = int(match.group(1))
-          for version in range(current, 26, -1):
-              source = Path(f"streamlit_memory_lazy_router_v{version}.py").read_text(encoding="utf-8")
-              if f"import streamlit_memory_lazy_router_v{version - 1} as prior" not in source:
-                  raise SystemExit(f"Router V{version} does not preserve additive chain to V26")
+          if "streamlit_memory_lazy_router_v27" not in app:
+              raise SystemExit("app.py is not booting Router V27")
 
-          print("CFB_STEP4_MONEYLINE_UI_BOUNDARY=PASS")
+          print("CFB_STEP5_RAW_MODEL_FIREWALL=PASS")
           PY
 
       - name: Certification marker
-        run: echo "CFB_STEP4_MONEYLINE_PAGE_GREEN"
+        run: echo "CFB_STEP5_MONEYLINE_MODEL_V1_GREEN"
