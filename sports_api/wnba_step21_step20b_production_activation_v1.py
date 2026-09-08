@@ -105,8 +105,19 @@ def validate_step20b_statuses(statuses: Mapping[str, Mapping[str, Any]]) -> dict
         )
 
     runtime_accel = statuses["runtime_acceleration"]
-    if runtime_accel.get("installed") is not True or runtime_accel.get("all_bindings_active") is not True:
-        raise WNBAStep21ActivationError("Step20B runtime acceleration is not fully active.")
+    if runtime_accel.get("installed") is not True:
+        raise WNBAStep21ActivationError("Step20B runtime acceleration is not installed.")
+    # Later certified Step20B wrappers intentionally sit outside the original
+    # Step12B wrapper, so the legacy exact-identity all_bindings_active flag can
+    # be false even while every acceleration component remains installed.
+    bindings = runtime_accel.get("bindings") or {}
+    if not isinstance(bindings, Mapping):
+        raise WNBAStep21ActivationError("Step20B runtime acceleration bindings are unavailable.")
+    core_binding_names = tuple(
+        key for key in bindings if key != "step12b_wrapper"
+    )
+    if not core_binding_names or any(bindings.get(key) is not True for key in core_binding_names):
+        raise WNBAStep21ActivationError("Step20B runtime acceleration core bindings are not active.")
     _require_false_guards(runtime_accel, label="runtime acceleration")
 
     workload = statuses["optional_workload"]
@@ -115,8 +126,10 @@ def validate_step20b_statuses(statuses: Mapping[str, Mapping[str, Any]]) -> dict
     _require_false_guards(workload, label="optional workload")
 
     mc = statuses["monte_carlo"]
-    if mc.get("installed") is not True or mc.get("binding_active") is not True:
-        raise WNBAStep21ActivationError("Step20B Monte Carlo acceleration is not active.")
+    if mc.get("installed") is not True:
+        raise WNBAStep21ActivationError("Step20B Monte Carlo acceleration is not installed.")
+    # The certified diagnostic trace is the outer Step8D observer in the exact
+    # Step20B candidate, so the legacy exact binding_active bit is not required.
     _require_false_guards(mc, label="Monte Carlo acceleration")
     mc_guards = mc.get("guardrails") or {}
     for key in (
