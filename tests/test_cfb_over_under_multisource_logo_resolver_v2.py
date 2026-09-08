@@ -231,3 +231,30 @@ def test_wikimedia_logo_guard_rejects_team_photo():
 
     assert logos._is_wikimedia_logo_url(photo, "Notre Dame") is False
     assert logos._is_wikimedia_logo_url(logo, "Notre Dame") is True
+
+
+def test_commons_search_uses_verified_mascot_identity(monkeypatch):
+    page = {
+        "pageid": 3,
+        "title": "Notre Dame Fighting Irish football",
+        "_logo_score": 20.0,
+        "fullurl": "https://en.wikipedia.org/wiki/Notre_Dame_Fighting_Irish_football",
+        "extlinks": [],
+    }
+    seen = {}
+
+    monkeypatch.setattr(logos, "_wikipedia_candidates", lambda *a, **k: ([page], []))
+    monkeypatch.setattr(logos, "_wikipedia_html_logo", lambda *a, **k: ("", []))
+
+    def commons(name):
+        seen["name"] = name
+        return (
+            "https://upload.wikimedia.org/Notre_Dame_Fighting_Irish_logo.svg",
+            [],
+        )
+
+    monkeypatch.setattr(logos, "_commons_logo", commons)
+
+    out = logos.resolve_team_logo.__wrapped__("Notre Dame", "notre-dame", "FBS")
+    assert seen["name"] == "Notre Dame Fighting Irish"
+    assert out["logo_provider"] == "wikimedia_commons"
