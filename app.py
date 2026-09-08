@@ -1,24 +1,24 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB Step 9 Over/Under Final Ranking.
+"""Kyre Sports AI Streamlit entrypoint — CFB Step 10 Game Total Foundation.
 
-Router V33 preserves the permanently frozen Router V32/V31/.../V2 chain down
+Router V34 preserves the permanently frozen Router V33/V32/.../V2 chain down
 to the streamlit_memory_lazy_router_v1 bootstrap.
 
-Additive Step 9 change:
-- preserves permanently frozen CFB Steps 1-8,
+Additive Step 10 change:
+- preserves permanently frozen CFB Steps 1-9,
 - preserves College Football Moneyline Step 6 unchanged,
-- completes College Football -> Over/Under with final O/U/PASS rules + Top-5,
-- keeps analysis-line projection weight at 0%,
-- keeps sportsbook feed/price, market probability, edge/EV, and Monte Carlo out,
-- keeps Game Total, MLB, WNBA, and NFL unchanged.
+- preserves College Football Over/Under Step 9 unchanged,
+- advances only College Football -> Game Total to its independent foundation,
+- keeps Game Total projection/distribution/ranking OFF until Steps 11-12,
+- keeps MLB, WNBA, and NFL unchanged.
 
-Deployment heartbeat: STREAMLIT_MAIN_V33_CFB_STEP9_2026-09-08T17:45Z.
+Deployment heartbeat: STREAMLIT_MAIN_V34_CFB_STEP10_2026-09-08T18:02Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v33 import render_app
+from streamlit_memory_lazy_router_v34 import render_app
 
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V33_CFB_STEP9_2026-09-08T17:45Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V34_CFB_STEP10_2026-09-08T18:02Z"
 
 
 render_app()
