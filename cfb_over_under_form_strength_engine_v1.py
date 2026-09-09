@@ -31,6 +31,7 @@ Integrity rules
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from statistics import fmean
 from typing import Any, Mapping
@@ -44,6 +45,9 @@ FROZEN_STEP10_ENGINE = "cfb_over_under_history_engine_v1"
 MIN_CURRENT_SEASON_GAMES = 2
 FULL_SAMPLE_GAMES = 5
 MIN_OPPONENT_RECORD_COVERAGE = 0.60
+FORM_GAME_WINDOW = 5
+MAX_OPPONENT_RECORD_WORKERS = 6
+OPPONENT_RECORD_FALLBACK_ACTIVE = True
 RECENT_FORM_PROJECTION_BLEND = 0.18
 SOS_CORRECTION_POINTS = 4.0
 MAX_TEAM_FORM_ADJUSTMENT = 1.25
@@ -205,11 +209,118 @@ def _current_season_rows(
         if dt.year != int(season):
             continue
         rows[event_id or _clean(row.get("date"))] = row
-    return sorted(
+    ordered = sorted(
         rows.values(),
         key=lambda row: row.get("date_dt") or datetime.min.replace(tzinfo=timezone.utc),
         reverse=True,
     )
+    return ordered[:FORM_GAME_WINDOW]
+
+
+def _opponent_schedule_record_pct(
+    team_id: str,
+    season: int,
+    cutoff: datetime,
+    excluded_event_id: str = "",
+) -> tuple[float | None, int, list[dict[str, Any]]]:
+    """Compute an opponent's pre-target current-season record from its own schedule."""
+    payload, attempts = history_engine._fetch_team_schedule(_clean(team_id), int(season))
+    wins = losses = ties = 0
+    seen: set[str] = set()
+    for event in payload.get("events") or []:
+        if not isinstance(event, Mapping):
+            continue
+        row = history_engine._event_row(event, _clean(team_id))
+        if not row:
+            continue
+        event_id = _clean(row.get("event_id"))
+        if excluded_event_id and event_id == _clean(excluded_event_id):
+            continue
+        dt = row.get("date_dt")
+        if not isinstance(dt, datetime) or dt >= cutoff or dt.year != int(season):
+            continue
+        key = event_id or _clean(row.get("date"))
+        if key in seen:
+            continue
+        seen.add(key)
+        pf = float(row.get("points_for") or 0.0)
+        pa = float(row.get("points_against") or 0.0)
+        if pf > pa:
+            wins += 1
+        elif pf < pa:
+            losses += 1
+        else:
+            ties += 1
+    games = wins + losses + ties
+    pct = ((wins + 0.5 * ties) / games) if games else None
+    return (float(pct) if pct is not None else None, games, list(attempts or []))
+
+
+def _hydrate_opponent_records(
+    rows: list[Mapping[str, Any]],
+    season: int,
+    cutoff: datetime,
+    excluded_event_id: str = "",
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Fill missing inline opponent records from exact opponent schedule IDs."""
+    hydrated = [dict(row) for row in rows]
+    missing_ids = sorted({
+        _clean(row.get("opponent_id"))
+        for row in hydrated
+        if row.get("opponent_record_pct") is None
+        and _clean(row.get("opponent_id")).isdigit()
+    })
+    resolved: dict[str, tuple[float | None, int]] = {}
+    attempts: list[dict[str, Any]] = []
+
+    if missing_ids and OPPONENT_RECORD_FALLBACK_ACTIVE:
+        with ThreadPoolExecutor(
+            max_workers=max(1, min(MAX_OPPONENT_RECORD_WORKERS, len(missing_ids)))
+        ) as pool:
+            futures = {
+                pool.submit(
+                    _opponent_schedule_record_pct,
+                    team_id,
+                    int(season),
+                    cutoff,
+                    excluded_event_id,
+                ): team_id
+                for team_id in missing_ids
+            }
+            for future in as_completed(futures):
+                team_id = futures[future]
+                try:
+                    pct, games, these_attempts = future.result()
+                except Exception:
+                    pct, games, these_attempts = None, 0, []
+                resolved[team_id] = (pct, games)
+                attempts.extend(these_attempts)
+
+    fallback_resolved = 0
+    inline_records = 0
+    for row in hydrated:
+        if row.get("opponent_record_pct") is not None:
+            row["opponent_record_source"] = "ESPN inline competitor record"
+            inline_records += 1
+            continue
+        opp_id = _clean(row.get("opponent_id"))
+        pct, games = resolved.get(opp_id, (None, 0))
+        row["opponent_record_pct"] = pct
+        row["opponent_record_games"] = int(games)
+        if pct is not None:
+            row["opponent_record_source"] = (
+                "ESPN opponent schedule completed games before target"
+            )
+            fallback_resolved += 1
+        else:
+            row["opponent_record_source"] = "unavailable"
+
+    return hydrated, {
+        "inline_records": inline_records,
+        "fallback_requested": len(missing_ids),
+        "fallback_resolved": fallback_resolved,
+        "attempts": attempts,
+    }
 
 
 def _side_form(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
@@ -346,6 +457,12 @@ def build_form_strength_engine(
     home_rows = _current_season_rows(
         home_payload, home_id, season, cutoff, excluded_event_id=event_id
     )
+    away_rows, away_record_diag = _hydrate_opponent_records(
+        away_rows, season, cutoff, excluded_event_id=event_id
+    )
+    home_rows, home_record_diag = _hydrate_opponent_records(
+        home_rows, season, cutoff, excluded_event_id=event_id
+    )
     away_form = _side_form(away_rows)
     home_form = _side_form(home_rows)
 
@@ -395,6 +512,8 @@ def build_form_strength_engine(
         "diagnostics": {
             "away_attempts": list(away_attempts or []),
             "home_attempts": list(home_attempts or []),
+            "away_opponent_record_resolution": away_record_diag,
+            "home_opponent_record_resolution": home_record_diag,
         },
     }
 
@@ -517,17 +636,21 @@ __all__ = [
     "DIRECT_SELECTION_FORM_WEIGHT",
     "EMPIRICAL_CALIBRATION_CLAIMED",
     "FROZEN_STEP10_ENGINE",
+    "FORM_GAME_WINDOW",
     "FULL_SAMPLE_GAMES",
     "MAX_TEAM_FORM_ADJUSTMENT",
     "MAX_TOTAL_FORM_ADJUSTMENT",
     "MIN_CURRENT_SEASON_GAMES",
     "MIN_OPPONENT_RECORD_COVERAGE",
     "MODEL_VERSION",
+    "OPPONENT_RECORD_FALLBACK_ACTIVE",
     "RECENT_FORM_PROJECTION_BLEND",
     "SOS_CORRECTION_POINTS",
     "_competitor_record_pct",
     "_current_season_rows",
     "_event_row_with_opponent_record",
+    "_hydrate_opponent_records",
+    "_opponent_schedule_record_pct",
     "_record_pct",
     "_side_adjustment",
     "_side_form",
