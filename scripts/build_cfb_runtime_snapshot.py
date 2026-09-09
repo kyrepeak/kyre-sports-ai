@@ -35,7 +35,12 @@ from zoneinfo import ZoneInfo
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:\n    sys.path.insert(0, str(ROOT))\n\nimport cfb_over_under_deep_data_reconciliation_v1 as project_deep\nOUT = ROOT / "data" / "cfb_runtime_snapshot_v1.json"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+import cfb_over_under_deep_data_reconciliation_v1 as project_deep
+
+OUT = ROOT / "data" / "cfb_runtime_snapshot_v1.json"
 
 ET = ZoneInfo("America/New_York")
 TIMEOUT = 18
