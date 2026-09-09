@@ -1,0 +1,106 @@
+name: CFB O/U color steps V19
+
+on:
+  push:
+    branches: [cfb-ou-color-steps-v19]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Presentation-only scope guard
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"],text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-ou-color-steps-v19.yml",
+              "cfb_over_under_clean_page_v17.py",
+              "tests/test_cfb_over_under_clean_page_v17.py",
+          }
+          if changed != expected:
+              raise SystemExit(f"scope mismatch: {sorted(changed)}")
+          print("CFB_OU_COLOR_STEPS_SCOPE=PASS")
+          PY
+
+      - name: Compile
+        run: |
+          python -m py_compile             cfb_over_under_clean_page_v17.py             tests/test_cfb_over_under_clean_page_v17.py
+
+      - name: Run clean-page regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q             tests/test_cfb_over_under_clean_page_v17.py             tests/test_cfb_over_under_router_v57.py
+
+      - name: Verify every model step has distinct color class
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_clean_page_v17 as page
+
+          for step in range(3,12):
+              html=page._model_step(
+                  step,
+                  "TEST",
+                  {"ready":True,"coverage":1.0},
+              )
+              if f'class="c17-step step-{step}"' not in html:
+                  raise SystemExit(f"step {step} missing color class")
+              if f".c17-step.step-{step}" not in page._CSS:
+                  raise SystemExit(f"step {step} missing CSS accent")
+
+          cert=page._cert_step({
+              "certification":{"status":"CERTIFIED","checks_failed":0},
+              "version":"runtime",
+          })
+          if 'class="c17-step step-12"' not in cert:
+              raise SystemExit("step 12 missing color class")
+
+          gated=page._model_step(
+              9,
+              "GAME-DAY ENVIRONMENT",
+              {
+                  "ready":True,
+                  "model_ready":False,
+                  "coverage":0.0,
+                  "reason":"missing verified event",
+              },
+          )
+          if 'class="gated"' not in gated:
+              raise SystemExit("truthful GATED badge was lost")
+
+          print("CFB_OU_COLOR_STEPS_AND_STATUS_BADGES=PASS")
+          PY
+
+      - name: Model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path("cfb_over_under_clean_page_v17.py").read_text().lower()
+          for token in ("sportsbook_api","np.random","import random","monte_carlo("):
+              if token in text:
+                  raise SystemExit(f"presentation patch crossed model firewall: {token}")
+          print("CFB_OU_COLOR_STEPS_MODEL_FIREWALL=PASS")
+          PY
+
+      - run: echo CFB_OU_COLOR_STEPS_V19_GREEN
