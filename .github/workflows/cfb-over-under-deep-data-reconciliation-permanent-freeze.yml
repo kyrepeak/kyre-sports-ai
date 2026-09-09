@@ -1,0 +1,122 @@
+name: CFB O/U deep data reconciliation permanent freeze
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [cfb-ou-deep-data-reconciliation-permanent-freeze]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Verify freeze scope and parent freezes
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import json,pathlib,subprocess,sys
+          def rev(spec): return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          actual=set(subprocess.check_output(["git","diff","--name-only","origin/main...HEAD"],text=True).splitlines())
+          expected={
+            ".github/workflows/cfb-over-under-deep-data-reconciliation-permanent-freeze.yml",
+            "cfb_over_under_deep_data_reconciliation_freeze_manifest_v1.json",
+          }
+          failures=[]
+          if actual!=expected: failures.append(f"scope mismatch: {sorted(actual)}")
+          parents=[
+            ("cfb_over_under_upgrade_freeze_manifest_v12.json","b2a798b4625bda5b8472a30e66cde2ecf6aef923"),
+            ("cfb_over_under_post12_data_recovery_freeze_manifest_v1.json","8baab0745d2b6fb1214da47eb5c0c6dd22355944"),
+          ]
+          for path,blob in parents:
+            if rev(f"HEAD:{path}")!=blob: failures.append(f"parent manifest changed: {path}")
+            m=json.loads(pathlib.Path(path).read_text())
+            for frozen,expected_blob in (m.get("exact_blobs") or {}).items():
+              if rev(f"HEAD:{frozen}")!=expected_blob: failures.append(f"parent frozen blob changed: {frozen}")
+          if failures: print(*failures,sep="\n"); sys.exit(1)
+          print("CFB_OU_DEEP_DATA_PARENT_FREEZES_AND_SCOPE=PASS")
+          PY
+
+      - name: Enforce deep-data exact blobs and contract
+        run: |
+          python - <<'PY'
+          import json,pathlib,subprocess,sys
+          def rev(spec): return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          path="cfb_over_under_deep_data_reconciliation_freeze_manifest_v1.json"
+          failures=[]
+          if rev(f"HEAD:{path}")!="d4734a3533a7a9a3f3d8ff570a00e831a1ada4ab":
+            failures.append("deep-data freeze manifest changed")
+          m=json.loads(pathlib.Path(path).read_text())
+          if m.get("baseline_commit")!="d86d93537e3a1932e8c50f50e447f03a23923ff1":
+            failures.append("baseline changed")
+          for frozen,expected in (m.get("exact_blobs") or {}).items():
+            if rev(f"HEAD:{frozen}")!=expected: failures.append(f"deep-data blob changed: {frozen}")
+          c=m.get("contract") or {}
+          eq={
+            "active_router":"streamlit_memory_lazy_router_v54",
+            "live_away_record":"1-1",
+            "live_home_record":"1-0",
+            "live_away_conference_record":"0-0",
+            "live_home_conference_record":"1-0",
+            "live_home_ap_rank":7,
+            "live_home_coaches_rank":7,
+            "live_step12_status":"CERTIFIED",
+            "live_step12_failures":0,
+            "regression_tests_passed":234,
+          }
+          for k,v in eq.items():
+            if c.get(k)!=v: failures.append(f"contract changed: {k}")
+          for k in (
+            "current_record_reconciliation","conference_record_reconciliation",
+            "current_schedule_wl_reconciliation","home_away_neutral_split_reconciliation",
+            "recent_form_reconciliation","current_scoring_reconciliation",
+            "venue_reconciliation","broadcast_reconciliation","head_coach_reconciliation",
+            "exact_week_ap_poll_reconciliation","exact_week_coaches_poll_reconciliation",
+            "fbs_fcs_poll_applicability_guard","ncaa_category_stats_preserved",
+            "frozen_model_engines_reused","frozen_step12_certification_reused",
+            "legacy_step1_step2_cards_reconciled","permanently_frozen",
+          ):
+            if c.get(k) is not True: failures.append(f"lost true invariant: {k}")
+          for k in ("new_model_formula_added","sportsbook_input_added","market_probability_input_added","edge_or_ev_added","monte_carlo_added"):
+            if c.get(k) is not False: failures.append(f"violated false invariant: {k}")
+          if failures: print(*failures,sep="\n"); sys.exit(1)
+          print("CFB_OU_DEEP_DATA_EXACT_BLOBS_AND_CONTRACT=PASS")
+          PY
+
+      - name: Compile and regress
+        run: |
+          python - <<'PY'
+          import py_compile
+          for p in ("app.py","cfb_over_under_deep_data_reconciliation_v1.py","cfb_over_under_slate_v13_deep_data.py","cfb_over_under_matchup_ui_v14_deep_data.py","streamlit_memory_lazy_router_v54.py"):
+            py_compile.compile(p,doraise=True)
+          print("CFB_OU_DEEP_DATA_FROZEN_COMPILE=PASS")
+          PY
+          PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_deep_data_reconciliation_v1.py tests/test_cfb_over_under_deep_data_ui_router.py tests/test_cfb_over_under_post12_data_recovery.py tests/test_cfb_over_under_post12_data_recovery_slate_ui_router.py tests/test_cfb_over_under_upgrade_step12_certification.py tests/test_cfb_over_under_upgrade_step12_slate.py tests/test_cfb_over_under_upgrade_step12_ui_router.py tests/test_cfb_over_under_upgrade_step11_form_strength_engine.py tests/test_cfb_over_under_upgrade_step11_slate.py tests/test_cfb_over_under_upgrade_step11_ui_router.py tests/test_cfb_over_under_upgrade_step10_history_engine.py tests/test_cfb_over_under_upgrade_step10_slate.py tests/test_cfb_over_under_upgrade_step10_ui_router.py tests/test_cfb_over_under_upgrade_step9_environment_engine.py tests/test_cfb_over_under_upgrade_step9_slate.py tests/test_cfb_over_under_upgrade_step9_ui_router.py tests/test_cfb_over_under_upgrade_step8_turnover_engine.py tests/test_cfb_over_under_upgrade_step8_slate.py tests/test_cfb_over_under_upgrade_step8_ui_router.py tests/test_cfb_over_under_upgrade_step7_third_down_engine.py tests/test_cfb_over_under_upgrade_step7_slate.py tests/test_cfb_over_under_upgrade_step7_ui_router.py tests/test_cfb_over_under_upgrade_step6_red_zone_engine.py tests/test_cfb_over_under_upgrade_step6_slate.py tests/test_cfb_over_under_upgrade_step6_ui_router.py tests/test_cfb_over_under_upgrade_step5_explosive_engine.py tests/test_cfb_over_under_upgrade_step5_slate.py tests/test_cfb_over_under_upgrade_step5_ui_router.py tests/test_cfb_over_under_upgrade_step4_pace_engine.py tests/test_cfb_over_under_upgrade_step4_slate.py tests/test_cfb_over_under_upgrade_step4_ui_router.py tests/test_cfb_over_under_upgrade_step3_engine.py tests/test_cfb_over_under_upgrade_step3_slate.py tests/test_cfb_over_under_upgrade_step3_ui.py tests/test_cfb_over_under_multisource_logo_resolver_v2.py tests/test_cfb_over_under_multisource_logo_hotfix_v4.py tests/test_cfb_over_under_logo_recursion_hotfix_v3.py
+
+      - name: Freeze firewall
+        run: |
+          grep -F 'from streamlit_memory_lazy_router_v54 import render_app' app.py
+          python - <<'PY'
+          from pathlib import Path
+          text="\n".join(Path(p).read_text() for p in ("cfb_over_under_deep_data_reconciliation_v1.py","cfb_over_under_slate_v13_deep_data.py","cfb_over_under_matchup_ui_v14_deep_data.py","streamlit_memory_lazy_router_v54.py"))
+          for token in ('FROZEN_PARENT_RECOVERY = "cfb_over_under_data_recovery_v1"','FROZEN_STEP12_CERTIFIER = "cfb_over_under_slate_v11"','FROZEN_ROUTER="streamlit_memory_lazy_router_v53"','NEW_MODEL_FORMULA_ADDED = False'):
+            if token not in text: raise SystemExit(f"missing marker: {token}")
+          lower=text.lower()
+          for token in ("sportsbook_api","np.random","import random","monte_carlo("):
+            if token in lower: raise SystemExit(f"firewall crossed: {token}")
+          print("CFB_OU_DEEP_DATA_PERMANENT_FREEZE_FIREWALL=PASS")
+          PY
+
+      - run: echo CFB_OU_DEEP_DATA_RECONCILIATION_PERMANENTLY_FROZEN_GREEN
