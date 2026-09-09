@@ -38,6 +38,11 @@ ESPN_SCOREBOARD_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/"
     "college-football/scoreboard"
 )
+GITHUB_VERIFIED_SNAPSHOT_URL_ENV = "CFB_GITHUB_VERIFIED_SNAPSHOT_URL"
+DEFAULT_GITHUB_VERIFIED_SNAPSHOT_URL = (
+    "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
+    "main/data/cfb_runtime_snapshot_v1.json"
+)
 MATCH_THRESHOLD = 0.88
 AMBIGUITY_MARGIN = 0.08
 _HTTP_TIMEOUT = 12.0
@@ -218,7 +223,9 @@ def load_verified_games() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Load the local verified runtime snapshot when the shared host has it.
 
     The API production branch intentionally does not require this file. When it
-    is absent, reconciliation resolves exact market dates through ESPN instead.
+    is absent, reconciliation first reads the public GitHub runtime snapshot
+    maintained by the existing hourly GitHub Actions refresh, then uses direct
+    ESPN exact-date reads only as a final fail-closed fallback.
     """
     path = _snapshot_path()
     try:
@@ -269,6 +276,91 @@ def load_verified_games() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         "malformed_games_ignored": malformed,
         "duplicate_event_ids_ignored": duplicate_ids,
     }
+
+
+def _github_snapshot_url() -> str:
+    configured = _clean(os.environ.get(GITHUB_VERIFIED_SNAPSHOT_URL_ENV))
+    return configured or DEFAULT_GITHUB_VERIFIED_SNAPSHOT_URL
+
+
+def _github_verified_games_from_payload(
+    payload: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    games_raw = payload.get("games")
+    if not isinstance(games_raw, list):
+        raise ValueError("GitHub CFB runtime snapshot has an invalid games contract")
+
+    games: list[dict[str, Any]] = []
+    malformed = 0
+    duplicate_ids = 0
+    seen: set[str] = set()
+    for row in games_raw:
+        game = _normalize_verified_game(row)
+        if game is None:
+            malformed += 1
+            continue
+        event_id = _clean(game.get("event_id"))
+        if event_id in seen:
+            duplicate_ids += 1
+            continue
+        seen.add(event_id)
+        games.append(game)
+
+    window = payload.get("window") if isinstance(payload.get("window"), dict) else {}
+    return games, {
+        "source": "GitHub hourly CFB runtime snapshot",
+        "snapshot_version": payload.get("version"),
+        "snapshot_generated_at": payload.get("generated_at"),
+        "snapshot_window": window,
+        "verified_games": len(games),
+        "malformed_games_ignored": malformed,
+        "duplicate_event_ids_ignored": duplicate_ids,
+        "synthetic_ids": False,
+        "fuzzy_matching": False,
+    }
+
+
+def _fetch_github_verified_games() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    url = _github_snapshot_url()
+    try:
+        response = httpx.get(
+            url,
+            timeout=_HTTP_TIMEOUT,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (compatible; KyreSportsAPI-CFB-Identity/1.0)"
+                ),
+                "Accept": "application/json,text/plain,*/*",
+                "Cache-Control": "no-cache",
+            },
+            follow_redirects=True,
+        )
+        status_code = int(response.status_code)
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("GitHub CFB runtime snapshot returned a non-object payload")
+        games, diag = _github_verified_games_from_payload(payload)
+        return games, {
+            **diag,
+            "http": status_code,
+            "ok": True,
+            "url_configured": bool(
+                _clean(os.environ.get(GITHUB_VERIFIED_SNAPSHOT_URL_ENV))
+            ),
+        }
+    except Exception as exc:
+        return [], {
+            "source": "GitHub hourly CFB runtime snapshot",
+            "http": None,
+            "ok": False,
+            "verified_games": 0,
+            "url_configured": bool(
+                _clean(os.environ.get(GITHUB_VERIFIED_SNAPSHOT_URL_ENV))
+            ),
+            "error": f"{type(exc).__name__}: {exc}"[:300],
+            "fail_closed": True,
+        }
 
 
 def _espn_game_date(raw_date: Any, requested_day: str) -> str:
@@ -451,12 +543,48 @@ def resolve_verified_games(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     local_games, snapshot_diag = load_verified_games()
     market_dates = _market_dates(feed)
-    covered_dates = {str(game.get("game_date") or "") for game in local_games}
-    missing_dates = [day for day in market_dates if day not in covered_dates]
 
     combined = list(local_games)
+    covered_dates = {
+        str(game.get("game_date") or "")
+        for game in combined
+        if str(game.get("game_date") or "")
+    }
+    missing_dates = [day for day in market_dates if day not in covered_dates]
+
+    github_diag: dict[str, Any] = {
+        "source": "GitHub hourly CFB runtime snapshot",
+        "attempted": False,
+        "verified_games": 0,
+    }
+    if missing_dates:
+        github_games, github_diag = _fetch_github_verified_games()
+        github_diag = {**github_diag, "attempted": True}
+        needed = set(missing_dates)
+        combined.extend(
+            game
+            for game in github_games
+            if str(game.get("game_date") or "") in needed
+        )
+
+    # A date being present is not enough: an FBS-only snapshot can contain the
+    # date while still missing FCS games on the same slate. Supplement only dates
+    # where at least one actual market row still has no deterministic identity
+    # candidate. This keeps the direct ESPN fallback quiet when GitHub is complete.
+    remaining_dates: list[str] = []
+    for market in feed.get("games") or []:
+        if not isinstance(market, Mapping):
+            continue
+        try:
+            game_date, candidates = _qualified_candidates(market, combined)
+        except ValueError:
+            continue
+        if not candidates and game_date not in remaining_dates:
+            remaining_dates.append(game_date)
+    remaining_dates.sort()
+
     provider_attempts: list[dict[str, Any]] = []
-    for day in missing_dates:
+    for day in remaining_dates:
         fetched, diag = _fetch_espn_verified_games(day)
         provider_attempts.append(diag)
         combined.extend(fetched)
@@ -475,9 +603,13 @@ def resolve_verified_games(
         deduped.append(game)
 
     return deduped, {
-        "resolver_mode": "verified runtime snapshot + live ESPN FBS/FCS exact-date fallback",
+        "resolver_mode": (
+            "local verified snapshot + GitHub hourly verified snapshot + "
+            "live ESPN FBS/FCS exact-date fallback"
+        ),
         "requested_market_dates": market_dates,
         "snapshot": snapshot_diag,
+        "github_snapshot": github_diag,
         "live_provider_attempts": provider_attempts,
         "verified_games": len(deduped),
         "duplicate_event_ids_ignored": duplicate_ids,
@@ -684,10 +816,14 @@ def identity_status():
         "identity_ready": True,
         "local_verified_games": len(games),
         "verified_snapshot": diag,
-        "resolver_mode": "verified runtime snapshot + live ESPN FBS/FCS exact-date fallback",
+        "resolver_mode": (
+            "local verified snapshot + GitHub hourly verified snapshot + "
+            "live ESPN FBS/FCS exact-date fallback"
+        ),
         "identity_policy": {
             "official_id_source": (
-                "verified CFB runtime event_id; ESPN scoreboard event_id fallback"
+                "verified CFB runtime event_id; GitHub hourly snapshot event_id; "
+                "ESPN scoreboard event_id final fallback"
             ),
             "fuzzy_matching": False,
             "synthetic_ids": False,
@@ -743,11 +879,15 @@ def reconciled(
 
 __all__ = [
     "AMBIGUITY_MARGIN",
+    "DEFAULT_GITHUB_VERIFIED_SNAPSHOT_URL",
     "ESPN_SCOREBOARD_URL",
+    "GITHUB_VERIFIED_SNAPSHOT_URL_ENV",
     "MATCH_THRESHOLD",
     "MODEL_VERSION",
     "SNAPSHOT_PATH_ENV",
     "_espn_verified_games_from_payload",
+    "_fetch_github_verified_games",
+    "_github_verified_games_from_payload",
     "_name_score",
     "load_verified_games",
     "reconcile_market_feed",
