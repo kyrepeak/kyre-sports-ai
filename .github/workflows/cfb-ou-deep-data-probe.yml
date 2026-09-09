@@ -1,0 +1,56 @@
+name: CFB O/U deep data provider probe
+
+on:
+  push:
+    branches: [cfb-ou-deep-data-reconciliation-v1]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Probe ESPN current data schemas
+        run: |
+          python - <<'PY'
+          import json, requests
+          H={"User-Agent":"Mozilla/5.0","Accept":"application/json,text/plain,*/*","Referer":"https://www.espn.com/"}
+          def get(url):
+              r=requests.get(url,timeout=20,headers=H)
+              print("\nURL",url,"STATUS",r.status_code,"LEN",len(r.content))
+              r.raise_for_status()
+              return r.json()
+
+          for team_id,name in [("2390","Miami"),("50","Florida A&M")]:
+              sched=get(f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{team_id}/schedule?season=2026")
+              print(name,"SCHEDULE_TOP_KEYS",sorted(sched.keys()))
+              print(name,"TEAM",json.dumps(sched.get("team"),indent=2)[:5000])
+              events=sched.get("events") or []
+              print(name,"EVENT_COUNT",len(events))
+              for ev in events[:3]:
+                  comp=(ev.get("competitions") or [{}])[0]
+                  print(name,"EVENT",json.dumps({
+                      "id":ev.get("id"),"date":ev.get("date"),"name":ev.get("name"),
+                      "status":ev.get("status"),"neutral":comp.get("neutralSite"),
+                      "conferenceCompetition":comp.get("conferenceCompetition"),
+                      "venue":comp.get("venue"),"broadcasts":comp.get("broadcasts"),
+                      "competitors":comp.get("competitors"),
+                  },indent=2)[:12000])
+
+              coaches=get(f"https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/teams/{team_id}/coaches?lang=en&region=us")
+              print(name,"COACHES",json.dumps(coaches,indent=2)[:12000])
+
+              ranks=get(f"https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/types/2/weeks/2/teams/{team_id}/ranks?lang=en&region=us")
+              print(name,"RANKS",json.dumps(ranks,indent=2)[:12000])
+
+          summary=get("https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=401858213")
+          print("SUMMARY_HEADER",json.dumps(summary.get("header"),indent=2)[:18000])
+          print("SUMMARY_GAMEINFO",json.dumps(summary.get("gameInfo"),indent=2)[:10000])
+          print("SUMMARY_BROADCASTS",json.dumps(summary.get("broadcasts"),indent=2)[:10000])
+          PY
