@@ -164,3 +164,14 @@ def test_live_loader_uses_step3_date_and_sportsbook_filters(monkeypatch):
     assert seen["timeout"] == market.REQUEST_TIMEOUT_SECONDS
     assert diag["status"] == "GREEN"
     assert payload["game_count"] == 1
+
+
+def test_adapter_rejects_missing_projection_weight_contract():
+    payload = _payload()
+    payload["market_semantics"].pop("projection_weight")
+    try:
+        market._validate_payload(payload, requested_day="2026-09-10")
+    except ValueError as exc:
+        assert "projection weight is missing" in str(exc)
+    else:
+        raise AssertionError("missing projection-weight contract was accepted")
