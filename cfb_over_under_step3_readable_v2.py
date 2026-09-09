@@ -626,6 +626,33 @@ def load_team_step3(
             for key in snapshot_defense
         )
     )
+    offense_fields = [
+        "points_pg",
+        "total_yards_pg",
+        "pass_yards_pg",
+        "rush_yards_pg",
+        "pass_td_pg",
+        "rush_td_pg",
+        "first_downs_pg",
+        "yards_per_play",
+    ]
+    defense_fields = [
+        "points_allowed_pg",
+        "total_yards_allowed_pg",
+        "pass_yards_allowed_pg",
+        "rush_yards_allowed_pg",
+        "pass_td_allowed_pg",
+        "rush_td_allowed_pg",
+        "first_downs_allowed_pg",
+        "yards_per_play_allowed",
+    ]
+    populated = sum(
+        offense.get(key) is not None for key in offense_fields
+    ) + sum(
+        defense.get(key) is not None for key in defense_fields
+    )
+    field_coverage = populated / float(len(offense_fields) + len(defense_fields))
+
     return {
         "version": MODEL_VERSION,
         "team_id": _clean(team_id),
@@ -633,11 +660,12 @@ def load_team_step3(
         "games": games,
         "offense": offense,
         "defense": defense,
-        "display_ready": bool(offense and defense and games > 0),
+        "field_coverage": field_coverage,
+        "display_ready": bool(games > 0 and field_coverage >= 0.75),
         "snapshot_used": snapshot_used,
         "source": (
             "ESPN Core season offense + ESPN exact-event defense summaries"
-            + (" + checked-in fallback" if snapshot_used else "")
+            + (" + checked-in verified fallback" if snapshot_used else "")
         ),
         "offense_diagnostics": offense_diag,
         "defense_diagnostics": defense_diag,
@@ -803,7 +831,7 @@ def build_matchup_step3(
         "sources": [
             "ESPN Core current-season team statistics",
             "ESPN exact-event completed-game summaries",
-            "checked-in certified Step-3 current snapshot fallback",
+            "checked-in verified Step-3 current snapshot fallback",
         ],
         "sportsbook_input_used": SPORTSBOOK_INPUT_USED,
         "market_probability_used": MARKET_PROBABILITY_USED,
