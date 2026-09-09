@@ -88,5 +88,67 @@ jobs:
                   sort_keys=True,
               ),
           )
+          # Verify a bounded set of page ids derived from FanDuel's public
+          # college-football URL vocabulary and sportsbook nomenclature. Nothing
+          # is accepted unless the returned event surface proves it is CFB.
+          candidates = ["college-football", "ncaaf", "ncaa-football"]
+          for page_id in candidates:
+              try:
+                  page = get_json(
+                      BASE + "/sbapi/content-managed-page",
+                      {
+                          "_ak": AK,
+                          "page": "CUSTOM",
+                          "customPageId": page_id,
+                          "timezone": "America/New_York",
+                      },
+                  )
+                  attachments = page.get("attachments")
+                  events_raw = attachments.get("events") if isinstance(attachments, dict) else None
+                  if isinstance(events_raw, dict):
+                      events = [v for v in events_raw.values() if isinstance(v, dict)]
+                  elif isinstance(events_raw, list):
+                      events = [v for v in events_raw if isinstance(v, dict)]
+                  else:
+                      events = []
+                  names = [
+                      str(e.get("name") or e.get("eventName") or e.get("displayName") or "")
+                      for e in events[:8]
+                  ]
+                  cfb_like = sum(
+                      1 for name in names
+                      if " @ " in name and any(
+                          token in name.casefold()
+                          for token in (
+                              "state", "university", "tigers", "bulldogs", "wildcats",
+                              "hurricanes", "seminoles", "buckeyes", "longhorns",
+                              "crimson tide", "trojans", "aggies", "volunteers",
+                          )
+                      )
+                  )
+                  print(
+                      "PAGE_PROBE",
+                      json.dumps(
+                          {
+                              "customPageId": page_id,
+                              "event_count": len(events),
+                              "sample_names": names,
+                              "cfb_like_sample_count": cfb_like,
+                          },
+                          sort_keys=True,
+                      ),
+                  )
+              except Exception as exc:
+                  print(
+                      "PAGE_PROBE",
+                      json.dumps(
+                          {
+                              "customPageId": page_id,
+                              "error": f"{type(exc).__name__}: {exc}"[:250],
+                          },
+                          sort_keys=True,
+                      ),
+                  )
+
           print("CFB_FANDUEL_DISCOVERY_GREEN")
           PY
