@@ -393,6 +393,50 @@ def _player_category_td(
     return None
 
 
+def _completed_rows(
+    team_id: str,
+    season: int,
+    cutoff: datetime,
+    excluded_event_id: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Completed current-season games without Step-11 opponent hydration."""
+    payload, attempts = deep.history_engine._fetch_team_schedule(
+        _clean(team_id),
+        int(season),
+    )
+    rows: list[dict[str, Any]] = []
+    for event in payload.get("events") or []:
+        if not isinstance(event, Mapping):
+            continue
+        row = deep.form_engine._event_row_with_opponent_record(
+            event,
+            _clean(team_id),
+        )
+        if not row:
+            continue
+        event_id = _clean(row.get("event_id"))
+        if excluded_event_id and event_id == _clean(excluded_event_id):
+            continue
+        dt = row.get("date_dt")
+        if not isinstance(dt, datetime):
+            continue
+        if dt >= cutoff or dt.year != int(season):
+            continue
+        comps = event.get("competitions") or []
+        comp = comps[0] if comps and isinstance(comps[0], Mapping) else {}
+        item = dict(row)
+        if comp.get("neutralSite") is True:
+            item["location"] = "neutral"
+        else:
+            item["location"] = _clean(item.get("home_away")).lower()
+        rows.append(item)
+    rows.sort(
+        key=lambda row: row.get("date_dt")
+        or datetime.min.replace(tzinfo=timezone.utc)
+    )
+    return rows, attempts
+
+
 @st.cache_data(ttl=900, show_spinner=False)
 def _live_defense(
     team_id: str,
@@ -401,7 +445,7 @@ def _live_defense(
     excluded_event_id: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     cutoff = _parse_dt(cutoff_iso) or datetime.max.replace(tzinfo=timezone.utc)
-    rows, hydration, attempts = deep._current_rows(
+    rows, attempts = _completed_rows(
         _clean(team_id),
         int(season),
         cutoff,
@@ -517,7 +561,6 @@ def _live_defense(
         "coverage": summary_games / len(rows) if rows else 0.0,
         "provider": "ESPN exact-event completed-game summaries",
         "events": event_rows,
-        "opponent_record_hydration": hydration,
         "attempts": attempts,
     }
 
@@ -613,32 +656,30 @@ def _sample_label(games: int) -> str:
     return f"CURRENT • {games} GAMES"
 
 
-def _raw_edge(
+def _comparison(
     offense_value: float | None,
     defense_value: float | None,
-) -> float | None:
+) -> tuple[float | None, str, str]:
+    """Describe production relative to current opponent allowance.
+
+    This is deliberately NOT called an edge. With tiny early-season samples
+    and cross-division matchups, raw values alone cannot establish true team
+    strength.
+    """
     if offense_value is None or defense_value is None:
-        return None
-    scale = max((abs(offense_value) + abs(defense_value)) / 2.0, 1.0)
-    return (offense_value - defense_value) / scale
-
-
-def _edge_label(
-    edge: float | None,
-    offense_team: str,
-    defense_team: str,
-) -> tuple[str, str]:
-    if edge is None:
-        return "DATA CHECK", "neutral"
-    if edge >= 0.25:
-        return f"{offense_team} OFFENSE EDGE", "offense-strong"
-    if edge >= 0.10:
-        return f"{offense_team} SLIGHT EDGE", "offense"
-    if edge <= -0.25:
-        return f"{defense_team} DEFENSE EDGE", "defense-strong"
-    if edge <= -0.10:
-        return f"{defense_team} SLIGHT EDGE", "defense"
-    return "CLOSE MATCHUP", "neutral"
+        return None, "DATA CHECK", "neutral"
+    delta = float(offense_value) - float(defense_value)
+    scale = max(abs(float(defense_value)), 1.0)
+    ratio = delta / scale
+    if ratio >= 0.25:
+        return delta, "ABOVE CURRENT ALLOWANCE", "above-strong"
+    if ratio >= 0.10:
+        return delta, "SLIGHTLY ABOVE ALLOWANCE", "above"
+    if ratio <= -0.25:
+        return delta, "BELOW CURRENT ALLOWANCE", "below-strong"
+    if ratio <= -0.10:
+        return delta, "SLIGHTLY BELOW ALLOWANCE", "below"
+    return delta, "NEAR CURRENT ALLOWANCE", "neutral"
 
 
 def _battle(
@@ -651,33 +692,38 @@ def _battle(
     defense = defense_team.get("defense") or {}
 
     rows: list[dict[str, Any]] = []
-    offense_edges = defense_edges = 0
+    above = below = 0
     for metric in _METRICS:
         off = _float(offense.get(metric["offense"]))
         allowed = _float(defense.get(metric["defense"]))
-        edge = _raw_edge(off, allowed)
-        label, cls = _edge_label(edge, offense_name, defense_name)
-        if cls.startswith("offense"):
-            offense_edges += 1
-        elif cls.startswith("defense"):
-            defense_edges += 1
+        delta, label, cls = _comparison(off, allowed)
+        if cls.startswith("above"):
+            above += 1
+        elif cls.startswith("below"):
+            below += 1
         rows.append({
             **metric,
             "offense_value": off,
             "defense_value": allowed,
-            "raw_edge": edge,
-            "edge_label": label,
-            "edge_class": cls,
+            "difference": delta,
+            "comparison_label": label,
+            "comparison_class": cls,
         })
 
-    if offense_edges >= defense_edges + 2:
-        summary = f"{offense_name} has the stronger raw matchup profile"
-        summary_class = "offense"
-    elif defense_edges >= offense_edges + 2:
-        summary = f"{defense_name} has the stronger raw matchup profile"
-        summary_class = "defense"
+    if above >= below + 2:
+        summary = (
+            f"{offense_name} is above {defense_name}'s current allowance "
+            f"in {above} of {len(rows)} displayed categories"
+        )
+        summary_class = "above"
+    elif below >= above + 2:
+        summary = (
+            f"{offense_name} is below {defense_name}'s current allowance "
+            f"in {below} of {len(rows)} displayed categories"
+        )
+        summary_class = "below"
     else:
-        summary = "Raw matchup is mixed"
+        summary = "Production vs allowance is mixed across the displayed categories"
         summary_class = "neutral"
 
     return {
@@ -688,8 +734,8 @@ def _battle(
         "offense_sample": _sample_label(int(offense_team.get("games") or 0)),
         "defense_sample": _sample_label(int(defense_team.get("games") or 0)),
         "rows": rows,
-        "offense_edges": offense_edges,
-        "defense_edges": defense_edges,
+        "above_allowance": above,
+        "below_allowance": below,
         "summary": summary,
         "summary_class": summary_class,
     }
@@ -785,7 +831,8 @@ __all__ = [
     "SNAPSHOT_PATH",
     "_METRICS",
     "_battle",
-    "_edge_label",
+    "_comparison",
+    "_completed_rows",
     "_live_defense",
     "_live_offense",
     "build_matchup_step3",
