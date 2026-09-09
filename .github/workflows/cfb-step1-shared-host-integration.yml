@@ -1,0 +1,44 @@
+name: CFB Step 1 shared-host integration
+
+on:
+  push:
+    branches:
+      - cfb-step1-shared-host-integration
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+
+jobs:
+  certify-shared-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install pytest
+      - name: Run focused CFB contract tests
+        run: python -m pytest -q sports_api/tests/test_cfb_markets_step1.py
+      - name: Compile shared-host CFB route
+        run: python -m py_compile sports_api/api/cfb_markets.py sports_api/api/health.py
+      - name: Verify shared-host route registration
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from fastapi.testclient import TestClient
+          from sports_api.main import app
+
+          with TestClient(app) as client:
+              health = client.get('/health')
+              assert health.status_code == 200, health.text
+              status = client.get('/api/v1/cfb/markets/status')
+              assert status.status_code == 200, status.text
+              body = status.json()
+              assert body['sport'] == 'college_football'
+              assert body['market_semantics']['projection_weight'] == 0.0
+              assert body['market_semantics']['market_context_only'] is True
+          PY
