@@ -1,0 +1,210 @@
+name: CFB O/U Upgrade Step 10 history
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [cfb-ou-upgrade-step10-history]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact additive Step 10 scope
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess,sys
+          actual=set(subprocess.check_output(["git","diff","--name-only","origin/main...HEAD"],text=True).splitlines())
+          expected={
+              ".github/workflows/cfb-over-under-upgrade-step10-history.yml",
+              "app.py",
+              "cfb_over_under_history_engine_v1.py",
+              "cfb_over_under_slate_v9.py",
+              "cfb_over_under_matchup_ui_v10.py",
+              "streamlit_memory_lazy_router_v50.py",
+              "tests/test_cfb_over_under_upgrade_step10_history_engine.py",
+              "tests/test_cfb_over_under_upgrade_step10_slate.py",
+              "tests/test_cfb_over_under_upgrade_step10_ui_router.py",
+          }
+          if actual!=expected:
+              print("expected",sorted(expected)); print("actual",sorted(actual)); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEP10_SCOPE=PASS")
+          PY
+
+      - name: Enforce original CFB, logo hotfixes, and Upgrade 1 through 9 freeze
+        run: |
+          python - <<'PY'
+          import json,pathlib,subprocess,sys
+          def rev(spec): return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          failures=[]
+          manifests=[
+              ("cfb_freeze_manifest_v12.json","3ff2a727967e80dddbe03f747d9f32090cc39539","original CFB"),
+              ("cfb_over_under_logo_hotfix_freeze_manifest_v4.json","b5b42535b0771a6e15d1f8581de325777f3c4177","logo V4"),
+              ("cfb_over_under_upgrade_freeze_manifest_v9.json","d95539a9dde4a51f31df197af1831fc870524480","O/U Upgrade Step 9"),
+          ]
+          for path,blob,label in manifests:
+              if rev(f"HEAD:{path}")!=blob: failures.append(f"{label} manifest changed")
+              manifest=json.loads(pathlib.Path(path).read_text())
+              for frozen,expected in (manifest.get("exact_blobs") or {}).items():
+                  try: actual=rev(f"HEAD:{frozen}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"missing frozen path: {frozen}"); continue
+                  if actual!=expected: failures.append(f"frozen path changed: {frozen}")
+          if failures:
+              print(*failures,sep="\n"); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEPS_1_9_FROZEN=PASS")
+          PY
+
+      - name: Compile Step 10
+        run: |
+          python - <<'PY'
+          import py_compile
+          for path in (
+              "app.py",
+              "cfb_over_under_history_engine_v1.py",
+              "cfb_over_under_slate_v9.py",
+              "cfb_over_under_matchup_ui_v10.py",
+              "streamlit_memory_lazy_router_v50.py",
+              "tests/test_cfb_over_under_upgrade_step10_history_engine.py",
+              "tests/test_cfb_over_under_upgrade_step10_slate.py",
+              "tests/test_cfb_over_under_upgrade_step10_ui_router.py",
+          ):
+              py_compile.compile(path,doraise=True)
+          print("CFB_OU_UPGRADE_STEP10_COMPILE=PASS")
+          PY
+          PYTHONPATH=. python -c "import cfb_over_under_history_engine_v1; import cfb_over_under_slate_v9; import cfb_over_under_matchup_ui_v10; import streamlit_memory_lazy_router_v50"
+
+      - name: Run Step 10 and inherited regressions
+        run: PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_upgrade_step10_history_engine.py tests/test_cfb_over_under_upgrade_step10_slate.py tests/test_cfb_over_under_upgrade_step10_ui_router.py tests/test_cfb_over_under_upgrade_step9_environment_engine.py tests/test_cfb_over_under_upgrade_step9_slate.py tests/test_cfb_over_under_upgrade_step9_ui_router.py tests/test_cfb_over_under_upgrade_step8_turnover_engine.py tests/test_cfb_over_under_upgrade_step8_slate.py tests/test_cfb_over_under_upgrade_step8_ui_router.py tests/test_cfb_over_under_upgrade_step7_third_down_engine.py tests/test_cfb_over_under_upgrade_step7_slate.py tests/test_cfb_over_under_upgrade_step7_ui_router.py tests/test_cfb_over_under_upgrade_step6_red_zone_engine.py tests/test_cfb_over_under_upgrade_step6_slate.py tests/test_cfb_over_under_upgrade_step6_ui_router.py tests/test_cfb_over_under_upgrade_step5_explosive_engine.py tests/test_cfb_over_under_upgrade_step5_slate.py tests/test_cfb_over_under_upgrade_step5_ui_router.py tests/test_cfb_over_under_upgrade_step4_pace_engine.py tests/test_cfb_over_under_upgrade_step4_slate.py tests/test_cfb_over_under_upgrade_step4_ui_router.py tests/test_cfb_over_under_upgrade_step3_engine.py tests/test_cfb_over_under_upgrade_step3_slate.py tests/test_cfb_over_under_upgrade_step3_ui.py tests/test_cfb_over_under_multisource_logo_resolver_v2.py tests/test_cfb_over_under_multisource_logo_hotfix_v4.py tests/test_cfb_over_under_logo_recursion_hotfix_v3.py
+
+      - name: Live Florida A&M at Miami Step 10 history
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_history_engine_v1 as hist
+          import cfb_over_under_slate_v9 as slate
+
+          hist.clear_history_engine_cache()
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          try: slate.analyze_game.clear()
+          except Exception: pass
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          engine=result.get("history_engine") or {}
+          raw=result.get("raw") or {}
+          step9=result.get("step9_raw") or {}
+          away=engine.get("away_recent") or {}
+          home=engine.get("home_recent") or {}
+          h2h=engine.get("head_to_head") or {}
+          print("HISTORY",json.dumps({
+              "away_id":engine.get("away_espn_team_id"),
+              "home_id":engine.get("home_espn_team_id"),
+              "away_recent":{k:away.get(k) for k in ("games","avg_points_for","avg_points_against","avg_combined_total","combined_total_sigma")},
+              "home_recent":{k:home.get(k) for k in ("games","avg_points_for","avg_points_against","avg_combined_total","combined_total_sigma")},
+              "h2h_meetings":h2h.get("meetings"),
+              "h2h_avg_total":h2h.get("avg_combined_total"),
+              "h2h_latest":h2h.get("latest"),
+              "coverage":engine.get("coverage"),
+          },indent=2,default=str))
+          if not engine.get("model_ready") or not raw.get("upgrade_step10_applied"):
+              raise SystemExit(f"Step 10 live history failed: {engine.get('reason')}")
+          if engine.get("away_espn_team_id")!="50" or engine.get("home_espn_team_id")!="2390":
+              raise SystemExit("Step 10 exact team identity failed")
+          if int(away.get("games") or 0)<3 or int(home.get("games") or 0)<3:
+              raise SystemExit("recent pre-kickoff sample is too small")
+          h2h_ids={str(row.get("event_id") or "") for row in (h2h.get("sample") or [])}
+          if "401635536" not in h2h_ids:
+              raise SystemExit("verified 2024 Florida A&M at Miami H2H missing")
+          cutoff=hist._target_cutoff(game)
+          for side in (away,home):
+              for row in side.get("sample") or []:
+                  dt=hist._parse_dt(row.get("date"))
+                  if dt is not None and dt>=cutoff:
+                      raise SystemExit("future/target game leaked into recent history")
+          for key in (
+              "projected_away_points","projected_home_points","projected_total",
+              "structural_total_sigma","over_probability","under_probability",
+              "push_probability","reliability","analysis_line",
+          ):
+              if step9.get(key)!=raw.get(key):
+                  raise SystemExit(f"Step 10 changed frozen Step 9 math: {key}")
+          if float(raw.get("projected_total_history_weight") or 0)!=0.0 or float(raw.get("analysis_line_history_weight") or 0)!=0.0 or float(raw.get("selection_history_weight") or 0)!=0.0:
+              raise SystemExit("Step 10 history weight firewall failed")
+          if raw.get("future_event_leakage_allowed") is not False:
+              raise SystemExit("future-event leakage firewall failed")
+          print("LIVE_FAMU_MIAMI_STEP10_HISTORY=PASS")
+          PY
+
+      - name: Live hero retains frozen stack and adds Step 10
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v9 as slate
+          import cfb_over_under_matchup_ui_v10 as ui
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          html=ui._hero_v10(game,result.get("away") or {},result.get("home") or {})
+          for token in ("TEAM LOGOS VERIFIED","UPGRADE STEP 4","UPGRADE STEP 5","UPGRADE STEP 6","UPGRADE STEP 7","UPGRADE STEP 8","UPGRADE STEP 9","UPGRADE STEP 10","CONTEXT ONLY • 0% MODEL WEIGHT"):
+              if token not in html: raise SystemExit(f"active Step 10 hero missing: {token}")
+          if "2024-09-" not in html or "65.0" not in html:
+              raise SystemExit("verified Florida A&M/Miami H2H context missing from hero")
+          print("LIVE_STEP10_HERO_STACK=PASS")
+          PY
+
+      - name: Prove Step 10 model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          combined="\n".join(Path(p).read_text(encoding="utf-8") for p in (
+              "cfb_over_under_history_engine_v1.py",
+              "cfb_over_under_slate_v9.py",
+              "cfb_over_under_matchup_ui_v10.py",
+              "streamlit_memory_lazy_router_v50.py",
+              "app.py",
+          ))
+          required=[
+              'FROZEN_STEP9_ENGINE = "cfb_over_under_environment_engine_v1"',
+              'PROJECTED_TOTAL_HISTORY_WEIGHT = 0.0',
+              'ANALYSIS_LINE_HISTORY_WEIGHT = 0.0',
+              'SELECTION_HISTORY_WEIGHT = 0.0',
+              'HISTORICAL_ROSTER_CONTINUITY_CERTIFIED = False',
+              'OPPONENT_STRENGTH_ADJUSTED_HISTORY = False',
+              '"future_event_leakage_allowed": False',
+              'FROZEN_UPGRADE = "cfb_over_under_matchup_ui_v9"',
+              'root._import("cfb_over_under_matchup_ui_v10")',
+              'FROZEN_ROUTER="streamlit_memory_lazy_router_v49"',
+              'from streamlit_memory_lazy_router_v50 import render_app',
+          ]
+          for token in required:
+              if token not in combined: raise SystemExit(f"missing Step 10 marker: {token}")
+          lower=combined.lower()
+          for token in ("sportsbook_api","np.random","import random","monte_carlo("):
+              if token in lower: raise SystemExit(f"Step 10 crossed model firewall: {token}")
+          print("CFB_OU_UPGRADE_STEP10_FIREWALL=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo CFB_OU_UPGRADE_STEP10_HISTORY_GREEN
