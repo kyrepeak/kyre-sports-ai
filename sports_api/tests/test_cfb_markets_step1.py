@@ -48,6 +48,20 @@ def test_status_route_declares_step1_contract(monkeypatch, tmp_path):
     assert body["market_semantics"]["market_context_only"] is True
 
 
+def test_shared_host_lifespan_starts_with_cfb_route(monkeypatch, tmp_path):
+    """Regression test for the Render startup recursion from nested router lifespans."""
+    monkeypatch.setenv("CFB_KYRE_MARKET_FEED_PATH", str(tmp_path / "cfb_market_feed.json"))
+    from sports_api.main import app as shared_host_app
+
+    with TestClient(shared_host_app) as client:
+        health = client.get("/health")
+        status = client.get("/api/v1/cfb/markets/status")
+
+    assert health.status_code == 200
+    assert status.status_code == 200
+    assert status.json()["market_semantics"]["projection_weight"] == 0.0
+
+
 def test_ingest_and_read_current_market(monkeypatch, tmp_path):
     feed_path = tmp_path / "cfb_market_feed.json"
     monkeypatch.setenv("CFB_KYRE_MARKET_FEED_PATH", str(feed_path))
