@@ -31,6 +31,7 @@ MAX_AGE_ENV = "CFB_MARKET_FEED_MAX_AGE_SECONDS"
 DEFAULT_FEED_PATH = "/var/lib/kyre-sports-api/cfb_market_feed.json"
 DEFAULT_MAX_AGE_SECONDS = 120.0
 MAX_MAX_AGE_SECONDS = 3600.0
+MAX_FUTURE_CAPTURE_SKEW_SECONDS = 60.0
 MAX_FEED_BYTES = 5_000_000
 _ALLOWED_LINE_STATUS = {"open", "active", "suspended", "closed", "final", "unknown"}
 
@@ -174,6 +175,9 @@ def _serialize_feed(validated: dict[str, Any]) -> bytes:
 
 
 def _store_validated_feed(validated: dict[str, Any]) -> Path:
+    # Refuse a materially future-dated snapshot before it can suppress automatic
+    # refreshes. A small bounded skew is tolerated for host clock differences.
+    _feed_age_seconds(validated)
     target = _feed_path()
     target.parent.mkdir(parents=True, exist_ok=True)
     raw = _serialize_feed(validated)
@@ -218,10 +222,14 @@ def _feed_age_seconds(feed: dict[str, Any], *, now: datetime | None = None) -> f
     captured = datetime.fromisoformat(
         str(feed["captured_at_utc"]).replace("Z", "+00:00")
     )
-    return max(
-        0.0,
-        (reference.astimezone(timezone.utc) - captured.astimezone(timezone.utc)).total_seconds(),
-    )
+    age = (
+        reference.astimezone(timezone.utc) - captured.astimezone(timezone.utc)
+    ).total_seconds()
+    if age < -MAX_FUTURE_CAPTURE_SKEW_SECONDS:
+        raise ValueError(
+            "captured_at_utc is implausibly in the future"
+        )
+    return max(0.0, age)
 
 
 def _refresh_from_fanduel() -> dict[str, Any]:
@@ -250,7 +258,9 @@ def _load_feed(*, force_refresh: bool = False) -> dict[str, Any]:
     try:
         cached = _read_cached_feed()
     except HTTPException as exc:
-        if exc.status_code == 404 and _auto_refresh_enabled():
+        # The cache is disposable. Missing, truncated, oversized, incompatible,
+        # or otherwise invalid cache state should self-heal from the live source.
+        if exc.status_code in {404, 500} and _auto_refresh_enabled():
             return _refresh_from_fanduel()
         raise
 
@@ -261,7 +271,12 @@ def _load_feed(*, force_refresh: bool = False) -> dict[str, Any]:
         max_age = _max_age_seconds()
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    if _feed_age_seconds(cached) <= max_age:
+    try:
+        age = _feed_age_seconds(cached)
+    except ValueError:
+        # Future-dated or otherwise invalid capture timing is not fresh.
+        return _refresh_from_fanduel()
+    if age <= max_age:
         return cached
     return _refresh_from_fanduel()
 
@@ -335,12 +350,10 @@ def status():
 @router.get("/current")
 def current(
     game_id: str | None = Query(default=None),
-    refresh: bool = Query(
-        default=False,
-        description="Force one fresh anonymous FanDuel NCAAF read before returning.",
-    ),
 ):
-    feed = _load_feed(force_refresh=refresh)
+    # Public callers use the bounded cache policy only. There is intentionally no
+    # public cache-bypass switch that can amplify outbound provider requests.
+    feed = _load_feed()
     if game_id is None:
         return feed
     matches = [row for row in feed["games"] if row["game_id"] == game_id]
@@ -410,6 +423,7 @@ __all__ = [
     "FEED_PATH_ENV",
     "INGEST_TOKEN_ENV",
     "MAX_FEED_BYTES",
+    "MAX_FUTURE_CAPTURE_SKEW_SECONDS",
     "SCHEMA_VERSION",
     "_feed_path",
     "_load_feed",
