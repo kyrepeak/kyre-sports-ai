@@ -105,6 +105,34 @@ def test_side_form_gates_low_record_coverage():
     assert out["opponent_record_coverage"] == 0.5
 
 
+
+
+def test_opponent_schedule_record_fallback_uses_only_pre_target_games(monkeypatch):
+    payload = {"events": [
+        _event("o1", "2026-08-29T20:00:00Z", team_id="900", opp_id="701", pf=24, pa=17, opp_record=None),
+        _event("o2", "2026-09-05T20:00:00Z", team_id="900", opp_id="702", pf=14, pa=21, opp_record=None),
+        _event("future", "2026-09-20T20:00:00Z", team_id="900", opp_id="703", pf=50, pa=0, opp_record=None),
+        _event("prior", "2025-09-01T20:00:00Z", team_id="900", opp_id="704", pf=50, pa=0, opp_record=None),
+    ]}
+    monkeypatch.setattr(form.history_engine, "_fetch_team_schedule", lambda team_id, season: (payload, []))
+    pct, games, _ = form._opponent_schedule_record_pct(
+        "900", 2026, form._parse_dt("2026-09-11T00:00:00Z")
+    )
+    assert games == 2
+    assert pct == 0.5
+
+    rows = [{
+        "event_id": "x", "opponent_id": "900", "points_for": 30.0,
+        "points_against": 20.0, "opponent_record_pct": None,
+    }]
+    hydrated, diag = form._hydrate_opponent_records(
+        rows, 2026, form._parse_dt("2026-09-11T00:00:00Z")
+    )
+    assert hydrated[0]["opponent_record_pct"] == 0.5
+    assert "completed games before target" in hydrated[0]["opponent_record_source"]
+    assert diag["fallback_requested"] == 1
+    assert diag["fallback_resolved"] == 1
+
 def test_build_engine_exact_ids_current_season_only(monkeypatch):
     away_payload = {"events": [
         _event("a1", "2026-08-29T20:00:00Z", team_id="50", opp_id="901", pf=28, pa=21, opp_record="3-1"),
