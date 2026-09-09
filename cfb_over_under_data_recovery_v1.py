@@ -542,33 +542,53 @@ class _TableParser(HTMLParser):
 
 
 @st.cache_data(ttl=21600, show_spinner=False)
-def _parse_markdown_game_rows(text: str, reversed_order: bool, url: str) -> list[dict[str, Any]]:
+def _parse_markdown_game_rows(
+    text: str,
+    reversed_order: bool,
+    url: str,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for line in str(text or "").splitlines():
         if "|" not in line:
             continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if len(cells) < 4:
+        cells = [
+            cell.strip()
+            for cell in line.strip().strip("|").split("|")
+        ]
+        if len(cells) < 5:
             continue
-        date = next(
-            (cell for cell in cells[:2] if re.fullmatch(r"\d{4}-\d{2}-\d{2}", cell)),
-            "",
-        )
+
+        date = ""
+        date_idx = -1
+        for idx, cell in enumerate(cells[:3]):
+            match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", cell)
+            if match:
+                date = match.group(1)
+                date_idx = idx
+                break
         if not date:
             continue
+
+        # Winsipedia's reader output can prepend a linked "view game details"
+        # cell. Score cells contain many numbers inside image URLs, so only
+        # accept an integer that appears at the END of a cell.
         scores: list[int] = []
-        for cell in cells[2:4]:
-            found = re.findall(r"\b(\d{1,3})\b", cell)
-            if not found:
+        for cell in cells[date_idx + 1:]:
+            match = re.search(r"(?:^|\s)(\d{1,3})\s*$", cell)
+            if not match:
+                continue
+            scores.append(int(match.group(1)))
+            if len(scores) == 2:
                 break
-            scores.append(int(found[-1]))
         if len(scores) != 2:
             continue
+
         first_points, second_points = scores
         if reversed_order:
             away_points, home_points = second_points, first_points
         else:
             away_points, home_points = first_points, second_points
+
         rows.append({
             "date": date,
             "away_points": away_points,
