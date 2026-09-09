@@ -228,5 +228,46 @@ jobs:
           for row in discovered[:20]:
               print("TOTAL_MARKET_PROBE", json.dumps(row, sort_keys=True)[:4000])
 
+          # Check whether the NCAAF landing already contains Total Points markets
+          # for all game events, which lets production refresh in one public GET.
+          landing_markets_raw = attachments.get("markets") if isinstance(attachments, dict) else None
+          landing_markets = rows(landing_markets_raw)
+          total_points = []
+          for market in landing_markets:
+              name = str(market.get("marketName") or market.get("name") or market.get("displayName") or "")
+              if name != "Total Points":
+                  continue
+              event_ref = str(
+                  market.get("eventId")
+                  or market.get("eventID")
+                  or market.get("event_id")
+                  or ""
+              ).strip()
+              runner_rows = rows(market.get("runners"))
+              total_points.append({
+                  "market_id": market.get("marketId") or market.get("_attachment_key"),
+                  "event_id": event_ref,
+                  "status": market.get("marketStatus") or market.get("status"),
+                  "inPlay": market.get("inPlay"),
+                  "runner_count": len(runner_rows),
+                  "handicaps": [r.get("handicap") for r in runner_rows[:2]],
+                  "roles": [
+                      (r.get("result") or {}).get("type") if isinstance(r.get("result"), dict) else None
+                      for r in runner_rows[:2]
+                  ],
+              })
+          print(
+              "LANDING_MARKET_COVERAGE",
+              json.dumps(
+                  {
+                      "landing_market_count": len(landing_markets),
+                      "total_points_market_count": len(total_points),
+                      "matchup_event_count": len(matchup_events),
+                      "total_points_sample": total_points[:8],
+                  },
+                  sort_keys=True,
+              )[:10000],
+          )
+
           print("CFB_FANDUEL_DISCOVERY_GREEN")
           PY
