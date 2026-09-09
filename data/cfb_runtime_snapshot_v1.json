@@ -1,13 +1,17 @@
 {
   "version": 1,
-  "generated_at": "2026-09-09T04:50:00Z",
-  "purpose": "Bootstrap current-data fallback when a deployed Streamlit runtime cannot reach one or more live providers. Scheduled refresh replaces/extends this snapshot.",
+  "generated_at": "2026-09-09T05:09:37Z",
+  "purpose": "Current-data fallback for deployed Streamlit runtimes. Auto-refreshed only when substantive game data changes.",
+  "window": {
+    "start": "2026-09-08",
+    "end": "2026-09-15"
+  },
   "games": [
     {
       "event_id": "401858213",
       "game_date": "2026-09-10",
       "away_team": "Florida A&M",
-      "home_team": "Miami (FL)",
+      "home_team": "Miami",
       "venue": "Hard Rock Stadium",
       "broadcast": "ACC Network",
       "status": "Scheduled",
@@ -17,10 +21,10 @@
         "record_text": "1-1",
         "conference_record_text": "0-0",
         "home_record": {
-          "wins": 1,
+          "wins": 0,
           "losses": 0,
           "ties": 0,
-          "games": 1
+          "games": 0
         },
         "away_record": {
           "wins": 0,
@@ -30,19 +34,19 @@
         },
         "neutral_record": {
           "wins": 0,
-          "losses": 1,
+          "losses": 0,
           "ties": 0,
-          "games": 1
+          "games": 0
         },
-        "recent_form": "WL",
-        "ppg": 16.5,
-        "points_allowed_pg": 19,
-        "point_diff_pg": -2.5,
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
         "head_coach": "Quinn Gray Sr.",
-        "division_context": "FCS",
         "ap_rank": null,
         "coaches_poll_rank": null,
-        "cfp_rank": null
+        "cfp_rank": null,
+        "completed_games": []
       },
       "home": {
         "team_id": "2390",
@@ -55,10 +59,10 @@
           "games": 0
         },
         "away_record": {
-          "wins": 1,
+          "wins": 0,
           "losses": 0,
           "ties": 0,
-          "games": 1
+          "games": 0
         },
         "neutral_record": {
           "wins": 0,
@@ -66,21 +70,6735 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "W",
-        "ppg": 45,
-        "points_allowed_pg": 6,
-        "point_diff_pg": 39,
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
         "head_coach": "Mario Cristobal",
-        "division_context": "FBS",
         "ap_rank": 7,
         "coaches_poll_rank": 7,
-        "cfp_rank": null
+        "cfp_rank": null,
+        "completed_games": []
       },
       "sources": [
-        "Miami Athletics 2026 football schedule",
-        "Florida A&M Athletics 2026 football schedule",
-        "Miami Athletics game-time release",
-        "ESPN current event/team feeds (certified in GitHub Actions)"
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856678",
+      "game_date": "2026-09-11",
+      "away_team": "Missouri",
+      "home_team": "Kansas",
+      "venue": "David Booth Kansas Memorial Stadium",
+      "broadcast": "FOX",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "142",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Eliah Drinkwitz",
+        "ap_rank": 23,
+        "coaches_poll_rank": 23,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2305",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Lance Leipold",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858214",
+      "game_date": "2026-09-11",
+      "away_team": "Rutgers",
+      "home_team": "Boston College",
+      "venue": "Alumni Stadium (Chestnut Hill, MA)",
+      "broadcast": "ESPN2",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "164",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Greg Schiano",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "103",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Bill O'Brien",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858215",
+      "game_date": "2026-09-11",
+      "away_team": "Villanova",
+      "home_team": "Louisville",
+      "venue": "L&N Federal Credit Union Stadium",
+      "broadcast": "ACC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "222",
+        "record_text": "1-1",
+        "conference_record_text": "1-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mark Ferrante",
+        "ap_rank": null,
+        "coaches_poll_rank": 18,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "97",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jeff Brohm",
+        "ap_rank": 24,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858220",
+      "game_date": "2026-09-11",
+      "away_team": "Norfolk State",
+      "home_team": "Virginia",
+      "venue": "Scott Stadium",
+      "broadcast": "ACCNX",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2450",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mike Vick",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "258",
+        "record_text": "1-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tony Elliott",
+        "ap_rank": 25,
+        "coaches_poll_rank": 25,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858222",
+      "game_date": "2026-09-11",
+      "away_team": "Richmond",
+      "home_team": "NC State",
+      "venue": "Carter-Finley Stadium",
+      "broadcast": "ESPNU",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "257",
+        "record_text": "2-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Russ Huesman",
+        "ap_rank": null,
+        "coaches_poll_rank": 21,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "152",
+        "record_text": "0-1",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dave Doeren",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856670",
+      "game_date": "2026-09-12",
+      "away_team": "Arkansas",
+      "home_team": "Utah",
+      "venue": "Rice-Eccles Stadium",
+      "broadcast": "ESPN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "8",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ryan Silverfield",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "254",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Morgan Scalley",
+        "ap_rank": 20,
+        "coaches_poll_rank": 20,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856671",
+      "game_date": "2026-09-12",
+      "away_team": "Southern Miss",
+      "home_team": "Auburn",
+      "venue": "Jordan-Hare Stadium",
+      "broadcast": "SEC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2572",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Blake Anderson",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Alex Golesh",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856672",
+      "game_date": "2026-09-12",
+      "away_team": "Campbell",
+      "home_team": "Florida",
+      "venue": "Ben Hill Griffin Stadium",
+      "broadcast": "SECN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2097",
+        "record_text": "2-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Braxton Harris",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "57",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jon Sumrall",
+        "ap_rank": null,
+        "coaches_poll_rank": 25,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856673",
+      "game_date": "2026-09-12",
+      "away_team": "Western Kentucky",
+      "home_team": "Georgia",
+      "venue": "Sanford Stadium",
+      "broadcast": "SEC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "98",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tyson Helton",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "61",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kirby Smart",
+        "ap_rank": 2,
+        "coaches_poll_rank": 2,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856674",
+      "game_date": "2026-09-12",
+      "away_team": "Alabama",
+      "home_team": "Kentucky",
+      "venue": "Kroger Field",
+      "broadcast": "ABC, Disney+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "333",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kalen DeBoer",
+        "ap_rank": 12,
+        "coaches_poll_rank": 12,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "96",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Will Stein",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856676",
+      "game_date": "2026-09-12",
+      "away_team": "Charlotte",
+      "home_team": "Ole Miss",
+      "venue": "Vaught-Hemingway Stadium",
+      "broadcast": "ESPN2",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2429",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tim Albin",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "145",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Pete Golding",
+        "ap_rank": 9,
+        "coaches_poll_rank": 11,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856677",
+      "game_date": "2026-09-12",
+      "away_team": "Mississippi State",
+      "home_team": "Minnesota",
+      "venue": "Huntington Bank Stadium",
+      "broadcast": "CBS",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "344",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jeff Lebby",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "135",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "P.J. Fleck",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856679",
+      "game_date": "2026-09-12",
+      "away_team": "Oklahoma",
+      "home_team": "Michigan",
+      "venue": "Michigan Stadium",
+      "broadcast": "FOX",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "201",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Brent Venables",
+        "ap_rank": 11,
+        "coaches_poll_rank": 10,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "130",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kyle Whittingham",
+        "ap_rank": null,
+        "coaches_poll_rank": 24,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856680",
+      "game_date": "2026-09-12",
+      "away_team": "Towson",
+      "home_team": "South Carolina",
+      "venue": "Williams-Brice Stadium",
+      "broadcast": "SECN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "119",
+        "record_text": "0-2",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Pete Shinnick",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2579",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Shane Beamer",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856681",
+      "game_date": "2026-09-12",
+      "away_team": "Tennessee",
+      "home_team": "Georgia Tech",
+      "venue": "Bobby Dodd Stadium",
+      "broadcast": "ESPN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2633",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Josh Heupel",
+        "ap_rank": 18,
+        "coaches_poll_rank": 18,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "59",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Brent Key",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856682",
+      "game_date": "2026-09-12",
+      "away_team": "Ohio State",
+      "home_team": "Texas",
+      "venue": "DKR-Texas Memorial Stadium",
+      "broadcast": "ABC",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "194",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ryan Day",
+        "ap_rank": 1,
+        "coaches_poll_rank": 1,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "251",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Steve Sarkisian",
+        "ap_rank": 4,
+        "coaches_poll_rank": 3,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856683",
+      "game_date": "2026-09-12",
+      "away_team": "Arizona State",
+      "home_team": "Texas A&M",
+      "venue": "Kyle Field",
+      "broadcast": "ABC",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "9",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kenny Dillingham",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "245",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mike Elko",
+        "ap_rank": 10,
+        "coaches_poll_rank": 9,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856684",
+      "game_date": "2026-09-12",
+      "away_team": "Delaware",
+      "home_team": "Vanderbilt",
+      "venue": "FirstBank Stadium",
+      "broadcast": "SEC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "48",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ryan Carty",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "238",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Clark Lea",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856781",
+      "game_date": "2026-09-12",
+      "away_team": "Washington State",
+      "home_team": "Kansas State",
+      "venue": "Bill Snyder Family Stadium",
+      "broadcast": "TNT",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "265",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kirby Moore",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2306",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Collin Klein",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856782",
+      "game_date": "2026-09-12",
+      "away_team": "Oregon",
+      "home_team": "Oklahoma State",
+      "venue": "Boone Pickens Stadium",
+      "broadcast": "ESPN, Disney+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2483",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dan Lanning",
+        "ap_rank": 6,
+        "coaches_poll_rank": 6,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "197",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Eric Morris",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856783",
+      "game_date": "2026-09-12",
+      "away_team": "Texas Tech",
+      "home_team": "Oregon State",
+      "venue": "Reser Stadium",
+      "broadcast": "CBS",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2641",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Joey McGuire",
+        "ap_rank": 13,
+        "coaches_poll_rank": 13,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "204",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jamarcus Shephard",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856784",
+      "game_date": "2026-09-12",
+      "away_team": "Prairie View A&M",
+      "home_team": "Baylor",
+      "venue": "McLane Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2504",
+        "record_text": "1-1",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tremaine Jackson",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "239",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dave Aranda",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856785",
+      "game_date": "2026-09-12",
+      "away_team": "Weber State",
+      "home_team": "Colorado",
+      "venue": "Folsom Field",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2692",
+        "record_text": "1-1",
+        "conference_record_text": "1-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Eric Kjar",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "38",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Deion Sanders",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856786",
+      "game_date": "2026-09-12",
+      "away_team": "Western Carolina",
+      "home_team": "Cincinnati",
+      "venue": "Nippert Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2717",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kerwin Bell",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2132",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Scott Satterfield",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856787",
+      "game_date": "2026-09-12",
+      "away_team": "Southern",
+      "home_team": "Houston",
+      "venue": "TDECU Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2582",
+        "record_text": "1-1",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Marshall Faulk",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "248",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Willie Fritz",
+        "ap_rank": 22,
+        "coaches_poll_rank": 22,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856788",
+      "game_date": "2026-09-12",
+      "away_team": "Iowa State",
+      "home_team": "Iowa",
+      "venue": "Kinnick Stadium",
+      "broadcast": "NBC",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "66",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jimmy Rogers",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2294",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kirk Ferentz",
+        "ap_rank": 21,
+        "coaches_poll_rank": 21,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856789",
+      "game_date": "2026-09-12",
+      "away_team": "Grambling",
+      "home_team": "TCU",
+      "venue": "Amon G. Carter Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2755",
+        "record_text": "2-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mickey Joseph",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2628",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Sonny Dykes",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856790",
+      "game_date": "2026-09-12",
+      "away_team": "UCF",
+      "home_team": "Pittsburgh",
+      "venue": "Acrisure Stadium",
+      "broadcast": "ESPN2",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2116",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Scott Frost",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "221",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Pat Narduzzi",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856791",
+      "game_date": "2026-09-12",
+      "away_team": "UT Martin",
+      "home_team": "West Virginia",
+      "venue": "Milan Puskar Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2630",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jason Simpson",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "277",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Rich Rodriguez",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401856810",
+      "game_date": "2026-09-12",
+      "away_team": "Arizona",
+      "home_team": "BYU",
+      "venue": "LaVell Edwards Stadium",
+      "broadcast": "FOX",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "12",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Brent Brennan",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "252",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Kalani Sitake",
+        "ap_rank": 15,
+        "coaches_poll_rank": 15,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858216",
+      "game_date": "2026-09-12",
+      "away_team": "California",
+      "home_team": "Syracuse",
+      "venue": "JMA Wireless Dome",
+      "broadcast": "ACC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "25",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tosh Lupoi",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "183",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Fran Brown",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858217",
+      "game_date": "2026-09-12",
+      "away_team": "Duke",
+      "home_team": "Illinois",
+      "venue": "Gies Memorial Stadium",
+      "broadcast": "FS1",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "150",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Manny Diaz",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "356",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Bret Bielema",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858218",
+      "game_date": "2026-09-12",
+      "away_team": "East Tennessee State",
+      "home_team": "North Carolina",
+      "venue": "Kenan Stadium",
+      "broadcast": "ACC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2193",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Will Healy",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "153",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Bill Belichick",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858219",
+      "game_date": "2026-09-12",
+      "away_team": "Georgia Southern",
+      "home_team": "Clemson",
+      "venue": "Memorial Stadium (Clemson, SC)",
+      "broadcast": "ACC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "290",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Clay Helton",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "228",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dabo Swinney",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858221",
+      "game_date": "2026-09-12",
+      "away_team": "Old Dominion",
+      "home_team": "Virginia Tech",
+      "venue": "Lane Stadium",
+      "broadcast": "CW",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "295",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ricky Rahne",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "259",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "James Franklin",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858223",
+      "game_date": "2026-09-12",
+      "away_team": "UC Davis",
+      "home_team": "SMU",
+      "venue": "Gerald J. Ford Stadium",
+      "broadcast": "ACCNX",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "302",
+        "record_text": "2-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tim Plough",
+        "ap_rank": null,
+        "coaches_poll_rank": 6,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2567",
+        "record_text": "1-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Rhett Lashlee",
+        "ap_rank": 17,
+        "coaches_poll_rank": 17,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858224",
+      "game_date": "2026-09-12",
+      "away_team": "Wake Forest",
+      "home_team": "Purdue",
+      "venue": "Ross-Ade Stadium",
+      "broadcast": "FS1",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "154",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jake Dickert",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2509",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Barry Odom",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858439",
+      "game_date": "2026-09-12",
+      "away_team": "Howard",
+      "home_team": "Indiana",
+      "venue": "Memorial Stadium (Bloomington, IN)",
+      "broadcast": "BTN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "47",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ted White",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "84",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Curt Cignetti",
+        "ap_rank": 5,
+        "coaches_poll_rank": 5,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858440",
+      "game_date": "2026-09-12",
+      "away_team": "Eastern Michigan",
+      "home_team": "Michigan State",
+      "venue": "Spartan Stadium",
+      "broadcast": "BTN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2199",
+        "record_text": "1-1",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Chris Creighton",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "127",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Pat Fitzgerald",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858441",
+      "game_date": "2026-09-12",
+      "away_team": "Bowling Green",
+      "home_team": "Nebraska",
+      "venue": "Memorial Stadium (Lincoln, NE)",
+      "broadcast": "FS1",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "189",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Eddie George",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "158",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Matt Rhule",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858442",
+      "game_date": "2026-09-12",
+      "away_team": "Penn State",
+      "home_team": "Temple",
+      "venue": "Lincoln Financial Field",
+      "broadcast": "ESPN2",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "213",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Matt Campbell",
+        "ap_rank": 16,
+        "coaches_poll_rank": 16,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "218",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "K.C. Keeler",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858443",
+      "game_date": "2026-09-12",
+      "away_team": "San Diego State",
+      "home_team": "UCLA",
+      "venue": "Rose Bowl",
+      "broadcast": "BTN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "21",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Sean Lewis",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "26",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Bob Chesney",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858444",
+      "game_date": "2026-09-12",
+      "away_team": "Maryland",
+      "home_team": "UConn",
+      "venue": "Pratt & Whitney Stadium",
+      "broadcast": "CBSSN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "120",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mike Locksley",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "41",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jason Candle",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858445",
+      "game_date": "2026-09-12",
+      "away_team": "Louisiana",
+      "home_team": "USC",
+      "venue": "Los Angeles Memorial Coliseum",
+      "broadcast": "BTN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "309",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Michael Desormeaux",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "30",
+        "record_text": "2-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Lincoln Riley",
+        "ap_rank": 14,
+        "coaches_poll_rank": 14,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858446",
+      "game_date": "2026-09-12",
+      "away_team": "Utah State",
+      "home_team": "Washington",
+      "venue": "Husky Stadium",
+      "broadcast": "BTN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "328",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Bronco Mendenhall",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "264",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jedd Fisch",
+        "ap_rank": 19,
+        "coaches_poll_rank": 19,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401858447",
+      "game_date": "2026-09-12",
+      "away_team": "Western Illinois",
+      "home_team": "Wisconsin",
+      "venue": "Camp Randall Stadium",
+      "broadcast": "BTN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2710",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Joe Davis",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "275",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Luke Fickell",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401859184",
+      "game_date": "2026-09-12",
+      "away_team": "Rice",
+      "home_team": "Notre Dame",
+      "venue": "Notre Dame Stadium",
+      "broadcast": "NBC",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "242",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Scott Abell",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "87",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Marcus Freeman",
+        "ap_rank": 3,
+        "coaches_poll_rank": 4,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401860881",
+      "game_date": "2026-09-12",
+      "away_team": "Memphis",
+      "home_team": "Boise State",
+      "venue": "Albertsons Stadium",
+      "broadcast": "USA Net",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "235",
+        "record_text": "2-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Charles Huff",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "68",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Spencer Danielson",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401860882",
+      "game_date": "2026-09-12",
+      "away_team": "Southern Utah",
+      "home_team": "Colorado State",
+      "venue": "Canvas Stadium",
+      "broadcast": "CBSSN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "253",
+        "record_text": "1-1",
+        "conference_record_text": "1-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "DeLane Fitzgerald",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "36",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jim Mora",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401860883",
+      "game_date": "2026-09-12",
+      "away_team": "Sacramento State",
+      "home_team": "Fresno State",
+      "venue": "Valley Children's Stadium",
+      "broadcast": "CBSSN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "16",
+        "record_text": "1-1",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Alonzo Carter",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "278",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Matt Entz",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401860884",
+      "game_date": "2026-09-12",
+      "away_team": "UTSA",
+      "home_team": "Texas State",
+      "venue": "UFCU Stadium",
+      "broadcast": "CW",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2636",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jeff Traylor",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "326",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "GJ Kinne",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401862702",
+      "game_date": "2026-09-12",
+      "away_team": "South Florida",
+      "home_team": "Army",
+      "venue": "Michie Stadium",
+      "broadcast": "CBSSN",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "58",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Brian Hartline",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "349",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jeff Monken",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401862703",
+      "game_date": "2026-09-12",
+      "away_team": "Navy",
+      "home_team": "Florida Atlantic",
+      "venue": "Flagler Credit Union Stadium",
+      "broadcast": "ESPNU",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2426",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Brian Newberry",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2226",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Zach Kittley",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401862705",
+      "game_date": "2026-09-12",
+      "away_team": "UNLV",
+      "home_team": "North Texas",
+      "venue": "DATCU Stadium",
+      "broadcast": "ESPNU",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2439",
+        "record_text": "1-1",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dan Mullen",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "249",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Neal Brown",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401862707",
+      "game_date": "2026-09-12",
+      "away_team": "Tulsa",
+      "home_team": "Sam Houston",
+      "venue": "Elliott T. Bowers Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "202",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tre Lamb",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2534",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Phil Longo",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401862708",
+      "game_date": "2026-09-12",
+      "away_team": "UL Monroe",
+      "home_team": "UAB",
+      "venue": "Protective Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2433",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Bryant Vincent",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "5",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Alex Mortensen",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864500",
+      "game_date": "2026-09-12",
+      "away_team": "Montana State",
+      "home_team": "Nevada",
+      "venue": "Mackay Stadium",
+      "broadcast": "CW",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "147",
+        "record_text": "2-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Brent Vigen",
+        "ap_rank": null,
+        "coaches_poll_rank": 1,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2440",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jeff Choate",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864502",
+      "game_date": "2026-09-12",
+      "away_team": "North Dakota State",
+      "home_team": "Air Force",
+      "venue": "Falcon Stadium",
+      "broadcast": "FS1",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2449",
+        "record_text": "2-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tim Polasek",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2005",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Troy Calhoun",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864503",
+      "game_date": "2026-09-12",
+      "away_team": "Illinois State",
+      "home_team": "Northern Illinois",
+      "venue": "Huskie Stadium",
+      "broadcast": "MW+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2287",
+        "record_text": "2-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Brock Spack",
+        "ap_rank": null,
+        "coaches_poll_rank": 4,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2459",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Rob Harley",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864504",
+      "game_date": "2026-09-12",
+      "away_team": "Cal Poly",
+      "home_team": "San Jos\u00e9 State",
+      "venue": "CEFCU Stadium",
+      "broadcast": "MW+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "13",
+        "record_text": "2-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tim Skipper",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "23",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ken Niumatalolo",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864505",
+      "game_date": "2026-09-12",
+      "away_team": "Texas Southern",
+      "home_team": "UTEP",
+      "venue": "Sun Bowl",
+      "broadcast": "MW+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2640",
+        "record_text": "1-1",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Cris Dishman",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2638",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Scotty Walden",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864506",
+      "game_date": "2026-09-12",
+      "away_team": "Northern Colorado",
+      "home_team": "Wyoming",
+      "venue": "War Memorial Stadium",
+      "broadcast": "MW+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2458",
+        "record_text": "0-2",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ed Lamb",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2751",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jay Sawvel",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864571",
+      "game_date": "2026-09-12",
+      "away_team": "App State",
+      "home_team": "East Carolina",
+      "venue": "Dowdy-Ficklen Stadium",
+      "broadcast": "ESPNU",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2026",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dowell Loggains",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "151",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Blake Harrell",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864575",
+      "game_date": "2026-09-12",
+      "away_team": "South Alabama",
+      "home_team": "Tulane",
+      "venue": "Yulman Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "6",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Major Applewhite",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2655",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Will Hall",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401864578",
+      "game_date": "2026-09-12",
+      "away_team": "New Mexico State",
+      "home_team": "Hawai'i",
+      "venue": "Clarence T.C. Ching Athletics Complex",
+      "broadcast": "MW+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "166",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tony Sanchez",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "62",
+        "record_text": "0-2",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Timmy Chang",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401865252",
+      "game_date": "2026-09-12",
+      "away_team": "Mercyhurst",
+      "home_team": "New Mexico",
+      "venue": "University Stadium (NM)",
+      "broadcast": "MW+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2385",
+        "record_text": "0-2",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "167",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jason Eck",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866412",
+      "game_date": "2026-09-12",
+      "away_team": "Robert Morris",
+      "home_team": "Akron",
+      "venue": "InfoCision Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2523",
+        "record_text": "2-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Bernard Clark Jr.",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2006",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Joe Moorhead",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866413",
+      "game_date": "2026-09-12",
+      "away_team": "Stony Brook",
+      "home_team": "Ball State",
+      "venue": "Scheumann Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2619",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Billy Cosh",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2050",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mike Uremovich",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866414",
+      "game_date": "2026-09-12",
+      "away_team": "Buffalo",
+      "home_team": "Florida International",
+      "venue": "Pitbull Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2084",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Pete Lembo",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2229",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Willie Simmons",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866415",
+      "game_date": "2026-09-12",
+      "away_team": "Colgate",
+      "home_team": "Central Michigan",
+      "venue": "Kelly/Shorts Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2142",
+        "record_text": "2-0",
+        "conference_record_text": "2-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Curt Fitzpatrick",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2117",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Matt Drinkall",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866416",
+      "game_date": "2026-09-12",
+      "away_team": "Wofford",
+      "home_team": "Kent State",
+      "venue": "Zoeller Field at Dix Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2747",
+        "record_text": "2-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Shawn Watson",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2309",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mark Carney",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866417",
+      "game_date": "2026-09-12",
+      "away_team": "Holy Cross",
+      "home_team": "Miami (OH)",
+      "venue": "Yager Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "107",
+        "record_text": "0-2",
+        "conference_record_text": "0-2",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dan Curran",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "193",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Chuck Martin",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866418",
+      "game_date": "2026-09-12",
+      "away_team": "Jacksonville State",
+      "home_team": "Ohio",
+      "venue": "Peden Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "55",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Charles Kelly",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "195",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "John Hauser",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866419",
+      "game_date": "2026-09-12",
+      "away_team": "Central Connecticut",
+      "home_team": "Toledo",
+      "venue": "Glass Bowl",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2115",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Adam Lechtenberg",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2649",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mike Jacobs",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866420",
+      "game_date": "2026-09-12",
+      "away_team": "Sacred Heart",
+      "home_team": "Massachusetts",
+      "venue": "Warren McGuirk Alumni Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2529",
+        "record_text": "0-1",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Mark Nofri",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "113",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Joe Harasymiak",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401866421",
+      "game_date": "2026-09-12",
+      "away_team": "Monmouth",
+      "home_team": "Western Michigan",
+      "venue": "Waldo Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2405",
+        "record_text": "1-1",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jeff Gallo",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2711",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Lance Taylor",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401867796",
+      "game_date": "2026-09-12",
+      "away_team": "Louisiana Tech",
+      "home_team": "LSU",
+      "venue": "Tiger Stadium (LA)",
+      "broadcast": "SECN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2348",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Sonny Cumbie",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "99",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Lane Kiffin",
+        "ap_rank": 8,
+        "coaches_poll_rank": 8,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401867929",
+      "game_date": "2026-09-12",
+      "away_team": "Wagner",
+      "home_team": "James Madison",
+      "venue": "Bridgeforth Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2681",
+        "record_text": "1-1",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tom Masella",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "256",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Billy Napier",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401868008",
+      "game_date": "2026-09-12",
+      "away_team": "Fordham",
+      "home_team": "Coastal Carolina",
+      "venue": "Brooks Stadium (SC)",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2230",
+        "record_text": "0-2",
+        "conference_record_text": "0-1",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Joe Conlin",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "324",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Ryan Beard",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401868187",
+      "game_date": "2026-09-12",
+      "away_team": "Gardner-Webb",
+      "home_team": "Liberty",
+      "venue": "Williams Stadium (VA)",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2241",
+        "record_text": "0-2",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2335",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jamey Chadwell",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401868241",
+      "game_date": "2026-09-12",
+      "away_team": "West Georgia",
+      "home_team": "Arkansas State",
+      "venue": "Centennial Bank Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2698",
+        "record_text": "0-2",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Steve Englehart",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2032",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Butch Jones",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401868326",
+      "game_date": "2026-09-12",
+      "away_team": "Alabama State",
+      "home_team": "Troy",
+      "venue": "Veterans Memorial Stadium (AL)",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2011",
+        "record_text": "2-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Eddie Robinson Jr.",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2653",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Gerad Parker",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401869955",
+      "game_date": "2026-09-12",
+      "away_team": "Georgia State",
+      "home_team": "Kennesaw State",
+      "venue": "Walens Family Field at Fifth Third Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2247",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Dell McGee",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "338",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jerry Mack",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401871045",
+      "game_date": "2026-09-12",
+      "away_team": "Middle Tennessee",
+      "home_team": "Marshall",
+      "venue": "Joan C. Edwards Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2393",
+        "record_text": "1-0",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Derek Mason",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "276",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Tony Gibson",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
+      ]
+    },
+    {
+      "event_id": "401871046",
+      "game_date": "2026-09-12",
+      "away_team": "Lindenwood",
+      "home_team": "Missouri State",
+      "venue": "Robert W. Plaster Stadium",
+      "broadcast": "ESPN+",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "2815",
+        "record_text": "1-1",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Jed Stugart",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "home": {
+        "team_id": "2623",
+        "record_text": "0-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "\u2014",
+        "ppg": null,
+        "points_allowed_pg": null,
+        "point_diff_pg": null,
+        "head_coach": "Casey Woods",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null,
+        "completed_games": []
+      },
+      "sources": [
+        "ESPN college-football scoreboard",
+        "ESPN current team schedules",
+        "ESPN Core current coaches and polls"
       ]
     }
   ]
