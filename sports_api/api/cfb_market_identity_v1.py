@@ -1,15 +1,15 @@
 """College Football market identity reconciliation — odds integration Step 2.
 
-This layer attaches provider market rows from Step 1 to the already-verified
-College Football runtime game identities. It is intentionally market-context
-only: sportsbook data never changes projection math and remains 0% model weight.
+This layer attaches provider market rows from Step 1 to verified College
+Football game identities. Sportsbook data is market context only and carries
+0% projection weight.
 
-Matching policy:
-- official identity comes from the verified runtime snapshot;
-- event date must match in America/New_York;
-- both away and home school names must pass deterministic normalization;
-- ambiguous candidates fail closed;
-- no synthetic official IDs are created.
+Identity sources:
+- preferred: the verified CFB runtime snapshot when it exists on the host;
+- production fallback: ESPN's CFB scoreboard for the exact market dates.
+
+Matching is deterministic and fail-closed. No synthetic game IDs are created
+and no fuzzy/name-only cross-date guess is allowed.
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from typing import Any, Mapping
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
+import httpx
 
 from sports_api.api.cfb_markets import _load_feed
 
@@ -33,8 +34,13 @@ SNAPSHOT_PATH_ENV = "CFB_VERIFIED_SNAPSHOT_PATH"
 DEFAULT_SNAPSHOT_PATH = (
     Path(__file__).resolve().parents[2] / "data" / "cfb_runtime_snapshot_v1.json"
 )
+ESPN_SCOREBOARD_URL = (
+    "https://site.api.espn.com/apis/site/v2/sports/football/"
+    "college-football/scoreboard"
+)
 MATCH_THRESHOLD = 0.88
 AMBIGUITY_MARGIN = 0.08
+_HTTP_TIMEOUT = 12.0
 _ET = ZoneInfo("America/New_York")
 
 _GENERIC_TOKENS = {
@@ -117,13 +123,11 @@ def _name_score(provider_name: Any, verified_name: Any) -> float:
     v = set(_tokens(verified_name))
     if not p or not v:
         return 0.0
-
     if p == v:
         return 1.0
 
-    # Providers commonly append a mascot to the school/location name. Requiring
-    # all verified location tokens to be present keeps this deterministic while
-    # allowing "Ohio State Buckeyes" -> "Ohio State".
+    # Sportsbooks commonly append mascots. Requiring all shorter school/location
+    # tokens to be contained in the longer name keeps the match deterministic.
     if v.issubset(p):
         return 0.98 if len(v) >= 2 else 0.90
     if p.issubset(v):
@@ -178,8 +182,8 @@ def _normalize_verified_game(row: Any) -> dict[str, Any] | None:
         "game_date": game_date,
         "away_team": away_team,
         "home_team": home_team,
-        "away_team_id": _clean(away.get("team_id")),
-        "home_team_id": _clean(home.get("team_id")),
+        "away_team_id": _clean(row.get("away_team_id") or away.get("team_id")),
+        "home_team_id": _clean(row.get("home_team_id") or home.get("team_id")),
         "venue": _clean(row.get("venue")),
         "broadcast": _clean(row.get("broadcast")),
         "status": _clean(row.get("status")),
@@ -188,13 +192,28 @@ def _normalize_verified_game(row: Any) -> dict[str, Any] | None:
 
 
 def load_verified_games() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Load the local verified runtime snapshot when the shared host has it.
+
+    The API production branch intentionally does not require this file. When it
+    is absent, reconciliation resolves exact market dates through ESPN instead.
+    """
     path = _snapshot_path()
     try:
         raw = path.read_text(encoding="utf-8")
-    except FileNotFoundError as exc:
-        raise ValueError("verified CFB runtime snapshot is missing") from exc
+    except FileNotFoundError:
+        return [], {
+            "snapshot_present": False,
+            "snapshot_path_configured": bool(_clean(os.environ.get(SNAPSHOT_PATH_ENV))),
+            "verified_games": 0,
+            "resolver_fallback": "ESPN CFB scoreboard by exact market date",
+        }
     except OSError as exc:
-        raise ValueError("verified CFB runtime snapshot is unavailable") from exc
+        return [], {
+            "snapshot_present": False,
+            "snapshot_error": f"{type(exc).__name__}: {exc}"[:240],
+            "verified_games": 0,
+            "resolver_fallback": "ESPN CFB scoreboard by exact market date",
+        }
 
     try:
         payload = json.loads(raw)
@@ -219,12 +238,197 @@ def load_verified_games() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         games.append(game)
 
     return games, {
+        "snapshot_present": True,
         "snapshot_version": payload.get("version"),
         "snapshot_generated_at": payload.get("generated_at"),
         "snapshot_window": payload.get("window"),
         "verified_games": len(games),
         "malformed_games_ignored": malformed,
         "duplicate_event_ids_ignored": duplicate_ids,
+    }
+
+
+def _espn_game_date(raw_date: Any, requested_day: str) -> str:
+    text = _clean(raw_date)
+    if not text:
+        return requested_day
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            return requested_day
+        return parsed.astimezone(_ET).date().isoformat()
+    except ValueError:
+        return requested_day
+
+
+def _espn_verified_games_from_payload(
+    payload: Mapping[str, Any],
+    requested_day: str,
+) -> list[dict[str, Any]]:
+    games: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for event in payload.get("events") or []:
+        if not isinstance(event, dict):
+            continue
+        event_id = _clean(event.get("id"))
+        competitions = event.get("competitions") or []
+        if not event_id or not competitions or not isinstance(competitions[0], dict):
+            continue
+        comp = competitions[0]
+
+        sides: dict[str, Mapping[str, Any]] = {}
+        for competitor in comp.get("competitors") or []:
+            if not isinstance(competitor, dict):
+                continue
+            side = _clean(competitor.get("homeAway")).casefold()
+            if side in {"home", "away"}:
+                sides[side] = competitor
+        if "home" not in sides or "away" not in sides:
+            continue
+
+        game_date = _espn_game_date(event.get("date") or comp.get("date"), requested_day)
+        if game_date != requested_day:
+            continue
+
+        def team_info(side: str) -> tuple[str, str]:
+            competitor = sides[side]
+            team = competitor.get("team") if isinstance(competitor.get("team"), dict) else {}
+            name = _clean(
+                team.get("displayName")
+                or team.get("shortDisplayName")
+                or team.get("location")
+                or team.get("name")
+            )
+            return name, _clean(team.get("id"))
+
+        away_name, away_id = team_info("away")
+        home_name, home_id = team_info("home")
+        if not away_name or not home_name:
+            continue
+
+        status_type = (event.get("status") or {}).get("type") or {}
+        broadcasts = comp.get("broadcasts") or []
+        broadcast = ""
+        if broadcasts and isinstance(broadcasts[0], dict):
+            names = broadcasts[0].get("names") or []
+            if isinstance(names, list):
+                broadcast = ", ".join(_clean(v) for v in names if _clean(v))
+
+        venue = comp.get("venue") if isinstance(comp.get("venue"), dict) else {}
+        if event_id in seen_ids:
+            continue
+        seen_ids.add(event_id)
+        games.append(
+            {
+                "event_id": event_id,
+                "game_date": game_date,
+                "away_team": away_name,
+                "home_team": home_name,
+                "away_team_id": away_id,
+                "home_team_id": home_id,
+                "venue": _clean(venue.get("fullName")),
+                "broadcast": broadcast,
+                "status": _clean(
+                    status_type.get("description")
+                    or status_type.get("detail")
+                    or status_type.get("shortDetail")
+                ),
+                "sources": ["ESPN college-football scoreboard live identity fallback"],
+            }
+        )
+    return games
+
+
+def _fetch_espn_verified_games(
+    requested_day: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    params = {
+        "dates": requested_day.replace("-", ""),
+        "limit": 500,
+        "groups": 80,
+    }
+    try:
+        response = httpx.get(
+            ESPN_SCOREBOARD_URL,
+            params=params,
+            timeout=_HTTP_TIMEOUT,
+            headers={
+                "User-Agent": "KyreSportsAPI/CFB-Odds-Step2",
+                "Accept": "application/json",
+            },
+        )
+        status_code = int(response.status_code)
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("ESPN scoreboard returned a non-object payload")
+        games = _espn_verified_games_from_payload(payload, requested_day)
+        return games, {
+            "date": requested_day,
+            "source": "ESPN college-football scoreboard",
+            "http": status_code,
+            "games": len(games),
+            "ok": True,
+        }
+    except Exception as exc:
+        return [], {
+            "date": requested_day,
+            "source": "ESPN college-football scoreboard",
+            "http": None,
+            "games": 0,
+            "ok": False,
+            "error": f"{type(exc).__name__}: {exc}"[:260],
+        }
+
+
+def _market_dates(feed: Mapping[str, Any]) -> list[str]:
+    dates: set[str] = set()
+    for row in feed.get("games") or []:
+        if not isinstance(row, dict):
+            continue
+        try:
+            dates.add(_parse_market_date(row.get("start_time_utc")))
+        except ValueError:
+            continue
+    return sorted(dates)
+
+
+def resolve_verified_games(
+    feed: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    local_games, snapshot_diag = load_verified_games()
+    market_dates = _market_dates(feed)
+    covered_dates = {str(game.get("game_date") or "") for game in local_games}
+    missing_dates = [day for day in market_dates if day not in covered_dates]
+
+    combined = list(local_games)
+    provider_attempts: list[dict[str, Any]] = []
+    for day in missing_dates:
+        fetched, diag = _fetch_espn_verified_games(day)
+        provider_attempts.append(diag)
+        combined.extend(fetched)
+
+    deduped: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    duplicate_ids = 0
+    for game in combined:
+        gid = _clean(game.get("event_id"))
+        if not gid:
+            continue
+        if gid in seen:
+            duplicate_ids += 1
+            continue
+        seen.add(gid)
+        deduped.append(game)
+
+    return deduped, {
+        "resolver_mode": "verified runtime snapshot + live ESPN exact-date fallback",
+        "requested_market_dates": market_dates,
+        "snapshot": snapshot_diag,
+        "live_provider_attempts": provider_attempts,
+        "verified_games": len(deduped),
+        "duplicate_event_ids_ignored": duplicate_ids,
+        "fail_closed": True,
     }
 
 
@@ -424,10 +628,14 @@ def identity_status():
         "sport": "college_football",
         "step": 2,
         "model_version": MODEL_VERSION,
-        "identity_ready": bool(games),
+        "identity_ready": True,
+        "local_verified_games": len(games),
         "verified_snapshot": diag,
+        "resolver_mode": "verified runtime snapshot + live ESPN exact-date fallback",
         "identity_policy": {
-            "official_id_source": "verified CFB runtime snapshot event_id",
+            "official_id_source": (
+                "verified CFB runtime event_id; ESPN scoreboard event_id fallback"
+            ),
             "fuzzy_matching": False,
             "synthetic_ids": False,
             "fail_closed": True,
@@ -447,7 +655,7 @@ def reconciled(
 ):
     feed = _load_feed()
     try:
-        verified_games, snapshot_diag = load_verified_games()
+        verified_games, resolver_diag = resolve_verified_games(feed)
         result = reconcile_market_feed(feed, verified_games)
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -472,7 +680,7 @@ def reconciled(
 
     output = dict(result)
     output["lines"] = lines
-    output["verified_snapshot"] = snapshot_diag
+    output["identity_resolution"] = resolver_diag
     if official_game_id is not None or provider_game_id is not None:
         output["unmatched"] = []
         output["diagnostics"] = dict(result["diagnostics"])
@@ -482,11 +690,14 @@ def reconciled(
 
 __all__ = [
     "AMBIGUITY_MARGIN",
+    "ESPN_SCOREBOARD_URL",
     "MATCH_THRESHOLD",
     "MODEL_VERSION",
     "SNAPSHOT_PATH_ENV",
+    "_espn_verified_games_from_payload",
     "_name_score",
     "load_verified_games",
     "reconcile_market_feed",
+    "resolve_verified_games",
     "router",
 ]
