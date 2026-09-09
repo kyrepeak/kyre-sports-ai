@@ -542,6 +542,46 @@ class _TableParser(HTMLParser):
 
 
 @st.cache_data(ttl=21600, show_spinner=False)
+def _parse_markdown_game_rows(text: str, reversed_order: bool, url: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for line in str(text or "").splitlines():
+        if "|" not in line:
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 4:
+            continue
+        date = next(
+            (cell for cell in cells[:2] if re.fullmatch(r"\d{4}-\d{2}-\d{2}", cell)),
+            "",
+        )
+        if not date:
+            continue
+        scores: list[int] = []
+        for cell in cells[2:4]:
+            found = re.findall(r"\b(\d{1,3})\b", cell)
+            if not found:
+                break
+            scores.append(int(found[-1]))
+        if len(scores) != 2:
+            continue
+        first_points, second_points = scores
+        if reversed_order:
+            away_points, home_points = second_points, first_points
+        else:
+            away_points, home_points = first_points, second_points
+        rows.append({
+            "date": date,
+            "away_points": away_points,
+            "home_points": home_points,
+            "combined_total": away_points + home_points,
+            "source": "Winsipedia game-by-game",
+            "source_url": url,
+            "source_order_reversed": reversed_order,
+        })
+    return rows
+
+
+@st.cache_data(ttl=21600, show_spinner=False)
 def _fetch_winsipedia_games(away_name: str, home_name: str) -> dict[str, Any]:
     away_slug = _slug_guess(away_name)
     home_slug = _slug_guess(home_name)
@@ -557,55 +597,79 @@ def _fetch_winsipedia_games(away_name: str, home_name: str) -> dict[str, Any]:
 
     for first_slug, second_slug, reversed_order in orientations:
         url = f"{WINSIPEDIA_BASE}/games/{first_slug}/vs/{second_slug}"
+        rows: list[dict[str, Any]] = []
+
+        # Direct HTML first.
         try:
             response = requests.get(
                 url,
                 timeout=12,
-                headers={"User-Agent": "KyreSportsAI/1.0"},
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                        "AppleWebKit/537.36 Chrome/140 Safari/537.36"
+                    ),
+                    "Accept": "text/html,application/xhtml+xml",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
             )
-            if response.status_code != 200:
-                continue
-            parser = _TableParser()
-            parser.feed(response.text)
+            if response.status_code == 200:
+                parser = _TableParser()
+                parser.feed(response.text)
+                for cells in parser.rows:
+                    if len(cells) < 4:
+                        continue
+                    date = next(
+                        (
+                            cell for cell in cells[:2]
+                            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", cell)
+                        ),
+                        "",
+                    )
+                    if not date:
+                        continue
+                    scores: list[int] = []
+                    for cell in cells[2:4]:
+                        found = re.findall(r"\b(\d{1,3})\b", cell)
+                        if not found:
+                            break
+                        scores.append(int(found[-1]))
+                    if len(scores) != 2:
+                        continue
+                    first_points, second_points = scores
+                    if reversed_order:
+                        away_points, home_points = second_points, first_points
+                    else:
+                        away_points, home_points = first_points, second_points
+                    rows.append({
+                        "date": date,
+                        "away_points": away_points,
+                        "home_points": home_points,
+                        "combined_total": away_points + home_points,
+                        "source": "Winsipedia game-by-game",
+                        "source_url": url,
+                        "source_order_reversed": reversed_order,
+                    })
         except Exception:
-            continue
+            rows = []
 
-        rows: list[dict[str, Any]] = []
-        for cells in parser.rows:
-            if len(cells) < 4:
-                continue
-            date = next(
-                (
-                    cell
-                    for cell in cells[:2]
-                    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", cell)
-                ),
-                "",
-            )
-            if not date:
-                continue
-            scores: list[int] = []
-            for cell in cells[2:4]:
-                found = re.findall(r"\b(\d{1,3})\b", cell)
-                if not found:
-                    break
-                scores.append(int(found[-1]))
-            if len(scores) != 2:
-                continue
-            first_points, second_points = scores
-            if reversed_order:
-                away_points, home_points = second_points, first_points
-            else:
-                away_points, home_points = first_points, second_points
-            rows.append({
-                "date": date,
-                "away_points": away_points,
-                "home_points": home_points,
-                "combined_total": away_points + home_points,
-                "source": "Winsipedia game-by-game",
-                "source_url": url,
-                "source_order_reversed": reversed_order,
-            })
+        # Reader fallback for providers that block server-side HTML fetches.
+        if not rows:
+            reader_url = "https://r.jina.ai/http://" + url.removeprefix("https://")
+            try:
+                response = requests.get(
+                    reader_url,
+                    timeout=15,
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                if response.status_code == 200:
+                    rows = _parse_markdown_game_rows(
+                        response.text,
+                        reversed_order,
+                        url,
+                    )
+            except Exception:
+                rows = []
 
         if rows:
             parsed_rows = rows
