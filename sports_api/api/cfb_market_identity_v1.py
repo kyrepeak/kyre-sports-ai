@@ -205,7 +205,7 @@ def load_verified_games() -> tuple[list[dict[str, Any]], dict[str, Any]]:
             "snapshot_present": False,
             "snapshot_path_configured": bool(_clean(os.environ.get(SNAPSHOT_PATH_ENV))),
             "verified_games": 0,
-            "resolver_fallback": "ESPN CFB scoreboard by exact market date",
+            "resolver_fallback": "ESPN CFB FBS/FCS scoreboards by exact market date",
         }
     except OSError as exc:
         return [], {
@@ -342,43 +342,73 @@ def _espn_verified_games_from_payload(
 def _fetch_espn_verified_games(
     requested_day: str,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    params = {
-        "dates": requested_day.replace("-", ""),
-        "limit": 500,
-        "groups": 80,
+    # ESPN separates Division I football into group 80 (FBS) and group 81
+    # (FCS). FanDuel's NCAAF board includes both, including cross-division
+    # matchups, so query both exact-date surfaces and dedupe by ESPN event ID.
+    combined: list[dict[str, Any]] = []
+    attempts: list[dict[str, Any]] = []
+    for group_id, division in ((80, "FBS"), (81, "FCS")):
+        params = {
+            "dates": requested_day.replace("-", ""),
+            "limit": 500,
+            "groups": group_id,
+        }
+        try:
+            response = httpx.get(
+                ESPN_SCOREBOARD_URL,
+                params=params,
+                timeout=_HTTP_TIMEOUT,
+                headers={
+                    "User-Agent": "KyreSportsAPI/CFB-Odds-Step2",
+                    "Accept": "application/json",
+                },
+            )
+            status_code = int(response.status_code)
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise ValueError("ESPN scoreboard returned a non-object payload")
+            games = _espn_verified_games_from_payload(payload, requested_day)
+            combined.extend(games)
+            attempts.append(
+                {
+                    "group_id": group_id,
+                    "division": division,
+                    "http": status_code,
+                    "games": len(games),
+                    "ok": True,
+                }
+            )
+        except Exception as exc:
+            attempts.append(
+                {
+                    "group_id": group_id,
+                    "division": division,
+                    "http": None,
+                    "games": 0,
+                    "ok": False,
+                    "error": f"{type(exc).__name__}: {exc}"[:220],
+                }
+            )
+
+    deduped: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for game in combined:
+        event_id = _clean(game.get("event_id"))
+        if not event_id or event_id in seen:
+            continue
+        seen.add(event_id)
+        deduped.append(game)
+
+    ok = any(bool(row.get("ok")) for row in attempts)
+    return deduped, {
+        "date": requested_day,
+        "source": "ESPN college-football scoreboard",
+        "groups": attempts,
+        "games": len(deduped),
+        "ok": ok,
+        "fail_closed": True,
     }
-    try:
-        response = httpx.get(
-            ESPN_SCOREBOARD_URL,
-            params=params,
-            timeout=_HTTP_TIMEOUT,
-            headers={
-                "User-Agent": "KyreSportsAPI/CFB-Odds-Step2",
-                "Accept": "application/json",
-            },
-        )
-        status_code = int(response.status_code)
-        response.raise_for_status()
-        payload = response.json()
-        if not isinstance(payload, dict):
-            raise ValueError("ESPN scoreboard returned a non-object payload")
-        games = _espn_verified_games_from_payload(payload, requested_day)
-        return games, {
-            "date": requested_day,
-            "source": "ESPN college-football scoreboard",
-            "http": status_code,
-            "games": len(games),
-            "ok": True,
-        }
-    except Exception as exc:
-        return [], {
-            "date": requested_day,
-            "source": "ESPN college-football scoreboard",
-            "http": None,
-            "games": 0,
-            "ok": False,
-            "error": f"{type(exc).__name__}: {exc}"[:260],
-        }
 
 
 def _market_dates(feed: Mapping[str, Any]) -> list[str]:
@@ -422,7 +452,7 @@ def resolve_verified_games(
         deduped.append(game)
 
     return deduped, {
-        "resolver_mode": "verified runtime snapshot + live ESPN exact-date fallback",
+        "resolver_mode": "verified runtime snapshot + live ESPN FBS/FCS exact-date fallback",
         "requested_market_dates": market_dates,
         "snapshot": snapshot_diag,
         "live_provider_attempts": provider_attempts,
@@ -631,7 +661,7 @@ def identity_status():
         "identity_ready": True,
         "local_verified_games": len(games),
         "verified_snapshot": diag,
-        "resolver_mode": "verified runtime snapshot + live ESPN exact-date fallback",
+        "resolver_mode": "verified runtime snapshot + live ESPN FBS/FCS exact-date fallback",
         "identity_policy": {
             "official_id_source": (
                 "verified CFB runtime event_id; ESPN scoreboard event_id fallback"
