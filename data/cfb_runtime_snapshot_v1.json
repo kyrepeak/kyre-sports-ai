@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-09T05:09:37Z",
+  "generated_at": "2026-09-09T10:38:00Z",
   "purpose": "Current-data fallback for deployed Streamlit runtimes. Auto-refreshed only when substantive game data changes.",
   "window": {
     "start": "2026-09-08",
@@ -21,10 +21,10 @@
         "record_text": "1-1",
         "conference_record_text": "0-0",
         "home_record": {
-          "wins": 0,
+          "wins": 1,
           "losses": 0,
           "ties": 0,
-          "games": 0
+          "games": 1
         },
         "away_record": {
           "wins": 0,
@@ -34,19 +34,38 @@
         },
         "neutral_record": {
           "wins": 0,
-          "losses": 0,
+          "losses": 1,
           "ties": 0,
-          "games": 0
+          "games": 1
         },
-        "recent_form": "\u2014",
-        "ppg": null,
-        "points_allowed_pg": null,
-        "point_diff_pg": null,
+        "recent_form": "WL",
+        "ppg": 16.5,
+        "points_allowed_pg": 19,
+        "point_diff_pg": -2.5,
         "head_coach": "Quinn Gray Sr.",
         "ap_rank": null,
         "coaches_poll_rank": null,
         "cfp_rank": null,
-        "completed_games": []
+        "completed_games": [
+          {
+            "event_id": "famu-2026-08-29-albany-state",
+            "date": "2026-08-29T23:00:00Z",
+            "location": "home",
+            "points_for": 20,
+            "points_against": 7,
+            "opponent": "Albany State",
+            "opponent_id": ""
+          },
+          {
+            "event_id": "famu-2026-09-06-south-carolina-state",
+            "date": "2026-09-06T00:00:00Z",
+            "location": "neutral",
+            "points_for": 13,
+            "points_against": 31,
+            "opponent": "South Carolina State",
+            "opponent_id": ""
+          }
+        ]
       },
       "home": {
         "team_id": "2390",
@@ -59,10 +78,10 @@
           "games": 0
         },
         "away_record": {
-          "wins": 0,
+          "wins": 1,
           "losses": 0,
           "ties": 0,
-          "games": 0
+          "games": 1
         },
         "neutral_record": {
           "wins": 0,
@@ -70,15 +89,25 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
-        "ppg": null,
-        "points_allowed_pg": null,
-        "point_diff_pg": null,
+        "recent_form": "W",
+        "ppg": 45,
+        "points_allowed_pg": 6,
+        "point_diff_pg": 39,
         "head_coach": "Mario Cristobal",
         "ap_rank": 7,
         "coaches_poll_rank": 7,
         "cfp_rank": null,
-        "completed_games": []
+        "completed_games": [
+          {
+            "event_id": "miami-2026-09-04-stanford",
+            "date": "2026-09-05T01:00:00Z",
+            "location": "away",
+            "points_for": 45,
+            "points_against": 6,
+            "opponent": "Stanford",
+            "opponent_id": "24"
+          }
+        ]
       },
       "sources": [
         "ESPN college-football scoreboard",
@@ -117,7 +146,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -149,7 +178,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -196,7 +225,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -228,7 +257,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -275,7 +304,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -307,7 +336,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -354,7 +383,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -386,7 +415,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -433,7 +462,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -465,7 +494,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -512,7 +541,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -544,7 +573,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -591,7 +620,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -623,7 +652,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -670,7 +699,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -702,7 +731,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -749,7 +778,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -781,7 +810,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -828,7 +857,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -860,7 +889,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -907,7 +936,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -939,7 +968,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -986,7 +1015,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1018,7 +1047,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1065,7 +1094,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1097,7 +1126,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1144,7 +1173,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1176,7 +1205,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1223,7 +1252,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1255,7 +1284,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1302,7 +1331,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1334,7 +1363,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1381,7 +1410,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1413,7 +1442,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1460,7 +1489,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1492,7 +1521,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1539,7 +1568,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1571,7 +1600,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1618,7 +1647,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1650,7 +1679,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1697,7 +1726,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1729,7 +1758,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1776,7 +1805,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1808,7 +1837,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1855,7 +1884,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1887,7 +1916,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1934,7 +1963,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -1966,7 +1995,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2013,7 +2042,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2045,7 +2074,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2092,7 +2121,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2124,7 +2153,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2171,7 +2200,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2203,7 +2232,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2250,7 +2279,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2282,7 +2311,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2329,7 +2358,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2361,7 +2390,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2408,7 +2437,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2440,7 +2469,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2487,7 +2516,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2519,7 +2548,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2566,7 +2595,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2598,7 +2627,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2645,7 +2674,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2677,7 +2706,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2724,7 +2753,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2756,7 +2785,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2803,7 +2832,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2835,7 +2864,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2882,7 +2911,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2914,7 +2943,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2961,7 +2990,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -2993,7 +3022,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3040,7 +3069,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3072,7 +3101,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3119,7 +3148,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3151,7 +3180,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3198,7 +3227,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3230,7 +3259,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3277,7 +3306,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3309,7 +3338,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3356,7 +3385,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3388,7 +3417,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3435,7 +3464,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3467,7 +3496,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3514,7 +3543,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3546,7 +3575,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3593,7 +3622,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3625,7 +3654,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3672,7 +3701,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3704,7 +3733,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3751,7 +3780,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3783,7 +3812,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3830,7 +3859,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3862,7 +3891,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3909,7 +3938,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3941,7 +3970,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -3988,7 +4017,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4020,7 +4049,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4067,7 +4096,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4099,7 +4128,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4146,7 +4175,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4178,7 +4207,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4225,7 +4254,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4257,7 +4286,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4304,7 +4333,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4336,7 +4365,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4383,7 +4412,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4415,7 +4444,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4462,7 +4491,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4494,7 +4523,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4541,7 +4570,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4573,7 +4602,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4620,7 +4649,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4652,7 +4681,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4699,7 +4728,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4731,7 +4760,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4751,7 +4780,7 @@
       "event_id": "401864504",
       "game_date": "2026-09-12",
       "away_team": "Cal Poly",
-      "home_team": "San Jos\u00e9 State",
+      "home_team": "San José State",
       "venue": "CEFCU Stadium",
       "broadcast": "MW+",
       "status": "Scheduled",
@@ -4778,7 +4807,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4810,7 +4839,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4857,7 +4886,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4889,7 +4918,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4936,7 +4965,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -4968,7 +4997,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5015,7 +5044,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5047,7 +5076,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5094,7 +5123,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5126,7 +5155,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5173,7 +5202,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5205,7 +5234,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5252,7 +5281,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5284,7 +5313,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5331,7 +5360,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5363,7 +5392,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5410,7 +5439,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5442,7 +5471,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5489,7 +5518,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5521,7 +5550,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5568,7 +5597,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5600,7 +5629,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5647,7 +5676,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5679,7 +5708,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5726,7 +5755,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5758,7 +5787,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5805,7 +5834,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5837,7 +5866,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5884,7 +5913,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5916,7 +5945,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5963,7 +5992,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -5995,7 +6024,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6042,7 +6071,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6074,7 +6103,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6121,7 +6150,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6153,7 +6182,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6200,7 +6229,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6232,7 +6261,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6279,7 +6308,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6311,7 +6340,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6358,7 +6387,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6390,7 +6419,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6437,7 +6466,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6469,7 +6498,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6516,7 +6545,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6548,7 +6577,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6595,7 +6624,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6627,7 +6656,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6674,7 +6703,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6706,7 +6735,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6753,7 +6782,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6785,7 +6814,7 @@
           "ties": 0,
           "games": 0
         },
-        "recent_form": "\u2014",
+        "recent_form": "—",
         "ppg": null,
         "points_allowed_pg": null,
         "point_diff_pg": null,
@@ -6801,5 +6830,17 @@
         "ESPN Core current coaches and polls"
       ]
     }
-  ]
+  ],
+  "manual_current_source_patch": {
+    "applied_at": "2026-09-09T10:38:00Z",
+    "teams": [
+      "Florida A&M",
+      "Miami (FL)"
+    ],
+    "reason": "Immediate current-form/split bootstrap while automatic snapshot builder refresh is queued",
+    "sources": [
+      "Florida A&M Athletics 2026 schedule",
+      "Miami Hurricanes 2026 schedule"
+    ]
+  }
 }
