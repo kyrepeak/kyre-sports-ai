@@ -150,5 +150,83 @@ jobs:
                       ),
                   )
 
+          # Inspect one real upcoming CFB event to discover the exact total-market
+          # contract before writing the production collector.
+          ncaaf = get_json(
+              BASE + "/sbapi/content-managed-page",
+              {
+                  "_ak": AK,
+                  "page": "CUSTOM",
+                  "customPageId": "ncaaf",
+                  "timezone": "America/New_York",
+              },
+          )
+          attachments = ncaaf.get("attachments")
+          raw_events = attachments.get("events") if isinstance(attachments, dict) else None
+          if isinstance(raw_events, dict):
+              event_rows = [dict(v, _attachment_key=str(k)) for k, v in raw_events.items() if isinstance(v, dict)]
+          elif isinstance(raw_events, list):
+              event_rows = [dict(v) for v in raw_events if isinstance(v, dict)]
+          else:
+              event_rows = []
+
+          matchup_events = [
+              e for e in event_rows
+              if " @ " in str(e.get("name") or e.get("eventName") or e.get("displayName") or "")
+          ]
+          assert matchup_events, "FanDuel ncaaf page returned no matchup events"
+          matchup_events.sort(key=lambda e: str(e.get("openDate") or ""))
+          sample = matchup_events[0]
+          event_id = str(sample.get("eventId") or sample.get("id") or sample.get("_attachment_key") or "").strip()
+          sample_name = str(sample.get("name") or sample.get("eventName") or sample.get("displayName") or "")
+          event_page = get_json(
+              BASE + "/sbapi/event-page",
+              {"_ak": AK, "eventId": event_id},
+          )
+          event_attachments = event_page.get("attachments")
+          raw_markets = event_attachments.get("markets") if isinstance(event_attachments, dict) else None
+          if isinstance(raw_markets, dict):
+              markets = [dict(v, _attachment_key=str(k)) for k, v in raw_markets.items() if isinstance(v, dict)]
+          elif isinstance(raw_markets, list):
+              markets = [dict(v) for v in raw_markets if isinstance(v, dict)]
+          else:
+              markets = []
+
+          def rows(value):
+              if isinstance(value, dict):
+                  return [dict(v, _attachment_key=str(k)) for k, v in value.items() if isinstance(v, dict)]
+              if isinstance(value, list):
+                  return [dict(v) for v in value if isinstance(v, dict)]
+              return []
+
+          discovered = []
+          for market in markets:
+              name = str(market.get("marketName") or market.get("name") or market.get("displayName") or "")
+              if "total" not in name.casefold() and "over" not in name.casefold():
+                  continue
+              runners = []
+              for runner in rows(market.get("runners")):
+                  result = runner.get("result") if isinstance(runner.get("result"), dict) else {}
+                  win = runner.get("winRunnerOdds") if isinstance(runner.get("winRunnerOdds"), dict) else {}
+                  display = win.get("americanDisplayOdds") if isinstance(win.get("americanDisplayOdds"), dict) else {}
+                  runners.append({
+                      "runnerName": runner.get("runnerName"),
+                      "role": result.get("type"),
+                      "handicap": runner.get("handicap"),
+                      "american": display.get("americanOddsInt") or display.get("americanOdds"),
+                      "runnerStatus": runner.get("runnerStatus"),
+                  })
+              discovered.append({
+                  "marketName": name,
+                  "marketId": market.get("marketId") or market.get("_attachment_key"),
+                  "marketStatus": market.get("marketStatus") or market.get("status"),
+                  "inPlay": market.get("inPlay"),
+                  "runners": runners,
+              })
+          print("EVENT_PROBE", json.dumps({"event_id": event_id, "event_name": sample_name}, sort_keys=True))
+          print("TOTAL_MARKET_PROBE_COUNT", len(discovered))
+          for row in discovered[:20]:
+              print("TOTAL_MARKET_PROBE", json.dumps(row, sort_keys=True)[:4000])
+
           print("CFB_FANDUEL_DISCOVERY_GREEN")
           PY
