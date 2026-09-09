@@ -86,7 +86,7 @@ def _clean(value: Any) -> str:
 
 def _key(value: Any) -> str:
     text = _clean(value).lower()
-    text = text.replace("&", " and ")
+    text = text.replace("&", "")
     text = text.replace("(fl)", " florida ")
     text = text.replace("(oh)", " ohio ")
     text = re.sub(r"\bthe\b", " ", text)
@@ -499,7 +499,7 @@ def _slug_guess(name: str) -> str:
         return _WINSIPEDIA_SLUG_OVERRIDES[key]
     text = _clean(name).lower()
     text = text.replace("(fl)", "fl").replace("(oh)", "oh")
-    text = text.replace("&", "and")
+    text = text.replace("&", "")
     text = re.sub(r"['’]", "", text)
     text = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
     return text
