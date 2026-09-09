@@ -1,24 +1,19 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U post-12 data recovery.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U deep current-data reconciliation.
 
-Router V53 preserves the permanently frozen 12/12 Over/Under stack through
-Router V52 and adds a provider-recovery layer above it.
+Router V54 preserves the complete frozen 12/12 Over/Under stack and frozen
+post-12 provider recovery, then adds a current-evidence reconciliation layer.
 
-Hotfix behavior:
-- ESPN exact event remains primary.
-- ESPN visual/team directory can recover stable team IDs.
-- Exact team-schedule pair/date matching can recover an ESPN event ID.
-- Recovered event IDs unlock ESPN summary weather/venue/rosters.
-- Winsipedia supplies all-time game-by-game H2H when ESPN history is missing.
-- Partial verified data is displayed instead of a blank gated panel.
-- Frozen Step-9/10/11 weighting rules, Step-12 certification, sportsbook/EV
-  firewalls, and all 12 permanent freeze contracts remain unchanged.
+It repairs stale records, home/road splits, recent form, exact venue/broadcast,
+head coach, AP/Coaches/CFP context, and source auditing from verified current
+providers before the unchanged frozen model engines run.
 
-Deployment heartbeat: STREAMLIT_MAIN_V53_CFB_OU_POST12_DATA_RECOVERY_2026-09-09T03:18Z.
+Deployment heartbeat:
+STREAMLIT_MAIN_V54_CFB_OU_DEEP_DATA_RECONCILIATION_2026-09-09T04:08Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v53 import render_app
+from streamlit_memory_lazy_router_v54 import render_app
 
-DEPLOYMENT_HEARTBEAT="STREAMLIT_MAIN_V53_CFB_OU_POST12_DATA_RECOVERY_2026-09-09T03:18Z"
+DEPLOYMENT_HEARTBEAT="STREAMLIT_MAIN_V54_CFB_OU_DEEP_DATA_RECONCILIATION_2026-09-09T04:08Z"
 
 render_app()
