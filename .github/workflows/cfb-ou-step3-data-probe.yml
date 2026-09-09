@@ -55,4 +55,19 @@ jobs:
                           key=str(st.get("name") or st.get("label") or "")
                           picked.append((key,st.get("displayValue")))
                       print("TEAM_STATS",team.get("id"),team.get("displayName"),json.dumps(picked,ensure_ascii=False))
+                  print("PLAYER_BLOCKS",len(box.get("players") or []))
+                  for pblock in box.get("players") or []:
+                      pteam=pblock.get("team") or {}
+                      print("PLAYER_TEAM",pteam.get("id"),pteam.get("displayName"))
+                      for category in pblock.get("statistics") or []:
+                          cname=category.get("name") or category.get("displayName") or ""
+                          labels=category.get("labels") or []
+                          totals=[]
+                          for athlete in category.get("athletes") or []:
+                              a=athlete.get("athlete") or {}
+                              totals.append({
+                                  "name":a.get("displayName"),
+                                  "stats":athlete.get("stats"),
+                              })
+                          print("PLAYER_CATEGORY",cname,json.dumps({"labels":labels,"athletes":totals},ensure_ascii=False))
           PY
