@@ -1,0 +1,79 @@
+name: CFB O/U truthful engine status V18
+
+on:
+  push:
+    branches: [cfb-ou-truthful-engine-status-v18]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Scope firewall
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess, sys
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"], text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-ou-engine-status-v18.yml",
+              "cfb_over_under_clean_page_v17.py",
+              "tests/test_cfb_over_under_clean_page_v17.py",
+          }
+          if changed != expected:
+              raise SystemExit(f"scope mismatch: {sorted(changed)}")
+          print("V18_SCOPE_FIREWALL=PASS")
+          PY
+      - name: Compile
+        run: |
+          python -m py_compile cfb_over_under_clean_page_v17.py tests/test_cfb_over_under_clean_page_v17.py
+      - name: Run direct-page regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q             tests/test_cfb_over_under_clean_page_v17.py             tests/test_cfb_over_under_router_v57.py
+      - name: Prove truthful status semantics
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_clean_page_v17 as page
+
+          step9={
+              "ready":True,
+              "model_ready":False,
+              "coverage":0.0,
+              "reason":"exact same-date ESPN event identity is unavailable",
+          }
+          step10={
+              "ready":True,
+              "model_ready":False,
+              "coverage":0.0,
+              "reason":"insufficient completed pre-kickoff recent-game history",
+          }
+          step11={
+              "ready":True,
+              "model_ready":False,
+              "coverage":0.0,
+              "reason":"current-season sample below minimum",
+          }
+          assert page._engine_ready(step9)=="GATED"
+          assert page._engine_ready(step10)=="GATED"
+          assert page._engine_ready(step11)=="GATED"
+          assert page._engine_ready({"ready":True,"coverage":1.0})=="READY"
+          assert page._engine_ready({"ready":True,"model_ready":False,"coverage":0.4})=="LIMITED"
+          print("V18_TRUTHFUL_STATUS=PASS")
+          PY
+      - run: echo CFB_OU_ENGINE_STATUS_V18_GREEN

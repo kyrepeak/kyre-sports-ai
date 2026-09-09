@@ -106,3 +106,45 @@ def test_clean_page_does_not_import_legacy_step1_or_step2_ui():
     assert "cfb_over_under_matchup_ui_v2" not in source
     assert "cfb_over_under_matchup_ui_v15" not in source
     assert "cfb_over_under_matchup_ui_v16" not in source
+
+
+def test_engine_status_requires_model_ready_not_generic_ready():
+    assert page._engine_ready({
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.0,
+        "reason": "missing verified event",
+    }) == "GATED"
+
+    assert page._engine_ready({
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.45,
+        "reason": "partial evidence",
+    }) == "LIMITED"
+
+    assert page._engine_ready({
+        "ready": True,
+        "model_ready": True,
+        "coverage": 1.0,
+    }) == "READY"
+
+
+def test_engine_status_preserves_legacy_ready_for_engines_without_model_ready():
+    assert page._engine_ready({"ready": True, "coverage": 1.0}) == "READY"
+
+
+def test_gated_step_discloses_zero_new_model_influence():
+    html = page._model_step(
+        9,
+        "GAME-DAY ENVIRONMENT",
+        {
+            "ready": True,
+            "model_ready": False,
+            "coverage": 0.0,
+            "reason": "exact same-date ESPN event identity is unavailable",
+        },
+    )
+    assert ">GATED<" in html
+    assert "0% new model influence" in html
+    assert ">READY<" not in html
