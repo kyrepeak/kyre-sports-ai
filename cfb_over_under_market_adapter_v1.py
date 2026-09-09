@@ -52,7 +52,9 @@ def _validate_payload(payload: Any, *, requested_day: str) -> dict[str, Any]:
         raise ValueError("CFB odds API diagnostics are missing")
     if diagnostics.get("complete_identity_coverage") is not True:
         raise ValueError("CFB odds API identity coverage is incomplete")
-    if int(diagnostics.get("unmatched_market_rows") or 0) != 0:
+    if diagnostics.get("unmatched_market_rows") is None:
+        raise ValueError("CFB odds API unmatched-row diagnostic is missing")
+    if int(diagnostics.get("unmatched_market_rows")) != 0:
         raise ValueError("CFB odds API contains unmatched market rows")
     if diagnostics.get("synthetic_official_ids") is not False:
         raise ValueError("CFB odds API synthetic-ID policy is unsafe")
@@ -62,7 +64,9 @@ def _validate_payload(payload: Any, *, requested_day: str) -> dict[str, Any]:
     semantics = payload.get("market_semantics")
     if not isinstance(semantics, Mapping):
         raise ValueError("CFB odds API market semantics are missing")
-    if float(semantics.get("projection_weight") or 0.0) != 0.0:
+    if semantics.get("projection_weight") is None:
+        raise ValueError("CFB market projection weight is missing")
+    if float(semantics.get("projection_weight")) != 0.0:
         raise ValueError("CFB market projection weight must remain 0")
     if semantics.get("market_context_only") is not True:
         raise ValueError("CFB market feed must remain context-only")
@@ -82,6 +86,12 @@ def _validate_payload(payload: Any, *, requested_day: str) -> dict[str, Any]:
         day = _clean(raw.get("game_date"))
         if not game_id:
             raise ValueError("CFB odds API row is missing official game_id")
+        if not _clean(raw.get("away_team")) or not _clean(raw.get("home_team")):
+            raise ValueError("CFB odds API row is missing official team identity")
+        if _clean(raw.get("market_type")) != "game_total":
+            raise ValueError("CFB odds API row is not a game-total market")
+        if not _clean(raw.get("sportsbook")):
+            raise ValueError("CFB odds API row is missing sportsbook identity")
         if day != requested_day:
             raise ValueError("CFB odds API returned a row outside the requested date")
         if raw.get("identity_verified") is not True:
