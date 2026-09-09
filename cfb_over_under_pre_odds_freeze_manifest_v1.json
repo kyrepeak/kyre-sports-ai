@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "scope": "cfb_over_under_pre_odds_clean_baseline",
+  "policy": "Freeze the current clean College Football Over/Under baseline before sportsbook odds/line integration. Future market-data work must be additive in new versioned modules/routers. Frozen model math, clean Step 1/2 rendering, readable Step 3 behavior, truthful engine statuses, and color-step presentation must not be edited in place.",
+  "baseline_commit": "2f2f4272fe0b7a7a87e115c411a81296787e24ed",
+  "parent_freezes": [
+    "cfb_over_under_upgrade_freeze_manifest_v12.json",
+    "cfb_over_under_post12_data_recovery_freeze_manifest_v1.json",
+    "cfb_over_under_deep_data_reconciliation_freeze_manifest_v1.json",
+    "cfb_over_under_visible_data_path_freeze_manifest_v1.json"
+  ],
+  "exact_blobs": {
+    "streamlit_memory_lazy_router_v57.py": "488dd6885f47639f0de285d981304585f9179dbe",
+    "cfb_schedule_v5_runtime_snapshot.py": "478a70e9042aaab4db157f5e148ed1bc22510ca7",
+    "cfb_over_under_runtime_team_data_v1.py": "6d3a92ff0798cc314f605c5ee941170f397eb20f",
+    "cfb_over_under_runtime_deep_adapter_v1.py": "a0bb914169cd780616c9841bf129b32ff84cebdf",
+    "cfb_over_under_slate_v14_runtime.py": "09a6a59b39ea9380216792cb32460c3551ca7f42",
+    "cfb_over_under_clean_page_v17.py": "d2ff0c6e49b5a71a5b2e5a758d913264c8d82481",
+    "cfb_over_under_step3_readable_v2.py": "91f01d660c3d1c6a3646c2948c9e1926f82a490a",
+    "data/cfb_step3_matchup_stats_v1.json": "a506ee8371470fdf4f378da939beff1d418880d6",
+    "scripts/build_cfb_runtime_snapshot.py": "37e22b46177c6db1fd90411ea50bb6cc5f997442",
+    ".github/workflows/cfb-runtime-snapshot-refresh.yml": "a7d9130f6686d78dfaf8d1ab5e334e61f881b942",
+    "tests/test_cfb_over_under_clean_page_v17.py": "4125c6131348188cedc9c97783feccc65d0fd564",
+    "tests/test_cfb_over_under_step3_readable_v2.py": "c28d4f3dba4d81d2d1c5ff8dbf9854e26c2d4298",
+    "tests/test_cfb_over_under_router_v57.py": "ce5d84d8eac1922ec0d409bf5fc738548dea4823"
+  },
+  "dynamic_runtime_files": {
+    "data/cfb_runtime_snapshot_v1.json": {
+      "frozen": false,
+      "reason": "This file is intentionally auto-refreshed with current schedule/team data and must remain dynamic."
+    }
+  },
+  "contract": {
+    "active_router": "streamlit_memory_lazy_router_v57",
+    "active_page": "cfb_over_under_clean_page_v17",
+    "active_runtime_slate": "cfb_over_under_slate_v14_runtime",
+    "active_schedule": "cfb_schedule_v5_runtime_snapshot",
+    "clean_step1_renderer_active": true,
+    "clean_step2_renderer_active": true,
+    "legacy_step1_step2_renderers_retired": true,
+    "readable_step3_active": true,
+    "step3_both_matchup_directions_active": true,
+    "step3_categories": [
+      "points",
+      "total_yards",
+      "passing_yards",
+      "rushing_yards",
+      "passing_touchdowns",
+      "rushing_touchdowns",
+      "first_downs",
+      "yards_per_play"
+    ],
+    "step3_favorable_for_active": true,
+    "step3_tough_for_active": true,
+    "step3_mixed_guard_active": true,
+    "step3_verdict_basis": "CURRENT SAMPLE ONLY",
+    "step3_new_projection_weight": 0,
+    "truthful_status_badges": [
+      "READY",
+      "LIMITED",
+      "GATED",
+      "CHECK"
+    ],
+    "colored_steps_restored": true,
+    "frozen_steps_3_12_model_math_reused": true,
+    "sportsbook_input_currently_added": false,
+    "live_odds_api_currently_added": false,
+    "manual_analysis_line_currently_active": true,
+    "market_probability_projection_weight": 0,
+    "sportsbook_projection_weight": 0,
+    "edge_or_ev_projection_weight": 0,
+    "monte_carlo_added": false,
+    "future_odds_integration_rules": {
+      "must_be_additive": true,
+      "new_versioned_market_module_required": true,
+      "new_router_or_page_version_required": true,
+      "may_autofill_current_market_total": true,
+      "may_display_multiple_books": true,
+      "may_display_timestamped_prices": true,
+      "may_compare_model_projection_to_market_line": true,
+      "may_not_change_frozen_projection_from_market_data": true,
+      "sportsbook_projection_weight_must_remain_zero_until_separately_certified": true
+    },
+    "live_reference_matchup": "Florida A&M @ Miami (FL)",
+    "live_away_record": "1-1",
+    "live_home_record": "1-0",
+    "live_venue": "Hard Rock Stadium",
+    "live_broadcast": "ACC Network",
+    "live_home_ap_rank": 7,
+    "live_home_coaches_rank": 7,
+    "live_step3_favorable_away_battle": "Miami (FL) defense",
+    "live_step3_tough_away_battle": "Florida A&M offense",
+    "live_step3_favorable_home_battle": "Miami (FL) offense",
+    "live_step3_tough_home_battle": "Florida A&M defense",
+    "regression_tests_passed": 305,
+    "permanently_frozen": true
+  }
+}
