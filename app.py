@@ -1,19 +1,17 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U deep current-data reconciliation.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U visible-data-path hotfix.
 
-Router V54 preserves the complete frozen 12/12 Over/Under stack and frozen
-post-12 provider recovery, then adds a current-evidence reconciliation layer.
-
-It repairs stale records, home/road splits, recent form, exact venue/broadcast,
-head coach, AP/Coaches/CFP context, and source auditing from verified current
-providers before the unchanged frozen model engines run.
+Router V55 preserves the frozen 12/12 stack, frozen post-12 recovery, and
+frozen V54 deep-data reconciliation. It fixes the final presentation handoff so
+the reconciled game + away + home profiles reach the visible Step-1/Step-2
+cards, and uses alias-safe Schedule V4 enrichment for the visible slate.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V54_CFB_OU_DEEP_DATA_RECONCILIATION_2026-09-09T04:08Z.
+STREAMLIT_MAIN_V55_CFB_OU_VISIBLE_DATA_PATH_2026-09-09T04:28Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v54 import render_app
+from streamlit_memory_lazy_router_v55 import render_app
 
-DEPLOYMENT_HEARTBEAT="STREAMLIT_MAIN_V54_CFB_OU_DEEP_DATA_RECONCILIATION_2026-09-09T04:08Z"
+DEPLOYMENT_HEARTBEAT="STREAMLIT_MAIN_V55_CFB_OU_VISIBLE_DATA_PATH_2026-09-09T04:28Z"
 
 render_app()
