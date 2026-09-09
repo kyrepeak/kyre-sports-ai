@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from sports_api.api.cfb_markets import router as cfb_markets_router
 from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_router
+from sports_api.api.cfb_odds_v1 import router as cfb_odds_router
 
 router = APIRouter(tags=["system"])
 # Register CFB routes by extending the shared route table instead of nesting
@@ -11,6 +12,7 @@ router = APIRouter(tags=["system"])
 # and the Render startup-recursion fix from CFB Step 1.
 router.routes.extend(cfb_markets_router.routes)
 router.routes.extend(cfb_market_identity_router.routes)
+router.routes.extend(cfb_odds_router.routes)
 
 
 @router.get("/health")
