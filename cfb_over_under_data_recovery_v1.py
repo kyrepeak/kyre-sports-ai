@@ -43,6 +43,9 @@ import cfb_over_under_environment_engine_v1 as frozen_environment
 import cfb_over_under_history_engine_v1 as frozen_history
 import cfb_over_under_logo_resolver_v1 as logo_identity
 
+_FROZEN_ENV_BUILD = frozen_environment.build_environment_engine
+_FROZEN_HISTORY_BUILD = frozen_history.build_history_engine
+
 MODEL_VERSION = "CFB O/U MULTI-SOURCE DATA RECOVERY V1 • POST-12 HOTFIX"
 FROZEN_STEP12_COMPLETE = True
 
@@ -450,7 +453,7 @@ def build_environment_engine(
     away: Mapping[str, Any],
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
-    base = frozen_environment.build_environment_engine(game, away, home)
+    base = _FROZEN_ENV_BUILD(game, away, home)
     if base.get("model_ready"):
         out = dict(base)
         out["recovery_used"] = False
@@ -623,7 +626,7 @@ def build_history_engine(
     if not env:
         env = build_environment_engine(game, away, home)
 
-    base = frozen_history.build_history_engine(
+    base = _FROZEN_HISTORY_BUILD(
         game,
         away,
         home,
