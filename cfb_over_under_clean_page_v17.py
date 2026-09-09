@@ -29,9 +29,10 @@ import cfb_over_under_final_v1 as final_model
 import cfb_over_under_logo_resolver_v2 as logo_resolver
 import cfb_over_under_runtime_team_data_v1 as runtime_team_data
 import cfb_over_under_slate_v14_runtime as runtime_slate
+import cfb_over_under_step3_readable_v2 as readable_step3
 import cfb_schedule_v5_runtime_snapshot as schedule
 
-MODEL_VERSION = "CFB O/U CLEAN PAGE V17.1 • DIRECT CURRENT-DATA UI • COLOR STEPS RESTORED"
+MODEL_VERSION = "CFB O/U CLEAN PAGE V17.2 • READABLE FOOTBALL EVIDENCE • STEP 3"
 MARKET = "Over/Under"
 _ET = ZoneInfo("America/New_York")
 
@@ -73,6 +74,22 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
 .c17-step-h{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(126,175,205,.09);background:linear-gradient(90deg,var(--step-wash,rgba(126,175,205,.06)),transparent 72%)}
 .c17-step-h b{color:var(--step-accent,#d8ecf5);font-size:.48rem;letter-spacing:.06em}.c17-step-h span{font-size:.34rem;font-weight:900}.c17-step-h span.ready{color:#81dcae}.c17-step-h span.limited{color:#f1c76f}.c17-step-h span.gated{color:#ff9d7a}.c17-step-h span.check{color:#9fb3bd}
 .c17-step.step-3{--step-accent:#ff746b;--step-wash:rgba(255,116,107,.10);border-color:rgba(255,116,107,.28);background:linear-gradient(145deg,#160d10,#0b151b 72%)}
+.c17-s3-wrap{padding:9px}
+.c17-s3-intro{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:0 1px 8px;color:#a6bac4;font-size:.36rem;line-height:1.45}
+.c17-s3-intro b{color:#ffd2cf;font-size:.40rem}.c17-s3-zero{color:#8fe8b9;font-weight:900;white-space:nowrap}
+.c17-s3-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.c17-s3-battle{border:1px solid rgba(255,116,107,.20);border-radius:12px;background:#08141a;overflow:hidden}
+.c17-s3-battle-h{padding:8px 9px;background:linear-gradient(90deg,rgba(255,116,107,.10),rgba(8,20,26,.30));border-bottom:1px solid rgba(255,116,107,.12)}
+.c17-s3-battle-h strong{display:block;color:#f7fbfd;font-size:.62rem;line-height:1.25}.c17-s3-battle-h span{display:block;color:#94aab4;font-size:.31rem;margin-top:3px}
+.c17-s3-table{padding:6px}
+.c17-s3-row{display:grid;grid-template-columns:1.12fr .88fr .88fr .95fr;gap:4px;align-items:center;padding:6px 4px;border-bottom:1px solid rgba(130,160,175,.07)}
+.c17-s3-row:last-child{border-bottom:0}.c17-s3-row.head{padding-top:2px;color:#6f8793;font-size:.25rem;font-weight:950;text-transform:uppercase}
+.c17-s3-label{color:#cbdce4;font-size:.34rem;font-weight:900}.c17-s3-val{color:#f0f7fa;font-size:.42rem;font-weight:950}
+.c17-s3-sub{display:block;color:#6d8590;font-size:.24rem;font-weight:700;margin-top:1px}.c17-s3-diff{font-size:.31rem;font-weight:950}
+.c17-s3-diff.pos{color:#ffb79e}.c17-s3-diff.neg{color:#87d5ff}.c17-s3-diff.neutral{color:#a7b5bc}
+.c17-s3-summary{padding:7px 9px;border-top:1px solid rgba(255,116,107,.10);color:#9cb0ba;font-size:.32rem;line-height:1.4}
+.c17-s3-source{padding:8px 10px;color:#768d98;font-size:.31rem;line-height:1.45;border-top:1px solid rgba(255,116,107,.10)}
+
 .c17-step.step-4{--step-accent:#c7d2dc;--step-wash:rgba(199,210,220,.09);border-color:rgba(199,210,220,.22);background:linear-gradient(145deg,#10161d,#09151c 72%)}
 .c17-step.step-5{--step-accent:#ff9a52;--step-wash:rgba(255,154,82,.10);border-color:rgba(255,154,82,.27);background:linear-gradient(145deg,#17110b,#0b151a 72%)}
 .c17-step.step-6{--step-accent:#ff5f70;--step-wash:rgba(255,95,112,.10);border-color:rgba(255,95,112,.27);background:linear-gradient(145deg,#180c11,#0b151a 72%)}
@@ -91,7 +108,8 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
  .c17-teams{grid-template-columns:1fr}.c17-at{min-height:24px}.c17-team,.c17-team.home{grid-template-columns:54px minmax(0,1fr);text-align:left}
  .c17-team.home .c17-logo{grid-column:1}.c17-team.home .c17-copy{grid-column:2;grid-row:1}
  .c17-context{grid-template-columns:repeat(2,minmax(0,1fr))}.c17-context div:last-child{grid-column:1/-1}
- .c17-grid2{grid-template-columns:1fr}.c17-metrics,.c17-ranks,.c17-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .c17-grid2,.c17-s3-grid{grid-template-columns:1fr}.c17-metrics,.c17-ranks,.c17-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .c17-s3-row{grid-template-columns:1.05fr .86fr .86fr .92fr}.c17-s3-label{font-size:.31rem}.c17-s3-val{font-size:.38rem}
 }
 </style>
 """
@@ -269,6 +287,111 @@ def _step2(away: Mapping[str, Any], home: Mapping[str, Any]) -> str:
  <div class="c17-head"><b>🏆 STEP 2 • CURRENT RANKINGS + RECORDS</b><span class="c17-pill">NO LEGACY STEP-2 ENGINE</span></div>
  <div class="c17-grid2">{_team_step2(away)}{_team_step2(home)}</div>
  <div class="c17-note">Polls and records come from the runtime current-data profile. NCAA category ranks remain official-stat evidence only and have 0% direct selection weight.</div>
+</div>'''
+
+
+def _s3_value(value: Any, key: str) -> str:
+    try:
+        number = float(value)
+    except Exception:
+        return "—"
+    digits = 2 if key == "yards_per_play" else 1
+    return f"{number:.{digits}f}"
+
+
+def _s3_difference(value: Any, key: str) -> tuple[str, str]:
+    try:
+        number = float(value)
+    except Exception:
+        return "—", "neutral"
+    digits = 2 if key == "yards_per_play" else 1
+    text = f"{number:+.{digits}f}"
+    if abs(number) < (0.01 if digits == 2 else 0.05):
+        return text, "neutral"
+    return text, "pos" if number > 0 else "neg"
+
+
+def _s3_battle_html(battle: Mapping[str, Any]) -> str:
+    offense = _clean(battle.get("offense_team")) or "Offense"
+    defense = _clean(battle.get("defense_team")) or "Defense"
+    offense_sample = _clean(battle.get("offense_sample")) or "SAMPLE CHECK"
+    defense_sample = _clean(battle.get("defense_sample")) or "SAMPLE CHECK"
+
+    rows_html: list[str] = []
+    for row in battle.get("rows") or []:
+        if not isinstance(row, Mapping):
+            continue
+        key = _clean(row.get("key"))
+        label = _clean(row.get("label")) or key.replace("_", " ").title()
+        off = _s3_value(row.get("offense_value"), key)
+        allowed = _s3_value(row.get("defense_value"), key)
+        diff, diff_cls = _s3_difference(row.get("difference"), key)
+        off_suffix = _clean(row.get("offense_suffix"))
+        def_suffix = _clean(row.get("defense_suffix"))
+        rows_html.append(
+            f'<div class="c17-s3-row">'
+            f'<div class="c17-s3-label">{escape(label)}</div>'
+            f'<div class="c17-s3-val">{escape(off)}<span class="c17-s3-sub">{escape(off_suffix)}</span></div>'
+            f'<div class="c17-s3-val">{escape(allowed)}<span class="c17-s3-sub">{escape(def_suffix)}</span></div>'
+            f'<div class="c17-s3-diff {escape(diff_cls)}">{escape(diff)}<span class="c17-s3-sub">production − allowance</span></div>'
+            f'</div>'
+        )
+
+    summary = _clean(battle.get("summary")) or "Current production and allowance shown without inventing an edge grade."
+    return f'''
+<div class="c17-s3-battle">
+ <div class="c17-s3-battle-h">
+  <strong>{escape(offense)} OFFENSE → {escape(defense)} DEFENSE</strong>
+  <span>{escape(offense_sample)} offense • {escape(defense_sample)} defense</span>
+ </div>
+ <div class="c17-s3-table">
+  <div class="c17-s3-row head"><div>Category</div><div>{escape(offense)} offense</div><div>{escape(defense)} allows</div><div>Difference</div></div>
+  {''.join(rows_html) or '<div class="c17-s3-row"><div class="c17-s3-label">Current stats unavailable</div></div>'}
+ </div>
+ <div class="c17-s3-summary">{escape(summary)}.</div>
+</div>'''
+
+
+def _step3_readable(
+    readable: Mapping[str, Any],
+    certified_engine: Mapping[str, Any],
+) -> str:
+    display_ready = bool(readable.get("display_ready"))
+    status = "DATA READY" if display_ready else "DATA LIMITED"
+    status_class = "ready" if display_ready else "limited"
+    sample = _clean(readable.get("sample_state")) or "CURRENT SAMPLE CHECK"
+    certified_status = _engine_ready(certified_engine)
+    certified_plain = {
+        "READY": "certified matchup model ready",
+        "LIMITED": "certified matchup model limited",
+        "GATED": "certified matchup model gated",
+        "CHECK": "certified matchup model check",
+    }.get(certified_status, "certified matchup model check")
+
+    if not display_ready:
+        reason = _clean(readable.get("reason")) or "Current readable Step 3 evidence is incomplete."
+        return f'''
+<div class="c17-step step-3">
+ <div class="c17-step-h"><b>STEP 3 • OFFENSE VS DEFENSE</b><span class="{status_class}">{status}</span></div>
+ <div class="c17-note">{escape(reason)} No old developer-number renderer is used as a fallback.</div>
+</div>'''
+
+    away_battle = readable.get("away_offense_vs_home_defense") or {}
+    home_battle = readable.get("home_offense_vs_away_defense") or {}
+    sources = " • ".join(
+        _clean(item) for item in (readable.get("sources") or []) if _clean(item)
+    )
+    return f'''
+<div class="c17-step step-3">
+ <div class="c17-step-h"><b>STEP 3 • OFFENSE VS DEFENSE</b><span class="{status_class}">{status}</span></div>
+ <div class="c17-s3-wrap">
+  <div class="c17-s3-intro">
+   <div><b>{escape(sample)}</b><br>Current-season production is compared directly with the opponent's current-season allowance. Difference is descriptive, not a made-up power rating.</div>
+   <div class="c17-s3-zero">NEW READABLE LAYER • 0% NEW PROJECTION WEIGHT</div>
+  </div>
+  <div class="c17-s3-grid">{_s3_battle_html(away_battle)}{_s3_battle_html(home_battle)}</div>
+ </div>
+ <div class="c17-s3-source">Sources: {escape(sources or "current verified team and exact-game data")} • {escape(certified_plain)} underneath • sportsbook/price/EV input: 0%.</div>
 </div>'''
 
 
@@ -458,7 +581,21 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
     st.markdown(_step1(game, away, home), unsafe_allow_html=True)
     st.markdown(_step2(away, home), unsafe_allow_html=True)
 
-    st.markdown(_model_step(3, "OFFENSE VS DEFENSE", result.get("matchup_engine") or {}), unsafe_allow_html=True)
+    try:
+        readable_matchup = readable_step3.build_matchup_step3(game, away, home)
+    except Exception as exc:
+        readable_matchup = {
+            "ready": True,
+            "display_ready": False,
+            "reason": f"Readable Step 3 data failed visibly: {type(exc).__name__}: {exc}",
+        }
+    st.markdown(
+        _step3_readable(
+            readable_matchup,
+            result.get("matchup_engine") or {},
+        ),
+        unsafe_allow_html=True,
+    )
     st.markdown(_model_step(4, "PACE / EXPECTED POSSESSIONS", result.get("pace_engine") or {}), unsafe_allow_html=True)
     st.markdown(_model_step(5, "EXPLOSIVE PLAY PROFILE", result.get("explosive_engine") or {}), unsafe_allow_html=True)
     st.markdown(_model_step(6, "RED ZONE", result.get("red_zone_engine") or {}), unsafe_allow_html=True)
