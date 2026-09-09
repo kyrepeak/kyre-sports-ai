@@ -90,12 +90,22 @@ jobs:
               "capture_reused_on_second_read": True,
           }
 
+          code, identity_status = get("/api/v1/cfb/markets/identity-status")
+          assert code == 200, identity_status
+          evidence["identity_status"] = identity_status
+
           code, reconciled = get("/api/v1/cfb/markets/reconciled", timeout=90)
           assert code == 200, reconciled
           diag = reconciled.get("diagnostics") or {}
           lines = reconciled.get("lines") or []
           unmatched = reconciled.get("unmatched") or []
-          assert len(lines) == len(games), (len(lines), len(games))
+          evidence["reconciled_debug"] = {
+              "diagnostics": diag,
+              "identity_resolution": reconciled.get("identity_resolution"),
+              "unmatched_sample": unmatched[:12],
+          }
+          print("CFB_STEP2_LIVE_DEBUG", json.dumps(evidence["reconciled_debug"], sort_keys=True))
+          assert len(lines) == len(games), (len(lines), len(games), evidence["reconciled_debug"])
           assert len(unmatched) == 0, unmatched[:10]
           assert diag.get("matched_market_rows") == len(games), diag
           assert diag.get("unmatched_market_rows") == 0, diag
