@@ -292,3 +292,107 @@ def test_live_fanduel_espn_school_aliases_match_without_fuzzy_identity():
     ]
     for provider_name, official_name in pairs:
         assert identity._name_score(provider_name, official_name) >= identity.MATCH_THRESHOLD
+
+
+def test_github_runtime_snapshot_payload_preserves_official_identity():
+    payload = {
+        "version": 1,
+        "generated_at": "2026-09-09T10:38:00Z",
+        "window": {"start": "2026-09-08", "end": "2026-09-15"},
+        "games": [
+            {
+                "event_id": "401858213",
+                "game_date": "2026-09-10",
+                "away_team": "Florida A&M",
+                "home_team": "Miami",
+                "away": {"team_id": "50"},
+                "home": {"team_id": "2390"},
+                "venue": "Hard Rock Stadium",
+                "broadcast": "ACC Network",
+                "status": "Scheduled",
+                "sources": ["ESPN college-football scoreboard"],
+            }
+        ],
+    }
+    games, diag = identity._github_verified_games_from_payload(payload)
+    assert len(games) == 1
+    assert games[0]["event_id"] == "401858213"
+    assert games[0]["away_team_id"] == "50"
+    assert games[0]["home_team_id"] == "2390"
+    assert diag["verified_games"] == 1
+    assert diag["synthetic_ids"] is False
+    assert diag["fuzzy_matching"] is False
+
+
+def test_resolver_prefers_github_snapshot_when_local_snapshot_is_missing(monkeypatch):
+    monkeypatch.setattr(
+        identity,
+        "load_verified_games",
+        lambda: (
+            [],
+            {
+                "snapshot_present": False,
+                "verified_games": 0,
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        identity,
+        "_fetch_github_verified_games",
+        lambda: (
+            [_verified_game()],
+            {
+                "source": "GitHub hourly CFB runtime snapshot",
+                "ok": True,
+                "verified_games": 1,
+            },
+        ),
+    )
+
+    def forbidden_direct_espn(_day):
+        raise AssertionError("direct ESPN fallback should not be needed")
+
+    monkeypatch.setattr(identity, "_fetch_espn_verified_games", forbidden_direct_espn)
+
+    games, diag = identity.resolve_verified_games(_feed(_market()))
+    assert len(games) == 1
+    assert games[0]["event_id"] == "401858213"
+    assert diag["github_snapshot"]["attempted"] is True
+    assert diag["github_snapshot"]["ok"] is True
+    assert diag["live_provider_attempts"] == []
+
+
+def test_resolver_uses_direct_espn_only_when_github_does_not_cover_date(monkeypatch):
+    monkeypatch.setattr(
+        identity,
+        "load_verified_games",
+        lambda: ([], {"snapshot_present": False, "verified_games": 0}),
+    )
+    monkeypatch.setattr(
+        identity,
+        "_fetch_github_verified_games",
+        lambda: (
+            [],
+            {
+                "source": "GitHub hourly CFB runtime snapshot",
+                "ok": False,
+                "verified_games": 0,
+            },
+        ),
+    )
+    calls = []
+
+    def direct(day):
+        calls.append(day)
+        return [_verified_game(game_date=day)], {
+            "date": day,
+            "source": "ESPN college-football scoreboard",
+            "ok": True,
+            "games": 1,
+        }
+
+    monkeypatch.setattr(identity, "_fetch_espn_verified_games", direct)
+    games, diag = identity.resolve_verified_games(_feed(_market()))
+    assert len(games) == 1
+    assert calls == ["2026-09-10"]
+    assert len(diag["live_provider_attempts"]) == 1
