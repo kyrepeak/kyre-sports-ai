@@ -47,7 +47,7 @@ def _key(value: Any) -> str:
     text = text.replace("&", " and ")
     # Parenthetical school qualifiers are aliases, not part of ESPN's base
     # location name: "Miami (FL)" must match ESPN "Miami".
-    text = re.sub(r"\\([^)]*\\)", " ", text)
+    text = re.sub(r"\([^)]*\)", " ", text)
     text = text.replace("saint ", "st ")
     return re.sub(r"[^a-z0-9]+", "", text)
 
