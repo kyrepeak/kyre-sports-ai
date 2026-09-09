@@ -1,0 +1,552 @@
+"""Build the checked-in College Football runtime snapshot from public current feeds.
+
+The snapshot exists so Streamlit rendering is not dependent on live access to
+every upstream provider. This builder runs in GitHub Actions, where the provider
+paths are already certified to be reachable.
+
+Window
+------
+- 7 days behind the current Eastern date
+- 21 days ahead
+
+Sources
+-------
+- ESPN college-football scoreboard: event identity, current records, rank,
+  venue, broadcast, status, week
+- ESPN team schedule: completed-game W/L, splits, recent form, scoring
+- ESPN Core: current head coach and latest available AP/Coaches/CFP rank set
+
+The script only rewrites the snapshot when substantive game data changes, so an
+hourly workflow does not force needless Streamlit redeploys.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+import json
+from pathlib import Path
+import re
+import sys
+from typing import Any, Mapping
+from zoneinfo import ZoneInfo
+
+import requests
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "data" / "cfb_runtime_snapshot_v1.json"
+
+ET = ZoneInfo("America/New_York")
+TIMEOUT = 18
+HEADERS = {
+    "User-Agent": "KyreSportsAI/RuntimeSnapshot/1.0",
+    "Accept": "application/json,text/plain,*/*",
+}
+
+SCOREBOARD = (
+    "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"
+)
+TEAM_SCHEDULE = (
+    "https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{team_id}/schedule"
+)
+CORE_ROOT = (
+    "https://sports.core.api.espn.com/v2/sports/football/leagues/college-football"
+)
+
+
+def clean(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def get_json(url: str, params: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    response = requests.get(
+        url,
+        params=dict(params or {}),
+        timeout=TIMEOUT,
+        headers=HEADERS,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict):
+        raise ValueError(f"non-object JSON from {url}")
+    return payload
+
+
+def parse_dt(value: Any) -> datetime | None:
+    text = clean(value)
+    if not text:
+        return None
+    try:
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def record_summary(competitor: Mapping[str, Any], wanted: set[str]) -> str:
+    records = competitor.get("record") or competitor.get("records") or []
+    if isinstance(records, Mapping):
+        records = [records]
+    for item in records if isinstance(records, list) else []:
+        if not isinstance(item, Mapping):
+            continue
+        typ = clean(item.get("type") or item.get("name")).lower()
+        if typ not in wanted:
+            continue
+        text = clean(
+            item.get("summary")
+            or item.get("displayValue")
+            or item.get("record")
+        )
+        if text:
+            return text
+    return ""
+
+
+def rank_value(competitor: Mapping[str, Any]) -> int | None:
+    try:
+        value = int((competitor.get("curatedRank") or {}).get("current"))
+    except Exception:
+        return None
+    return value if 0 < value < 99 else None
+
+
+def event_sides(event: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]]:
+    comps = event.get("competitions") or []
+    comp = comps[0] if comps and isinstance(comps[0], Mapping) else {}
+    away: Mapping[str, Any] = {}
+    home: Mapping[str, Any] = {}
+    for competitor in comp.get("competitors") or []:
+        if not isinstance(competitor, Mapping):
+            continue
+        side = clean(competitor.get("homeAway")).lower()
+        if side == "away":
+            away = competitor
+        elif side == "home":
+            home = competitor
+    return away, home, comp
+
+
+def team_name(competitor: Mapping[str, Any]) -> str:
+    team = competitor.get("team") or {}
+    if not isinstance(team, Mapping):
+        team = {}
+    return clean(
+        team.get("location")
+        or team.get("shortDisplayName")
+        or team.get("displayName")
+        or team.get("name")
+    )
+
+
+def team_id(competitor: Mapping[str, Any]) -> str:
+    team = competitor.get("team") or {}
+    if not isinstance(team, Mapping):
+        return ""
+    return clean(team.get("id"))
+
+
+def broadcast(comp: Mapping[str, Any]) -> str:
+    names: list[str] = []
+    for row in comp.get("broadcasts") or []:
+        if not isinstance(row, Mapping):
+            continue
+        for name in row.get("names") or []:
+            text = clean(name)
+            if text:
+                names.append(text)
+        media = row.get("media") or {}
+        if isinstance(media, Mapping):
+            text = clean(media.get("shortName") or media.get("name"))
+            if text:
+                names.append(text)
+    return ", ".join(dict.fromkeys(names))
+
+
+def week_number(event: Mapping[str, Any]) -> int:
+    week = event.get("week")
+    if isinstance(week, Mapping):
+        try:
+            return int(week.get("number") or 0)
+        except Exception:
+            return 0
+    try:
+        return int(week or 0)
+    except Exception:
+        return 0
+
+
+def status_name(event: Mapping[str, Any], comp: Mapping[str, Any]) -> str:
+    raw = event.get("status") or comp.get("status") or {}
+    typ = raw.get("type") if isinstance(raw, Mapping) else {}
+    if not isinstance(typ, Mapping):
+        typ = {}
+    return clean(
+        typ.get("description")
+        or typ.get("name")
+        or typ.get("detail")
+        or typ.get("shortDetail")
+    )
+
+
+def completed(event: Mapping[str, Any]) -> bool:
+    raw = event.get("status") or {}
+    typ = raw.get("type") if isinstance(raw, Mapping) else {}
+    if not isinstance(typ, Mapping):
+        return False
+    if typ.get("completed") is True:
+        return True
+    state = clean(typ.get("state")).lower()
+    name = clean(typ.get("name")).lower()
+    return state == "post" or "final" in name
+
+
+def competitor_score(competitor: Mapping[str, Any]) -> float | None:
+    score = competitor.get("score")
+    if isinstance(score, Mapping):
+        score = score.get("value") or score.get("displayValue")
+    try:
+        return float(score)
+    except Exception:
+        return None
+
+
+def schedule_rows(team_id_value: str, season: int, now_utc: datetime) -> list[dict[str, Any]]:
+    payload = get_json(
+        TEAM_SCHEDULE.format(team_id=team_id_value),
+        {"season": season},
+    )
+    rows: list[dict[str, Any]] = []
+    for event in payload.get("events") or []:
+        if not isinstance(event, Mapping) or not completed(event):
+            continue
+        dt = parse_dt(event.get("date"))
+        if dt is None or dt > now_utc:
+            continue
+        away, home, comp = event_sides(event)
+        if not away or not home:
+            continue
+
+        if team_id(away) == team_id_value:
+            self_comp, opp_comp = away, home
+            loc = "neutral" if comp.get("neutralSite") is True else "away"
+        elif team_id(home) == team_id_value:
+            self_comp, opp_comp = home, away
+            loc = "neutral" if comp.get("neutralSite") is True else "home"
+        else:
+            continue
+
+        pf = competitor_score(self_comp)
+        pa = competitor_score(opp_comp)
+        if pf is None or pa is None:
+            continue
+
+        rows.append({
+            "event_id": clean(event.get("id")),
+            "date": dt.isoformat(),
+            "location": loc,
+            "points_for": pf,
+            "points_against": pa,
+            "opponent": team_name(opp_comp),
+            "opponent_id": team_id(opp_comp),
+        })
+
+    rows.sort(key=lambda row: row["date"])
+    return rows
+
+
+def record_from_rows(rows: list[Mapping[str, Any]]) -> dict[str, int]:
+    wins = losses = ties = 0
+    for row in rows:
+        pf = float(row.get("points_for") or 0.0)
+        pa = float(row.get("points_against") or 0.0)
+        if pf > pa:
+            wins += 1
+        elif pf < pa:
+            losses += 1
+        else:
+            ties += 1
+    return {
+        "wins": wins,
+        "losses": losses,
+        "ties": ties,
+        "games": wins + losses + ties,
+    }
+
+
+def split_record(rows: list[Mapping[str, Any]], location: str) -> dict[str, int]:
+    return record_from_rows([
+        row for row in rows if clean(row.get("location")).lower() == location
+    ])
+
+
+def record_text(record: Mapping[str, Any]) -> str:
+    wins = int(record.get("wins") or 0)
+    losses = int(record.get("losses") or 0)
+    ties = int(record.get("ties") or 0)
+    return f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+
+
+def head_coach(team_id_value: str, season: int) -> str:
+    try:
+        collection = get_json(
+            f"{CORE_ROOT}/seasons/{season}/teams/{team_id_value}/coaches",
+            {"lang": "en", "region": "us"},
+        )
+        items = collection.get("items") or []
+        first = items[0] if items and isinstance(items[0], Mapping) else {}
+        ref = clean(first.get("$ref"))
+        if not ref:
+            return ""
+        detail = get_json(ref.replace("http://", "https://", 1))
+        return " ".join(
+            x for x in (
+                clean(detail.get("firstName")),
+                clean(detail.get("lastName")),
+            )
+            if x
+        )
+    except Exception:
+        return ""
+
+
+def latest_polls(team_id_value: str, season: int, preferred_week: int) -> dict[str, int | None]:
+    result: dict[str, int | None] = {
+        "ap_rank": None,
+        "coaches_poll_rank": None,
+        "cfp_rank": None,
+    }
+    for week in range(max(1, preferred_week), 0, -1):
+        try:
+            collection = get_json(
+                f"{CORE_ROOT}/seasons/{season}/types/2/weeks/{week}/teams/{team_id_value}/ranks",
+                {"lang": "en", "region": "us"},
+            )
+        except Exception:
+            continue
+        items = collection.get("items") or []
+        if not items:
+            continue
+
+        found_any = False
+        for item in items:
+            if not isinstance(item, Mapping):
+                continue
+            ref = clean(item.get("$ref"))
+            if not ref:
+                continue
+            try:
+                detail = get_json(ref.replace("http://", "https://", 1))
+            except Exception:
+                continue
+            typ = clean(detail.get("type")).lower()
+            name = clean(detail.get("shortName") or detail.get("name")).lower()
+            rank_obj = detail.get("rank") or {}
+            if not isinstance(rank_obj, Mapping):
+                rank_obj = {}
+            try:
+                current = int(rank_obj.get("current"))
+                if current <= 0 or current >= 99:
+                    current = None
+            except Exception:
+                current = None
+
+            if typ == "ap" or "ap poll" in name:
+                result["ap_rank"] = current
+                found_any = True
+            elif typ == "usa" or "coach" in name:
+                result["coaches_poll_rank"] = current
+                found_any = True
+            elif typ == "cfp" or "playoff" in name:
+                result["cfp_rank"] = current
+                found_any = True
+
+        if found_any:
+            return result
+    return result
+
+
+def side_snapshot(
+    competitor: Mapping[str, Any],
+    current_week: int,
+    season: int,
+    now_utc: datetime,
+) -> dict[str, Any]:
+    tid = team_id(competitor)
+    overall = record_summary(competitor, {"overall", "total"})
+    conf = record_summary(
+        competitor,
+        {"vsconf", "conference", "conference record"},
+    )
+
+    rows: list[dict[str, Any]] = []
+    if tid.isdigit():
+        try:
+            rows = schedule_rows(tid, season, now_utc)
+        except Exception:
+            rows = []
+
+    derived = record_from_rows(rows)
+    if not overall and int(derived.get("games") or 0) > 0:
+        overall = record_text(derived)
+
+    recent = rows[-5:]
+    recent_form = "".join(
+        "W" if float(row["points_for"]) > float(row["points_against"])
+        else "L" if float(row["points_for"]) < float(row["points_against"])
+        else "T"
+        for row in recent
+    )
+
+    if rows:
+        ppg = sum(float(r["points_for"]) for r in rows) / len(rows)
+        pa = sum(float(r["points_against"]) for r in rows) / len(rows)
+    else:
+        ppg = pa = None
+
+    coach = head_coach(tid, season) if tid.isdigit() else ""
+    polls = latest_polls(tid, season, current_week) if tid.isdigit() else {
+        "ap_rank": None,
+        "coaches_poll_rank": None,
+        "cfp_rank": None,
+    }
+
+    event_rank = rank_value(competitor)
+    if polls.get("ap_rank") is None and event_rank is not None:
+        polls["ap_rank"] = event_rank
+
+    return {
+        "team_id": tid,
+        "record_text": overall,
+        "conference_record_text": conf,
+        "home_record": split_record(rows, "home"),
+        "away_record": split_record(rows, "away"),
+        "neutral_record": split_record(rows, "neutral"),
+        "recent_form": recent_form or "—",
+        "ppg": round(ppg, 6) if ppg is not None else None,
+        "points_allowed_pg": round(pa, 6) if pa is not None else None,
+        "point_diff_pg": round(ppg - pa, 6) if ppg is not None and pa is not None else None,
+        "head_coach": coach,
+        **polls,
+        "completed_games": rows,
+    }
+
+
+def build_snapshot() -> dict[str, Any]:
+    now_et = datetime.now(ET)
+    now_utc = now_et.astimezone(timezone.utc)
+    season = now_et.year if now_et.month >= 7 else now_et.year - 1
+
+    dates = [
+        (now_et.date() + timedelta(days=offset)).isoformat()
+        for offset in range(-7, 22)
+    ]
+
+    events: dict[str, dict[str, Any]] = {}
+    for day in dates:
+        ymd = day.replace("-", "")
+        try:
+            payload = get_json(
+                SCOREBOARD,
+                {"dates": ymd, "limit": 1000},
+            )
+        except Exception as exc:
+            print(f"WARN scoreboard {day}: {type(exc).__name__}: {exc}", file=sys.stderr)
+            continue
+
+        for event in payload.get("events") or []:
+            if not isinstance(event, Mapping):
+                continue
+            event_id = clean(event.get("id"))
+            if not event_id:
+                continue
+            away, home, comp = event_sides(event)
+            if not away or not home:
+                continue
+
+            dt = parse_dt(event.get("date"))
+            event_day = (
+                dt.astimezone(ET).date().isoformat()
+                if dt is not None
+                else day
+            )
+            week = week_number(event)
+            venue = comp.get("venue") or {}
+            if not isinstance(venue, Mapping):
+                venue = {}
+
+            row = {
+                "event_id": event_id,
+                "game_date": event_day,
+                "away_team": team_name(away),
+                "home_team": team_name(home),
+                "venue": clean(venue.get("fullName") or venue.get("name")),
+                "broadcast": broadcast(comp),
+                "status": status_name(event, comp),
+                "espn_week": week,
+                "away": side_snapshot(away, week, season, now_utc),
+                "home": side_snapshot(home, week, season, now_utc),
+                "sources": [
+                    "ESPN college-football scoreboard",
+                    "ESPN current team schedules",
+                    "ESPN Core current coaches and polls",
+                ],
+            }
+            events[event_id] = row
+
+    if not events:
+        raise SystemExit("No CFB events were retrieved; refusing to overwrite runtime snapshot")
+
+    return {
+        "version": 1,
+        "generated_at": now_utc.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "purpose": (
+            "Current-data fallback for deployed Streamlit runtimes. "
+            "Auto-refreshed only when substantive game data changes."
+        ),
+        "window": {
+            "start": dates[0],
+            "end": dates[-1],
+        },
+        "games": sorted(
+            events.values(),
+            key=lambda row: (
+                row.get("game_date") or "",
+                row.get("event_id") or "",
+            ),
+        ),
+    }
+
+
+def normalize_for_compare(payload: Mapping[str, Any]) -> dict[str, Any]:
+    out = dict(payload)
+    out.pop("generated_at", None)
+    return out
+
+
+def main() -> int:
+    new = build_snapshot()
+    old: dict[str, Any] = {}
+    if OUT.exists():
+        try:
+            parsed = json.loads(OUT.read_text(encoding="utf-8"))
+            old = parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            old = {}
+
+    if normalize_for_compare(old) == normalize_for_compare(new):
+        print("CFB_RUNTIME_SNAPSHOT_NO_SUBSTANTIVE_CHANGE")
+        return 0
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(new, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    print(
+        "CFB_RUNTIME_SNAPSHOT_UPDATED",
+        f"games={len(new.get('games') or [])}",
+        f"window={new.get('window')}",
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
