@@ -1,0 +1,298 @@
+name: CFB O/U Upgrade Step 7 third down
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [cfb-ou-upgrade-step7-third-down-drive-sustain]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact additive Step 7 scope
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess, sys
+          actual=set(subprocess.check_output(["git","diff","--name-only","origin/main...HEAD"],text=True).splitlines())
+          expected={
+              ".github/workflows/cfb-over-under-upgrade-step7-third-down.yml",
+              "app.py",
+              "cfb_over_under_third_down_engine_v1.py",
+              "cfb_over_under_slate_v6.py",
+              "cfb_over_under_matchup_ui_v7.py",
+              "streamlit_memory_lazy_router_v47.py",
+              "tests/test_cfb_over_under_upgrade_step7_third_down_engine.py",
+              "tests/test_cfb_over_under_upgrade_step7_slate.py",
+              "tests/test_cfb_over_under_upgrade_step7_ui_router.py",
+          }
+          if actual != expected:
+              print("expected", sorted(expected))
+              print("actual", sorted(actual))
+              sys.exit(1)
+          print("CFB_OU_UPGRADE_STEP7_SCOPE=PASS")
+          PY
+
+      - name: Enforce original CFB Steps 1 through 12 freeze
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+          def rev(spec):
+              return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          failures=[]
+          if rev("HEAD:cfb_freeze_manifest_v12.json") != "3ff2a727967e80dddbe03f747d9f32090cc39539":
+              failures.append("CFB Step-12 freeze manifest changed")
+          manifest=json.loads(pathlib.Path("cfb_freeze_manifest_v12.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen CFB path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen CFB path changed: {path}")
+          if failures:
+              print(*failures, sep="\n")
+              sys.exit(1)
+          print("ORIGINAL_CFB_STEPS_1_12_FROZEN=PASS")
+          PY
+
+      - name: Enforce O/U Upgrade Steps 1 through 6 freeze
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+          def rev(spec):
+              return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          failures=[]
+          if rev("HEAD:cfb_over_under_upgrade_freeze_manifest_v6.json") != "7eb86b48a782c11e46cec0ec08ed4becd525e378":
+              failures.append("O/U Upgrade Step 6 freeze manifest changed")
+          manifest=json.loads(pathlib.Path("cfb_over_under_upgrade_freeze_manifest_v6.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen upgrade path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen Upgrade Step 1-6 path changed: {path}")
+          if failures:
+              print(*failures, sep="\n")
+              sys.exit(1)
+          print("CFB_OU_UPGRADE_STEPS_1_6_FROZEN=PASS")
+          PY
+
+      - name: Enforce logo hotfix V1 through V4 freeze
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, sys
+          def rev(spec):
+              return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          failures=[]
+          if rev("HEAD:cfb_over_under_logo_hotfix_freeze_manifest_v4.json") != "b5b42535b0771a6e15d1f8581de325777f3c4177":
+              failures.append("logo V4 freeze manifest changed")
+          manifest=json.loads(pathlib.Path("cfb_over_under_logo_hotfix_freeze_manifest_v4.json").read_text())
+          for path, expected in (manifest.get("exact_blobs") or {}).items():
+              try:
+                  actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing frozen logo path: {path}")
+                  continue
+              if actual != expected:
+                  failures.append(f"frozen logo V1-V4 path changed: {path}")
+          if failures:
+              print(*failures, sep="\n")
+              sys.exit(1)
+          print("CFB_OU_LOGO_HOTFIX_V1_V4_FROZEN=PASS")
+          PY
+
+      - name: Compile Step 7
+        run: |
+          python - <<'PY'
+          import py_compile
+          files=[
+              "app.py",
+              "cfb_over_under_third_down_engine_v1.py",
+              "cfb_over_under_slate_v6.py",
+              "cfb_over_under_matchup_ui_v7.py",
+              "streamlit_memory_lazy_router_v47.py",
+              "tests/test_cfb_over_under_upgrade_step7_third_down_engine.py",
+              "tests/test_cfb_over_under_upgrade_step7_slate.py",
+              "tests/test_cfb_over_under_upgrade_step7_ui_router.py",
+          ]
+          for path in files:
+              py_compile.compile(path,doraise=True)
+          print("CFB_OU_UPGRADE_STEP7_COMPILE=PASS")
+          PY
+          PYTHONPATH=. python -c "import cfb_over_under_third_down_engine_v1; import cfb_over_under_slate_v6; import cfb_over_under_matchup_ui_v7; import streamlit_memory_lazy_router_v47"
+
+      - name: Run Step 7 and frozen regressions
+        run: PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_upgrade_step7_third_down_engine.py tests/test_cfb_over_under_upgrade_step7_slate.py tests/test_cfb_over_under_upgrade_step7_ui_router.py tests/test_cfb_over_under_upgrade_step6_red_zone_engine.py tests/test_cfb_over_under_upgrade_step6_slate.py tests/test_cfb_over_under_upgrade_step6_ui_router.py tests/test_cfb_over_under_upgrade_step5_explosive_engine.py tests/test_cfb_over_under_upgrade_step5_slate.py tests/test_cfb_over_under_upgrade_step5_ui_router.py tests/test_cfb_over_under_upgrade_step4_pace_engine.py tests/test_cfb_over_under_upgrade_step4_slate.py tests/test_cfb_over_under_upgrade_step4_ui_router.py tests/test_cfb_over_under_upgrade_step3_engine.py tests/test_cfb_over_under_upgrade_step3_slate.py tests/test_cfb_over_under_upgrade_step3_ui.py tests/test_cfb_over_under_multisource_logo_resolver_v2.py tests/test_cfb_over_under_multisource_logo_hotfix_v4.py tests/test_cfb_over_under_logo_recursion_hotfix_v3.py
+
+      - name: Live NCAA third-down tables retain tied rows
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_third_down_engine_v1 as td
+          td.clear_third_down_engine_cache()
+          for division, expected_rows in (("FBS",137),("FCS",116)):
+              bundle, diag = td._load_third_down_division(division)
+              tables=bundle.get("tables") or {}
+              baselines=bundle.get("baselines") or {}
+              offense=tables.get("third_down_offense") or {}
+              defense=tables.get("third_down_defense") or {}
+              print(division,"rows",{"offense":len(offense),"defense":len(defense)},"baselines",baselines)
+              if len(offense) != expected_rows or len(defense) != expected_rows:
+                  raise SystemExit(f"{division} third-down table coverage mismatch")
+              for key in ("offense_conversion_rate","defense_conversion_rate_allowed","offense_attempts_per_game","defense_attempts_per_game"):
+                  if baselines.get(key) is None:
+                      raise SystemExit(f"{division} third-down baseline missing: {key}")
+          print("LIVE_NCAA_THIRD_DOWN_TIE_SAFE_TABLES=PASS")
+          PY
+
+      - name: Live Florida A&M at Miami Step 7 analysis
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v6 as slate
+
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          try:
+              slate.analyze_game.clear()
+          except Exception:
+              pass
+
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          engine=result.get("third_down_engine") or {}
+          raw=result.get("raw") or {}
+          away=engine.get("away_offense") or {}
+          home=engine.get("home_offense") or {}
+
+          print("THIRD_DOWN",json.dumps({
+              "away_division":engine.get("away_division"),
+              "home_division":engine.get("home_division"),
+              "mixed_division":engine.get("mixed_division"),
+              "away_coverage":away.get("coverage"),
+              "home_coverage":home.get("coverage"),
+              "away_sample":away.get("sample_factor"),
+              "home_sample":home.get("sample_factor"),
+              "away_signal":away.get("signal"),
+              "home_signal":home.get("signal"),
+              "away_adjustment":away.get("points_adjustment"),
+              "home_adjustment":home.get("points_adjustment"),
+              "total_adjustment":(raw.get("components") or {}).get("step7_total_third_down_adjustment"),
+              "away_offense":away.get("offense"),
+              "away_defense":away.get("defense"),
+              "home_offense":home.get("offense"),
+              "home_defense":home.get("defense"),
+          },indent=2))
+
+          if not raw.get("ready") or not engine.get("model_ready") or not raw.get("upgrade_step7_applied"):
+              raise SystemExit("Step 7 live model did not apply")
+          if engine.get("away_division") != "FCS" or engine.get("home_division") != "FBS" or not engine.get("mixed_division"):
+              raise SystemExit("Step 7 FCS/FBS identity resolution is wrong")
+          if float(away.get("coverage") or 0.0) != 1.0 or float(home.get("coverage") or 0.0) != 1.0:
+              raise SystemExit("Step 7 third-down direct coverage must be 100%")
+          if abs(float(away.get("points_adjustment") or 0.0)) > 1.250001 or abs(float(home.get("points_adjustment") or 0.0)) > 1.250001:
+              raise SystemExit("Step 7 third-down adjustment exceeded cap")
+          if float(raw.get("analysis_line_third_down_weight") or 0.0) != 0.0:
+              raise SystemExit("analysis line leaked into third-down engine")
+          if engine.get("rankless_tie_safe_parser_active") is not True or engine.get("cross_division_rank_comparison_used") is not False:
+              raise SystemExit("Step 7 parser/rank firewall failed")
+
+          aoff=away.get("offense") or {}
+          adef=away.get("defense") or {}
+          hoff=home.get("offense") or {}
+          hdef=home.get("defense") or {}
+          if float(aoff.get("attempts") or 0) != 30.0 or float(aoff.get("conversions") or 0) != 7.0:
+              raise SystemExit("Florida A&M third-down offense evidence mismatch")
+          if float(adef.get("attempts") or 0) != 15.0 or float(adef.get("conversions") or 0) != 5.0:
+              raise SystemExit("Miami third-down defense evidence mismatch")
+          if float(hoff.get("attempts") or 0) != 11.0 or float(hoff.get("conversions") or 0) != 8.0:
+              raise SystemExit("Miami third-down offense evidence mismatch")
+          if float(hdef.get("attempts") or 0) != 19.0 or float(hdef.get("conversions") or 0) != 3.0:
+              raise SystemExit("Florida A&M third-down defense evidence mismatch")
+          if round(float(away.get("sample_factor") or 0),6) != round(15/30,6):
+              raise SystemExit("away third-down sample factor mismatch")
+          if round(float(home.get("sample_factor") or 0),6) != round(11/30,6):
+              raise SystemExit("home third-down sample factor mismatch")
+          print("LIVE_FAMU_MIAMI_STEP7_THIRD_DOWN=PASS")
+          PY
+
+      - name: Live hero retains frozen stack and adds Step 7
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v6 as slate
+          import cfb_over_under_matchup_ui_v7 as ui
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          html=ui._hero_v7(game,result.get("away") or {},result.get("home") or {})
+          for token in ("TEAM LOGOS VERIFIED","UPGRADE STEP 4","UPGRADE STEP 5","UPGRADE STEP 6","UPGRADE STEP 7"):
+              if token not in html:
+                  raise SystemExit(f"active Step 7 hero missing: {token}")
+          if "blended 50/50" not in html:
+              raise SystemExit("Step 7 third-down weighting disclosure missing")
+          print("LIVE_STEP7_HERO_STACK=PASS")
+          PY
+
+      - name: Prove Step 7 model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          combined="\n".join(Path(p).read_text(encoding="utf-8") for p in (
+              "cfb_over_under_third_down_engine_v1.py",
+              "cfb_over_under_slate_v6.py",
+              "cfb_over_under_matchup_ui_v7.py",
+              "streamlit_memory_lazy_router_v47.py",
+              "app.py",
+          ))
+          required=[
+              'FROZEN_STEP6_ENGINE = "cfb_over_under_red_zone_engine_v1"',
+              'MAX_TEAM_THIRD_DOWN_ADJUSTMENT = 1.25',
+              'MIN_SIDE_COVERAGE = 1.00',
+              'OFFENSE_RATE_WEIGHT = 0.50',
+              'DEFENSE_ALLOWED_RATE_WEIGHT = 0.50',
+              'FULL_SAMPLE_THIRD_DOWN_ATTEMPTS = 30.0',
+              'ANALYSIS_LINE_THIRD_DOWN_WEIGHT = 0.0',
+              '"rankless_tie_safe_parser_active": True',
+              '"cross_division_rank_comparison_used": False',
+              'FROZEN_UPGRADE = "cfb_over_under_matchup_ui_v6"',
+              'root._import("cfb_over_under_matchup_ui_v7")',
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v46"',
+              'from streamlit_memory_lazy_router_v47 import render_app',
+          ]
+          for token in required:
+              if token not in combined:
+                  raise SystemExit(f"missing Step 7 marker: {token}")
+          lower=combined.lower()
+          for token in ("sportsbook_api","np.random","import random","monte_carlo("):
+              if token in lower:
+                  raise SystemExit(f"Step 7 crossed model firewall: {token}")
+          print("CFB_OU_UPGRADE_STEP7_FIREWALL=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo CFB_OU_UPGRADE_STEP7_THIRD_DOWN_GREEN
