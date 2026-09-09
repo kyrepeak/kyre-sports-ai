@@ -31,7 +31,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install requests
 
       - name: Build snapshot in certification workspace
         run: python scripts/build_cfb_runtime_snapshot.py
@@ -130,7 +130,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install requests
 
       - name: Refresh snapshot
         run: python scripts/build_cfb_runtime_snapshot.py
