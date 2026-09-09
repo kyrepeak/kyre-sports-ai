@@ -1,0 +1,163 @@
+name: CFB Step 4 Streamlit live odds
+
+on:
+  push:
+    branches:
+      - cfb-step4-streamlit-live-odds
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  certify-step4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify Step 4 did not edit frozen pre-odds files
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+
+          frozen = {
+              "streamlit_memory_lazy_router_v57.py",
+              "cfb_schedule_v5_runtime_snapshot.py",
+              "cfb_over_under_runtime_team_data_v1.py",
+              "cfb_over_under_runtime_deep_adapter_v1.py",
+              "cfb_over_under_slate_v14_runtime.py",
+              "cfb_over_under_clean_page_v17.py",
+              "cfb_over_under_step3_readable_v2.py",
+              "data/cfb_step3_matchup_stats_v1.json",
+              "scripts/build_cfb_runtime_snapshot.py",
+              ".github/workflows/cfb-runtime-snapshot-refresh.yml",
+              "tests/test_cfb_over_under_clean_page_v17.py",
+              "tests/test_cfb_over_under_step3_readable_v2.py",
+              "tests/test_cfb_over_under_router_v57.py",
+          }
+          changed = set(
+              subprocess.check_output(
+                  ["git", "diff", "--name-only", "origin/main...HEAD"],
+                  text=True,
+              ).splitlines()
+          )
+          touched = sorted(frozen & changed)
+          assert not touched, f"Step 4 edited frozen files: {touched}"
+          print("CFB_STEP4_FROZEN_BASELINE_UNTOUCHED")
+          PY
+
+      - name: Install Streamlit dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pytest
+
+      - name: Run frozen and Step 4 regression tests
+        run: |
+          python -m pytest -q             tests/test_cfb_over_under_clean_page_v17.py             tests/test_cfb_over_under_step3_readable_v2.py             tests/test_cfb_over_under_router_v57.py             tests/test_cfb_over_under_market_adapter_v1.py             tests/test_cfb_over_under_clean_page_v18.py             tests/test_cfb_over_under_router_v58.py
+
+      - name: Compile additive Step 4 modules
+        run: |
+          python -m py_compile             cfb_over_under_market_adapter_v1.py             cfb_over_under_clean_page_v18.py             streamlit_memory_lazy_router_v58.py             app.py
+
+      - name: Verify active Streamlit entrypoint
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path("app.py").read_text(encoding="utf-8")
+          assert "streamlit_memory_lazy_router_v58" in text
+          assert "STREAMLIT_MAIN_V58_CFB_OU_LIVE_ODDS" in text
+          print("CFB_STEP4_STREAMLIT_ENTRYPOINT_GREEN")
+          PY
+
+      - name: Read-only live Step 4 adapter witness
+        run: |
+          python - <<'PY'
+          import json
+          import requests
+
+          import cfb_over_under_market_adapter_v1 as adapter
+
+          base = adapter.DEFAULT_API_BASE.rstrip("/")
+          response = requests.get(
+              base + adapter.API_PATH,
+              timeout=45,
+              headers={
+                  "Accept": "application/json",
+                  "User-Agent": "KyreSportsAI-Streamlit-Step4-Cert/1.0",
+              },
+          )
+          response.raise_for_status()
+          raw = response.json()
+          games = raw.get("games") or []
+          assert len(games) >= 100, len(games)
+
+          sample = next(
+              (
+                  row for row in games
+                  if row.get("away_team") == "Florida A&M"
+                  and row.get("home_team") == "Miami"
+              ),
+              games[0],
+          )
+          day = sample["game_date"]
+
+          adapter.clear_market_cache()
+          payload, fetch_diag = adapter.load_odds_for_date(day, "FanDuel")
+          assert fetch_diag["status"] == "GREEN", fetch_diag
+          assert payload["game_count"] >= 1, payload
+
+          target = next(
+              row for row in payload["games"]
+              if row["game_id"] == sample["game_id"]
+          )
+          schedule_game = {
+              "game_date": day,
+              "away_team": target["away_team"],
+              "home_team": target["home_team"],
+              "espn_event_id": target["game_id"],
+              "identity_key": "certified-schedule-row",
+          }
+          attached, attach_diag = adapter.attach_market_lines(
+              [schedule_game],
+              payload,
+          )
+          game = attached[0]
+          assert game["market_line_available"] is True, game
+          assert game["market_identity_verified"] is True, game
+          assert game["market_total"] == float(target["total"]), game
+          assert game["market_sportsbook"] == "FanDuel", game
+          assert game["market_projection_weight"] == 0.0, game
+          assert attach_diag["matching_method"] == "official ESPN event_id only"
+          assert attach_diag["fuzzy_matching"] is False
+          assert attach_diag["synthetic_ids"] is False
+
+          print(
+              "CFB_STEP4_LIVE_ADAPTER_WITNESS",
+              json.dumps(
+                  {
+                      "date": day,
+                      "api_rows": payload["game_count"],
+                      "game_id": game["market_official_game_id"],
+                      "matchup": (
+                          f"{schedule_game['away_team']} @ "
+                          f"{schedule_game['home_team']}"
+                      ),
+                      "sportsbook": game["market_sportsbook"],
+                      "total": game["market_total"],
+                      "projection_weight": game["market_projection_weight"],
+                  },
+                  sort_keys=True,
+              ),
+          )
+          print("CFB_STEP4_STREAMLIT_LIVE_ODDS_GREEN")
+          PY
