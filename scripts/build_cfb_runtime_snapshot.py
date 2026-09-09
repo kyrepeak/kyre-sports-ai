@@ -11,7 +11,7 @@ Window
 
 Sources
 -------
-- ESPN college-football FBS + FCS scoreboards: event identity, current records, rank,
+- ESPN college-football scoreboard: event identity, current records, rank,
   venue, broadcast, status, week
 - ESPN team schedule: completed-game W/L, splits, recent form, scoring
 - ESPN Core: current head coach and latest available AP/Coaches/CFP rank set
@@ -552,76 +552,65 @@ def build_snapshot() -> dict[str, Any]:
     raw_events: dict[str, dict[str, Any]] = {}
     team_inputs: dict[str, dict[str, Any]] = {}
 
-    # Phase 1: date-scoped Division I scoreboards only. FanDuel's NCAAF
-    # board contains FBS and FCS games, including cross-division matchups, so
-    # both ESPN groups are required for complete identity coverage.
+    # Phase 1: date-scoped scoreboards only. Keep this fast and deterministic.
     for day in dates:
         ymd = day.replace("-", "")
-        for group_id, division in ((80, "FBS"), (81, "FCS")):
-            try:
-                payload = get_json(
-                    SCOREBOARD,
-                    {"dates": ymd, "limit": 500, "groups": group_id},
-                )
-            except Exception as exc:
-                print(
-                    f"WARN scoreboard {day} {division}: "
-                    f"{type(exc).__name__}: {exc}",
-                    file=sys.stderr,
-                )
+        try:
+            payload = get_json(
+                SCOREBOARD,
+                {"dates": ymd, "limit": 500, "groups": 80},
+            )
+        except Exception as exc:
+            print(
+                f"WARN scoreboard {day}: {type(exc).__name__}: {exc}",
+                file=sys.stderr,
+            )
+            continue
+
+        for event in payload.get("events") or []:
+            if not isinstance(event, Mapping):
+                continue
+            event_id = clean(event.get("id"))
+            if not event_id:
+                continue
+            away, home, comp = event_sides(event)
+            if not away or not home:
                 continue
 
-            for event in payload.get("events") or []:
-                if not isinstance(event, Mapping):
-                    continue
-                event_id = clean(event.get("id"))
-                if not event_id:
-                    continue
-                away, home, comp = event_sides(event)
-                if not away or not home:
-                    continue
+            dt = parse_dt(event.get("date"))
+            event_day = (
+                dt.astimezone(ET).date().isoformat()
+                if dt is not None
+                else day
+            )
+            week = week_number(event)
+            venue = comp.get("venue") or {}
+            if not isinstance(venue, Mapping):
+                venue = {}
 
-                dt = parse_dt(event.get("date"))
-                event_day = (
-                    dt.astimezone(ET).date().isoformat()
-                    if dt is not None
-                    else day
-                )
-                week = week_number(event)
-                venue = comp.get("venue") or {}
-                if not isinstance(venue, Mapping):
-                    venue = {}
+            raw_events[event_id] = {
+                "event_id": event_id,
+                "game_date": event_day,
+                "away_team": team_name(away),
+                "home_team": team_name(home),
+                "venue": clean(venue.get("fullName") or venue.get("name")),
+                "broadcast": broadcast(comp),
+                "status": status_name(event, comp),
+                "espn_week": week,
+                "_away_comp": dict(away),
+                "_home_comp": dict(home),
+            }
 
-                existing_event = raw_events.get(event_id)
-                if existing_event is None:
-                    raw_events[event_id] = {
-                        "event_id": event_id,
-                        "game_date": event_day,
-                        "away_team": team_name(away),
-                        "home_team": team_name(home),
-                        "venue": clean(
-                            venue.get("fullName") or venue.get("name")
-                        ),
-                        "broadcast": broadcast(comp),
-                        "status": status_name(event, comp),
-                        "espn_week": week,
-                        "_away_comp": dict(away),
-                        "_home_comp": dict(home),
+            for comp_side in (away, home):
+                tid = team_id(comp_side)
+                if not tid:
+                    continue
+                existing = team_inputs.get(tid)
+                if existing is None or int(week or 0) >= int(existing.get("week") or 0):
+                    team_inputs[tid] = {
+                        "competitor": dict(comp_side),
+                        "week": int(week or 0),
                     }
-
-                for comp_side in (away, home):
-                    tid = team_id(comp_side)
-                    if not tid:
-                        continue
-                    existing = team_inputs.get(tid)
-                    if (
-                        existing is None
-                        or int(week or 0) >= int(existing.get("week") or 0)
-                    ):
-                        team_inputs[tid] = {
-                            "competitor": dict(comp_side),
-                            "week": int(week or 0),
-                        }
 
     if not raw_events:
         raise SystemExit(
