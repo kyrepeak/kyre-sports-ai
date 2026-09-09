@@ -31,7 +31,7 @@ import cfb_over_under_runtime_team_data_v1 as runtime_team_data
 import cfb_over_under_slate_v14_runtime as runtime_slate
 import cfb_schedule_v5_runtime_snapshot as schedule
 
-MODEL_VERSION = "CFB O/U CLEAN PAGE V17 • DIRECT CURRENT-DATA UI"
+MODEL_VERSION = "CFB O/U CLEAN PAGE V17.1 • DIRECT CURRENT-DATA UI • COLOR STEPS RESTORED"
 MARKET = "Over/Under"
 _ET = ZoneInfo("America/New_York")
 
@@ -69,9 +69,19 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
 .c17-ranks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:7px}
 .c17-rankbox{border:1px solid rgba(80,210,150,.10);border-radius:8px;background:#071812;padding:6px}
 .c17-rankbox b{display:block;color:#9be8c1;font-size:.48rem}.c17-rankbox span{display:block;color:#607c6e;font-size:.25rem;text-transform:uppercase}
-.c17-step{border:1px solid rgba(126,175,205,.17);border-radius:13px;background:#08141c;margin-top:8px;overflow:hidden}
-.c17-step-h{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(126,175,205,.09)}
-.c17-step-h b{color:#d8ecf5;font-size:.48rem;letter-spacing:.06em}.c17-step-h span{font-size:.34rem;font-weight:900}.c17-step-h span.ready{color:#81dcae}.c17-step-h span.limited{color:#f1c76f}.c17-step-h span.gated{color:#ff9d7a}.c17-step-h span.check{color:#9fb3bd}
+.c17-step{border:1px solid rgba(126,175,205,.17);border-radius:13px;background:#08141c;margin-top:8px;overflow:hidden;box-shadow:inset 3px 0 0 var(--step-accent,#7eaecb)}
+.c17-step-h{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(126,175,205,.09);background:linear-gradient(90deg,var(--step-wash,rgba(126,175,205,.06)),transparent 72%)}
+.c17-step-h b{color:var(--step-accent,#d8ecf5);font-size:.48rem;letter-spacing:.06em}.c17-step-h span{font-size:.34rem;font-weight:900}.c17-step-h span.ready{color:#81dcae}.c17-step-h span.limited{color:#f1c76f}.c17-step-h span.gated{color:#ff9d7a}.c17-step-h span.check{color:#9fb3bd}
+.c17-step.step-3{--step-accent:#ff746b;--step-wash:rgba(255,116,107,.10);border-color:rgba(255,116,107,.28);background:linear-gradient(145deg,#160d10,#0b151b 72%)}
+.c17-step.step-4{--step-accent:#c7d2dc;--step-wash:rgba(199,210,220,.09);border-color:rgba(199,210,220,.22);background:linear-gradient(145deg,#10161d,#09151c 72%)}
+.c17-step.step-5{--step-accent:#ff9a52;--step-wash:rgba(255,154,82,.10);border-color:rgba(255,154,82,.27);background:linear-gradient(145deg,#17110b,#0b151a 72%)}
+.c17-step.step-6{--step-accent:#ff5f70;--step-wash:rgba(255,95,112,.10);border-color:rgba(255,95,112,.27);background:linear-gradient(145deg,#180c11,#0b151a 72%)}
+.c17-step.step-7{--step-accent:#b984ff;--step-wash:rgba(185,132,255,.10);border-color:rgba(185,132,255,.27);background:linear-gradient(145deg,#130d1b,#0a151b 72%)}
+.c17-step.step-8{--step-accent:#f6a04d;--step-wash:rgba(246,160,77,.10);border-color:rgba(246,160,77,.27);background:linear-gradient(145deg,#17110b,#0b151a 72%)}
+.c17-step.step-9{--step-accent:#62baff;--step-wash:rgba(98,186,255,.10);border-color:rgba(98,186,255,.28);background:linear-gradient(145deg,#091422,#0a151b 72%)}
+.c17-step.step-10{--step-accent:#d07cff;--step-wash:rgba(208,124,255,.10);border-color:rgba(208,124,255,.27);background:linear-gradient(145deg,#150d1b,#0a151b 72%)}
+.c17-step.step-11{--step-accent:#64df9b;--step-wash:rgba(100,223,155,.10);border-color:rgba(100,223,155,.27);background:linear-gradient(145deg,#0a1812,#0a151b 72%)}
+.c17-step.step-12{--step-accent:#f2c94c;--step-wash:rgba(242,201,76,.10);border-color:rgba(242,201,76,.30);background:linear-gradient(145deg,#17150a,#0a151b 72%)}
 .c17-step-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px}
 .c17-note{padding:8px 10px;color:#6f8793;font-size:.34rem;line-height:1.45;border-top:1px solid rgba(126,175,205,.08)}
 .c17-final{border:1px solid rgba(84,220,151,.28);border-radius:15px;background:#071a12;margin-top:10px;padding:11px}
@@ -329,7 +339,7 @@ def _model_step(step: int, title: str, engine: Mapping[str, Any]) -> str:
     elif status == "LIMITED":
         influence_note = " • Partial evidence is visible, but the engine has not cleared its full model-ready gate."
     return f'''
-<div class="c17-step">
+<div class="c17-step step-{int(step)}">
  <div class="c17-step-h"><b>STEP {step} • {escape(title)}</b><span class="{escape(status_class)}">{escape(status)}</span></div>
  <div class="c17-step-grid">{metric_html}</div>
  <div class="c17-note">{escape(reason + influence_note)}</div>
@@ -341,8 +351,8 @@ def _cert_step(result: Mapping[str, Any]) -> str:
     status = _clean(cert.get("status")) or "CHECK"
     failed = int(cert.get("checks_failed") or 0)
     return f'''
-<div class="c17-step">
- <div class="c17-step-h"><b>STEP 12 • FINAL CERTIFICATION</b><span>{escape(status)}</span></div>
+<div class="c17-step step-12">
+ <div class="c17-step-h"><b>STEP 12 • FINAL CERTIFICATION</b><span class="ready">{escape(status)}</span></div>
  <div class="c17-step-grid">
   <div class="c17-metric"><b>{failed}</b><span>integrity failures</span></div>
   <div class="c17-metric"><b>{escape(_clean(result.get("version")) or "runtime slate")}</b><span>model stack</span></div>
