@@ -1,0 +1,128 @@
+name: CFB Step 3 public odds endpoint
+
+on:
+  push:
+    branches:
+      - cfb-step3-public-odds-endpoint
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+
+jobs:
+  certify-step3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify Step 1 and Step 2 API blobs are unchanged
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          expected = {
+              "sports_api/api/cfb_markets.py": "72cc4c53467cd0130eeb0fed0da1603bf82e648b",
+              "sports_api/api/cfb_market_identity_v1.py": "807e311c84d3feb437637c4c36206a5e90ec1027",
+          }
+          # Git blob SHA = sha1("blob <len>\0" + bytes)
+          for path, wanted in expected.items():
+              raw = Path(path).read_bytes()
+              actual = hashlib.sha1(
+                  f"blob {len(raw)}\0".encode() + raw
+              ).hexdigest()
+              assert actual == wanted, (path, wanted, actual)
+              print("STEP3_FROZEN_BLOB_OK", path, actual)
+          PY
+
+      - name: Install shared-host test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-mlb-step14b-persistence.txt
+          python -m pip install pytest
+
+      - name: Run Step 1 through Step 3 CFB tests
+        run: |
+          python -m pytest -q             sports_api/tests/test_cfb_markets_step1.py             sports_api/tests/test_cfb_fanduel_direct_step2.py             sports_api/tests/test_cfb_market_identity_step2.py             sports_api/tests/test_cfb_odds_step3.py
+
+      - name: Compile Step 3 and shared router
+        run: |
+          python -m py_compile             sports_api/api/cfb_odds_v1.py             sports_api/api/health.py
+
+      - name: Shared-host Step 3 route witness
+        run: |
+          python - <<'PY'
+          from fastapi.testclient import TestClient
+          from sports_api.main import app
+
+          with TestClient(app) as client:
+              health = client.get("/health")
+              status = client.get("/api/v1/cfb/odds/status")
+
+          assert health.status_code == 200, health.text
+          assert status.status_code == 200, status.text
+          body = status.json()
+          assert body["step"] == 3
+          assert body["endpoint_ready"] is True
+          assert body["endpoint"] == "/api/v1/cfb/odds"
+          assert body["identity_required"] is True
+          assert body["identity_policy"]["synthetic_ids"] is False
+          assert body["identity_policy"]["fuzzy_matching"] is False
+          assert body["market_semantics"]["projection_weight"] == 0.0
+          assert body["market_semantics"]["may_modify_projection"] is False
+          print("CFB_STEP3_PUBLIC_ODDS_ENDPOINT_GREEN")
+          PY
+
+      - name: Read-only live Step 3 contract witness
+        run: |
+          python - <<'PY'
+          import json
+          from sports_api.api.cfb_odds_v1 import build_odds_payload
+          from sports_api.api.cfb_market_identity_v1 import resolve_verified_games
+          from sports_api.api.cfb_markets import _refresh_from_fanduel
+
+          feed = _refresh_from_fanduel()
+          verified, identity_diag = resolve_verified_games(feed)
+          payload = build_odds_payload(feed, verified)
+
+          assert payload["game_count"] >= 100, payload["game_count"]
+          assert payload["game_count"] == len(feed["games"])
+          assert payload["diagnostics"]["unmatched_market_rows"] == 0
+          assert payload["diagnostics"]["complete_identity_coverage"] is True
+          assert payload["diagnostics"]["synthetic_official_ids"] is False
+          assert payload["diagnostics"]["fuzzy_matching"] is False
+          assert all(row["identity_verified"] is True for row in payload["games"])
+          assert all(row["game_id"] for row in payload["games"])
+          assert all(row["away_team"] and row["home_team"] for row in payload["games"])
+
+          sample = next(
+              (
+                  row for row in payload["games"]
+                  if row["away_team"] == "Florida A&M"
+                  and row["home_team"] == "Miami"
+              ),
+              payload["games"][0],
+          )
+          print(
+              "CFB_STEP3_LIVE_WITNESS",
+              json.dumps(
+                  {
+                      "game_count": payload["game_count"],
+                      "identity_verified": payload["diagnostics"][
+                          "complete_identity_coverage"
+                      ],
+                      "identity_source_games": identity_diag.get("verified_games"),
+                      "sample": sample,
+                  },
+                  sort_keys=True,
+              ),
+          )
+          print("CFB_STEP3_LIVE_CONTRACT_GREEN")
+          PY
