@@ -17,60 +17,34 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install requests
-      - name: Probe ESPN completed-game summary stats
+      - name: Probe completed-game summary stats through certified transports
         run: |
-          python - <<'PY'
-          import json, requests, re
-          from datetime import datetime, timezone
-
-          H={
-            "User-Agent":"KyreSportsAI/CFB-Step3",
-            "Accept":"application/json,text/plain,*/*",
-            "Referer":"https://www.espn.com/",
-          }
-
-          def get(url, params=None):
-            r=requests.get(url,params=params,headers=H,timeout=20)
-            print("GET",r.url,"STATUS",r.status_code)
-            r.raise_for_status()
-            return r.json()
-
-          def sides(event):
-            comps=event.get("competitions") or []
-            comp=comps[0] if comps else {}
-            out={}
-            for c in comp.get("competitors") or []:
-              out[c.get("homeAway")]=c
-            return out,comp
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import cfb_over_under_deep_data_reconciliation_v1 as deep
 
           teams={"50":"Florida A&M","2390":"Miami (FL)"}
           for tid,name in teams.items():
-            print("\n=== TEAM",tid,name,"===")
-            sched=get(
-              f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{tid}/schedule",
-              {"season":2026}
-            )
-            for event in sched.get("events") or []:
-              status=((event.get("status") or {}).get("type") or {})
-              if not (status.get("completed") is True or status.get("state")=="post"):
-                continue
-              eid=str(event.get("id") or "")
-              print("COMPLETED_EVENT",eid,event.get("date"),status.get("description"))
-              summary=get(
-                "https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary",
-                {"event":eid}
-              )
-              box=summary.get("boxscore") or {}
-              print("BOX_KEYS",sorted(box.keys()))
-              print("TEAM_BLOCKS",len(box.get("teams") or []))
-              for block in box.get("teams") or []:
-                team=block.get("team") or {}
-                print("TEAM",team.get("id"),team.get("displayName"))
-                stats=block.get("statistics") or []
-                picked=[]
-                for st in stats:
-                  key=str(st.get("name") or st.get("label") or "")
-                  disp=st.get("displayValue")
-                  picked.append((key,disp))
-                print("STATS",json.dumps(picked,ensure_ascii=False))
+              print("\n=== TEAM",tid,name,"===")
+              sched,attempts=deep.history_engine._fetch_team_schedule(tid,2026)
+              print("SCHEDULE_ATTEMPTS",json.dumps(attempts[-4:],default=str))
+              for event in sched.get("events") or []:
+                  status=((event.get("status") or {}).get("type") or {})
+                  if not (status.get("completed") is True or status.get("state")=="post"):
+                      continue
+                  eid=str(event.get("id") or "")
+                  print("COMPLETED_EVENT",eid,event.get("date"),status.get("description"))
+                  summary,sum_attempts=deep.environment_engine._fetch_summary(eid)
+                  print("SUMMARY_ATTEMPTS",json.dumps(sum_attempts[-4:],default=str))
+                  box=summary.get("boxscore") or {}
+                  print("BOX_KEYS",sorted(box.keys()))
+                  print("TEAM_BLOCKS",len(box.get("teams") or []))
+                  for block in box.get("teams") or []:
+                      team=block.get("team") or {}
+                      print("TEAM",team.get("id"),team.get("displayName"))
+                      picked=[]
+                      for st in block.get("statistics") or []:
+                          key=str(st.get("name") or st.get("label") or "")
+                          picked.append((key,st.get("displayValue")))
+                      print("STATS",json.dumps(picked,ensure_ascii=False))
           PY
