@@ -1,0 +1,75 @@
+name: CFB Step 1 live production certification
+
+on:
+  push:
+    branches:
+      - cfb-step1-live-cert-20260909
+
+jobs:
+  live-cert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live Kyre Sports API
+        env:
+          BASE_URL: https://kyre-sports-api.onrender.com
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.request
+
+          base = os.environ["BASE_URL"].rstrip("/")
+          paths = {
+              "health": "/health",
+              "cfb": "/api/v1/cfb/markets/status",
+              "wnba": "/api/v1/wnba/teams",
+              "mlb": "/api/v1/mlb/runtime/step17b",
+          }
+
+          def get_json(path):
+              url = base + path
+              last = None
+              for attempt in range(1, 6):
+                  try:
+                      req = urllib.request.Request(
+                          url,
+                          headers={"User-Agent": "kyre-cfb-step1-live-cert/1.0"},
+                      )
+                      with urllib.request.urlopen(req, timeout=30) as response:
+                          body = response.read().decode("utf-8")
+                          if response.status != 200:
+                              raise RuntimeError(f"{path} returned HTTP {response.status}")
+                          return json.loads(body)
+                  except Exception as exc:
+                      last = exc
+                      if attempt == 5:
+                          raise
+                      time.sleep(5)
+              raise last
+
+          health = get_json(paths["health"])
+          cfb = get_json(paths["cfb"])
+          wnba = get_json(paths["wnba"])
+          mlb = get_json(paths["mlb"])
+
+          assert health.get("status") == "ok"
+
+          assert cfb.get("sport") == "college_football"
+          assert cfb.get("route_ready") is True
+          semantics = cfb.get("market_semantics") or {}
+          assert semantics.get("projection_weight") == 0.0
+          assert semantics.get("market_context_only") is True
+          assert semantics.get("may_modify_projection") is False
+          rendered = json.dumps(cfb).lower()
+          assert "cfb_kyre_market_ingest_token" not in rendered
+
+          assert int(wnba.get("team_count") or 0) > 0
+          assert mlb.get("data_type") == "mlb_step17b_runtime_status_v1"
+
+          print("LIVE_CERT_PASS")
+          print("health=200")
+          print("cfb=200 projection_weight=0.0 market_context_only=true")
+          print(f"wnba=200 team_count={wnba.get('team_count')}")
+          print(f"mlb=200 enabled={mlb.get('enabled')} running={mlb.get('running')} role={mlb.get('role')}")
+          PY
