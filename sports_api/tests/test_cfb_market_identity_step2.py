@@ -261,3 +261,19 @@ def test_reconciled_endpoint_returns_404_for_unverified_filter(monkeypatch, tmp_
         "/api/v1/cfb/markets/reconciled?official_game_id=does-not-exist"
     )
     assert response.status_code == 404
+
+
+def test_shared_host_lifespan_starts_with_step2_routes():
+    """Regression for the shared Render lifespan recursion fixed after Step 1."""
+    from sports_api.main import app as shared_host_app
+
+    with TestClient(shared_host_app) as client:
+        health = client.get("/health")
+        identity_status = client.get("/api/v1/cfb/markets/identity-status")
+
+    assert health.status_code == 200
+    assert identity_status.status_code == 200
+    body = identity_status.json()
+    assert body["step"] == 2
+    assert body["identity_ready"] is True
+    assert body["market_semantics"]["projection_weight"] == 0.0
