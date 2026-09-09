@@ -129,7 +129,7 @@ def _summary_sides(payload: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
 
 
 def _record_summary(competitor: Mapping[str, Any], wanted: set[str]) -> str:
-    records = competitor.get("records") or []
+    records = competitor.get("record") or competitor.get("records") or []
     if isinstance(records, Mapping):
         records = [records]
     for item in records if isinstance(records, list) else []:
@@ -608,9 +608,24 @@ def _reconcile_profile(
     out["conference_record"] = _parse_record(conference_record_text)
 
     division = _clean(out.get("division_context")).upper()
-    if not division:
+    if not division or division not in {"FBS", "FCS"}:
         source = _clean(out.get("data_source")).lower()
-        division = "FCS" if "fcs" in source else "FBS"
+        stat_labels = " ".join(
+            _clean(item.get("label")).lower()
+            for item in (out.get("official_stats") or {}).values()
+            if isinstance(item, Mapping)
+        )
+        division = "FCS" if ("fcs" in source or "fcs" in stat_labels) else "FBS"
+    elif division == "FBS":
+        # The stats-only crossover fallback can inherit a stale FBS default.
+        # Official NCAA rows labeled FCS are stronger evidence of division.
+        stat_labels = " ".join(
+            _clean(item.get("label")).lower()
+            for item in (out.get("official_stats") or {}).values()
+            if isinstance(item, Mapping)
+        )
+        if "fcs" in stat_labels:
+            division = "FCS"
     out["division_context"] = division
 
     coach, coach_attempts = _head_coach(team_id, season)
