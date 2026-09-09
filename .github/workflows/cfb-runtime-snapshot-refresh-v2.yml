@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   certify:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/cfb-runtime-snapshot-auto-refresh-v1' || github.event_name == 'pull_request'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/cfb-runtime-snapshot-auto-refresh-v2' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,8 +45,10 @@ jobs:
           path=Path("data/cfb_runtime_snapshot_v2.json")
           payload=json.loads(path.read_text())
           games=payload.get("games") or []
-          if not games:
-              raise SystemExit("snapshot contains no games")
+          if int(payload.get("version") or 0) != 2:
+              raise SystemExit(f"unexpected V2 snapshot version: {payload.get('version')}")
+          if len(games) < 100:
+              raise SystemExit(f"V2 snapshot coverage too small: {len(games)}")
 
           row=next(
               (
