@@ -284,6 +284,44 @@ jobs:
           print("LIVE_FAMU_MIAMI_DEEP_DATA_UI=PASS")
           PY
 
+      - name: Live legacy Step-1 and Step-2 cards consume reconciled data
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_deep_data_reconciliation_v1 as deep
+          import cfb_over_under_matchup_ui_v1 as step1
+          import cfb_over_under_matchup_ui_v2 as step2
+          import cfb_over_under_rankings_v1 as rankings
+
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(
+              g for g in games
+              if "Florida A&M" in str(g.get("away_team"))
+              and "Miami" in str(g.get("home_team"))
+          )
+          evidence,_=deep.reconcile_matchup(game,"2026-09-10")
+          g=evidence.get("game") or {}
+          away=evidence.get("away") or {}
+          home=evidence.get("home") or {}
+
+          hero=step1._enhanced_hero(g,away,home)
+          original=rankings.build_ranking_context
+          rankings.build_ranking_context=deep.build_ranking_context
+          try:
+              panel=step2._rankings_panel(g,away,home)
+          finally:
+              rankings.build_ranking_context=original
+
+          for token in ("Hard Rock Stadium","ACC Network","1-1","1-0"):
+              if token not in hero and token not in panel:
+                  raise SystemExit(f"legacy reconciled cards missing {token!r}")
+          if "#7" not in panel or "Coaches" not in panel:
+              raise SystemExit("Step-2 current Coaches/AP rendering missing")
+          if "2 GAME SAMPLE" in panel or "1 GAME SAMPLE" in panel:
+              raise SystemExit("stale sample-only record leaked into Step-2 card")
+          print("LIVE_FAMU_MIAMI_LEGACY_CARDS_RECONCILED=PASS")
+          PY
+
       - name: Deep-data model firewall
         run: |
           python - <<'PY'
