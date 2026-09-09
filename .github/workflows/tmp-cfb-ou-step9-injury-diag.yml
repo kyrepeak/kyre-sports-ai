@@ -17,46 +17,43 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Inspect ESPN event summary and team injury endpoints
+      - name: Summarize ESPN roster availability
         run: |
           python - <<'PY'
           import json,requests
 
-          event_id="401858213"
-          summary_url="https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary"
-          r=requests.get(summary_url,params={"event":event_id},timeout=20)
-          print("SUMMARY_HTTP",r.status_code,r.url)
-          p=r.json()
-          print("SUMMARY_KEYS",sorted(p.keys()) if isinstance(p,dict) else type(p).__name__)
-          for k,v in (p.items() if isinstance(p,dict) else []):
-              if any(x in k.lower() for x in ("injur","weather","header","roster","team")):
-                  print("SUMMARY_SECTION",k,json.dumps(v,default=str)[:24000])
-
-          def walk(obj,path=""):
-              if isinstance(obj,dict):
-                  for k,v in obj.items():
-                      pp=f"{path}.{k}" if path else k
-                      if any(x in k.lower() for x in ("injur","weather","temperature","wind","status","position")):
-                          print("MATCH",pp,json.dumps(v,default=str)[:5000])
-                      walk(v,pp)
-              elif isinstance(obj,list):
-                  for i,v in enumerate(obj[:100]):
-                      walk(v,f"{path}[{i}]")
-          walk(p)
-
-          for tid in ("50","2390"):
-              for suffix in ("injuries","roster","depthchart","depth-chart"):
-                  u=f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{tid}/{suffix}"
-                  try:
-                      rr=requests.get(u,timeout=20)
-                      print("TEAM_ENDPOINT",tid,suffix,rr.status_code,rr.url)
-                      try:
-                          q=rr.json()
-                      except Exception:
-                          print("TEAM_TEXT",tid,suffix,rr.text[:1000])
-                          continue
-                      print("TEAM_KEYS",tid,suffix,sorted(q.keys()) if isinstance(q,dict) else type(q).__name__)
-                      print("TEAM_PAYLOAD",tid,suffix,json.dumps(q,default=str)[:16000])
-                  except Exception as e:
-                      print("TEAM_ERROR",tid,suffix,type(e).__name__,str(e))
+          for tid,name in (("50","Florida A&M"),("2390","Miami (FL)")):
+              url=f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{tid}/roster"
+              r=requests.get(url,timeout=20)
+              print("HTTP",name,r.status_code,url)
+              p=r.json()
+              rows=[]
+              total=0
+              active=0
+              for group in p.get("athletes") or []:
+                  group_name=group.get("position")
+                  for a in group.get("items") or []:
+                      total+=1
+                      status=a.get("status") or {}
+                      injuries=a.get("injuries") or []
+                      pos=a.get("position") or {}
+                      if str(status.get("type") or "").lower()=="active":
+                          active+=1
+                      if injuries or str(status.get("type") or "").lower()!="active":
+                          rows.append({
+                              "name":a.get("displayName"),
+                              "position":pos.get("abbreviation") or pos.get("displayName"),
+                              "group":group_name,
+                              "status":status,
+                              "injuries":injuries,
+                              "experience":a.get("experience"),
+                          })
+              print("SUMMARY",name,json.dumps({
+                  "timestamp":p.get("timestamp"),
+                  "status":p.get("status"),
+                  "total":total,
+                  "active":active,
+                  "flagged":len(rows),
+              }))
+              print("FLAGGED",name,json.dumps(rows,default=str,indent=2))
           PY
