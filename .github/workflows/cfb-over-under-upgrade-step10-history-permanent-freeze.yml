@@ -1,0 +1,190 @@
+name: CFB O/U Upgrade Step 10 history permanent freeze
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [cfb-ou-upgrade-step10-history-permanent-freeze]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact permanent-freeze scope
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess,sys
+          actual=set(subprocess.check_output(["git","diff","--name-only","origin/main...HEAD"],text=True).splitlines())
+          expected={
+              ".github/workflows/cfb-over-under-upgrade-step10-history-permanent-freeze.yml",
+              "cfb_over_under_upgrade_freeze_manifest_v10.json",
+          }
+          if actual!=expected:
+              print("expected",sorted(expected)); print("actual",sorted(actual)); sys.exit(1)
+          print("CFB_OU_STEP10_PERMANENT_FREEZE_SCOPE=PASS")
+          PY
+
+      - name: Enforce previous Upgrade Step 9 freeze
+        run: |
+          python - <<'PY'
+          import json,pathlib,subprocess,sys
+          def rev(spec): return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          failures=[]
+          if rev("HEAD:cfb_over_under_upgrade_freeze_manifest_v9.json")!="d95539a9dde4a51f31df197af1831fc870524480":
+              failures.append("Upgrade Step 9 freeze manifest changed")
+          manifest=json.loads(pathlib.Path("cfb_over_under_upgrade_freeze_manifest_v9.json").read_text())
+          for path,expected in (manifest.get("exact_blobs") or {}).items():
+              try: actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing Step 1-9 frozen path: {path}"); continue
+              if actual!=expected: failures.append(f"Step 1-9 frozen path changed: {path}")
+          if failures:
+              print(*failures,sep="\n"); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEPS_1_9_PERMANENTLY_FROZEN=PASS")
+          PY
+
+      - name: Enforce Step 10 exact blobs and contract
+        run: |
+          python - <<'PY'
+          import json,pathlib,subprocess,sys
+          def rev(spec): return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          manifest=json.loads(pathlib.Path("cfb_over_under_upgrade_freeze_manifest_v10.json").read_text())
+          failures=[]
+          if rev("HEAD:cfb_over_under_upgrade_freeze_manifest_v10.json")!="ebaf3e3ac8819aca47eccf81b7089ec05d833fd8":
+              failures.append("Step 10 freeze manifest blob changed")
+          if manifest.get("version")!=10: failures.append("Step 10 freeze version changed")
+          if manifest.get("completed_upgrade_steps")!=[1,2,3,4,5,6,7,8,9,10]:
+              failures.append("completed upgrade-step list changed")
+          if manifest.get("baseline_commit")!="a30f4622848fa1662160280b9886f7437313ca39":
+              failures.append("Step 10 baseline commit changed")
+          c=manifest.get("step10_contract") or {}
+          expected_equal={
+              "name":"historical matchup context audit",
+              "market":"Over/Under",
+              "frozen_parent_upgrade":"cfb_over_under_matchup_ui_v9",
+              "frozen_parent_slate":"cfb_over_under_slate_v8",
+              "active_engine":"cfb_over_under_history_engine_v1",
+              "active_slate":"cfb_over_under_slate_v9",
+              "active_ui":"cfb_over_under_matchup_ui_v10",
+              "active_router":"streamlit_memory_lazy_router_v50",
+              "recent_game_window":8,
+              "recent_lookback_seasons":3,
+              "h2h_lookback_seasons":6,
+              "minimum_recent_games_for_context":3,
+              "projected_total_history_weight":0,
+              "analysis_line_history_weight":0,
+              "selection_history_weight":0,
+              "live_florida_am_espn_team_id":"50",
+              "live_miami_espn_team_id":"2390",
+              "live_h2h_event_id":"401635536",
+              "live_h2h_combined_total":65,
+              "next_upgrade_step":11,
+          }
+          for key,expected in expected_equal.items():
+              if c.get(key)!=expected: failures.append(f"Step 10 contract changed: {key}")
+          required_true=[
+              "exact_espn_team_id_history_active",
+              "completed_pre_kickoff_history_only",
+              "target_event_excluded",
+              "live_florida_am_miami_certified",
+          ]
+          for key in required_true:
+              if c.get(key) is not True: failures.append(f"Step 10 lost true invariant: {key}")
+          required_false=[
+              "future_event_leakage_allowed",
+              "historical_roster_continuity_certified",
+              "opponent_strength_adjusted_history",
+              "projected_team_points_changed",
+              "projected_total_changed",
+              "structural_sigma_changed",
+              "frozen_step9_qualification_thresholds_changed",
+              "frozen_reliability_changed",
+              "sportsbook_input_added",
+              "market_probability_input_added",
+              "edge_or_ev_added",
+              "monte_carlo_added",
+          ]
+          for key in required_false:
+              if c.get(key) is not False: failures.append(f"Step 10 violated false invariant: {key}")
+          for path,expected in (manifest.get("exact_blobs") or {}).items():
+              try: actual=rev(f"HEAD:{path}")
+              except subprocess.CalledProcessError:
+                  failures.append(f"missing Step 10 frozen path: {path}"); continue
+              if actual!=expected: failures.append(f"Step 10 frozen blob changed: {path}")
+          if failures:
+              print(*failures,sep="\n"); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEP10_EXACT_BLOBS_AND_CONTRACT=PASS")
+          PY
+
+      - name: Verify active Router V50 and compile frozen Step 10
+        run: |
+          grep -F 'from streamlit_memory_lazy_router_v50 import render_app' app.py
+          python - <<'PY'
+          import py_compile
+          for path in (
+              "app.py",
+              "cfb_over_under_history_engine_v1.py",
+              "cfb_over_under_slate_v9.py",
+              "cfb_over_under_matchup_ui_v10.py",
+              "streamlit_memory_lazy_router_v50.py",
+          ):
+              py_compile.compile(path,doraise=True)
+          print("CFB_OU_STEP10_FROZEN_COMPILE=PASS")
+          PY
+
+      - name: Run Step 10 and inherited regressions
+        run: PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_upgrade_step10_history_engine.py tests/test_cfb_over_under_upgrade_step10_slate.py tests/test_cfb_over_under_upgrade_step10_ui_router.py tests/test_cfb_over_under_upgrade_step9_environment_engine.py tests/test_cfb_over_under_upgrade_step9_slate.py tests/test_cfb_over_under_upgrade_step9_ui_router.py tests/test_cfb_over_under_upgrade_step8_turnover_engine.py tests/test_cfb_over_under_upgrade_step8_slate.py tests/test_cfb_over_under_upgrade_step8_ui_router.py tests/test_cfb_over_under_upgrade_step7_third_down_engine.py tests/test_cfb_over_under_upgrade_step7_slate.py tests/test_cfb_over_under_upgrade_step7_ui_router.py tests/test_cfb_over_under_upgrade_step6_red_zone_engine.py tests/test_cfb_over_under_upgrade_step6_slate.py tests/test_cfb_over_under_upgrade_step6_ui_router.py tests/test_cfb_over_under_upgrade_step5_explosive_engine.py tests/test_cfb_over_under_upgrade_step5_slate.py tests/test_cfb_over_under_upgrade_step5_ui_router.py tests/test_cfb_over_under_upgrade_step4_pace_engine.py tests/test_cfb_over_under_upgrade_step4_slate.py tests/test_cfb_over_under_upgrade_step4_ui_router.py tests/test_cfb_over_under_upgrade_step3_engine.py tests/test_cfb_over_under_upgrade_step3_slate.py tests/test_cfb_over_under_upgrade_step3_ui.py tests/test_cfb_over_under_multisource_logo_resolver_v2.py tests/test_cfb_over_under_multisource_logo_hotfix_v4.py tests/test_cfb_over_under_logo_recursion_hotfix_v3.py
+
+      - name: Step 10 permanent-freeze model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          combined="\n".join(Path(p).read_text(encoding="utf-8") for p in (
+              "cfb_over_under_history_engine_v1.py",
+              "cfb_over_under_slate_v9.py",
+              "cfb_over_under_matchup_ui_v10.py",
+              "streamlit_memory_lazy_router_v50.py",
+          ))
+          required=[
+              'FROZEN_STEP9_ENGINE = "cfb_over_under_environment_engine_v1"',
+              'RECENT_GAME_WINDOW = 8',
+              'H2H_LOOKBACK_SEASONS = 6',
+              'PROJECTED_TOTAL_HISTORY_WEIGHT = 0.0',
+              'ANALYSIS_LINE_HISTORY_WEIGHT = 0.0',
+              'SELECTION_HISTORY_WEIGHT = 0.0',
+              'HISTORICAL_ROSTER_CONTINUITY_CERTIFIED = False',
+              'OPPONENT_STRENGTH_ADJUSTED_HISTORY = False',
+              '"future_event_leakage_allowed": False',
+              'FROZEN_UPGRADE = "cfb_over_under_matchup_ui_v9"',
+              'FROZEN_ROUTER="streamlit_memory_lazy_router_v49"',
+          ]
+          for token in required:
+              if token not in combined: raise SystemExit(f"missing frozen Step 10 marker: {token}")
+          lower=combined.lower()
+          for token in ("sportsbook_api","np.random","import random","monte_carlo("):
+              if token in lower: raise SystemExit(f"Step 10 permanent freeze crossed firewall: {token}")
+          print("CFB_OU_UPGRADE_STEP10_PERMANENT_FREEZE_FIREWALL=PASS")
+          PY
+
+      - name: Permanent freeze marker
+        run: echo CFB_OU_UPGRADE_STEP10_HISTORY_PERMANENTLY_FROZEN_GREEN
