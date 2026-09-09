@@ -138,6 +138,8 @@ jobs:
               raise SystemExit("Step 11 current-season-only firewall failed")
           if float(engine.get("previous_season_projection_weight") or 0)!=0.0:
               raise SystemExit("previous-season history entered Step 11 projection")
+          if float(away.get("opponent_record_coverage") or 0)<0.60 or float(home.get("opponent_record_coverage") or 0)<0.60:
+              raise SystemExit("Step 11 opponent schedule fallback did not resolve coverage")
           if engine.get("future_event_leakage_allowed") is not False or engine.get("target_event_excluded") is not True:
               raise SystemExit("Step 11 event leakage contract failed")
 
@@ -212,6 +214,7 @@ jobs:
               'FROZEN_STEP10_ENGINE = "cfb_over_under_history_engine_v1"',
               'MIN_CURRENT_SEASON_GAMES = 2',
               'MIN_OPPONENT_RECORD_COVERAGE = 0.60',
+              'OPPONENT_RECORD_FALLBACK_ACTIVE = True',
               'RECENT_FORM_PROJECTION_BLEND = 0.18',
               'MAX_TEAM_FORM_ADJUSTMENT = 1.25',
               'MAX_TOTAL_FORM_ADJUSTMENT = 2.0',
