@@ -38,24 +38,56 @@ def _load_v2_snapshot() -> dict[str, Any]:
 
 def _find_v2_snapshot(game: Mapping[str, Any]) -> dict[str, Any]:
     payload = _load_v2_snapshot()
+    rows = [
+        row for row in (payload.get("games") or [])
+        if isinstance(row, Mapping)
+    ]
+
     event_id = _clean(game.get("espn_event_id"))
+    if event_id:
+        exact = [
+            row for row in rows
+            if _clean(row.get("event_id")) == event_id
+        ]
+        return dict(exact[0]) if len(exact) == 1 else {}
+
+    # If V5 already recovered team IDs but not the event ID, use the exact
+    # away/home ESPN team-ID pair before falling back to deterministic names.
+    away_team_id = _clean(game.get("away_espn_team_id"))
+    home_team_id = _clean(game.get("home_espn_team_id"))
     day = _clean(game.get("game_date"))
+    if away_team_id and home_team_id and day:
+        exact_team_ids: list[Mapping[str, Any]] = []
+        for row in rows:
+            if _clean(row.get("game_date")) != day:
+                continue
+            away_side = row.get("away") if isinstance(row.get("away"), Mapping) else {}
+            home_side = row.get("home") if isinstance(row.get("home"), Mapping) else {}
+            if (
+                _clean(away_side.get("team_id")) == away_team_id
+                and _clean(home_side.get("team_id")) == home_team_id
+            ):
+                exact_team_ids.append(row)
+        if len(exact_team_ids) == 1:
+            return dict(exact_team_ids[0])
+        if len(exact_team_ids) > 1:
+            return {}
+
+    if not day:
+        return {}
+
     away = runtime_data._key(game.get("away_team"))
     home = runtime_data._key(game.get("home_team"))
-
-    for row in payload.get("games") or []:
-        if not isinstance(row, Mapping):
-            continue
-        if event_id and _clean(row.get("event_id")) == event_id:
-            return dict(row)
+    candidates = [
+        row for row in rows
         if (
-            day
-            and _clean(row.get("game_date")) == day
+            _clean(row.get("game_date")) == day
             and runtime_data._key(row.get("away_team")) == away
             and runtime_data._key(row.get("home_team")) == home
-        ):
-            return dict(row)
-    return {}
+        )
+    ]
+    # Fail closed on an alias collision rather than attaching the wrong event ID.
+    return dict(candidates[0]) if len(candidates) == 1 else {}
 
 
 @st.cache_data(ttl=90, show_spinner=False)
