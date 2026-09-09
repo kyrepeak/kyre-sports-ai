@@ -1,0 +1,101 @@
+name: CFB O/U pre-odds freeze V1
+
+on:
+  push:
+    branches: [cfb-ou-pre-odds-freeze-v1]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Freeze scope guard
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"],text=True
+          ).splitlines())
+          expected={
+              "cfb_over_under_pre_odds_freeze_manifest_v1.json",
+              ".github/workflows/cfb-ou-pre-odds-freeze-v1.yml",
+          }
+          if changed != expected:
+              raise SystemExit(f"freeze branch changed active code: {sorted(changed)}")
+          print("PRE_ODDS_FREEZE_SCOPE=PASS")
+          PY
+
+      - name: Verify every frozen blob exactly
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+
+          manifest=json.loads(
+              Path("cfb_over_under_pre_odds_freeze_manifest_v1.json").read_text()
+          )
+          failures=[]
+          for path, expected in manifest["exact_blobs"].items():
+              actual=subprocess.check_output(
+                  ["git","rev-parse",f"HEAD:{path}"],text=True
+              ).strip()
+              if actual != expected:
+                  failures.append(
+                      f"{path}: expected {expected}, got {actual}"
+                  )
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print(
+              "PRE_ODDS_FREEZE_BLOBS=PASS",
+              len(manifest["exact_blobs"]),
+          )
+          PY
+
+      - name: Verify odds integration firewall contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          m=json.loads(
+              Path("cfb_over_under_pre_odds_freeze_manifest_v1.json").read_text()
+          )
+          c=m["contract"]
+          rules=c["future_odds_integration_rules"]
+
+          assert c["live_odds_api_currently_added"] is False
+          assert c["manual_analysis_line_currently_active"] is True
+          assert c["sportsbook_projection_weight"] == 0
+          assert c["market_probability_projection_weight"] == 0
+          assert c["step3_new_projection_weight"] == 0
+          assert rules["must_be_additive"] is True
+          assert rules["new_versioned_market_module_required"] is True
+          assert rules["may_not_change_frozen_projection_from_market_data"] is True
+          assert rules["sportsbook_projection_weight_must_remain_zero_until_separately_certified"] is True
+          print("PRE_ODDS_MARKET_FIREWALL=PASS")
+          PY
+
+      - name: Full CFB O/U regression suite
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_*.py
+
+      - run: echo CFB_OU_PRE_ODDS_FREEZE_V1_GREEN
