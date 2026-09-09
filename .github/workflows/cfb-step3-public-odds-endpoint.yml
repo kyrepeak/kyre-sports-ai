@@ -81,6 +81,8 @@ jobs:
           PY
 
       - name: Read-only live Step 3 contract witness
+        env:
+          CFB_KYRE_MARKET_FEED_PATH: ${{ runner.temp }}/cfb_market_feed.json
         run: |
           python - <<'PY'
           import json
