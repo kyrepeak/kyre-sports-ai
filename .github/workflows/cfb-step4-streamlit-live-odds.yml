@@ -53,11 +53,24 @@ jobs:
 
       - name: Run frozen and Step 4 regression tests
         run: |
-          python -m pytest -q             tests/test_cfb_over_under_clean_page_v17.py             tests/test_cfb_over_under_step3_readable_v2.py             tests/test_cfb_over_under_router_v57.py             tests/test_cfb_over_under_market_adapter_v1.py             tests/test_cfb_over_under_clean_page_v18.py             tests/test_cfb_over_under_router_v58.py
+          python -m pytest -q \
+            tests/test_cfb_over_under_clean_page_v17.py \
+            tests/test_cfb_over_under_step3_readable_v2.py \
+            tests/test_cfb_over_under_router_v57.py \
+            tests/test_cfb_schedule_v6_runtime_snapshot.py \
+            tests/test_cfb_over_under_market_adapter_v1.py \
+            tests/test_cfb_over_under_clean_page_v18.py \
+            tests/test_cfb_over_under_router_v58.py
 
       - name: Compile additive Step 4 modules
         run: |
-          python -m py_compile             cfb_over_under_market_adapter_v1.py             cfb_over_under_clean_page_v18.py             streamlit_memory_lazy_router_v58.py             app.py
+          python -m py_compile \
+            scripts/build_cfb_runtime_snapshot_v2.py \
+            cfb_schedule_v6_runtime_snapshot.py \
+            cfb_over_under_market_adapter_v1.py \
+            cfb_over_under_clean_page_v18.py \
+            streamlit_memory_lazy_router_v58.py \
+            app.py
 
       - name: Verify additive FBS + FCS snapshot V2 contract
         run: |
