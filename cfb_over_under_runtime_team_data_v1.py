@@ -286,23 +286,14 @@ def reconcile_runtime(
     away = dict(profiles.get("away") or {})
     home = dict(profiles.get("home") or {})
 
-    deep_error = ""
-    deep_ok = False
-    try:
-        evidence, deep_diag = deep.reconcile_matchup(
-            mutable_game,
-            as_of_day,
-        )
-        mutable_game.update(dict(evidence.get("game") or {}))
-        away.update(dict(evidence.get("away") or {}))
-        home.update(dict(evidence.get("home") or {}))
-        deep_ok = True
-    except Exception as exc:
-        deep_diag = {}
-        deep_error = f"{type(exc).__name__}: {exc}"[:500]
-
+    # Prefer the checked-in verified snapshot when this matchup is present.
+    # That removes deployed-runtime network dependence for current slates.
     snap = _find_snapshot(mutable_game)
     snapshot_used = bool(snap)
+    deep_error = ""
+    deep_ok = False
+    deep_diag: dict[str, Any] = {}
+
     if snap:
         _merge_game_snapshot(mutable_game, snap)
         away = _profile_from_snapshot(
@@ -313,6 +304,19 @@ def reconcile_runtime(
             home,
             snap.get("home") or {},
         )
+    else:
+        # No snapshot coverage: try live reconciliation, but never hide failure.
+        try:
+            evidence, deep_diag = deep.reconcile_matchup(
+                mutable_game,
+                as_of_day,
+            )
+            mutable_game.update(dict(evidence.get("game") or {}))
+            away.update(dict(evidence.get("away") or {}))
+            home.update(dict(evidence.get("home") or {}))
+            deep_ok = True
+        except Exception as exc:
+            deep_error = f"{type(exc).__name__}: {exc}"[:500]
 
     away = _apply_game_event_fallback(away, mutable_game, "away")
     home = _apply_game_event_fallback(home, mutable_game, "home")
