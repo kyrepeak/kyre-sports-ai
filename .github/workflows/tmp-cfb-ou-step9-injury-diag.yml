@@ -17,43 +17,62 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Summarize ESPN roster availability
+      - name: Sample ESPN roster injury coverage across the slate
         run: |
           python - <<'PY'
           import json,requests
 
-          for tid,name in (("50","Florida A&M"),("2390","Miami (FL)")):
-              url=f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{tid}/roster"
-              r=requests.get(url,timeout=20)
-              print("HTTP",name,r.status_code,url)
-              p=r.json()
-              rows=[]
+          s=requests.Session()
+          board=s.get(
+              "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard",
+              params={"dates":"20260912","limit":1000},
+              timeout=20,
+          ).json()
+          teams={}
+          for e in board.get("events") or []:
+              comps=(e.get("competitions") or [{}])[0]
+              for c in comps.get("competitors") or []:
+                  t=c.get("team") or {}
+                  tid=str(t.get("id") or "")
+                  if tid:
+                      teams[tid]=t.get("displayName") or t.get("shortDisplayName") or tid
+          print("TEAM_COUNT",len(teams))
+          flagged_teams=[]
+          checked=0
+          for tid,name in list(teams.items())[:60]:
+              try:
+                  p=s.get(
+                      f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{tid}/roster",
+                      timeout=20,
+                  ).json()
+              except Exception as e:
+                  print("ERROR",tid,name,type(e).__name__,str(e))
+                  continue
+              checked+=1
+              flags=[]
               total=0
-              active=0
               for group in p.get("athletes") or []:
                   group_name=group.get("position")
                   for a in group.get("items") or []:
                       total+=1
                       status=a.get("status") or {}
                       injuries=a.get("injuries") or []
-                      pos=a.get("position") or {}
-                      if str(status.get("type") or "").lower()=="active":
-                          active+=1
-                      if injuries or str(status.get("type") or "").lower()!="active":
-                          rows.append({
+                      st=str(status.get("type") or "").lower()
+                      if injuries or st not in ("","active"):
+                          flags.append({
                               "name":a.get("displayName"),
-                              "position":pos.get("abbreviation") or pos.get("displayName"),
+                              "pos":(a.get("position") or {}).get("abbreviation"),
                               "group":group_name,
                               "status":status,
                               "injuries":injuries,
-                              "experience":a.get("experience"),
                           })
-              print("SUMMARY",name,json.dumps({
-                  "timestamp":p.get("timestamp"),
-                  "status":p.get("status"),
-                  "total":total,
-                  "active":active,
-                  "flagged":len(rows),
-              }))
-              print("FLAGGED",name,json.dumps(rows,default=str,indent=2))
+              if flags:
+                  flagged_teams.append({"id":tid,"team":name,"total":total,"flags":flags})
+                  print("FLAGGED_TEAM",tid,name,json.dumps(flags,default=str)[:12000])
+          print("CHECKED",checked)
+          print("FLAGGED_TEAM_COUNT",len(flagged_teams))
+          print("FLAGGED_SUMMARY",json.dumps([
+              {"id":x["id"],"team":x["team"],"flag_count":len(x["flags"])}
+              for x in flagged_teams
+          ]))
           PY
