@@ -502,7 +502,7 @@ def build_snapshot() -> dict[str, Any]:
 
     dates = [
         (now_et.date() + timedelta(days=offset)).isoformat()
-        for offset in range(-3, 11)
+        for offset in range(-1, 7)
     ]
 
     events: dict[str, dict[str, Any]] = {}
