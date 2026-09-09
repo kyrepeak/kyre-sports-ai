@@ -164,6 +164,9 @@ jobs:
                   r=requests.get(url,timeout=15,headers={"User-Agent":"Mozilla/5.0"})
                   print("SOURCE_PROBE",url,"STATUS",r.status_code,"LEN",len(r.text),"TYPE",r.headers.get("content-type"))
                   print("SOURCE_HEAD",repr(r.text[:180]))
+                  for line in r.text.splitlines():
+                      if "2024-09-07" in line:
+                          print("SOURCE_2024_ROW",repr(line[:1200]))
               except Exception as exc:
                   print("SOURCE_PROBE",url,"ERROR",type(exc).__name__,str(exc))
           PY
