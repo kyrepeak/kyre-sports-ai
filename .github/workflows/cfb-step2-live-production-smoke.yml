@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - cfb-step2-live-production-smoke
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
 
 jobs:
   live-smoke:
