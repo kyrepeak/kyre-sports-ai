@@ -1,0 +1,68 @@
+name: TEMP CFB O/U Step 8 turnover diagnostic
+
+on:
+  push:
+    branches: [cfb-ou-upgrade-step8-turnover-field-position]
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Inspect NCAA turnover categories and target rows
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import cfb_team_data_v1 as team
+          import cfb_over_under_matchup_engine_v1 as engine
+
+          def all_rows(url, provider):
+              found={}
+              first,_=team._fetch_text_with_fallback(url,provider)
+              pages=team._max_stat_pages(first)
+              for page in range(1,pages+1):
+                  html=first if page==1 else team._fetch_text_with_fallback(url.rstrip("/") + f"/p{page}",provider+f" p{page}")[0]
+                  headers,rows=team._table_rows(html or "")
+                  team_idx=team._team_cell_index(headers,rows)
+                  for cells in rows:
+                      if team_idx >= len(cells):
+                          continue
+                      name=team._clean(cells[team_idx])
+                      key=team._canonical_name(name)
+                      if key:
+                          found[key]={"team":name,"headers":headers,"row":cells}
+              return found,pages
+
+          targets=["Miami (FL)","Florida A&M"]
+          needles=("turnover","interception","fumble")
+
+          for division,index in (("FBS",team.NCAA_STATS_INDEX),("FCS",engine.NCAA_FCS_STATS_INDEX)):
+              html,_=team._fetch_text_with_fallback(index,f"NCAA {division} index")
+              parser=engine._CategoryOptionParser()
+              parser.feed(html or "")
+              print("\nDIVISION",division)
+              cats=[]
+              for label,path in parser.options:
+                  low=label.lower()
+                  if any(n in low for n in needles) and "/team/" in path:
+                      cats.append((label,path))
+                      print("CATEGORY",label,"=>",path)
+              for label,path in cats:
+                  url="https://www.ncaa.com"+path
+                  table,pages=all_rows(url,f"NCAA {division} {label}")
+                  first=next(iter(table.values()),{})
+                  print("TABLE",label,"rows",len(table),"pages",pages)
+                  print("HEADERS",label,json.dumps(first.get("headers") or []))
+                  for target in targets:
+                      key=team._canonical_name(target)
+                      if key in table:
+                          print("TARGET",label,target,json.dumps(table[key]))
+          PY
