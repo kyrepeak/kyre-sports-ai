@@ -277,3 +277,18 @@ def test_shared_host_lifespan_starts_with_step2_routes():
     assert body["step"] == 2
     assert body["identity_ready"] is True
     assert body["market_semantics"]["projection_weight"] == 0.0
+
+
+def test_live_fanduel_espn_school_aliases_match_without_fuzzy_identity():
+    pairs = [
+        ("Miami Florida", "Miami Hurricanes"),
+        ("Appalachian State", "App State Mountaineers"),
+        ("Albany", "UAlbany Great Danes"),
+        ("Miami Ohio", "Miami (OH) RedHawks"),
+        ("FIU", "Florida International Panthers"),
+        ("Sam Houston State", "Sam Houston Bearkats"),
+        ("UTRGV", "UT Rio Grande Valley Vaqueros"),
+        ("Hawaii", "Hawai'i Rainbow Warriors"),
+    ]
+    for provider_name, official_name in pairs:
+        assert identity._name_score(provider_name, official_name) >= identity.MATCH_THRESHOLD
