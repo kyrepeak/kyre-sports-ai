@@ -20,7 +20,7 @@ MODEL_VERSION = "CFB O/U MARKET ADAPTER V1 • ODDS INTEGRATION STEP 4"
 API_BASE_ENV = "KYRE_SPORTS_API_BASE_URL"
 DEFAULT_API_BASE = "https://kyre-sports-api.onrender.com"
 API_PATH = "/api/v1/cfb/odds"
-REQUEST_TIMEOUT_SECONDS = 20.0
+REQUEST_TIMEOUT_SECONDS = 45.0
 
 
 def _clean(value: Any) -> str:
