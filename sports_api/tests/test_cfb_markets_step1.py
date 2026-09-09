@@ -151,7 +151,7 @@ def test_missing_cache_self_heals_from_live_provider(monkeypatch, tmp_path):
     assert response.json()["source"].startswith("FanDuel anonymous public NCAAF")
 
 
-def test_force_refresh_replaces_existing_cache(monkeypatch, tmp_path):
+def test_internal_force_refresh_replaces_existing_cache(monkeypatch, tmp_path):
     feed_path = tmp_path / "cfb_market_feed.json"
     monkeypatch.setenv("CFB_KYRE_MARKET_FEED_PATH", str(feed_path))
     monkeypatch.delenv("CFB_FANDUEL_AUTO_REFRESH_ENABLED", raising=False)
@@ -171,12 +171,24 @@ def test_force_refresh_replaces_existing_cache(monkeypatch, tmp_path):
         return validated
 
     monkeypatch.setattr(cfb_markets, "_refresh_from_fanduel", refresh)
+    result = cfb_markets._load_feed(force_refresh=True)
+    assert called["count"] == 1
+    assert result["games"][0]["total"] == 52.5
+
+
+def test_public_current_has_no_force_refresh_parameter(monkeypatch, tmp_path):
+    feed_path = tmp_path / "cfb_market_feed.json"
+    monkeypatch.setenv("CFB_KYRE_MARKET_FEED_PATH", str(feed_path))
+    monkeypatch.setenv("CFB_FANDUEL_AUTO_REFRESH_ENABLED", "false")
+    cfb_markets._store_validated_feed(validate_feed(_sample_feed()))
+
     app = FastAPI()
     app.include_router(router)
     response = TestClient(app).get("/api/v1/cfb/markets/current?refresh=true")
     assert response.status_code == 200
-    assert called["count"] == 1
-    assert response.json()["games"][0]["total"] == 52.5
+    # Unknown query parameters are ignored by FastAPI, but there is no route
+    # argument that can bypass the cache and no provider refresh occurs.
+    assert response.json()["games"][0]["total"] == 51.5
 
 
 def test_ingest_rejects_bad_token_before_echoing_or_parsing(monkeypatch, tmp_path):
@@ -226,3 +238,38 @@ def test_strict_serializer_refuses_nan_even_if_called_directly():
     validated["games"][0]["total"] = math.nan
     with pytest.raises(ValueError, match="strict JSON"):
         cfb_markets._serialize_feed(validated)
+
+
+def test_materially_future_capture_timestamp_is_rejected(monkeypatch, tmp_path):
+    monkeypatch.setenv(
+        "CFB_KYRE_MARKET_FEED_PATH",
+        str(tmp_path / "cfb_market_feed.json"),
+    )
+    payload = _sample_feed()
+    payload["captured_at_utc"] = "2099-01-01T00:00:00Z"
+    validated = validate_feed(payload)
+    with pytest.raises(ValueError, match="implausibly in the future"):
+        cfb_markets._store_validated_feed(validated)
+
+
+def test_invalid_cache_self_heals_from_live_provider(monkeypatch, tmp_path):
+    feed_path = tmp_path / "cfb_market_feed.json"
+    monkeypatch.setenv("CFB_KYRE_MARKET_FEED_PATH", str(feed_path))
+    monkeypatch.delenv("CFB_FANDUEL_AUTO_REFRESH_ENABLED", raising=False)
+    feed_path.write_text("{truncated-json", encoding="utf-8")
+
+    fresh = _sample_feed()
+    fresh["captured_at_utc"] = "2026-09-09T20:00:00Z"
+    fresh["source"] = "FanDuel anonymous public NCAAF content-managed-page"
+    called = {"count": 0}
+
+    def refresh():
+        called["count"] += 1
+        validated = validate_feed(fresh)
+        cfb_markets._store_validated_feed(validated)
+        return validated
+
+    monkeypatch.setattr(cfb_markets, "_refresh_from_fanduel", refresh)
+    result = cfb_markets._load_feed()
+    assert called["count"] == 1
+    assert result["source"].startswith("FanDuel anonymous public NCAAF")
