@@ -17,34 +17,42 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - name: Probe completed-game summary stats through certified transports
+      - name: Probe completed-game summary stats through certified parsers
         run: |
           PYTHONPATH=. python - <<'PY'
           import json
+          from datetime import datetime, timezone
           import cfb_over_under_deep_data_reconciliation_v1 as deep
 
+          cutoff=datetime(2026,9,10,23,59,tzinfo=timezone.utc)
           teams={"50":"Florida A&M","2390":"Miami (FL)"}
           for tid,name in teams.items():
               print("\n=== TEAM",tid,name,"===")
-              sched,attempts=deep.history_engine._fetch_team_schedule(tid,2026)
-              print("SCHEDULE_ATTEMPTS",json.dumps(attempts[-4:],default=str))
-              for event in sched.get("events") or []:
-                  status=((event.get("status") or {}).get("type") or {})
-                  if not (status.get("completed") is True or status.get("state")=="post"):
+              rows,hydration,attempts=deep._current_rows(tid,2026,cutoff,"401858213")
+              print("CURRENT_ROWS",json.dumps([
+                  {
+                      "event_id":r.get("event_id"),
+                      "date":str(r.get("date") or r.get("date_dt")),
+                      "opponent":r.get("opponent_name"),
+                      "pf":r.get("points_for"),
+                      "pa":r.get("points_against"),
+                      "location":r.get("location"),
+                  } for r in rows
+              ],default=str))
+              for row in rows:
+                  eid=str(row.get("event_id") or "")
+                  if not eid:
                       continue
-                  eid=str(event.get("id") or "")
-                  print("COMPLETED_EVENT",eid,event.get("date"),status.get("description"))
                   summary,sum_attempts=deep.environment_engine._fetch_summary(eid)
-                  print("SUMMARY_ATTEMPTS",json.dumps(sum_attempts[-4:],default=str))
+                  print("COMPLETED_EVENT",eid,row.get("opponent_name"))
+                  print("SUMMARY_READY",bool(summary),"ATTEMPTS",json.dumps(sum_attempts[-3:],default=str))
                   box=summary.get("boxscore") or {}
-                  print("BOX_KEYS",sorted(box.keys()))
                   print("TEAM_BLOCKS",len(box.get("teams") or []))
                   for block in box.get("teams") or []:
                       team=block.get("team") or {}
-                      print("TEAM",team.get("id"),team.get("displayName"))
                       picked=[]
                       for st in block.get("statistics") or []:
                           key=str(st.get("name") or st.get("label") or "")
                           picked.append((key,st.get("displayValue")))
-                      print("STATS",json.dumps(picked,ensure_ascii=False))
+                      print("TEAM_STATS",team.get("id"),team.get("displayName"),json.dumps(picked,ensure_ascii=False))
           PY
