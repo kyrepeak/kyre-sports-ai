@@ -10,10 +10,6 @@ on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
-  pull_request_target:
-    branches: [main]
-    paths:
-      - .github/cfb-runtime-snapshot-trigger.txt
 
 permissions:
   contents: write
@@ -114,7 +110,7 @@ jobs:
           PY
 
   refresh:
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.actor != 'github-actions[bot]'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     concurrency:
       group: cfb-runtime-snapshot-refresh
@@ -134,7 +130,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install -r requirements.txt
 
       - name: Refresh snapshot
         run: python scripts/build_cfb_runtime_snapshot.py
