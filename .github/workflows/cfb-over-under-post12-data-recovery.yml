@@ -149,28 +149,6 @@ jobs:
           print("LIVE_FAMU_MIAMI_FORCED_ESPN_DATA_RECOVERY=PASS")
           PY
 
-      - name: Probe external H2H source reachability
-        run: |
-          PYTHONPATH=. python - <<'PY'
-          import requests
-          urls=[
-              "https://www.winsipedia.com/games/miami-fl/vs/florida-am",
-              "https://r.jina.ai/http://www.winsipedia.com/games/miami-fl/vs/florida-am",
-              "https://r.jina.ai/https://www.winsipedia.com/games/miami-fl/vs/florida-am",
-              "https://mcubed.net/ncaaf/series/miaf/nd1_floridaam.shtml",
-          ]
-          for url in urls:
-              try:
-                  r=requests.get(url,timeout=15,headers={"User-Agent":"Mozilla/5.0"})
-                  print("SOURCE_PROBE",url,"STATUS",r.status_code,"LEN",len(r.text),"TYPE",r.headers.get("content-type"))
-                  print("SOURCE_HEAD",repr(r.text[:180]))
-                  for line in r.text.splitlines():
-                      if "2024-09-07" in line:
-                          print("SOURCE_2024_ROW",repr(line[:1200]))
-              except Exception as exc:
-                  print("SOURCE_PROBE",url,"ERROR",type(exc).__name__,str(exc))
-          PY
-
       - name: Live Winsipedia H2H recovery
         run: |
           PYTHONPATH=. python - <<'PY'
