@@ -23,7 +23,7 @@ import cfb_over_under_matchup_ui_v15_visible_data_path as frozen_v15
 import cfb_over_under_runtime_deep_adapter_v1 as runtime_deep
 import cfb_over_under_runtime_team_data_v1 as runtime_team_data
 import cfb_over_under_slate_v13_deep_data as deep_slate
-import cfb_schedule_v4 as schedule_v4
+import cfb_schedule_v5_runtime_snapshot as schedule_v5
 
 MODEL_VERSION = "CFB O/U UI V16 • CENTRAL RUNTIME TEAM-DATA HANDOFF"
 FROZEN_PARENT_UI = "cfb_over_under_matchup_ui_v15_visible_data_path"
@@ -93,7 +93,7 @@ def _reset_runtime_caches_once() -> None:
         return
 
     try:
-        schedule_v4.clear_schedule_cache()
+        schedule_v5.clear_schedule_cache()
     except Exception:
         pass
     try:
@@ -131,11 +131,13 @@ def render_over_under_hub(
     original_hero = frozen_v15._hero_v15
     original_deep_data = deep_slate.deep_data
     original_diag = frozen_v14._team_data_diagnostics_v14
+    original_v15_schedule = frozen_v15.schedule_v4
 
     base_hub.team_data = runtime_team_data
     frozen_v15._hero_v15 = _hero_v16
     deep_slate.deep_data = runtime_deep
     frozen_v14._team_data_diagnostics_v14 = _team_data_diagnostics_v16
+    frozen_v15.schedule_v4 = schedule_v5
     try:
         return frozen_v15.render_over_under_hub(
             section_header,
@@ -148,6 +150,7 @@ def render_over_under_hub(
         frozen_v15._hero_v15 = original_hero
         deep_slate.deep_data = original_deep_data
         frozen_v14._team_data_diagnostics_v14 = original_diag
+        frozen_v15.schedule_v4 = original_v15_schedule
 
 
 def render_cfb_hub(
