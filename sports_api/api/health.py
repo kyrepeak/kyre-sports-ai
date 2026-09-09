@@ -3,13 +3,14 @@ from datetime import datetime, timezone
 from fastapi import APIRouter
 
 from sports_api.api.cfb_markets import router as cfb_markets_router
+from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_router
 
 router = APIRouter(tags=["system"])
-# Register the CFB routes without nesting APIRouter lifespans into the shared
-# health router. The CFB market router has no startup/shutdown handlers, so
-# extending the route table preserves the existing Step17B app lifespan and
-# avoids the recursive merged_lifespan startup failure seen on Render.
+# Register CFB routes by extending the shared route table instead of nesting
+# APIRouter lifespans. This preserves the certified Step17B shared-host lifespan
+# and the Render startup-recursion fix from CFB Step 1.
 router.routes.extend(cfb_markets_router.routes)
+router.routes.extend(cfb_market_identity_router.routes)
 
 
 @router.get("/health")
