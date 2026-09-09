@@ -396,3 +396,45 @@ def test_resolver_uses_direct_espn_only_when_github_does_not_cover_date(monkeypa
     assert len(games) == 1
     assert calls == ["2026-09-10"]
     assert len(diag["live_provider_attempts"]) == 1
+
+
+def test_resolver_supplements_same_date_when_github_snapshot_is_partial(monkeypatch):
+    partial = _verified_game(
+        event_id="other-game",
+        game_date="2026-09-10",
+        away_team="Georgia",
+        home_team="Clemson",
+    )
+    monkeypatch.setattr(
+        identity,
+        "load_verified_games",
+        lambda: ([], {"snapshot_present": False, "verified_games": 0}),
+    )
+    monkeypatch.setattr(
+        identity,
+        "_fetch_github_verified_games",
+        lambda: (
+            [partial],
+            {
+                "source": "GitHub hourly CFB runtime snapshot",
+                "ok": True,
+                "verified_games": 1,
+            },
+        ),
+    )
+    calls = []
+
+    def direct(day):
+        calls.append(day)
+        return [_verified_game(game_date=day)], {
+            "date": day,
+            "source": "ESPN college-football scoreboard",
+            "ok": True,
+            "games": 1,
+        }
+
+    monkeypatch.setattr(identity, "_fetch_espn_verified_games", direct)
+    games, diag = identity.resolve_verified_games(_feed(_market()))
+    assert calls == ["2026-09-10"]
+    assert {game["event_id"] for game in games} == {"other-game", "401858213"}
+    assert len(diag["live_provider_attempts"]) == 1
