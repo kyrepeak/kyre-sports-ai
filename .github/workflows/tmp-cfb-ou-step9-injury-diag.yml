@@ -1,0 +1,60 @@
+name: TEMP CFB O/U Step 9 injury diagnostic
+
+on:
+  push:
+    branches: [cfb-ou-upgrade-step9-availability-injury]
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Inspect ESPN summary injury and weather payloads
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import requests
+          import cfb_schedule_v3 as schedule
+
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          print("GAME",json.dumps(game,indent=2,default=str))
+          event_id=str(game.get("espn_event_id") or "")
+          if not event_id:
+              key=str(game.get("identity_key") or "")
+              if key.startswith("espn:"):
+                  event_id=key.split(":",1)[1]
+          print("EVENT_ID",event_id)
+          url="https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary"
+          r=requests.get(url,params={"event":event_id},timeout=20)
+          print("HTTP",r.status_code,r.url)
+          payload=r.json()
+          print("TOP_KEYS",sorted(payload.keys()))
+          for k,v in payload.items():
+              low=k.lower()
+              if any(x in low for x in ("injur","weather","roster","athlete","team","header","pickcenter")):
+                  if isinstance(v,(dict,list)):
+                      print("SECTION",k,json.dumps(v,indent=2)[:25000])
+                  else:
+                      print("SECTION",k,repr(v))
+
+          def walk(obj,path=""):
+              if isinstance(obj,dict):
+                  for k,v in obj.items():
+                      p=f"{path}.{k}" if path else k
+                      if any(x in k.lower() for x in ("injur","weather","temperature","wind","athlete","position","status")):
+                          print("MATCH",p,json.dumps(v,default=str)[:3000])
+                      walk(v,p)
+              elif isinstance(obj,list):
+                  for i,v in enumerate(obj[:50]):
+                      walk(v,f"{path}[{i}]")
+          walk(payload)
+          PY
