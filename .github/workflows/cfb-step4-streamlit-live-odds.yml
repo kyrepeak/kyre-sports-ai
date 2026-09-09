@@ -23,35 +23,24 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Verify Step 4 did not edit frozen pre-odds files
+      - name: Verify permanent pre-odds freeze blobs
         run: |
-          git fetch origin main --depth=1
           python - <<'PY'
-          import subprocess
+          import hashlib
+          import json
+          from pathlib import Path
 
-          frozen = {
-              "streamlit_memory_lazy_router_v57.py",
-              "cfb_schedule_v5_runtime_snapshot.py",
-              "cfb_over_under_runtime_team_data_v1.py",
-              "cfb_over_under_runtime_deep_adapter_v1.py",
-              "cfb_over_under_slate_v14_runtime.py",
-              "cfb_over_under_clean_page_v17.py",
-              "cfb_over_under_step3_readable_v2.py",
-              "data/cfb_step3_matchup_stats_v1.json",
-              "scripts/build_cfb_runtime_snapshot.py",
-              ".github/workflows/cfb-runtime-snapshot-refresh.yml",
-              "tests/test_cfb_over_under_clean_page_v17.py",
-              "tests/test_cfb_over_under_step3_readable_v2.py",
-              "tests/test_cfb_over_under_router_v57.py",
-          }
-          changed = set(
-              subprocess.check_output(
-                  ["git", "diff", "--name-only", "origin/main...HEAD"],
-                  text=True,
-              ).splitlines()
+          manifest = json.loads(
+              Path("cfb_over_under_pre_odds_freeze_manifest_v1.json")
+              .read_text(encoding="utf-8")
           )
-          touched = sorted(frozen & changed)
-          assert not touched, f"Step 4 edited frozen files: {touched}"
+          for path, expected in manifest["exact_blobs"].items():
+              raw = Path(path).read_bytes()
+              actual = hashlib.sha1(
+                  f"blob {len(raw)}\0".encode() + raw
+              ).hexdigest()
+              assert actual == expected, (path, expected, actual)
+              print("CFB_STEP4_FROZEN_BLOB_OK", path, actual)
           print("CFB_STEP4_FROZEN_BASELINE_UNTOUCHED")
           PY
 
@@ -68,6 +57,31 @@ jobs:
       - name: Compile additive Step 4 modules
         run: |
           python -m py_compile             cfb_over_under_market_adapter_v1.py             cfb_over_under_clean_page_v18.py             streamlit_memory_lazy_router_v58.py             app.py
+
+      - name: Verify additive FBS + FCS snapshot V2 contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(
+              Path("data/cfb_runtime_snapshot_v2.json").read_text(encoding="utf-8")
+          )
+          games = payload.get("games") or []
+          assert int(payload.get("version") or 0) == 2, payload.get("version")
+          assert len(games) >= 100, len(games)
+          ids = {str(row.get("event_id") or "") for row in games}
+          assert "401858213" in ids
+          builder = Path("scripts/build_cfb_runtime_snapshot_v2.py").read_text(
+              encoding="utf-8"
+          )
+          assert '((80, "FBS"), (81, "FCS"))' in builder
+          print(
+              "CFB_STEP4_RUNTIME_SNAPSHOT_V2_GREEN",
+              len(games),
+              payload.get("generated_at"),
+          )
+          PY
 
       - name: Verify active Streamlit entrypoint
         run: |
