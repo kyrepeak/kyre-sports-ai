@@ -17,44 +17,65 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Inspect ESPN summary injury and weather payloads
+      - name: Discover ESPN event team IDs and injury endpoints
         run: |
-          PYTHONPATH=. python - <<'PY'
-          import json
-          import requests
-          import cfb_schedule_v3 as schedule
+          python - <<'PY'
+          import json,re,requests
 
-          games,_=schedule.load_with_diagnostics("2026-09-10")
-          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
-          print("GAME",json.dumps(game,indent=2,default=str))
-          event_id=str(game.get("espn_event_id") or "")
-          if not event_id:
-              key=str(game.get("identity_key") or "")
-              if key.startswith("espn:"):
-                  event_id=key.split(":",1)[1]
-          print("EVENT_ID",event_id)
-          url="https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary"
-          r=requests.get(url,params={"event":event_id},timeout=20)
-          print("HTTP",r.status_code,r.url)
-          payload=r.json()
-          print("TOP_KEYS",sorted(payload.keys()))
-          for k,v in payload.items():
-              low=k.lower()
-              if any(x in low for x in ("injur","weather","roster","athlete","team","header","pickcenter")):
-                  if isinstance(v,(dict,list)):
-                      print("SECTION",k,json.dumps(v,indent=2)[:25000])
-                  else:
-                      print("SECTION",k,repr(v))
+          def key(v):
+              return re.sub(r"[^a-z0-9]+","",str(v or "").lower())
 
-          def walk(obj,path=""):
-              if isinstance(obj,dict):
-                  for k,v in obj.items():
-                      p=f"{path}.{k}" if path else k
-                      if any(x in k.lower() for x in ("injur","weather","temperature","wind","athlete","position","status")):
-                          print("MATCH",p,json.dumps(v,default=str)[:3000])
-                      walk(v,p)
-              elif isinstance(obj,list):
-                  for i,v in enumerate(obj[:50]):
-                      walk(v,f"{path}[{i}]")
-          walk(payload)
+          targets=(key("Florida A&M"),key("Miami (FL)"))
+          urls=[
+              "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20260910&limit=1000",
+              "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20260910&groups=80&limit=1000",
+              "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20260910&groups=81&limit=1000",
+          ]
+          found=[]
+          for url in urls:
+              r=requests.get(url,timeout=20)
+              print("SCOREBOARD",r.status_code,url)
+              p=r.json()
+              print("EVENTS",len(p.get("events") or []))
+              for e in p.get("events") or []:
+                  comps=(e.get("competitions") or [{}])[0]
+                  sides={}
+                  names=[]
+                  for c in comps.get("competitors") or []:
+                      t=c.get("team") or {}
+                      n=t.get("displayName") or t.get("shortDisplayName") or t.get("location")
+                      names.append((n,t.get("id"),t.get("slug")))
+                      sides[c.get("homeAway")]=(n,t.get("id"),t.get("slug"))
+                  nk={key(x[0]) for x in names}
+                  if any("floridaam" in x or "floridaa" in x for x in nk) or any(x.startswith("miami") for x in nk):
+                      print("CANDIDATE",e.get("id"),json.dumps(names))
+                  away=key((sides.get("away") or ("",))[0])
+                  home=key((sides.get("home") or ("",))[0])
+                  if ("floridaam" in away or away.startswith("floridaa")) and home.startswith("miami"):
+                      found.append((e.get("id"),sides))
+          print("FOUND",json.dumps(found,default=str))
+
+          team_ids=set(["2390","50"])
+          for _,sides in found:
+              for v in sides.values():
+                  if len(v)>1 and v[1]:
+                      team_ids.add(str(v[1]))
+          for tid in sorted(team_ids):
+              for u in (
+                  f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{tid}/injuries",
+                  f"https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/{tid}",
+                  f"https://sports.api.espn.com/apis/v2/sports/football/college-football/leagues/college-football/seasons/2026/types/2/teams/{tid}/athletes?limit=1000",
+              ):
+                  r=requests.get(u,timeout=20)
+                  print("ENDPOINT",tid,r.status_code,u)
+                  try:
+                      p=r.json()
+                  except Exception:
+                      print("TEXT",r.text[:500])
+                      continue
+                  print("KEYS",tid,sorted(p.keys()) if isinstance(p,dict) else type(p).__name__)
+                  if isinstance(p,dict):
+                      for k,v in p.items():
+                          if any(x in k.lower() for x in ("injur","athlete","team","status")):
+                              print("SECTION",tid,k,json.dumps(v,default=str)[:12000])
           PY
