@@ -101,3 +101,32 @@ jobs:
               except Exception as e:
                   print("ERROR",type(e).__name__,str(e))
           PY
+
+      - name: Probe ESPN Core readable Step-3 season stats
+        run: |
+          python - <<'PY'
+          import json,re
+          from urllib.request import Request,urlopen
+
+          def fetch(tid):
+              url=f"https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/types/2/teams/{tid}/statistics?lang=en&region=us"
+              req=Request(url,headers={"User-Agent":"Mozilla/5.0","Accept":"application/json"})
+              with urlopen(req,timeout=20) as r:
+                  return json.loads(r.read())
+
+          wanted=(
+              "yard","touchdown","firstdown","point","play","attempt","completion",
+              "sack","third","redzone","turnover","opponent","allowed"
+          )
+          for tid,name in (("50","Florida A&M"),("2390","Miami (FL)")):
+              payload=fetch(tid)
+              print("\nCORE_TEAM",tid,name)
+              for category in ((payload.get("splits") or {}).get("categories") or []):
+                  cname=category.get("name")
+                  for st in category.get("stats") or []:
+                      n=str(st.get("name") or "")
+                      d=str(st.get("displayName") or "")
+                      blob=(n+" "+d).lower()
+                      if any(w in blob for w in wanted):
+                          print("CORE_STAT",cname,n,st.get("value"),st.get("displayValue"),st.get("rank"),d)
+          PY
