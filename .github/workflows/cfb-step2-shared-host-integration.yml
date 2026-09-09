@@ -77,6 +77,8 @@ jobs:
               collect_fanduel_cfb_total_feed,
           )
           from sports_api.api.cfb_market_identity_v1 import (
+              _name_score,
+              _parse_market_date,
               reconcile_market_feed,
               resolve_verified_games,
           )
@@ -91,16 +93,47 @@ jobs:
               "espn_verified_games": len(verified),
               "matched_rows": diag["matched_market_rows"],
               "unmatched_rows": diag["unmatched_market_rows"],
-              "unmatched_sample": [
-                  {
-                      "away": row.get("provider_away_team"),
-                      "home": row.get("provider_home_team"),
-                      "date": row.get("game_date"),
-                      "reason": row.get("reason"),
-                  }
-                  for row in result["unmatched"][:20]
-              ],
+              "unmatched_sample": [],
           }
+          by_provider_id = {
+              str(row.get("game_id") or ""): row
+              for row in feed["games"]
+              if isinstance(row, dict)
+          }
+          for row in result["unmatched"][:20]:
+              provider_id = str(row.get("provider_game_id") or "")
+              market = by_provider_id.get(provider_id) or {}
+              day = row.get("game_date")
+              candidates = []
+              for game in verified:
+                  if str(game.get("game_date") or "") != str(day or ""):
+                      continue
+                  away_score = _name_score(
+                      market.get("away_team"),
+                      game.get("away_team"),
+                  )
+                  home_score = _name_score(
+                      market.get("home_team"),
+                      game.get("home_team"),
+                  )
+                  candidates.append({
+                      "official_game_id": game.get("event_id"),
+                      "official_away": game.get("away_team"),
+                      "official_home": game.get("home_team"),
+                      "away_score": away_score,
+                      "home_score": home_score,
+                      "pair_score": round((away_score + home_score) / 2.0, 4),
+                  })
+              candidates.sort(
+                  key=lambda candidate: -float(candidate["pair_score"])
+              )
+              evidence["unmatched_sample"].append({
+                  "away": row.get("provider_away_team"),
+                  "home": row.get("provider_home_team"),
+                  "date": day,
+                  "reason": row.get("reason"),
+                  "top_candidates": candidates[:3],
+              })
           print("CFB_LIVE_RECON_WITNESS", json.dumps(evidence, sort_keys=True))
           assert len(feed["games"]) >= 1
           assert diag["matched_market_rows"] >= 1
