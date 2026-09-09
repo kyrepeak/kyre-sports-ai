@@ -1,0 +1,257 @@
+name: CFB verified identity snapshot
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/cfb-verified-identity-snapshot.yml
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cfb-verified-identity-snapshot
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cfb-live-data
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch verified ESPN FBS and FCS schedule identities
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          from datetime import datetime, timedelta, timezone
+          import json
+          from pathlib import Path
+          import time
+          import urllib.parse
+          import urllib.request
+          from zoneinfo import ZoneInfo
+
+          ET = ZoneInfo("America/New_York")
+          URL = (
+              "https://site.api.espn.com/apis/site/v2/sports/football/"
+              "college-football/scoreboard"
+          )
+          OUT = Path("data/cfb_verified_schedule_live.json")
+          now = datetime.now(timezone.utc)
+          start_day = now.astimezone(ET).date() - timedelta(days=1)
+          end_day = start_day + timedelta(days=15)
+
+          def get_json(day, group_id):
+              params = urllib.parse.urlencode(
+                  {
+                      "dates": day.strftime("%Y%m%d"),
+                      "limit": "500",
+                      "groups": str(group_id),
+                  }
+              )
+              req = urllib.request.Request(
+                  URL + "?" + params,
+                  headers={
+                      "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAPI-CFB-Snapshot/1.0)",
+                      "Accept": "application/json",
+                      "Referer": "https://www.espn.com/college-football/",
+                  },
+                  method="GET",
+              )
+              last = None
+              for attempt in range(3):
+                  try:
+                      with urllib.request.urlopen(req, timeout=25) as response:
+                          if int(response.status) != 200:
+                              raise RuntimeError(f"HTTP {response.status}")
+                          return json.loads(response.read().decode("utf-8"))
+                  except Exception as exc:
+                      last = exc
+                      if attempt < 2:
+                          time.sleep(1.5 * (attempt + 1))
+              raise RuntimeError(
+                  f"ESPN group {group_id} failed for {day.isoformat()}: {type(last).__name__}: {last}"
+              )
+
+          def clean(value):
+              return " ".join(str(value or "").split())
+
+          def game_date(raw, fallback):
+              text = clean(raw)
+              if not text:
+                  return fallback.isoformat()
+              try:
+                  parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+              except ValueError:
+                  return fallback.isoformat()
+              if parsed.tzinfo is None or parsed.utcoffset() is None:
+                  return fallback.isoformat()
+              return parsed.astimezone(ET).date().isoformat()
+
+          games = {}
+          attempts = []
+          day = start_day
+          while day <= end_day:
+              for group_id, division in ((80, "FBS"), (81, "FCS")):
+                  payload = get_json(day, group_id)
+                  count = 0
+                  for event in payload.get("events") or []:
+                      if not isinstance(event, dict):
+                          continue
+                      event_id = clean(event.get("id"))
+                      competitions = event.get("competitions") or []
+                      if not event_id or not competitions or not isinstance(competitions[0], dict):
+                          continue
+                      comp = competitions[0]
+                      sides = {}
+                      for competitor in comp.get("competitors") or []:
+                          if not isinstance(competitor, dict):
+                              continue
+                          side = clean(competitor.get("homeAway")).casefold()
+                          if side in {"home", "away"}:
+                              sides[side] = competitor
+                      if set(sides) != {"home", "away"}:
+                          continue
+
+                      def team_info(side):
+                          competitor = sides[side]
+                          team = (
+                              competitor.get("team")
+                              if isinstance(competitor.get("team"), dict)
+                              else {}
+                          )
+                          name = clean(
+                              team.get("displayName")
+                              or team.get("shortDisplayName")
+                              or team.get("location")
+                              or team.get("name")
+                          )
+                          return name, clean(team.get("id"))
+
+                      away_name, away_id = team_info("away")
+                      home_name, home_id = team_info("home")
+                      if not away_name or not home_name:
+                          continue
+
+                      venue = (
+                          comp.get("venue")
+                          if isinstance(comp.get("venue"), dict)
+                          else {}
+                      )
+                      status_type = (
+                          (event.get("status") or {}).get("type") or {}
+                          if isinstance(event.get("status"), dict)
+                          else {}
+                      )
+                      broadcasts = comp.get("broadcasts") or []
+                      broadcast = ""
+                      if broadcasts and isinstance(broadcasts[0], dict):
+                          names = broadcasts[0].get("names") or []
+                          if isinstance(names, list):
+                              broadcast = ", ".join(clean(v) for v in names if clean(v))
+
+                      row = {
+                          "event_id": event_id,
+                          "game_date": game_date(event.get("date") or comp.get("date"), day),
+                          "away_team": away_name,
+                          "home_team": home_name,
+                          "away_team_id": away_id,
+                          "home_team_id": home_id,
+                          "venue": clean(venue.get("fullName")),
+                          "broadcast": broadcast,
+                          "status": clean(
+                              status_type.get("description")
+                              or status_type.get("detail")
+                              or status_type.get("shortDetail")
+                          ),
+                          "sources": [
+                              f"ESPN college-football scoreboard group {group_id} ({division})"
+                          ],
+                      }
+                      existing = games.get(event_id)
+                      if existing is None:
+                          games[event_id] = row
+                      elif row["sources"][0] not in existing["sources"]:
+                          existing["sources"].append(row["sources"][0])
+                      count += 1
+                  attempts.append(
+                      {
+                          "date": day.isoformat(),
+                          "group_id": group_id,
+                          "division": division,
+                          "events_seen": count,
+                          "ok": True,
+                      }
+                  )
+              day += timedelta(days=1)
+
+          ordered = sorted(
+              games.values(),
+              key=lambda row: (row["game_date"], row["event_id"]),
+          )
+          if len(ordered) < 100:
+              raise RuntimeError(
+                  f"Fail closed: only {len(ordered)} verified CFB games collected"
+              )
+
+          payload = {
+              "version": "cfb_verified_schedule_live_v1",
+              "generated_at": now.isoformat(),
+              "window": {
+                  "start_date": start_day.isoformat(),
+                  "end_date": end_day.isoformat(),
+                  "timezone": "America/New_York",
+              },
+              "game_count": len(ordered),
+              "games": ordered,
+              "diagnostics": {
+                  "provider": "ESPN",
+                  "groups": [80, 81],
+                  "http_method": "GET",
+                  "attempts": attempts,
+                  "synthetic_ids": False,
+                  "fuzzy_matching": False,
+              },
+          }
+          OUT.parent.mkdir(parents=True, exist_ok=True)
+          OUT.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(
+              "CFB_VERIFIED_IDENTITY_SNAPSHOT_GREEN",
+              json.dumps(
+                  {
+                      "game_count": len(ordered),
+                      "start_date": start_day.isoformat(),
+                      "end_date": end_day.isoformat(),
+                  },
+                  sort_keys=True,
+              ),
+          )
+          PY
+
+      - name: Publish snapshot to cfb-live-data
+        run: |
+          git config user.name "kyre-sports-ai-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/cfb_verified_schedule_live.json
+          if git diff --cached --quiet; then
+            echo "CFB snapshot unchanged."
+          else
+            git commit -m "Update live CFB verified identity snapshot"
+            git push origin HEAD:cfb-live-data
+          fi
