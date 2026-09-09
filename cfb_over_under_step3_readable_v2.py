@@ -744,15 +744,39 @@ def _battle(
             f"in {above} of {len(rows)} displayed categories"
         )
         summary_class = "above"
+        favorable_for = f"{offense_name} offense"
+        tough_for = f"{defense_name} defense"
+        verdict = "CURRENT-SAMPLE FAVORABLE FOR OFFENSE"
+        verdict_class = "offense"
+        verdict_reason = (
+            f"{above} categories are above the defense's current allowance "
+            f"versus {below} below."
+        )
     elif below >= above + 2:
         summary = (
             f"{offense_name} is below {defense_name}'s current allowance "
             f"in {below} of {len(rows)} displayed categories"
         )
         summary_class = "below"
+        favorable_for = f"{defense_name} defense"
+        tough_for = f"{offense_name} offense"
+        verdict = "CURRENT-SAMPLE FAVORABLE FOR DEFENSE"
+        verdict_class = "defense"
+        verdict_reason = (
+            f"{below} categories are below the defense's current allowance "
+            f"versus {above} above."
+        )
     else:
         summary = "Production vs allowance is mixed across the displayed categories"
         summary_class = "neutral"
+        favorable_for = "No clear side"
+        tough_for = "No clear side"
+        verdict = "CURRENT-SAMPLE MIXED"
+        verdict_class = "mixed"
+        verdict_reason = (
+            f"Above-allowance categories ({above}) and below-allowance "
+            f"categories ({below}) are too close for a clear verdict."
+        )
 
     return {
         "offense_team": offense_name,
@@ -764,6 +788,12 @@ def _battle(
         "rows": rows,
         "above_allowance": above,
         "below_allowance": below,
+        "favorable_for": favorable_for,
+        "tough_for": tough_for,
+        "verdict": verdict,
+        "verdict_class": verdict_class,
+        "verdict_reason": verdict_reason,
+        "verdict_basis": "CURRENT SAMPLE ONLY",
         "summary": summary,
         "summary_class": summary_class,
     }

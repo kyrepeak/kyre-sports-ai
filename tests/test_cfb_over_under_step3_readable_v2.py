@@ -347,3 +347,111 @@ def test_clean_page_step3_renders_both_readable_battles_not_dev_numbers():
         "weighted signal",
     ):
         assert token not in html.lower()
+
+
+def test_famu_miami_current_sample_verdicts_match_displayed_categories():
+    payload = step3._snapshot_payload()
+    famu = {
+        "team": "Florida A&M",
+        "games": payload["teams"]["50"]["games"],
+        "offense": payload["teams"]["50"]["offense"],
+        "defense": payload["teams"]["50"]["defense"],
+    }
+    miami = {
+        "team": "Miami (FL)",
+        "games": payload["teams"]["2390"]["games"],
+        "offense": payload["teams"]["2390"]["offense"],
+        "defense": payload["teams"]["2390"]["defense"],
+    }
+
+    famu_offense = step3._battle(famu, miami)
+    miami_offense = step3._battle(miami, famu)
+
+    assert famu_offense["favorable_for"] == "Miami (FL) defense"
+    assert famu_offense["tough_for"] == "Florida A&M offense"
+    assert famu_offense["verdict_class"] == "defense"
+    assert famu_offense["verdict_basis"] == "CURRENT SAMPLE ONLY"
+
+    assert miami_offense["favorable_for"] == "Miami (FL) offense"
+    assert miami_offense["tough_for"] == "Florida A&M defense"
+    assert miami_offense["verdict_class"] == "offense"
+    assert miami_offense["verdict_basis"] == "CURRENT SAMPLE ONLY"
+
+
+def test_step3_html_shows_favorable_and_tough_without_claiming_certainty():
+    payload = step3._snapshot_payload()
+    famu = {
+        "team": "Florida A&M",
+        "games": payload["teams"]["50"]["games"],
+        "offense": payload["teams"]["50"]["offense"],
+        "defense": payload["teams"]["50"]["defense"],
+    }
+    miami = {
+        "team": "Miami (FL)",
+        "games": payload["teams"]["2390"]["games"],
+        "offense": payload["teams"]["2390"]["offense"],
+        "defense": payload["teams"]["2390"]["defense"],
+    }
+
+    readable = {
+        "display_ready": True,
+        "sample_state": "VERY EARLY • 1 GAME",
+        "sources": ["ESPN Core", "ESPN exact-event summaries"],
+        "away_offense_vs_home_defense": step3._battle(famu, miami),
+        "home_offense_vs_away_defense": step3._battle(miami, famu),
+    }
+    html = page._step3_readable(
+        readable,
+        {"ready": True, "model_ready": False, "coverage": 0.0, "reason": "gated"},
+    )
+
+    for token in (
+        "Favorable for",
+        "Tough for",
+        "Miami (FL) defense",
+        "Florida A&amp;M offense",
+        "Miami (FL) offense",
+        "Florida A&amp;M defense",
+        "CURRENT SAMPLE ONLY",
+        "CURRENT-SAMPLE FAVORABLE FOR DEFENSE",
+        "CURRENT-SAMPLE FAVORABLE FOR OFFENSE",
+    ):
+        assert token in html
+
+    assert "GUARANTEED" not in html.upper()
+    assert "LOCK" not in html.upper()
+
+
+def test_mixed_battle_does_not_force_favorable_team():
+    offense = {
+        "team": "Team A",
+        "games": 4,
+        "offense": {
+            "points_pg": 20,
+            "total_yards_pg": 300,
+            "pass_yards_pg": 200,
+            "rush_yards_pg": 100,
+            "pass_td_pg": 1,
+            "rush_td_pg": 1,
+            "first_downs_pg": 20,
+            "yards_per_play": 5,
+        },
+    }
+    defense = {
+        "team": "Team B",
+        "games": 4,
+        "defense": {
+            "points_allowed_pg": 20,
+            "total_yards_allowed_pg": 300,
+            "pass_yards_allowed_pg": 200,
+            "rush_yards_allowed_pg": 100,
+            "pass_td_allowed_pg": 1,
+            "rush_td_allowed_pg": 1,
+            "first_downs_allowed_pg": 20,
+            "yards_per_play_allowed": 5,
+        },
+    }
+    battle = step3._battle(offense, defense)
+    assert battle["verdict_class"] == "mixed"
+    assert battle["favorable_for"] == "No clear side"
+    assert battle["tough_for"] == "No clear side"

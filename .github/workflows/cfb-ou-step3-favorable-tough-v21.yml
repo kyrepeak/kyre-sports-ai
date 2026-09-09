@@ -1,0 +1,144 @@
+name: CFB O/U Step 3 favorable tough V21
+
+on:
+  push:
+    branches: [cfb-ou-step3-favorable-tough-v21]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Scope firewall
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"], text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-ou-step3-favorable-tough-v21.yml",
+              "cfb_over_under_clean_page_v17.py",
+              "cfb_over_under_step3_readable_v2.py",
+              "tests/test_cfb_over_under_step3_readable_v2.py",
+          }
+          if changed != expected:
+              raise SystemExit(f"scope mismatch: {sorted(changed)}")
+          print("STEP3_V21_SCOPE=PASS")
+          PY
+
+      - name: Compile
+        run: |
+          python -m py_compile             cfb_over_under_clean_page_v17.py             cfb_over_under_step3_readable_v2.py             tests/test_cfb_over_under_step3_readable_v2.py
+
+      - name: Full CFB O/U regressions
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_*.py
+
+      - name: Exact FAMU Miami verdict certification
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_step3_readable_v2 as step3
+          import cfb_over_under_clean_page_v17 as page
+
+          payload=step3._snapshot_payload()
+          famu={
+              "team":"Florida A&M",
+              "games":payload["teams"]["50"]["games"],
+              "offense":payload["teams"]["50"]["offense"],
+              "defense":payload["teams"]["50"]["defense"],
+          }
+          miami={
+              "team":"Miami (FL)",
+              "games":payload["teams"]["2390"]["games"],
+              "offense":payload["teams"]["2390"]["offense"],
+              "defense":payload["teams"]["2390"]["defense"],
+          }
+
+          famu_battle=step3._battle(famu,miami)
+          miami_battle=step3._battle(miami,famu)
+
+          assert famu_battle["favorable_for"]=="Miami (FL) defense"
+          assert famu_battle["tough_for"]=="Florida A&M offense"
+          assert miami_battle["favorable_for"]=="Miami (FL) offense"
+          assert miami_battle["tough_for"]=="Florida A&M defense"
+
+          readable={
+              "display_ready":True,
+              "sample_state":"VERY EARLY • 1 GAME",
+              "sources":["ESPN Core","ESPN exact-event summaries"],
+              "away_offense_vs_home_defense":famu_battle,
+              "home_offense_vs_away_defense":miami_battle,
+          }
+          html=page._step3_readable(
+              readable,
+              {"ready":True,"model_ready":False,"coverage":0.0,"reason":"gated"},
+          )
+          for token in (
+              "Favorable for",
+              "Tough for",
+              "Miami (FL) defense",
+              "Florida A&amp;M offense",
+              "Miami (FL) offense",
+              "Florida A&amp;M defense",
+              "CURRENT SAMPLE ONLY",
+          ):
+              assert token in html, token
+
+          print("STEP3_V21_FAMU_MIAMI_VERDICTS=PASS")
+          PY
+
+      - name: Mixed matchup must stay mixed
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_over_under_step3_readable_v2 as step3
+
+          offense={
+              "team":"A","games":4,
+              "offense":{
+                  "points_pg":20,"total_yards_pg":300,"pass_yards_pg":200,
+                  "rush_yards_pg":100,"pass_td_pg":1,"rush_td_pg":1,
+                  "first_downs_pg":20,"yards_per_play":5,
+              },
+          }
+          defense={
+              "team":"B","games":4,
+              "defense":{
+                  "points_allowed_pg":20,"total_yards_allowed_pg":300,
+                  "pass_yards_allowed_pg":200,"rush_yards_allowed_pg":100,
+                  "pass_td_allowed_pg":1,"rush_td_allowed_pg":1,
+                  "first_downs_allowed_pg":20,"yards_per_play_allowed":5,
+              },
+          }
+          battle=step3._battle(offense,defense)
+          assert battle["verdict_class"]=="mixed"
+          assert battle["favorable_for"]=="No clear side"
+          assert battle["tough_for"]=="No clear side"
+          print("STEP3_V21_MIXED_GUARD=PASS")
+          PY
+
+      - name: Model firewall
+        run: |
+          git diff --quiet origin/main...HEAD --             cfb_over_under_model_v1.py             cfb_over_under_matchup_engine_v1.py             cfb_over_under_pace_engine_v1.py             cfb_over_under_explosive_engine_v1.py             cfb_over_under_red_zone_engine_v1.py             cfb_over_under_third_down_engine_v1.py             cfb_over_under_turnover_engine_v1.py             cfb_over_under_environment_engine_v1.py             cfb_over_under_history_engine_v1.py             cfb_over_under_form_strength_engine_v1.py             cfb_over_under_final_v1.py             cfb_over_under_slate_v14_runtime.py
+          echo STEP3_V21_MODEL_FIREWALL=PASS
+
+      - run: echo CFB_OU_STEP3_FAVORABLE_TOUGH_V21_GREEN
