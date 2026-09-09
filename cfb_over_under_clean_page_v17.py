@@ -71,7 +71,7 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
 .c17-rankbox b{display:block;color:#9be8c1;font-size:.48rem}.c17-rankbox span{display:block;color:#607c6e;font-size:.25rem;text-transform:uppercase}
 .c17-step{border:1px solid rgba(126,175,205,.17);border-radius:13px;background:#08141c;margin-top:8px;overflow:hidden}
 .c17-step-h{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(126,175,205,.09)}
-.c17-step-h b{color:#d8ecf5;font-size:.48rem;letter-spacing:.06em}.c17-step-h span{color:#81dcae;font-size:.34rem;font-weight:900}
+.c17-step-h b{color:#d8ecf5;font-size:.48rem;letter-spacing:.06em}.c17-step-h span{font-size:.34rem;font-weight:900}.c17-step-h span.ready{color:#81dcae}.c17-step-h span.limited{color:#f1c76f}.c17-step-h span.gated{color:#ff9d7a}.c17-step-h span.check{color:#9fb3bd}
 .c17-step-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px}
 .c17-note{padding:8px 10px;color:#6f8793;font-size:.34rem;line-height:1.45;border-top:1px solid rgba(126,175,205,.08)}
 .c17-final{border:1px solid rgba(84,220,151,.28);border-radius:15px;background:#071a12;margin-top:10px;padding:11px}
@@ -263,10 +263,31 @@ def _step2(away: Mapping[str, Any], home: Mapping[str, Any]) -> str:
 
 
 def _engine_ready(engine: Mapping[str, Any]) -> str:
-    if engine.get("model_ready") is True or engine.get("ready") is True:
+    """Return a truthful presentation status without changing model math.
+
+    Engines that expose model_ready must only show READY when model_ready=True.
+    A generic ready=True on those engines means the audit object itself exists,
+    not that its adjustment is allowed to influence the projection.
+    """
+    if "model_ready" in engine:
+        if engine.get("model_ready") is True:
+            return "READY"
+        try:
+            coverage = float(engine.get("coverage") or 0.0)
+        except Exception:
+            coverage = 0.0
+        return "LIMITED" if coverage > 0.0 else "GATED"
+
+    if engine.get("ready") is True:
         return "READY"
-    reason = _clean(engine.get("reason"))
-    return "LIMITED" if reason else "CHECK"
+
+    try:
+        coverage = float(engine.get("coverage") or 0.0)
+    except Exception:
+        coverage = 0.0
+    if coverage > 0.0:
+        return "LIMITED"
+    return "GATED" if _clean(engine.get("reason")) else "CHECK"
 
 
 def _interesting(engine: Mapping[str, Any], limit: int = 8) -> list[tuple[str, str]]:
@@ -301,11 +322,17 @@ def _model_step(step: int, title: str, engine: Mapping[str, Any]) -> str:
         for label, value in metrics
     ) or '<div class="c17-metric"><b>—</b><span>no numeric summary</span></div>'
     reason = _clean(engine.get("reason")) or "Current verified inputs processed through the frozen certified engine."
+    status_class = status.lower()
+    influence_note = ""
+    if status == "GATED":
+        influence_note = " • 0% new model influence; prior certified projection remains active."
+    elif status == "LIMITED":
+        influence_note = " • Partial evidence is visible, but the engine has not cleared its full model-ready gate."
     return f'''
 <div class="c17-step">
- <div class="c17-step-h"><b>STEP {step} • {escape(title)}</b><span>{escape(status)}</span></div>
+ <div class="c17-step-h"><b>STEP {step} • {escape(title)}</b><span class="{escape(status_class)}">{escape(status)}</span></div>
  <div class="c17-step-grid">{metric_html}</div>
- <div class="c17-note">{escape(reason)}</div>
+ <div class="c17-note">{escape(reason + influence_note)}</div>
 </div>'''
 
 
