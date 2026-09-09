@@ -136,6 +136,10 @@ jobs:
               })
           print("CFB_LIVE_RECON_WITNESS", json.dumps(evidence, sort_keys=True))
           assert len(feed["games"]) >= 1
-          assert diag["matched_market_rows"] >= 1
+          assert diag["matched_market_rows"] == len(feed["games"]), evidence
+          assert diag["unmatched_market_rows"] == 0, evidence
+          assert diag["all_lines_identity_verified"] is True, evidence
+          assert diag["synthetic_official_ids"] is False, evidence
+          assert diag["fuzzy_matching"] is False, evidence
           print("CFB_STEP2_LIVE_FANDUEL_RECON_WITNESS_GREEN")
           PY
