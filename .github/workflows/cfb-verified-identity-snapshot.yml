@@ -1,4 +1,5 @@
 name: CFB verified identity snapshot
+# Live publisher trigger/update marker.
 
 on:
   push:
