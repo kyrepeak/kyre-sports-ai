@@ -1,0 +1,222 @@
+name: CFB O/U Upgrade Step 9 environment
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [cfb-ou-upgrade-step9-availability-injury]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact additive Step 9 scope
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess,sys
+          actual=set(subprocess.check_output(["git","diff","--name-only","origin/main...HEAD"],text=True).splitlines())
+          expected={
+              ".github/workflows/cfb-over-under-upgrade-step9-environment.yml",
+              "app.py",
+              "cfb_over_under_environment_engine_v1.py",
+              "cfb_over_under_slate_v8.py",
+              "cfb_over_under_matchup_ui_v9.py",
+              "streamlit_memory_lazy_router_v49.py",
+              "tests/test_cfb_over_under_upgrade_step9_environment_engine.py",
+              "tests/test_cfb_over_under_upgrade_step9_slate.py",
+              "tests/test_cfb_over_under_upgrade_step9_ui_router.py",
+          }
+          if actual!=expected:
+              print("expected",sorted(expected)); print("actual",sorted(actual)); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEP9_SCOPE=PASS")
+          PY
+
+      - name: Enforce original CFB and Upgrade 1 through 8 freeze
+        run: |
+          python - <<'PY'
+          import json,pathlib,subprocess,sys
+          def rev(spec): return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          failures=[]
+          manifests=[
+              ("cfb_freeze_manifest_v12.json","3ff2a727967e80dddbe03f747d9f32090cc39539","original CFB"),
+              ("cfb_over_under_logo_hotfix_freeze_manifest_v4.json","b5b42535b0771a6e15d1f8581de325777f3c4177","logo V4"),
+              ("cfb_over_under_upgrade_freeze_manifest_v8.json","08e48fca0137c396da39b3be159ab68390f7739d","O/U Upgrade Step 8"),
+          ]
+          for path,blob,label in manifests:
+              if rev(f"HEAD:{path}")!=blob: failures.append(f"{label} manifest changed")
+              manifest=json.loads(pathlib.Path(path).read_text())
+              for frozen,expected in (manifest.get("exact_blobs") or {}).items():
+                  try: actual=rev(f"HEAD:{frozen}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"missing frozen path: {frozen}"); continue
+                  if actual!=expected: failures.append(f"frozen path changed: {frozen}")
+          if failures:
+              print(*failures,sep="\n"); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEPS_1_8_FROZEN=PASS")
+          PY
+
+      - name: Compile Step 9
+        run: |
+          python - <<'PY'
+          import py_compile
+          for path in (
+              "app.py",
+              "cfb_over_under_environment_engine_v1.py",
+              "cfb_over_under_slate_v8.py",
+              "cfb_over_under_matchup_ui_v9.py",
+              "streamlit_memory_lazy_router_v49.py",
+              "tests/test_cfb_over_under_upgrade_step9_environment_engine.py",
+              "tests/test_cfb_over_under_upgrade_step9_slate.py",
+              "tests/test_cfb_over_under_upgrade_step9_ui_router.py",
+          ):
+              py_compile.compile(path,doraise=True)
+          print("CFB_OU_UPGRADE_STEP9_COMPILE=PASS")
+          PY
+          PYTHONPATH=. python -c "import cfb_over_under_environment_engine_v1; import cfb_over_under_slate_v8; import cfb_over_under_matchup_ui_v9; import streamlit_memory_lazy_router_v49"
+
+      - name: Run Step 9 and inherited regressions
+        run: PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_upgrade_step9_environment_engine.py tests/test_cfb_over_under_upgrade_step9_slate.py tests/test_cfb_over_under_upgrade_step9_ui_router.py tests/test_cfb_over_under_upgrade_step8_turnover_engine.py tests/test_cfb_over_under_upgrade_step8_slate.py tests/test_cfb_over_under_upgrade_step8_ui_router.py tests/test_cfb_over_under_upgrade_step7_third_down_engine.py tests/test_cfb_over_under_upgrade_step7_slate.py tests/test_cfb_over_under_upgrade_step7_ui_router.py tests/test_cfb_over_under_upgrade_step6_red_zone_engine.py tests/test_cfb_over_under_upgrade_step6_slate.py tests/test_cfb_over_under_upgrade_step6_ui_router.py tests/test_cfb_over_under_upgrade_step5_explosive_engine.py tests/test_cfb_over_under_upgrade_step5_slate.py tests/test_cfb_over_under_upgrade_step5_ui_router.py tests/test_cfb_over_under_upgrade_step4_pace_engine.py tests/test_cfb_over_under_upgrade_step4_slate.py tests/test_cfb_over_under_upgrade_step4_ui_router.py tests/test_cfb_over_under_upgrade_step3_engine.py tests/test_cfb_over_under_upgrade_step3_slate.py tests/test_cfb_over_under_upgrade_step3_ui.py tests/test_cfb_over_under_multisource_logo_resolver_v2.py tests/test_cfb_over_under_multisource_logo_hotfix_v4.py tests/test_cfb_over_under_logo_recursion_hotfix_v3.py
+
+      - name: Live Florida A&M at Miami Step 9 environment
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v8 as slate
+          import cfb_over_under_environment_engine_v1 as env
+
+          env.clear_environment_engine_cache()
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          try: slate.analyze_game.clear()
+          except Exception: pass
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          engine=result.get("environment_engine") or {}
+          raw=result.get("raw") or {}
+          step8=result.get("step8_raw") or {}
+          weather=engine.get("weather") or {}
+          venue=engine.get("venue") or {}
+          away=engine.get("away_availability") or {}
+          home=engine.get("home_availability") or {}
+          print("ENVIRONMENT",json.dumps({
+              "event_id":engine.get("event_id"),
+              "away_team_id":engine.get("away_espn_team_id"),
+              "home_team_id":engine.get("home_espn_team_id"),
+              "venue":venue,
+              "weather":weather,
+              "weather_stress":engine.get("weather_stress"),
+              "sigma_adjustment":engine.get("sigma_adjustment"),
+              "step8_total":step8.get("projected_total"),
+              "step9_total":raw.get("projected_total"),
+              "step8_sigma":step8.get("structural_total_sigma"),
+              "step9_sigma":raw.get("structural_total_sigma"),
+              "away_roster":{"ready":away.get("ready"),"total":away.get("roster_total"),"flags":away.get("flagged_count"),"timestamp":away.get("timestamp")},
+              "home_roster":{"ready":home.get("ready"),"total":home.get("roster_total"),"flags":home.get("flagged_count"),"timestamp":home.get("timestamp")},
+          },indent=2))
+          if not engine.get("model_ready") or not raw.get("upgrade_step9_applied"):
+              raise SystemExit(f"Step 9 live engine failed: {engine.get('reason')}")
+          if engine.get("event_id")!="401858213":
+              raise SystemExit("wrong ESPN event identity")
+          if engine.get("away_espn_team_id")!="50" or engine.get("home_espn_team_id")!="2390":
+              raise SystemExit("wrong ESPN team identity")
+          if "Hard Rock Stadium" not in str(venue.get("name")):
+              raise SystemExit("venue did not verify")
+          for key in ("temperature_f","gust_mph","precipitation_pct"):
+              if weather.get(key) is None:
+                  raise SystemExit(f"weather field missing: {key}")
+          if not (0 <= float(weather.get("precipitation_pct")) <= 100):
+              raise SystemExit("precipitation out of range")
+          if not (0 <= float(weather.get("gust_mph")) <= 100):
+              raise SystemExit("gust out of range")
+          if not (20 <= float(weather.get("temperature_f")) <= 120):
+              raise SystemExit("temperature out of range")
+          if float(engine.get("sigma_adjustment") or 0) < 0 or float(engine.get("sigma_adjustment") or 0)>1.250001:
+              raise SystemExit("weather sigma adjustment out of bounds")
+          if float(step8.get("projected_total"))!=float(raw.get("projected_total")):
+              raise SystemExit("Step 9 changed Step-8 projected total")
+          if float(step8.get("projected_away_points"))!=float(raw.get("projected_away_points")) or float(step8.get("projected_home_points"))!=float(raw.get("projected_home_points")):
+              raise SystemExit("Step 9 changed Step-8 team points")
+          if float(raw.get("analysis_line_environment_weight") or 0)!=0.0 or float(raw.get("projected_total_environment_weight") or 0)!=0.0:
+              raise SystemExit("environment line/total weight firewall failed")
+          if float(raw.get("injury_model_weight") or 0)!=0.0:
+              raise SystemExit("uncertified injury feed entered model")
+          if engine.get("injury_reporting_completeness_certified") is not False or engine.get("availability_zero_flags_means_healthy") is not False:
+              raise SystemExit("availability integrity contract failed")
+          if not away.get("ready") or not home.get("ready") or int(away.get("roster_total") or 0)<70 or int(home.get("roster_total") or 0)<70:
+              raise SystemExit("roster audit coverage failed")
+          print("LIVE_FAMU_MIAMI_STEP9_ENVIRONMENT=PASS")
+          PY
+
+      - name: Live hero retains frozen stack and adds Step 9
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v8 as slate
+          import cfb_over_under_matchup_ui_v9 as ui
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          html=ui._hero_v9(game,result.get("away") or {},result.get("home") or {})
+          for token in ("TEAM LOGOS VERIFIED","UPGRADE STEP 4","UPGRADE STEP 5","UPGRADE STEP 6","UPGRADE STEP 7","UPGRADE STEP 8","UPGRADE STEP 9","Hard Rock Stadium"):
+              if token not in html: raise SystemExit(f"active Step 9 hero missing: {token}")
+          if "Zero reported flags" not in html:
+              raise SystemExit("availability integrity disclosure missing")
+          print("LIVE_STEP9_HERO_STACK=PASS")
+          PY
+
+      - name: Prove Step 9 model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          combined="\n".join(Path(p).read_text(encoding="utf-8") for p in (
+              "cfb_over_under_environment_engine_v1.py",
+              "cfb_over_under_slate_v8.py",
+              "cfb_over_under_matchup_ui_v9.py",
+              "streamlit_memory_lazy_router_v49.py",
+              "app.py",
+          ))
+          required=[
+              'FROZEN_STEP8_ENGINE = "cfb_over_under_turnover_engine_v1"',
+              'MAX_TOTAL_SIGMA_ADJUSTMENT = 1.25',
+              'ANALYSIS_LINE_ENVIRONMENT_WEIGHT = 0.0',
+              'PROJECTED_TOTAL_ENVIRONMENT_WEIGHT = 0.0',
+              'INJURY_MODEL_WEIGHT = 0.0',
+              'INJURY_REPORTING_COMPLETENESS_CERTIFIED = False',
+              '"availability_zero_flags_means_healthy": False',
+              '"weather_thresholds_empirically_calibrated": False',
+              'FROZEN_UPGRADE = "cfb_over_under_matchup_ui_v8"',
+              'root._import("cfb_over_under_matchup_ui_v9")',
+              'FROZEN_ROUTER="streamlit_memory_lazy_router_v48"',
+              'from streamlit_memory_lazy_router_v49 import render_app',
+          ]
+          for token in required:
+              if token not in combined: raise SystemExit(f"missing Step 9 marker: {token}")
+          lower=combined.lower()
+          for token in ("sportsbook_api","np.random","import random","monte_carlo("):
+              if token in lower: raise SystemExit(f"Step 9 crossed model firewall: {token}")
+          print("CFB_OU_UPGRADE_STEP9_FIREWALL=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo CFB_OU_UPGRADE_STEP9_ENVIRONMENT_GREEN
