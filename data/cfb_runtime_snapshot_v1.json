@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-09T04:50:00Z",
+  "purpose": "Bootstrap current-data fallback when a deployed Streamlit runtime cannot reach one or more live providers. Scheduled refresh replaces/extends this snapshot.",
+  "games": [
+    {
+      "event_id": "401858213",
+      "game_date": "2026-09-10",
+      "away_team": "Florida A&M",
+      "home_team": "Miami (FL)",
+      "venue": "Hard Rock Stadium",
+      "broadcast": "ACC Network",
+      "status": "Scheduled",
+      "espn_week": 2,
+      "away": {
+        "team_id": "50",
+        "record_text": "1-1",
+        "conference_record_text": "0-0",
+        "home_record": {
+          "wins": 1,
+          "losses": 0,
+          "ties": 0,
+          "games": 1
+        },
+        "away_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 1,
+          "ties": 0,
+          "games": 1
+        },
+        "recent_form": "WL",
+        "ppg": 16.5,
+        "points_allowed_pg": 19,
+        "point_diff_pg": -2.5,
+        "head_coach": "Quinn Gray Sr.",
+        "division_context": "FCS",
+        "ap_rank": null,
+        "coaches_poll_rank": null,
+        "cfp_rank": null
+      },
+      "home": {
+        "team_id": "2390",
+        "record_text": "1-0",
+        "conference_record_text": "1-0",
+        "home_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "away_record": {
+          "wins": 1,
+          "losses": 0,
+          "ties": 0,
+          "games": 1
+        },
+        "neutral_record": {
+          "wins": 0,
+          "losses": 0,
+          "ties": 0,
+          "games": 0
+        },
+        "recent_form": "W",
+        "ppg": 45,
+        "points_allowed_pg": 6,
+        "point_diff_pg": 39,
+        "head_coach": "Mario Cristobal",
+        "division_context": "FBS",
+        "ap_rank": 7,
+        "coaches_poll_rank": 7,
+        "cfp_rank": null
+      },
+      "sources": [
+        "Miami Athletics 2026 football schedule",
+        "Florida A&M Athletics 2026 football schedule",
+        "Miami Athletics game-time release",
+        "ESPN current event/team feeds (certified in GitHub Actions)"
+      ]
+    }
+  ]
+}
