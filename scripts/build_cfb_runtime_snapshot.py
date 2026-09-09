@@ -26,6 +26,8 @@ import json
 from pathlib import Path
 import re
 import sys
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from typing import Any, Mapping
 from zoneinfo import ZoneInfo
 
@@ -37,8 +39,8 @@ OUT = ROOT / "data" / "cfb_runtime_snapshot_v1.json"
 ET = ZoneInfo("America/New_York")
 TIMEOUT = 18
 HEADERS = {
-    "User-Agent": "KyreSportsAI/RuntimeSnapshot/1.0",
-    "Accept": "application/json,text/plain,*/*",
+    "User-Agent": "KyreSportsAI/CFB-Step2",
+    "Accept": "application/json",
 }
 
 SCOREBOARD = (
@@ -61,17 +63,57 @@ def clean(value: Any) -> str:
 
 
 def get_json(url: str, params: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    response = requests.get(
-        url,
-        params=dict(params or {}),
-        timeout=TIMEOUT,
-        headers=HEADERS,
+    query = dict(params or {})
+    errors: list[str] = []
+
+    header_sets = (
+        HEADERS,
+        {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 Chrome/140 Safari/537.36"
+            ),
+            "Accept": "application/json,text/plain,*/*",
+            "Referer": "https://www.espn.com/",
+        },
     )
-    response.raise_for_status()
-    payload = response.json()
-    if not isinstance(payload, dict):
-        raise ValueError(f"non-object JSON from {url}")
-    return payload
+
+    for headers in header_sets:
+        try:
+            response = requests.get(
+                url,
+                params=query,
+                timeout=TIMEOUT,
+                headers=headers,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise ValueError("non-object JSON")
+            return payload
+        except Exception as exc:
+            errors.append(f"requests {type(exc).__name__}: {exc}")
+
+    full = url + (("?" + urlencode(query)) if query else "")
+    for headers in header_sets:
+        try:
+            request = Request(
+                full,
+                headers={
+                    **headers,
+                    "Cache-Control": "no-cache",
+                },
+            )
+            with urlopen(request, timeout=TIMEOUT) as response:
+                raw = response.read()
+            payload = json.loads(raw.decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("non-object JSON")
+            return payload
+        except Exception as exc:
+            errors.append(f"urllib {type(exc).__name__}: {exc}")
+
+    raise RuntimeError("; ".join(errors)[-1200:])
 
 
 def parse_dt(value: Any) -> datetime | None:
@@ -469,7 +511,7 @@ def build_snapshot() -> dict[str, Any]:
         try:
             payload = get_json(
                 SCOREBOARD,
-                {"dates": ymd, "limit": 1000, "groups": 80},
+                {"dates": ymd, "limit": 500, "groups": 80},
             )
         except Exception as exc:
             print(f"WARN scoreboard {day}: {type(exc).__name__}: {exc}", file=sys.stderr)
