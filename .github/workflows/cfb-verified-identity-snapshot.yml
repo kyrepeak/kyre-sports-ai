@@ -10,6 +10,11 @@ on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
+  pull_request_target:
+    branches:
+      - main
+    paths:
+      - .github/cfb-snapshot-trigger.txt
 
 permissions:
   contents: write
