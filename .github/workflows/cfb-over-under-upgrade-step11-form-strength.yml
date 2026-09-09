@@ -1,0 +1,237 @@
+name: CFB O/U Upgrade Step 11 form strength
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [cfb-ou-upgrade-step11-form-strength]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact additive Step 11 scope
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess,sys
+          actual=set(subprocess.check_output(["git","diff","--name-only","origin/main...HEAD"],text=True).splitlines())
+          expected={
+              ".github/workflows/cfb-over-under-upgrade-step11-form-strength.yml",
+              "app.py",
+              "cfb_over_under_form_strength_engine_v1.py",
+              "cfb_over_under_slate_v10.py",
+              "cfb_over_under_matchup_ui_v11.py",
+              "streamlit_memory_lazy_router_v51.py",
+              "tests/test_cfb_over_under_upgrade_step11_form_strength_engine.py",
+              "tests/test_cfb_over_under_upgrade_step11_slate.py",
+              "tests/test_cfb_over_under_upgrade_step11_ui_router.py",
+          }
+          if actual!=expected:
+              print("expected",sorted(expected)); print("actual",sorted(actual)); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEP11_SCOPE=PASS")
+          PY
+
+      - name: Enforce original CFB, logo hotfixes, and Upgrade 1 through 10 freeze
+        run: |
+          python - <<'PY'
+          import json,pathlib,subprocess,sys
+          def rev(spec): return subprocess.check_output(["git","rev-parse",spec],text=True).strip()
+          failures=[]
+          manifests=[
+              ("cfb_freeze_manifest_v12.json","3ff2a727967e80dddbe03f747d9f32090cc39539","original CFB"),
+              ("cfb_over_under_logo_hotfix_freeze_manifest_v4.json","b5b42535b0771a6e15d1f8581de325777f3c4177","logo V4"),
+              ("cfb_over_under_upgrade_freeze_manifest_v10.json","ebaf3e3ac8819aca47eccf81b7089ec05d833fd8","O/U Upgrade Step 10"),
+          ]
+          for path,blob,label in manifests:
+              if rev(f"HEAD:{path}")!=blob: failures.append(f"{label} manifest changed")
+              manifest=json.loads(pathlib.Path(path).read_text())
+              for frozen,expected in (manifest.get("exact_blobs") or {}).items():
+                  try: actual=rev(f"HEAD:{frozen}")
+                  except subprocess.CalledProcessError:
+                      failures.append(f"missing frozen path: {frozen}"); continue
+                  if actual!=expected: failures.append(f"frozen path changed: {frozen}")
+          if failures:
+              print(*failures,sep="\n"); sys.exit(1)
+          print("CFB_OU_UPGRADE_STEPS_1_10_FROZEN=PASS")
+          PY
+
+      - name: Compile Step 11
+        run: |
+          python - <<'PY'
+          import py_compile
+          for path in (
+              "app.py",
+              "cfb_over_under_form_strength_engine_v1.py",
+              "cfb_over_under_slate_v10.py",
+              "cfb_over_under_matchup_ui_v11.py",
+              "streamlit_memory_lazy_router_v51.py",
+              "tests/test_cfb_over_under_upgrade_step11_form_strength_engine.py",
+              "tests/test_cfb_over_under_upgrade_step11_slate.py",
+              "tests/test_cfb_over_under_upgrade_step11_ui_router.py",
+          ):
+              py_compile.compile(path,doraise=True)
+          print("CFB_OU_UPGRADE_STEP11_COMPILE=PASS")
+          PY
+          PYTHONPATH=. python -c "import cfb_over_under_form_strength_engine_v1; import cfb_over_under_slate_v10; import cfb_over_under_matchup_ui_v11; import streamlit_memory_lazy_router_v51"
+
+      - name: Run Step 11 and inherited regressions
+        run: PYTHONPATH=. python -m pytest -q tests/test_cfb_over_under_upgrade_step11_form_strength_engine.py tests/test_cfb_over_under_upgrade_step11_slate.py tests/test_cfb_over_under_upgrade_step11_ui_router.py tests/test_cfb_over_under_upgrade_step10_history_engine.py tests/test_cfb_over_under_upgrade_step10_slate.py tests/test_cfb_over_under_upgrade_step10_ui_router.py tests/test_cfb_over_under_upgrade_step9_environment_engine.py tests/test_cfb_over_under_upgrade_step9_slate.py tests/test_cfb_over_under_upgrade_step9_ui_router.py tests/test_cfb_over_under_upgrade_step8_turnover_engine.py tests/test_cfb_over_under_upgrade_step8_slate.py tests/test_cfb_over_under_upgrade_step8_ui_router.py tests/test_cfb_over_under_upgrade_step7_third_down_engine.py tests/test_cfb_over_under_upgrade_step7_slate.py tests/test_cfb_over_under_upgrade_step7_ui_router.py tests/test_cfb_over_under_upgrade_step6_red_zone_engine.py tests/test_cfb_over_under_upgrade_step6_slate.py tests/test_cfb_over_under_upgrade_step6_ui_router.py tests/test_cfb_over_under_upgrade_step5_explosive_engine.py tests/test_cfb_over_under_upgrade_step5_slate.py tests/test_cfb_over_under_upgrade_step5_ui_router.py tests/test_cfb_over_under_upgrade_step4_pace_engine.py tests/test_cfb_over_under_upgrade_step4_slate.py tests/test_cfb_over_under_upgrade_step4_ui_router.py tests/test_cfb_over_under_upgrade_step3_engine.py tests/test_cfb_over_under_upgrade_step3_slate.py tests/test_cfb_over_under_upgrade_step3_ui.py tests/test_cfb_over_under_multisource_logo_resolver_v2.py tests/test_cfb_over_under_multisource_logo_hotfix_v4.py tests/test_cfb_over_under_logo_recursion_hotfix_v3.py
+
+      - name: Live Florida A&M at Miami Step 11 form strength
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_form_strength_engine_v1 as form
+          import cfb_over_under_slate_v10 as slate
+
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          try: slate.analyze_game.clear()
+          except Exception: pass
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          engine=result.get("form_strength_engine") or {}
+          raw=result.get("raw") or {}
+          step10=result.get("step10_raw") or {}
+          away=engine.get("away_form") or {}
+          home=engine.get("home_form") or {}
+          comp=raw.get("components") or {}
+          print("FORM_STRENGTH",json.dumps({
+              "model_ready":engine.get("model_ready"),
+              "reason":engine.get("reason"),
+              "away_id":engine.get("away_espn_team_id"),
+              "home_id":engine.get("home_espn_team_id"),
+              "away_form":{k:away.get(k) for k in ("games","avg_points_for","avg_points_against","opponent_record_coverage","avg_opponent_win_pct","sos_adjusted_points_for","sos_adjusted_points_against","quality_factor")},
+              "home_form":{k:home.get(k) for k in ("games","avg_points_for","avg_points_against","opponent_record_coverage","avg_opponent_win_pct","sos_adjusted_points_for","sos_adjusted_points_against","quality_factor")},
+              "coverage":engine.get("coverage"),
+              "step10_total":step10.get("projected_total"),
+              "step11_total":raw.get("projected_total"),
+              "away_adjustment":comp.get("step11_away_form_adjustment"),
+              "home_adjustment":comp.get("step11_home_form_adjustment"),
+              "total_adjustment":comp.get("step11_total_form_adjustment"),
+          },indent=2,default=str))
+
+          if engine.get("away_espn_team_id")!="50" or engine.get("home_espn_team_id")!="2390":
+              raise SystemExit("Step 11 exact team identity failed")
+          if engine.get("current_season_only") is not True:
+              raise SystemExit("Step 11 current-season-only firewall failed")
+          if float(engine.get("previous_season_projection_weight") or 0)!=0.0:
+              raise SystemExit("previous-season history entered Step 11 projection")
+          if engine.get("future_event_leakage_allowed") is not False or engine.get("target_event_excluded") is not True:
+              raise SystemExit("Step 11 event leakage contract failed")
+
+          cutoff=form._cutoff(game)
+          for side in (away,home):
+              for row in side.get("sample") or []:
+                  dt=form._parse_dt(row.get("date"))
+                  if dt is None or dt>=cutoff or dt.year!=2026:
+                      raise SystemExit("non-current/future event leaked into Step 11 form sample")
+
+          frozen_exact=("structural_total_sigma","reliability","feature_coverage","analysis_line")
+          for key in frozen_exact:
+              if step10.get(key)!=raw.get(key):
+                  raise SystemExit(f"Step 11 changed frozen invariant: {key}")
+          if float(raw.get("analysis_line_form_weight") or 0)!=0.0 or float(raw.get("direct_selection_form_weight") or 0)!=0.0:
+              raise SystemExit("Step 11 direct line/selection influence firewall failed")
+
+          if engine.get("model_ready"):
+              if not raw.get("upgrade_step11_applied"):
+                  raise SystemExit("ready Step 11 engine did not apply")
+              for side in (away,home):
+                  if int(side.get("games") or 0)<2:
+                      raise SystemExit("Step 11 applied below 2 current-season games")
+                  if float(side.get("opponent_record_coverage") or 0)<0.60:
+                      raise SystemExit("Step 11 applied below opponent-record coverage gate")
+              away_delta=float(raw.get("projected_away_points"))-float(step10.get("projected_away_points"))
+              home_delta=float(raw.get("projected_home_points"))-float(step10.get("projected_home_points"))
+              total_delta=float(raw.get("projected_total"))-float(step10.get("projected_total"))
+              if abs(away_delta)>1.250001 or abs(home_delta)>1.250001 or abs(total_delta)>2.000001:
+                  raise SystemExit("Step 11 adjustment cap failed")
+              print("LIVE_FAMU_MIAMI_STEP11_FORM_STRENGTH=APPLIED_PASS")
+          else:
+              if raw.get("upgrade_step11_applied"):
+                  raise SystemExit("gated Step 11 engine applied anyway")
+              for key in ("projected_away_points","projected_home_points","projected_total","over_probability","under_probability","push_probability"):
+                  if step10.get(key)!=raw.get(key):
+                      raise SystemExit(f"gated Step 11 changed Step 10 math: {key}")
+              if not str(engine.get("reason") or "").strip():
+                  raise SystemExit("gated Step 11 lacks reason")
+              print("LIVE_FAMU_MIAMI_STEP11_FORM_STRENGTH=GATED_PASS")
+          PY
+
+      - name: Live hero retains frozen stack and adds Step 11
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_schedule_v3 as schedule
+          import cfb_over_under_slate_v10 as slate
+          import cfb_over_under_matchup_ui_v11 as ui
+          games,_=schedule.load_with_diagnostics("2026-09-10")
+          game=next(g for g in games if "Florida A&M" in str(g.get("away_team")) and "Miami" in str(g.get("home_team")))
+          result=slate.analyze_game(game,"2026-09-10",50.5)
+          html=ui._hero_v11(game,result.get("away") or {},result.get("home") or {})
+          for token in ("TEAM LOGOS VERIFIED","UPGRADE STEP 4","UPGRADE STEP 5","UPGRADE STEP 6","UPGRADE STEP 7","UPGRADE STEP 8","UPGRADE STEP 9","UPGRADE STEP 10","UPGRADE STEP 11"):
+              if token not in html: raise SystemExit(f"active Step 11 hero missing: {token}")
+          if "CURRENT SEASON ONLY" not in html and "FORM GATED" not in html:
+              raise SystemExit("Step 11 hero missing applied/gated state")
+          print("LIVE_STEP11_HERO_STACK=PASS")
+          PY
+
+      - name: Prove Step 11 model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          combined="\n".join(Path(p).read_text(encoding="utf-8") for p in (
+              "cfb_over_under_form_strength_engine_v1.py",
+              "cfb_over_under_slate_v10.py",
+              "cfb_over_under_matchup_ui_v11.py",
+              "streamlit_memory_lazy_router_v51.py",
+              "app.py",
+          ))
+          required=[
+              'FROZEN_STEP10_ENGINE = "cfb_over_under_history_engine_v1"',
+              'MIN_CURRENT_SEASON_GAMES = 2',
+              'MIN_OPPONENT_RECORD_COVERAGE = 0.60',
+              'RECENT_FORM_PROJECTION_BLEND = 0.18',
+              'MAX_TEAM_FORM_ADJUSTMENT = 1.25',
+              'MAX_TOTAL_FORM_ADJUSTMENT = 2.0',
+              'ANALYSIS_LINE_FORM_WEIGHT = 0.0',
+              'DIRECT_SELECTION_FORM_WEIGHT = 0.0',
+              'EMPIRICAL_CALIBRATION_CLAIMED = False',
+              '"previous_season_projection_weight": 0.0',
+              '"future_event_leakage_allowed": False',
+              'FROZEN_UPGRADE = "cfb_over_under_matchup_ui_v10"',
+              'root._import("cfb_over_under_matchup_ui_v11")',
+              'FROZEN_ROUTER="streamlit_memory_lazy_router_v50"',
+              'from streamlit_memory_lazy_router_v51 import render_app',
+          ]
+          for token in required:
+              if token not in combined: raise SystemExit(f"missing Step 11 marker: {token}")
+          lower=combined.lower()
+          for token in ("sportsbook_api","np.random","import random","monte_carlo("):
+              if token in lower: raise SystemExit(f"Step 11 crossed model firewall: {token}")
+          print("CFB_OU_UPGRADE_STEP11_FIREWALL=PASS")
+          PY
+
+      - name: Certification marker
+        run: echo CFB_OU_UPGRADE_STEP11_FORM_STRENGTH_GREEN
