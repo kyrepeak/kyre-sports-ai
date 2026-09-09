@@ -99,10 +99,13 @@ def test_non_matchup_futures_are_never_treated_as_games():
 
 
 def test_duplicate_open_total_markets_fail_closed_per_event():
-    with pytest.raises(collector.CFBFanDuelCollectorError):
+    with pytest.raises(
+        collector.CFBFanDuelCollectorError,
+        match="produced no future open Total Points games",
+    ):
         collector.normalize_fanduel_ncaaf_page(
             _page(duplicate_total=True),
-            observed_at_utc=datetime(2026, 9, 13, 20, 0, tzinfo=timezone.utc),
+            observed_at_utc=datetime(2026, 9, 9, 20, 0, tzinfo=timezone.utc),
         )
 
 
