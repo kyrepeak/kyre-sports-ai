@@ -1,28 +1,26 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U Upgrade Step 11 form strength.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U Upgrade Step 12 final certification.
 
-Router V51 preserves the permanently frozen Router V50/V49/... chain.
+Router V52 preserves the permanently frozen Router V51/V50/... chain.
 
-Additive Upgrade Step 11:
+Final Upgrade Step 12:
 - preserves original CFB Steps 1-12,
-- preserves O/U Upgrade Steps 1-10,
-- preserves all multi-source logo hotfixes,
-- uses only completed current-season games before kickoff,
-- normalizes recent scoring form using verified opponent records,
-- shrinks influence by sample size and opponent-record coverage,
-- requires at least two current-season games and 60% opponent-record coverage,
-- keeps previous-season history at 0% projection weight,
-- caps adjustment at ±1.25 points per team and ±2.00 total,
-- keeps structural sigma, reliability, feature coverage, and frozen final
-  qualification thresholds unchanged,
-- keeps analysis-line form weight and direct selection form weight at 0%,
-- adds no sportsbook input, market probability, EV, price, or Monte Carlo.
+- preserves O/U Upgrade Steps 1-11,
+- preserves all logo hotfixes,
+- adds read-only final integrity certification,
+- checks identity/date gates, projection arithmetic, probability mass,
+  raw/final coherence, frozen selection thresholds, Step-11 gate/apply behavior,
+  analysis-line weight firewalls, and market/EV/Monte Carlo firewalls,
+- labels results CERTIFIED, DATA_GATED, or INTEGRITY_FAIL,
+- adds a compact final certification panel and projection fingerprint,
+- changes no projection, probability, selection, reliability, sigma, feature
+  coverage, or qualification threshold.
 
-Deployment heartbeat: STREAMLIT_MAIN_V51_CFB_OU_UPGRADE_STEP11_FORM_STRENGTH_2026-09-09T02:10Z.
+Deployment heartbeat: STREAMLIT_MAIN_V52_CFB_OU_UPGRADE_STEP12_FINAL_CERT_2026-09-09T02:33Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v51 import render_app
+from streamlit_memory_lazy_router_v52 import render_app
 
-DEPLOYMENT_HEARTBEAT="STREAMLIT_MAIN_V51_CFB_OU_UPGRADE_STEP11_FORM_STRENGTH_2026-09-09T02:10Z"
+DEPLOYMENT_HEARTBEAT="STREAMLIT_MAIN_V52_CFB_OU_UPGRADE_STEP12_FINAL_CERT_2026-09-09T02:33Z"
 
 render_app()
