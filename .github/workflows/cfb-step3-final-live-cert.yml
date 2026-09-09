@@ -1,0 +1,152 @@
+name: CFB Step 3 final live certification
+
+on:
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+
+jobs:
+  final-live-cert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Certify live Step 3 CFB odds API
+        env:
+          BASE_URL: https://kyre-sports-api.onrender.com
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          base = os.environ["BASE_URL"].rstrip("/")
+
+          def get(path, timeout=90):
+              req = urllib.request.Request(
+                  base + path,
+                  headers={
+                      "User-Agent": "KyreSportsAI-CFB-Step3-Final-Cert/1.0",
+                      "Accept": "application/json",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=timeout) as resp:
+                  return int(resp.status), json.loads(resp.read().decode("utf-8"))
+
+          evidence = {}
+
+          code, health = get("/health")
+          assert code == 200 and health.get("status") == "ok", health
+          evidence["health"] = code
+
+          code, status = get("/api/v1/cfb/odds/status")
+          assert code == 200, status
+          assert status.get("step") == 3, status
+          assert status.get("endpoint_ready") is True, status
+          assert status.get("endpoint") == "/api/v1/cfb/odds", status
+          assert status.get("identity_required") is True, status
+          policy = status.get("identity_policy") or {}
+          assert policy.get("synthetic_ids") is False, status
+          assert policy.get("fuzzy_matching") is False, status
+          assert policy.get("fail_closed") is True, status
+          sem = status.get("market_semantics") or {}
+          assert sem.get("projection_weight") == 0.0, status
+          assert sem.get("market_context_only") is True, status
+          assert sem.get("may_modify_projection") is False, status
+          evidence["step3_status"] = {
+              "http": code,
+              "step": status.get("step"),
+              "endpoint_ready": status.get("endpoint_ready"),
+              "projection_weight": sem.get("projection_weight"),
+          }
+
+          code, odds = get("/api/v1/cfb/odds", timeout=120)
+          assert code == 200, odds
+          games = odds.get("games") or []
+          diag = odds.get("diagnostics") or {}
+          identity_resolution = odds.get("identity_resolution") or {}
+          assert len(games) >= 100, len(games)
+          assert odds.get("game_count") == len(games), odds.get("game_count")
+          assert diag.get("identity_verified_rows") == len(games), diag
+          assert diag.get("unmatched_market_rows") == 0, diag
+          assert diag.get("complete_identity_coverage") is True, diag
+          assert diag.get("synthetic_official_ids") is False, diag
+          assert diag.get("fuzzy_matching") is False, diag
+          assert all(row.get("identity_verified") is True for row in games)
+          assert all(row.get("game_id") for row in games)
+          assert all(row.get("away_team") and row.get("home_team") for row in games)
+          assert all(row.get("market_type") == "game_total" for row in games)
+
+          github_snapshot = identity_resolution.get("github_snapshot") or {}
+          assert github_snapshot.get("ok") is True, identity_resolution
+          assert int(github_snapshot.get("verified_games") or 0) >= len(games), identity_resolution
+          assert identity_resolution.get("live_provider_attempts") == [], identity_resolution
+
+          famu = [
+              row for row in games
+              if row.get("away_team") == "Florida A&M"
+              and row.get("home_team") == "Miami"
+          ]
+          assert len(famu) == 1, famu
+          sample = famu[0]
+          assert sample.get("game_id") == "401858213", sample
+          assert sample.get("sportsbook") == "FanDuel", sample
+          assert sample.get("identity_verified") is True, sample
+
+          query = urllib.parse.urlencode(
+              {
+                  "game_date": sample.get("game_date"),
+                  "game_id": sample.get("game_id"),
+                  "sportsbook": "fanduel",
+              }
+          )
+          code, filtered = get("/api/v1/cfb/odds?" + query)
+          assert code == 200, filtered
+          assert filtered.get("game_count") == 1, filtered
+          assert (filtered.get("games") or [])[0].get("game_id") == "401858213", filtered
+
+          evidence["cfb_odds"] = {
+              "http": 200,
+              "game_count": len(games),
+              "identity_verified_rows": diag.get("identity_verified_rows"),
+              "unmatched_rows": diag.get("unmatched_market_rows"),
+              "verified_identity_source_games": github_snapshot.get("verified_games"),
+              "direct_espn_fallback_calls": len(
+                  identity_resolution.get("live_provider_attempts") or []
+              ),
+              "sample": {
+                  "game_id": sample.get("game_id"),
+                  "provider_game_id": sample.get("provider_game_id"),
+                  "away_team": sample.get("away_team"),
+                  "home_team": sample.get("home_team"),
+                  "total": sample.get("total"),
+                  "sportsbook": sample.get("sportsbook"),
+                  "venue": sample.get("venue"),
+                  "broadcast": sample.get("broadcast"),
+              },
+              "filter_contract": "GREEN",
+          }
+
+          code, mlb = get("/api/v1/mlb/runtime/step17b")
+          assert code == 200, mlb
+          assert mlb.get("enabled") is True, mlb
+          assert mlb.get("running") is True, mlb
+          assert mlb.get("role") == "leader", mlb
+          evidence["mlb"] = {
+              "http": code,
+              "enabled": mlb.get("enabled"),
+              "running": mlb.get("running"),
+              "role": mlb.get("role"),
+          }
+
+          code, wnba = get("/api/v1/wnba/teams?season=2026")
+          assert code == 200, wnba
+          assert int(wnba.get("team_count") or 0) == 15, wnba
+          evidence["wnba"] = {
+              "http": code,
+              "team_count": wnba.get("team_count"),
+          }
+
+          print("CFB_STEP3_FINAL_LIVE_EVIDENCE", json.dumps(evidence, sort_keys=True))
+          print("CFB_STEP3_FINAL_LIVE_CERT_GREEN")
+          PY
