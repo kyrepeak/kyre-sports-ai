@@ -35,6 +35,11 @@ from zoneinfo import ZoneInfo
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+import cfb_over_under_deep_data_reconciliation_v1 as project_deep
+
 OUT = ROOT / "data" / "cfb_runtime_snapshot_v1.json"
 
 ET = ZoneInfo("America/New_York")
@@ -263,6 +268,44 @@ def schedule_rows(team_id_value: str, season: int, now_utc: datetime) -> list[di
     if cache_key in _SCHEDULE_CACHE:
         return [dict(row) for row in _SCHEDULE_CACHE[cache_key]]
 
+    # Use the same certified schedule parser as the runtime reconciliation layer.
+    try:
+        current_rows, _, _ = project_deep._current_rows(
+            team_id_value,
+            int(season),
+            now_utc,
+            "",
+        )
+        rows: list[dict[str, Any]] = []
+        for row in current_rows:
+            pf = float(row.get("points_for") or 0.0)
+            pa = float(row.get("points_against") or 0.0)
+            rows.append({
+                "event_id": clean(row.get("event_id")),
+                "date": clean(row.get("date") or row.get("date_dt")),
+                "location": clean(row.get("location") or row.get("home_away")).lower(),
+                "points_for": pf,
+                "points_against": pa,
+                "opponent": clean(row.get("opponent_name")),
+                "opponent_id": clean(row.get("opponent_id")),
+            })
+        rows = [
+            row for row in rows
+            if row["event_id"]
+            and (row["points_for"] != 0.0 or row["points_against"] != 0.0)
+        ]
+        if rows:
+            rows.sort(key=lambda row: row["date"])
+            _SCHEDULE_CACHE[cache_key] = [dict(row) for row in rows]
+            return rows
+    except Exception as exc:
+        print(
+            f"WARN certified schedule parser {team_id_value}: "
+            f"{type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+
+    # Lower-level transport fallback.
     payload = get_json(
         TEAM_SCHEDULE.format(team_id=team_id_value),
         {"season": season},
