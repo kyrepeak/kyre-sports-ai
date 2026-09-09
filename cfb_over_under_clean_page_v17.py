@@ -32,7 +32,7 @@ import cfb_over_under_slate_v14_runtime as runtime_slate
 import cfb_over_under_step3_readable_v2 as readable_step3
 import cfb_schedule_v5_runtime_snapshot as schedule
 
-MODEL_VERSION = "CFB O/U CLEAN PAGE V17.2 • READABLE FOOTBALL EVIDENCE • STEP 3"
+MODEL_VERSION = "CFB O/U CLEAN PAGE V17.3 • STEP 3 FAVORABLE / TOUGH VERDICTS"
 MARKET = "Over/Under"
 _ET = ZoneInfo("America/New_York")
 
@@ -88,6 +88,14 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
 .c17-s3-sub{display:block;color:#6d8590;font-size:.24rem;font-weight:700;margin-top:1px}.c17-s3-diff{font-size:.31rem;font-weight:950}
 .c17-s3-diff.pos{color:#ffb79e}.c17-s3-diff.neg{color:#87d5ff}.c17-s3-diff.neutral{color:#a7b5bc}
 .c17-s3-summary{padding:7px 9px;border-top:1px solid rgba(255,116,107,.10);color:#9cb0ba;font-size:.32rem;line-height:1.4}
+.c17-s3-verdict{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:7px 8px;border-top:1px solid rgba(255,116,107,.10);background:#071118}
+.c17-s3-verdict-box{border-radius:8px;padding:7px 8px;border:1px solid rgba(255,255,255,.08)}
+.c17-s3-verdict-box small{display:block;font-size:.25rem;font-weight:950;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px}
+.c17-s3-verdict-box strong{display:block;font-size:.46rem;line-height:1.2}
+.c17-s3-verdict-box.fav{background:rgba(65,205,133,.08);border-color:rgba(65,205,133,.24)}.c17-s3-verdict-box.fav small{color:#78dca7}.c17-s3-verdict-box.fav strong{color:#dff9ea}
+.c17-s3-verdict-box.tough{background:rgba(255,105,105,.08);border-color:rgba(255,105,105,.24)}.c17-s3-verdict-box.tough small{color:#ff9292}.c17-s3-verdict-box.tough strong{color:#ffe4e4}
+.c17-s3-verdict-meta{grid-column:1/-1;color:#7f98a3;font-size:.28rem;line-height:1.35;padding:1px 2px}
+
 .c17-s3-source{padding:8px 10px;color:#768d98;font-size:.31rem;line-height:1.45;border-top:1px solid rgba(255,116,107,.10)}
 
 .c17-step.step-4{--step-accent:#c7d2dc;--step-wash:rgba(199,210,220,.09);border-color:rgba(199,210,220,.22);background:linear-gradient(145deg,#10161d,#09151c 72%)}
@@ -109,7 +117,7 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
  .c17-team.home .c17-logo{grid-column:1}.c17-team.home .c17-copy{grid-column:2;grid-row:1}
  .c17-context{grid-template-columns:repeat(2,minmax(0,1fr))}.c17-context div:last-child{grid-column:1/-1}
  .c17-grid2,.c17-s3-grid{grid-template-columns:1fr}.c17-metrics,.c17-ranks,.c17-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
- .c17-s3-row{grid-template-columns:1.05fr .86fr .86fr .92fr}.c17-s3-label{font-size:.31rem}.c17-s3-val{font-size:.38rem}
+ .c17-s3-row{grid-template-columns:1.05fr .86fr .86fr .92fr}.c17-s3-label{font-size:.31rem}.c17-s3-val{font-size:.38rem}\n .c17-s3-verdict{grid-template-columns:1fr}
 }
 </style>
 """
@@ -338,6 +346,11 @@ def _s3_battle_html(battle: Mapping[str, Any]) -> str:
         )
 
     summary = _clean(battle.get("summary")) or "Current production and allowance shown without inventing an edge grade."
+    favorable_for = _clean(battle.get("favorable_for")) or "No clear side"
+    tough_for = _clean(battle.get("tough_for")) or "No clear side"
+    verdict_reason = _clean(battle.get("verdict_reason")) or "Current sample is mixed."
+    verdict_basis = _clean(battle.get("verdict_basis")) or "CURRENT SAMPLE ONLY"
+    verdict = _clean(battle.get("verdict")) or "CURRENT-SAMPLE MIXED"
     return f'''
 <div class="c17-s3-battle">
  <div class="c17-s3-battle-h">
@@ -347,6 +360,11 @@ def _s3_battle_html(battle: Mapping[str, Any]) -> str:
  <div class="c17-s3-table">
   <div class="c17-s3-row head"><div>Category</div><div>{escape(offense)} offense</div><div>{escape(defense)} allows</div><div>Difference</div></div>
   {''.join(rows_html) or '<div class="c17-s3-row"><div class="c17-s3-label">Current stats unavailable</div></div>'}
+ </div>
+ <div class="c17-s3-verdict">
+  <div class="c17-s3-verdict-box fav"><small>✓ Favorable for</small><strong>{escape(favorable_for)}</strong></div>
+  <div class="c17-s3-verdict-box tough"><small>⚠ Tough for</small><strong>{escape(tough_for)}</strong></div>
+  <div class="c17-s3-verdict-meta">{escape(verdict)} • {escape(verdict_basis)} • {escape(verdict_reason)}</div>
  </div>
  <div class="c17-s3-summary">{escape(summary)}.</div>
 </div>'''
