@@ -1,0 +1,89 @@
+name: CFB Step 2 FanDuel discovery
+
+on:
+  push:
+    branches:
+      - cfb-step2-fanduel-discovery
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Discover CFB public FanDuel page identity
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.parse
+          import urllib.request
+
+          AK = "FhMFpcPWXMeyZxOx"
+          BASE = "https://api.sportsbook.fanduel.com"
+          headers = {
+              "Accept": "application/json, text/plain, */*",
+              "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAPI-CFB/1.0; read-only)",
+              "Origin": "https://sportsbook.fanduel.com",
+              "Referer": "https://sportsbook.fanduel.com/",
+              "x-sportsbook-region": "NJ",
+          }
+
+          def get_json(url, params=None):
+              if params:
+                  url += "?" + urllib.parse.urlencode(params)
+              req = urllib.request.Request(url, headers=headers, method="GET")
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  raw = response.read(20_000_001)
+                  assert response.status == 200, response.status
+              assert len(raw) <= 20_000_000
+              return json.loads(raw.decode("utf-8"))
+
+          context = get_json(
+              BASE + "/sbapi/application-context",
+              {"_ak": AK, "dataEntries": "EVENT_TYPES"},
+          )
+
+          matches = []
+          needles = ("college football", "ncaaf", "ncaa football", "college-football")
+
+          def walk(value, path="$"):
+              if isinstance(value, dict):
+                  text = " ".join(
+                      str(v) for v in value.values()
+                      if isinstance(v, (str, int, float, bool))
+                  ).casefold()
+                  if any(n in text for n in needles):
+                      matches.append((path, value))
+                  for key, child in value.items():
+                      if isinstance(child, (dict, list)):
+                          walk(child, f"{path}.{key}")
+              elif isinstance(value, list):
+                  for idx, child in enumerate(value):
+                      if isinstance(child, (dict, list)):
+                          walk(child, f"{path}[{idx}]")
+
+          walk(context)
+          print("FANDUEL_CFB_DISCOVERY_MATCH_COUNT", len(matches))
+          for path, row in matches[:30]:
+              safe = {
+                  str(k): v
+                  for k, v in row.items()
+                  if isinstance(v, (str, int, float, bool, type(None)))
+              }
+              print("MATCH", path, json.dumps(safe, sort_keys=True)[:3000])
+
+          # Probe the current production market transport without printing secrets.
+          status = get_json("https://kyre-sports-api.onrender.com/api/v1/cfb/markets/status")
+          print(
+              "PRODUCTION_CFB_STATUS",
+              json.dumps(
+                  {
+                      "feed_configured": status.get("feed_configured"),
+                      "feed_present": status.get("feed_present"),
+                      "ingest_configured": status.get("ingest_configured"),
+                      "route_ready": status.get("route_ready"),
+                  },
+                  sort_keys=True,
+              ),
+          )
+          print("CFB_FANDUEL_DISCOVERY_GREEN")
+          PY
