@@ -148,3 +148,46 @@ def test_gated_step_discloses_zero_new_model_influence():
     assert ">GATED<" in html
     assert "0% new model influence" in html
     assert ">READY<" not in html
+
+
+def test_steps_3_through_11_render_unique_color_classes():
+    for step in range(3, 12):
+        html = page._model_step(
+            step,
+            "TEST ENGINE",
+            {"ready": True, "coverage": 1.0},
+        )
+        assert f'class="c17-step step-{step}"' in html
+
+
+def test_step12_uses_dedicated_certification_color_class():
+    html = page._cert_step({
+        "certification": {"status": "CERTIFIED", "checks_failed": 0},
+        "version": "runtime",
+    })
+    assert 'class="c17-step step-12"' in html
+    assert "CERTIFIED" in html
+
+
+def test_clean_page_css_contains_all_restored_step_accents():
+    for step in range(3, 13):
+        assert f".c17-step.step-{step}" in page._CSS
+    assert "--step-accent:#62baff" in page._CSS  # Step 9 environment blue
+    assert "--step-accent:#d07cff" in page._CSS  # Step 10 history violet
+    assert "--step-accent:#64df9b" in page._CSS  # Step 11 form green
+    assert "--step-accent:#f2c94c" in page._CSS  # Step 12 certification gold
+
+
+def test_truthful_status_badges_are_preserved_with_colored_steps():
+    html = page._model_step(
+        9,
+        "GAME-DAY ENVIRONMENT",
+        {
+            "ready": True,
+            "model_ready": False,
+            "coverage": 0.0,
+            "reason": "missing verified event",
+        },
+    )
+    assert 'class="gated"' in html
+    assert 'class="c17-step step-9"' in html
