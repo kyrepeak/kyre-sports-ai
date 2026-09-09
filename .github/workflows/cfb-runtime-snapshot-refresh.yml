@@ -1,0 +1,151 @@
+name: CFB runtime snapshot refresh
+
+on:
+  push:
+    branches:
+      - main
+      - cfb-runtime-snapshot-auto-refresh-v1
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  certify:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/cfb-runtime-snapshot-auto-refresh-v1' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Build snapshot in certification workspace
+        run: python scripts/build_cfb_runtime_snapshot.py
+
+      - name: Validate current snapshot coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path=Path("data/cfb_runtime_snapshot_v1.json")
+          payload=json.loads(path.read_text())
+          games=payload.get("games") or []
+          if not games:
+              raise SystemExit("snapshot contains no games")
+
+          row=next(
+              (
+                  g for g in games
+                  if str(g.get("event_id"))=="401858213"
+                  or (
+                      str(g.get("game_date"))=="2026-09-10"
+                      and "Florida A&M" in str(g.get("away_team"))
+                      and "Miami" in str(g.get("home_team"))
+                  )
+              ),
+              None,
+          )
+          if row is None:
+              raise SystemExit("FAMU @ Miami is missing from current snapshot window")
+
+          away=row.get("away") or {}
+          home=row.get("home") or {}
+          print(json.dumps({
+              "games":len(games),
+              "window":payload.get("window"),
+              "event_id":row.get("event_id"),
+              "venue":row.get("venue"),
+              "broadcast":row.get("broadcast"),
+              "away_record":away.get("record_text"),
+              "home_record":home.get("record_text"),
+              "home_ap":home.get("ap_rank"),
+              "home_coaches":home.get("coaches_poll_rank"),
+              "away_coach":away.get("head_coach"),
+              "home_coach":home.get("head_coach"),
+          },indent=2))
+
+          expected={
+              "event_id":"401858213",
+              "venue":"Hard Rock Stadium",
+              "broadcast":"ACC Network",
+              "away_record":"1-1",
+              "home_record":"1-0",
+              "home_ap":7,
+              "home_coaches":7,
+          }
+          actual={
+              "event_id":str(row.get("event_id") or ""),
+              "venue":row.get("venue"),
+              "broadcast":row.get("broadcast"),
+              "away_record":away.get("record_text"),
+              "home_record":home.get("record_text"),
+              "home_ap":home.get("ap_rank"),
+              "home_coaches":home.get("coaches_poll_rank"),
+          }
+          for key,value in expected.items():
+              if actual.get(key)!=value:
+                  raise SystemExit(f"{key}: expected {value!r}, got {actual.get(key)!r}")
+
+          if "quinn" not in str(away.get("head_coach") or "").lower() or "gray" not in str(away.get("head_coach") or "").lower():
+              raise SystemExit(f"FAMU coach missing/wrong: {away.get('head_coach')}")
+          if "mario" not in str(home.get("head_coach") or "").lower() or "cristobal" not in str(home.get("head_coach") or "").lower():
+              raise SystemExit(f"Miami coach missing/wrong: {home.get('head_coach')}")
+
+          print("CFB_RUNTIME_SNAPSHOT_CERTIFICATION_GREEN")
+          PY
+
+  refresh:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: cfb-runtime-snapshot-refresh
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Refresh snapshot
+        run: python scripts/build_cfb_runtime_snapshot.py
+
+      - name: Commit only substantive changes
+        run: |
+          if git diff --quiet -- data/cfb_runtime_snapshot_v1.json; then
+            echo "CFB_RUNTIME_SNAPSHOT_NO_COMMIT_NEEDED"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cfb_runtime_snapshot_v1.json
+          git commit -m "Refresh CFB runtime data snapshot"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "CFB_RUNTIME_SNAPSHOT_PUSHED"
