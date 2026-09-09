@@ -71,3 +71,33 @@ jobs:
                               })
                           print("PLAYER_CATEGORY",cname,json.dumps({"labels":labels,"athletes":totals},ensure_ascii=False))
           PY
+
+      - name: Probe direct season-stat endpoints
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import Request,urlopen
+          from urllib.error import HTTPError
+
+          urls=[
+            "https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/types/2/teams/2390/statistics?lang=en&region=us",
+            "https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/2390/statistics?season=2026",
+            "https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/2390/stats?season=2026",
+          ]
+          for url in urls:
+              print("URL",url)
+              try:
+                  req=Request(url,headers={
+                    "User-Agent":"Mozilla/5.0",
+                    "Accept":"application/json,text/plain,*/*",
+                    "Referer":"https://www.espn.com/",
+                  })
+                  with urlopen(req,timeout=20) as r:
+                      raw=r.read()
+                  print("STATUS 200 BYTES",len(raw))
+                  payload=json.loads(raw)
+                  print("KEYS",sorted(payload.keys()) if isinstance(payload,dict) else type(payload).__name__)
+                  print("PREVIEW",json.dumps(payload,default=str)[:5000])
+              except Exception as e:
+                  print("ERROR",type(e).__name__,str(e))
+          PY
