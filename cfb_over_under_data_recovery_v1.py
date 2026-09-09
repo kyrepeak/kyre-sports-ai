@@ -547,69 +547,99 @@ def _fetch_winsipedia_games(away_name: str, home_name: str) -> dict[str, Any]:
     home_slug = _slug_guess(home_name)
     if not away_slug or not home_slug:
         return {}
-    url = f"{WINSIPEDIA_BASE}/games/{away_slug}/vs/{home_slug}"
-    try:
-        response = requests.get(
-            url,
-            timeout=12,
-            headers={"User-Agent": "KyreSportsAI/1.0"},
-        )
-        if response.status_code != 200:
-            return {}
-        parser = _TableParser()
-        parser.feed(response.text)
-    except Exception:
+
+    orientations = (
+        (away_slug, home_slug, False),
+        (home_slug, away_slug, True),
+    )
+    parsed_rows: list[dict[str, Any]] = []
+    used_url = ""
+
+    for first_slug, second_slug, reversed_order in orientations:
+        url = f"{WINSIPEDIA_BASE}/games/{first_slug}/vs/{second_slug}"
+        try:
+            response = requests.get(
+                url,
+                timeout=12,
+                headers={"User-Agent": "KyreSportsAI/1.0"},
+            )
+            if response.status_code != 200:
+                continue
+            parser = _TableParser()
+            parser.feed(response.text)
+        except Exception:
+            continue
+
+        rows: list[dict[str, Any]] = []
+        for cells in parser.rows:
+            if len(cells) < 4:
+                continue
+            date = next(
+                (
+                    cell
+                    for cell in cells[:2]
+                    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", cell)
+                ),
+                "",
+            )
+            if not date:
+                continue
+            scores: list[int] = []
+            for cell in cells[2:4]:
+                found = re.findall(r"\b(\d{1,3})\b", cell)
+                if not found:
+                    break
+                scores.append(int(found[-1]))
+            if len(scores) != 2:
+                continue
+            first_points, second_points = scores
+            if reversed_order:
+                away_points, home_points = second_points, first_points
+            else:
+                away_points, home_points = first_points, second_points
+            rows.append({
+                "date": date,
+                "away_points": away_points,
+                "home_points": home_points,
+                "combined_total": away_points + home_points,
+                "source": "Winsipedia game-by-game",
+                "source_url": url,
+                "source_order_reversed": reversed_order,
+            })
+
+        if rows:
+            parsed_rows = rows
+            used_url = url
+            break
+
+    if not parsed_rows:
         return {}
 
-    rows: list[dict[str, Any]] = []
-    for cells in parser.rows:
-        if len(cells) < 4:
-            continue
-        date = next(
-            (cell for cell in cells[:2] if re.fullmatch(r"\d{4}-\d{2}-\d{2}", cell)),
-            "",
-        )
-        if not date:
-            continue
-        score_cells = cells[2:4]
-        scores: list[int] = []
-        for cell in score_cells:
-            found = re.findall(r"\b(\d{1,3})\b", cell)
-            if not found:
-                break
-            scores.append(int(found[-1]))
-        if len(scores) != 2:
-            continue
-        rows.append({
-            "date": date,
-            "away_points": scores[0],
-            "home_points": scores[1],
-            "combined_total": scores[0] + scores[1],
-            "source": "Winsipedia game-by-game",
-            "source_url": url,
-        })
-
-    if not rows:
-        return {}
-    rows.sort(key=lambda row: row["date"], reverse=True)
-    totals = [float(row["combined_total"]) for row in rows]
-    away_wins = sum(row["away_points"] > row["home_points"] for row in rows)
-    home_wins = sum(row["home_points"] > row["away_points"] for row in rows)
-    ties = len(rows) - away_wins - home_wins
+    parsed_rows.sort(key=lambda row: row["date"], reverse=True)
+    totals = [float(row["combined_total"]) for row in parsed_rows]
+    away_wins = sum(
+        row["away_points"] > row["home_points"] for row in parsed_rows
+    )
+    home_wins = sum(
+        row["home_points"] > row["away_points"] for row in parsed_rows
+    )
+    ties = len(parsed_rows) - away_wins - home_wins
     return {
         "ready": True,
         "source": "Winsipedia",
-        "source_url": url,
+        "source_url": used_url,
         "away_name": away_name,
         "home_name": home_name,
-        "meetings": len(rows),
+        "meetings": len(parsed_rows),
         "away_wins": away_wins,
         "home_wins": home_wins,
         "ties": ties,
         "avg_combined_total": float(fmean(totals)),
-        "combined_total_sigma": float(pstdev(totals)) if len(totals) > 1 else 0.0,
-        "latest": dict(rows[0]),
-        "sample": rows,
+        "combined_total_sigma": (
+            float(pstdev(totals)) if len(totals) > 1 else 0.0
+        ),
+        "latest": dict(parsed_rows[0]),
+        "sample": parsed_rows,
         "projection_weight": EXTERNAL_HISTORY_PROJECTION_WEIGHT,
         "selection_weight": EXTERNAL_HISTORY_SELECTION_WEIGHT,
         "analysis_line_weight": EXTERNAL_HISTORY_ANALYSIS_LINE_WEIGHT,
