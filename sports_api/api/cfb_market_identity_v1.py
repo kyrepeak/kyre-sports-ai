@@ -567,12 +567,21 @@ def resolve_verified_games(
             if str(game.get("game_date") or "") in needed
         )
 
-    covered_dates = {
-        str(game.get("game_date") or "")
-        for game in combined
-        if str(game.get("game_date") or "")
-    }
-    remaining_dates = [day for day in market_dates if day not in covered_dates]
+    # A date being present is not enough: an FBS-only snapshot can contain the
+    # date while still missing FCS games on the same slate. Supplement only dates
+    # where at least one actual market row still has no deterministic identity
+    # candidate. This keeps the direct ESPN fallback quiet when GitHub is complete.
+    remaining_dates: list[str] = []
+    for market in feed.get("games") or []:
+        if not isinstance(market, Mapping):
+            continue
+        try:
+            game_date, candidates = _qualified_candidates(market, combined)
+        except ValueError:
+            continue
+        if not candidates and game_date not in remaining_dates:
+            remaining_dates.append(game_date)
+    remaining_dates.sort()
 
     provider_attempts: list[dict[str, Any]] = []
     for day in remaining_dates:
