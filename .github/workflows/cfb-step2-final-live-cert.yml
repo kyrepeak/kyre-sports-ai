@@ -1,0 +1,150 @@
+name: CFB Step 2 final live certification
+
+on:
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+
+jobs:
+  final-live-cert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Certify live CFB feed, identity, MLB, and WNBA
+        env:
+          BASE_URL: https://kyre-sports-api.onrender.com
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          base = os.environ["BASE_URL"].rstrip("/")
+
+          def get(path, timeout=45):
+              req = urllib.request.Request(
+                  base + path,
+                  headers={
+                      "User-Agent": "KyreSportsAI-CFB-Step2-Final-Cert/1.0",
+                      "Accept": "application/json",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=timeout) as resp:
+                  return int(resp.status), json.loads(resp.read().decode("utf-8"))
+
+          evidence = {}
+
+          code, health = get("/health")
+          assert code == 200 and health.get("status") == "ok", health
+          evidence["health"] = code
+
+          code, before = get("/api/v1/cfb/markets/status")
+          assert code == 200, before
+          assert before.get("auto_refresh_enabled") is True, before
+          provider = before.get("live_provider") or {}
+          assert provider.get("provider") == "FanDuel", before
+          assert provider.get("custom_page_id") == "ncaaf", before
+          assert provider.get("secret_required") is False, before
+          assert provider.get("requests_per_refresh") == 1, before
+          assert (before.get("market_semantics") or {}).get("projection_weight") == 0.0
+          evidence["before"] = {
+              "feed_present": before.get("feed_present"),
+              "feed_fresh": before.get("feed_fresh"),
+              "cached_game_count": before.get("cached_game_count"),
+          }
+
+          # This ordinary public read is the self-healing witness. There is no
+          # public force-refresh switch; a missing/stale cache invokes one bounded
+          # provider refresh automatically.
+          code, current1 = get("/api/v1/cfb/markets/current", timeout=60)
+          assert code == 200, current1
+          games = current1.get("games") or []
+          assert len(games) >= 100, len(games)
+          assert current1.get("source", "").startswith(
+              "FanDuel anonymous public NCAAF"
+          ), current1.get("source")
+          sem = current1.get("market_semantics") or {}
+          assert sem.get("projection_weight") == 0.0
+          assert sem.get("market_context_only") is True
+          assert sem.get("may_modify_projection") is False
+          first_capture = current1.get("captured_at_utc")
+
+          # Immediate second read must reuse the fresh cache.
+          code, current2 = get("/api/v1/cfb/markets/current")
+          assert code == 200, current2
+          assert current2.get("captured_at_utc") == first_capture, (
+              first_capture,
+              current2.get("captured_at_utc"),
+          )
+
+          code, after = get("/api/v1/cfb/markets/status")
+          assert code == 200, after
+          assert after.get("feed_present") is True, after
+          assert after.get("feed_fresh") is True, after
+          assert int(after.get("cached_game_count") or 0) == len(games), after
+          evidence["feed"] = {
+              "game_count": len(games),
+              "feed_present": after.get("feed_present"),
+              "feed_fresh": after.get("feed_fresh"),
+              "feed_age_seconds": after.get("feed_age_seconds"),
+              "capture_reused_on_second_read": True,
+          }
+
+          code, reconciled = get("/api/v1/cfb/markets/reconciled", timeout=90)
+          assert code == 200, reconciled
+          diag = reconciled.get("diagnostics") or {}
+          lines = reconciled.get("lines") or []
+          unmatched = reconciled.get("unmatched") or []
+          assert len(lines) == len(games), (len(lines), len(games))
+          assert len(unmatched) == 0, unmatched[:10]
+          assert diag.get("matched_market_rows") == len(games), diag
+          assert diag.get("unmatched_market_rows") == 0, diag
+          assert diag.get("all_lines_identity_verified") is True, diag
+          assert diag.get("synthetic_official_ids") is False, diag
+          assert diag.get("fuzzy_matching") is False, diag
+          assert (reconciled.get("market_semantics") or {}).get(
+              "projection_weight"
+          ) == 0.0
+          assert all(row.get("identity_verified") is True for row in lines)
+
+          miami = [
+              row for row in lines
+              if row.get("provider_away_team") == "Florida A&M"
+              and row.get("provider_home_team") == "Miami Florida"
+          ]
+          assert len(miami) == 1, miami
+          evidence["reconciliation"] = {
+              "matched_rows": len(lines),
+              "unmatched_rows": len(unmatched),
+              "all_identity_verified": diag.get("all_lines_identity_verified"),
+              "synthetic_ids": diag.get("synthetic_official_ids"),
+              "fuzzy_matching": diag.get("fuzzy_matching"),
+              "sample": {
+                  "provider_game_id": miami[0].get("provider_game_id"),
+                  "official_game_id": miami[0].get("official_game_id"),
+                  "total": miami[0].get("total"),
+                  "sportsbook": miami[0].get("sportsbook"),
+              },
+          }
+
+          code, mlb = get("/api/v1/mlb/runtime/step17b")
+          assert code == 200, mlb
+          assert mlb.get("enabled") is True, mlb
+          assert mlb.get("running") is True, mlb
+          assert mlb.get("role") == "leader", mlb
+          assert mlb.get("leadership_acquired") is True, mlb
+          evidence["mlb"] = {
+              "http": code,
+              "enabled": mlb.get("enabled"),
+              "running": mlb.get("running"),
+              "role": mlb.get("role"),
+          }
+
+          code, wnba = get("/api/v1/wnba/teams?season=2026")
+          assert code == 200, wnba
+          assert int(wnba.get("team_count") or 0) == 15, wnba
+          evidence["wnba"] = {"http": code, "team_count": wnba.get("team_count")}
+
+          print("CFB_STEP2_FINAL_LIVE_EVIDENCE", json.dumps(evidence, sort_keys=True))
+          print("CFB_STEP2_FINAL_LIVE_CERT_GREEN")
+          PY
