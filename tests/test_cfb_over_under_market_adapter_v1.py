@@ -132,3 +132,35 @@ def test_market_line_is_bounded_and_visible():
     }
     assert market.market_line(game) == 62.5
     assert market.market_line({"market_line_available": False}) is None
+
+
+def test_live_loader_uses_step3_date_and_sportsbook_filters(monkeypatch):
+    seen = {}
+
+    class Response:
+        status_code = 200
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return _payload()
+
+    def fake_get(url, **kwargs):
+        seen["url"] = url
+        seen.update(kwargs)
+        return Response()
+
+    market.clear_market_cache()
+    monkeypatch.setattr(market.requests, "get", fake_get)
+    payload, diag = market.load_odds_for_date("2026-09-10", "FanDuel")
+    market.clear_market_cache()
+
+    assert seen["url"].endswith("/api/v1/cfb/odds")
+    assert seen["params"] == {
+        "game_date": "2026-09-10",
+        "sportsbook": "FanDuel",
+    }
+    assert seen["timeout"] == market.REQUEST_TIMEOUT_SECONDS
+    assert diag["status"] == "GREEN"
+    assert payload["game_count"] == 1
