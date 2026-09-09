@@ -21,6 +21,7 @@ hourly workflow does not force needless Streamlit redeploys.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
@@ -505,7 +506,10 @@ def build_snapshot() -> dict[str, Any]:
         for offset in range(-1, 7)
     ]
 
-    events: dict[str, dict[str, Any]] = {}
+    raw_events: dict[str, dict[str, Any]] = {}
+    team_inputs: dict[str, dict[str, Any]] = {}
+
+    # Phase 1: date-scoped scoreboards only. Keep this fast and deterministic.
     for day in dates:
         ymd = day.replace("-", "")
         try:
@@ -514,7 +518,10 @@ def build_snapshot() -> dict[str, Any]:
                 {"dates": ymd, "limit": 500, "groups": 80},
             )
         except Exception as exc:
-            print(f"WARN scoreboard {day}: {type(exc).__name__}: {exc}", file=sys.stderr)
+            print(
+                f"WARN scoreboard {day}: {type(exc).__name__}: {exc}",
+                file=sys.stderr,
+            )
             continue
 
         for event in payload.get("events") or []:
@@ -538,7 +545,7 @@ def build_snapshot() -> dict[str, Any]:
             if not isinstance(venue, Mapping):
                 venue = {}
 
-            row = {
+            raw_events[event_id] = {
                 "event_id": event_id,
                 "game_date": event_day,
                 "away_team": team_name(away),
@@ -547,22 +554,134 @@ def build_snapshot() -> dict[str, Any]:
                 "broadcast": broadcast(comp),
                 "status": status_name(event, comp),
                 "espn_week": week,
-                "away": side_snapshot(away, week, season, now_utc),
-                "home": side_snapshot(home, week, season, now_utc),
-                "sources": [
-                    "ESPN college-football scoreboard",
-                    "ESPN current team schedules",
-                    "ESPN Core current coaches and polls",
-                ],
+                "_away_comp": dict(away),
+                "_home_comp": dict(home),
             }
-            events[event_id] = row
 
-    if not events:
-        raise SystemExit("No CFB events were retrieved; refusing to overwrite runtime snapshot")
+            for comp_side in (away, home):
+                tid = team_id(comp_side)
+                if not tid:
+                    continue
+                existing = team_inputs.get(tid)
+                if existing is None or int(week or 0) >= int(existing.get("week") or 0):
+                    team_inputs[tid] = {
+                        "competitor": dict(comp_side),
+                        "week": int(week or 0),
+                    }
+
+    if not raw_events:
+        raise SystemExit(
+            "No CFB events were retrieved; refusing to overwrite runtime snapshot"
+        )
+
+    # Phase 2: enrich each unique team once, in parallel. Team schedules,
+    # coaches and poll collections are the expensive provider calls.
+    team_snapshots: dict[str, dict[str, Any]] = {}
+    max_workers = max(1, min(16, len(team_inputs)))
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {
+            pool.submit(
+                side_snapshot,
+                item["competitor"],
+                int(item.get("week") or 0),
+                season,
+                now_utc,
+            ): tid
+            for tid, item in team_inputs.items()
+        }
+        for future in as_completed(futures):
+            tid = futures[future]
+            try:
+                team_snapshots[tid] = future.result()
+            except Exception as exc:
+                print(
+                    f"WARN team snapshot {tid}: {type(exc).__name__}: {exc}",
+                    file=sys.stderr,
+                )
+                item = team_inputs[tid]
+                comp = item["competitor"]
+                team_snapshots[tid] = {
+                    "team_id": tid,
+                    "record_text": record_summary(comp, {"overall", "total"}),
+                    "conference_record_text": record_summary(
+                        comp,
+                        {"vsconf", "conference", "conference record"},
+                    ),
+                    "home_record": {},
+                    "away_record": {},
+                    "neutral_record": {},
+                    "recent_form": "—",
+                    "ppg": None,
+                    "points_allowed_pg": None,
+                    "point_diff_pg": None,
+                    "head_coach": "",
+                    "ap_rank": rank_value(comp),
+                    "coaches_poll_rank": None,
+                    "cfp_rank": None,
+                    "completed_games": [],
+                }
+
+    # Phase 3: join team snapshots back to each event.
+    events: list[dict[str, Any]] = []
+    for event_id, row in raw_events.items():
+        away_comp = row.pop("_away_comp")
+        home_comp = row.pop("_home_comp")
+        away_id = team_id(away_comp)
+        home_id = team_id(home_comp)
+
+        away_snapshot = dict(team_snapshots.get(away_id) or {})
+        home_snapshot = dict(team_snapshots.get(home_id) or {})
+
+        # Event-carried record/rank is authoritative current context for this
+        # exact matchup when the team-level enrichment did not return it.
+        away_snapshot["record_text"] = (
+            record_summary(away_comp, {"overall", "total"})
+            or away_snapshot.get("record_text")
+            or ""
+        )
+        away_snapshot["conference_record_text"] = (
+            record_summary(
+                away_comp,
+                {"vsconf", "conference", "conference record"},
+            )
+            or away_snapshot.get("conference_record_text")
+            or ""
+        )
+        home_snapshot["record_text"] = (
+            record_summary(home_comp, {"overall", "total"})
+            or home_snapshot.get("record_text")
+            or ""
+        )
+        home_snapshot["conference_record_text"] = (
+            record_summary(
+                home_comp,
+                {"vsconf", "conference", "conference record"},
+            )
+            or home_snapshot.get("conference_record_text")
+            or ""
+        )
+
+        away_rank = rank_value(away_comp)
+        home_rank = rank_value(home_comp)
+        if away_snapshot.get("ap_rank") is None and away_rank is not None:
+            away_snapshot["ap_rank"] = away_rank
+        if home_snapshot.get("ap_rank") is None and home_rank is not None:
+            home_snapshot["ap_rank"] = home_rank
+
+        row["away"] = away_snapshot
+        row["home"] = home_snapshot
+        row["sources"] = [
+            "ESPN college-football scoreboard",
+            "ESPN current team schedules",
+            "ESPN Core current coaches and polls",
+        ]
+        events.append(row)
 
     return {
         "version": 1,
-        "generated_at": now_utc.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "generated_at": now_utc.replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
         "purpose": (
             "Current-data fallback for deployed Streamlit runtimes. "
             "Auto-refreshed only when substantive game data changes."
@@ -572,7 +691,7 @@ def build_snapshot() -> dict[str, Any]:
             "end": dates[-1],
         },
         "games": sorted(
-            events.values(),
+            events,
             key=lambda row: (
                 row.get("game_date") or "",
                 row.get("event_id") or "",
