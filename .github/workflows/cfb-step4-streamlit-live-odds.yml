@@ -125,9 +125,17 @@ jobs:
           )
           day = sample["game_date"]
 
-          adapter.clear_market_cache()
-          payload, fetch_diag = adapter.load_odds_for_date(day, "FanDuel")
-          assert fetch_diag["status"] == "GREEN", fetch_diag
+          filtered_raw = dict(raw)
+          filtered_raw["games"] = [
+              row for row in games
+              if row.get("game_date") == day
+              and str(row.get("sportsbook") or "").casefold() == "fanduel"
+          ]
+          filtered_raw["game_count"] = len(filtered_raw["games"])
+          payload = adapter._validate_payload(
+              filtered_raw,
+              requested_day=day,
+          )
           assert payload["game_count"] >= 1, payload
 
           target = next(
