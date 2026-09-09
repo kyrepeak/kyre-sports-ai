@@ -3,12 +3,13 @@ from datetime import datetime, timezone
 from fastapi import APIRouter
 
 from sports_api.api.cfb_markets import router as cfb_markets_router
+from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_router
 
 router = APIRouter(tags=["system"])
 # CFB market transport is registered through the existing system router so
-# Step 1 remains an additive API-layer change and does not touch frozen CFB
-# projection modules.
+# the odds integration remains isolated from frozen CFB projection modules.
 router.include_router(cfb_markets_router)
+router.include_router(cfb_market_identity_router)
 
 
 @router.get("/health")
