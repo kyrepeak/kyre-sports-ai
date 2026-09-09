@@ -1,0 +1,98 @@
+name: CFB Step 2 live production smoke
+
+on:
+  push:
+    branches:
+      - cfb-step2-live-production-smoke
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Smoke live Render API
+        env:
+          BASE_URL: https://kyre-sports-api.onrender.com
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          base = os.environ["BASE_URL"].rstrip("/")
+
+          def get(path):
+              req = urllib.request.Request(
+                  base + path,
+                  headers={
+                      "User-Agent": "KyreSportsAI-CFB-Step2-Live-Smoke/1.0",
+                      "Accept": "application/json",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  body = json.loads(resp.read().decode("utf-8"))
+                  return int(resp.status), body
+
+          checks = {}
+
+          status, body = get("/health")
+          assert status == 200, (status, body)
+          assert body.get("status") == "ok", body
+          checks["health"] = {"http": status, "status": body.get("status")}
+
+          status, body = get("/api/v1/cfb/markets/status")
+          assert status == 200, (status, body)
+          sem = body.get("market_semantics") or {}
+          assert sem.get("projection_weight") == 0.0, body
+          assert sem.get("market_context_only") is True, body
+          assert sem.get("may_modify_projection") is False, body
+          checks["cfb_step1"] = {
+              "http": status,
+              "feed_present": body.get("feed_present"),
+              "projection_weight": sem.get("projection_weight"),
+          }
+
+          status, body = get("/api/v1/cfb/markets/identity-status")
+          assert status == 200, (status, body)
+          policy = body.get("identity_policy") or {}
+          sem = body.get("market_semantics") or {}
+          assert body.get("step") == 2, body
+          assert body.get("identity_ready") is True, body
+          assert policy.get("synthetic_ids") is False, body
+          assert policy.get("fuzzy_matching") is False, body
+          assert policy.get("fail_closed") is True, body
+          assert sem.get("projection_weight") == 0.0, body
+          assert sem.get("may_modify_projection") is False, body
+          checks["cfb_step2"] = {
+              "http": status,
+              "identity_ready": body.get("identity_ready"),
+              "resolver_mode": body.get("resolver_mode"),
+              "local_verified_games": body.get("local_verified_games"),
+              "synthetic_ids": policy.get("synthetic_ids"),
+              "fuzzy_matching": policy.get("fuzzy_matching"),
+          }
+
+          status, body = get("/api/v1/mlb/runtime/step17b")
+          assert status == 200, (status, body)
+          assert body.get("enabled") is True, body
+          assert body.get("running") is True, body
+          checks["mlb_step17b"] = {
+              "http": status,
+              "enabled": body.get("enabled"),
+              "running": body.get("running"),
+              "role": body.get("role"),
+              "leadership_acquired": body.get("leadership_acquired"),
+          }
+
+          status, body = get("/api/v1/wnba/teams?season=2026")
+          assert status == 200, (status, body)
+          assert int(body.get("team_count") or 0) == 15, body
+          checks["wnba"] = {
+              "http": status,
+              "team_count": body.get("team_count"),
+              "season": body.get("season"),
+          }
+
+          print(json.dumps(checks, indent=2, sort_keys=True))
+          print("CFB_STEP2_LIVE_PRODUCTION_SMOKE_GREEN")
+          PY
