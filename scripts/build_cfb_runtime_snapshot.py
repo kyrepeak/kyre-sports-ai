@@ -51,6 +51,10 @@ CORE_ROOT = (
     "https://sports.core.api.espn.com/v2/sports/football/leagues/college-football"
 )
 
+_SCHEDULE_CACHE: dict[tuple[str, int], list[dict[str, Any]]] = {}
+_COACH_CACHE: dict[tuple[str, int], str] = {}
+_POLL_CACHE: dict[tuple[str, int, int], dict[str, int | None]] = {}
+
 
 def clean(value: Any) -> str:
     return str(value or "").strip()
@@ -212,6 +216,10 @@ def competitor_score(competitor: Mapping[str, Any]) -> float | None:
 
 
 def schedule_rows(team_id_value: str, season: int, now_utc: datetime) -> list[dict[str, Any]]:
+    cache_key = (team_id_value, int(season))
+    if cache_key in _SCHEDULE_CACHE:
+        return [dict(row) for row in _SCHEDULE_CACHE[cache_key]]
+
     payload = get_json(
         TEAM_SCHEDULE.format(team_id=team_id_value),
         {"season": season},
@@ -252,6 +260,7 @@ def schedule_rows(team_id_value: str, season: int, now_utc: datetime) -> list[di
         })
 
     rows.sort(key=lambda row: row["date"])
+    _SCHEDULE_CACHE[cache_key] = [dict(row) for row in rows]
     return rows
 
 
@@ -288,6 +297,9 @@ def record_text(record: Mapping[str, Any]) -> str:
 
 
 def head_coach(team_id_value: str, season: int) -> str:
+    cache_key = (team_id_value, int(season))
+    if cache_key in _COACH_CACHE:
+        return _COACH_CACHE[cache_key]
     try:
         collection = get_json(
             f"{CORE_ROOT}/seasons/{season}/teams/{team_id_value}/coaches",
@@ -299,18 +311,25 @@ def head_coach(team_id_value: str, season: int) -> str:
         if not ref:
             return ""
         detail = get_json(ref.replace("http://", "https://", 1))
-        return " ".join(
+        value = " ".join(
             x for x in (
                 clean(detail.get("firstName")),
                 clean(detail.get("lastName")),
             )
             if x
         )
+        _COACH_CACHE[cache_key] = value
+        return value
     except Exception:
+        _COACH_CACHE[cache_key] = ""
         return ""
 
 
 def latest_polls(team_id_value: str, season: int, preferred_week: int) -> dict[str, int | None]:
+    cache_key = (team_id_value, int(season), int(preferred_week))
+    if cache_key in _POLL_CACHE:
+        return dict(_POLL_CACHE[cache_key])
+
     result: dict[str, int | None] = {
         "ap_rank": None,
         "coaches_poll_rank": None,
@@ -362,7 +381,9 @@ def latest_polls(team_id_value: str, season: int, preferred_week: int) -> dict[s
                 found_any = True
 
         if found_any:
+            _POLL_CACHE[cache_key] = dict(result)
             return result
+    _POLL_CACHE[cache_key] = dict(result)
     return result
 
 
@@ -439,7 +460,7 @@ def build_snapshot() -> dict[str, Any]:
 
     dates = [
         (now_et.date() + timedelta(days=offset)).isoformat()
-        for offset in range(-7, 22)
+        for offset in range(-3, 11)
     ]
 
     events: dict[str, dict[str, Any]] = {}
@@ -448,7 +469,7 @@ def build_snapshot() -> dict[str, Any]:
         try:
             payload = get_json(
                 SCOREBOARD,
-                {"dates": ymd, "limit": 1000},
+                {"dates": ymd, "limit": 1000, "groups": 80},
             )
         except Exception as exc:
             print(f"WARN scoreboard {day}: {type(exc).__name__}: {exc}", file=sys.stderr)
