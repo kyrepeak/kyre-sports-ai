@@ -24,11 +24,13 @@ import streamlit as st
 
 import cfb_over_under_clean_page_v17 as frozen_page
 import cfb_over_under_market_adapter_v1 as market_adapter
+import cfb_schedule_v6_runtime_snapshot as schedule_v6
 
 MODEL_VERSION = "CFB O/U CLEAN PAGE V18 • LIVE ODDS THRESHOLD"
 MARKET = "Over/Under"
 FROZEN_PAGE = "cfb_over_under_clean_page_v17"
 FROZEN_RUNTIME_SLATE = "cfb_over_under_slate_v14_runtime"
+ACTIVE_SCHEDULE = "cfb_schedule_v6_runtime_snapshot"
 _ET = ZoneInfo("America/New_York")
 
 
@@ -112,7 +114,7 @@ def render_over_under_hub(
     )
     day = selected.isoformat()
 
-    games, schedule_diag = frozen_page.schedule.load_with_diagnostics(day)
+    games, schedule_diag = schedule_v6.load_with_diagnostics(day)
     if not games:
         st.warning("No verified College Football games were returned for this date.")
         return
@@ -405,6 +407,7 @@ def render_cfb_hub(
 
 __all__ = [
     "FROZEN_PAGE",
+    "ACTIVE_SCHEDULE",
     "FROZEN_RUNTIME_SLATE",
     "MARKET",
     "MODEL_VERSION",
