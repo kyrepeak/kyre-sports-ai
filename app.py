@@ -1,21 +1,22 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U Step 6 market intelligence live.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U readable Step 4 pace live.
 
-Router V60 keeps permanently frozen Router V59 / Clean Page V19 untouched and
-activates additive Clean Page V20 for College Football Over/Under only.
+Router V61 keeps permanently frozen Router V60 / Clean Page V20 untouched and
+activates additive Clean Page V21 for College Football Over/Under only.
 
-Clean Page V20 uses certified Market Adapter V2 for freshness + exact official
-ESPN event-ID attachment, then activates certified Step 5C market intelligence
-for display/context only. Market data remains 0.0% influence on frozen projection
-math. No fuzzy matching. No synthetic IDs. Frozen Schedule V5 and Steps 3-12
+Clean Page V21 preserves certified Market Adapter V2 freshness + exact official
+ESPN event-ID attachment and Step 5C market intelligence at 0.0% projection
+influence. It changes only Step 4 presentation, translating the already-frozen
+pace / expected-possessions engine output into a readable football explanation.
+No fuzzy matching. No synthetic IDs. Frozen Schedule V5 and Steps 3-12
 projection math remain unchanged.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V60_CFB_OU_MARKET_INTELLIGENCE_2026-09-10T15:00Z.
+STREAMLIT_MAIN_V61_CFB_OU_READABLE_STEP4_2026-09-10T18:31Z.
 """
 from __future__ import annotations
 
-from streamlit_memory_lazy_router_v60 import render_app
+from streamlit_memory_lazy_router_v61 import render_app
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V60_CFB_OU_MARKET_INTELLIGENCE_2026-09-10T15:00Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V61_CFB_OU_READABLE_STEP4_2026-09-10T18:31Z"
 
 render_app()
