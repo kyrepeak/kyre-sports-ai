@@ -122,7 +122,7 @@ jobs:
               raise SystemExit('identity authority drift')
           if policy.get('synthetic_ids') is not False or policy.get('fuzzy_matching') is not False:
               raise SystemExit('identity safety contract drift')
-          if float(policy.get('sportsbook_projection_weight') or -1) != 0.0:
+          if float(policy.get('sportsbook_projection_weight', -1)) != 0.0:
               raise SystemExit('sportsbook projection weight drift')
 
           seen = set()

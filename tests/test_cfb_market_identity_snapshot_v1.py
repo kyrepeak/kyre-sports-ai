@@ -1,4 +1,9 @@
 from datetime import datetime, timezone
+import json
+from pathlib import Path
+import textwrap
+
+import pytest
 
 from scripts import build_cfb_market_identity_snapshot_v1 as snapshot
 
@@ -151,3 +156,46 @@ def test_write_snapshot_ignores_timestamp_only_changes(tmp_path):
     later["generated_at"] = "2026-09-10T21:00:00Z"
     later["provider_future_matchups"] = 999
     assert snapshot.write_snapshot(later, path) is False
+
+
+def _run_publish_validation(tmp_path, monkeypatch, weight, *, missing=False):
+    """Execute the real refresh validator without running its Git publish commands."""
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github/workflows/cfb-market-identity-snapshot-v1.yml"
+    ).read_text(encoding="utf-8")
+    publish_step = workflow.split(
+        "- name: Validate and publish identity runtime branch", 1
+    )[1]
+    validator = textwrap.dedent(
+        publish_step.split("python - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+    )
+    payload = snapshot.build_snapshot(
+        now_utc=datetime(2026, 9, 10, 20, 0, tzinfo=timezone.utc),
+        fetch_json=_fetcher,
+    )
+    if missing:
+        payload["identity_policy"].pop("sportsbook_projection_weight")
+    else:
+        payload["identity_policy"]["sportsbook_projection_weight"] = weight
+    path = tmp_path / "data/cfb_market_identity_snapshot_v1.json"
+    path.parent.mkdir()
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    exec(compile(validator, "cfb-market-identity-snapshot-v1.yml:refresh", "exec"), {})
+
+
+@pytest.mark.parametrize("weight", [0, 0.0])
+def test_publish_validator_accepts_required_zero_weight(tmp_path, monkeypatch, weight):
+    _run_publish_validation(tmp_path, monkeypatch, weight)
+
+
+@pytest.mark.parametrize("weight", [0.01, -1, None, "invalid", "NaN", "Infinity"])
+def test_publish_validator_fails_closed_for_invalid_weight(tmp_path, monkeypatch, weight):
+    with pytest.raises((SystemExit, TypeError, ValueError)):
+        _run_publish_validation(tmp_path, monkeypatch, weight)
+
+
+def test_publish_validator_fails_closed_for_missing_weight(tmp_path, monkeypatch):
+    with pytest.raises(SystemExit, match="sportsbook projection weight drift"):
+        _run_publish_validation(tmp_path, monkeypatch, None, missing=True)
