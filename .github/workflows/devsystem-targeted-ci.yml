@@ -237,6 +237,10 @@ jobs:
             tests/test_cfb_over_under_router_v58.py \
             tests/test_cfb_over_under_router_v59.py \
             tests/test_cfb_step2_schedule_identity.py \
+            tests/test_cfb_over_under_upgrade_step9_environment_engine.py \
+            tests/test_cfb_over_under_upgrade_step9_slate.py \
+            tests/test_cfb_over_under_readable_step9_v1.py \
+            tests/test_cfb_over_under_router_v66.py \
             tests/test_cfb_step3_team_data_foundation.py
 
   mlb-critical:
