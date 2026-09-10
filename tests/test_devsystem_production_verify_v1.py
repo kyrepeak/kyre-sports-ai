@@ -41,6 +41,7 @@ def test_production_browser_contract_matches_certified_ui():
     assert "FRESHNESS FIREWALL ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "0.0% PROJECTION INFLUENCE" in module.CFB_REQUIRED_MARKERS
     assert "FROZEN PROJECTION MATH PRESERVED" in module.CFB_REQUIRED_MARKERS
+    assert "READABLE STEP 9 GAME-DAY ENVIRONMENT ACTIVE" in module.CFB_REQUIRED_MARKERS
 
 
 def test_production_runtime_error_detector():
