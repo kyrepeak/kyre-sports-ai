@@ -1,8 +1,7 @@
 name: CFB O/U Upgrade Step 5 explosive
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-upgrade-step5-explosive']
 

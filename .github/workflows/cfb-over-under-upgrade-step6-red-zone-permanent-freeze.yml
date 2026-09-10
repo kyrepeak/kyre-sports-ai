@@ -1,8 +1,7 @@
 name: CFB O/U Upgrade Step 6 red zone permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-upgrade-step6-red-zone-permanent-freeze]
 

@@ -1,8 +1,7 @@
 name: CFB O/U Upgrade Step 8 turnover volatility
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-upgrade-step8-turnover-field-position]
 

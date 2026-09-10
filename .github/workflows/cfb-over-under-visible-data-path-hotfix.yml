@@ -1,11 +1,9 @@
 name: CFB O/U visible data path hotfix
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-visible-data-path-hotfix-v1]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 
