@@ -2,13 +2,10 @@ name: CFB Step 4 Streamlit live odds
 # STEP4_FINAL_CERT_TRIGGER
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - cfb-step4-streamlit-live-odds
-  pull_request:
-    branches:
-      - main
-
 jobs:
   certify-step4:
     runs-on: ubuntu-latest

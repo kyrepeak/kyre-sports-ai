@@ -1,8 +1,7 @@
 name: College Football Step 12 final Game Total certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step12-game-total-final']
 

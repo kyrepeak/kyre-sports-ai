@@ -1,8 +1,7 @@
 name: College Football Step 4 Moneyline-page certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step4-moneyline-page-ui']
 

@@ -1,8 +1,7 @@
 name: College Football Step 2 permanent freeze contract
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-step2-freeze-contract']
 
