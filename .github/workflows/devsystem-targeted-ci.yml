@@ -63,12 +63,18 @@ jobs:
           changed="$(git diff --name-only "$base" "$head" || true)"
           printf 'Changed paths:\n%s\n' "$changed"
 
-          python - "$GITHUB_OUTPUT" <<'PY' <<< "$changed"
+          printf '%s\n' "$changed" > /tmp/devsystem_changed_paths.txt
+          python - "$GITHUB_OUTPUT" /tmp/devsystem_changed_paths.txt <<'PY'
           import pathlib
           import sys
 
           output = pathlib.Path(sys.argv[1])
-          paths = [line.strip() for line in sys.stdin if line.strip()]
+          changed_file = pathlib.Path(sys.argv[2])
+          paths = [
+              line.strip()
+              for line in changed_file.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          ]
 
           def any_match(fn):
               return any(fn(path) for path in paths)
@@ -84,7 +90,13 @@ jobs:
               p.startswith(("wnba_", "tests/test_wnba_", "sports_api/wnba_"))
           )
           core = any_match(lambda p:
-              p in {"app.py", "engine.py", "history.py", "spread_engine.py"}
+              p in {
+                  "app.py",
+                  "engine.py",
+                  "history.py",
+                  "spread_engine.py",
+                  ".github/workflows/devsystem-targeted-ci.yml",
+              }
               or p.startswith(("requirements", ".streamlit/"))
               or (
                   p.startswith("sports_api/")
