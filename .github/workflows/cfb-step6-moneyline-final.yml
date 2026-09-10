@@ -1,8 +1,7 @@
 name: College Football Step 6 Moneyline-final certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step6-moneyline-final-synthesis']
 

@@ -1,8 +1,7 @@
 name: College Football Step 8 Over-Under Model V1 certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step8-over-under-model-v1']
 
