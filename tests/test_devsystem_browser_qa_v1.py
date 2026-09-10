@@ -24,8 +24,10 @@ def test_browser_qa_contract_is_explicit_and_safe():
     )
     assert module.CFB_SPORT == "College Football"
     assert module.CFB_MARKET == "Over/Under"
-    assert "CFB O/U • CLEAN PAGE V19 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V20 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "STEP 6 MARKET INTELLIGENCE LIVE" in module.CFB_REQUIRED_MARKERS
     assert "FRESHNESS FIREWALL ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "0.0% PROJECTION INFLUENCE" in module.CFB_REQUIRED_MARKERS
     assert "FROZEN PROJECTION MATH PRESERVED" in module.CFB_REQUIRED_MARKERS
 
 
