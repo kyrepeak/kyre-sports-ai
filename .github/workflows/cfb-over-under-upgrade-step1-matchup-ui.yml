@@ -1,8 +1,7 @@
 name: CFB Over-Under Intelligence V2 Upgrade Step 1
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-upgrade-step1-matchup-header']
 

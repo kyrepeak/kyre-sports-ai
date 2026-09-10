@@ -1,8 +1,7 @@
 name: CFB O/U post-12 multi-source data recovery
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-post12-data-recovery-hotfix]
 

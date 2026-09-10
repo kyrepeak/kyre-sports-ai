@@ -1,8 +1,7 @@
 name: CFB O/U multi-source logo hotfix V4 permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-multisource-logo-hotfix-v4-permanent-freeze']
 
