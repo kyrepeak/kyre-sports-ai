@@ -170,6 +170,8 @@ jobs:
               if any(not str(value or "").strip() for value in required):
                   raise SystemExit(f"Incomplete official identity row: {row.get('event_id')}")
               event_id = str(row.get("event_id"))
+              if not event_id.isdigit():
+                  raise SystemExit(f"Non-official/synthetic event ID: {event_id}")
               if event_id in seen:
                   raise SystemExit(f"Duplicate official event ID: {event_id}")
               seen.add(event_id)
@@ -207,5 +209,8 @@ jobs:
 
           # Runtime data lives on its dedicated branch. Protected main is never
           # written by this job, and Schedule V6 validates/falls back locally.
+          # Refresh the lease first so a concurrent/newer branch write cannot
+          # be overwritten by a stale hourly job.
+          git fetch origin "$refresh_branch" || true
           git push --force-with-lease origin HEAD:"$refresh_branch"
           echo "CFB_RUNTIME_SNAPSHOT_V2_RUNTIME_BRANCH_PUBLISHED $refresh_branch"
