@@ -36,10 +36,11 @@ CRITICAL_FILES = (
     "devsystem/change_classifier_v1.py",
     "devsystem/permanent_gate_v1.py",
     "devsystem/final_gate_v1.py",
-    # CFB active Step 5B path plus frozen Step 4 baseline
+    # CFB active Step 5B path plus Step 5C shadow intelligence and frozen Step 4 baseline
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
     "cfb_over_under_market_adapter_v2.py",
+    "cfb_over_under_market_intelligence_v1.py",
     "cfb_over_under_clean_page_v18.py",
     "cfb_over_under_clean_page_v19.py",
     "data/cfb_runtime_snapshot_v2.json",
@@ -57,6 +58,7 @@ CRITICAL_TESTS = (
     "tests/test_cfb_schedule_v6_runtime_snapshot.py",
     "tests/test_cfb_over_under_market_adapter_v1.py",
     "tests/test_cfb_over_under_market_adapter_v2.py",
+    "tests/test_cfb_over_under_market_intelligence_v1.py",
     "tests/test_cfb_over_under_clean_page_v18.py",
     "tests/test_cfb_over_under_clean_page_v19.py",
     "tests/test_cfb_over_under_router_v58.py",
@@ -251,6 +253,26 @@ def _verify_cfb_market_contract_text() -> None:
             "CFB freshness firewall drift: " + " | ".join(missing_v2)
         )
 
+    intelligence = (ROOT / "cfb_over_under_market_intelligence_v1.py").read_text(
+        encoding="utf-8"
+    )
+    required_intelligence = (
+        "if not event_id or not event_id.isdigit():",
+        'raise MarketIntelligenceError("unsafe_nonzero_projection_weight")',
+        '"single_book_is_consensus": False',
+        '"consensus_minimum_provider_count": 2',
+        '"projection_weight": 0.0',
+        '"may_modify_projection": False',
+    )
+    missing_intelligence = [
+        item for item in required_intelligence if item not in intelligence
+    ]
+    if missing_intelligence:
+        raise ShieldFailure(
+            "CFB market intelligence safety contract drift: "
+            + " | ".join(missing_intelligence)
+        )
+
 
 def _verify_active_router() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
@@ -306,6 +328,8 @@ def run() -> dict[str, Any]:
         "cfb_synthetic_ids": False,
         "cfb_freshness_firewall_active": True,
         "cfb_max_market_age_seconds": 300.0,
+        "cfb_market_intelligence_shadow_certified": True,
+        "cfb_market_intelligence_min_consensus_books": 2,
     }
     print("DEVSYSTEM_REGRESSION_SHIELD_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
