@@ -1,8 +1,7 @@
 name: CFB O/U Intelligence V2 Upgrade Step 3 permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-upgrade-step3-permanent-freeze']
 

@@ -1,8 +1,7 @@
 name: CFB O/U Upgrade Step 12 final permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-upgrade-step12-final-permanent-freeze]
 
