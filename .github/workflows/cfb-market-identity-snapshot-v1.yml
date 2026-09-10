@@ -1,0 +1,191 @@
+name: CFB market identity snapshot V1 refresh
+
+on:
+  push:
+    branches:
+      - main
+      - cfb-market-identity-snapshot-v1
+  schedule:
+    - cron: "11 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  certify:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/cfb-market-identity-snapshot-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependency
+        run: python -m pip install pytest
+
+      - name: Run deterministic identity publisher tests
+        run: python -m pytest -q tests/test_cfb_market_identity_snapshot_v1.py
+
+      - name: Compile identity publisher
+        run: python -m py_compile scripts/build_cfb_market_identity_snapshot_v1.py
+
+      - name: Build live market-horizon identity snapshot
+        run: python scripts/build_cfb_market_identity_snapshot_v1.py
+
+      - name: Validate official identity contract
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          path = Path('data/cfb_market_identity_snapshot_v1.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          games = payload.get('games') or []
+          dates = payload.get('market_dates') or []
+          policy = payload.get('identity_policy') or {}
+
+          assert int(payload.get('version') or 0) == 1
+          assert dates, 'market date coverage is empty'
+          assert games, 'official ESPN identity rows are empty'
+          assert policy.get('authority') == 'ESPN'
+          assert policy.get('official_event_ids_only') is True
+          assert policy.get('synthetic_ids') is False
+          assert policy.get('fuzzy_matching') is False
+          assert float(policy.get('sportsbook_projection_weight')) == 0.0
+
+          ids = [str(row.get('event_id') or '') for row in games]
+          assert all(value.isdigit() for value in ids), 'non-official event ID found'
+          assert len(ids) == len(set(ids)), 'duplicate official ESPN event ID found'
+
+          represented = {str(row.get('game_date') or '') for row in games}
+          missing_dates = sorted(set(dates) - represented)
+          assert not missing_dates, f'ESPN identity coverage missing market dates: {missing_dates}'
+          assert all(str(row.get('away_team') or '').strip() for row in games)
+          assert all(str(row.get('home_team') or '').strip() for row in games)
+          assert all(str(row.get('away_team_id') or '').strip() for row in games)
+          assert all(str(row.get('home_team_id') or '').strip() for row in games)
+
+          generated = datetime.fromisoformat(
+              str(payload['generated_at']).replace('Z', '+00:00')
+          ).astimezone(timezone.utc)
+          age = (datetime.now(timezone.utc) - generated).total_seconds()
+          assert -60 <= age <= 600, f'identity snapshot is not fresh: age={age}'
+
+          print(
+              'CFB_MARKET_IDENTITY_SNAPSHOT_V1_GREEN',
+              f'market_dates={len(dates)}',
+              f'games={len(games)}',
+              f"window={payload['window']['start']}..{payload['window']['end']}",
+          )
+          PY
+
+  refresh:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: cfb-market-identity-snapshot-v1-refresh
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build official market-horizon identity snapshot
+        run: python scripts/build_cfb_market_identity_snapshot_v1.py
+
+      - name: Validate and publish identity runtime branch
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(
+              Path('data/cfb_market_identity_snapshot_v1.json').read_text(encoding='utf-8')
+          )
+          games = payload.get('games') or []
+          dates = payload.get('market_dates') or []
+          policy = payload.get('identity_policy') or {}
+          if not dates or not games:
+              raise SystemExit('refusing to publish empty CFB identity snapshot')
+          if policy.get('authority') != 'ESPN':
+              raise SystemExit('identity authority drift')
+          if policy.get('synthetic_ids') is not False or policy.get('fuzzy_matching') is not False:
+              raise SystemExit('identity safety contract drift')
+          if float(policy.get('sportsbook_projection_weight', -1)) != 0.0:
+              raise SystemExit('sportsbook projection weight drift')
+
+          seen = set()
+          represented = set()
+          for row in games:
+              event_id = str(row.get('event_id') or '')
+              required = (
+                  event_id,
+                  row.get('game_date'),
+                  row.get('away_team'),
+                  row.get('home_team'),
+                  row.get('away_team_id'),
+                  row.get('home_team_id'),
+              )
+              if any(not str(value or '').strip() for value in required):
+                  raise SystemExit(f'incomplete official identity row: {event_id}')
+              if not event_id.isdigit():
+                  raise SystemExit(f'non-official/synthetic event ID: {event_id}')
+              if event_id in seen:
+                  raise SystemExit(f'duplicate official event ID: {event_id}')
+              seen.add(event_id)
+              represented.add(str(row.get('game_date')))
+
+          missing = sorted(set(dates) - represented)
+          if missing:
+              raise SystemExit(f'missing market-date identity coverage: {missing}')
+          print(
+              'CFB_MARKET_IDENTITY_SNAPSHOT_V1_VALIDATED',
+              f'games={len(games)}',
+              f'unique_event_ids={len(seen)}',
+              f'market_dates={len(dates)}',
+          )
+          PY
+
+          refresh_branch="cfb-market-identity-auto-refresh-v1"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$refresh_branch" || true
+
+          publish_needed=1
+          if git show "origin/$refresh_branch:data/cfb_market_identity_snapshot_v1.json" > /tmp/prior_identity.json 2>/dev/null; then
+            if python - <<'PY'
+          import json
+          from pathlib import Path
+
+          current = json.loads(Path('data/cfb_market_identity_snapshot_v1.json').read_text())
+          prior = json.loads(Path('/tmp/prior_identity.json').read_text())
+          for payload in (current, prior):
+              payload.pop('generated_at', None)
+              payload.pop('provider_future_matchups', None)
+          raise SystemExit(0 if current == prior else 1)
+          PY
+            then
+              publish_needed=0
+            fi
+          fi
+
+          if [ "$publish_needed" = "0" ]; then
+            echo "CFB_MARKET_IDENTITY_SNAPSHOT_V1_NO_PUBLISH_NEEDED"
+            exit 0
+          fi
+
+          git add data/cfb_market_identity_snapshot_v1.json
+          git commit -m "Refresh CFB market identity snapshot V1"
+          git push --force-with-lease origin HEAD:"$refresh_branch"
+          echo "CFB_MARKET_IDENTITY_SNAPSHOT_V1_PUBLISHED $refresh_branch"
