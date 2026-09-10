@@ -38,6 +38,7 @@ CRITICAL_FILES = (
     # CFB active Step 4 path
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
+    "cfb_over_under_market_adapter_v2.py",
     "cfb_over_under_clean_page_v18.py",
     "data/cfb_runtime_snapshot_v2.json",
     # MLB current certified path
@@ -53,6 +54,7 @@ CRITICAL_TESTS = (
     # CFB
     "tests/test_cfb_schedule_v6_runtime_snapshot.py",
     "tests/test_cfb_over_under_market_adapter_v1.py",
+    "tests/test_cfb_over_under_market_adapter_v2.py",
     "tests/test_cfb_over_under_clean_page_v18.py",
     "tests/test_cfb_over_under_router_v58.py",
     # MLB
