@@ -278,7 +278,7 @@ def _browser_verify(
                 page.wait_for_timeout(1500)
             else:
                 raise ProductionVerificationFailure(
-                    "Production CFB Clean Page V20 Step 6 marker did not appear"
+                    "Production CFB Clean Page V26 Step 9 marker did not appear"
                 )
 
             missing_markers = [
@@ -287,7 +287,7 @@ def _browser_verify(
             ]
             if missing_markers:
                 raise ProductionVerificationFailure(
-                    "Production CFB Step 6 marker drift: " + " | ".join(missing_markers)
+                    "Production CFB Step 9 marker drift: " + " | ".join(missing_markers)
                 )
 
             forbidden = _body_has_forbidden_error(final_body)
