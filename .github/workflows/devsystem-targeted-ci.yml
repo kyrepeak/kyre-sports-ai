@@ -8,6 +8,7 @@ on:
       - devsystem-step2-targeted-ci
       - devsystem-step3-regression-shield
       - devsystem-step4-browser-qa
+      - devsystem-step5-production-verification
   workflow_dispatch:
 
 permissions:
@@ -99,6 +100,7 @@ jobs:
                   "history.py",
                   "spread_engine.py",
                   ".github/workflows/devsystem-targeted-ci.yml",
+                  ".github/workflows/devsystem-production-verification.yml",
               }
               or p.startswith(("requirements", ".streamlit/", "devsystem/", "tests/test_devsystem_"))
               or (
