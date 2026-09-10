@@ -130,3 +130,150 @@ def test_v6_name_alias_collision_fails_closed(monkeypatch):
         }
     )
     assert row == {}
+
+def _clear_v6_cache():
+    for fn in (schedule.load_with_diagnostics, schedule.games_for_date):
+        try:
+            fn.clear()
+        except Exception:
+            pass
+
+
+def test_v6_seeds_verified_snapshot_when_frozen_v5_returns_zero_games(monkeypatch):
+    snapshot = {
+        "version": 2,
+        "games": [
+            {
+                "event_id": "401858213",
+                "game_date": "2026-09-10",
+                "away_team": "Florida A&M",
+                "home_team": "Miami",
+                "venue": "Hard Rock Stadium",
+                "broadcast": "ACC Network",
+                "status": "Scheduled",
+                "espn_week": 2,
+                "away": {
+                    "team_id": "50",
+                    "record_text": "1-1",
+                    "ap_rank": None,
+                },
+                "home": {
+                    "team_id": "2390",
+                    "record_text": "1-0",
+                    "ap_rank": 7,
+                },
+            },
+            {
+                "event_id": "other-date",
+                "game_date": "2026-09-11",
+                "away_team": "Other Away",
+                "home_team": "Other Home",
+                "away": {"team_id": "1"},
+                "home": {"team_id": "2"},
+            },
+        ],
+    }
+    monkeypatch.setattr(
+        schedule.frozen,
+        "load_with_diagnostics",
+        lambda target_date: (
+            [],
+            {
+                "games": 0,
+                "identity_ready": False,
+                "espn_matches": 0,
+            },
+        ),
+    )
+    monkeypatch.setattr(schedule, "_load_v2_snapshot", lambda: snapshot)
+
+    _clear_v6_cache()
+    games, diag = schedule.load_with_diagnostics("2026-09-10")
+    _clear_v6_cache()
+
+    assert len(games) == 1
+    game = games[0]
+    assert game["game_id"] == "401858213"
+    assert game["identity_key"] == "espn:401858213"
+    assert game["espn_event_id"] == "401858213"
+    assert game["away_espn_team_id"] == "50"
+    assert game["home_espn_team_id"] == "2390"
+    assert game["away_team"] == "Florida A&M"
+    assert game["home_team"] == "Miami"
+    assert game["venue"] == "Hard Rock Stadium"
+    assert game["broadcast"] == "ACC Network"
+    assert game["identity_verified"] is True
+    assert game["date_matches_query"] is True
+    assert game["schedule_v6_runtime_snapshot_v2_seeded"] is True
+
+    assert diag["games"] == 1
+    assert diag["identity_ready"] is True
+    assert diag["espn_matches"] == 1
+    assert diag["runtime_snapshot_v2_seeded_games"] == 1
+    assert diag["runtime_snapshot_v2_seed_fallback_active"] is True
+    assert diag["official_ids_before_v2"] == 0
+    assert diag["official_ids_after_v2"] == 1
+    assert diag["fuzzy_matching"] is False
+    assert diag["synthetic_ids"] is False
+
+
+def test_v6_does_not_supplement_nonempty_frozen_v5_slate(monkeypatch):
+    base_game = {
+        "game_id": "ncaa-1",
+        "identity_key": "ncaa:ncaa-1",
+        "identity_fingerprint": "ncaa-1",
+        "game_date": "2026-09-10",
+        "away_team": "Base Away",
+        "away_team_slug": "base-away",
+        "home_team": "Base Home",
+        "home_team_slug": "base-home",
+        "identity_verified": True,
+        "date_matches_query": True,
+        "espn_event_id": "base-event",
+    }
+    snapshot = {
+        "version": 2,
+        "games": [
+            {
+                "event_id": "base-event",
+                "game_date": "2026-09-10",
+                "away_team": "Base Away",
+                "home_team": "Base Home",
+                "away": {"team_id": "10"},
+                "home": {"team_id": "20"},
+            },
+            {
+                "event_id": "snapshot-only-event",
+                "game_date": "2026-09-10",
+                "away_team": "Snapshot Away",
+                "home_team": "Snapshot Home",
+                "away": {"team_id": "30"},
+                "home": {"team_id": "40"},
+            },
+        ],
+    }
+    monkeypatch.setattr(
+        schedule.frozen,
+        "load_with_diagnostics",
+        lambda target_date: (
+            [base_game],
+            {
+                "games": 1,
+                "identity_ready": True,
+                "espn_matches": 1,
+            },
+        ),
+    )
+    monkeypatch.setattr(schedule, "_load_v2_snapshot", lambda: snapshot)
+
+    _clear_v6_cache()
+    games, diag = schedule.load_with_diagnostics("2026-09-10")
+    _clear_v6_cache()
+
+    assert len(games) == 1
+    assert games[0]["game_id"] == "ncaa-1"
+    assert games[0]["espn_event_id"] == "base-event"
+    assert games[0].get("schedule_v6_runtime_snapshot_v2_seeded") is not True
+    assert diag["runtime_snapshot_v2_seeded_games"] == 0
+    assert diag["runtime_snapshot_v2_seed_fallback_active"] is False
+
