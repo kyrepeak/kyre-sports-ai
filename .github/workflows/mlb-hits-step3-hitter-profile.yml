@@ -1,8 +1,7 @@
 name: MLB Hits Step 3 hitter-profile certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-hits-step3-hitter-profile']
 

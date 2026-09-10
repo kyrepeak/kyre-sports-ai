@@ -1,8 +1,7 @@
 name: MLB Hits Step 3 permanent freeze contract
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['mlb-hits-step3-freeze-contract']
 

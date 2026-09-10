@@ -1,8 +1,7 @@
 name: MLB Hits Step 2 compact Top-5 certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-hits-step2-mobile-top5']
 
