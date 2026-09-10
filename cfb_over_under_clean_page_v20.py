@@ -27,13 +27,15 @@ ACTIVE_MARKET_INTELLIGENCE = "cfb_over_under_market_intelligence_v1"
 ACTIVE_SCHEDULE = frozen_page.ACTIVE_SCHEDULE
 FROZEN_RUNTIME_SLATE = frozen_page.FROZEN_RUNTIME_SLATE
 
+_V18_MARKER = "CFB O/U • CLEAN PAGE V18 ACTIVE"
 _V19_MARKER = (
     "🟢 CFB O/U • CLEAN PAGE V19 ACTIVE • FRESHNESS FIREWALL ACTIVE • "
     "FROZEN PROJECTION MATH PRESERVED"
 )
 _V20_MARKER = (
     "🟢 CFB O/U • CLEAN PAGE V20 ACTIVE • STEP 6 MARKET INTELLIGENCE LIVE • "
-    "DISPLAY ONLY • 0.0% PROJECTION INFLUENCE"
+    "FRESHNESS FIREWALL ACTIVE • DISPLAY ONLY • 0.0% PROJECTION INFLUENCE • "
+    "FROZEN PROJECTION MATH PRESERVED"
 )
 
 
@@ -169,14 +171,14 @@ _market_adapter_facade = SimpleNamespace(
 
 
 class _StreamlitV20Proxy:
-    """Delegate Streamlit while replacing only the V19 active-page marker."""
+    """Delegate Streamlit while replacing the inherited active-page shell marker."""
 
     def __getattr__(self, name: str) -> Any:
         return getattr(st, name)
 
     def caption(self, body: Any, *args: Any, **kwargs: Any) -> Any:
         text = str(body or "")
-        if _V19_MARKER in text:
+        if _V18_MARKER in text or _V19_MARKER in text:
             body = _V20_MARKER
         return st.caption(body, *args, **kwargs)
 
