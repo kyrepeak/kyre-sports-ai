@@ -1,8 +1,7 @@
 name: MLB Matchup Explorer permanent freeze contract
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['mlb-matchup-explorer-step18-hard-freeze']
 

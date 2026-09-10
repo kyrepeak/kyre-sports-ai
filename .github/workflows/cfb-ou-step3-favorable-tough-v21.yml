@@ -1,11 +1,9 @@
 name: CFB O/U Step 3 favorable tough V21
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-step3-favorable-tough-v21]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 

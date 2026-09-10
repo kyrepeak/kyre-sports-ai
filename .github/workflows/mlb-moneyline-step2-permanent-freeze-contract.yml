@@ -1,8 +1,7 @@
 name: MLB Moneyline Step 2 permanent freeze contract
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['mlb-moneyline-step2-freeze-contract']
 

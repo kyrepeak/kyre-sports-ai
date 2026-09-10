@@ -1,0 +1,227 @@
+name: DevSystem targeted CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [devsystem-step2-targeted-ci]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devsystem-targeted-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    runs-on: ubuntu-24.04
+    outputs:
+      cfb: ${{ steps.changed.outputs.cfb }}
+      mlb: ${{ steps.changed.outputs.mlb }}
+      wnba: ${{ steps.changed.outputs.wnba }}
+      core: ${{ steps.changed.outputs.core }}
+      changed_count: ${{ steps.changed.outputs.changed_count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: changed
+        name: Classify changed paths
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "cfb=true" >> "$GITHUB_OUTPUT"
+            echo "mlb=true" >> "$GITHUB_OUTPUT"
+            echo "wnba=true" >> "$GITHUB_OUTPUT"
+            echo "core=true" >> "$GITHUB_OUTPUT"
+            echo "changed_count=manual" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="$PR_BASE"
+            head="$PR_HEAD"
+          else
+            base="$PUSH_BEFORE"
+            head="$CURRENT_SHA"
+          fi
+
+          if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
+            base="$(git rev-parse HEAD^ 2>/dev/null || git rev-parse HEAD)"
+          fi
+
+          changed="$(git diff --name-only "$base" "$head" || true)"
+          printf 'Changed paths:\n%s\n' "$changed"
+
+          printf '%s\n' "$changed" > /tmp/devsystem_changed_paths.txt
+          python - "$GITHUB_OUTPUT" /tmp/devsystem_changed_paths.txt <<'PY'
+          import pathlib
+          import sys
+
+          output = pathlib.Path(sys.argv[1])
+          changed_file = pathlib.Path(sys.argv[2])
+          paths = [
+              line.strip()
+              for line in changed_file.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          ]
+
+          def any_match(fn):
+              return any(fn(path) for path in paths)
+
+          cfb = any_match(lambda p:
+              p.startswith(("cfb_", "tests/test_cfb_", "data/cfb_", "scripts/build_cfb_"))
+              or p.startswith("sports_api/cfb_")
+          )
+          mlb = any_match(lambda p:
+              p.startswith(("mlb_", "tests/test_mlb_", "sports_api/mlb_"))
+          )
+          wnba = any_match(lambda p:
+              p.startswith(("wnba_", "tests/test_wnba_", "sports_api/wnba_"))
+          )
+          core = any_match(lambda p:
+              p in {
+                  "app.py",
+                  "engine.py",
+                  "history.py",
+                  "spread_engine.py",
+                  ".github/workflows/devsystem-targeted-ci.yml",
+              }
+              or p.startswith(("requirements", ".streamlit/"))
+              or (
+                  p.startswith("sports_api/")
+                  and not p.startswith(("sports_api/mlb_", "sports_api/wnba_", "sports_api/cfb_"))
+              )
+          )
+
+          with output.open("a", encoding="utf-8") as fh:
+              fh.write(f"cfb={'true' if cfb else 'false'}\n")
+              fh.write(f"mlb={'true' if mlb else 'false'}\n")
+              fh.write(f"wnba={'true' if wnba else 'false'}\n")
+              fh.write(f"core={'true' if core else 'false'}\n")
+              fh.write(f"changed_count={len(paths)}\n")
+          PY
+
+  workflow-hygiene:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prove legacy PR fan-out is quarantined
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          manifest = Path("devsystem/legacy_broad_pr_workflows_2026-09-09.txt")
+          paths = [
+              line.strip()
+              for line in manifest.read_text(encoding="utf-8").splitlines()
+              if line.strip() and not line.lstrip().startswith("#")
+          ]
+          failures = []
+          for item in paths:
+              text = Path(item).read_text(encoding="utf-8")
+              if re.search(r"(?m)^  pull_request\s*:", text):
+                  failures.append(item)
+              if not re.search(r"(?m)^  (workflow_dispatch|push|schedule)\s*:", text):
+                  failures.append(item + " [no retained trigger]")
+          if failures:
+              print("LEGACY_PR_FANOUT_STILL_ACTIVE")
+              print("\n".join(failures))
+              raise SystemExit(1)
+          print(f"DEVSYSTEM_WORKFLOW_HYGIENE_GREEN quarantined={len(paths)}")
+          PY
+
+  cfb-critical:
+    needs: [classify, workflow-hygiene]
+    if: needs.classify.outputs.cfb == 'true' || needs.classify.outputs.core == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install CFB test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Run current CFB critical path
+        run: |
+          python -m pytest -q \
+            tests/test_cfb_schedule_v6_runtime_snapshot.py \
+            tests/test_cfb_over_under_market_adapter_v1.py \
+            tests/test_cfb_over_under_clean_page_v18.py \
+            tests/test_cfb_over_under_router_v58.py \
+            tests/test_cfb_step2_schedule_identity.py \
+            tests/test_cfb_step3_team_data_foundation.py
+
+  mlb-critical:
+    needs: [classify, workflow-hygiene]
+    if: needs.classify.outputs.mlb == 'true' || needs.classify.outputs.core == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install MLB test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          if [ -f sports_api/requirements.txt ]; then python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Run current MLB critical path
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_step20a_end_to_end_certification_v1.py \
+            tests/test_mlb_step20b_production_release_certification_v1.py \
+            tests/test_mlb_step9g_postfreeze_handoff_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py
+
+  wnba-critical:
+    needs: [classify, workflow-hygiene]
+    if: needs.classify.outputs.wnba == 'true' || needs.classify.outputs.core == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install WNBA test dependencies
+        run: |
+          if [ -f sports_api/requirements.txt ]; then python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Run current WNBA critical path
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step20b_runtime_acceleration.py \
+            tests/test_wnba_step20b_monte_carlo_acceleration.py \
+            tests/test_wnba_step20b_step2_exact_reuse_timing.py
+
+  core-smoke:
+    needs: [classify, workflow-hygiene]
+    if: needs.classify.outputs.core == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile shared entry points
+        run: python -m py_compile app.py

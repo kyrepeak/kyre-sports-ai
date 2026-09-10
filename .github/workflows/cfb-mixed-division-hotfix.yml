@@ -1,8 +1,7 @@
 name: College Football mixed-division hotfix certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['fix/cfb-mixed-division-schedule-hotfix']
 

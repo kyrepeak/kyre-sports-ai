@@ -1,11 +1,9 @@
 name: CFB O/U runtime team data V56
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-runtime-team-data-hotfix-v1]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 

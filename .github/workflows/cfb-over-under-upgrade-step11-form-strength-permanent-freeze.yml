@@ -1,8 +1,7 @@
 name: CFB O/U Upgrade Step 11 form strength permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-upgrade-step11-form-strength-permanent-freeze]
 

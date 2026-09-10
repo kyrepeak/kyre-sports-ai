@@ -1,8 +1,7 @@
 name: CFB O/U ESPN logo hotfix V2
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-logo-hotfix-v2']
 

@@ -1,8 +1,7 @@
 name: MLB Hits Step 1 strength + evidence summary
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['mlb-hits-step1-strength-evidence-summary']
 

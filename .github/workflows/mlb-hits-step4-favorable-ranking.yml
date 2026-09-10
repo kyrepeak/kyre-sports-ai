@@ -1,8 +1,7 @@
 name: MLB Hits Step 4 favorable-ranking certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-hits-step4-favorable-ranking']
 

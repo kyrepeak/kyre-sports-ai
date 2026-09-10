@@ -1,8 +1,7 @@
 name: CFB O/U Upgrade Step 4 pace permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-upgrade-step4-pace-permanent-freeze']
 

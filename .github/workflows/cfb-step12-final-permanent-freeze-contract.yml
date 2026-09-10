@@ -1,8 +1,7 @@
 name: College Football Step 12 final permanent freeze contract
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-step12-final-freeze-contract']
 

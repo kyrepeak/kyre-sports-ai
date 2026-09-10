@@ -1,8 +1,7 @@
 name: College Football NCAA-scoreboard completeness certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['fix/cfb-official-scoreboard-slate-completeness']
 

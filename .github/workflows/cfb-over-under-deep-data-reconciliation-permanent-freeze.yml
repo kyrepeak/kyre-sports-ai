@@ -1,8 +1,7 @@
 name: CFB O/U deep data reconciliation permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-deep-data-reconciliation-permanent-freeze]
 

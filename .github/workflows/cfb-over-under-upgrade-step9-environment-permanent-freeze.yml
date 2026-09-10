@@ -1,8 +1,7 @@
 name: CFB O/U Upgrade Step 9 environment permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-upgrade-step9-environment-permanent-freeze]
 

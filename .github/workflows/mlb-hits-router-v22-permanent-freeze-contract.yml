@@ -1,8 +1,7 @@
 name: MLB Hits Router V22 permanent freeze contract
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['mlb-hits-router-v22-freeze-contract']
 

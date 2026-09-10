@@ -1,8 +1,7 @@
 name: College Football Step 2 schedule-identity certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step2-schedule-identity']
 

@@ -1,11 +1,9 @@
 name: CFB O/U visible data path permanent freeze
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-visible-data-path-permanent-freeze]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 

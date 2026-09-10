@@ -1,8 +1,7 @@
 name: College Football Step 5 Moneyline-model certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step5-moneyline-model-v1']
 

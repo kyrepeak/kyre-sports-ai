@@ -1,8 +1,7 @@
 name: CFB O/U logo recursion hotfix V3 permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-logo-recursion-hotfix-v3-permanent-freeze']
 

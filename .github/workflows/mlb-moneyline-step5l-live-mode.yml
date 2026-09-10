@@ -1,8 +1,7 @@
 name: MLB Moneyline Step 5L live-mode certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-moneyline-step5l-live-mode']
 
