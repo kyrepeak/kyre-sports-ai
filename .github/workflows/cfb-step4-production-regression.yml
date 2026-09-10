@@ -265,10 +265,11 @@ jobs:
               if date_input.count() == 0:
                   print("CFB_STEP4_APP_BODY_NO_DATE", app_frame.locator("body").inner_text()[:10000])
                   raise SystemExit("CFB_STEP4_DATE_INPUT_MISSING")
-              date_input.click()
-              date_input.fill("09/10/2026")
-              date_input.press("Enter")
+              print("CFB_STEP4_DATE_BEFORE", date_input.input_value())
+              date_input.fill(day, force=True)
+              date_input.dispatch_event("change")
               page.wait_for_timeout(12000)
+              print("CFB_STEP4_DATE_AFTER", date_input.input_value())
 
               body = app_frame.locator("body").inner_text()
               print("CFB_STEP4_BROWSER_FINAL_BODY", body[:20000])
