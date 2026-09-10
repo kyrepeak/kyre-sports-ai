@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "streamlit": {
+    "name": "Kyre Sports AI",
+    "url": "https://kyre-sports-ai.streamlit.app",
+    "health_path": "/_stcore/health"
+  },
+  "render_api": {
+    "name": "kyre-sports-api",
+    "url": "https://kyre-sports-api.onrender.com",
+    "service_id": "srv-da84q6ifngtc73bdbm6g",
+    "source_branch": "mlb-step17b-shared-host-cert",
+    "auto_deploy": false,
+    "health_path": "/health"
+  },
+  "contracts": {
+    "cfb_odds_path": "/api/v1/cfb/odds",
+    "cfb_projection_weight": 0.0,
+    "cfb_matching_method": "official ESPN event_id only"
+  }
+}

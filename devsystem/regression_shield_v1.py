@@ -26,6 +26,9 @@ CRITICAL_FILES = (
     "streamlit_memory_lazy_router_v58.py",
     # DevSystem browser QA
     "devsystem/browser_qa_v1.py",
+    # DevSystem production verification
+    "devsystem/production_verify_v1.py",
+    "devsystem/production_targets_v1.json",
     # CFB active Step 4 path
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
@@ -56,6 +59,8 @@ CRITICAL_TESTS = (
     "tests/test_wnba_step20b_step2_exact_reuse_timing.py",
     # DevSystem browser QA
     "tests/test_devsystem_browser_qa_v1.py",
+    # DevSystem production verification
+    "tests/test_devsystem_production_verify_v1.py",
 )
 
 PYTHON_COMPILE_TARGETS = tuple(
