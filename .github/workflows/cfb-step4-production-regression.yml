@@ -123,8 +123,6 @@ jobs:
           }
           print("CFB_STEP4_PRODUCTION_API_GREEN")
           print(json.dumps(evidence, indent=2))
-          with open("/tmp/cfb_step4_api_evidence.json", "w", encoding="utf-8") as fh:
-              json.dump(evidence, fh)
           PY
 
       - name: Verify production Streamlit transport
@@ -188,7 +186,7 @@ jobs:
               timeout=60,
               headers={
                   "Accept": "application/json",
-                  "User-Agent": "KyreSportsAI-CFB-Step4-Browser-Regress/1.0",
+                  "User-Agent": "KyreSportsAI-CFB-Step4-Browser-Regress/1.1",
                   "Cache-Control": "no-cache",
               },
           )
@@ -198,33 +196,80 @@ jobs:
           expected_total = float(target["total"])
 
           with sync_playwright() as p:
-              browser = p.chromium.launch(headless=True)
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
               page = browser.new_page(viewport={"width": 1440, "height": 1400})
               page.goto(streamlit_url + "/", wait_until="domcontentloaded", timeout=120000)
-              page.wait_for_selector('[data-testid="stAppViewContainer"]', timeout=120000)
 
-              # Select College Football in the first Streamlit selectbox.
-              sport_box = page.locator('[data-testid="stSelectbox"]').nth(0)
-              sport_box.click()
+              ready = False
+              last_body = ""
+              for attempt in range(1, 7):
+                  page.wait_for_timeout(5000)
+                  try:
+                      last_body = page.locator("body").inner_text(timeout=10000)
+                  except Exception:
+                      last_body = ""
+                  combo_count = page.get_by_role("combobox").count()
+                  print(
+                      f"CFB_STEP4_BROWSER_BOOT_{attempt}: "
+                      f"url={page.url} title={page.title()!r} "
+                      f"comboboxes={combo_count} body={last_body[:1000]!r}"
+                  )
+
+                  lower = last_body.lower()
+                  if "get this app back up" in lower:
+                      try:
+                          page.get_by_text("Yes, get this app back up!", exact=False).click()
+                          page.wait_for_timeout(10000)
+                          continue
+                      except Exception:
+                          pass
+
+                  if combo_count >= 1 or "🏟️ sport" in lower or "sport" in lower:
+                      ready = True
+                      break
+
+                  if attempt in (3, 5):
+                      page.reload(wait_until="domcontentloaded", timeout=120000)
+
+              page.screenshot(path="cfb_step4_browser_boot.png", full_page=True)
+              if not ready:
+                  html = page.content()
+                  print("CFB_STEP4_BROWSER_FINAL_URL", page.url)
+                  print("CFB_STEP4_BROWSER_FINAL_TITLE", page.title())
+                  print("CFB_STEP4_BROWSER_FINAL_BODY", last_body[:5000])
+                  print("CFB_STEP4_BROWSER_FINAL_HTML", html[:5000])
+                  raise SystemExit("CFB_STEP4_STREAMLIT_BROWSER_APP_NOT_READY")
+
+              # Streamlit selectboxes expose role=combobox through BaseWeb.
+              combos = page.get_by_role("combobox")
+              combos.nth(0).click()
               page.keyboard.type("College Football")
-              page.keyboard.press("Enter")
-              page.wait_for_timeout(2500)
-
-              # Select Over/Under in the CFB market selectbox.
-              market_box = page.locator('[data-testid="stSelectbox"]').nth(1)
-              market_box.click()
-              page.keyboard.type("Over/Under")
               page.keyboard.press("Enter")
               page.wait_for_timeout(3500)
 
-              # Force the certified target date so the FAMU @ Miami line is present.
+              combos = page.get_by_role("combobox")
+              if combos.count() < 2:
+                  raise SystemExit(f"CFB_STEP4_CFB_MARKET_COMBOBOX_MISSING: {combos.count()}")
+              combos.nth(1).click()
+              page.keyboard.type("Over/Under")
+              page.keyboard.press("Enter")
+              page.wait_for_timeout(5000)
+
+              # Set the certified target slate date.
               date_input = page.locator('[data-testid="stDateInput"] input').first
+              if date_input.count() == 0:
+                  date_input = page.locator('input').filter(has=page.locator('')).first
               date_input.click()
               date_input.fill("09/10/2026")
               date_input.press("Enter")
-              page.wait_for_timeout(7000)
+              page.wait_for_timeout(9000)
 
               body = page.locator("body").inner_text()
+              print("CFB_STEP4_BROWSER_FINAL_BODY_TEXT", body[:12000])
+
               required = [
                   "CFB O/U • CLEAN PAGE V18 ACTIVE • LIVE ODDS CONNECTED • FROZEN PROJECTION MATH PRESERVED",
                   "LIVE CFB ODDS API CONNECTED",
