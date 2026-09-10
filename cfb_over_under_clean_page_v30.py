@@ -39,7 +39,12 @@ class _StreamlitV30Proxy:
 
     def caption(self, body: Any, *args: Any, **kwargs: Any) -> Any:
         text = str(body or "")
-        if "READABLE STEP 12 FINAL CERTIFICATION ACTIVE" in text:
+        if (
+            "CFB O/U • CLEAN PAGE V18 ACTIVE" in text
+            or "CFB O/U • CLEAN PAGE V19 ACTIVE" in text
+            or "CFB O/U • CLEAN PAGE V20 ACTIVE" in text
+            or "READABLE STEP 12 FINAL CERTIFICATION ACTIVE" in text
+        ):
             body = _V30_MARKER
         return st.caption(body, *args, **kwargs)
 
