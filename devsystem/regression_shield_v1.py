@@ -25,6 +25,7 @@ CRITICAL_FILES = (
     # Shared / active Streamlit
     "app.py",
     "streamlit_memory_lazy_router_v58.py",
+    "streamlit_memory_lazy_router_v59.py",
     # DevSystem browser QA
     "devsystem/browser_qa_v1.py",
     # DevSystem production verification
@@ -35,11 +36,12 @@ CRITICAL_FILES = (
     "devsystem/change_classifier_v1.py",
     "devsystem/permanent_gate_v1.py",
     "devsystem/final_gate_v1.py",
-    # CFB active Step 4 path
+    # CFB active Step 5B path plus frozen Step 4 baseline
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
     "cfb_over_under_market_adapter_v2.py",
     "cfb_over_under_clean_page_v18.py",
+    "cfb_over_under_clean_page_v19.py",
     "data/cfb_runtime_snapshot_v2.json",
     # MLB current certified path
     "sports_api/mlb_step20a_end_to_end_certification_v1.py",
@@ -56,7 +58,9 @@ CRITICAL_TESTS = (
     "tests/test_cfb_over_under_market_adapter_v1.py",
     "tests/test_cfb_over_under_market_adapter_v2.py",
     "tests/test_cfb_over_under_clean_page_v18.py",
+    "tests/test_cfb_over_under_clean_page_v19.py",
     "tests/test_cfb_over_under_router_v58.py",
+    "tests/test_cfb_over_under_router_v59.py",
     # MLB
     "tests/test_mlb_step20a_end_to_end_certification_v1.py",
     "tests/test_mlb_step20b_production_release_certification_v1.py",
@@ -213,10 +217,10 @@ def _verify_cfb_snapshot_v2() -> dict[str, int]:
 
 
 def _verify_cfb_market_contract_text() -> None:
-    text = (ROOT / "cfb_over_under_market_adapter_v1.py").read_text(
+    v1 = (ROOT / "cfb_over_under_market_adapter_v1.py").read_text(
         encoding="utf-8"
     )
-    required = (
+    required_v1 = (
         'float(semantics.get("projection_weight")) != 0.0',
         '"projection_weight": 0.0',
         '"market_context_only": True',
@@ -225,20 +229,39 @@ def _verify_cfb_market_contract_text() -> None:
         '"fuzzy_matching": False',
         '"synthetic_ids": False',
     )
-    missing = [item for item in required if item not in text]
+    missing = [item for item in required_v1 if item not in v1]
     if missing:
         raise ShieldFailure(
             "CFB market safety contract drift: " + " | ".join(missing)
         )
 
+    v2 = (ROOT / "cfb_over_under_market_adapter_v2.py").read_text(
+        encoding="utf-8"
+    )
+    required_v2 = (
+        "MAX_MARKET_AGE_SECONDS = 300.0",
+        'raise ValueError("unsafe_non_official_event_id")',
+        '"projection_weight": 0.0',
+        '"may_modify_projection": False',
+        'attach_market_lines = frozen.attach_market_lines',
+    )
+    missing_v2 = [item for item in required_v2 if item not in v2]
+    if missing_v2:
+        raise ShieldFailure(
+            "CFB freshness firewall drift: " + " | ".join(missing_v2)
+        )
+
 
 def _verify_active_router() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    if "streamlit_memory_lazy_router_v58" not in app:
+    if "from streamlit_memory_lazy_router_v59 import render_app" not in app:
         raise ShieldFailure(
-            "active Streamlit entrypoint no longer references router V58; "
+            "active Streamlit entrypoint no longer imports Router V59; "
             "update the regression shield deliberately if this is intentional"
         )
+    page = (ROOT / "cfb_over_under_clean_page_v19.py").read_text(encoding="utf-8")
+    if 'ACTIVE_MARKET_ADAPTER = "cfb_over_under_market_adapter_v2"' not in page:
+        raise ShieldFailure("active CFB O/U page no longer uses Market Adapter V2")
 
 
 def _compile_critical_python() -> int:
@@ -281,6 +304,8 @@ def run() -> dict[str, Any]:
         "cfb_matching_method": "official ESPN event_id only",
         "cfb_fuzzy_matching": False,
         "cfb_synthetic_ids": False,
+        "cfb_freshness_firewall_active": True,
+        "cfb_max_market_age_seconds": 300.0,
     }
     print("DEVSYSTEM_REGRESSION_SHIELD_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
