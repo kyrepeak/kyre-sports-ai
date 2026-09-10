@@ -1,8 +1,7 @@
 name: CFB O/U deep current-data reconciliation
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: [cfb-ou-deep-data-reconciliation-v1]
 

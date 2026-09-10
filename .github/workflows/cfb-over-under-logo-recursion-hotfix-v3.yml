@@ -1,8 +1,7 @@
 name: CFB O/U ESPN logo recursion hotfix V3
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-ou-logo-recursion-hotfix-v3']
 

@@ -1,11 +1,9 @@
 name: CFB O/U clean page V17
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-clean-page-v17]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 

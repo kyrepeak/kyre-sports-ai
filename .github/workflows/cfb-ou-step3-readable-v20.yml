@@ -1,11 +1,9 @@
 name: CFB O/U readable Step 3 V20
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-step3-readable-matchup-v20]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 
