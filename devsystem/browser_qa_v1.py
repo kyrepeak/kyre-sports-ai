@@ -1,11 +1,11 @@
-"""DevSystem Step 4 automated browser QA for the local Streamlit branch build.
+"""DevSystem automated browser QA for the local Streamlit branch build.
 
-This is intentionally a local/PR browser gate. Step 5 will own production
-deployment verification. The browser QA proves that the checked-out branch can:
+The browser QA proves that the checked-out branch can:
 - boot Streamlit;
 - expose the expected sport choices;
 - route to College Football -> Over/Under;
-- render the certified Clean Page V18 shell;
+- render the active Clean Page V19 freshness-firewall shell;
+- preserve the frozen projection marker;
 - do so without obvious Python/runtime error text.
 
 Dynamic schedule/odds availability is not required here because those are
@@ -33,7 +33,8 @@ REQUIRED_SPORTS = (
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V18 ACTIVE",
+    "CFB O/U • CLEAN PAGE V19 ACTIVE",
+    "FRESHNESS FIREWALL ACTIVE",
     "FROZEN PROJECTION MATH PRESERVED",
 )
 FORBIDDEN_ERROR_MARKERS = (
@@ -254,7 +255,7 @@ def run_browser_qa(
             ]
             if missing_markers:
                 raise BrowserQAFailure(
-                    "CFB Clean Page V18 marker drift: "
+                    "CFB Clean Page V19 marker drift: "
                     + " | ".join(missing_markers)
                 )
 
