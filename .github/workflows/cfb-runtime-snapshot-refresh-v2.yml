@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  actions: write
 
 jobs:
   certify:
@@ -135,17 +137,51 @@ jobs:
       - name: Refresh snapshot
         run: python scripts/build_cfb_runtime_snapshot_v2.py
 
-      - name: Commit only substantive changes
+      - name: Route substantive changes through protected DevSystem PR
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if git diff --quiet -- data/cfb_runtime_snapshot_v2.json; then
             echo "CFB_RUNTIME_SNAPSHOT_V2_NO_COMMIT_NEEDED"
             exit 0
           fi
 
+          refresh_branch="cfb-runtime-snapshot-auto-refresh-v2"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/cfb_runtime_snapshot_v2.json
           git commit -m "Refresh CFB runtime data snapshot V2"
-          git pull --rebase origin main
-          git push origin HEAD:main
-          echo "CFB_RUNTIME_SNAPSHOT_V2_PUSHED"
+
+          # Protected main is never written directly. Keep one deterministic
+          # refresh branch so scheduled runs update/reuse the same PR safely.
+          git push --force-with-lease origin HEAD:"$refresh_branch"
+          echo "CFB_RUNTIME_SNAPSHOT_V2_BRANCH_PUSHED $refresh_branch"
+
+          pr_url="$(
+            gh pr list               --repo "$GITHUB_REPOSITORY"               --head "$refresh_branch"               --base main               --state open               --json url               --jq '.[0].url // empty'
+          )"
+
+          if [ -z "$pr_url" ]; then
+            pr_url="$(
+              gh pr create                 --repo "$GITHUB_REPOSITORY"                 --head "$refresh_branch"                 --base main                 --title "Refresh CFB runtime snapshot V2"                 --body "Automated Snapshot V2 refresh. This PR must pass devsystem-final-gate before protected main can update."
+            )"
+            echo "CFB_RUNTIME_SNAPSHOT_V2_PR_CREATED $pr_url"
+          else
+            echo "CFB_RUNTIME_SNAPSHOT_V2_PR_REUSED $pr_url"
+          fi
+
+          # PRs opened by GITHUB_TOKEN do not fan out normal pull_request
+          # workflows. Dispatch the permanent DevSystem gate explicitly on
+          # this exact branch head so branch protection still receives the
+          # required devsystem-final-gate status.
+          gh workflow run devsystem-targeted-ci.yml             --repo "$GITHUB_REPOSITORY"             --ref "$refresh_branch"
+          echo "CFB_RUNTIME_SNAPSHOT_V2_DEVSYSTEM_DISPATCHED $refresh_branch"
+
+          # If repository auto-merge is enabled, queue the protected merge.
+          # Otherwise leave the PR open and green for an operator/assistant.
+          if gh pr merge "$pr_url" --repo "$GITHUB_REPOSITORY" --auto --merge; then
+            echo "CFB_RUNTIME_SNAPSHOT_V2_AUTO_MERGE_QUEUED $pr_url"
+          else
+            echo "CFB_RUNTIME_SNAPSHOT_V2_AUTO_MERGE_UNAVAILABLE $pr_url"
+          fi
