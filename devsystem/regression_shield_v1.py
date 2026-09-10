@@ -28,6 +28,7 @@ CRITICAL_FILES = (
     "streamlit_memory_lazy_router_v59.py",
     "streamlit_memory_lazy_router_v60.py",
     "streamlit_memory_lazy_router_v61.py",
+    "streamlit_memory_lazy_router_v62.py",
     # DevSystem browser QA
     "devsystem/browser_qa_v1.py",
     # DevSystem production verification
@@ -38,7 +39,7 @@ CRITICAL_FILES = (
     "devsystem/change_classifier_v1.py",
     "devsystem/permanent_gate_v1.py",
     "devsystem/final_gate_v1.py",
-    # CFB active readable Step 4 path plus frozen predecessors
+    # CFB active readable Step 5 path plus frozen predecessors
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
     "cfb_over_under_market_adapter_v2.py",
@@ -48,6 +49,8 @@ CRITICAL_FILES = (
     "cfb_over_under_clean_page_v20.py",
     "cfb_over_under_step4_readable_v1.py",
     "cfb_over_under_clean_page_v21.py",
+    "cfb_over_under_step5_readable_v1.py",
+    "cfb_over_under_clean_page_v22.py",
     "data/cfb_runtime_snapshot_v2.json",
     # MLB current certified path
     "sports_api/mlb_step20a_end_to_end_certification_v1.py",
@@ -68,10 +71,12 @@ CRITICAL_TESTS = (
     "tests/test_cfb_over_under_clean_page_v19.py",
     "tests/test_cfb_over_under_clean_page_v20.py",
     "tests/test_cfb_over_under_readable_step4_v1.py",
+    "tests/test_cfb_over_under_readable_step5_v1.py",
     "tests/test_cfb_over_under_router_v58.py",
     "tests/test_cfb_over_under_router_v59.py",
     "tests/test_cfb_over_under_router_v60.py",
     "tests/test_cfb_over_under_router_v61.py",
+    "tests/test_cfb_over_under_router_v62.py",
     # MLB
     "tests/test_mlb_step20a_end_to_end_certification_v1.py",
     "tests/test_mlb_step20b_production_release_certification_v1.py",
@@ -245,8 +250,44 @@ def _verify_cfb_market_contract_text() -> None:
 
 def _verify_active_router() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    if "from streamlit_memory_lazy_router_v61 import render_app" not in app:
-        raise ShieldFailure("active Streamlit entrypoint must import Router V61 for readable Step 4")
+    if "from streamlit_memory_lazy_router_v62 import render_app" not in app:
+        raise ShieldFailure("active Streamlit entrypoint must import Router V62 for readable Step 5")
+
+    router_v62 = (ROOT / "streamlit_memory_lazy_router_v62.py").read_text(encoding="utf-8")
+    required_router_v62 = (
+        "import streamlit_memory_lazy_router_v61 as prior",
+        'FROZEN_ROUTER = "streamlit_memory_lazy_router_v61"',
+        'root._import("cfb_over_under_clean_page_v22")',
+    )
+    missing_router_v62 = [item for item in required_router_v62 if item not in router_v62]
+    if missing_router_v62:
+        raise ShieldFailure("Router V62 additive contract drift: " + " | ".join(missing_router_v62))
+
+    page_v22 = (ROOT / "cfb_over_under_clean_page_v22.py").read_text(encoding="utf-8")
+    required_page_v22 = (
+        'FROZEN_PAGE = "cfb_over_under_clean_page_v21"',
+        'ACTIVE_MARKET_ADAPTER = frozen_page.ACTIVE_MARKET_ADAPTER',
+        'ACTIVE_MARKET_INTELLIGENCE = frozen_page.ACTIVE_MARKET_INTELLIGENCE',
+        '"frozen_page": _PRESENTATION_PROXY',
+        '"st": _StreamlitV22Proxy()',
+        "READABLE STEP 4 PACE ACTIVE",
+        "READABLE STEP 5 EXPLOSIVE ACTIVE",
+    )
+    missing_page_v22 = [item for item in required_page_v22 if item not in page_v22]
+    if missing_page_v22:
+        raise ShieldFailure("active CFB O/U V22 presentation contract drift: " + " | ".join(missing_page_v22))
+
+    readable5 = (ROOT / "cfb_over_under_step5_readable_v1.py").read_text(encoding="utf-8")
+    required_readable5 = (
+        "PROJECTION_WEIGHT = 0.0",
+        "MAY_MODIFY_PROJECTION = False",
+        "def render_step5(",
+        "sportsbook projection weight: <b>0.0%</b>",
+        "true 20+ pass and 10+ rush rates are never fabricated",
+    )
+    missing_readable5 = [item for item in required_readable5 if item not in readable5]
+    if missing_readable5:
+        raise ShieldFailure("readable Step 5 safety contract drift: " + " | ".join(missing_readable5))
 
     router_v61 = (ROOT / "streamlit_memory_lazy_router_v61.py").read_text(encoding="utf-8")
     required_router_v61 = (
@@ -254,9 +295,9 @@ def _verify_active_router() -> None:
         'FROZEN_ROUTER = "streamlit_memory_lazy_router_v60"',
         'root._import("cfb_over_under_clean_page_v21")',
     )
-    missing_router = [item for item in required_router_v61 if item not in router_v61]
-    if missing_router:
-        raise ShieldFailure("Router V61 additive contract drift: " + " | ".join(missing_router))
+    missing_router_v61 = [item for item in required_router_v61 if item not in router_v61]
+    if missing_router_v61:
+        raise ShieldFailure("frozen Router V61 additive contract drift: " + " | ".join(missing_router_v61))
 
     page_v21 = (ROOT / "cfb_over_under_clean_page_v21.py").read_text(encoding="utf-8")
     required_page_v21 = (
@@ -269,18 +310,18 @@ def _verify_active_router() -> None:
     )
     missing_page_v21 = [item for item in required_page_v21 if item not in page_v21]
     if missing_page_v21:
-        raise ShieldFailure("active CFB O/U V21 presentation contract drift: " + " | ".join(missing_page_v21))
+        raise ShieldFailure("frozen CFB O/U V21 presentation contract drift: " + " | ".join(missing_page_v21))
 
-    readable = (ROOT / "cfb_over_under_step4_readable_v1.py").read_text(encoding="utf-8")
-    required_readable = (
+    readable4 = (ROOT / "cfb_over_under_step4_readable_v1.py").read_text(encoding="utf-8")
+    required_readable4 = (
         "PROJECTION_WEIGHT = 0.0",
         "MAY_MODIFY_PROJECTION = False",
         "def render_step4(",
         "sportsbook projection weight: <b>0.0%</b>",
     )
-    missing_readable = [item for item in required_readable if item not in readable]
-    if missing_readable:
-        raise ShieldFailure("readable Step 4 safety contract drift: " + " | ".join(missing_readable))
+    missing_readable4 = [item for item in required_readable4 if item not in readable4]
+    if missing_readable4:
+        raise ShieldFailure("readable Step 4 safety contract drift: " + " | ".join(missing_readable4))
 
     router_v60 = (ROOT / "streamlit_memory_lazy_router_v60.py").read_text(encoding="utf-8")
     required_router_v60 = (
@@ -351,9 +392,10 @@ def run() -> dict[str, Any]:
         "cfb_market_intelligence_shadow_certified": True,
         "cfb_market_intelligence_live_presentation": True,
         "cfb_market_intelligence_min_consensus_books": 2,
-        "cfb_active_router": "V61",
-        "cfb_active_clean_page": "V21",
+        "cfb_active_router": "V62",
+        "cfb_active_clean_page": "V22",
         "cfb_readable_step4_pace": True,
+        "cfb_readable_step5_explosive": True,
     }
     print("DEVSYSTEM_REGRESSION_SHIELD_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
