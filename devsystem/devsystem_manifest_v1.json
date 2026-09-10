@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "name": "Kyre Sports AI DevSystem",
+  "policy": {
+    "default_branch": "main",
+    "block_unprotected_domain_changes": true,
+    "require_tests_for_active_domains": true,
+    "stable_final_gate": "devsystem-final-gate",
+    "production_verification_workflow": ".github/workflows/devsystem-production-verification.yml",
+    "targeted_ci_workflow": ".github/workflows/devsystem-targeted-ci.yml"
+  },
+  "domains": {
+    "cfb": {
+      "status": "active",
+      "description": "College football",
+      "critical_job": "cfb-critical",
+      "critical_tests": [
+        "tests/test_cfb_schedule_v6_runtime_snapshot.py",
+        "tests/test_cfb_over_under_market_adapter_v1.py",
+        "tests/test_cfb_over_under_clean_page_v18.py",
+        "tests/test_cfb_over_under_router_v58.py",
+        "tests/test_cfb_step2_schedule_identity.py",
+        "tests/test_cfb_step3_team_data_foundation.py"
+      ],
+      "browser_coverage": "College Football -> Over/Under -> Clean Page V18",
+      "production_probe": "GET /api/v1/cfb/odds plus Streamlit CFB O/U route"
+    },
+    "mlb": {
+      "status": "active",
+      "description": "Major League Baseball",
+      "critical_job": "mlb-critical",
+      "critical_tests": [
+        "tests/test_mlb_step20a_end_to_end_certification_v1.py",
+        "tests/test_mlb_step20b_production_release_certification_v1.py",
+        "tests/test_mlb_step9g_postfreeze_handoff_v1.py",
+        "tests/test_mlb_step8d_player_hits_integration_v1.py"
+      ],
+      "browser_coverage": "shared app shell/sport inventory",
+      "production_probe": "existing MLB production certifications plus shared platform health"
+    },
+    "wnba": {
+      "status": "active",
+      "description": "WNBA",
+      "critical_job": "wnba-critical",
+      "critical_tests": [
+        "tests/test_wnba_step20b_runtime_acceleration.py",
+        "tests/test_wnba_step20b_monte_carlo_acceleration.py",
+        "tests/test_wnba_step20b_step2_exact_reuse_timing.py"
+      ],
+      "browser_coverage": "shared app shell/sport inventory",
+      "production_probe": "existing WNBA production certifications plus shared platform health"
+    },
+    "nfl": {
+      "status": "legacy_unprotected",
+      "description": "NFL code exists, but it must receive a dedicated critical test lane before new NFL changes are allowed.",
+      "critical_job": null,
+      "critical_tests": [],
+      "browser_coverage": "sport inventory only",
+      "production_probe": null
+    },
+    "nba": {
+      "status": "planned",
+      "description": "NBA domain reserved for future activation.",
+      "critical_job": null,
+      "critical_tests": [],
+      "browser_coverage": null,
+      "production_probe": null
+    },
+    "nhl": {
+      "status": "planned",
+      "description": "NHL domain reserved for future activation.",
+      "critical_job": null,
+      "critical_tests": [],
+      "browser_coverage": null,
+      "production_probe": null
+    },
+    "soccer": {
+      "status": "planned",
+      "description": "Soccer domain reserved for future activation.",
+      "critical_job": null,
+      "critical_tests": [],
+      "browser_coverage": null,
+      "production_probe": null
+    }
+  }
+}
