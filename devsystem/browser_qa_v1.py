@@ -4,7 +4,7 @@ The browser QA proves that the checked-out branch can:
 - boot Streamlit;
 - expose the expected sport choices;
 - route to College Football -> Over/Under;
-- render the active Clean Page V28 readable Step 11 current form + schedule strength shell;
+- render the active Clean Page V29 readable Step 12 final-certification shell;
 - preserve the freshness firewall, 0.0% market influence, and frozen projection marker;
 - do so without obvious Python/runtime error text.
 
@@ -41,6 +41,7 @@ CFB_REQUIRED_MARKERS = (
     "READABLE STEP 9 GAME-DAY ENVIRONMENT ACTIVE",
     "READABLE STEP 10 HISTORICAL MATCHUP ACTIVE",
     "READABLE STEP 11 CURRENT FORM + SCHEDULE STRENGTH ACTIVE",
+    "READABLE STEP 12 FINAL CERTIFICATION ACTIVE",
 )
 FORBIDDEN_ERROR_MARKERS = (
     "Traceback (most recent call last)",
@@ -260,7 +261,7 @@ def run_browser_qa(
             ]
             if missing_markers:
                 raise BrowserQAFailure(
-                    "CFB Clean Page V28 Step 11 marker drift: "
+                    "CFB Clean Page V29 Step 12 marker drift: "
                     + " | ".join(missing_markers)
                 )
 

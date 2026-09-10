@@ -32,6 +32,7 @@ def test_browser_qa_contract_is_explicit_and_safe():
     assert "READABLE STEP 9 GAME-DAY ENVIRONMENT ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "READABLE STEP 10 HISTORICAL MATCHUP ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "READABLE STEP 11 CURRENT FORM + SCHEDULE STRENGTH ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "READABLE STEP 12 FINAL CERTIFICATION ACTIVE" in module.CFB_REQUIRED_MARKERS
 
 
 def test_runtime_error_detector_fails_on_obvious_python_errors():
