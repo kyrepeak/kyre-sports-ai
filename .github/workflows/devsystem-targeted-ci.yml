@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [devsystem-step2-targeted-ci]
+    branches:
+      - devsystem-step2-targeted-ci
+      - devsystem-step3-regression-shield
   workflow_dispatch:
 
 permissions:
@@ -97,7 +99,7 @@ jobs:
                   "spread_engine.py",
                   ".github/workflows/devsystem-targeted-ci.yml",
               }
-              or p.startswith(("requirements", ".streamlit/"))
+              or p.startswith(("requirements", ".streamlit/", "devsystem/", "tests/test_devsystem_"))
               or (
                   p.startswith("sports_api/")
                   and not p.startswith(("sports_api/mlb_", "sports_api/wnba_", "sports_api/cfb_"))
@@ -143,8 +145,24 @@ jobs:
           print(f"DEVSYSTEM_WORKFLOW_HYGIENE_GREEN quarantined={len(paths)}")
           PY
 
-  cfb-critical:
+  regression-shield:
     needs: [classify, workflow-hygiene]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run dependency-light invariant shield
+        run: python devsystem/regression_shield_v1.py
+      - name: Self-test regression shield
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_regression_shield_v1.py
+
+  cfb-critical:
+    needs: [classify, workflow-hygiene, regression-shield]
     if: needs.classify.outputs.cfb == 'true' || needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -169,7 +187,7 @@ jobs:
             tests/test_cfb_step3_team_data_foundation.py
 
   mlb-critical:
-    needs: [classify, workflow-hygiene]
+    needs: [classify, workflow-hygiene, regression-shield]
     if: needs.classify.outputs.mlb == 'true' || needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -193,7 +211,7 @@ jobs:
             tests/test_mlb_step8d_player_hits_integration_v1.py
 
   wnba-critical:
-    needs: [classify, workflow-hygiene]
+    needs: [classify, workflow-hygiene, regression-shield]
     if: needs.classify.outputs.wnba == 'true' || needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -215,7 +233,7 @@ jobs:
             tests/test_wnba_step20b_step2_exact_reuse_timing.py
 
   core-smoke:
-    needs: [classify, workflow-hygiene]
+    needs: [classify, workflow-hygiene, regression-shield]
     if: needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     steps:
