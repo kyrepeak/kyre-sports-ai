@@ -28,285 +28,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prove branch is based on exact merged Step 4 main
+      - name: Prove isolated witness over exact Step 4 main
         shell: bash
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$EXPECTED_MAIN_SHA" HEAD
           changed="$(git diff --name-only "$EXPECTED_MAIN_SHA"...HEAD)"
-          printf 'REGRESSION_BRANCH_CHANGES_FROM_STEP4_MAIN:\n%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^\.github/workflows/cfb-step4-production-regression\.yml
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install focused production-regression dependencies
-        run: |
-          python -m pip install --disable-pip-version-check -q requests playwright
-          python -m playwright install --with-deps chromium
-
-      - name: Validate live production CFB odds contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          import os
-          import time
-          import requests
-
-          base = os.environ["API_BASE_URL"].rstrip("/")
-          day = os.environ["TARGET_DATE"]
-          target_game_id = os.environ["TARGET_GAME_ID"]
-          url = base + "/api/v1/cfb/odds"
-          headers = {
-              "Accept": "application/json",
-              "User-Agent": "KyreSportsAI-CFB-Step4-Prod-Regress/1.0",
-              "Cache-Control": "no-cache",
-          }
-
-          last = None
-          for attempt in range(1, 4):
-              try:
-                  response = requests.get(
-                      url,
-                      params={"game_date": day, "sportsbook": "FanDuel"},
-                      timeout=60,
-                      headers=headers,
-                  )
-                  response.raise_for_status()
-                  payload = response.json()
-                  break
-              except Exception as exc:
-                  last = exc
-                  print(f"CFB_STEP4_API_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}")
-                  if attempt == 3:
-                      raise SystemExit(f"CFB_STEP4_PRODUCTION_API_UNREACHABLE: {last}")
-                  time.sleep(5)
-
-          assert int(payload.get("step") or 0) == 3
-          assert payload.get("schema_version") == "cfb_odds_v1"
-          diagnostics = payload.get("diagnostics") or {}
-          semantics = payload.get("market_semantics") or {}
-          assert diagnostics.get("complete_identity_coverage") is True
-          assert int(diagnostics.get("unmatched_market_rows") or 0) == 0
-          assert diagnostics.get("synthetic_official_ids") is False
-          assert diagnostics.get("fuzzy_matching") is False
-          assert float(semantics.get("projection_weight")) == 0.0
-          assert semantics.get("market_context_only") is True
-          assert semantics.get("may_modify_projection") is False
-
-          games = payload.get("games") or []
-          assert games, "filtered FanDuel slate is empty"
-          target = next((g for g in games if str(g.get("game_id")) == target_game_id), None)
-          assert target is not None, f"target ESPN event {target_game_id} missing"
-          assert target.get("identity_verified") is True
-          assert target.get("market_type") == "game_total"
-          assert str(target.get("sportsbook") or "").casefold() == "fanduel"
-          total = float(target.get("total"))
-          assert 20.0 <= total <= 100.0
-
-          evidence = {
-              "http": response.status_code,
-              "game_count": len(games),
-              "target_game_id": target_game_id,
-              "target_matchup": f"{target.get('away_team')} @ {target.get('home_team')}",
-              "target_total": total,
-              "projection_weight": semantics.get("projection_weight"),
-              "complete_identity_coverage": diagnostics.get("complete_identity_coverage"),
-              "fuzzy_matching": diagnostics.get("fuzzy_matching"),
-              "synthetic_official_ids": diagnostics.get("synthetic_official_ids"),
-          }
-          print("CFB_STEP4_PRODUCTION_API_GREEN")
-          print(json.dumps(evidence, indent=2))
-          PY
-
-      - name: Verify production Streamlit transport
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import os
-          import time
-          import requests
-
-          root = os.environ["STREAMLIT_URL"].rstrip("/")
-          session = requests.Session()
-          session.headers.update({"User-Agent": "KyreSportsAI-CFB-Step4-Streamlit-Prod-Regress/1.0"})
-
-          def fetch(url, label):
-              last = None
-              for attempt in range(1, 4):
-                  try:
-                      r = session.get(url, timeout=60, allow_redirects=True)
-                      r.raise_for_status()
-                      return r
-                  except Exception as exc:
-                      last = exc
-                      print(f"{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}")
-                      if attempt < 3:
-                          time.sleep(5)
-              raise SystemExit(f"{label}_FAILED: {last}")
-
-          page = fetch(root + "/", "CFB_STEP4_STREAMLIT_ROOT")
-          health = fetch(root + "/_stcore/health", "CFB_STEP4_STREAMLIT_HEALTH")
-
-          assert page.status_code == 200
-          assert health.status_code == 200
-          assert "<html" in page.text.lower()
-          assert "streamlit" in page.text.lower()
-          print("CFB_STEP4_STREAMLIT_TRANSPORT_GREEN")
-          print("ROOT_HTTP", page.status_code)
-          print("HEALTH_HTTP", health.status_code)
-          PY
-
-      - name: Browser-verify deployed Clean Page V18 and live FanDuel total
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          import os
-          import time
-          import requests
-          from playwright.sync_api import sync_playwright
-
-          streamlit_url = os.environ["STREAMLIT_URL"].rstrip("/")
-          api_url = os.environ["API_BASE_URL"].rstrip("/") + "/api/v1/cfb/odds"
-          day = os.environ["TARGET_DATE"]
-          target_game_id = os.environ["TARGET_GAME_ID"]
-
-          api = requests.get(
-              api_url,
-              params={"game_date": day, "sportsbook": "FanDuel"},
-              timeout=60,
-              headers={
-                  "Accept": "application/json",
-                  "User-Agent": "KyreSportsAI-CFB-Step4-Browser-Regress/1.1",
-                  "Cache-Control": "no-cache",
-              },
-          )
-          api.raise_for_status()
-          payload = api.json()
-          target = next(g for g in payload["games"] if str(g.get("game_id")) == target_game_id)
-          expected_total = float(target["total"])
-
-          with sync_playwright() as p:
-              browser = p.chromium.launch(
-                  headless=True,
-                  args=["--disable-dev-shm-usage", "--no-sandbox"],
-              )
-              page = browser.new_page(viewport={"width": 1440, "height": 1400})
-              page.goto(streamlit_url + "/", wait_until="domcontentloaded", timeout=120000)
-
-              ready = False
-              last_body = ""
-              for attempt in range(1, 7):
-                  page.wait_for_timeout(5000)
-                  try:
-                      last_body = page.locator("body").inner_text(timeout=10000)
-                  except Exception:
-                      last_body = ""
-                  combo_count = page.get_by_role("combobox").count()
-                  print(
-                      f"CFB_STEP4_BROWSER_BOOT_{attempt}: "
-                      f"url={page.url} title={page.title()!r} "
-                      f"comboboxes={combo_count} body={last_body[:1000]!r}"
-                  )
-
-                  lower = last_body.lower()
-                  if "get this app back up" in lower:
-                      try:
-                          page.get_by_text("Yes, get this app back up!", exact=False).click()
-                          page.wait_for_timeout(10000)
-                          continue
-                      except Exception:
-                          pass
-
-                  if combo_count >= 1 or "🏟️ sport" in lower or "sport" in lower:
-                      ready = True
-                      break
-
-                  if attempt in (3, 5):
-                      page.reload(wait_until="domcontentloaded", timeout=120000)
-
-              page.screenshot(path="cfb_step4_browser_boot.png", full_page=True)
-              if not ready:
-                  html = page.content()
-                  print("CFB_STEP4_BROWSER_FINAL_URL", page.url)
-                  print("CFB_STEP4_BROWSER_FINAL_TITLE", page.title())
-                  print("CFB_STEP4_BROWSER_FINAL_BODY", last_body[:5000])
-                  print("CFB_STEP4_BROWSER_FINAL_HTML", html[:5000])
-                  raise SystemExit("CFB_STEP4_STREAMLIT_BROWSER_APP_NOT_READY")
-
-              # Streamlit selectboxes expose role=combobox through BaseWeb.
-              combos = page.get_by_role("combobox")
-              combos.nth(0).click()
-              page.keyboard.type("College Football")
-              page.keyboard.press("Enter")
-              page.wait_for_timeout(3500)
-
-              combos = page.get_by_role("combobox")
-              if combos.count() < 2:
-                  raise SystemExit(f"CFB_STEP4_CFB_MARKET_COMBOBOX_MISSING: {combos.count()}")
-              combos.nth(1).click()
-              page.keyboard.type("Over/Under")
-              page.keyboard.press("Enter")
-              page.wait_for_timeout(5000)
-
-              # Set the certified target slate date.
-              date_input = page.locator('[data-testid="stDateInput"] input').first
-              if date_input.count() == 0:
-                  date_input = page.locator('input').filter(has=page.locator('')).first
-              date_input.click()
-              date_input.fill("09/10/2026")
-              date_input.press("Enter")
-              page.wait_for_timeout(9000)
-
-              body = page.locator("body").inner_text()
-              print("CFB_STEP4_BROWSER_FINAL_BODY_TEXT", body[:12000])
-
-              required = [
-                  "CFB O/U • CLEAN PAGE V18 ACTIVE • LIVE ODDS CONNECTED • FROZEN PROJECTION MATH PRESERVED",
-                  "LIVE CFB ODDS API CONNECTED",
-                  "LIVE FANDUEL GAME TOTAL",
-                  "market projection weight 0%",
-              ]
-              missing = [text for text in required if text not in body]
-              if missing:
-                  page.screenshot(path="cfb_step4_production_failure.png", full_page=True)
-                  raise SystemExit("CFB_STEP4_DEPLOYED_V18_TEXT_MISSING: " + " | ".join(missing))
-
-              expected = f"{expected_total:.1f}"
-              if expected not in body:
-                  page.screenshot(path="cfb_step4_production_failure.png", full_page=True)
-                  raise SystemExit(
-                      f"CFB_STEP4_LIVE_TOTAL_MISMATCH: expected visible {expected}"
-                  )
-
-              page.screenshot(path="cfb_step4_production_green.png", full_page=True)
-              evidence = {
-                  "streamlit_url": streamlit_url,
-                  "clean_page": "V18",
-                  "target_game_id": target_game_id,
-                  "target_total_api": expected_total,
-                  "target_total_visible": expected,
-                  "projection_weight_visible": "0%",
-                  "live_api_connected_visible": True,
-              }
-              print("CFB_STEP4_DEPLOYED_STREAMLIT_V18_GREEN")
-              print(json.dumps(evidence, indent=2))
-              browser.close()
-          PY
-
-      - name: Final Step 4 production marker
-        run: |
-          echo 'CFB_STEP4_PRODUCTION_REGRESSION_GREEN'
-          echo 'CFB_STEP4_COMPLETE'
- || true)"
-          test -z "$bad"
+          echo "Changed paths from certified Step 4 main:"
+          echo "$changed"
+          count="$(echo "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          test "$count" = "1"
+          test "$changed" = ".github/workflows/cfb-step4-production-regression.yml"
           grep -F 'STREAMLIT_MAIN_V58_CFB_OU_LIVE_ODDS_2026-09-09T22:58Z' app.py
           grep -F 'streamlit_memory_lazy_router_v58' app.py
           echo 'CFB_STEP4_MAIN_SOURCE_HEARTBEAT_GREEN'
@@ -334,18 +66,18 @@ jobs:
           base = os.environ["API_BASE_URL"].rstrip("/")
           day = os.environ["TARGET_DATE"]
           target_game_id = os.environ["TARGET_GAME_ID"]
-          url = base + "/api/v1/cfb/odds"
           headers = {
               "Accept": "application/json",
-              "User-Agent": "KyreSportsAI-CFB-Step4-Prod-Regress/1.0",
+              "User-Agent": "KyreSportsAI-CFB-Step4-Prod-Regress/1.2",
               "Cache-Control": "no-cache",
           }
 
+          payload = None
           last = None
           for attempt in range(1, 4):
               try:
                   response = requests.get(
-                      url,
+                      base + "/api/v1/cfb/odds",
                       params={"game_date": day, "sportsbook": "FanDuel"},
                       timeout=60,
                       headers=headers,
@@ -355,10 +87,11 @@ jobs:
                   break
               except Exception as exc:
                   last = exc
-                  print(f"CFB_STEP4_API_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}")
-                  if attempt == 3:
-                      raise SystemExit(f"CFB_STEP4_PRODUCTION_API_UNREACHABLE: {last}")
-                  time.sleep(5)
+                  print("CFB_STEP4_API_ATTEMPT_FAILED", attempt, type(exc).__name__, str(exc))
+                  if attempt < 3:
+                      time.sleep(5)
+          if payload is None:
+              raise SystemExit("CFB_STEP4_PRODUCTION_API_UNREACHABLE: " + str(last))
 
           assert int(payload.get("step") or 0) == 3
           assert payload.get("schema_version") == "cfb_odds_v1"
@@ -373,28 +106,26 @@ jobs:
           assert semantics.get("may_modify_projection") is False
 
           games = payload.get("games") or []
-          assert games, "filtered FanDuel slate is empty"
           target = next((g for g in games if str(g.get("game_id")) == target_game_id), None)
-          assert target is not None, f"target ESPN event {target_game_id} missing"
+          assert target is not None
           assert target.get("identity_verified") is True
           assert target.get("market_type") == "game_total"
           assert str(target.get("sportsbook") or "").casefold() == "fanduel"
           total = float(target.get("total"))
           assert 20.0 <= total <= 100.0
 
-          evidence = {
+          print("CFB_STEP4_PRODUCTION_API_GREEN")
+          print(json.dumps({
               "http": response.status_code,
               "game_count": len(games),
               "target_game_id": target_game_id,
-              "target_matchup": f"{target.get('away_team')} @ {target.get('home_team')}",
+              "target_matchup": str(target.get("away_team")) + " @ " + str(target.get("home_team")),
               "target_total": total,
               "projection_weight": semantics.get("projection_weight"),
               "complete_identity_coverage": diagnostics.get("complete_identity_coverage"),
               "fuzzy_matching": diagnostics.get("fuzzy_matching"),
               "synthetic_official_ids": diagnostics.get("synthetic_official_ids"),
-          }
-          print("CFB_STEP4_PRODUCTION_API_GREEN")
-          print(json.dumps(evidence, indent=2))
+          }, indent=2))
           PY
 
       - name: Verify production Streamlit transport
@@ -408,7 +139,7 @@ jobs:
 
           root = os.environ["STREAMLIT_URL"].rstrip("/")
           session = requests.Session()
-          session.headers.update({"User-Agent": "KyreSportsAI-CFB-Step4-Streamlit-Prod-Regress/1.0"})
+          session.headers.update({"User-Agent": "KyreSportsAI-CFB-Step4-Streamlit-Prod-Regress/1.2"})
 
           def fetch(url, label):
               last = None
@@ -419,21 +150,21 @@ jobs:
                       return r
                   except Exception as exc:
                       last = exc
-                      print(f"{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}")
+                      print(label + "_ATTEMPT_FAILED", attempt, type(exc).__name__, str(exc))
                       if attempt < 3:
                           time.sleep(5)
-              raise SystemExit(f"{label}_FAILED: {last}")
+              raise SystemExit(label + "_FAILED: " + str(last))
 
-          page = fetch(root + "/", "CFB_STEP4_STREAMLIT_ROOT")
-          health = fetch(root + "/_stcore/health", "CFB_STEP4_STREAMLIT_HEALTH")
+          root_response = fetch(root + "/", "CFB_STEP4_STREAMLIT_ROOT")
+          health_response = fetch(root + "/_stcore/health", "CFB_STEP4_STREAMLIT_HEALTH")
 
-          assert page.status_code == 200
-          assert health.status_code == 200
-          assert "<html" in page.text.lower()
-          assert "streamlit" in page.text.lower()
+          assert root_response.status_code == 200
+          assert health_response.status_code == 200
+          assert "<html" in root_response.text.lower()
+          assert "streamlit" in root_response.text.lower()
           print("CFB_STEP4_STREAMLIT_TRANSPORT_GREEN")
-          print("ROOT_HTTP", page.status_code)
-          print("HEALTH_HTTP", health.status_code)
+          print("ROOT_HTTP", root_response.status_code)
+          print("HEALTH_HTTP", health_response.status_code)
           PY
 
       - name: Browser-verify deployed Clean Page V18 and live FanDuel total
@@ -443,7 +174,6 @@ jobs:
           python - <<'PY'
           import json
           import os
-          import time
           import requests
           from playwright.sync_api import sync_playwright
 
@@ -458,7 +188,7 @@ jobs:
               timeout=60,
               headers={
                   "Accept": "application/json",
-                  "User-Agent": "KyreSportsAI-CFB-Step4-Browser-Regress/1.1",
+                  "User-Agent": "KyreSportsAI-CFB-Step4-Browser-Regress/1.2",
                   "Cache-Control": "no-cache",
               },
           )
@@ -476,71 +206,60 @@ jobs:
               page.goto(streamlit_url + "/", wait_until="domcontentloaded", timeout=120000)
 
               ready = False
-              last_body = ""
+              body = ""
               for attempt in range(1, 7):
                   page.wait_for_timeout(5000)
-                  try:
-                      last_body = page.locator("body").inner_text(timeout=10000)
-                  except Exception:
-                      last_body = ""
+                  body = page.locator("body").inner_text(timeout=15000)
                   combo_count = page.get_by_role("combobox").count()
-                  print(
-                      f"CFB_STEP4_BROWSER_BOOT_{attempt}: "
-                      f"url={page.url} title={page.title()!r} "
-                      f"comboboxes={combo_count} body={last_body[:1000]!r}"
-                  )
+                  print("CFB_STEP4_BROWSER_BOOT", attempt)
+                  print("URL", page.url)
+                  print("TITLE", page.title())
+                  print("COMBOBOXES", combo_count)
+                  print("BODY_START", repr(body[:2000]))
 
-                  lower = last_body.lower()
+                  lower = body.lower()
                   if "get this app back up" in lower:
-                      try:
-                          page.get_by_text("Yes, get this app back up!", exact=False).click()
+                      wake = page.get_by_text("Yes, get this app back up!", exact=False)
+                      if wake.count() > 0:
+                          wake.click()
                           page.wait_for_timeout(10000)
                           continue
-                      except Exception:
-                          pass
 
-                  if combo_count >= 1 or "🏟️ sport" in lower or "sport" in lower:
+                  if combo_count >= 1:
                       ready = True
                       break
 
                   if attempt in (3, 5):
                       page.reload(wait_until="domcontentloaded", timeout=120000)
 
-              page.screenshot(path="cfb_step4_browser_boot.png", full_page=True)
               if not ready:
-                  html = page.content()
-                  print("CFB_STEP4_BROWSER_FINAL_URL", page.url)
-                  print("CFB_STEP4_BROWSER_FINAL_TITLE", page.title())
-                  print("CFB_STEP4_BROWSER_FINAL_BODY", last_body[:5000])
-                  print("CFB_STEP4_BROWSER_FINAL_HTML", html[:5000])
+                  print("CFB_STEP4_BROWSER_FINAL_HTML", page.content()[:8000])
                   raise SystemExit("CFB_STEP4_STREAMLIT_BROWSER_APP_NOT_READY")
 
-              # Streamlit selectboxes expose role=combobox through BaseWeb.
               combos = page.get_by_role("combobox")
               combos.nth(0).click()
               page.keyboard.type("College Football")
               page.keyboard.press("Enter")
-              page.wait_for_timeout(3500)
+              page.wait_for_timeout(4000)
 
               combos = page.get_by_role("combobox")
               if combos.count() < 2:
-                  raise SystemExit(f"CFB_STEP4_CFB_MARKET_COMBOBOX_MISSING: {combos.count()}")
+                  raise SystemExit("CFB_STEP4_CFB_MARKET_COMBOBOX_MISSING")
               combos.nth(1).click()
               page.keyboard.type("Over/Under")
               page.keyboard.press("Enter")
-              page.wait_for_timeout(5000)
+              page.wait_for_timeout(6000)
 
-              # Set the certified target slate date.
               date_input = page.locator('[data-testid="stDateInput"] input').first
               if date_input.count() == 0:
-                  date_input = page.locator('input').filter(has=page.locator('')).first
+                  raise SystemExit("CFB_STEP4_DATE_INPUT_MISSING")
               date_input.click()
               date_input.fill("09/10/2026")
               date_input.press("Enter")
-              page.wait_for_timeout(9000)
+              page.wait_for_timeout(10000)
 
               body = page.locator("body").inner_text()
-              print("CFB_STEP4_BROWSER_FINAL_BODY_TEXT", body[:12000])
+              print("CFB_STEP4_BROWSER_FINAL_BODY", body[:16000])
 
               required = [
                   "CFB O/U • CLEAN PAGE V18 ACTIVE • LIVE ODDS CONNECTED • FROZEN PROJECTION MATH PRESERVED",
@@ -548,20 +267,16 @@ jobs:
                   "LIVE FANDUEL GAME TOTAL",
                   "market projection weight 0%",
               ]
-              missing = [text for text in required if text not in body]
+              missing = [item for item in required if item not in body]
               if missing:
-                  page.screenshot(path="cfb_step4_production_failure.png", full_page=True)
                   raise SystemExit("CFB_STEP4_DEPLOYED_V18_TEXT_MISSING: " + " | ".join(missing))
 
-              expected = f"{expected_total:.1f}"
+              expected = format(expected_total, ".1f")
               if expected not in body:
-                  page.screenshot(path="cfb_step4_production_failure.png", full_page=True)
-                  raise SystemExit(
-                      f"CFB_STEP4_LIVE_TOTAL_MISMATCH: expected visible {expected}"
-                  )
+                  raise SystemExit("CFB_STEP4_LIVE_TOTAL_MISMATCH: expected visible " + expected)
 
-              page.screenshot(path="cfb_step4_production_green.png", full_page=True)
-              evidence = {
+              print("CFB_STEP4_DEPLOYED_STREAMLIT_V18_GREEN")
+              print(json.dumps({
                   "streamlit_url": streamlit_url,
                   "clean_page": "V18",
                   "target_game_id": target_game_id,
@@ -569,9 +284,7 @@ jobs:
                   "target_total_visible": expected,
                   "projection_weight_visible": "0%",
                   "live_api_connected_visible": True,
-              }
-              print("CFB_STEP4_DEPLOYED_STREAMLIT_V18_GREEN")
-              print(json.dumps(evidence, indent=2))
+              }, indent=2))
               browser.close()
           PY
 
