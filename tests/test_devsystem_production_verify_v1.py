@@ -44,6 +44,7 @@ def test_production_browser_contract_matches_certified_ui():
     assert "READABLE STEP 9 GAME-DAY ENVIRONMENT ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "READABLE STEP 10 HISTORICAL MATCHUP ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "READABLE STEP 11 CURRENT FORM + SCHEDULE STRENGTH ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "READABLE STEP 12 FINAL CERTIFICATION ACTIVE" in module.CFB_REQUIRED_MARKERS
 
 
 def test_production_runtime_error_detector():
