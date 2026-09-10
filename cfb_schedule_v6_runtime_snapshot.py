@@ -1,9 +1,10 @@
 """College Football Schedule V6 — additive FBS + FCS runtime snapshot V2.
 
 Wraps permanently frozen Schedule V5 without editing it. V5 remains the baseline
-schedule/enrichment path. V6 adds a second checked-in verified snapshot source
-that includes both ESPN FBS and FCS identities so every current NCAAF market row
-can receive an official ESPN event ID before the Step 4 market adapter runs.
+schedule/enrichment path. V6 prefers a validated Snapshot V2 from the dedicated
+runtime-data branch and fails closed to the checked-in Snapshot V2 on main. Both
+sources carry ESPN FBS + FCS identities so market rows can receive official ESPN
+event IDs before the Step 4 market adapter runs.
 """
 from __future__ import annotations
 
