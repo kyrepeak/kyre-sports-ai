@@ -23,7 +23,7 @@ def test_permanent_contract_is_green():
     assert result["status"] == "GREEN"
     assert result["active_domains"] == ["cfb", "mlb", "wnba"]
     assert "nfl" in result["blocked_until_activated"]
-    assert result["critical_test_count"] == 16
+    assert result["critical_test_count"] == 17
 
 
 def test_final_gate_accepts_success_and_skipped_only():

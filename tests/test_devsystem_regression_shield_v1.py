@@ -30,3 +30,5 @@ def test_regression_shield_is_green():
     assert result["cfb_synthetic_ids"] is False
     assert result["cfb_freshness_firewall_active"] is True
     assert result["cfb_max_market_age_seconds"] == 300.0
+    assert result["cfb_market_intelligence_shadow_certified"] is True
+    assert result["cfb_market_intelligence_min_consensus_books"] == 2
