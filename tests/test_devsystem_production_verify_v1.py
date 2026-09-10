@@ -36,7 +36,8 @@ def test_production_browser_contract_matches_certified_ui():
     )
     assert module.CFB_SPORT == "College Football"
     assert module.CFB_MARKET == "Over/Under"
-    assert "CFB O/U • CLEAN PAGE V18 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V19 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "FRESHNESS FIREWALL ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "FROZEN PROJECTION MATH PRESERVED" in module.CFB_REQUIRED_MARKERS
 
 
