@@ -44,6 +44,8 @@ OUT = ROOT / "data" / "cfb_runtime_snapshot_v2.json"
 
 ET = ZoneInfo("America/New_York")
 TIMEOUT = 18
+RUNTIME_SNAPSHOT_PAST_DAYS = 7
+RUNTIME_SNAPSHOT_FUTURE_DAYS = 21
 HEADERS = {
     "User-Agent": "KyreSportsAI/CFB-Step2",
     "Accept": "application/json",
@@ -62,6 +64,18 @@ CORE_ROOT = (
 _SCHEDULE_CACHE: dict[tuple[str, int], list[dict[str, Any]]] = {}
 _COACH_CACHE: dict[tuple[str, int], str] = {}
 _POLL_CACHE: dict[tuple[str, int, int], dict[str, int | None]] = {}
+
+
+def snapshot_dates(now_et: datetime) -> list[str]:
+    """Return the documented date-driven runtime window, inclusive."""
+    anchor = now_et.date()
+    return [
+        (anchor + timedelta(days=offset)).isoformat()
+        for offset in range(
+            -RUNTIME_SNAPSHOT_PAST_DAYS,
+            RUNTIME_SNAPSHOT_FUTURE_DAYS + 1,
+        )
+    ]
 
 
 def clean(value: Any) -> str:
@@ -544,10 +558,7 @@ def build_snapshot() -> dict[str, Any]:
     now_utc = now_et.astimezone(timezone.utc)
     season = now_et.year if now_et.month >= 7 else now_et.year - 1
 
-    dates = [
-        (now_et.date() + timedelta(days=offset)).isoformat()
-        for offset in range(-1, 7)
-    ]
+    dates = snapshot_dates(now_et)
 
     raw_events: dict[str, dict[str, Any]] = {}
     team_inputs: dict[str, dict[str, Any]] = {}
@@ -599,11 +610,19 @@ def build_snapshot() -> dict[str, Any]:
                         "game_date": event_day,
                         "away_team": team_name(away),
                         "home_team": team_name(home),
+                        "kickoff_iso": dt.isoformat() if dt is not None else "",
+                        "kickoff_et": (
+                            dt.astimezone(ET).strftime("%I:%M %p").lstrip("0")
+                            + " ET"
+                            if dt is not None
+                            else ""
+                        ),
                         "venue": clean(
                             venue.get("fullName") or venue.get("name")
                         ),
                         "broadcast": broadcast(comp),
                         "status": status_name(event, comp),
+                        "neutral_site": comp.get("neutralSite") is True,
                         "espn_week": week,
                         "_away_comp": dict(away),
                         "_home_comp": dict(home),
