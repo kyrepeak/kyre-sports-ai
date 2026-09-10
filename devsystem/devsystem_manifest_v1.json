@@ -19,12 +19,14 @@
         "tests/test_cfb_over_under_market_adapter_v1.py",
         "tests/test_cfb_over_under_market_adapter_v2.py",
         "tests/test_cfb_over_under_clean_page_v18.py",
+        "tests/test_cfb_over_under_clean_page_v19.py",
         "tests/test_cfb_over_under_router_v58.py",
+        "tests/test_cfb_over_under_router_v59.py",
         "tests/test_cfb_step2_schedule_identity.py",
         "tests/test_cfb_step3_team_data_foundation.py"
       ],
-      "browser_coverage": "College Football -> Over/Under -> Clean Page V18",
-      "production_probe": "GET /api/v1/cfb/odds plus Streamlit CFB O/U route"
+      "browser_coverage": "College Football -> Over/Under -> Clean Page V19 freshness firewall",
+      "production_probe": "GET /api/v1/cfb/odds plus Streamlit CFB O/U V19 freshness route"
     },
     "mlb": {
       "status": "active",
