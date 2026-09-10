@@ -1,29 +1,30 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U readable Step 9 environment live.
+"""Kyre Sports AI Streamlit entrypoint — CFB O/U readable Step 10 history live.
 
-Router V66 keeps Router V65 / Clean Page V25 untouched and activates additive
-Clean Page V26 for College Football Over/Under only.
+Router V67 keeps Router V66 / Clean Page V26 certified and activates additive
+Clean Page V27 for College Football Over/Under only.
 
-Clean Page V26 preserves readable Steps 4-8, certified Market Adapter V2
+Clean Page V27 preserves readable Steps 4-9, certified Market Adapter V2
 freshness + exact official ESPN event-ID attachment, and Step 5C market
-intelligence at 0.0% projection influence. It changes only Step 9 presentation,
-translating the already-frozen game-day environment engine output into readable
-football context. Weather can widen structural uncertainty only; it cannot move
-the frozen projected total. Availability remains an audit with 0.0% injury model
-weight. No fuzzy matching. No synthetic IDs. Frozen Schedule V5 and Steps 3-12
-projection math remain unchanged.
+intelligence at 0.0% projection influence. It changes only Step 10
+presentation, translating the already-frozen historical-context engine output
+into readable recent-form and head-to-head context. Historical context is
+descriptive only: it cannot move the frozen projected total, analysis line,
+selection, or certification. No fuzzy matching. No synthetic IDs. Frozen
+Schedule V5 and Steps 3-12 projection math remain unchanged.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V66_CFB_OU_READABLE_STEP9_2026-09-10T22:00Z.
+STREAMLIT_MAIN_V67_CFB_OU_READABLE_STEP10_2026-09-10T23:00Z.
 """
 from __future__ import annotations
 
 # Retain explicit frozen predecessor imports so the permanent DevSystem guard
-# continues proving older active contracts while V66 is the additive top layer.
+# continues proving older active contracts while V67 is the additive top layer.
 from streamlit_memory_lazy_router_v63 import render_app as _frozen_v63_render_app
 from streamlit_memory_lazy_router_v64 import render_app as _frozen_v64_render_app
 from streamlit_memory_lazy_router_v65 import render_app as _frozen_v65_render_app
-from streamlit_memory_lazy_router_v66 import render_app
+from streamlit_memory_lazy_router_v66 import render_app as _frozen_v66_render_app
+from streamlit_memory_lazy_router_v67 import render_app
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V66_CFB_OU_READABLE_STEP9_2026-09-10T22:00Z"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V67_CFB_OU_READABLE_STEP10_2026-09-10T23:00Z"
 
 render_app()
