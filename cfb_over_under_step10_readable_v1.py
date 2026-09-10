@@ -175,7 +175,7 @@ def render_step10(engine: Mapping[str, Any]) -> str:
 <div class="hist10-wrap">
 <style>{_CSS}</style>
 <div class="hist10-title"><b>🟪 STEP 10 • HISTORICAL MATCHUP CONTEXT</b><span>GATED</span></div>
-<div class="hist10-gate"><b>HISTORICAL CONTEXT GATED</b><br>{escape(_reason(engine))}. Step 9 projection math remains active and unchanged; no verified historical matchup evidence is displayed.</div>
+<div class="hist10-gate"><b>HISTORICAL CONTEXT GATED</b><br>{escape(_reason(engine))}. Step 9 projection math remains active and unchanged; No verified historical matchup evidence is displayed.</div>
 <div class="hist10-foot">Projection mutation: <b>OFF</b> • projected-total adjustment: <b>0.00 pts</b> • sportsbook projection weight: <b>0.0%</b> • history weight: <b>0.0%</b> • official ESPN event IDs only • no fuzzy matching • no synthetic IDs.</div>
 </div>
 """
@@ -192,7 +192,7 @@ def render_step10(engine: Mapping[str, Any]) -> str:
 <div class="hist10-wrap">
 <style>{_CSS}</style>
 <div class="hist10-title"><b>🟪 STEP 10 • HISTORICAL MATCHUP CONTEXT</b><span>{escape(status)}</span></div>
-<div class="hist10-intro"><b>Why it matters:</b> prior scoring shape and true team-vs-team meetings add transparent context. They are descriptive only because roster continuity and opponent-strength normalization are not certified.</div>
+<div class="hist10-intro"><b>Why it matters:</b> prior scoring shape and true team-vs-team meetings add transparent context. They are descriptive only because roster continuity and opponent-strength normalization are not certified. <span>{escape(_reason(engine))}.</span></div>
 <div class="hist10-grid">
  {_summary_card(away_label, _mapping(engine.get("away_recent")))}
  {_summary_card(home_label, _mapping(engine.get("home_recent")))}
@@ -203,7 +203,7 @@ def render_step10(engine: Mapping[str, Any]) -> str:
  <span>History coverage <strong>{escape(coverage)}</strong> • {ids} • future-event leakage <strong>BLOCKED</strong> • target event excluded <strong>{'YES' if engine.get('target_event_excluded') is not False else 'CHECK'}</strong> • roster continuity <strong>{continuity}</strong> • opponent-strength normalization <strong>{strength}</strong>.</span>
  <span>{escape(source_note)}.</span>
 </div>
-<div class="hist10-warning">Projected total remains unchanged by Step 10. Analysis-line history weight <b>0.0%</b> • selection history weight <b>0.0%</b> • sportsbook input <b>0.0%</b>. This panel cannot create a pick, edge, EV, price, probability, or Monte Carlo result.</div>
+<div class="hist10-warning">Projected total remains unchanged by Step 10. Analysis-line history weight <b>0.0%</b> • selection history weight <b>0.0%</b> • sportsbook input <b>0.0%</b> • sportsbook projection weight: <b>0.0%</b>. This panel cannot create a pick, edge, EV, price, probability, or Monte Carlo result.</div>
 <div class="hist10-foot">Official ESPN event IDs only for attached game identity • exact team IDs for ESPN history • no fuzzy matching • no synthetic IDs • frozen Steps 3–12 projection math preserved.</div>
 </div>
 """
