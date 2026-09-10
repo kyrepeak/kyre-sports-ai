@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 FROZEN_MANIFESTS = (
     "cfb_over_under_pre_odds_freeze_manifest_v1.json",
+    "cfb_over_under_live_odds_freeze_manifest_v1.json",
     "mlb_moneyline_freeze_manifest_v13.json",
     "mlb_hits_freeze_manifest_v7.json",
 )
