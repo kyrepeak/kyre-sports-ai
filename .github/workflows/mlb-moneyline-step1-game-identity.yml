@@ -1,8 +1,7 @@
 name: MLB Moneyline Step 1 game identity certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['mlb-moneyline-step1-game-identity']
 

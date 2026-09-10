@@ -1,8 +1,7 @@
 name: MLB Hits strict no-TOUGH certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['fix/mlb-hits-strict-no-tough-visible']
 

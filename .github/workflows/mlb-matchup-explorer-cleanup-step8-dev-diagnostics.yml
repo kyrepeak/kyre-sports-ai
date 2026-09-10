@@ -1,13 +1,7 @@
 name: MLB Matchup Explorer cleanup Step 8 developer diagnostics certification
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/mlb-matchup-explorer-cleanup-step8-dev-diagnostics.yml'
-      - 'app.py'
-      - 'streamlit_memory_lazy_router_v2.py'
-      - 'tests/test_mlb_matchup_explorer_cleanup_step8_dev_diagnostics.py'
+  workflow_dispatch:
   push:
     branches: ['mlb-matchup-explorer-cleanup-step8-dev-diagnostics']
     paths:
