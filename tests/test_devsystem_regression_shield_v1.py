@@ -28,3 +28,5 @@ def test_regression_shield_is_green():
     assert result["cfb_matching_method"] == "official ESPN event_id only"
     assert result["cfb_fuzzy_matching"] is False
     assert result["cfb_synthetic_ids"] is False
+    assert result["cfb_freshness_firewall_active"] is True
+    assert result["cfb_max_market_age_seconds"] == 300.0
