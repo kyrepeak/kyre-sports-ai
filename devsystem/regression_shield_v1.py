@@ -27,6 +27,7 @@ CRITICAL_FILES = (
     "streamlit_memory_lazy_router_v58.py",
     "streamlit_memory_lazy_router_v59.py",
     "streamlit_memory_lazy_router_v60.py",
+    "streamlit_memory_lazy_router_v61.py",
     # DevSystem browser QA
     "devsystem/browser_qa_v1.py",
     # DevSystem production verification
@@ -37,7 +38,7 @@ CRITICAL_FILES = (
     "devsystem/change_classifier_v1.py",
     "devsystem/permanent_gate_v1.py",
     "devsystem/final_gate_v1.py",
-    # CFB active Step 6 path plus frozen predecessors
+    # CFB active readable Step 4 path plus frozen predecessors
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
     "cfb_over_under_market_adapter_v2.py",
@@ -45,6 +46,8 @@ CRITICAL_FILES = (
     "cfb_over_under_clean_page_v18.py",
     "cfb_over_under_clean_page_v19.py",
     "cfb_over_under_clean_page_v20.py",
+    "cfb_over_under_step4_readable_v1.py",
+    "cfb_over_under_clean_page_v21.py",
     "data/cfb_runtime_snapshot_v2.json",
     # MLB current certified path
     "sports_api/mlb_step20a_end_to_end_certification_v1.py",
@@ -64,9 +67,11 @@ CRITICAL_TESTS = (
     "tests/test_cfb_over_under_clean_page_v18.py",
     "tests/test_cfb_over_under_clean_page_v19.py",
     "tests/test_cfb_over_under_clean_page_v20.py",
+    "tests/test_cfb_over_under_readable_step4_v1.py",
     "tests/test_cfb_over_under_router_v58.py",
     "tests/test_cfb_over_under_router_v59.py",
     "tests/test_cfb_over_under_router_v60.py",
+    "tests/test_cfb_over_under_router_v61.py",
     # MLB
     "tests/test_mlb_step20a_end_to_end_certification_v1.py",
     "tests/test_mlb_step20b_production_release_certification_v1.py",
@@ -84,14 +89,7 @@ CRITICAL_TESTS = (
     "tests/test_devsystem_permanent_gate_v1.py",
 )
 
-PYTHON_COMPILE_TARGETS = tuple(
-    path
-    for path in CRITICAL_FILES
-    if path.endswith(".py")
-)
-
-# DevSystem Step 2 intentionally changed only workflow trigger metadata to stop
-# unrelated PR fan-out. Frozen sports/runtime/model blobs remain hash-protected.
+PYTHON_COMPILE_TARGETS = tuple(path for path in CRITICAL_FILES if path.endswith(".py"))
 INFRASTRUCTURE_EXEMPT_PREFIXES = (".github/workflows/",)
 
 
@@ -101,9 +99,7 @@ class ShieldFailure(RuntimeError):
 
 def _git_blob_sha(path: Path) -> str:
     raw = path.read_bytes()
-    return hashlib.sha1(
-        f"blob {len(raw)}\0".encode("utf-8") + raw
-    ).hexdigest()
+    return hashlib.sha1(f"blob {len(raw)}\0".encode("utf-8") + raw).hexdigest()
 
 
 def _require_paths(paths: tuple[str, ...], label: str) -> None:
@@ -139,9 +135,7 @@ def _verify_frozen_manifest(path: str) -> tuple[int, int]:
             verified += 1
 
     if failures:
-        raise ShieldFailure(
-            f"{path} frozen blob drift:\n" + "\n".join(failures)
-        )
+        raise ShieldFailure(f"{path} frozen blob drift:\n" + "\n".join(failures))
     return verified, infrastructure_exemptions
 
 
@@ -168,7 +162,6 @@ def _verify_cfb_snapshot_v2() -> dict[str, int]:
         ),
     )
     _assert_finite(payload)
-
     if payload.get("version") != 2:
         raise ShieldFailure("CFB runtime snapshot must remain version 2")
     games = payload.get("games")
@@ -179,7 +172,6 @@ def _verify_cfb_snapshot_v2() -> dict[str, int]:
     duplicate_ids: list[str] = []
     missing_identity: list[int] = []
     missing_team_ids: list[int] = []
-
     for index, game in enumerate(games):
         if not isinstance(game, dict):
             raise ShieldFailure(f"CFB snapshot game {index} is not an object")
@@ -192,40 +184,26 @@ def _verify_cfb_snapshot_v2() -> dict[str, int]:
         if not all(required):
             missing_identity.append(index)
             continue
-
         event_id = required[0]
         if event_id in ids:
             duplicate_ids.append(event_id)
         ids.add(event_id)
-
         away = game.get("away") if isinstance(game.get("away"), dict) else {}
         home = game.get("home") if isinstance(game.get("home"), dict) else {}
         if not str(away.get("team_id") or "").strip() or not str(home.get("team_id") or "").strip():
             missing_team_ids.append(index)
 
     if missing_identity:
-        raise ShieldFailure(
-            f"CFB snapshot games missing official identity fields: {missing_identity[:20]}"
-        )
+        raise ShieldFailure(f"CFB snapshot games missing official identity fields: {missing_identity[:20]}")
     if duplicate_ids:
-        raise ShieldFailure(
-            f"CFB snapshot duplicate official event IDs: {sorted(set(duplicate_ids))[:20]}"
-        )
+        raise ShieldFailure(f"CFB snapshot duplicate official event IDs: {sorted(set(duplicate_ids))[:20]}")
     if missing_team_ids:
-        raise ShieldFailure(
-            f"CFB snapshot games missing ESPN team IDs: {missing_team_ids[:20]}"
-        )
-
-    return {
-        "games": len(games),
-        "unique_event_ids": len(ids),
-    }
+        raise ShieldFailure(f"CFB snapshot games missing ESPN team IDs: {missing_team_ids[:20]}")
+    return {"games": len(games), "unique_event_ids": len(ids)}
 
 
 def _verify_cfb_market_contract_text() -> None:
-    v1 = (ROOT / "cfb_over_under_market_adapter_v1.py").read_text(
-        encoding="utf-8"
-    )
+    v1 = (ROOT / "cfb_over_under_market_adapter_v1.py").read_text(encoding="utf-8")
     required_v1 = (
         'float(semantics.get("projection_weight")) != 0.0',
         '"projection_weight": 0.0',
@@ -237,13 +215,9 @@ def _verify_cfb_market_contract_text() -> None:
     )
     missing = [item for item in required_v1 if item not in v1]
     if missing:
-        raise ShieldFailure(
-            "CFB market safety contract drift: " + " | ".join(missing)
-        )
+        raise ShieldFailure("CFB market safety contract drift: " + " | ".join(missing))
 
-    v2 = (ROOT / "cfb_over_under_market_adapter_v2.py").read_text(
-        encoding="utf-8"
-    )
+    v2 = (ROOT / "cfb_over_under_market_adapter_v2.py").read_text(encoding="utf-8")
     required_v2 = (
         "MAX_MARKET_AGE_SECONDS = 300.0",
         'raise ValueError("unsafe_non_official_event_id")',
@@ -253,13 +227,9 @@ def _verify_cfb_market_contract_text() -> None:
     )
     missing_v2 = [item for item in required_v2 if item not in v2]
     if missing_v2:
-        raise ShieldFailure(
-            "CFB freshness firewall drift: " + " | ".join(missing_v2)
-        )
+        raise ShieldFailure("CFB freshness firewall drift: " + " | ".join(missing_v2))
 
-    intelligence = (ROOT / "cfb_over_under_market_intelligence_v1.py").read_text(
-        encoding="utf-8"
-    )
+    intelligence = (ROOT / "cfb_over_under_market_intelligence_v1.py").read_text(encoding="utf-8")
     required_intelligence = (
         "if not event_id or not event_id.isdigit():",
         'raise MarketIntelligenceError("unsafe_nonzero_projection_weight")',
@@ -268,40 +238,61 @@ def _verify_cfb_market_contract_text() -> None:
         '"projection_weight": 0.0',
         '"may_modify_projection": False',
     )
-    missing_intelligence = [
-        item for item in required_intelligence if item not in intelligence
-    ]
+    missing_intelligence = [item for item in required_intelligence if item not in intelligence]
     if missing_intelligence:
-        raise ShieldFailure(
-            "CFB market intelligence safety contract drift: "
-            + " | ".join(missing_intelligence)
-        )
+        raise ShieldFailure("CFB market intelligence safety contract drift: " + " | ".join(missing_intelligence))
 
 
 def _verify_active_router() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    if "from streamlit_memory_lazy_router_v60 import render_app" not in app:
-        raise ShieldFailure(
-            "active Streamlit entrypoint must import Router V60 for Step 6"
-        )
+    if "from streamlit_memory_lazy_router_v61 import render_app" not in app:
+        raise ShieldFailure("active Streamlit entrypoint must import Router V61 for readable Step 4")
 
-    router_v60 = (ROOT / "streamlit_memory_lazy_router_v60.py").read_text(
-        encoding="utf-8"
+    router_v61 = (ROOT / "streamlit_memory_lazy_router_v61.py").read_text(encoding="utf-8")
+    required_router_v61 = (
+        "import streamlit_memory_lazy_router_v60 as prior",
+        'FROZEN_ROUTER = "streamlit_memory_lazy_router_v60"',
+        'root._import("cfb_over_under_clean_page_v21")',
     )
+    missing_router = [item for item in required_router_v61 if item not in router_v61]
+    if missing_router:
+        raise ShieldFailure("Router V61 additive contract drift: " + " | ".join(missing_router))
+
+    page_v21 = (ROOT / "cfb_over_under_clean_page_v21.py").read_text(encoding="utf-8")
+    required_page_v21 = (
+        'FROZEN_PAGE = "cfb_over_under_clean_page_v20"',
+        'ACTIVE_MARKET_ADAPTER = frozen_page.ACTIVE_MARKET_ADAPTER',
+        'ACTIVE_MARKET_INTELLIGENCE = frozen_page.ACTIVE_MARKET_INTELLIGENCE',
+        '"frozen_page": _PRESENTATION_PROXY',
+        '"st": _StreamlitV21Proxy()',
+        "READABLE STEP 4 PACE ACTIVE",
+    )
+    missing_page_v21 = [item for item in required_page_v21 if item not in page_v21]
+    if missing_page_v21:
+        raise ShieldFailure("active CFB O/U V21 presentation contract drift: " + " | ".join(missing_page_v21))
+
+    readable = (ROOT / "cfb_over_under_step4_readable_v1.py").read_text(encoding="utf-8")
+    required_readable = (
+        "PROJECTION_WEIGHT = 0.0",
+        "MAY_MODIFY_PROJECTION = False",
+        "def render_step4(",
+        "sportsbook projection weight: <b>0.0%</b>",
+    )
+    missing_readable = [item for item in required_readable if item not in readable]
+    if missing_readable:
+        raise ShieldFailure("readable Step 4 safety contract drift: " + " | ".join(missing_readable))
+
+    router_v60 = (ROOT / "streamlit_memory_lazy_router_v60.py").read_text(encoding="utf-8")
     required_router_v60 = (
         "import streamlit_memory_lazy_router_v59 as prior",
         'FROZEN_ROUTER = "streamlit_memory_lazy_router_v59"',
         'root._import("cfb_over_under_clean_page_v20")',
     )
-    missing_router = [item for item in required_router_v60 if item not in router_v60]
-    if missing_router:
-        raise ShieldFailure(
-            "Router V60 additive contract drift: " + " | ".join(missing_router)
-        )
+    missing_router_v60 = [item for item in required_router_v60 if item not in router_v60]
+    if missing_router_v60:
+        raise ShieldFailure("frozen Router V60 additive contract drift: " + " | ".join(missing_router_v60))
 
-    page_v20 = (ROOT / "cfb_over_under_clean_page_v20.py").read_text(
-        encoding="utf-8"
-    )
+    page_v20 = (ROOT / "cfb_over_under_clean_page_v20.py").read_text(encoding="utf-8")
     required_page_v20 = (
         'FROZEN_PAGE = "cfb_over_under_clean_page_v19"',
         'ACTIVE_MARKET_ADAPTER = "cfb_over_under_market_adapter_v2"',
@@ -315,13 +306,9 @@ def _verify_active_router() -> None:
     )
     missing_page = [item for item in required_page_v20 if item not in page_v20]
     if missing_page:
-        raise ShieldFailure(
-            "active CFB O/U V20 safety contract drift: " + " | ".join(missing_page)
-        )
+        raise ShieldFailure("frozen CFB O/U V20 safety contract drift: " + " | ".join(missing_page))
 
-    page_v19 = (ROOT / "cfb_over_under_clean_page_v19.py").read_text(
-        encoding="utf-8"
-    )
+    page_v19 = (ROOT / "cfb_over_under_clean_page_v19.py").read_text(encoding="utf-8")
     if 'ACTIVE_MARKET_ADAPTER = "cfb_over_under_market_adapter_v2"' not in page_v19:
         raise ShieldFailure("frozen predecessor V19 no longer uses Market Adapter V2")
 
@@ -329,10 +316,7 @@ def _verify_active_router() -> None:
 def _compile_critical_python() -> int:
     compiled = 0
     for rel in PYTHON_COMPILE_TARGETS:
-        py_compile.compile(
-            str(ROOT / rel),
-            doraise=True,
-        )
+        py_compile.compile(str(ROOT / rel), doraise=True)
         compiled += 1
     return compiled
 
@@ -340,11 +324,7 @@ def _compile_critical_python() -> int:
 def run() -> dict[str, Any]:
     _require_paths(CRITICAL_FILES, "critical file")
     _require_paths(CRITICAL_TESTS, "critical test")
-
-    manifest_results = [
-        _verify_frozen_manifest(path)
-        for path in FROZEN_MANIFESTS
-    ]
+    manifest_results = [_verify_frozen_manifest(path) for path in FROZEN_MANIFESTS]
     frozen_blob_count = sum(item[0] for item in manifest_results)
     infrastructure_exemptions = sum(item[1] for item in manifest_results)
     snapshot = _verify_cfb_snapshot_v2()
@@ -371,8 +351,9 @@ def run() -> dict[str, Any]:
         "cfb_market_intelligence_shadow_certified": True,
         "cfb_market_intelligence_live_presentation": True,
         "cfb_market_intelligence_min_consensus_books": 2,
-        "cfb_active_router": "V60",
-        "cfb_active_clean_page": "V20",
+        "cfb_active_router": "V61",
+        "cfb_active_clean_page": "V21",
+        "cfb_readable_step4_pace": True,
     }
     print("DEVSYSTEM_REGRESSION_SHIELD_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
