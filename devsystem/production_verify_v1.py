@@ -4,7 +4,7 @@ This script verifies the real deployed public surfaces after a merge:
 - Render API transport and health;
 - the public CFB odds safety contract;
 - the deployed Streamlit app shell;
-- the College Football -> Over/Under V19 freshness route through a real browser.
+- the College Football -> Over/Under V20 Step 6 market-intelligence route through a real browser.
 
 Render deploy metadata/log freshness is inspected through the connected Render
 tooling by the release operator/assistant. No Render API secret is required here.
@@ -40,8 +40,10 @@ REQUIRED_SPORTS = (
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V19 ACTIVE",
+    "CFB O/U • CLEAN PAGE V20 ACTIVE",
+    "STEP 6 MARKET INTELLIGENCE LIVE",
     "FRESHNESS FIREWALL ACTIVE",
+    "0.0% PROJECTION INFLUENCE",
     "FROZEN PROJECTION MATH PRESERVED",
 )
 
@@ -275,7 +277,7 @@ def _browser_verify(
                 page.wait_for_timeout(1500)
             else:
                 raise ProductionVerificationFailure(
-                    "Production CFB Clean Page V19 marker did not appear"
+                    "Production CFB Clean Page V20 Step 6 marker did not appear"
                 )
 
             missing_markers = [
@@ -284,7 +286,7 @@ def _browser_verify(
             ]
             if missing_markers:
                 raise ProductionVerificationFailure(
-                    "Production CFB marker drift: " + " | ".join(missing_markers)
+                    "Production CFB Step 6 marker drift: " + " | ".join(missing_markers)
                 )
 
             forbidden = _body_has_forbidden_error(final_body)
