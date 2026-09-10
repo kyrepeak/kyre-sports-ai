@@ -1,0 +1,85 @@
+name: CFB Render FanDuel transport hotfix
+
+on:
+  push:
+    branches:
+      - cfb-render-fanduel-transport-hotfix
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+
+jobs:
+  certify-hosted-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify frozen CFB market/parser blobs are unchanged
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          expected = {
+              "sports_api/api/cfb_markets.py": "72cc4c53467cd0130eeb0fed0da1603bf82e648b",
+              "sports_api/collectors/cfb_fanduel_direct.py": "e9f747c793e80595070100724aa0ea802a08e252",
+              "sports_api/api/cfb_market_identity_v1.py": "807e311c84d3feb437637c4c36206a5e90ec1027",
+          }
+          for path, wanted in expected.items():
+              raw = Path(path).read_bytes()
+              actual = hashlib.sha1(
+                  f"blob {len(raw)}\0".encode() + raw
+              ).hexdigest()
+              assert actual == wanted, (path, wanted, actual)
+              print("CFB_FROZEN_BLOB_OK", path, actual)
+          PY
+
+      - name: Install shared-host test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-mlb-step14b-persistence.txt
+          python -m pip install pytest
+
+      - name: Run hosted transport and existing CFB regression
+        run: |
+          python -m pytest -q \
+            sports_api/tests/test_cfb_render_fanduel_transport_v1.py \
+            sports_api/tests/test_cfb_markets_step1.py \
+            sports_api/tests/test_cfb_fanduel_direct_step2.py \
+            sports_api/tests/test_cfb_market_identity_step2.py \
+            sports_api/tests/test_cfb_odds_step3.py
+
+      - name: Compile hosted overlay and shared route
+        run: |
+          python -m py_compile \
+            sports_api/collectors/cfb_fanduel_hosted_transport_v1.py \
+            sports_api/api/cfb_render_fanduel_transport_v1.py \
+            sports_api/api/health.py
+
+      - name: Read-only hosted FanDuel transport witness
+        run: |
+          python - <<'PY'
+          from sports_api.collectors.cfb_fanduel_direct import (
+              collect_fanduel_cfb_total_feed,
+          )
+          from sports_api.collectors.cfb_fanduel_hosted_transport_v1 import (
+              fetch_fanduel_ncaaf_page_hosted,
+          )
+
+          feed = collect_fanduel_cfb_total_feed(
+              page_fetcher=fetch_fanduel_ncaaf_page_hosted,
+          )
+          assert len(feed["games"]) >= 1
+          assert feed["provider_diagnostics"]["network_requests"] == 1
+          assert feed["market_semantics"]["projection_weight"] == 0.0
+          assert feed["market_semantics"]["may_modify_projection"] is False
+          print("CFB_RENDER_FANDUEL_HOSTED_TRANSPORT_GREEN", len(feed["games"]))
+          PY
