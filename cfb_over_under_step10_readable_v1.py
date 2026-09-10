@@ -203,7 +203,7 @@ def render_step10(engine: Mapping[str, Any]) -> str:
  <span>History coverage <strong>{escape(coverage)}</strong> • {ids} • future-event leakage <strong>BLOCKED</strong> • target event excluded <strong>{'YES' if engine.get('target_event_excluded') is not False else 'CHECK'}</strong> • roster continuity <strong>{continuity}</strong> • opponent-strength normalization <strong>{strength}</strong>.</span>
  <span>{escape(source_note)}.</span>
 </div>
-<div class="hist10-warning">Projected total remains unchanged by Step 10. Analysis-line history weight <b>0.0%</b> • selection history weight <b>0.0%</b> • sportsbook input <b>0.0%</b> • sportsbook projection weight: <b>0.0%</b>. This panel cannot create a pick, edge, EV, price, probability, or Monte Carlo result.</div>
+<div class="hist10-warning">Projection mutation: <b>OFF</b> • Projected total remains unchanged by Step 10. Analysis-line history weight <b>0.0%</b> • selection history weight <b>0.0%</b> • sportsbook input <b>0.0%</b> • sportsbook projection weight: <b>0.0%</b>. This panel cannot create a pick, edge, EV, price, probability, or Monte Carlo result.</div>
 <div class="hist10-foot">Official ESPN event IDs only for attached game identity • exact team IDs for ESPN history • no fuzzy matching • no synthetic IDs • frozen Steps 3–12 projection math preserved.</div>
 </div>
 """
