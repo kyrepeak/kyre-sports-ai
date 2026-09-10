@@ -72,6 +72,8 @@ def _validated_v2_snapshot(
             )
         ):
             return None
+        if not event_id.isdigit():
+            return None
         if event_id in seen_event_ids:
             return None
         seen_event_ids.add(event_id)
