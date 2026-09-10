@@ -1,8 +1,7 @@
 name: College Football Step 11 Game Total distribution certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step11-game-total-distribution']
 

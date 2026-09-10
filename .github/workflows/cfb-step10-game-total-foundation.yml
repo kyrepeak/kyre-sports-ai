@@ -1,8 +1,7 @@
 name: College Football Step 10 Game Total foundation certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/cfb-step10-game-total-foundation']
 

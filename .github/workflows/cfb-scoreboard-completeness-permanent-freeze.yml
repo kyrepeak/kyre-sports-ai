@@ -1,8 +1,7 @@
 name: College Football scoreboard-completeness permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-scoreboard-completeness-freeze']
 
