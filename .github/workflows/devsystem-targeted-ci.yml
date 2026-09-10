@@ -7,6 +7,7 @@ on:
     branches:
       - devsystem-step2-targeted-ci
       - devsystem-step3-regression-shield
+      - devsystem-step4-browser-qa
   workflow_dispatch:
 
 permissions:
@@ -160,6 +161,63 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q pytest
           python -m pytest -q tests/test_devsystem_regression_shield_v1.py
+
+  browser-qa:
+    needs: [classify, workflow-hygiene, regression-shield]
+    if: >-
+      needs.classify.outputs.cfb == 'true' ||
+      needs.classify.outputs.mlb == 'true' ||
+      needs.classify.outputs.wnba == 'true' ||
+      needs.classify.outputs.core == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install browser QA dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Self-test browser QA contract
+        run: python -m pytest -q tests/test_devsystem_browser_qa_v1.py
+      - name: Start branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/browser-qa
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            > artifacts/browser-qa/streamlit.log 2>&1 &
+          echo $! > /tmp/devsystem_streamlit_pid
+      - name: Drive the real Streamlit UI with Playwright
+        run: |
+          python devsystem/browser_qa_v1.py \
+            --base-url http://127.0.0.1:8501 \
+            --artifact-dir artifacts/browser-qa
+      - name: Print Streamlit log on browser failure
+        if: failure()
+        run: tail -n 500 artifacts/browser-qa/streamlit.log || true
+      - name: Upload browser QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devsystem-browser-qa-${{ github.run_id }}
+          path: artifacts/browser-qa
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Stop branch-local Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/devsystem_streamlit_pid ]; then
+            kill "$(cat /tmp/devsystem_streamlit_pid)" 2>/dev/null || true
+          fi
 
   cfb-critical:
     needs: [classify, workflow-hygiene, regression-shield]
