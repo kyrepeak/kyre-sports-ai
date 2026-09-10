@@ -1,8 +1,7 @@
 name: MLB Moneyline Step 12 final-synthesis certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-moneyline-step12-final-synthesis']
 

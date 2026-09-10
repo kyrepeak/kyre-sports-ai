@@ -1,8 +1,7 @@
 name: MLB Moneyline Step 11 market-intelligence certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-moneyline-step11-market-intelligence']
 
