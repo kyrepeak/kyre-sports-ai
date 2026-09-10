@@ -241,6 +241,10 @@ jobs:
             tests/test_cfb_over_under_upgrade_step9_slate.py \
             tests/test_cfb_over_under_readable_step9_v1.py \
             tests/test_cfb_over_under_router_v66.py \
+            tests/test_cfb_over_under_upgrade_step10_history_engine.py \
+            tests/test_cfb_over_under_upgrade_step10_slate.py \
+            tests/test_cfb_over_under_readable_step10_v1.py \
+            tests/test_cfb_over_under_router_v67.py \
             tests/test_cfb_step3_team_data_foundation.py
 
   mlb-critical:
