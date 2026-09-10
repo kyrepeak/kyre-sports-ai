@@ -135,7 +135,7 @@ def render_step12(result: Mapping[str, Any]) -> str:
  <span>Frozen certifier: <strong>{escape(FROZEN_CERTIFIER)}</strong> • game identity: <strong>{escape(identity or "not attached")}</strong> • raw ready: <strong>{_bool_word(raw.get("ready"))}</strong> • final ready: <strong>{_bool_word(final.get("ready"))}</strong>.</span>
 </div>
 {_failure_html(cert)}
-<div class="cert12-foot">Official ESPN event IDs only • exact identity gates • no fuzzy matching • no synthetic IDs • frozen Schedule V5 and Steps 3–12 projection contracts preserved.</div>
+<div class="cert12-foot">official ESPN event IDs only • exact identity gates • no fuzzy matching • no synthetic IDs • frozen Schedule V5 and Steps 3–12 projection contracts preserved.</div>
 </div>
 """
 
