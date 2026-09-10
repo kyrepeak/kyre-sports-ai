@@ -128,7 +128,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install requests streamlit
 
       - name: Refresh snapshot
         run: python scripts/build_cfb_runtime_snapshot.py
