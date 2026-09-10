@@ -188,7 +188,7 @@ jobs:
               timeout=60,
               headers={
                   "Accept": "application/json",
-                  "User-Agent": "KyreSportsAI-CFB-Step4-Browser-Regress/1.2",
+                  "User-Agent": "KyreSportsAI-CFB-Step4-Browser-Regress/1.3",
                   "Cache-Control": "no-cache",
               },
           )
@@ -205,61 +205,73 @@ jobs:
               page = browser.new_page(viewport={"width": 1440, "height": 1400})
               page.goto(streamlit_url + "/", wait_until="domcontentloaded", timeout=120000)
 
-              ready = False
-              body = ""
-              for attempt in range(1, 7):
+              app_frame = None
+              for attempt in range(1, 9):
                   page.wait_for_timeout(5000)
-                  body = page.locator("body").inner_text(timeout=15000)
-                  combo_count = page.get_by_role("combobox").count()
-                  print("CFB_STEP4_BROWSER_BOOT", attempt)
-                  print("URL", page.url)
-                  print("TITLE", page.title())
-                  print("COMBOBOXES", combo_count)
-                  print("BODY_START", repr(body[:2000]))
+                  print("CFB_STEP4_FRAME_SCAN", attempt, "frames", len(page.frames))
+                  for idx, frame in enumerate(page.frames):
+                      try:
+                          frame_body = frame.locator("body").inner_text(timeout=10000)
+                      except Exception as exc:
+                          frame_body = ""
+                          print("FRAME_BODY_ERROR", idx, type(exc).__name__, str(exc))
+                      try:
+                          combos = frame.get_by_role("combobox").count()
+                      except Exception:
+                          combos = 0
+                      print("FRAME", idx, "URL", frame.url)
+                      print("FRAME", idx, "COMBOBOXES", combos)
+                      print("FRAME", idx, "BODY_START", repr(frame_body[:2500]))
 
-                  lower = body.lower()
-                  if "get this app back up" in lower:
-                      wake = page.get_by_text("Yes, get this app back up!", exact=False)
-                      if wake.count() > 0:
-                          wake.click()
-                          page.wait_for_timeout(10000)
-                          continue
+                      lower = frame_body.lower()
+                      if "get this app back up" in lower:
+                          wake = frame.get_by_text("Yes, get this app back up!", exact=False)
+                          if wake.count() > 0:
+                              print("CFB_STEP4_STREAMLIT_WAKE_CLICK", idx)
+                              wake.click()
+                              page.wait_for_timeout(10000)
 
-                  if combo_count >= 1:
-                      ready = True
+                      if combos >= 1:
+                          app_frame = frame
+                          break
+
+                  if app_frame is not None:
                       break
-
-                  if attempt in (3, 5):
+                  if attempt in (3, 6):
                       page.reload(wait_until="domcontentloaded", timeout=120000)
 
-              if not ready:
-                  print("CFB_STEP4_BROWSER_FINAL_HTML", page.content()[:8000])
-                  raise SystemExit("CFB_STEP4_STREAMLIT_BROWSER_APP_NOT_READY")
+              if app_frame is None:
+                  print("CFB_STEP4_BROWSER_FINAL_PAGE_HTML", page.content()[:12000])
+                  print("CFB_STEP4_BROWSER_IFRAMES", page.locator("iframe").count())
+                  raise SystemExit("CFB_STEP4_STREAMLIT_APP_FRAME_NOT_READY")
 
-              combos = page.get_by_role("combobox")
+              print("CFB_STEP4_APP_FRAME_FOUND", app_frame.url)
+              combos = app_frame.get_by_role("combobox")
               combos.nth(0).click()
               page.keyboard.type("College Football")
               page.keyboard.press("Enter")
-              page.wait_for_timeout(4000)
+              page.wait_for_timeout(5000)
 
-              combos = page.get_by_role("combobox")
+              combos = app_frame.get_by_role("combobox")
+              print("CFB_STEP4_COMBOBOX_COUNT_AFTER_SPORT", combos.count())
               if combos.count() < 2:
                   raise SystemExit("CFB_STEP4_CFB_MARKET_COMBOBOX_MISSING")
               combos.nth(1).click()
               page.keyboard.type("Over/Under")
               page.keyboard.press("Enter")
-              page.wait_for_timeout(6000)
+              page.wait_for_timeout(7000)
 
-              date_input = page.locator('[data-testid="stDateInput"] input').first
+              date_input = app_frame.locator('[data-testid="stDateInput"] input').first
               if date_input.count() == 0:
+                  print("CFB_STEP4_APP_BODY_NO_DATE", app_frame.locator("body").inner_text()[:10000])
                   raise SystemExit("CFB_STEP4_DATE_INPUT_MISSING")
               date_input.click()
               date_input.fill("09/10/2026")
               date_input.press("Enter")
-              page.wait_for_timeout(10000)
+              page.wait_for_timeout(12000)
 
-              body = page.locator("body").inner_text()
-              print("CFB_STEP4_BROWSER_FINAL_BODY", body[:16000])
+              body = app_frame.locator("body").inner_text()
+              print("CFB_STEP4_BROWSER_FINAL_BODY", body[:20000])
 
               required = [
                   "CFB O/U • CLEAN PAGE V18 ACTIVE • LIVE ODDS CONNECTED • FROZEN PROJECTION MATH PRESERVED",
@@ -278,6 +290,7 @@ jobs:
               print("CFB_STEP4_DEPLOYED_STREAMLIT_V18_GREEN")
               print(json.dumps({
                   "streamlit_url": streamlit_url,
+                  "app_frame_url": app_frame.url,
                   "clean_page": "V18",
                   "target_game_id": target_game_id,
                   "target_total_api": expected_total,
