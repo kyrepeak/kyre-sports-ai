@@ -4,8 +4,8 @@ The browser QA proves that the checked-out branch can:
 - boot Streamlit;
 - expose the expected sport choices;
 - route to College Football -> Over/Under;
-- render the active Clean Page V19 freshness-firewall shell;
-- preserve the frozen projection marker;
+- render the active Clean Page V20 Step 6 market-intelligence shell;
+- preserve the freshness firewall, 0.0% market influence, and frozen projection marker;
 - do so without obvious Python/runtime error text.
 
 Dynamic schedule/odds availability is not required here because those are
@@ -33,8 +33,10 @@ REQUIRED_SPORTS = (
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V19 ACTIVE",
+    "CFB O/U • CLEAN PAGE V20 ACTIVE",
+    "STEP 6 MARKET INTELLIGENCE LIVE",
     "FRESHNESS FIREWALL ACTIVE",
+    "0.0% PROJECTION INFLUENCE",
     "FROZEN PROJECTION MATH PRESERVED",
 )
 FORBIDDEN_ERROR_MARKERS = (
@@ -255,7 +257,7 @@ def run_browser_qa(
             ]
             if missing_markers:
                 raise BrowserQAFailure(
-                    "CFB Clean Page V19 marker drift: "
+                    "CFB Clean Page V20 Step 6 marker drift: "
                     + " | ".join(missing_markers)
                 )
 
