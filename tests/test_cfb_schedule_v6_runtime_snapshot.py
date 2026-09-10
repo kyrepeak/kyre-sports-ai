@@ -36,7 +36,7 @@ def _complete_snapshot_row(event_id="401858213"):
 def test_v6_prefers_valid_certified_runtime_branch_snapshot(monkeypatch):
     remote = {
         "version": 2,
-        "games": [_complete_snapshot_row("remote-event")],
+        "games": [_complete_snapshot_row("401858214")],
     }
     monkeypatch.setattr(
         schedule.requests,
@@ -48,7 +48,7 @@ def test_v6_prefers_valid_certified_runtime_branch_snapshot(monkeypatch):
     payload = schedule._load_v2_snapshot()
     schedule._load_v2_snapshot.clear()
 
-    assert payload["games"][0]["event_id"] == "remote-event"
+    assert payload["games"][0]["event_id"] == "401858214"
     assert payload["_runtime_snapshot_source"] == "certified-runtime-branch"
 
 
@@ -56,14 +56,14 @@ def test_v6_rejects_ambiguous_remote_snapshot_and_falls_back_local(
     monkeypatch,
     tmp_path,
 ):
-    duplicate = _complete_snapshot_row("duplicate-event")
+    duplicate = _complete_snapshot_row("401858215")
     remote = {
         "version": 2,
         "games": [duplicate, dict(duplicate)],
     }
     local = {
         "version": 2,
-        "games": [_complete_snapshot_row("local-event")],
+        "games": [_complete_snapshot_row("401858216")],
     }
     local_path = tmp_path / "cfb_runtime_snapshot_v2.json"
     local_path.write_text(json.dumps(local), encoding="utf-8")
@@ -79,8 +79,22 @@ def test_v6_rejects_ambiguous_remote_snapshot_and_falls_back_local(
     payload = schedule._load_v2_snapshot()
     schedule._load_v2_snapshot.clear()
 
-    assert payload["games"][0]["event_id"] == "local-event"
+    assert payload["games"][0]["event_id"] == "401858216"
     assert payload["_runtime_snapshot_source"] == "checked-in-main-fallback"
+
+
+def test_v6_runtime_snapshot_validator_rejects_synthetic_event_id():
+    synthetic = {
+        "version": 2,
+        "games": [_complete_snapshot_row("synthetic-401858213")],
+    }
+    assert (
+        schedule._validated_v2_snapshot(
+            synthetic,
+            source="certified-runtime-branch",
+        )
+        is None
+    )
 
 
 def test_v6_runtime_snapshot_validator_requires_complete_official_identity():
