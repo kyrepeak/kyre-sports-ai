@@ -10,15 +10,6 @@ on:
       - tests/test_streamlit_memory_lazy_router_v1.py
       - tests/test_mlb_live_odds_streamlit.py
       - .github/workflows/streamlit-memory-lazy-router-v1.yml
-  pull_request:
-    branches:
-      - main
-    paths:
-      - app.py
-      - streamlit_memory_lazy_router_v1.py
-      - tests/test_streamlit_memory_lazy_router_v1.py
-      - tests/test_mlb_live_odds_streamlit.py
-      - .github/workflows/streamlit-memory-lazy-router-v1.yml
   workflow_dispatch:
 
 permissions:

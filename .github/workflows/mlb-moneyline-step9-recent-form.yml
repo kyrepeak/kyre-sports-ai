@@ -1,8 +1,7 @@
 name: MLB Moneyline Step 9 recent-form certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-moneyline-step9-recent-form']
 
