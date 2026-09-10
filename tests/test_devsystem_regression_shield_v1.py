@@ -18,7 +18,7 @@ def test_regression_shield_is_green():
     result = module.run()
 
     assert result["status"] == "GREEN"
-    assert result["frozen_manifests"] == 3
+    assert result["frozen_manifests"] == 4
     assert result["frozen_blobs_verified"] >= 40
     assert result["critical_files_verified"] >= 10
     assert result["critical_tests_verified"] >= 10
