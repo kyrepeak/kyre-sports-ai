@@ -43,7 +43,6 @@ class _StreamlitV26Proxy:
             "CFB O/U • CLEAN PAGE V18 ACTIVE" in text
             or "CFB O/U • CLEAN PAGE V19 ACTIVE" in text
             or "CFB O/U • CLEAN PAGE V20 ACTIVE" in text
-            or "CFB O/U • CLEAN PAGE V20 ACTIVE" in text
         ):
             body = _V26_MARKER
         return st.caption(body, *args, **kwargs)
