@@ -26,6 +26,7 @@ CRITICAL_FILES = (
     "app.py",
     "streamlit_memory_lazy_router_v58.py",
     "streamlit_memory_lazy_router_v59.py",
+    "streamlit_memory_lazy_router_v60.py",
     # DevSystem browser QA
     "devsystem/browser_qa_v1.py",
     # DevSystem production verification
@@ -36,13 +37,14 @@ CRITICAL_FILES = (
     "devsystem/change_classifier_v1.py",
     "devsystem/permanent_gate_v1.py",
     "devsystem/final_gate_v1.py",
-    # CFB active Step 5B path plus Step 5C shadow intelligence and frozen Step 4 baseline
+    # CFB active Step 6 path plus frozen predecessors
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
     "cfb_over_under_market_adapter_v2.py",
     "cfb_over_under_market_intelligence_v1.py",
     "cfb_over_under_clean_page_v18.py",
     "cfb_over_under_clean_page_v19.py",
+    "cfb_over_under_clean_page_v20.py",
     "data/cfb_runtime_snapshot_v2.json",
     # MLB current certified path
     "sports_api/mlb_step20a_end_to_end_certification_v1.py",
@@ -61,8 +63,10 @@ CRITICAL_TESTS = (
     "tests/test_cfb_over_under_market_intelligence_v1.py",
     "tests/test_cfb_over_under_clean_page_v18.py",
     "tests/test_cfb_over_under_clean_page_v19.py",
+    "tests/test_cfb_over_under_clean_page_v20.py",
     "tests/test_cfb_over_under_router_v58.py",
     "tests/test_cfb_over_under_router_v59.py",
+    "tests/test_cfb_over_under_router_v60.py",
     # MLB
     "tests/test_mlb_step20a_end_to_end_certification_v1.py",
     "tests/test_mlb_step20b_production_release_certification_v1.py",
@@ -276,14 +280,50 @@ def _verify_cfb_market_contract_text() -> None:
 
 def _verify_active_router() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    if "from streamlit_memory_lazy_router_v59 import render_app" not in app:
+    if "from streamlit_memory_lazy_router_v60 import render_app" not in app:
         raise ShieldFailure(
-            "active Streamlit entrypoint no longer imports Router V59; "
-            "update the regression shield deliberately if this is intentional"
+            "active Streamlit entrypoint must import Router V60 for Step 6"
         )
-    page = (ROOT / "cfb_over_under_clean_page_v19.py").read_text(encoding="utf-8")
-    if 'ACTIVE_MARKET_ADAPTER = "cfb_over_under_market_adapter_v2"' not in page:
-        raise ShieldFailure("active CFB O/U page no longer uses Market Adapter V2")
+
+    router_v60 = (ROOT / "streamlit_memory_lazy_router_v60.py").read_text(
+        encoding="utf-8"
+    )
+    required_router_v60 = (
+        "import streamlit_memory_lazy_router_v59 as prior",
+        'FROZEN_ROUTER = "streamlit_memory_lazy_router_v59"',
+        'root._import("cfb_over_under_clean_page_v20")',
+    )
+    missing_router = [item for item in required_router_v60 if item not in router_v60]
+    if missing_router:
+        raise ShieldFailure(
+            "Router V60 additive contract drift: " + " | ".join(missing_router)
+        )
+
+    page_v20 = (ROOT / "cfb_over_under_clean_page_v20.py").read_text(
+        encoding="utf-8"
+    )
+    required_page_v20 = (
+        'FROZEN_PAGE = "cfb_over_under_clean_page_v19"',
+        'ACTIVE_MARKET_ADAPTER = "cfb_over_under_market_adapter_v2"',
+        'ACTIVE_MARKET_INTELLIGENCE = "cfb_over_under_market_intelligence_v1"',
+        '"projection_weight": 0.0',
+        '"market_context_only": True',
+        '"may_modify_projection": False',
+        '"official_event_id_only"',
+        '"fuzzy_matching"',
+        '"synthetic_official_ids"',
+    )
+    missing_page = [item for item in required_page_v20 if item not in page_v20]
+    if missing_page:
+        raise ShieldFailure(
+            "active CFB O/U V20 safety contract drift: " + " | ".join(missing_page)
+        )
+
+    page_v19 = (ROOT / "cfb_over_under_clean_page_v19.py").read_text(
+        encoding="utf-8"
+    )
+    if 'ACTIVE_MARKET_ADAPTER = "cfb_over_under_market_adapter_v2"' not in page_v19:
+        raise ShieldFailure("frozen predecessor V19 no longer uses Market Adapter V2")
 
 
 def _compile_critical_python() -> int:
@@ -329,7 +369,10 @@ def run() -> dict[str, Any]:
         "cfb_freshness_firewall_active": True,
         "cfb_max_market_age_seconds": 300.0,
         "cfb_market_intelligence_shadow_certified": True,
+        "cfb_market_intelligence_live_presentation": True,
         "cfb_market_intelligence_min_consensus_books": 2,
+        "cfb_active_router": "V60",
+        "cfb_active_clean_page": "V20",
     }
     print("DEVSYSTEM_REGRESSION_SHIELD_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
