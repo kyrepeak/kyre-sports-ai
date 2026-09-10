@@ -131,7 +131,7 @@ def render_step12(result: Mapping[str, Any]) -> str:
 <div class="cert12-audit">
  <b>🧾 FINAL INTEGRITY AUDIT</b>
  <span>Projection math changed: <strong>{_bool_word(cert.get("projection_math_changed"))}</strong> • selection math changed: <strong>{_bool_word(cert.get("selection_math_changed"))}</strong> • structural σ changed: <strong>{_bool_word(cert.get("structural_sigma_changed"))}</strong> • reliability changed: <strong>{_bool_word(cert.get("reliability_changed"))}</strong> • qualification thresholds changed: <strong>{_bool_word(cert.get("qualification_thresholds_changed"))}</strong>.</span>
- <span>Sportsbook input used: <strong>{_bool_word(cert.get("sportsbook_input_used"))}</strong> • market price/probability/EV/Monte Carlo inputs: <strong>OFF</strong> • analysis-line/direct-selection weights: <strong>0.0%</strong>.</span>
+ <span>Sportsbook input used: <strong>{_bool_word(cert.get("sportsbook_input_used"))}</strong> • market price/probability/EV/Monte Carlo inputs: <strong>OFF</strong> • sportsbook projection weight: <strong>0.0%</strong> • analysis-line/direct-selection weights: <strong>0.0%</strong>.</span>
  <span>Frozen certifier: <strong>{escape(FROZEN_CERTIFIER)}</strong> • game identity: <strong>{escape(identity or "not attached")}</strong> • raw ready: <strong>{_bool_word(raw.get("ready"))}</strong> • final ready: <strong>{_bool_word(final.get("ready"))}</strong>.</span>
 </div>
 {_failure_html(cert)}
