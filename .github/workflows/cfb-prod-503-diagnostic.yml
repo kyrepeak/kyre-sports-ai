@@ -1,0 +1,61 @@
+name: CFB production 503 diagnostic
+
+on:
+  push:
+    branches:
+      - cfb-prod-503-diagnostic
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Probe production CFB routes
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.error
+          import urllib.request
+
+          base = 'https://kyre-sports-api.onrender.com'
+          paths = [
+              '/health',
+              '/api/v1/cfb/markets/status',
+              '/api/v1/cfb/markets/current',
+              '/api/v1/cfb/markets/identity-status',
+              '/api/v1/cfb/odds/status',
+              '/api/v1/cfb/odds',
+              '/api/v1/cfb/odds?game_date=2026-09-10&sportsbook=FanDuel',
+          ]
+
+          for path in paths:
+              url = base + path
+              try:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'Kyre-CFB-prod-diagnostic/1.0'})
+                  with urllib.request.urlopen(req, timeout=30) as response:
+                      body = response.read().decode('utf-8', 'replace')
+                      print('CFB_PROBE', json.dumps({
+                          'path': path,
+                          'status': int(response.status),
+                          'body': body[:4000],
+                      }, sort_keys=True))
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode('utf-8', 'replace')
+                  print('CFB_PROBE', json.dumps({
+                      'path': path,
+                      'status': int(exc.code),
+                      'body': body[:4000],
+                  }, sort_keys=True))
+              except Exception as exc:
+                  print('CFB_PROBE', json.dumps({
+                      'path': path,
+                      'status': None,
+                      'error': f'{type(exc).__name__}: {exc}',
+                  }, sort_keys=True))
+          PY
