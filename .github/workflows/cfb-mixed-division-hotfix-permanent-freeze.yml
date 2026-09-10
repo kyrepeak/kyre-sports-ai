@@ -1,8 +1,7 @@
 name: College Football mixed-division hotfix permanent freeze
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['cfb-mixed-division-hotfix-freeze']
 

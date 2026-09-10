@@ -1,11 +1,9 @@
 name: CFB O/U color steps V19
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-color-steps-v19]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 

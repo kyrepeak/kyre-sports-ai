@@ -1,11 +1,9 @@
 name: CFB O/U pre-odds freeze V1
 
 on:
+  workflow_dispatch:
   push:
     branches: [cfb-ou-pre-odds-freeze-v1]
-  pull_request:
-    branches: [main]
-
 permissions:
   contents: read
 
