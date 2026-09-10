@@ -29,6 +29,11 @@ CRITICAL_FILES = (
     # DevSystem production verification
     "devsystem/production_verify_v1.py",
     "devsystem/production_targets_v1.json",
+    # Permanent DevSystem operating contract
+    "devsystem/devsystem_manifest_v1.json",
+    "devsystem/change_classifier_v1.py",
+    "devsystem/permanent_gate_v1.py",
+    "devsystem/final_gate_v1.py",
     # CFB active Step 4 path
     "cfb_schedule_v6_runtime_snapshot.py",
     "cfb_over_under_market_adapter_v1.py",
@@ -61,6 +66,9 @@ CRITICAL_TESTS = (
     "tests/test_devsystem_browser_qa_v1.py",
     # DevSystem production verification
     "tests/test_devsystem_production_verify_v1.py",
+    # Permanent DevSystem operating contract
+    "tests/test_devsystem_change_classifier_v1.py",
+    "tests/test_devsystem_permanent_gate_v1.py",
 )
 
 PYTHON_COMPILE_TARGETS = tuple(

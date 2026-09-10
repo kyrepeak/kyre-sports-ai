@@ -9,6 +9,7 @@ on:
       - devsystem-step3-regression-shield
       - devsystem-step4-browser-qa
       - devsystem-step5-production-verification
+      - devsystem-step6-permanent-workflow
   workflow_dispatch:
 
 permissions:
@@ -25,7 +26,18 @@ jobs:
       cfb: ${{ steps.changed.outputs.cfb }}
       mlb: ${{ steps.changed.outputs.mlb }}
       wnba: ${{ steps.changed.outputs.wnba }}
+      nfl: ${{ steps.changed.outputs.nfl }}
+      nba: ${{ steps.changed.outputs.nba }}
+      nhl: ${{ steps.changed.outputs.nhl }}
+      soccer: ${{ steps.changed.outputs.soccer }}
       core: ${{ steps.changed.outputs.core }}
+      ui: ${{ steps.changed.outputs.ui }}
+      api: ${{ steps.changed.outputs.api }}
+      data: ${{ steps.changed.outputs.data }}
+      model: ${{ steps.changed.outputs.model }}
+      infra: ${{ steps.changed.outputs.infra }}
+      unprotected_domains: ${{ steps.changed.outputs.unprotected_domains }}
+      risk_tier: ${{ steps.changed.outputs.risk_tier }}
       changed_count: ${{ steps.changed.outputs.changed_count }}
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +45,7 @@ jobs:
           fetch-depth: 0
 
       - id: changed
-        name: Classify changed paths
+        name: Classify changed paths with permanent DevSystem registry
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -43,12 +55,11 @@ jobs:
           CURRENT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            echo "cfb=true" >> "$GITHUB_OUTPUT"
-            echo "mlb=true" >> "$GITHUB_OUTPUT"
-            echo "wnba=true" >> "$GITHUB_OUTPUT"
-            echo "core=true" >> "$GITHUB_OUTPUT"
-            echo "changed_count=manual" >> "$GITHUB_OUTPUT"
+            python devsystem/change_classifier_v1.py \
+              --manual \
+              --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -64,58 +75,10 @@ jobs:
             base="$(git rev-parse HEAD^ 2>/dev/null || git rev-parse HEAD)"
           fi
 
-          changed="$(git diff --name-only "$base" "$head" || true)"
-          printf 'Changed paths:\n%s\n' "$changed"
-
-          printf '%s\n' "$changed" > /tmp/devsystem_changed_paths.txt
-          python - "$GITHUB_OUTPUT" /tmp/devsystem_changed_paths.txt <<'PY'
-          import pathlib
-          import sys
-
-          output = pathlib.Path(sys.argv[1])
-          changed_file = pathlib.Path(sys.argv[2])
-          paths = [
-              line.strip()
-              for line in changed_file.read_text(encoding="utf-8").splitlines()
-              if line.strip()
-          ]
-
-          def any_match(fn):
-              return any(fn(path) for path in paths)
-
-          cfb = any_match(lambda p:
-              p.startswith(("cfb_", "tests/test_cfb_", "data/cfb_", "scripts/build_cfb_"))
-              or p.startswith("sports_api/cfb_")
-          )
-          mlb = any_match(lambda p:
-              p.startswith(("mlb_", "tests/test_mlb_", "sports_api/mlb_"))
-          )
-          wnba = any_match(lambda p:
-              p.startswith(("wnba_", "tests/test_wnba_", "sports_api/wnba_"))
-          )
-          core = any_match(lambda p:
-              p in {
-                  "app.py",
-                  "engine.py",
-                  "history.py",
-                  "spread_engine.py",
-                  ".github/workflows/devsystem-targeted-ci.yml",
-                  ".github/workflows/devsystem-production-verification.yml",
-              }
-              or p.startswith(("requirements", ".streamlit/", "devsystem/", "tests/test_devsystem_"))
-              or (
-                  p.startswith("sports_api/")
-                  and not p.startswith(("sports_api/mlb_", "sports_api/wnba_", "sports_api/cfb_"))
-              )
-          )
-
-          with output.open("a", encoding="utf-8") as fh:
-              fh.write(f"cfb={'true' if cfb else 'false'}\n")
-              fh.write(f"mlb={'true' if mlb else 'false'}\n")
-              fh.write(f"wnba={'true' if wnba else 'false'}\n")
-              fh.write(f"core={'true' if core else 'false'}\n")
-              fh.write(f"changed_count={len(paths)}\n")
-          PY
+          python devsystem/change_classifier_v1.py \
+            --base "$base" \
+            --head "$head" \
+            --github-output "$GITHUB_OUTPUT"
 
   workflow-hygiene:
     runs-on: ubuntu-24.04
@@ -148,8 +111,35 @@ jobs:
           print(f"DEVSYSTEM_WORKFLOW_HYGIENE_GREEN quarantined={len(paths)}")
           PY
 
-  regression-shield:
+  permanent-contract:
     needs: [classify, workflow-hygiene]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fail closed for sport domains without a dedicated test lane
+        env:
+          UNPROTECTED: ${{ needs.classify.outputs.unprotected_domains }}
+        run: |
+          if [ -n "$UNPROTECTED" ]; then
+            echo "DEVSYSTEM_UNPROTECTED_DOMAIN_BLOCKED: $UNPROTECTED"
+            echo "Activate its manifest entry + dedicated critical tests before changing it."
+            exit 1
+          fi
+      - name: Validate permanent DevSystem contract
+        run: python devsystem/permanent_gate_v1.py
+      - name: Self-test classifier and final gate
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q \
+            tests/test_devsystem_change_classifier_v1.py \
+            tests/test_devsystem_permanent_gate_v1.py
+
+  regression-shield:
+    needs: [classify, workflow-hygiene, permanent-contract]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -165,11 +155,10 @@ jobs:
           python -m pytest -q tests/test_devsystem_regression_shield_v1.py
 
   browser-qa:
-    needs: [classify, workflow-hygiene, regression-shield]
+    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: >-
+      needs.classify.outputs.ui == 'true' ||
       needs.classify.outputs.cfb == 'true' ||
-      needs.classify.outputs.mlb == 'true' ||
-      needs.classify.outputs.wnba == 'true' ||
       needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 18
@@ -222,7 +211,7 @@ jobs:
           fi
 
   cfb-critical:
-    needs: [classify, workflow-hygiene, regression-shield]
+    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: needs.classify.outputs.cfb == 'true' || needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -247,7 +236,7 @@ jobs:
             tests/test_cfb_step3_team_data_foundation.py
 
   mlb-critical:
-    needs: [classify, workflow-hygiene, regression-shield]
+    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: needs.classify.outputs.mlb == 'true' || needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -271,7 +260,7 @@ jobs:
             tests/test_mlb_step8d_player_hits_integration_v1.py
 
   wnba-critical:
-    needs: [classify, workflow-hygiene, regression-shield]
+    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: needs.classify.outputs.wnba == 'true' || needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -293,7 +282,7 @@ jobs:
             tests/test_wnba_step20b_step2_exact_reuse_timing.py
 
   core-smoke:
-    needs: [classify, workflow-hygiene, regression-shield]
+    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     steps:
@@ -303,3 +292,26 @@ jobs:
           python-version: "3.12"
       - name: Compile shared entry points
         run: python -m py_compile app.py
+
+  devsystem-final-gate:
+    if: always()
+    needs:
+      - classify
+      - workflow-hygiene
+      - permanent-contract
+      - regression-shield
+      - browser-qa
+      - cfb-critical
+      - mlb-critical
+      - wnba-critical
+      - core-smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Aggregate every required DevSystem lane
+        env:
+          DEVSYSTEM_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: python devsystem/final_gate_v1.py
