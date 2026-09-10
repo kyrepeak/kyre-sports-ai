@@ -144,6 +144,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/cfb_runtime_snapshot_v1.json
           git commit -m "Refresh CFB runtime data snapshot"
-          git pull --rebase origin main
-          git push origin HEAD:main
-          echo "CFB_RUNTIME_SNAPSHOT_PUSHED"
+          refresh_branch="cfb-runtime-snapshot-auto-refresh-v1"
+          git fetch origin "$refresh_branch" || true
+          git push --force-with-lease origin HEAD:"$refresh_branch"
+          echo "CFB_RUNTIME_SNAPSHOT_RUNTIME_BRANCH_PUBLISHED $refresh_branch"
