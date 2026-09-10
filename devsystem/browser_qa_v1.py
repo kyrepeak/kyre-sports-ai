@@ -258,7 +258,7 @@ def run_browser_qa(
             ]
             if missing_markers:
                 raise BrowserQAFailure(
-                    "CFB Clean Page V20 Step 6 marker drift: "
+                    "CFB Clean Page V26 Step 9 marker drift: "
                     + " | ".join(missing_markers)
                 )
 
