@@ -1,7 +1,109 @@
 """Regression tests for additive Schedule V6 FBS + FCS snapshot enrichment."""
 from __future__ import annotations
 
+import json
+
 import cfb_schedule_v6_runtime_snapshot as schedule
+
+
+
+
+
+class _FakeSnapshotResponse:
+    def __init__(self, payload, *, status=200):
+        self._payload = payload
+        self.status_code = status
+
+    def raise_for_status(self):
+        if self.status_code != 200:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+    def json(self):
+        return self._payload
+
+
+def _complete_snapshot_row(event_id="401858213"):
+    return {
+        "event_id": event_id,
+        "game_date": "2026-09-10",
+        "away_team": "Florida A&M",
+        "home_team": "Miami",
+        "away": {"team_id": "50"},
+        "home": {"team_id": "2390"},
+    }
+
+
+def test_v6_prefers_valid_certified_runtime_branch_snapshot(monkeypatch):
+    remote = {
+        "version": 2,
+        "games": [_complete_snapshot_row("remote-event")],
+    }
+    monkeypatch.setattr(
+        schedule.requests,
+        "get",
+        lambda *args, **kwargs: _FakeSnapshotResponse(remote),
+    )
+
+    schedule._load_v2_snapshot.clear()
+    payload = schedule._load_v2_snapshot()
+    schedule._load_v2_snapshot.clear()
+
+    assert payload["games"][0]["event_id"] == "remote-event"
+    assert payload["_runtime_snapshot_source"] == "certified-runtime-branch"
+
+
+def test_v6_rejects_ambiguous_remote_snapshot_and_falls_back_local(
+    monkeypatch,
+    tmp_path,
+):
+    duplicate = _complete_snapshot_row("duplicate-event")
+    remote = {
+        "version": 2,
+        "games": [duplicate, dict(duplicate)],
+    }
+    local = {
+        "version": 2,
+        "games": [_complete_snapshot_row("local-event")],
+    }
+    local_path = tmp_path / "cfb_runtime_snapshot_v2.json"
+    local_path.write_text(json.dumps(local), encoding="utf-8")
+
+    monkeypatch.setattr(schedule, "SNAPSHOT_PATH", local_path)
+    monkeypatch.setattr(
+        schedule.requests,
+        "get",
+        lambda *args, **kwargs: _FakeSnapshotResponse(remote),
+    )
+
+    schedule._load_v2_snapshot.clear()
+    payload = schedule._load_v2_snapshot()
+    schedule._load_v2_snapshot.clear()
+
+    assert payload["games"][0]["event_id"] == "local-event"
+    assert payload["_runtime_snapshot_source"] == "checked-in-main-fallback"
+
+
+def test_v6_runtime_snapshot_validator_requires_complete_official_identity():
+    incomplete = {
+        "version": 2,
+        "games": [
+            {
+                "event_id": "401858213",
+                "game_date": "2026-09-10",
+                "away_team": "Florida A&M",
+                "home_team": "Miami",
+                "away": {"team_id": ""},
+                "home": {"team_id": "2390"},
+            }
+        ],
+    }
+    assert (
+        schedule._validated_v2_snapshot(
+            incomplete,
+            source="certified-runtime-branch",
+        )
+        is None
+    )
 
 
 def test_v6_finds_snapshot_by_exact_official_event_id(monkeypatch):
