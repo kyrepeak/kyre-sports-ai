@@ -11,8 +11,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
-  actions: write
 
 jobs:
   certify:
@@ -137,51 +135,82 @@ jobs:
       - name: Refresh snapshot
         run: python scripts/build_cfb_runtime_snapshot_v2.py
 
-      - name: Route substantive changes through protected DevSystem PR
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Validate and publish certified runtime branch
         run: |
           if git diff --quiet -- data/cfb_runtime_snapshot_v2.json; then
             echo "CFB_RUNTIME_SNAPSHOT_V2_NO_COMMIT_NEEDED"
             exit 0
           fi
 
-          refresh_branch="cfb-runtime-snapshot-auto-refresh-v2"
+          python - <<'PY'
+          import json
+          from pathlib import Path
 
+          payload = json.loads(
+              Path("data/cfb_runtime_snapshot_v2.json").read_text(encoding="utf-8")
+          )
+          games = payload.get("games") or []
+          if int(payload.get("version") or 0) != 2:
+              raise SystemExit("Snapshot V2 version drift")
+          if len(games) < 25:
+              raise SystemExit(f"Snapshot V2 coverage unexpectedly small: {len(games)}")
+
+          seen = set()
+          for row in games:
+              away = row.get("away") or {}
+              home = row.get("home") or {}
+              required = (
+                  row.get("event_id"),
+                  row.get("game_date"),
+                  row.get("away_team"),
+                  row.get("home_team"),
+                  away.get("team_id"),
+                  home.get("team_id"),
+              )
+              if any(not str(value or "").strip() for value in required):
+                  raise SystemExit(f"Incomplete official identity row: {row.get('event_id')}")
+              event_id = str(row.get("event_id"))
+              if not event_id.isdigit():
+                  raise SystemExit(f"Non-official/synthetic event ID: {event_id}")
+              if event_id in seen:
+                  raise SystemExit(f"Duplicate official event ID: {event_id}")
+              seen.add(event_id)
+
+          window = payload.get("window") or {}
+          if str(window.get("start") or "") <= "2026-09-10" <= str(window.get("end") or ""):
+              target = next(
+                  (row for row in games if str(row.get("event_id")) == "401858213"),
+                  None,
+              )
+              if target is None:
+                  raise SystemExit("Current Step 4 witness 401858213 is missing")
+              if (
+                  target.get("game_date") != "2026-09-10"
+                  or target.get("away_team") != "Florida A&M"
+                  or target.get("home_team") != "Miami"
+                  or str((target.get("away") or {}).get("team_id") or "") != "50"
+                  or str((target.get("home") or {}).get("team_id") or "") != "2390"
+              ):
+                  raise SystemExit(f"Step 4 witness identity drift: {target}")
+
+          print(
+              "CFB_RUNTIME_SNAPSHOT_V2_RUNTIME_BRANCH_VALIDATED",
+              f"games={len(games)}",
+              f"unique_event_ids={len(seen)}",
+              f"generated_at={payload.get('generated_at')}",
+          )
+          PY
+
+          refresh_branch="cfb-runtime-snapshot-auto-refresh-v2"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/cfb_runtime_snapshot_v2.json
           git commit -m "Refresh CFB runtime data snapshot V2"
 
-          # Protected main is never written directly. Keep one deterministic
-          # refresh branch so scheduled runs update/reuse the same PR safely.
+          # Runtime data lives on its dedicated branch. Protected main is never
+          # written by this job, and Schedule V6 validates/falls back locally.
+          # Refresh the lease first so a concurrent/newer branch write cannot
+          # be overwritten by a stale hourly job.
+          git fetch origin "$refresh_branch" || true
           git push --force-with-lease origin HEAD:"$refresh_branch"
-          echo "CFB_RUNTIME_SNAPSHOT_V2_BRANCH_PUSHED $refresh_branch"
-
-          pr_url="$(
-            gh pr list               --repo "$GITHUB_REPOSITORY"               --head "$refresh_branch"               --base main               --state open               --json url               --jq '.[0].url // empty'
-          )"
-
-          if [ -z "$pr_url" ]; then
-            pr_url="$(
-              gh pr create                 --repo "$GITHUB_REPOSITORY"                 --head "$refresh_branch"                 --base main                 --title "Refresh CFB runtime snapshot V2"                 --body "Automated Snapshot V2 refresh. This PR must pass devsystem-final-gate before protected main can update."
-            )"
-            echo "CFB_RUNTIME_SNAPSHOT_V2_PR_CREATED $pr_url"
-          else
-            echo "CFB_RUNTIME_SNAPSHOT_V2_PR_REUSED $pr_url"
-          fi
-
-          # PRs opened by GITHUB_TOKEN do not fan out normal pull_request
-          # workflows. Dispatch the permanent DevSystem gate explicitly on
-          # this exact branch head so branch protection still receives the
-          # required devsystem-final-gate status.
-          gh workflow run devsystem-targeted-ci.yml             --repo "$GITHUB_REPOSITORY"             --ref "$refresh_branch"
-          echo "CFB_RUNTIME_SNAPSHOT_V2_DEVSYSTEM_DISPATCHED $refresh_branch"
-
-          # If repository auto-merge is enabled, queue the protected merge.
-          # Otherwise leave the PR open and green for an operator/assistant.
-          if gh pr merge "$pr_url" --repo "$GITHUB_REPOSITORY" --auto --merge; then
-            echo "CFB_RUNTIME_SNAPSHOT_V2_AUTO_MERGE_QUEUED $pr_url"
-          else
-            echo "CFB_RUNTIME_SNAPSHOT_V2_AUTO_MERGE_UNAVAILABLE $pr_url"
-          fi
+          echo "CFB_RUNTIME_SNAPSHOT_V2_RUNTIME_BRANCH_PUBLISHED $refresh_branch"

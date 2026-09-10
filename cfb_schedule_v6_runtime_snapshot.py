@@ -1,9 +1,10 @@
 """College Football Schedule V6 — additive FBS + FCS runtime snapshot V2.
 
 Wraps permanently frozen Schedule V5 without editing it. V5 remains the baseline
-schedule/enrichment path. V6 adds a second checked-in verified snapshot source
-that includes both ESPN FBS and FCS identities so every current NCAAF market row
-can receive an official ESPN event ID before the Step 4 market adapter runs.
+schedule/enrichment path. V6 prefers a validated Snapshot V2 from the dedicated
+runtime-data branch and fails closed to the checked-in Snapshot V2 on main. Both
+sources carry ESPN FBS + FCS identities so market rows can receive official ESPN
+event IDs before the Step 4 market adapter runs.
 """
 from __future__ import annotations
 
@@ -12,6 +13,7 @@ from pathlib import Path
 import re
 from typing import Any, Mapping
 
+import requests
 import streamlit as st
 
 import cfb_over_under_runtime_team_data_v1 as runtime_data
@@ -20,21 +22,110 @@ import cfb_schedule_v5_runtime_snapshot as frozen
 MODEL_VERSION = "CFB SCHEDULE V6 • FBS + FCS RUNTIME SNAPSHOT V2"
 FROZEN_SCHEDULE = "cfb_schedule_v5_runtime_snapshot"
 SNAPSHOT_PATH = Path(__file__).resolve().parent / "data" / "cfb_runtime_snapshot_v2.json"
+REMOTE_SNAPSHOT_URL = (
+    "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
+    "cfb-runtime-snapshot-auto-refresh-v2/data/cfb_runtime_snapshot_v2.json"
+)
+REMOTE_SNAPSHOT_TIMEOUT_SECONDS = 5.0
 
 
 def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _validated_v2_snapshot(
+    payload: Any,
+    *,
+    source: str,
+) -> dict[str, Any] | None:
+    """Accept only complete, unambiguous official-identity Snapshot V2 payloads."""
+    if not isinstance(payload, dict):
+        return None
+    if int(payload.get("version") or 0) != 2:
+        return None
+
+    games = payload.get("games")
+    if not isinstance(games, list) or not games:
+        return None
+
+    seen_event_ids: set[str] = set()
+    for row in games:
+        if not isinstance(row, Mapping):
+            return None
+        event_id = _clean(row.get("event_id"))
+        game_date = _clean(row.get("game_date"))[:10]
+        away_team = _clean(row.get("away_team"))
+        home_team = _clean(row.get("home_team"))
+        away_side = row.get("away") if isinstance(row.get("away"), Mapping) else {}
+        home_side = row.get("home") if isinstance(row.get("home"), Mapping) else {}
+        away_team_id = _clean(away_side.get("team_id"))
+        home_team_id = _clean(home_side.get("team_id"))
+
+        if not all(
+            (
+                event_id,
+                game_date,
+                away_team,
+                home_team,
+                away_team_id,
+                home_team_id,
+            )
+        ):
+            return None
+        if not event_id.isdigit():
+            return None
+        if event_id in seen_event_ids:
+            return None
+        seen_event_ids.add(event_id)
+
+    out = dict(payload)
+    out["_runtime_snapshot_source"] = source
+    return out
+
+
 @st.cache_data(ttl=90, show_spinner=False)
 def _load_v2_snapshot() -> dict[str, Any]:
+    """Prefer the certified runtime-data branch; fail closed to main's snapshot."""
+    try:
+        response = requests.get(
+            REMOTE_SNAPSHOT_URL,
+            timeout=REMOTE_SNAPSHOT_TIMEOUT_SECONDS,
+            headers={
+                "Accept": "application/json",
+                "Cache-Control": "no-cache",
+                "User-Agent": "KyreSportsAI-CFB-ScheduleV6/1.0",
+            },
+        )
+        response.raise_for_status()
+        remote = _validated_v2_snapshot(
+            response.json(),
+            source="certified-runtime-branch",
+        )
+        if remote is not None:
+            return remote
+    except Exception:
+        pass
+
     try:
         payload = json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
     except Exception:
-        return {"version": 2, "games": []}
-    if not isinstance(payload, dict) or not isinstance(payload.get("games"), list):
-        return {"version": 2, "games": []}
-    return payload
+        return {
+            "version": 2,
+            "games": [],
+            "_runtime_snapshot_source": "unavailable",
+        }
+
+    local = _validated_v2_snapshot(
+        payload,
+        source="checked-in-main-fallback",
+    )
+    if local is not None:
+        return local
+    return {
+        "version": 2,
+        "games": [],
+        "_runtime_snapshot_source": "unavailable",
+    }
 
 
 def _slug(value: Any) -> str:
@@ -186,6 +277,11 @@ def load_with_diagnostics(
     games, diag = frozen.load_with_diagnostics(target_date)
     out = [dict(game) for game in games]
 
+    snapshot_payload = _load_v2_snapshot()
+    snapshot_source = _clean(
+        snapshot_payload.get("_runtime_snapshot_source")
+    ) or "unknown"
+
     v2_matches = 0
     official_ids_before = sum(
         bool(_clean(game.get("espn_event_id"))) for game in out
@@ -244,6 +340,7 @@ def load_with_diagnostics(
             "venue_missing": int(venue_missing),
             "broadcast_missing": int(broadcast_missing),
             "runtime_snapshot_v2_active": True,
+            "runtime_snapshot_v2_source": snapshot_source,
             "fuzzy_matching": False,
             "synthetic_ids": False,
         }
@@ -272,7 +369,9 @@ def clear_schedule_cache() -> None:
 __all__ = [
     "FROZEN_SCHEDULE",
     "MODEL_VERSION",
+    "REMOTE_SNAPSHOT_URL",
     "SNAPSHOT_PATH",
+    "_validated_v2_snapshot",
     "_find_v2_snapshot",
     "_snapshot_seed_games",
     "clear_schedule_cache",
