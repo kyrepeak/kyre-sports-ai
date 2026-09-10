@@ -1,10 +1,10 @@
-"""DevSystem Step 5 production verification.
+"""DevSystem production verification.
 
 This script verifies the real deployed public surfaces after a merge:
 - Render API transport and health;
 - the public CFB odds safety contract;
 - the deployed Streamlit app shell;
-- the College Football -> Over/Under route through a real browser.
+- the College Football -> Over/Under V19 freshness route through a real browser.
 
 Render deploy metadata/log freshness is inspected through the connected Render
 tooling by the release operator/assistant. No Render API secret is required here.
@@ -40,7 +40,8 @@ REQUIRED_SPORTS = (
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V18 ACTIVE",
+    "CFB O/U • CLEAN PAGE V19 ACTIVE",
+    "FRESHNESS FIREWALL ACTIVE",
     "FROZEN PROJECTION MATH PRESERVED",
 )
 
@@ -243,12 +244,6 @@ def _browser_verify(
                     "Production sport selector is missing"
                 )
 
-            # Streamlit Community Cloud can render selectbox popovers in a
-            # portal that Playwright's page-level role query does not expose
-            # consistently. Step 4's branch-local browser QA already verifies
-            # the complete sport option list. Production QA therefore proves
-            # the important end-to-end behavior directly by selecting the CFB
-            # route and requiring its certified page markers.
             try:
                 initial_sport_value = combo.input_value(timeout=3000)
             except Exception:
@@ -280,7 +275,7 @@ def _browser_verify(
                 page.wait_for_timeout(1500)
             else:
                 raise ProductionVerificationFailure(
-                    "Production CFB Clean Page V18 marker did not appear"
+                    "Production CFB Clean Page V19 marker did not appear"
                 )
 
             missing_markers = [
@@ -302,7 +297,7 @@ def _browser_verify(
             page.screenshot(path=str(screenshot), full_page=True)
             return {
                 "initial_sport_value": initial_sport_value,
-                "sport_option_inventory_verified_by": "Step 4 branch-local browser QA",
+                "sport_option_inventory_verified_by": "branch-local DevSystem browser QA",
                 "cfb_route": f"{CFB_SPORT} -> {CFB_MARKET}",
                 "cfb_markers": list(CFB_REQUIRED_MARKERS),
                 "app_frame_url": frame.url,
