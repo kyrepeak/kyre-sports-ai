@@ -1,8 +1,7 @@
 name: MLB Moneyline Step 7 park-weather certification
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     branches: ['feature/mlb-moneyline-step7-park-weather']
 
