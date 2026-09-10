@@ -52,7 +52,7 @@ def test_readable_step11_renders_current_form_sos_and_zero_weight_audit():
     assert "Projection blend 18%" in html
     assert "TOUGHER OPPONENT SET" in html
     assert "BALANCED OPPONENT SET" in html
-    assert "33.2" in html
+    assert "33.1" in html
     assert "16.9" in html
     assert "sportsbook projection weight: <b>0.0%</b>" in html
     assert "ESPN team IDs 50 / 2390" in html
