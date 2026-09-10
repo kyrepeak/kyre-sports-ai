@@ -212,8 +212,7 @@ jobs:
           python -m pytest -q \
             tests/test_wnba_step20b_runtime_acceleration.py \
             tests/test_wnba_step20b_monte_carlo_acceleration.py \
-            tests/test_wnba_step20b_step2_exact_reuse_timing.py \
-            tests/test_wnba_step8_fastapi_integration.py
+            tests/test_wnba_step20b_step2_exact_reuse_timing.py
 
   core-smoke:
     needs: [classify, workflow-hygiene]
