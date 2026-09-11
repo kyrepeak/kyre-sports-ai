@@ -164,7 +164,9 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -173,7 +175,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv-browser-qa
-          key: devsystem-browser-venv-${{ runner.os }}-py312-${{ hashFiles('requirements.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+          key: devsystem-browser-venv-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
 
       - name: Build browser QA virtualenv on cache miss
         if: steps.browser-venv-cache.outputs.cache-hit != 'true'
@@ -220,8 +222,11 @@ jobs:
           print('DEVSYSTEM_BROWSER_RUNTIME_GREEN')
           PY
 
-      - name: Self-test browser QA contract
-        run: python -m pytest -q tests/test_devsystem_browser_qa_v1.py
+      - name: Self-test browser QA and cache contracts
+        run: |
+          python -m pytest -q \
+            tests/test_devsystem_browser_qa_v1.py \
+            tests/test_devsystem_browser_cache_v1.py
       - name: Start branch-local Streamlit
         shell: bash
         run: |
