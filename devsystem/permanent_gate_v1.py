@@ -1,4 +1,4 @@
-"""Step 9 permanent DevSystem contract validator."""
+"""Step 10 permanent DevSystem contract validator."""
 from __future__ import annotations
 
 import json
@@ -133,6 +133,11 @@ def validate() -> dict:
         "--source-created-at",
         "current_timestamp=",
         "timestamps=",
+        "History coverage confidence:.*confirmed",
+        "History oldest verified prior packet (UTC):.*2026-09-01T12:00:00Z",
+        "History newest verified prior packet (UTC):.*2026-09-01T12:00:00Z",
+        "Bounded history lookback:.*10d",
+        "Bounded history lookback (seconds):.*864000",
         "class NoRedirect",
         "Do not forward GH_TOKEN off github.com.",
         "--history-json",
@@ -186,6 +191,11 @@ def validate() -> dict:
         '"prior_last_seen_age_seconds"',
         '"prior_last_seen_age"',
         '"current_run_created_at"',
+        '"history_coverage_confidence"',
+        '"history_oldest_verified_at"',
+        '"history_newest_verified_at"',
+        '"history_lookback_seconds"',
+        '"history_lookback"',
         '"claims_flakiness": False',
         '"claims_cadence": False',
     )
@@ -200,6 +210,14 @@ def validate() -> dict:
         history_missing.append("packet:Age since prior matching occurrence")
     if "Source run created (UTC)" not in packet_source:
         history_missing.append("packet:Source run created (UTC)")
+    if "History coverage confidence" not in packet_source:
+        history_missing.append("packet:History coverage confidence")
+    if "History oldest verified prior packet (UTC)" not in packet_source:
+        history_missing.append("packet:History oldest verified prior packet (UTC)")
+    if "History newest verified prior packet (UTC)" not in packet_source:
+        history_missing.append("packet:History newest verified prior packet (UTC)")
+    if "Bounded history lookback" not in packet_source:
+        history_missing.append("packet:Bounded history lookback")
     if history_missing:
         raise PermanentGateFailure("failure recurrence history drift: " + " | ".join(history_missing))
 
@@ -236,6 +254,7 @@ def validate() -> dict:
         "failure_recurrence_history_permanent": True,
         "failure_recurrence_chronology_permanent": True,
         "failure_recurrence_age_permanent": True,
+        "failure_history_coverage_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
