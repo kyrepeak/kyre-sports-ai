@@ -22,6 +22,27 @@ def _load_triage():
     return module
 
 
+def _needs_with_failed_step_evidence(
+    needs: dict[str, Any],
+    failed_steps: dict[str, list[str]] | None,
+) -> dict[str, Any]:
+    """Attach captured failed-step text to its lane without mutating caller input.
+
+    Explicit evidence already supplied by a lane wins. Failed-step evidence is a
+    deterministic fallback so Phase 3 triage signatures can operate automatically
+    from the evidence packet that CI already captures.
+    """
+    enriched: dict[str, Any] = {}
+    captured = failed_steps or {}
+    for name, raw_payload in sorted(needs.items()):
+        payload = dict(raw_payload or {})
+        steps = captured.get(name) or []
+        if steps and not (payload.get("evidence") or payload.get("log_excerpt")):
+            payload["evidence"] = "\n".join(str(step) for step in steps if str(step).strip())
+        enriched[name] = payload
+    return enriched
+
+
 def build_packet(
     needs: dict[str, Any],
     *,
@@ -31,7 +52,8 @@ def build_packet(
     failed_steps: dict[str, list[str]] | None = None,
 ) -> dict[str, Any]:
     triage_module = _load_triage()
-    report = triage_module.triage(needs)
+    enriched_needs = _needs_with_failed_step_evidence(needs, failed_steps)
+    report = triage_module.triage(enriched_needs)
     lane_results = {
         name: str((payload or {}).get("result") or "unknown")
         for name, payload in sorted(needs.items())
@@ -75,6 +97,9 @@ def render_markdown(packet: dict[str, Any]) -> str:
             f"- **Lane:** {primary['job']}",
             f"- **Layer:** {primary['layer']}",
             f"- **Failure class:** {primary['failure_class']}",
+            f"- **Evidence signal:** {primary.get('evidence_signal', 'none')}",
+            f"- **Confidence:** {primary.get('confidence', 'lane-only')}",
+            f"- **Diagnosis:** {primary.get('diagnosis', primary['failure_class'])}",
             f"- **Inspect first:** {primary['inspect_first']}",
         ])
 
@@ -85,7 +110,10 @@ def render_markdown(packet: dict[str, Any]) -> str:
     else:
         for item in failures:
             lines.append(
-                f"- `{item['job']}` → {item['layer']} → {item['failure_class']} → inspect: {item['inspect_first']}"
+                f"- `{item['job']}` → {item['layer']} → "
+                f"signal={item.get('evidence_signal', 'none')} → "
+                f"confidence={item.get('confidence', 'lane-only')} → "
+                f"{item.get('diagnosis', item['failure_class'])} → inspect: {item['inspect_first']}"
             )
 
     lines.extend(["", "## Failed Steps", ""])

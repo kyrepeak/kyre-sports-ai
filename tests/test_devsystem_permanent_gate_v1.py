@@ -26,6 +26,7 @@ def test_permanent_contract_is_green():
     assert result["critical_test_count"] == 17
     assert result["api_observability_permanent"] is True
     assert result["predictive_failure_triage_permanent"] is True
+    assert result["automatic_failure_evidence_wiring_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
@@ -62,6 +63,22 @@ def test_predictive_triage_signature_is_permanently_exercised():
     assert primary["evidence_signal"] == "browser-selector-race"
     assert primary["confidence"] == "high"
     assert "readiness" in primary["inspect_first"]
+
+
+def test_failure_packet_automatically_wires_captured_step_evidence():
+    packet_module = _load("failure_packet_evidence_wiring", "devsystem/failure_packet_v1.py")
+    packet = packet_module.build_packet(
+        {"browser-qa": {"result": "failure"}},
+        failed_steps={
+            "browser-qa": [
+                "Drive real UI: Playwright TimeoutError waiting for locator combobox"
+            ]
+        },
+    )
+    primary = packet["triage"]["primary"]
+    assert primary["job"] == "browser-qa"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
 
 
 def test_production_contract_separates_hosting_config_from_release_parity():
