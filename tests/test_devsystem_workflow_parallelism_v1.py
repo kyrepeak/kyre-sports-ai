@@ -44,3 +44,26 @@ def test_final_gate_still_aggregates_both_safety_gates() -> None:
     final_gate = _job_block("devsystem-final-gate")
     assert "- permanent-contract" in final_gate
     assert "- regression-shield" in final_gate
+
+
+def test_final_gate_is_lightweight_and_fail_closed() -> None:
+    final_gate = _job_block("devsystem-final-gate")
+
+    assert "actions/checkout" not in final_gate
+    assert "actions/setup-python" not in final_gate
+    assert "python devsystem/final_gate_v1.py" not in final_gate
+    assert 'allowed="success skipped"' in final_gate
+    assert 'if ! grep -qw -- "$result" <<< "$allowed"; then' in final_gate
+    assert "DEVSYSTEM_FINAL_GATE_GREEN" in final_gate
+    for job in (
+        "CLASSIFY_RESULT",
+        "WORKFLOW_HYGIENE_RESULT",
+        "PERMANENT_CONTRACT_RESULT",
+        "REGRESSION_SHIELD_RESULT",
+        "BROWSER_QA_RESULT",
+        "CFB_CRITICAL_RESULT",
+        "MLB_CRITICAL_RESULT",
+        "WNBA_CRITICAL_RESULT",
+        "CORE_SMOKE_RESULT",
+    ):
+        assert job in final_gate

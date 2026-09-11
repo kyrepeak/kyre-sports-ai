@@ -90,7 +90,8 @@ def validate() -> dict:
         "python devsystem/change_classifier_v1.py",
         "permanent-contract:",
         "devsystem-final-gate:",
-        "python devsystem/final_gate_v1.py",
+        'allowed="success skipped"',
+        "DEVSYSTEM_FINAL_GATE_GREEN",
     )
     workflow_missing = [m for m in required_workflow_markers if m not in workflow]
     for key in active:
