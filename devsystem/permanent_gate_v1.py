@@ -122,6 +122,7 @@ def validate() -> dict:
         "tests/test_devsystem_failure_history_v1.py",
         "Collect prior failure fingerprint history",
         "DEVSYSTEM_FAILURE_HISTORY_UNAVAILABLE",
+        "DEVSYSTEM_FAILURE_HISTORY_LIVE_CERTIFIED",
         "--history-json",
         "retention-days: 30",
         "DEVSYSTEM_FAILURE_LOG_EXCERPT_UNAVAILABLE",
