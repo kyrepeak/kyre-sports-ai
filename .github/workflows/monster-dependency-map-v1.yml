@@ -1,0 +1,84 @@
+name: Monster Dependency Map V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.py"
+      - "tests/test_monster_dependency_map_v1.py"
+      - ".github/workflows/monster-dependency-map-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/monster_dependency_map_v1.py"
+      - "tests/test_monster_dependency_map_v1.py"
+      - ".github/workflows/monster-dependency-map-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-dependency-map-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  monster-dependency-map:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install dependency-map test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile dependency-map engine
+        run: |
+          python -m py_compile sports_api/monster_dependency_map_v1.py
+
+      - name: Run dependency-map contracts
+        run: |
+          python -m pytest -q tests/test_monster_dependency_map_v1.py
+
+      - name: Prove repository snapshot builds without executing app modules
+        run: |
+          python -m sports_api.monster_dependency_map_v1 --snapshot --json > /tmp/monster-dependency-map.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/monster-dependency-map.json').read_text())
+          assert payload['version'] == 'MONSTER_DEPENDENCY_MAP_V1'
+          assert payload['modules'] > 100
+          assert payload['edges'] > 100
+          assert payload['projection_weight'] == 0.0
+          assert payload['may_modify_projection'] is False
+          print(f"modules={payload['modules']} edges={payload['edges']} parse_errors={len(payload['parse_errors'])}")
+          PY
+
+      - name: Prove active CFB page blast radius is visible
+        run: |
+          python -m sports_api.monster_dependency_map_v1 cfb_over_under_clean_page_v35.py --json > /tmp/cfb-impact.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/cfb-impact.json').read_text())
+          assert payload['status'] == 'OK'
+          assert 'app.py' in payload['impacted_entrypoints']
+          assert 'streamlit_memory_lazy_router_v77' in payload['transitive_dependents']
+          print(json.dumps({
+              'risk': payload['risk'],
+              'blast_radius': payload['blast_radius'],
+              'entrypoints': payload['impacted_entrypoints'],
+          }, indent=2))
+          PY
