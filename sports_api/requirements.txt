@@ -6,3 +6,4 @@ pydantic
 python-dotenv
 pypdf
 numpy
+posthog~=7.48
