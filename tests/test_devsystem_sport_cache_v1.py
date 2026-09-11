@@ -2,11 +2,16 @@ from pathlib import Path
 
 
 WORKFLOW = Path('.github/workflows/devsystem-targeted-ci.yml')
+SEED_WORKFLOW = Path('.github/workflows/devsystem-cache-seed-v1.yml')
 EPOCH = Path('devsystem/sport_cache_epoch_v1.txt')
 
 
 def _workflow_text() -> str:
     return WORKFLOW.read_text(encoding='utf-8')
+
+
+def _seed_text() -> str:
+    return SEED_WORKFLOW.read_text(encoding='utf-8')
 
 
 def test_each_sport_critical_lane_has_isolated_exact_python_cache():
@@ -43,6 +48,30 @@ def test_cache_misses_rebuild_and_frozen_test_commands_remain_present():
     assert 'tests/test_cfb_over_under_upgrade_step12_certification.py' in text
     assert 'tests/test_mlb_step20b_production_release_certification_v1.py' in text
     assert 'tests/test_wnba_step20b_monte_carlo_acceleration.py' in text
+
+
+def test_main_cache_seed_is_trusted_scoped_and_key_aligned():
+    targeted = _workflow_text()
+    seed = _seed_text()
+
+    assert 'name: DevSystem cache seed' in seed
+    assert 'branches: [main]' in seed
+    assert 'workflow_dispatch:' in seed
+    assert 'pull_request:' not in seed
+
+    for marker in (
+        'devsystem-browser-venv-',
+        'devsystem-playwright-',
+        'devsystem-cfb-venv-',
+        'devsystem-mlb-venv-',
+        'devsystem-wnba-venv-',
+    ):
+        assert marker in targeted
+        assert marker in seed
+
+    assert 'devsystem/sport_cache_epoch_v1.txt' in seed
+    assert 'devsystem/browser_cache_epoch_v1.txt' in seed
+    assert '.github/workflows/devsystem-cache-seed-v1.yml' in seed
 
 
 def test_sport_cache_contract_is_permanently_exercised():
