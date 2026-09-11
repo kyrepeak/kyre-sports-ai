@@ -29,6 +29,7 @@ def test_permanent_contract_is_green():
     assert result["automatic_failure_evidence_wiring_permanent"] is True
     assert result["failed_job_log_evidence_permanent"] is True
     assert result["failure_remediation_policy_permanent"] is True
+    assert result["stable_failure_fingerprint_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
@@ -98,6 +99,20 @@ def test_failure_packet_automatically_wires_captured_step_evidence():
     assert primary["evidence_signal"] == "browser-selector-race"
     assert primary["confidence"] == "high"
     assert primary["retry_policy"] == "retry-once-after-inspection"
+    assert primary["failure_fingerprint"].startswith("KYRE-CI-")
+
+
+def test_same_packet_failure_keeps_same_fingerprint_across_run_metadata():
+    packet_module = _load("failure_packet_fingerprint", "devsystem/failure_packet_v1.py")
+    needs = {
+        "browser-qa": {
+            "result": "failure",
+            "evidence": "Playwright TimeoutError while waiting for locator combobox",
+        }
+    }
+    first = packet_module.build_packet(needs, run_id="100", sha="aaa")
+    second = packet_module.build_packet(needs, run_id="200", sha="bbb")
+    assert first["triage"]["primary"]["failure_fingerprint"] == second["triage"]["primary"]["failure_fingerprint"]
 
 
 def test_failed_job_log_excerpt_reaches_predictive_triage():
@@ -117,6 +132,7 @@ def test_failed_job_log_excerpt_reaches_predictive_triage():
     assert primary["evidence_signal"] == "browser-selector-race"
     assert primary["confidence"] == "high"
     assert primary["retry_policy"] == "retry-once-after-inspection"
+    assert primary["failure_fingerprint"].startswith("KYRE-CI-")
 
 
 def test_production_contract_separates_hosting_config_from_release_parity():
