@@ -25,6 +25,7 @@ def test_permanent_contract_is_green():
     assert "nfl" in result["blocked_until_activated"]
     assert result["critical_test_count"] == 17
     assert result["api_observability_permanent"] is True
+    assert result["predictive_failure_triage_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
@@ -46,6 +47,21 @@ def test_final_gate_accepts_success_and_skipped_only():
     assert "primary=cfb-critical" in message
     assert "layer=cfb" in message
     assert "official-ID contracts" in message
+
+
+def test_predictive_triage_signature_is_permanently_exercised():
+    triage = _load("failure_triage_predictive", "devsystem/failure_triage_v1.py")
+    report = triage.triage({
+        "browser-qa": {
+            "result": "failure",
+            "evidence": "Playwright TimeoutError while waiting for locator combobox",
+        }
+    })
+    primary = report["primary"]
+    assert primary["layer"] == "ui-browser"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
+    assert "readiness" in primary["inspect_first"]
 
 
 def test_production_contract_separates_hosting_config_from_release_parity():

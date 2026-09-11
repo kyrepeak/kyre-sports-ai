@@ -1,14 +1,16 @@
 """Intelligent failure triage for DevSystem CI.
 
-Maps failed/skipped infrastructure lanes to a small, deterministic diagnosis so
-operators know which layer to inspect first. This module never changes sports
-projection/model logic; it only interprets CI job outcomes.
+Maps failed/skipped infrastructure lanes and optional failure evidence to a small,
+deterministic diagnosis so operators know which layer and failure mode to inspect
+first. This module never changes sports projection/model logic; it only interprets
+CI outcomes and evidence text.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import re
 from typing import Any
 
 
@@ -61,7 +63,7 @@ ROUTES: dict[str, dict[str, str]] = {
     "devsystem-final-gate": {
         "layer": "devsystem-final-gate",
         "failure_class": "aggregate gate execution or final-gate contract failure",
-        "inspect_first": "the failed final-gate step, then devsystem/final_gate_v1.py",
+        "inspect_first": "the failed final-gate dependency result",
     },
     "production-verification": {
         "layer": "production",
@@ -69,6 +71,59 @@ ROUTES: dict[str, dict[str, str]] = {
         "inspect_first": "production verification evidence, Render health/details, then deploy identity",
     },
 }
+
+# Ordered most-specific first. This is intentionally deterministic and conservative.
+EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
+    {
+        "name": "browser-selector-race",
+        "patterns": (r"playwright.*timeout", r"locator.*timeout", r"strict mode violation", r"waiting for.*combobox", r"waiting for.*locator"),
+        "diagnosis": "browser selector/readiness synchronization failure",
+        "confidence": "high",
+        "inspect_first": "the first timed-out locator and the preceding Streamlit rerun/readiness barrier",
+    },
+    {
+        "name": "test-assertion",
+        "patterns": (r"assertionerror", r"\bfailed\b.*::", r"short test summary info"),
+        "diagnosis": "test assertion or protected contract failure",
+        "confidence": "high",
+        "inspect_first": "the first failing test assertion and its protected invariant before changing implementation",
+    },
+    {
+        "name": "python-import",
+        "patterns": (r"modulenotfounderror", r"importerror", r"cannot import name"),
+        "diagnosis": "Python import/dependency surface failure",
+        "confidence": "high",
+        "inspect_first": "the first missing/imported module, then the lane requirements/cache key that supplies it",
+    },
+    {
+        "name": "syntax-compile",
+        "patterns": (r"syntaxerror", r"indentationerror", r"taberror"),
+        "diagnosis": "Python syntax/compile failure",
+        "confidence": "high",
+        "inspect_first": "the first syntax traceback location; avoid touching unrelated model/runtime code",
+    },
+    {
+        "name": "cache-dependency",
+        "patterns": (r"cache (miss|restore|failed)", r"pip.*(error|failed)", r"no matching distribution", r"could not find a version"),
+        "diagnosis": "dependency or CI cache provisioning failure",
+        "confidence": "medium",
+        "inspect_first": "the cache key/restore result and first dependency installation error",
+    },
+    {
+        "name": "network-upstream",
+        "patterns": (r"connectionerror", r"connection reset", r"timed out.*https?", r"429 too many requests", r"rate limit", r"502 bad gateway", r"503 service unavailable"),
+        "diagnosis": "network or upstream service failure",
+        "confidence": "medium",
+        "inspect_first": "the first failing external endpoint and whether retry/freshness policy was engaged",
+    },
+    {
+        "name": "generic-timeout",
+        "patterns": (r"timeout(error)?", r"timed out", r"deadline exceeded"),
+        "diagnosis": "timeout without a more specific signature",
+        "confidence": "medium",
+        "inspect_first": "the operation immediately before the timeout and its readiness/timeout contract",
+    },
+)
 
 
 def _route_for(job_name: str) -> dict[str, str]:
@@ -81,14 +136,53 @@ def _route_for(job_name: str) -> dict[str, str]:
     }
 
 
+def diagnose_evidence(text: str | None) -> dict[str, str] | None:
+    normalized = (text or "").strip().lower()
+    if not normalized:
+        return None
+    for signature in EVIDENCE_SIGNATURES:
+        for pattern in signature["patterns"]:
+            match = re.search(pattern, normalized, flags=re.DOTALL)
+            if match:
+                return {
+                    "evidence_signal": str(signature["name"]),
+                    "diagnosis": str(signature["diagnosis"]),
+                    "confidence": str(signature["confidence"]),
+                    "evidence_match": match.group(0)[:160],
+                    "inspect_first": str(signature["inspect_first"]),
+                }
+    return {
+        "evidence_signal": "unclassified-evidence",
+        "diagnosis": "no known deterministic failure signature matched",
+        "confidence": "low",
+        "evidence_match": "",
+        "inspect_first": "the first error/traceback line in the captured job evidence",
+    }
+
+
 def triage(needs: dict[str, Any]) -> dict[str, Any]:
     failures: list[dict[str, str]] = []
     for name, payload in sorted(needs.items()):
-        result = str((payload or {}).get("result") or "unknown")
+        payload = payload or {}
+        result = str(payload.get("result") or "unknown")
         if result in {"success", "skipped"}:
             continue
         route = _route_for(name)
-        failures.append({"job": name, "result": result, **route})
+        failure: dict[str, str] = {"job": name, "result": result, **route}
+        evidence = diagnose_evidence(
+            str(payload.get("evidence") or payload.get("log_excerpt") or "")
+        )
+        if evidence:
+            # Evidence refines the failure mode and next action; the lane remains the owner.
+            failure.update(evidence)
+        else:
+            failure.update({
+                "evidence_signal": "none",
+                "diagnosis": route["failure_class"],
+                "confidence": "lane-only",
+                "evidence_match": "",
+            })
+        failures.append(failure)
 
     primary = failures[0] if failures else None
     return {
@@ -107,7 +201,9 @@ def render_summary(report: dict[str, Any]) -> str:
         "DEVSYSTEM_FAILURE_TRIAGE "
         f"primary={primary.get('job')} "
         f"layer={primary.get('layer')} "
-        f"class={primary.get('failure_class')} "
+        f"signal={primary.get('evidence_signal')} "
+        f"confidence={primary.get('confidence')} "
+        f"diagnosis={primary.get('diagnosis')} "
         f"inspect_first={primary.get('inspect_first')}"
     )
 

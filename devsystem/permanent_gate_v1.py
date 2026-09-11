@@ -11,12 +11,14 @@ EXPECTED_DOMAINS = {"cfb", "mlb", "wnba", "nfl", "nba", "nhl", "soccer"}
 REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/change_classifier_v1.py",
     "devsystem/final_gate_v1.py",
+    "devsystem/failure_triage_v1.py",
     "devsystem/browser_qa_v1.py",
     "devsystem/production_verify_v1.py",
     "devsystem/production_targets_v1.json",
     "devsystem/production_contract_v1.py",
     "devsystem/regression_shield_v1.py",
     "devsystem/phase2_closure_v1.json",
+    "tests/test_devsystem_failure_triage_v1.py",
     "sports_api/observability_v1.py",
     "devsystem/README.md",
     ".github/pull_request_template.md",
@@ -146,6 +148,7 @@ def validate() -> dict:
         "api_observability_permanent": True,
         "phase2_certified": True,
         "phase2_completed_steps": closure["completed_steps"],
+        "predictive_failure_triage_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
