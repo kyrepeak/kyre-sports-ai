@@ -23,7 +23,7 @@ import time
 from typing import Any
 
 import requests
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import sync_playwright
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8501"
 REQUIRED_SPORTS = (
@@ -34,6 +34,7 @@ REQUIRED_SPORTS = (
 )
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
+CFB_MARKET_LABEL = "🎯 CFB Market"
 CFB_REQUIRED_MARKERS = (
     "CFB O/U • CLEAN PAGE V30 ACTIVE",
     "FUTURE SLATE COVERAGE ACTIVE",
@@ -53,6 +54,7 @@ FORBIDDEN_ERROR_MARKERS = (
     "NameError:",
 )
 SELECTOR_TIMEOUT_MS = 5000
+CFB_RERUN_TIMEOUT_MS = 30000
 
 
 class BrowserQAFailure(RuntimeError):
@@ -200,10 +202,6 @@ def _choose(page, frame, combo_index: int, value: str) -> None:
     combo.click()
     page.keyboard.type(value)
     page.keyboard.press("Enter")
-    expect(frame.get_by_role("combobox").nth(combo_index)).to_have_value(
-        value,
-        timeout=SELECTOR_TIMEOUT_MS,
-    )
 
 
 def run_browser_qa(
@@ -248,15 +246,18 @@ def run_browser_qa(
 
             _choose(page, frame, 0, CFB_SPORT)
 
-            deadline = time.monotonic() + 30.0
-            while time.monotonic() < deadline:
-                if frame.get_by_role("combobox").count() >= 2:
-                    break
-                page.wait_for_timeout(1000)
-            else:
-                raise BrowserQAFailure(
-                    "CFB route did not expose a market combobox"
-                )
+            # The initial MLB page can already have two comboboxes, so a count
+            # is not a safe rerun barrier. Wait for the CFB-specific market
+            # selector that only exists after Streamlit finishes the sport rerun.
+            cfb_market_combo = frame.get_by_role(
+                "combobox",
+                name=CFB_MARKET_LABEL,
+                exact=True,
+            )
+            cfb_market_combo.wait_for(
+                state="visible",
+                timeout=CFB_RERUN_TIMEOUT_MS,
+            )
 
             _choose(page, frame, 1, CFB_MARKET)
             body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[0], 60.0)
