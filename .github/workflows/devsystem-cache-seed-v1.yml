@@ -1,0 +1,129 @@
+name: DevSystem cache seed
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - requirements.txt
+      - sports_api/requirements.txt
+      - devsystem/browser_cache_epoch_v1.txt
+      - devsystem/sport_cache_epoch_v1.txt
+      - .github/workflows/devsystem-targeted-ci.yml
+      - .github/workflows/devsystem-cache-seed-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-cache-seed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore browser QA virtualenv
+        id: browser-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-browser-qa
+          key: devsystem-browser-venv-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+      - name: Build browser QA virtualenv on cache miss
+        if: steps.browser-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q pytest requests playwright
+      - name: Resolve Playwright cache identity
+        id: playwright-meta
+        shell: bash
+        run: |
+          version="$(.venv-browser-qa/bin/python -c 'import importlib.metadata as m; print(m.version("playwright"))')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Restore Playwright browser binaries
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: devsystem-playwright-${{ runner.os }}-${{ steps.playwright-meta.outputs.version }}-${{ hashFiles('devsystem/browser_cache_epoch_v1.txt') }}
+      - name: Install Chromium on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: .venv-browser-qa/bin/python -m playwright install chromium
+
+  cfb-cache-seed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up CFB Python
+        id: cfb-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore CFB critical virtualenv
+        id: cfb-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-cfb-critical
+          key: devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+      - name: Build CFB critical virtualenv on cache miss
+        if: steps.cfb-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-cfb-critical
+          .venv-cfb-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-cfb-critical/bin/python -m pip install --disable-pip-version-check -q pytest
+
+  mlb-cache-seed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up MLB Python
+        id: mlb-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore MLB critical virtualenv
+        id: mlb-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-mlb-critical
+          key: devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+      - name: Build MLB critical virtualenv on cache miss
+        if: steps.mlb-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-mlb-critical
+          .venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          if [ -f sports_api/requirements.txt ]; then .venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
+          .venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q pytest
+
+  wnba-cache-seed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up WNBA Python
+        id: wnba-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore WNBA critical virtualenv
+        id: wnba-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-wnba-critical
+          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+      - name: Build WNBA critical virtualenv on cache miss
+        if: steps.wnba-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-wnba-critical
+          if [ -f sports_api/requirements.txt ]; then .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
+          .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q pytest
