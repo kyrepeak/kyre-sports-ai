@@ -275,6 +275,7 @@ jobs:
           import json
           with open('/tmp/devsystem-history-seed/failure-packet.json', encoding='utf-8') as handle:
               packet = json.load(handle)
+          packet['run_id'] = 'step7-history-seed'
           with open('/tmp/devsystem-cert-history.json', 'w', encoding='utf-8') as handle:
               json.dump([packet], handle, sort_keys=True)
           PY
