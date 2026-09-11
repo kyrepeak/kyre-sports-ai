@@ -39,6 +39,7 @@ def test_regression_shield_failure_points_to_invariant_layer():
     assert report["primary"]["job"] == "regression-shield"
     assert report["primary"]["layer"] == "regression-shield"
     assert report["primary"]["confidence"] == "lane-only"
+    assert report["primary"]["retry_policy"] == "investigate-first"
     assert "first failing invariant" in report["primary"]["inspect_first"]
 
 
@@ -54,6 +55,7 @@ def test_unknown_job_fails_safe_to_action_logs():
     module = _load()
     report = module.triage({"mystery-lane": {"result": "cancelled"}})
     assert report["primary"]["layer"] == "unknown"
+    assert report["primary"]["retry_policy"] == "investigate-first"
     assert "GitHub Actions logs" in report["primary"]["inspect_first"]
 
 
@@ -76,6 +78,8 @@ def test_browser_locator_timeout_gets_specific_high_confidence_diagnosis():
     assert primary["layer"] == "ui-browser"
     assert primary["evidence_signal"] == "browser-selector-race"
     assert primary["confidence"] == "high"
+    assert primary["remediation_class"] == "transient-capable"
+    assert primary["retry_policy"] == "retry-once-after-inspection"
     assert "readiness" in primary["inspect_first"]
 
 
@@ -90,6 +94,8 @@ def test_assertion_failure_points_to_first_protected_invariant():
     primary = report["primary"]
     assert primary["evidence_signal"] == "test-assertion"
     assert primary["confidence"] == "high"
+    assert primary["remediation_class"] == "deterministic-regression"
+    assert primary["retry_policy"] == "do-not-retry"
     assert "protected invariant" in primary["inspect_first"]
     assert primary["layer"] == "cfb"
 
@@ -104,6 +110,8 @@ def test_import_error_identifies_dependency_surface():
     })
     primary = report["primary"]
     assert primary["evidence_signal"] == "python-import"
+    assert primary["remediation_class"] == "deterministic-regression"
+    assert primary["retry_policy"] == "do-not-retry"
     assert "requirements/cache key" in primary["inspect_first"]
 
 
@@ -118,6 +126,8 @@ def test_unknown_evidence_is_low_confidence_and_does_not_guess():
     primary = report["primary"]
     assert primary["evidence_signal"] == "unclassified-evidence"
     assert primary["confidence"] == "low"
+    assert primary["remediation_class"] == "unknown"
+    assert primary["retry_policy"] == "investigate-first"
     assert "first error/traceback line" in primary["inspect_first"]
 
 
@@ -128,9 +138,29 @@ def test_specific_browser_signature_wins_over_generic_timeout():
     )
     assert diagnosis is not None
     assert diagnosis["evidence_signal"] == "browser-selector-race"
+    assert diagnosis["retry_policy"] == "retry-once-after-inspection"
 
 
-def test_summary_exposes_signal_confidence_and_diagnosis():
+def test_network_upstream_allows_only_one_controlled_retry():
+    module = _load()
+    diagnosis = module.diagnose_evidence("503 Service Unavailable from upstream API")
+    assert diagnosis is not None
+    assert diagnosis["evidence_signal"] == "network-upstream"
+    assert diagnosis["remediation_class"] == "transient-capable"
+    assert diagnosis["retry_policy"] == "retry-once-after-inspection"
+    assert "one controlled retry" in diagnosis["retry_reason"]
+
+
+def test_syntax_error_is_never_retried_as_flake():
+    module = _load()
+    diagnosis = module.diagnose_evidence("SyntaxError: invalid syntax at app.py line 12")
+    assert diagnosis is not None
+    assert diagnosis["evidence_signal"] == "syntax-compile"
+    assert diagnosis["remediation_class"] == "deterministic-regression"
+    assert diagnosis["retry_policy"] == "do-not-retry"
+
+
+def test_summary_exposes_signal_confidence_diagnosis_and_retry_policy():
     module = _load()
     report = module.triage({
         "core-smoke": {
@@ -141,4 +171,6 @@ def test_summary_exposes_signal_confidence_and_diagnosis():
     text = module.render_summary(report)
     assert "signal=syntax-compile" in text
     assert "confidence=high" in text
+    assert "remediation=deterministic-regression" in text
+    assert "retry_policy=do-not-retry" in text
     assert "diagnosis=Python syntax/compile failure" in text

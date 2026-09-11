@@ -137,6 +137,23 @@ def validate() -> dict:
             "failure packet log evidence drift: " + " | ".join(packet_missing)
         )
 
+    triage_source = (ROOT / "devsystem/failure_triage_v1.py").read_text(encoding="utf-8")
+    remediation_markers = (
+        '"remediation_class": "deterministic-regression"',
+        '"remediation_class": "transient-capable"',
+        '"retry_policy": "do-not-retry"',
+        '"retry_policy": "retry-once-after-inspection"',
+        '"retry_policy": "investigate-first"',
+    )
+    remediation_missing = [
+        marker for marker in remediation_markers
+        if marker not in triage_source
+    ]
+    if remediation_missing:
+        raise PermanentGateFailure(
+            "failure remediation policy drift: " + " | ".join(remediation_missing)
+        )
+
     prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(
         encoding="utf-8"
     )
@@ -175,6 +192,7 @@ def validate() -> dict:
         "predictive_failure_triage_permanent": True,
         "automatic_failure_evidence_wiring_permanent": True,
         "failed_job_log_evidence_permanent": True,
+        "failure_remediation_policy_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))

@@ -28,6 +28,7 @@ def test_permanent_contract_is_green():
     assert result["predictive_failure_triage_permanent"] is True
     assert result["automatic_failure_evidence_wiring_permanent"] is True
     assert result["failed_job_log_evidence_permanent"] is True
+    assert result["failure_remediation_policy_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
@@ -63,7 +64,23 @@ def test_predictive_triage_signature_is_permanently_exercised():
     assert primary["layer"] == "ui-browser"
     assert primary["evidence_signal"] == "browser-selector-race"
     assert primary["confidence"] == "high"
+    assert primary["remediation_class"] == "transient-capable"
+    assert primary["retry_policy"] == "retry-once-after-inspection"
     assert "readiness" in primary["inspect_first"]
+
+
+def test_deterministic_failure_is_permanently_protected_from_blind_retry():
+    triage = _load("failure_triage_no_blind_retry", "devsystem/failure_triage_v1.py")
+    report = triage.triage({
+        "cfb-critical": {
+            "result": "failure",
+            "evidence": "AssertionError: expected official ESPN event ID",
+        }
+    })
+    primary = report["primary"]
+    assert primary["layer"] == "cfb"
+    assert primary["remediation_class"] == "deterministic-regression"
+    assert primary["retry_policy"] == "do-not-retry"
 
 
 def test_failure_packet_automatically_wires_captured_step_evidence():
@@ -80,6 +97,7 @@ def test_failure_packet_automatically_wires_captured_step_evidence():
     assert primary["job"] == "browser-qa"
     assert primary["evidence_signal"] == "browser-selector-race"
     assert primary["confidence"] == "high"
+    assert primary["retry_policy"] == "retry-once-after-inspection"
 
 
 def test_failed_job_log_excerpt_reaches_predictive_triage():
@@ -98,6 +116,7 @@ def test_failed_job_log_excerpt_reaches_predictive_triage():
     assert primary["job"] == "browser-qa"
     assert primary["evidence_signal"] == "browser-selector-race"
     assert primary["confidence"] == "high"
+    assert primary["retry_policy"] == "retry-once-after-inspection"
 
 
 def test_production_contract_separates_hosting_config_from_release_parity():
