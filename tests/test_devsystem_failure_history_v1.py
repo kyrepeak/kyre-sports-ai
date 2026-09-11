@@ -67,6 +67,11 @@ def test_recurrence_is_confirmed_only_with_matching_historical_fingerprint():
     assert summary["history_available"] is True
     assert summary["timestamped_packets"] == 2
     assert summary["current_run_created_at"] == "2026-09-11T08:00:00Z"
+    assert summary["history_coverage_confidence"] == "confirmed"
+    assert summary["history_oldest_verified_at"] == "2026-09-08T15:00:00Z"
+    assert summary["history_newest_verified_at"] == "2026-09-10T04:30:00Z"
+    assert summary["history_lookback_seconds"] == 234000
+    assert summary["history_lookback"] == "2d 17h"
     assert summary["claims_flakiness"] is False
     assert summary["claims_cadence"] is False
 
@@ -89,7 +94,7 @@ def test_partial_or_invalid_timestamps_never_create_fake_chronology_or_age():
             "triage": {"failures": [{"failure_fingerprint": "KYRE-CI-SAME"}]},
         },
     ]
-    history.attach_recurrence(
+    summary = history.attach_recurrence(
         report,
         packets,
         current_run_id="999",
@@ -103,6 +108,11 @@ def test_partial_or_invalid_timestamps_never_create_fake_chronology_or_age():
     assert primary["prior_last_seen_at"] == "2026-09-09T01:02:03Z"
     assert primary["prior_last_seen_age_seconds"] is None
     assert primary["prior_last_seen_age"] == ""
+    assert summary["history_coverage_confidence"] == "partial"
+    assert summary["history_oldest_verified_at"] == ""
+    assert summary["history_newest_verified_at"] == ""
+    assert summary["history_lookback_seconds"] is None
+    assert summary["history_lookback"] == ""
 
 
 def test_current_run_is_not_counted_as_prior_occurrence():
@@ -149,6 +159,8 @@ def test_missing_history_is_not_misreported_as_first_seen():
     assert report["primary"]["recurrence_timing_confidence"] == "unavailable"
     assert report["primary"]["recurrence_age_confidence"] == "unavailable"
     assert summary["history_available"] is False
+    assert summary["history_coverage_confidence"] == "unavailable"
+    assert summary["history_lookback_seconds"] is None
 
 
 def test_empty_bounded_history_means_not_seen_in_history_only():
@@ -157,7 +169,7 @@ def test_empty_bounded_history_means_not_seen_in_history_only():
         "failures": [{"failure_fingerprint": "KYRE-CI-NEW"}],
         "primary": {"failure_fingerprint": "KYRE-CI-NEW"},
     }
-    history.attach_recurrence(
+    summary = history.attach_recurrence(
         report,
         [],
         current_run_created_at="2026-09-11T00:00:00Z",
@@ -166,6 +178,11 @@ def test_empty_bounded_history_means_not_seen_in_history_only():
     assert report["primary"]["recurrence_confidence"] == "bounded"
     assert report["primary"]["recurrence_timing_confidence"] == "not-applicable"
     assert report["primary"]["recurrence_age_confidence"] == "not-applicable"
+    assert summary["history_coverage_confidence"] == "not-applicable"
+    assert summary["history_oldest_verified_at"] == ""
+    assert summary["history_newest_verified_at"] == ""
+    assert summary["history_lookback_seconds"] is None
+    assert summary["history_lookback"] == ""
 
 
 def test_future_or_missing_current_timestamp_never_creates_negative_or_guessed_age():
@@ -182,7 +199,7 @@ def test_future_or_missing_current_timestamp_never_creates_negative_or_guessed_a
             "failures": [{"failure_fingerprint": "KYRE-CI-SAME"}],
             "primary": {"failure_fingerprint": "KYRE-CI-SAME"},
         }
-        history.attach_recurrence(
+        summary = history.attach_recurrence(
             report,
             packets,
             current_run_id="999",
@@ -194,6 +211,9 @@ def test_future_or_missing_current_timestamp_never_creates_negative_or_guessed_a
         assert primary["recurrence_age_confidence"] == "unavailable"
         assert primary["prior_last_seen_age_seconds"] is None
         assert primary["prior_last_seen_age"] == ""
+        assert summary["history_coverage_confidence"] == "unavailable"
+        assert summary["history_lookback_seconds"] is None
+        assert summary["history_lookback"] == ""
 
 
 def test_failure_packet_integration_reuses_stable_fingerprint_for_recurrence(tmp_path):
@@ -225,9 +245,19 @@ def test_failure_packet_integration_reuses_stable_fingerprint_for_recurrence(tmp
     assert current["source_created_at"] == "2026-09-11T12:34:56Z"
     assert current["history"]["packets_scanned"] == 1
     assert current["history"]["timestamped_packets"] == 1
+    assert current["history"]["history_coverage_confidence"] == "confirmed"
+    assert current["history"]["history_oldest_verified_at"] == "2026-09-10T12:34:56Z"
+    assert current["history"]["history_newest_verified_at"] == "2026-09-10T12:34:56Z"
+    assert current["history"]["history_lookback_seconds"] == 86400
+    assert current["history"]["history_lookback"] == "1d"
 
     packet_module.write_packet(current, tmp_path)
     markdown = (tmp_path / "failure-packet.md").read_text()
+    assert "**History coverage confidence:** confirmed" in markdown
+    assert "**History oldest verified prior packet (UTC):** 2026-09-10T12:34:56Z" in markdown
+    assert "**History newest verified prior packet (UTC):** 2026-09-10T12:34:56Z" in markdown
+    assert "**Bounded history lookback:** 1d" in markdown
+    assert "**Bounded history lookback (seconds):** 86400" in markdown
     assert "**Recurrence:** recurring" in markdown
     assert "Prior occurrences in bounded history" in markdown
     assert "**Prior first occurrence (UTC):** 2026-09-10T12:34:56Z" in markdown
