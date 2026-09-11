@@ -4,21 +4,29 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "app.py"
       - "sports_api/main.py"
       - "sports_api/observability_v1.py"
+      - "sports_api/posthog_error_radar_v1.py"
+      - "sports_api/requirements.txt"
       - "sports_api/api/health.py"
       - "devsystem/production_contract_v1.py"
       - "tests/test_sports_api_observability_v1.py"
+      - "tests/test_monster_error_radar_v1.py"
       - "tests/test_devsystem_production_contract_v1.py"
       - ".github/workflows/devsystem-api-observability-v1.yml"
   push:
     branches: [main]
     paths:
+      - "app.py"
       - "sports_api/main.py"
       - "sports_api/observability_v1.py"
+      - "sports_api/posthog_error_radar_v1.py"
+      - "sports_api/requirements.txt"
       - "sports_api/api/health.py"
       - "devsystem/production_contract_v1.py"
       - "tests/test_sports_api_observability_v1.py"
+      - "tests/test_monster_error_radar_v1.py"
       - "tests/test_devsystem_production_contract_v1.py"
       - ".github/workflows/devsystem-api-observability-v1.yml"
   workflow_dispatch:
@@ -50,6 +58,8 @@ jobs:
       - name: Compile API observability entry points
         run: |
           python -m py_compile \
+            app.py \
+            sports_api/posthog_error_radar_v1.py \
             sports_api/observability_v1.py \
             sports_api/api/health.py \
             sports_api/main.py \
@@ -69,4 +79,5 @@ jobs:
         run: |
           python -m pytest -q \
             tests/test_sports_api_observability_v1.py \
+            tests/test_monster_error_radar_v1.py \
             tests/test_devsystem_production_contract_v1.py
