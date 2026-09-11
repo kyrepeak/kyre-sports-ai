@@ -14,13 +14,16 @@ def test_browser_cache_contract_is_present_and_fail_safe():
     assert 'actions/cache@v4' in text
     assert '.venv-browser-qa' in text
     assert "steps.browser-venv-cache.outputs.cache-hit != 'true'" in text
-    assert 'Resolve Playwright cache identity' in text
-    assert '~/.cache/ms-playwright' in text
-    assert "steps.playwright-cache.outputs.cache-hit != 'true'" in text
-    assert 'python -m playwright install chromium' in text
+    assert 'Prove runner Chrome is available' in text
+    assert 'google-chrome --version' in text
+    assert 'Resolve Playwright cache identity' not in text
+    assert 'Restore Playwright browser binaries' not in text
+    assert '~/.cache/ms-playwright' not in text
+    assert 'python -m playwright install chromium' not in text
     assert 'Verify Chromium can launch' not in text
     assert 'sync_playwright()' in browser_qa
     assert 'p.chromium.launch(' in browser_qa
+    assert 'channel="chrome"' in browser_qa
     assert 'DEVSYSTEM_BROWSER_QA_GREEN' in browser_qa
 
 
@@ -40,10 +43,12 @@ def test_browser_cache_contract_tests_run_inside_protected_browser_lane():
     assert 'tests/test_devsystem_browser_cache_v1.py' in text
 
 
-def test_browser_cache_avoids_expensive_with_deps_install_and_keeps_real_qa():
+def test_browser_cache_avoids_expensive_browser_binary_restore_and_keeps_real_qa():
     text = WORKFLOW.read_text(encoding='utf-8')
 
     assert 'playwright install --with-deps chromium' not in text
+    assert 'Restore Playwright browser binaries' not in text
+    assert 'python -m playwright install chromium' not in text
     assert 'python devsystem/browser_qa_v1.py' in text
     assert '--base-url http://127.0.0.1:8501' in text
     assert 'Upload browser QA evidence' in text
