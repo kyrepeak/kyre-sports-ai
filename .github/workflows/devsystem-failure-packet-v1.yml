@@ -11,6 +11,7 @@ on:
       - devsystem-phase3-step7-failure-recurrence-history-v1
       - devsystem-phase3-step8-failure-recurrence-chronology-v1
       - devsystem-phase3-step9-failure-recurrence-age-v1
+      - devsystem-phase3-step10-history-coverage-v1
   workflow_dispatch:
 
 permissions:
@@ -330,6 +331,8 @@ jobs:
           ]
           if not timestamped:
               raise SystemExit('live failure history collector returned no verified prior run timestamps')
+          if len(timestamped) != len(live_history):
+              raise SystemExit('live failure history collector returned partial prior run timestamps')
           if not source_created_at:
               raise SystemExit('live failure collector returned no verified current source-run timestamp')
           print(
@@ -347,7 +350,7 @@ jobs:
           import json
           with open('/tmp/devsystem-history-seed/failure-packet.json', encoding='utf-8') as handle:
               packet = json.load(handle)
-          packet['run_id'] = 'step9-history-seed'
+          packet['run_id'] = 'step10-history-seed'
           packet['_history_source_created_at'] = '2026-09-01T12:00:00Z'
           with open('/tmp/devsystem-cert-history.json', 'w', encoding='utf-8') as handle:
               json.dump([packet], handle, sort_keys=True)
@@ -363,6 +366,11 @@ jobs:
           grep -q 'test-assertion' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'high' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'KYRE-CI-' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'History coverage confidence:.*confirmed' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'History oldest verified prior packet (UTC):.*2026-09-01T12:00:00Z' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'History newest verified prior packet (UTC):.*2026-09-01T12:00:00Z' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Bounded history lookback:.*10d' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Bounded history lookback (seconds):.*864000' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'Recurrence:.*recurring' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'Prior occurrences in bounded history:.*1' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'Recurrence timing confidence:.*confirmed' artifacts/devsystem-failure-packet/failure-packet.md
