@@ -6,6 +6,7 @@ on:
     paths:
       - requirements.txt
       - sports_api/requirements.txt
+      - devsystem/browser_tooling_v1.txt
       - devsystem/browser_cache_epoch_v1.txt
       - devsystem/sport_cache_epoch_v1.txt
       - .github/workflows/devsystem-targeted-ci.yml
@@ -26,34 +27,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Restore browser QA virtualenv
-        id: browser-venv-cache
+      - name: Restore Browser QA stack
+        id: browser-stack-cache
         uses: actions/cache@v4
         with:
-          path: .venv-browser-qa
-          key: devsystem-browser-venv-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
-      - name: Build browser QA virtualenv on cache miss
-        if: steps.browser-venv-cache.outputs.cache-hit != 'true'
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+      - name: Build Browser QA stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           python -m venv .venv-browser-qa
           .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q pytest requests playwright
-      - name: Resolve Playwright cache identity
-        id: playwright-meta
-        shell: bash
-        run: |
-          version="$(.venv-browser-qa/bin/python -c 'import importlib.metadata as m; print(m.version("playwright"))')"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-      - name: Restore Playwright browser binaries
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: devsystem-playwright-${{ runner.os }}-${{ steps.playwright-meta.outputs.version }}-${{ hashFiles('devsystem/browser_cache_epoch_v1.txt') }}
-      - name: Install Chromium on cache miss
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: .venv-browser-qa/bin/python -m playwright install chromium
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
 
   cfb-cache-seed:
     runs-on: ubuntu-24.04

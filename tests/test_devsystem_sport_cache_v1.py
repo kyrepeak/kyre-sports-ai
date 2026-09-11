@@ -60,8 +60,7 @@ def test_main_cache_seed_is_trusted_scoped_and_key_aligned():
     assert 'pull_request:' not in seed
 
     for marker in (
-        'devsystem-browser-venv-',
-        'devsystem-playwright-',
+        'devsystem-browser-stack-',
         'devsystem-cfb-venv-',
         'devsystem-mlb-venv-',
         'devsystem-wnba-venv-',
@@ -69,6 +68,14 @@ def test_main_cache_seed_is_trusted_scoped_and_key_aligned():
         assert marker in targeted
         assert marker in seed
 
+    assert 'devsystem-browser-venv-' not in targeted
+    assert 'devsystem-browser-venv-' not in seed
+    assert 'devsystem-playwright-' not in targeted
+    assert 'devsystem-playwright-' not in seed
+    assert 'devsystem/browser_tooling_v1.txt' in targeted
+    assert 'devsystem/browser_tooling_v1.txt' in seed
+    assert '~/.cache/ms-playwright' in targeted
+    assert '~/.cache/ms-playwright' in seed
     assert 'devsystem/sport_cache_epoch_v1.txt' in seed
     assert 'devsystem/browser_cache_epoch_v1.txt' in seed
     assert '.github/workflows/devsystem-cache-seed-v1.yml' in seed

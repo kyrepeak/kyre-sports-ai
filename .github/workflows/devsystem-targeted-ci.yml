@@ -171,45 +171,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Restore browser QA virtualenv
-        id: browser-venv-cache
+      - name: Restore Browser QA stack
+        id: browser-stack-cache
         uses: actions/cache@v4
         with:
-          path: .venv-browser-qa
-          key: devsystem-browser-venv-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
-
-      - name: Build browser QA virtualenv on cache miss
-        if: steps.browser-venv-cache.outputs.cache-hit != 'true'
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+      - name: Build Browser QA stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
           python -m venv .venv-browser-qa
           .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
-          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q pytest requests playwright
-
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
       - name: Activate browser QA virtualenv
         shell: bash
         run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
-
-      - name: Resolve Playwright cache identity
-        id: playwright-meta
-        shell: bash
-        run: |
-          version="$(.venv-browser-qa/bin/python -c 'import importlib.metadata as m; print(m.version("playwright"))')"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "DEVSYSTEM_PLAYWRIGHT_VERSION=$version"
-
-      - name: Restore Playwright browser binaries
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: devsystem-playwright-${{ runner.os }}-${{ steps.playwright-meta.outputs.version }}-${{ hashFiles('devsystem/browser_cache_epoch_v1.txt') }}
-
-      - name: Install Chromium on cache miss
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: python -m playwright install chromium
-
       - name: Self-test browser QA and cache contracts
         run: |
           python -m pytest -q \
