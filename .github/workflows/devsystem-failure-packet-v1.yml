@@ -31,7 +31,10 @@ jobs:
       - name: Self-test failure packet contract
         run: |
           python -m pip install --disable-pip-version-check -q pytest
-          python -m pytest -q tests/test_devsystem_failure_triage_v1.py tests/test_devsystem_failure_packet_v1.py
+          python -m pytest -q \
+            tests/test_devsystem_failure_triage_v1.py \
+            tests/test_devsystem_failure_packet_v1.py \
+            tests/test_devsystem_failure_log_excerpt_v1.py
 
       - name: Collect completed DevSystem job evidence
         if: github.event_name == 'workflow_run'
@@ -45,19 +48,47 @@ jobs:
           import os
           import urllib.request
 
+          from devsystem.failure_log_excerpt_v1 import extract_log_excerpt
+
           repo = os.environ["REPOSITORY"]
           run_id = os.environ["SOURCE_RUN_ID"]
           token = os.environ["GH_TOKEN"]
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def fetch_failed_job_excerpt(job_id: int | str) -> str:
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}/actions/jobs/{job_id}/logs",
+                  headers=headers,
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as response:
+                      tail = bytearray()
+                      while True:
+                          chunk = response.read(65536)
+                          if not chunk:
+                              break
+                          tail.extend(chunk)
+                          if len(tail) > 2_000_000:
+                              del tail[:-2_000_000]
+                      raw = bytes(tail).decode("utf-8", errors="replace")
+              except Exception as exc:
+                  print(
+                      "DEVSYSTEM_FAILURE_LOG_EXCERPT_UNAVAILABLE "
+                      f"job_id={job_id} error={type(exc).__name__}"
+                  )
+                  return ""
+              return extract_log_excerpt(raw)
+
           jobs = []
           page = 1
           while True:
               req = urllib.request.Request(
                   f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&page={page}",
-                  headers={
-                      "Authorization": f"Bearer {token}",
-                      "Accept": "application/vnd.github+json",
-                      "X-GitHub-Api-Version": "2022-11-28",
-                  },
+                  headers=headers,
               )
               with urllib.request.urlopen(req, timeout=30) as response:
                   payload = json.load(response)
@@ -71,6 +102,7 @@ jobs:
           failed_steps = {}
           final_gate = None
           final_gate_bad_steps = []
+          final_gate_log_excerpt = ""
 
           for job in jobs:
               name = str(job.get("name") or "unknown")
@@ -80,14 +112,20 @@ jobs:
                   for step in (job.get("steps") or [])
                   if str(step.get("conclusion") or "") in {"failure", "cancelled", "timed_out", "action_required"}
               ]
+              failed = conclusion not in {"success", "skipped"}
+              log_excerpt = fetch_failed_job_excerpt(job.get("id")) if failed and job.get("id") else ""
 
               if name == "devsystem-final-gate":
                   final_gate = conclusion
                   final_gate_bad_steps = bad_steps
+                  final_gate_log_excerpt = log_excerpt
                   continue
 
-              needs[name] = {"result": conclusion}
-              if conclusion not in {"success", "skipped"}:
+              lane = {"result": conclusion}
+              if log_excerpt:
+                  lane["log_excerpt"] = log_excerpt
+              needs[name] = lane
+              if failed:
                   failed_steps[name] = bad_steps
 
           explained_failure = any(
@@ -96,13 +134,19 @@ jobs:
           )
           if final_gate not in {None, "success", "skipped"} and not explained_failure:
               needs["devsystem-final-gate"] = {"result": final_gate}
+              if final_gate_log_excerpt:
+                  needs["devsystem-final-gate"]["log_excerpt"] = final_gate_log_excerpt
               failed_steps["devsystem-final-gate"] = final_gate_bad_steps
 
           with open("/tmp/devsystem-needs.json", "w", encoding="utf-8") as handle:
               json.dump(needs, handle, sort_keys=True)
           with open("/tmp/devsystem-failed-steps.json", "w", encoding="utf-8") as handle:
               json.dump(failed_steps, handle, sort_keys=True)
-          print(f"DEVSYSTEM_FAILURE_PACKET_COLLECTED jobs={len(needs)} failed={len(failed_steps)}")
+          evidence_lanes = sum(1 for payload in needs.values() if (payload or {}).get("log_excerpt"))
+          print(
+              f"DEVSYSTEM_FAILURE_PACKET_COLLECTED jobs={len(needs)} "
+              f"failed={len(failed_steps)} log_evidence={evidence_lanes}"
+          )
           PY
 
       - name: Build packet from completed DevSystem run
@@ -125,12 +169,13 @@ jobs:
           DEVSYSTEM_SOURCE_REF: ${{ github.ref }}
         run: |
           python devsystem/failure_packet_v1.py \
-            --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure"},"mlb-critical":{"result":"success"}}' \
+            --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure","log_excerpt":"FAILED tests/test_cfb_guard.py::test_frozen_contract - AssertionError"},"mlb-critical":{"result":"success"}}' \
             --failed-steps-json '{"cfb-critical":["Run current CFB critical path"]}' \
             --output-dir artifacts/devsystem-failure-packet
           grep -q 'KYRE_DEVSYSTEM_FAILURE_PACKET_V1' artifacts/devsystem-failure-packet/failure-packet.json
           grep -q 'Run current CFB critical path' artifacts/devsystem-failure-packet/failure-packet.md
-          grep -q 'frozen projection math' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'test-assertion' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'high' artifacts/devsystem-failure-packet/failure-packet.md
           python devsystem/failure_packet_v1.py \
             --needs-json '{"classify":{"result":"success"},"devsystem-final-gate":{"result":"failure"}}' \
             --failed-steps-json '{"devsystem-final-gate":["Aggregate every required DevSystem lane"]}' \
