@@ -108,6 +108,7 @@ def render_markdown(packet: dict[str, Any]) -> str:
         f"- **History source:** {history.get('source', 'unavailable')}",
         f"- **History available:** {history.get('history_available', False)}",
         f"- **History packets scanned:** {history.get('packets_scanned', 0)}",
+        f"- **History packets with verified timestamps:** {history.get('timestamped_packets', 0)}",
         "",
         "## Lane Results",
         "",
@@ -128,8 +129,11 @@ def render_markdown(packet: dict[str, Any]) -> str:
             f"- **Failure fingerprint:** {primary.get('failure_fingerprint', 'unavailable')}",
             f"- **Recurrence:** {primary.get('recurrence_status', 'history-unavailable')}",
             f"- **Recurrence confidence:** {primary.get('recurrence_confidence', 'unavailable')}",
+            f"- **Recurrence timing confidence:** {primary.get('recurrence_timing_confidence', 'unavailable')}",
             f"- **Prior occurrences in bounded history:** {primary.get('prior_occurrence_count', 0)}",
             f"- **Prior run IDs:** {', '.join(prior_run_ids) if prior_run_ids else 'none'}",
+            f"- **Prior first occurrence (UTC):** {primary.get('prior_first_seen_at') or 'unavailable'}",
+            f"- **Prior last occurrence (UTC):** {primary.get('prior_last_seen_at') or 'unavailable'}",
             f"- **Layer:** {primary['layer']}",
             f"- **Failure class:** {primary['failure_class']}",
             f"- **Evidence signal:** {primary.get('evidence_signal', 'none')}",
@@ -151,6 +155,7 @@ def render_markdown(packet: dict[str, Any]) -> str:
                 f"- `{item['job']}` → fingerprint={item.get('failure_fingerprint', 'unavailable')} → "
                 f"recurrence={item.get('recurrence_status', 'history-unavailable')} → "
                 f"prior={item.get('prior_occurrence_count', 0)} → "
+                f"last-prior={item.get('prior_last_seen_at') or 'unavailable'} → "
                 f"{item['layer']} → signal={item.get('evidence_signal', 'none')} → "
                 f"confidence={item.get('confidence', 'lane-only')} → "
                 f"remediation={item.get('remediation_class', 'unknown')} → "
