@@ -14,6 +14,7 @@ REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/failure_triage_v1.py",
     "devsystem/failure_packet_v1.py",
     "devsystem/failure_log_excerpt_v1.py",
+    "devsystem/failure_fingerprint_v1.py",
     "devsystem/browser_qa_v1.py",
     "devsystem/production_verify_v1.py",
     "devsystem/production_targets_v1.json",
@@ -23,6 +24,7 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_failure_triage_v1.py",
     "tests/test_devsystem_failure_packet_v1.py",
     "tests/test_devsystem_failure_log_excerpt_v1.py",
+    "tests/test_devsystem_failure_fingerprint_v1.py",
     "sports_api/observability_v1.py",
     "devsystem/README.md",
     ".github/pull_request_template.md",
@@ -55,10 +57,7 @@ def validate() -> dict:
             f"actual={sorted(domains or {})}"
         )
 
-    missing = [
-        path for path in REQUIRED_DEVSYSTEM_FILES
-        if not (ROOT / path).is_file()
-    ]
+    missing = [path for path in REQUIRED_DEVSYSTEM_FILES if not (ROOT / path).is_file()]
     if missing:
         raise PermanentGateFailure(f"permanent DevSystem files missing: {missing}")
 
@@ -74,7 +73,6 @@ def validate() -> dict:
         if not isinstance(tests, list):
             invalid_contracts.append(f"{key}: critical_tests must be a list")
             continue
-
         if status == "active":
             active.append(key)
             if not job:
@@ -87,9 +85,7 @@ def validate() -> dict:
         elif status in {"legacy_unprotected", "planned"}:
             inactive.append(key)
             if job or tests:
-                invalid_contracts.append(
-                    f"{key}: inactive domain may not claim a protected test lane"
-                )
+                invalid_contracts.append(f"{key}: inactive domain may not claim a protected test lane")
         else:
             invalid_contracts.append(f"{key}: unsupported status {status!r}")
 
@@ -98,9 +94,7 @@ def validate() -> dict:
     if invalid_contracts:
         raise PermanentGateFailure("manifest contract invalid: " + " | ".join(invalid_contracts))
 
-    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     required_workflow_markers = (
         "python devsystem/change_classifier_v1.py",
         "permanent-contract:",
@@ -114,13 +108,9 @@ def validate() -> dict:
         if f"  {job}:" not in workflow:
             workflow_missing.append(f"job:{job}")
     if workflow_missing:
-        raise PermanentGateFailure(
-            "targeted CI permanent markers missing: " + " | ".join(workflow_missing)
-        )
+        raise PermanentGateFailure("targeted CI permanent markers missing: " + " | ".join(workflow_missing))
 
-    failure_packet_workflow = (
-        ROOT / ".github/workflows/devsystem-failure-packet-v1.yml"
-    ).read_text(encoding="utf-8")
+    failure_packet_workflow = (ROOT / ".github/workflows/devsystem-failure-packet-v1.yml").read_text(encoding="utf-8")
     failure_packet_markers = (
         "actions/jobs/{job_id}/logs",
         "extract_log_excerpt",
@@ -128,14 +118,9 @@ def validate() -> dict:
         "tests/test_devsystem_failure_log_excerpt_v1.py",
         "DEVSYSTEM_FAILURE_LOG_EXCERPT_UNAVAILABLE",
     )
-    packet_missing = [
-        marker for marker in failure_packet_markers
-        if marker not in failure_packet_workflow
-    ]
+    packet_missing = [marker for marker in failure_packet_markers if marker not in failure_packet_workflow]
     if packet_missing:
-        raise PermanentGateFailure(
-            "failure packet log evidence drift: " + " | ".join(packet_missing)
-        )
+        raise PermanentGateFailure("failure packet log evidence drift: " + " | ".join(packet_missing))
 
     triage_source = (ROOT / "devsystem/failure_triage_v1.py").read_text(encoding="utf-8")
     remediation_markers = (
@@ -145,47 +130,47 @@ def validate() -> dict:
         '"retry_policy": "retry-once-after-inspection"',
         '"retry_policy": "investigate-first"',
     )
-    remediation_missing = [
-        marker for marker in remediation_markers
-        if marker not in triage_source
-    ]
+    remediation_missing = [marker for marker in remediation_markers if marker not in triage_source]
     if remediation_missing:
-        raise PermanentGateFailure(
-            "failure remediation policy drift: " + " | ".join(remediation_missing)
-        )
+        raise PermanentGateFailure("failure remediation policy drift: " + " | ".join(remediation_missing))
 
-    prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(
-        encoding="utf-8"
+    fingerprint_source = (ROOT / "devsystem/failure_fingerprint_v1.py").read_text(encoding="utf-8")
+    packet_source = (ROOT / "devsystem/failure_packet_v1.py").read_text(encoding="utf-8")
+    fingerprint_markers = (
+        "KYRE-CI-",
+        "sha256",
+        "failure_fingerprint",
+        "attach_fingerprints",
     )
+    fingerprint_missing = [marker for marker in fingerprint_markers if marker not in fingerprint_source]
+    if "attach_fingerprints(report)" not in packet_source:
+        fingerprint_missing.append("packet:attach_fingerprints(report)")
+    if "Failure fingerprint" not in packet_source:
+        fingerprint_missing.append("packet:Failure fingerprint")
+    if fingerprint_missing:
+        raise PermanentGateFailure("failure fingerprint contract drift: " + " | ".join(fingerprint_missing))
+
+    prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(encoding="utf-8")
     if "branches: [main]" not in prod:
         raise PermanentGateFailure("production verification must remain main-only")
 
-    api_observability = (
-        ROOT / ".github/workflows/devsystem-api-observability-v1.yml"
-    ).read_text(encoding="utf-8")
+    api_observability = (ROOT / ".github/workflows/devsystem-api-observability-v1.yml").read_text(encoding="utf-8")
     api_required_markers = (
         "api-observability:",
         "tests/test_sports_api_observability_v1.py",
         "tests/test_devsystem_production_contract_v1.py",
         "sports_api/observability_v1.py",
     )
-    api_missing = [
-        marker for marker in api_required_markers
-        if marker not in api_observability
-    ]
+    api_missing = [marker for marker in api_required_markers if marker not in api_observability]
     if api_missing:
-        raise PermanentGateFailure(
-            "API observability workflow drift: " + " | ".join(api_missing)
-        )
+        raise PermanentGateFailure("API observability workflow drift: " + " | ".join(api_missing))
 
     result = {
         "status": "GREEN",
         "active_domains": active,
         "blocked_until_activated": inactive,
         "stable_final_gate": payload["policy"]["stable_final_gate"],
-        "critical_test_count": sum(
-            len(domains[key]["critical_tests"]) for key in active
-        ),
+        "critical_test_count": sum(len(domains[key]["critical_tests"]) for key in active),
         "api_observability_permanent": True,
         "phase2_certified": True,
         "phase2_completed_steps": closure["completed_steps"],
@@ -193,6 +178,7 @@ def validate() -> dict:
         "automatic_failure_evidence_wiring_permanent": True,
         "failed_job_log_evidence_permanent": True,
         "failure_remediation_policy_permanent": True,
+        "stable_failure_fingerprint_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
