@@ -7,6 +7,7 @@ The browser QA proves that the checked-out branch can:
 - render the active Clean Page V30 future-slate coverage shell;
 - preserve the freshness firewall, 0.0% market influence, and frozen projection marker;
 - prove official ESPN identity recovery without fuzzy or synthetic IDs;
+- preserve the certified readable Steps 4-12 shell;
 - do so without obvious Python/runtime error text.
 
 Dynamic schedule/odds availability is not required here because those are
@@ -39,14 +40,11 @@ CFB_REQUIRED_MARKERS = (
     "OFFICIAL ESPN IDENTITY RECOVERY",
     "NO FUZZY MATCHING",
     "NO SYNTHETIC IDS",
-    "STEP 6 MARKET INTELLIGENCE LIVE",
+    "STEP 5C MARKET INTELLIGENCE LIVE",
     "FRESHNESS FIREWALL ACTIVE",
     "0.0% PROJECTION INFLUENCE",
     "FROZEN PROJECTION MATH PRESERVED",
-    "READABLE STEP 9 GAME-DAY ENVIRONMENT ACTIVE",
-    "READABLE STEP 10 HISTORICAL MATCHUP ACTIVE",
-    "READABLE STEP 11 CURRENT FORM + SCHEDULE STRENGTH ACTIVE",
-    "READABLE STEP 12 FINAL CERTIFICATION ACTIVE",
+    "READABLE STEPS 4-12 ACTIVE",
 )
 FORBIDDEN_ERROR_MARKERS = (
     "Traceback (most recent call last)",
