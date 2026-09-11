@@ -230,7 +230,7 @@ def test_step3_parses_opponent_pass_defense_and_derives_efficiency() -> None:
             {"name": "opponentPassingTouchdowns", "value": 4},
             {"name": "interceptions", "value": 2},
             {"name": "sacks", "value": 5},
-        }]}]}
+        ]}]}
     }
     out = defense.parse_season_pass_defense(payload)
     assert out["ready"] is True
