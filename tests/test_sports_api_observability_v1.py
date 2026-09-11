@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from sports_api import observability_v1 as obs
 from sports_api.api import health
 
@@ -70,3 +73,32 @@ def test_health_endpoints_expose_liveness_readiness_and_diagnostics(monkeypatch)
     assert details["observability_version"] == "KYRE_OBSERVABILITY_V1"
     assert details["debug_contract"]["request_id_header"] == "X-Request-ID"
     assert details["debug_contract"]["error_fingerprint_field"] == "error_fingerprint"
+
+
+def test_real_fastapi_middleware_stamps_ids_headers_and_crash_fingerprint(monkeypatch):
+    monkeypatch.setenv("RENDER_GIT_BRANCH", "main")
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "feedface1234")
+
+    app = FastAPI()
+    obs.install_observability(app)
+    app.include_router(health.router)
+
+    @app.get("/boom")
+    def boom():
+        raise ValueError("token=should-not-escape")
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        healthy = client.get("/health/details", headers={"X-Request-ID": "req-123"})
+        assert healthy.status_code == 200
+        assert healthy.headers["X-Request-ID"] == "req-123"
+        assert healthy.headers["X-Kyre-Deploy-Commit"] == "feedface1234"
+        assert healthy.headers["X-Kyre-Deploy-Branch"] == "main"
+        assert float(healthy.headers["X-Kyre-Duration-Ms"]) >= 0.0
+
+        failed = client.get("/boom", headers={"X-Request-ID": "req-crash"})
+        payload = failed.json()
+        assert failed.status_code == 500
+        assert payload["request_id"] == "req-crash"
+        assert payload["error_fingerprint"].startswith("KYRE-")
+        assert "should-not-escape" not in repr(payload)
+        assert failed.headers["X-Request-ID"] == "req-crash"
