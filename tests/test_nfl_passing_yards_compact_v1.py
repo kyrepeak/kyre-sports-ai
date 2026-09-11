@@ -5,6 +5,7 @@ from pathlib import Path
 import nfl_passing_yards_identity_v1 as identity
 import nfl_passing_yards_profile_v1 as profile
 import nfl_passing_yards_defense_v1 as defense
+import nfl_passing_yards_pressure_v1 as pressure
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -294,3 +295,90 @@ def test_router_v83_advances_only_passing_yards_step3() -> None:
     assert "projection/Monte Carlo/probability/fair-line/EV/ranking/recommendation OFF" in page
     assert "passing-yards projection" in engine
     assert "no fuzzy team matching" in engine.lower()
+
+
+def test_step4_offense_protection_uses_passing_sacks_not_defensive_sacks() -> None:
+    payload = {
+        "splits": {"categories": [
+            {"name": "general", "stats": [{"name": "gamesPlayed", "value": 2}]},
+            {"name": "passing", "stats": [
+                {"name": "passingAttempts", "value": 70},
+                {"name": "sacks", "value": 4, "rank": 7},
+                {"name": "sackYardsLost", "value": 29},
+            ]},
+            {"name": "defensive", "stats": [{"name": "sacks", "value": 11}]},
+        ]}
+    }
+    out = pressure.parse_offense_protection(payload)
+    assert out["ready"] is True
+    assert out["sacks_allowed"] == 4.0
+    assert out["passing_attempts"] == 70.0
+    assert out["sack_yards_lost"] == 29.0
+    assert round(out["sack_rate_allowed"], 2) == 5.41
+    assert out["sacks_allowed_rank"] == 7
+
+
+def test_step4_defensive_pressure_derives_sack_rate_proxy() -> None:
+    payload = {
+        "splits": {"categories": [{"name": "defensive", "stats": [
+            {"name": "gamesPlayed", "value": 2},
+            {"name": "opponentPassingYards", "value": 480},
+            {"name": "opponentPassingAttempts", "value": 70},
+            {"name": "sacks", "value": 7},
+        ]}]}
+    }
+    out = pressure.parse_defensive_pressure(payload)
+    assert out["ready"] is True
+    assert out["sacks_made"] == 7.0
+    assert out["sacks_per_game"] == 3.5
+    assert round(out["sack_rate_generated"], 2) == 9.09
+    assert out["blitz_state"].startswith("UNAVAILABLE")
+
+
+def test_step4_recent_boxscore_sacks_taken_are_parsed_from_offense_row() -> None:
+    summary = {
+        "boxscore": {"teams": [
+            {"team": {"id": "11"}, "statistics": [
+                {"name": "completionAttempts", "displayValue": "24-38"},
+                {"name": "sacksYardsLost", "displayValue": "3-21"},
+            ]},
+            {"team": {"id": "34"}, "statistics": [
+                {"name": "completionAttempts", "displayValue": "18-29"},
+                {"name": "sacksYardsLost", "displayValue": "2-12"},
+            ]},
+        ]}
+    }
+    taken = pressure.parse_recent_sacks_taken(summary, "11")
+    made = pressure.parse_recent_sacks_made(summary, "34")
+    assert taken["sacks_taken"] == 3.0
+    assert taken["pass_attempts"] == 38.0
+    assert round(taken["sack_rate"], 2) == 7.32
+    assert made["sacks_made"] == 3.0
+
+
+def test_step4_invalid_verified_ids_fail_closed() -> None:
+    out = pressure.build_pressure_matchup("fake", "Fake O", "34", "Houston", 2026, 2, "2026-09-12")
+    assert out["ready"] is False
+    assert "verified ESPN offense and defense team IDs" in out["reason"]
+
+
+def test_router_v84_advances_only_passing_yards_step4() -> None:
+    hub = _read("nfl_hub_v23.py")
+    router = _read("streamlit_memory_lazy_router_v84.py")
+    app = _read("app.py")
+    page = _read("nfl_passing_yards_hub_v5.py")
+    engine = _read("nfl_passing_yards_pressure_v1.py")
+
+    assert "import nfl_hub_v22 as base" in hub
+    assert "nfl_passing_yards_hub_v5" in hub
+    assert "import streamlit_memory_lazy_router_v83 as prior" in router
+    assert 'ACTIVE_NFL_HUB = "nfl_hub_v23"' in router
+    assert "streamlit_memory_lazy_router_v84" in app
+    assert "STREAMLIT_MAIN_V83_NFL_PASSING_YARDS_STEP3_PASS_DEFENSE_2026-09-11" in app
+    assert "STREAMLIT_MAIN_V84_NFL_PASSING_YARDS_STEP4_PRESSURE_2026-09-11" in app
+    assert "STEP 4 PRESSURE GREEN" in page
+    assert "Step 4 projection influence 0.0%" in page
+    assert "projection/Monte Carlo/probability/fair-line/EV/ranking/recommendation OFF" in page
+    assert '"projection_adjustment": 0.0' in engine
+    assert "blitz" in engine.lower()
+    assert "not synthesized" in engine.lower()
