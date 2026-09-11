@@ -64,6 +64,7 @@ def build_packet(
     run_id: str = "",
     sha: str = "",
     ref: str = "",
+    source_created_at: str = "",
     failed_steps: dict[str, list[str]] | None = None,
     history_packets: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
@@ -77,6 +78,7 @@ def build_packet(
         report,
         history_packets,
         current_run_id=run_id,
+        current_run_created_at=source_created_at,
     )
     lane_results = {
         name: str((payload or {}).get("result") or "unknown")
@@ -88,6 +90,7 @@ def build_packet(
         "run_id": run_id,
         "sha": sha,
         "ref": ref,
+        "source_created_at": history_summary.get("current_run_created_at", ""),
         "lane_results": lane_results,
         "failed_steps": failed_steps or {},
         "history": history_summary,
@@ -105,6 +108,7 @@ def render_markdown(packet: dict[str, Any]) -> str:
         f"- **Run ID:** {packet.get('run_id') or 'unknown'}",
         f"- **Commit:** {packet.get('sha') or 'unknown'}",
         f"- **Ref:** {packet.get('ref') or 'unknown'}",
+        f"- **Source run created (UTC):** {packet.get('source_created_at') or 'unavailable'}",
         f"- **History source:** {history.get('source', 'unavailable')}",
         f"- **History available:** {history.get('history_available', False)}",
         f"- **History packets scanned:** {history.get('packets_scanned', 0)}",
@@ -130,10 +134,13 @@ def render_markdown(packet: dict[str, Any]) -> str:
             f"- **Recurrence:** {primary.get('recurrence_status', 'history-unavailable')}",
             f"- **Recurrence confidence:** {primary.get('recurrence_confidence', 'unavailable')}",
             f"- **Recurrence timing confidence:** {primary.get('recurrence_timing_confidence', 'unavailable')}",
+            f"- **Recurrence age confidence:** {primary.get('recurrence_age_confidence', 'unavailable')}",
             f"- **Prior occurrences in bounded history:** {primary.get('prior_occurrence_count', 0)}",
             f"- **Prior run IDs:** {', '.join(prior_run_ids) if prior_run_ids else 'none'}",
             f"- **Prior first occurrence (UTC):** {primary.get('prior_first_seen_at') or 'unavailable'}",
             f"- **Prior last occurrence (UTC):** {primary.get('prior_last_seen_at') or 'unavailable'}",
+            f"- **Age since prior matching occurrence:** {primary.get('prior_last_seen_age') or 'unavailable'}",
+            f"- **Age since prior matching occurrence (seconds):** {primary.get('prior_last_seen_age_seconds') if primary.get('prior_last_seen_age_seconds') is not None else 'unavailable'}",
             f"- **Layer:** {primary['layer']}",
             f"- **Failure class:** {primary['failure_class']}",
             f"- **Evidence signal:** {primary.get('evidence_signal', 'none')}",
@@ -156,6 +163,7 @@ def render_markdown(packet: dict[str, Any]) -> str:
                 f"recurrence={item.get('recurrence_status', 'history-unavailable')} → "
                 f"prior={item.get('prior_occurrence_count', 0)} → "
                 f"last-prior={item.get('prior_last_seen_at') or 'unavailable'} → "
+                f"age={item.get('prior_last_seen_age') or 'unavailable'} → "
                 f"{item['layer']} → signal={item.get('evidence_signal', 'none')} → "
                 f"confidence={item.get('confidence', 'lane-only')} → "
                 f"remediation={item.get('remediation_class', 'unknown')} → "
@@ -187,6 +195,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--needs-json")
     parser.add_argument("--failed-steps-json")
     parser.add_argument("--history-json")
+    parser.add_argument("--source-created-at")
     parser.add_argument("--output-dir", default="artifacts/devsystem-failure-packet")
     return parser.parse_args()
 
@@ -202,6 +211,11 @@ def main() -> int:
         run_id=os.environ.get("DEVSYSTEM_SOURCE_RUN_ID") or os.environ.get("GITHUB_RUN_ID", ""),
         sha=os.environ.get("DEVSYSTEM_SOURCE_SHA") or os.environ.get("GITHUB_SHA", ""),
         ref=os.environ.get("DEVSYSTEM_SOURCE_REF") or os.environ.get("GITHUB_REF", ""),
+        source_created_at=(
+            args.source_created_at
+            or os.environ.get("DEVSYSTEM_SOURCE_CREATED_AT")
+            or ""
+        ),
         failed_steps=json.loads(steps_raw),
         history_packets=history_packets,
     )

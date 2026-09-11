@@ -1,4 +1,4 @@
-"""Step 8 permanent DevSystem contract validator."""
+"""Step 9 permanent DevSystem contract validator."""
 from __future__ import annotations
 
 import json
@@ -127,6 +127,11 @@ def validate() -> dict:
         "DEVSYSTEM_FAILURE_HISTORY_UNAVAILABLE",
         "DEVSYSTEM_FAILURE_HISTORY_LIVE_CERTIFIED",
         'packet["_history_source_created_at"] = str(source_run.get("created_at") or "")',
+        "DEVSYSTEM_FAILURE_CURRENT_SOURCE_TIMESTAMP",
+        "DEVSYSTEM_FAILURE_CURRENT_SOURCE_TIMESTAMP_UNAVAILABLE",
+        'source_created_at = str(current_source_run.get("created_at") or "")',
+        "--source-created-at",
+        "current_timestamp=",
         "timestamps=",
         "class NoRedirect",
         "Do not forward GH_TOKEN off github.com.",
@@ -177,6 +182,10 @@ def validate() -> dict:
         '"recurrence_timing_confidence"',
         '"prior_first_seen_at"',
         '"prior_last_seen_at"',
+        '"recurrence_age_confidence"',
+        '"prior_last_seen_age_seconds"',
+        '"prior_last_seen_age"',
+        '"current_run_created_at"',
         '"claims_flakiness": False',
         '"claims_cadence": False',
     )
@@ -187,6 +196,10 @@ def validate() -> dict:
         history_missing.append("packet:Prior occurrences in bounded history")
     if "Prior last occurrence (UTC)" not in packet_source:
         history_missing.append("packet:Prior last occurrence (UTC)")
+    if "Age since prior matching occurrence" not in packet_source:
+        history_missing.append("packet:Age since prior matching occurrence")
+    if "Source run created (UTC)" not in packet_source:
+        history_missing.append("packet:Source run created (UTC)")
     if history_missing:
         raise PermanentGateFailure("failure recurrence history drift: " + " | ".join(history_missing))
 
@@ -222,6 +235,7 @@ def validate() -> dict:
         "failure_packet_self_health_permanent": True,
         "failure_recurrence_history_permanent": True,
         "failure_recurrence_chronology_permanent": True,
+        "failure_recurrence_age_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))

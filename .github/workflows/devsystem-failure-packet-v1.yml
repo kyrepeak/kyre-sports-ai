@@ -10,6 +10,7 @@ on:
       - devsystem-phase3-step6-failure-packet-self-health-v1
       - devsystem-phase3-step7-failure-recurrence-history-v1
       - devsystem-phase3-step8-failure-recurrence-chronology-v1
+      - devsystem-phase3-step9-failure-recurrence-age-v1
   workflow_dispatch:
 
 permissions:
@@ -218,6 +219,24 @@ jobs:
                       raise ValueError("failure packet artifact contains no packet JSON")
                   return json.loads(archive.read(sorted(names)[0]).decode("utf-8"))
 
+          source_created_at = ""
+          try:
+              current_source_run = api_json(
+                  f"https://api.github.com/repos/{repo}/actions/runs/{current_source_run_id}"
+              )
+              source_created_at = str(current_source_run.get("created_at") or "")
+          except Exception as exc:
+              print(
+                  "DEVSYSTEM_FAILURE_CURRENT_SOURCE_TIMESTAMP_UNAVAILABLE "
+                  f"run_id={current_source_run_id} error={type(exc).__name__}"
+              )
+          with open("/tmp/devsystem-source-created-at.txt", "w", encoding="utf-8") as handle:
+              handle.write(source_created_at)
+          print(
+              "DEVSYSTEM_FAILURE_CURRENT_SOURCE_TIMESTAMP "
+              f"available={bool(source_created_at)}"
+          )
+
           history = None
           try:
               history = []
@@ -287,6 +306,7 @@ jobs:
             --needs-json "$(cat /tmp/devsystem-needs.json)" \
             --failed-steps-json "$(cat /tmp/devsystem-failed-steps.json)" \
             --history-json "$(cat /tmp/devsystem-history.json)" \
+            --source-created-at "$(cat /tmp/devsystem-source-created-at.txt)" \
             --output-dir artifacts/devsystem-failure-packet
 
       - name: Build certification packet
@@ -300,6 +320,8 @@ jobs:
           import json
           with open('/tmp/devsystem-history.json', encoding='utf-8') as handle:
               live_history = json.load(handle)
+          with open('/tmp/devsystem-source-created-at.txt', encoding='utf-8') as handle:
+              source_created_at = handle.read().strip()
           if not isinstance(live_history, list) or not live_history:
               raise SystemExit('live failure history collector returned no verified prior targeted-CI packets')
           timestamped = [
@@ -308,21 +330,24 @@ jobs:
           ]
           if not timestamped:
               raise SystemExit('live failure history collector returned no verified prior run timestamps')
+          if not source_created_at:
+              raise SystemExit('live failure collector returned no verified current source-run timestamp')
           print(
               f"DEVSYSTEM_FAILURE_HISTORY_LIVE_CERTIFIED packets={len(live_history)} "
-              f"timestamps={len(timestamped)}"
+              f"timestamps={len(timestamped)} current_timestamp={bool(source_created_at)}"
           )
           PY
           python devsystem/failure_packet_v1.py \
             --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure","log_excerpt":"FAILED tests/test_cfb_guard.py::test_frozen_contract - AssertionError"},"mlb-critical":{"result":"success"}}' \
             --failed-steps-json '{"cfb-critical":["Run current CFB critical path"]}' \
             --history-json '[]' \
+            --source-created-at '2026-09-11T12:00:00Z' \
             --output-dir /tmp/devsystem-history-seed
           python - <<'PY'
           import json
           with open('/tmp/devsystem-history-seed/failure-packet.json', encoding='utf-8') as handle:
               packet = json.load(handle)
-          packet['run_id'] = 'step8-history-seed'
+          packet['run_id'] = 'step9-history-seed'
           packet['_history_source_created_at'] = '2026-09-01T12:00:00Z'
           with open('/tmp/devsystem-cert-history.json', 'w', encoding='utf-8') as handle:
               json.dump([packet], handle, sort_keys=True)
@@ -331,6 +356,7 @@ jobs:
             --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure","log_excerpt":"FAILED tests/test_cfb_guard.py::test_frozen_contract - AssertionError"},"mlb-critical":{"result":"success"}}' \
             --failed-steps-json '{"cfb-critical":["Run current CFB critical path"]}' \
             --history-json "$(cat /tmp/devsystem-cert-history.json)" \
+            --source-created-at '2026-09-11T12:00:00Z' \
             --output-dir artifacts/devsystem-failure-packet
           grep -q 'KYRE_DEVSYSTEM_FAILURE_PACKET_V1' artifacts/devsystem-failure-packet/failure-packet.json
           grep -q 'Run current CFB critical path' artifacts/devsystem-failure-packet/failure-packet.md
@@ -340,12 +366,17 @@ jobs:
           grep -q 'Recurrence:.*recurring' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'Prior occurrences in bounded history:.*1' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'Recurrence timing confidence:.*confirmed' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Recurrence age confidence:.*confirmed' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Source run created (UTC):.*2026-09-11T12:00:00Z' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'Prior first occurrence (UTC):.*2026-09-01T12:00:00Z' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'Prior last occurrence (UTC):.*2026-09-01T12:00:00Z' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Age since prior matching occurrence:.*10d' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Age since prior matching occurrence (seconds):.*864000' artifacts/devsystem-failure-packet/failure-packet.md
           python devsystem/failure_packet_v1.py \
             --needs-json '{"classify":{"result":"success"},"devsystem-final-gate":{"result":"failure"}}' \
             --failed-steps-json '{"devsystem-final-gate":["Aggregate every required DevSystem lane"]}' \
             --history-json '[]' \
+            --source-created-at '2026-09-11T12:00:00Z' \
             --output-dir artifacts/devsystem-final-gate-cert
           grep -q 'devsystem-final-gate' artifacts/devsystem-final-gate-cert/failure-packet.md
           grep -q 'FAILURES_FOUND' artifacts/devsystem-final-gate-cert/failure-packet.json
