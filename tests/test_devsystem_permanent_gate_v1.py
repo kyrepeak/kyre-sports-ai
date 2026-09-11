@@ -27,6 +27,7 @@ def test_permanent_contract_is_green():
     assert result["api_observability_permanent"] is True
     assert result["predictive_failure_triage_permanent"] is True
     assert result["automatic_failure_evidence_wiring_permanent"] is True
+    assert result["failed_job_log_evidence_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
@@ -75,6 +76,24 @@ def test_failure_packet_automatically_wires_captured_step_evidence():
             ]
         },
     )
+    primary = packet["triage"]["primary"]
+    assert primary["job"] == "browser-qa"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
+
+
+def test_failed_job_log_excerpt_reaches_predictive_triage():
+    extractor = _load("failure_log_excerpt_permanent", "devsystem/failure_log_excerpt_v1.py")
+    packet_module = _load("failure_packet_log_path", "devsystem/failure_packet_v1.py")
+    raw_log = "\n".join([
+        "browser setup complete",
+        "Playwright TimeoutError: waiting for locator combobox",
+        "cleanup complete",
+    ])
+    excerpt = extractor.extract_log_excerpt(raw_log)
+    packet = packet_module.build_packet({
+        "browser-qa": {"result": "failure", "log_excerpt": excerpt}
+    })
     primary = packet["triage"]["primary"]
     assert primary["job"] == "browser-qa"
     assert primary["evidence_signal"] == "browser-selector-race"
