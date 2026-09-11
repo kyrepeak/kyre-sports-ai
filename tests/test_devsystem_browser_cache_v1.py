@@ -3,10 +3,12 @@ from pathlib import Path
 
 WORKFLOW = Path('.github/workflows/devsystem-targeted-ci.yml')
 EPOCH = Path('devsystem/browser_cache_epoch_v1.txt')
+BROWSER_QA = Path('devsystem/browser_qa_v1.py')
 
 
 def test_browser_cache_contract_is_present_and_fail_safe():
     text = WORKFLOW.read_text(encoding='utf-8')
+    browser_qa = BROWSER_QA.read_text(encoding='utf-8')
 
     assert 'Restore browser QA virtualenv' in text
     assert 'actions/cache@v4' in text
@@ -16,8 +18,10 @@ def test_browser_cache_contract_is_present_and_fail_safe():
     assert '~/.cache/ms-playwright' in text
     assert "steps.playwright-cache.outputs.cache-hit != 'true'" in text
     assert 'python -m playwright install chromium' in text
-    assert 'Verify Chromium can launch' in text
-    assert 'DEVSYSTEM_BROWSER_RUNTIME_GREEN' in text
+    assert 'Verify Chromium can launch' not in text
+    assert 'sync_playwright()' in browser_qa
+    assert 'p.chromium.launch(' in browser_qa
+    assert 'DEVSYSTEM_BROWSER_QA_GREEN' in browser_qa
 
 
 def test_browser_venv_cache_is_bound_to_exact_setup_python_version():

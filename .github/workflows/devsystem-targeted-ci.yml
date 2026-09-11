@@ -210,20 +210,6 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: python -m playwright install chromium
 
-      - name: Verify Chromium can launch
-        shell: bash
-        run: |
-          python - <<'PY'
-          from playwright.sync_api import sync_playwright
-          with sync_playwright() as p:
-              browser = p.chromium.launch(headless=True)
-              page = browser.new_page()
-              page.set_content('<title>DevSystem Browser Cache</title>')
-              assert page.title() == 'DevSystem Browser Cache'
-              browser.close()
-          print('DEVSYSTEM_BROWSER_RUNTIME_GREEN')
-          PY
-
       - name: Self-test browser QA and cache contracts
         run: |
           python -m pytest -q \
