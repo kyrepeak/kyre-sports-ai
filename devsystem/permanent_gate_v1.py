@@ -1,4 +1,4 @@
-"""Step 7 permanent DevSystem contract validator."""
+"""Step 8 permanent DevSystem contract validator."""
 from __future__ import annotations
 
 import json
@@ -126,6 +126,8 @@ def validate() -> dict:
         "DEVSYSTEM_FAILURE_HISTORY_ARTIFACT_UNAVAILABLE",
         "DEVSYSTEM_FAILURE_HISTORY_UNAVAILABLE",
         "DEVSYSTEM_FAILURE_HISTORY_LIVE_CERTIFIED",
+        'packet["_history_source_created_at"] = str(source_run.get("created_at") or "")',
+        "timestamps=",
         "class NoRedirect",
         "Do not forward GH_TOKEN off github.com.",
         "--history-json",
@@ -172,13 +174,19 @@ def validate() -> dict:
         '"not-seen-in-history"',
         '"history-unavailable"',
         '"prior_occurrence_count"',
+        '"recurrence_timing_confidence"',
+        '"prior_first_seen_at"',
+        '"prior_last_seen_at"',
         '"claims_flakiness": False',
+        '"claims_cadence": False',
     )
     history_missing = [marker for marker in history_markers if marker not in history_source]
     if "history_module.attach_recurrence" not in packet_source:
         history_missing.append("packet:history_module.attach_recurrence")
     if "Prior occurrences in bounded history" not in packet_source:
         history_missing.append("packet:Prior occurrences in bounded history")
+    if "Prior last occurrence (UTC)" not in packet_source:
+        history_missing.append("packet:Prior last occurrence (UTC)")
     if history_missing:
         raise PermanentGateFailure("failure recurrence history drift: " + " | ".join(history_missing))
 
@@ -213,6 +221,7 @@ def validate() -> dict:
         "stable_failure_fingerprint_permanent": True,
         "failure_packet_self_health_permanent": True,
         "failure_recurrence_history_permanent": True,
+        "failure_recurrence_chronology_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
