@@ -23,7 +23,7 @@ import time
 from typing import Any
 
 import requests
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8501"
 REQUIRED_SPORTS = (
@@ -200,6 +200,10 @@ def _choose(page, frame, combo_index: int, value: str) -> None:
     combo.click()
     page.keyboard.type(value)
     page.keyboard.press("Enter")
+    expect(frame.get_by_role("combobox").nth(combo_index)).to_have_value(
+        value,
+        timeout=SELECTOR_TIMEOUT_MS,
+    )
 
 
 def run_browser_qa(
