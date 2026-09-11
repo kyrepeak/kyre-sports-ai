@@ -100,6 +100,9 @@ def render_markdown(packet: dict[str, Any]) -> str:
             f"- **Evidence signal:** {primary.get('evidence_signal', 'none')}",
             f"- **Confidence:** {primary.get('confidence', 'lane-only')}",
             f"- **Diagnosis:** {primary.get('diagnosis', primary['failure_class'])}",
+            f"- **Remediation class:** {primary.get('remediation_class', 'unknown')}",
+            f"- **Retry policy:** {primary.get('retry_policy', 'investigate-first')}",
+            f"- **Retry reason:** {primary.get('retry_reason', 'insufficient evidence for retry guidance')}",
             f"- **Inspect first:** {primary['inspect_first']}",
         ])
 
@@ -113,6 +116,8 @@ def render_markdown(packet: dict[str, Any]) -> str:
                 f"- `{item['job']}` → {item['layer']} → "
                 f"signal={item.get('evidence_signal', 'none')} → "
                 f"confidence={item.get('confidence', 'lane-only')} → "
+                f"remediation={item.get('remediation_class', 'unknown')} → "
+                f"retry={item.get('retry_policy', 'investigate-first')} → "
                 f"{item.get('diagnosis', item['failure_class'])} → inspect: {item['inspect_first']}"
             )
 
