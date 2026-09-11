@@ -49,4 +49,4 @@ def test_router_v80_preserves_cfb_v79_and_advances_only_nfl_hub() -> None:
     assert 'import streamlit_memory_lazy_router_v79 as prior' in router
     assert 'nfl_hub_v19' in router
     assert 'streamlit_memory_lazy_router_v80' in app
-    assert 'STREAMLIT_MAIN_V80_NFL_PASSING_YARDS_COMPACT_2026-09-11' in app
+    assert 'STREAMLIT_MAIN_V80_NFL_PASSING_YARDS_COMPACT_FOUNDATION_2026-09-11' in app
