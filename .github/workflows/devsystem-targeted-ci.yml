@@ -191,24 +191,11 @@ jobs:
         shell: bash
         run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
 
-      - name: Resolve Playwright cache identity
-        id: playwright-meta
+      - name: Prove runner Chrome is available
         shell: bash
         run: |
-          version="$(.venv-browser-qa/bin/python -c 'import importlib.metadata as m; print(m.version("playwright"))')"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "DEVSYSTEM_PLAYWRIGHT_VERSION=$version"
-
-      - name: Restore Playwright browser binaries
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: devsystem-playwright-${{ runner.os }}-${{ steps.playwright-meta.outputs.version }}-${{ hashFiles('devsystem/browser_cache_epoch_v1.txt') }}
-
-      - name: Install Chromium on cache miss
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: python -m playwright install chromium
+          set -euo pipefail
+          google-chrome --version
 
       - name: Self-test browser QA and cache contracts
         run: |
