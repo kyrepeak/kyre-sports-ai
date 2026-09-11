@@ -101,6 +101,36 @@ def attach_recurrence(
     current_created_at = _normalize_utc_timestamp(current_run_created_at)
     current_dt = _parse_utc_datetime(current_created_at)
 
+    normalized_packet_times = [
+        _normalize_utc_timestamp(packet.get(HISTORY_TIMESTAMP_FIELD))
+        for packet in packets
+        if isinstance(packet, dict)
+    ]
+    verified_packet_times = sorted(timestamp for timestamp in normalized_packet_times if timestamp)
+    coverage_oldest = ""
+    coverage_newest = ""
+    coverage_lookback_seconds: int | None = None
+    coverage_lookback = ""
+    if not history_available:
+        coverage_confidence = "unavailable"
+    elif not packets:
+        coverage_confidence = "not-applicable"
+    elif len(normalized_packet_times) != len(packets) or len(verified_packet_times) != len(packets):
+        coverage_confidence = "partial"
+    elif current_dt is None:
+        coverage_confidence = "unavailable"
+    else:
+        parsed_packet_times = [_parse_utc_datetime(timestamp) for timestamp in verified_packet_times]
+        if any(timestamp is None or timestamp > current_dt for timestamp in parsed_packet_times):
+            coverage_confidence = "unavailable"
+        else:
+            oldest_dt = parsed_packet_times[0]
+            coverage_oldest = verified_packet_times[0]
+            coverage_newest = verified_packet_times[-1]
+            coverage_lookback_seconds = int((current_dt - oldest_dt).total_seconds())
+            coverage_lookback = _format_age(coverage_lookback_seconds)
+            coverage_confidence = "confirmed"
+
     failures = report.get("failures") or []
     for failure in failures:
         fingerprint = str(failure.get("failure_fingerprint") or "")
@@ -193,6 +223,11 @@ def attach_recurrence(
         ),
         "current_run_id": current_run_id,
         "current_run_created_at": current_created_at,
+        "history_coverage_confidence": coverage_confidence,
+        "history_oldest_verified_at": coverage_oldest,
+        "history_newest_verified_at": coverage_newest,
+        "history_lookback_seconds": coverage_lookback_seconds,
+        "history_lookback": coverage_lookback,
         "claims_flakiness": False,
         "claims_cadence": False,
     }
