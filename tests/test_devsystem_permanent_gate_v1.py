@@ -21,9 +21,9 @@ def test_permanent_contract_is_green():
     module = _load("permanent_gate_v1", "devsystem/permanent_gate_v1.py")
     result = module.validate()
     assert result["status"] == "GREEN"
-    assert result["active_domains"] == ["cfb", "mlb", "wnba"]
-    assert "nfl" in result["blocked_until_activated"]
-    assert result["critical_test_count"] == 17
+    assert result["active_domains"] == ["cfb", "mlb", "nfl", "wnba"]
+    assert "nfl" not in result["blocked_until_activated"]
+    assert result["critical_test_count"] == 19
     assert result["api_observability_permanent"] is True
     assert result["predictive_failure_triage_permanent"] is True
     assert result["automatic_failure_evidence_wiring_permanent"] is True

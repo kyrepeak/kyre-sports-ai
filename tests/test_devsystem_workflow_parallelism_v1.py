@@ -35,6 +35,7 @@ def test_expensive_lanes_still_wait_for_both_safety_gates() -> None:
         "cfb-critical",
         "mlb-critical",
         "wnba-critical",
+        "nfl-critical",
         "core-smoke",
     ):
         assert expected in _job_block(job), job
@@ -64,6 +65,7 @@ def test_final_gate_is_lightweight_and_fail_closed() -> None:
         "CFB_CRITICAL_RESULT",
         "MLB_CRITICAL_RESULT",
         "WNBA_CRITICAL_RESULT",
+        "NFL_CRITICAL_RESULT",
         "CORE_SMOKE_RESULT",
     ):
         assert job in final_gate

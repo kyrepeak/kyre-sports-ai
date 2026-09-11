@@ -161,6 +161,7 @@ jobs:
     if: >-
       needs.classify.outputs.ui == 'true' ||
       needs.classify.outputs.cfb == 'true' ||
+      needs.classify.outputs.nfl == 'true' ||
       needs.classify.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 18
@@ -360,6 +361,40 @@ jobs:
             tests/test_wnba_step20b_monte_carlo_acceleration.py \
             tests/test_wnba_step20b_step2_exact_reuse_timing.py
 
+  nfl-critical:
+    needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
+    if: needs.classify.outputs.nfl == 'true' || needs.classify.outputs.core == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up NFL Python
+        id: nfl-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore NFL critical virtualenv
+        id: nfl-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-nfl-critical
+          key: devsystem-nfl-venv-${{ runner.os }}-py${{ steps.nfl-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+      - name: Build NFL critical virtualenv on cache miss
+        if: steps.nfl-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-nfl-critical
+          .venv-nfl-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-nfl-critical/bin/python -m pip install --disable-pip-version-check -q pytest
+      - name: Activate NFL critical virtualenv
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-nfl-critical/bin" >> "$GITHUB_PATH"
+      - name: Run current NFL critical path
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_foundation_v1.py \
+            tests/test_nfl_passing_yards_compact_v1.py
+
   core-smoke:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
     if: needs.classify.outputs.core == 'true'
@@ -383,6 +418,7 @@ jobs:
       - cfb-critical
       - mlb-critical
       - wnba-critical
+      - nfl-critical
       - core-smoke
     runs-on: ubuntu-24.04
     steps:
@@ -397,6 +433,7 @@ jobs:
           CFB_CRITICAL_RESULT: ${{ needs.cfb-critical.result }}
           MLB_CRITICAL_RESULT: ${{ needs.mlb-critical.result }}
           WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
+          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
           CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
         run: |
           set -euo pipefail
@@ -411,6 +448,7 @@ jobs:
             CFB_CRITICAL_RESULT \
             MLB_CRITICAL_RESULT \
             WNBA_CRITICAL_RESULT \
+            NFL_CRITICAL_RESULT \
             CORE_SMOKE_RESULT
           do
             result="${!name:-}"

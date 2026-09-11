@@ -55,12 +55,15 @@
       "production_probe": "existing WNBA production certifications plus shared platform health"
     },
     "nfl": {
-      "status": "legacy_unprotected",
-      "description": "NFL code exists, but it must receive a dedicated critical test lane before new NFL changes are allowed.",
-      "critical_job": null,
-      "critical_tests": [],
-      "browser_coverage": "sport inventory only",
-      "production_probe": null
+      "status": "active",
+      "description": "NFL protected lane covering the existing foundation plus the dedicated Passing Yards workspace.",
+      "critical_job": "nfl-critical",
+      "critical_tests": [
+        "tests/test_nfl_foundation_v1.py",
+        "tests/test_nfl_passing_yards_compact_v1.py"
+      ],
+      "browser_coverage": "NFL -> Passing Yards compact verified-slate workspace",
+      "production_probe": "Streamlit NFL Passing Yards verified slate route; model remains off until dedicated projection steps are certified"
     },
     "nba": {
       "status": "planned",

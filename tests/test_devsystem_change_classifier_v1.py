@@ -38,12 +38,12 @@ def test_api_subdirectories_classify_to_the_correct_sport():
     assert result["api"] is True
 
 
-def test_unprotected_existing_nfl_lane_fails_closed():
+def test_nfl_lane_is_protected_after_activation():
     module = _load()
-    result = module.classify(["nfl_moneyline_hub_v8.py"])
+    result = module.classify(["nfl_moneyline_hub_v8.py", "nfl_passing_yards_hub_v1.py"])
     assert result["nfl"] is True
-    assert result["unprotected_domains"] == ["nfl"]
-    assert result["risk_tier"] == "blocked"
+    assert result["unprotected_domains"] == []
+    assert result["risk_tier"] != "blocked"
 
 
 def test_future_domains_are_reserved_and_fail_closed():
