@@ -162,20 +162,21 @@ def _find_app_frame(page, timeout_seconds: float = 90.0):
 
 
 def _wait_for_text(frame, text: str, timeout_seconds: float = 45.0) -> str:
-    deadline = time.monotonic() + timeout_seconds
-    last_body = ""
-    while time.monotonic() < deadline:
+    marker = frame.get_by_text(text, exact=False).first
+    try:
+        marker.wait_for(
+            state="visible",
+            timeout=int(timeout_seconds * 1000),
+        )
+    except Exception as exc:
         try:
-            last_body = frame.locator("body").inner_text(timeout=5000)
+            body = frame.locator("body").inner_text(timeout=5000)
         except Exception:
-            last_body = ""
-        if text in last_body:
-            return last_body
-        page = frame.page
-        page.wait_for_timeout(1500)
-    raise BrowserQAFailure(
-        f"Timed out waiting for text {text!r}. Body start={last_body[:3000]!r}"
-    )
+            body = ""
+        raise BrowserQAFailure(
+            f"Timed out waiting for text {text!r}. Body start={body[:3000]!r}"
+        ) from exc
+    return frame.locator("body").inner_text(timeout=5000)
 
 
 def _read_sport_options(page, frame) -> list[str]:

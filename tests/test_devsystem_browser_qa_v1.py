@@ -64,3 +64,17 @@ def test_selector_helpers_are_readiness_driven_not_fixed_sleep_driven():
     assert 'state="visible"' in run_source
     assert module.SELECTOR_TIMEOUT_MS == 5000
     assert module.CFB_RERUN_TIMEOUT_MS == 30000
+
+
+def test_cfb_marker_wait_is_event_driven_not_polling_driven():
+    module = _load_module()
+
+    wait_source = inspect.getsource(module._wait_for_text)
+
+    assert 'get_by_text(text, exact=False).first' in wait_source
+    assert 'wait_for(' in wait_source
+    assert 'state="visible"' in wait_source
+    assert 'wait_for_timeout' not in wait_source
+    assert 'time.monotonic' not in wait_source
+    assert 'while ' not in wait_source
+    assert 'inner_text(timeout=5000)' in wait_source
