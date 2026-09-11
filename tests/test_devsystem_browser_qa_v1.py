@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 from pathlib import Path
 
 
@@ -43,3 +44,16 @@ def test_runtime_error_detector_fails_on_obvious_python_errors():
     assert module._body_has_forbidden_error(
         "ModuleNotFoundError: no module named x"
     ) == "ModuleNotFoundError"
+
+
+def test_selector_helpers_are_event_driven_not_fixed_sleep_driven():
+    module = _load_module()
+
+    read_source = inspect.getsource(module._read_sport_options)
+    choose_source = inspect.getsource(module._choose)
+
+    assert "wait_for_timeout" not in read_source
+    assert "wait_for_timeout" not in choose_source
+    assert 'wait_for(state="visible"' in read_source
+    assert 'wait_for(state="visible"' in choose_source
+    assert module.SELECTOR_TIMEOUT_MS == 5000
