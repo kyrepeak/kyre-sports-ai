@@ -136,7 +136,8 @@ jobs:
           python -m pip install --disable-pip-version-check -q pytest
           python -m pytest -q \
             tests/test_devsystem_change_classifier_v1.py \
-            tests/test_devsystem_permanent_gate_v1.py
+            tests/test_devsystem_permanent_gate_v1.py \
+            tests/test_devsystem_sport_cache_v1.py
 
   regression-shield:
     needs: [classify, workflow-hygiene, permanent-contract]
@@ -269,14 +270,27 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up CFB Python
+        id: cfb-python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-      - name: Install CFB test dependencies
+      - name: Restore CFB critical virtualenv
+        id: cfb-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-cfb-critical
+          key: devsystem-cfb-venv-${{ runner.os }}-py${{ steps.cfb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+      - name: Build CFB critical virtualenv on cache miss
+        if: steps.cfb-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
         run: |
-          python -m pip install --disable-pip-version-check -q -r requirements.txt
-          python -m pip install --disable-pip-version-check -q pytest
+          python -m venv .venv-cfb-critical
+          .venv-cfb-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-cfb-critical/bin/python -m pip install --disable-pip-version-check -q pytest
+      - name: Activate CFB critical virtualenv
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-cfb-critical/bin" >> "$GITHUB_PATH"
       - name: Run current CFB critical path
         run: |
           python -m pytest -q \
@@ -314,15 +328,28 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up MLB Python
+        id: mlb-python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-      - name: Install MLB test dependencies
+      - name: Restore MLB critical virtualenv
+        id: mlb-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-mlb-critical
+          key: devsystem-mlb-venv-${{ runner.os }}-py${{ steps.mlb-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+      - name: Build MLB critical virtualenv on cache miss
+        if: steps.mlb-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
         run: |
-          python -m pip install --disable-pip-version-check -q -r requirements.txt
-          if [ -f sports_api/requirements.txt ]; then python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
-          python -m pip install --disable-pip-version-check -q pytest
+          python -m venv .venv-mlb-critical
+          .venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          if [ -f sports_api/requirements.txt ]; then .venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
+          .venv-mlb-critical/bin/python -m pip install --disable-pip-version-check -q pytest
+      - name: Activate MLB critical virtualenv
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-mlb-critical/bin" >> "$GITHUB_PATH"
       - name: Run current MLB critical path
         run: |
           python -m pytest -q \
@@ -338,14 +365,27 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up WNBA Python
+        id: wnba-python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-      - name: Install WNBA test dependencies
+      - name: Restore WNBA critical virtualenv
+        id: wnba-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-wnba-critical
+          key: devsystem-wnba-venv-${{ runner.os }}-py${{ steps.wnba-python.outputs.python-version }}-${{ hashFiles('sports_api/requirements.txt', 'devsystem/sport_cache_epoch_v1.txt') }}
+      - name: Build WNBA critical virtualenv on cache miss
+        if: steps.wnba-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
         run: |
-          if [ -f sports_api/requirements.txt ]; then python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
-          python -m pip install --disable-pip-version-check -q pytest
+          python -m venv .venv-wnba-critical
+          if [ -f sports_api/requirements.txt ]; then .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt; fi
+          .venv-wnba-critical/bin/python -m pip install --disable-pip-version-check -q pytest
+      - name: Activate WNBA critical virtualenv
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-wnba-critical/bin" >> "$GITHUB_PATH"
       - name: Run current WNBA critical path
         run: |
           python -m pytest -q \
