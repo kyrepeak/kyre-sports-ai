@@ -22,7 +22,14 @@ def _load_triage():
     return module
 
 
-def build_packet(needs: dict[str, Any], *, run_id: str = "", sha: str = "", ref: str = "") -> dict[str, Any]:
+def build_packet(
+    needs: dict[str, Any],
+    *,
+    run_id: str = "",
+    sha: str = "",
+    ref: str = "",
+    failed_steps: dict[str, list[str]] | None = None,
+) -> dict[str, Any]:
     triage_module = _load_triage()
     report = triage_module.triage(needs)
     lane_results = {
@@ -36,6 +43,7 @@ def build_packet(needs: dict[str, Any], *, run_id: str = "", sha: str = "", ref:
         "sha": sha,
         "ref": ref,
         "lane_results": lane_results,
+        "failed_steps": failed_steps or {},
         "triage": report,
     }
 
@@ -79,6 +87,14 @@ def render_markdown(packet: dict[str, Any]) -> str:
             lines.append(
                 f"- `{item['job']}` → {item['layer']} → {item['failure_class']} → inspect: {item['inspect_first']}"
             )
+
+    lines.extend(["", "## Failed Steps", ""])
+    failed_steps = packet.get("failed_steps") or {}
+    if not failed_steps:
+        lines.append("None captured.")
+    else:
+        for job, steps in sorted(failed_steps.items()):
+            lines.append(f"- **{job}:** {', '.join(steps) if steps else 'job failed without a failed step'}")
     lines.append("")
     return "\n".join(lines)
 
@@ -94,6 +110,7 @@ def write_packet(packet: dict[str, Any], output_dir: Path) -> None:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--needs-json")
+    parser.add_argument("--failed-steps-json")
     parser.add_argument("--output-dir", default="artifacts/devsystem-failure-packet")
     return parser.parse_args()
 
@@ -101,11 +118,13 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     args = _parse_args()
     raw = args.needs_json or os.environ.get("DEVSYSTEM_NEEDS_JSON") or "{}"
+    steps_raw = args.failed_steps_json or os.environ.get("DEVSYSTEM_FAILED_STEPS_JSON") or "{}"
     packet = build_packet(
         json.loads(raw),
-        run_id=os.environ.get("GITHUB_RUN_ID", ""),
-        sha=os.environ.get("GITHUB_SHA", ""),
-        ref=os.environ.get("GITHUB_REF", ""),
+        run_id=os.environ.get("DEVSYSTEM_SOURCE_RUN_ID") or os.environ.get("GITHUB_RUN_ID", ""),
+        sha=os.environ.get("DEVSYSTEM_SOURCE_SHA") or os.environ.get("GITHUB_SHA", ""),
+        ref=os.environ.get("DEVSYSTEM_SOURCE_REF") or os.environ.get("GITHUB_REF", ""),
+        failed_steps=json.loads(steps_raw),
     )
     write_packet(packet, Path(args.output_dir))
     print("DEVSYSTEM_FAILURE_PACKET_WRITTEN")
