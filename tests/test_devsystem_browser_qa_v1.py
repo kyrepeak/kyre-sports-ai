@@ -57,4 +57,5 @@ def test_selector_helpers_are_readiness_driven_not_fixed_sleep_driven():
     assert 'wait_for(state="visible"' in read_source
     assert 'page.keyboard.type(value)' in choose_source
     assert 'page.keyboard.press("Enter")' in choose_source
+    assert ".to_have_value(" in choose_source
     assert module.SELECTOR_TIMEOUT_MS == 5000
