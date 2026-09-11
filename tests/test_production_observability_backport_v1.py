@@ -36,8 +36,10 @@ def test_release_entrypoint_installs_observability_without_replacing_runtime():
     assert "from sports_api.observability_v1 import install_observability" in source
     assert "install_observability(app)" in source
     assert "lifespan=step17b_lifespan" in source
-    assert "_collapse_lifecycle_free_router_lifespans()" in source
-    assert "app.router.lifespan_context = step17b_lifespan" in source
+    assert "_install_flat_production_lifespan()" in source
+    assert "app.router.lifespan_context = _production_lifespan" in source
+    assert "wnba_pregame_board_scheduler_router.lifespan_context" in source
+    assert "wnba_pregame_prediction_store_router.lifespan_context" in source
     assert '"health_ready": "/health/ready"' in source
     assert '"health_details": "/health/details"' in source
 
@@ -62,11 +64,17 @@ def test_release_health_preserves_cfb_hosted_transport_and_adds_diagnostics():
     assert "diagnostics_snapshot()" in source
 
 
-def test_release_lifespan_is_collapsed_to_the_single_step17b_context():
-    """Permanent structural guard against recursive merged_lifespan growth."""
-    from sports_api.main import app, step17b_lifespan
+def test_draftkings_canary_routes_do_not_add_a_noop_nested_lifespan():
+    source = (ROOT / "sports_api/api/wnba_draftkings_direct.py").read_text(encoding="utf-8")
+    assert "router.routes.extend(step6j_canary_router.routes)" in source
+    assert "router.include_router(step6j_canary_router)" not in source
 
-    assert app.router.lifespan_context is step17b_lifespan
+
+def test_release_lifespan_is_flat_and_preserves_real_wnba_worker_lifecycles():
+    """Permanent structural guard against recursive merged_lifespan growth."""
+    from sports_api.main import app, _production_lifespan
+
+    assert app.router.lifespan_context is _production_lifespan
 
 
 def test_full_production_app_lifespan_enters_exits_and_serves_release_contract():
