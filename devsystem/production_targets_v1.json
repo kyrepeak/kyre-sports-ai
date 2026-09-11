@@ -10,6 +10,7 @@
     "url": "https://kyre-sports-api.onrender.com",
     "service_id": "srv-da84q6ifngtc73bdbm6g",
     "source_branch": "mlb-step17b-shared-host-cert",
+    "certified_commit": "5de9e2cbff64d1bf28b5835c5fbc9b9484f5e728",
     "auto_deploy": false,
     "health_path": "/health"
   },

@@ -1,13 +1,14 @@
 """DevSystem production verification.
 
 This script verifies the real deployed public surfaces after a merge:
-- Render API transport and health;
+- Render API liveness, readiness, deployment identity, and diagnostics;
 - the public CFB odds safety contract;
 - the deployed Streamlit app shell;
-- the College Football -> Over/Under V29 readable Step 12 final-certification route through a real browser.
+- the College Football -> Over/Under V30 future-slate route through a real browser.
 
-Render deploy metadata/log freshness is inspected through the connected Render
-tooling by the release operator/assistant. No Render API secret is required here.
+The verifier intentionally checks stable shell/identity contracts only. Dynamic
+sportsbook availability is not a required browser marker because live market
+inventory can legitimately vary while the application remains healthy.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS_PATH = ROOT / "devsystem" / "production_targets_v1.json"
+OBSERVABILITY_VERSION = "KYRE_OBSERVABILITY_V1"
 
 FORBIDDEN_ERROR_MARKERS = (
     "Traceback (most recent call last)",
@@ -40,15 +42,15 @@ REQUIRED_SPORTS = (
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V20 ACTIVE",
-    "STEP 6 MARKET INTELLIGENCE LIVE",
+    "CFB O/U • CLEAN PAGE V30 ACTIVE",
+    "FUTURE SLATE COVERAGE ACTIVE",
+    "OFFICIAL ESPN IDENTITY RECOVERY",
+    "NO FUZZY MATCHING",
+    "NO SYNTHETIC IDS",
     "FRESHNESS FIREWALL ACTIVE",
     "0.0% PROJECTION INFLUENCE",
     "FROZEN PROJECTION MATH PRESERVED",
-    "READABLE STEP 9 GAME-DAY ENVIRONMENT ACTIVE",
-    "READABLE STEP 10 HISTORICAL MATCHUP ACTIVE",
-    "READABLE STEP 11 CURRENT FORM + SCHEDULE STRENGTH ACTIVE",
-    "READABLE STEP 12 FINAL CERTIFICATION ACTIVE",
+    "READABLE STEPS 4-12 ACTIVE",
 )
 
 
@@ -107,16 +109,68 @@ def _validate_api_contract(
     session: requests.Session,
     api_base: str,
     cfb_path: str,
+    expected_runtime_branch: str,
 ) -> dict[str, Any]:
     health_http, health = _request_json(session, api_base + "/health")
     if health.get("status") != "ok":
         raise ProductionVerificationFailure(f"Render health drift: {health}")
     if health.get("service") != "kyre-sports-api":
         raise ProductionVerificationFailure(f"Render service identity drift: {health}")
+    if health.get("observability_version") != OBSERVABILITY_VERSION:
+        raise ProductionVerificationFailure(
+            f"Render observability version drift: {health.get('observability_version')!r}"
+        )
+
+    health_deployment = health.get("deployment") or {}
+    if health_deployment.get("branch") != expected_runtime_branch:
+        raise ProductionVerificationFailure(
+            "Render health branch drift: "
+            f"expected={expected_runtime_branch!r} actual={health_deployment.get('branch')!r}"
+        )
+    if health_deployment.get("branch_aligned") is not True:
+        raise ProductionVerificationFailure("Render health reports runtime branch misalignment")
+    deploy_commit = str(health_deployment.get("commit") or "")
+    if not deploy_commit or deploy_commit == "unknown":
+        raise ProductionVerificationFailure("Render health is missing deploy commit identity")
+
+    ready_http, ready = _request_json(session, api_base + "/health/ready")
+    if ready.get("status") != "ready":
+        raise ProductionVerificationFailure(f"Render readiness drift: {ready}")
+    if ready.get("observability_version") != OBSERVABILITY_VERSION:
+        raise ProductionVerificationFailure("Render readiness observability version drift")
+    ready_deployment = ready.get("deployment") or {}
+    if ready_deployment.get("branch") != expected_runtime_branch:
+        raise ProductionVerificationFailure("Render readiness branch drift")
+    if ready_deployment.get("aligned") is not True:
+        raise ProductionVerificationFailure("Render readiness branch alignment is false")
+    if str(ready_deployment.get("commit") or "") != deploy_commit:
+        raise ProductionVerificationFailure("Render health/readiness deploy commit mismatch")
+
+    details_http, details = _request_json(session, api_base + "/health/details")
+    if details.get("status") != "ok":
+        raise ProductionVerificationFailure(f"Render diagnostics drift: {details}")
+    if details.get("observability_version") != OBSERVABILITY_VERSION:
+        raise ProductionVerificationFailure("Render diagnostics observability version drift")
+    runtime = details.get("runtime") or {}
+    if runtime.get("deploy_branch") != expected_runtime_branch:
+        raise ProductionVerificationFailure("Render diagnostics runtime branch drift")
+    if runtime.get("deploy_commit") != deploy_commit:
+        raise ProductionVerificationFailure("Render diagnostics deploy commit drift")
+    if runtime.get("branch_aligned") is not True:
+        raise ProductionVerificationFailure("Render diagnostics branch alignment is false")
+    debug_contract = details.get("debug_contract") or {}
+    if debug_contract.get("request_id_header") != "X-Request-ID":
+        raise ProductionVerificationFailure("Render request correlation contract drift")
+    if debug_contract.get("error_fingerprint_field") != "error_fingerprint":
+        raise ProductionVerificationFailure("Render error fingerprint contract drift")
 
     root_http, root = _request_json(session, api_base + "/")
     if root.get("name") != "Kyre Sports API" or root.get("status") != "online":
         raise ProductionVerificationFailure(f"Render API root contract drift: {root}")
+    if root.get("health_ready") != "/health/ready":
+        raise ProductionVerificationFailure("Render root missing readiness endpoint")
+    if root.get("health_details") != "/health/details":
+        raise ProductionVerificationFailure("Render root missing diagnostics endpoint")
 
     odds_http, odds = _request_json(session, api_base + cfb_path)
     if int(odds.get("step") or 0) != 3:
@@ -142,7 +196,13 @@ def _validate_api_contract(
 
     return {
         "health_http": health_http,
+        "readiness_http": ready_http,
+        "details_http": details_http,
         "root_http": root_http,
+        "render_observability_version": details.get("observability_version"),
+        "render_deploy_branch": runtime.get("deploy_branch"),
+        "render_deploy_commit": runtime.get("deploy_commit"),
+        "render_branch_aligned": runtime.get("branch_aligned"),
         "cfb_odds_http": odds_http,
         "cfb_game_count": len(games),
         "cfb_projection_weight": semantics.get("projection_weight"),
@@ -246,9 +306,7 @@ def _browser_verify(
 
             combo = frame.get_by_role("combobox").nth(0)
             if combo.count() == 0:
-                raise ProductionVerificationFailure(
-                    "Production sport selector is missing"
-                )
+                raise ProductionVerificationFailure("Production sport selector is missing")
 
             try:
                 initial_sport_value = combo.input_value(timeout=3000)
@@ -281,7 +339,7 @@ def _browser_verify(
                 page.wait_for_timeout(1500)
             else:
                 raise ProductionVerificationFailure(
-                    "Production CFB Clean Page V29 Step 12 marker did not appear"
+                    "Production CFB Clean Page V30 marker did not appear"
                 )
 
             missing_markers = [
@@ -290,7 +348,7 @@ def _browser_verify(
             ]
             if missing_markers:
                 raise ProductionVerificationFailure(
-                    "Production CFB Step 12 marker drift: " + " | ".join(missing_markers)
+                    "Production CFB V30 marker drift: " + " | ".join(missing_markers)
                 )
 
             forbidden = _body_has_forbidden_error(final_body)
@@ -334,12 +392,13 @@ def run(
     streamlit_url = str(targets["streamlit"]["url"]).rstrip("/")
     api_base = str(targets["render_api"]["url"]).rstrip("/")
     cfb_path = str(targets["contracts"]["cfb_odds_path"])
+    expected_runtime_branch = str(targets["render_api"]["source_branch"])
 
     session = requests.Session()
     session.headers.update(
         {
             "Accept": "application/json",
-            "User-Agent": "KyreSportsAI-DevSystem-ProductionVerify/1.0",
+            "User-Agent": "KyreSportsAI-DevSystem-ProductionVerify/2.0",
             "Cache-Control": "no-cache",
         }
     )
@@ -361,7 +420,12 @@ def run(
         timeout_seconds=420,
     )
 
-    api = _validate_api_contract(session, api_base, cfb_path)
+    api = _validate_api_contract(
+        session,
+        api_base,
+        cfb_path,
+        expected_runtime_branch,
+    )
     browser = _browser_verify(streamlit_url, artifacts)
 
     result = {
@@ -372,7 +436,7 @@ def run(
         "render_api_url": api_base,
         "render_api_health_http": api_health_http,
         "render_service_id": targets["render_api"]["service_id"],
-        "render_source_branch": targets["render_api"]["source_branch"],
+        "render_source_branch": expected_runtime_branch,
         "render_auto_deploy": targets["render_api"]["auto_deploy"],
         **api,
         **browser,

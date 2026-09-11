@@ -25,7 +25,7 @@ def test_production_target_registry_is_explicit():
     assert targets["contracts"]["cfb_projection_weight"] == 0.0
 
 
-def test_production_browser_contract_matches_certified_ui():
+def test_production_browser_contract_matches_certified_v30_ui():
     module = _load_module()
 
     assert module.REQUIRED_SPORTS == (
@@ -36,15 +36,29 @@ def test_production_browser_contract_matches_certified_ui():
     )
     assert module.CFB_SPORT == "College Football"
     assert module.CFB_MARKET == "Over/Under"
-    assert "CFB O/U • CLEAN PAGE V20 ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "STEP 6 MARKET INTELLIGENCE LIVE" in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V30 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "FUTURE SLATE COVERAGE ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "OFFICIAL ESPN IDENTITY RECOVERY" in module.CFB_REQUIRED_MARKERS
+    assert "NO FUZZY MATCHING" in module.CFB_REQUIRED_MARKERS
+    assert "NO SYNTHETIC IDS" in module.CFB_REQUIRED_MARKERS
     assert "FRESHNESS FIREWALL ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "0.0% PROJECTION INFLUENCE" in module.CFB_REQUIRED_MARKERS
     assert "FROZEN PROJECTION MATH PRESERVED" in module.CFB_REQUIRED_MARKERS
-    assert "READABLE STEP 9 GAME-DAY ENVIRONMENT ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "READABLE STEP 10 HISTORICAL MATCHUP ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "READABLE STEP 11 CURRENT FORM + SCHEDULE STRENGTH ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "READABLE STEP 12 FINAL CERTIFICATION ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "READABLE STEPS 4-12 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "STEP 5C MARKET INTELLIGENCE LIVE" not in module.CFB_REQUIRED_MARKERS
+
+
+def test_production_verifier_requires_observability_identity_contract():
+    module = _load_module()
+
+    assert module.OBSERVABILITY_VERSION == "KYRE_OBSERVABILITY_V1"
+    source = Path(module.__file__).read_text(encoding="utf-8")
+    assert 'api_base + "/health/ready"' in source
+    assert 'api_base + "/health/details"' in source
+    assert "expected_runtime_branch" in source
+    assert "render_deploy_commit" in source
+    assert 'debug_contract.get("request_id_header") != "X-Request-ID"' in source
+    assert 'debug_contract.get("error_fingerprint_field") != "error_fingerprint"' in source
 
 
 def test_production_runtime_error_detector():
