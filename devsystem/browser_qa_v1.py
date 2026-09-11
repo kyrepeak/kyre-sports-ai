@@ -214,6 +214,7 @@ def run_browser_qa(
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
+            channel="chrome",
             headless=True,
             args=["--disable-dev-shm-usage", "--no-sandbox"],
         )
