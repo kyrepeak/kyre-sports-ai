@@ -3,9 +3,14 @@
 Step 6 of the College Football Over/Under performance work.
 
 V77 preserves certified Router V76 behavior but removes the historical router
-chain from the import path when College Football -> Over/Under is already the
-active Streamlit route. The frozen V76 chain is imported lazily only when a
-non-fast route needs it.
+chain from the import path when College Football -> Over/Under is the active
+Streamlit route. The frozen V76 chain is imported lazily only when a non-fast
+route needs it.
+
+For a user already on CFB Over/Under, V77 also stores that exact route in the
+page query parameters. On a later browser refresh or Streamlit cold restart,
+the route can be restored before the frozen historical router chain is loaded.
+Changing away from CFB Over/Under clears the fast-route query parameters.
 
 The active CFB O/U page remains Clean Page V35. No schedule, market, team-data,
 projection, ranking, qualification, selection, or sportsbook semantics change.
@@ -27,6 +32,8 @@ CFB_SPORT_LABEL = "College Football"
 CFB_MARKETS = ("Moneyline", "Over/Under", "Game Total")
 OVER_UNDER_MARKET = "Over/Under"
 ACTIVE_PAGE = "cfb_over_under_clean_page_v35"
+ROUTE_QUERY_SPORT = "ks_sport"
+ROUTE_QUERY_MARKET = "ks_cfb_market"
 
 _ORIGINAL_SELECTBOX = root.st.selectbox
 _ORIGINAL_RENDER_NFL = root._render_nfl
@@ -48,6 +55,54 @@ def _load_prior():
     return importlib.import_module(FROZEN_ROUTER)
 
 
+def _query_value(name: str) -> str:
+    try:
+        value = st.query_params.get(name)
+    except Exception:
+        return ""
+    if isinstance(value, (list, tuple)):
+        value = value[-1] if value else ""
+    return str(value or "").strip()
+
+
+def _clear_fast_route_query() -> None:
+    try:
+        for key in (ROUTE_QUERY_SPORT, ROUTE_QUERY_MARKET):
+            if key in st.query_params:
+                del st.query_params[key]
+    except Exception:
+        pass
+
+
+def _persist_fast_route_query() -> None:
+    """Keep only the exact certified CFB O/U route restorable after a restart."""
+    try:
+        if _query_value(ROUTE_QUERY_SPORT) != CFB_SPORT_LABEL:
+            st.query_params[ROUTE_QUERY_SPORT] = CFB_SPORT_LABEL
+        if _query_value(ROUTE_QUERY_MARKET) != OVER_UNDER_MARKET:
+            st.query_params[ROUTE_QUERY_MARKET] = OVER_UNDER_MARKET
+    except Exception:
+        pass
+
+
+def _restore_fast_route_from_query() -> bool:
+    """Restore the fast route only when session widget state is not yet established."""
+    current_sport = str(st.session_state.get("ks_sport_touch") or "").strip()
+    current_market = str(st.session_state.get("ks_cfb_market_touch") or "").strip()
+    if current_sport or current_market:
+        return False
+
+    if (
+        _query_value(ROUTE_QUERY_SPORT) != CFB_SPORT_LABEL
+        or _query_value(ROUTE_QUERY_MARKET) != OVER_UNDER_MARKET
+    ):
+        return False
+
+    st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL
+    st.session_state["ks_cfb_market_touch"] = OVER_UNDER_MARKET
+    return True
+
+
 def _fast_route_active() -> bool:
     return (
         str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
@@ -60,7 +115,10 @@ def _selectbox_v77(label: Any, options: Any, *args: Any, **kwargs: Any):
         choices = list(options)
         if CFB_SPORT_LABEL not in choices:
             choices.append(CFB_SPORT_LABEL)
-        return _ORIGINAL_SELECTBOX(label, choices, *args, **kwargs)
+        selected = _ORIGINAL_SELECTBOX(label, choices, *args, **kwargs)
+        if str(selected) != CFB_SPORT_LABEL:
+            _clear_fast_route_query()
+        return selected
 
     if (
         label == "🎯 NFL Market"
@@ -72,13 +130,18 @@ def _selectbox_v77(label: Any, options: Any, *args: Any, **kwargs: Any):
         clean_kwargs = dict(kwargs)
         clean_kwargs.pop("key", None)
         clean_kwargs.pop("index", None)
-        return _ORIGINAL_SELECTBOX(
+        selected = _ORIGINAL_SELECTBOX(
             "🎯 CFB Market",
             list(CFB_MARKETS),
             *args,
             key="ks_cfb_market_touch",
             **clean_kwargs,
         )
+        if str(selected) == OVER_UNDER_MARKET:
+            _persist_fast_route_query()
+        else:
+            _clear_fast_route_query()
+        return selected
 
     return _ORIGINAL_SELECTBOX(label, options, *args, **kwargs)
 
@@ -90,6 +153,7 @@ def _render_cfb_ou_direct(market: str) -> None:
     ):
         return _ORIGINAL_RENDER_NFL(market)
 
+    _persist_fast_route_query()
     legacy_chain_skipped = FROZEN_ROUTER not in sys.modules
     page_import_started = perf_counter()
     mod = root._import(ACTIVE_PAGE)
@@ -101,6 +165,10 @@ def _render_cfb_ou_direct(market: str) -> None:
             "first_bootstrap_import_ms": _FIRST_BOOTSTRAP_IMPORT_MS,
             "active_page_import_ms": page_import_ms,
             "legacy_router_chain_skipped": legacy_chain_skipped,
+            "restored_from_query": (
+                _query_value(ROUTE_QUERY_SPORT) == CFB_SPORT_LABEL
+                and _query_value(ROUTE_QUERY_MARKET) == OVER_UNDER_MARKET
+            ),
             "frozen_router": FROZEN_ROUTER,
             "active_page": ACTIVE_PAGE,
             "projection_weight": 0.0,
@@ -147,6 +215,8 @@ def _render_direct_cfb_ou() -> None:
 
 
 def render_app() -> None:
+    if not _fast_route_active():
+        _restore_fast_route_from_query()
     if _fast_route_active():
         return _render_direct_cfb_ou()
     return _load_prior().render_app()
@@ -159,10 +229,16 @@ __all__ = [
     "FROZEN_ROUTER",
     "MODEL_VERSION",
     "OVER_UNDER_MARKET",
+    "ROUTE_QUERY_MARKET",
+    "ROUTE_QUERY_SPORT",
+    "_clear_fast_route_query",
     "_fast_route_active",
     "_load_prior",
+    "_persist_fast_route_query",
+    "_query_value",
     "_render_cfb_ou_direct",
     "_render_direct_cfb_ou",
+    "_restore_fast_route_from_query",
     "_selectbox_v77",
     "record_bootstrap_import_ms",
     "render_app",
