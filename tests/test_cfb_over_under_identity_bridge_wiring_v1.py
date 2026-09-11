@@ -20,6 +20,28 @@ def test_clean_page_v31_preserves_v7_schedule_and_injects_only_v15_runtime():
     assert bridge.MARKET_PROJECTION_WEIGHT == 0.0
 
 
+def test_clean_page_v31_preserves_certified_v30_browser_contract_markers():
+    certified_markers = (
+        "CFB O/U • CLEAN PAGE V30 ACTIVE",
+        "FUTURE SLATE COVERAGE ACTIVE",
+        "OFFICIAL ESPN IDENTITY RECOVERY",
+        "NO FUZZY MATCHING",
+        "NO SYNTHETIC IDS",
+        "FRESHNESS FIREWALL ACTIVE",
+        "0.0% PROJECTION INFLUENCE",
+        "FROZEN PROJECTION MATH PRESERVED",
+        "READABLE STEPS 4-12 ACTIVE",
+    )
+    for marker in certified_markers:
+        assert marker in page._V31_MARKER
+
+    assert "CFB O/U • CLEAN PAGE V31 ACTIVE" in page._V31_MARKER
+    assert "DOWNSTREAM IDENTITY BRIDGE ACTIVE" in page._V31_MARKER
+    assert "NO FUZZY GAME MATCHING" in page._V31_MARKER
+    assert "0.0% SPORTSBOOK PROJECTION INFLUENCE" in page._V31_MARKER
+    assert "FROZEN V14 PROJECTION MATH PRESERVED" in page._V31_MARKER
+
+
 def test_router_v71_only_advances_cfb_over_under(monkeypatch):
     seen = {}
     monkeypatch.setattr(
