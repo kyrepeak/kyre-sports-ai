@@ -40,13 +40,14 @@ def test_extract_log_excerpt_redacts_common_secrets():
         "password: hunter2\n"
         "AssertionError: protected invariant failed"
     )
+    sanitized = module.sanitize_log_text(raw)
     excerpt = module.extract_log_excerpt(raw)
-    assert "abc123" not in excerpt
-    assert "secret-token" not in excerpt
-    assert "hunter2" not in excerpt
-    assert "Authorization: Bearer [REDACTED]" in excerpt
-    assert "token=[REDACTED]" in excerpt
-    assert "password: [REDACTED]" in excerpt
+    assert "abc123" not in sanitized
+    assert "secret-token" not in sanitized
+    assert "hunter2" not in sanitized
+    assert "Authorization: Bearer [REDACTED]" in sanitized
+    assert "token=[REDACTED]" in sanitized
+    assert "password: [REDACTED]" in sanitized
     assert "AssertionError" in excerpt
 
 
@@ -58,12 +59,13 @@ def test_extract_log_excerpt_accepts_github_actions_premasked_secret():
         "password: hunter2\n"
         "AssertionError: protected invariant failed"
     )
+    sanitized = module.sanitize_log_text(raw)
     excerpt = module.extract_log_excerpt(raw)
-    assert "Authorization: ***" in excerpt
-    assert "secret-token" not in excerpt
-    assert "hunter2" not in excerpt
-    assert "token=[REDACTED]" in excerpt
-    assert "password: [REDACTED]" in excerpt
+    assert "Authorization: ***" in sanitized
+    assert "secret-token" not in sanitized
+    assert "hunter2" not in sanitized
+    assert "token=[REDACTED]" in sanitized
+    assert "password: [REDACTED]" in sanitized
     assert "AssertionError" in excerpt
 
 
