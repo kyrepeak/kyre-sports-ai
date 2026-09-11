@@ -1,4 +1,4 @@
-"""Step 6 permanent DevSystem contract validator."""
+"""Step 7 permanent DevSystem contract validator."""
 from __future__ import annotations
 
 import json
@@ -15,6 +15,7 @@ REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/failure_packet_v1.py",
     "devsystem/failure_log_excerpt_v1.py",
     "devsystem/failure_fingerprint_v1.py",
+    "devsystem/failure_history_v1.py",
     "devsystem/browser_qa_v1.py",
     "devsystem/production_verify_v1.py",
     "devsystem/production_targets_v1.json",
@@ -25,6 +26,7 @@ REQUIRED_DEVSYSTEM_FILES = (
     "tests/test_devsystem_failure_packet_v1.py",
     "tests/test_devsystem_failure_log_excerpt_v1.py",
     "tests/test_devsystem_failure_fingerprint_v1.py",
+    "tests/test_devsystem_failure_history_v1.py",
     "sports_api/observability_v1.py",
     "devsystem/README.md",
     ".github/pull_request_template.md",
@@ -117,12 +119,17 @@ def validate() -> dict:
         'lane["log_excerpt"] = log_excerpt',
         "tests/test_devsystem_failure_log_excerpt_v1.py",
         "tests/test_devsystem_failure_fingerprint_v1.py",
+        "tests/test_devsystem_failure_history_v1.py",
+        "Collect prior failure fingerprint history",
+        "DEVSYSTEM_FAILURE_HISTORY_UNAVAILABLE",
+        "--history-json",
+        "retention-days: 30",
         "DEVSYSTEM_FAILURE_LOG_EXCERPT_UNAVAILABLE",
         "Upload failure packet evidence",
     )
     packet_missing = [marker for marker in failure_packet_markers if marker not in failure_packet_workflow]
     if packet_missing:
-        raise PermanentGateFailure("failure packet log evidence drift: " + " | ".join(packet_missing))
+        raise PermanentGateFailure("failure packet log/history evidence drift: " + " | ".join(packet_missing))
 
     triage_source = (ROOT / "devsystem/failure_triage_v1.py").read_text(encoding="utf-8")
     remediation_markers = (
@@ -151,6 +158,23 @@ def validate() -> dict:
         fingerprint_missing.append("packet:Failure fingerprint")
     if fingerprint_missing:
         raise PermanentGateFailure("failure fingerprint contract drift: " + " | ".join(fingerprint_missing))
+
+    history_source = (ROOT / "devsystem/failure_history_v1.py").read_text(encoding="utf-8")
+    history_markers = (
+        "attach_recurrence",
+        '"recurring"',
+        '"not-seen-in-history"',
+        '"history-unavailable"',
+        '"prior_occurrence_count"',
+        '"claims_flakiness": False',
+    )
+    history_missing = [marker for marker in history_markers if marker not in history_source]
+    if "history_module.attach_recurrence" not in packet_source:
+        history_missing.append("packet:history_module.attach_recurrence")
+    if "Prior occurrences in bounded history" not in packet_source:
+        history_missing.append("packet:Prior occurrences in bounded history")
+    if history_missing:
+        raise PermanentGateFailure("failure recurrence history drift: " + " | ".join(history_missing))
 
     prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(encoding="utf-8")
     if "branches: [main]" not in prod:
@@ -182,6 +206,7 @@ def validate() -> dict:
         "failure_remediation_policy_permanent": True,
         "stable_failure_fingerprint_permanent": True,
         "failure_packet_self_health_permanent": True,
+        "failure_recurrence_history_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
