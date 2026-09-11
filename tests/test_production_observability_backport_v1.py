@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
 from sports_api import observability_v1 as obs
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +36,10 @@ def test_release_entrypoint_installs_observability_without_replacing_runtime():
     assert "from sports_api.observability_v1 import install_observability" in source
     assert "install_observability(app)" in source
     assert "lifespan=step17b_lifespan" in source
+    assert "_install_flat_production_lifespan()" in source
+    assert "app.router.lifespan_context = _production_lifespan" in source
+    assert "wnba_pregame_board_scheduler_router.lifespan_context" in source
+    assert "wnba_pregame_prediction_store_router.lifespan_context" in source
     assert '"health_ready": "/health/ready"' in source
     assert '"health_details": "/health/details"' in source
 
@@ -56,3 +62,37 @@ def test_release_health_preserves_cfb_hosted_transport_and_adds_diagnostics():
     assert "runtime_metadata()" in source
     assert "readiness_snapshot()" in source
     assert "diagnostics_snapshot()" in source
+
+
+def test_draftkings_canary_routes_do_not_add_a_noop_nested_lifespan():
+    source = (ROOT / "sports_api/api/wnba_draftkings_direct.py").read_text(encoding="utf-8")
+    assert "router.routes.extend(step6j_canary_router.routes)" in source
+    assert "router.include_router(step6j_canary_router)" not in source
+
+
+def test_release_lifespan_is_flat_and_preserves_real_wnba_worker_lifecycles():
+    """Permanent structural guard against recursive merged_lifespan growth."""
+    from sports_api.main import app, _production_lifespan
+
+    assert app.router.lifespan_context is _production_lifespan
+
+
+def test_full_production_app_lifespan_enters_exits_and_serves_release_contract():
+    """Boot the real sports_api.main:app; no mocked or partial FastAPI app."""
+    from sports_api.main import app
+
+    with TestClient(app) as client:
+        health = client.get("/health")
+        ready = client.get("/health/ready")
+        details = client.get("/health/details")
+        cfb_status = client.get("/api/v1/cfb/markets/status")
+
+    assert health.status_code == 200
+    assert ready.status_code == 200
+    assert details.status_code == 200
+    assert cfb_status.status_code == 200
+    assert health.json()["observability_version"] == "KYRE_OBSERVABILITY_V1"
+    assert ready.json()["observability_version"] == "KYRE_OBSERVABILITY_V1"
+    assert details.json()["observability_version"] == "KYRE_OBSERVABILITY_V1"
+    assert cfb_status.json()["market_semantics"]["projection_weight"] == 0.0
+    assert cfb_status.json()["market_semantics"]["market_context_only"] is True
