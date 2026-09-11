@@ -41,7 +41,7 @@ def test_runtime_metadata_surfaces_deployment_identity_without_secrets(monkeypat
     monkeypatch.setenv("RENDER", "true")
     monkeypatch.setenv("RENDER_SERVICE_NAME", "kyre-sports-api")
     monkeypatch.setenv("RENDER_SERVICE_ID", "srv-test")
-    monkeypatch.setenv("RENDER_GIT_BRANCH", "main")
+    monkeypatch.setenv("RENDER_GIT_BRANCH", obs.DEFAULT_RENDER_RUNTIME_BRANCH)
     monkeypatch.setenv("RENDER_GIT_COMMIT", "abc123")
     monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://example.test")
     monkeypatch.setenv("HOSTNAME", "instance-test")
@@ -51,15 +51,32 @@ def test_runtime_metadata_surfaces_deployment_identity_without_secrets(monkeypat
     flattened = repr(payload)
 
     assert payload["environment"] == "render"
-    assert payload["deploy_branch"] == "main"
+    assert payload["deploy_branch"] == obs.DEFAULT_RENDER_RUNTIME_BRANCH
     assert payload["deploy_commit"] == "abc123"
+    assert payload["canonical_source_branch"] == "main"
+    assert payload["expected_runtime_branch"] == obs.DEFAULT_RENDER_RUNTIME_BRANCH
     assert payload["branch_aligned"] is True
     assert "must-never-appear" not in flattened
     assert "API_KEY" not in flattened
 
 
+def test_render_runtime_branch_drift_is_visible_without_blocking_liveness(monkeypatch):
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setenv("RENDER_GIT_BRANCH", "unexpected-release-branch")
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "abc123")
+
+    payload = obs.runtime_metadata()
+    ready = obs.readiness_snapshot()
+
+    assert payload["branch_aligned"] is False
+    assert ready["status"] == "ready"
+    assert ready["checks"]["runtime_branch_alignment"] is False
+    assert ready["deployment"]["expected_runtime_branch"] == obs.DEFAULT_RENDER_RUNTIME_BRANCH
+
+
 def test_health_endpoints_expose_liveness_readiness_and_diagnostics(monkeypatch):
-    monkeypatch.setenv("RENDER_GIT_BRANCH", "main")
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setenv("RENDER_GIT_BRANCH", obs.DEFAULT_RENDER_RUNTIME_BRANCH)
     monkeypatch.setenv("RENDER_GIT_COMMIT", "deadbeef")
 
     live = health.health_check()
@@ -69,6 +86,7 @@ def test_health_endpoints_expose_liveness_readiness_and_diagnostics(monkeypatch)
     assert live["status"] == "ok"
     assert live["deployment"]["commit"] == "deadbeef"
     assert ready["status"] == "ready"
+    assert ready["deployment"]["canonical_source_branch"] == "main"
     assert ready["deployment"]["aligned"] is True
     assert details["observability_version"] == "KYRE_OBSERVABILITY_V1"
     assert details["debug_contract"]["request_id_header"] == "X-Request-ID"
