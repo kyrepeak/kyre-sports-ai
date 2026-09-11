@@ -24,6 +24,7 @@ def test_permanent_contract_is_green():
     assert result["active_domains"] == ["cfb", "mlb", "wnba"]
     assert "nfl" in result["blocked_until_activated"]
     assert result["critical_test_count"] == 17
+    assert result["api_observability_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
@@ -85,3 +86,11 @@ def test_observability_core_is_dependency_light_and_secret_safe(monkeypatch):
     assert runtime["deploy_branch"] == "main"
     assert runtime["deploy_commit"] == "abc123"
     assert "do-not-leak" not in repr(runtime)
+
+
+def test_production_contract_and_observability_share_branch_truth():
+    contract = _load("production_contract_branch_truth", "devsystem/production_contract_v1.py")
+    obs = _load("observability_branch_truth", "sports_api/observability_v1.py")
+
+    assert obs.CANONICAL_SOURCE_BRANCH == contract.CANONICAL_SOURCE_BRANCH
+    assert obs.DEFAULT_RENDER_RUNTIME_BRANCH == contract.RENDER_RELEASE_BRANCH
