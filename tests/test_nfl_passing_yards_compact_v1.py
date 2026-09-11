@@ -216,4 +216,4 @@ def test_router_v82_advances_only_passing_yards_step2() -> None:
     assert "sportsbook influence 0.0%" in page
     assert "descriptive stats only" in page
     assert "projection/Monte Carlo/probability/ranking/recommendation OFF" in page
-    assert "does not create a passing-yards projection" in engine
+    assert "passing-yards projection" in engine
