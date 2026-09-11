@@ -46,7 +46,7 @@ def test_runtime_error_detector_fails_on_obvious_python_errors():
     ) == "ModuleNotFoundError"
 
 
-def test_selector_helpers_are_event_driven_not_fixed_sleep_driven():
+def test_selector_helpers_are_readiness_driven_not_fixed_sleep_driven():
     module = _load_module()
 
     read_source = inspect.getsource(module._read_sport_options)
@@ -55,5 +55,6 @@ def test_selector_helpers_are_event_driven_not_fixed_sleep_driven():
     assert "wait_for_timeout" not in read_source
     assert "wait_for_timeout" not in choose_source
     assert 'wait_for(state="visible"' in read_source
-    assert 'wait_for(state="visible"' in choose_source
+    assert 'page.keyboard.type(value)' in choose_source
+    assert 'page.keyboard.press("Enter")' in choose_source
     assert module.SELECTOR_TIMEOUT_MS == 5000
