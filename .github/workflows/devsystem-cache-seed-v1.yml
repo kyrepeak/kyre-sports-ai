@@ -39,21 +39,6 @@ jobs:
           python -m venv .venv-browser-qa
           .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
           .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q pytest requests playwright
-      - name: Resolve Playwright cache identity
-        id: playwright-meta
-        shell: bash
-        run: |
-          version="$(.venv-browser-qa/bin/python -c 'import importlib.metadata as m; print(m.version("playwright"))')"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-      - name: Restore Playwright browser binaries
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: devsystem-playwright-${{ runner.os }}-${{ steps.playwright-meta.outputs.version }}-${{ hashFiles('devsystem/browser_cache_epoch_v1.txt') }}
-      - name: Install Chromium on cache miss
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: .venv-browser-qa/bin/python -m playwright install chromium
 
   cfb-cache-seed:
     runs-on: ubuntu-24.04
