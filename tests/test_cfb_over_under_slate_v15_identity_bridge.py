@@ -127,3 +127,112 @@ def test_analyze_game_hydrates_then_delegates_to_frozen_v14(monkeypatch):
     assert seen["day"] == date(2026, 9, 11)
     assert seen["line"] == 51.5
     assert bridge.MARKET_PROJECTION_WEIGHT == 0.0
+
+
+def test_scan_slate_hydrates_every_game_then_delegates_unchanged(monkeypatch):
+    games = [
+        {
+            "identity_key": "norfolk-st-at-virginia",
+            "game_date": "2026-09-11",
+            "away_team": "Norfolk St.",
+            "home_team": "Virginia",
+            "identity_verified": True,
+            "date_matches_query": True,
+        },
+        {
+            "identity_key": "richmond-at-nc-state",
+            "game_date": "2026-09-11",
+            "away_team": "Richmond",
+            "home_team": "NC State",
+            "identity_verified": True,
+            "date_matches_query": True,
+        },
+    ]
+    analysis_lines = {
+        "norfolk-st-at-virginia": 48.5,
+        "richmond-at-nc-state": 51.0,
+    }
+    hydrate_calls = []
+    seen = {}
+
+    def fake_hydrate(game, as_of_day):
+        hydrate_calls.append((dict(game), as_of_day))
+        hydrated = dict(game)
+        hydrated["espn_event_id"] = (
+            "401858220" if game["away_team"] == "Norfolk St." else "401858222"
+        )
+        return hydrated, {"matched": True}
+
+    def frozen_scan(games_arg, day_arg, lines_arg, workers=bridge.MAX_WORKERS):
+        seen["games"] = [dict(game) for game in games_arg]
+        seen["day"] = day_arg
+        seen["lines"] = lines_arg
+        seen["workers"] = workers
+        return [{"frozen_row": True}], {"version": "frozen-v14", "games_analyzed": 2}
+
+    monkeypatch.setattr(bridge, "hydrate_game_identity", fake_hydrate)
+    monkeypatch.setattr(bridge.frozen, "scan_slate", frozen_scan)
+
+    rows, diag = bridge.scan_slate(
+        games,
+        date(2026, 9, 11),
+        analysis_lines,
+        workers=1,
+    )
+
+    assert len(hydrate_calls) == 2
+    assert seen["games"][0]["espn_event_id"] == "401858220"
+    assert seen["games"][1]["espn_event_id"] == "401858222"
+    assert seen["games"][0]["identity_key"] == "norfolk-st-at-virginia"
+    assert seen["games"][1]["identity_key"] == "richmond-at-nc-state"
+    assert seen["day"] == "2026-09-11"
+    assert seen["lines"] is analysis_lines
+    assert seen["workers"] == 1
+    assert rows == [{"frozen_row": True}]
+    assert diag == {"version": "frozen-v14", "games_analyzed": 2}
+    assert bridge.MARKET_PROJECTION_WEIGHT == 0.0
+
+
+def test_scan_slate_preserves_original_game_when_bridge_fails_closed(monkeypatch):
+    game = {
+        "identity_key": "collision-game",
+        "game_date": "2026-09-11",
+        "away_team": "Example St.",
+        "home_team": "Example",
+        "identity_verified": True,
+        "date_matches_query": True,
+    }
+    seen = {}
+
+    monkeypatch.setattr(
+        bridge,
+        "hydrate_game_identity",
+        lambda original, day: (dict(original), {"matched": False, "match_method": "collision"}),
+    )
+
+    def frozen_scan(games_arg, day_arg, lines_arg, workers=bridge.MAX_WORKERS):
+        seen["games"] = [dict(value) for value in games_arg]
+        return [], {"errors": []}
+
+    monkeypatch.setattr(bridge.frozen, "scan_slate", frozen_scan)
+
+    rows, diag = bridge.scan_slate(
+        [game],
+        "2026-09-11",
+        {"collision-game": 50.0},
+    )
+
+    assert seen["games"] == [game]
+    assert rows == []
+    assert diag == {"errors": []}
+    assert "espn_event_id" not in seen["games"][0]
+
+
+def test_clear_scan_cache_delegates_to_frozen_v14(monkeypatch):
+    seen = []
+    monkeypatch.setattr(bridge.frozen, "clear_scan_cache", lambda: seen.append(True))
+
+    bridge.clear_scan_cache()
+
+    assert seen == [True]
+    assert bridge.MAX_WORKERS == bridge.frozen.MAX_WORKERS
