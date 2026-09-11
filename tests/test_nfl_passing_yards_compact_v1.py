@@ -6,6 +6,7 @@ import nfl_passing_yards_identity_v1 as identity
 import nfl_passing_yards_profile_v1 as profile
 import nfl_passing_yards_defense_v1 as defense
 import nfl_passing_yards_pressure_v1 as pressure
+import nfl_passing_yards_personnel_v1 as personnel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -382,3 +383,76 @@ def test_router_v84_advances_only_passing_yards_step4() -> None:
     assert '"projection_adjustment": 0.0' in engine
     assert "blitz" in engine.lower()
     assert "not synthesized" in engine.lower()
+
+
+def test_step5_parses_depth_positions_with_exact_athlete_ids() -> None:
+    payload = {"depthCharts": [{"positions": {
+        "wr": {"position": {"abbreviation": "WR"}, "athletes": [
+            {"rank": 1, "athlete": {"id": "501", "displayName": "WR One"}},
+            {"rank": 2, "athlete": {"id": "502", "displayName": "WR Two"}},
+        ]},
+        "lt": {"position": {"abbreviation": "LT"}, "athletes": [
+            {"rank": 1, "athlete": {"id": "601", "displayName": "Left Tackle"}},
+        ]},
+    }}]}
+    rows = personnel.parse_depth_positions(payload)
+    assert rows[0]["athlete_id"] == "601" or rows[0]["athlete_id"] == "501"
+    assert {row["athlete_id"] for row in rows} == {"501", "502", "601"}
+    assert any(row["position"] == "WR" and row["rank"] == 1 for row in rows)
+
+
+def test_step5_receiving_targets_fail_closed_without_explicit_targets() -> None:
+    with_targets = {"splits": {"categories": [{"name": "receiving", "stats": [
+        {"name": "receivingTargets", "value": 20},
+        {"name": "receptions", "value": 14},
+        {"name": "receivingYards", "value": 180},
+    ]}]}}
+    without_targets = {"splits": {"categories": [{"name": "receiving", "stats": [
+        {"name": "receptions", "value": 14},
+        {"name": "receivingYards", "value": 180},
+    ]}]}}
+    good = personnel.parse_receiving_usage(with_targets)
+    missing = personnel.parse_receiving_usage(without_targets)
+    assert good["ready"] is True and good["targets"] == 20.0
+    assert missing["ready"] is False
+
+
+def test_step5_personnel_label_separates_offense_hurt_from_secondary_help() -> None:
+    skill = [{"tier": "HARD", "depth_rank": 1, "target_share": 22.0}]
+    ol = [{"tier": "HARD", "depth_rank": 1}, {"tier": "HARD", "depth_rank": 1}]
+    secondary = [{"tier": "HARD", "depth_rank": 1}, {"tier": "HARD", "depth_rank": 1}]
+    hurt, _ = personnel.personnel_label("No listed injury", skill, ol, [], 22.0, True)
+    help_label, _ = personnel.personnel_label("No listed injury", [], [], secondary, float("nan"), True)
+    mixed, _ = personnel.personnel_label("No listed injury", skill, ol, secondary, 22.0, True)
+    assert hurt == "HURT"
+    assert help_label == "HELP"
+    assert mixed == "MIXED"
+
+
+def test_step5_invalid_team_identity_fails_closed() -> None:
+    out = personnel.build_personnel_matchup({"team_id": "fake"}, {"team_id": "34"}, 2026, 2, 70)
+    assert out["ready"] is False
+    assert "verified ESPN offense and defense team IDs" in out["reason"]
+    assert out["projection_adjustment"] == 0.0
+
+
+def test_router_v85_advances_only_passing_yards_step5() -> None:
+    hub = _read("nfl_hub_v24.py")
+    router = _read("streamlit_memory_lazy_router_v85.py")
+    app = _read("app.py")
+    page = _read("nfl_passing_yards_hub_v6.py")
+    engine = _read("nfl_passing_yards_personnel_v1.py")
+
+    assert "import nfl_hub_v23 as base" in hub
+    assert "nfl_passing_yards_hub_v6" in hub
+    assert "import streamlit_memory_lazy_router_v84 as prior" in router
+    assert 'ACTIVE_NFL_HUB = "nfl_hub_v24"' in router
+    assert "streamlit_memory_lazy_router_v85" in app
+    assert "STREAMLIT_MAIN_V84_NFL_PASSING_YARDS_STEP4_PRESSURE_2026-09-11" in app
+    assert "STREAMLIT_MAIN_V85_NFL_PASSING_YARDS_STEP5_PERSONNEL_2026-09-11" in app
+    assert "STEP 5 PERSONNEL GREEN" in page
+    assert "Step 5 projection influence 0.0%" in page
+    assert "exact ESPN athlete IDs" in page
+    assert "No fuzzy player matching" in engine
+    assert '"projection_adjustment": 0.0' in engine
+    assert "explicit target" in engine.lower()
