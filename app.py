@@ -47,7 +47,9 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v75 import render_app as _frozen_v75_render_app
     from streamlit_memory_lazy_router_v76 import render_app as _frozen_v76_render_app
     from streamlit_memory_lazy_router_v77 import render_app as _frozen_v77_render_app
+    from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
 
+FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
 
 try:
