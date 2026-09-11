@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "devsystem" / "devsystem_manifest_v1.json"
+PHASE2_CLOSURE = ROOT / "devsystem" / "phase2_closure_v1.json"
 EXPECTED_DOMAINS = {"cfb", "mlb", "wnba", "nfl", "nba", "nhl", "soccer"}
 REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/change_classifier_v1.py",
@@ -15,6 +16,7 @@ REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/production_targets_v1.json",
     "devsystem/production_contract_v1.py",
     "devsystem/regression_shield_v1.py",
+    "devsystem/phase2_closure_v1.json",
     "sports_api/observability_v1.py",
     "devsystem/README.md",
     ".github/pull_request_template.md",
@@ -32,6 +34,12 @@ def validate() -> dict:
     payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if payload.get("version") != 1:
         raise PermanentGateFailure("DevSystem manifest version drift")
+
+    closure = json.loads(PHASE2_CLOSURE.read_text(encoding="utf-8"))
+    if closure.get("version") != 1 or closure.get("status") != "certified":
+        raise PermanentGateFailure("Phase 2 closure certification drift")
+    if closure.get("completed_steps") != 12:
+        raise PermanentGateFailure("Phase 2 closure step count drift")
 
     domains = payload.get("domains")
     if not isinstance(domains, dict) or set(domains) != EXPECTED_DOMAINS:
@@ -136,6 +144,8 @@ def validate() -> dict:
             len(domains[key]["critical_tests"]) for key in active
         ),
         "api_observability_permanent": True,
+        "phase2_certified": True,
+        "phase2_completed_steps": closure["completed_steps"],
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
