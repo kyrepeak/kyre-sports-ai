@@ -69,19 +69,34 @@ jobs:
 
           needs = {}
           failed_steps = {}
+          final_gate = None
+          final_gate_bad_steps = []
+
           for job in jobs:
               name = str(job.get("name") or "unknown")
-              if name == "devsystem-final-gate":
-                  continue
               conclusion = str(job.get("conclusion") or job.get("status") or "unknown")
-              needs[name] = {"result": conclusion}
               bad_steps = [
                   str(step.get("name") or "unnamed step")
                   for step in (job.get("steps") or [])
                   if str(step.get("conclusion") or "") in {"failure", "cancelled", "timed_out", "action_required"}
               ]
+
+              if name == "devsystem-final-gate":
+                  final_gate = conclusion
+                  final_gate_bad_steps = bad_steps
+                  continue
+
+              needs[name] = {"result": conclusion}
               if conclusion not in {"success", "skipped"}:
                   failed_steps[name] = bad_steps
+
+          explained_failure = any(
+              (payload or {}).get("result") not in {"success", "skipped"}
+              for payload in needs.values()
+          )
+          if final_gate not in {None, "success", "skipped"} and not explained_failure:
+              needs["devsystem-final-gate"] = {"result": final_gate}
+              failed_steps["devsystem-final-gate"] = final_gate_bad_steps
 
           with open("/tmp/devsystem-needs.json", "w", encoding="utf-8") as handle:
               json.dump(needs, handle, sort_keys=True)
@@ -116,12 +131,20 @@ jobs:
           grep -q 'KYRE_DEVSYSTEM_FAILURE_PACKET_V1' artifacts/devsystem-failure-packet/failure-packet.json
           grep -q 'Run current CFB critical path' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'frozen projection math' artifacts/devsystem-failure-packet/failure-packet.md
+          python devsystem/failure_packet_v1.py \
+            --needs-json '{"classify":{"result":"success"},"devsystem-final-gate":{"result":"failure"}}' \
+            --failed-steps-json '{"devsystem-final-gate":["Aggregate every required DevSystem lane"]}' \
+            --output-dir artifacts/devsystem-final-gate-cert
+          grep -q 'devsystem-final-gate' artifacts/devsystem-final-gate-cert/failure-packet.md
+          grep -q 'FAILURES_FOUND' artifacts/devsystem-final-gate-cert/failure-packet.json
 
       - name: Upload failure packet evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: devsystem-failure-packet-${{ github.event.workflow_run.id || github.run_id }}
-          path: artifacts/devsystem-failure-packet
+          path: |
+            artifacts/devsystem-failure-packet
+            artifacts/devsystem-final-gate-cert
           if-no-files-found: error
           retention-days: 14
