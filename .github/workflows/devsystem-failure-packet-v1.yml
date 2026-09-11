@@ -8,6 +8,7 @@ on:
     branches:
       - devsystem-phase2-failure-packet-v1
       - devsystem-phase3-step6-failure-packet-self-health-v1
+      - devsystem-phase3-step7-failure-recurrence-history-v1
   workflow_dispatch:
 
 permissions:
@@ -36,7 +37,8 @@ jobs:
             tests/test_devsystem_failure_triage_v1.py \
             tests/test_devsystem_failure_packet_v1.py \
             tests/test_devsystem_failure_log_excerpt_v1.py \
-            tests/test_devsystem_failure_fingerprint_v1.py
+            tests/test_devsystem_failure_fingerprint_v1.py \
+            tests/test_devsystem_failure_history_v1.py
 
       - name: Collect completed DevSystem job evidence
         if: github.event_name == 'workflow_run'
@@ -151,6 +153,127 @@ jobs:
           )
           PY
 
+      - name: Collect prior failure fingerprint history
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || github.run_id }}
+        run: |
+          python - <<'PY'
+          import io
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.request
+          import zipfile
+
+          repo = os.environ["REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          current_source_run_id = os.environ["SOURCE_RUN_ID"]
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, hdrs, newurl):
+                  return None
+
+          def api_json(url: str):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.load(response)
+
+          def download_artifact(artifact: dict) -> bytes:
+              req = urllib.request.Request(artifact["archive_download_url"], headers=headers)
+              opener = urllib.request.build_opener(NoRedirect)
+              try:
+                  with opener.open(req, timeout=30) as response:
+                      return response.read(5_000_001)
+              except urllib.error.HTTPError as exc:
+                  if exc.code not in {301, 302, 303, 307, 308}:
+                      raise
+                  location = exc.headers.get("Location")
+                  if not location:
+                      raise ValueError("artifact redirect missing Location header") from exc
+                  # The Location is a signed storage URL. Do not forward GH_TOKEN off github.com.
+                  with urllib.request.urlopen(location, timeout=30) as response:
+                      return response.read(5_000_001)
+
+          def load_packet(artifact: dict):
+              raw = download_artifact(artifact)
+              if len(raw) > 5_000_000:
+                  raise ValueError("failure packet artifact exceeds 5 MB safety bound")
+              with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                  names = [
+                      name
+                      for name in archive.namelist()
+                      if name.endswith("failure-packet.json")
+                      and "devsystem-final-gate-cert" not in name
+                  ]
+                  if not names:
+                      raise ValueError("failure packet artifact contains no packet JSON")
+                  return json.loads(archive.read(sorted(names)[0]).decode("utf-8"))
+
+          history = None
+          try:
+              history = []
+              collection_complete = True
+              page = 1
+              while len(history) < 20:
+                  payload = api_json(
+                      f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&page={page}"
+                  )
+                  artifacts = sorted(
+                      (payload.get("artifacts") or []),
+                      key=lambda item: str(item.get("created_at") or ""),
+                      reverse=True,
+                  )
+                  for artifact in artifacts:
+                      if len(history) >= 20:
+                          break
+                      name = str(artifact.get("name") or "")
+                      if artifact.get("expired") or not re.fullmatch(r"devsystem-failure-packet-\d+", name):
+                          continue
+                      try:
+                          packet = load_packet(artifact)
+                          if packet.get("schema") != "KYRE_DEVSYSTEM_FAILURE_PACKET_V1":
+                              continue
+                          source_run_id = str(packet.get("run_id") or "")
+                          if not source_run_id or source_run_id == current_source_run_id:
+                              continue
+                          source_run = api_json(
+                              f"https://api.github.com/repos/{repo}/actions/runs/{source_run_id}"
+                          )
+                          if source_run.get("name") != "DevSystem targeted CI":
+                              continue
+                          history.append(packet)
+                      except Exception as exc:
+                          collection_complete = False
+                          print(
+                              "DEVSYSTEM_FAILURE_HISTORY_ARTIFACT_UNAVAILABLE "
+                              f"artifact={artifact.get('id')} error={type(exc).__name__}"
+                          )
+                          break
+                  if not collection_complete or len(history) >= 20 or len(artifacts) < 100:
+                      break
+                  page += 1
+              if not collection_complete:
+                  history = None
+          except Exception as exc:
+              print(f"DEVSYSTEM_FAILURE_HISTORY_UNAVAILABLE error={type(exc).__name__}")
+              history = None
+
+          with open("/tmp/devsystem-history.json", "w", encoding="utf-8") as handle:
+              json.dump(history, handle, sort_keys=True)
+          print(
+              "DEVSYSTEM_FAILURE_HISTORY_COLLECTED "
+              f"available={history is not None} packets={len(history or [])}"
+          )
+          PY
+
       - name: Build packet from completed DevSystem run
         if: github.event_name == 'workflow_run'
         env:
@@ -161,6 +284,7 @@ jobs:
           python devsystem/failure_packet_v1.py \
             --needs-json "$(cat /tmp/devsystem-needs.json)" \
             --failed-steps-json "$(cat /tmp/devsystem-failed-steps.json)" \
+            --history-json "$(cat /tmp/devsystem-history.json)" \
             --output-dir artifacts/devsystem-failure-packet
 
       - name: Build certification packet
@@ -170,18 +294,43 @@ jobs:
           DEVSYSTEM_SOURCE_SHA: ${{ github.sha }}
           DEVSYSTEM_SOURCE_REF: ${{ github.ref }}
         run: |
+          python - <<'PY'
+          import json
+          with open('/tmp/devsystem-history.json', encoding='utf-8') as handle:
+              live_history = json.load(handle)
+          if not isinstance(live_history, list) or not live_history:
+              raise SystemExit('live failure history collector returned no verified prior targeted-CI packets')
+          print(f"DEVSYSTEM_FAILURE_HISTORY_LIVE_CERTIFIED packets={len(live_history)}")
+          PY
           python devsystem/failure_packet_v1.py \
             --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure","log_excerpt":"FAILED tests/test_cfb_guard.py::test_frozen_contract - AssertionError"},"mlb-critical":{"result":"success"}}' \
             --failed-steps-json '{"cfb-critical":["Run current CFB critical path"]}' \
+            --history-json '[]' \
+            --output-dir /tmp/devsystem-history-seed
+          python - <<'PY'
+          import json
+          with open('/tmp/devsystem-history-seed/failure-packet.json', encoding='utf-8') as handle:
+              packet = json.load(handle)
+          packet['run_id'] = 'step7-history-seed'
+          with open('/tmp/devsystem-cert-history.json', 'w', encoding='utf-8') as handle:
+              json.dump([packet], handle, sort_keys=True)
+          PY
+          python devsystem/failure_packet_v1.py \
+            --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure","log_excerpt":"FAILED tests/test_cfb_guard.py::test_frozen_contract - AssertionError"},"mlb-critical":{"result":"success"}}' \
+            --failed-steps-json '{"cfb-critical":["Run current CFB critical path"]}' \
+            --history-json "$(cat /tmp/devsystem-cert-history.json)" \
             --output-dir artifacts/devsystem-failure-packet
           grep -q 'KYRE_DEVSYSTEM_FAILURE_PACKET_V1' artifacts/devsystem-failure-packet/failure-packet.json
           grep -q 'Run current CFB critical path' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'test-assertion' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'high' artifacts/devsystem-failure-packet/failure-packet.md
           grep -q 'KYRE-CI-' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Recurrence:.*recurring' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'Prior occurrences in bounded history:.*1' artifacts/devsystem-failure-packet/failure-packet.md
           python devsystem/failure_packet_v1.py \
             --needs-json '{"classify":{"result":"success"},"devsystem-final-gate":{"result":"failure"}}' \
             --failed-steps-json '{"devsystem-final-gate":["Aggregate every required DevSystem lane"]}' \
+            --history-json '[]' \
             --output-dir artifacts/devsystem-final-gate-cert
           grep -q 'devsystem-final-gate' artifacts/devsystem-final-gate-cert/failure-packet.md
           grep -q 'FAILURES_FOUND' artifacts/devsystem-final-gate-cert/failure-packet.json
@@ -195,4 +344,4 @@ jobs:
             artifacts/devsystem-failure-packet
             artifacts/devsystem-final-gate-cert
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
