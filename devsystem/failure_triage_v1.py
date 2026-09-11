@@ -58,6 +58,11 @@ ROUTES: dict[str, dict[str, str]] = {
         "failure_class": "shared entrypoint/import/compile regression",
         "inspect_first": "app.py and the first compile/import traceback",
     },
+    "devsystem-final-gate": {
+        "layer": "devsystem-final-gate",
+        "failure_class": "aggregate gate execution or final-gate contract failure",
+        "inspect_first": "the failed final-gate step, then devsystem/final_gate_v1.py",
+    },
     "production-verification": {
         "layer": "production",
         "failure_class": "deployment/runtime/identity drift",
