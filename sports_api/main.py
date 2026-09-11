@@ -1,3 +1,5 @@
+from contextlib import AsyncExitStack, asynccontextmanager
+
 from fastapi import APIRouter, FastAPI
 
 from sports_api.observability_v1 import install_observability
@@ -93,6 +95,21 @@ from sports_api.api.wnba_step6w_final_certification import router as wnba_step6w
 from sports_api.api.wnba_team_history import router as wnba_team_history_router
 from sports_api.api.wnba_tracking import router as wnba_tracking_router
 
+
+@asynccontextmanager
+async def _production_lifespan(app_instance):
+    """Run Step17B plus the two real WNBA router lifecycles without recursion."""
+    async with step17b_lifespan(app_instance):
+        async with AsyncExitStack() as stack:
+            await stack.enter_async_context(
+                wnba_pregame_board_scheduler_router.lifespan_context(app_instance)
+            )
+            await stack.enter_async_context(
+                wnba_pregame_prediction_store_router.lifespan_context(app_instance)
+            )
+            yield
+
+
 app = FastAPI(
     title="Kyre Sports API",
     description="Sports data and analytics API for the Kyre Sports AI Streamlit app.",
@@ -187,17 +204,16 @@ app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
 
 
-def _collapse_lifecycle_free_router_lifespans() -> None:
-    """Remove FastAPI's nested no-op router lifespan wrappers after registration.
+def _install_flat_production_lifespan() -> None:
+    """Replace only FastAPI-generated no-op lifespan nesting.
 
-    All child routers on this shared production host are route-only. FastAPI still
-    merges each router's default lifespan context into the app lifespan, creating
-    a deep merged_lifespan chain. Render has intermittently exhausted recursion
-    while entering that chain. Refuse to flatten if a future router adds a real
-    lifecycle hook; otherwise restore the one intentional Step17B app lifespan.
+    Router registration above remains untouched. The two WNBA routers with real
+    startup/shutdown workers are explicitly preserved by _production_lifespan.
+    Any future lifecycle-bearing router makes startup fail closed until this
+    composition is deliberately reviewed.
     """
     default_lifespan_type = type(APIRouter().lifespan_context)
-    unsafe_routers: list[str] = []
+    lifecycle_router_names: set[str] = set()
 
     for name, value in globals().items():
         if not name.endswith("_router") or not isinstance(value, APIRouter):
@@ -207,18 +223,22 @@ def _collapse_lifecycle_free_router_lifespans() -> None:
             or value.on_shutdown
             or type(value.lifespan_context) is not default_lifespan_type
         ):
-            unsafe_routers.append(name)
+            lifecycle_router_names.add(name)
 
-    if unsafe_routers:
+    expected = {
+        "wnba_pregame_board_scheduler_router",
+        "wnba_pregame_prediction_store_router",
+    }
+    if lifecycle_router_names != expected:
         raise RuntimeError(
-            "Refusing to collapse FastAPI router lifespans because lifecycle hooks "
-            "are present: " + ", ".join(sorted(unsafe_routers))
+            "Unexpected production router lifecycle set; refusing to flatten: "
+            f"expected={sorted(expected)} actual={sorted(lifecycle_router_names)}"
         )
 
-    app.router.lifespan_context = step17b_lifespan
+    app.router.lifespan_context = _production_lifespan
 
 
-_collapse_lifecycle_free_router_lifespans()
+_install_flat_production_lifespan()
 
 
 @app.get("/", tags=["system"])
