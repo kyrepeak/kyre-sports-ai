@@ -16,6 +16,7 @@ import cfb_schedule_v7_future_slate as schedule_v7
 MODEL_VERSION = "KYRE CFB O/U SLATE V15 • DOWNSTREAM IDENTITY BRIDGE"
 FROZEN_ANALYZER = "cfb_over_under_slate_v14_runtime"
 MARKET_PROJECTION_WEIGHT = 0.0
+MAX_WORKERS = frozen.MAX_WORKERS
 
 
 def _clean(value: Any) -> str:
@@ -126,3 +127,45 @@ def analyze_game(
     """Hydrate identity, then delegate projection work unchanged to frozen V14."""
     hydrated_game, _ = hydrate_game_identity(game, as_of_day)
     return frozen.analyze_game(hydrated_game, as_of_day, analysis_line)
+
+
+def scan_slate(
+    games: list[Mapping[str, Any]],
+    as_of_day: date | str,
+    analysis_lines: Mapping[str, Any],
+    workers: int = MAX_WORKERS,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Hydrate every slate game, then preserve frozen V14 scan behavior exactly.
+
+    Analysis-line identity keys, qualification rules, concurrency, sorting,
+    diagnostics, ranking inputs, and projection math remain owned by V14. If an
+    official identity cannot be recovered, ``hydrate_game_identity`` fails
+    closed to that game's original mapping before V14 receives it.
+    """
+    hydrated_games = [
+        hydrate_game_identity(game, as_of_day)[0]
+        for game in games
+    ]
+    return frozen.scan_slate(
+        hydrated_games,
+        str(as_of_day),
+        analysis_lines,
+        workers=workers,
+    )
+
+
+def clear_scan_cache() -> None:
+    """Preserve the frozen runtime-slate cache API for inherited page controls."""
+    frozen.clear_scan_cache()
+
+
+__all__ = [
+    "FROZEN_ANALYZER",
+    "MARKET_PROJECTION_WEIGHT",
+    "MAX_WORKERS",
+    "MODEL_VERSION",
+    "analyze_game",
+    "clear_scan_cache",
+    "hydrate_game_identity",
+    "scan_slate",
+]
