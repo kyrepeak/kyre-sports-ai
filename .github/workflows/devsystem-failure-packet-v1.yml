@@ -1,0 +1,127 @@
+name: DevSystem failure packet
+
+on:
+  workflow_run:
+    workflows: ["DevSystem targeted CI"]
+    types: [completed]
+  push:
+    branches:
+      - devsystem-phase2-failure-packet-v1
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: devsystem-failure-packet-${{ github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  failure-packet:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Self-test failure packet contract
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_devsystem_failure_triage_v1.py tests/test_devsystem_failure_packet_v1.py
+
+      - name: Collect completed DevSystem job evidence
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          repo = os.environ["REPOSITORY"]
+          run_id = os.environ["SOURCE_RUN_ID"]
+          token = os.environ["GH_TOKEN"]
+          jobs = []
+          page = 1
+          while True:
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&page={page}",
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  payload = json.load(response)
+              batch = payload.get("jobs", [])
+              jobs.extend(batch)
+              if len(batch) < 100:
+                  break
+              page += 1
+
+          needs = {}
+          failed_steps = {}
+          for job in jobs:
+              name = str(job.get("name") or "unknown")
+              if name == "devsystem-final-gate":
+                  continue
+              conclusion = str(job.get("conclusion") or job.get("status") or "unknown")
+              needs[name] = {"result": conclusion}
+              bad_steps = [
+                  str(step.get("name") or "unnamed step")
+                  for step in (job.get("steps") or [])
+                  if str(step.get("conclusion") or "") in {"failure", "cancelled", "timed_out", "action_required"}
+              ]
+              if conclusion not in {"success", "skipped"}:
+                  failed_steps[name] = bad_steps
+
+          with open("/tmp/devsystem-needs.json", "w", encoding="utf-8") as handle:
+              json.dump(needs, handle, sort_keys=True)
+          with open("/tmp/devsystem-failed-steps.json", "w", encoding="utf-8") as handle:
+              json.dump(failed_steps, handle, sort_keys=True)
+          print(f"DEVSYSTEM_FAILURE_PACKET_COLLECTED jobs={len(needs)} failed={len(failed_steps)}")
+          PY
+
+      - name: Build packet from completed DevSystem run
+        if: github.event_name == 'workflow_run'
+        env:
+          DEVSYSTEM_SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          DEVSYSTEM_SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+          DEVSYSTEM_SOURCE_REF: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          python devsystem/failure_packet_v1.py \
+            --needs-json "$(cat /tmp/devsystem-needs.json)" \
+            --failed-steps-json "$(cat /tmp/devsystem-failed-steps.json)" \
+            --output-dir artifacts/devsystem-failure-packet
+
+      - name: Build certification packet
+        if: github.event_name != 'workflow_run'
+        env:
+          DEVSYSTEM_SOURCE_RUN_ID: ${{ github.run_id }}
+          DEVSYSTEM_SOURCE_SHA: ${{ github.sha }}
+          DEVSYSTEM_SOURCE_REF: ${{ github.ref }}
+        run: |
+          python devsystem/failure_packet_v1.py \
+            --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure"},"mlb-critical":{"result":"success"}}' \
+            --failed-steps-json '{"cfb-critical":["Run current CFB critical path"]}' \
+            --output-dir artifacts/devsystem-failure-packet
+          grep -q 'KYRE_DEVSYSTEM_FAILURE_PACKET_V1' artifacts/devsystem-failure-packet/failure-packet.json
+          grep -q 'Run current CFB critical path' artifacts/devsystem-failure-packet/failure-packet.md
+          grep -q 'frozen projection math' artifacts/devsystem-failure-packet/failure-packet.md
+
+      - name: Upload failure packet evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devsystem-failure-packet-${{ github.event.workflow_run.id || github.run_id }}
+          path: artifacts/devsystem-failure-packet
+          if-no-files-found: error
+          retention-days: 14
