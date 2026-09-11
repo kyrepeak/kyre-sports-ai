@@ -28,7 +28,8 @@ def test_compact_page_does_not_enable_uncertified_betting_logic() -> None:
     assert 'no projection or sportsbook influence enabled.' in page
     assert 'QB starter identity, passing data, matchup engines, projections, probabilities, and rankings are not active yet.' in page
     assert 'st.metric(' not in page
-    assert 'Monte Carlo' not in page
+    assert 'np.random' not in page
+    assert 'numpy' not in page
 
 
 def test_compact_layout_reduces_above_fold_vertical_weight() -> None:
