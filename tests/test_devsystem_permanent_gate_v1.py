@@ -30,6 +30,7 @@ def test_permanent_contract_is_green():
     assert result["failed_job_log_evidence_permanent"] is True
     assert result["failure_remediation_policy_permanent"] is True
     assert result["stable_failure_fingerprint_permanent"] is True
+    assert result["failure_packet_self_health_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():

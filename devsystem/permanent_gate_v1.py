@@ -116,7 +116,9 @@ def validate() -> dict:
         "extract_log_excerpt",
         'lane["log_excerpt"] = log_excerpt',
         "tests/test_devsystem_failure_log_excerpt_v1.py",
+        "tests/test_devsystem_failure_fingerprint_v1.py",
         "DEVSYSTEM_FAILURE_LOG_EXCERPT_UNAVAILABLE",
+        "Upload failure packet evidence",
     )
     packet_missing = [marker for marker in failure_packet_markers if marker not in failure_packet_workflow]
     if packet_missing:
@@ -179,6 +181,7 @@ def validate() -> dict:
         "failed_job_log_evidence_permanent": True,
         "failure_remediation_policy_permanent": True,
         "stable_failure_fingerprint_permanent": True,
+        "failure_packet_self_health_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
