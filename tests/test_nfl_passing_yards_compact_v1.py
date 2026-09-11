@@ -4,6 +4,7 @@ from pathlib import Path
 
 import nfl_passing_yards_identity_v1 as identity
 import nfl_passing_yards_profile_v1 as profile
+import nfl_passing_yards_defense_v1 as defense
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -217,3 +218,79 @@ def test_router_v82_advances_only_passing_yards_step2() -> None:
     assert "descriptive stats only" in page
     assert "projection/Monte Carlo/probability/ranking/recommendation OFF" in page
     assert "passing-yards projection" in engine
+
+
+def test_step3_parses_opponent_pass_defense_and_derives_efficiency() -> None:
+    payload = {
+        "splits": {"categories": [{"name": "defensive", "stats": [
+            {"name": "gamesPlayed", "value": 2},
+            {"name": "opponentPassingYards", "value": 500, "rank": 28},
+            {"name": "opponentPassingAttempts", "value": 70},
+            {"name": "opponentPassingCompletions", "value": 44},
+            {"name": "opponentPassingTouchdowns", "value": 4},
+            {"name": "interceptions", "value": 2},
+            {"name": "sacks", "value": 5},
+        }]}]}
+    }
+    out = defense.parse_season_pass_defense(payload)
+    assert out["ready"] is True
+    assert out["passing_yards_allowed_per_game"] == 250.0
+    assert out["passing_attempts_allowed_per_game"] == 35.0
+    assert round(out["completion_pct_allowed"], 1) == 62.9
+    assert round(out["yards_per_attempt_allowed"], 2) == 7.14
+    assert out["passing_yards_allowed_rank"] == 28
+    assert defense.matchup_grade(out)[0] == "FAVORABLE"
+
+
+def test_step3_recent_defense_uses_opponent_boxscore_row() -> None:
+    summary = {
+        "boxscore": {"teams": [
+            {"team": {"id": "11", "abbreviation": "IND"}, "statistics": [
+                {"name": "passingYards", "displayValue": "210"},
+            ]},
+            {"team": {"id": "34", "abbreviation": "HOU"}, "statistics": [
+                {"name": "passingYards", "displayValue": "280"},
+                {"name": "completionAttempts", "displayValue": "25/36"},
+            ]},
+        ]}
+    }
+    out = defense.parse_recent_defense_game(summary, "11")
+    assert out["passing_yards_allowed"] == 280.0
+    assert out["completions_allowed"] == 25.0
+    assert out["attempts_allowed"] == 36.0
+    assert round(out["completion_pct_allowed"], 1) == 69.4
+    assert round(out["yards_per_attempt_allowed"], 2) == 7.78
+
+
+def test_step3_missing_verified_team_id_fails_closed() -> None:
+    out = defense.build_pass_defense_profile("synthetic-team", "Fake Team", 2026, 2, "2026-09-12")
+    assert out["ready"] is False
+    assert "verified opponent ESPN team ID" in out["reason"]
+
+
+def test_step3_matchup_grade_requires_espn_rank() -> None:
+    grade, reason = defense.matchup_grade({"passing_yards_allowed_rank": None})
+    assert grade == "CHECK"
+    assert "rank unavailable" in reason
+
+
+def test_router_v83_advances_only_passing_yards_step3() -> None:
+    hub = _read("nfl_hub_v22.py")
+    router = _read("streamlit_memory_lazy_router_v83.py")
+    app = _read("app.py")
+    page = _read("nfl_passing_yards_hub_v4.py")
+    engine = _read("nfl_passing_yards_defense_v1.py")
+
+    assert "import nfl_hub_v21 as base" in hub
+    assert "nfl_passing_yards_hub_v4" in hub
+    assert "import streamlit_memory_lazy_router_v82 as prior" in router
+    assert 'ACTIVE_NFL_HUB = "nfl_hub_v22"' in router
+    assert "streamlit_memory_lazy_router_v83" in app
+    assert "STREAMLIT_MAIN_V82_NFL_PASSING_YARDS_STEP2_QB_PROFILE_2026-09-11" in app
+    assert "STREAMLIT_MAIN_V83_NFL_PASSING_YARDS_STEP3_PASS_DEFENSE_2026-09-11" in app
+    assert "STEP 3 PASS DEFENSE GREEN" in page
+    assert "sportsbook influence 0.0%" in page
+    assert "descriptive matchup evidence only" in page
+    assert "projection/Monte Carlo/probability/fair-line/EV/ranking/recommendation OFF" in page
+    assert "passing-yards projection" in engine
+    assert "no fuzzy team matching" in engine.lower()
