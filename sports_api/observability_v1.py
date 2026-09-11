@@ -20,6 +20,8 @@ import time
 import uuid
 from typing import Any
 
+from sports_api.posthog_error_radar_v1 import capture_runtime_exception
+
 OBSERVABILITY_VERSION = "KYRE_OBSERVABILITY_V1"
 CANONICAL_SOURCE_BRANCH = "main"
 DEFAULT_RENDER_RUNTIME_BRANCH = "mlb-step17b-shared-host-cert"
@@ -194,6 +196,18 @@ def install_observability(app: Any) -> None:
                 "deploy_commit": runtime["deploy_commit"],
             }
             _structured_log("KYRE_UNHANDLED_ERROR", payload, level=logging.ERROR)
+            capture_runtime_exception(
+                exc,
+                error_fingerprint=fingerprint,
+                surface="sports_api",
+                request_id=request_id,
+                path=request.url.path,
+                method=request.method,
+                properties={
+                    "duration_ms": duration_ms,
+                    "error_type": payload["error_type"],
+                },
+            )
             response = JSONResponse(
                 status_code=500,
                 content={
