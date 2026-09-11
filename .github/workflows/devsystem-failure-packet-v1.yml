@@ -154,11 +154,10 @@ jobs:
           PY
 
       - name: Collect prior failure fingerprint history
-        if: github.event_name == 'workflow_run'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || github.run_id }}
         run: |
           python - <<'PY'
           import io
@@ -266,6 +265,14 @@ jobs:
           DEVSYSTEM_SOURCE_SHA: ${{ github.sha }}
           DEVSYSTEM_SOURCE_REF: ${{ github.ref }}
         run: |
+          python - <<'PY'
+          import json
+          with open('/tmp/devsystem-history.json', encoding='utf-8') as handle:
+              live_history = json.load(handle)
+          if not isinstance(live_history, list) or not live_history:
+              raise SystemExit('live failure history collector returned no verified prior targeted-CI packets')
+          print(f"DEVSYSTEM_FAILURE_HISTORY_LIVE_CERTIFIED packets={len(live_history)}")
+          PY
           python devsystem/failure_packet_v1.py \
             --needs-json '{"classify":{"result":"success"},"cfb-critical":{"result":"failure","log_excerpt":"FAILED tests/test_cfb_guard.py::test_frozen_contract - AssertionError"},"mlb-critical":{"result":"success"}}' \
             --failed-steps-json '{"cfb-critical":["Run current CFB critical path"]}' \
