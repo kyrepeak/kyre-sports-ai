@@ -22,16 +22,21 @@ def _load_triage():
     return module
 
 
+def _load_fingerprint():
+    path = ROOT / "devsystem" / "failure_fingerprint_v1.py"
+    spec = importlib.util.spec_from_file_location("failure_fingerprint_v1", path)
+    if not spec or not spec.loader:
+        raise RuntimeError("Unable to load failure_fingerprint_v1")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _needs_with_failed_step_evidence(
     needs: dict[str, Any],
     failed_steps: dict[str, list[str]] | None,
 ) -> dict[str, Any]:
-    """Attach captured failed-step text to its lane without mutating caller input.
-
-    Explicit evidence already supplied by a lane wins. Failed-step evidence is a
-    deterministic fallback so Phase 3 triage signatures can operate automatically
-    from the evidence packet that CI already captures.
-    """
+    """Attach captured failed-step text to its lane without mutating caller input."""
     enriched: dict[str, Any] = {}
     captured = failed_steps or {}
     for name, raw_payload in sorted(needs.items()):
@@ -52,8 +57,10 @@ def build_packet(
     failed_steps: dict[str, list[str]] | None = None,
 ) -> dict[str, Any]:
     triage_module = _load_triage()
+    fingerprint_module = _load_fingerprint()
     enriched_needs = _needs_with_failed_step_evidence(needs, failed_steps)
     report = triage_module.triage(enriched_needs)
+    fingerprint_module.attach_fingerprints(report)
     lane_results = {
         name: str((payload or {}).get("result") or "unknown")
         for name, payload in sorted(needs.items())
@@ -95,6 +102,7 @@ def render_markdown(packet: dict[str, Any]) -> str:
     else:
         lines.extend([
             f"- **Lane:** {primary['job']}",
+            f"- **Failure fingerprint:** {primary.get('failure_fingerprint', 'unavailable')}",
             f"- **Layer:** {primary['layer']}",
             f"- **Failure class:** {primary['failure_class']}",
             f"- **Evidence signal:** {primary.get('evidence_signal', 'none')}",
@@ -113,8 +121,8 @@ def render_markdown(packet: dict[str, Any]) -> str:
     else:
         for item in failures:
             lines.append(
-                f"- `{item['job']}` → {item['layer']} → "
-                f"signal={item.get('evidence_signal', 'none')} → "
+                f"- `{item['job']}` → fingerprint={item.get('failure_fingerprint', 'unavailable')} → "
+                f"{item['layer']} → signal={item.get('evidence_signal', 'none')} → "
                 f"confidence={item.get('confidence', 'lane-only')} → "
                 f"remediation={item.get('remediation_class', 'unknown')} → "
                 f"retry={item.get('retry_policy', 'investigate-first')} → "
