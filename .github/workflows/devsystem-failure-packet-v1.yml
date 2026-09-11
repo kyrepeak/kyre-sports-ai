@@ -186,7 +186,7 @@ jobs:
               with urllib.request.urlopen(req, timeout=30) as response:
                   raw = response.read(5_000_001)
               if len(raw) > 5_000_000:
-                  return None
+                  raise ValueError("failure packet artifact exceeds 5 MB safety bound")
               with zipfile.ZipFile(io.BytesIO(raw)) as archive:
                   names = [
                       name
@@ -195,44 +195,54 @@ jobs:
                       and "devsystem-final-gate-cert" not in name
                   ]
                   if not names:
-                      return None
+                      raise ValueError("failure packet artifact contains no packet JSON")
                   return json.loads(archive.read(sorted(names)[0]).decode("utf-8"))
 
           history = None
           try:
-              payload = api_json(
-                  f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100"
-              )
-              artifacts = sorted(
-                  (payload.get("artifacts") or []),
-                  key=lambda item: str(item.get("created_at") or ""),
-                  reverse=True,
-              )
               history = []
-              for artifact in artifacts:
-                  if len(history) >= 20:
+              collection_complete = True
+              page = 1
+              while len(history) < 20:
+                  payload = api_json(
+                      f"https://api.github.com/repos/{repo}/actions/artifacts?per_page=100&page={page}"
+                  )
+                  artifacts = sorted(
+                      (payload.get("artifacts") or []),
+                      key=lambda item: str(item.get("created_at") or ""),
+                      reverse=True,
+                  )
+                  for artifact in artifacts:
+                      if len(history) >= 20:
+                          break
+                      name = str(artifact.get("name") or "")
+                      if artifact.get("expired") or not re.fullmatch(r"devsystem-failure-packet-\d+", name):
+                          continue
+                      try:
+                          packet = load_packet(artifact)
+                          if packet.get("schema") != "KYRE_DEVSYSTEM_FAILURE_PACKET_V1":
+                              continue
+                          source_run_id = str(packet.get("run_id") or "")
+                          if not source_run_id or source_run_id == current_source_run_id:
+                              continue
+                          source_run = api_json(
+                              f"https://api.github.com/repos/{repo}/actions/runs/{source_run_id}"
+                          )
+                          if source_run.get("name") != "DevSystem targeted CI":
+                              continue
+                          history.append(packet)
+                      except Exception as exc:
+                          collection_complete = False
+                          print(
+                              "DEVSYSTEM_FAILURE_HISTORY_ARTIFACT_UNAVAILABLE "
+                              f"artifact={artifact.get('id')} error={type(exc).__name__}"
+                          )
+                          break
+                  if not collection_complete or len(history) >= 20 or len(artifacts) < 100:
                       break
-                  name = str(artifact.get("name") or "")
-                  if artifact.get("expired") or not re.fullmatch(r"devsystem-failure-packet-\d+", name):
-                      continue
-                  try:
-                      packet = load_packet(artifact)
-                      if not packet or packet.get("schema") != "KYRE_DEVSYSTEM_FAILURE_PACKET_V1":
-                          continue
-                      source_run_id = str(packet.get("run_id") or "")
-                      if not source_run_id or source_run_id == current_source_run_id:
-                          continue
-                      source_run = api_json(
-                          f"https://api.github.com/repos/{repo}/actions/runs/{source_run_id}"
-                      )
-                      if source_run.get("name") != "DevSystem targeted CI":
-                          continue
-                      history.append(packet)
-                  except Exception as exc:
-                      print(
-                          "DEVSYSTEM_FAILURE_HISTORY_ARTIFACT_SKIPPED "
-                          f"artifact={artifact.get('id')} error={type(exc).__name__}"
-                      )
+                  page += 1
+              if not collection_complete:
+                  history = None
           except Exception as exc:
               print(f"DEVSYSTEM_FAILURE_HISTORY_UNAVAILABLE error={type(exc).__name__}")
               history = None
