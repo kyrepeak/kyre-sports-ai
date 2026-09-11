@@ -2,12 +2,24 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
+from pathlib import Path
 
 
 class FinalGateFailure(RuntimeError):
     pass
+
+
+def _triage_summary(needs: dict) -> str:
+    path = Path(__file__).with_name("failure_triage_v1.py")
+    spec = importlib.util.spec_from_file_location("failure_triage_v1", path)
+    if spec is None or spec.loader is None:
+        return "DEVSYSTEM_FAILURE_TRIAGE unavailable"
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.render_summary(module.triage(needs))
 
 
 def evaluate(needs: dict) -> dict:
@@ -21,7 +33,10 @@ def evaluate(needs: dict) -> dict:
 
     if failures:
         raise FinalGateFailure(
-            "DevSystem lanes not green: " + " | ".join(failures)
+            "DevSystem lanes not green: "
+            + " | ".join(failures)
+            + " | "
+            + _triage_summary(needs)
         )
 
     return {
