@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
 from sports_api.observability_v1 import install_observability
 
@@ -185,6 +185,40 @@ app.include_router(wnba_step6u_activation_bridge_router)
 app.include_router(wnba_step6w_final_certification_router)
 app.include_router(wnba_team_history_router)
 app.include_router(wnba_tracking_router)
+
+
+def _collapse_lifecycle_free_router_lifespans() -> None:
+    """Remove FastAPI's nested no-op router lifespan wrappers after registration.
+
+    All child routers on this shared production host are route-only. FastAPI still
+    merges each router's default lifespan context into the app lifespan, creating
+    a deep merged_lifespan chain. Render has intermittently exhausted recursion
+    while entering that chain. Refuse to flatten if a future router adds a real
+    lifecycle hook; otherwise restore the one intentional Step17B app lifespan.
+    """
+    default_lifespan_type = type(APIRouter().lifespan_context)
+    unsafe_routers: list[str] = []
+
+    for name, value in globals().items():
+        if not name.endswith("_router") or not isinstance(value, APIRouter):
+            continue
+        if (
+            value.on_startup
+            or value.on_shutdown
+            or type(value.lifespan_context) is not default_lifespan_type
+        ):
+            unsafe_routers.append(name)
+
+    if unsafe_routers:
+        raise RuntimeError(
+            "Refusing to collapse FastAPI router lifespans because lifecycle hooks "
+            "are present: " + ", ".join(sorted(unsafe_routers))
+        )
+
+    app.router.lifespan_context = step17b_lifespan
+
+
+_collapse_lifecycle_free_router_lifespans()
 
 
 @app.get("/", tags=["system"])
