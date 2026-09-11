@@ -3,6 +3,10 @@
 This module is intentionally additive and model-agnostic. It exposes deployment
 identity, deterministic error fingerprints, request correlation, and safe
 runtime diagnostics without changing any sports projection/data logic.
+
+The dependency-light helpers intentionally import without FastAPI installed so
+the permanent DevSystem can validate them early in CI. FastAPI/Starlette are
+loaded only when the middleware is installed by the API entrypoint.
 """
 from __future__ import annotations
 
@@ -15,9 +19,6 @@ import re
 import time
 import uuid
 from typing import Any
-
-from fastapi import FastAPI, Request
-from starlette.responses import JSONResponse
 
 OBSERVABILITY_VERSION = "KYRE_OBSERVABILITY_V1"
 EXPECTED_PRODUCTION_BRANCH = "main"
@@ -133,8 +134,12 @@ def _structured_log(event: str, payload: dict[str, Any], *, level: int = logging
     )
 
 
-def install_observability(app: FastAPI) -> None:
+def install_observability(app: Any) -> None:
     """Install request correlation and unhandled-error fingerprinting once."""
+    # Keep FastAPI dependencies out of module import so the pure contract helpers
+    # remain testable in the earliest, dependency-light DevSystem lane.
+    from starlette.responses import JSONResponse
+
     if getattr(app.state, "kyre_observability_v1_installed", False):
         return
     app.state.kyre_observability_v1_installed = True
@@ -153,7 +158,7 @@ def install_observability(app: FastAPI) -> None:
     )
 
     @app.middleware("http")
-    async def kyre_observability_middleware(request: Request, call_next):
+    async def kyre_observability_middleware(request, call_next):
         request_id = request_id_from_header(request.headers.get("x-request-id"))
         request.state.kyre_request_id = request_id
         started = time.perf_counter()
