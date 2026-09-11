@@ -29,6 +29,11 @@ def _safe(value: Any, default: str = "") -> str:
     return text or default
 
 
+def _rank(value: Any, default: int = 99) -> int:
+    parsed = pd.to_numeric(value, errors="coerce")
+    return int(parsed) if pd.notna(parsed) else int(default)
+
+
 @st.cache_data(ttl=120, show_spinner=False)
 def load_current_injury_map():
     payload, diag = depth_base._league_injuries_payload()
@@ -103,8 +108,8 @@ def resolve_team_qb_identity(
 
     verified_qb1 = None
     if result["depth_state"] == "VERIFIED":
-        ordered = sorted(qbs, key=lambda x: (int(pd.to_numeric(x.get("rank"), errors="coerce") or 99), _safe(x.get("name"))))
-        if ordered and int(pd.to_numeric(ordered[0].get("rank"), errors="coerce") or 99) == 1:
+        ordered = sorted(qbs, key=lambda x: (_rank(x.get("rank")), _safe(x.get("name"))))
+        if ordered and _rank(ordered[0].get("rank")) == 1:
             candidate = ordered[0]
             if _safe(candidate.get("athlete_id")) and _safe(candidate.get("name")):
                 verified_qb1 = candidate
@@ -145,9 +150,10 @@ def resolve_matchup_identity(game: dict, season_year: int) -> dict:
         injury_map,
         injury_ok,
     )
+    ready = bool(away.get("identity_verified") and home.get("identity_verified"))
     return {
-        "ready": bool(away.get("identity_verified") and home.get("identity_verified")),
-        "reason": "" if away.get("identity_verified") and home.get("identity_verified") else "one or both verified depth QB1 identities are unresolved",
+        "ready": ready,
+        "reason": "" if ready else "one or both verified depth QB1 identities are unresolved",
         "game_id": game_id,
         "injury_feed_ok": injury_ok,
         "injury_http": injury_diag.get("http"),
