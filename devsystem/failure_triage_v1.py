@@ -73,6 +73,8 @@ ROUTES: dict[str, dict[str, str]] = {
 }
 
 # Ordered most-specific first. This is intentionally deterministic and conservative.
+# "transient-capable" means a one-time retry can distinguish runner/upstream variance;
+# it is not a claim that the failure is flaky.
 EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
     {
         "name": "browser-selector-race",
@@ -80,6 +82,9 @@ EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
         "diagnosis": "browser selector/readiness synchronization failure",
         "confidence": "high",
         "inspect_first": "the first timed-out locator and the preceding Streamlit rerun/readiness barrier",
+        "remediation_class": "transient-capable",
+        "retry_policy": "retry-once-after-inspection",
+        "retry_reason": "browser readiness can vary with runner timing, but a repeated failure should be treated as deterministic until fixed",
     },
     {
         "name": "test-assertion",
@@ -87,6 +92,9 @@ EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
         "diagnosis": "test assertion or protected contract failure",
         "confidence": "high",
         "inspect_first": "the first failing test assertion and its protected invariant before changing implementation",
+        "remediation_class": "deterministic-regression",
+        "retry_policy": "do-not-retry",
+        "retry_reason": "the test observed a concrete protected-contract mismatch; inspect and fix the cause before rerunning",
     },
     {
         "name": "python-import",
@@ -94,6 +102,9 @@ EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
         "diagnosis": "Python import/dependency surface failure",
         "confidence": "high",
         "inspect_first": "the first missing/imported module, then the lane requirements/cache key that supplies it",
+        "remediation_class": "deterministic-regression",
+        "retry_policy": "do-not-retry",
+        "retry_reason": "a missing or incompatible import normally persists until code, requirements, or cache provisioning is corrected",
     },
     {
         "name": "syntax-compile",
@@ -101,6 +112,9 @@ EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
         "diagnosis": "Python syntax/compile failure",
         "confidence": "high",
         "inspect_first": "the first syntax traceback location; avoid touching unrelated model/runtime code",
+        "remediation_class": "deterministic-regression",
+        "retry_policy": "do-not-retry",
+        "retry_reason": "syntax and compile errors are deterministic and cannot be repaired by rerunning CI",
     },
     {
         "name": "cache-dependency",
@@ -108,6 +122,9 @@ EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
         "diagnosis": "dependency or CI cache provisioning failure",
         "confidence": "medium",
         "inspect_first": "the cache key/restore result and first dependency installation error",
+        "remediation_class": "transient-capable",
+        "retry_policy": "retry-once-after-inspection",
+        "retry_reason": "cache/network provisioning can be transient, but repeated dependency-resolution failures require a real fix",
     },
     {
         "name": "network-upstream",
@@ -115,6 +132,9 @@ EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
         "diagnosis": "network or upstream service failure",
         "confidence": "medium",
         "inspect_first": "the first failing external endpoint and whether retry/freshness policy was engaged",
+        "remediation_class": "transient-capable",
+        "retry_policy": "retry-once-after-inspection",
+        "retry_reason": "rate limits and upstream/network faults can clear without a code change; one controlled retry is safe after confirming the endpoint failure",
     },
     {
         "name": "generic-timeout",
@@ -122,6 +142,9 @@ EVIDENCE_SIGNATURES: tuple[dict[str, Any], ...] = (
         "diagnosis": "timeout without a more specific signature",
         "confidence": "medium",
         "inspect_first": "the operation immediately before the timeout and its readiness/timeout contract",
+        "remediation_class": "transient-capable",
+        "retry_policy": "retry-once-after-inspection",
+        "retry_reason": "a timeout may reflect runner variance, but a second occurrence should be investigated as a deterministic readiness or performance defect",
     },
 )
 
@@ -150,6 +173,9 @@ def diagnose_evidence(text: str | None) -> dict[str, str] | None:
                     "confidence": str(signature["confidence"]),
                     "evidence_match": match.group(0)[:160],
                     "inspect_first": str(signature["inspect_first"]),
+                    "remediation_class": str(signature["remediation_class"]),
+                    "retry_policy": str(signature["retry_policy"]),
+                    "retry_reason": str(signature["retry_reason"]),
                 }
     return {
         "evidence_signal": "unclassified-evidence",
@@ -157,6 +183,9 @@ def diagnose_evidence(text: str | None) -> dict[str, str] | None:
         "confidence": "low",
         "evidence_match": "",
         "inspect_first": "the first error/traceback line in the captured job evidence",
+        "remediation_class": "unknown",
+        "retry_policy": "investigate-first",
+        "retry_reason": "the evidence is not specific enough to safely recommend a retry or a code fix",
     }
 
 
@@ -181,6 +210,9 @@ def triage(needs: dict[str, Any]) -> dict[str, Any]:
                 "diagnosis": route["failure_class"],
                 "confidence": "lane-only",
                 "evidence_match": "",
+                "remediation_class": "unknown",
+                "retry_policy": "investigate-first",
+                "retry_reason": "lane-level failure alone is not enough evidence to safely recommend a retry",
             })
         failures.append(failure)
 
@@ -203,6 +235,8 @@ def render_summary(report: dict[str, Any]) -> str:
         f"layer={primary.get('layer')} "
         f"signal={primary.get('evidence_signal')} "
         f"confidence={primary.get('confidence')} "
+        f"remediation={primary.get('remediation_class')} "
+        f"retry_policy={primary.get('retry_policy')} "
         f"diagnosis={primary.get('diagnosis')} "
         f"inspect_first={primary.get('inspect_first')}"
     )
