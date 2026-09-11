@@ -34,6 +34,7 @@ def test_permanent_contract_is_green():
     assert result["failure_recurrence_history_permanent"] is True
     assert result["failure_recurrence_chronology_permanent"] is True
     assert result["failure_recurrence_age_permanent"] is True
+    assert result["failure_history_coverage_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
