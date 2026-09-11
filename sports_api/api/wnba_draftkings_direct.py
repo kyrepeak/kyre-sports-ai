@@ -34,4 +34,6 @@ def get_draftkings_reconciled_sync_status():
     return get_reconciled_sync_status()
 
 
-router.include_router(step6j_canary_router)
+# Step 6J exposes routes only and has no startup/shutdown/lifespan handlers.
+# Extend the route table instead of nesting another FastAPI lifespan wrapper.
+router.routes.extend(step6j_canary_router.routes)
