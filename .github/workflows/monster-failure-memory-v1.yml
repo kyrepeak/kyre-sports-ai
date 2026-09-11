@@ -1,0 +1,130 @@
+name: Monster Failure Memory V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/monster_failure_memory_v1.py"
+      - "tests/test_monster_failure_memory_v1.py"
+      - ".github/workflows/monster-failure-memory-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/monster_failure_memory_v1.py"
+      - "tests/test_monster_failure_memory_v1.py"
+      - ".github/workflows/monster-failure-memory-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-failure-memory-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  monster-failure-memory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install Failure Memory test dependency
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Failure Memory
+        run: |
+          python -m py_compile sports_api/monster_failure_memory_v1.py
+
+      - name: Run Failure Memory contracts
+        run: |
+          python -m pytest -q tests/test_monster_failure_memory_v1.py
+
+      - name: Prove real historical identity failure is remembered exactly
+        run: |
+          python -m sports_api.monster_failure_memory_v1 \
+            --signature "cfb ou verified identity present upstream but downstream steps gate" \
+            --json > /tmp/failure-memory.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/failure-memory.json').read_text())
+          assert payload['status'] == 'FOUND'
+          assert payload['exact'] is True
+          assert payload['match_type'] == 'signature_exact'
+          assert payload['record_count'] == 1
+          record = payload['records'][0]
+          assert record['pr_number'] == 325
+          assert record['commit_sha'] == '2baa57563556dfc463866fd03e29b00aadc9261a'
+          assert 'Slate V15' in record['fix_summary']
+          assert payload['fuzzy_matching'] is False
+          print('remembered:', record['memory_id'], 'PR', record['pr_number'])
+          PY
+
+      - name: Prove unknown similar wording never guesses
+        run: |
+          set +e
+          python -m sports_api.monster_failure_memory_v1 \
+            --signature "cfb verified identities disappeared somewhere downstream" \
+            --json > /tmp/unknown-memory.json
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/unknown-memory.json').read_text())
+          assert payload['status'] == 'NOT_FOUND'
+          assert payload['found'] is False
+          assert payload['record_count'] == 0
+          assert payload['fuzzy_matching'] is False
+          print('unknown incident correctly left unmatched')
+          PY
+
+      - name: Prove Failure Memory remains outside production entrypoints
+        run: |
+          python - <<'PY'
+          from sports_api.monster_dependency_map_v1 import build_dependency_map
+
+          graph = build_dependency_map('.')
+          report = graph.impact_report('sports_api/monster_failure_memory_v1.py')
+          assert report['status'] == 'OK'
+          assert report['impacted_entrypoints'] == []
+          print(
+              f"failure_memory blast_radius={report['blast_radius']} "
+              f"entrypoints={report['impacted_entrypoints']}"
+          )
+          PY
+
+      - name: Prove memory is read-only for models and runtime
+        run: |
+          python - <<'PY'
+          from sports_api.monster_failure_memory_v1 import (
+              DEFAULT_MEMORY,
+              FUZZY_MATCHING,
+              MAY_AUTO_WRITE_RUNTIME_MEMORY,
+              MAY_MODIFY_PROJECTION,
+              MAY_MODIFY_SOURCE_DATA,
+              PROJECTION_WEIGHT,
+          )
+
+          snapshot = DEFAULT_MEMORY.snapshot()
+          assert snapshot['record_count'] == 5
+          assert PROJECTION_WEIGHT == 0.0
+          assert MAY_MODIFY_PROJECTION is False
+          assert MAY_MODIFY_SOURCE_DATA is False
+          assert MAY_AUTO_WRITE_RUNTIME_MEMORY is False
+          assert FUZZY_MATCHING is False
+          print('records=', snapshot['record_count'], 'runtime_auto_write=', MAY_AUTO_WRITE_RUNTIME_MEMORY)
+          PY
