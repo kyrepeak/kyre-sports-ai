@@ -32,6 +32,16 @@ def _load_fingerprint():
     return module
 
 
+def _load_history():
+    path = ROOT / "devsystem" / "failure_history_v1.py"
+    spec = importlib.util.spec_from_file_location("failure_history_v1", path)
+    if not spec or not spec.loader:
+        raise RuntimeError("Unable to load failure_history_v1")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _needs_with_failed_step_evidence(
     needs: dict[str, Any],
     failed_steps: dict[str, list[str]] | None,
@@ -55,12 +65,19 @@ def build_packet(
     sha: str = "",
     ref: str = "",
     failed_steps: dict[str, list[str]] | None = None,
+    history_packets: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     triage_module = _load_triage()
     fingerprint_module = _load_fingerprint()
+    history_module = _load_history()
     enriched_needs = _needs_with_failed_step_evidence(needs, failed_steps)
     report = triage_module.triage(enriched_needs)
     fingerprint_module.attach_fingerprints(report)
+    history_summary = history_module.attach_recurrence(
+        report,
+        history_packets,
+        current_run_id=run_id,
+    )
     lane_results = {
         name: str((payload or {}).get("result") or "unknown")
         for name, payload in sorted(needs.items())
@@ -73,12 +90,14 @@ def build_packet(
         "ref": ref,
         "lane_results": lane_results,
         "failed_steps": failed_steps or {},
+        "history": history_summary,
         "triage": report,
     }
 
 
 def render_markdown(packet: dict[str, Any]) -> str:
     triage = packet["triage"]
+    history = packet.get("history") or {}
     lines = [
         "# DevSystem Failure Packet",
         "",
@@ -86,6 +105,9 @@ def render_markdown(packet: dict[str, Any]) -> str:
         f"- **Run ID:** {packet.get('run_id') or 'unknown'}",
         f"- **Commit:** {packet.get('sha') or 'unknown'}",
         f"- **Ref:** {packet.get('ref') or 'unknown'}",
+        f"- **History source:** {history.get('source', 'unavailable')}",
+        f"- **History available:** {history.get('history_available', False)}",
+        f"- **History packets scanned:** {history.get('packets_scanned', 0)}",
         "",
         "## Lane Results",
         "",
@@ -100,9 +122,14 @@ def render_markdown(packet: dict[str, Any]) -> str:
     if not primary:
         lines.append("No failed DevSystem lanes were detected.")
     else:
+        prior_run_ids = primary.get("prior_run_ids") or []
         lines.extend([
             f"- **Lane:** {primary['job']}",
             f"- **Failure fingerprint:** {primary.get('failure_fingerprint', 'unavailable')}",
+            f"- **Recurrence:** {primary.get('recurrence_status', 'history-unavailable')}",
+            f"- **Recurrence confidence:** {primary.get('recurrence_confidence', 'unavailable')}",
+            f"- **Prior occurrences in bounded history:** {primary.get('prior_occurrence_count', 0)}",
+            f"- **Prior run IDs:** {', '.join(prior_run_ids) if prior_run_ids else 'none'}",
             f"- **Layer:** {primary['layer']}",
             f"- **Failure class:** {primary['failure_class']}",
             f"- **Evidence signal:** {primary.get('evidence_signal', 'none')}",
@@ -122,6 +149,8 @@ def render_markdown(packet: dict[str, Any]) -> str:
         for item in failures:
             lines.append(
                 f"- `{item['job']}` → fingerprint={item.get('failure_fingerprint', 'unavailable')} → "
+                f"recurrence={item.get('recurrence_status', 'history-unavailable')} → "
+                f"prior={item.get('prior_occurrence_count', 0)} → "
                 f"{item['layer']} → signal={item.get('evidence_signal', 'none')} → "
                 f"confidence={item.get('confidence', 'lane-only')} → "
                 f"remediation={item.get('remediation_class', 'unknown')} → "
@@ -152,6 +181,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--needs-json")
     parser.add_argument("--failed-steps-json")
+    parser.add_argument("--history-json")
     parser.add_argument("--output-dir", default="artifacts/devsystem-failure-packet")
     return parser.parse_args()
 
@@ -160,12 +190,15 @@ def main() -> int:
     args = _parse_args()
     raw = args.needs_json or os.environ.get("DEVSYSTEM_NEEDS_JSON") or "{}"
     steps_raw = args.failed_steps_json or os.environ.get("DEVSYSTEM_FAILED_STEPS_JSON") or "{}"
+    history_raw = args.history_json or os.environ.get("DEVSYSTEM_FAILURE_HISTORY_JSON")
+    history_packets = json.loads(history_raw) if history_raw is not None else None
     packet = build_packet(
         json.loads(raw),
         run_id=os.environ.get("DEVSYSTEM_SOURCE_RUN_ID") or os.environ.get("GITHUB_RUN_ID", ""),
         sha=os.environ.get("DEVSYSTEM_SOURCE_SHA") or os.environ.get("GITHUB_SHA", ""),
         ref=os.environ.get("DEVSYSTEM_SOURCE_REF") or os.environ.get("GITHUB_REF", ""),
         failed_steps=json.loads(steps_raw),
+        history_packets=history_packets,
     )
     write_packet(packet, Path(args.output_dir))
     print("DEVSYSTEM_FAILURE_PACKET_WRITTEN")
