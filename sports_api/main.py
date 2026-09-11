@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from sports_api.observability_v1 import install_observability
+
 # Step 6D must install before WNBA scheduler/router modules bind Step 5O functions.
 import sports_api.wnba_step6d_direct_integration as _wnba_step6d_direct_integration  # noqa: F401
 # Step 6I interposes reconciliation before the Step 6D runtime write hook.
@@ -97,6 +99,7 @@ app = FastAPI(
     version="0.1.0",
     lifespan=step17b_lifespan,
 )
+install_observability(app)
 
 app.include_router(health_router)
 app.include_router(mlb_router)
@@ -192,5 +195,7 @@ def root():
         "status": "online",
         "docs": "/docs",
         "health": "/health",
+        "health_ready": "/health/ready",
+        "health_details": "/health/details",
         "first_data_endpoint": "/api/v1/mlb/games/today",
     }
