@@ -29,6 +29,7 @@ def test_recurrence_is_confirmed_only_with_matching_historical_fingerprint():
             "run_id": "101",
             "sha": "aaa",
             "ref": "branch-a",
+            "_history_source_created_at": "2026-09-08T15:00:00Z",
             "triage": {
                 "failures": [
                     {"failure_fingerprint": "KYRE-CI-ABC123"},
@@ -40,6 +41,7 @@ def test_recurrence_is_confirmed_only_with_matching_historical_fingerprint():
             "run_id": "102",
             "sha": "bbb",
             "ref": "branch-b",
+            "_history_source_created_at": "2026-09-10T04:30:00+00:00",
             "triage": {"failures": [{"failure_fingerprint": "KYRE-CI-ABC123"}]},
         },
     ]
@@ -48,11 +50,42 @@ def test_recurrence_is_confirmed_only_with_matching_historical_fingerprint():
     primary = report["primary"]
     assert primary["recurrence_status"] == "recurring"
     assert primary["recurrence_confidence"] == "confirmed"
+    assert primary["recurrence_timing_confidence"] == "confirmed"
     assert primary["prior_occurrence_count"] == 2
     assert primary["known_occurrence_count"] == 3
     assert primary["prior_run_ids"] == ["101", "102"]
+    assert primary["prior_first_seen_at"] == "2026-09-08T15:00:00Z"
+    assert primary["prior_last_seen_at"] == "2026-09-10T04:30:00Z"
     assert summary["history_available"] is True
+    assert summary["timestamped_packets"] == 2
     assert summary["claims_flakiness"] is False
+    assert summary["claims_cadence"] is False
+
+
+def test_partial_or_invalid_timestamps_never_create_fake_chronology():
+    history = _load("failure_history_partial_timing", "devsystem/failure_history_v1.py")
+    report = {
+        "failures": [{"failure_fingerprint": "KYRE-CI-SAME"}],
+        "primary": {"failure_fingerprint": "KYRE-CI-SAME"},
+    }
+    packets = [
+        {
+            "run_id": "201",
+            "_history_source_created_at": "not-a-time",
+            "triage": {"failures": [{"failure_fingerprint": "KYRE-CI-SAME"}]},
+        },
+        {
+            "run_id": "202",
+            "_history_source_created_at": "2026-09-09T01:02:03Z",
+            "triage": {"failures": [{"failure_fingerprint": "KYRE-CI-SAME"}]},
+        },
+    ]
+    history.attach_recurrence(report, packets, current_run_id="999")
+    primary = report["primary"]
+    assert primary["recurrence_status"] == "recurring"
+    assert primary["recurrence_timing_confidence"] == "partial"
+    assert primary["prior_first_seen_at"] == "2026-09-09T01:02:03Z"
+    assert primary["prior_last_seen_at"] == "2026-09-09T01:02:03Z"
 
 
 def test_current_run_is_not_counted_as_prior_occurrence():
@@ -64,12 +97,16 @@ def test_current_run_is_not_counted_as_prior_occurrence():
     packets = [
         {
             "run_id": "200",
+            "_history_source_created_at": "2026-09-10T00:00:00Z",
             "triage": {"failures": [{"failure_fingerprint": "KYRE-CI-SAME"}]},
         }
     ]
     history.attach_recurrence(report, packets, current_run_id="200")
     assert report["primary"]["recurrence_status"] == "not-seen-in-history"
+    assert report["primary"]["recurrence_timing_confidence"] == "not-applicable"
     assert report["primary"]["prior_occurrence_count"] == 0
+    assert report["primary"]["prior_first_seen_at"] == ""
+    assert report["primary"]["prior_last_seen_at"] == ""
 
 
 def test_missing_history_is_not_misreported_as_first_seen():
@@ -81,6 +118,7 @@ def test_missing_history_is_not_misreported_as_first_seen():
     summary = history.attach_recurrence(report, None)
     assert report["primary"]["recurrence_status"] == "history-unavailable"
     assert report["primary"]["recurrence_confidence"] == "unavailable"
+    assert report["primary"]["recurrence_timing_confidence"] == "unavailable"
     assert summary["history_available"] is False
 
 
@@ -93,6 +131,7 @@ def test_empty_bounded_history_means_not_seen_in_history_only():
     history.attach_recurrence(report, [])
     assert report["primary"]["recurrence_status"] == "not-seen-in-history"
     assert report["primary"]["recurrence_confidence"] == "bounded"
+    assert report["primary"]["recurrence_timing_confidence"] == "not-applicable"
 
 
 def test_failure_packet_integration_reuses_stable_fingerprint_for_recurrence(tmp_path):
@@ -104,6 +143,7 @@ def test_failure_packet_integration_reuses_stable_fingerprint_for_recurrence(tmp
         }
     }
     prior = packet_module.build_packet(needs, run_id="300", history_packets=[])
+    prior["_history_source_created_at"] = "2026-09-10T12:34:56Z"
     current = packet_module.build_packet(
         needs,
         run_id="301",
@@ -111,11 +151,17 @@ def test_failure_packet_integration_reuses_stable_fingerprint_for_recurrence(tmp
     )
     primary = current["triage"]["primary"]
     assert primary["recurrence_status"] == "recurring"
+    assert primary["recurrence_timing_confidence"] == "confirmed"
     assert primary["prior_occurrence_count"] == 1
     assert primary["prior_run_ids"] == ["300"]
+    assert primary["prior_first_seen_at"] == "2026-09-10T12:34:56Z"
+    assert primary["prior_last_seen_at"] == "2026-09-10T12:34:56Z"
     assert current["history"]["packets_scanned"] == 1
+    assert current["history"]["timestamped_packets"] == 1
 
     packet_module.write_packet(current, tmp_path)
     markdown = (tmp_path / "failure-packet.md").read_text()
     assert "**Recurrence:** recurring" in markdown
     assert "Prior occurrences in bounded history" in markdown
+    assert "**Prior first occurrence (UTC):** 2026-09-10T12:34:56Z" in markdown
+    assert "**Prior last occurrence (UTC):** 2026-09-10T12:34:56Z" in markdown

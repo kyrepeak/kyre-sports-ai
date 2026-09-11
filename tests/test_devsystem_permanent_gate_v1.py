@@ -32,6 +32,7 @@ def test_permanent_contract_is_green():
     assert result["stable_failure_fingerprint_permanent"] is True
     assert result["failure_packet_self_health_permanent"] is True
     assert result["failure_recurrence_history_permanent"] is True
+    assert result["failure_recurrence_chronology_permanent"] is True
 
 
 def test_final_gate_accepts_success_and_skipped_only():
@@ -103,6 +104,7 @@ def test_failure_packet_automatically_wires_captured_step_evidence():
     assert primary["retry_policy"] == "retry-once-after-inspection"
     assert primary["failure_fingerprint"].startswith("KYRE-CI-")
     assert primary["recurrence_status"] == "history-unavailable"
+    assert primary["recurrence_timing_confidence"] == "unavailable"
 
 
 def test_same_packet_failure_keeps_same_fingerprint_across_run_metadata():
