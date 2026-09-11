@@ -1,17 +1,17 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards Step 1 live.
+"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards Step 2 live.
 
-Router V81 is additive over certified Router V80. It preserves the College
+Router V82 is additive over certified Router V81. It preserves the College
 Football Over/Under path and every existing sport/market route, while routing
-only NFL -> Passing Yards to the verified matchup + QB identity page.
+only NFL -> Passing Yards to the descriptive QB passing-profile page.
 
 The Passing Yards page keeps projection, sportsbook grading, Monte Carlo,
-ranking, and recommendation logic OFF while Step 1 identity is certified.
+probability, ranking, and recommendation logic OFF while Step 2 is certified.
 
 Permanent CFB protections remain unchanged: frozen V14 projection math, no
 fuzzy game matching, no synthetic IDs, and 0.0% sportsbook projection influence.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V81_NFL_PASSING_YARDS_STEP1_IDENTITY_2026-09-11.
+STREAMLIT_MAIN_V82_NFL_PASSING_YARDS_STEP2_QB_PROFILE_2026-09-11.
 """
 from __future__ import annotations
 
@@ -48,22 +48,25 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v78 import render_app as _frozen_v78_render_app
     from streamlit_memory_lazy_router_v79 import render_app as _frozen_v79_render_app
     from streamlit_memory_lazy_router_v80 import render_app as _frozen_v80_render_app
+    from streamlit_memory_lazy_router_v81 import render_app as _frozen_v81_render_app
     # Static predecessor contract strings retained for Monster regressions.
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v80 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v81 import record_bootstrap_import_ms, render_app
 
 FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 FROZEN_V78_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
 FROZEN_V79_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V79_CFB_OU_EXACT_TEAM_LOGOS_WIRED_2026-09-11"
 FROZEN_V80_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V80_NFL_PASSING_YARDS_COMPACT_FOUNDATION_2026-09-11"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V81_NFL_PASSING_YARDS_STEP1_IDENTITY_2026-09-11"
+FROZEN_V81_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V81_NFL_PASSING_YARDS_STEP1_IDENTITY_2026-09-11"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V82_NFL_PASSING_YARDS_STEP2_QB_PROFILE_2026-09-11"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v81 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v82 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
@@ -85,11 +88,7 @@ try:
         except (TypeError, ValueError):
             _active_page_import_ms = 0.0
         if _active_page_import_ms > 0.0:
-            _monster_trace.add(
-                "import.active_page",
-                _active_page_import_ms,
-                category="import",
-            )
+            _monster_trace.add("import.active_page", _active_page_import_ms, category="import")
 
     _monster_diagnosis = diagnose_trace(_monster_trace, total_ms=_app_total_ms)
     st.session_state["monster_performance_profiler_v1_last"] = _monster_diagnosis
@@ -98,11 +97,7 @@ try:
         st.caption(compact_summary(_monster_diagnosis))
         st.write(_monster_diagnosis["guidance"])
         if _monster_diagnosis["top_spans"]:
-            st.dataframe(
-                _monster_diagnosis["top_spans"],
-                hide_index=True,
-                use_container_width=True,
-            )
+            st.dataframe(_monster_diagnosis["top_spans"], hide_index=True, use_container_width=True)
 except Exception as exc:
     capture_runtime_exception(
         exc,
