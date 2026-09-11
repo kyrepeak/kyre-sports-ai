@@ -38,10 +38,11 @@ def test_regression_shield_failure_points_to_invariant_layer():
     assert report["status"] == "FAILURES_FOUND"
     assert report["primary"]["job"] == "regression-shield"
     assert report["primary"]["layer"] == "regression-shield"
+    assert report["primary"]["confidence"] == "lane-only"
     assert "first failing invariant" in report["primary"]["inspect_first"]
 
 
-def test_cfb_failure_preserves_frozen_contract_guidance():
+def test_cfb_failure_preserves_frozen_contract_guidance_without_evidence():
     module = _load()
     report = module.triage({"cfb-critical": {"result": "failure"}})
     text = module.render_summary(report)
@@ -61,3 +62,83 @@ def test_production_failure_routes_to_identity_and_health_evidence():
     report = module.triage({"production-verification": {"result": "failure"}})
     assert report["primary"]["layer"] == "production"
     assert "Render health/details" in report["primary"]["inspect_first"]
+
+
+def test_browser_locator_timeout_gets_specific_high_confidence_diagnosis():
+    module = _load()
+    report = module.triage({
+        "browser-qa": {
+            "result": "failure",
+            "evidence": "Playwright Timeout 30000ms exceeded waiting for locator combobox",
+        }
+    })
+    primary = report["primary"]
+    assert primary["layer"] == "ui-browser"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
+    assert "readiness" in primary["inspect_first"]
+
+
+def test_assertion_failure_points_to_first_protected_invariant():
+    module = _load()
+    report = module.triage({
+        "cfb-critical": {
+            "result": "failure",
+            "log_excerpt": "AssertionError: expected official ESPN event ID\nshort test summary info",
+        }
+    })
+    primary = report["primary"]
+    assert primary["evidence_signal"] == "test-assertion"
+    assert primary["confidence"] == "high"
+    assert "protected invariant" in primary["inspect_first"]
+    assert primary["layer"] == "cfb"
+
+
+def test_import_error_identifies_dependency_surface():
+    module = _load()
+    report = module.triage({
+        "mlb-critical": {
+            "result": "failure",
+            "evidence": "ModuleNotFoundError: No module named 'pandas'",
+        }
+    })
+    primary = report["primary"]
+    assert primary["evidence_signal"] == "python-import"
+    assert "requirements/cache key" in primary["inspect_first"]
+
+
+def test_unknown_evidence_is_low_confidence_and_does_not_guess():
+    module = _load()
+    report = module.triage({
+        "wnba-critical": {
+            "result": "failure",
+            "evidence": "something novel happened with no known signature",
+        }
+    })
+    primary = report["primary"]
+    assert primary["evidence_signal"] == "unclassified-evidence"
+    assert primary["confidence"] == "low"
+    assert "first error/traceback line" in primary["inspect_first"]
+
+
+def test_specific_browser_signature_wins_over_generic_timeout():
+    module = _load()
+    diagnosis = module.diagnose_evidence(
+        "Playwright TimeoutError while waiting for locator get_by_role('combobox')"
+    )
+    assert diagnosis is not None
+    assert diagnosis["evidence_signal"] == "browser-selector-race"
+
+
+def test_summary_exposes_signal_confidence_and_diagnosis():
+    module = _load()
+    report = module.triage({
+        "core-smoke": {
+            "result": "failure",
+            "evidence": "SyntaxError: invalid syntax at app.py line 12",
+        }
+    })
+    text = module.render_summary(report)
+    assert "signal=syntax-compile" in text
+    assert "confidence=high" in text
+    assert "diagnosis=Python syntax/compile failure" in text
