@@ -1,17 +1,18 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards Step 2 live.
+"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards Step 3 live.
 
-Router V82 is additive over certified Router V81. It preserves the College
+Router V83 is additive over certified Router V82. It preserves the College
 Football Over/Under path and every existing sport/market route, while routing
-only NFL -> Passing Yards to the descriptive QB passing-profile page.
+only NFL -> Passing Yards to the opponent pass-defense matchup page.
 
 The Passing Yards page keeps projection, sportsbook grading, Monte Carlo,
-probability, ranking, and recommendation logic OFF while Step 2 is certified.
+probability, fair-line, EV, ranking, and recommendation logic OFF while Step 3
+adds descriptive defense evidence.
 
 Permanent CFB protections remain unchanged: frozen V14 projection math, no
 fuzzy game matching, no synthetic IDs, and 0.0% sportsbook projection influence.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V82_NFL_PASSING_YARDS_STEP2_QB_PROFILE_2026-09-11.
+STREAMLIT_MAIN_V83_NFL_PASSING_YARDS_STEP3_PASS_DEFENSE_2026-09-11.
 """
 from __future__ import annotations
 
@@ -49,24 +50,27 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v79 import render_app as _frozen_v79_render_app
     from streamlit_memory_lazy_router_v80 import render_app as _frozen_v80_render_app
     from streamlit_memory_lazy_router_v81 import render_app as _frozen_v81_render_app
+    from streamlit_memory_lazy_router_v82 import render_app as _frozen_v82_render_app
     # Static predecessor contract strings retained for Monster regressions.
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v80 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v81 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v82 import record_bootstrap_import_ms, render_app
 
 FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 FROZEN_V78_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
 FROZEN_V79_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V79_CFB_OU_EXACT_TEAM_LOGOS_WIRED_2026-09-11"
 FROZEN_V80_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V80_NFL_PASSING_YARDS_COMPACT_FOUNDATION_2026-09-11"
 FROZEN_V81_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V81_NFL_PASSING_YARDS_STEP1_IDENTITY_2026-09-11"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V82_NFL_PASSING_YARDS_STEP2_QB_PROFILE_2026-09-11"
+FROZEN_V82_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V82_NFL_PASSING_YARDS_STEP2_QB_PROFILE_2026-09-11"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V83_NFL_PASSING_YARDS_STEP3_PASS_DEFENSE_2026-09-11"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v82 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v83 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
