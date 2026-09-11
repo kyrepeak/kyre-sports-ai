@@ -21,6 +21,12 @@ from __future__ import annotations
 from time import perf_counter
 from typing import TYPE_CHECKING
 
+from sports_api.monster_performance_profiler_v1 import (
+    PerformanceTrace,
+    add_stage_rows,
+    compact_summary,
+    diagnose_trace,
+)
 from sports_api.observability_v1 import error_fingerprint
 from sports_api.posthog_error_radar_v1 import capture_runtime_exception
 
@@ -45,10 +51,50 @@ if TYPE_CHECKING:
 DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 
 try:
+    _app_started = perf_counter()
     _bootstrap_started = perf_counter()
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
-    record_bootstrap_import_ms((perf_counter() - _bootstrap_started) * 1000.0)
+    _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
+    record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
+    _app_total_ms = (perf_counter() - _app_started) * 1000.0
+
+    # The active CFB page already owns a measurement-only stage profiler. Monster
+    # consumes its public session snapshot instead of changing or duplicating it.
+    import streamlit as st
+
+    _monster_trace = PerformanceTrace(surface="streamlit", path="app.py")
+    _monster_trace.add("import.bootstrap_router", _bootstrap_import_ms, category="import")
+
+    _cfb_perf = st.session_state.get("cfb_ou_perf_v1_last")
+    if isinstance(_cfb_perf, dict):
+        add_stage_rows(_monster_trace, _cfb_perf.get("stages"))
+
+    _cold_start = st.session_state.get("cfb_ou_cold_start_v1_last")
+    if isinstance(_cold_start, dict):
+        try:
+            _active_page_import_ms = float(_cold_start.get("active_page_import_ms") or 0.0)
+        except (TypeError, ValueError):
+            _active_page_import_ms = 0.0
+        if _active_page_import_ms > 0.0:
+            _monster_trace.add(
+                "import.active_page",
+                _active_page_import_ms,
+                category="import",
+            )
+
+    _monster_diagnosis = diagnose_trace(_monster_trace, total_ms=_app_total_ms)
+    st.session_state["monster_performance_profiler_v1_last"] = _monster_diagnosis
+
+    with st.expander("⚡ Monster Performance Diagnosis", expanded=False):
+        st.caption(compact_summary(_monster_diagnosis))
+        st.write(_monster_diagnosis["guidance"])
+        if _monster_diagnosis["top_spans"]:
+            st.dataframe(
+                _monster_diagnosis["top_spans"],
+                hide_index=True,
+                use_container_width=True,
+            )
 except Exception as exc:
     capture_runtime_exception(
         exc,
