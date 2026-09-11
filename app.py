@@ -1,20 +1,19 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB O/U cold-start fast route live.
+"""Kyre Sports AI Streamlit entrypoint — exact CFB O/U team logos live.
 
-Router V77 preserves the certified V76 behavior while allowing an already-active
-College Football -> Over/Under session to start without eagerly importing the
-historical V63-V76 router spine. Non-fast routes still lazy-load frozen Router
-V76 unchanged.
+Router V78 preserves the certified V77 cold-start fast route while advancing
+only College Football -> Over/Under from Clean Page V35 to Clean Page V36.
+V36 replaces the network-heavy, name-based logo fallback path with exact ESPN
+team-ID logo resolution only.
 
-Clean Page V35 remains the active CFB Over/Under page, including freshness-safe
-market snapshot reuse, parallel analysis prewarm, cache-stable analysis, the
-performance profiler, official ESPN identity recovery, and Schedule V7 future
-slate coverage.
+Clean Page V36 otherwise preserves freshness-safe market snapshot reuse,
+parallel analysis prewarm, cache-stable analysis, the performance profiler,
+official ESPN identity recovery, and Schedule V7 future-slate coverage.
 
 Permanent protections remain unchanged: frozen V14 projection math, no fuzzy
 game matching, no synthetic IDs, and 0.0% sportsbook projection influence.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11.
+STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11.
 """
 from __future__ import annotations
 
@@ -47,13 +46,16 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v74 import render_app as _frozen_v74_render_app
     from streamlit_memory_lazy_router_v75 import render_app as _frozen_v75_render_app
     from streamlit_memory_lazy_router_v76 import render_app as _frozen_v76_render_app
+    from streamlit_memory_lazy_router_v77 import render_app as _frozen_v77_render_app
+    from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
 
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
+FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
