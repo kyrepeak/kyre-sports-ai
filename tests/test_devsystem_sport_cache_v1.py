@@ -61,13 +61,19 @@ def test_main_cache_seed_is_trusted_scoped_and_key_aligned():
 
     for marker in (
         'devsystem-browser-venv-',
-        'devsystem-playwright-',
         'devsystem-cfb-venv-',
         'devsystem-mlb-venv-',
         'devsystem-wnba-venv-',
     ):
         assert marker in targeted
         assert marker in seed
+
+    assert 'devsystem-playwright-' not in targeted
+    assert 'devsystem-playwright-' not in seed
+    assert 'Restore Playwright browser binaries' not in targeted
+    assert 'Restore Playwright browser binaries' not in seed
+    assert 'python -m playwright install chromium' not in targeted
+    assert 'python -m playwright install chromium' not in seed
 
     assert 'devsystem/sport_cache_epoch_v1.txt' in seed
     assert 'devsystem/browser_cache_epoch_v1.txt' in seed
