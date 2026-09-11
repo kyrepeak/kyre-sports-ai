@@ -3,7 +3,6 @@ name: CFB market identity snapshot V1 refresh
 on:
   push:
     branches:
-      - main
       - cfb-market-identity-snapshot-v1
   schedule:
     - cron: "11 * * * *"
@@ -85,7 +84,7 @@ jobs:
           PY
 
   refresh:
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.actor != 'github-actions[bot]'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     concurrency:

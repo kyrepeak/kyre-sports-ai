@@ -3,7 +3,6 @@ name: CFB runtime snapshot V2 refresh
 on:
   push:
     branches:
-      - main
       - cfb-runtime-snapshot-auto-refresh-v2
   schedule:
     - cron: "19 * * * *"
@@ -110,7 +109,7 @@ jobs:
           PY
 
   refresh:
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.actor != 'github-actions[bot]'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     concurrency:
       group: cfb-runtime-snapshot-v2-refresh
