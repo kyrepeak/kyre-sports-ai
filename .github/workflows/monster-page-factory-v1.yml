@@ -1,0 +1,80 @@
+name: Monster Page Factory V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/monster_page_factory_v1.py"
+      - "tests/test_monster_page_factory_v1.py"
+      - ".github/workflows/monster-page-factory-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/monster_page_factory_v1.py"
+      - "tests/test_monster_page_factory_v1.py"
+      - ".github/workflows/monster-page-factory-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-page-factory-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  monster-page-factory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install Page Factory test dependency
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Page Factory
+        run: |
+          python -m py_compile sports_api/monster_page_factory_v1.py
+
+      - name: Run Page Factory contracts
+        run: |
+          python -m pytest -q tests/test_monster_page_factory_v1.py
+
+      - name: Prove new NFL totals shell is generated from the shared factory
+        run: |
+          python -m sports_api.monster_page_factory_v1 --preset totals --sport NFL --json > /tmp/nfl-totals-page.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path('/tmp/nfl-totals-page.json').read_text())
+          assert payload['factory_version'] == 'MONSTER_PAGE_FACTORY_V1'
+          assert payload['sport'] == 'NFL'
+          assert payload['market'] == 'Game Total'
+          assert len(payload['components']) == 10
+          assert payload['projection_weight'] == 0.0
+          assert payload['may_modify_projection'] is False
+          assert payload['may_modify_source_data'] is False
+          print('NFL totals shell:', ' -> '.join(c['key'] for c in payload['components']))
+          PY
+
+      - name: Prove factory remains outside production entrypoints
+        run: |
+          python - <<'PY'
+          from sports_api.monster_dependency_map_v1 import build_dependency_map
+
+          graph = build_dependency_map('.')
+          report = graph.impact_report('sports_api/monster_page_factory_v1.py')
+          assert report['status'] == 'OK'
+          assert report['impacted_entrypoints'] == []
+          print(f"factory blast_radius={report['blast_radius']} entrypoints={report['impacted_entrypoints']}")
+          PY
