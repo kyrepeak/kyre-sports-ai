@@ -386,11 +386,41 @@ jobs:
       - core-smoke
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
       - name: Aggregate every required DevSystem lane
+        shell: bash
         env:
-          DEVSYSTEM_NEEDS_JSON: ${{ toJSON(needs) }}
-        run: python devsystem/final_gate_v1.py
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          WORKFLOW_HYGIENE_RESULT: ${{ needs.workflow-hygiene.result }}
+          PERMANENT_CONTRACT_RESULT: ${{ needs.permanent-contract.result }}
+          REGRESSION_SHIELD_RESULT: ${{ needs.regression-shield.result }}
+          BROWSER_QA_RESULT: ${{ needs.browser-qa.result }}
+          CFB_CRITICAL_RESULT: ${{ needs.cfb-critical.result }}
+          MLB_CRITICAL_RESULT: ${{ needs.mlb-critical.result }}
+          WNBA_CRITICAL_RESULT: ${{ needs.wnba-critical.result }}
+          CORE_SMOKE_RESULT: ${{ needs.core-smoke.result }}
+        run: |
+          set -euo pipefail
+          allowed="success skipped"
+          failed=0
+          for name in \
+            CLASSIFY_RESULT \
+            WORKFLOW_HYGIENE_RESULT \
+            PERMANENT_CONTRACT_RESULT \
+            REGRESSION_SHIELD_RESULT \
+            BROWSER_QA_RESULT \
+            CFB_CRITICAL_RESULT \
+            MLB_CRITICAL_RESULT \
+            WNBA_CRITICAL_RESULT \
+            CORE_SMOKE_RESULT
+          do
+            result="${!name:-}"
+            printf '%s=%s\n' "$name" "${result:-unknown}"
+            if ! grep -qw -- "$result" <<< "$allowed"; then
+              failed=1
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "DEVSYSTEM_FINAL_GATE_BLOCKED"
+            exit 1
+          fi
+          echo "DEVSYSTEM_FINAL_GATE_GREEN"
