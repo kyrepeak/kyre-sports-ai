@@ -55,10 +55,14 @@ jobs:
           CURRENT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            python devsystem/change_classifier_v1.py --manual --github-output "$GITHUB_OUTPUT"
+            python devsystem/change_classifier_v1.py \
+              --manual \
+              --github-output "$GITHUB_OUTPUT"
             exit 0
           fi
+
           if [ "$EVENT_NAME" = "pull_request" ]; then
             base="$PR_BASE"
             head="$PR_HEAD"
@@ -66,10 +70,15 @@ jobs:
             base="$PUSH_BEFORE"
             head="$CURRENT_SHA"
           fi
+
           if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
             base="$(git rev-parse HEAD^ 2>/dev/null || git rev-parse HEAD)"
           fi
-          python devsystem/change_classifier_v1.py --base "$base" --head "$head" --github-output "$GITHUB_OUTPUT"
+
+          python devsystem/change_classifier_v1.py \
+            --base "$base" \
+            --head "$head" \
+            --github-output "$GITHUB_OUTPUT"
 
   workflow-hygiene:
     runs-on: ubuntu-24.04
@@ -81,13 +90,20 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
+
           manifest = Path("devsystem/legacy_broad_pr_workflows_2026-09-09.txt")
-          paths = [line.strip() for line in manifest.read_text(encoding="utf-8").splitlines() if line.strip() and not line.lstrip().startswith("#")]
+          paths = [
+              line.strip()
+              for line in manifest.read_text(encoding="utf-8").splitlines()
+              if line.strip() and not line.lstrip().startswith("#")
+          ]
           failures = []
           for item in paths:
               text = Path(item).read_text(encoding="utf-8")
-              if re.search(r"(?m)^  pull_request\s*:", text): failures.append(item)
-              if not re.search(r"(?m)^  (workflow_dispatch|push|schedule)\s*:", text): failures.append(item + " [no retained trigger]")
+              if re.search(r"(?m)^  pull_request\s*:", text):
+                  failures.append(item)
+              if not re.search(r"(?m)^  (workflow_dispatch|push|schedule)\s*:", text):
+                  failures.append(item + " [no retained trigger]")
           if failures:
               print("LEGACY_PR_FANOUT_STILL_ACTIVE")
               print("\n".join(failures))
