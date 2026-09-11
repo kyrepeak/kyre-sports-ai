@@ -1,8 +1,9 @@
 """Production observability primitives for Kyre Sports API.
 
 This module is intentionally additive and model-agnostic. It exposes deployment
-identity, deterministic error fingerprints, request correlation, and safe
-runtime diagnostics without changing any sports projection/data logic.
+identity, deterministic error fingerprints, request correlation, safe runtime
+diagnostics, and measurement-only performance diagnosis without changing any
+sports projection/data logic.
 
 The dependency-light helpers intentionally import without FastAPI installed so
 the permanent DevSystem can validate them early in CI. FastAPI/Starlette are
@@ -20,6 +21,12 @@ import time
 import uuid
 from typing import Any
 
+from sports_api.monster_performance_profiler_v1 import (
+    diagnose_trace,
+    header_token,
+    reset_trace,
+    start_trace,
+)
 from sports_api.posthog_error_radar_v1 import capture_runtime_exception
 
 OBSERVABILITY_VERSION = "KYRE_OBSERVABILITY_V1"
@@ -135,6 +142,8 @@ def diagnostics_snapshot() -> dict[str, Any]:
             "deploy_commit_header": "X-Kyre-Deploy-Commit",
             "deploy_branch_header": "X-Kyre-Deploy-Branch",
             "duration_header": "X-Kyre-Duration-Ms",
+            "performance_grade_header": "X-Kyre-Perf-Grade",
+            "performance_bottleneck_header": "X-Kyre-Perf-Bottleneck",
         },
     }
 
@@ -149,7 +158,7 @@ def _structured_log(event: str, payload: dict[str, Any], *, level: int = logging
 
 
 def install_observability(app: Any) -> None:
-    """Install request correlation and unhandled-error fingerprinting once."""
+    """Install request correlation, error fingerprinting, and performance diagnosis."""
     # Keep FastAPI dependencies out of module import so the pure contract helpers
     # remain testable in the earliest, dependency-light DevSystem lane.
     from starlette.responses import JSONResponse
@@ -176,68 +185,102 @@ def install_observability(app: Any) -> None:
     async def kyre_observability_middleware(request, call_next):
         request_id = request_id_from_header(request.headers.get("x-request-id"))
         request.state.kyre_request_id = request_id
+        perf_trace, perf_token = start_trace("sports_api", path=request.url.path)
+        request.state.kyre_performance_trace = perf_trace
         started = time.perf_counter()
 
         try:
-            response = await call_next(request)
-        except Exception as exc:  # pragma: no cover - exercised in runtime/contract tests
-            duration_ms = round((time.perf_counter() - started) * 1000.0, 2)
-            fingerprint = error_fingerprint(exc, path=request.url.path)
-            runtime = runtime_metadata()
-            payload = {
-                "request_id": request_id,
-                "error_fingerprint": fingerprint,
-                "error_type": f"{exc.__class__.__module__}.{exc.__class__.__qualname__}",
-                "error_message": sanitize_error_message(str(exc)),
-                "method": request.method,
-                "path": request.url.path,
-                "duration_ms": duration_ms,
-                "deploy_branch": runtime["deploy_branch"],
-                "deploy_commit": runtime["deploy_commit"],
-            }
-            _structured_log("KYRE_UNHANDLED_ERROR", payload, level=logging.ERROR)
-            capture_runtime_exception(
-                exc,
-                error_fingerprint=fingerprint,
-                surface="sports_api",
-                request_id=request_id,
-                path=request.url.path,
-                method=request.method,
-                properties={
-                    "duration_ms": duration_ms,
-                    "error_type": payload["error_type"],
-                },
-            )
-            response = JSONResponse(
-                status_code=500,
-                content={
-                    "status": "error",
-                    "message": "Internal server error",
+            try:
+                response = await call_next(request)
+            except Exception as exc:  # pragma: no cover - exercised in runtime/contract tests
+                duration_ms = round((time.perf_counter() - started) * 1000.0, 2)
+                fingerprint = error_fingerprint(exc, path=request.url.path)
+                runtime = runtime_metadata()
+                payload = {
                     "request_id": request_id,
                     "error_fingerprint": fingerprint,
-                },
-            )
-
-        duration_ms = round((time.perf_counter() - started) * 1000.0, 2)
-        runtime = runtime_metadata()
-        response.headers["X-Request-ID"] = request_id
-        response.headers["X-Kyre-Deploy-Commit"] = str(runtime["deploy_commit"])[:40]
-        response.headers["X-Kyre-Deploy-Branch"] = str(runtime["deploy_branch"])[:128]
-        response.headers["X-Kyre-Duration-Ms"] = f"{duration_ms:.2f}"
-
-        if response.status_code >= 400:
-            _structured_log(
-                "KYRE_HTTP_NON_SUCCESS",
-                {
-                    "request_id": request_id,
+                    "error_type": f"{exc.__class__.__module__}.{exc.__class__.__qualname__}",
+                    "error_message": sanitize_error_message(str(exc)),
                     "method": request.method,
                     "path": request.url.path,
-                    "status_code": response.status_code,
                     "duration_ms": duration_ms,
                     "deploy_branch": runtime["deploy_branch"],
                     "deploy_commit": runtime["deploy_commit"],
-                },
-                level=logging.WARNING if response.status_code < 500 else logging.ERROR,
+                }
+                _structured_log("KYRE_UNHANDLED_ERROR", payload, level=logging.ERROR)
+                capture_runtime_exception(
+                    exc,
+                    error_fingerprint=fingerprint,
+                    surface="sports_api",
+                    request_id=request_id,
+                    path=request.url.path,
+                    method=request.method,
+                    properties={
+                        "duration_ms": duration_ms,
+                        "error_type": payload["error_type"],
+                    },
+                )
+                response = JSONResponse(
+                    status_code=500,
+                    content={
+                        "status": "error",
+                        "message": "Internal server error",
+                        "request_id": request_id,
+                        "error_fingerprint": fingerprint,
+                    },
+                )
+
+            duration_ms = round((time.perf_counter() - started) * 1000.0, 2)
+            perf_trace.add("api.request.total", duration_ms, category="api")
+            perf_diagnosis = diagnose_trace(perf_trace, total_ms=duration_ms)
+            request.state.kyre_performance_diagnosis = perf_diagnosis
+
+            runtime = runtime_metadata()
+            response.headers["X-Request-ID"] = request_id
+            response.headers["X-Kyre-Deploy-Commit"] = str(runtime["deploy_commit"])[:40]
+            response.headers["X-Kyre-Deploy-Branch"] = str(runtime["deploy_branch"])[:128]
+            response.headers["X-Kyre-Duration-Ms"] = f"{duration_ms:.2f}"
+            response.headers["X-Kyre-Perf-Grade"] = header_token(perf_diagnosis["grade"], limit=24)
+            response.headers["X-Kyre-Perf-Bottleneck"] = header_token(
+                perf_diagnosis["bottleneck"],
+                limit=96,
             )
 
-        return response
+            if perf_diagnosis["grade"] in {"SLOW", "CRITICAL"}:
+                _structured_log(
+                    "KYRE_SLOW_REQUEST",
+                    {
+                        "request_id": request_id,
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status_code": response.status_code,
+                        "duration_ms": duration_ms,
+                        "performance_grade": perf_diagnosis["grade"],
+                        "bottleneck": perf_diagnosis["bottleneck"],
+                        "bottleneck_category": perf_diagnosis["bottleneck_category"],
+                        "bottleneck_ms": perf_diagnosis["bottleneck_ms"],
+                        "slow_span_count": perf_diagnosis["slow_span_count"],
+                        "deploy_branch": runtime["deploy_branch"],
+                        "deploy_commit": runtime["deploy_commit"],
+                    },
+                    level=logging.WARNING,
+                )
+
+            if response.status_code >= 400:
+                _structured_log(
+                    "KYRE_HTTP_NON_SUCCESS",
+                    {
+                        "request_id": request_id,
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status_code": response.status_code,
+                        "duration_ms": duration_ms,
+                        "deploy_branch": runtime["deploy_branch"],
+                        "deploy_commit": runtime["deploy_commit"],
+                    },
+                    level=logging.WARNING if response.status_code < 500 else logging.ERROR,
+                )
+
+            return response
+        finally:
+            reset_trace(perf_token)
