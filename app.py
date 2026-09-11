@@ -11,8 +11,7 @@ is attempted. It does not change schedule identity, sportsbook semantics,
 projection inputs, projection math, ranking, qualification, or selection.
 
 Permanent protections remain unchanged: frozen V14 projection math, official
-ESPN identity recovery, no fuzzy game matching, no synthetic IDs, and 0.0%
-sportsbook projection influence.
+ESPN identity recovery, no fuzzy game matching, no synthetic IDs, and 0.0% sportsbook projection influence.
 
 Deployment heartbeat:
 STREAMLIT_MAIN_V72_CFB_OU_PERFORMANCE_PROFILER_2026-09-11.
