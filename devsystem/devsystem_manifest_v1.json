@@ -60,11 +60,10 @@
       "critical_job": "nfl-critical",
       "critical_tests": [
         "tests/test_nfl_foundation_v1.py",
-        "tests/test_nfl_passing_yards_compact_v1.py",
-        "tests/test_nfl_passing_yards_step1_identity_v1.py"
+        "tests/test_nfl_passing_yards_compact_v1.py"
       ],
-      "browser_coverage": "NFL -> Passing Yards compact workspace with Step 1 verified matchup + QB identity",
-      "production_probe": "Streamlit NFL Passing Yards Step 1 route; verified ESPN matchup/QB identity only; model remains off"
+      "browser_coverage": "NFL -> Passing Yards compact verified-slate workspace",
+      "production_probe": "Streamlit NFL Passing Yards verified slate route; model remains off until dedicated projection steps are certified"
     },
     "nba": {
       "status": "planned",
