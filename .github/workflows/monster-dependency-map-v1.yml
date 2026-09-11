@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "**/*.py"
+      - "sports_api/monster_dependency_map_v1.py"
       - "tests/test_monster_dependency_map_v1.py"
       - ".github/workflows/monster-dependency-map-v1.yml"
   push:
