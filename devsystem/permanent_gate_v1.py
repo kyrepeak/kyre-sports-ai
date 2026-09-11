@@ -126,6 +126,8 @@ def validate() -> dict:
         "DEVSYSTEM_FAILURE_HISTORY_ARTIFACT_UNAVAILABLE",
         "DEVSYSTEM_FAILURE_HISTORY_UNAVAILABLE",
         "DEVSYSTEM_FAILURE_HISTORY_LIVE_CERTIFIED",
+        "class NoRedirect",
+        "Do not forward GH_TOKEN off github.com.",
         "--history-json",
         "retention-days: 30",
         "DEVSYSTEM_FAILURE_LOG_EXCERPT_UNAVAILABLE",
