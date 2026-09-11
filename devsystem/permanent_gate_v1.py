@@ -13,6 +13,7 @@ REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/final_gate_v1.py",
     "devsystem/failure_triage_v1.py",
     "devsystem/failure_packet_v1.py",
+    "devsystem/failure_log_excerpt_v1.py",
     "devsystem/browser_qa_v1.py",
     "devsystem/production_verify_v1.py",
     "devsystem/production_targets_v1.json",
@@ -21,10 +22,12 @@ REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/phase2_closure_v1.json",
     "tests/test_devsystem_failure_triage_v1.py",
     "tests/test_devsystem_failure_packet_v1.py",
+    "tests/test_devsystem_failure_log_excerpt_v1.py",
     "sports_api/observability_v1.py",
     "devsystem/README.md",
     ".github/pull_request_template.md",
     ".github/workflows/devsystem-targeted-ci.yml",
+    ".github/workflows/devsystem-failure-packet-v1.yml",
     ".github/workflows/devsystem-production-verification.yml",
     ".github/workflows/devsystem-api-observability-v1.yml",
 )
@@ -115,6 +118,25 @@ def validate() -> dict:
             "targeted CI permanent markers missing: " + " | ".join(workflow_missing)
         )
 
+    failure_packet_workflow = (
+        ROOT / ".github/workflows/devsystem-failure-packet-v1.yml"
+    ).read_text(encoding="utf-8")
+    failure_packet_markers = (
+        "actions/jobs/{job_id}/logs",
+        "extract_log_excerpt",
+        'lane["log_excerpt"] = log_excerpt',
+        "tests/test_devsystem_failure_log_excerpt_v1.py",
+        "DEVSYSTEM_FAILURE_LOG_EXCERPT_UNAVAILABLE",
+    )
+    packet_missing = [
+        marker for marker in failure_packet_markers
+        if marker not in failure_packet_workflow
+    ]
+    if packet_missing:
+        raise PermanentGateFailure(
+            "failure packet log evidence drift: " + " | ".join(packet_missing)
+        )
+
     prod = (ROOT / ".github/workflows/devsystem-production-verification.yml").read_text(
         encoding="utf-8"
     )
@@ -152,6 +174,7 @@ def validate() -> dict:
         "phase2_completed_steps": closure["completed_steps"],
         "predictive_failure_triage_permanent": True,
         "automatic_failure_evidence_wiring_permanent": True,
+        "failed_job_log_evidence_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
