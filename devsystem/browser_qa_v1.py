@@ -34,6 +34,7 @@ REQUIRED_SPORTS = (
 )
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
+CFB_MARKET_LABEL = "🎯 CFB Market"
 CFB_REQUIRED_MARKERS = (
     "CFB O/U • CLEAN PAGE V30 ACTIVE",
     "FUTURE SLATE COVERAGE ACTIVE",
@@ -52,6 +53,8 @@ FORBIDDEN_ERROR_MARKERS = (
     "SyntaxError:",
     "NameError:",
 )
+SELECTOR_TIMEOUT_MS = 5000
+CFB_RERUN_TIMEOUT_MS = 30000
 
 
 class BrowserQAFailure(RuntimeError):
@@ -178,10 +181,11 @@ def _wait_for_text(frame, text: str, timeout_seconds: float = 45.0) -> str:
 def _read_sport_options(page, frame) -> list[str]:
     combo = frame.get_by_role("combobox").nth(0)
     combo.click()
-    page.wait_for_timeout(500)
+    options_locator = page.get_by_role("option")
+    options_locator.first.wait_for(state="visible", timeout=SELECTOR_TIMEOUT_MS)
     options = [
         value.strip()
-        for value in page.get_by_role("option").all_inner_texts()
+        for value in options_locator.all_inner_texts()
         if value.strip()
     ]
     page.keyboard.press("Escape")
@@ -196,10 +200,8 @@ def _choose(page, frame, combo_index: int, value: str) -> None:
         )
     combo = combos.nth(combo_index)
     combo.click()
-    page.wait_for_timeout(250)
     page.keyboard.type(value)
     page.keyboard.press("Enter")
-    page.wait_for_timeout(1800)
 
 
 def run_browser_qa(
@@ -244,15 +246,18 @@ def run_browser_qa(
 
             _choose(page, frame, 0, CFB_SPORT)
 
-            deadline = time.monotonic() + 30.0
-            while time.monotonic() < deadline:
-                if frame.get_by_role("combobox").count() >= 2:
-                    break
-                page.wait_for_timeout(1000)
-            else:
-                raise BrowserQAFailure(
-                    "CFB route did not expose a market combobox"
-                )
+            # The initial MLB page can already have two comboboxes, so a count
+            # is not a safe rerun barrier. Wait for the CFB-specific market
+            # selector that only exists after Streamlit finishes the sport rerun.
+            cfb_market_combo = frame.get_by_role(
+                "combobox",
+                name=CFB_MARKET_LABEL,
+                exact=True,
+            )
+            cfb_market_combo.wait_for(
+                state="visible",
+                timeout=CFB_RERUN_TIMEOUT_MS,
+            )
 
             _choose(page, frame, 1, CFB_MARKET)
             body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[0], 60.0)
