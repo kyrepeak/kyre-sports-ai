@@ -21,7 +21,8 @@ import uuid
 from typing import Any
 
 OBSERVABILITY_VERSION = "KYRE_OBSERVABILITY_V1"
-EXPECTED_PRODUCTION_BRANCH = "main"
+CANONICAL_SOURCE_BRANCH = "main"
+DEFAULT_RENDER_RUNTIME_BRANCH = "mlb-step17b-shared-host-cert"
 _PROCESS_STARTED_MONOTONIC = time.monotonic()
 _LOGGER = logging.getLogger("kyre.observability")
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
@@ -68,6 +69,15 @@ def runtime_metadata() -> dict[str, Any]:
     external_url = _env_first("RENDER_EXTERNAL_URL")
     instance = _env_first("RENDER_INSTANCE_ID", "HOSTNAME")
     environment = "render" if os.getenv("RENDER") else _env_first("KYRE_ENV", default="local")
+    expected_runtime_branch = _env_first(
+        "KYRE_EXPECTED_RUNTIME_BRANCH",
+        default=DEFAULT_RENDER_RUNTIME_BRANCH if environment == "render" else "unknown",
+    )
+    branch_aligned = (
+        expected_runtime_branch == "unknown"
+        or branch == "unknown"
+        or branch == expected_runtime_branch
+    )
 
     return {
         "observability_version": OBSERVABILITY_VERSION,
@@ -76,8 +86,9 @@ def runtime_metadata() -> dict[str, Any]:
         "environment": environment,
         "deploy_branch": branch,
         "deploy_commit": commit,
-        "expected_production_branch": EXPECTED_PRODUCTION_BRANCH,
-        "branch_aligned": branch in {EXPECTED_PRODUCTION_BRANCH, "unknown"},
+        "canonical_source_branch": CANONICAL_SOURCE_BRANCH,
+        "expected_runtime_branch": expected_runtime_branch,
+        "branch_aligned": branch_aligned,
         "instance": instance,
         "external_url": external_url,
         "python_version": platform.python_version(),
@@ -96,12 +107,13 @@ def readiness_snapshot() -> dict[str, Any]:
             "process_running": True,
             "python_runtime": bool(runtime["python_version"]),
             "deployment_identity_available": runtime["deploy_commit"] != "unknown",
-            "production_branch_alignment": runtime["branch_aligned"],
+            "runtime_branch_alignment": runtime["branch_aligned"],
         },
         "deployment": {
             "branch": runtime["deploy_branch"],
             "commit": runtime["deploy_commit"],
-            "expected_branch": EXPECTED_PRODUCTION_BRANCH,
+            "canonical_source_branch": CANONICAL_SOURCE_BRANCH,
+            "expected_runtime_branch": runtime["expected_runtime_branch"],
             "aligned": runtime["branch_aligned"],
         },
     }
@@ -153,6 +165,7 @@ def install_observability(app: Any) -> None:
             "environment": startup["environment"],
             "deploy_branch": startup["deploy_branch"],
             "deploy_commit": startup["deploy_commit"],
+            "expected_runtime_branch": startup["expected_runtime_branch"],
             "branch_aligned": startup["branch_aligned"],
         },
     )
