@@ -52,6 +52,7 @@ FORBIDDEN_ERROR_MARKERS = (
     "SyntaxError:",
     "NameError:",
 )
+SELECTOR_TIMEOUT_MS = 5000
 
 
 class BrowserQAFailure(RuntimeError):
@@ -178,10 +179,11 @@ def _wait_for_text(frame, text: str, timeout_seconds: float = 45.0) -> str:
 def _read_sport_options(page, frame) -> list[str]:
     combo = frame.get_by_role("combobox").nth(0)
     combo.click()
-    page.wait_for_timeout(500)
+    options_locator = page.get_by_role("option")
+    options_locator.first.wait_for(state="visible", timeout=SELECTOR_TIMEOUT_MS)
     options = [
         value.strip()
-        for value in page.get_by_role("option").all_inner_texts()
+        for value in options_locator.all_inner_texts()
         if value.strip()
     ]
     page.keyboard.press("Escape")
@@ -196,10 +198,9 @@ def _choose(page, frame, combo_index: int, value: str) -> None:
         )
     combo = combos.nth(combo_index)
     combo.click()
-    page.wait_for_timeout(250)
-    page.keyboard.type(value)
-    page.keyboard.press("Enter")
-    page.wait_for_timeout(1800)
+    option = page.get_by_role("option", name=value, exact=True)
+    option.wait_for(state="visible", timeout=SELECTOR_TIMEOUT_MS)
+    option.click()
 
 
 def run_browser_qa(
