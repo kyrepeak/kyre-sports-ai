@@ -36,11 +36,16 @@ def test_final_gate_accepts_success_and_skipped_only():
     })
     assert result["status"] == "GREEN"
 
-    with pytest.raises(module.FinalGateFailure):
+    with pytest.raises(module.FinalGateFailure) as exc:
         module.evaluate({
             "classify": {"result": "success"},
             "cfb-critical": {"result": "failure"},
         })
+    message = str(exc.value)
+    assert "DEVSYSTEM_FAILURE_TRIAGE" in message
+    assert "primary=cfb-critical" in message
+    assert "layer=cfb" in message
+    assert "official-ID contracts" in message
 
 
 def test_production_contract_separates_hosting_config_from_release_parity():
