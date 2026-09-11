@@ -198,9 +198,8 @@ def _choose(page, frame, combo_index: int, value: str) -> None:
         )
     combo = combos.nth(combo_index)
     combo.click()
-    option = page.get_by_role("option", name=value, exact=True)
-    option.wait_for(state="visible", timeout=SELECTOR_TIMEOUT_MS)
-    option.click()
+    page.keyboard.type(value)
+    page.keyboard.press("Enter")
 
 
 def run_browser_qa(
