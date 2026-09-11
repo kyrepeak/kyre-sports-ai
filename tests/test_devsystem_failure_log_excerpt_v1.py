@@ -44,7 +44,26 @@ def test_extract_log_excerpt_redacts_common_secrets():
     assert "abc123" not in excerpt
     assert "secret-token" not in excerpt
     assert "hunter2" not in excerpt
-    assert excerpt.count("[REDACTED]") == 3
+    assert "Authorization: Bearer [REDACTED]" in excerpt
+    assert "token=[REDACTED]" in excerpt
+    assert "password: [REDACTED]" in excerpt
+    assert "AssertionError" in excerpt
+
+
+def test_extract_log_excerpt_accepts_github_actions_premasked_secret():
+    module = _load()
+    raw = (
+        "Authorization: ***\n"
+        "token=secret-token\n"
+        "password: hunter2\n"
+        "AssertionError: protected invariant failed"
+    )
+    excerpt = module.extract_log_excerpt(raw)
+    assert "Authorization: ***" in excerpt
+    assert "secret-token" not in excerpt
+    assert "hunter2" not in excerpt
+    assert "token=[REDACTED]" in excerpt
+    assert "password: [REDACTED]" in excerpt
     assert "AssertionError" in excerpt
 
 
