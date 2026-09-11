@@ -167,12 +167,59 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-      - name: Install browser QA dependencies
+
+      - name: Restore browser QA virtualenv
+        id: browser-venv-cache
+        uses: actions/cache@v4
+        with:
+          path: .venv-browser-qa
+          key: devsystem-browser-venv-${{ runner.os }}-py312-${{ hashFiles('requirements.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser QA virtualenv on cache miss
+        if: steps.browser-venv-cache.outputs.cache-hit != 'true'
+        shell: bash
         run: |
-          python -m pip install --disable-pip-version-check -q -r requirements.txt
-          python -m pip install --disable-pip-version-check -q pytest requests playwright
-          python -m playwright install --with-deps chromium
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q pytest requests playwright
+
+      - name: Activate browser QA virtualenv
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Resolve Playwright cache identity
+        id: playwright-meta
+        shell: bash
+        run: |
+          version="$(.venv-browser-qa/bin/python -c 'import importlib.metadata as m; print(m.version("playwright"))')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "DEVSYSTEM_PLAYWRIGHT_VERSION=$version"
+
+      - name: Restore Playwright browser binaries
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: devsystem-playwright-${{ runner.os }}-${{ steps.playwright-meta.outputs.version }}-${{ hashFiles('devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Install Chromium on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: python -m playwright install chromium
+
+      - name: Verify Chromium can launch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page()
+              page.set_content('<title>DevSystem Browser Cache</title>')
+              assert page.title() == 'DevSystem Browser Cache'
+              browser.close()
+          print('DEVSYSTEM_BROWSER_RUNTIME_GREEN')
+          PY
+
       - name: Self-test browser QA contract
         run: python -m pytest -q tests/test_devsystem_browser_qa_v1.py
       - name: Start branch-local Streamlit
