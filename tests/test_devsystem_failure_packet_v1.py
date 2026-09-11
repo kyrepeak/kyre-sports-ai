@@ -71,3 +71,76 @@ def test_packet_captures_all_failed_lanes_in_deterministic_order():
     jobs = [item["job"] for item in packet["triage"]["failures"]]
     assert jobs == ["browser-qa", "wnba-critical"]
     assert packet["triage"]["primary"]["job"] == "browser-qa"
+
+
+def test_failed_step_evidence_automatically_triggers_browser_signature(tmp_path):
+    module = _load()
+    needs = {
+        "browser-qa": {"result": "failure"},
+        "cfb-critical": {"result": "success"},
+    }
+    packet = module.build_packet(
+        needs,
+        failed_steps={
+            "browser-qa": [
+                "Drive the real Streamlit UI with Playwright: locator timeout waiting for combobox"
+            ]
+        },
+    )
+    primary = packet["triage"]["primary"]
+    assert primary["job"] == "browser-qa"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
+    assert "selector/readiness" in primary["diagnosis"]
+    # Packet enrichment must not mutate the caller's raw needs payload.
+    assert "evidence" not in needs["browser-qa"]
+
+    module.write_packet(packet, tmp_path)
+    markdown = (tmp_path / "failure-packet.md").read_text()
+    assert "browser-selector-race" in markdown
+    assert "**Confidence:** high" in markdown
+
+
+def test_failed_step_assertion_evidence_refines_sport_lane_without_changing_owner():
+    module = _load()
+    packet = module.build_packet(
+        {"cfb-critical": {"result": "failure"}},
+        failed_steps={
+            "cfb-critical": [
+                "FAILED tests/test_cfb_guard.py::test_frozen_contract - AssertionError"
+            ]
+        },
+    )
+    primary = packet["triage"]["primary"]
+    assert primary["job"] == "cfb-critical"
+    assert primary["layer"] == "cfb"
+    assert primary["evidence_signal"] == "test-assertion"
+    assert primary["confidence"] == "high"
+
+
+def test_unknown_failed_step_evidence_stays_low_confidence():
+    module = _load()
+    packet = module.build_packet(
+        {"mlb-critical": {"result": "failure"}},
+        failed_steps={"mlb-critical": ["Run current MLB critical path ended unexpectedly"]},
+    )
+    primary = packet["triage"]["primary"]
+    assert primary["job"] == "mlb-critical"
+    assert primary["evidence_signal"] == "unclassified-evidence"
+    assert primary["confidence"] == "low"
+
+
+def test_explicit_lane_evidence_wins_over_failed_step_fallback():
+    module = _load()
+    packet = module.build_packet(
+        {
+            "core-smoke": {
+                "result": "failure",
+                "evidence": "ModuleNotFoundError: No module named 'sports_api'",
+            }
+        },
+        failed_steps={"core-smoke": ["timeout waiting for unrelated cleanup"]},
+    )
+    primary = packet["triage"]["primary"]
+    assert primary["evidence_signal"] == "python-import"
+    assert primary["confidence"] == "high"
