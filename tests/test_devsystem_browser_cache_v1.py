@@ -20,6 +20,22 @@ def test_browser_cache_contract_is_present_and_fail_safe():
     assert 'DEVSYSTEM_BROWSER_RUNTIME_GREEN' in text
 
 
+def test_browser_venv_cache_is_bound_to_exact_setup_python_version():
+    text = WORKFLOW.read_text(encoding='utf-8')
+
+    assert 'id: browser-python' in text
+    assert 'steps.browser-python.outputs.python-version' in text
+    assert 'devsystem-browser-venv-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-' in text
+
+
+def test_browser_cache_contract_tests_run_inside_protected_browser_lane():
+    text = WORKFLOW.read_text(encoding='utf-8')
+
+    assert 'Self-test browser QA and cache contracts' in text
+    assert 'tests/test_devsystem_browser_qa_v1.py' in text
+    assert 'tests/test_devsystem_browser_cache_v1.py' in text
+
+
 def test_browser_cache_avoids_expensive_with_deps_install_and_keeps_real_qa():
     text = WORKFLOW.read_text(encoding='utf-8')
 
