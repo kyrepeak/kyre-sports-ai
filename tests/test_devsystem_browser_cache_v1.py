@@ -1,0 +1,36 @@
+from pathlib import Path
+
+
+WORKFLOW = Path('.github/workflows/devsystem-targeted-ci.yml')
+EPOCH = Path('devsystem/browser_cache_epoch_v1.txt')
+
+
+def test_browser_cache_contract_is_present_and_fail_safe():
+    text = WORKFLOW.read_text(encoding='utf-8')
+
+    assert 'Restore browser QA virtualenv' in text
+    assert 'actions/cache@v4' in text
+    assert '.venv-browser-qa' in text
+    assert "steps.browser-venv-cache.outputs.cache-hit != 'true'" in text
+    assert 'Resolve Playwright cache identity' in text
+    assert '~/.cache/ms-playwright' in text
+    assert "steps.playwright-cache.outputs.cache-hit != 'true'" in text
+    assert 'python -m playwright install chromium' in text
+    assert 'Verify Chromium can launch' in text
+    assert 'DEVSYSTEM_BROWSER_RUNTIME_GREEN' in text
+
+
+def test_browser_cache_avoids_expensive_with_deps_install_and_keeps_real_qa():
+    text = WORKFLOW.read_text(encoding='utf-8')
+
+    assert 'playwright install --with-deps chromium' not in text
+    assert 'python devsystem/browser_qa_v1.py' in text
+    assert '--base-url http://127.0.0.1:8501' in text
+    assert 'Upload browser QA evidence' in text
+
+
+def test_browser_cache_epoch_is_explicit_and_versioned():
+    text = EPOCH.read_text(encoding='utf-8')
+
+    assert 'DEVSYSTEM_BROWSER_CACHE_EPOCH=1' in text
+    assert 'Bump the epoch' in text
