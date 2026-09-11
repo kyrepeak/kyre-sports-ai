@@ -13,11 +13,14 @@ REQUIRED_DEVSYSTEM_FILES = (
     "devsystem/browser_qa_v1.py",
     "devsystem/production_verify_v1.py",
     "devsystem/production_targets_v1.json",
+    "devsystem/production_contract_v1.py",
     "devsystem/regression_shield_v1.py",
+    "sports_api/observability_v1.py",
     "devsystem/README.md",
     ".github/pull_request_template.md",
     ".github/workflows/devsystem-targeted-ci.yml",
     ".github/workflows/devsystem-production-verification.yml",
+    ".github/workflows/devsystem-api-observability-v1.yml",
 )
 
 
@@ -105,6 +108,24 @@ def validate() -> dict:
     if "branches: [main]" not in prod:
         raise PermanentGateFailure("production verification must remain main-only")
 
+    api_observability = (
+        ROOT / ".github/workflows/devsystem-api-observability-v1.yml"
+    ).read_text(encoding="utf-8")
+    api_required_markers = (
+        "api-observability:",
+        "tests/test_sports_api_observability_v1.py",
+        "tests/test_devsystem_production_contract_v1.py",
+        "sports_api/observability_v1.py",
+    )
+    api_missing = [
+        marker for marker in api_required_markers
+        if marker not in api_observability
+    ]
+    if api_missing:
+        raise PermanentGateFailure(
+            "API observability workflow drift: " + " | ".join(api_missing)
+        )
+
     result = {
         "status": "GREEN",
         "active_domains": active,
@@ -113,6 +134,7 @@ def validate() -> dict:
         "critical_test_count": sum(
             len(domains[key]["critical_tests"]) for key in active
         ),
+        "api_observability_permanent": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
