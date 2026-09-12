@@ -4,8 +4,8 @@ V3 changes certification mechanics only. Production/runtime code is untouched.
 It keeps V2's ESPN transport hardening, but replaces two brittle Playwright
 interactions discovered by the live public run:
 
-* set the Streamlit slate date through the actual input value instead of
-  locale-dependent keystrokes;
+* set the Streamlit slate date atomically instead of locale-dependent segmented
+  keystrokes;
 * resolve selectbox options inside the app frame first (with a page fallback)
   instead of assuming options always live in the top-level page.
 
@@ -39,6 +39,16 @@ def _date_input(frame):
     return None
 
 
+def _calendar_value(value: str) -> str:
+    text = str(value or "").strip()
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%Y/%m/%d", "%m-%d-%Y", "%Y.%m.%d"):
+        try:
+            return datetime.strptime(text, fmt).date().isoformat()
+        except Exception:
+            pass
+    return ""
+
+
 def _set_slate_date_exact(page, frame, day: str) -> None:
     target = datetime.fromisoformat(day).date().isoformat()
     date_input = _date_input(frame)
@@ -46,54 +56,72 @@ def _set_slate_date_exact(page, frame, day: str) -> None:
         raise base.PublicProductionCertFailure("NFL Passing Yards slate-date input was not found")
 
     input_type = str(date_input.get_attribute("type") or "").strip().lower()
-    if input_type == "date":
-        # Playwright fill() uses yyyy-mm-dd for native date inputs and dispatches
-        # the browser input/change events Streamlit needs. This avoids segmented
-        # locale keystrokes turning 09/13/2026 into a different day.
-        date_input.fill(target)
-        date_input.press("Enter")
-    else:
-        # Fallback for a future Streamlit/BaseWeb text implementation. Use the
-        # native value setter so React receives real input/change events.
-        date_input.evaluate(
-            """(el, value) => {
-                const proto = Object.getPrototypeOf(el);
-                const desc = Object.getOwnPropertyDescriptor(proto, 'value')
-                    || Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
-                if (desc && desc.set) desc.set.call(el, value);
-                else el.value = value;
-                el.dispatchEvent(new Event('input', {bubbles: true}));
-                el.dispatchEvent(new Event('change', {bubbles: true}));
-                el.blur();
-            }""",
-            target,
+    placeholder = str(date_input.get_attribute("placeholder") or "").strip()
+    before = str(date_input.input_value() or "").strip()
+    print(
+        "PUBLIC_CERT_DATE_INPUT "
+        + json.dumps(
+            {"type": input_type, "placeholder": placeholder, "before": before, "target": target},
+            sort_keys=True,
+        )
+    )
+
+    # Native date inputs require ISO. Streamlit/BaseWeb currently exposes a text
+    # control in production, so try the common exact calendar formats atomically
+    # with Playwright fill(). fill() replaces the whole value in one event rather
+    # than walking segmented date fields one keystroke at a time.
+    day_obj = datetime.fromisoformat(target).date()
+    attempts = [target]
+    if input_type != "date":
+        attempts.extend(
+            [
+                day_obj.strftime("%m/%d/%Y"),
+                day_obj.strftime("%Y/%m/%d"),
+                day_obj.strftime("%m-%d-%Y"),
+            ]
         )
 
-    # Allow Streamlit's rerun to settle, then prove the control itself points at
-    # the exact ESPN event date before looking for a matchup.
-    deadline = time.monotonic() + 20.0
-    last_value = ""
-    while time.monotonic() < deadline:
-        page.wait_for_timeout(400)
+    seen: set[str] = set()
+    observations: list[dict[str, str]] = []
+    for fill_value in attempts:
+        if fill_value in seen:
+            continue
+        seen.add(fill_value)
         try:
             current = _date_input(frame)
             if current is None:
                 continue
-            last_value = str(current.input_value() or "").strip()
-            if last_value == target:
-                return
-            # Some text implementations display locale formatting. Compare only
-            # parsed calendar values when possible; never accept a different day.
-            for fmt in ("%m/%d/%Y", "%Y/%m/%d", "%Y-%m-%d"):
-                try:
-                    if datetime.strptime(last_value, fmt).date().isoformat() == target:
-                        return
-                except Exception:
-                    pass
-        except Exception:
+            current.fill(fill_value)
+            current.press("Enter")
+            page.keyboard.press("Tab")
+        except Exception as exc:
+            observations.append({"fill": fill_value, "error": f"{type(exc).__name__}: {exc}"[:220]})
             continue
+
+        deadline = time.monotonic() + 5.0
+        last_value = ""
+        while time.monotonic() < deadline:
+            page.wait_for_timeout(350)
+            try:
+                refreshed = _date_input(frame)
+                if refreshed is None:
+                    continue
+                last_value = str(refreshed.input_value() or "").strip()
+                if _calendar_value(last_value) == target or last_value == target:
+                    print(
+                        "PUBLIC_CERT_DATE_GREEN "
+                        + json.dumps({"fill": fill_value, "observed": last_value, "target": target}, sort_keys=True)
+                    )
+                    return
+            except Exception:
+                continue
+        observations.append({"fill": fill_value, "observed": last_value})
+
     raise base.PublicProductionCertFailure(
-        f"public slate-date control did not settle on exact ESPN date {target}; observed {last_value!r}"
+        "public slate-date control did not settle on exact ESPN date "
+        + target
+        + "; observations="
+        + json.dumps(observations, sort_keys=True)
     )
 
 
@@ -152,12 +180,11 @@ def _select_exact_matchup_frame_safe(page, frame, event: dict[str, Any]) -> str:
             f"verified ESPN event {event['event_id']} was not present in public matchup options; saw {texts}"
         )
 
-    # Click the exact visible option from the portal owner. If the DOM rerenders
-    # between inspection and click, fall back to typing the already-verified text.
     try:
         options.nth(chosen_index).click()
     except Exception:
         base._choose(page, matchup, chosen)
+    print("PUBLIC_CERT_MATCHUP_GREEN " + json.dumps({"event_id": event["event_id"], "option": chosen}, sort_keys=True))
     return chosen
 
 
