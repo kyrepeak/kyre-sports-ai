@@ -31,9 +31,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install production Python stack
+      - name: Install production Python stack and test runner
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
       - name: Test ESPN general gamesPlayed recovery
         env:
           PYTHONPATH: ${{ github.workspace }}
