@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
 
-from sports_api.collectors.nfl_fanduel_passing_yards import (
-    NFLPassingYardsCollectorError,
-    collect_fanduel_nfl_passing_yards,
+from sports_api.collectors.nfl_fanduel_passing_yards import NFLPassingYardsCollectorError
+from sports_api.collectors.nfl_passing_yards_render_espn_v2 import (
+    collect_fanduel_nfl_passing_yards_hosted as collect_fanduel_nfl_passing_yards,
 )
 
 router = APIRouter(prefix="/api/v1/nfl/passing-yards", tags=["nfl-passing-yards"])
