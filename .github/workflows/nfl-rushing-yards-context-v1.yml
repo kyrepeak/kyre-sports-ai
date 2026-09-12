@@ -1,0 +1,46 @@
+name: NFL Rushing Yards Context V1 cert
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - 'sports_api/collectors/nfl_rushing_yards_context_v1.py'
+      - 'sports_api/api/nfl_rushing_yards_context_v1.py'
+      - 'sports_api/api/health.py'
+      - 'sports_api/tests/test_nfl_rushing_yards_context_v1.py'
+      - '.github/workflows/nfl-rushing-yards-context-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-context-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production API stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Compile additive NFL Rushing Yards files
+        run: |
+          python -m py_compile sports_api/collectors/nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/api/nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_context_v1.py
+      - name: Run deterministic exact-ID Rushing Yards contract tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_context_v1.py
+      - name: Revalidate shared-host startup and observability contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_production_observability_backport_v1.py
