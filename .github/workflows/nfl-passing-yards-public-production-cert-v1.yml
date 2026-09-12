@@ -7,6 +7,7 @@ on:
       - 'devsystem/nfl_passing_yards_public_prod_cert_v1.py'
       - 'devsystem/nfl_passing_yards_public_prod_cert_v2.py'
       - 'devsystem/nfl_passing_yards_public_prod_cert_v3.py'
+      - 'devsystem/nfl_passing_yards_public_prod_cert_v4.py'
       - '.github/workflows/nfl-passing-yards-public-production-cert-v1.yml'
   workflow_dispatch:
 
@@ -35,6 +36,7 @@ jobs:
           python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v1.py
           python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v2.py
           python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v3.py
+          python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v4.py
       - name: Probe deployed Passing Yards fail-closed detail
         run: |
           python - <<'PY'
@@ -48,7 +50,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
         run: |
-          python devsystem/nfl_passing_yards_public_prod_cert_v3.py \
+          python devsystem/nfl_passing_yards_public_prod_cert_v4.py \
             --production-url https://kyre-sports-ai.streamlit.app \
             --api-url https://kyre-sports-api.onrender.com \
             --artifact-dir artifacts/nfl-passing-yards-public-prod
