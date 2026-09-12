@@ -3,8 +3,8 @@
 Preserves NFL V3.4 for every other NFL market and advances only Passing Yards
 to V22. V22 is a visual-only exact-ID quarterback-headshot overlay over V21;
 V21 remains the exact-ID team-logo overlay over certified V20. V20's Kyre
-Sports API Step 10 bridge, frozen projection math, market evaluator, 0.0%
-sportsbook projection influence, and fail-closed protections remain intact.
+Sports API Step 10 bridge, frozen projection math, market evaluator,
+0.0% sportsbook projection influence, and fail-closed protections remain intact.
 """
 from __future__ import annotations
 
