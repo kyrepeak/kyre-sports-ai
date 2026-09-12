@@ -1,4 +1,4 @@
-"""Diagnostic V2 for ESPN NFL Passing Yards source shape and UTC recovery."""
+"""Diagnostic V2 for ESPN NFL Passing Yards source shape and live bridges."""
 from __future__ import annotations
 
 import json
@@ -13,8 +13,10 @@ import nfl_passing_yards_defense_v1 as defense
 import nfl_passing_yards_defense_v3 as defense_v3
 import nfl_passing_yards_environment_v1 as environment
 import nfl_passing_yards_espn_stat_split_v1 as stats
+import nfl_passing_yards_profile_v1 as profile
 
 OUTPUT = os.path.join(ROOT, "nfl_passing_yards_espn_payload_probe_v2.json")
+CORE_BASE = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl"
 
 
 def category_summary(payload: dict) -> list[dict]:
@@ -46,7 +48,7 @@ def category_summary(payload: dict) -> list[dict]:
 
 
 def boxscore_shape(summary: dict) -> list[dict]:
-    """Keep only the exact team/stat fields needed to diagnose the parser."""
+    """Keep only exact team/stat fields needed to diagnose the defense parser."""
     out = []
     for team_row in ((summary or {}).get("boxscore") or {}).get("teams") or []:
         if not isinstance(team_row, dict):
@@ -83,7 +85,45 @@ def sample_event_probe(team_id: str) -> dict:
         "event": {"event_id": str(event.get("event_id") or ""), "date": str(event.get("date") or "")},
         "summary_diag": summary_diag,
         "boxscore": boxscore_shape(summary),
-        "parsed_defense_game": defense.parse_recent_defense_game(summary, team_id) if summary_diag.get("ok") else {},
+        "parsed_defense_game_v1": defense.parse_recent_defense_game(summary, team_id) if summary_diag.get("ok") else {},
+        "parsed_defense_game_v3": defense_v3.parse_recent_defense_game(summary, team_id) if summary_diag.get("ok") else {},
+    }
+
+
+def _compact(value, depth: int = 0):
+    """Keep a small JSON-safe source-shape sample without dumping entire feeds."""
+    if depth >= 4:
+        if isinstance(value, dict):
+            return {"_type": "dict", "keys": list(value)[:20]}
+        if isinstance(value, list):
+            return {"_type": "list", "length": len(value)}
+        return value
+    if isinstance(value, dict):
+        out = {}
+        for key, item in list(value.items())[:30]:
+            out[str(key)] = _compact(item, depth + 1)
+        return out
+    if isinstance(value, list):
+        return [_compact(item, depth + 1) for item in value[:5]]
+    return value
+
+
+def gamelog_probe(athlete_id: str) -> dict:
+    site_payload, site_diag = profile._gamelog_payload(2025, athlete_id)
+    site_recent = profile.parse_recent_passing(site_payload) if site_diag.get("ok") else []
+
+    core_url = f"{CORE_BASE}/seasons/2025/athletes/{athlete_id}/eventlog"
+    core_payload, core_diag = profile._json_get(core_url)
+
+    return {
+        "site_diag": site_diag,
+        "site_top_keys": list(site_payload)[:30] if isinstance(site_payload, dict) else [],
+        "site_shape": _compact(site_payload),
+        "site_recent_count": len(site_recent),
+        "site_recent_sample": site_recent[:5],
+        "core_eventlog_diag": core_diag,
+        "core_eventlog_top_keys": list(core_payload)[:30] if isinstance(core_payload, dict) else [],
+        "core_eventlog_shape": _compact(core_payload),
     }
 
 
@@ -92,7 +132,11 @@ def main() -> None:
 
     for name, athlete_id in (("Baker Mayfield", "3052587"), ("Joe Burrow", "3915511")):
         payload, diag = stats.athlete_stats_payload(2025, 2, athlete_id)
-        report["athletes"][name] = {"diag": diag, "categories": category_summary(payload)}
+        report["athletes"][name] = {
+            "diag": diag,
+            "categories": category_summary(payload),
+            "gamelog_probe": gamelog_probe(athlete_id),
+        }
 
     for name, team_id in (("Tampa Bay Buccaneers", "27"), ("Cincinnati Bengals", "4")):
         payload, diag = stats.team_stats_payload(2025, 2, team_id)
