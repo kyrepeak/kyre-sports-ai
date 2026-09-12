@@ -1,0 +1,61 @@
+name: NFL Passing Yards V22 player headshot cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_passing_yards_hub_v22.py'
+      - 'nfl_passing_yards_hub_v21.py'
+      - 'nfl_hub_v35.py'
+      - 'tests/test_nfl_passing_yards_visual_identity_v22.py'
+      - '.github/workflows/nfl-passing-yards-visual-v22.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-yards-visual-v22-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-v22-headshots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production Python stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Compile V22/V21 visual overlays and router
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v22.py
+          python -m py_compile nfl_passing_yards_hub_v21.py
+          python -m py_compile nfl_hub_v35.py
+      - name: Certify exact-ID visual-only player headshot overlay
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_visual_identity_v22.py
+      - name: Re-run V21 team-logo visual contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_visual_identity_v21.py
+      - name: Re-run certified V20 API-page contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_api_page_v20.py
+      - name: Re-run recursion and timezone protections
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_v18_recursion_guard_v1.py
+          python -m pytest -q tests/test_nfl_passing_yards_step4_timezone_v1.py
+      - name: Verify visual-only frozen-prior contract
+        run: |
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v21"' nfl_passing_yards_hub_v22.py
+          grep -Fi 'sportsbook projection influence remains 0.0%' nfl_passing_yards_hub_v22.py
+          grep -Fi 'stake sizing remains OFF' nfl_passing_yards_hub_v22.py
