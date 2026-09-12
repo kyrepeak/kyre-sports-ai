@@ -10,6 +10,7 @@ on:
       - 'app.py'
       - 'tests/test_nfl_passing_yards_profile_espn_shape_v1.py'
       - 'tests/test_nfl_passing_yards_defense_v3_timezone_v1.py'
+      - 'tests/test_nfl_passing_yards_v18_recursion_guard_v1.py'
       - 'devsystem/nfl_passing_yards_live_cert_v1.py'
       - 'devsystem/nfl_passing_yards_live_cert_v2.py'
       - 'devsystem/nfl_passing_yards_live_stage_cert_v1.py'
@@ -39,6 +40,10 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt
           python -m pip install --disable-pip-version-check -q pytest
+      - name: Test Passing Yards production recursion guard
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_v18_recursion_guard_v1.py
       - name: Test ESPN general gamesPlayed recovery
         env:
           PYTHONPATH: ${{ github.workspace }}
