@@ -1,25 +1,14 @@
 """NFL Passing Yards Step 5 V2 — exact-ID weapons + injury usage recovery.
 
-Additive successor to Step 5 V1. V2 keeps the current ESPN injury/depth feed as
-the availability authority, but fills the biggest production blind spot from V1:
-ESPN athlete season-stat payloads do not always expose receiving targets.
+Additive successor to Step 5 V1. V2 keeps ESPN injury/depth as the availability
+authority and recovers recent receiving target usage only from exact verified ESPN
+event box scores. Current depth-chart athlete IDs remain authoritative, explicit
+targets are required, and matching team pass attempts come from the same games.
 
-V2 recovers *recent target usage* only from exact verified ESPN event box scores:
-- exact offense ESPN team ID;
-- exact event IDs from that team's verified schedule;
-- exact athlete IDs from the current ESPN depth chart;
-- explicit receiving target columns only (never inferred from receptions);
-- matching team pass attempts from the same verified games.
-
-During the opening regular-season window, current completed games are used first
-and the immediately prior regular season may fill the existing five-game recent
-window. Current roster/depth IDs remain authoritative, so departed prior-season
-players are ignored automatically.
-
-No fuzzy/name identity authority, synthetic IDs, fabricated targets, sportsbook
-input, projection adjustment, EV, probability, market math, or stake sizing is
-introduced. Step 5 remains descriptive context with projection_adjustment = 0.0
-and sportsbook_influence = 0.0.
+Current-season completed games are used first. During the opening regular-season
+window, the immediately prior regular season may fill the existing five-game
+recent window. No fuzzy/name identity authority, synthetic IDs, fabricated targets,
+sportsbook input, projection adjustment, market math, or stake sizing is added.
 """
 from __future__ import annotations
 
@@ -62,14 +51,19 @@ def _norm(value: Any) -> str:
 
 
 def _stat_index(category: dict, aliases: tuple[str, ...]) -> int | None:
-    alias_keys = {_norm(alias) for alias in aliases}
+    """Resolve one ESPN stat column without short-token substring collisions."""
+    alias_keys = {_norm(alias) for alias in aliases if _norm(alias)}
     fields = category.get("labels") or category.get("keys") or category.get("descriptions") or []
-    for index, value in enumerate(fields):
-        key = _norm(value)
+    normalized = [_norm(value) for value in fields]
+    for index, key in enumerate(normalized):
         if key in alias_keys:
             return index
-        if any(alias and (alias in key or key in alias) for alias in alias_keys):
-            return index
+    for index, key in enumerate(normalized):
+        if len(key) < 4:
+            continue
+        for alias in alias_keys:
+            if len(alias) >= 4 and (alias in key or key in alias):
+                return index
     return None
 
 
@@ -86,29 +80,19 @@ def _parse_comp_att(value: Any):
 
 def _team_player_block(summary: dict, team_id: str) -> dict:
     for row in ((summary or {}).get("boxscore") or {}).get("players") or []:
-        if not isinstance(row, dict):
-            continue
-        if _safe((row.get("team") or {}).get("id")) == _safe(team_id):
+        if isinstance(row, dict) and _safe((row.get("team") or {}).get("id")) == _safe(team_id):
             return row
     return {}
 
 
 def _team_box_row(summary: dict, team_id: str) -> dict:
     for row in ((summary or {}).get("boxscore") or {}).get("teams") or []:
-        if not isinstance(row, dict):
-            continue
-        if _safe((row.get("team") or {}).get("id")) == _safe(team_id):
+        if isinstance(row, dict) and _safe((row.get("team") or {}).get("id")) == _safe(team_id):
             return row
     return {}
 
 
 def parse_team_receiving_game(summary: dict, team_id: str) -> dict:
-    """Parse explicit target usage for one exact ESPN team/event.
-
-    The event is usable only when ESPN exposes a target column and matching team
-    pass attempts. This prevents partial target numerators from being divided by
-    unrelated denominators.
-    """
     team_id = _safe(team_id)
     if not team_id.isdigit():
         return {"ready": False, "reason": "verified ESPN team id required", "players": []}
@@ -165,33 +149,21 @@ def parse_team_receiving_game(summary: dict, team_id: str) -> dict:
             continue
         athlete = athlete_row.get("athlete") or {}
         athlete_id = _safe(athlete.get("id"))
-        if not athlete_id.isdigit():
-            continue
         stats = athlete_row.get("stats") or []
-        if target_i >= len(stats):
+        if not athlete_id.isdigit() or target_i >= len(stats):
             continue
         targets = _num(stats[target_i])
         if not _finite(targets):
             continue
-        receptions = _num(stats[rec_i]) if rec_i is not None and rec_i < len(stats) else math.nan
-        yards = _num(stats[yards_i]) if yards_i is not None and yards_i < len(stats) else math.nan
-        players.append(
-            {
-                "athlete_id": athlete_id,
-                "name": _safe(athlete.get("displayName") or athlete.get("fullName"), "Unknown player"),
-                "targets": targets,
-                "receptions": receptions,
-                "receiving_yards": yards,
-            }
-        )
+        players.append({
+            "athlete_id": athlete_id,
+            "name": _safe(athlete.get("displayName") or athlete.get("fullName"), "Unknown player"),
+            "targets": targets,
+            "receptions": _num(stats[rec_i]) if rec_i is not None and rec_i < len(stats) else math.nan,
+            "receiving_yards": _num(stats[yards_i]) if yards_i is not None and yards_i < len(stats) else math.nan,
+        })
 
-    return {
-        "ready": True,
-        "reason": "",
-        "team_id": team_id,
-        "team_pass_attempts": attempts,
-        "players": players,
-    }
+    return {"ready": True, "reason": "", "team_id": team_id, "team_pass_attempts": attempts, "players": players}
 
 
 def _completed_events(year: int, season_type: int, team_id: str, cutoff_date: str, limit: int) -> list[dict]:
@@ -205,32 +177,21 @@ def _recent_event_window(team_id: str, year: int, season_type: int, cutoff_date:
     current = _completed_events(year, season_type, team_id, cutoff_date, RECENT_USAGE_WINDOW)
     if len(current) >= RECENT_USAGE_WINDOW or not early.allow_prior_regular_fallback(season_type):
         return current[:RECENT_USAGE_WINDOW], False
-
-    prior_year = early.prior_regular_year(year)
-    prior = _completed_events(prior_year, 2, team_id, cutoff_date, RECENT_USAGE_WINDOW)
+    prior = _completed_events(early.prior_regular_year(year), 2, team_id, cutoff_date, RECENT_USAGE_WINDOW)
     merged = early.merge_recent_rows(current, prior, limit=RECENT_USAGE_WINDOW)
-    prior_used = len(merged) > len(current)
-    return merged, prior_used
+    return merged, len(merged) > len(current)
 
 
 def recent_weapon_usage(team_id: str, year: int, season_type: int, cutoff_date: str) -> dict:
     events, prior_used = _recent_event_window(team_id, year, season_type, cutoff_date)
     if not events:
-        return {
-            "ready": False,
-            "reason": "no completed exact ESPN events available for target usage",
-            "usage_games": 0,
-            "team_pass_attempts": math.nan,
-            "players": {},
-            "early_season_fallback": False,
-        }
+        return {"ready": False, "reason": "no completed exact ESPN events available for target usage", "usage_games": 0, "team_pass_attempts": math.nan, "players": {}, "early_season_fallback": False}
 
     parsed_by_event: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=min(5, len(events))) as pool:
         futures = {
             pool.submit(defense_v1._summary_payload, _safe(row.get("event_id"))): _safe(row.get("event_id"))
-            for row in events
-            if _safe(row.get("event_id")).isdigit()
+            for row in events if _safe(row.get("event_id")).isdigit()
         }
         for future in as_completed(futures):
             event_id = futures[future]
@@ -238,11 +199,10 @@ def recent_weapon_usage(team_id: str, year: int, season_type: int, cutoff_date: 
                 payload, diag = future.result()
             except Exception:
                 continue
-            if not diag.get("ok"):
-                continue
-            parsed = parse_team_receiving_game(payload, team_id)
-            if parsed.get("ready"):
-                parsed_by_event[event_id] = parsed
+            if diag.get("ok"):
+                parsed = parse_team_receiving_game(payload, team_id)
+                if parsed.get("ready"):
+                    parsed_by_event[event_id] = parsed
 
     attempts = 0.0
     usage_games = 0
@@ -263,36 +223,27 @@ def recent_weapon_usage(team_id: str, year: int, season_type: int, cutoff_date: 
             athlete_id = _safe(player.get("athlete_id"))
             if not athlete_id.isdigit():
                 continue
-            row = aggregate.setdefault(
-                athlete_id,
-                {
-                    "athlete_id": athlete_id,
-                    "name": _safe(player.get("name"), "Unknown player"),
-                    "targets": 0.0,
-                    "receptions": 0.0,
-                    "receiving_yards": 0.0,
-                    "games_with_targets": 0,
-                },
-            )
+            row = aggregate.setdefault(athlete_id, {
+                "athlete_id": athlete_id,
+                "name": _safe(player.get("name"), "Unknown player"),
+                "targets": 0.0,
+                "receptions": 0.0,
+                "receiving_yards": 0.0,
+                "games_with_targets": 0,
+            })
             row["targets"] += _num(player.get("targets")) if _finite(player.get("targets")) else 0.0
             row["receptions"] += _num(player.get("receptions")) if _finite(player.get("receptions")) else 0.0
             row["receiving_yards"] += _num(player.get("receiving_yards")) if _finite(player.get("receiving_yards")) else 0.0
             row["games_with_targets"] += 1
 
     if usage_games <= 0 or attempts <= 0:
-        return {
-            "ready": False,
-            "reason": "explicit ESPN target columns were unavailable in recent verified events",
-            "usage_games": 0,
-            "team_pass_attempts": math.nan,
-            "players": {},
-            "early_season_fallback": prior_used,
-        }
+        return {"ready": False, "reason": "explicit ESPN target columns were unavailable in recent verified events", "usage_games": 0, "team_pass_attempts": math.nan, "players": {}, "early_season_fallback": prior_used}
 
     for row in aggregate.values():
         row["target_share"] = 100.0 * _num(row.get("targets")) / attempts
         row["target_share_verified"] = True
 
+    current_exists = bool(_completed_events(year, season_type, team_id, cutoff_date, 1))
     return {
         "ready": True,
         "reason": "",
@@ -301,7 +252,7 @@ def recent_weapon_usage(team_id: str, year: int, season_type: int, cutoff_date: 
         "players": aggregate,
         "event_ids": used_event_ids,
         "early_season_fallback": prior_used,
-        "source_year": int(year) - 1 if prior_used and not _completed_events(year, season_type, team_id, cutoff_date, 1) else int(year),
+        "source_year": int(year) - 1 if prior_used and not current_exists else int(year),
     }
 
 
@@ -318,26 +269,21 @@ def _current_weapon_rows(depth_rows: list[dict], usage: dict, limit: int = 6) ->
         seen.add(athlete_id)
         row = dict(raw)
         hit = usage_by_id.get(athlete_id) or {}
-        row.update(
-            {
-                "targets": hit.get("targets"),
-                "receptions": hit.get("receptions"),
-                "receiving_yards": hit.get("receiving_yards"),
-                "target_share": hit.get("target_share"),
-                "target_share_verified": bool(hit.get("target_share_verified")),
-                "usage_games": usage.get("usage_games", 0),
-            }
-        )
+        row.update({
+            "targets": hit.get("targets"),
+            "receptions": hit.get("receptions"),
+            "receiving_yards": hit.get("receiving_yards"),
+            "target_share": hit.get("target_share"),
+            "target_share_verified": bool(hit.get("target_share_verified")),
+            "usage_games": usage.get("usage_games", 0),
+        })
         rows.append(row)
-
-    rows.sort(
-        key=lambda row: (
-            0 if _finite(row.get("target_share")) else 1,
-            -_num(row.get("target_share")) if _finite(row.get("target_share")) else 0,
-            int(row.get("rank", 99)),
-            _safe(row.get("name")),
-        )
-    )
+    rows.sort(key=lambda row: (
+        0 if _finite(row.get("target_share")) else 1,
+        -_num(row.get("target_share")) if _finite(row.get("target_share")) else 0,
+        int(row.get("rank", 99)),
+        _safe(row.get("name")),
+    ))
     return rows[: max(0, int(limit))]
 
 
@@ -346,15 +292,16 @@ def _enrich_injury_usage(rows: list[dict], usage: dict) -> list[dict]:
     out = []
     for raw in rows or []:
         row = dict(raw)
-        athlete_id = _safe(row.get("athlete_id"))
-        hit = usage_by_id.get(athlete_id) or {}
+        hit = usage_by_id.get(_safe(row.get("athlete_id"))) or {}
         if hit.get("target_share_verified"):
-            row["targets"] = hit.get("targets")
-            row["receptions"] = hit.get("receptions")
-            row["receiving_yards"] = hit.get("receiving_yards")
-            row["target_share"] = hit.get("target_share")
-            row["target_share_verified"] = True
-            row["usage_source"] = "EXACT ESPN RECENT BOXSCORE TARGETS"
+            row.update({
+                "targets": hit.get("targets"),
+                "receptions": hit.get("receptions"),
+                "receiving_yards": hit.get("receiving_yards"),
+                "target_share": hit.get("target_share"),
+                "target_share_verified": True,
+                "usage_source": "EXACT ESPN RECENT BOXSCORE TARGETS",
+            })
         out.append(row)
     return out
 
@@ -364,24 +311,10 @@ def _share_for_tier(rows: list[dict], tier: str):
     if not matching:
         return 0.0
     shares = [_num(row.get("target_share")) for row in matching if _finite(row.get("target_share"))]
-    if len(shares) != len(matching):
-        return math.nan
-    return sum(shares)
+    return sum(shares) if len(shares) == len(matching) else math.nan
 
 
-def build_personnel_matchup(
-    offense_ctx: dict,
-    defense_ctx: dict,
-    year: int,
-    season_type: int,
-    team_pass_attempts: Any,
-    cutoff_date: str | None = None,
-) -> dict:
-    """Build V1 availability plus exact-ID recent weapon usage.
-
-    ``team_pass_attempts`` is retained for signature compatibility but recent
-    target share uses pass attempts from the same verified box-score events.
-    """
+def build_personnel_matchup(offense_ctx: dict, defense_ctx: dict, year: int, season_type: int, team_pass_attempts: Any, cutoff_date: str | None = None) -> dict:
     row = dict(base.build_personnel_matchup(offense_ctx, defense_ctx, year, season_type, team_pass_attempts) or {})
     offense_id = _safe(row.get("offense_team_id") or offense_ctx.get("team_id"))
     if not offense_id.isdigit():
@@ -391,9 +324,6 @@ def build_personnel_matchup(
 
     cutoff = _safe(cutoff_date)
     if not cutoff:
-        # V1 did not need a cutoff. Callers on the active Passing Yards page can
-        # provide one through the V28 bridge; without it, keep V1 fail-closed
-        # behavior rather than guessing a calendar boundary.
         row["weapon_usage_ready"] = False
         row["weapon_usage_state"] = "CHECK — verified slate cutoff unavailable"
         row["top_weapons"] = _current_weapon_rows(row.get("offense_depth_rows") or [], {"players": {}})
@@ -417,19 +347,14 @@ def build_personnel_matchup(
     row["weapon_usage_state"] = (
         f"VERIFIED RECENT {row['weapon_usage_games']} ESPN BOXSCORES"
         + (" • PRIOR REGULAR-SEASON BRIDGE" if row["weapon_usage_early_season_fallback"] else "")
-        if usage.get("ready")
-        else "UNAVAILABLE — explicit ESPN box-score targets not returned"
+        if usage.get("ready") else "UNAVAILABLE — explicit ESPN box-score targets not returned"
     )
     row["target_share_state"] = row["weapon_usage_state"]
 
     feed_ok = bool(offense_ctx.get("injury_feed_ok") and defense_ctx.get("injury_feed_ok"))
     label, basis = base.personnel_label(
-        _safe(row.get("qb_status")),
-        skill,
-        list(row.get("ol_injuries") or []),
-        list(row.get("secondary_injuries") or []),
-        row.get("hard_target_share"),
-        feed_ok,
+        _safe(row.get("qb_status")), skill, list(row.get("ol_injuries") or []),
+        list(row.get("secondary_injuries") or []), row.get("hard_target_share"), feed_ok,
     )
     row["personnel_label"] = label
     row["personnel_basis"] = basis
@@ -444,14 +369,7 @@ personnel_label = base.personnel_label
 status_tier = base.status_tier
 
 __all__ = [
-    "FROZEN_PRIOR",
-    "MODEL_VERSION",
-    "RECENT_USAGE_WINDOW",
-    "build_personnel_matchup",
-    "parse_team_receiving_game",
-    "recent_weapon_usage",
-    "parse_depth_positions",
-    "parse_receiving_usage",
-    "personnel_label",
-    "status_tier",
+    "FROZEN_PRIOR", "MODEL_VERSION", "RECENT_USAGE_WINDOW", "build_personnel_matchup",
+    "parse_team_receiving_game", "recent_weapon_usage", "parse_depth_positions",
+    "parse_receiving_usage", "personnel_label", "status_tier",
 ]
