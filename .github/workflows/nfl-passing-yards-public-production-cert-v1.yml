@@ -33,6 +33,15 @@ jobs:
         run: |
           python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v1.py
           python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v2.py
+      - name: Probe deployed Passing Yards fail-closed detail
+        run: |
+          python - <<'PY'
+          import requests
+          url = 'https://kyre-sports-api.onrender.com/api/v1/nfl/passing-yards'
+          r = requests.get(url, params={'event_id': '401872925'}, timeout=30)
+          print('HTTP', r.status_code)
+          print(r.text[:2000])
+          PY
       - name: Drive actual public Streamlit Passing Yards page
         env:
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
