@@ -3,8 +3,9 @@
 GitHub-hosted runners can receive HTTP 403 from ESPN when Python requests uses
 its default TLS/request fingerprint, even though the same public endpoint is
 available through the urllib transport already proven by the NFL API live cert.
-This wrapper changes certification transport only. Production/runtime behavior
-is untouched.
+Only ESPN discovery uses that transport; Streamlit and Kyre API checks keep the
+normal requests transport so redirects/cookies behave exactly like a browser.
+Production/runtime behavior is untouched.
 """
 from __future__ import annotations
 
@@ -41,7 +42,13 @@ def _urllib_get(url: str, *, params: dict[str, Any] | None = None, timeout: floa
 
 def run_public_cert(**kwargs):
     original = base._get
-    base._get = _urllib_get
+
+    def routed_get(url: str, *, params: dict[str, Any] | None = None, timeout: float = 20.0):
+        if "site.api.espn.com" in str(url).lower():
+            return _urllib_get(url, params=params, timeout=timeout)
+        return original(url, params=params, timeout=timeout)
+
+    base._get = routed_get
     try:
         return base.run_public_cert(**kwargs)
     finally:
