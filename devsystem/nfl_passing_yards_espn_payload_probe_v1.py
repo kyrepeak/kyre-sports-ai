@@ -10,6 +10,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 import nfl_passing_yards_defense_v1 as defense
+import nfl_passing_yards_defense_v2 as defense_v2
 import nfl_passing_yards_environment_v1 as environment
 import nfl_passing_yards_espn_stat_split_v1 as stats
 
@@ -56,11 +57,22 @@ def main() -> None:
 
     for name, team_id in (("Tampa Bay Buccaneers", "27"), ("Cincinnati Bengals", "4")):
         payload, diag = stats.team_stats_payload(2025, 2, team_id)
+        parsed_defense = defense.parse_season_pass_defense(payload)
+        recovered_season, recovered_rows, recovered_diag = defense_v2._verified_boxscore_season(
+            team_id,
+            2025,
+            2,
+            "2026-09-13",
+            partial_season=parsed_defense,
+        )
         row = {
             "diag": diag,
             "categories": category_summary(payload),
-            "parsed_defense": defense.parse_season_pass_defense(payload),
+            "parsed_defense": parsed_defense,
             "parsed_pace": environment.parse_team_pace(payload),
+            "boxscore_recovery_diag": recovered_diag,
+            "boxscore_recovered_season": recovered_season,
+            "boxscore_recovered_rows": recovered_rows,
         }
         report["teams"][name] = row
         print(f"=== TEAM {name} {team_id} ===")
