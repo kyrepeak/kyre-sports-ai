@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'devsystem/nfl_passing_yards_public_prod_cert_v1.py'
+      - 'devsystem/nfl_passing_yards_public_prod_cert_v2.py'
       - '.github/workflows/nfl-passing-yards-public-production-cert-v1.yml'
   workflow_dispatch:
 
@@ -29,12 +30,14 @@ jobs:
           python -m pip install --disable-pip-version-check -q requests playwright
           python -m playwright install --with-deps chromium
       - name: Compile public production certification
-        run: python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v1.py
+        run: |
+          python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v1.py
+          python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v2.py
       - name: Drive actual public Streamlit Passing Yards page
         env:
-          PYTHONPATH: ${{ github.workspace }}
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
         run: |
-          python devsystem/nfl_passing_yards_public_prod_cert_v1.py \
+          python devsystem/nfl_passing_yards_public_prod_cert_v2.py \
             --production-url https://kyre-sports-ai.streamlit.app \
             --api-url https://kyre-sports-api.onrender.com \
             --artifact-dir artifacts/nfl-passing-yards-public-prod
