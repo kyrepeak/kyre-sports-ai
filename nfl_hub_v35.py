@@ -1,18 +1,19 @@
 """NFL V3.5 routing wrapper — Passing Yards verified Kyre API + visual identity.
 
 Preserves NFL V3.4 for every other NFL market and advances only Passing Yards
-to V25. V25 is a Step 4 pressure-source hotfix over certified V24; V24 adds
-exact-ID team/opponent matchup context over V23; V23 is CSS-only market-card
-header polish over V22; V22 is the exact-ID QB headshot overlay over V21; V21
-is the exact-ID team-logo overlay over V20. V20's Kyre Sports API Step 10 bridge,
-frozen projection/market math, 0.0% sportsbook projection influence, stake sizing
-OFF, and fail-closed protections remain intact.
+to V26. V26 repairs live ESPN Step 4 pressure-source shape over certified V25;
+V25 keeps the bounded exact-ID early-season gate over V24; V24 adds exact-ID
+team/opponent matchup context over V23; V23 is CSS-only market-card header polish
+over V22; V22 is the exact-ID QB headshot overlay over V21; V21 is the exact-ID
+team-logo overlay over V20. V20's Kyre Sports API Step 10 bridge, frozen
+projection/market math, 0.0% sportsbook projection influence, stake sizing OFF,
+and fail-closed protections remain intact.
 """
 from __future__ import annotations
 
 import nfl_hub_v34 as base
 
-MODEL_VERSION = "NFL V3.5 • PASSING YARDS V25 STEP 4 PRESSURE HOTFIX • V24/V23/V22/V21/V20 FROZEN • V3.4 PRESERVED"
+MODEL_VERSION = "NFL V3.5 • PASSING YARDS V26 STEP 4 LIVE ESPN PRESSURE RECOVERY • V25/V24/V23/V22/V21/V20 FROZEN • V3.4 PRESERVED"
 NFL_MARKETS = base.NFL_MARKETS
 load_nfl_slate = base.load_nfl_slate
 ET = base.ET
@@ -39,12 +40,18 @@ def _render_certified_v24_contract():
     return render_v24()
 
 
+def _render_certified_v25_contract():
+    """Keep the certified V25 Step 4 bounded-gate route explicitly importable."""
+    from nfl_passing_yards_hub_v25 import render_nfl_passing_yards_hub as render_v25
+    return render_v25()
+
+
 def render_nfl_hub(market: str = "Slate"):
     market = str(market or "Slate")
     if market == "Passing Yards":
-        # V25 changes only Step 4 pressure source gating; V24 and prior contracts stay frozen.
-        from nfl_passing_yards_hub_v25 import render_nfl_passing_yards_hub as render_v25
-        return render_v25()
+        # V26 changes only Step 4 live ESPN source recovery; prior contracts stay frozen.
+        from nfl_passing_yards_hub_v26 import render_nfl_passing_yards_hub as render_v26
+        return render_v26()
     return base.render_nfl_hub(market)
 
 
