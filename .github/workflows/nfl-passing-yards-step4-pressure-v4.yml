@@ -1,0 +1,70 @@
+name: NFL Passing Yards Step 4 pressure V4 cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_passing_yards_pressure_v4.py'
+      - 'nfl_passing_yards_hub_v25.py'
+      - 'nfl_hub_v35.py'
+      - 'tests/test_nfl_passing_yards_step4_pressure_fallback_v4.py'
+      - '.github/workflows/nfl-passing-yards-step4-pressure-v4.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-yards-step4-pressure-v4-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-step4-pressure-v4:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production Python stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Compile additive Step 4 hotfix and active route
+        run: |
+          python -m py_compile nfl_passing_yards_pressure_v4.py
+          python -m py_compile nfl_passing_yards_hub_v25.py
+          python -m py_compile nfl_hub_v35.py
+      - name: Certify bounded exact-ID prior-season rescue
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_step4_pressure_fallback_v4.py
+      - name: Re-run early-season bridge contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_early_season_bridge_v1.py
+      - name: Re-run recursion and timezone protections
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_v18_recursion_guard_v1.py
+          python -m pytest -q tests/test_nfl_passing_yards_step4_timezone_v1.py
+      - name: Re-run certified V24 through V20 page contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_matchup_context_v24.py
+          python -m pytest -q tests/test_nfl_passing_yards_market_card_polish_v23.py
+          python -m pytest -q tests/test_nfl_passing_yards_visual_identity_v22.py
+          python -m pytest -q tests/test_nfl_passing_yards_visual_identity_v21.py
+          python -m pytest -q tests/test_nfl_passing_yards_api_page_v20.py
+      - name: Verify permanent safety contract
+        run: |
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_pressure_v3"' nfl_passing_yards_pressure_v4.py
+          grep -F 'FROZEN_RECENT_WINDOW = 5' nfl_passing_yards_pressure_v4.py
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v24"' nfl_passing_yards_hub_v25.py
+          grep -Fi 'sportsbook influence remains 0.0%' nfl_passing_yards_pressure_v4.py
+          grep -Fi 'stake sizing OFF' nfl_passing_yards_hub_v25.py
+          ! grep -F 'import requests' nfl_passing_yards_pressure_v4.py
+          ! grep -Fi 'fuzzy' nfl_passing_yards_pressure_v4.py | grep -F 'matching(' || true
