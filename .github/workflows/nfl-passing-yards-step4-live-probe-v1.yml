@@ -1,0 +1,35 @@
+name: NFL Passing Yards Step 4 live probe V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'devsystem/nfl_passing_yards_step4_live_probe_v1.py'
+      - '.github/workflows/nfl-passing-yards-step4-live-probe-v1.yml'
+      - 'nfl_passing_yards_pressure_v4.py'
+      - 'nfl_passing_yards_pressure_v5.py'
+      - 'nfl_passing_yards_hub_v26.py'
+      - 'nfl_hub_v35.py'
+      - 'tests/test_nfl_passing_yards_step4_pressure_live_fallback_v5.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-step4-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install app dependencies
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt
+      - name: Compile live probe
+        run: python -m py_compile devsystem/nfl_passing_yards_step4_live_probe_v1.py
+      - name: Probe exact ESPN IDs for Step 4
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_passing_yards_step4_live_probe_v1.py
