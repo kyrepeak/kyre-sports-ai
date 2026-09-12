@@ -1,4 +1,4 @@
-name: NFL Passing Yards Step 4 live probe V1
+name: NFL Passing Yards Step 4 live pressure V5 cert
 
 on:
   pull_request:
@@ -8,8 +8,10 @@ on:
       - '.github/workflows/nfl-passing-yards-step4-live-probe-v1.yml'
       - 'nfl_passing_yards_pressure_v4.py'
       - 'nfl_passing_yards_pressure_v5.py'
+      - 'nfl_passing_yards_hub_v25.py'
       - 'nfl_passing_yards_hub_v26.py'
       - 'nfl_hub_v35.py'
+      - 'tests/test_nfl_passing_yards_step4_pressure_fallback_v4.py'
       - 'tests/test_nfl_passing_yards_step4_pressure_live_fallback_v5.py'
   workflow_dispatch:
 
@@ -19,7 +21,7 @@ permissions:
 jobs:
   live-step4-probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,9 +29,22 @@ jobs:
           python-version: '3.12'
       - name: Install app dependencies
         run: python -m pip install --disable-pip-version-check -q -r requirements.txt
-      - name: Compile live probe
-        run: python -m py_compile devsystem/nfl_passing_yards_step4_live_probe_v1.py
-      - name: Probe exact ESPN IDs for Step 4
+      - name: Compile Step 4 V5 route
+        run: |
+          python -m py_compile nfl_passing_yards_pressure_v5.py
+          python -m py_compile nfl_passing_yards_hub_v26.py
+          python -m py_compile nfl_hub_v35.py
+          python -m py_compile devsystem/nfl_passing_yards_step4_live_probe_v1.py
+      - name: Run V5 source-recovery regression tests
+        run: pytest -q tests/test_nfl_passing_yards_step4_pressure_live_fallback_v5.py
+      - name: Re-run frozen V4 pressure gate tests
+        run: pytest -q tests/test_nfl_passing_yards_step4_pressure_fallback_v4.py
+      - name: Probe exact live ESPN IDs for Step 4
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: python devsystem/nfl_passing_yards_step4_live_probe_v1.py
+      - name: Permanent protection assertions
+        run: |
+          grep -q 'sportsbook_influence"] = 0.0' nfl_passing_yards_pressure_v5.py
+          grep -q 'projection_adjustment"] = 0.0' nfl_passing_yards_pressure_v5.py
+          grep -q 'PASSING YARDS V26' nfl_hub_v35.py
