@@ -246,21 +246,13 @@ def test_market_endpoint_rejects_identity_mismatch(monkeypatch):
     assert response.status_code == 503
 
 
-def _route_paths(routes) -> set[str]:
-    paths: set[str] = set()
-    for route in routes:
-        path = getattr(route, "path", None)
-        if path:
-            paths.add(str(path))
-        nested = getattr(route, "routes", None)
-        if nested:
-            paths.update(_route_paths(nested))
-    return paths
-
-
-def test_shared_host_route_table_contains_nfl_passing_yards_without_new_lifespan_router():
+def test_shared_host_serves_nfl_passing_yards_status_without_new_lifespan_router():
     from sports_api.main import app
 
-    paths = _route_paths(app.routes)
-    assert "/api/v1/nfl/passing-yards" in paths
-    assert "/api/v1/nfl/passing-yards/status" in paths
+    with TestClient(app) as client:
+        response = client.get("/api/v1/nfl/passing-yards/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["schema_version"] == "nfl_passing_yards_market_v1"
+    assert payload["projection_weight"] == 0.0
+    assert payload["market_context_only"] is True
