@@ -85,3 +85,52 @@ def test_build_qb_profile_uses_verified_prior_regular_season_when_current_sample
     assert row["early_season_fallback"] is True
     assert row["season"]["games"] == 17
     assert row["season"]["attempts"] == 543
+
+
+def test_parse_recent_passing_supports_current_espn_web_v3_season_types_shape():
+    payload = {
+        "names": ["completions", "passingAttempts", "passingYards", "passingTouchdowns", "interceptions"],
+        "events": {
+            "401772969": {
+                "gameDate": "2026-01-03T21:30:00Z",
+                "atVs": "@",
+                "opponent": {"id": "29", "abbreviation": "CAR", "displayName": "Carolina Panthers"},
+            },
+            "401772900": {
+                "gameDate": "2025-12-28T18:00:00Z",
+                "atVs": "vs",
+                "opponent": {"id": "15", "abbreviation": "MIA", "displayName": "Miami Dolphins"},
+            },
+        },
+        "seasonTypes": [
+            {
+                "displayName": "2025 Regular Season",
+                "categories": [
+                    {
+                        "type": "event",
+                        "events": [
+                            {"eventId": "401772969", "stats": [16, 22, 198, 1, 1]},
+                            {"eventId": "401772900", "stats": [24, 35, 266, 2, 0]},
+                        ],
+                    }
+                ],
+            },
+            {
+                "displayName": "2025 Preseason",
+                "categories": [
+                    {"type": "event", "events": [{"eventId": "401000000", "stats": [1, 2, 3, 0, 0]}]},
+                ],
+            },
+        ],
+    }
+
+    rows = profile.parse_recent_passing(payload)
+
+    assert [row["event_id"] for row in rows] == ["401772969", "401772900"]
+    assert rows[0]["attempts"] == 22.0
+    assert rows[0]["passing_yards"] == 198.0
+    assert rows[0]["opponent"] == "CAR"
+    assert rows[0]["home_away"] == "away"
+    assert rows[1]["attempts"] == 35.0
+    assert rows[1]["passing_yards"] == 266.0
+    assert rows[1]["home_away"] == "home"
