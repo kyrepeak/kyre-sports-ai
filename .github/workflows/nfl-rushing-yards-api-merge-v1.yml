@@ -1,0 +1,47 @@
+name: NFL Rushing Yards API Merge V1
+
+on:
+  pull_request:
+    paths:
+      - "nfl_rushing_yards_api_v1.py"
+      - "nfl_rushing_yards_hub_v1.py"
+      - "sports_api/api/nfl_rushing_yards.py"
+      - "sports_api/main.py"
+      - "sports_api/tests/test_nfl_rushing_yards.py"
+      - "tests/test_nfl_rushing_yards_api_v1.py"
+      - ".github/workflows/nfl-rushing-yards-api-merge-v1.yml"
+  workflow_dispatch:
+
+jobs:
+  rushing-yards-api-merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install runtime and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r sports_api/requirements.txt
+      - name: Compile exact API merge surface
+        run: |
+          python -m py_compile nfl_rushing_yards_api_v1.py nfl_rushing_yards_hub_v1.py sports_api/api/nfl_rushing_yards.py sports_api/main.py
+      - name: Run client exact-ID contract tests
+        run: python -m unittest tests.test_nfl_rushing_yards_api_v1 -v
+      - name: Run backend exact-event bridge tests
+        run: python -m unittest sports_api.tests.test_nfl_rushing_yards -v
+      - name: Frozen Passing Yards import guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          rushing = Path("nfl_rushing_yards_api_v1.py").read_text()
+          hub = Path("nfl_rushing_yards_hub_v1.py").read_text()
+          assert "nfl_passing_yards_market_api_v1" not in rushing
+          assert "nfl_passing_yards_market_api_v1" not in hub
+          assert "projection_weight\": 0.0" in rushing
+          print("Rushing Yards API merge isolation guard: GREEN")
+          PY
