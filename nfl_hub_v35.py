@@ -5,9 +5,9 @@ to V28. V28 upgrades Step 5 with exact-ID current weapon usage from verified
 ESPN box scores while preserving the current injury/depth authority. V27 keeps
 the certified nested Step 4 Pressure V5 route; V24 adds exact-ID matchup context,
 V23 card-header polish, V22 exact-ID QB headshots, V21 exact-ID team logos, and
-V20 the Kyre Sports API Step 10 bridge. Frozen projection/market math, 0.0%
-sportsbook projection influence, stake sizing OFF, and fail-closed protections
-remain intact.
+V20 the Kyre Sports API Step 10 bridge. Frozen projection/market math,
+0.0% sportsbook projection influence, stake sizing OFF, and fail-closed
+protections remain intact.
 """
 from __future__ import annotations
 
