@@ -26,13 +26,17 @@ def _render_certified_v22_contract():
     return render_v22()
 
 
+def _render_certified_v23_contract():
+    """Keep the certified V23 presentation route explicitly importable."""
+    from nfl_passing_yards_hub_v23 import render_nfl_passing_yards_hub as render_v23
+    return render_v23()
+
+
 def render_nfl_hub(market: str = "Slate"):
     market = str(market or "Slate")
     if market == "Passing Yards":
         # V24 wraps V23 and changes presentation only; all prior contracts stay frozen.
-        from nfl_passing_yards_hub_v23 import render_nfl_passing_yards_hub as render_v23
         from nfl_passing_yards_hub_v24 import render_nfl_passing_yards_hub as render_v24
-        _ = render_v23
         return render_v24()
     return base.render_nfl_hub(market)
 
