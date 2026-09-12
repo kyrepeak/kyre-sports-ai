@@ -19,6 +19,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import math
 from typing import Any
 
+import pandas as pd
+
 import nfl_passing_yards_defense_v1 as base
 import nfl_passing_yards_early_season_v1 as early
 
@@ -50,6 +52,12 @@ def _sum(rows: list[dict], key: str):
     return sum(values)
 
 
+def _utc_cutoff(value: Any) -> str:
+    """Normalize a cutoff to UTC so V1 schedule comparisons stay timezone-safe."""
+    stamp = pd.to_datetime(value, errors="coerce", utc=True)
+    return stamp.isoformat() if pd.notna(stamp) else str(value or "")
+
+
 def _verified_boxscore_season(
     team_id: str,
     year: int,
@@ -64,6 +72,7 @@ def _verified_boxscore_season(
     If any completed regular-season event lacks a usable summary row, the season
     aggregate is withheld instead of silently estimating the missing game.
     """
+    safe_cutoff = _utc_cutoff(cutoff_date)
     schedule, schedule_diag = base._team_schedule_payload(year, season_type, team_id)
     if not schedule_diag.get("ok"):
         return {"ready": False}, [], {
@@ -74,7 +83,7 @@ def _verified_boxscore_season(
             "parsed_games": 0,
         }
 
-    events = base._completed_event_rows(schedule, cutoff_date, max_games=25)
+    events = base._completed_event_rows(schedule, safe_cutoff, max_games=25)
     if not events:
         return {"ready": False}, [], {
             "ready": False,
@@ -169,7 +178,8 @@ def _verified_boxscore_season(
 
 
 def build_pass_defense_profile(team_id: str, team_name: str, year: int, season_type: int, cutoff_date: str) -> dict:
-    current = dict(base.build_pass_defense_profile(team_id, team_name, year, season_type, cutoff_date) or {})
+    safe_cutoff = _utc_cutoff(cutoff_date)
+    current = dict(base.build_pass_defense_profile(team_id, team_name, year, season_type, safe_cutoff) or {})
     current_recent = list(current.get("recent_games") or [])
     source_year = int(year)
     fallback_used = False
@@ -177,7 +187,7 @@ def build_pass_defense_profile(team_id: str, team_name: str, year: int, season_t
 
     if early.allow_prior_regular_fallback(season_type) and (not current.get("ready") or len(current_recent) < 5):
         prior_year = early.prior_regular_year(year)
-        prior = dict(base.build_pass_defense_profile(team_id, team_name, prior_year, 2, cutoff_date) or {})
+        prior = dict(base.build_pass_defense_profile(team_id, team_name, prior_year, 2, safe_cutoff) or {})
         prior_recent = list(prior.get("recent_games") or [])
 
         if not current.get("ready") and prior.get("ready"):
@@ -193,7 +203,7 @@ def build_pass_defense_profile(team_id: str, team_name: str, year: int, season_t
                 team_id,
                 prior_year,
                 2,
-                cutoff_date,
+                safe_cutoff,
                 partial_season=prior.get("season") or {},
             )
             current["season_aggregation_diag"] = recovered_diag
