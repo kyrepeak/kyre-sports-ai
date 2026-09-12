@@ -67,3 +67,11 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: python devsystem/nfl_passing_yards_live_stage_cert_v1.py --stage recent
+      - name: Upload ESPN live-source diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-yards-live-source-diagnostic
+          path: nfl_passing_yards_espn_payload_probe_v1.json
+          if-no-files-found: error
+          retention-days: 2
