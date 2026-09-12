@@ -1,0 +1,64 @@
+name: NFL Passing Yards public production cert V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'devsystem/nfl_passing_yards_public_prod_cert_v1.py'
+      - 'devsystem/nfl_passing_yards_public_prod_cert_v2.py'
+      - 'devsystem/nfl_passing_yards_public_prod_cert_v3.py'
+      - 'devsystem/nfl_passing_yards_public_prod_cert_v4.py'
+      - '.github/workflows/nfl-passing-yards-public-production-cert-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-yards-public-production-cert-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-production-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install read-only public browser certification stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Compile public production certification
+        run: |
+          python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v1.py
+          python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v2.py
+          python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v3.py
+          python -m py_compile devsystem/nfl_passing_yards_public_prod_cert_v4.py
+      - name: Probe deployed Passing Yards fail-closed detail
+        run: |
+          python - <<'PY'
+          import requests
+          url = 'https://kyre-sports-api.onrender.com/api/v1/nfl/passing-yards'
+          r = requests.get(url, params={'event_id': '401872925'}, timeout=30)
+          print('HTTP', r.status_code)
+          print(r.text[:2000])
+          PY
+      - name: Drive actual public Streamlit Passing Yards page
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
+        run: |
+          python devsystem/nfl_passing_yards_public_prod_cert_v4.py \
+            --production-url https://kyre-sports-ai.streamlit.app \
+            --api-url https://kyre-sports-api.onrender.com \
+            --artifact-dir artifacts/nfl-passing-yards-public-prod
+      - name: Upload public production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-yards-public-prod-${{ github.run_id }}
+          path: artifacts/nfl-passing-yards-public-prod
+          if-no-files-found: warn
+          retention-days: 14
