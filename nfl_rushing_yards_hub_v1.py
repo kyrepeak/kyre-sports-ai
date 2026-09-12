@@ -1,9 +1,9 @@
 """NFL Rushing Yards V1 — UI cleanup foundation.
 
-Additive, presentation-only Rushing Yards workspace. It reuses the verified NFL
-slate/date layer from nfl_hub_v1 and intentionally does not enable projection,
-sportsbook grading, probability, EV, Monte Carlo, ranking or recommendation
-logic.
+Additive Rushing Yards workspace. It reuses the verified NFL slate/date layer
+from nfl_hub_v1 and now exposes a fail-closed exact-ID Kyre Sports API bridge.
+Projection, sportsbook grading, probability, EV, Monte Carlo, ranking and
+recommendation logic remain intentionally OFF.
 
 The certified NFL Passing Yards chain is not imported or modified here.
 """
@@ -16,8 +16,9 @@ import pandas as pd
 import streamlit as st
 
 from nfl_hub_v1 import ET, load_nfl_slate
+from nfl_rushing_yards_api_v1 import fetch_event_data
 
-MODEL_VERSION = "NFL RUSHING YARDS V1 • UI CLEANUP FOUNDATION • MODEL OFF"
+MODEL_VERSION = "NFL RUSHING YARDS V1 • UI CLEANUP + EXACT-ID API BRIDGE • MODEL OFF"
 
 _RUSH_CSS = r'''
 <style>
@@ -110,8 +111,47 @@ def _game_card(row) -> str:
     '''
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _load_rushing_api_event(game_id: str) -> dict:
+    """Load one exact-ID Rushing Yards API payload without changing page math."""
+    return fetch_event_data(str(game_id or "").strip())
+
+
+def _render_api_bridge(games: pd.DataFrame) -> None:
+    """Small diagnostic surface for the API merge; does not alter the build board."""
+    with st.expander("🔌 Kyre Sports API bridge", expanded=False):
+        st.caption(
+            "Exact ESPN event IDs only • no fuzzy/name identity • model/projection/market logic remains OFF."
+        )
+        if games.empty:
+            st.info("Choose a slate with at least one verified NFL game to test the API bridge.")
+            return
+
+        if not st.button("Verify selected slate API bridge", key="nfl_rushing_yards_v1_api_verify"):
+            st.caption("API calls stay idle until you verify the selected slate, keeping the page fast while the bridge is being certified.")
+            return
+
+        for _, row in games.iterrows():
+            game_id = _safe(row.get("game_id"), "")
+            matchup = f"{_safe(row.get('away_abbr'), 'AWY')} @ {_safe(row.get('home_abbr'), 'HME')}"
+            if not game_id.isdigit():
+                st.error(f"{matchup} • FAIL CLOSED • official ESPN event ID missing")
+                continue
+
+            event_data = _load_rushing_api_event(game_id)
+            if event_data.get("ready"):
+                player_count = len(event_data.get("players") or [])
+                availability = f"{player_count} exact-ID rushing row{'s' if player_count != 1 else ''}" if player_count else "event verified • rushing rows pending"
+                st.success(f"{matchup} • CONNECTED • event {game_id} • {availability}")
+            else:
+                st.warning(
+                    f"{matchup} • FAIL CLOSED • event {game_id} • "
+                    f"{_safe(event_data.get('reason'), 'API data unavailable')}"
+                )
+
+
 def render_nfl_rushing_yards_hub() -> None:
-    """Render the Rushing Yards cleanup shell with verified schedule context only."""
+    """Render the Rushing Yards cleanup shell plus its exact-ID API bridge."""
     st.markdown(_RUSH_CSS, unsafe_allow_html=True)
     st.markdown(
         '''
@@ -191,6 +231,8 @@ def render_nfl_rushing_yards_hub() -> None:
             f"✅ {len(games)} verified NFL game{'s' if len(games) != 1 else ''} • "
             f"source: {diag.get('provider') or 'NFL schedule'} • selected date: {day_str}"
         )
+
+    _render_api_bridge(games if diag.get("request_ok") else pd.DataFrame())
 
     st.markdown(
         '<div class="krush-guard">🧊 <b>Frozen-line guard:</b> this cleanup page does not alter the certified Passing Yards chain, projection math, probability logic, FanDuel transport, grading, freshness rules, or any CFB surface.</div>',
