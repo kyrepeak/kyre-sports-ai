@@ -1,0 +1,90 @@
+name: NFL Passing Yards live source cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_passing_yards_*.py'
+      - 'nfl_hub_v*.py'
+      - 'streamlit_memory_lazy_router_v*.py'
+      - 'app.py'
+      - 'tests/test_nfl_passing_yards_profile_espn_shape_v1.py'
+      - 'tests/test_nfl_passing_yards_defense_v3_timezone_v1.py'
+      - 'devsystem/nfl_passing_yards_live_cert_v1.py'
+      - 'devsystem/nfl_passing_yards_live_cert_v2.py'
+      - 'devsystem/nfl_passing_yards_live_stage_cert_v1.py'
+      - 'devsystem/nfl_passing_yards_live_stage_cert_v2.py'
+      - 'devsystem/nfl_passing_yards_espn_payload_probe_v1.py'
+      - 'devsystem/nfl_passing_yards_espn_payload_probe_v2.py'
+      - '.github/workflows/nfl-passing-yards-live-source-cert-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-yards-live-source-cert-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-source-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production Python stack and test runner
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Test ESPN general gamesPlayed recovery
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_profile_espn_shape_v1.py::test_parse_season_passing_recovers_games_from_general_without_stat_collisions
+      - name: Test ESPN teamGamesPlayed recovery
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_profile_espn_shape_v1.py::test_parse_season_passing_accepts_team_games_played_from_passing_category
+      - name: Test verified prior-season profile bridge
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_profile_espn_shape_v1.py::test_build_qb_profile_uses_verified_prior_regular_season_when_current_sample_empty
+      - name: Test ESPN web-v3 game-log recovery
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_profile_espn_shape_v1.py::test_parse_recent_passing_supports_current_espn_web_v3_season_types_shape
+      - name: Test UTC-safe verified defense schedule filter
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_defense_v3_timezone_v1.py
+      - name: Probe ESPN payload shape
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_passing_yards_espn_payload_probe_v2.py
+      - name: Certify live Step 2 QB profile bridge
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_passing_yards_live_stage_cert_v2.py --stage profile
+      - name: Certify live Step 3 defense and Step 6 pace inputs
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_passing_yards_live_stage_cert_v2.py --stage matchup
+      - name: Certify Buccaneers at Bengals live Passing Yards chain
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_passing_yards_live_cert_v2.py
+      - name: Certify live Step 9 recent-game variance inputs
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_passing_yards_live_stage_cert_v2.py --stage recent
+      # Always retain the live ESPN shape even when an upstream certification gate fails.
+      - name: Upload ESPN live-source diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-yards-live-source-diagnostic
+          path: nfl_passing_yards_espn_payload_probe_v2.json
+          if-no-files-found: error
+          retention-days: 2

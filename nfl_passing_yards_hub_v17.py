@@ -5,9 +5,10 @@ math and the cleanup UI while allowing verified 2025 regular-season evidence to
 bridge the opening 2026 slate when no current-season completed-game sample exists.
 Current-season data always wins automatically as soon as it is usable.
 
-Production hotfix: ESPN Core season statistics are now requested from the
-explicit all-splits ``statistics/0`` resource first. This fixes the blank Step 2+
-chain seen on the Sep. 13 opening-week slate without changing model math.
+Production hotfix: ESPN Core season statistics are requested from the explicit
+all-splits ``statistics/0`` resource first, and the verified pass-defense bridge
+normalizes ESPN schedule timestamps to UTC before cutoff comparisons. These are
+source/transport fixes only; projection math is unchanged.
 """
 from __future__ import annotations
 
@@ -16,14 +17,14 @@ from html import escape
 import streamlit as st
 
 import nfl_passing_yards_defense_v1 as defense_v1
-import nfl_passing_yards_defense_v2 as defense_v2
+import nfl_passing_yards_defense_v3 as defense_v3
 import nfl_passing_yards_environment_v2 as environment_v2
 import nfl_passing_yards_espn_stat_split_v1 as stat_split
 import nfl_passing_yards_hub_v16 as prior
 import nfl_passing_yards_hub_v8 as step7_ui
 import nfl_passing_yards_pressure_v2 as pressure_v2
 
-MODEL_VERSION = "NFL PASSING YARDS V17 • EARLY SEASON VERIFIED BRIDGE • ESPN SPLIT-ZERO HOTFIX"
+MODEL_VERSION = "NFL PASSING YARDS V17 • EARLY SEASON VERIFIED BRIDGE • ESPN SPLIT-ZERO + UTC DEFENSE HOTFIX"
 
 _EARLY_CSS = r"""
 <style>
@@ -65,7 +66,7 @@ def render_nfl_passing_yards_hub() -> None:
         return row
 
     def bridged_defense(*args, **kwargs):
-        row = dict(defense_v2.build_pass_defense_profile(*args, **kwargs) or {})
+        row = dict(defense_v3.build_pass_defense_profile(*args, **kwargs) or {})
         defenses.append(row)
         return row
 
@@ -75,8 +76,8 @@ def render_nfl_passing_yards_hub() -> None:
     def defense_card(qb_ctx: dict, opponent_ctx: dict, defense_profile: dict) -> str:
         return _with_provenance(original_defense_card(qb_ctx, opponent_ctx, defense_profile), defense_profile, "Step 3 source")
 
-    # Exact verified IDs still drive every request. The only transport change is
-    # selecting ESPN's explicit all-splits statistics/0 resource first.
+    # Exact verified IDs still drive every request. The transport fixes select
+    # ESPN's all-splits resource and normalize verified schedule timestamps.
     step7_ui.profile._season_stats_payload = stat_split.athlete_stats_payload
     defense_v1._team_stats_payload = stat_split.team_stats_payload
     step7_ui.profile.build_qb_profile = capture_profile
