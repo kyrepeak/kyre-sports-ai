@@ -1,0 +1,1 @@
+trigger public FanDuel CFB discovery
