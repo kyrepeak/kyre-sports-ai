@@ -1,0 +1,55 @@
+name: NFL Passing Yards API page V20 cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_passing_yards_market_api_v1.py'
+      - 'nfl_passing_yards_hub_v20.py'
+      - 'nfl_hub_v35.py'
+      - 'tests/test_nfl_passing_yards_api_page_v20.py'
+      - '.github/workflows/nfl-passing-yards-api-page-v20.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-yards-api-page-v20-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-v20:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production Python stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Compile V20 market bridge
+        run: |
+          python -m py_compile nfl_passing_yards_market_api_v1.py
+          python -m py_compile nfl_passing_yards_hub_v20.py
+          python -m py_compile nfl_hub_v35.py
+      - name: Certify V20 exact-ID API bridge and fail-closed fallback
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_api_page_v20.py
+      - name: Re-run production recursion guard
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_v18_recursion_guard_v1.py
+      - name: Re-run Step 4 timezone guard
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_step4_timezone_v1.py
+      - name: Verify frozen market independence strings
+        run: |
+          grep -F 'FROZEN_PRIOR = "nfl_passing_yards_hub_v19"' nfl_passing_yards_hub_v20.py
+          grep -F 'projection influence 0.0%' nfl_passing_yards_hub_v20.py
+          grep -F 'stake sizing remains OFF' nfl_passing_yards_hub_v20.py
