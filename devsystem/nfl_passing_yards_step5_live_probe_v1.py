@@ -27,6 +27,22 @@ def _team(abbr: str, name: str, injury_map: dict, injury_ok: bool) -> dict:
     return row
 
 
+def _diag_row(row: dict) -> dict:
+    return {
+        "ready": row.get("ready"),
+        "reason": row.get("reason"),
+        "weapon_usage_ready": row.get("weapon_usage_ready"),
+        "weapon_usage_state": row.get("weapon_usage_state"),
+        "weapon_usage_games": row.get("weapon_usage_games"),
+        "weapon_usage_event_ids": row.get("weapon_usage_event_ids"),
+        "offense_depth_http": row.get("offense_depth_http"),
+        "depth_rows_count": len(row.get("offense_depth_rows") or []),
+        "depth_rows_sample": (row.get("offense_depth_rows") or [])[:12],
+        "top_weapons": row.get("top_weapons") or [],
+        "skill_injuries": row.get("skill_injuries") or [],
+    }
+
+
 def _assert_profile(row: dict, offense_id: str, defense_id: str) -> None:
     assert row.get("ready"), row.get("reason")
     assert row.get("weapon_usage_ready"), row.get("weapon_usage_state")
@@ -50,6 +66,8 @@ def main() -> None:
 
     baker = personnel.build_personnel_matchup(tb, cin, YEAR, SEASON_TYPE, math.nan, cutoff_date=CUTOFF)
     burrow = personnel.build_personnel_matchup(cin, tb, YEAR, SEASON_TYPE, math.nan, cutoff_date=CUTOFF)
+    print("STEP5_LIVE_DIAGNOSTIC " + json.dumps({"baker": _diag_row(baker), "burrow": _diag_row(burrow)}, sort_keys=True, default=str))
+
     _assert_profile(baker, "27", "4")
     _assert_profile(burrow, "4", "27")
 
@@ -61,13 +79,7 @@ def main() -> None:
             "usage_state": baker.get("weapon_usage_state"),
             "hard_target_share": baker.get("hard_target_share"),
             "top_weapons": [
-                {
-                    "athlete_id": w.get("athlete_id"),
-                    "name": w.get("name"),
-                    "position": w.get("position"),
-                    "targets": w.get("targets"),
-                    "target_share": w.get("target_share"),
-                }
+                {"athlete_id": w.get("athlete_id"), "name": w.get("name"), "position": w.get("position"), "targets": w.get("targets"), "target_share": w.get("target_share")}
                 for w in (baker.get("top_weapons") or [])[:4]
             ],
         },
@@ -76,13 +88,7 @@ def main() -> None:
             "usage_state": burrow.get("weapon_usage_state"),
             "hard_target_share": burrow.get("hard_target_share"),
             "top_weapons": [
-                {
-                    "athlete_id": w.get("athlete_id"),
-                    "name": w.get("name"),
-                    "position": w.get("position"),
-                    "targets": w.get("targets"),
-                    "target_share": w.get("target_share"),
-                }
+                {"athlete_id": w.get("athlete_id"), "name": w.get("name"), "position": w.get("position"), "targets": w.get("targets"), "target_share": w.get("target_share")}
                 for w in (burrow.get("top_weapons") or [])[:4]
             ],
         },
