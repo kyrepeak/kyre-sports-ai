@@ -1,9 +1,11 @@
 """NFL Passing Yards V28 — Step 5 exact-ID weapons + injury upgrade.
 
 Presentation/data-routing wrapper over certified V27. V28 advances only Step 5:
-- injects Personnel V2 into the active V8 Step 5 call site;
-- supplies the exact selected slate date from the existing V8 Streamlit state;
+- injects Personnel V3 into the active V8 Step 5 call site;
+- supplies the exact selected slate date from existing V8 Streamlit state;
 - adds recent verified target-share context for current depth-chart weapons;
+- recovers current depth from season-specific ESPN Core when the site endpoint's
+  changed ``depthchart`` shape leaves frozen V1 with no parsed rows;
 - keeps current injury/depth evidence and fail-closed semantics visible.
 
 V27 Step 4, V24-V20 market/visual contracts, projection/distribution/market math,
@@ -21,7 +23,7 @@ import streamlit as st
 import nfl_passing_yards_hub_v7 as step5_ui
 import nfl_passing_yards_hub_v8 as step7_owner
 import nfl_passing_yards_hub_v27 as prior
-import nfl_passing_yards_personnel_v2 as personnel_v2
+import nfl_passing_yards_personnel_v3 as personnel_v3
 
 MODEL_VERSION = "NFL PASSING YARDS V28 • STEP 5 EXACT-ID WEAPONS + INJURIES MONSTER"
 FROZEN_PRIOR = "nfl_passing_yards_hub_v27"
@@ -69,14 +71,14 @@ def _selected_cutoff() -> str:
     return ""
 
 
-class _PersonnelV2Proxy:
+class _PersonnelV3Proxy:
     def __init__(self, wrapped: Any) -> None:
         self._wrapped = wrapped
 
     def __getattr__(self, name: str) -> Any:
         if name == "build_personnel_matchup":
             def build(offense_ctx, defense_ctx, year, season_type, team_pass_attempts):
-                return personnel_v2.build_personnel_matchup(
+                return personnel_v3.build_personnel_matchup(
                     offense_ctx,
                     defense_ctx,
                     year,
@@ -102,6 +104,7 @@ def _weapon_pills(p: dict) -> str:
 def _personnel_card(p: dict) -> str:
     label = _safe(p.get("personnel_label"), "CHECK").upper()
     css = label.lower() if label.lower() in {"help", "hurt", "mixed", "watch", "neutral"} else "check"
+    depth_state = _safe(p.get("depth_recovery_state"), "EXACT ESPN DEPTH")
     return (
         '<section class="kpy-personnel">'
         '<div class="kpy-ihead">'
@@ -117,7 +120,7 @@ def _personnel_card(p: dict) -> str:
         '</div>'
         '<div class="kpy28-weapons"><b>Core passing weapons • recent verified target share</b><br>'
         f'{_weapon_pills(p)}'
-        f'<div class="kpy28-source">{escape(_safe(p.get("weapon_usage_state"), p.get("target_share_state") or "UNAVAILABLE"))}</div></div>'
+        f'<div class="kpy28-source">{escape(_safe(p.get("weapon_usage_state"), p.get("target_share_state") or "UNAVAILABLE"))}<br>{escape(depth_state)}</div></div>'
         '<div class="kpy-inote">'
         f'Watch-list skill players: <b>{int(p.get("skill_watch_count") or 0)}</b> • '
         f'watch target share: <b>{_fmt(p.get("watch_target_share"),1,"%")}</b><br>'
@@ -131,18 +134,16 @@ def _personnel_table(p: dict) -> pd.DataFrame:
     skill_injuries = {_safe(r.get("athlete_id")): r for r in (p.get("skill_injuries") or []) if _safe(r.get("athlete_id"))}
     for item in p.get("top_weapons") or []:
         hit = skill_injuries.get(_safe(item.get("athlete_id"))) or {}
-        rows.append(
-            {
-                "Group": "Core weapon",
-                "Player": _safe(item.get("name"), "Unknown"),
-                "Pos": _safe(item.get("position"), "—"),
-                "Status": _safe(hit.get("status"), "No listed injury"),
-                "Depth": f"#{item.get('rank')}" if isinstance(item.get("rank"), int) and item.get("rank") < 99 else "—",
-                "Targets": int(round(float(item.get("targets")))) if _finite(item.get("targets")) else "—",
-                "Target Share": _fmt(item.get("target_share"), 1, "%"),
-                "Detail": f"recent {int(item.get('usage_games') or 0)} verified game(s)",
-            }
-        )
+        rows.append({
+            "Group": "Core weapon",
+            "Player": _safe(item.get("name"), "Unknown"),
+            "Pos": _safe(item.get("position"), "—"),
+            "Status": _safe(hit.get("status"), "No listed injury"),
+            "Depth": f"#{item.get('rank')}" if isinstance(item.get("rank"), int) and item.get("rank") < 99 else "—",
+            "Targets": int(round(float(item.get("targets")))) if _finite(item.get("targets")) else "—",
+            "Target Share": _fmt(item.get("target_share"), 1, "%"),
+            "Detail": f"recent {int(item.get('usage_games') or 0)} verified game(s) • {item.get('source','ESPN depth')}",
+        })
 
     for group, items in (
         ("Pass catcher injury", p.get("skill_injuries") or []),
@@ -151,18 +152,16 @@ def _personnel_table(p: dict) -> pd.DataFrame:
     ):
         for item in items:
             rank = item.get("depth_rank")
-            rows.append(
-                {
-                    "Group": group,
-                    "Player": _safe(item.get("name"), "Unknown"),
-                    "Pos": _safe(item.get("position"), "—"),
-                    "Status": _safe(item.get("status"), "Unspecified"),
-                    "Depth": f"#{rank}" if isinstance(rank, int) and rank < 99 else "—",
-                    "Targets": int(round(float(item.get("targets")))) if _finite(item.get("targets")) else "—",
-                    "Target Share": _fmt(item.get("target_share"), 1, "%"),
-                    "Detail": _safe(item.get("detail")),
-                }
-            )
+            rows.append({
+                "Group": group,
+                "Player": _safe(item.get("name"), "Unknown"),
+                "Pos": _safe(item.get("position"), "—"),
+                "Status": _safe(item.get("status"), "Unspecified"),
+                "Depth": f"#{rank}" if isinstance(rank, int) and rank < 99 else "—",
+                "Targets": int(round(float(item.get("targets")))) if _finite(item.get("targets")) else "—",
+                "Target Share": _fmt(item.get("target_share"), 1, "%"),
+                "Detail": _safe(item.get("detail")),
+            })
     return pd.DataFrame(rows)
 
 
@@ -171,7 +170,7 @@ def render_nfl_passing_yards_hub() -> None:
     original_personnel = step7_owner.personnel
     original_card = step5_ui._personnel_card
     original_table = step5_ui._personnel_table
-    step7_owner.personnel = _PersonnelV2Proxy(original_personnel)
+    step7_owner.personnel = _PersonnelV3Proxy(original_personnel)
     step5_ui._personnel_card = _personnel_card
     step5_ui._personnel_table = _personnel_table
     try:
@@ -185,7 +184,7 @@ def render_nfl_passing_yards_hub() -> None:
 __all__ = [
     "FROZEN_PRIOR",
     "MODEL_VERSION",
-    "_PersonnelV2Proxy",
+    "_PersonnelV3Proxy",
     "_personnel_card",
     "_personnel_table",
     "render_nfl_passing_yards_hub",
