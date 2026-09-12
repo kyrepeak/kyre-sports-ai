@@ -1,0 +1,35 @@
+name: NFL Passing Yards live source cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_passing_yards_*.py'
+      - 'nfl_hub_v*.py'
+      - 'streamlit_memory_lazy_router_v*.py'
+      - 'app.py'
+      - 'devsystem/nfl_passing_yards_live_cert_v1.py'
+      - '.github/workflows/nfl-passing-yards-live-source-cert-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-yards-live-source-cert-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-source-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production Python stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+      - name: Certify Buccaneers at Bengals live Passing Yards chain
+        run: python devsystem/nfl_passing_yards_live_cert_v1.py
