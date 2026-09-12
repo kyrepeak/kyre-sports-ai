@@ -3,6 +3,11 @@
 Wraps V1 certification unchanged except that Step 3 uses the production
 pass-defense V3 wrapper, which normalizes verified ESPN schedule timestamps to
 UTC before cutoff comparisons. No sportsbook input or projection math changes.
+
+Important: this swaps the V1 cert module's *module reference* through a proxy;
+it never mutates the shared V2 module function object. That keeps V3's own
+internal delegation to the real V2 implementation intact and prevents recursive
+self-calls during certification.
 """
 from __future__ import annotations
 
@@ -12,13 +17,23 @@ import nfl_passing_yards_defense_v3 as defense_v3
 from devsystem import nfl_passing_yards_live_stage_cert_v1 as prior
 
 
+class _DefenseProxy:
+    def __init__(self, wrapped) -> None:
+        self._wrapped = wrapped
+
+    def __getattr__(self, name):
+        if name == "build_pass_defense_profile":
+            return defense_v3.build_pass_defense_profile
+        return getattr(self._wrapped, name)
+
+
 def _run(func) -> None:
-    original = prior.defense_v2.build_pass_defense_profile
-    prior.defense_v2.build_pass_defense_profile = defense_v3.build_pass_defense_profile
+    original_module = prior.defense_v2
+    prior.defense_v2 = _DefenseProxy(original_module)
     try:
         func()
     finally:
-        prior.defense_v2.build_pass_defense_profile = original
+        prior.defense_v2 = original_module
 
 
 def main() -> None:
