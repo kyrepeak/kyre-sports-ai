@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from sports_api.collectors.nfl_fanduel_passing_yards import NFLPassingYardsCollectorError
 from sports_api.collectors.nfl_passing_yards_render_espn_v2 import (
-    collect_fanduel_nfl_passing_yards_hosted,
+    collect_fanduel_nfl_passing_yards_hosted as collect_fanduel_nfl_passing_yards,
 )
 
 router = APIRouter(prefix="/api/v1/nfl/passing-yards", tags=["nfl-passing-yards"])
@@ -56,7 +56,7 @@ def passing_yards_market(
     if not event_id.isdigit():
         raise HTTPException(status_code=422, detail="event_id must be an official numeric ESPN NFL event ID")
     try:
-        payload = collect_fanduel_nfl_passing_yards_hosted(event_id)
+        payload = collect_fanduel_nfl_passing_yards(event_id)
     except NFLPassingYardsCollectorError as exc:
         raise HTTPException(
             status_code=503,
