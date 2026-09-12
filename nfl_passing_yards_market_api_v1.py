@@ -18,6 +18,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import math
 import os
+import time
 from typing import Any
 
 import requests
@@ -27,8 +28,20 @@ DEFAULT_API_BASE_URL = "https://kyre-sports-api.onrender.com"
 SCHEMA_VERSION = "nfl_passing_yards_market_v1"
 MAX_MARKET_AGE_SECONDS = 300
 MAX_FUTURE_SKEW_SECONDS = 30
-REQUEST_CONNECT_TIMEOUT_SECONDS = 2.5
-REQUEST_READ_TIMEOUT_SECONDS = 5.0
+
+# Step 10 transport policy. One bounded retry is allowed only for transient
+# connection/read failures against the exact same official event endpoint.
+# HTTP/schema/identity/freshness/market validation still fails closed without
+# a retry that could turn invalid data into accepted market context.
+REQUEST_CONNECT_TIMEOUT_SECONDS = 3.0
+REQUEST_READ_TIMEOUT_SECONDS = 8.0
+MAX_REQUEST_ATTEMPTS = 2
+RETRY_BACKOFF_SECONDS = 0.35
+_TRANSIENT_REQUEST_EXCEPTIONS = (
+    requests.exceptions.ConnectTimeout,
+    requests.exceptions.ReadTimeout,
+    requests.exceptions.ConnectionError,
+)
 
 
 def _safe(value: Any, default: str = "") -> str:
@@ -190,25 +203,52 @@ def fetch_event_market(
     if not event_id.isdigit():
         return _fail("official ESPN event ID is required", event_id=event_id)
     url = f"{_safe(base_url, _api_base_url()).rstrip('/')}/api/v1/nfl/passing-yards"
-    try:
-        response = requests.get(
-            url,
-            params={"event_id": event_id},
-            timeout=(REQUEST_CONNECT_TIMEOUT_SECONDS, REQUEST_READ_TIMEOUT_SECONDS),
-            headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Streamlit/1.0"},
+
+    response = None
+    request_error: Exception | None = None
+    request_attempts = 0
+    for attempt in range(1, MAX_REQUEST_ATTEMPTS + 1):
+        request_attempts = attempt
+        try:
+            response = requests.get(
+                url,
+                params={"event_id": event_id},
+                timeout=(REQUEST_CONNECT_TIMEOUT_SECONDS, REQUEST_READ_TIMEOUT_SECONDS),
+                headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Streamlit/1.0"},
+            )
+        except _TRANSIENT_REQUEST_EXCEPTIONS as exc:
+            request_error = exc
+            if attempt < MAX_REQUEST_ATTEMPTS:
+                time.sleep(RETRY_BACKOFF_SECONDS)
+                continue
+        except Exception as exc:
+            # Unknown/non-transient request failures remain one-shot and fail closed.
+            request_error = exc
+        break
+
+    if response is None:
+        out = _fail(
+            f"Kyre Sports API request failed: {type(request_error).__name__ if request_error else 'UnknownError'}",
+            event_id=event_id,
         )
-    except Exception as exc:
-        return _fail(f"Kyre Sports API request failed: {type(exc).__name__}", event_id=event_id)
+        out["request_attempts"] = request_attempts
+        return out
+
     status = int(getattr(response, "status_code", 0) or 0)
     if status != 200:
-        return _fail(f"Kyre Sports API returned HTTP {status}", event_id=event_id, http=status)
+        out = _fail(f"Kyre Sports API returned HTTP {status}", event_id=event_id, http=status)
+        out["request_attempts"] = request_attempts
+        return out
     try:
         payload = response.json()
     except Exception:
-        return _fail("Kyre Sports API returned invalid JSON", event_id=event_id, http=status)
+        out = _fail("Kyre Sports API returned invalid JSON", event_id=event_id, http=status)
+        out["request_attempts"] = request_attempts
+        return out
     out = validate_event_payload(payload, event_id, now_utc=now_utc)
     out["http"] = status
     out["api_url"] = url
+    out["request_attempts"] = request_attempts
     return out
 
 
@@ -246,7 +286,11 @@ def market_for_athlete(event_market: dict, official_athlete_id: str) -> dict:
 __all__ = [
     "DEFAULT_API_BASE_URL",
     "MAX_MARKET_AGE_SECONDS",
+    "MAX_REQUEST_ATTEMPTS",
     "MODEL_VERSION",
+    "REQUEST_CONNECT_TIMEOUT_SECONDS",
+    "REQUEST_READ_TIMEOUT_SECONDS",
+    "RETRY_BACKOFF_SECONDS",
     "fetch_event_market",
     "market_for_athlete",
     "validate_event_payload",

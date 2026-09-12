@@ -1,0 +1,58 @@
+name: NFL Passing Yards Step 10 transport reliability cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_passing_yards_market_api_v1.py'
+      - 'tests/test_nfl_passing_yards_step10_transport_reliability.py'
+      - 'tests/test_nfl_passing_yards_api_page_v20.py'
+      - '.github/workflows/nfl-passing-yards-step10-transport-reliability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-yards-step10-transport-reliability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-step10-transport:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install production Python stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Compile Step 10 API client and frozen V20 bridge
+        run: |
+          python -m py_compile nfl_passing_yards_market_api_v1.py
+          python -m py_compile nfl_passing_yards_hub_v20.py
+      - name: Certify bounded transient retry and fail-closed validation
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_step10_transport_reliability.py
+      - name: Re-run certified V20 Step 10 API-page contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_passing_yards_api_page_v20.py
+      - name: Re-run exact-ID V21/V22 visual contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_visual_identity_v21.py
+          python -m pytest -q tests/test_nfl_passing_yards_visual_identity_v22.py
+      - name: Verify permanent Step 10 safety contract remains frozen
+        run: |
+          grep -F 'MAX_MARKET_AGE_SECONDS = 300' nfl_passing_yards_market_api_v1.py
+          grep -F 'MAX_REQUEST_ATTEMPTS = 2' nfl_passing_yards_market_api_v1.py
+          grep -F '"projection_weight": 0.0' nfl_passing_yards_market_api_v1.py
+          grep -F '"stake_sizing_enabled": False' nfl_passing_yards_market_api_v1.py
+          grep -F 'fuzzy_matching' nfl_passing_yards_market_api_v1.py
+          grep -F 'synthetic_event_ids' nfl_passing_yards_market_api_v1.py
