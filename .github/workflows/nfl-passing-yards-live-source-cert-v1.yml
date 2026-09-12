@@ -32,4 +32,6 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt
       - name: Certify Buccaneers at Bengals live Passing Yards chain
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: python devsystem/nfl_passing_yards_live_cert_v1.py
