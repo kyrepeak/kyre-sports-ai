@@ -48,11 +48,12 @@ def test_router_keeps_frozen_v20_v21_v22_contracts_and_advances_to_v23():
 
 def test_v23_has_no_identity_network_or_market_math_implementation():
     source = Path("nfl_passing_yards_hub_v23.py").read_text()
+    lower = source.lower()
     assert "import requests" not in source
     assert "resolve_matchup_identity" not in source
     assert "evaluate_market(" not in source
     assert "projection_yards" not in source
     assert "over_ev" not in source
     assert "under_ev" not in source
-    assert "sportsbook projection influence remains 0.0%" in source
-    assert "stake sizing remains OFF" in source
+    assert "sportsbook projection influence remains 0.0%" in lower
+    assert "stake sizing remains off" in lower
