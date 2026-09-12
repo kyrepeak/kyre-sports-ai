@@ -22,6 +22,8 @@ jobs:
   live-step4-probe:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,12 +38,10 @@ jobs:
           python -m py_compile nfl_hub_v35.py
           python -m py_compile devsystem/nfl_passing_yards_step4_live_probe_v1.py
       - name: Run V5 source-recovery regression tests
-        run: pytest -q tests/test_nfl_passing_yards_step4_pressure_live_fallback_v5.py
+        run: python -m pytest -q tests/test_nfl_passing_yards_step4_pressure_live_fallback_v5.py
       - name: Re-run frozen V4 pressure gate tests
-        run: pytest -q tests/test_nfl_passing_yards_step4_pressure_fallback_v4.py
+        run: python -m pytest -q tests/test_nfl_passing_yards_step4_pressure_fallback_v4.py
       - name: Probe exact live ESPN IDs for Step 4
-        env:
-          PYTHONPATH: ${{ github.workspace }}
         run: python devsystem/nfl_passing_yards_step4_live_probe_v1.py
       - name: Permanent protection assertions
         run: |
