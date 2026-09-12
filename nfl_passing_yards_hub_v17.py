@@ -4,6 +4,10 @@ Presentation/data-routing wrapper over certified V16. It preserves Steps 1–10
 math and the cleanup UI while allowing verified 2025 regular-season evidence to
 bridge the opening 2026 slate when no current-season completed-game sample exists.
 Current-season data always wins automatically as soon as it is usable.
+
+Production hotfix: ESPN Core season statistics are now requested from the
+explicit all-splits ``statistics/0`` resource first. This fixes the blank Step 2+
+chain seen on the Sep. 13 opening-week slate without changing model math.
 """
 from __future__ import annotations
 
@@ -11,13 +15,15 @@ from html import escape
 
 import streamlit as st
 
+import nfl_passing_yards_defense_v1 as defense_v1
 import nfl_passing_yards_defense_v2 as defense_v2
 import nfl_passing_yards_environment_v2 as environment_v2
+import nfl_passing_yards_espn_stat_split_v1 as stat_split
 import nfl_passing_yards_hub_v16 as prior
 import nfl_passing_yards_hub_v8 as step7_ui
 import nfl_passing_yards_pressure_v2 as pressure_v2
 
-MODEL_VERSION = "NFL PASSING YARDS V17 • EARLY SEASON VERIFIED BRIDGE"
+MODEL_VERSION = "NFL PASSING YARDS V17 • EARLY SEASON VERIFIED BRIDGE • ESPN SPLIT-ZERO HOTFIX"
 
 _EARLY_CSS = r"""
 <style>
@@ -42,6 +48,8 @@ def render_nfl_passing_yards_hub() -> None:
     st.markdown(_EARLY_CSS, unsafe_allow_html=True)
 
     original_profile_builder = step7_ui.profile.build_qb_profile
+    original_profile_season_loader = step7_ui.profile._season_stats_payload
+    original_team_stats_loader = defense_v1._team_stats_payload
     original_defense_builder = step7_ui.defense.build_pass_defense_profile
     original_pressure_builder = step7_ui.pressure.build_pressure_matchup
     original_environment_builder = step7_ui.environment.build_game_environment
@@ -67,6 +75,10 @@ def render_nfl_passing_yards_hub() -> None:
     def defense_card(qb_ctx: dict, opponent_ctx: dict, defense_profile: dict) -> str:
         return _with_provenance(original_defense_card(qb_ctx, opponent_ctx, defense_profile), defense_profile, "Step 3 source")
 
+    # Exact verified IDs still drive every request. The only transport change is
+    # selecting ESPN's explicit all-splits statistics/0 resource first.
+    step7_ui.profile._season_stats_payload = stat_split.athlete_stats_payload
+    defense_v1._team_stats_payload = stat_split.team_stats_payload
     step7_ui.profile.build_qb_profile = capture_profile
     step7_ui.defense.build_pass_defense_profile = bridged_defense
     step7_ui.pressure.build_pressure_matchup = pressure_v2.build_pressure_matchup
@@ -76,6 +88,8 @@ def render_nfl_passing_yards_hub() -> None:
     try:
         prior.render_nfl_passing_yards_hub()
     finally:
+        step7_ui.profile._season_stats_payload = original_profile_season_loader
+        defense_v1._team_stats_payload = original_team_stats_loader
         step7_ui.profile.build_qb_profile = original_profile_builder
         step7_ui.defense.build_pass_defense_profile = original_defense_builder
         step7_ui.pressure.build_pressure_matchup = original_pressure_builder
