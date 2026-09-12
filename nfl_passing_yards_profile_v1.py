@@ -1,13 +1,13 @@
 """NFL Passing Yards Step 2 — descriptive quarterback passing profile.
 
-This layer adds only verified/descriptive quarterback production data. It does
-not create a passing-yards projection, sportsbook grade, fair line, probability,
-Monte Carlo result, ranking, or recommendation.
-
 Primary source: ESPN NFL athlete season statistics.
 Secondary/recent source: ESPN NFL athlete game log.
-All derived fields are arithmetic transforms of returned statistics and fail
-closed when the underlying stat evidence is missing.
+
+Early-season rule: current regular-season data always wins. If the selected
+regular season has no usable completed-game baseline yet, the immediately prior
+regular season is allowed as a clearly-labelled fallback. Recent rolling history
+may be filled from that prior season so downstream variance does not disappear
+on opening weekend. No sportsbook input is used and nothing is synthesized.
 """
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ from typing import Any
 import pandas as pd
 import requests
 import streamlit as st
+
+import nfl_passing_yards_early_season_v1 as early
 
 MODEL_VERSION = "NFL PASSING YARDS STEP 2 • QB PASSING PROFILE V1"
 CORE_BASE = "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl"
@@ -165,6 +167,7 @@ def parse_season_passing(payload: dict) -> dict:
 
 
 def _gamelog_category(payload: dict):
+    # Older ESPN payloads put labels/events directly on the passing category.
     for cat in (payload or {}).get("categories", []) or []:
         if not isinstance(cat, dict):
             continue
@@ -176,16 +179,48 @@ def _gamelog_category(payload: dict):
 
 def _event_meta_map(payload: dict) -> dict:
     raw = (payload or {}).get("events") or {}
+    # Current common/v3 gamelog payloads can expose event metadata as a map.
     if isinstance(raw, dict):
-        return raw
+        if isinstance(raw.get("items"), list):
+            raw = raw.get("items")
+        else:
+            return raw
     out = {}
     if isinstance(raw, list):
         for item in raw:
             if isinstance(item, dict):
-                key = _safe(item.get("id") or item.get("eventId"))
+                event = item.get("event") if isinstance(item.get("event"), dict) else item
+                key = _safe(event.get("id") or item.get("id") or item.get("eventId"))
                 if key:
-                    out[key] = item
+                    merged = dict(event)
+                    merged.update({k: v for k, v in item.items() if k not in merged})
+                    out[key] = merged
     return out
+
+
+def _top_level_gamelog_rows(payload: dict, category_name: str = "passing") -> tuple[list[str], list[dict]]:
+    """Handle current ESPN common/v3 shape where categories are metadata only."""
+    labels: list[str] = []
+    rows: list[dict] = []
+    # Some versions expose names/labels once at the payload root.
+    for key in ("labels", "names", "displayNames"):
+        raw = (payload or {}).get(key)
+        if isinstance(raw, list) and raw:
+            labels = [_safe(x) for x in raw]
+            break
+    raw_events = (payload or {}).get("events")
+    if isinstance(raw_events, dict) and isinstance(raw_events.get("items"), list):
+        raw_events = raw_events.get("items")
+    if isinstance(raw_events, list):
+        for item in raw_events:
+            if not isinstance(item, dict):
+                continue
+            category = _norm(item.get("category") or item.get("name") or item.get("type"))
+            if category and category_name not in category:
+                continue
+            if item.get("stats") is not None or item.get("statistics") is not None:
+                rows.append(dict(item))
+    return labels, rows
 
 
 def parse_recent_passing(payload: dict) -> list[dict]:
@@ -193,13 +228,25 @@ def parse_recent_passing(payload: dict) -> list[dict]:
     labels = [_safe(x) for x in (cat.get("labels") or [])]
     norm_labels = [_norm(x) for x in labels]
     events = cat.get("events") or []
+
+    if not events:
+        top_labels, top_rows = _top_level_gamelog_rows(payload)
+        if top_rows:
+            labels = top_labels or labels
+            norm_labels = [_norm(x) for x in labels]
+            events = top_rows
+
     if isinstance(events, dict):
         iterable = []
-        for key, value in events.items():
-            if isinstance(value, dict):
-                row = dict(value)
-                row.setdefault("eventId", key)
-                iterable.append(row)
+        event_items = events.get("items") if isinstance(events.get("items"), list) else None
+        if event_items is not None:
+            iterable = [dict(x) for x in event_items if isinstance(x, dict)]
+        else:
+            for key, value in events.items():
+                if isinstance(value, dict):
+                    row = dict(value)
+                    row.setdefault("eventId", key)
+                    iterable.append(row)
     else:
         iterable = list(events) if isinstance(events, list) else []
 
@@ -222,8 +269,9 @@ def parse_recent_passing(payload: dict) -> list[dict]:
                     return float(stat_lookup[key])
             return math.nan
 
-        event_id = _safe(item.get("eventId") or item.get("id"))
-        meta = meta_map.get(event_id) or {}
+        event_obj = item.get("event") if isinstance(item.get("event"), dict) else {}
+        event_id = _safe(item.get("eventId") or item.get("id") or event_obj.get("id"))
+        meta = meta_map.get(event_id) or event_obj or {}
         opponent = meta.get("opponent") or item.get("opponent") or {}
         opponent_name = _safe(
             opponent.get("abbreviation") if isinstance(opponent, dict) else opponent,
@@ -272,24 +320,52 @@ def build_qb_profile(athlete_id: str, qb_name: str, year: int, season_type: int 
     if not athlete_id:
         return {"ready": False, "reason": "missing verified athlete ID", "athlete_id": "", "qb_name": qb_name}
 
-    season_payload, season_diag = _season_stats_payload(int(year), int(season_type), athlete_id)
-    season = parse_season_passing(season_payload) if season_diag.get("ok") else {"ready": False}
-    gamelog_payload, gamelog_diag = _gamelog_payload(int(year), athlete_id)
-    games = parse_recent_passing(gamelog_payload) if gamelog_diag.get("ok") else []
+    year = int(year)
+    season_type = int(season_type)
+    season_payload, season_diag = _season_stats_payload(year, season_type, athlete_id)
+    current_season = parse_season_passing(season_payload) if season_diag.get("ok") else {"ready": False}
+    season = current_season
+    source_year = year
+    fallback_used = False
+    fallback_season_diag = {"http": None, "ok": False}
 
+    if not current_season.get("ready") and early.allow_prior_regular_fallback(season_type):
+        prior_year = early.prior_regular_year(year)
+        prior_payload, fallback_season_diag = _season_stats_payload(prior_year, 2, athlete_id)
+        prior_season = parse_season_passing(prior_payload) if fallback_season_diag.get("ok") else {"ready": False}
+        if prior_season.get("ready"):
+            season = prior_season
+            source_year = prior_year
+            fallback_used = True
+
+    gamelog_payload, gamelog_diag = _gamelog_payload(year, athlete_id)
+    current_games = parse_recent_passing(gamelog_payload) if gamelog_diag.get("ok") else []
+    prior_games: list[dict] = []
+    prior_gamelog_diag = {"http": None, "ok": False}
+    if len(current_games) < 5 and early.allow_prior_regular_fallback(season_type):
+        prior_year = early.prior_regular_year(year)
+        prior_payload, prior_gamelog_diag = _gamelog_payload(prior_year, athlete_id)
+        if prior_gamelog_diag.get("ok"):
+            prior_games = parse_recent_passing(prior_payload)
+
+    games = early.merge_recent_rows(current_games, prior_games, limit=5)
     recent3 = games[:3]
     recent5 = games[:5]
     home = [x for x in games if x.get("home_away") == "home"]
     away = [x for x in games if x.get("home_away") == "away"]
+    prov = early.provenance(bool(current_season.get("ready")), fallback_used, year, source_year)
     result = {
         "ready": bool(season.get("ready")),
         "reason": "" if season.get("ready") else "verified season passing totals are incomplete",
         "athlete_id": athlete_id,
         "qb_name": qb_name,
-        "season_year": int(year),
-        "season_type": int(season_type),
+        "season_year": source_year,
+        "requested_season_year": year,
+        "season_type": season_type,
         "season": season,
         "recent_games": games,
+        "current_recent_games": len(current_games),
+        "prior_recent_games_used": max(0, len(games) - len(current_games[:5])),
         "recent3_yards": _avg(recent3, "passing_yards"),
         "recent3_attempts": _avg(recent3, "attempts"),
         "recent5_yards": _avg(recent5, "passing_yards"),
@@ -299,9 +375,12 @@ def build_qb_profile(athlete_id: str, qb_name: str, year: int, season_type: int 
         "home_games": len(home),
         "away_games": len(away),
         "season_http": season_diag.get("http"),
+        "fallback_season_http": fallback_season_diag.get("http"),
         "gamelog_http": gamelog_diag.get("http"),
-        "season_source_ok": bool(season_diag.get("ok")),
-        "gamelog_source_ok": bool(gamelog_diag.get("ok")),
+        "fallback_gamelog_http": prior_gamelog_diag.get("http"),
+        "season_source_ok": bool(season_diag.get("ok") or fallback_season_diag.get("ok")),
+        "gamelog_source_ok": bool(gamelog_diag.get("ok") or prior_gamelog_diag.get("ok")),
+        **prov,
     }
     return result
 
