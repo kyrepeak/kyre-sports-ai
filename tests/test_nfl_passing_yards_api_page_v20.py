@@ -166,7 +166,7 @@ def test_step10_proxy_autofills_fresh_api_market_and_disables_only_market_field(
     assert value == "249.5"
     assert fake.session_state[key] == "249.5"
     assert fake.calls[-1]["kwargs"]["disabled"] is True
-    assert "projection influence remains 0.0%" in fake.calls[-1]["kwargs"]["help"]
+    assert "projection influence remains 0.0%" in fake.calls[-1]["kwargs"]["help"].lower()
 
     proxy.text_input("Unrelated input", value="manual", key="unrelated")
     assert fake.calls[-1]["kwargs"].get("disabled") is not True
