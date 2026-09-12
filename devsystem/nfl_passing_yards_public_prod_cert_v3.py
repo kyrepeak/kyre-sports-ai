@@ -1,13 +1,14 @@
 """Browser-hardened wrapper for the NFL Passing Yards public production cert.
 
 V3 changes certification mechanics only. Production/runtime code is untouched.
-It keeps V2's ESPN transport hardening, but replaces two brittle Playwright
-interactions discovered by the live public run:
+It keeps V2's ESPN transport hardening while making the Playwright proof follow
+the public page's actual behavior:
 
-* set the Streamlit slate date atomically instead of locale-dependent segmented
-  keystrokes;
-* resolve selectbox options inside the app frame first (with a page fallback)
-  instead of assuming options always live in the top-level page.
+* accept the page's own automatic next-verified-slate selection only when the
+  rendered ET SLATE label proves the exact ESPN calendar day;
+* accept the page's own default matchup only when Step 1 already renders the
+  exact official ESPN event ID discovered before browser navigation;
+* otherwise use exact date/matchup controls with frame-safe fallbacks.
 
 The cert remains read-only and still requires the exact ESPN event identity,
 fresh Kyre Sports API / FanDuel Passing Yards line + two-way prices, 0.0%
@@ -25,10 +26,23 @@ import nfl_passing_yards_public_prod_cert_v1 as base
 import nfl_passing_yards_public_prod_cert_v2 as transport
 
 
+def _rendered_slate_is_exact(frame, target: str) -> bool:
+    try:
+        body = base._body(frame)
+    except Exception:
+        return False
+    # The compact status block renders the selected day immediately above
+    # "ET SLATE". Do not treat a date mentioned only in an informational message
+    # as proof that the widget actually selected that day.
+    return re.search(rf"(?m)(?:^|\n){re.escape(target)}\s*\nET SLATE(?:\n|$)", body) is not None
+
+
 def _date_input(frame):
     candidates = [
+        frame.locator('[data-testid="stDateInput"] input'),
         frame.locator('input[aria-label="NFL Passing Yards slate date"]'),
         frame.get_by_label("NFL Passing Yards slate date", exact=True),
+        frame.locator('input[type="date"]'),
     ]
     for locator in candidates:
         try:
@@ -51,9 +65,36 @@ def _calendar_value(value: str) -> str:
 
 def _set_slate_date_exact(page, frame, day: str) -> None:
     target = datetime.fromisoformat(day).date().isoformat()
+
+    # The Passing Yards page deliberately auto-opens the next verified NFL slate
+    # when today has no games. If it already landed on the exact ESPN day, that is
+    # stronger production evidence than mutating the date widget again.
+    if _rendered_slate_is_exact(frame, target):
+        print("PUBLIC_CERT_DATE_GREEN " + json.dumps({"mode": "public-auto-slate", "target": target}, sort_keys=True))
+        return
+
     date_input = _date_input(frame)
     if date_input is None:
-        raise base.PublicProductionCertFailure("NFL Passing Yards slate-date input was not found")
+        # Log the visible input surface so a future Streamlit DOM change is easy
+        # to diagnose without weakening the exact-date requirement.
+        diagnostics: list[dict[str, str]] = []
+        try:
+            for i in range(min(frame.locator("input").count(), 25)):
+                item = frame.locator("input").nth(i)
+                diagnostics.append(
+                    {
+                        "type": str(item.get_attribute("type") or ""),
+                        "aria": str(item.get_attribute("aria-label") or ""),
+                        "placeholder": str(item.get_attribute("placeholder") or ""),
+                        "value": str(item.input_value() or ""),
+                    }
+                )
+        except Exception:
+            pass
+        raise base.PublicProductionCertFailure(
+            "NFL Passing Yards slate-date input was not found and rendered ET slate did not equal target; inputs="
+            + json.dumps(diagnostics, sort_keys=True)
+        )
 
     input_type = str(date_input.get_attribute("type") or "").strip().lower()
     placeholder = str(date_input.get_attribute("placeholder") or "").strip()
@@ -66,10 +107,6 @@ def _set_slate_date_exact(page, frame, day: str) -> None:
         )
     )
 
-    # Native date inputs require ISO. Streamlit/BaseWeb currently exposes a text
-    # control in production, so try the common exact calendar formats atomically
-    # with Playwright fill(). fill() replaces the whole value in one event rather
-    # than walking segmented date fields one keystroke at a time.
     day_obj = datetime.fromisoformat(target).date()
     attempts = [target]
     if input_type != "date":
@@ -98,23 +135,22 @@ def _set_slate_date_exact(page, frame, day: str) -> None:
             observations.append({"fill": fill_value, "error": f"{type(exc).__name__}: {exc}"[:220]})
             continue
 
-        deadline = time.monotonic() + 5.0
+        deadline = time.monotonic() + 7.0
         last_value = ""
         while time.monotonic() < deadline:
             page.wait_for_timeout(350)
+            if _rendered_slate_is_exact(frame, target):
+                print(
+                    "PUBLIC_CERT_DATE_GREEN "
+                    + json.dumps({"mode": "widget", "fill": fill_value, "target": target}, sort_keys=True)
+                )
+                return
             try:
                 refreshed = _date_input(frame)
-                if refreshed is None:
-                    continue
-                last_value = str(refreshed.input_value() or "").strip()
-                if _calendar_value(last_value) == target or last_value == target:
-                    print(
-                        "PUBLIC_CERT_DATE_GREEN "
-                        + json.dumps({"fill": fill_value, "observed": last_value, "target": target}, sort_keys=True)
-                    )
-                    return
+                if refreshed is not None:
+                    last_value = str(refreshed.input_value() or "").strip()
             except Exception:
-                continue
+                pass
         observations.append({"fill": fill_value, "observed": last_value})
 
     raise base.PublicProductionCertFailure(
@@ -143,9 +179,35 @@ def _visible_option_texts(page, frame) -> tuple[Any, list[str]]:
     return frame.get_by_role("option"), last
 
 
+def _exact_event_already_rendered(frame, event_id: str) -> bool:
+    try:
+        body = base._body(frame)
+    except Exception:
+        return False
+    # Step 1's official identity banner is the authority, not team-name text.
+    return re.search(rf"\bESPN event\s+{re.escape(str(event_id))}\b", body, flags=re.IGNORECASE) is not None
+
+
 def _select_exact_matchup_frame_safe(page, frame, event: dict[str, Any]) -> str:
+    event_id = str(event["event_id"])
     matchup = frame.get_by_role("combobox", name="Verified matchup", exact=True)
     matchup.wait_for(state="visible", timeout=120000)
+
+    # Public production defaults to the first verified matchup on the selected
+    # slate. If Step 1 already proves the exact official event, do not reopen the
+    # selectbox merely for automation's sake.
+    if _exact_event_already_rendered(frame, event_id):
+        try:
+            selected = str(matchup.input_value() or "").strip()
+        except Exception:
+            selected = ""
+        chosen = selected or f"{(event.get('away') or {}).get('abbr', '')} @ {(event.get('home') or {}).get('abbr', '')}"
+        print(
+            "PUBLIC_CERT_MATCHUP_GREEN "
+            + json.dumps({"mode": "public-default", "event_id": event_id, "option": chosen}, sort_keys=True)
+        )
+        return chosen
+
     matchup.click()
     options, texts = _visible_option_texts(page, frame)
 
@@ -177,14 +239,17 @@ def _select_exact_matchup_frame_safe(page, frame, event: dict[str, Any]) -> str:
         except Exception:
             pass
         raise base.PublicProductionCertFailure(
-            f"verified ESPN event {event['event_id']} was not present in public matchup options; saw {texts}"
+            f"verified ESPN event {event_id} was not present in public matchup options; saw {texts}"
         )
 
     try:
         options.nth(chosen_index).click()
     except Exception:
         base._choose(page, matchup, chosen)
-    print("PUBLIC_CERT_MATCHUP_GREEN " + json.dumps({"event_id": event["event_id"], "option": chosen}, sort_keys=True))
+    print(
+        "PUBLIC_CERT_MATCHUP_GREEN "
+        + json.dumps({"mode": "selectbox", "event_id": event_id, "option": chosen}, sort_keys=True)
+    )
     return chosen
 
 
