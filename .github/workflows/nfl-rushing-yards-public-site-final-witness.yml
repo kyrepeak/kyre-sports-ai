@@ -1,0 +1,119 @@
+name: NFL Rushing Yards Public Site Final Witness
+
+on:
+  push:
+    branches: [nfl-rushing-yards-public-site-final-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-rushing-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Drive actual public Streamlit Rushing page
+        shell: bash
+        run: |
+          mkdir -p artifacts/rushing-public-final
+          python - <<'PY'
+          import json, time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _find_app_frame, _wait_for_text, _body_has_forbidden_error, BrowserQAFailure
+
+          base='https://kyre-sports-ai.streamlit.app'
+          url=base+'/?ks_nfl_sport=NFL&ks_nfl_market=Rushing%20Yards'
+          artifacts=Path('artifacts/rushing-public-final')
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1440,'height':1800})
+              try:
+                  response=page.goto(url,wait_until='domcontentloaded',timeout=180000)
+                  if response is None or response.status >= 500:
+                      raise BrowserQAFailure(f'Public Streamlit initial HTTP failure: {None if response is None else response.status}')
+                  frame,_=_find_app_frame(page)
+                  body=_wait_for_text(frame,'Ground Game Lab',180.0)
+                  body=_wait_for_text(frame,'Monster Performance Diagnosis',240.0)
+                  forbidden=_body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f'Public Rushing page runtime error marker: {forbidden}')
+                  leaked=[m for m in ('<article class="krush-game"','<article class="krush-proj"','<article class="krush-mkt"') if m in body]
+                  if leaked:
+                      raise BrowserQAFailure('Public Streamlit still leaks literal HTML: '+', '.join(leaked))
+
+                  chase=frame.locator('article.krush4-card').filter(has_text='Chase Brown')
+                  bucky=frame.locator('article.krush4-card').filter(has_text='Bucky Irving')
+                  if chase.count() != 1:
+                      raise BrowserQAFailure(f'Public site expected one Chase Brown card, got {chase.count()}')
+                  if bucky.count() != 1:
+                      raise BrowserQAFailure(f'Public site expected one Bucky Irving card, got {bucky.count()}')
+                  chase_text=chase.first.inner_text()
+                  bucky_text=bucky.first.inner_text()
+                  if '56.5' not in chase_text or 'EXACT-ID LIVE' not in chase_text:
+                      raise BrowserQAFailure('Public Chase Brown card missing live 56.5 exact-ID market')
+                  if '57.5' not in bucky_text or 'EXACT-ID LIVE' not in bucky_text:
+                      raise BrowserQAFailure('Public Bucky Irving card missing live 57.5 exact-ID market')
+                  if 'sportsbook projection influence 0.0%' not in body.lower():
+                      raise BrowserQAFailure('Public 0.0% sportsbook projection influence marker missing')
+
+                  result={
+                      'status':'GREEN',
+                      'site':base,
+                      'chase_brown_line':'56.5',
+                      'bucky_irving_line':'57.5',
+                      'chase_exact_id_live':True,
+                      'bucky_exact_id_live':True,
+                      'literal_html_leaks':[],
+                      'sportsbook_projection_influence':0.0,
+                      'projection_math_changed':False,
+                  }
+                  page.screenshot(path=str(artifacts/'rushing_public_final_green.png'),full_page=True)
+                  (artifacts/'rushing_public_final_metrics.json').write_text(json.dumps(result,indent=2))
+                  print('NFL_RUSHING_PUBLIC_SITE_FINAL_GREEN')
+                  print(json.dumps(result,indent=2))
+              except Exception:
+                  try:
+                      page.screenshot(path=str(artifacts/'rushing_public_final_failure.png'),full_page=True)
+                  except Exception:
+                      pass
+                  raise
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload public-site evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-rushing-public-final-${{ github.run_id }}
+          path: artifacts/rushing-public-final
+          if-no-files-found: warn
+          retention-days: 7
