@@ -1,23 +1,24 @@
-"""KYRE Streamlit Router V98 — NFL Rushing Yards cleanup foundation.
+"""KYRE Streamlit Router V98 — NFL Rushing Yards additive route.
 
 V97 remains the certified Passing Yards owner. V98 is additive: it temporarily
 replaces V97's handler symbol only long enough to intercept Rushing Yards and
-route that market to the new presentation-only Rushing Yards V1 page. Every
-other NFL market delegates back to V97's original handler, preserving Passing
-Yards and the established router chain exactly.
+route that market to the active isolated Rushing Yards page. Every other NFL
+market delegates back to V97's original handler, preserving Passing Yards and
+the established router chain exactly.
 
-No projection, probability, sportsbook, grading, freshness, identity, CFB, or
-other sport logic changes are made here.
+Step 3 advances only the Rushing Yards target from V1 to V2. No Passing Yards,
+probability, sportsbook, grading, freshness, identity, CFB, or other sport logic
+is changed here. Sportsbook projection influence remains 0.0%.
 """
 from __future__ import annotations
 
 import streamlit_memory_lazy_router_v1 as root
 import streamlit_memory_lazy_router_v97 as prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V98 • NFL RUSHING YARDS UI CLEANUP FOUNDATION"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V98 • NFL RUSHING YARDS STEP 3 PROJECTION TARGET"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v97"
 PRECEDENCE_ANCHOR = "streamlit_memory_lazy_router_v97._render_nfl_v97"
-ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v1"
+ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v2"
 RUSHING_YARDS_MARKET = "Rushing Yards"
 
 _PRIOR_RENDER_NFL = prior._render_nfl_v97
