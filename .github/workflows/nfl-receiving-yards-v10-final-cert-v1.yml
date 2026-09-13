@@ -205,7 +205,10 @@ jobs:
               ):
                   if required not in body:
                       raise BrowserQAFailure(f'{label} missing final marker: {required}')
-              if 'sportsbook projection influence 0.0%' not in body.lower():
+              body_lower=body.lower()
+              if 'projection math remains frozen' not in body_lower:
+                  raise BrowserQAFailure(f'{label} missing frozen projection marker')
+              if 'sportsbook influence remains 0.0%' not in body_lower:
                   raise BrowserQAFailure(f'{label} missing 0.0% sportsbook influence marker')
               ribbon_count=frame.locator('.krecv10-ribbon').count()
               if ribbon_count < 1:
