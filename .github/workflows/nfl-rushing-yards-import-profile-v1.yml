@@ -1,0 +1,61 @@
+name: NFL Rushing Yards Import Profile V1
+
+on:
+  push:
+    branches: [nfl-rushing-yards-import-profile-v1]
+
+permissions:
+  contents: read
+
+jobs:
+  profile-v10-imports:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore Browser QA stack
+        id: stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build stack on cache miss
+        if: steps.stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+
+      - name: Profile cold V10 import
+        shell: bash
+        run: |
+          set -euo pipefail
+          .venv-browser-qa/bin/python -X importtime -c 'import nfl_rushing_yards_hub_v10' 2> /tmp/importtime.txt
+          .venv-browser-qa/bin/python - <<'PY'
+          import json, re
+          from pathlib import Path
+          rows = []
+          for line in Path('/tmp/importtime.txt').read_text().splitlines():
+              m = re.match(r'import time:\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(.+)$', line)
+              if not m:
+                  continue
+              self_us, cum_us, name = int(m.group(1)), int(m.group(2)), m.group(3).strip()
+              rows.append({'module': name, 'self_ms': round(self_us / 1000, 3), 'cumulative_ms': round(cum_us / 1000, 3)})
+          rows.sort(key=lambda r: r['cumulative_ms'], reverse=True)
+          print('RUSH_V10_IMPORT_TOP', json.dumps(rows[:35], indent=2))
+          focused = [r for r in rows if any(token in r['module'] for token in ('nfl_rushing', 'streamlit', 'pandas', 'numpy', 'plotly', 'requests', 'httpx'))]
+          focused.sort(key=lambda r: r['cumulative_ms'], reverse=True)
+          print('RUSH_V10_IMPORT_FOCUSED', json.dumps(focused[:60], indent=2))
+          v10 = next(r for r in rows if r['module'] == 'nfl_rushing_yards_hub_v10')
+          print('RUSH_V10_IMPORT_TOTAL_MS', v10['cumulative_ms'])
+          PY
