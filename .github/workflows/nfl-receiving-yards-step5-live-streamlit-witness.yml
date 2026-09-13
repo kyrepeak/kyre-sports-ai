@@ -1,0 +1,164 @@
+name: NFL Receiving Yards Step 5 Live Streamlit Witness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-receiving-yards-step5-live-streamlit-witness.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-receiving-step5-live-streamlit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-live-streamlit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser witness dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify deployed NFL Receiving Yards Step 5 V5 route
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://kyre-sports-ai.streamlit.app"
+          REQUIRED = (
+              "NFL RECEIVING YARDS • MONSTER BUILD",
+              "STEP 5 OF 10 • DEFENSE + H2H LIVE",
+              "5 • DEFENSE + H2H ✅",
+              "Step 5 safety lock:",
+              "Sportsbook projection influence: 0.0%",
+          )
+          FORBIDDEN = (
+              "Traceback (most recent call last)",
+              "This app has encountered an error",
+              "ModuleNotFoundError",
+              "ImportError:",
+              "SyntaxError:",
+              "NameError:",
+              "TypeError:",
+              "RecursionError",
+          )
+
+          def body_text(frame):
+              try:
+                  return frame.locator("body").inner_text(timeout=5000)
+              except Exception:
+                  return ""
+
+          def find_frame(page, timeout=100):
+              deadline = time.monotonic() + timeout
+              scans = []
+              while time.monotonic() < deadline:
+                  scans = []
+                  for idx, frame in enumerate(page.frames):
+                      body = body_text(frame)
+                      try:
+                          combos = frame.get_by_role("combobox").count()
+                      except Exception:
+                          combos = 0
+                      scans.append({"index": idx, "url": frame.url, "comboboxes": combos, "body_start": body[:500]})
+                      if "get this app back up" in body.casefold():
+                          wake = frame.get_by_text("Yes, get this app back up!", exact=False)
+                          if wake.count() > 0:
+                              wake.click()
+                              page.wait_for_timeout(9000)
+                              continue
+                      if combos >= 1 and ("KYRE SPORTS AI" in body or "Sport" in body):
+                          return frame, scans
+                  page.wait_for_timeout(2000)
+              raise AssertionError("Could not find deployed Streamlit app frame: " + json.dumps(scans, ensure_ascii=False))
+
+          def choose(page, frame, index, value):
+              combos = frame.get_by_role("combobox")
+              if combos.count() <= index:
+                  raise AssertionError(f"Expected combobox {index}; found {combos.count()}")
+              combos.nth(index).click()
+              page.wait_for_timeout(300)
+              page.keyboard.type(value)
+              page.keyboard.press("Enter")
+              page.wait_for_timeout(3000)
+
+          def wait_for_terminal_step5(page, frame, timeout=110):
+              deadline = time.monotonic() + timeout
+              latest = ""
+              while time.monotonic() < deadline:
+                  latest = body_text(frame)
+                  forbidden = [marker for marker in FORBIDDEN if marker in latest]
+                  if forbidden:
+                      raise AssertionError("Live Receiving route runtime error: " + " | ".join(forbidden))
+                  if REQUIRED[1] in latest and REQUIRED[3] in latest:
+                      # Terminal safety lock is emitted after the slate/player board path,
+                      # so seeing both the V5 marker and this footer proves the route finished.
+                      page.wait_for_timeout(2500)
+                      latest = body_text(frame)
+                      return latest
+                  page.wait_for_timeout(1000)
+              raise AssertionError("Timed out before terminal Step 5 marker. Body excerpt=" + latest[-3000:])
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width": 1440, "height": 1800})
+              try:
+                  page.goto(URL + "/", wait_until="domcontentloaded", timeout=120000)
+                  frame, scans = find_frame(page)
+                  choose(page, frame, 0, "NFL")
+
+                  deadline = time.monotonic() + 40
+                  while time.monotonic() < deadline:
+                      if frame.get_by_role("combobox").count() >= 2:
+                          break
+                      page.wait_for_timeout(750)
+                  else:
+                      raise AssertionError("NFL route did not expose market selector")
+
+                  choose(page, frame, 1, "Receiving Yards")
+                  body = wait_for_terminal_step5(page, frame)
+
+                  forbidden = [marker for marker in FORBIDDEN if marker in body]
+                  missing = [marker for marker in REQUIRED if marker not in body]
+                  marker_lines = [
+                      line for line in body.splitlines()
+                      if "RECEIVING" in line.upper()
+                      or "STEP 5" in line.upper()
+                      or "DEFENSE + H2H" in line.upper()
+                      or "SPORTSBOOK" in line.upper()
+                  ]
+                  print("LIVE_RECEIVING_STEP5_EXCERPT=" + json.dumps(marker_lines[:80], ensure_ascii=False))
+                  if forbidden:
+                      raise AssertionError("Live Receiving route runtime error: " + " | ".join(forbidden))
+                  if missing:
+                      raise AssertionError("Live Receiving Step 5 marker missing: " + json.dumps(missing, ensure_ascii=False))
+
+                  # If player data is available on the live selected slate, require the
+                  # actual Step 5 player context surface too. The footer remains the
+                  # terminal proof when an exact-ID player board is legitimately empty.
+                  has_player_cards = "Verified receiver profiles" in body or "EXACT ESPN ATHLETE" in body.upper()
+                  if has_player_cards and "Opponent Pass Defense + Player vs Team History" not in body:
+                      raise AssertionError("Live player cards rendered but Step 5 defense/H2H surface was missing")
+
+                  print("NFL_RECEIVING_YARDS_STEP5_LIVE_STREAMLIT_GREEN")
+                  print(json.dumps({
+                      "streamlit_url": URL,
+                      "route": "NFL -> Receiving Yards",
+                      "required_markers": list(REQUIRED),
+                      "step5_player_surface_seen": "Opponent Pass Defense + Player vs Team History" in body,
+                      "app_frame_url": frame.url,
+                      "frame_scan_count": len(scans),
+                  }, sort_keys=True))
+              finally:
+                  page.close()
+                  browser.close()
+          PY
