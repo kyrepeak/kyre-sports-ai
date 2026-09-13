@@ -169,18 +169,46 @@ def _roster(team_id: str) -> dict[str, dict[str, str]]:
 
 
 def _completed_game_ids(team_id: str, season: int) -> list[str]:
-    payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/schedule", {"season": season})
+    """Return recent completed regular-season ESPN event IDs for one exact season.
+
+    ESPN's team schedule payload exposes the requested year in each event's
+    ``season.year`` and the regular-season discriminator separately in
+    ``seasonType.type``. The top-level ``season.year`` can describe the current
+    display season even when the requested historical event rows are correct,
+    so event-level year + type are authoritative here.
+    """
+    payload = _get_json(
+        f"{ESPN_SITE_BASE}/teams/{team_id}/schedule",
+        {"season": season, "seasontype": 2},
+    )
     out: list[tuple[str, str]] = []
     for event in payload.get("events") or []:
         if not isinstance(event, dict):
             continue
         event_id = _text(event.get("id"))
+        event_season = event.get("season") or {}
+        season_type = event.get("seasonType") or {}
+        try:
+            event_year = int(event_season.get("year") or 0)
+        except (TypeError, ValueError):
+            event_year = 0
+        try:
+            event_season_type = int(season_type.get("type") or season_type.get("id") or 0)
+        except (TypeError, ValueError):
+            event_season_type = 0
         comps = event.get("competitions") or []
         comp = comps[0] if comps and isinstance(comps[0], dict) else {}
-        state = _text((((comp.get("status") or {}).get("type") or {}).get("state"))).lower()
-        season_type = int((event.get("season") or {}).get("type") or 0)
+        status_type = (comp.get("status") or {}).get("type") or {}
+        state = _text(status_type.get("state")).lower()
+        completed = status_type.get("completed") is True
         date = _text(event.get("date"))
-        if event_id.isdigit() and state == "post" and season_type == 2:
+        if (
+            event_id.isdigit()
+            and event_year == int(season)
+            and event_season_type == 2
+            and state == "post"
+            and completed
+        ):
             out.append((date, event_id))
     out.sort(reverse=True)
     return [event_id for _, event_id in out[:RECENT_GAME_LIMIT]]
