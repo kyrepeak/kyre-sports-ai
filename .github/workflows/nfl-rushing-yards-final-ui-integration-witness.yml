@@ -1,0 +1,153 @@
+name: NFL Rushing Yards Final UI Integration Witness
+
+on:
+  push:
+    branches: [nfl-rushing-yards-final-ui-integration-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-final-rushing-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Prewarm live exact-event Rushing context and market
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?event_id=401872925' \
+            -o /tmp/context.json
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards/market?event_id=401872925' \
+            -o /tmp/market.json
+          python - <<'PY'
+          import json
+          market=json.load(open('/tmp/market.json'))
+          by_id={str(p.get('official_athlete_id')):p for p in market.get('props') or []}
+          assert by_id['4362238']['line'] == 56.5
+          assert by_id['4596448']['line'] == 57.5
+          assert market['market_semantics']['projection_weight'] == 0.0
+          print('FINAL_UI_PREWARM_GREEN')
+          PY
+
+      - name: Start clean Streamlit from protected-main merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/rushing-final-ui
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8506 \
+            > artifacts/rushing-final-ui/streamlit.log 2>&1 &
+          echo $! > /tmp/rushing_final_ui_pid
+
+      - name: Drive final Rushing UI with Playwright
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from browser_qa_v1 import _wait_for_health, _find_app_frame, _wait_for_text, _body_has_forbidden_error, BrowserQAFailure
+
+          base='http://127.0.0.1:8506'
+          artifacts=Path('artifacts/rushing-final-ui')
+          _wait_for_health(base)
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1440,'height':1800})
+              try:
+                  page.goto(base+'/?ks_nfl_sport=NFL&ks_nfl_market=Rushing%20Yards',wait_until='domcontentloaded',timeout=120000)
+                  frame,_=_find_app_frame(page)
+                  body=_wait_for_text(frame,'Ground Game Lab',120.0)
+                  body=_wait_for_text(frame,'Monster Performance Diagnosis',180.0)
+                  forbidden=_body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f'Runtime error marker: {forbidden}')
+                  for marker in ('<article class="krush-game"','<article class="krush-proj"','<article class="krush-mkt"'):
+                      if marker in body:
+                          raise BrowserQAFailure(f'Literal HTML leaked: {marker}')
+
+                  chase=frame.locator('article.krush4-card').filter(has_text='Chase Brown')
+                  bucky=frame.locator('article.krush4-card').filter(has_text='Bucky Irving')
+                  if chase.count() != 1:
+                      raise BrowserQAFailure(f'Expected one Chase Brown compact card, got {chase.count()}')
+                  if bucky.count() != 1:
+                      raise BrowserQAFailure(f'Expected one Bucky Irving compact card, got {bucky.count()}')
+                  chase_text=chase.first.inner_text()
+                  bucky_text=bucky.first.inner_text()
+                  if '56.5' not in chase_text or 'EXACT-ID LIVE' not in chase_text:
+                      raise BrowserQAFailure('Chase Brown live FanDuel 56.5 not rendered in exact-ID card')
+                  if '57.5' not in bucky_text or 'EXACT-ID LIVE' not in bucky_text:
+                      raise BrowserQAFailure('Bucky Irving live FanDuel 57.5 not rendered in exact-ID card')
+                  if 'sportsbook projection influence 0.0%' not in body.lower():
+                      raise BrowserQAFailure('0.0% sportsbook influence marker missing')
+
+                  result={
+                      'status':'GREEN',
+                      'chase_brown_line':'56.5',
+                      'bucky_irving_line':'57.5',
+                      'chase_exact_id_live':True,
+                      'bucky_exact_id_live':True,
+                      'literal_html_leaks':[],
+                      'sportsbook_projection_influence':0.0,
+                      'projection_math_changed':False,
+                  }
+                  page.screenshot(path=str(artifacts/'rushing_final_ui_green.png'),full_page=True)
+                  (artifacts/'rushing_final_ui_metrics.json').write_text(json.dumps(result,indent=2))
+                  print('NFL_RUSHING_FINAL_UI_INTEGRATION_GREEN')
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Print Streamlit log
+        if: always()
+        run: tail -n 500 artifacts/rushing-final-ui/streamlit.log || true
+
+      - name: Upload final UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-rushing-final-ui-${{ github.run_id }}
+          path: artifacts/rushing-final-ui
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/rushing_final_ui_pid ]; then
+            kill "$(cat /tmp/rushing_final_ui_pid)" 2>/dev/null || true
+          fi
