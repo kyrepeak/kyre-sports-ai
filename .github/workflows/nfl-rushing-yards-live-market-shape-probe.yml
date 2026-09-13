@@ -1,0 +1,87 @@
+name: NFL Rushing Yards Live Market Shape Probe
+
+on:
+  push:
+    branches: [nfl-rushing-yards-live-market-coverage-probe]
+
+permissions:
+  contents: read
+
+jobs:
+  probe-fanduel-market-shape:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect FanDuel Rushing market runner structure
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from sports_api.collectors import nfl_fanduel_passing_yards as base
+          from sports_api.collectors import nfl_fanduel_rushing_yards_v1 as rush
+          from sports_api.collectors.nfl_passing_yards_render_espn_v2 import fetch_espn_event_summary_hosted
+
+          event_id = '401872925'
+          summary, _ = fetch_espn_event_summary_hosted(event_id)
+          official = base.parse_official_event(summary)
+          landing = base.fetch_fanduel_nfl_landing()
+          provider_event = base.reconcile_fanduel_event(landing, official)
+          provider_event_id = provider_event['provider_event_id']
+          page = base.fetch_fanduel_event_page(provider_event_id, 'rushing-props')
+          markets = rush._rushing_markets(page)
+          fdx = base.fetch_fanduel_event_players(provider_event_id)
+          players, by_selection = base._provider_player_maps(fdx)
+
+          def player_for_selection(selection):
+              keys = by_selection.get(str(selection)) or []
+              return [
+                  {
+                      'provider_player_key': k,
+                      'name': players.get(k, {}).get('name') or players.get(k, {}).get('displayName'),
+                      'team': players.get(k, {}).get('team'),
+                      'number': players.get(k, {}).get('number') or players.get(k, {}).get('jersey') or players.get(k, {}).get('jerseyNumber'),
+                      'position': players.get(k, {}).get('position'),
+                  }
+                  for k in keys
+              ]
+
+          out = []
+          for market in markets:
+              active = base._active_player_runners(market)
+              runners = []
+              for runner in active:
+                  selection = runner.get('selectionId')
+                  try:
+                      odds = base._american_odds(runner)
+                  except Exception:
+                      odds = None
+                  runners.append({
+                      'selection_id': selection,
+                      'role': base._runner_role(runner),
+                      'handicap': runner.get('handicap'),
+                      'odds': odds,
+                      'runner_name': runner.get('runnerName') or runner.get('name') or runner.get('displayName'),
+                      'mapped_players': player_for_selection(selection),
+                  })
+              out.append({
+                  'market_id': str(market.get('marketId') or market.get('id') or market.get('_attachment_key') or ''),
+                  'marketType': market.get('marketType'),
+                  'marketTypeCode': market.get('marketTypeCode'),
+                  'type': market.get('type'),
+                  'marketName': market.get('marketName'),
+                  'name': market.get('name'),
+                  'displayName': market.get('displayName'),
+                  'status': market.get('marketStatus') or market.get('status'),
+                  'inPlay': market.get('inPlay'),
+                  'active_runner_count': len(active),
+                  'runners': runners,
+              })
+
+          print('FANDUEL_RUSHING_MARKET_SHAPES')
+          print(json.dumps(out, indent=2))
+          print('FANDUEL_RUSHING_MARKET_SHAPE_PROBE_GREEN')
+          PY
