@@ -33,7 +33,8 @@ def test_step3_page_uses_isolated_projection_engine_after_context():
 def test_step3_does_not_import_or_modify_passing_yards():
     source = _source("nfl_rushing_yards_hub_v2.py")
     assert "nfl_passing_yards" not in source
-    assert "Passing Yards is not imported or modified" in source
+    normalized = " ".join(source.split())
+    assert "Passing Yards is not imported or modified" in normalized
 
 
 def test_step4_features_remain_locked_on_page():
