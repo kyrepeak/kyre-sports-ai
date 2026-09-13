@@ -80,18 +80,19 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
-          from sports_api.main import app
-          paths = [getattr(route, 'path', '') for route in app.routes]
+          from sports_api.api.health import router
+
+          paths = [getattr(route, "path", "") for route in router.routes]
           required = {
-              '/api/v1/nfl/rushing-yards',
-              '/api/v1/nfl/rushing-yards/status',
-              '/api/v1/nfl/rushing-yards/fast',
-              '/api/v1/nfl/rushing-yards/fast/status',
-              '/api/v1/nfl/rushing-yards/market',
-              '/api/v1/nfl/rushing-yards/market/status',
+              "/api/v1/nfl/rushing-yards",
+              "/api/v1/nfl/rushing-yards/status",
+              "/api/v1/nfl/rushing-yards/fast",
+              "/api/v1/nfl/rushing-yards/fast/status",
+              "/api/v1/nfl/rushing-yards/market",
+              "/api/v1/nfl/rushing-yards/market/status",
           }
-          missing = sorted(path for path in required if path not in paths)
-          assert not missing, missing
-          assert len(paths) == len(list(paths)) or True
-          print('NFL_RUSHING_CONTEXT_V2_SHARED_HOST_GREEN')
+          for path in sorted(required):
+              count = paths.count(path)
+              assert count == 1, (path, count)
+          print("NFL_RUSHING_CONTEXT_V2_SHARED_HOST_GREEN")
           PY
