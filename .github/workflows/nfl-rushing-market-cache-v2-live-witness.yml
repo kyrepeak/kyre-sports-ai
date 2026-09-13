@@ -1,0 +1,81 @@
+name: NFL Rushing Market Cache V2 Live Witness
+
+on:
+  push:
+    branches: [nfl-rushing-market-cache-v2-live-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-live-market-cache:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Benchmark cold vs warm exact-event market cache
+        shell: bash
+        env:
+          URL: https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards/market?event_id=401872925
+        run: |
+          set -euo pipefail
+          : > /tmp/times.txt
+          : > /tmp/captured.txt
+          for i in 1 2 3 4 5 6; do
+            metrics="$(curl --fail --silent --show-error --max-time 30 \
+              --output /tmp/market-$i.json \
+              --write-out '%{http_code} %{time_starttransfer} %{time_total}' \
+              "$URL")"
+            read -r http ttfb total <<< "$metrics"
+            test "$http" = "200"
+            python - "$i" <<'PY'
+          import json, sys
+          from pathlib import Path
+          i = sys.argv[1]
+          payload = json.loads(Path(f'/tmp/market-{i}.json').read_text())
+          assert payload['schema_version'] == 'nfl_rushing_yards_market_v1'
+          assert payload['official_event_id'] == '401872925'
+          identity = payload['identity']
+          semantics = payload['market_semantics']
+          assert identity['player_name_matching'] is False
+          assert identity['fuzzy_matching'] is False
+          assert identity['synthetic_event_ids'] is False
+          assert identity['synthetic_player_ids'] is False
+          assert semantics['projection_weight'] == 0.0
+          assert semantics['market_context_only'] is True
+          assert semantics['may_modify_projection'] is False
+          assert semantics['probability_enabled'] is False
+          assert semantics['fair_odds_enabled'] is False
+          assert semantics['ev_enabled'] is False
+          assert semantics['grading_enabled'] is False
+          assert semantics['stake_sizing_enabled'] is False
+          assert semantics['wager_actions'] is False
+          assert payload['ready'] is True
+          assert payload['market_available'] is True
+          PY
+            captured="$(python -c "import json; print(json.load(open('/tmp/market-$i.json'))['captured_at_utc'])")"
+            printf '%s\n' "$total" >> /tmp/times.txt
+            printf '%s\n' "$captured" >> /tmp/captured.txt
+            echo "RUSH_MARKET_CACHE_PROBE index=$i http=$http ttfb_s=$ttfb total_s=$total captured_at_utc=$captured"
+          done
+          python - <<'PY'
+          import json, statistics
+          from pathlib import Path
+          values = [float(x) for x in Path('/tmp/times.txt').read_text().splitlines() if x.strip()]
+          captured = [x.strip() for x in Path('/tmp/captured.txt').read_text().splitlines() if x.strip()]
+          assert len(values) == 6
+          assert len(captured) == 6
+          assert len(set(captured)) == 1, captured
+          warm = values[1:]
+          result = {
+              'event_id': '401872925',
+              'cold_ms': round(values[0] * 1000, 2),
+              'warm_fastest_ms': round(min(warm) * 1000, 2),
+              'warm_median_ms': round(statistics.median(warm) * 1000, 2),
+              'warm_mean_ms': round(statistics.mean(warm) * 1000, 2),
+              'warm_slowest_ms': round(max(warm) * 1000, 2),
+              'captured_at_utc': captured[0],
+              'projection_weight': 0.0,
+          }
+          print('RUSH_MARKET_CACHE_V2_LIVE_RESULT', json.dumps(result, sort_keys=True))
+          PY
