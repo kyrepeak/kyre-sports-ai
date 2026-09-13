@@ -75,10 +75,10 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import json, time
+          import json
           from pathlib import Path
           from playwright.sync_api import sync_playwright
-          from browser_qa_v1 import _wait_for_health, _find_app_frame, _wait_for_text, _body_has_forbidden_error, BrowserQAFailure
+          from devsystem.browser_qa_v1 import _wait_for_health, _find_app_frame, _wait_for_text, _body_has_forbidden_error, BrowserQAFailure
 
           base='http://127.0.0.1:8506'
           artifacts=Path('artifacts/rushing-final-ui')
