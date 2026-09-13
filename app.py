@@ -1,17 +1,15 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Rushing Phoenix game times.
+"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Step 1 foundation.
 
-Router V111 is additive over certified Router V110. It preserves the V14
-detailed FAVORABLE / MEDIUM / TOUGH player stacks and every prior routing and
-performance behavior while advancing only NFL -> Rushing Yards to display-only
-V15.
+Router V112 is additive over certified Router V111. It preserves the complete
+Passing Yards chain and the certified Rushing Yards V15 page while activating
+only NFL -> Receiving Yards on the isolated V1 verified-slate foundation.
 
-V15 converts visible scheduled kickoff times from the verified NFL slate's
-Eastern display into Phoenix, Arizona local time (America/Phoenix / MST) without
-changing schedule identity, projection math, market semantics, matchup tiers,
-or sportsbook influence. Sportsbook projection influence stays 0.0%.
+Receiving Yards player context, projection math, sportsbook markets,
+probabilities, EV, Monte Carlo, grading, ranking, recommendations, staking, and
+wager actions remain OFF. Sportsbook projection influence stays 0.0%.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V111_NFL_RUSHING_YARDS_PHOENIX_GAME_TIMES_2026-09-13.
+STREAMLIT_MAIN_V112_NFL_RECEIVING_YARDS_STEP1_FOUNDATION_2026-09-13.
 """
 from __future__ import annotations
 
@@ -76,6 +74,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v108 import render_app as _frozen_v108_render_app
     from streamlit_memory_lazy_router_v109 import render_app as _frozen_v109_render_app
     from streamlit_memory_lazy_router_v110 import render_app as _frozen_v110_render_app
+    from streamlit_memory_lazy_router_v111 import render_app as _frozen_v111_render_app
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
@@ -110,6 +109,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v108 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v109 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v110 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v111 import record_bootstrap_import_ms, render_app
 
 FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 FROZEN_V78_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
@@ -145,12 +145,13 @@ FROZEN_V107_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V107_NFL_RUSHING_YARDS_HTML_R
 FROZEN_V108_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V108_NFL_RUSHING_YARDS_FANDUEL_FULL_LINEUP_2026-09-12"
 FROZEN_V109_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V109_NFL_RUSHING_YARDS_MATCHUP_TIERS_2026-09-12"
 FROZEN_V110_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V110_NFL_RUSHING_YARDS_DETAILED_MATCHUP_TIERS_2026-09-13"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V111_NFL_RUSHING_YARDS_PHOENIX_GAME_TIMES_2026-09-13"
+FROZEN_V111_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V111_NFL_RUSHING_YARDS_PHOENIX_GAME_TIMES_2026-09-13"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V112_NFL_RECEIVING_YARDS_STEP1_FOUNDATION_2026-09-13"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v111 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v112 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
