@@ -1,17 +1,17 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Rushing Yards Page Build Step 5 projection recipe.
+"""Kyre Sports AI Streamlit entrypoint — NFL Rushing Yards Page Build Step 6 support + concerns.
 
-Router V104 is additive over certified Router V103. It preserves the full V103 ->
-V102 -> V101 chain and intercepts only NFL -> Rushing Yards for the new V8
-visual-only projection recipe transparency panel.
+Router V105 is additive over certified Router V104. It preserves the full V104 ->
+V103 -> V102 chain and intercepts only NFL -> Rushing Yards for the new V9
+visual-only support/counterweight explanation panel.
 
 The certified Rushing Yards projection and live market contracts remain frozen.
-V8 only displays already-certified projection explanation fields beneath each
-certified V7 player stack. Sportsbook projection influence remains 0.0%.
+V9 only interprets already-certified projection fields beneath each certified V8
+player stack. Sportsbook projection influence remains 0.0%.
 Probability, fair odds, EV, value grading, stake sizing and wager actions remain
 OFF.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V104_NFL_RUSHING_YARDS_PAGE_STEP5_PROJECTION_RECIPE_2026-09-12.
+STREAMLIT_MAIN_V105_NFL_RUSHING_YARDS_PAGE_STEP6_SUPPORT_CONCERNS_2026-09-12.
 """
 from __future__ import annotations
 
@@ -69,6 +69,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v101 import render_app as _frozen_v101_render_app
     from streamlit_memory_lazy_router_v102 import render_app as _frozen_v102_render_app
     from streamlit_memory_lazy_router_v103 import render_app as _frozen_v103_render_app
+    from streamlit_memory_lazy_router_v104 import render_app as _frozen_v104_render_app
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
@@ -96,6 +97,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v101 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v102 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v103 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v104 import record_bootstrap_import_ms, render_app
 
 FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 FROZEN_V78_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
@@ -124,12 +126,13 @@ FROZEN_V100_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V100_NFL_RUSHING_YARDS_PAGE_S
 FROZEN_V101_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V101_NFL_RUSHING_YARDS_PAGE_STEP2_SUMMARY_METRICS_2026-09-12"
 FROZEN_V102_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V102_NFL_RUSHING_YARDS_PAGE_STEP3_WORKLOAD_EFFICIENCY_2026-09-12"
 FROZEN_V103_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V103_NFL_RUSHING_YARDS_PAGE_STEP4_OPPONENT_RUN_DEFENSE_2026-09-12"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V104_NFL_RUSHING_YARDS_PAGE_STEP5_PROJECTION_RECIPE_2026-09-12"
+FROZEN_V104_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V104_NFL_RUSHING_YARDS_PAGE_STEP5_PROJECTION_RECIPE_2026-09-12"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V105_NFL_RUSHING_YARDS_PAGE_STEP6_SUPPORT_CONCERNS_2026-09-12"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v104 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v105 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
