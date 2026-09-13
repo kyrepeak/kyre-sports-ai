@@ -115,9 +115,9 @@ def test_target_efficiency_fails_closed_for_zero_or_missing_targets():
 
 def test_step4_reserves_defense_h2h_and_later_model_market_steps():
     source = _source("nfl_receiving_yards_hub_v4.py")
-    v3 = _source("nfl_receiving_yards_hub_v3.py")
+    v2 = _source("nfl_receiving_yards_hub_v2.py")
     assert "Opponent pass-defense presentation and player-vs-team history remain reserved for Step 5" in source
-    assert "DEFENSE + H2H" in v3
+    assert "DEFENSE + H2H" in v2
     assert "projection math" in source
     assert "sportsbook markets" in source
     assert "probability, EV, Monte Carlo" in source
