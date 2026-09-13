@@ -13,6 +13,11 @@ on:
       - ".github/workflows/nfl-rushing-yards-v13-matchup-tiers-v1.yml"
       - ".github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1.yml"
       - ".github/workflows/nfl-rushing-yards-html-render-fix-v1.yml"
+      - "nfl_rushing_yards_hub_v15.py"
+      - "streamlit_memory_lazy_router_v111.py"
+      - "tests/test_nfl_rushing_yards_v15_phoenix_game_times_v1.py"
+      - "devsystem/nfl_rushing_yards_v15_phoenix_times_browser_v1.py"
+      - ".github/workflows/nfl-rushing-yards-v15-phoenix-game-times-v1.yml"
   workflow_dispatch:
 
 permissions:
@@ -103,7 +108,7 @@ jobs:
           fi
           echo "RUSH_V14_FROZEN_GUARD_GREEN"
 
-      - name: Prove exactly 9 approved V14 files changed
+      - name: Prove exactly 10 approved V15-descendant files changed
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -113,15 +118,15 @@ jobs:
           set -euo pipefail
           changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(nfl_rushing_yards_hub_v14\.py|streamlit_memory_lazy_router_v110\.py|app\.py|tests/test_nfl_rushing_yards_v14_detailed_tiers_v1\.py|devsystem/nfl_rushing_yards_v14_detailed_tiers_browser_v1\.py|\.github/workflows/nfl-rushing-yards-v14-detailed-tiers-v1\.yml|\.github/workflows/nfl-rushing-yards-v13-matchup-tiers-v1\.yml|\.github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1\.yml|\.github/workflows/nfl-rushing-yards-html-render-fix-v1\.yml)$' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(nfl_rushing_yards_hub_v15\.py|streamlit_memory_lazy_router_v111\.py|app\.py|tests/test_nfl_rushing_yards_v15_phoenix_game_times_v1\.py|devsystem/nfl_rushing_yards_v15_phoenix_times_browser_v1\.py|\.github/workflows/nfl-rushing-yards-v15-phoenix-game-times-v1\.yml|\.github/workflows/nfl-rushing-yards-v14-detailed-tiers-v1\.yml|\.github/workflows/nfl-rushing-yards-v13-matchup-tiers-v1\.yml|\.github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1\.yml|\.github/workflows/nfl-rushing-yards-html-render-fix-v1\.yml)$' || true)"
           if [ -n "$bad" ]; then
-            echo "UNAPPROVED_RUSH_V14_FILE_CHANGE"
+            echo "UNAPPROVED_RUSH_V15_DESCENDANT_FILE_CHANGE"
             printf '%s\n' "$bad"
             exit 1
           fi
           count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
-          test "$count" -eq 9
-          echo "RUSH_V14_DIFF_GREEN"
+          test "$count" -eq 10
+          echo "RUSH_V14_DESCENDANT_DIFF_GREEN"
 
       - name: Start clean branch-local Streamlit
         run: |
