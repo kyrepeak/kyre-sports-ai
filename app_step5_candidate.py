@@ -1,0 +1,172 @@
+"""Kyre Sports AI Streamlit entrypoint — NFL Rushing Yards Page Build Step 5 projection recipe.
+
+Router V104 is additive over certified Router V103. It preserves the full V103 ->
+V102 -> V101 chain and intercepts only NFL -> Rushing Yards for the new V8
+visual-only projection recipe transparency panel.
+
+The certified Rushing Yards projection and live market contracts remain frozen.
+V8 only displays already-certified projection explanation fields beneath each
+certified V7 player stack. Sportsbook projection influence remains 0.0%.
+Probability, fair odds, EV, value grading, stake sizing and wager actions remain
+OFF.
+
+Deployment heartbeat:
+STREAMLIT_MAIN_V104_NFL_RUSHING_YARDS_PAGE_STEP5_PROJECTION_RECIPE_2026-09-12.
+"""
+from __future__ import annotations
+
+from time import perf_counter
+from typing import TYPE_CHECKING
+
+from sports_api.monster_performance_profiler_v1 import (
+    PerformanceTrace,
+    add_stage_rows,
+    compact_summary,
+    diagnose_trace,
+)
+from sports_api.observability_v1 import error_fingerprint
+from sports_api.posthog_error_radar_v1 import capture_runtime_exception
+
+if TYPE_CHECKING:
+    from streamlit_memory_lazy_router_v63 import render_app as _frozen_v63_render_app
+    from streamlit_memory_lazy_router_v64 import render_app as _frozen_v64_render_app
+    from streamlit_memory_lazy_router_v65 import render_app as _frozen_v65_render_app
+    from streamlit_memory_lazy_router_v66 import render_app as _frozen_v66_render_app
+    from streamlit_memory_lazy_router_v67 import render_app as _frozen_v67_render_app
+    from streamlit_memory_lazy_router_v68 import render_app as _frozen_v68_render_app
+    from streamlit_memory_lazy_router_v69 import render_app as _frozen_v69_render_app
+    from streamlit_memory_lazy_router_v70 import render_app as _frozen_v70_render_app
+    from streamlit_memory_lazy_router_v71 import render_app as _frozen_v71_render_app
+    from streamlit_memory_lazy_router_v72 import render_app as _frozen_v72_render_app
+    from streamlit_memory_lazy_router_v73 import render_app as _frozen_v73_render_app
+    from streamlit_memory_lazy_router_v74 import render_app as _frozen_v74_render_app
+    from streamlit_memory_lazy_router_v75 import render_app as _frozen_v75_render_app
+    from streamlit_memory_lazy_router_v76 import render_app as _frozen_v76_render_app
+    from streamlit_memory_lazy_router_v77 import render_app as _frozen_v77_render_app
+    from streamlit_memory_lazy_router_v78 import render_app as _frozen_v78_render_app
+    from streamlit_memory_lazy_router_v79 import render_app as _frozen_v79_render_app
+    from streamlit_memory_lazy_router_v80 import render_app as _frozen_v80_render_app
+    from streamlit_memory_lazy_router_v81 import render_app as _frozen_v81_render_app
+    from streamlit_memory_lazy_router_v82 import render_app as _frozen_v82_render_app
+    from streamlit_memory_lazy_router_v83 import render_app as _frozen_v83_render_app
+    from streamlit_memory_lazy_router_v84 import render_app as _frozen_v84_render_app
+    from streamlit_memory_lazy_router_v85 import render_app as _frozen_v85_render_app
+    from streamlit_memory_lazy_router_v86 import render_app as _frozen_v86_render_app
+    from streamlit_memory_lazy_router_v87 import render_app as _frozen_v87_render_app
+    from streamlit_memory_lazy_router_v88 import render_app as _frozen_v88_render_app
+    from streamlit_memory_lazy_router_v89 import render_app as _frozen_v89_render_app
+    from streamlit_memory_lazy_router_v90 import render_app as _frozen_v90_render_app
+    from streamlit_memory_lazy_router_v91 import render_app as _frozen_v91_render_app
+    from streamlit_memory_lazy_router_v92 import render_app as _frozen_v92_render_app
+    from streamlit_memory_lazy_router_v93 import render_app as _frozen_v93_render_app
+    from streamlit_memory_lazy_router_v94 import render_app as _frozen_v94_render_app
+    from streamlit_memory_lazy_router_v95 import render_app as _frozen_v95_render_app
+    from streamlit_memory_lazy_router_v96 import render_app as _frozen_v96_render_app
+    from streamlit_memory_lazy_router_v97 import render_app as _frozen_v97_render_app
+    from streamlit_memory_lazy_router_v98 import render_app as _frozen_v98_render_app
+    from streamlit_memory_lazy_router_v99 import render_app as _frozen_v99_render_app
+    from streamlit_memory_lazy_router_v100 import render_app as _frozen_v100_render_app
+    from streamlit_memory_lazy_router_v101 import render_app as _frozen_v101_render_app
+    from streamlit_memory_lazy_router_v102 import render_app as _frozen_v102_render_app
+    from streamlit_memory_lazy_router_v103 import render_app as _frozen_v103_render_app
+    from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v80 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v81 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v82 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v83 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v84 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v85 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v86 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v87 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v88 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v89 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v90 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v91 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v92 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v93 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v94 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v95 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v96 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v97 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v98 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v99 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v100 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v101 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v102 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v103 import record_bootstrap_import_ms, render_app
+
+FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
+FROZEN_V78_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
+FROZEN_V79_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V79_CFB_OU_EXACT_TEAM_LOGOS_WIRED_2026-09-11"
+FROZEN_V80_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V80_NFL_PASSING_YARDS_COMPACT_FOUNDATION_2026-09-11"
+FROZEN_V81_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V81_NFL_PASSING_YARDS_STEP1_IDENTITY_2026-09-11"
+FROZEN_V82_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V82_NFL_PASSING_YARDS_STEP2_QB_PROFILE_2026-09-11"
+FROZEN_V83_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V83_NFL_PASSING_YARDS_STEP3_PASS_DEFENSE_2026-09-11"
+FROZEN_V84_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V84_NFL_PASSING_YARDS_STEP4_PRESSURE_2026-09-11"
+FROZEN_V85_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V85_NFL_PASSING_YARDS_STEP5_PERSONNEL_2026-09-11"
+FROZEN_V86_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V86_NFL_PASSING_YARDS_STEP6_ENVIRONMENT_2026-09-11"
+FROZEN_V87_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V87_NFL_PASSING_YARDS_STEP7_BASELINE_PROJECTION_2026-09-11"
+FROZEN_V88_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V88_NFL_PASSING_YARDS_STEP8_CONTEXT_UNCERTAINTY_2026-09-11"
+FROZEN_V89_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V89_NFL_PASSING_YARDS_STEP9_DISTRIBUTION_PROBABILITY_2026-09-11"
+FROZEN_V90_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V90_NFL_PASSING_YARDS_STEP10_MARKET_EDGE_FINAL_2026-09-11"
+FROZEN_V91_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V91_NFL_PASSING_YARDS_LIVE_ROUTE_AUTO_SLATE_2026-09-11"
+FROZEN_V92_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V92_NFL_PASSING_YARDS_CLEANUP_STEP1_2026-09-11"
+FROZEN_V93_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V93_NFL_PASSING_YARDS_CLEANUP_STEP2_2026-09-11"
+FROZEN_V94_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V94_NFL_PASSING_YARDS_CLEANUP_STEP3_2026-09-11"
+FROZEN_V95_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V95_NFL_PASSING_YARDS_CLEANUP_STEP4_2026-09-11"
+FROZEN_V96_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V96_NFL_PASSING_YARDS_ROUTE_PRECEDENCE_HOTFIX_V2_2026-09-11"
+FROZEN_V97_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V97_NFL_PASSING_YARDS_EARLY_SEASON_BRIDGE_2026-09-11"
+FROZEN_V98_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V98_NFL_RUSHING_YARDS_UI_CLEANUP_2026-09-12"
+FROZEN_V99_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V99_NFL_RUSHING_YARDS_STEP4_MARKET_CONTEXT_2026-09-12"
+FROZEN_V100_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V100_NFL_RUSHING_YARDS_PAGE_STEP1_COMPACT_PLAYER_CARDS_2026-09-12"
+FROZEN_V101_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V101_NFL_RUSHING_YARDS_PAGE_STEP2_SUMMARY_METRICS_2026-09-12"
+FROZEN_V102_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V102_NFL_RUSHING_YARDS_PAGE_STEP3_WORKLOAD_EFFICIENCY_2026-09-12"
+FROZEN_V103_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V103_NFL_RUSHING_YARDS_PAGE_STEP4_OPPONENT_RUN_DEFENSE_2026-09-12"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V104_NFL_RUSHING_YARDS_PAGE_STEP5_PROJECTION_RECIPE_2026-09-12"
+
+try:
+    _app_started = perf_counter()
+    _bootstrap_started = perf_counter()
+    from streamlit_memory_lazy_router_v104 import record_bootstrap_import_ms, render_app
+    _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
+    record_bootstrap_import_ms(_bootstrap_import_ms)
+    render_app()
+    _app_total_ms = (perf_counter() - _app_started) * 1000.0
+
+    import streamlit as st
+
+    _monster_trace = PerformanceTrace(surface="streamlit", path="app.py")
+    _monster_trace.add("import.bootstrap_router", _bootstrap_import_ms, category="import")
+
+    _cfb_perf = st.session_state.get("cfb_ou_perf_v1_last")
+    if isinstance(_cfb_perf, dict):
+        add_stage_rows(_monster_trace, _cfb_perf.get("stages"))
+
+    _cold_start = st.session_state.get("cfb_ou_cold_start_v1_last")
+    if isinstance(_cold_start, dict):
+        try:
+            _active_page_import_ms = float(_cold_start.get("active_page_import_ms") or 0.0)
+        except (TypeError, ValueError):
+            _active_page_import_ms = 0.0
+        if _active_page_import_ms > 0.0:
+            _monster_trace.add("import.active_page", _active_page_import_ms, category="import")
+
+    _monster_diagnosis = diagnose_trace(_monster_trace, total_ms=_app_total_ms)
+    st.session_state["monster_performance_profiler_v1_last"] = _monster_diagnosis
+
+    with st.expander("⚡ Monster Performance Diagnosis", expanded=False):
+        st.caption(compact_summary(_monster_diagnosis))
+        st.write(_monster_diagnosis["guidance"])
+        if _monster_diagnosis["top_spans"]:
+            st.dataframe(_monster_diagnosis["top_spans"], hide_index=True, use_container_width=True)
+except Exception as exc:
+    capture_runtime_exception(
+        exc,
+        error_fingerprint=error_fingerprint(exc, path="streamlit-entrypoint"),
+        surface="streamlit",
+        path="app.py",
+        properties={"deployment_heartbeat": DEPLOYMENT_HEARTBEAT},
+    )
+    raise
