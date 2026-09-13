@@ -5,6 +5,7 @@ context. No projection, sportsbook market, EV, ranking, staking or wagering.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
 import math
@@ -22,6 +23,7 @@ ESPN_HEADERS = {
 DEFAULT_TIMEOUT_SECONDS = 10
 MAX_RESPONSE_BYTES = 12_000_000
 RECENT_GAME_LIMIT = 5
+MAX_PARALLEL_ESPN_REQUESTS = 6
 MODEL_VERSION = "nfl_rushing_yards_context_v1"
 
 
@@ -169,14 +171,7 @@ def _roster(team_id: str) -> dict[str, dict[str, str]]:
 
 
 def _completed_game_ids(team_id: str, season: int) -> list[str]:
-    """Return recent completed regular-season ESPN event IDs for one exact season.
-
-    ESPN's team schedule payload exposes the requested year in each event's
-    ``season.year`` and the regular-season discriminator separately in
-    ``seasonType.type``. The top-level ``season.year`` can describe the current
-    display season even when the requested historical event rows are correct,
-    so event-level year + type are authoritative here.
-    """
+    """Return recent completed regular-season ESPN event IDs for one exact season."""
     payload = _get_json(
         f"{ESPN_SITE_BASE}/teams/{team_id}/schedule",
         {"season": season, "seasontype": 2},
@@ -272,8 +267,13 @@ def _summary(event_id: str, memo: dict[str, dict[str, Any]]) -> dict[str, Any]:
     return memo[event_id]
 
 
-def _player_profiles(team_id: str, season: int, roster: dict[str, dict[str, str]], memo: dict[str, dict[str, Any]]) -> tuple[int, int, list[dict[str, Any]]]:
-    baseline_season, game_ids = _baseline_game_ids(team_id, season)
+def _player_profiles_from_games(
+    team_id: str,
+    baseline_season: int,
+    game_ids: list[str],
+    roster: dict[str, dict[str, str]],
+    memo: dict[str, dict[str, Any]],
+) -> tuple[int, int, list[dict[str, Any]]]:
     agg: dict[str, dict[str, float]] = {}
     for game_id in game_ids:
         for row in _rushing_rows(_summary(game_id, memo), team_id):
@@ -311,8 +311,17 @@ def _player_profiles(team_id: str, season: int, roster: dict[str, dict[str, str]
     return baseline_season, len(game_ids), profiles
 
 
-def _run_front(defense_team_id: str, season: int, memo: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    baseline_season, game_ids = _baseline_game_ids(defense_team_id, season)
+def _player_profiles(team_id: str, season: int, roster: dict[str, dict[str, str]], memo: dict[str, dict[str, Any]]) -> tuple[int, int, list[dict[str, Any]]]:
+    baseline_season, game_ids = _baseline_game_ids(team_id, season)
+    return _player_profiles_from_games(team_id, baseline_season, game_ids, roster, memo)
+
+
+def _run_front_from_games(
+    defense_team_id: str,
+    baseline_season: int,
+    game_ids: list[str],
+    memo: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
     attempts = yards = touchdowns = 0.0
     valid_games = 0
     for game_id in game_ids:
@@ -356,22 +365,84 @@ def _run_front(defense_team_id: str, season: int, memo: dict[str, dict[str, Any]
     }
 
 
+def _run_front(defense_team_id: str, season: int, memo: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    baseline_season, game_ids = _baseline_game_ids(defense_team_id, season)
+    return _run_front_from_games(defense_team_id, baseline_season, game_ids, memo)
+
+
+def _parallel_team_inputs(
+    team_ids: list[str],
+    season: int,
+) -> tuple[dict[str, dict[str, dict[str, str]]], dict[str, tuple[int, list[str]]]]:
+    """Fetch independent roster + schedule-baseline inputs concurrently.
+
+    Results are materialized only after futures complete, so the shared payload
+    maps are never mutated by worker threads.
+    """
+    rosters: dict[str, dict[str, dict[str, str]]] = {}
+    baselines: dict[str, tuple[int, list[str]]] = {}
+    workers = max(1, min(MAX_PARALLEL_ESPN_REQUESTS, len(team_ids) * 2))
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="nfl-rush-input") as pool:
+        roster_futures = {team_id: pool.submit(_roster, team_id) for team_id in team_ids}
+        baseline_futures = {team_id: pool.submit(_baseline_game_ids, team_id, season) for team_id in team_ids}
+        for team_id in team_ids:
+            rosters[team_id] = roster_futures[team_id].result()
+            baselines[team_id] = baseline_futures[team_id].result()
+    return rosters, baselines
+
+
+def _prefetch_summaries(game_ids: list[str], memo: dict[str, dict[str, Any]]) -> None:
+    """Fetch each unique ESPN game book once with bounded concurrency."""
+    pending = list(dict.fromkeys(game_id for game_id in game_ids if game_id.isdigit() and game_id not in memo))
+    if not pending:
+        return
+    workers = max(1, min(MAX_PARALLEL_ESPN_REQUESTS, len(pending)))
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="nfl-rush-summary") as pool:
+        futures = {
+            game_id: pool.submit(_get_json, f"{ESPN_SITE_BASE}/summary", {"event": game_id})
+            for game_id in pending
+        }
+        fetched = {game_id: futures[game_id].result() for game_id in pending}
+    memo.update(fetched)
+
+
 def collect_nfl_rushing_yards_context(event_id: str) -> dict[str, Any]:
     event_id = _text(event_id)
     if not event_id.isdigit():
         raise NFLRushingYardsContextError("event_id must be an official numeric ESPN NFL event ID")
+
     memo: dict[str, dict[str, Any]] = {}
     event = _summary(event_id, memo)
     season, teams = _event_identity(event, event_id)
     team_ids = [row["official_team_id"] for row in teams]
+
+    # Each exact team roster and baseline schedule is independent. Fetch those
+    # four inputs concurrently and reuse each schedule baseline for both player
+    # workload and the opposing run-front calculation.
+    rosters, baselines = _parallel_team_inputs(team_ids, season)
+
+    # All game books required by either team are identity-keyed. Fetch each
+    # unique summary once, concurrently, then perform deterministic aggregation.
+    all_game_ids: list[str] = []
+    for team_id in team_ids:
+        all_game_ids.extend(baselines[team_id][1])
+    _prefetch_summaries(all_game_ids, memo)
+
     team_blocks: list[dict[str, Any]] = []
     total_profiles = 0
     for row in teams:
         team_id = row["official_team_id"]
         opponent_id = next(x for x in team_ids if x != team_id)
-        roster = _roster(team_id)
-        baseline_season, sample_games, profiles = _player_profiles(team_id, season, roster, memo)
+        baseline_season, game_ids = baselines[team_id]
+        _, sample_games, profiles = _player_profiles_from_games(
+            team_id,
+            baseline_season,
+            game_ids,
+            rosters[team_id],
+            memo,
+        )
         total_profiles += len(profiles)
+        opponent_baseline_season, opponent_game_ids = baselines[opponent_id]
         team_blocks.append({
             **row,
             "opponent_official_team_id": opponent_id,
@@ -380,9 +451,15 @@ def collect_nfl_rushing_yards_context(event_id: str) -> dict[str, Any]:
             "players": profiles,
             "opponent_run_front": {
                 "official_team_id": opponent_id,
-                **_run_front(opponent_id, season, memo),
+                **_run_front_from_games(
+                    opponent_id,
+                    opponent_baseline_season,
+                    opponent_game_ids,
+                    memo,
+                ),
             },
         })
+
     return {
         "schema_version": MODEL_VERSION,
         "ready": total_profiles > 0,
