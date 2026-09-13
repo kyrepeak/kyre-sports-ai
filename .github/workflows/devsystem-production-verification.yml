@@ -23,6 +23,8 @@ on:
       - "devsystem/change_classifier_v1.py"
       - "devsystem/permanent_gate_v1.py"
       - "devsystem/final_gate_v1.py"
+      - "tests/test_devsystem_production_verify_v1.py"
+      - "tests/test_devsystem_production_identity_verify_v1.py"
       - ".github/workflows/devsystem-production-verification.yml"
   workflow_dispatch:
 
