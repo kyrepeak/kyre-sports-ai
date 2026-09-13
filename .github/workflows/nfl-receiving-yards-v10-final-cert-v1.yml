@@ -210,10 +210,13 @@ jobs:
                   raise BrowserQAFailure(f'{label} missing frozen projection marker')
               if 'sportsbook influence remains 0.0%' not in body_lower:
                   raise BrowserQAFailure(f'{label} missing 0.0% sportsbook influence marker')
+              player_count=frame.locator('.krecv10-player').count()
               ribbon_count=frame.locator('.krecv10-ribbon').count()
-              if ribbon_count < 1:
-                  raise BrowserQAFailure(f'{label} expected detailed matchup ribbon, got {ribbon_count}')
-              return ribbon_count
+              if player_count > 0 and ribbon_count != player_count:
+                  raise BrowserQAFailure(
+                      f'{label} detailed ribbon mismatch: players={player_count} ribbons={ribbon_count}'
+                  )
+              return player_count,ribbon_count
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
@@ -223,14 +226,14 @@ jobs:
                   page.goto(base,wait_until='domcontentloaded',timeout=120000)
                   frame,cold_body=navigate_receiving(page)
                   cold_ms=(perf_counter()-cold_started)*1000.0
-                  cold_ribbons=verify(frame,cold_body,'cold')
+                  cold_players,cold_ribbons=verify(frame,cold_body,'cold')
                   page.screenshot(path=str(artifacts/'receiving_final_cold.png'),full_page=True)
 
                   warm_started=perf_counter()
                   page.reload(wait_until='domcontentloaded',timeout=120000)
                   frame,warm_body=navigate_receiving(page)
                   warm_ms=(perf_counter()-warm_started)*1000.0
-                  warm_ribbons=verify(frame,warm_body,'warm')
+                  warm_players,warm_ribbons=verify(frame,warm_body,'warm')
                   page.screenshot(path=str(artifacts/'receiving_final_warm.png'),full_page=True)
 
                   result={
@@ -238,7 +241,9 @@ jobs:
                       'cold_ms':round(cold_ms,1),
                       'warm_ms':round(warm_ms,1),
                       'warm_vs_cold_ratio':round(warm_ms/cold_ms,3) if cold_ms > 0 else None,
+                      'cold_detailed_players':cold_players,
                       'cold_detailed_ribbons':cold_ribbons,
+                      'warm_detailed_players':warm_players,
                       'warm_detailed_ribbons':warm_ribbons,
                       'page_step':'10/10',
                       'sportsbook_projection_influence':0.0,
