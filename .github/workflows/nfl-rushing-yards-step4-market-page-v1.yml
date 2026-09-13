@@ -103,3 +103,114 @@ jobs:
           assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v3"' in router99
           print("NFL_RUSHING_YARDS_STEP4_POST_PROJECTION_ISOLATION_GREEN")
           PY
+
+      - name: Live production Step 4 contract witness
+        env:
+          RUSH_EVENT_ID: "401872925"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import requests
+
+          base = "https://kyre-sports-api.onrender.com"
+          event_id = os.environ["RUSH_EVENT_ID"]
+
+          def get_json(path: str):
+              last = None
+              for attempt in range(1, 4):
+                  try:
+                      response = requests.get(
+                          base + path,
+                          timeout=(5, 25),
+                          headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Step4-Cert/1.0"},
+                      )
+                      last = response
+                      if response.status_code == 200:
+                          return response.json()
+                  except requests.RequestException:
+                      pass
+                  if attempt < 3:
+                      time.sleep(2)
+              raise AssertionError(
+                  f"production GET failed: {path} status={getattr(last, 'status_code', None)} body={getattr(last, 'text', '')[:300]}"
+              )
+
+          health = get_json("/health")
+          assert health.get("status") == "ok"
+          deployment = health.get("deployment") or {}
+          assert deployment.get("branch") == "mlb-step17b-shared-host-cert"
+          assert deployment.get("branch_aligned") is True
+          assert str(deployment.get("commit") or "").strip()
+
+          status = get_json("/api/v1/nfl/rushing-yards/market/status")
+          assert status.get("status") == "ready"
+          assert status.get("schema_version") == "nfl_rushing_yards_market_v1"
+          assert status.get("provider") == "FanDuel"
+          assert status.get("official_authority") == "ESPN"
+          assert status.get("official_event_id_required") is True
+          assert status.get("official_athlete_id_required") is True
+          assert status.get("official_team_id_required") is True
+          assert status.get("player_name_matching") is False
+          assert status.get("fuzzy_matching") is False
+          assert status.get("synthetic_event_ids") is False
+          assert status.get("synthetic_player_ids") is False
+          assert status.get("projection_weight") == 0.0
+          assert status.get("market_context_only") is True
+          assert status.get("may_modify_projection") is False
+          assert status.get("probability_enabled") is False
+          assert status.get("fair_odds_enabled") is False
+          assert status.get("ev_enabled") is False
+          assert status.get("grading_enabled") is False
+          assert status.get("stake_sizing_enabled") is False
+          assert status.get("wager_actions") is False
+
+          market = get_json(f"/api/v1/nfl/rushing-yards/market?event_id={event_id}")
+          assert market.get("schema_version") == "nfl_rushing_yards_market_v1"
+          assert str(market.get("official_event_id") or "") == event_id
+          assert market.get("sportsbook") == "FanDuel"
+          identity = market.get("identity") or {}
+          semantics = market.get("market_semantics") or {}
+          assert identity.get("player_name_matching") is False
+          assert identity.get("fuzzy_matching") is False
+          assert identity.get("synthetic_event_ids") is False
+          assert identity.get("synthetic_player_ids") is False
+          assert semantics.get("projection_weight") == 0.0
+          assert semantics.get("market_context_only") is True
+          assert semantics.get("may_modify_projection") is False
+          assert semantics.get("probability_enabled") is False
+          assert semantics.get("fair_odds_enabled") is False
+          assert semantics.get("ev_enabled") is False
+          assert semantics.get("grading_enabled") is False
+          assert semantics.get("stake_sizing_enabled") is False
+          assert semantics.get("wager_actions") is False
+
+          props = market.get("props") or []
+          seen = set()
+          for row in props:
+              athlete_id = str(row.get("official_athlete_id") or "")
+              team_id = str(row.get("official_team_id") or "")
+              assert athlete_id.isdigit()
+              assert team_id.isdigit()
+              assert athlete_id not in seen
+              seen.add(athlete_id)
+              assert str(row.get("official_event_id") or "") == event_id
+              assert str(row.get("market_type") or "").lower() == "rushing_yards"
+              assert str(row.get("sportsbook") or "").lower() == "fanduel"
+              assert str(row.get("line_status") or "").lower() == "active"
+
+          print(
+              "NFL_RUSHING_YARDS_STEP4_LIVE_PRODUCTION_GREEN",
+              json.dumps(
+                  {
+                      "deployment_commit": deployment.get("commit"),
+                      "event_id": event_id,
+                      "market_available": bool(market.get("market_available")),
+                      "prop_count": len(props),
+                      "captured_at_utc": market.get("captured_at_utc"),
+                  },
+                  sort_keys=True,
+              ),
+          )
+          PY
