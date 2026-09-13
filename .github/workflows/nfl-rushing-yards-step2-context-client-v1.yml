@@ -88,6 +88,39 @@ jobs:
           print("Live production Rushing Yards status contract: GREEN")
           PY
 
+      - name: Diagnose live ESPN upstream chain
+        run: |
+          python - <<'PY'
+          from urllib.error import HTTPError, URLError
+          from urllib.request import Request, urlopen
+
+          base = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
+          urls = [
+              ("summary", f"{base}/summary?event=401872925"),
+              ("tb_roster", f"{base}/teams/27/roster"),
+              ("cin_roster", f"{base}/teams/4/roster"),
+              ("tb_schedule_2026", f"{base}/teams/27/schedule?season=2026"),
+              ("tb_schedule_2025", f"{base}/teams/27/schedule?season=2025"),
+              ("cin_schedule_2026", f"{base}/teams/4/schedule?season=2026"),
+              ("cin_schedule_2025", f"{base}/teams/4/schedule?season=2025"),
+          ]
+          headers = {
+              "Accept": "application/json,text/plain,*/*",
+              "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAPI-NFL-Rushing/1.0; read-only)",
+          }
+          for label, url in urls:
+              request = Request(url, headers=headers, method="GET")
+              try:
+                  with urlopen(request, timeout=20) as response:
+                      preview = response.read(220).decode("utf-8", errors="replace").replace("\n", " ")
+                      print(f"ESPN_UPSTREAM {label}: HTTP {response.status} • {preview[:180]}")
+              except HTTPError as exc:
+                  preview = exc.read(400).decode("utf-8", errors="replace").replace("\n", " ")
+                  print(f"ESPN_UPSTREAM {label}: HTTP {exc.code} • {preview[:300]}")
+              except URLError as exc:
+                  print(f"ESPN_UPSTREAM {label}: URLERROR {type(exc.reason).__name__}")
+          PY
+
       - name: Live exact-event production probe
         run: |
           python - <<'PY'
