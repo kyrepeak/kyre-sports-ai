@@ -1,0 +1,57 @@
+name: NFL Rushing Yards V13 Public Matchup Tiers Witness
+
+on:
+  push:
+    branches:
+      - nfl-rushing-yards-v13-public-matchup-tiers-witness
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-v13-matchup-tiers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Drive actual public Streamlit V13 matchup tiers
+        run: |
+          python devsystem/nfl_rushing_yards_v13_matchup_tiers_browser_v1.py \
+            --base-url https://kyre-sports-ai.streamlit.app \
+            --artifact-dir artifacts/rushing-v13-public-matchup-tiers \
+            --event-id 401872925
+
+      - name: Upload public V13 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-rushing-v13-public-matchup-tiers-${{ github.run_id }}
+          path: artifacts/rushing-v13-public-matchup-tiers
+          if-no-files-found: warn
+          retention-days: 7
