@@ -1,0 +1,87 @@
+name: NFL Rushing Yards Step 3 Projection V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_rushing_yards_projection_v1.py"
+      - "nfl_rushing_yards_hub_v2.py"
+      - "streamlit_memory_lazy_router_v98.py"
+      - "tests/test_nfl_rushing_yards_projection_v1.py"
+      - "tests/test_nfl_rushing_yards_step3_surface_v1.py"
+      - ".github/workflows/nfl-rushing-yards-step3-projection-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-step3-projection:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Step 3 surface
+        run: |
+          python -m py_compile \
+            nfl_rushing_yards_projection_v1.py \
+            nfl_rushing_yards_hub_v2.py \
+            streamlit_memory_lazy_router_v98.py
+
+      - name: Prove frozen owners were not modified
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_|nfl_hub_v35\.py$|streamlit_memory_lazy_router_v97\.py$|nfl_rushing_yards_hub_v1\.py$|nfl_rushing_yards_context_api_v1\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "STEP3_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "STEP3_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Run Step 3 projection and surface contracts
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_rushing_yards_projection_v1.py \
+            tests/test_nfl_rushing_yards_step3_surface_v1.py
+
+      - name: Prove market isolation stays hard off
+        shell: bash
+        run: |
+          python - <<'PY'
+          import nfl_rushing_yards_projection_v1 as p
+          banned = {
+              "probability_enabled": False,
+              "monte_carlo_enabled": False,
+              "market_enabled": False,
+              "fair_line_enabled": False,
+              "ev_enabled": False,
+              "ranking_enabled": False,
+              "recommendation_enabled": False,
+              "stake_sizing_enabled": False,
+              "wager_actions": False,
+          }
+          source = open("nfl_rushing_yards_projection_v1.py", encoding="utf-8").read()
+          assert '"sportsbook_influence": 0.0' in source
+          for key, expected in banned.items():
+              assert f'"{key}": False' in source, key
+          assert sum(p.EFFICIENCY_WEIGHTS.values()) == 1.0
+          print("NFL_RUSHING_YARDS_STEP3_MARKET_ISOLATION_GREEN")
+          PY
