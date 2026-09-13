@@ -1,0 +1,68 @@
+name: NFL Rushing Yards Live Latency Witness V2
+
+on:
+  push:
+    branches: [nfl-rushing-yards-live-latency-witness-v2]
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-live-context:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Measure live exact-event Rushing context latency
+        shell: bash
+        env:
+          URL: https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?event_id=401872925
+        run: |
+          set -euo pipefail
+          : > /tmp/rushing_times.txt
+          for i in 1 2 3 4 5 6; do
+            metrics="$(curl --fail --silent --show-error --max-time 30 \
+              --output /tmp/rushing_response.json \
+              --write-out '%{http_code} %{time_starttransfer} %{time_total}' \
+              "$URL")"
+            read -r http ttfb total <<< "$metrics"
+            test "$http" = "200"
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/rushing_response.json').read_text())
+          assert payload['schema_version'] == 'nfl_rushing_yards_context_v1'
+          assert payload['official_event_id'] == '401872925'
+          assert payload['identity']['player_name_matching'] is False
+          assert payload['identity']['fuzzy_matching'] is False
+          assert payload['identity']['synthetic_event_ids'] is False
+          assert payload['identity']['synthetic_player_ids'] is False
+          assert payload['semantics']['sportsbook_influence'] == 0.0
+          assert payload['semantics']['projection_enabled'] is False
+          assert payload['semantics']['market_enabled'] is False
+          print('RUSH_LIVE_RESPONSE_CONTRACT_GREEN')
+          PY
+            printf '%s\n' "$total" >> /tmp/rushing_times.txt
+            echo "RUSH_LIVE_PROBE index=$i http=$http ttfb_s=$ttfb total_s=$total"
+          done
+
+          python - <<'PY'
+          import json, statistics
+          from pathlib import Path
+          values = [float(x) for x in Path('/tmp/rushing_times.txt').read_text().splitlines() if x.strip()]
+          result = {
+              'event_id': '401872925',
+              'requests': len(values),
+              'fastest_ms': round(min(values) * 1000, 2),
+              'median_ms': round(statistics.median(values) * 1000, 2),
+              'mean_ms': round(statistics.mean(values) * 1000, 2),
+              'slowest_ms': round(max(values) * 1000, 2),
+              'sportsbook_projection_influence': 0.0,
+          }
+          print('RUSH_LIVE_LATENCY_V2', json.dumps(result, sort_keys=True))
+          PY
