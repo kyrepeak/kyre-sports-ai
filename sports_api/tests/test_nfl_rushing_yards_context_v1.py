@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import io
+import json
+from urllib.error import HTTPError
+
 from fastapi.testclient import TestClient
 
 from sports_api.api import nfl_rushing_yards_context_v1 as route
@@ -82,6 +86,78 @@ def _install_fake_espn(monkeypatch):
         raise AssertionError(f"unexpected ESPN call: {url} {params}")
 
     monkeypatch.setattr(collector, "_get_json", fake_get)
+
+
+class _BytesResponse:
+    def __init__(self, payload: dict, status: int = 200):
+        self.status = status
+        self._raw = json.dumps(payload).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def read(self, _limit=None):
+        return self._raw
+
+
+def _http_error(url: str, code: int) -> HTTPError:
+    return HTTPError(url, code, "transport failure", {}, io.BytesIO(b"{}"))
+
+
+def test_get_json_primary_http_error_uses_same_path_and_query_on_alternate(monkeypatch):
+    seen: list[str] = []
+    event_id = "401872925"
+
+    def fake_urlopen(request, timeout):
+        assert timeout == collector.DEFAULT_TIMEOUT_SECONDS
+        target = request.full_url
+        seen.append(target)
+        if len(seen) == 1:
+            raise _http_error(target, 403)
+        return _BytesResponse({"header": {"id": event_id}})
+
+    monkeypatch.setattr(collector, "urlopen", fake_urlopen)
+    payload = collector._get_json(
+        f"{collector.ESPN_SITE_BASE}/summary",
+        {"event": event_id},
+    )
+
+    assert payload["header"]["id"] == event_id
+    assert len(seen) == 2
+    assert seen[0] == f"{collector.ESPN_SITE_BASE}/summary?event={event_id}"
+    assert seen[1] == f"{collector.ESPN_SITE_ALTERNATE_BASE}/summary?event={event_id}"
+    assert seen[0].split("/summary", 1)[1] == seen[1].split("/summary", 1)[1]
+
+
+def test_get_json_both_espn_transports_fail_closed_with_codes(monkeypatch):
+    seen: list[str] = []
+
+    def fake_urlopen(request, timeout):
+        target = request.full_url
+        seen.append(target)
+        code = 403 if len(seen) == 1 else 429
+        raise _http_error(target, code)
+
+    monkeypatch.setattr(collector, "urlopen", fake_urlopen)
+    try:
+        collector._get_json(
+            f"{collector.ESPN_SITE_BASE}/summary",
+            {"event": "401872925"},
+        )
+    except collector.NFLRushingYardsContextError as exc:
+        message = str(exc)
+        assert "both certified transports" in message
+        assert "primary HTTP 403" in message
+        assert "alternate HTTP 429" in message
+    else:
+        raise AssertionError("dual ESPN transport failure did not fail closed")
+
+    assert len(seen) == 2
+    assert seen[0].startswith(collector.ESPN_SITE_BASE)
+    assert seen[1].startswith(collector.ESPN_SITE_ALTERNATE_BASE)
 
 
 def test_collector_exact_id_prior_season_fallback(monkeypatch):
