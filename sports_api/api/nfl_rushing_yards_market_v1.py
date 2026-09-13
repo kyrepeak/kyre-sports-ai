@@ -19,7 +19,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
-from sports_api.collectors.nfl_fanduel_rushing_yards_v1 import (
+from sports_api.collectors.nfl_fanduel_rushing_yards_v2 import (
     NFLRushingYardsCollectorError,
     SCHEMA_VERSION,
     collect_fanduel_nfl_rushing_yards_hosted,
