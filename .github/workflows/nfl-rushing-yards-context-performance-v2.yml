@@ -1,0 +1,97 @@
+name: NFL Rushing Yards Context Performance V2
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - "sports_api/collectors/nfl_rushing_yards_context_v1.py"
+      - "sports_api/tests/test_nfl_rushing_yards_context_performance_v2.py"
+      - ".github/workflows/nfl-rushing-yards-context-performance-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-context-performance-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-context-performance-v2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile optimized collector and tests
+        run: |
+          python -m py_compile sports_api/collectors/nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/api/nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_context_performance_v2.py
+
+      - name: Run frozen exact-ID Rushing context contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_context_v1.py
+
+      - name: Run context performance V2 contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_context_performance_v2.py
+
+      - name: Verify optimization stays transport-only
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path("sports_api/collectors/nfl_rushing_yards_context_v1.py").read_text()
+          route = Path("sports_api/api/nfl_rushing_yards_context_v1.py").read_text()
+
+          assert "ThreadPoolExecutor" in source
+          assert "MAX_PARALLEL_ESPN_REQUESTS = 6" in source
+          assert "_parallel_team_inputs" in source
+          assert "_prefetch_summaries" in source
+          assert '"model_enabled": False' in source
+          assert '"projection_enabled": False' in source
+          assert '"market_enabled": False' in source
+          assert '"sportsbook_influence": 0.0' in source
+          assert '"stake_sizing_enabled": False' in source
+          assert '"wager_actions": False' in source
+          assert 'player_name_matching' in source
+          assert 'fuzzy_matching' in source
+          assert 'synthetic_event_ids' in source
+          assert 'synthetic_player_ids' in source
+          assert "collect_nfl_rushing_yards_context(event_id)" in route
+          print("NFL_RUSHING_CONTEXT_PERFORMANCE_V2_SAFETY_GREEN")
+          PY
+
+      - name: Prove only approved API-performance files changed
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(sports_api/collectors/nfl_rushing_yards_context_v1\.py|sports_api/tests/test_nfl_rushing_yards_context_performance_v2\.py|\.github/workflows/nfl-rushing-yards-context-performance-v2\.yml)$' || true)"
+          if [ -n "$bad" ]; then
+            echo "UNAPPROVED_CONTEXT_PERFORMANCE_FILE_CHANGE"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "NFL_RUSHING_CONTEXT_PERFORMANCE_V2_DIFF_GREEN"
