@@ -28,7 +28,7 @@ import nfl_rushing_yards_market_api_v1 as market_api
 DEFAULT_BASE_URL = "http://127.0.0.1:8508"
 DEFAULT_EVENT_ID = "401872925"
 FAST_QUERY = "?ks_nfl_sport=NFL&ks_nfl_market=Rushing%20Yards"
-V13_MARKER = "FanDuel Rushing Yards • Favorable First"
+V13_MARKER = "Favorable First"
 READY_MARKER = "Monster Performance Diagnosis"
 ATHLETE_RE = re.compile(r"ESPN athlete\s+(\d+)")
 
