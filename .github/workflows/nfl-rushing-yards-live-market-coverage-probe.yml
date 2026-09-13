@@ -1,0 +1,73 @@
+name: NFL Rushing Yards Live Market Coverage Probe
+
+on:
+  push:
+    branches: [nfl-rushing-yards-live-market-coverage-probe]
+
+permissions:
+  contents: read
+
+jobs:
+  probe-live-market-coverage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe live Rushing context and market coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?event_id=401872925' \
+            -o /tmp/context.json
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards/market?event_id=401872925' \
+            -o /tmp/market.json
+          python - <<'PY'
+          import json
+          context = json.load(open('/tmp/context.json'))
+          market = json.load(open('/tmp/market.json'))
+          print('LIVE_CONTEXT_SCHEMA', context.get('schema_version'))
+          print('LIVE_MARKET_SCHEMA', market.get('schema_version'))
+          print('LIVE_EVENT', market.get('official_event_id'))
+          print('MARKET_AVAILABLE', market.get('market_available'))
+          print('CAPTURED_AT', market.get('captured_at_utc'))
+          diagnostics = market.get('provider_diagnostics') or {}
+          print('SELECTED_TAB', diagnostics.get('selected_tab'))
+          print('ATTEMPTED_TABS', json.dumps(diagnostics.get('attempted_tabs') or []))
+          print('RUSHING_MARKET_COUNT', diagnostics.get('rushing_market_count'))
+          print('ACCEPTED_PROP_COUNT', diagnostics.get('accepted_prop_count'))
+          print('REJECTED_MARKET_COUNT', diagnostics.get('rejected_market_count'))
+          print('REJECTED_MARKETS', json.dumps(diagnostics.get('rejected_markets') or [], indent=2))
+          props = market.get('props') or []
+          print('CERTIFIED_PROPS', json.dumps([
+              {
+                  'athlete_id': p.get('official_athlete_id'),
+                  'team_id': p.get('official_team_id'),
+                  'player_name': p.get('player_name'),
+                  'position': p.get('position'),
+                  'line': p.get('line'),
+                  'over_odds': p.get('over_odds'),
+                  'under_odds': p.get('under_odds'),
+                  'provider_market_id': p.get('provider_market_id'),
+              }
+              for p in props
+          ], indent=2))
+          context_players = []
+          for team in context.get('teams') or []:
+              for p in team.get('players') or []:
+                  context_players.append({
+                      'athlete_id': p.get('official_athlete_id'),
+                      'team_id': team.get('official_team_id'),
+                      'player_name': p.get('player_name'),
+                      'position': p.get('position'),
+                  })
+          print('CONTEXT_PLAYERS', json.dumps(context_players, indent=2))
+          prop_ids = {str(p.get('official_athlete_id')) for p in props}
+          print('CONTEXT_PLAYERS_WITHOUT_MARKET', json.dumps([
+              p for p in context_players if str(p.get('athlete_id')) not in prop_ids
+          ], indent=2))
+          assert market.get('market_semantics', {}).get('projection_weight') == 0.0
+          print('LIVE_MARKET_COVERAGE_PROBE_GREEN')
+          PY
