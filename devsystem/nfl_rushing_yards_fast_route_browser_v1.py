@@ -22,6 +22,7 @@ FAST_QUERY = "?ks_nfl_sport=NFL&ks_nfl_market=Rushing%20Yards"
 FAST_MARKER = "RUSHING FAST PATH V1"
 PAGE_MARKER = "Ground Game Lab"
 READY_MARKER = "Monster Performance Diagnosis"
+PERF_MARKER = "MONSTER PERF V1"
 
 
 def _parse_ms(body: str, label: str) -> float | None:
@@ -29,6 +30,43 @@ def _parse_ms(body: str, label: str) -> float | None:
     if not match:
         return None
     return float(match.group(1))
+
+
+def _capture_monster_diagnosis(frame, page, artifacts: Path) -> dict:
+    diagnosis = {
+        "monster_grade": None,
+        "monster_total_ms": None,
+        "monster_bottleneck": None,
+        "monster_bottleneck_ms": None,
+        "monster_bottleneck_share_pct": None,
+    }
+    try:
+        details = frame.locator("details").filter(has_text="Monster Performance Diagnosis").first
+        if details.count() > 0:
+            details.locator("summary").click()
+            page.wait_for_timeout(400)
+        body = frame.locator("body").inner_text()
+        marker_at = body.find(PERF_MARKER)
+        excerpt = body[marker_at : marker_at + 4000] if marker_at >= 0 else body[-4000:]
+        (artifacts / "monster_performance_diagnosis.txt").write_text(excerpt, encoding="utf-8")
+        match = re.search(
+            r"MONSTER PERF V1\s*•\s*([^•\n]+)\s*•\s*total\s*([0-9.]+)\s*ms\s*•\s*"
+            r"bottleneck\s+([^\(\n]+)\s*\(([0-9.]+)\s*ms,\s*([0-9.]+)%\)",
+            excerpt,
+        )
+        if match:
+            diagnosis.update(
+                {
+                    "monster_grade": match.group(1).strip(),
+                    "monster_total_ms": float(match.group(2)),
+                    "monster_bottleneck": match.group(3).strip(),
+                    "monster_bottleneck_ms": float(match.group(4)),
+                    "monster_bottleneck_share_pct": float(match.group(5)),
+                }
+            )
+    except Exception as exc:
+        (artifacts / "monster_performance_capture_error.txt").write_text(str(exc), encoding="utf-8")
+    return diagnosis
 
 
 def run_witness(*, base_url: str, artifact_dir: str | Path) -> dict:
@@ -75,6 +113,7 @@ def run_witness(*, base_url: str, artifact_dir: str | Path) -> dict:
             if bootstrap_import_ms is None or active_page_import_ms is None:
                 raise BrowserQAFailure("Rushing fast-route import timing markers were not parseable")
 
+            diagnosis = _capture_monster_diagnosis(frame, page, artifacts)
             screenshot = artifacts / "rushing_fast_route_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
             result = {
@@ -92,6 +131,7 @@ def run_witness(*, base_url: str, artifact_dir: str | Path) -> dict:
                 "sportsbook_projection_influence": 0.0,
                 "frame_scan_count": len(scan),
                 "screenshot": str(screenshot),
+                **diagnosis,
             }
             (artifacts / "rushing_fast_route_metrics.json").write_text(
                 json.dumps(result, indent=2, sort_keys=True),
