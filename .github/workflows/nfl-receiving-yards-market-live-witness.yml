@@ -1,0 +1,144 @@
+name: NFL Receiving Yards Market Live Witness
+
+on:
+  push:
+    branches: [nfl-receiving-yards-live-witness]
+    paths:
+      - '.github/workflows/nfl-receiving-yards-market-live-witness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-receiving-yards-market-live-witness
+  cancel-in-progress: true
+
+jobs:
+  witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Verify public Receiving Yards market status and live FanDuel payload
+        env:
+          API_BASE: https://kyre-sports-api.onrender.com
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          from datetime import datetime, timedelta, timezone
+          import json
+          import os
+          import time
+          from urllib.error import HTTPError
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          API_BASE = os.environ['API_BASE'].rstrip('/')
+          UA = 'kyre-sports-ai-receiving-market-live-witness/1.0'
+
+          def get_json(url: str, timeout: float = 25.0):
+              req = Request(url, headers={'User-Agent': UA, 'Accept': 'application/json'})
+              try:
+                  with urlopen(req, timeout=timeout) as response:
+                      body = response.read().decode('utf-8')
+                      return response.status, json.loads(body)
+              except HTTPError as exc:
+                  body = exc.read().decode('utf-8', errors='replace')
+                  try:
+                      payload = json.loads(body)
+                  except Exception:
+                      payload = {'raw': body[:500]}
+                  return exc.code, payload
+
+          status_code, status = get_json(f'{API_BASE}/api/v1/nfl/receiving-yards/market/status')
+          print('MARKET_STATUS_HTTP', status_code)
+          print('MARKET_STATUS', json.dumps(status, sort_keys=True))
+          assert status_code == 200, (status_code, status)
+          assert status.get('status') == 'ready', status
+          assert status.get('service') == 'kyre-sports-api', status
+          assert status.get('provider') == 'FanDuel', status
+          assert status.get('projection_weight') == 0.0, status
+          assert status.get('market_context_only') is True, status
+          assert status.get('may_modify_projection') is False, status
+          assert status.get('player_name_matching') is False, status
+          assert status.get('fuzzy_matching') is False, status
+          assert status.get('synthetic_event_ids') is False, status
+          assert status.get('synthetic_player_ids') is False, status
+          for key in ('probability_enabled', 'fair_odds_enabled', 'ev_enabled', 'grading_enabled', 'stake_sizing_enabled', 'wager_actions'):
+              assert status.get(key) is False, (key, status.get(key))
+          print('NFL_RECEIVING_MARKET_STATUS_PUBLIC_GREEN')
+
+          # Discover official ESPN NFL event IDs for today and the next 10 days.
+          # We deliberately use ESPN IDs as the only event authority.
+          today = datetime.now(timezone.utc).date()
+          event_ids: list[str] = []
+          seen: set[str] = set()
+          for offset in range(0, 11):
+              day = today + timedelta(days=offset)
+              date_token = day.strftime('%Y%m%d')
+              espn_url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?' + urlencode({'dates': date_token, 'limit': 100})
+              code, board = get_json(espn_url)
+              if code != 200:
+                  print('ESPN_SCOREBOARD_SKIP', date_token, code)
+                  continue
+              for event in board.get('events') or []:
+                  event_id = str(event.get('id') or '').strip()
+                  if event_id.isdigit() and event_id not in seen:
+                      seen.add(event_id)
+                      event_ids.append(event_id)
+
+          print('OFFICIAL_ESPN_EVENT_IDS', event_ids)
+          assert event_ids, 'No official ESPN NFL events found in witness window'
+
+          failures: list[tuple[str, int, str]] = []
+          winner = None
+          for event_id in event_ids:
+              url = f'{API_BASE}/api/v1/nfl/receiving-yards/market?' + urlencode({'event_id': event_id})
+              code, payload = get_json(url, timeout=35.0)
+              print('MARKET_EVENT_HTTP', event_id, code)
+              if code != 200:
+                  detail = str(payload.get('detail') or payload)[:300]
+                  failures.append((event_id, code, detail))
+                  print('MARKET_EVENT_FAIL_CLOSED', event_id, code, detail)
+                  continue
+
+              assert str(payload.get('official_event_id') or '') == event_id, payload
+              identity = payload.get('identity') or {}
+              semantics = payload.get('market_semantics') or {}
+              props = payload.get('props') or []
+              assert props, ('empty props', event_id, payload)
+              assert identity.get('player_name_matching') is False, identity
+              assert identity.get('fuzzy_matching') is False, identity
+              assert identity.get('synthetic_event_ids') is False, identity
+              assert identity.get('synthetic_player_ids') is False, identity
+              assert semantics.get('projection_weight') == 0.0, semantics
+              assert semantics.get('market_context_only') is True, semantics
+              assert semantics.get('may_modify_projection') is False, semantics
+              for key in ('probability_enabled', 'fair_odds_enabled', 'ev_enabled', 'grading_enabled', 'stake_sizing_enabled', 'wager_actions'):
+                  assert semantics.get(key) is False, (key, semantics.get(key))
+
+              athlete_ids: set[str] = set()
+              for row in props:
+                  athlete_id = str(row.get('official_athlete_id') or '').strip()
+                  team_id = str(row.get('official_team_id') or '').strip()
+                  assert str(row.get('official_event_id') or '').strip() == event_id, row
+                  assert athlete_id.isdigit(), row
+                  assert team_id.isdigit(), row
+                  assert athlete_id not in athlete_ids, ('duplicate athlete', athlete_id)
+                  athlete_ids.add(athlete_id)
+                  assert str(row.get('position') or '').strip().upper() in {'WR', 'TE', 'RB', 'FB'}, row
+                  assert str(row.get('market_type') or '').strip().lower() == 'receiving_yards', row
+                  assert str(row.get('sportsbook') or '').strip().lower() == 'fanduel', row
+                  assert str(row.get('line_status') or '').strip().lower() == 'active', row
+
+              winner = (event_id, len(props))
+              print('NFL_RECEIVING_MARKET_PUBLIC_PAYLOAD_GREEN', event_id, 'props=', len(props))
+              break
+
+          if winner is None:
+              print('MARKET_FAILURES', json.dumps(failures))
+              raise AssertionError('Public status is GREEN, but no upcoming official ESPN event returned a full live FanDuel Receiving Yards payload')
+
+          print('NFL_RECEIVING_YARDS_STEP8_EXTERNAL_WITNESS_GREEN', winner[0], 'props=', winner[1])
+          PY
