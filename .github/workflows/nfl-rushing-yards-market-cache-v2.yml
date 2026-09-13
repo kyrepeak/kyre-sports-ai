@@ -74,7 +74,7 @@ jobs:
           assert '"grading_enabled": False' in route
           assert '"wager_actions": False' in route
           assert 'SCHEMA_VERSION = "nfl_rushing_yards_market_v1"' in collector
-          assert 'SPORTSBOOK = "FanDuel"' in collector
+          assert '"sportsbook": "FanDuel"' in collector
           print("NFL_RUSHING_MARKET_CACHE_V2_SAFETY_GREEN")
           PY
 
