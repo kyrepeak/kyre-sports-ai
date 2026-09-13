@@ -11,6 +11,11 @@ on:
       - "devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1.py"
       - ".github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1.yml"
       - ".github/workflows/nfl-rushing-yards-html-render-fix-v1.yml"
+      - "nfl_rushing_yards_hub_v13.py"
+      - "streamlit_memory_lazy_router_v109.py"
+      - "tests/test_nfl_rushing_yards_v13_matchup_tiers_v1.py"
+      - "devsystem/nfl_rushing_yards_v13_matchup_tiers_browser_v1.py"
+      - ".github/workflows/nfl-rushing-yards-v13-matchup-tiers-v1.yml"
   workflow_dispatch:
 
 permissions:
@@ -101,7 +106,7 @@ jobs:
           fi
           echo "RUSH_FANDUEL_LINEUP_FROZEN_GUARD_GREEN"
 
-      - name: Prove only approved full-lineup and cert-compat files changed
+      - name: Prove only approved full-lineup descendants changed
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -111,9 +116,9 @@ jobs:
           set -euo pipefail
           changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(nfl_rushing_yards_hub_v12\.py|streamlit_memory_lazy_router_v108\.py|app\.py|tests/test_nfl_rushing_yards_fanduel_full_lineup_v1\.py|devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1\.py|\.github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1\.yml|\.github/workflows/nfl-rushing-yards-html-render-fix-v1\.yml)$' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(nfl_rushing_yards_hub_v12\.py|streamlit_memory_lazy_router_v108\.py|app\.py|tests/test_nfl_rushing_yards_fanduel_full_lineup_v1\.py|devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1\.py|\.github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1\.yml|\.github/workflows/nfl-rushing-yards-html-render-fix-v1\.yml|nfl_rushing_yards_hub_v13\.py|streamlit_memory_lazy_router_v109\.py|tests/test_nfl_rushing_yards_v13_matchup_tiers_v1\.py|devsystem/nfl_rushing_yards_v13_matchup_tiers_browser_v1\.py|\.github/workflows/nfl-rushing-yards-v13-matchup-tiers-v1\.yml)$' || true)"
           if [ -n "$bad" ]; then
-            echo "UNAPPROVED_RUSH_FANDUEL_LINEUP_FILE_CHANGE"
+            echo "UNAPPROVED_RUSH_FANDUEL_LINEUP_DESCENDANT_FILE_CHANGE"
             printf '%s\n' "$bad"
             exit 1
           fi
