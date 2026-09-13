@@ -181,9 +181,24 @@ jobs:
           )
 
           base='http://127.0.0.1:8510'
-          route=base+'/?ks_nfl_sport=NFL&ks_nfl_market=Receiving%20Yards'
           artifacts=Path('artifacts/receiving-final')
           _wait_for_health(base)
+
+          def navigate_receiving(page):
+              frame,_=_find_app_frame(page)
+              sport_box=frame.locator('div[data-testid="stSelectbox"]').filter(has_text='🏟️ Sport').first
+              sport_box.locator('div[data-baseweb="select"]').first.click()
+              frame.get_by_role('option', name='NFL', exact=True).click()
+
+              frame,_=_find_app_frame(page)
+              _wait_for_text(frame,'🎯 NFL Market',60.0)
+              market_box=frame.locator('div[data-testid="stSelectbox"]').filter(has_text='🎯 NFL Market').first
+              market_box.locator('div[data-baseweb="select"]').first.click()
+              frame.get_by_role('option', name='Receiving Yards', exact=True).click()
+
+              frame,_=_find_app_frame(page)
+              body=_wait_for_text(frame,'STEP 10 OF 10',180.0)
+              return frame,body
 
           def verify(frame, body, label):
               forbidden=_body_has_forbidden_error(body)
@@ -208,17 +223,15 @@ jobs:
               page=browser.new_page(viewport={'width':1440,'height':1800})
               try:
                   cold_started=perf_counter()
-                  page.goto(route,wait_until='domcontentloaded',timeout=120000)
-                  frame,_=_find_app_frame(page)
-                  cold_body=_wait_for_text(frame,'STEP 10 OF 10',180.0)
+                  page.goto(base,wait_until='domcontentloaded',timeout=120000)
+                  frame,cold_body=navigate_receiving(page)
                   cold_ms=(perf_counter()-cold_started)*1000.0
                   cold_ribbons=verify(frame,cold_body,'cold')
                   page.screenshot(path=str(artifacts/'receiving_final_cold.png'),full_page=True)
 
                   warm_started=perf_counter()
                   page.reload(wait_until='domcontentloaded',timeout=120000)
-                  frame,_=_find_app_frame(page)
-                  warm_body=_wait_for_text(frame,'STEP 10 OF 10',180.0)
+                  frame,warm_body=navigate_receiving(page)
                   warm_ms=(perf_counter()-warm_started)*1000.0
                   warm_ribbons=verify(frame,warm_body,'warm')
                   page.screenshot(path=str(artifacts/'receiving_final_warm.png'),full_page=True)
