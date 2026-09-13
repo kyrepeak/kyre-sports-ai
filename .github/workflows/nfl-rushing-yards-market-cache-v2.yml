@@ -1,0 +1,97 @@
+name: NFL Rushing Yards Market Cache V2
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - "sports_api/api/nfl_rushing_yards_market_v1.py"
+      - "sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py"
+      - ".github/workflows/nfl-rushing-yards-market-cache-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-market-cache-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-market-cache-v2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile market cache surface
+        run: |
+          python -m py_compile sports_api/api/nfl_rushing_yards_market_v1.py
+          python -m py_compile sports_api/collectors/nfl_fanduel_rushing_yards_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py
+
+      - name: Run frozen market V1 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_v1.py
+
+      - name: Run market cache V2 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py
+
+      - name: Verify short-cache safety and frozen collector
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          route = Path("sports_api/api/nfl_rushing_yards_market_v1.py").read_text()
+          collector = Path("sports_api/collectors/nfl_fanduel_rushing_yards_v1.py").read_text()
+
+          assert "MARKET_SNAPSHOT_TTL_SECONDS = 10.0" in route
+          assert "deepcopy" in route
+          assert "_validate_market_payload(cached, event_id)" in route
+          assert "_event_lock(event_id)" in route
+          assert 'payload.get("market_available") is not True' in route
+          assert '"projection_weight": 0.0' in route
+          assert '"market_context_only": True' in route
+          assert '"may_modify_projection": False' in route
+          assert '"probability_enabled": False' in route
+          assert '"fair_odds_enabled": False' in route
+          assert '"ev_enabled": False' in route
+          assert '"grading_enabled": False' in route
+          assert '"wager_actions": False' in route
+          assert 'SCHEMA_VERSION = "nfl_rushing_yards_market_v1"' in collector
+          assert '"sportsbook": "FanDuel"' in collector
+          print("NFL_RUSHING_MARKET_CACHE_V2_SAFETY_GREEN")
+          PY
+
+      - name: Prove only approved market-cache files changed
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(sports_api/api/nfl_rushing_yards_market_v1\.py|sports_api/tests/test_nfl_rushing_yards_market_cache_v2\.py|\.github/workflows/nfl-rushing-yards-market-cache-v2\.yml)$' || true)"
+          if [ -n "$bad" ]; then
+            echo "UNAPPROVED_RUSHING_MARKET_CACHE_FILE_CHANGE"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "NFL_RUSHING_MARKET_CACHE_V2_DIFF_GREEN"
