@@ -1,0 +1,57 @@
+name: NFL Rushing Yards V15 Public Phoenix Times Witness
+
+on:
+  push:
+    branches: [nfl-rushing-yards-v15-public-phoenix-times-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-v15-phoenix-times:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Drive actual public Streamlit V15 Phoenix times
+        shell: bash
+        run: |
+          python devsystem/nfl_rushing_yards_v15_phoenix_times_browser_v1.py \
+            --base-url https://kyre-sports-ai.streamlit.app \
+            --artifact-dir artifacts/rushing-v15-public-phoenix-times \
+            --day 2026-09-13
+
+      - name: Upload public V15 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-rushing-v15-public-phoenix-times-${{ github.run_id }}
+          path: artifacts/rushing-v15-public-phoenix-times
+          if-no-files-found: warn
+          retention-days: 7
