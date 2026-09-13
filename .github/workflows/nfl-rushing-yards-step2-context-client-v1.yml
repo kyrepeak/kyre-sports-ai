@@ -92,15 +92,21 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          from urllib.error import HTTPError
           from urllib.parse import urlencode
           from urllib.request import Request, urlopen
 
           event_id = "401872925"
           url = "https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?" + urlencode({"event_id": event_id})
           request = Request(url, headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Cert/1.0"})
-          with urlopen(request, timeout=45) as response:
-              assert response.status == 200, response.status
-              body = json.loads(response.read().decode("utf-8"))
+          try:
+              with urlopen(request, timeout=45) as response:
+                  assert response.status == 200, response.status
+                  body = json.loads(response.read().decode("utf-8"))
+          except HTTPError as exc:
+              diagnostic = exc.read().decode("utf-8", errors="replace")
+              print(f"LIVE_RUSHING_YARDS_HTTP_{exc.code}: {diagnostic}")
+              raise
 
           assert body["schema_version"] == "nfl_rushing_yards_context_v1"
           assert body["official_event_id"] == event_id
