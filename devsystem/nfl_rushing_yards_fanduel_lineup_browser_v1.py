@@ -69,6 +69,10 @@ def run_witness(*, base_url: str, artifact_dir: str | Path, event_id: str) -> di
                 raise BrowserQAFailure(
                     f"Rushing full-lineup page contains runtime error marker: {forbidden}"
                 )
+            if f"official ESPN event {event_id}" not in body:
+                raise BrowserQAFailure(
+                    f"Rushing page did not select exact ESPN event {event_id}"
+                )
             for raw_marker in (
                 '<article class="krush-game"',
                 '<article class="krush-proj"',
