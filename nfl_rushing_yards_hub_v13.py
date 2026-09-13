@@ -228,8 +228,8 @@ def _lineup_board_html_v13(context: dict[str, Any], event_market: dict[str, Any]
     return (
         '<section class="krush13-wrap" aria-label="Full FanDuel Rushing Yards lineup">'
         '<div class="krush13-head"><div>'
-        '<div class="krush13-title">🏈 FanDuel Rushing Yards • Favorable First</div>'
-        f'<div class="krush13-sub">FAVORABLE → MEDIUM → TOUGH • {escape(summary)} • {escape(age_text)} • matchup tier uses verified opponent run-defense context only.</div>'
+        '<div class="krush13-title">🏈 FanDuel Rushing Yards • Full Standard Lineup</div>'
+        f'<div class="krush13-sub">Favorable First • FAVORABLE → MEDIUM → TOUGH • {escape(summary)} • {escape(age_text)} • matchup tier uses verified opponent run-defense context only.</div>'
         '</div>'
         f'<span class="krush13-count">{len(cards)} {count_label}</span>'
         '</div>'
