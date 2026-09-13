@@ -1,0 +1,97 @@
+name: NFL Rushing Yards Page Step 1 Compact V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_rushing_yards_hub_v4.py"
+      - "streamlit_memory_lazy_router_v100.py"
+      - "app.py"
+      - "tests/test_nfl_rushing_yards_page_step1_compact_v1.py"
+      - ".github/workflows/nfl-rushing-yards-page-step1-compact-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-page-step1-compact-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-page-step1-compact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile compact player-card surface
+        run: |
+          python -m py_compile \
+            nfl_rushing_yards_hub_v4.py \
+            streamlit_memory_lazy_router_v100.py \
+            app.py \
+            tests/test_nfl_rushing_yards_page_step1_compact_v1.py
+
+      - name: Prove certified owners were not modified
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_|nfl_hub_v35\.py$|streamlit_memory_lazy_router_v97\.py$|streamlit_memory_lazy_router_v98\.py$|streamlit_memory_lazy_router_v99\.py$|nfl_rushing_yards_hub_v1\.py$|nfl_rushing_yards_hub_v2\.py$|nfl_rushing_yards_hub_v3\.py$|nfl_rushing_yards_projection_v1\.py$|nfl_rushing_yards_context_api_v1\.py$|nfl_rushing_yards_market_api_v1\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "RUSH_PAGE_STEP1_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "RUSH_PAGE_STEP1_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Re-run certified Step 3 and Step 4 contracts
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_rushing_yards_projection_v1.py \
+            tests/test_nfl_rushing_yards_step3_surface_v1.py \
+            tests/test_nfl_rushing_yards_market_api_v1.py \
+            tests/test_nfl_rushing_yards_step4_surface_v1.py
+
+      - name: Run compact player-card contracts
+        run: python -m pytest -q tests/test_nfl_rushing_yards_page_step1_compact_v1.py
+
+      - name: Prove visual-only isolation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          v4 = Path("nfl_rushing_yards_hub_v4.py").read_text(encoding="utf-8")
+          v3 = Path("nfl_rushing_yards_hub_v3.py").read_text(encoding="utf-8")
+          v99 = Path("streamlit_memory_lazy_router_v99.py").read_text(encoding="utf-8")
+          v100 = Path("streamlit_memory_lazy_router_v100.py").read_text(encoding="utf-8")
+          engine = Path("nfl_rushing_yards_projection_v1.py").read_text(encoding="utf-8")
+          market = Path("nfl_rushing_yards_market_api_v1.py").read_text(encoding="utf-8")
+
+          assert 'FROZEN_PRIOR = "nfl_rushing_yards_hub_v3"' in v4
+          assert 'FROZEN_PRIOR = "nfl_rushing_yards_hub_v2"' in v3
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v3"' in v99
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v4"' in v100
+          assert '"sportsbook_influence": 0.0' in engine
+          assert '"projection_weight": 0.0' in market
+          assert '"probability_enabled": False' in market
+          assert '"grading_enabled": False' in market
+          assert '"wager_actions": False' in market
+          print("NFL_RUSHING_YARDS_PAGE_STEP1_VISUAL_ISOLATION_GREEN")
+          PY
