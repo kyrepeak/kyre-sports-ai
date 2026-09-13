@@ -15,6 +15,11 @@ on:
       - "tests/test_nfl_rushing_yards_fanduel_full_lineup_v1.py"
       - "devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1.py"
       - ".github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1.yml"
+      - "nfl_rushing_yards_hub_v13.py"
+      - "streamlit_memory_lazy_router_v109.py"
+      - "tests/test_nfl_rushing_yards_v13_matchup_tiers_v1.py"
+      - "devsystem/nfl_rushing_yards_v13_matchup_tiers_browser_v1.py"
+      - ".github/workflows/nfl-rushing-yards-v13-matchup-tiers-v1.yml"
   workflow_dispatch:
 
 permissions:
@@ -114,7 +119,7 @@ jobs:
           set -euo pipefail
           changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(nfl_rushing_yards_hub_v11\.py|streamlit_memory_lazy_router_v107\.py|app\.py|tests/test_nfl_rushing_yards_html_render_fix_v1\.py|devsystem/nfl_rushing_yards_html_render_browser_v1\.py|\.github/workflows/nfl-rushing-yards-html-render-fix-v1\.yml|nfl_rushing_yards_hub_v12\.py|streamlit_memory_lazy_router_v108\.py|tests/test_nfl_rushing_yards_fanduel_full_lineup_v1\.py|devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1\.py|\.github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1\.yml)$' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(nfl_rushing_yards_hub_v11\.py|streamlit_memory_lazy_router_v107\.py|app\.py|tests/test_nfl_rushing_yards_html_render_fix_v1\.py|devsystem/nfl_rushing_yards_html_render_browser_v1\.py|\.github/workflows/nfl-rushing-yards-html-render-fix-v1\.yml|nfl_rushing_yards_hub_v12\.py|streamlit_memory_lazy_router_v108\.py|tests/test_nfl_rushing_yards_fanduel_full_lineup_v1\.py|devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1\.py|\.github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1\.yml|nfl_rushing_yards_hub_v13\.py|streamlit_memory_lazy_router_v109\.py|tests/test_nfl_rushing_yards_v13_matchup_tiers_v1\.py|devsystem/nfl_rushing_yards_v13_matchup_tiers_browser_v1\.py|\.github/workflows/nfl-rushing-yards-v13-matchup-tiers-v1\.yml)$' || true)"
           if [ -n "$bad" ]; then
             echo "UNAPPROVED_RUSH_HTML_REPAIR_DESCENDANT_FILE_CHANGE"
             printf '%s\n' "$bad"
