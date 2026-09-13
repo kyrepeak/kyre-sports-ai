@@ -195,7 +195,7 @@ def _lineup_board_html_v13(context: dict[str, Any], event_market: dict[str, Any]
             else prior._safe(grade.get("reason"), "verified context unavailable")
         )
         cards.append(
-            f'<article class="krush13-card {escape(tier_class)}" data-matchup-tier="{escape(tier)}" data-matchup-score="{score:+d}">'
+            f'<article class="krush12-card krush13-card {escape(tier_class)}" data-matchup-tier="{escape(tier)}" data-matchup-score="{score:+d}">'
             '<div class="krush13-top">'
             '<div>'
             f'<div class="krush13-name">{escape(player_name)}</div>'
@@ -226,7 +226,7 @@ def _lineup_board_html_v13(context: dict[str, Any], event_market: dict[str, Any]
         f'{tier_counts["TOUGH"]} tough'
     )
     return (
-        '<section class="krush13-wrap" aria-label="FanDuel Rushing Yards lineup sorted by matchup tier">'
+        '<section class="krush13-wrap" aria-label="Full FanDuel Rushing Yards lineup">'
         '<div class="krush13-head"><div>'
         '<div class="krush13-title">🏈 FanDuel Rushing Yards • Favorable First</div>'
         f'<div class="krush13-sub">FAVORABLE → MEDIUM → TOUGH • {escape(summary)} • {escape(age_text)} • matchup tier uses verified opponent run-defense context only.</div>'
