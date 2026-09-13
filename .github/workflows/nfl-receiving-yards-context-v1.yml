@@ -1,0 +1,119 @@
+name: NFL Receiving Yards Context V1 cert
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - 'sports_api/collectors/nfl_receiving_yards_context_v1.py'
+      - 'sports_api/api/nfl_receiving_yards_context_v1.py'
+      - 'sports_api/api/health.py'
+      - 'sports_api/tests/test_nfl_receiving_yards_context_v1.py'
+      - '.github/workflows/nfl-receiving-yards-context-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-receiving-yards-context-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install production API stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Enforce exact five-file Receiving API diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin mlb-step17b-shared-host-cert:refs/remotes/origin/mlb-step17b-shared-host-cert
+          git diff --name-only origin/mlb-step17b-shared-host-cert...HEAD | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-receiving-yards-context-v1.yml
+          sports_api/api/health.py
+          sports_api/api/nfl_receiving_yards_context_v1.py
+          sports_api/collectors/nfl_receiving_yards_context_v1.py
+          sports_api/tests/test_nfl_receiving_yards_context_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual Receiving API diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile additive NFL Receiving Yards files
+        run: |
+          python -m py_compile sports_api/collectors/nfl_receiving_yards_context_v1.py
+          python -m py_compile sports_api/api/nfl_receiving_yards_context_v1.py
+          python -m py_compile sports_api/tests/test_nfl_receiving_yards_context_v1.py
+
+      - name: Run deterministic NFL Receiving Yards contract tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_receiving_yards_context_v1.py
+
+      - name: Prove Receiving routes on certified shared-host router
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from sports_api.api.health import router as health_router
+          from sports_api.main import app
+
+          health_paths = [getattr(route, 'path', '') for route in health_router.routes]
+          app_paths = [getattr(route, 'path', '') for route in app.routes]
+          receiving = {
+              '/api/v1/nfl/receiving-yards',
+              '/api/v1/nfl/receiving-yards/status',
+          }
+          frozen_rushing = {
+              '/api/v1/nfl/rushing-yards',
+              '/api/v1/nfl/rushing-yards/status',
+              '/api/v1/nfl/rushing-yards/fast',
+              '/api/v1/nfl/rushing-yards/fast/status',
+              '/api/v1/nfl/rushing-yards/market',
+              '/api/v1/nfl/rushing-yards/market/status',
+          }
+
+          print('Shared-host route counts (health_router, main.app):')
+          for path in sorted(receiving | frozen_rushing):
+              print(path, health_paths.count(path), app_paths.count(path))
+
+          # Match the already-certified Rushing shared-host ownership contract:
+          # NFL route collections are owned by sports_api.api.health.router.
+          for path in sorted(receiving):
+              count = health_paths.count(path)
+              assert count == 1, (path, 'receiving shared-host count', count)
+          for path in sorted(frozen_rushing):
+              count = health_paths.count(path)
+              assert count == 1, (path, 'frozen rushing shared-host count', count)
+
+          print('NFL_RECEIVING_CONTEXT_V1_SHARED_HOST_GREEN')
+          PY
+
+      - name: Re-run frozen NFL Rushing context regressions
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q \
+            sports_api/tests/test_nfl_rushing_yards_context_v1.py \
+            sports_api/tests/test_nfl_rushing_yards_context_performance_v2.py \
+            sports_api/tests/test_nfl_rushing_yards_context_cache_v3.py
+
+      - name: Revalidate shared-host startup and observability contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_production_observability_backport_v1.py
