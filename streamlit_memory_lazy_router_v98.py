@@ -6,20 +6,19 @@ route that market to the active isolated Rushing Yards page. Every other NFL
 market delegates back to V97's original handler, preserving Passing Yards and
 the established router chain exactly.
 
-Step 4 advances only the Rushing Yards target from V2 to V3. No Passing Yards,
-projection math, probability, EV, grading, CFB, or other sport logic is changed
-here. The V3 market layer remains post-projection context only and sportsbook
-projection influence remains 0.0%.
+Step 3 advances only the Rushing Yards target from V1 to V2. No Passing Yards,
+probability, sportsbook, grading, freshness, identity, CFB, or other sport logic
+is changed here. Sportsbook projection influence remains 0.0%.
 """
 from __future__ import annotations
 
 import streamlit_memory_lazy_router_v1 as root
 import streamlit_memory_lazy_router_v97 as prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V98 • NFL RUSHING YARDS STEP 4 MARKET CONTEXT TARGET"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V98 • NFL RUSHING YARDS STEP 3 PROJECTION TARGET"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v97"
 PRECEDENCE_ANCHOR = "streamlit_memory_lazy_router_v97._render_nfl_v97"
-ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v3"
+ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v2"
 RUSHING_YARDS_MARKET = "Rushing Yards"
 
 _PRIOR_RENDER_NFL = prior._render_nfl_v97
