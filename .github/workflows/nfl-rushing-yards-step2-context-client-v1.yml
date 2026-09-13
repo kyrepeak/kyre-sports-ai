@@ -91,18 +91,24 @@ jobs:
       - name: Diagnose live ESPN upstream chain
         run: |
           python - <<'PY'
+          import json
           from urllib.error import HTTPError, URLError
           from urllib.request import Request, urlopen
 
-          base = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
+          site = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
+          web = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl"
           urls = [
-              ("summary", f"{base}/summary?event=401872925"),
-              ("tb_roster", f"{base}/teams/27/roster"),
-              ("cin_roster", f"{base}/teams/4/roster"),
-              ("tb_schedule_2026", f"{base}/teams/27/schedule?season=2026"),
-              ("tb_schedule_2025", f"{base}/teams/27/schedule?season=2025"),
-              ("cin_schedule_2026", f"{base}/teams/4/schedule?season=2026"),
-              ("cin_schedule_2025", f"{base}/teams/4/schedule?season=2025"),
+              ("site_summary", f"{site}/summary?event=401872925"),
+              ("site_tb_roster", f"{site}/teams/27/roster"),
+              ("site_cin_roster", f"{site}/teams/4/roster"),
+              ("site_tb_schedule_2026", f"{site}/teams/27/schedule?season=2026&seasontype=2"),
+              ("site_tb_schedule_2025", f"{site}/teams/27/schedule?season=2025&seasontype=2"),
+              ("site_cin_schedule_2026", f"{site}/teams/4/schedule?season=2026&seasontype=2"),
+              ("site_cin_schedule_2025", f"{site}/teams/4/schedule?season=2025&seasontype=2"),
+              ("web_summary", f"{web}/summary?event=401872925"),
+              ("web_tb_roster", f"{web}/teams/27/roster"),
+              ("web_cin_roster", f"{web}/teams/4/roster"),
+              ("web_tb_schedule_2025", f"{web}/teams/27/schedule?season=2025&seasontype=2"),
           ]
           headers = {
               "Accept": "application/json,text/plain,*/*",
@@ -112,13 +118,16 @@ jobs:
               request = Request(url, headers=headers, method="GET")
               try:
                   with urlopen(request, timeout=20) as response:
-                      preview = response.read(220).decode("utf-8", errors="replace").replace("\n", " ")
-                      print(f"ESPN_UPSTREAM {label}: HTTP {response.status} • {preview[:180]}")
+                      raw = response.read()
+                      payload = json.loads(raw.decode("utf-8"))
+                      season = payload.get("season") if isinstance(payload, dict) else None
+                      year = season.get("year") if isinstance(season, dict) else None
+                      print(f"ESPN_UPSTREAM {label}: HTTP {response.status} • season_year={year} • bytes={len(raw)}")
               except HTTPError as exc:
                   preview = exc.read(400).decode("utf-8", errors="replace").replace("\n", " ")
                   print(f"ESPN_UPSTREAM {label}: HTTP {exc.code} • {preview[:300]}")
-              except URLError as exc:
-                  print(f"ESPN_UPSTREAM {label}: URLERROR {type(exc.reason).__name__}")
+              except (URLError, ValueError) as exc:
+                  print(f"ESPN_UPSTREAM {label}: ERROR {type(exc).__name__}")
           PY
 
       - name: Live exact-event production probe
