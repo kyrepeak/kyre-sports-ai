@@ -133,20 +133,23 @@ jobs:
                       line for line in body.splitlines()
                       if "RECEIVING" in line.upper()
                       or "STEP 5" in line.upper()
-                      or "DEFENSE + H2H" in line.upper()
+                      or "DEFENSE" in line.upper()
+                      or "H2H" in line.upper()
                       or "SPORTSBOOK" in line.upper()
                   ]
-                  print("LIVE_RECEIVING_STEP5_EXCERPT=" + json.dumps(marker_lines[:80], ensure_ascii=False))
+                  print("LIVE_RECEIVING_STEP5_EXCERPT=" + json.dumps(marker_lines[:100], ensure_ascii=False))
                   if forbidden:
                       raise AssertionError("Live Receiving route runtime error: " + " | ".join(forbidden))
                   if missing:
                       raise AssertionError("Live Receiving Step 5 marker missing: " + json.dumps(missing, ensure_ascii=False))
 
-                  # If player data is available on the live selected slate, require the
-                  # actual Step 5 player context surface too. The footer remains the
-                  # terminal proof when an exact-ID player board is legitimately empty.
-                  has_player_cards = "Verified receiver profiles" in body or "EXACT ESPN ATHLETE" in body.upper()
-                  if has_player_cards and "Opponent Pass Defense + Player vs Team History" not in body:
+                  # CSS text-transform can uppercase rendered innerText. Compare the
+                  # player-card surface case-insensitively so the witness checks content,
+                  # not presentation casing.
+                  body_upper = body.upper()
+                  has_player_cards = "VERIFIED RECEIVER PROFILES" in body_upper or "EXACT ESPN ATHLETE" in body_upper
+                  has_step5_surface = "OPPONENT PASS DEFENSE + PLAYER VS TEAM HISTORY" in body_upper
+                  if has_player_cards and not has_step5_surface:
                       raise AssertionError("Live player cards rendered but Step 5 defense/H2H surface was missing")
 
                   print("NFL_RECEIVING_YARDS_STEP5_LIVE_STREAMLIT_GREEN")
@@ -154,7 +157,7 @@ jobs:
                       "streamlit_url": URL,
                       "route": "NFL -> Receiving Yards",
                       "required_markers": list(REQUIRED),
-                      "step5_player_surface_seen": "Opponent Pass Defense + Player vs Team History" in body,
+                      "step5_player_surface_seen": has_step5_surface,
                       "app_frame_url": frame.url,
                       "frame_scan_count": len(scans),
                   }, sort_keys=True))
