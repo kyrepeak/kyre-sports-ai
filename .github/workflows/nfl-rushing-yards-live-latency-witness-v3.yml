@@ -1,0 +1,77 @@
+name: NFL Rushing Yards Live Latency Witness V3
+
+on:
+  push:
+    branches: [nfl-rushing-yards-live-latency-witness-v3]
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-live-context-v3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Measure cold miss then exact-event cache hits
+        shell: bash
+        env:
+          URL: https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?event_id=401872925
+        run: |
+          set -euo pipefail
+          : > /tmp/rushing_v3_times.txt
+          : > /tmp/rushing_v3_stamps.txt
+          for i in 1 2 3 4 5 6; do
+            metrics="$(curl --fail --silent --show-error --max-time 30 \
+              --output /tmp/rushing_v3_response.json \
+              --write-out '%{http_code} %{time_starttransfer} %{time_total}' \
+              "$URL")"
+            read -r http ttfb total <<< "$metrics"
+            test "$http" = "200"
+            stamp="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/rushing_v3_response.json').read_text())
+          assert payload['schema_version'] == 'nfl_rushing_yards_context_v1'
+          assert payload['official_event_id'] == '401872925'
+          assert payload['identity']['player_name_matching'] is False
+          assert payload['identity']['fuzzy_matching'] is False
+          assert payload['identity']['synthetic_event_ids'] is False
+          assert payload['identity']['synthetic_player_ids'] is False
+          assert payload['semantics']['sportsbook_influence'] == 0.0
+          assert payload['semantics']['projection_enabled'] is False
+          assert payload['semantics']['market_enabled'] is False
+          print(payload['captured_at_utc'])
+          PY
+          )"
+            printf '%s\n' "$total" >> /tmp/rushing_v3_times.txt
+            printf '%s\n' "$stamp" >> /tmp/rushing_v3_stamps.txt
+            echo "RUSH_V3_PROBE index=$i http=$http ttfb_s=$ttfb total_s=$total captured_at=$stamp"
+          done
+
+          python - <<'PY'
+          import json, statistics
+          from pathlib import Path
+          values = [float(x) for x in Path('/tmp/rushing_v3_times.txt').read_text().splitlines() if x.strip()]
+          stamps = [x for x in Path('/tmp/rushing_v3_stamps.txt').read_text().splitlines() if x.strip()]
+          assert len(values) == 6
+          assert len(set(stamps)) == 1, stamps
+          warm = values[1:]
+          result = {
+              'event_id': '401872925',
+              'requests': len(values),
+              'cold_ms': round(values[0] * 1000, 2),
+              'warm_fastest_ms': round(min(warm) * 1000, 2),
+              'warm_median_ms': round(statistics.median(warm) * 1000, 2),
+              'warm_mean_ms': round(statistics.mean(warm) * 1000, 2),
+              'warm_slowest_ms': round(max(warm) * 1000, 2),
+              'captured_at_preserved': True,
+              'sportsbook_projection_influence': 0.0,
+          }
+          print('RUSH_LIVE_LATENCY_V3', json.dumps(result, sort_keys=True))
+          PY
