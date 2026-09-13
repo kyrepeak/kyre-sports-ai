@@ -150,6 +150,25 @@ jobs:
               print(f"LIVE_RUSHING_YARDS_HTTP_{exc.code}: {diagnostic}")
               raise
 
+          team_diagnostics = []
+          for team in body.get("teams") or []:
+              front = team.get("opponent_run_front") or {}
+              team_diagnostics.append({
+                  "team_id": team.get("official_team_id"),
+                  "opponent_id": team.get("opponent_official_team_id"),
+                  "player_baseline_season": team.get("player_baseline_season"),
+                  "player_sample_games": team.get("player_sample_games"),
+                  "player_count": len(team.get("players") or []),
+                  "run_front_baseline_season": front.get("baseline_season"),
+                  "run_front_sample_games": front.get("sample_games"),
+                  "run_front_available": front.get("data_available"),
+              })
+          print("LIVE_RUSHING_YARDS_BODY_SUMMARY: " + json.dumps({
+              "ready": body.get("ready"),
+              "season": body.get("season"),
+              "teams": team_diagnostics,
+          }, sort_keys=True))
+
           assert body["schema_version"] == "nfl_rushing_yards_context_v1"
           assert body["official_event_id"] == event_id
           assert body["identity"]["player_name_matching"] is False
