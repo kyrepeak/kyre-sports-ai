@@ -1,0 +1,159 @@
+name: NFL Rushing Yards FanDuel Full Lineup V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_rushing_yards_hub_v12.py"
+      - "streamlit_memory_lazy_router_v108.py"
+      - "app.py"
+      - "tests/test_nfl_rushing_yards_fanduel_full_lineup_v1.py"
+      - "devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1.py"
+      - ".github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-fanduel-full-lineup-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-fanduel-full-lineup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore Browser QA stack
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build Browser QA stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate Browser QA stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Compile full-lineup surface
+        run: |
+          python -m py_compile nfl_rushing_yards_hub_v12.py
+          python -m py_compile streamlit_memory_lazy_router_v108.py
+          python -m py_compile app.py
+          python -m py_compile tests/test_nfl_rushing_yards_fanduel_full_lineup_v1.py
+          python -m py_compile devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1.py
+
+      - name: Re-run certified Rushing contracts and page stack
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_rushing_yards_context_api_v1.py \
+            tests/test_nfl_rushing_yards_projection_v1.py \
+            tests/test_nfl_rushing_yards_step3_surface_v1.py \
+            tests/test_nfl_rushing_yards_market_api_v1.py \
+            tests/test_nfl_rushing_yards_step4_surface_v1.py \
+            tests/test_nfl_rushing_yards_page_step1_compact_v1.py \
+            tests/test_nfl_rushing_yards_page_step2_summary_v1.py \
+            tests/test_nfl_rushing_yards_page_step3_workload_v1.py \
+            tests/test_nfl_rushing_yards_page_step4_opponent_run_defense_v1.py \
+            tests/test_nfl_rushing_yards_page_step5_projection_recipe_v1.py \
+            tests/test_nfl_rushing_yards_page_step6_support_concerns_v1.py \
+            tests/test_nfl_rushing_yards_performance_fast_route_v1.py \
+            tests/test_nfl_rushing_yards_html_render_fix_v1.py \
+            tests/test_nfl_rushing_yards_fanduel_full_lineup_v1.py
+
+      - name: Prove frozen owners and Passing Yards are untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_|nfl_rushing_yards_hub_v([1-9]|10|11)\.py$|streamlit_memory_lazy_router_v(7[7-9]|8[0-9]|9[0-9]|10[0-7])\.py$|nfl_rushing_yards_(context_api|projection|market_api)_v1\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "RUSH_FANDUEL_LINEUP_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "RUSH_FANDUEL_LINEUP_FROZEN_GUARD_GREEN"
+
+      - name: Prove only approved full-lineup files changed
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(nfl_rushing_yards_hub_v12\.py|streamlit_memory_lazy_router_v108\.py|app\.py|tests/test_nfl_rushing_yards_fanduel_full_lineup_v1\.py|devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1\.py|\.github/workflows/nfl-rushing-yards-fanduel-full-lineup-v1\.yml)$' || true)"
+          if [ -n "$bad" ]; then
+            echo "UNAPPROVED_RUSH_FANDUEL_LINEUP_FILE_CHANGE"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "RUSH_FANDUEL_LINEUP_DIFF_GREEN"
+
+      - name: Start clean branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/rushing-fanduel-lineup
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8507 \
+            > artifacts/rushing-fanduel-lineup/streamlit.log 2>&1 &
+          echo $! > /tmp/rushing_fanduel_lineup_pid
+
+      - name: Drive real Rushing page and prove every live FanDuel prop renders
+        run: |
+          python devsystem/nfl_rushing_yards_fanduel_lineup_browser_v1.py \
+            --base-url http://127.0.0.1:8507 \
+            --artifact-dir artifacts/rushing-fanduel-lineup \
+            --event-id 401872925
+
+      - name: Print Streamlit log
+        if: always()
+        run: tail -n 500 artifacts/rushing-fanduel-lineup/streamlit.log || true
+
+      - name: Upload full-lineup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-rushing-fanduel-lineup-${{ github.run_id }}
+          path: artifacts/rushing-fanduel-lineup
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/rushing_fanduel_lineup_pid ]; then
+            kill "$(cat /tmp/rushing_fanduel_lineup_pid)" 2>/dev/null || true
+          fi
