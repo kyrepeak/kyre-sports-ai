@@ -1,0 +1,73 @@
+name: NFL Rushing Yards Postdeploy Market V2 Witness
+
+on:
+  push:
+    branches: [nfl-rushing-yards-postdeploy-market-v2-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-live-market-v2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe live Rushing market V2 coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?event_id=401872925' \
+            -o /tmp/context.json
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards/market?event_id=401872925' \
+            -o /tmp/market.json
+          python - <<'PY'
+          import json
+          context = json.load(open('/tmp/context.json'))
+          market = json.load(open('/tmp/market.json'))
+          assert market['schema_version'] == 'nfl_rushing_yards_market_v1'
+          assert market['official_event_id'] == '401872925'
+          assert market['market_semantics']['projection_weight'] == 0.0
+          assert market['identity']['player_name_matching'] is False
+          assert market['identity']['fuzzy_matching'] is False
+          assert market['identity']['synthetic_player_ids'] is False
+          diagnostics = market.get('provider_diagnostics') or {}
+          props = market.get('props') or []
+          print('LIVE_CAPTURED_AT', market.get('captured_at_utc'))
+          print('LIVE_SELECTED_TAB', diagnostics.get('selected_tab'))
+          print('LIVE_ATTEMPTED_TABS', json.dumps(diagnostics.get('attempted_tabs') or []))
+          print('LIVE_CANONICAL_MARKET_COUNT', diagnostics.get('rushing_market_count'))
+          print('LIVE_ACCEPTED_PROP_COUNT', diagnostics.get('accepted_prop_count'))
+          print('LIVE_REJECTED_MARKET_COUNT', diagnostics.get('rejected_market_count'))
+          print('LIVE_COLLECTOR_VERSION', diagnostics.get('collector_version'))
+          print('LIVE_CERTIFIED_PROPS', json.dumps([
+              {
+                  'player_name': p.get('player_name'),
+                  'athlete_id': p.get('official_athlete_id'),
+                  'team_id': p.get('official_team_id'),
+                  'line': p.get('line'),
+                  'over_odds': p.get('over_odds'),
+                  'under_odds': p.get('under_odds'),
+                  'provider_market_id': p.get('provider_market_id'),
+              } for p in props
+          ], indent=2))
+          context_players=[]
+          for team in context.get('teams') or []:
+              for p in team.get('players') or []:
+                  context_players.append({
+                      'player_name': p.get('player_name'),
+                      'athlete_id': str(p.get('official_athlete_id') or ''),
+                      'team_id': str(team.get('official_team_id') or ''),
+                  })
+          prop_ids={str(p.get('official_athlete_id') or '') for p in props}
+          missing=[p for p in context_players if p['athlete_id'] not in prop_ids]
+          print('LIVE_CONTEXT_PLAYERS_WITHOUT_STANDARD_FANDUEL_MARKET', json.dumps(missing, indent=2))
+          by_id={str(p.get('official_athlete_id')): p for p in props}
+          if '4362238' in by_id:
+              print('CHASE_BROWN_STANDARD_LINE', by_id['4362238'].get('line'))
+          if '4596448' in by_id:
+              print('BUCKY_IRVING_STANDARD_LINE', by_id['4596448'].get('line'))
+          print('NFL_RUSHING_POSTDEPLOY_MARKET_V2_GREEN')
+          PY
