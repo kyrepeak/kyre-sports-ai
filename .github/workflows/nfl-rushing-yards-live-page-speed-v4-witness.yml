@@ -1,0 +1,140 @@
+name: NFL Rushing Yards Live Page Speed V4 Witness
+
+on:
+  push:
+    branches: [nfl-rushing-yards-live-page-speed-v4-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-real-rushing-page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up browser Python
+        id: browser-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore Browser QA stack
+        id: browser-stack-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build Browser QA stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate Browser QA stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Prewarm exact-event production Rushing context
+        shell: bash
+        run: |
+          set -euo pipefail
+          metrics="$(curl --fail --silent --show-error --max-time 30 \
+            --output /tmp/rush_context_prewarm.json \
+            --write-out '%{http_code} %{time_total}' \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?event_id=401872925')"
+          read -r http total <<< "$metrics"
+          test "$http" = "200"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/rush_context_prewarm.json').read_text())
+          assert payload['schema_version'] == 'nfl_rushing_yards_context_v1'
+          assert payload['official_event_id'] == '401872925'
+          assert payload['semantics']['sportsbook_influence'] == 0.0
+          print('RUSH_PAGE_CONTEXT_PREWARM_CONTRACT_GREEN')
+          PY
+          echo "RUSH_PAGE_CONTEXT_PREWARM total_s=$total"
+
+      - name: Prewarm exact-event production Rushing market immediately before page boot
+        shell: bash
+        run: |
+          set -euo pipefail
+          metrics="$(curl --fail --silent --show-error --max-time 30 \
+            --output /tmp/rush_market_prewarm.json \
+            --write-out '%{http_code} %{time_total}' \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards/market?event_id=401872925')"
+          read -r http total <<< "$metrics"
+          test "$http" = "200"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/rush_market_prewarm.json').read_text())
+          assert payload['schema_version'] == 'nfl_rushing_yards_market_v1'
+          assert payload['official_event_id'] == '401872925'
+          assert payload['ready'] is True
+          assert payload['market_available'] is True
+          identity = payload['identity']
+          semantics = payload['market_semantics']
+          assert identity['player_name_matching'] is False
+          assert identity['fuzzy_matching'] is False
+          assert identity['synthetic_event_ids'] is False
+          assert identity['synthetic_player_ids'] is False
+          assert semantics['projection_weight'] == 0.0
+          assert semantics['market_context_only'] is True
+          assert semantics['may_modify_projection'] is False
+          assert semantics['probability_enabled'] is False
+          assert semantics['fair_odds_enabled'] is False
+          assert semantics['ev_enabled'] is False
+          assert semantics['grading_enabled'] is False
+          assert semantics['stake_sizing_enabled'] is False
+          assert semantics['wager_actions'] is False
+          print('RUSH_PAGE_MARKET_PREWARM_CONTRACT_GREEN')
+          PY
+          echo "RUSH_PAGE_MARKET_PREWARM total_s=$total"
+
+      - name: Start clean branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/rushing-page-v4
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8503 \
+            > artifacts/rushing-page-v4/streamlit.log 2>&1 &
+          echo $! > /tmp/rushing_page_v4_pid
+
+      - name: Drive real Rushing page and capture timings
+        run: |
+          python devsystem/nfl_rushing_yards_fast_route_browser_v1.py \
+            --base-url http://127.0.0.1:8503 \
+            --artifact-dir artifacts/rushing-page-v4
+
+      - name: Print Streamlit log
+        if: always()
+        run: tail -n 400 artifacts/rushing-page-v4/streamlit.log || true
+
+      - name: Upload page-speed evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-rushing-page-v4-${{ github.run_id }}
+          path: artifacts/rushing-page-v4
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/rushing_page_v4_pid ]; then
+            kill "$(cat /tmp/rushing_page_v4_pid)" 2>/dev/null || true
+          fi
