@@ -1,0 +1,125 @@
+name: NFL Rushing Yards Market Canonical V2
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - "sports_api/collectors/nfl_fanduel_rushing_yards_v2.py"
+      - "sports_api/api/nfl_rushing_yards_market_v1.py"
+      - "sports_api/tests/test_nfl_rushing_yards_market_canonical_v2.py"
+      - ".github/workflows/nfl-rushing-yards-market-canonical-v2.yml"
+      - ".github/workflows/nfl-rushing-yards-market-cache-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-market-canonical-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-canonical-market-v2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile canonical V2 market surface
+        run: |
+          python -m py_compile sports_api/collectors/nfl_fanduel_rushing_yards_v1.py
+          python -m py_compile sports_api/collectors/nfl_fanduel_rushing_yards_v2.py
+          python -m py_compile sports_api/api/nfl_rushing_yards_market_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_canonical_v2.py
+
+      - name: Run frozen market V1 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_v1.py
+
+      - name: Run market cache V2 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py
+
+      - name: Run canonical market V2 contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_canonical_v2.py
+
+      - name: Verify exact-ID and market-safety isolation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v1 = Path("sports_api/collectors/nfl_fanduel_rushing_yards_v1.py").read_text()
+          v2 = Path("sports_api/collectors/nfl_fanduel_rushing_yards_v2.py").read_text()
+          route = Path("sports_api/api/nfl_rushing_yards_market_v1.py").read_text()
+
+          assert 'FROZEN_COLLECTOR = "sports_api.collectors.nfl_fanduel_rushing_yards_v1"' in v2
+          assert 'nfl_fanduel_rushing_yards_v2 import' in route
+          assert 'SCHEMA_VERSION = "nfl_rushing_yards_market_v1"' in v1
+          assert '"player_name_matching": False' in v1
+          assert '"fuzzy_matching": False' in v1
+          assert '"synthetic_event_ids": False' in v1
+          assert '"synthetic_player_ids": False' in v1
+          assert '"projection_weight": 0.0' in v1
+          assert '"probability_enabled": False' in v1
+          assert '"fair_odds_enabled": False' in v1
+          assert '"ev_enabled": False' in v1
+          assert '"grading_enabled": False' in v1
+          assert '"stake_sizing_enabled": False' in v1
+          assert '"wager_actions": False' in v1
+          assert 'PLAYER_X_RUSHING_YARDS' in v2
+          assert 'PLAYER_X_ALT_RUSHING_YARDS' not in v2.replace('"PLAYER_X_ALT_RUSHING_YARDS_LOW"', '')
+          print("NFL_RUSHING_MARKET_CANONICAL_V2_SAFETY_GREEN")
+          PY
+
+      - name: Prove frozen collector and unrelated systems are untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(sports_api/collectors/nfl_fanduel_rushing_yards_v1\.py|nfl_passing_yards_|sports_api/.*passing_yards|nfl_rushing_yards_(projection|context_api)_v1\.py)$' || true)"
+          if [ -n "$blocked" ]; then
+            echo "FROZEN_OR_UNRELATED_SYSTEM_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "NFL_RUSHING_MARKET_CANONICAL_V2_FROZEN_GUARD_GREEN"
+
+      - name: Prove only approved canonical V2 files changed
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(sports_api/collectors/nfl_fanduel_rushing_yards_v2\.py|sports_api/api/nfl_rushing_yards_market_v1\.py|sports_api/tests/test_nfl_rushing_yards_market_canonical_v2\.py|\.github/workflows/nfl-rushing-yards-market-canonical-v2\.yml|\.github/workflows/nfl-rushing-yards-market-cache-v2\.yml)$' || true)"
+          if [ -n "$bad" ]; then
+            echo "UNAPPROVED_RUSHING_CANONICAL_V2_FILE_CHANGE"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "NFL_RUSHING_MARKET_CANONICAL_V2_DIFF_GREEN"

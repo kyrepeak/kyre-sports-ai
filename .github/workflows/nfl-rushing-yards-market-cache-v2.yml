@@ -5,8 +5,11 @@ on:
     branches: [mlb-step17b-shared-host-cert]
     paths:
       - "sports_api/api/nfl_rushing_yards_market_v1.py"
+      - "sports_api/collectors/nfl_fanduel_rushing_yards_v2.py"
       - "sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py"
+      - "sports_api/tests/test_nfl_rushing_yards_market_canonical_v2.py"
       - ".github/workflows/nfl-rushing-yards-market-cache-v2.yml"
+      - ".github/workflows/nfl-rushing-yards-market-canonical-v2.yml"
   workflow_dispatch:
 
 permissions:
@@ -38,8 +41,10 @@ jobs:
         run: |
           python -m py_compile sports_api/api/nfl_rushing_yards_market_v1.py
           python -m py_compile sports_api/collectors/nfl_fanduel_rushing_yards_v1.py
+          python -m py_compile sports_api/collectors/nfl_fanduel_rushing_yards_v2.py
           python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_v1.py
           python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_market_canonical_v2.py
 
       - name: Run frozen market V1 contract
         env:
@@ -88,7 +93,7 @@ jobs:
           set -euo pipefail
           changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(sports_api/api/nfl_rushing_yards_market_v1\.py|sports_api/tests/test_nfl_rushing_yards_market_cache_v2\.py|\.github/workflows/nfl-rushing-yards-market-cache-v2\.yml)$' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(sports_api/api/nfl_rushing_yards_market_v1\.py|sports_api/collectors/nfl_fanduel_rushing_yards_v2\.py|sports_api/tests/test_nfl_rushing_yards_market_cache_v2\.py|sports_api/tests/test_nfl_rushing_yards_market_canonical_v2\.py|\.github/workflows/nfl-rushing-yards-market-cache-v2\.yml|\.github/workflows/nfl-rushing-yards-market-canonical-v2\.yml)$' || true)"
           if [ -n "$bad" ]; then
             echo "UNAPPROVED_RUSHING_MARKET_CACHE_FILE_CHANGE"
             printf '%s\n' "$bad"
