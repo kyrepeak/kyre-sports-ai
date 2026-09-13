@@ -142,13 +142,14 @@ def _lineup_board_html(context: dict[str, Any], event_market: dict[str, Any]) ->
         return ""
     age = _number(event_market.get("age_seconds"))
     age_text = f"{max(age, 0.0):.0f}s old" if math.isfinite(age) else "freshness verified"
+    prop_label = "LIVE PROP" if len(cards) == 1 else "LIVE PROPS"
     return (
         '<section class="krush12-wrap" aria-label="Full FanDuel Rushing Yards lineup">'
         '<div class="krush12-head"><div>'
         '<div class="krush12-title">🏈 FanDuel Rushing Yards • Full Standard Lineup</div>'
         f'<div class="krush12-sub">Every fresh exact-ID standard FanDuel prop returned for this event • {escape(age_text)} • market-only players receive no invented projection.</div>'
         '</div>'
-        f'<span class="krush12-count">{len(cards)} LIVE PROP{'' if len(cards) == 1 else 'S'}</span>'
+        f'<span class="krush12-count">{len(cards)} {prop_label}</span>'
         '</div>'
         f'<div class="krush12-grid">{"".join(cards)}</div>'
         '</section>'
