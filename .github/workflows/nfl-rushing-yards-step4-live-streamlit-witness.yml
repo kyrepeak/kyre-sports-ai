@@ -1,0 +1,149 @@
+name: NFL Rushing Yards Step 4 Live Streamlit Witness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-rushing-yards-step4-live-streamlit-witness.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-step4-live-streamlit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-live-streamlit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser witness dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify deployed NFL Rushing Yards Step 4 V3 route
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://kyre-sports-ai.streamlit.app"
+          SPORT = "NFL"
+          MARKET = "Rushing Yards"
+          REQUIRED = (
+              "RUSHING YARDS LAB",
+              "4 OF 4 • MARKET LIVE • GRADE LOCKED",
+              "4 • LIVE MARKET ✅ • GRADE LOCKED",
+          )
+          FORBIDDEN = (
+              "Traceback (most recent call last)",
+              "ModuleNotFoundError",
+              "ImportError:",
+              "SyntaxError:",
+              "NameError:",
+          )
+
+          def find_frame(page, timeout=120):
+              deadline = time.monotonic() + timeout
+              scans = []
+              while time.monotonic() < deadline:
+                  scans = []
+                  for idx, frame in enumerate(page.frames):
+                      try:
+                          body = frame.locator("body").inner_text(timeout=7000)
+                      except Exception:
+                          body = ""
+                      try:
+                          combos = frame.get_by_role("combobox").count()
+                      except Exception:
+                          combos = 0
+                      scans.append({"index": idx, "url": frame.url, "comboboxes": combos, "body_start": body[:500]})
+                      if "get this app back up" in body.casefold():
+                          wake = frame.get_by_text("Yes, get this app back up!", exact=False)
+                          if wake.count() > 0:
+                              wake.click()
+                              page.wait_for_timeout(10000)
+                              continue
+                      if combos >= 1 and ("KYRE SPORTS AI" in body or "Sport" in body):
+                          return frame, scans
+                  page.wait_for_timeout(2500)
+              raise AssertionError("Could not find live Streamlit app frame: " + json.dumps(scans, ensure_ascii=False))
+
+          def choose(page, frame, combo_index, value):
+              combos = frame.get_by_role("combobox")
+              if combos.count() <= combo_index:
+                  raise AssertionError(f"Expected combobox {combo_index}; found {combos.count()}")
+              combos.nth(combo_index).click()
+              page.wait_for_timeout(250)
+              page.keyboard.type(value)
+              page.keyboard.press("Enter")
+              page.wait_for_timeout(2500)
+
+          last = ""
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              try:
+                  for attempt in range(1, 7):
+                      page = browser.new_page(viewport={"width": 1440, "height": 1600})
+                      try:
+                          page.goto(URL + "/", wait_until="domcontentloaded", timeout=120000)
+                          frame, scans = find_frame(page)
+                          choose(page, frame, 0, SPORT)
+
+                          deadline = time.monotonic() + 45
+                          while time.monotonic() < deadline:
+                              if frame.get_by_role("combobox").count() >= 2:
+                                  break
+                              page.wait_for_timeout(1000)
+                          else:
+                              raise AssertionError("NFL route did not expose market selector")
+
+                          choose(page, frame, 1, MARKET)
+                          deadline = time.monotonic() + 90
+                          body = ""
+                          while time.monotonic() < deadline:
+                              body = frame.locator("body").inner_text()
+                              if REQUIRED[1] in body:
+                                  break
+                              page.wait_for_timeout(1500)
+
+                          last = body
+                          forbidden = [marker for marker in FORBIDDEN if marker in body]
+                          if forbidden:
+                              raise AssertionError("Live Rushing route runtime error: " + " | ".join(forbidden))
+
+                          missing = [marker for marker in REQUIRED if marker not in body]
+                          if not missing:
+                              print("NFL_RUSHING_YARDS_STEP4_LIVE_STREAMLIT_GREEN")
+                              print(json.dumps({
+                                  "streamlit_url": URL,
+                                  "route": f"{SPORT} -> {MARKET}",
+                                  "required_markers": list(REQUIRED),
+                                  "app_frame_url": frame.url,
+                                  "frame_scan_count": len(scans),
+                                  "attempt": attempt,
+                              }, sort_keys=True))
+                              break
+
+                          print(f"attempt={attempt} live marker not ready; missing={missing}")
+                          marker_lines = [line for line in body.splitlines() if "OF 4" in line or "RUSHING" in line or "MARKET" in line]
+                          print("live_marker_excerpt=" + json.dumps(marker_lines[:30], ensure_ascii=False))
+                      finally:
+                          page.close()
+
+                      if attempt < 6:
+                          time.sleep(20)
+                  else:
+                      raise AssertionError(
+                          "Live Streamlit never exposed Step 4 V3 markers after retries. "
+                          + json.dumps([line for line in last.splitlines() if "OF 4" in line or "RUSHING" in line or "MARKET" in line][:40], ensure_ascii=False)
+                      )
+              finally:
+                  browser.close()
+          PY
