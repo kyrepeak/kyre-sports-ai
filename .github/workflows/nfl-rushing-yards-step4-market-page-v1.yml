@@ -1,0 +1,105 @@
+name: NFL Rushing Yards Step 4 Market Page V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_rushing_yards_market_api_v1.py"
+      - "nfl_rushing_yards_hub_v3.py"
+      - "streamlit_memory_lazy_router_v99.py"
+      - "app.py"
+      - "tests/test_nfl_rushing_yards_market_api_v1.py"
+      - "tests/test_nfl_rushing_yards_step4_surface_v1.py"
+      - ".github/workflows/nfl-rushing-yards-step4-market-page-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-step4-market-page-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-step4-market-page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests
+
+      - name: Compile Step 4 surface
+        run: |
+          python -m py_compile \
+            nfl_rushing_yards_market_api_v1.py \
+            nfl_rushing_yards_hub_v3.py \
+            streamlit_memory_lazy_router_v99.py \
+            app.py \
+            tests/test_nfl_rushing_yards_market_api_v1.py \
+            tests/test_nfl_rushing_yards_step4_surface_v1.py
+
+      - name: Prove certified owners were not modified
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_|nfl_hub_v35\.py$|streamlit_memory_lazy_router_v97\.py$|streamlit_memory_lazy_router_v98\.py$|nfl_rushing_yards_hub_v1\.py$|nfl_rushing_yards_hub_v2\.py$|nfl_rushing_yards_projection_v1\.py$|nfl_rushing_yards_context_api_v1\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "STEP4_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "STEP4_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Re-run certified Step 3 contracts
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_rushing_yards_projection_v1.py \
+            tests/test_nfl_rushing_yards_step3_surface_v1.py
+
+      - name: Run Step 4 market client and surface contracts
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_rushing_yards_market_api_v1.py \
+            tests/test_nfl_rushing_yards_step4_surface_v1.py
+
+      - name: Prove post-projection market isolation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          engine = Path("nfl_rushing_yards_projection_v1.py").read_text(encoding="utf-8")
+          client = Path("nfl_rushing_yards_market_api_v1.py").read_text(encoding="utf-8")
+          page = Path("nfl_rushing_yards_hub_v3.py").read_text(encoding="utf-8")
+          router98 = Path("streamlit_memory_lazy_router_v98.py").read_text(encoding="utf-8")
+          router99 = Path("streamlit_memory_lazy_router_v99.py").read_text(encoding="utf-8")
+
+          assert '"sportsbook_influence": 0.0' in engine
+          assert '"market_enabled": False' in engine
+          assert '"ev_enabled": False' in engine
+          assert '"stake_sizing_enabled": False' in engine
+          assert '"projection_weight": 0.0' in client
+          assert '"probability_enabled": False' in client
+          assert '"fair_odds_enabled": False' in client
+          assert '"ev_enabled": False' in client
+          assert '"grading_enabled": False' in client
+          assert '"wager_actions": False' in client
+          assert "_ORIGINAL_STEP3_RENDER(context, event_id)" in page
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v2"' in router98
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v3"' in router99
+          print("NFL_RUSHING_YARDS_STEP4_POST_PROJECTION_ISOLATION_GREEN")
+          PY
