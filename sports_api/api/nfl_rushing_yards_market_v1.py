@@ -3,8 +3,19 @@
 The endpoint exposes only fresh exact-ID sportsbook context. It does not
 calculate or modify projections, probabilities, fair odds, EV, grades, stake
 sizes, rankings, recommendations, or wager actions.
+
+A very short exact-event in-process snapshot avoids rebuilding the same active
+FanDuel market repeatedly across cold Streamlit sessions. The provider capture
+timestamp is preserved and the full market safety/identity contract is re-run
+on every cache hit. The downstream client keeps the independent 300-second
+absolute market-freshness firewall.
 """
 from __future__ import annotations
+
+from copy import deepcopy
+import threading
+from time import monotonic
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -15,6 +26,11 @@ from sports_api.collectors.nfl_fanduel_rushing_yards_v1 import (
 )
 
 router = APIRouter(prefix="/api/v1/nfl/rushing-yards/market", tags=["nfl-rushing-yards-market"])
+
+MARKET_SNAPSHOT_TTL_SECONDS = 10.0
+_CACHE_LOCK = threading.RLock()
+_MARKET_SNAPSHOT_CACHE: dict[str, tuple[float, int, dict[str, Any]]] = {}
+_EVENT_LOCKS: dict[str, threading.Lock] = {}
 
 CONTRACT = {
     "schema_version": SCHEMA_VERSION,
@@ -41,35 +57,10 @@ CONTRACT = {
 }
 
 
-@router.get("/status")
-def rushing_yards_market_status():
-    return {"status": "ready", "service": "kyre-sports-api", **CONTRACT}
-
-
-@router.get("")
-def rushing_yards_market(
-    event_id: str = Query(
-        ...,
-        min_length=1,
-        max_length=32,
-        description="Official ESPN NFL event ID from the verified Streamlit slate.",
-    )
-):
-    event_id = str(event_id or "").strip()
-    if not event_id.isdigit():
-        raise HTTPException(status_code=422, detail="event_id must be an official numeric ESPN NFL event ID")
-    try:
-        payload = collect_fanduel_nfl_rushing_yards_hosted(event_id)
-    except NFLRushingYardsCollectorError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=f"NFL Rushing Yards market unavailable: {str(exc)[:240]}",
-        ) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=f"NFL Rushing Yards market unavailable: {type(exc).__name__}",
-        ) from exc
+def _validate_market_payload(payload: dict[str, Any], event_id: str) -> dict[str, Any]:
+    """Re-run the frozen market identity/safety contract for every response."""
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=503, detail="NFL Rushing Yards market payload is invalid")
 
     identity = payload.get("identity") or {}
     semantics = payload.get("market_semantics") or {}
@@ -96,6 +87,8 @@ def rushing_yards_market(
 
     seen_athletes: set[str] = set()
     for row in payload.get("props") or []:
+        if not isinstance(row, dict):
+            raise HTTPException(status_code=503, detail="NFL Rushing Yards market row identity contract failed closed")
         athlete_id = str(row.get("official_athlete_id") or "").strip()
         team_id = str(row.get("official_team_id") or "").strip()
         row_event_id = str(row.get("official_event_id") or "").strip()
@@ -110,8 +103,108 @@ def rushing_yards_market(
         ):
             raise HTTPException(status_code=503, detail="NFL Rushing Yards market row identity contract failed closed")
         seen_athletes.add(athlete_id)
-
     return payload
 
 
-__all__ = ["CONTRACT", "router"]
+def _collector_identity() -> int:
+    return id(collect_fanduel_nfl_rushing_yards_hosted)
+
+
+def _cache_get(event_id: str, now: float | None = None) -> dict[str, Any] | None:
+    stamp = monotonic() if now is None else float(now)
+    collector_id = _collector_identity()
+    with _CACHE_LOCK:
+        entry = _MARKET_SNAPSHOT_CACHE.get(event_id)
+        if entry is None:
+            return None
+        expires_at, stored_collector_id, payload = entry
+        if expires_at <= stamp or stored_collector_id != collector_id:
+            _MARKET_SNAPSHOT_CACHE.pop(event_id, None)
+            return None
+        return deepcopy(payload)
+
+
+def _cache_put(event_id: str, payload: dict[str, Any], now: float | None = None) -> None:
+    # Cache active canonical markets only. A currently unavailable market is
+    # deliberately retried on the very next request so a newly posted line is
+    # never hidden behind the speed layer.
+    if payload.get("ready") is not True or payload.get("market_available") is not True:
+        return
+    stamp = monotonic() if now is None else float(now)
+    with _CACHE_LOCK:
+        _MARKET_SNAPSHOT_CACHE[event_id] = (
+            stamp + MARKET_SNAPSHOT_TTL_SECONDS,
+            _collector_identity(),
+            deepcopy(payload),
+        )
+
+
+def _event_lock(event_id: str) -> threading.Lock:
+    with _CACHE_LOCK:
+        lock = _EVENT_LOCKS.get(event_id)
+        if lock is None:
+            lock = threading.Lock()
+            _EVENT_LOCKS[event_id] = lock
+        return lock
+
+
+def _clear_market_snapshot_cache() -> None:
+    with _CACHE_LOCK:
+        _MARKET_SNAPSHOT_CACHE.clear()
+        _EVENT_LOCKS.clear()
+
+
+def _collect_or_reuse_market(event_id: str) -> dict[str, Any]:
+    cached = _cache_get(event_id)
+    if cached is not None:
+        return _validate_market_payload(cached, event_id)
+
+    with _event_lock(event_id):
+        cached = _cache_get(event_id)
+        if cached is not None:
+            return _validate_market_payload(cached, event_id)
+
+        try:
+            payload = collect_fanduel_nfl_rushing_yards_hosted(event_id)
+        except NFLRushingYardsCollectorError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"NFL Rushing Yards market unavailable: {str(exc)[:240]}",
+            ) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"NFL Rushing Yards market unavailable: {type(exc).__name__}",
+            ) from exc
+
+        validated = _validate_market_payload(payload, event_id)
+        _cache_put(event_id, validated)
+        return deepcopy(validated)
+
+
+@router.get("/status")
+def rushing_yards_market_status():
+    return {"status": "ready", "service": "kyre-sports-api", **CONTRACT}
+
+
+@router.get("")
+def rushing_yards_market(
+    event_id: str = Query(
+        ...,
+        min_length=1,
+        max_length=32,
+        description="Official ESPN NFL event ID from the verified Streamlit slate.",
+    )
+):
+    event_id = str(event_id or "").strip()
+    if not event_id.isdigit():
+        raise HTTPException(status_code=422, detail="event_id must be an official numeric ESPN NFL event ID")
+    return _collect_or_reuse_market(event_id)
+
+
+__all__ = [
+    "CONTRACT",
+    "MARKET_SNAPSHOT_TTL_SECONDS",
+    "_clear_market_snapshot_cache",
+    "router",
+]
