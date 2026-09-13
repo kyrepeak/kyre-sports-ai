@@ -1,0 +1,149 @@
+name: NFL Receiving Yards live production witness
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - '.github/workflows/nfl-receiving-yards-live-witness.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-receiving-yards-live-witness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Prove live Render health, Receiving context, and frozen NFL routes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          BASE = "https://kyre-sports-api.onrender.com"
+          EXPECTED_COMMIT = "06509ce1b3fc7c31b2646428a6c47403d550e4b3"
+          ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+
+          def get_json(url, params=None, timeout=90):
+              if params:
+                  url = f"{url}?{urlencode(params)}"
+              request = Request(
+                  url,
+                  headers={
+                      "Accept": "application/json,text/plain,*/*",
+                      "User-Agent": "KyreSportsAPI-LiveWitness/1.0",
+                  },
+                  method="GET",
+              )
+              with urlopen(request, timeout=timeout) as response:
+                  status = int(getattr(response, "status", 0) or 0)
+                  body = response.read(12_000_000)
+              assert status == 200, (url, status, body[:500])
+              payload = json.loads(body.decode("utf-8"))
+              assert isinstance(payload, dict), (url, type(payload).__name__)
+              return payload
+
+          health = get_json(f"{BASE}/health")
+          assert health.get("status") == "ok", health
+          deployment = health.get("deployment") or {}
+          assert deployment.get("branch") == "mlb-step17b-shared-host-cert", deployment
+          assert deployment.get("commit") == EXPECTED_COMMIT, deployment
+          print("LIVE_HEALTH_GREEN", deployment)
+
+          receiving_status = get_json(f"{BASE}/api/v1/nfl/receiving-yards/status")
+          assert receiving_status.get("status") == "ready", receiving_status
+          assert receiving_status.get("schema_version") == "nfl_receiving_yards_context_v1", receiving_status
+          assert receiving_status.get("official_event_id_required") is True
+          assert receiving_status.get("official_athlete_id_required") is True
+          assert receiving_status.get("official_team_id_required") is True
+          assert receiving_status.get("player_name_matching") is False
+          assert receiving_status.get("fuzzy_matching") is False
+          assert receiving_status.get("targets_explicit_only") is True
+          assert receiving_status.get("targets_inferred") is False
+          assert receiving_status.get("projection_enabled") is False
+          assert receiving_status.get("market_enabled") is False
+          assert receiving_status.get("sportsbook_influence") == 0.0
+          print("LIVE_RECEIVING_STATUS_GREEN", receiving_status)
+
+          rushing_status = get_json(f"{BASE}/api/v1/nfl/rushing-yards/status")
+          assert rushing_status.get("status") == "ready", rushing_status
+          assert rushing_status.get("sportsbook_influence") == 0.0, rushing_status
+          print("FROZEN_RUSHING_STATUS_GREEN", rushing_status.get("schema_version"))
+
+          passing_status = get_json(f"{BASE}/api/v1/nfl/passing-yards/status")
+          assert passing_status.get("status") == "ready", passing_status
+          assert passing_status.get("projection_weight") == 0.0, passing_status
+          assert passing_status.get("market_context_only") is True, passing_status
+          print("FROZEN_PASSING_STATUS_GREEN", passing_status.get("schema_version"))
+
+          scoreboard = get_json(ESPN_SCOREBOARD, {"dates": "20260913", "limit": 100})
+          events = [
+              row for row in (scoreboard.get("events") or [])
+              if isinstance(row, dict) and str(row.get("id") or "").isdigit()
+          ]
+          assert events, "No official ESPN NFL event IDs found for 2026-09-13"
+          event_id = str(events[0]["id"])
+          event_name = str(events[0].get("name") or "")
+          print("OFFICIAL_ESPN_EVENT", event_id, event_name)
+
+          receiving = get_json(
+              f"{BASE}/api/v1/nfl/receiving-yards",
+              {"event_id": event_id},
+              timeout=120,
+          )
+          assert receiving.get("schema_version") == "nfl_receiving_yards_context_v1", receiving
+          assert receiving.get("official_event_id") == event_id, receiving
+          assert receiving.get("official_authority") == "ESPN", receiving
+          assert receiving.get("ready") is True, receiving
+          identity = receiving.get("identity") or {}
+          semantics = receiving.get("semantics") or {}
+          assert identity.get("official_event_id_required") is True
+          assert identity.get("official_athlete_id_required") is True
+          assert identity.get("official_team_id_required") is True
+          assert identity.get("player_name_matching") is False
+          assert identity.get("fuzzy_matching") is False
+          assert semantics.get("targets_inferred") is False
+          assert semantics.get("projection_enabled") is False
+          assert semantics.get("market_enabled") is False
+          assert semantics.get("sportsbook_influence") == 0.0
+          teams = receiving.get("teams") or []
+          assert len(teams) == 2, teams
+          for team in teams:
+              team_id = str(team.get("official_team_id") or "")
+              opponent_id = str(team.get("opponent_official_team_id") or "")
+              assert team_id.isdigit() and opponent_id.isdigit() and team_id != opponent_id, team
+              players = team.get("players") or []
+              assert players, team
+              for player in players:
+                  assert str(player.get("official_athlete_id") or "").isdigit(), player
+                  assert str(player.get("official_team_id") or "") == team_id, player
+                  if player.get("targets_data_available") is not True:
+                      assert player.get("targets") is None, player
+                      assert player.get("targets_per_game") is None, player
+
+          print(
+              "LIVE_RECEIVING_CONTEXT_GREEN",
+              {
+                  "official_event_id": event_id,
+                  "event_name": event_name,
+                  "captured_at_utc": receiving.get("captured_at_utc"),
+                  "teams": [
+                      {
+                          "official_team_id": team.get("official_team_id"),
+                          "team_name": team.get("team_name"),
+                          "player_count": len(team.get("players") or []),
+                          "player_baseline_season": team.get("player_baseline_season"),
+                          "opponent_defense_available": (team.get("opponent_pass_defense") or {}).get("data_available"),
+                      }
+                      for team in teams
+                  ],
+              },
+          )
+          print("NFL_RECEIVING_YARDS_PRODUCTION_WITNESS_GREEN")
+          PY
