@@ -133,6 +133,16 @@ def _render_nfl_v106(market: str) -> None:
     except Exception:
         pass
 
+    bootstrap_ms = _FIRST_BOOTSTRAP_IMPORT_MS
+    bootstrap_text = "n/a" if bootstrap_ms is None else f"{bootstrap_ms:.1f} ms"
+    st.caption(
+        "⚡ RUSHING FAST PATH V1 • "
+        f"bootstrap router import {bootstrap_text} • "
+        f"active-page import {page_import_ms:.1f} ms • "
+        f"historical router chain {'SKIPPED' if legacy_chain_skipped else 'already loaded'} • "
+        "projection math unchanged"
+    )
+
     return mod.render_nfl_hub(market)
 
 
