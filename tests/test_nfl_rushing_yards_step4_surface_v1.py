@@ -51,7 +51,7 @@ def test_probability_ev_grading_and_staking_remain_locked():
     ):
         assert phrase in client
     assert "GRADE LOCKED" in page
-    assert "no probability, value grade or betting recommendation" in page
+    assert "not a probability, value grade or betting recommendation" in page
     assert "sportsbook projection influence remains exactly 0.0%" in page
 
 
