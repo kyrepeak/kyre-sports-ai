@@ -1,18 +1,18 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Step 8 FanDuel full lineup.
+"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Step 9 matchup tiers.
 
-Router V119 is additive over certified Router V118. It preserves the complete
+Router V120 is additive over certified Router V119. It preserves the complete
 Passing Yards chain and the certified Rushing Yards V15 page while advancing
-only NFL -> Receiving Yards to the isolated V8 full-lineup market page.
+only NFL -> Receiving Yards to the isolated V9 matchup-tier page.
 
 Receiving Yards exact-ID player context, descriptive metrics, opponent defense,
 exact-ID player-vs-team history, the frozen market-blind baseline projection,
-Support + Concerns, and fresh exact-ID FanDuel full-lineup display are live.
+Support + Concerns, fresh exact-ID FanDuel full-lineup display, and opponent matchup tiers are live.
 FanDuel remains visual context only: probability, EV, Monte Carlo, betting
 grades, rankings, recommendations, staking, and wager actions remain OFF.
 Sportsbook projection influence stays 0.0%.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP8_FANDUEL_FULL_LINEUP_2026-09-13.
+STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13.
 """
 from __future__ import annotations
 
@@ -85,6 +85,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v116 import render_app as _frozen_v116_render_app
     from streamlit_memory_lazy_router_v117 import render_app as _frozen_v117_render_app
     from streamlit_memory_lazy_router_v118 import render_app as _frozen_v118_render_app
+    from streamlit_memory_lazy_router_v119 import render_app as _frozen_v119_render_app
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
@@ -170,12 +171,13 @@ FROZEN_V115_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V115_NFL_RECEIVING_YARDS_STEP
 FROZEN_V116_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V116_NFL_RECEIVING_YARDS_STEP5_DEFENSE_H2H_2026-09-13"
 FROZEN_V117_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V117_NFL_RECEIVING_YARDS_STEP6_PROJECTION_RECIPE_2026-09-13"
 FROZEN_V118_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V118_NFL_RECEIVING_YARDS_STEP7_SUPPORT_CONCERNS_2026-09-13"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP8_FANDUEL_FULL_LINEUP_2026-09-13"
+FROZEN_V119_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP8_FANDUEL_FULL_LINEUP_2026-09-13"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v119 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v120 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
