@@ -28,7 +28,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install deterministic test dependencies
-        run: python -m pip install --disable-pip-version-check -q pytest requests
+        run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
 
       - name: Enforce exact five-file Step 9 diff
         if: github.event_name == 'pull_request'
