@@ -9,7 +9,7 @@ import time
 
 from playwright.sync_api import sync_playwright
 
-from devsystem.browser_qa_v1 import (
+from browser_qa_v1 import (
     BrowserQAFailure,
     _body_has_forbidden_error,
     _find_app_frame,
