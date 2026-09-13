@@ -65,6 +65,13 @@ def test_v100_advances_only_rushing_yards_to_v4():
     assert "prior._render_nfl_v99 = original_v99_handler" in source
 
 
+def test_app_boots_v100_and_preserves_v99_heartbeat():
+    source = _source("app.py")
+    assert "from streamlit_memory_lazy_router_v100 import record_bootstrap_import_ms, render_app" in source
+    assert 'FROZEN_V99_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V99_NFL_RUSHING_YARDS_STEP4_MARKET_CONTEXT_2026-09-12"' in source
+    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V100_NFL_RUSHING_YARDS_PAGE_STEP1_COMPACT_PLAYER_CARDS_2026-09-12"' in source
+
+
 def test_certified_v3_and_v99_stay_historical_owners():
     v3 = _source("nfl_rushing_yards_hub_v3.py")
     v99 = _source("streamlit_memory_lazy_router_v99.py")
