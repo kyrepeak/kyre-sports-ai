@@ -122,7 +122,9 @@ def _validate_player(raw: Any, *, event_id: str, team_id: str) -> tuple[dict[str
             normalized[key] = None
             continue
         number = _finite(value)
-        if number is None or (key != "rushing_yards_per_game" and number < 0):
+        # Kneel-downs and other legitimate rushes can make yards/carry or
+        # rushing-yards/game negative. Volume and touchdown counts cannot.
+        if number is None or (key in {"carries_per_game", "rushing_touchdowns"} and number < 0):
             return None, f"invalid player metric: {key}"
         normalized[key] = number
     return normalized, ""
