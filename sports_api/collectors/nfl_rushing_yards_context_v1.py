@@ -9,10 +9,12 @@ from datetime import datetime, timezone
 import json
 import math
 from typing import Any, Mapping
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 ESPN_SITE_BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
+ESPN_SITE_ALTERNATE_BASE = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl"
 ESPN_HEADERS = {
     "Accept": "application/json,text/plain,*/*",
     "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAPI-NFL-Rushing/1.0; read-only)",
@@ -42,20 +44,59 @@ def _number(value: Any) -> float | None:
     return out if math.isfinite(out) else None
 
 
+def _transport_error_label(exc: BaseException) -> str:
+    if isinstance(exc, HTTPError):
+        return f"HTTP {int(exc.code)}"
+    if isinstance(exc, URLError):
+        reason = getattr(exc, "reason", None)
+        return f"URLError({type(reason).__name__ if reason is not None else 'unknown'})"
+    return type(exc).__name__
+
+
+def _alternate_espn_target(target: str) -> str:
+    """Map only the certified ESPN site origin to the equivalent ESPN web origin.
+
+    Path and query string are preserved byte-for-byte. This is a transport
+    fallback only; it never changes event/team/athlete identity or data source.
+    """
+    if not target.startswith(ESPN_SITE_BASE):
+        return ""
+    return ESPN_SITE_ALTERNATE_BASE + target[len(ESPN_SITE_BASE):]
+
+
+def _read_espn_bytes(target: str) -> bytes:
+    request = Request(target, headers=ESPN_HEADERS, method="GET")
+    with urlopen(request, timeout=DEFAULT_TIMEOUT_SECONDS) as response:
+        status = int(getattr(response, "status", 0) or 0)
+        if status != 200:
+            raise NFLRushingYardsContextError(f"ESPN GET returned HTTP {status}")
+        return response.read(MAX_RESPONSE_BYTES + 1)
+
+
 def _get_json(url: str, params: Mapping[str, Any] | None = None) -> dict[str, Any]:
     query = urlencode({str(k): str(v) for k, v in (params or {}).items()})
     target = f"{url}?{query}" if query else url
-    request = Request(target, headers=ESPN_HEADERS, method="GET")
     try:
-        with urlopen(request, timeout=DEFAULT_TIMEOUT_SECONDS) as response:
-            status = int(getattr(response, "status", 0) or 0)
-            if status != 200:
-                raise NFLRushingYardsContextError(f"ESPN GET returned HTTP {status}")
-            raw = response.read(MAX_RESPONSE_BYTES + 1)
+        raw = _read_espn_bytes(target)
+    except (HTTPError, URLError, TimeoutError) as primary_exc:
+        alternate_target = _alternate_espn_target(target)
+        if not alternate_target:
+            raise NFLRushingYardsContextError(
+                f"ESPN read failed: {_transport_error_label(primary_exc)}"
+            ) from primary_exc
+        try:
+            raw = _read_espn_bytes(alternate_target)
+        except (HTTPError, URLError, TimeoutError) as alternate_exc:
+            raise NFLRushingYardsContextError(
+                "ESPN read failed on both certified transports: "
+                f"primary {_transport_error_label(primary_exc)}; "
+                f"alternate {_transport_error_label(alternate_exc)}"
+            ) from alternate_exc
     except NFLRushingYardsContextError:
         raise
     except Exception as exc:
         raise NFLRushingYardsContextError(f"ESPN read failed: {type(exc).__name__}") from exc
+
     if len(raw) > MAX_RESPONSE_BYTES:
         raise NFLRushingYardsContextError("ESPN response exceeded safe size limit")
     try:
