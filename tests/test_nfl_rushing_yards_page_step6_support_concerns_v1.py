@@ -29,10 +29,13 @@ def test_step6_uses_only_certified_projection_explanation_fields():
         'projection_row.get("efficiency_coverage")',
         'projection_row.get("coverage_grade")',
         'projection_row.get("coverage_basis")',
-        'projection_row.get("workload_source")',
         'projection_row.get("efficiency_components")',
     ):
         assert field in source
+    assert (
+        'projection_row.get("workload_source")' in source
+        or "projection_row.get('workload_source')" in source
+    )
     assert '"player_yards_per_carry"' in source
     assert '"opponent_yards_per_carry_allowed"' in source
 
