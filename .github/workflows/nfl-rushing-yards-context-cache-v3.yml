@@ -1,0 +1,99 @@
+name: NFL Rushing Yards Context Cache V3
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - "sports_api/api/nfl_rushing_yards_context_v1.py"
+      - "sports_api/tests/test_nfl_rushing_yards_context_cache_v3.py"
+      - ".github/workflows/nfl-rushing-yards-context-cache-v3.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-context-cache-v3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-context-cache-v3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile V3 cache surface
+        run: |
+          python -m py_compile sports_api/api/nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/collectors/nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_context_v1.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_context_performance_v2.py
+          python -m py_compile sports_api/tests/test_nfl_rushing_yards_context_cache_v3.py
+
+      - name: Run frozen exact-ID V1 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_context_v1.py
+
+      - name: Re-run parallel collector V2 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_context_performance_v2.py
+
+      - name: Run exact-event cache V3 contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_rushing_yards_context_cache_v3.py
+
+      - name: Verify cache stays exact-event and safety-first
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          route = Path("sports_api/api/nfl_rushing_yards_context_v1.py").read_text()
+          collector = Path("sports_api/collectors/nfl_rushing_yards_context_v1.py").read_text()
+
+          assert "CONTEXT_SNAPSHOT_TTL_SECONDS = 60.0" in route
+          assert "deepcopy" in route
+          assert "_validate_context_payload(cached, event_id)" in route
+          assert "_event_lock(event_id)" in route
+          assert "payload.get(\"ready\") is not True" in route
+          assert '"sportsbook_influence": 0.0' in route
+          assert '"projection_enabled": False' in route
+          assert '"market_enabled": False' in route
+          assert '"wager_actions": False' in route
+          assert "ThreadPoolExecutor" in collector
+          assert "MAX_PARALLEL_ESPN_REQUESTS = 6" in collector
+          print("NFL_RUSHING_CONTEXT_CACHE_V3_SAFETY_GREEN")
+          PY
+
+      - name: Prove only approved V3 files changed
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(sports_api/api/nfl_rushing_yards_context_v1\.py|sports_api/tests/test_nfl_rushing_yards_context_cache_v3\.py|\.github/workflows/nfl-rushing-yards-context-cache-v3\.yml)$' || true)"
+          if [ -n "$bad" ]; then
+            echo "UNAPPROVED_CONTEXT_CACHE_V3_FILE_CHANGE"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "NFL_RUSHING_CONTEXT_CACHE_V3_DIFF_GREEN"
