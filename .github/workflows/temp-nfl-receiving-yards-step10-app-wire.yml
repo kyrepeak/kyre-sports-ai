@@ -1,0 +1,73 @@
+name: TEMP NFL Receiving Yards Step 10 App Wire
+
+on:
+  push:
+    branches: [nfl-receiving-yards-v10-final-polish-speed-cert]
+    paths:
+      - '.github/workflows/temp-nfl-receiving-yards-step10-app-wire.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-receiving-yards-v10-final-polish-speed-cert
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply exact V120 to V121 app wiring
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app.py')
+          text = path.read_text(encoding='utf-8')
+          replacements = [
+              (
+                  '"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Step 9 matchup tiers.\n\nRouter V120 is additive over certified Router V119. It preserves the complete\nPassing Yards chain and the certified Rushing Yards V15 page while advancing\nonly NFL -> Receiving Yards to the isolated V9 matchup-tier page.',
+                  '"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Step 10 final page.\n\nRouter V121 is additive over certified Router V120. It preserves the complete\nPassing Yards chain and the certified Rushing Yards V15 page while advancing\nonly NFL -> Receiving Yards to the isolated V10 final page.',
+              ),
+              (
+                  'Support + Concerns, fresh exact-ID FanDuel full-lineup display, and opponent matchup tiers are live.',
+                  'Support + Concerns, fresh exact-ID FanDuel full-lineup display, opponent matchup tiers, and final detailed-tier polish are live.',
+              ),
+              (
+                  'STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13.\n"""',
+                  'STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP10_FINAL_POLISH_SPEED_CERT_2026-09-13.\n"""',
+              ),
+              (
+                  '    from streamlit_memory_lazy_router_v119 import render_app as _frozen_v119_render_app\n',
+                  '    from streamlit_memory_lazy_router_v119 import render_app as _frozen_v119_render_app\n    from streamlit_memory_lazy_router_v120 import render_app as _frozen_v120_render_app\n',
+              ),
+              (
+                  'FROZEN_V119_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP8_FANDUEL_FULL_LINEUP_2026-09-13"\nDEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13"',
+                  'FROZEN_V119_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP8_FANDUEL_FULL_LINEUP_2026-09-13"\nFROZEN_V120_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13"\nDEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP10_FINAL_POLISH_SPEED_CERT_2026-09-13"',
+              ),
+              (
+                  '    from streamlit_memory_lazy_router_v120 import record_bootstrap_import_ms, render_app\n',
+                  '    from streamlit_memory_lazy_router_v121 import record_bootstrap_import_ms, render_app\n',
+              ),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'guard failed: expected exactly one occurrence, got {count}: {old[:100]!r}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          print('RECEIVING_STEP10_APP_WIRE_GREEN')
+          PY
+
+      - name: Commit app wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name kyrepeak
+          git config user.email kyrewhite15@gmail.com
+          git add app.py
+          git diff --cached --check
+          git commit -m 'NFL Receiving Yards Step 10: activate Router V121'
+          git push origin HEAD:nfl-receiving-yards-v10-final-polish-speed-cert
