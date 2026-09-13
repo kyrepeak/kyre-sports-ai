@@ -39,7 +39,7 @@ _ORIGINAL_MARKDOWN = st.markdown
 
 _SUMMARY_CSS = r'''
 <style>
-.krecv-fill{width:30%!important}
+.krecv-progress .krecv-fill{width:30%!important}
 .krecv3-player{min-width:0;display:flex;flex-direction:column;gap:6px}
 .krecv3-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:0 2px 2px}
 .krecv3-box{min-width:0;border:1px solid #203a2b;border-radius:9px;background:linear-gradient(180deg,#0a1711 0%,#08120e 100%);padding:6px 7px}
