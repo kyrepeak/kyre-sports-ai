@@ -53,6 +53,16 @@ def _old_game(team_id: str, opponent_id: str, athlete_id: str, name: str, attemp
     }
 
 
+def _schedule_event(event_id: str, *, year: int, season_type: int = 2, completed: bool = True, state: str = "post"):
+    return {
+        "id": event_id,
+        "date": f"{year}-12-01T18:00Z",
+        "season": {"year": year, "displayName": str(year)},
+        "seasonType": {"id": str(season_type), "type": season_type, "name": "Regular Season" if season_type == 2 else "Other"},
+        "competitions": [{"status": {"type": {"state": state, "completed": completed}}}],
+    }
+
+
 def _install_fake_espn(monkeypatch):
     old27 = _old_game("27", "1", "100", "Runner One", "20", "100")
     old4 = _old_game("4", "2", "200", "Runner Two", "18", "81")
@@ -72,17 +82,19 @@ def _install_fake_espn(monkeypatch):
         if url.endswith("/teams/4/roster"):
             return {"athletes": [{"items": [{"id": "200", "displayName": "Runner Two", "position": {"abbreviation": "RB"}}]}]}
         if "/schedule" in url:
+            assert int(params.get("seasontype") or 0) == 2
             team = url.split("/teams/", 1)[1].split("/", 1)[0]
             season = int(params.get("season") or 0)
             if season == 2026:
-                return {"events": []}
+                return {"season": {"year": 2026}, "events": []}
             event_id = "90027" if team == "27" else "90004"
-            return {"events": [{
-                "id": event_id,
-                "date": "2025-12-01T18:00Z",
-                "season": {"type": 2},
-                "competitions": [{"status": {"type": {"state": "post"}}}],
-            }]}
+            # ESPN may label the top-level display season as current even while
+            # the historical event rows correctly identify their own year.
+            return {
+                "season": {"year": 2026, "type": 2},
+                "requestedSeason": {"year": 2025},
+                "events": [_schedule_event(event_id, year=2025)],
+            }
         raise AssertionError(f"unexpected ESPN call: {url} {params}")
 
     monkeypatch.setattr(collector, "_get_json", fake_get)
@@ -160,6 +172,47 @@ def test_get_json_both_espn_transports_fail_closed_with_codes(monkeypatch):
     assert seen[1].startswith(collector.ESPN_SITE_ALTERNATE_BASE)
 
 
+def test_completed_game_ids_uses_event_level_year_and_season_type(monkeypatch):
+    calls = []
+
+    def fake_get(url, params=None):
+        calls.append((url, dict(params or {})))
+        return {
+            # Mirrors the live ESPN quirk: top-level display season can be 2026.
+            "season": {"year": 2026, "type": 2},
+            "requestedSeason": {"year": 2025},
+            "events": [
+                _schedule_event("good-ignored-nonnumeric", year=2025),
+                _schedule_event("401772830", year=2025),
+                _schedule_event("401999999", year=2026),
+                _schedule_event("401888888", year=2025, season_type=3),
+                _schedule_event("401777777", year=2025, completed=False, state="pre"),
+            ],
+        }
+
+    monkeypatch.setattr(collector, "_get_json", fake_get)
+    ids = collector._completed_game_ids("27", 2025)
+    assert ids == ["401772830"]
+    assert calls == [(
+        f"{collector.ESPN_SITE_BASE}/teams/27/schedule",
+        {"season": 2025, "seasontype": 2},
+    )]
+
+
+def test_completed_game_ids_does_not_trust_top_level_current_season(monkeypatch):
+    def fake_get(url, params=None):
+        return {
+            "season": {"year": 2026, "type": 2},
+            "events": [
+                _schedule_event("401772830", year=2025),
+                _schedule_event("401900001", year=2026),
+            ],
+        }
+
+    monkeypatch.setattr(collector, "_get_json", fake_get)
+    assert collector._completed_game_ids("27", 2025) == ["401772830"]
+
+
 def test_collector_exact_id_prior_season_fallback(monkeypatch):
     _install_fake_espn(monkeypatch)
     payload = collector.collect_nfl_rushing_yards_context("401900001")
@@ -183,7 +236,10 @@ def test_collector_exact_id_prior_season_fallback(monkeypatch):
     assert by_team["27"]["players"][0]["carries"] == 20
     assert by_team["27"]["players"][0]["rushing_yards"] == 100
     assert by_team["27"]["player_baseline_season"] == 2025
+    assert by_team["27"]["player_sample_games"] == 1
     assert by_team["27"]["opponent_run_front"]["official_team_id"] == "4"
+    assert by_team["27"]["opponent_run_front"]["baseline_season"] == 2025
+    assert by_team["27"]["opponent_run_front"]["sample_games"] == 1
     assert by_team["27"]["opponent_run_front"]["rush_yards_allowed_per_game"] == 108.0
 
 
