@@ -1,0 +1,128 @@
+name: NFL Rushing Yards Step 2 Context Client V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_rushing_yards_context_api_v1.py"
+      - "nfl_rushing_yards_hub_v1.py"
+      - "tests/test_nfl_rushing_yards_context_api_v1.py"
+      - ".github/workflows/nfl-rushing-yards-step2-context-client-v1.yml"
+      - ".github/nfl-rushing-yards-step2-context-client-v1-contract.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-step2-context-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install app dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile exact Step 2 surface
+        run: |
+          python -m py_compile nfl_rushing_yards_context_api_v1.py nfl_rushing_yards_hub_v1.py
+
+      - name: Run exact-ID production-client tests
+        run: |
+          python -m unittest discover -s tests -p 'test_nfl_rushing_yards_context_api_v1.py' -v
+
+      - name: Permanent isolation and safety guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          client = Path("nfl_rushing_yards_context_api_v1.py").read_text()
+          hub = Path("nfl_rushing_yards_hub_v1.py").read_text()
+          joined = client + "\n" + hub
+
+          assert 'SCHEMA_VERSION = "nfl_rushing_yards_context_v1"' in client
+          assert "nfl_passing_yards" not in joined
+          assert '"market_enabled": False' in client
+          assert '"sportsbook_influence": 0.0' in client
+          assert '"stake_sizing_enabled": False' in client
+          assert "2 OF 4 • DATA LIVE" in hub
+          assert "PLAYER + MATCHUP DATA ✅" in hub
+          assert 'row.get("game_id")' in hub
+          print("Rushing Yards Step 2 isolation/safety guard: GREEN")
+          PY
+
+      - name: Live production Rushing Yards status contract
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import Request, urlopen
+
+          url = "https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards/status"
+          request = Request(url, headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Cert/1.0"})
+          with urlopen(request, timeout=30) as response:
+              assert response.status == 200, response.status
+              body = json.loads(response.read().decode("utf-8"))
+
+          assert body["schema_version"] == "nfl_rushing_yards_context_v1"
+          assert body["official_event_id_required"] is True
+          assert body["official_athlete_id_required"] is True
+          assert body["official_team_id_required"] is True
+          assert body["player_name_matching"] is False
+          assert body["fuzzy_matching"] is False
+          assert body["synthetic_event_ids"] is False
+          assert body["synthetic_player_ids"] is False
+          assert body["model_enabled"] is False
+          assert body["projection_enabled"] is False
+          assert body["market_enabled"] is False
+          assert body["sportsbook_influence"] == 0.0
+          assert body["stake_sizing_enabled"] is False
+          assert body["wager_actions"] is False
+          print("Live production Rushing Yards status contract: GREEN")
+          PY
+
+      - name: Live exact-event production probe
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          event_id = "401872925"
+          url = "https://kyre-sports-api.onrender.com/api/v1/nfl/rushing-yards?" + urlencode({"event_id": event_id})
+          request = Request(url, headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Cert/1.0"})
+          with urlopen(request, timeout=45) as response:
+              assert response.status == 200, response.status
+              body = json.loads(response.read().decode("utf-8"))
+
+          assert body["schema_version"] == "nfl_rushing_yards_context_v1"
+          assert body["official_event_id"] == event_id
+          assert body["identity"]["player_name_matching"] is False
+          assert body["identity"]["fuzzy_matching"] is False
+          assert body["semantics"]["model_enabled"] is False
+          assert body["semantics"]["projection_enabled"] is False
+          assert body["semantics"]["market_enabled"] is False
+          assert body["semantics"]["sportsbook_influence"] == 0.0
+          assert body["semantics"]["stake_sizing_enabled"] is False
+          teams = body.get("teams") or []
+          assert len(teams) == 2
+          team_ids = {str(team.get("official_team_id") or "") for team in teams}
+          assert all(team_id.isdigit() for team_id in team_ids)
+          assert {str(team.get("opponent_official_team_id") or "") for team in teams} == team_ids
+          athletes = [
+              str(player.get("official_athlete_id") or "")
+              for team in teams
+              for player in (team.get("players") or [])
+          ]
+          assert body.get("ready") is True
+          assert athletes and all(athlete_id.isdigit() for athlete_id in athletes)
+          assert len(athletes) == len(set(athletes))
+          print(f"Live exact-event Rushing Yards probe: GREEN • {len(athletes)} exact-ID rushers")
+          PY
