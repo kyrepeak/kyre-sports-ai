@@ -88,46 +88,46 @@ jobs:
           print("Live production Rushing Yards status contract: GREEN")
           PY
 
-      - name: Diagnose live ESPN upstream chain
+      - name: Inspect historical ESPN schedule event shape
         run: |
           python - <<'PY'
           import json
-          from urllib.error import HTTPError, URLError
           from urllib.request import Request, urlopen
 
-          site = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
-          web = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl"
-          urls = [
-              ("site_summary", f"{site}/summary?event=401872925"),
-              ("site_tb_roster", f"{site}/teams/27/roster"),
-              ("site_cin_roster", f"{site}/teams/4/roster"),
-              ("site_tb_schedule_2026", f"{site}/teams/27/schedule?season=2026&seasontype=2"),
-              ("site_tb_schedule_2025", f"{site}/teams/27/schedule?season=2025&seasontype=2"),
-              ("site_cin_schedule_2026", f"{site}/teams/4/schedule?season=2026&seasontype=2"),
-              ("site_cin_schedule_2025", f"{site}/teams/4/schedule?season=2025&seasontype=2"),
-              ("web_summary", f"{web}/summary?event=401872925"),
-              ("web_tb_roster", f"{web}/teams/27/roster"),
-              ("web_cin_roster", f"{web}/teams/4/roster"),
-              ("web_tb_schedule_2025", f"{web}/teams/27/schedule?season=2025&seasontype=2"),
-          ]
+          base = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
           headers = {
               "Accept": "application/json,text/plain,*/*",
               "User-Agent": "Mozilla/5.0 (compatible; KyreSportsAPI-NFL-Rushing/1.0; read-only)",
           }
-          for label, url in urls:
+
+          for team_id, abbr in (("27", "TB"), ("4", "CIN")):
+              url = f"{base}/teams/{team_id}/schedule?season=2025&seasontype=2"
               request = Request(url, headers=headers, method="GET")
-              try:
-                  with urlopen(request, timeout=20) as response:
-                      raw = response.read()
-                      payload = json.loads(raw.decode("utf-8"))
-                      season = payload.get("season") if isinstance(payload, dict) else None
-                      year = season.get("year") if isinstance(season, dict) else None
-                      print(f"ESPN_UPSTREAM {label}: HTTP {response.status} • season_year={year} • bytes={len(raw)}")
-              except HTTPError as exc:
-                  preview = exc.read(400).decode("utf-8", errors="replace").replace("\n", " ")
-                  print(f"ESPN_UPSTREAM {label}: HTTP {exc.code} • {preview[:300]}")
-              except (URLError, ValueError) as exc:
-                  print(f"ESPN_UPSTREAM {label}: ERROR {type(exc).__name__}")
+              with urlopen(request, timeout=20) as response:
+                  payload = json.loads(response.read().decode("utf-8"))
+
+              events = payload.get("events") or []
+              print(f"HIST_SCHEDULE {abbr}: top_keys={sorted(payload.keys())} event_count={len(events)} top_season={payload.get('season')}")
+              for index, event in enumerate(events[:10]):
+                  comps = event.get("competitions") or []
+                  comp = comps[0] if comps and isinstance(comps[0], dict) else {}
+                  status = ((comp.get("status") or {}).get("type") or {})
+                  summary = {
+                      "index": index,
+                      "event_id": event.get("id"),
+                      "date": event.get("date"),
+                      "event_keys": sorted(event.keys()),
+                      "event_season": event.get("season"),
+                      "event_season_type": event.get("seasonType"),
+                      "event_season_year": event.get("seasonYear"),
+                      "comp_keys": sorted(comp.keys()),
+                      "comp_type": comp.get("type"),
+                      "comp_season": comp.get("season"),
+                      "status_state": status.get("state"),
+                      "status_completed": status.get("completed"),
+                      "status_name": status.get("name"),
+                  }
+                  print(f"HIST_EVENT {abbr}: {json.dumps(summary, sort_keys=True, default=str)}")
           PY
 
       - name: Live exact-event production probe
