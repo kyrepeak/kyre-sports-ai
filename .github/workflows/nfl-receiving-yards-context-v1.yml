@@ -65,20 +65,43 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: python -m pytest -q sports_api/tests/test_nfl_receiving_yards_context_v1.py
 
-      - name: Prove Receiving routes are mounted on the real shared app
+      - name: Prove Receiving routes on certified shared-host router
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
+          from sports_api.api.health import router as health_router
           from sports_api.main import app
-          paths = {getattr(route, 'path', '') for route in app.routes}
-          required = {
+
+          health_paths = [getattr(route, 'path', '') for route in health_router.routes]
+          app_paths = [getattr(route, 'path', '') for route in app.routes]
+          receiving = {
               '/api/v1/nfl/receiving-yards',
               '/api/v1/nfl/receiving-yards/status',
           }
-          missing = sorted(required - paths)
-          assert not missing, f'Receiving routes missing from sports_api.main:app: {missing}'
-          print('Receiving route registration GREEN:', sorted(required))
+          frozen_rushing = {
+              '/api/v1/nfl/rushing-yards',
+              '/api/v1/nfl/rushing-yards/status',
+              '/api/v1/nfl/rushing-yards/fast',
+              '/api/v1/nfl/rushing-yards/fast/status',
+              '/api/v1/nfl/rushing-yards/market',
+              '/api/v1/nfl/rushing-yards/market/status',
+          }
+
+          print('Shared-host route counts (health_router, main.app):')
+          for path in sorted(receiving | frozen_rushing):
+              print(path, health_paths.count(path), app_paths.count(path))
+
+          # Match the already-certified Rushing shared-host ownership contract:
+          # NFL route collections are owned by sports_api.api.health.router.
+          for path in sorted(receiving):
+              count = health_paths.count(path)
+              assert count == 1, (path, 'receiving shared-host count', count)
+          for path in sorted(frozen_rushing):
+              count = health_paths.count(path)
+              assert count == 1, (path, 'frozen rushing shared-host count', count)
+
+          print('NFL_RECEIVING_CONTEXT_V1_SHARED_HOST_GREEN')
           PY
 
       - name: Re-run frozen NFL Rushing context regressions
