@@ -129,6 +129,8 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v116 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v117 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v118 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v119 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v120 import record_bootstrap_import_ms, render_app
 
 FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 FROZEN_V78_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
