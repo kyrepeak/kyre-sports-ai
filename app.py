@@ -1,17 +1,15 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Rushing Yards Page Build Step 6 support + concerns.
+"""Kyre Sports AI Streamlit entrypoint — NFL Rushing Yards performance fast route.
 
-Router V105 is additive over certified Router V104. It preserves the full V104 ->
-V103 -> V102 chain and intercepts only NFL -> Rushing Yards for the new V9
-visual-only support/counterweight explanation panel.
+Router V106 preserves certified Router V105 for every non-Rushing route while
+allowing an active NFL -> Rushing Yards session to cold-start directly into the
+final certified page through performance-only V10.
 
-The certified Rushing Yards projection and live market contracts remain frozen.
-V9 only interprets already-certified projection fields beneath each certified V8
-player stack. Sportsbook projection influence remains 0.0%.
-Probability, fair odds, EV, value grading, stake sizing and wager actions remain
-OFF.
+V10 reuses identical context/projection/market work within one render only.
+Projection math, market freshness, identity contracts, page output, and betting
+semantics remain unchanged. Sportsbook projection influence remains 0.0%.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V105_NFL_RUSHING_YARDS_PAGE_STEP6_SUPPORT_CONCERNS_2026-09-12.
+STREAMLIT_MAIN_V106_NFL_RUSHING_YARDS_PERFORMANCE_FAST_ROUTE_2026-09-12.
 """
 from __future__ import annotations
 
@@ -70,6 +68,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v102 import render_app as _frozen_v102_render_app
     from streamlit_memory_lazy_router_v103 import render_app as _frozen_v103_render_app
     from streamlit_memory_lazy_router_v104 import render_app as _frozen_v104_render_app
+    from streamlit_memory_lazy_router_v105 import render_app as _frozen_v105_render_app
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
@@ -98,6 +97,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v102 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v103 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v104 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v105 import record_bootstrap_import_ms, render_app
 
 FROZEN_V77_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V77_CFB_OU_COLD_START_FAST_ROUTE_2026-09-11"
 FROZEN_V78_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V78_CFB_OU_EXACT_TEAM_LOGOS_2026-09-11"
@@ -127,12 +127,13 @@ FROZEN_V101_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V101_NFL_RUSHING_YARDS_PAGE_S
 FROZEN_V102_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V102_NFL_RUSHING_YARDS_PAGE_STEP3_WORKLOAD_EFFICIENCY_2026-09-12"
 FROZEN_V103_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V103_NFL_RUSHING_YARDS_PAGE_STEP4_OPPONENT_RUN_DEFENSE_2026-09-12"
 FROZEN_V104_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V104_NFL_RUSHING_YARDS_PAGE_STEP5_PROJECTION_RECIPE_2026-09-12"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V105_NFL_RUSHING_YARDS_PAGE_STEP6_SUPPORT_CONCERNS_2026-09-12"
+FROZEN_V105_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V105_NFL_RUSHING_YARDS_PAGE_STEP6_SUPPORT_CONCERNS_2026-09-12"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V106_NFL_RUSHING_YARDS_PERFORMANCE_FAST_ROUTE_2026-09-12"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v105 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v106 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
@@ -147,14 +148,47 @@ try:
     if isinstance(_cfb_perf, dict):
         add_stage_rows(_monster_trace, _cfb_perf.get("stages"))
 
-    _cold_start = st.session_state.get("cfb_ou_cold_start_v1_last")
-    if isinstance(_cold_start, dict):
+    _cfb_cold = st.session_state.get("cfb_ou_cold_start_v1_last")
+    if isinstance(_cfb_cold, dict):
         try:
-            _active_page_import_ms = float(_cold_start.get("active_page_import_ms") or 0.0)
+            _active_page_import_ms = float(_cfb_cold.get("active_page_import_ms") or 0.0)
         except (TypeError, ValueError):
             _active_page_import_ms = 0.0
         if _active_page_import_ms > 0.0:
             _monster_trace.add("import.active_page", _active_page_import_ms, category="import")
+
+    _rush_cold = st.session_state.get("nfl_rushing_yards_cold_start_v1_last")
+    if isinstance(_rush_cold, dict):
+        try:
+            _rush_page_import_ms = float(_rush_cold.get("active_page_import_ms") or 0.0)
+        except (TypeError, ValueError):
+            _rush_page_import_ms = 0.0
+        if _rush_page_import_ms > 0.0:
+            _monster_trace.add("import.nfl_rushing_page", _rush_page_import_ms, category="import")
+
+    _rush_speed = st.session_state.get("nfl_rushing_yards_speed_v1_last")
+    if isinstance(_rush_speed, dict):
+        for _stage, _category in (
+            ("context", "api"),
+            ("projection", "analysis"),
+            ("market", "market"),
+            ("athlete_market", "code"),
+        ):
+            _bucket = _rush_speed.get(_stage)
+            if not isinstance(_bucket, dict):
+                continue
+            try:
+                _work_ms = float(_bucket.get("work_ms") or 0.0)
+                _work_calls = max(1, int(_bucket.get("misses") or 1))
+            except (TypeError, ValueError):
+                continue
+            if _work_ms > 0.0:
+                _monster_trace.add(
+                    f"nfl_rushing.{_stage}",
+                    _work_ms,
+                    category=_category,
+                    calls=_work_calls,
+                )
 
     _monster_diagnosis = diagnose_trace(_monster_trace, total_ms=_app_total_ms)
     st.session_state["monster_performance_profiler_v1_last"] = _monster_diagnosis
