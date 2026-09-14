@@ -1,0 +1,374 @@
+name: CERT ONLY NFL Moneyline V12 Production Witness V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cert-nfl-moneyline-v12-production-witness-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  EXPECTED_PRODUCTION_MAIN_SHA: 8226fad343e4855f5b656f81eb106ef21ed4d42c
+  WITNESS_FILE: .github/workflows/cert-nfl-moneyline-v12-production-witness-v1.yml
+
+jobs:
+  production-witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Enforce certification-only one-file surface
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$BASE_SHA" = "$EXPECTED_PRODUCTION_MAIN_SHA"
+          git fetch --no-tags --depth=2 origin "$BASE_SHA" "$HEAD_SHA"
+          mapfile -t changed < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          printf 'Changed files:\n%s\n' "${changed[*]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = "$WITNESS_FILE"
+          echo "NFL_MONEYLINE_V12_CERT_ONLY_SURFACE_GREEN"
+
+      - name: Prove V131 to V12 production source contract
+        shell: bash
+        run: |
+          mkdir -p artifacts/moneyline-v12-production-witness
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          app = Path('app.py').read_text()
+          router = Path('streamlit_memory_lazy_router_v131.py').read_text()
+          hub = Path('nfl_moneyline_hub_v12.py').read_text()
+
+          checks = {
+              'app_activates_v131': 'streamlit_memory_lazy_router_v131' in app,
+              'router_activates_v12': 'ACTIVE_MONEYLINE_HUB = "nfl_moneyline_hub_v12"' in router,
+              'router_freezes_v130': 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v130"' in router,
+              'router_query_sport': 'ROUTE_QUERY_SPORT = "ks_nfl_sport"' in router,
+              'router_query_market': 'ROUTE_QUERY_MARKET = "ks_nfl_market"' in router,
+              'hub_freezes_v11': 'FROZEN_PRIOR = "nfl_moneyline_hub_v11"' in hub,
+              'performance_only': 'PERFORMANCE_ONLY = True' in hub,
+              'five_million_mc': 'MONTE_CARLO_SIMULATIONS = 5_000_000' in hub,
+              'sportsbook_influence_zero': 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in hub,
+              'stake_sizing_off': 'STAKE_SIZING_ENABLED = False' in hub,
+              'hot_ttl_30_seconds': 'HOT_MODEL_TTL_SECONDS = 30.0' in hub,
+          }
+          failures = [name for name, ok in checks.items() if not ok]
+          result = {
+              'status': 'GREEN' if not failures else 'RED',
+              'production_main_sha': '8226fad343e4855f5ebad416e46a93638f966676' if False else '8226fad343e4855f5b656f81eb106ef21ed4d42c',
+              'active_router': 'streamlit_memory_lazy_router_v131',
+              'active_moneyline_hub': 'nfl_moneyline_hub_v12',
+              'frozen_router': 'streamlit_memory_lazy_router_v130',
+              'frozen_moneyline_prior': 'nfl_moneyline_hub_v11',
+              'monte_carlo_simulations': 5_000_000,
+              'sportsbook_model_influence': 0.0,
+              'stake_sizing_enabled': False,
+              'checks': checks,
+              'failures': failures,
+          }
+          Path('artifacts/moneyline-v12-production-witness/source_contract.json').write_text(json.dumps(result, indent=2))
+          print(json.dumps(result, indent=2))
+          if failures:
+              raise SystemExit('V12 source contract failed: ' + ', '.join(failures))
+          print('NFL_MONEYLINE_V12_SOURCE_CONTRACT_GREEN')
+          PY
+
+      - name: Correlate exact repaired production API event
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, time
+          from pathlib import Path
+          import requests
+
+          url='https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market'
+          params={'event_id':'401872931'}
+          last=None
+          for attempt in range(1,4):
+              try:
+                  r=requests.get(url,params=params,timeout=(5,35),headers={'Accept':'application/json','User-Agent':'KyreSportsAI-V12ProductionWitness/1.0'})
+                  if r.status_code == 200:
+                      p=r.json()
+                      assert p.get('official_event_id') == '401872931'
+                      assert p.get('ready') is True
+                      assert p.get('market_available') is True
+                      assert ((p.get('identity') or {}).get('fuzzy_matching')) is False
+                      assert ((p.get('identity') or {}).get('synthetic_event_ids')) is False
+                      assert ((p.get('market_semantics') or {}).get('projection_weight')) == 0.0
+                      books=p.get('books') or []
+                      assert books and any(str(x.get('sportsbook','')).casefold() == 'fanduel' for x in books)
+                      safe={
+                          'status':'GREEN',
+                          'http':r.status_code,
+                          'official_event_id':p.get('official_event_id'),
+                          'ready':p.get('ready'),
+                          'market_available':p.get('market_available'),
+                          'books':[{
+                              'sportsbook':x.get('sportsbook'),
+                              'away_ml':x.get('away_ml'),
+                              'home_ml':x.get('home_ml'),
+                              'line_status':x.get('line_status'),
+                          } for x in books],
+                          'fuzzy_matching':(p.get('identity') or {}).get('fuzzy_matching'),
+                          'synthetic_event_ids':(p.get('identity') or {}).get('synthetic_event_ids'),
+                          'projection_weight':(p.get('market_semantics') or {}).get('projection_weight'),
+                      }
+                      Path('artifacts/moneyline-v12-production-witness/exact_api_event.json').write_text(json.dumps(safe,indent=2))
+                      print('NFL_MONEYLINE_V12_EXACT_PRODUCTION_API_GREEN')
+                      print(json.dumps(safe,indent=2))
+                      break
+                  last=RuntimeError(f'HTTP {r.status_code}: {r.text[:500]}')
+              except Exception as exc:
+                  last=exc
+              if attempt < 3:
+                  time.sleep(5)
+          else:
+              raise last or RuntimeError('Exact Moneyline API event probe failed')
+          PY
+
+      - name: Prove deployed V12 Moneyline survives repeated public reruns
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, re, statistics, time
+          from pathlib import Path
+          from urllib.parse import parse_qs, urlparse
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _find_app_frame, _wait_for_text, _body_has_forbidden_error, _choose, BrowserQAFailure
+
+          base='https://kyre-sports-ai.streamlit.app'
+          artifacts=Path('artifacts/moneyline-v12-production-witness')
+          legacy=[
+              'NFL Moneyline Command Center',
+              'STEP 1A PASSED',
+              'STEP 1B PASSED',
+              'Step 2 — QB Depth + Current Availability',
+              'Step 3 — Preseason Game-Plan Intelligence',
+              'Step 5 — Sportsbook Moneyline Market',
+              'Step 7 — No-Vig Edge + Expected Value',
+          ]
+          visits=[]
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1024,'height':1366})
+              try:
+                  page.goto(base,wait_until='domcontentloaded',timeout=120000)
+                  frame,_=_find_app_frame(page)
+                  _choose(page,frame,0,'NFL')
+                  market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+                  market_combo.wait_for(state='visible',timeout=60000)
+
+                  frame.evaluate("""(markers) => {
+                      window.__v12Witness = {legacy: [], marketUnavailable: 0};
+                      const hidden = (el) => {
+                          for (let cur=el; cur; cur=cur.parentElement) {
+                              if (cur.hidden) return true;
+                              const s=getComputedStyle(cur);
+                              if (s.display==='none' || s.visibility==='hidden' || Number(s.opacity)===0) return true;
+                          }
+                          return false;
+                      };
+                      const scan=(node) => {
+                          if (!node) return;
+                          const root=node.nodeType===Node.TEXT_NODE ? node.parentElement : node;
+                          if (!root || hidden(root)) return;
+                          const text=root.innerText || root.textContent || '';
+                          for (const marker of markers) {
+                              if (text.includes(marker) && !window.__v12Witness.legacy.includes(marker)) window.__v12Witness.legacy.push(marker);
+                          }
+                          if (text.toUpperCase().includes('MARKET UNAVAILABLE')) window.__v12Witness.marketUnavailable += 1;
+                      };
+                      window.__v12WitnessObserver=new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes || []) scan(n); });
+                      window.__v12WitnessObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
+                  }""", legacy)
+
+                  def wait_moneyline_gone():
+                      deadline=time.time()+90
+                      while time.time()<deadline:
+                          cards=frame.locator('.kml9-matchup-card').count()
+                          titles=frame.get_by_text('NFL Moneyline Matchup Board',exact=False).count()
+                          if cards==0 and titles==0:
+                              return
+                          time.sleep(0.10)
+                      raise BrowserQAFailure('Moneyline DOM did not clear after leaving page')
+
+                  def ready_target(label):
+                      _wait_for_text(frame,'NFL Moneyline Matchup Board',300.0)
+                      cards=frame.locator('.kml9-matchup-card')
+                      deadline=time.time()+300
+                      last=''
+                      while time.time()<deadline:
+                          for i in range(cards.count()):
+                              text=cards.nth(i).inner_text()
+                              if 'Denver' in text and 'Kansas City' in text:
+                                  last=text
+                                  if 'FANDUEL' in text.upper() and 'MARKET UNAVAILABLE' not in text.upper():
+                                      return cards, cards.nth(i), text
+                          time.sleep(0.10)
+                      raise BrowserQAFailure(f'{label}: exact Denver @ Kansas City card not market-ready; last={last[:500]}')
+
+                  def route_query_green():
+                      q=parse_qs(urlparse(page.url).query)
+                      return q.get('ks_nfl_sport')==['NFL'] and q.get('ks_nfl_market')==['Moneyline']
+
+                  def load_moneyline(label):
+                      started=time.perf_counter()
+                      _choose(page,frame,1,'Moneyline')
+                      cards,target,text=ready_target(label)
+                      elapsed=time.perf_counter()-started
+                      body=frame.locator('body').inner_text()
+                      forbidden=_body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f'{label}: runtime error marker {forbidden}')
+                      if 'MARKET UNAVAILABLE' in text.upper():
+                          raise BrowserQAFailure(f'{label}: MARKET UNAVAILABLE visible on exact card')
+                      if 'FANDUEL' not in text.upper():
+                          raise BrowserQAFailure(f'{label}: FanDuel missing on exact card')
+                      panels=target.locator('.kml9-team-panel')
+                      if panels.count()!=2:
+                          raise BrowserQAFailure(f'{label}: expected 2 team panels, got {panels.count()}')
+                      panel_results=[]
+                      for i in range(2):
+                          ptext=panels.nth(i).inner_text()
+                          best=re.search(r'BEST ML\s*([+-]\d+|-\d+)',ptext,re.I)
+                          novig=re.search(r'MARKET NO-VIG\s*(\d+(?:\.\d+)?%)',ptext,re.I)
+                          if not best or not novig or 'FANDUEL' not in ptext.upper():
+                              raise BrowserQAFailure(f'{label}: invalid team panel {i+1}: {ptext[:500]}')
+                          panel_results.append({'panel':i+1,'best_ml':best.group(1),'market_no_vig':novig.group(1),'book':'FanDuel'})
+                      if not route_query_green():
+                          raise BrowserQAFailure(f'{label}: V131 Moneyline route query contract missing from {page.url}')
+                      visit={
+                          'label':label,
+                          'seconds':round(elapsed,4),
+                          'cards':cards.count(),
+                          'market_available':True,
+                          'fanduel_visible':True,
+                          'route_query_green':True,
+                          'panels':panel_results,
+                      }
+                      visits.append(visit)
+                      return cards
+
+                  load_moneyline('first_visit')
+                  for idx in range(5):
+                      _choose(page,frame,1,'Slate')
+                      wait_moneyline_gone()
+                      frame.get_by_role('combobox',name='🎯 NFL Market',exact=True).wait_for(state='visible',timeout=60000)
+                      load_moneyline(f'warm_visit_{idx+1}')
+
+                  witness_state=frame.evaluate('() => window.__v12Witness || {legacy: [], marketUnavailable: 0}')
+                  if witness_state.get('legacy'):
+                      raise BrowserQAFailure(f'legacy Moneyline UI flashed visibly: {witness_state["legacy"]}')
+                  if int(witness_state.get('marketUnavailable') or 0) != 0:
+                      raise BrowserQAFailure(f'MARKET UNAVAILABLE flashed visibly during repeated reruns: {witness_state["marketUnavailable"]}')
+
+                  direct_url=page.url
+                  reload_started=time.perf_counter()
+                  page.reload(wait_until='domcontentloaded',timeout=120000)
+                  frame,_=_find_app_frame(page)
+                  cards,target,text=ready_target('direct_reload')
+                  direct_reload=time.perf_counter()-reload_started
+                  if 'MARKET UNAVAILABLE' in text.upper() or 'FANDUEL' not in text.upper():
+                      raise BrowserQAFailure('direct reload did not restore market-ready Moneyline card')
+                  if not route_query_green():
+                      raise BrowserQAFailure(f'direct reload lost V131 route query contract: {page.url}')
+
+                  body=frame.locator('body').inner_text()
+                  leaked=[marker for marker in legacy if marker in body]
+                  if leaked:
+                      raise BrowserQAFailure(f'legacy Moneyline UI visible after direct reload: {leaked}')
+                  forbidden=_body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f'direct reload runtime error marker: {forbidden}')
+
+                  overflow=frame.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
+                  if overflow>4:
+                      raise BrowserQAFailure(f'iPad horizontal overflow detected: {overflow}px')
+
+                  warm=[v['seconds'] for v in visits if v['label'].startswith('warm_visit_')]
+                  result={
+                      'status':'GREEN',
+                      'site':base,
+                      'production_main_sha':'8226fad343e4855f5b656f81eb106ef21ed4d42c',
+                      'viewport':'1024x1366',
+                      'target':'Denver @ Kansas City',
+                      'official_event_id':'401872931',
+                      'visits':visits,
+                      'warm_visit_count':len(warm),
+                      'warm_p50_seconds':round(statistics.median(warm),4),
+                      'warm_best_seconds':round(min(warm),4),
+                      'warm_worst_seconds':round(max(warm),4),
+                      'market_available_visits':sum(1 for v in visits if v['market_available']),
+                      'fanduel_visible_visits':sum(1 for v in visits if v['fanduel_visible']),
+                      'visible_market_unavailable_flash_count':int(witness_state.get('marketUnavailable') or 0),
+                      'legacy_visible_flash_count':len(witness_state.get('legacy') or []),
+                      'legacy_visible_final_count':len(leaked),
+                      'direct_url':direct_url,
+                      'direct_reload_seconds':round(direct_reload,4),
+                      'direct_reload_market_available':True,
+                      'direct_reload_fanduel_visible':True,
+                      'v131_route_query_restored':True,
+                      'matchup_cards':cards.count(),
+                      'horizontal_overflow_px':overflow,
+                      'expected_active_router':'streamlit_memory_lazy_router_v131',
+                      'expected_active_moneyline_hub':'nfl_moneyline_hub_v12',
+                      'frozen_prior':'nfl_moneyline_hub_v11',
+                      'sportsbook_model_influence':0.0,
+                      'monte_carlo_simulations':5_000_000,
+                  }
+                  artifacts.joinpath('streamlit_moneyline_v12_live_witness.json').write_text(json.dumps(result,indent=2))
+                  page.screenshot(path=str(artifacts/'streamlit_moneyline_v12_live_ipad.png'),full_page=True)
+                  print('NFL_MONEYLINE_V12_DEPLOYED_STREAMLIT_WITNESS_GREEN')
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload certification-only evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cert-nfl-moneyline-v12-production-witness-${{ github.run_id }}
+          path: artifacts/moneyline-v12-production-witness
+          if-no-files-found: warn
+          retention-days: 7
