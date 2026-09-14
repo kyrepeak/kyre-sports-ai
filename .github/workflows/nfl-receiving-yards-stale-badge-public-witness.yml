@@ -1,0 +1,200 @@
+name: NFL Receiving Yards Stale Badge Public Witness
+
+on:
+  push:
+    branches: [nfl-receiving-yards-stale-badge-public-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-receiving-badge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Verify live Receiving market backend before public witness
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/receiving-yards/market/status' \
+            -o /tmp/receiving-market-status.json
+          python - <<'PY'
+          import json
+          payload=json.load(open('/tmp/receiving-market-status.json'))
+          assert payload['status'] == 'ready'
+          assert payload['schema_version'] == 'nfl_receiving_yards_market_v1'
+          assert payload['provider'] == 'FanDuel'
+          assert payload['projection_weight'] == 0.0
+          assert payload['market_context_only'] is True
+          print('RECEIVING_BADGE_PUBLIC_BACKEND_STATUS_GREEN')
+          PY
+
+      - name: Drive actual public Streamlit Receiving badge witness
+        shell: bash
+        run: |
+          mkdir -p artifacts/receiving-badge-public
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from time import perf_counter
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _find_app_frame,
+              _wait_for_text,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base='https://kyre-sports-ai.streamlit.app'
+          artifacts=Path('artifacts/receiving-badge-public')
+
+          def navigate_receiving(page):
+              frame,_=_find_app_frame(page)
+              _choose(page,frame,0,'NFL')
+              nfl_market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+              nfl_market_combo.wait_for(state='visible',timeout=30000)
+              _choose(page,frame,1,'Receiving Yards')
+              body=_wait_for_text(frame,'STEP 10 OF 10',120.0)
+              return frame,body
+
+          def verify(frame, body, label):
+              forbidden=_body_has_forbidden_error(body)
+              if forbidden:
+                  raise BrowserQAFailure(f'{label} runtime error marker: {forbidden}')
+              for required in ('STEP 10 OF 10','FINAL CERTIFIED','MATCHUP TIERS'):
+                  if required not in body:
+                      raise BrowserQAFailure(f'{label} missing final marker: {required}')
+              body_lower=body.lower()
+              if 'page step 7 / 10' in body_lower:
+                  raise BrowserQAFailure(f'{label} stale Page Step 7 / 10 still visible on public site')
+              if 'projection math remains frozen' not in body_lower:
+                  raise BrowserQAFailure(f'{label} missing frozen projection marker')
+              if 'sportsbook influence remains 0.0%' not in body_lower:
+                  raise BrowserQAFailure(f'{label} missing 0.0% sportsbook influence marker')
+
+              player_count=frame.locator('.krecv10-player').count()
+              ribbon_count=frame.locator('.krecv10-ribbon').count()
+              badge_locator=frame.locator('.krecv7-badge')
+              badge_count=badge_locator.count()
+              badge_texts=[badge_locator.nth(i).inner_text().strip() for i in range(badge_count)]
+
+              if player_count > 0 and ribbon_count != player_count:
+                  raise BrowserQAFailure(
+                      f'{label} detailed ribbon mismatch: players={player_count} ribbons={ribbon_count}'
+                  )
+              if player_count > 0 and badge_count != player_count:
+                  raise BrowserQAFailure(
+                      f'{label} inherited step badge mismatch: players={player_count} badges={badge_count}'
+                  )
+              if player_count > 0:
+                  wrong=[text for text in badge_texts if text.lower() != 'page step 10 / 10']
+                  if wrong:
+                      raise BrowserQAFailure(f'{label} non-final inherited badge text: {wrong}')
+              return player_count,ribbon_count,badge_texts
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1440,'height':1800})
+              try:
+                  cold_started=perf_counter()
+                  for attempt in range(1,7):
+                      try:
+                          response=page.goto(base,wait_until='domcontentloaded',timeout=180000)
+                          if response is None or response.status >= 500:
+                              raise BrowserQAFailure(
+                                  f'Public Streamlit HTTP failure: {None if response is None else response.status}'
+                              )
+                          frame,cold_body=navigate_receiving(page)
+                          cold_players,cold_ribbons,cold_badges=verify(frame,cold_body,'cold')
+                          break
+                      except Exception as exc:
+                          page.screenshot(
+                              path=str(artifacts/f'receiving_badge_attempt_{attempt}_failure.png'),
+                              full_page=True,
+                          )
+                          if attempt == 6:
+                              raise
+                          print(f'PUBLIC_DEPLOYMENT_NOT_READY attempt={attempt}: {exc}')
+                          time.sleep(30)
+                  cold_ms=(perf_counter()-cold_started)*1000.0
+                  page.screenshot(path=str(artifacts/'receiving_badge_public_cold.png'),full_page=True)
+
+                  warm_started=perf_counter()
+                  page.reload(wait_until='domcontentloaded',timeout=180000)
+                  frame,warm_body=navigate_receiving(page)
+                  warm_players,warm_ribbons,warm_badges=verify(frame,warm_body,'warm')
+                  warm_ms=(perf_counter()-warm_started)*1000.0
+                  page.screenshot(path=str(artifacts/'receiving_badge_public_warm.png'),full_page=True)
+
+                  if warm_players < 1:
+                      raise BrowserQAFailure('warm public witness expected at least one populated detailed receiver card')
+
+                  result={
+                      'status':'GREEN',
+                      'site':base,
+                      'page_step':'10/10',
+                      'stale_step7_badge_visible':False,
+                      'cold_ms':round(cold_ms,1),
+                      'warm_ms':round(warm_ms,1),
+                      'cold_detailed_players':cold_players,
+                      'cold_detailed_ribbons':cold_ribbons,
+                      'cold_step_badges':cold_badges,
+                      'warm_detailed_players':warm_players,
+                      'warm_detailed_ribbons':warm_ribbons,
+                      'warm_step_badges':warm_badges,
+                      'sportsbook_projection_influence':0.0,
+                      'projection_math_changed':False,
+                      'source_main_sha':'06213da7383e91c3ed3649c081bc9ab62c42e6f1',
+                  }
+                  (artifacts/'receiving_badge_public_metrics.json').write_text(json.dumps(result,indent=2))
+                  print('NFL_RECEIVING_STALE_BADGE_PUBLIC_GREEN')
+                  print(json.dumps(result,indent=2))
+              except Exception:
+                  try:
+                      page.screenshot(path=str(artifacts/'receiving_badge_public_failure.png'),full_page=True)
+                  except Exception:
+                      pass
+                  raise
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload public badge evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-receiving-stale-badge-public-${{ github.run_id }}
+          path: artifacts/receiving-badge-public
+          if-no-files-found: warn
+          retention-days: 7
