@@ -91,6 +91,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v122 import render_app as _frozen_v122_render_app
     from streamlit_memory_lazy_router_v123 import render_app as _frozen_v123_render_app
     from streamlit_memory_lazy_router_v124 import render_app as _frozen_v124_render_app
+    from streamlit_memory_lazy_router_v124 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v122 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
