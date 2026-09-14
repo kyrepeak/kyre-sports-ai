@@ -77,6 +77,8 @@ jobs:
               '+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V132_NFL_SPREAD_KYRE_API_TRANSPORT_2026-09-14"',
               '-    from streamlit_memory_lazy_router_v131 import record_bootstrap_import_ms, render_app',
               '+    from streamlit_memory_lazy_router_v132 import record_bootstrap_import_ms, render_app',
+              '-    raise',
+              '+    raise',
           ])
           if changes != expected:
               print('Unexpected app.py changed lines:')
