@@ -1,0 +1,248 @@
+name: CERT ONLY NFL Moneyline V12 Production Speed V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cert-nfl-moneyline-v12-production-speed-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-speed-witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - name: Enforce one-file cert-only diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          test "$actual" = ".github/workflows/cert-nfl-moneyline-v12-production-speed-v1.yml"
+          echo NFL_MONEYLINE_V12_PRODUCTION_WITNESS_SCOPE_GREEN
+
+      - name: Prove merged V12 safety contract in source
+        shell: bash
+        run: |
+          python - <<'PY'
+          import nfl_moneyline_hub_v12 as v12
+          import streamlit_memory_lazy_router_v131 as r131
+          from pathlib import Path
+          text=Path('app.py').read_text()
+          assert v12.MONTE_CARLO_SIMULATIONS == 5_000_000
+          assert v12.SPORTSBOOK_MODEL_INFLUENCE == 0.0
+          assert v12.STAKE_SIZING_ENABLED is False
+          assert r131.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert r131.STAKE_SIZING_ENABLED is False
+          assert 'from streamlit_memory_lazy_router_v131 import record_bootstrap_import_ms, render_app' in text
+          assert 'STREAMLIT_MAIN_V131_NFL_MONEYLINE_PERFORMANCE_FAST_ROUTE_2026-09-14' in text
+          print('NFL_MONEYLINE_V12_MERGED_SOURCE_GREEN')
+          PY
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Prove deployed Streamlit V12 speed and no-flash behavior
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/moneyline-v12-production-speed
+          python - <<'PY'
+          import json
+          import statistics
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _find_app_frame, _wait_for_text, _body_has_forbidden_error, _choose, BrowserQAFailure
+
+          site='https://kyre-sports-ai.streamlit.app'
+          artifacts=Path('artifacts/moneyline-v12-production-speed')
+          baseline_warm_p50=1.1603
+          promotion_warm_p50=1.0000
+          legacy=[
+              'NFL Moneyline Command Center',
+              'STEP 1A PASSED',
+              'STEP 1B PASSED',
+              'Step 2 — QB Depth + Current Availability',
+              'Step 3 — Preseason Game-Plan Intelligence',
+              'Step 5 — Sportsbook Moneyline Market',
+              'Step 7 — No-Vig Edge + Expected Value',
+          ]
+
+          def run_attempt(attempt):
+              result={
+                  'status':'RUNNING',
+                  'attempt':attempt,
+                  'site':site,
+                  'viewport':'1024x1366',
+                  'baseline_warm_p50_seconds':baseline_warm_p50,
+                  'promotion_warm_p50_seconds':promotion_warm_p50,
+                  'sportsbook_model_influence':0.0,
+                  'monte_carlo_simulations':5_000_000,
+              }
+              with sync_playwright() as p:
+                  browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+                  page=browser.new_page(viewport={'width':1024,'height':1366})
+                  try:
+                      nav0=time.perf_counter()
+                      page.goto(site,wait_until='domcontentloaded',timeout=120000)
+                      frame,_=_find_app_frame(page)
+                      result['initial_dom_seconds']=round(time.perf_counter()-nav0,4)
+                      _choose(page,frame,0,'NFL')
+                      frame.get_by_role('combobox',name='🎯 NFL Market',exact=True).wait_for(state='visible',timeout=60000)
+
+                      frame.evaluate("""(markers) => {
+                          window.__moneylineV12VisibleLegacy=[];
+                          const hidden=(el)=>{
+                              for(let cur=el;cur;cur=cur.parentElement){
+                                  if(cur.hidden)return true;
+                                  const s=getComputedStyle(cur);
+                                  if(s.display==='none'||s.visibility==='hidden'||Number(s.opacity)===0)return true;
+                              }
+                              return false;
+                          };
+                          const scan=(node)=>{
+                              if(!node)return;
+                              const root=node.nodeType===Node.TEXT_NODE?node.parentElement:node;
+                              if(!root||hidden(root))return;
+                              const text=root.innerText||root.textContent||'';
+                              for(const marker of markers){
+                                  if(text.includes(marker)&&!window.__moneylineV12VisibleLegacy.includes(marker))window.__moneylineV12VisibleLegacy.push(marker);
+                              }
+                          };
+                          window.__moneylineV12Observer=new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes||[])scan(n);});
+                          window.__moneylineV12Observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+                      }""",legacy)
+
+                      def wait_cards(label):
+                          _wait_for_text(frame,'NFL Moneyline Matchup Board',300.0)
+                          cards=frame.locator('.kml9-matchup-card')
+                          deadline=time.time()+300
+                          last_body=''
+                          while time.time()<deadline:
+                              if cards.count()>=1:
+                                  body=frame.locator('body').inner_text()
+                                  last_body=body
+                                  forbidden=_body_has_forbidden_error(body)
+                                  if forbidden:
+                                      raise BrowserQAFailure(f'{label}: runtime error marker {forbidden}')
+                                  upper=body.upper()
+                                  if 'MARKET UNAVAILABLE' in upper:
+                                      raise BrowserQAFailure(f'{label}: MARKET UNAVAILABLE')
+                                  if 'FANDUEL' in upper:
+                                      return cards
+                              time.sleep(0.05)
+                          raise BrowserQAFailure(f'{label}: FanDuel/card not settled; body={last_body[-500:]}')
+
+                      t0=time.perf_counter()
+                      _choose(page,frame,1,'Moneyline')
+                      cards=wait_cards('first')
+                      result['first_moneyline_seconds']=round(time.perf_counter()-t0,4)
+
+                      warm=[]
+                      for idx in range(3):
+                          _choose(page,frame,1,'Slate')
+                          deadline=time.time()+90
+                          while time.time()<deadline and frame.locator('.kml9-matchup-card').count()>0:
+                              time.sleep(0.05)
+                          if frame.locator('.kml9-matchup-card').count()>0:
+                              raise BrowserQAFailure(f'warm {idx+1}: could not leave Moneyline')
+                          frame.get_by_role('combobox',name='🎯 NFL Market',exact=True).wait_for(state='visible',timeout=60000)
+                          started=time.perf_counter()
+                          _choose(page,frame,1,'Moneyline')
+                          wait_cards(f'warm {idx+1}')
+                          warm.append(time.perf_counter()-started)
+
+                      body=frame.locator('body').inner_text()
+                      leaked=[marker for marker in legacy if marker in body]
+                      flashes=frame.evaluate("() => window.__moneylineV12VisibleLegacy || []")
+                      overflow=frame.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
+                      warm_p50=statistics.median(warm)
+                      result.update({
+                          'status':'GREEN',
+                          'warm_moneyline_seconds':[round(x,4) for x in warm],
+                          'warm_p50_seconds':round(warm_p50,4),
+                          'warm_best_seconds':round(min(warm),4),
+                          'warm_improvement_pct':round((1.0-(warm_p50/baseline_warm_p50))*100.0,2),
+                          'matchup_cards':cards.count(),
+                          'fanduel_visible':True,
+                          'market_unavailable_visible':False,
+                          'legacy_visible_flash_count':len(flashes),
+                          'legacy_visible_final_count':len(leaked),
+                          'horizontal_overflow_px':overflow,
+                      })
+                      if leaked:
+                          raise BrowserQAFailure(f'legacy UI visible: {leaked}')
+                      if flashes:
+                          raise BrowserQAFailure(f'legacy UI flashed: {flashes}')
+                      if overflow>4:
+                          raise BrowserQAFailure(f'horizontal overflow {overflow}px')
+                      if warm_p50>promotion_warm_p50:
+                          raise BrowserQAFailure(f'warm p50 {warm_p50:.4f}s exceeds {promotion_warm_p50:.4f}s')
+                      page.screenshot(path=str(artifacts/'streamlit_moneyline_v12_production_ipad.png'),full_page=True)
+                      return result
+                  finally:
+                      browser.close()
+
+          last=None
+          for attempt in range(1,4):
+              try:
+                  result=run_attempt(attempt)
+                  artifacts.joinpath('production_speed.json').write_text(json.dumps(result,indent=2))
+                  print(json.dumps(result,indent=2))
+                  print('NFL_MONEYLINE_V12_PRODUCTION_SPEED_GREEN')
+                  break
+              except Exception as exc:
+                  last=exc
+                  failed={'status':'RETRY','attempt':attempt,'error':f'{type(exc).__name__}: {exc}'}
+                  artifacts.joinpath(f'attempt_{attempt}_failure.json').write_text(json.dumps(failed,indent=2))
+                  print(json.dumps(failed,indent=2))
+                  if attempt<3:
+                      time.sleep(20)
+          else:
+              raise last or RuntimeError('production V12 witness failed')
+          PY
+
+      - name: Upload production speed evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cert-nfl-moneyline-v12-production-speed-${{ github.run_id }}
+          path: artifacts/moneyline-v12-production-speed
+          if-no-files-found: warn
+          retention-days: 7
