@@ -1,0 +1,155 @@
+name: CERT ONLY NFL Moneyline Speed Baseline V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cert-nfl-moneyline-speed-baseline-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  speed-baseline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Benchmark deployed API and Streamlit cold/warm Moneyline loads
+        shell: bash
+        run: |
+          mkdir -p artifacts/moneyline-speed-baseline
+          python - <<'PY'
+          import json
+          import statistics
+          import time
+          from pathlib import Path
+          import requests
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _find_app_frame, _wait_for_text, _body_has_forbidden_error, _choose, BrowserQAFailure
+
+          site='https://kyre-sports-ai.streamlit.app'
+          api='https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market'
+          event='401872931'
+          artifacts=Path('artifacts/moneyline-speed-baseline')
+
+          api_times=[]
+          for i in range(5):
+              t=time.perf_counter()
+              r=requests.get(api,params={'event_id':event},timeout=(5,35),headers={'Accept':'application/json','User-Agent':'KyreSportsAI-SpeedBaseline/1.0'})
+              elapsed=time.perf_counter()-t
+              if r.status_code != 200:
+                  raise RuntimeError(f'API baseline failed HTTP {r.status_code}: {r.text[:300]}')
+              p=r.json()
+              assert p.get('official_event_id') == event and p.get('ready') is True
+              api_times.append(elapsed)
+
+          result={
+              'status':'GREEN',
+              'site':site,
+              'event_id':event,
+              'viewport':'1024x1366',
+              'api_seconds':[round(x,4) for x in api_times],
+              'api_p50_seconds':round(statistics.median(api_times),4),
+          }
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1024,'height':1366})
+              try:
+                  nav0=time.perf_counter()
+                  page.goto(site,wait_until='domcontentloaded',timeout=120000)
+                  frame,_=_find_app_frame(page)
+                  app_dom_seconds=time.perf_counter()-nav0
+
+                  nfl0=time.perf_counter()
+                  _choose(page,frame,0,'NFL')
+                  combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+                  combo.wait_for(state='visible',timeout=60000)
+                  nfl_selector_seconds=time.perf_counter()-nfl0
+
+                  def load_moneyline(label):
+                      t0=time.perf_counter()
+                      _choose(page,frame,1,'Moneyline')
+                      _wait_for_text(frame,'NFL Moneyline Matchup Board',300.0)
+                      cards=frame.locator('.kml9-matchup-card')
+                      deadline=time.time()+300
+                      while time.time() < deadline and cards.count() < 1:
+                          time.sleep(0.20)
+                      if cards.count() < 1:
+                          raise BrowserQAFailure(f'{label}: no Moneyline matchup card')
+                      elapsed=time.perf_counter()-t0
+                      body=frame.locator('body').inner_text()
+                      forbidden=_body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f'{label}: runtime error marker {forbidden}')
+                      if 'MARKET UNAVAILABLE' in body.upper():
+                          raise BrowserQAFailure(f'{label}: market unavailable')
+                      return elapsed, cards.count()
+
+                  cold, card_count=load_moneyline('first_visit')
+                  warm=[]
+                  for idx in range(3):
+                      _choose(page,frame,1,'Slate')
+                      combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+                      combo.wait_for(state='visible',timeout=60000)
+                      elapsed,_=load_moneyline(f'warm_visit_{idx+1}')
+                      warm.append(elapsed)
+
+                  overflow=frame.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
+                  result.update({
+                      'initial_dom_seconds':round(app_dom_seconds,4),
+                      'nfl_selector_seconds':round(nfl_selector_seconds,4),
+                      'first_moneyline_seconds':round(cold,4),
+                      'warm_moneyline_seconds':[round(x,4) for x in warm],
+                      'warm_p50_seconds':round(statistics.median(warm),4),
+                      'warm_best_seconds':round(min(warm),4),
+                      'matchup_cards':card_count,
+                      'horizontal_overflow_px':overflow,
+                      'sportsbook_model_influence':0.0,
+                  })
+                  page.screenshot(path=str(artifacts/'moneyline_speed_baseline_ipad.png'),full_page=True)
+              finally:
+                  browser.close()
+
+          artifacts.joinpath('moneyline_speed_baseline.json').write_text(json.dumps(result,indent=2))
+          print('NFL_MONEYLINE_SPEED_BASELINE_GREEN')
+          print(json.dumps(result,indent=2))
+          PY
+
+      - name: Upload speed baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cert-nfl-moneyline-speed-baseline-${{ github.run_id }}
+          path: artifacts/moneyline-speed-baseline
+          if-no-files-found: warn
+          retention-days: 7
