@@ -68,7 +68,7 @@ jobs:
           graph = build_dependency_map('.')
           report = graph.impact_report('sports_api/api/health.py')
           assert report['status'] == 'OK', report
-          print('health-router risk=', report['risk_level'])
+          print('health-router risk=', report['risk'])
           print('health-router blast_radius=', report['blast_radius'])
           print('health-router entrypoints=', report['impacted_entrypoints'])
           print('health-router protected_reach=', report['protected_reach'])
