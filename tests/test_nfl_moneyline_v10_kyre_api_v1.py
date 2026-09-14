@@ -153,7 +153,7 @@ def test_v10_temporarily_swaps_only_v5_transport_and_restores(monkeypatch):
     monkeypatch.setattr(v10.frozen_hub, "render_nfl_hub", render)
     assert v10.render_nfl_hub("Moneyline") == "ok"
     assert seen["market"] == "Moneyline"
-    assert seen["transport"] is v10.api_market
+    assert seen["transport"] is v10.kyre_market
     assert v10.frozen_v5.market is original
 
 
@@ -161,7 +161,7 @@ def test_v10_restores_transport_even_when_frozen_surface_raises(monkeypatch):
     original = v10.frozen_v5.market
 
     def boom(market):
-        assert v10.frozen_v5.market is v10.api_market
+        assert v10.frozen_v5.market is v10.kyre_market
         raise RuntimeError("synthetic witness failure")
 
     monkeypatch.setattr(v10.frozen_hub, "render_nfl_hub", boom)
@@ -195,7 +195,7 @@ def test_app_activates_v129_and_preserves_v128_descendant_anchor():
 def test_v10_and_adapter_do_not_own_frozen_analytics():
     wrapper_source = inspect.getsource(v10)
     adapter_source = inspect.getsource(api)
-    assert v10.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+    assert v10.SPORTSBOOK_MODEL_INFLUENCE == 0.0
     assert v10.STAKE_SIZING_ENABLED is False
     assert api.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert api.STAKE_SIZING_ENABLED is False
