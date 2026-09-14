@@ -94,3 +94,12 @@ def test_nfl_router_preserves_v8_descendant_cert_anchor():
     runtime = inspect.getsource(router.render_nfl_hub)
     assert "from nfl_moneyline_hub_v8 import render_nfl_moneyline_hub" in source
     assert "from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub" in runtime
+
+
+def test_v9_runtime_date_guard_never_rewrites_live_v9_widget():
+    source = inspect.getsource(router._sync_moneyline_v9_frozen_dates)
+    assert 'text == "nfl_moneyline_v9_date_input"' in source
+    assert "continue" in source
+    assert '"nfl_moneyline_v1_date_input"' in source
+    assert '"nfl_moneyline_v2_date_input"' in source
+    assert '"nfl_moneyline_v3_date_input"' in source

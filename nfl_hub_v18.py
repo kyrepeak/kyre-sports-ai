@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import streamlit as st
 import nfl_hub_v1 as base
 
 # Frozen descendant-cert compatibility anchor. Runtime Moneyline routing advances
@@ -25,11 +26,35 @@ load_nfl_slate = base.load_nfl_slate
 ET = base.ET
 
 
+def _sync_moneyline_v9_frozen_dates(selected) -> None:
+    """Sync only frozen V1-V8 date state; never rewrite V9's live widget key."""
+    st.session_state["nfl_v1_date"] = selected
+    for key in list(st.session_state.keys()):
+        text = str(key)
+        if text == "nfl_moneyline_v9_date_input":
+            continue
+        if text.startswith("nfl_moneyline_v") and text.endswith("_date_input"):
+            st.session_state[key] = selected
+    for key in (
+        "nfl_moneyline_v1_date_input",
+        "nfl_moneyline_v2_date_input",
+        "nfl_moneyline_v3_date_input",
+    ):
+        st.session_state[key] = selected
+
+
 def render_nfl_hub(market: str = "Slate"):
     market = str(market or "Slate")
     if market == "Moneyline":
         from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub
-        return render_nfl_moneyline_hub()
+        import nfl_moneyline_hub_v9 as page
+
+        original_sync = page._sync_frozen_date
+        page._sync_frozen_date = _sync_moneyline_v9_frozen_dates
+        try:
+            return render_nfl_moneyline_hub()
+        finally:
+            page._sync_frozen_date = original_sync
     return base.render_nfl_hub(market)
 
 
