@@ -1,0 +1,155 @@
+name: NFL Moneyline Runtime Repair V1
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - 'sports_api/collectors/nfl_fanduel_moneyline_v1.py'
+      - 'sports_api/api/nfl_moneyline_market_v1.py'
+      - 'sports_api/tests/test_nfl_moneyline_market_v1.py'
+      - '.github/workflows/nfl-moneyline-runtime-repair-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-moneyline-runtime-repair-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose-and-certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install production API stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Moneyline repair surface
+        run: |
+          python -m py_compile sports_api/collectors/nfl_fanduel_moneyline_v1.py
+          python -m py_compile sports_api/api/nfl_moneyline_market_v1.py
+          python -m py_compile sports_api/tests/test_nfl_moneyline_market_v1.py
+
+      - name: Live exact-event upstream diagnostic
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import json
+          from sports_api.collectors import nfl_fanduel_moneyline_v1 as moneyline
+          from sports_api.collectors import nfl_fanduel_passing_yards as base
+
+          event_id = '401872931'
+          print('DIAGNOSTIC_EVENT_ID', event_id)
+          summary = base.fetch_espn_event_summary(event_id)
+          official = base.parse_official_event(summary)
+          print('OFFICIAL_EVENT', json.dumps({
+              'event_id': official['event_id'],
+              'away_team_id': official['away']['team_id'],
+              'home_team_id': official['home']['team_id'],
+              'away_abbr': official['away']['abbr'],
+              'home_abbr': official['home']['abbr'],
+              'kickoff_utc': official['kickoff_utc'].isoformat(),
+          }, sort_keys=True))
+
+          landing = base.fetch_fanduel_nfl_landing()
+          provider = base.reconcile_fanduel_event(landing, official)
+          print('PROVIDER_EVENT', json.dumps({
+              'provider_event_id': provider['provider_event_id'],
+              'provider_event_name': provider['provider_event_name'],
+              'kickoff_delta_seconds': provider['kickoff_delta_seconds'],
+          }, sort_keys=True))
+
+          page = base.fetch_fanduel_event_page(provider['provider_event_id'])
+          attachments = page.get('attachments') or {}
+          markets = base._rows(attachments.get('markets'))
+          print('DEFAULT_EVENT_PAGE_MARKET_COUNT', len(markets))
+
+          descriptors = []
+          for market in markets:
+              name = str(market.get('marketName') or market.get('name') or market.get('displayName') or '').strip()
+              market_type = str(market.get('marketType') or market.get('marketTypeCode') or market.get('type') or '').strip()
+              runners = base._rows(market.get('runners'))
+              roles = []
+              for runner in runners:
+                  result = runner.get('result') if isinstance(runner.get('result'), dict) else {}
+                  role = str((result or {}).get('type') or '').strip().upper()
+                  if role:
+                      roles.append(role)
+              descriptor = {
+                  'market_id': str(market.get('marketId') or market.get('_attachment_key') or ''),
+                  'name': name,
+                  'market_type': market_type,
+                  'status': str(market.get('marketStatus') or market.get('status') or ''),
+                  'in_play': market.get('inPlay'),
+                  'event_id': str(market.get('eventId') or market.get('eventID') or market.get('event_id') or ''),
+                  'roles': sorted(set(roles)),
+              }
+              text = f"{name} {market_type}".casefold()
+              if 'money' in text or {'AWAY', 'HOME'}.issubset(set(roles)):
+                  descriptors.append(descriptor)
+
+          print('MONEYLINE_LIKE_MARKETS', json.dumps(descriptors[:50], indent=2, sort_keys=True))
+          if not descriptors:
+              fallback = []
+              for market in markets[:50]:
+                  fallback.append({
+                      'market_id': str(market.get('marketId') or market.get('_attachment_key') or ''),
+                      'name': str(market.get('marketName') or market.get('name') or market.get('displayName') or '').strip(),
+                      'market_type': str(market.get('marketType') or market.get('marketTypeCode') or market.get('type') or '').strip(),
+                      'status': str(market.get('marketStatus') or market.get('status') or ''),
+                      'in_play': market.get('inPlay'),
+                  })
+              print('DEFAULT_MARKET_SAMPLE', json.dumps(fallback, indent=2, sort_keys=True))
+
+          try:
+              payload = moneyline.collect_fanduel_nfl_moneyline(event_id)
+          except Exception as exc:
+              print('CURRENT_COLLECTOR_FAILURE', type(exc).__name__, str(exc))
+              raise
+          else:
+              print('CURRENT_COLLECTOR_GREEN', json.dumps({
+                  'official_event_id': payload.get('official_event_id'),
+                  'book_count': len(payload.get('books') or []),
+                  'books': [row.get('sportsbook') for row in payload.get('books') or []],
+              }, sort_keys=True))
+          PY
+
+      - name: Run deterministic Moneyline contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_moneyline_market_v1.py
+
+      - name: Re-run Passing and Rushing shared-host regressions
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q sports_api/tests/test_nfl_passing_yards_api_v1.py
+          python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_api_v1.py
+
+      - name: Prove permanent Moneyline safety contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from sports_api.api.nfl_moneyline_market_v1 import CONTRACT
+          assert CONTRACT['official_event_id_required'] is True
+          assert CONTRACT['fuzzy_matching'] is False
+          assert CONTRACT['synthetic_event_ids'] is False
+          assert CONTRACT['projection_weight'] == 0.0
+          assert CONTRACT['market_context_only'] is True
+          assert CONTRACT['may_modify_projection'] is False
+          assert CONTRACT['model_probability_input'] is False
+          assert CONTRACT['stake_sizing_enabled'] is False
+          assert CONTRACT['wager_actions'] is False
+          print('NFL_MONEYLINE_RUNTIME_REPAIR_SAFETY_GREEN')
+          PY
