@@ -35,9 +35,17 @@ BASE_BATCH_CONVERGENCE_TOLERANCE = 0.005
 def _num(value: Any) -> float:
     try:
         out = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return math.nan
     return out if math.isfinite(out) else math.nan
+
+
+def _meta_int(value: Any) -> int:
+    """Best-effort integer metadata without raising before validation runs."""
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0
 
 
 def _base_result(
@@ -47,17 +55,17 @@ def _base_result(
     batch_size: int,
     market_away_spread: float | None,
 ) -> dict[str, Any]:
-    pred = prediction or {}
+    pred = prediction if isinstance(prediction, dict) else {}
     return {
         "ready": False,
         "simulator_version": SIMULATOR_VERSION,
         "model_version": str(pred.get("model_version") or ""),
         "model_quality": str(pred.get("model_quality") or "LOW"),
         "game_id": str(pred.get("game_id") or ""),
-        "simulations": int(simulations),
+        "simulations": _meta_int(simulations),
         "certified_simulations": CERTIFIED_SIMULATIONS,
-        "batch_size": int(batch_size),
-        "seed": int(seed),
+        "batch_size": _meta_int(batch_size),
+        "seed": _meta_int(seed),
         "market_away_spread": market_away_spread,
         "market_line_role": "settlement_only",
         "sportsbook_projection_influence": 0.0,
@@ -77,7 +85,7 @@ def _validate_inputs(
 ) -> tuple[dict[str, Any], float, float, float | None]:
     result = _base_result(prediction, simulations, seed, batch_size, market_away_spread)
     if not isinstance(prediction, dict) or not prediction.get("ready"):
-        result["error"] = str((prediction or {}).get("error") or "margin prediction is not ready")
+        result["error"] = str((prediction or {}).get("error") or "margin prediction is not ready") if isinstance(prediction, dict) else "margin prediction is not ready"
         return result, math.nan, math.nan, None
 
     try:
