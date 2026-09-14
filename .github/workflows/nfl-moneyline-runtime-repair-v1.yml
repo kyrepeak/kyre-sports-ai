@@ -39,75 +39,33 @@ jobs:
           python -m py_compile sports_api/api/nfl_moneyline_market_v1.py
           python -m py_compile sports_api/tests/test_nfl_moneyline_market_v1.py
 
-      - name: Live exact-event upstream diagnostic
+      - name: Live exact-event repaired collector proof
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python - <<'PY'
           import json
           from sports_api.collectors import nfl_fanduel_moneyline_v1 as moneyline
-          from sports_api.collectors import nfl_fanduel_passing_yards as base
 
           event_id = '401872931'
-          print('DIAGNOSTIC_EVENT_ID', event_id)
-          summary = base.fetch_espn_event_summary(event_id)
-          official = base.parse_official_event(summary)
-          print('OFFICIAL_EVENT', json.dumps({
-              'event_id': official['event_id'],
-              'away_team_id': official['away']['team_id'],
-              'home_team_id': official['home']['team_id'],
-              'away_abbr': official['away']['abbr'],
-              'home_abbr': official['home']['abbr'],
-              'kickoff_utc': official['kickoff_utc'].isoformat(),
-          }, sort_keys=True))
-
-          landing = base.fetch_fanduel_nfl_landing()
-          provider = base.reconcile_fanduel_event(landing, official)
-          print('PROVIDER_EVENT', json.dumps({
-              'provider_event_id': provider['provider_event_id'],
-              'provider_event_name': provider['provider_event_name'],
-              'kickoff_delta_seconds': provider['kickoff_delta_seconds'],
-          }, sort_keys=True))
-
-          page = base.fetch_fanduel_event_page(provider['provider_event_id'])
-          attachments = page.get('attachments') or {}
-          markets = base._rows(attachments.get('markets'))
-          print('DEFAULT_EVENT_PAGE_MARKET_COUNT', len(markets))
-
-          descriptors = []
-          for market in markets:
-              name = str(market.get('marketName') or market.get('name') or market.get('displayName') or '').strip()
-              market_type = str(market.get('marketType') or market.get('marketTypeCode') or market.get('type') or '').strip()
-              runners = base._rows(market.get('runners'))
-              roles = []
-              for runner in runners:
-                  result = runner.get('result') if isinstance(runner.get('result'), dict) else {}
-                  role = str((result or {}).get('type') or '').strip().upper()
-                  if role:
-                      roles.append(role)
-              descriptor = {
-                  'market_id': str(market.get('marketId') or market.get('_attachment_key') or ''),
-                  'name': name,
-                  'market_type': market_type,
-                  'status': str(market.get('marketStatus') or market.get('status') or ''),
-                  'in_play': market.get('inPlay'),
-                  'event_id': str(market.get('eventId') or market.get('eventID') or market.get('event_id') or ''),
-                  'roles': sorted(set(roles)),
-              }
-              text = f"{name} {market_type}".casefold()
-              if 'money' in text or {'AWAY', 'HOME'}.issubset(set(roles)):
-                  descriptors.append(descriptor)
-
-          print('MONEYLINE_LIKE_MARKETS', json.dumps(descriptors[:50], indent=2, sort_keys=True))
           payload = moneyline.collect_fanduel_nfl_moneyline(event_id)
-          print('CURRENT_COLLECTOR_GREEN', json.dumps({
-              'official_event_id': payload.get('official_event_id'),
-              'book_count': len(payload.get('books') or []),
-              'books': [row.get('sportsbook') for row in payload.get('books') or []],
+          assert payload.get('official_event_id') == event_id
+          assert payload.get('ready') is True
+          assert payload.get('market_available') is True
+          books = payload.get('books') or []
+          assert len(books) >= 1
+          assert books[0].get('sportsbook') == 'FanDuel'
+          assert payload['identity']['fuzzy_matching'] is False
+          assert payload['identity']['synthetic_event_ids'] is False
+          assert payload['market_semantics']['projection_weight'] == 0.0
+          print('REPAIRED_LIVE_COLLECTOR_GREEN', json.dumps({
+              'official_event_id': payload['official_event_id'],
+              'provider_event_id': payload['identity']['provider_event_id'],
+              'book_count': len(books),
           }, sort_keys=True))
           PY
 
-      - name: Probe deployed Render Moneyline endpoint
+      - name: Record current deployed Render state before repair deploy
         run: |
           python - <<'PY'
           import json
@@ -120,10 +78,7 @@ jobs:
           url = base + '?' + urllib.parse.urlencode({'event_id': event_id})
           request = urllib.request.Request(
               url,
-              headers={
-                  'Accept': 'application/json',
-                  'User-Agent': 'KyreSportsAI-MoneylineRuntimeRepair/1.0',
-              },
+              headers={'Accept': 'application/json', 'User-Agent': 'KyreSportsAI-MoneylineRuntimeRepair/1.0'},
               method='GET',
           )
           try:
@@ -133,16 +88,16 @@ jobs:
           except urllib.error.HTTPError as exc:
               status = int(exc.code)
               body = exc.read(200000).decode('utf-8', errors='replace')
-          print('DEPLOYED_RENDER_STATUS', status)
-          print('DEPLOYED_RENDER_BODY', body)
-          if status != 200:
-              raise SystemExit(f'deployed Moneyline endpoint returned HTTP {status}')
-          payload = json.loads(body)
-          assert payload.get('official_event_id') == event_id
-          assert payload.get('ready') is True
-          assert payload.get('market_available') is True
-          assert len(payload.get('books') or []) >= 1
-          print('DEPLOYED_RENDER_MONEYLINE_GREEN')
+          print('PREDEPLOY_RENDER_STATUS', status)
+          print('PREDEPLOY_RENDER_BODY', body)
+          if status == 200:
+              payload = json.loads(body)
+              assert payload.get('official_event_id') == event_id
+              print('PREDEPLOY_RENDER_ALREADY_GREEN')
+          else:
+              assert status == 503
+              assert 'read-only upstream GET failed: HTTPError' in body
+              print('PREDEPLOY_OLD_RUNTIME_503_REPRODUCED')
           PY
 
       - name: Run deterministic Moneyline contracts
@@ -150,11 +105,12 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: python -m pytest -q sports_api/tests/test_nfl_moneyline_market_v1.py
 
-      - name: Re-run Passing and Rushing shared-host regressions
+      - name: Re-run certified Passing and Rushing regressions
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -m pytest -q sports_api/tests/test_nfl_passing_yards_api_v1.py
+          python -m pytest -q sports_api/tests/test_nfl_passing_yards_render_espn_v2.py
           python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_api_v1.py
 
       - name: Prove permanent Moneyline safety contracts
