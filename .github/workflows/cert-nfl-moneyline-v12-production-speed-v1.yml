@@ -40,17 +40,17 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import nfl_moneyline_hub_v12 as v12
-          import streamlit_memory_lazy_router_v131 as r131
           from pathlib import Path
-          text=Path('app.py').read_text()
-          assert v12.MONTE_CARLO_SIMULATIONS == 5_000_000
-          assert v12.SPORTSBOOK_MODEL_INFLUENCE == 0.0
-          assert v12.STAKE_SIZING_ENABLED is False
-          assert r131.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
-          assert r131.STAKE_SIZING_ENABLED is False
-          assert 'from streamlit_memory_lazy_router_v131 import record_bootstrap_import_ms, render_app' in text
-          assert 'STREAMLIT_MAIN_V131_NFL_MONEYLINE_PERFORMANCE_FAST_ROUTE_2026-09-14' in text
+          v12=Path('nfl_moneyline_hub_v12.py').read_text()
+          r131=Path('streamlit_memory_lazy_router_v131.py').read_text()
+          app=Path('app.py').read_text()
+          assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v12
+          assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v12
+          assert 'STAKE_SIZING_ENABLED = False' in v12
+          assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in r131
+          assert 'STAKE_SIZING_ENABLED = False' in r131
+          assert 'from streamlit_memory_lazy_router_v131 import record_bootstrap_import_ms, render_app' in app
+          assert 'STREAMLIT_MAIN_V131_NFL_MONEYLINE_PERFORMANCE_FAST_ROUTE_2026-09-14' in app
           print('NFL_MONEYLINE_V12_MERGED_SOURCE_GREEN')
           PY
 
