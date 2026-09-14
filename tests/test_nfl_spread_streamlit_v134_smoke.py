@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
 
 
-def test_real_streamlit_apptest_executes_v134_spread_route() -> None:
-    """Execute the real app entrypoint on the NFL -> Spread fast route."""
+def test_real_streamlit_apptest_executes_v135_spread_route() -> None:
+    """Execute the real app entrypoint on the NFL -> Spread V135/V4 fast route."""
     at = AppTest.from_file(str(APP), default_timeout=90)
     at.query_params["ks_nfl_sport"] = "NFL"
     at.query_params["ks_nfl_market"] = "Spread"
@@ -24,7 +24,7 @@ def test_real_streamlit_apptest_executes_v134_spread_route() -> None:
     assert not at.exception
 
     cold = at.session_state["nfl_spread_cold_start_v132_last"]
-    assert cold["active_page"] == "nfl_spread_hub_v3"
+    assert cold["active_page"] == "nfl_spread_hub_v4"
     assert cold["sportsbook_projection_influence"] == 0.0
     assert cold["stake_sizing_enabled"] is False
     assert cold["wager_actions_enabled"] is False
@@ -35,12 +35,14 @@ def test_real_streamlit_apptest_executes_v134_spread_route() -> None:
     profiler = at.session_state["monster_performance_profiler_v1_last"]
     assert isinstance(profiler, dict)
 
-    # V3 renders its hero before any remote schedule response is required, so this
-    # confirms that the actual V3 page body executed even if a provider fails closed.
+    # V4 renders its hero before any remote schedule response is required, so this
+    # confirms that the actual visual-parity page body executed even if a provider
+    # fails closed.
     rendered = "\n".join(str(item.value) for item in at.markdown)
     assert "NFL Spread" in rendered
-    assert "Model + 5M Monte Carlo" in rendered
-    assert "independent football fair line" in rendered
+    assert "Matchup Board" in rendered
+    assert "MODEL + 5M MC" in rendered
+    assert "Receiving / Rushing / Moneyline visual parity" in rendered
 
 
 def test_v3_normalizes_nested_matchup_html_before_markdown() -> None:
