@@ -179,6 +179,31 @@ def test_invalid_prediction_and_runtime_inputs_fail_closed() -> None:
     assert too_many["ready"] is False
     assert "simulations" in too_many["error"]
 
+    non_dict = mc.simulate_from_prediction(  # type: ignore[arg-type]
+        "not-a-prediction",
+        simulations=20_000,
+        batch_size=10_000,
+    )
+    assert non_dict["ready"] is False
+    assert non_dict["error"] == "margin prediction is not ready"
+
+    malformed_count = mc.simulate_from_prediction(
+        _prediction(),
+        simulations="five-million",  # type: ignore[arg-type]
+        batch_size=10_000,
+    )
+    assert malformed_count["ready"] is False
+    assert "must be integers" in malformed_count["error"]
+
+    malformed_seed = mc.simulate_from_prediction(
+        _prediction(),
+        simulations=20_000,
+        seed=None,  # type: ignore[arg-type]
+        batch_size=10_000,
+    )
+    assert malformed_seed["ready"] is False
+    assert "must be integers" in malformed_seed["error"]
+
 
 def test_source_contract_keeps_projection_inputs_separate_from_market_settlement() -> None:
     source = inspect.getsource(mc.simulate_from_prediction)
