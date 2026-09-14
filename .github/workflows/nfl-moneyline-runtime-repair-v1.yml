@@ -111,7 +111,7 @@ jobs:
         run: |
           python -m pytest -q sports_api/tests/test_nfl_passing_yards_api_v1.py
           python -m pytest -q sports_api/tests/test_nfl_passing_yards_render_espn_v2.py
-          python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_api_v1.py
+          python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_v1.py
 
       - name: Prove permanent Moneyline safety contracts
         env:
