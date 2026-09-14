@@ -358,18 +358,16 @@ def _fast_hidden_run_frozen_engine(stats: dict[str, Any]) -> None:
             with _sink_hidden_presentation(stats):
                 pregame, reason = _fresh_pregame_for_hot_state(stats)
                 hot = stats.setdefault("hot_path", {})
+                hot["used"] = False
                 hot["eligibility"] = reason
                 if pregame is not None:
                     try:
                         if _refresh_market_and_edge(pregame, _selected_day(), stats):
                             hot["used"] = True
                             hot["market_refreshed"] = True
-                        else:
-                            hot["used"] = False
                     except Exception as exc:
-                        hot["used"] = False
                         hot["refresh_error"] = type(exc).__name__
-                if not hot.get("used"):
+                if not hot["used"]:
                     full_started = perf_counter()
                     v11.frozen_v9.frozen.render_nfl_moneyline_hub()
                     hot["full_engine_ms"] = (perf_counter() - full_started) * 1000.0
