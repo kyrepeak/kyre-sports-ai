@@ -24,6 +24,7 @@ import nfl_passing_yards_hub_v7 as environment_ui
 import nfl_passing_yards_hub_v8 as projection_ui
 import nfl_passing_yards_hub_v9 as context_ui
 import nfl_passing_yards_hub_v10 as distribution_ui
+import nfl_passing_yards_hub_v11 as market_ui
 import nfl_passing_yards_hub_v17 as provenance_ui
 import nfl_passing_yards_hub_v21 as market_visual_ui
 import nfl_passing_yards_hub_v28 as personnel_visual_ui
@@ -93,6 +94,32 @@ _STEP_LABELS = (
     (9, "Distribution + Probability", "distribution"),
     (10, "Market Evaluation", "market"),
 )
+
+
+class _CompositionStreamlitProxy:
+    """Route only presentational messages through V34; delegate real widgets."""
+
+    def __init__(self, wrapped: Any, markdown_handler: Any, success_handler: Any, warning_handler: Any, info_handler: Any) -> None:
+        self._wrapped = wrapped
+        self._markdown_handler = markdown_handler
+        self._success_handler = success_handler
+        self._warning_handler = warning_handler
+        self._info_handler = info_handler
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._wrapped, name)
+
+    def markdown(self, body: Any, *args: Any, **kwargs: Any):
+        return self._markdown_handler(body, *args, **kwargs)
+
+    def success(self, body: Any, *args: Any, **kwargs: Any):
+        return self._success_handler(body, *args, **kwargs)
+
+    def warning(self, body: Any, *args: Any, **kwargs: Any):
+        return self._warning_handler(body, *args, **kwargs)
+
+    def info(self, body: Any, *args: Any, **kwargs: Any):
+        return self._info_handler(body, *args, **kwargs)
 
 
 def _visual_build_banner_v34() -> str:
@@ -273,6 +300,10 @@ def render_nfl_passing_yards_hub() -> None:
     original_context_factory = context_ui._context_card
     original_distribution_factory = distribution_ui._distribution_card
     original_market_logo_injector = market_visual_ui._inject_team_logo
+    original_projection_st = projection_ui.st
+    original_context_st = context_ui.st
+    original_distribution_st = distribution_ui.st
+    original_market_st = market_ui.st
 
     def capture_pair(key: str, html: str) -> str:
         rows = captured.setdefault(key, [])
@@ -319,9 +350,6 @@ def render_nfl_passing_yards_hub() -> None:
         return capture_pair("distribution", original_distribution_factory(distribution_row))
 
     def capture_final_market_card(card_html: str, visual: dict) -> str:
-        # V21 is the last HTML market-card decorator in the nested chain. Its
-        # input already contains V24 matchup context and V22 QB headshot; its
-        # return adds the exact-ID team logo and is therefore the final card.
         final_html = original_market_logo_injector(card_html, visual)
         return capture_pair("market", final_html)
 
@@ -369,6 +397,11 @@ def render_nfl_passing_yards_hub() -> None:
             return None
         return original_info(body, *args, **kwargs)
 
+    projection_proxy = _CompositionStreamlitProxy(original_projection_st, composed_markdown, filtered_success, filtered_warning, filtered_info)
+    context_proxy = _CompositionStreamlitProxy(original_context_st, composed_markdown, filtered_success, filtered_warning, filtered_info)
+    distribution_proxy = _CompositionStreamlitProxy(original_distribution_st, composed_markdown, filtered_success, filtered_warning, filtered_info)
+    market_proxy = _CompositionStreamlitProxy(original_market_st, composed_markdown, filtered_success, filtered_warning, filtered_info)
+
     prior._visual_build_banner_v33 = _visual_build_banner_v34
     identity_visual_ui._qb_hero_card = capture_identity_card
     profile_visual_ui._profile_card_v30 = capture_profile_card
@@ -380,6 +413,10 @@ def render_nfl_passing_yards_hub() -> None:
     context_ui._context_card = capture_context_card
     distribution_ui._distribution_card = capture_distribution_card
     market_visual_ui._inject_team_logo = capture_final_market_card
+    projection_ui.st = projection_proxy
+    context_ui.st = context_proxy
+    distribution_ui.st = distribution_proxy
+    market_ui.st = market_proxy
     st.markdown = composed_markdown
     st.success = filtered_success
     st.warning = filtered_warning
@@ -391,6 +428,10 @@ def render_nfl_passing_yards_hub() -> None:
         st.success = original_success
         st.warning = original_warning
         st.info = original_info
+        projection_ui.st = original_projection_st
+        context_ui.st = original_context_st
+        distribution_ui.st = original_distribution_st
+        market_ui.st = original_market_st
         identity_visual_ui._qb_hero_card = original_identity_factory
         profile_visual_ui._profile_card_v30 = original_profile_factory
         provenance_ui._with_provenance = original_provenance
