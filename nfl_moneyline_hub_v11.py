@@ -33,6 +33,16 @@ def _noop(*args, **kwargs):
     return None
 
 
+def _false(*args, **kwargs):
+    """Pickle-safe false-returning widget fallback."""
+    return False
+
+
+def _none(*args, **kwargs):
+    """Pickle-safe none-returning widget fallback."""
+    return None
+
+
 class _SilentBlock:
     """Minimal DeltaGenerator-like object used only during frozen V8 execution."""
 
@@ -64,11 +74,15 @@ class _SilentBlock:
         return _silent_columns(spec)
 
     def tabs(self, labels, *args, **kwargs):
-        return [_SilentBlock() for _ in list(labels or [])]
+        try:
+            count = len(labels)
+        except Exception:
+            count = 0
+        return [_SilentBlock() for _ in range(max(0, count))]
 
     def __getattr__(self, _name):
-        # Keep unknown legacy calls silent while remaining safe for Streamlit's
-        # cache message/result pickling. Never return a locally-created closure.
+        # Never create a closure here. Streamlit cache_data can pickle captured
+        # execution messages/results after a cached function returns.
         return _noop
 
 
@@ -198,10 +212,10 @@ def _silent_streamlit_execution():
     patch("multiselect", _silent_multiselect)
     patch("slider", _silent_slider)
     patch("select_slider", _silent_slider)
-    patch("button", lambda *args, **kwargs: False)
-    patch("form_submit_button", lambda *args, **kwargs: False)
-    patch("download_button", lambda *args, **kwargs: False)
-    patch("file_uploader", lambda *args, **kwargs: None)
+    patch("button", _false)
+    patch("form_submit_button", _false)
+    patch("download_button", _false)
+    patch("file_uploader", _none)
     patch("data_editor", _silent_data_editor)
 
     if hasattr(st, "sidebar"):
