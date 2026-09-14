@@ -1,0 +1,69 @@
+name: TEMP Render Live Bridge Parity
+
+on:
+  push:
+    branches:
+      - render-postdeploy-verify-20260914
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-bridge-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Feed live Render identity into Monster Live Bridge
+        env:
+          BASE_URL: https://kyre-sports-api.onrender.com
+          EXPECTED_SHA: 7f245cb6e0827dd4025155aa98e78573c454ac04
+          EXPECTED_BRANCH: mlb-step17b-shared-host-cert
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.request
+
+          from sports_api.monster_live_bridge_v1 import (
+              compare_deployment_parity,
+              github_evidence,
+              render_evidence,
+          )
+
+          url = os.environ['BASE_URL'].rstrip('/') + '/health'
+          last = None
+          for attempt in range(5):
+              try:
+                  with urllib.request.urlopen(url, timeout=20) as response:
+                      last = json.loads(response.read().decode('utf-8'))
+                  break
+              except Exception:
+                  if attempt == 4:
+                      raise
+                  time.sleep(2)
+
+          deployment = dict((last or {}).get('deployment') or {})
+          github = github_evidence(
+              main_sha=os.environ['EXPECTED_SHA'],
+              working_branch='main',
+              working_sha=os.environ['EXPECTED_SHA'],
+              final_gate='SUCCESS',
+              unresolved_review_threads=0,
+              expected_deploy_sha=os.environ['EXPECTED_SHA'],
+              expected_deploy_branch=os.environ['EXPECTED_BRANCH'],
+          )
+          render = render_evidence(
+              service_name='kyre-sports-api',
+              branch=str(deployment.get('branch') or ''),
+              deployed_commit=str(deployment.get('commit') or ''),
+              deploy_status='LIVE',
+          )
+          parity = compare_deployment_parity(github, render)
+          print(json.dumps(parity, indent=2, sort_keys=True))
+          assert parity['status'] == 'ALIGNED', parity
+          assert parity['blocking'] is False, parity
+          PY
