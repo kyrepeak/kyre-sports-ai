@@ -1,0 +1,89 @@
+name: TEMP Receiving Step10 Badge Hotfix
+
+on:
+  push:
+    branches: [nfl-receiving-yards-step10-stale-badge-hotfix]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-receiving-yards-step10-stale-badge-hotfix
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Apply exact guarded hotfix
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          hub = Path('nfl_receiving_yards_hub_v10.py')
+          text = hub.read_text()
+          old = '    stack = _ORIGINAL_DETAILED_CARD_V7(player, team, opponent)\n'
+          new = '''    stack = _ORIGINAL_DETAILED_CARD_V7(player, team, opponent)\n    stack = stack.replace(\n        '<span class="krecv7-badge">Page Step 7 / 10</span>',\n        '<span class="krecv7-badge">Page Step 10 / 10</span>',\n    )\n'''
+          if new not in text:
+              if old not in text:
+                  raise SystemExit('V10_BADGE_PATCH_ANCHOR_MISSING')
+              text = text.replace(old, new, 1)
+              hub.write_text(text)
+
+          test = Path('tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py')
+          test.write_text('''from __future__ import annotations\n\nimport nfl_receiving_yards_hub_v10 as page\n\n\ndef test_v10_rewrites_inherited_v7_badge_to_final_step(monkeypatch):\n    monkeypatch.setattr(\n        page,\n        "_ORIGINAL_DETAILED_CARD_V7",\n        lambda *args: '<span class="krecv7-badge">Page Step 7 / 10</span>',\n    )\n    monkeypatch.setattr(\n        page,\n        "_grade_for_team_opponent",\n        lambda *args: {\n            "tier": "MEDIUM",\n            "score": 0,\n            "available": False,\n            "reason": "verified context unavailable",\n        },\n    )\n    html = page._detailed_player_card_v10(\n        {"official_athlete_id": "1"},\n        {"official_team_id": "2", "opponent_official_team_id": "3"},\n        {"team_abbreviation": "OPP"},\n    )\n    assert "Page Step 7 / 10" not in html\n    assert "Page Step 10 / 10" in html\n    assert page.PAGE_BUILD_STEP == page.PAGE_BUILD_TOTAL == 10\n    assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0\n''')
+
+          wf = Path('.github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml')
+          w = wf.read_text()
+          path_anchor = '      - "tests/test_nfl_receiving_yards_v10_final_v1.py"\n'
+          path_new = path_anchor + '      - "tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py"\n'
+          if 'tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py' not in w.split('permissions:',1)[0]:
+              if path_anchor not in w:
+                  raise SystemExit('WORKFLOW_PATH_ANCHOR_MISSING')
+              w = w.replace(path_anchor, path_new, 1)
+
+          old_gate = '''      - name: Enforce exact five-file Step 10 diff\n        if: github.event_name == 'pull_request'\n        shell: bash\n        env:\n          BASE_SHA: ${{ github.event.pull_request.base.sha }}\n          HEAD_SHA: ${{ github.event.pull_request.head.sha }}\n        run: |\n          set -euo pipefail\n          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt\n          cat > /tmp/expected.txt <<'EOF'\n          .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml\n          app.py\n          nfl_receiving_yards_hub_v10.py\n          streamlit_memory_lazy_router_v121.py\n          tests/test_nfl_receiving_yards_v10_final_v1.py\n          EOF\n          sort -o /tmp/expected.txt /tmp/expected.txt\n          echo 'Actual Step 10 diff:'\n          cat /tmp/actual.txt\n          diff -u /tmp/expected.txt /tmp/actual.txt\n'''
+          new_gate = '''      - name: Enforce certified Step 10 diff or exact stale-badge hotfix diff\n        if: github.event_name == 'pull_request'\n        shell: bash\n        env:\n          BASE_SHA: ${{ github.event.pull_request.base.sha }}\n          HEAD_SHA: ${{ github.event.pull_request.head.sha }}\n        run: |\n          set -euo pipefail\n          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt\n          cat > /tmp/expected-step10.txt <<'EOF'\n          .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml\n          app.py\n          nfl_receiving_yards_hub_v10.py\n          streamlit_memory_lazy_router_v121.py\n          tests/test_nfl_receiving_yards_v10_final_v1.py\n          EOF\n          cat > /tmp/expected-badge-hotfix.txt <<'EOF'\n          .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml\n          nfl_receiving_yards_hub_v10.py\n          tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py\n          EOF\n          sort -o /tmp/expected-step10.txt /tmp/expected-step10.txt\n          sort -o /tmp/expected-badge-hotfix.txt /tmp/expected-badge-hotfix.txt\n          echo 'Actual Receiving final diff:'\n          cat /tmp/actual.txt\n          if diff -q /tmp/expected-step10.txt /tmp/actual.txt >/dev/null; then\n            echo STEP10_ORIGINAL_EXACT_DIFF_GREEN\n          elif diff -q /tmp/expected-badge-hotfix.txt /tmp/actual.txt >/dev/null; then\n            echo STEP10_BADGE_HOTFIX_EXACT_DIFF_GREEN\n          else\n            echo RECEIVING_FINAL_DIFF_GUARD_FAILED\n            exit 1\n          fi\n'''
+          if 'STEP10_BADGE_HOTFIX_EXACT_DIFF_GREEN' not in w:
+              if old_gate not in w:
+                  raise SystemExit('WORKFLOW_DIFF_GATE_ANCHOR_MISSING')
+              w = w.replace(old_gate, new_gate, 1)
+
+          compile_anchor = '            tests/test_nfl_receiving_yards_v10_final_v1.py\n'
+          compile_new = '            tests/test_nfl_receiving_yards_v10_final_v1.py \\\n            tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py\n'
+          if 'py_compile' in w and 'tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py' not in w.split('Prove all prior Receiving owners remain frozen',1)[0].split('Compile final Receiving surface',1)[1]:
+              if compile_anchor not in w:
+                  raise SystemExit('WORKFLOW_COMPILE_ANCHOR_MISSING')
+              w = w.replace(compile_anchor, compile_new, 1)
+
+          test_anchor = '      - name: Run final Step 10 contracts\n        run: python -m pytest -q tests/test_nfl_receiving_yards_v10_final_v1.py\n'
+          test_new = '''      - name: Run final Step 10 contracts\n        run: |\n          python -m pytest -q tests/test_nfl_receiving_yards_v10_final_v1.py\n          python -m pytest -q tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py\n'''
+          if 'python -m pytest -q tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py' not in w:
+              if test_anchor not in w:
+                  raise SystemExit('WORKFLOW_TEST_ANCHOR_MISSING')
+              w = w.replace(test_anchor, test_new, 1)
+
+          browser_anchor = '''              body_lower=body.lower()\n              if 'projection math remains frozen' not in body_lower:\n'''
+          browser_new = '''              body_lower=body.lower()\n              if 'page step 7 / 10' in body_lower:\n                  raise BrowserQAFailure(f'{label} stale inherited Page Step 7 / 10 badge still visible')\n              if 'projection math remains frozen' not in body_lower:\n'''
+          if 'stale inherited Page Step 7 / 10 badge still visible' not in w:
+              if browser_anchor not in w:
+                  raise SystemExit('WORKFLOW_BROWSER_ANCHOR_MISSING')
+              w = w.replace(browser_anchor, browser_new, 1)
+          wf.write_text(w)
+          PY
+
+          git config user.name "kyrepeak"
+          git config user.email "kyrewhite15@gmail.com"
+          git add nfl_receiving_yards_hub_v10.py \
+            tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py \
+            .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml
+          if git diff --cached --quiet; then
+            echo NO_PATCH_CHANGES
+            exit 0
+          fi
+          git commit -m "Fix stale Receiving Step 7 badge on final page"
+          git push origin HEAD:nfl-receiving-yards-step10-stale-badge-hotfix
