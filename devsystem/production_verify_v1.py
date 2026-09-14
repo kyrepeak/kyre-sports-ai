@@ -41,6 +41,10 @@ REQUIRED_SPORTS = (
 )
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
+CFB_ODDS_STATUS_PATH = "/api/v1/cfb/odds/status"
+CFB_INCOMPLETE_IDENTITY_DETAIL = (
+    "CFB odds endpoint is not ready: market identity coverage is incomplete"
+)
 CFB_REQUIRED_MARKERS = (
     "CFB O/U • CLEAN PAGE V30 ACTIVE",
     "FUTURE SLATE COVERAGE ACTIVE",
@@ -78,6 +82,75 @@ def _request_json(
     if not isinstance(payload, dict):
         raise ProductionVerificationFailure(f"Expected JSON object from {url}")
     return response.status_code, payload
+
+
+def _request_json_response(
+    session: requests.Session,
+    url: str,
+    *,
+    params: dict[str, Any] | None = None,
+    timeout_seconds: float = 60.0,
+) -> tuple[int, dict[str, Any]]:
+    """Read an HTTP JSON object without collapsing an intentional non-2xx body."""
+    response = session.get(url, params=params, timeout=timeout_seconds)
+    try:
+        payload = response.json()
+    except (TypeError, ValueError) as exc:
+        raise ProductionVerificationFailure(
+            f"Expected JSON object from {url}: HTTP {response.status_code}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise ProductionVerificationFailure(
+            f"Expected JSON object from {url}: HTTP {response.status_code}"
+        )
+    return response.status_code, payload
+
+
+def _validate_cfb_status_contract(status: dict[str, Any]) -> dict[str, Any]:
+    if status.get("service") != "Kyre Sports API":
+        raise ProductionVerificationFailure("CFB odds status service identity drift")
+    if status.get("sport") != "college_football":
+        raise ProductionVerificationFailure("CFB odds status sport identity drift")
+    if int(status.get("step") or 0) != 3:
+        raise ProductionVerificationFailure("CFB odds status step drift")
+    if status.get("schema_version") != "cfb_odds_v1":
+        raise ProductionVerificationFailure("CFB odds status schema drift")
+    if status.get("endpoint_ready") is not True:
+        raise ProductionVerificationFailure("CFB odds status endpoint is not ready")
+    if status.get("endpoint") != "/api/v1/cfb/odds":
+        raise ProductionVerificationFailure("CFB odds status endpoint path drift")
+    if status.get("identity_required") is not True:
+        raise ProductionVerificationFailure("CFB odds status no longer requires identity")
+
+    policy = status.get("identity_policy")
+    if not isinstance(policy, dict):
+        raise ProductionVerificationFailure("CFB odds status identity policy is malformed")
+    if policy.get("synthetic_ids") is not False:
+        raise ProductionVerificationFailure("CFB synthetic official IDs became enabled")
+    if policy.get("fuzzy_matching") is not False:
+        raise ProductionVerificationFailure("CFB fuzzy matching became enabled")
+    if policy.get("fail_closed") is not True:
+        raise ProductionVerificationFailure("CFB fail-closed identity policy became disabled")
+
+    semantics = status.get("market_semantics")
+    if not isinstance(semantics, dict):
+        raise ProductionVerificationFailure("CFB odds status market semantics is malformed")
+    projection_weight = semantics.get("projection_weight")
+    if (
+        isinstance(projection_weight, bool)
+        or not isinstance(projection_weight, (int, float))
+        or float(projection_weight) != 0.0
+    ):
+        raise ProductionVerificationFailure("CFB market projection weight is not 0%")
+    if semantics.get("market_context_only") is not True:
+        raise ProductionVerificationFailure("CFB market is no longer context-only")
+    if semantics.get("may_modify_projection") is not False:
+        raise ProductionVerificationFailure("CFB market can modify projection")
+
+    return {
+        "identity_policy": policy,
+        "market_semantics": semantics,
+    }
 
 
 def _wait_http_200(
@@ -172,7 +245,46 @@ def _validate_api_contract(
     if root.get("health_details") != "/health/details":
         raise ProductionVerificationFailure("Render root missing diagnostics endpoint")
 
-    odds_http, odds = _request_json(session, api_base + cfb_path)
+    cfb_status_http, cfb_status = _request_json(
+        session,
+        api_base + CFB_ODDS_STATUS_PATH,
+    )
+    cfb_status_contract = _validate_cfb_status_contract(cfb_status)
+    status_policy = cfb_status_contract["identity_policy"]
+    status_semantics = cfb_status_contract["market_semantics"]
+
+    odds_http, odds = _request_json_response(session, api_base + cfb_path)
+    if odds_http == 503:
+        detail = odds.get("detail")
+        if detail != CFB_INCOMPLETE_IDENTITY_DETAIL:
+            raise ProductionVerificationFailure(
+                "CFB odds endpoint returned unrecognized HTTP 503 detail: "
+                f"{detail!r}"
+            )
+        return {
+            "health_http": health_http,
+            "readiness_http": ready_http,
+            "details_http": details_http,
+            "root_http": root_http,
+            "render_observability_version": details.get("observability_version"),
+            "render_deploy_branch": runtime.get("deploy_branch"),
+            "render_deploy_commit": runtime.get("deploy_commit"),
+            "render_branch_aligned": runtime.get("branch_aligned"),
+            "cfb_status_http": cfb_status_http,
+            "cfb_odds_http": odds_http,
+            "cfb_odds_state": "protected-fail-closed",
+            "cfb_odds_detail": detail,
+            "cfb_game_count": None,
+            "cfb_projection_weight": status_semantics.get("projection_weight"),
+            "cfb_fuzzy_matching": status_policy.get("fuzzy_matching"),
+            "cfb_synthetic_official_ids": status_policy.get("synthetic_ids"),
+            "cfb_fail_closed": status_policy.get("fail_closed"),
+        }
+    if odds_http != 200:
+        raise ProductionVerificationFailure(
+            f"CFB odds endpoint unexpected HTTP {odds_http}: {odds}"
+        )
+
     if int(odds.get("step") or 0) != 3:
         raise ProductionVerificationFailure("CFB odds endpoint step drift")
     if odds.get("schema_version") != "cfb_odds_v1":
@@ -203,11 +315,14 @@ def _validate_api_contract(
         "render_deploy_branch": runtime.get("deploy_branch"),
         "render_deploy_commit": runtime.get("deploy_commit"),
         "render_branch_aligned": runtime.get("branch_aligned"),
+        "cfb_status_http": cfb_status_http,
         "cfb_odds_http": odds_http,
+        "cfb_odds_state": "complete",
         "cfb_game_count": len(games),
         "cfb_projection_weight": semantics.get("projection_weight"),
         "cfb_fuzzy_matching": diagnostics.get("fuzzy_matching"),
         "cfb_synthetic_official_ids": diagnostics.get("synthetic_official_ids"),
+        "cfb_fail_closed": status_policy.get("fail_closed"),
     }
 
 
