@@ -25,6 +25,8 @@ MAY_MODIFY_PROJECTION = False
 MAY_MODIFY_SOURCE_DATA = False
 NETWORK_CALLS = False
 MAX_ARTIFACT_BYTES = 262_144
+MAX_SANITIZE_DEPTH = 8
+MAX_SEQUENCE_ITEMS = 500
 
 _ALLOWED_HEADER_PREFIXES = (
     "content-type",
@@ -37,9 +39,17 @@ _ALLOWED_HEADER_PREFIXES = (
 
 def _safe_url(value: str) -> str:
     parsed = urlsplit(str(value))
-    # Query strings can contain tokens or user-provided parameters. Store only
-    # the scheme/netloc/path; request params belong in a separately sanitized map.
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+    # Never preserve HTTP userinfo (user:password@host), query strings, or
+    # fragments in replay artifacts. Rebuild authority from hostname + port.
+    hostname = parsed.hostname or ""
+    if ":" in hostname and not hostname.startswith("["):
+        hostname = f"[{hostname}]"
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("Captured URL contains an invalid port") from exc
+    authority = f"{hostname}:{port}" if port is not None else hostname
+    return urlunsplit((parsed.scheme, authority, parsed.path, "", ""))
 
 
 def _safe_headers(headers: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -49,6 +59,32 @@ def _safe_headers(headers: Mapping[str, Any] | None) -> dict[str, Any]:
         if any(lowered == prefix or lowered.startswith(prefix) for prefix in _ALLOWED_HEADER_PREFIXES):
             selected[str(key)] = value
     return sanitize_mapping(selected)
+
+
+def _sanitize_json_value(value: Any, *, depth: int = 0) -> Any:
+    """Recursively sanitize arbitrary JSON-like values.
+
+    Mapping keys still go through the shared secret-key redactor, while scalar
+    values (including scalars nested inside lists/tuples) go through the same
+    Bearer/Basic credential redaction used by Runtime Replay. Depth and sequence
+    caps keep hostile or accidental payloads bounded before artifact sizing.
+    """
+    if depth >= MAX_SANITIZE_DEPTH:
+        return "<max-depth>"
+    if isinstance(value, Mapping):
+        recursively_sanitized = {
+            str(key): _sanitize_json_value(item, depth=depth + 1)
+            for key, item in value.items()
+        }
+        return sanitize_mapping(recursively_sanitized)
+    if isinstance(value, (list, tuple)):
+        return [
+            _sanitize_json_value(item, depth=depth + 1)
+            for item in list(value)[:MAX_SEQUENCE_ITEMS]
+        ]
+    # Route a scalar through the shared value sanitizer without relying on a
+    # private helper from monster_runtime_replay_v1.
+    return sanitize_mapping({"value": value})["value"]
 
 
 def _canonical_json(payload: Mapping[str, Any]) -> str:
@@ -124,9 +160,6 @@ def capture_response(
     key = str(route_key or "").strip()
     if not key:
         raise ValueError("route_key must be non-empty")
-    safe_body = sanitize_mapping(json_body) if isinstance(json_body, Mapping) else json_body
-    if isinstance(safe_body, list):
-        safe_body = [sanitize_mapping(item) if isinstance(item, Mapping) else item for item in safe_body[:500]]
     artifact = ReplayArtifact(
         route_key=key,
         method=str(method or "GET").upper(),
@@ -134,10 +167,10 @@ def capture_response(
         status_code=int(status_code),
         headers=_safe_headers(headers),
         params=sanitize_mapping(dict(params or {})),
-        json_body=safe_body,
+        json_body=_sanitize_json_value(json_body),
         malformed_json=bool(malformed_json),
         timeout=bool(timeout),
-        note=str(note or ""),
+        note=str(_sanitize_json_value(str(note or ""))),
     )
     artifact.as_dict()  # enforce size/safety now
     return artifact
@@ -187,6 +220,8 @@ def session_from_artifacts(*artifacts: ReplayArtifact) -> ReplaySession:
 __all__ = [
     "CAPTURE_VERSION",
     "MAX_ARTIFACT_BYTES",
+    "MAX_SANITIZE_DEPTH",
+    "MAX_SEQUENCE_ITEMS",
     "MAY_MODIFY_PROJECTION",
     "MAY_MODIFY_SOURCE_DATA",
     "NETWORK_CALLS",
