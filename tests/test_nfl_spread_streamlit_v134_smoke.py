@@ -39,5 +39,5 @@ def test_real_streamlit_apptest_executes_v134_spread_route() -> None:
     # confirms that the actual V3 page body executed even if a provider fails closed.
     rendered = "\n".join(str(item.value) for item in at.markdown)
     assert "NFL Spread" in rendered
-    assert "Independent Fair Line" in rendered
-    assert "5M Monte Carlo" in rendered
+    assert "Model + 5M Monte Carlo" in rendered
+    assert "independent football fair line" in rendered
