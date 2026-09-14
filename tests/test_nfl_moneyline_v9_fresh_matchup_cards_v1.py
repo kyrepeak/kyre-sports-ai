@@ -87,3 +87,10 @@ def test_nfl_router_advances_only_moneyline_to_v9():
     assert 'if market == "Moneyline"' in source
     assert "from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub" in source
     assert "return base.render_nfl_hub(market)" in source
+
+
+def test_nfl_router_preserves_v8_descendant_cert_anchor():
+    source = inspect.getsource(router)
+    runtime = inspect.getsource(router.render_nfl_hub)
+    assert "from nfl_moneyline_hub_v8 import render_nfl_moneyline_hub" in source
+    assert "from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub" in runtime

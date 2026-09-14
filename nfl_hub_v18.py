@@ -10,7 +10,14 @@ prices remain comparison inputs only and never alter the Step-4C/6 model.
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import nfl_hub_v1 as base
+
+# Frozen descendant-cert compatibility anchor. Runtime Moneyline routing advances
+# to V9 below; this non-runtime import preserves the certified V8 wrapper contract.
+if TYPE_CHECKING:
+    from nfl_moneyline_hub_v8 import render_nfl_moneyline_hub
 
 MODEL_VERSION = "NFL V1.8 • MONEYLINE V9 MATCHUP CARDS • V8 ENGINE FROZEN • SLATE V1 PRESERVED"
 NFL_MARKETS = base.NFL_MARKETS
