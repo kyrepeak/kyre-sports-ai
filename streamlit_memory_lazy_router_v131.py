@@ -159,7 +159,12 @@ def _render_direct_moneyline() -> None:
 
 def render_app() -> None:
     if not _fast_route_active():
-        _restore_fast_route_from_query()
+        restored = _restore_fast_route_from_query()
+        if not restored:
+            current_sport = str(st.session_state.get("ks_sport_touch") or "").strip()
+            current_market = str(st.session_state.get("ks_nfl_market_touch") or "").strip()
+            if current_sport != NFL_SPORT_LABEL or current_market != MONEYLINE_MARKET:
+                _clear_fast_route_query()
     if _fast_route_active():
         return _render_direct_moneyline()
     return _load_prior().render_app()
