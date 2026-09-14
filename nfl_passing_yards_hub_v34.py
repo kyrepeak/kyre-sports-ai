@@ -62,6 +62,21 @@ _GRID_MARKERS = {
     '<div class="kpy10-grid">': "market",
 }
 
+# Extract the certified card root itself rather than depending only on the
+# surrounding legacy grid shape. This keeps V34 resilient to deeply nested card
+# markup while still moving already-rendered HTML only.
+_ROOT_CARD_CLASSES = {
+    "identity": ("article", "kpass29-card"),
+    "profile": ("section", "kpass30-profile"),
+    "defense": ("section", "kpy-defense"),
+    "pressure": ("section", "kpy-pressure"),
+    "personnel": ("section", "kpy-personnel"),
+    "projection": ("section", "kpy-proj"),
+    "context": ("section", "kpy8-card"),
+    "distribution": ("section", "kpy9-card"),
+    "market": ("section", "kpy10-card"),
+}
+
 _STEP_LABELS = (
     (2, "Quarterback Passing Profile", "profile"),
     (3, "Opponent Pass Defense", "defense"),
@@ -126,8 +141,6 @@ def _split_top_level_children(grid_html: str) -> list[str]:
         if stack[-1] == tag:
             stack.pop()
         else:
-            # Generated card HTML is valid, but fail conservatively if a future
-            # wrapper introduces an unexpected nesting shape.
             while stack and stack[-1] != tag:
                 stack.pop()
             if stack and stack[-1] == tag:
@@ -138,8 +151,46 @@ def _split_top_level_children(grid_html: str) -> list[str]:
     return [child for child in children if child]
 
 
+def _extract_elements_by_class(body: str, tag: str, class_name: str) -> list[str]:
+    """Extract balanced certified root cards by their exact rendered class."""
+    text = str(body or "")
+    opener = re.compile(
+        rf'<{re.escape(tag)}\b[^>]*class="{re.escape(class_name)}"[^>]*>',
+        re.IGNORECASE,
+    )
+    cards: list[str] = []
+    cursor = 0
+    while True:
+        start = opener.search(text, cursor)
+        if start is None:
+            break
+        depth = 0
+        end_pos: int | None = None
+        for token in _TAG_RE.finditer(text, start.start()):
+            closing = bool(token.group(1))
+            token_tag = str(token.group(2) or "").lower()
+            self_closing = bool(token.group(3)) or token_tag in _VOID_TAGS
+            if token_tag != tag.lower():
+                continue
+            if not closing and not self_closing:
+                depth += 1
+            elif closing:
+                depth -= 1
+                if depth == 0:
+                    end_pos = token.end()
+                    break
+        if end_pos is None:
+            break
+        cards.append(text[start.start():end_pos].strip())
+        cursor = end_pos
+    return cards
+
+
 def _capture_grid(captured: dict[str, list[str]], key: str, body: str) -> None:
-    children = _split_top_level_children(body)
+    root = _ROOT_CARD_CLASSES.get(key)
+    children = _extract_elements_by_class(body, *root) if root else []
+    if not children:
+        children = _split_top_level_children(body)
     if children:
         captured[key] = children[:2]
 
@@ -206,8 +257,6 @@ def render_nfl_passing_yards_hub() -> None:
         nonlocal placeholder
         text = body if isinstance(body, str) else ""
 
-        # Put the combined player stack exactly where the old Step 1 section
-        # began, after the matchup selector and slate summary.
         if '<div class="kpy-step">' in text:
             if "Step 1 — Verified Matchup + Quarterback Identity" in text and placeholder is None:
                 placeholder = st.empty()
@@ -282,6 +331,7 @@ __all__ = [
     "STAKE_SIZING_ENABLED",
     "_PLAYER_CARD_CSS",
     "_combined_player_cards_html",
+    "_extract_elements_by_class",
     "_split_top_level_children",
     "_visual_build_banner_v34",
     "render_nfl_hub",
