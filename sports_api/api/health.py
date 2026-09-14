@@ -8,8 +8,38 @@ from sports_api.observability_v1 import (
     readiness_snapshot,
     runtime_metadata,
 )
+from sports_api.api.cfb_render_fanduel_transport_v1 import install_hosted_transport
+from sports_api.api.cfb_markets import router as cfb_markets_router
+from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_router
+from sports_api.api.cfb_odds_v1 import router as cfb_odds_router
+from sports_api.api.nfl_moneyline_market_v1 import router as nfl_moneyline_market_router
+from sports_api.api.nfl_passing_yards_market_v1 import router as nfl_passing_yards_market_router
+from sports_api.api.nfl_receiving_yards_context_v1 import router as nfl_receiving_yards_context_router
+from sports_api.api.nfl_receiving_yards_market_v1 import router as nfl_receiving_yards_market_router
+from sports_api.api.nfl_rushing_yards_context_v1 import router as nfl_rushing_yards_context_router
+from sports_api.api.nfl_rushing_yards_context_v2 import router as nfl_rushing_yards_fast_context_router
+from sports_api.api.nfl_rushing_yards_market_v1 import router as nfl_rushing_yards_market_router
+from sports_api.api.nfl_spread_market_v1 import router as nfl_spread_market_router
+
+# Shared-host hotfix: swap only the outbound FanDuel GET transport. The frozen
+# CFB cache/freshness, parser, identity, and projection contracts stay intact.
+install_hosted_transport()
 
 router = APIRouter(tags=["system"])
+# Register CFB + NFL routes by extending the shared route table instead of
+# nesting APIRouter lifespans. This preserves the certified Step17B shared-host
+# lifespan and the Render startup-recursion fix from CFB Step 1.
+router.routes.extend(cfb_markets_router.routes)
+router.routes.extend(cfb_market_identity_router.routes)
+router.routes.extend(cfb_odds_router.routes)
+router.routes.extend(nfl_moneyline_market_router.routes)
+router.routes.extend(nfl_passing_yards_market_router.routes)
+router.routes.extend(nfl_receiving_yards_context_router.routes)
+router.routes.extend(nfl_receiving_yards_market_router.routes)
+router.routes.extend(nfl_rushing_yards_context_router.routes)
+router.routes.extend(nfl_rushing_yards_fast_context_router.routes)
+router.routes.extend(nfl_rushing_yards_market_router.routes)
+router.routes.extend(nfl_spread_market_router.routes)
 
 
 @router.get("/health")
