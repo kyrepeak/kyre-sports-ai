@@ -104,10 +104,12 @@ jobs:
           import inspect
           import nfl_moneyline_hub_v10 as v10
           import nfl_moneyline_market_api_v1 as api
-          assert v10.FROZEN_MONEYLINE_PRESENTATION == 'nfl_hub_v18'
-          assert v10.FROZEN_MARKET_OWNER == 'nfl_moneyline_hub_v5'
-          assert v10.TRANSPORT_OWNER == 'nfl_moneyline_market_api_v1'
-          assert v10.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v10.FROZEN_PRESENTATION == 'nfl_moneyline_hub_v9'
+          assert v10.FROZEN_ENGINE == 'nfl_moneyline_hub_v8'
+          assert v10.FROZEN_MARKET_MATH == 'nfl_moneyline_market_v1'
+          assert v10.API_ADAPTER == 'nfl_moneyline_market_api_v1'
+          assert v10.TRANSPORT_ONLY is True
+          assert v10.SPORTSBOOK_MODEL_INFLUENCE == 0.0
           assert v10.STAKE_SIZING_ENABLED is False
           assert api.FROZEN_MARKET_OWNER == 'nfl_moneyline_market_v1'
           assert api.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
