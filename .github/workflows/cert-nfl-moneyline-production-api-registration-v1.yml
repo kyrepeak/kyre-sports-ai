@@ -1,0 +1,196 @@
+name: CERT ONLY NFL Moneyline Production API Registration V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/cert-nfl-moneyline-production-api-registration-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prove certification-only one-file diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          test "$changed" = '.github/workflows/cert-nfl-moneyline-production-api-registration-v1.yml'
+          echo 'CERT_ONLY_ONE_FILE_DIFF_GREEN'
+
+      - name: Install production browser witness stack
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright requests
+          python -m playwright install chromium
+
+      - name: Witness deployed Streamlit Moneyline registration
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+
+          BASE = 'https://kyre-sports-ai.streamlit.app'
+          OUT = Path('artifacts/moneyline-production-registration')
+          OUT.mkdir(parents=True, exist_ok=True)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=['--disable-dev-shm-usage','--no-sandbox'])
+              page = browser.new_page(viewport={'width': 1024, 'height': 1366})
+              try:
+                  page.goto(BASE, wait_until='domcontentloaded', timeout=180000)
+                  page.wait_for_timeout(5000)
+
+                  app = None
+                  deadline = time.time() + 180
+                  while time.time() < deadline and app is None:
+                      for candidate in page.frames:
+                          try:
+                              if candidate.get_by_role('combobox').count() >= 1:
+                                  app = candidate
+                                  break
+                          except Exception:
+                              pass
+                      if app is None:
+                          time.sleep(2)
+                  if app is None:
+                      raise RuntimeError('No Streamlit combobox became available in production')
+
+                  combos = app.get_by_role('combobox')
+                  sport = combos.nth(0)
+                  sport.wait_for(state='visible', timeout=60000)
+                  try:
+                      sport.select_option(label='NFL')
+                  except Exception:
+                      sport.click()
+                      option = app.get_by_text('NFL', exact=True)
+                      if option.count():
+                          option.last.click()
+                  page.wait_for_timeout(2500)
+
+                  market = app.get_by_role('combobox', name='🎯 NFL Market', exact=True)
+                  deadline = time.time() + 60
+                  while time.time() < deadline and not market.count():
+                      for candidate in page.frames:
+                          try:
+                              candidate_market = candidate.get_by_role('combobox', name='🎯 NFL Market', exact=True)
+                              if candidate_market.count():
+                                  app = candidate
+                                  market = candidate_market
+                                  break
+                          except Exception:
+                              pass
+                      if market.count():
+                          break
+                      time.sleep(1)
+                  market.wait_for(state='visible', timeout=60000)
+                  try:
+                      market.select_option(label='Moneyline')
+                  except Exception:
+                      market.click()
+                      option = app.get_by_text('Moneyline', exact=True)
+                      if option.count():
+                          option.last.click()
+
+                  app.get_by_text('NFL Moneyline Matchup Board', exact=False).wait_for(state='visible', timeout=240000)
+                  cards = app.locator('.kml9-matchup-card')
+                  deadline = time.time() + 240
+                  while time.time() < deadline and cards.count() < 1:
+                      time.sleep(2)
+                  if cards.count() < 1:
+                      raise RuntimeError('Production Moneyline page returned no matchup card')
+
+                  first = cards.first
+                  text = first.inner_text(timeout=30000)
+                  body = app.locator('body').inner_text(timeout=30000)
+                  forbidden_runtime = (
+                      'Traceback (most recent call last)', 'ModuleNotFoundError',
+                      'ImportError:', 'NameError:', 'AttributeError:',
+                      'StreamlitAPIException', 'This app has encountered an error',
+                  )
+                  for marker in forbidden_runtime:
+                      if marker.lower() in body.lower():
+                          raise RuntimeError(f'Production runtime error marker: {marker}')
+                  if 'MARKET UNAVAILABLE' in text:
+                      raise RuntimeError('Production Moneyline card still reports MARKET UNAVAILABLE')
+                  if 'FanDuel' not in text:
+                      raise RuntimeError('Production Moneyline card does not expose FanDuel as the live book')
+
+                  panels = first.locator('.kml9-team-panel')
+                  if panels.count() != 2:
+                      raise RuntimeError(f'Expected 2 team panels, found {panels.count()}')
+
+                  best_ml = []
+                  no_vig = []
+                  for i in range(2):
+                      panel = panels.nth(i)
+                      stats = panel.locator('.kml9-stat')
+                      found_best = None
+                      found_market = None
+                      for j in range(stats.count()):
+                          stat = stats.nth(j)
+                          stext = stat.inner_text(timeout=5000)
+                          if 'BEST ML' in stext:
+                              found_best = stat.locator('b').inner_text(timeout=5000).strip()
+                          if 'MARKET NO-VIG' in stext:
+                              found_market = stat.locator('b').inner_text(timeout=5000).strip()
+                      if not found_best or found_best == '—':
+                          raise RuntimeError(f'Team panel {i} has no registered BEST ML price')
+                      if not found_market or found_market == '—':
+                          raise RuntimeError(f'Team panel {i} has no registered MARKET NO-VIG probability')
+                      best_ml.append(found_best)
+                      no_vig.append(found_market)
+
+                  overflow = app.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
+                  if overflow > 4:
+                      raise RuntimeError(f'iPad horizontal overflow detected: {overflow}px')
+
+                  result = {
+                      'status': 'GREEN',
+                      'production_url': BASE,
+                      'matchup_cards': cards.count(),
+                      'team_panels_first_card': panels.count(),
+                      'market_unavailable_present': False,
+                      'fanduel_visible': True,
+                      'best_ml': best_ml,
+                      'market_no_vig': no_vig,
+                      'horizontal_overflow_px': overflow,
+                      'viewport': '1024x1366',
+                  }
+                  (OUT / 'metrics.json').write_text(json.dumps(result, indent=2))
+                  page.screenshot(path=str(OUT / 'production-moneyline-ipad.png'), full_page=True)
+                  print('NFL_MONEYLINE_PRODUCTION_API_REGISTRATION_GREEN')
+                  print(json.dumps(result, indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload production witness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-moneyline-production-registration-${{ github.run_id }}
+          path: artifacts/moneyline-production-registration
+          if-no-files-found: warn
+          retention-days: 7
