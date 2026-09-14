@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from datetime import date
 import inspect
 from pathlib import Path
-import pickle
 
 import pytest
 
@@ -16,72 +14,85 @@ def test_v11_contract_is_presentation_execution_only():
     assert v11.FROZEN_PRESENTATION == "nfl_moneyline_hub_v9"
     assert v11.FROZEN_ENGINE == "nfl_moneyline_hub_v8"
     assert v11.PRESENTATION_EXECUTION_ONLY is True
-    assert v11.LEGACY_UI_EMISSION_ENABLED is False
+    assert v11.LEGACY_UI_VISIBLE is False
     assert v11.SPORTSBOOK_MODEL_INFLUENCE == 0.0
     assert v11.STAKE_SIZING_ENABLED is False
+    assert v11.LEGACY_CONTAINER_KEY == "nfl_moneyline_v11_legacy_hidden"
+    assert v11.LEGACY_CONTAINER_CLASS == "st-key-nfl_moneyline_v11_legacy_hidden"
 
 
-def test_silent_context_suppresses_legacy_output_and_restores_streamlit(monkeypatch):
-    emitted = []
-
-    def witness(body=None, *args, **kwargs):
-        emitted.append(body)
-
-    monkeypatch.setattr(v11.st, "markdown", witness)
-    original = v11.st.markdown
-
-    with v11._silent_streamlit_execution():
-        assert v11.st.markdown is not original
-        v11.st.markdown("NFL Moneyline Command Center")
-        v11.st.warning("STEP 1A PASSED")
-        columns = v11.st.columns(2)
-        assert len(columns) == 2
-        columns[0].metric("Legacy metric", "1")
-        with v11.st.expander("Legacy expander"):
-            v11.st.caption("legacy caption")
-
-    assert emitted == []
-    assert v11.st.markdown is original
+def test_hidden_css_contract_is_fail_closed_before_legacy_render():
+    css = v11._HIDDEN_LEGACY_CSS
+    assert f".{v11.LEGACY_CONTAINER_CLASS}" in css
+    assert "display: none !important" in css
+    assert "visibility: hidden !important" in css
+    assert "opacity: 0 !important" in css
+    assert "pointer-events: none !important" in css
+    assert "height: 0 !important" in css
+    assert "overflow: hidden !important" in css
 
 
-def test_silent_fallbacks_are_pickle_safe_for_streamlit_cache():
-    block = v11._SilentBlock()
-    assert pickle.loads(pickle.dumps(block)).__class__ is v11._SilentBlock
-    fallback = block.any_unknown_streamlit_method
-    restored = pickle.loads(pickle.dumps(fallback))
-    assert restored is v11._noop
-    assert pickle.loads(pickle.dumps(v11._false)) is v11._false
-    assert pickle.loads(pickle.dumps(v11._none)) is v11._none
+def test_hidden_engine_orders_css_container_engine_and_cleanup(monkeypatch):
+    events = []
 
+    class Context:
+        def __init__(self, name):
+            self.name = name
 
-def test_silent_widgets_return_existing_values_without_rendering():
-    chosen = date(2026, 9, 14)
-    assert v11._silent_date_input("date", chosen) == chosen
-    assert v11._silent_text_input("text", "abc") == "abc"
-    assert v11._silent_number_input("number", value=17) == 17
-    assert v11._silent_bool_widget("toggle", True) is True
-    assert v11._silent_selectbox("select", ["A", "B"], index=1) == "B"
-    assert v11._silent_multiselect("multi", ["A", "B"], default=["B"]) == ["B"]
+        def __enter__(self):
+            events.append(("enter", self.name))
+            return self
 
+        def __exit__(self, exc_type, exc, tb):
+            events.append(("exit", self.name))
+            return False
 
-def test_silent_engine_executes_frozen_v8_without_emitting_legacy_markdown(monkeypatch):
-    emitted = []
-    ran = {"value": False}
+    class EmptySlot:
+        def container(self):
+            events.append(("legacy-container",))
+            return Context("legacy")
 
-    def witness(body=None, *args, **kwargs):
-        emitted.append(body)
+        def empty(self):
+            events.append(("legacy-empty",))
+
+    def markdown(body=None, *args, **kwargs):
+        events.append(("markdown", body, kwargs.get("unsafe_allow_html")))
+
+    def container(*args, **kwargs):
+        events.append(("hidden-container", kwargs.get("key")))
+        return Context("hidden")
+
+    def empty():
+        events.append(("empty-slot",))
+        return EmptySlot()
 
     def fake_engine():
-        ran["value"] = True
+        # V8 must see the normal Streamlit renderer; V11 does not monkeypatch it.
+        events.append(("engine", v11.st.markdown is markdown))
         v11.st.markdown("NFL Moneyline Command Center")
-        v11.st.success("STEP 1A PASSED")
 
-    monkeypatch.setattr(v11.st, "markdown", witness)
+    monkeypatch.setattr(v11.st, "markdown", markdown)
+    monkeypatch.setattr(v11.st, "container", container)
+    monkeypatch.setattr(v11.st, "empty", empty)
     monkeypatch.setattr(v11.frozen_v9.frozen, "render_nfl_moneyline_hub", fake_engine)
-    v11._silent_run_frozen_engine()
 
-    assert ran["value"] is True
-    assert emitted == []
+    v11._hidden_run_frozen_engine()
+
+    assert events[0][0] == "markdown"
+    assert events[0][1] == v11._HIDDEN_LEGACY_CSS
+    assert events[0][2] is True
+    assert ("hidden-container", v11.LEGACY_CONTAINER_KEY) in events
+    assert ("enter", "hidden") in events
+    assert ("enter", "legacy") in events
+    assert ("engine", True) in events
+    assert ("markdown", "NFL Moneyline Command Center", None) in events
+    assert ("legacy-empty",) in events
+
+    css_i = events.index(events[0])
+    hidden_i = events.index(("hidden-container", v11.LEGACY_CONTAINER_KEY))
+    engine_i = events.index(("engine", True))
+    cleanup_i = events.index(("legacy-empty",))
+    assert css_i < hidden_i < engine_i < cleanup_i
 
 
 def test_v11_temporarily_patches_v9_runner_and_restores(monkeypatch):
@@ -96,7 +107,7 @@ def test_v11_temporarily_patches_v9_runner_and_restores(monkeypatch):
     monkeypatch.setattr(v11.v10, "render_nfl_hub", render)
     assert v11.render_nfl_hub("Moneyline") == "ok"
     assert seen["market"] == "Moneyline"
-    assert seen["runner"] is v11._silent_run_frozen_engine
+    assert seen["runner"] is v11._hidden_run_frozen_engine
     assert v11.frozen_v9._run_frozen_engine is original
 
 
@@ -104,13 +115,18 @@ def test_v11_restores_v9_runner_even_when_v10_raises(monkeypatch):
     original = v11.frozen_v9._run_frozen_engine
 
     def boom(market):
-        assert v11.frozen_v9._run_frozen_engine is v11._silent_run_frozen_engine
+        assert v11.frozen_v9._run_frozen_engine is v11._hidden_run_frozen_engine
         raise RuntimeError("synthetic V11 witness")
 
     monkeypatch.setattr(v11.v10, "render_nfl_hub", boom)
     with pytest.raises(RuntimeError, match="synthetic V11 witness"):
         v11.render_nfl_hub("Moneyline")
     assert v11.frozen_v9._run_frozen_engine is original
+
+
+def test_v11_rejects_non_moneyline_direct_calls():
+    with pytest.raises(RuntimeError, match="Moneyline only"):
+        v11.render_nfl_hub("Passing Yards")
 
 
 def test_v130_advances_only_exact_nfl_moneyline():
@@ -155,6 +171,8 @@ def test_v11_owns_no_moneyline_analytics_or_market_math():
     for token in forbidden:
         assert token not in source, token
 
-    assert "frozen_v9._run_frozen_engine = _silent_run_frozen_engine" in source
+    assert "frozen_v9._run_frozen_engine = _hidden_run_frozen_engine" in source
     assert "return v10.render_nfl_hub(market)" in source
-    assert "legacy.empty()" not in source
+    assert "frozen_v9.frozen.render_nfl_moneyline_hub()" in source
+    assert "legacy.empty()" in source
+    assert "st.markdown(_HIDDEN_LEGACY_CSS, unsafe_allow_html=True)" in source
