@@ -1,8 +1,10 @@
-"""KYRE Streamlit Router V129 — NFL Moneyline Kyre Sports API transport.
+"""KYRE Streamlit Router V129 — NFL Moneyline Kyre Sports API + no-flash execution.
 
-V129 is additive over frozen Router V128. It advances only exact
-NFL -> Moneyline to the V10 transport wrapper. Passing Yards remains owned by
-V128 and all other routes delegate through the frozen router chain unchanged.
+V129 remains additive over frozen Router V128. It advances only exact
+NFL -> Moneyline, now through V11. V11 preserves the certified V10 Kyre Sports
+API transport and V9 matchup-card presentation while preventing frozen V8's
+legacy step-first UI from ever being emitted to the browser. Passing Yards and
+all other routes still delegate through the frozen router chain unchanged.
 """
 from __future__ import annotations
 
@@ -10,11 +12,12 @@ import streamlit as st
 import streamlit_memory_lazy_router_v1 as root
 import streamlit_memory_lazy_router_v128 as prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V129 • NFL MONEYLINE KYRE SPORTS API TRANSPORT"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V129 • NFL MONEYLINE V11 NO-FLASH"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v128"
 NFL_SPORT_LABEL = "NFL"
 MONEYLINE_MARKET = "Moneyline"
-ACTIVE_MONEYLINE_HUB = "nfl_moneyline_hub_v10"
+ACTIVE_MONEYLINE_HUB = "nfl_moneyline_hub_v11"
+FROZEN_MONEYLINE_HUB = "nfl_moneyline_hub_v10"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
 
@@ -59,6 +62,7 @@ def render_app() -> None:
 
 __all__ = [
     "ACTIVE_MONEYLINE_HUB",
+    "FROZEN_MONEYLINE_HUB",
     "FROZEN_ROUTER",
     "MODEL_VERSION",
     "MONEYLINE_MARKET",
