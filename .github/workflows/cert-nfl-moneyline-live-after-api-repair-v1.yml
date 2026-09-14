@@ -1,0 +1,204 @@
+name: CERT ONLY NFL Moneyline Live After API Repair V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cert-nfl-moneyline-live-after-api-repair-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-witness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Create evidence directory
+        run: mkdir -p artifacts/moneyline-live-after-api-repair
+
+      - name: Correlate exact repaired production API event
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, time
+          from pathlib import Path
+          import requests
+
+          url='https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market'
+          params={'event_id':'401872931'}
+          last=None
+          for attempt in range(1,4):
+              try:
+                  r=requests.get(url,params=params,timeout=(5,35),headers={'Accept':'application/json','User-Agent':'KyreSportsAI-LiveStreamlitWitness/1.0'})
+                  if r.status_code == 200:
+                      p=r.json()
+                      assert p.get('official_event_id') == '401872931'
+                      assert p.get('ready') is True
+                      assert p.get('market_available') is True
+                      assert ((p.get('identity') or {}).get('fuzzy_matching')) is False
+                      assert ((p.get('identity') or {}).get('synthetic_event_ids')) is False
+                      assert ((p.get('market_semantics') or {}).get('projection_weight')) == 0.0
+                      books=p.get('books') or []
+                      assert books and any(str(x.get('sportsbook','')).casefold() == 'fanduel' for x in books)
+                      safe={
+                          'status':'GREEN',
+                          'http':r.status_code,
+                          'official_event_id':p.get('official_event_id'),
+                          'ready':p.get('ready'),
+                          'market_available':p.get('market_available'),
+                          'books':[{
+                              'sportsbook':x.get('sportsbook'),
+                              'away_ml':x.get('away_ml'),
+                              'home_ml':x.get('home_ml'),
+                              'line_status':x.get('line_status'),
+                          } for x in books],
+                          'fuzzy_matching':(p.get('identity') or {}).get('fuzzy_matching'),
+                          'synthetic_event_ids':(p.get('identity') or {}).get('synthetic_event_ids'),
+                          'projection_weight':(p.get('market_semantics') or {}).get('projection_weight'),
+                      }
+                      Path('artifacts/moneyline-live-after-api-repair/exact_api_event.json').write_text(json.dumps(safe,indent=2))
+                      print('NFL_MONEYLINE_EXACT_PRODUCTION_API_200_GREEN')
+                      print(json.dumps(safe,indent=2))
+                      break
+                  last=RuntimeError(f'HTTP {r.status_code}: {r.text[:500]}')
+              except Exception as exc:
+                  last=exc
+              if attempt < 3:
+                  time.sleep(5)
+          else:
+              raise last or RuntimeError('Exact Moneyline API event probe failed')
+          PY
+
+      - name: Prove deployed Streamlit consumes repaired Moneyline market
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, re, time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _find_app_frame, _wait_for_text, _body_has_forbidden_error, _choose, BrowserQAFailure
+
+          base='https://kyre-sports-ai.streamlit.app'
+          artifacts=Path('artifacts/moneyline-live-after-api-repair')
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1024,'height':1366})
+              try:
+                  page.goto(base,wait_until='domcontentloaded',timeout=120000)
+                  frame,_=_find_app_frame(page)
+                  _choose(page,frame,0,'NFL')
+                  market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+                  market_combo.wait_for(state='visible',timeout=60000)
+                  _choose(page,frame,1,'Moneyline')
+                  _wait_for_text(frame,'NFL Moneyline Matchup Board',300.0)
+
+                  cards=frame.locator('.kml9-matchup-card')
+                  deadline=time.time()+300
+                  while time.time() < deadline and cards.count() < 1:
+                      time.sleep(2)
+                  if cards.count() < 1:
+                      raise BrowserQAFailure('expected at least one deployed Moneyline matchup card')
+
+                  target=None
+                  target_text=''
+                  for i in range(cards.count()):
+                      text=cards.nth(i).inner_text()
+                      if 'Denver' in text and 'Kansas City' in text:
+                          target=cards.nth(i)
+                          target_text=text
+                          break
+                  if target is None:
+                      raise BrowserQAFailure('Denver @ Kansas City Moneyline card was not found on deployed Streamlit')
+
+                  body=frame.locator('body').inner_text()
+                  forbidden=_body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f'deployed Streamlit runtime error marker: {forbidden}')
+                  if 'MARKET UNAVAILABLE' in target_text.upper():
+                      raise BrowserQAFailure('repaired Denver @ Kansas City card still shows MARKET UNAVAILABLE')
+                  if 'FANDUEL' not in target_text.upper():
+                      raise BrowserQAFailure('FanDuel is not visible on the repaired Denver @ Kansas City card')
+
+                  panels=target.locator('.kml9-team-panel')
+                  if panels.count() != 2:
+                      raise BrowserQAFailure(f'expected exactly two team panels, got {panels.count()}')
+
+                  panel_results=[]
+                  for i in range(2):
+                      text=panels.nth(i).inner_text()
+                      best=re.search(r'BEST ML\s*([+-]\d+|-\d+)',text,re.I)
+                      novig=re.search(r'MARKET NO-VIG\s*(\d+(?:\.\d+)?%)',text,re.I)
+                      if not best:
+                          raise BrowserQAFailure(f'team panel {i+1} has no real BEST ML price: {text[:500]}')
+                      if not novig:
+                          raise BrowserQAFailure(f'team panel {i+1} has no real MARKET NO-VIG percentage: {text[:500]}')
+                      if 'FANDUEL' not in text.upper():
+                          raise BrowserQAFailure(f'team panel {i+1} does not identify FanDuel as the visible book')
+                      panel_results.append({'panel':i+1,'best_ml':best.group(1),'market_no_vig':novig.group(1),'book':'FanDuel'})
+
+                  overflow=frame.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
+                  if overflow > 4:
+                      raise BrowserQAFailure(f'iPad horizontal overflow detected: {overflow}px')
+
+                  result={
+                      'status':'GREEN',
+                      'site':base,
+                      'viewport':'1024x1366',
+                      'target':'Denver @ Kansas City',
+                      'matchup_cards':cards.count(),
+                      'team_panels':panels.count(),
+                      'market_unavailable_visible':False,
+                      'visible_book':'FanDuel',
+                      'panels':panel_results,
+                      'horizontal_overflow_px':overflow,
+                      'active_moneyline_ui':'V11/V10/V9 certified chain',
+                      'sportsbook_model_influence':0.0,
+                  }
+                  artifacts.joinpath('streamlit_moneyline_live_witness.json').write_text(json.dumps(result,indent=2))
+                  page.screenshot(path=str(artifacts/'streamlit_moneyline_live_ipad.png'),full_page=True)
+                  print('NFL_MONEYLINE_DEPLOYED_STREAMLIT_REPAIRED_MARKET_GREEN')
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload certification-only evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cert-nfl-moneyline-live-after-api-repair-${{ github.run_id }}
+          path: artifacts/moneyline-live-after-api-repair
+          if-no-files-found: warn
+          retention-days: 7
