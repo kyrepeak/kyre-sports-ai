@@ -1,0 +1,41 @@
+from __future__ import annotations
+
+import inspect
+
+import streamlit_memory_lazy_router_v135 as router
+
+
+def test_v135_router_contract_is_additive_over_v134() -> None:
+    assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v134"
+    assert router.ACTIVE_SPREAD_HUB == "nfl_spread_hub_v4"
+    assert router.SPREAD_MARKET == "Spread"
+    assert router.PROJECTION_MODEL_ENABLED is True
+    assert router.MONTE_CARLO_ENABLED is True
+    assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+    assert router.STAKE_SIZING_ENABLED is False
+    assert router.WAGER_ACTIONS_ENABLED is False
+
+
+def test_v135_temporarily_swaps_only_spread_owner(monkeypatch) -> None:
+    original = router.prior.ACTIVE_SPREAD_HUB
+    seen: list[str] = []
+
+    def fake_render_app() -> None:
+        seen.append(router.prior.ACTIVE_SPREAD_HUB)
+
+    monkeypatch.setattr(router.prior, "render_app", fake_render_app)
+    router.render_app()
+
+    assert seen == ["nfl_spread_hub_v4"]
+    assert router.prior.ACTIVE_SPREAD_HUB == original
+
+
+def test_v135_source_has_no_model_or_market_reimplementation() -> None:
+    source = inspect.getsource(router)
+    assert "import streamlit_memory_lazy_router_v134 as prior" in source
+    assert 'ACTIVE_SPREAD_HUB = "nfl_spread_hub_v4"' in source
+    assert "nfl_spread_model_v1" not in source
+    assert "nfl_spread_mc_v1" not in source
+    assert "nfl_spread_hub_v1" not in source
+    assert "fetch" not in source.lower()
+    assert "simulate" not in source.lower()
