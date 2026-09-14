@@ -1,0 +1,287 @@
+name: NFL Passing Yards V35 Production Cleanup V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_passing_yards_market_api_v2.py"
+      - "nfl_passing_yards_hub_v35.py"
+      - "streamlit_memory_lazy_router_v128.py"
+      - "app.py"
+      - "tests/test_nfl_passing_yards_v35_production_cleanup_v1.py"
+      - ".github/workflows/nfl-passing-yards-v35-production-cleanup-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-production-cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
+
+      - name: Enforce exact six-file production-cleanup diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-passing-yards-v35-production-cleanup-v1.yml
+          app.py
+          nfl_passing_yards_hub_v35.py
+          nfl_passing_yards_market_api_v2.py
+          streamlit_memory_lazy_router_v128.py
+          tests/test_nfl_passing_yards_v35_production_cleanup_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual Passing V35 production cleanup diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile V35 production surface
+        run: |
+          python -m py_compile \
+            nfl_passing_yards_market_api_v2.py \
+            nfl_passing_yards_hub_v35.py \
+            streamlit_memory_lazy_router_v128.py \
+            app.py \
+            tests/test_nfl_passing_yards_v35_production_cleanup_v1.py
+
+      - name: Prove frozen analytical and sibling owners remain untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_hub_v([1-9]|1[0-9]|2[0-9]|3[0-4])\.py$|nfl_passing_yards_market_api_v1\.py$|streamlit_memory_lazy_router_v127\.py$|nfl_receiving_yards_.*\.py$|nfl_rushing_yards_.*\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "PASSING_V35_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "PASSING_V35_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Run V35 transport and production-cleanup contracts
+        run: python -m pytest -q tests/test_nfl_passing_yards_v35_production_cleanup_v1.py
+
+      - name: Re-run frozen V34 combined-player-card contracts
+        run: python -m pytest -q tests/test_nfl_passing_yards_v34_combined_player_cards_v1.py
+
+      - name: Re-run frozen V33 final certification contracts
+        run: python -m pytest -q tests/test_nfl_passing_yards_v33_visual_parity_step6_final_v1.py
+
+      - name: Re-run frozen V28 exact-ID personnel regression
+        run: python -m pytest -q tests/test_nfl_passing_yards_step5_personnel_v2.py
+
+      - name: Prove V35 remains post-model production cleanup only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import inspect
+          import nfl_passing_yards_hub_v35 as page
+          import nfl_passing_yards_market_api_v2 as transport
+          assert page.PRODUCTION_CLEANUP_ONLY is True
+          assert page.FROZEN_PRIOR == 'nfl_passing_yards_hub_v34'
+          assert page.FROZEN_PASSING_ENGINE == 'nfl_passing_yards_hub_v28'
+          assert page.ACTIVE_MARKET_TRANSPORT == 'nfl_passing_yards_market_api_v2'
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.STAKE_SIZING_ENABLED is False
+          assert transport.FROZEN_VALIDATION_OWNER == 'nfl_passing_yards_market_api_v1'
+          assert transport.MAX_REQUEST_ATTEMPTS == 1
+          assert transport.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          source = inspect.getsource(page.render_nfl_passing_yards_hub)
+          for forbidden in (
+              'build_baseline_projection','build_context_projection','build_distribution',
+              'evaluate_market','projection_yards','fair_odds','no_vig',
+              'over_ev','under_ev','projection_adjustment','stake_size',
+          ):
+              assert forbidden not in source, forbidden
+          print('NFL_PASSING_YARDS_V35_PRODUCTION_CLEANUP_ONLY_GREEN')
+          PY
+
+  browser-production-cleanup:
+    needs: certify-production-cleanup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Start branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/passing-v35-production
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8518 \
+            > artifacts/passing-v35-production/streamlit.log 2>&1 &
+          echo $! > /tmp/passing_v35_pid
+
+      - name: Drive real Passing production UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _wait_for_text,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base='http://127.0.0.1:8518'
+          artifacts=Path('artifacts/passing-v35-production')
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1600,'height':3400})
+              try:
+                  page.goto(base,wait_until='domcontentloaded',timeout=120000)
+                  frame,_=_find_app_frame(page)
+                  _choose(page,frame,0,'NFL')
+                  market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+                  market_combo.wait_for(state='visible',timeout=30000)
+                  _choose(page,frame,1,'Passing Yards')
+
+                  _wait_for_text(frame,'ALL 10 STEPS • PLAYER CARDS',180.0)
+                  body=_wait_for_text(frame,'Model probabilities are estimates — not guarantees.',210.0)
+                  forbidden=_body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f'Passing V35 runtime error marker: {forbidden}')
+
+                  deadline=time.time()+180
+                  cards=frame.locator('.kpass34-player')
+                  required=(
+                      ('.kpass29-card',1),('.kpass30-profile',1),('.kpy-defense',1),
+                      ('.kpy-pressure',1),('.kpy-personnel',1),('.kpy-env',1),
+                      ('.kpy-proj',1),('.kpy8-card',1),('.kpy9-card',1),('.kpy10-card',1),
+                      ('.kpass34-step',9),
+                  )
+                  while time.time() < deadline:
+                      if cards.count() == 2 and all(
+                          all(cards.nth(idx).locator(selector).count() == want for selector,want in required)
+                          for idx in range(2)
+                      ):
+                          break
+                      time.sleep(2)
+
+                  if cards.count() != 2:
+                      raise BrowserQAFailure(f'expected 2 combined QB cards, got {cards.count()}')
+                  per_card=[]
+                  for idx in range(2):
+                      card=cards.nth(idx)
+                      counts={selector:card.locator(selector).count() for selector,_ in required}
+                      for selector,want in required:
+                          if counts[selector] != want:
+                              raise BrowserQAFailure(f'QB card {idx+1} expected {want} {selector}, got {counts[selector]}')
+                      per_card.append(counts)
+
+                  settled_body=frame.locator('body').inner_text()
+                  leaked=[
+                      f'NFL PASSING YARDS V{version} •'
+                      for version in range(20,25)
+                      if f'NFL PASSING YARDS V{version} •' in settled_body
+                  ]
+                  if leaked:
+                      raise BrowserQAFailure(f'legacy production captions leaked: {leaked}')
+                  if 'Model probabilities are estimates — not guarantees.' not in settled_body:
+                      raise BrowserQAFailure('user-facing model disclaimer was accidentally removed')
+
+                  # Manual fields remain the fail-closed fallback even when the live API
+                  # succeeds and disables/autofills them on this particular run.
+                  for label in ('Passing yards line','Over American odds','Under American odds'):
+                      if frame.get_by_text(label,exact=True).count() < 2:
+                          raise BrowserQAFailure(f'missing two Step 10 controls for: {label}')
+
+                  result={
+                      'status':'GREEN',
+                      'combined_qb_cards':2,
+                      'nested_section_counts':per_card,
+                      'legacy_v20_v24_caption_count':0,
+                      'model_disclaimer_preserved':True,
+                      'step10_manual_fallback_controls_preserved':True,
+                      'sportsbook_projection_influence':0.0,
+                      'stake_sizing_enabled':False,
+                      'frozen_combined_player_cards':'v34',
+                      'frozen_passing_engine':'v28',
+                      'active_market_transport':'v2',
+                  }
+                  (artifacts/'passing_v35_metrics.json').write_text(json.dumps(result,indent=2))
+                  page.screenshot(path=str(artifacts/'passing_v35_production.png'),full_page=True)
+                  print('NFL_PASSING_YARDS_V35_PRODUCTION_BROWSER_GREEN')
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Print Streamlit log
+        if: always()
+        run: tail -n 500 artifacts/passing-v35-production/streamlit.log || true
+
+      - name: Upload V35 production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-v35-production-${{ github.run_id }}
+          path: artifacts/passing-v35-production
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/passing_v35_pid ]; then
+            kill "$(cat /tmp/passing_v35_pid)" 2>/dev/null || true
+          fi
