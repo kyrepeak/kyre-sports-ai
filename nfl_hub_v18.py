@@ -43,6 +43,13 @@ def _sync_moneyline_v9_frozen_dates(selected) -> None:
         st.session_state[key] = selected
 
 
+def _strip_moneyline_v9_team_panel_html(original):
+    """Keep V9 team panels inside one uninterrupted raw-HTML matchup block."""
+    def _wrapped(*args, **kwargs):
+        return str(original(*args, **kwargs)).strip()
+    return _wrapped
+
+
 def render_nfl_hub(market: str = "Slate"):
     market = str(market or "Slate")
     if market == "Moneyline":
@@ -50,11 +57,14 @@ def render_nfl_hub(market: str = "Slate"):
         import nfl_moneyline_hub_v9 as page
 
         original_sync = page._sync_frozen_date
+        original_side_html = page._side_html
         page._sync_frozen_date = _sync_moneyline_v9_frozen_dates
+        page._side_html = _strip_moneyline_v9_team_panel_html(original_side_html)
         try:
             return render_nfl_moneyline_hub()
         finally:
             page._sync_frozen_date = original_sync
+            page._side_html = original_side_html
     return base.render_nfl_hub(market)
 
 
