@@ -89,6 +89,8 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v126 import render_app as _frozen_v126_render_app
     from streamlit_memory_lazy_router_v127 import render_app as _frozen_v127_render_app
     from streamlit_memory_lazy_router_v128 import render_app as _frozen_v128_render_app
+    from streamlit_memory_lazy_router_v129 import render_app as _frozen_v129_render_app
+    from streamlit_memory_lazy_router_v129 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v128 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v127 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v126 import record_bootstrap_import_ms, render_app
@@ -193,12 +195,13 @@ FROZEN_V125_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V125_NFL_PASSING_YARDS_VISUAL
 FROZEN_V126_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V126_NFL_PASSING_YARDS_VISUAL_PARITY_STEP6_FINAL_2026-09-13"
 FROZEN_V127_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V127_NFL_PASSING_YARDS_COMBINED_PLAYER_CARDS_2026-09-13"
 FROZEN_V128_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V128_NFL_PASSING_YARDS_PRODUCTION_CLEANUP_2026-09-13"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V129_NFL_MONEYLINE_KYRE_API_TRANSPORT_2026-09-14"
+FROZEN_V129_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V129_NFL_MONEYLINE_KYRE_API_TRANSPORT_2026-09-14"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V130_NFL_MONEYLINE_NO_FLASH_2026-09-14"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v129 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v130 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
