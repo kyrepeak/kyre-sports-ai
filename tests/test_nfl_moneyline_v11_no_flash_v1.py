@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 import inspect
 from pathlib import Path
+import pickle
 
 import pytest
 
@@ -41,6 +42,16 @@ def test_silent_context_suppresses_legacy_output_and_restores_streamlit(monkeypa
 
     assert emitted == []
     assert v11.st.markdown is original
+
+
+def test_silent_fallbacks_are_pickle_safe_for_streamlit_cache():
+    block = v11._SilentBlock()
+    assert pickle.loads(pickle.dumps(block)).__class__ is v11._SilentBlock
+    fallback = block.any_unknown_streamlit_method
+    restored = pickle.loads(pickle.dumps(fallback))
+    assert restored is v11._noop
+    assert pickle.loads(pickle.dumps(v11._false)) is v11._false
+    assert pickle.loads(pickle.dumps(v11._none)) is v11._none
 
 
 def test_silent_widgets_return_existing_values_without_rendering():
