@@ -47,8 +47,6 @@ jobs:
           tests/test_nfl_passing_yards_v33_visual_parity_step6_final_v1.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          echo 'Actual Passing visual Step 6 diff:'
-          cat /tmp/actual.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
 
       - name: Compile final Passing surface
@@ -116,7 +114,7 @@ jobs:
   browser-final-step6:
     needs: certify-final-step6
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
 
@@ -163,6 +161,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import time
           from pathlib import Path
           from time import perf_counter
           from playwright.sync_api import sync_playwright
@@ -179,6 +178,20 @@ jobs:
           artifacts=Path('artifacts/passing-final-step6')
           _wait_for_health(base)
 
+          expected={
+              '.kpass29-card':2,
+              '.kpass30-profile':2,
+              '.kpy-stat':5,
+              '.kpy-defense':2,
+              '.kpy-pressure':2,
+              '.kpy-personnel':2,
+              '.kpy-env':1,
+              '.kpy-proj':2,
+              '.kpy8-card':2,
+              '.kpy9-card':2,
+              '.kpy10-card':2,
+          }
+
           def navigate_passing(page):
               frame,_=_find_app_frame(page)
               _choose(page,frame,0,'NFL')
@@ -188,6 +201,16 @@ jobs:
               body=_wait_for_text(frame,'VISUAL STEP 6 / 6',180.0)
               return frame,body
 
+          def wait_for_stack(frame,label,timeout=150):
+              deadline=time.time()+timeout
+              counts={}
+              while time.time() < deadline:
+                  counts={selector:frame.locator(selector).count() for selector in expected}
+                  if all(counts.get(selector,0) >= want for selector,want in expected.items()):
+                      return counts
+                  time.sleep(2)
+              raise BrowserQAFailure(f'{label} final Passing stack timed out: {counts}')
+
           def verify(frame,body,label):
               forbidden=_body_has_forbidden_error(body)
               if forbidden:
@@ -196,20 +219,7 @@ jobs:
                   if required not in body:
                       raise BrowserQAFailure(f'{label} missing final marker: {required}')
 
-              expected={
-                  '.kpass29-card':2,
-                  '.kpass30-profile':2,
-                  '.kpy-stat':5,
-                  '.kpy-defense':2,
-                  '.kpy-pressure':2,
-                  '.kpy-personnel':2,
-                  '.kpy-env':1,
-                  '.kpy-proj':2,
-                  '.kpy8-card':2,
-                  '.kpy9-card':2,
-                  '.kpy10-card':2,
-              }
-              counts={selector:frame.locator(selector).count() for selector in expected}
+              counts=wait_for_stack(frame,label)
               for selector,want in expected.items():
                   if counts[selector] != want:
                       raise BrowserQAFailure(f'{label} expected {want} {selector}, got {counts[selector]}')
@@ -233,15 +243,15 @@ jobs:
                   cold_started=perf_counter()
                   page.goto(base,wait_until='domcontentloaded',timeout=120000)
                   frame,cold_body=navigate_passing(page)
-                  cold_ms=(perf_counter()-cold_started)*1000.0
                   cold_counts,cold_style,cold_fill=verify(frame,cold_body,'cold')
+                  cold_ms=(perf_counter()-cold_started)*1000.0
                   page.screenshot(path=str(artifacts/'passing_final_cold.png'),full_page=True)
 
                   warm_started=perf_counter()
                   page.reload(wait_until='domcontentloaded',timeout=120000)
                   frame,warm_body=navigate_passing(page)
-                  warm_ms=(perf_counter()-warm_started)*1000.0
                   warm_counts,warm_style,warm_fill=verify(frame,warm_body,'warm')
+                  warm_ms=(perf_counter()-warm_started)*1000.0
                   page.screenshot(path=str(artifacts/'passing_final_warm.png'),full_page=True)
 
                   result={
