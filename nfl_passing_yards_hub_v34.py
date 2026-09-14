@@ -19,6 +19,7 @@ from typing import Any
 
 import streamlit as st
 
+import nfl_passing_yards_hub_v30 as profile_visual_ui
 import nfl_passing_yards_hub_v33 as prior
 
 MODEL_VERSION = "NFL PASSING YARDS V34 • COMBINED PLAYER-FIRST 10-STEP CARDS"
@@ -63,7 +64,6 @@ _GRID_MARKERS = {
 }
 
 _ROOT_CARD_CLASSES = {
-    "profile": ("section", "kpass30-profile"),
     "defense": ("section", "kpy-defense"),
     "pressure": ("section", "kpy-pressure"),
     "personnel": ("section", "kpy-personnel"),
@@ -183,8 +183,10 @@ def _extract_elements_by_class(body: str, tag: str, class_name: str) -> list[str
 
 
 def _capture_grid(captured: dict[str, list[str]], key: str, body: str) -> None:
-    # V29 QB hero cards are proven stable with the original top-level splitter.
-    # Later certified sections are more deeply nested, so use their root class.
+    # Step 2 is captured directly from V30's certified card factory, so never
+    # overwrite those exact cards with downstream grid parsing.
+    if key == "profile" and captured.get("profile"):
+        return
     if key == "identity":
         children = _split_top_level_children(body)
     else:
@@ -253,6 +255,14 @@ def render_nfl_passing_yards_hub() -> None:
     original_warning = st.warning
     original_info = st.info
     original_banner = prior._visual_build_banner_v33
+    original_profile_factory = profile_visual_ui._profile_card_v30
+
+    def capture_profile_card(team_ctx: dict[str, Any], qb_profile: dict[str, Any]) -> str:
+        html = original_profile_factory(team_ctx, qb_profile)
+        profile_cards = captured.setdefault("profile", [])
+        if len(profile_cards) < 2:
+            profile_cards.append(html)
+        return html
 
     def composed_markdown(body: Any, *args: Any, **kwargs: Any):
         nonlocal placeholder
@@ -298,6 +308,7 @@ def render_nfl_passing_yards_hub() -> None:
         return original_info(body, *args, **kwargs)
 
     prior._visual_build_banner_v33 = _visual_build_banner_v34
+    profile_visual_ui._profile_card_v30 = capture_profile_card
     st.markdown = composed_markdown
     st.success = filtered_success
     st.warning = filtered_warning
@@ -309,6 +320,7 @@ def render_nfl_passing_yards_hub() -> None:
         st.success = original_success
         st.warning = original_warning
         st.info = original_info
+        profile_visual_ui._profile_card_v30 = original_profile_factory
         prior._visual_build_banner_v33 = original_banner
 
     if placeholder is not None:
