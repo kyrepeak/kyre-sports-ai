@@ -1,0 +1,327 @@
+name: NFL Moneyline V10 Kyre API V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_moneyline_market_api_v1.py"
+      - "nfl_moneyline_hub_v10.py"
+      - "streamlit_memory_lazy_router_v129.py"
+      - "app.py"
+      - "tests/test_nfl_moneyline_v10_kyre_api_v1.py"
+      - ".github/workflows/nfl-moneyline-v10-kyre-api-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-v10-api-transport:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests pandas numpy streamlit
+
+      - name: Enforce exact six-file V10 Kyre API diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-moneyline-v10-kyre-api-v1.yml
+          app.py
+          nfl_moneyline_hub_v10.py
+          nfl_moneyline_market_api_v1.py
+          streamlit_memory_lazy_router_v129.py
+          tests/test_nfl_moneyline_v10_kyre_api_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual Moneyline V10 diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile V10 transport surface
+        run: |
+          python -m py_compile \
+            nfl_moneyline_market_api_v1.py \
+            nfl_moneyline_hub_v10.py \
+            streamlit_memory_lazy_router_v129.py \
+            app.py \
+            tests/test_nfl_moneyline_v10_kyre_api_v1.py
+
+      - name: Prove frozen Moneyline V1-V9 and certified sibling owners stay untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_moneyline_hub_v([1-9])\.py$|nfl_moneyline_market_v1\.py$|nfl_hub_v18\.py$|nfl_passing_yards_.*\.py$|nfl_receiving_yards_.*\.py$|nfl_rushing_yards_.*\.py$|streamlit_memory_lazy_router_v128\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "NFL_MONEYLINE_V10_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "NFL_MONEYLINE_V10_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Run V10 Kyre API deterministic contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v10_kyre_api_v1.py
+
+      - name: Re-run certified V9 fresh matchup-card contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v9_fresh_matchup_cards_v1.py
+
+      - name: Compile frozen Moneyline V1-V9 ownership chain
+        run: |
+          python -m py_compile \
+            nfl_moneyline_hub_v1.py nfl_moneyline_hub_v2.py nfl_moneyline_hub_v3.py \
+            nfl_moneyline_hub_v4.py nfl_moneyline_hub_v5.py nfl_moneyline_hub_v6.py \
+            nfl_moneyline_hub_v7.py nfl_moneyline_hub_v8.py nfl_moneyline_hub_v9.py \
+            nfl_moneyline_market_v1.py nfl_hub_v18.py
+
+      - name: Prove V10 is transport-only over frozen owners
+        shell: bash
+        run: |
+          python - <<'PY'
+          import inspect
+          import nfl_moneyline_hub_v10 as v10
+          import nfl_moneyline_market_api_v1 as api
+          assert v10.FROZEN_PRESENTATION == 'nfl_moneyline_hub_v9'
+          assert v10.FROZEN_ENGINE == 'nfl_moneyline_hub_v8'
+          assert v10.FROZEN_MARKET_MATH == 'nfl_moneyline_market_v1'
+          assert v10.API_ADAPTER == 'nfl_moneyline_market_api_v1'
+          assert v10.TRANSPORT_ONLY is True
+          assert v10.SPORTSBOOK_MODEL_INFLUENCE == 0.0
+          assert v10.STAKE_SIZING_ENABLED is False
+          assert api.FROZEN_MARKET_OWNER == 'nfl_moneyline_market_v1'
+          assert api.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert api.STAKE_SIZING_ENABLED is False
+          source = inspect.getsource(v10)
+          for forbidden in (
+              'np.random','default_rng','_expected_return(','_fair_american(',
+              'QUALIFIED_EDGE =','QUALIFIED_EV =','LEAN_EDGE =','MAX_COMFORTABLE_INTERVAL =',
+          ):
+              assert forbidden not in source, forbidden
+          print('NFL_MONEYLINE_V10_TRANSPORT_ONLY_GREEN')
+          PY
+
+      - name: Probe deployed Kyre Sports API Moneyline contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          import time
+          import requests
+
+          url='https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market/status'
+          last=None
+          for attempt in range(1, 4):
+              try:
+                  response=requests.get(url,timeout=(5,30),headers={'Accept':'application/json','User-Agent':'KyreSportsAI-GitHubCert/1.0'})
+                  if response.status_code == 200:
+                      payload=response.json()
+                      assert payload['status'] == 'ready'
+                      assert payload['schema_version'] == 'nfl_moneyline_market_v1'
+                      assert payload['service'] == 'Kyre Sports API'
+                      assert payload['sport'] == 'nfl'
+                      assert payload['market'] == 'moneyline'
+                      assert payload['official_event_id_required'] is True
+                      assert payload['fuzzy_matching'] is False
+                      assert payload['synthetic_event_ids'] is False
+                      assert payload['projection_weight'] == 0.0
+                      assert payload['market_context_only'] is True
+                      assert payload['may_modify_projection'] is False
+                      assert payload['model_probability_input'] is False
+                      assert payload['multi_book_capable'] is True
+                      assert payload['stake_sizing_enabled'] is False
+                      assert payload['wager_actions'] is False
+                      print('NFL_MONEYLINE_V10_PUBLIC_API_STATUS_GREEN')
+                      print(payload)
+                      break
+                  last=RuntimeError(f'HTTP {response.status_code}: {response.text[:300]}')
+              except Exception as exc:
+                  last=exc
+              if attempt < 3:
+                  time.sleep(5)
+          else:
+              raise last or RuntimeError('Kyre Sports API Moneyline status probe failed')
+          PY
+
+  browser-v10-api-transport:
+    needs: certify-v10-api-transport
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Start branch-local Streamlit V129
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/moneyline-v10-api
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8520 \
+            > artifacts/moneyline-v10-api/streamlit.log 2>&1 &
+          echo $! > /tmp/moneyline_v10_pid
+
+      - name: Drive real iPad-size Moneyline V10 UI
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _wait_for_text,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base='http://127.0.0.1:8520'
+          artifacts=Path('artifacts/moneyline-v10-api')
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1024,'height':1366})
+              try:
+                  page.goto(base,wait_until='domcontentloaded',timeout=120000)
+                  frame,_=_find_app_frame(page)
+                  _choose(page,frame,0,'NFL')
+                  market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+                  market_combo.wait_for(state='visible',timeout=30000)
+                  _choose(page,frame,1,'Moneyline')
+
+                  _wait_for_text(frame,'NFL Moneyline Matchup Board',240.0)
+                  deadline=time.time()+240
+                  cards=frame.locator('.kml9-matchup-card')
+                  while time.time() < deadline and cards.count() < 1:
+                      time.sleep(2)
+                  if cards.count() < 1:
+                      raise BrowserQAFailure('expected at least one Moneyline V9/V10 matchup card')
+
+                  body=frame.locator('body').inner_text()
+                  forbidden=_body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f'Moneyline V10 runtime error marker: {forbidden}')
+                  if 'no sportsbook provider key is connected' in body.lower():
+                      raise BrowserQAFailure('legacy direct sportsbook-key gate leaked into V10')
+
+                  first=cards.nth(0)
+                  if first.locator('.kml9-team-panel').count() != 2:
+                      raise BrowserQAFailure('first Moneyline matchup card must contain exactly two team panels')
+                  first_text=first.inner_text()
+                  for label in ('MODEL P(WIN)','MARKET NO-VIG','EDGE','EV / 1U','FINAL MONEYLINE STATE'):
+                      if label not in first_text:
+                          raise BrowserQAFailure(f'missing Moneyline V10 card label: {label}')
+
+                  legacy=(
+                      'NFL Moneyline Command Center',
+                      'STEP 1A PASSED',
+                      'STEP 1B PASSED',
+                      'Step 2 — QB Depth + Current Availability',
+                      'Step 3 — Preseason Game-Plan Intelligence',
+                      'Step 5 — Sportsbook Moneyline Market',
+                      'Step 7 — No-Vig Edge + Expected Value',
+                  )
+                  leaked=[text for text in legacy if text in body]
+                  if leaked:
+                      raise BrowserQAFailure(f'legacy step-first UI leaked into V10: {leaked}')
+
+                  overflow=frame.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
+                  if overflow > 4:
+                      raise BrowserQAFailure(f'iPad horizontal overflow detected: {overflow}px')
+                  if frame.get_by_text('Model details & guardrails',exact=False).count() < 1:
+                      raise BrowserQAFailure('Moneyline details/guardrails drawer missing')
+
+                  result={
+                      'status':'GREEN',
+                      'viewport':'1024x1366',
+                      'matchup_cards':cards.count(),
+                      'team_panels_first_card':2,
+                      'legacy_step_ui_count':0,
+                      'legacy_provider_key_gate_count':0,
+                      'horizontal_overflow_px':overflow,
+                      'active_router':'streamlit_memory_lazy_router_v129',
+                      'transport':'nfl_moneyline_market_api_v1',
+                      'frozen_v9_cards':True,
+                      'sportsbook_model_influence':0.0,
+                      'stake_sizing_enabled':False,
+                  }
+                  (artifacts/'moneyline_v10_metrics.json').write_text(json.dumps(result,indent=2))
+                  page.screenshot(path=str(artifacts/'moneyline_v10_ipad.png'),full_page=True)
+                  print('NFL_MONEYLINE_V10_BROWSER_GREEN')
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Print Streamlit log
+        if: always()
+        run: tail -n 600 artifacts/moneyline-v10-api/streamlit.log || true
+
+      - name: Upload Moneyline V10 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-moneyline-v10-api-${{ github.run_id }}
+          path: artifacts/moneyline-v10-api
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/moneyline_v10_pid ]; then
+            kill "$(cat /tmp/moneyline_v10_pid)" || true
+          fi
