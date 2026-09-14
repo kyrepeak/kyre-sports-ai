@@ -37,9 +37,9 @@ _STEP4_CONTEXT_CSS = r'''
   background:linear-gradient(145deg,#0b1712 0%,#09140f 72%,#0d1a14 100%)!important;
   padding:10px 11px!important;box-shadow:none!important;
 }
-/* Frozen personnel styles render later in the legacy stack; use a more-specific
-   Step 4 selector so the certified 16px visual-parity radius remains authoritative. */
-.kpy-igrid > section.kpy-personnel{border-radius:16px!important}
+/* Frozen context styles render later in the legacy stack. Keep the Step 4 outer
+   card radius authoritative with element+class specificity across every family. */
+section.kpy-defense,section.kpy-pressure,section.kpy-personnel,section.kpy-env{border-radius:16px!important}
 .kpy-defense:after,.kpy-pressure:after,.kpy-personnel:after,.kpy-env:after{
   content:"";position:absolute;right:-38px;bottom:-62px;width:145px;height:145px;
   border:1px solid rgba(139,226,172,.045);border-radius:50%;
