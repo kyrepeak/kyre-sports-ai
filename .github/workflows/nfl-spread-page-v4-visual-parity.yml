@@ -6,14 +6,18 @@ on:
       - nfl-spread-page-visual-parity-v1
     paths:
       - 'nfl_spread_hub_v4.py'
+      - 'streamlit_memory_lazy_router_v135.py'
       - 'tests/test_nfl_spread_v4_visual_parity.py'
+      - 'tests/test_nfl_spread_router_v135.py'
       - '.github/workflows/nfl-spread-page-v4-visual-parity.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'nfl_spread_hub_v4.py'
+      - 'streamlit_memory_lazy_router_v135.py'
       - 'tests/test_nfl_spread_v4_visual_parity.py'
+      - 'tests/test_nfl_spread_router_v135.py'
       - '.github/workflows/nfl-spread-page-v4-visual-parity.yml'
   workflow_dispatch:
 
@@ -40,16 +44,18 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q requests pandas numpy streamlit pytest
 
-      - name: Compile Spread V4 visual surface
+      - name: Compile Spread V4 and Router V135 surfaces
         run: |
           python -m py_compile nfl_spread_hub_v4.py
+          python -m py_compile streamlit_memory_lazy_router_v135.py
           python -m py_compile tests/test_nfl_spread_v4_visual_parity.py
+          python -m py_compile tests/test_nfl_spread_router_v135.py
 
-      - name: Run Spread V4 visual parity tests
+      - name: Run Spread V4 visual parity and Router V135 tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest -q tests/test_nfl_spread_v4_visual_parity.py
+          pytest -q tests/test_nfl_spread_v4_visual_parity.py tests/test_nfl_spread_router_v135.py
 
       - name: Prove frozen model Monte Carlo firewall
         env:
@@ -60,6 +66,7 @@ jobs:
           import nfl_spread_hub_v3 as v3
           import nfl_spread_hub_v4 as v4
           import nfl_spread_mc_v1 as mc
+          import streamlit_memory_lazy_router_v135 as router
 
           assert v4.PRESENTATION_ONLY is True
           assert v4.FROZEN_ANALYTICS == 'nfl_spread_hub_v3'
@@ -70,6 +77,9 @@ jobs:
           assert v3.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           assert mc.CERTIFIED_SIMULATIONS == 5_000_000
           assert mc.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v134'
+          assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v4'
+          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           source = inspect.getsource(v4)
           assert 'prior._analytics_for_game' in source
           assert 'simulate_game_spread' not in source
