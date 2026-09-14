@@ -77,13 +77,15 @@ def test_artifact_from_dict_fails_closed_on_unknown_version():
 
 
 def test_artifact_size_limit_fails_closed():
-    huge = "x" * 300_000
+    # Scalar strings are intentionally clipped by the sanitizer before storage,
+    # so exercise the total artifact cap with many individually safe fields.
+    huge = {f"field_{index:04d}": "x" * 160 for index in range(3000)}
     with pytest.raises(ValueError, match="size limit"):
         capture_response(
             route_key="huge",
             url="https://api.test/huge",
             status_code=200,
-            json_body={"blob": huge},
+            json_body=huge,
         )
 
 
