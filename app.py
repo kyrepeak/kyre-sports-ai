@@ -1,4 +1,4 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Step 10 final page.
+"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards visual parity Step 2.
 
 Router V121 is additive over certified Router V120. It preserves the complete
 Passing Yards chain and the certified Rushing Yards V15 page while advancing
@@ -12,7 +12,7 @@ grades, rankings, recommendations, staking, and wager actions remain OFF.
 Sportsbook projection influence stays 0.0%.
 
 Deployment heartbeat:
-STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP10_FINAL_POLISH_SPEED_CERT_2026-09-13.
+STREAMLIT_MAIN_V122_NFL_PASSING_YARDS_VISUAL_PARITY_STEP2_QB_HEROES_2026-09-13.
 """
 from __future__ import annotations
 
@@ -87,6 +87,7 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v118 import render_app as _frozen_v118_render_app
     from streamlit_memory_lazy_router_v119 import render_app as _frozen_v119_render_app
     from streamlit_memory_lazy_router_v120 import render_app as _frozen_v120_render_app
+    from streamlit_memory_lazy_router_v121 import render_app as _frozen_v121_render_app
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v79 import record_bootstrap_import_ms, render_app
@@ -176,12 +177,13 @@ FROZEN_V117_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V117_NFL_RECEIVING_YARDS_STEP
 FROZEN_V118_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V118_NFL_RECEIVING_YARDS_STEP7_SUPPORT_CONCERNS_2026-09-13"
 FROZEN_V119_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP8_FANDUEL_FULL_LINEUP_2026-09-13"
 FROZEN_V120_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP10_FINAL_POLISH_SPEED_CERT_2026-09-13"
+FROZEN_V121_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP10_FINAL_POLISH_SPEED_CERT_2026-09-13"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V122_NFL_PASSING_YARDS_VISUAL_PARITY_STEP2_QB_HEROES_2026-09-13"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v121 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v122 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
