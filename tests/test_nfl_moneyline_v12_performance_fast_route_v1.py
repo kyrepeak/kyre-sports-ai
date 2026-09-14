@@ -229,6 +229,19 @@ def test_v131_fallback_loads_frozen_prior(monkeypatch):
     assert r131.render_app() == "prior"
 
 
+def test_v131_nonmoneyline_session_clears_stale_fast_query_before_fallback(monkeypatch):
+    state = {"ks_sport_touch": "NFL", "ks_nfl_market_touch": "Slate"}
+    query = {r131.ROUTE_QUERY_SPORT: "NFL", r131.ROUTE_QUERY_MARKET: "Moneyline"}
+    monkeypatch.setattr(r131.st, "session_state", state)
+    monkeypatch.setattr(r131.st, "query_params", query)
+    prior = SimpleNamespace(render_app=lambda: "prior")
+    monkeypatch.setattr(r131, "_load_prior", lambda: prior)
+
+    assert r131.render_app() == "prior"
+    assert r131.ROUTE_QUERY_SPORT not in query
+    assert r131.ROUTE_QUERY_MARKET not in query
+
+
 def test_v131_fast_path_does_not_load_prior(monkeypatch):
     monkeypatch.setattr(r131, "_fast_route_active", lambda: True)
     monkeypatch.setattr(r131, "_render_direct_moneyline", lambda: "fast")
