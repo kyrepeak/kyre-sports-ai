@@ -244,6 +244,9 @@ jobs:
 
           base='http://127.0.0.1:8521'
           artifacts=Path('artifacts/moneyline-v12-performance')
+          baseline_first=1.8548
+          baseline_warm_p50=1.1603
+          promotion_warm_p50=1.0000
           legacy=[
               'NFL Moneyline Command Center',
               'STEP 1A PASSED',
@@ -254,7 +257,13 @@ jobs:
               'Step 7 — No-Vig Edge + Expected Value',
           ]
           _wait_for_health(base)
-          result={'status':'RUNNING','baseline_first_seconds':1.8548,'baseline_warm_p50_seconds':1.1603,'viewport':'1024x1366'}
+          result={
+              'status':'RUNNING',
+              'baseline_first_seconds':baseline_first,
+              'baseline_warm_p50_seconds':baseline_warm_p50,
+              'promotion_warm_p50_seconds':promotion_warm_p50,
+              'viewport':'1024x1366',
+          }
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
@@ -292,20 +301,23 @@ jobs:
                       _wait_for_text(frame,'NFL Moneyline Matchup Board',300.0)
                       cards=frame.locator('.kml9-matchup-card')
                       deadline=time.time()+300
-                      while time.time()<deadline and cards.count()<1:
-                          time.sleep(0.10)
+                      last_body=''
+                      while time.time()<deadline:
+                          if cards.count()>=1:
+                              body=frame.locator('body').inner_text()
+                              last_body=body
+                              forbidden=_body_has_forbidden_error(body)
+                              if forbidden:
+                                  raise BrowserQAFailure(f'{label}: runtime error marker {forbidden}')
+                              if 'FANDUEL' in body.upper():
+                                  return cards
+                          time.sleep(0.05)
+                      upper=last_body.upper()
                       if cards.count()<1:
                           raise BrowserQAFailure(f'{label}: no matchup card')
-                      time.sleep(0.25)
-                      body=frame.locator('body').inner_text()
-                      forbidden=_body_has_forbidden_error(body)
-                      if forbidden:
-                          raise BrowserQAFailure(f'{label}: runtime error marker {forbidden}')
-                      if 'MARKET UNAVAILABLE' in body.upper():
-                          raise BrowserQAFailure(f'{label}: market unavailable')
-                      if 'FANDUEL' not in body.upper():
-                          raise BrowserQAFailure(f'{label}: FanDuel missing')
-                      return cards
+                      if 'MARKET UNAVAILABLE' in upper:
+                          raise BrowserQAFailure(f'{label}: market unavailable after settle timeout')
+                      raise BrowserQAFailure(f'{label}: FanDuel missing after settle timeout')
 
                   t0=time.perf_counter()
                   _choose(page,frame,1,'Moneyline')
@@ -317,7 +329,7 @@ jobs:
                       _choose(page,frame,1,'Slate')
                       deadline=time.time()+90
                       while time.time()<deadline and frame.locator('.kml9-matchup-card').count()>0:
-                          time.sleep(0.10)
+                          time.sleep(0.05)
                       if frame.locator('.kml9-matchup-card').count()>0:
                           raise BrowserQAFailure(f'warm {idx+1}: could not leave Moneyline')
                       frame.get_by_role('combobox',name='🎯 NFL Market',exact=True).wait_for(state='visible',timeout=60000)
@@ -344,12 +356,14 @@ jobs:
                   if overflow>4:
                       raise BrowserQAFailure(f'horizontal overflow {overflow}px')
 
+                  warm_p50=statistics.median(warm)
                   result.update({
                       'status':'GREEN',
                       'first_moneyline_seconds':round(first,4),
                       'warm_moneyline_seconds':[round(x,4) for x in warm],
-                      'warm_p50_seconds':round(statistics.median(warm),4),
+                      'warm_p50_seconds':round(warm_p50,4),
                       'warm_best_seconds':round(min(warm),4),
+                      'warm_improvement_pct':round((1.0-(warm_p50/baseline_warm_p50))*100.0,2),
                       'direct_reload_seconds':round(direct_reload,4),
                       'direct_url':direct_url,
                       'matchup_cards':cards.count(),
@@ -362,10 +376,16 @@ jobs:
                       'sportsbook_model_influence':0.0,
                       'monte_carlo_simulations':5_000_000,
                   })
+                  if warm_p50 > promotion_warm_p50:
+                      result['status']='SPEED_GATE_RED'
                   artifacts.joinpath('moneyline_v12_performance.json').write_text(json.dumps(result,indent=2))
                   page.screenshot(path=str(artifacts/'moneyline_v12_performance_ipad.png'),full_page=True)
-                  print('NFL_MONEYLINE_V12_BROWSER_PERFORMANCE_GREEN')
                   print(json.dumps(result,indent=2))
+                  if warm_p50 > promotion_warm_p50:
+                      raise BrowserQAFailure(
+                          f'warm p50 {warm_p50:.4f}s exceeds promotion gate {promotion_warm_p50:.4f}s; baseline {baseline_warm_p50:.4f}s'
+                      )
+                  print('NFL_MONEYLINE_V12_BROWSER_PERFORMANCE_GREEN')
               finally:
                   browser.close()
           PY
