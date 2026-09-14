@@ -39,14 +39,19 @@ jobs:
           if target in text:
               raise SystemExit('APP_V124_COMPAT_ALREADY_PRESENT')
 
-          anchor = (
-              '    from streamlit_memory_lazy_router_v122 import record_bootstrap_import_ms, render_app\n'
+          frozen_anchor = (
+              '    from streamlit_memory_lazy_router_v124 import render_app as _frozen_v124_render_app\n'
               '    from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app\n'
           )
-          if anchor not in text:
-              raise SystemExit('APP_TYPE_CHECKING_V122_V123_ANCHOR_MISSING')
+          replacement = (
+              '    from streamlit_memory_lazy_router_v124 import render_app as _frozen_v124_render_app\n'
+              + target
+              + '    from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app\n'
+          )
+          if frozen_anchor not in text:
+              raise SystemExit('APP_TYPE_CHECKING_V124_V123_ANCHOR_MISSING')
 
-          text = text.replace(anchor, anchor + target, 1)
+          text = text.replace(frozen_anchor, replacement, 1)
 
           if runtime not in text:
               raise SystemExit('APP_V125_RUNTIME_CHANGED_UNEXPECTEDLY')
