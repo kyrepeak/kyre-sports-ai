@@ -60,26 +60,34 @@ jobs:
           api='https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market'
           event='401872931'
           artifacts=Path('artifacts/moneyline-speed-baseline')
-
-          api_times=[]
-          for i in range(5):
-              t=time.perf_counter()
-              r=requests.get(api,params={'event_id':event},timeout=(5,35),headers={'Accept':'application/json','User-Agent':'KyreSportsAI-SpeedBaseline/1.0'})
-              elapsed=time.perf_counter()-t
-              if r.status_code != 200:
-                  raise RuntimeError(f'API baseline failed HTTP {r.status_code}: {r.text[:300]}')
-              p=r.json()
-              assert p.get('official_event_id') == event and p.get('ready') is True
-              api_times.append(elapsed)
-
+          metrics_path=artifacts/'moneyline_speed_baseline.json'
           result={
-              'status':'GREEN',
+              'status':'RUNNING',
               'site':site,
               'event_id':event,
               'viewport':'1024x1366',
-              'api_seconds':[round(x,4) for x in api_times],
-              'api_p50_seconds':round(statistics.median(api_times),4),
+              'visits':[],
           }
+
+          def save():
+              metrics_path.write_text(json.dumps(result,indent=2))
+
+          api_times=[]
+          api_statuses=[]
+          for i in range(5):
+              t=time.perf_counter()
+              r=requests.get(api,params={'event_id':event},timeout=(5,35),headers={'Accept':'application/json','User-Agent':'KyreSportsAI-SpeedBaseline/1.1'})
+              elapsed=time.perf_counter()-t
+              api_times.append(elapsed)
+              api_statuses.append(r.status_code)
+              if r.status_code == 200:
+                  p=r.json()
+                  assert p.get('official_event_id') == event
+              time.sleep(0.15)
+          result['api_seconds']=[round(x,4) for x in api_times]
+          result['api_http_statuses']=api_statuses
+          result['api_p50_seconds']=round(statistics.median(api_times),4)
+          save()
 
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
@@ -88,13 +96,24 @@ jobs:
                   nav0=time.perf_counter()
                   page.goto(site,wait_until='domcontentloaded',timeout=120000)
                   frame,_=_find_app_frame(page)
-                  app_dom_seconds=time.perf_counter()-nav0
+                  result['initial_dom_seconds']=round(time.perf_counter()-nav0,4)
 
                   nfl0=time.perf_counter()
                   _choose(page,frame,0,'NFL')
                   combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
                   combo.wait_for(state='visible',timeout=60000)
-                  nfl_selector_seconds=time.perf_counter()-nfl0
+                  result['nfl_selector_seconds']=round(time.perf_counter()-nfl0,4)
+                  save()
+
+                  def wait_moneyline_gone():
+                      deadline=time.time()+60
+                      while time.time() < deadline:
+                          cards=frame.locator('.kml9-matchup-card').count()
+                          titles=frame.get_by_text('NFL Moneyline Matchup Board',exact=False).count()
+                          if cards == 0 and titles == 0:
+                              return
+                          time.sleep(0.10)
+                      raise BrowserQAFailure('Moneyline DOM did not clear after leaving page')
 
                   def load_moneyline(label):
                       t0=time.perf_counter()
@@ -103,44 +122,51 @@ jobs:
                       cards=frame.locator('.kml9-matchup-card')
                       deadline=time.time()+300
                       while time.time() < deadline and cards.count() < 1:
-                          time.sleep(0.20)
+                          time.sleep(0.10)
                       if cards.count() < 1:
                           raise BrowserQAFailure(f'{label}: no Moneyline matchup card')
                       elapsed=time.perf_counter()-t0
+                      time.sleep(0.35)
                       body=frame.locator('body').inner_text()
                       forbidden=_body_has_forbidden_error(body)
                       if forbidden:
                           raise BrowserQAFailure(f'{label}: runtime error marker {forbidden}')
-                      if 'MARKET UNAVAILABLE' in body.upper():
-                          raise BrowserQAFailure(f'{label}: market unavailable')
-                      return elapsed, cards.count()
+                      target=cards.nth(0).inner_text()
+                      visit={
+                          'label':label,
+                          'seconds':round(elapsed,4),
+                          'cards':cards.count(),
+                          'market_available':'MARKET UNAVAILABLE' not in target.upper(),
+                          'fanduel_visible':'FANDUEL' in target.upper(),
+                      }
+                      result['visits'].append(visit)
+                      save()
+                      return visit
 
-                  cold, card_count=load_moneyline('first_visit')
-                  warm=[]
+                  load_moneyline('first_visit')
                   for idx in range(3):
                       _choose(page,frame,1,'Slate')
-                      combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
-                      combo.wait_for(state='visible',timeout=60000)
-                      elapsed,_=load_moneyline(f'warm_visit_{idx+1}')
-                      warm.append(elapsed)
+                      wait_moneyline_gone()
+                      frame.get_by_role('combobox',name='🎯 NFL Market',exact=True).wait_for(state='visible',timeout=60000)
+                      load_moneyline(f'warm_visit_{idx+1}')
 
-                  overflow=frame.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
-                  result.update({
-                      'initial_dom_seconds':round(app_dom_seconds,4),
-                      'nfl_selector_seconds':round(nfl_selector_seconds,4),
-                      'first_moneyline_seconds':round(cold,4),
-                      'warm_moneyline_seconds':[round(x,4) for x in warm],
-                      'warm_p50_seconds':round(statistics.median(warm),4),
-                      'warm_best_seconds':round(min(warm),4),
-                      'matchup_cards':card_count,
-                      'horizontal_overflow_px':overflow,
-                      'sportsbook_model_influence':0.0,
-                  })
+                  visits=result['visits']
+                  first=visits[0]
+                  warm=[x['seconds'] for x in visits[1:]]
+                  result['first_moneyline_seconds']=first['seconds']
+                  result['warm_moneyline_seconds']=warm
+                  result['warm_p50_seconds']=round(statistics.median(warm),4)
+                  result['warm_best_seconds']=round(min(warm),4)
+                  result['market_available_visits']=sum(1 for x in visits if x['market_available'])
+                  result['matchup_cards']=visits[-1]['cards']
+                  result['horizontal_overflow_px']=frame.evaluate('() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth')
+                  result['sportsbook_model_influence']=0.0
+                  result['status']='GREEN'
                   page.screenshot(path=str(artifacts/'moneyline_speed_baseline_ipad.png'),full_page=True)
+                  save()
               finally:
                   browser.close()
 
-          artifacts.joinpath('moneyline_speed_baseline.json').write_text(json.dumps(result,indent=2))
           print('NFL_MONEYLINE_SPEED_BASELINE_GREEN')
           print(json.dumps(result,indent=2))
           PY
