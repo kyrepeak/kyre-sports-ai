@@ -28,6 +28,11 @@ SPORTSBOOK_MODEL_INFLUENCE = 0.0
 STAKE_SIZING_ENABLED = False
 
 
+def _noop(*args, **kwargs):
+    """Pickle-safe shared no-op used by the silent Streamlit facade."""
+    return None
+
+
 class _SilentBlock:
     """Minimal DeltaGenerator-like object used only during frozen V8 execution."""
 
@@ -62,13 +67,9 @@ class _SilentBlock:
         return [_SilentBlock() for _ in list(labels or [])]
 
     def __getattr__(self, _name):
-        def _silent_method(*args, **kwargs):
-            return None
-        return _silent_method
-
-
-def _noop(*args, **kwargs):
-    return None
+        # Keep unknown legacy calls silent while remaining safe for Streamlit's
+        # cache message/result pickling. Never return a locally-created closure.
+        return _noop
 
 
 def _silent_block(*args, **kwargs):
@@ -133,14 +134,20 @@ def _silent_selectbox(label, options, *args, **kwargs):
                 return st.session_state[key]
         except Exception:
             pass
-    values = list(options or [])
+    try:
+        values = list(options)
+    except Exception:
+        values = []
     index = kwargs.get("index", 0)
     value = None if index is None or not values else values[max(0, min(int(index), len(values) - 1))]
     return _state_value(key, value)
 
 
 def _silent_multiselect(label, options, default=None, *args, **kwargs):
-    value = list(default or [])
+    try:
+        value = list(default) if default is not None else []
+    except Exception:
+        value = []
     return _state_value(kwargs.get("key"), value)
 
 
