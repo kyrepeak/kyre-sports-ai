@@ -1,0 +1,164 @@
+name: NFL Moneyline V12 Speed Cache V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_moneyline_market_api_v2.py"
+      - "nfl_moneyline_hub_v12.py"
+      - "streamlit_memory_lazy_router_v131.py"
+      - "app.py"
+      - "tests/test_nfl_moneyline_v12_speed_cache_v1.py"
+      - ".github/workflows/nfl-moneyline-v12-speed-cache-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-v12-speed-cache:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests pandas numpy streamlit
+
+      - name: Enforce exact six-file V12 diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-moneyline-v12-speed-cache-v1.yml
+          app.py
+          nfl_moneyline_hub_v12.py
+          nfl_moneyline_market_api_v2.py
+          streamlit_memory_lazy_router_v131.py
+          tests/test_nfl_moneyline_v12_speed_cache_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual Moneyline V12 diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile V12 speed surface
+        run: |
+          python -m py_compile \
+            nfl_moneyline_market_api_v2.py \
+            nfl_moneyline_hub_v12.py \
+            streamlit_memory_lazy_router_v131.py \
+            app.py \
+            tests/test_nfl_moneyline_v12_speed_cache_v1.py
+
+      - name: Prove frozen Moneyline V1-V11 and sibling owners stay untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_moneyline_hub_v([1-9]|10|11)\.py$|nfl_moneyline_market_v1\.py$|nfl_moneyline_market_api_v1\.py$|nfl_hub_v18\.py$|streamlit_memory_lazy_router_v(128|129|130)\.py$|nfl_passing_yards_.*\.py$|nfl_receiving_yards_.*\.py$|nfl_rushing_yards_.*\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo 'NFL_MONEYLINE_V12_FROZEN_OWNER_MODIFICATION_BLOCKED'
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo 'NFL_MONEYLINE_V12_FROZEN_OWNER_GUARD_GREEN'
+
+      - name: Run deterministic V12 cache and fallback contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v12_speed_cache_v1.py
+
+      - name: Re-run frozen V11 no-flash contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v11_no_flash_v1.py
+
+      - name: Re-run frozen V10 Kyre API contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v10_kyre_api_v1.py
+
+      - name: Re-run frozen V9 matchup-card contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v9_fresh_matchup_cards_v1.py
+
+      - name: Prove V12 remains transport-only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import nfl_moneyline_hub_v12 as v12
+          import nfl_moneyline_market_api_v2 as market
+          import streamlit_memory_lazy_router_v131 as router
+
+          assert v12.FROZEN_HUB == 'nfl_moneyline_hub_v11'
+          assert v12.FROZEN_TRANSPORT_WRAPPER == 'nfl_moneyline_hub_v10'
+          assert v12.ACTIVE_MARKET_ADAPTER == 'nfl_moneyline_market_api_v2'
+          assert v12.SPORTSBOOK_MODEL_INFLUENCE == 0.0
+          assert v12.STAKE_SIZING_ENABLED is False
+          assert market.FROZEN_ADAPTER == 'nfl_moneyline_market_api_v1'
+          assert market.HOT_CACHE_TTL_SECONDS == 45.0
+          assert market.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert market.STAKE_SIZING_ENABLED is False
+          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v130'
+          assert router.ACTIVE_MONEYLINE_HUB == 'nfl_moneyline_hub_v12'
+          print('NFL_MONEYLINE_V12_TRANSPORT_ONLY_GREEN')
+          PY
+
+      - name: Probe deployed Kyre Sports API Moneyline safety contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          import time
+          import requests
+
+          url = 'https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market/status'
+          last = None
+          for attempt in range(1, 4):
+              try:
+                  response = requests.get(
+                      url,
+                      timeout=(5, 30),
+                      headers={'Accept': 'application/json', 'User-Agent': 'KyreSportsAI-V12Cert/1.0'},
+                  )
+                  if response.status_code == 200:
+                      payload = response.json()
+                      assert payload['status'] == 'ready'
+                      assert payload['schema_version'] == 'nfl_moneyline_market_v1'
+                      assert payload['sport'] == 'nfl'
+                      assert payload['market'] == 'moneyline'
+                      assert payload['official_event_id_required'] is True
+                      assert payload['fuzzy_matching'] is False
+                      assert payload['synthetic_event_ids'] is False
+                      assert payload['projection_weight'] == 0.0
+                      assert payload['market_context_only'] is True
+                      assert payload['may_modify_projection'] is False
+                      assert payload['model_probability_input'] is False
+                      assert payload['stake_sizing_enabled'] is False
+                      assert payload['wager_actions'] is False
+                      print('NFL_MONEYLINE_V12_PUBLIC_API_GREEN')
+                      break
+                  last = RuntimeError(f'HTTP {response.status_code}: {response.text[:300]}')
+              except Exception as exc:
+                  last = exc
+              if attempt < 3:
+                  time.sleep(5)
+          else:
+              raise last or RuntimeError('Kyre Sports API Moneyline status probe failed')
+          PY
