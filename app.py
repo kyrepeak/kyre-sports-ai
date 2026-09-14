@@ -1,4 +1,4 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards visual parity Step 3.
+"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards visual parity Step 4.
 
 Router V121 is additive over certified Router V120. It preserves the complete
 Passing Yards chain and the certified Rushing Yards V15 page while advancing
@@ -89,6 +89,8 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v120 import render_app as _frozen_v120_render_app
     from streamlit_memory_lazy_router_v121 import render_app as _frozen_v121_render_app
     from streamlit_memory_lazy_router_v122 import render_app as _frozen_v122_render_app
+    from streamlit_memory_lazy_router_v123 import render_app as _frozen_v123_render_app
+    from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v122 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v77 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v78 import record_bootstrap_import_ms, render_app
@@ -181,12 +183,13 @@ FROZEN_V119_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP
 FROZEN_V120_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13"
 FROZEN_V121_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP10_FINAL_POLISH_SPEED_CERT_2026-09-13"
 FROZEN_V122_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V122_NFL_PASSING_YARDS_VISUAL_PARITY_STEP2_QB_HEROES_2026-09-13"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V123_NFL_PASSING_YARDS_VISUAL_PARITY_STEP3_QB_PROFILE_2026-09-13"
+FROZEN_V123_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V123_NFL_PASSING_YARDS_VISUAL_PARITY_STEP3_QB_PROFILE_2026-09-13"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V124_NFL_PASSING_YARDS_VISUAL_PARITY_STEP4_CONTEXT_CARDS_2026-09-13"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v124 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
