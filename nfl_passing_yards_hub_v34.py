@@ -19,6 +19,14 @@ from typing import Any
 
 import streamlit as st
 
+import nfl_passing_yards_hub_v5 as pressure_ui
+import nfl_passing_yards_hub_v7 as environment_ui
+import nfl_passing_yards_hub_v8 as projection_ui
+import nfl_passing_yards_hub_v9 as context_ui
+import nfl_passing_yards_hub_v10 as distribution_ui
+import nfl_passing_yards_hub_v17 as provenance_ui
+import nfl_passing_yards_hub_v21 as market_visual_ui
+import nfl_passing_yards_hub_v28 as personnel_visual_ui
 import nfl_passing_yards_hub_v29 as identity_visual_ui
 import nfl_passing_yards_hub_v30 as profile_visual_ui
 import nfl_passing_yards_hub_v33 as prior
@@ -184,9 +192,8 @@ def _extract_elements_by_class(body: str, tag: str, class_name: str) -> list[str
 
 
 def _capture_grid(captured: dict[str, list[str]], key: str, body: str) -> None:
-    # Steps 1-2 are captured directly from their certified card factories, so
-    # downstream grid parsing must never overwrite those exact cards.
-    if key in {"identity", "profile"} and captured.get(key):
+    # Direct final-factory capture is authoritative. Grid parsing is fallback only.
+    if captured.get(key):
         return
     if key == "identity":
         children = _split_top_level_children(body)
@@ -258,20 +265,65 @@ def render_nfl_passing_yards_hub() -> None:
     original_banner = prior._visual_build_banner_v33
     original_identity_factory = identity_visual_ui._qb_hero_card
     original_profile_factory = profile_visual_ui._profile_card_v30
+    original_provenance = provenance_ui._with_provenance
+    original_pressure_factory = pressure_ui._pressure_card
+    original_personnel_factory = personnel_visual_ui._personnel_card
+    original_environment_factory = environment_ui._environment_card
+    original_projection_factory = projection_ui._projection_card
+    original_context_factory = context_ui._context_card
+    original_distribution_factory = distribution_ui._distribution_card
+    original_market_logo_injector = market_visual_ui._inject_team_logo
+
+    def capture_pair(key: str, html: str) -> str:
+        rows = captured.setdefault(key, [])
+        if len(rows) < 2:
+            rows.append(html)
+        return html
 
     def capture_identity_card(ctx: dict[str, Any], preseason: bool, matchup: dict[str, str] | None = None) -> str:
-        html = original_identity_factory(ctx, preseason, matchup)
-        identity_cards = captured.setdefault("identity", [])
-        if len(identity_cards) < 2:
-            identity_cards.append(html)
-        return html
+        return capture_pair("identity", original_identity_factory(ctx, preseason, matchup))
 
     def capture_profile_card(team_ctx: dict[str, Any], qb_profile: dict[str, Any]) -> str:
-        html = original_profile_factory(team_ctx, qb_profile)
-        profile_cards = captured.setdefault("profile", [])
-        if len(profile_cards) < 2:
-            profile_cards.append(html)
+        return capture_pair("profile", original_profile_factory(team_ctx, qb_profile))
+
+    def capture_provenance(html: str, row: dict, label: str) -> str:
+        final_html = original_provenance(html, row, label)
+        if label == "Step 2 source":
+            profile_rows = captured.setdefault("profile", [])
+            if profile_rows:
+                profile_rows[-1] = final_html
+            elif len(profile_rows) < 2:
+                profile_rows.append(final_html)
+        elif label == "Step 3 source":
+            capture_pair("defense", final_html)
+        return final_html
+
+    def capture_pressure_card(qb_ctx: dict, offense_ctx: dict, defense_ctx: dict, pressure_row: dict) -> str:
+        return capture_pair("pressure", original_pressure_factory(qb_ctx, offense_ctx, defense_ctx, pressure_row))
+
+    def capture_personnel_card(personnel_row: dict) -> str:
+        return capture_pair("personnel", original_personnel_factory(personnel_row))
+
+    def capture_environment_card(environment_row: dict) -> str:
+        html = original_environment_factory(environment_row)
+        captured["environment"] = [html]
         return html
+
+    def capture_projection_card(projection_row: dict) -> str:
+        return capture_pair("projection", original_projection_factory(projection_row))
+
+    def capture_context_card(context_row: dict) -> str:
+        return capture_pair("context", original_context_factory(context_row))
+
+    def capture_distribution_card(distribution_row: dict) -> str:
+        return capture_pair("distribution", original_distribution_factory(distribution_row))
+
+    def capture_final_market_card(card_html: str, visual: dict) -> str:
+        # V21 is the last HTML market-card decorator in the nested chain. Its
+        # input already contains V24 matchup context and V22 QB headshot; its
+        # return adds the exact-ID team logo and is therefore the final card.
+        final_html = original_market_logo_injector(card_html, visual)
+        return capture_pair("market", final_html)
 
     def composed_markdown(body: Any, *args: Any, **kwargs: Any):
         nonlocal placeholder
@@ -293,7 +345,8 @@ def render_nfl_passing_yards_hub() -> None:
                 return None
 
         if '<section class="kpy-env"' in text:
-            captured["environment"] = [text]
+            if not captured.get("environment"):
+                captured["environment"] = [text]
             return None
 
         if any(marker in text for marker in ('<div class="kpy8-active"', '<div class="kpy9-active"', '<div class="kpy10-active"')):
@@ -319,6 +372,14 @@ def render_nfl_passing_yards_hub() -> None:
     prior._visual_build_banner_v33 = _visual_build_banner_v34
     identity_visual_ui._qb_hero_card = capture_identity_card
     profile_visual_ui._profile_card_v30 = capture_profile_card
+    provenance_ui._with_provenance = capture_provenance
+    pressure_ui._pressure_card = capture_pressure_card
+    personnel_visual_ui._personnel_card = capture_personnel_card
+    environment_ui._environment_card = capture_environment_card
+    projection_ui._projection_card = capture_projection_card
+    context_ui._context_card = capture_context_card
+    distribution_ui._distribution_card = capture_distribution_card
+    market_visual_ui._inject_team_logo = capture_final_market_card
     st.markdown = composed_markdown
     st.success = filtered_success
     st.warning = filtered_warning
@@ -332,6 +393,14 @@ def render_nfl_passing_yards_hub() -> None:
         st.info = original_info
         identity_visual_ui._qb_hero_card = original_identity_factory
         profile_visual_ui._profile_card_v30 = original_profile_factory
+        provenance_ui._with_provenance = original_provenance
+        pressure_ui._pressure_card = original_pressure_factory
+        personnel_visual_ui._personnel_card = original_personnel_factory
+        environment_ui._environment_card = original_environment_factory
+        projection_ui._projection_card = original_projection_factory
+        context_ui._context_card = original_context_factory
+        distribution_ui._distribution_card = original_distribution_factory
+        market_visual_ui._inject_team_logo = original_market_logo_injector
         prior._visual_build_banner_v33 = original_banner
 
     if placeholder is not None:
