@@ -1,0 +1,182 @@
+name: NFL Spread Step 8 Regression Shield
+
+on:
+  push:
+    branches:
+      - nfl-spread-model-mc-v1
+    paths:
+      - 'app.py'
+      - 'nfl_spread_hub_v1.py'
+      - 'nfl_spread_hub_v2.py'
+      - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_market_api_v1.py'
+      - 'nfl_spread_model_v1.py'
+      - 'nfl_spread_mc_v1.py'
+      - 'streamlit_memory_lazy_router_v132.py'
+      - 'streamlit_memory_lazy_router_v133.py'
+      - 'streamlit_memory_lazy_router_v134.py'
+      - 'tests/test_nfl_spread_fun_ui_v2.py'
+      - 'tests/test_nfl_spread_model_v1.py'
+      - 'tests/test_nfl_spread_mc_v1.py'
+      - 'tests/test_nfl_spread_v3_model_mc.py'
+      - 'tests/test_nfl_spread_v134_activation.py'
+      - '.github/workflows/nfl-spread-step8-regression-shield.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_spread_hub_v1.py'
+      - 'nfl_spread_hub_v2.py'
+      - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_market_api_v1.py'
+      - 'nfl_spread_model_v1.py'
+      - 'nfl_spread_mc_v1.py'
+      - 'streamlit_memory_lazy_router_v132.py'
+      - 'streamlit_memory_lazy_router_v133.py'
+      - 'streamlit_memory_lazy_router_v134.py'
+      - 'tests/test_nfl_spread_fun_ui_v2.py'
+      - 'tests/test_nfl_spread_model_v1.py'
+      - 'tests/test_nfl_spread_mc_v1.py'
+      - 'tests/test_nfl_spread_v3_model_mc.py'
+      - 'tests/test_nfl_spread_v134_activation.py'
+      - '.github/workflows/nfl-spread-step8-regression-shield.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-spread-step8-regression-shield-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression-shield:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install isolated regression stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests pandas numpy streamlit pytest
+
+      - name: Compile complete NFL Spread Step 7 surface
+        run: |
+          python -m py_compile app.py
+          python -m py_compile nfl_spread_hub_v1.py
+          python -m py_compile nfl_spread_hub_v2.py
+          python -m py_compile nfl_spread_hub_v3.py
+          python -m py_compile nfl_spread_model_v1.py
+          python -m py_compile nfl_spread_mc_v1.py
+          python -m py_compile streamlit_memory_lazy_router_v133.py
+          python -m py_compile streamlit_memory_lazy_router_v134.py
+          python -m py_compile tests/test_nfl_spread_fun_ui_v2.py
+          python -m py_compile tests/test_nfl_spread_model_v1.py
+          python -m py_compile tests/test_nfl_spread_mc_v1.py
+          python -m py_compile tests/test_nfl_spread_v3_model_mc.py
+          python -m py_compile tests/test_nfl_spread_v134_activation.py
+
+      - name: Run frozen presentation plus model MC V3 activation regression tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest -q \
+            tests/test_nfl_spread_fun_ui_v2.py \
+            tests/test_nfl_spread_model_v1.py \
+            tests/test_nfl_spread_mc_v1.py \
+            tests/test_nfl_spread_v3_model_mc.py \
+            tests/test_nfl_spread_v134_activation.py
+
+      - name: Prove frozen Step 6 and Moneyline owners are untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP6='29c1f0edd5931a70ab386d9ea0b9b5b46a47ce20'
+          git diff --quiet "$STEP6" HEAD -- \
+            nfl_spread_hub_v1.py \
+            nfl_spread_hub_v2.py \
+            nfl_spread_market_api_v1.py \
+            streamlit_memory_lazy_router_v132.py \
+            streamlit_memory_lazy_router_v133.py \
+            streamlit_memory_lazy_router_v131.py \
+            nfl_moneyline_hub_v12.py \
+            nfl_moneyline_hub_v11.py \
+            nfl_moneyline_market_api_v1.py
+          echo 'NFL_SPREAD_STEP8_FROZEN_OWNERS_GREEN'
+
+      - name: Enforce exact app V134 activation-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          step6 = '29c1f0edd5931a70ab386d9ea0b9b5b46a47ce20'
+          diff = subprocess.check_output(
+              ['git', 'diff', '--unified=0', step6, 'HEAD', '--', 'app.py'],
+              text=True,
+          )
+          changes = sorted(
+              line for line in diff.splitlines()
+              if line.startswith(('+', '-')) and not line.startswith(('+++', '---'))
+          )
+          expected = sorted([
+              '-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"',
+              '+FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"',
+              '+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"',
+              '-    from streamlit_memory_lazy_router_v133 import record_bootstrap_import_ms, render_app',
+              '+    from streamlit_memory_lazy_router_v134 import record_bootstrap_import_ms, render_app',
+          ])
+          if changes != expected:
+              print('Unexpected app.py activation changes:')
+              print('\n'.join(changes))
+              raise SystemExit(1)
+          print('NFL_SPREAD_V134_APP_ACTIVATION_ONLY_GREEN')
+          PY
+
+      - name: Prove full model simulation page router firewall
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import nfl_spread_model_v1 as model
+          import nfl_spread_mc_v1 as mc
+          import nfl_spread_hub_v3 as page
+          import streamlit_memory_lazy_router_v134 as router
+
+          assert model.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert mc.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert mc.CERTIFIED_SIMULATIONS == 5_000_000
+          assert page.CERTIFIED_SIMULATIONS == 5_000_000
+          assert page.MARKET_LINE_ROLE == 'settlement_only'
+          assert page.PROJECTION_MODEL_ENABLED is True
+          assert page.MONTE_CARLO_ENABLED is True
+          assert page.RANKINGS_ENABLED is False
+          assert page.STAKE_SIZING_ENABLED is False
+          assert page.WAGER_ACTIONS_ENABLED is False
+          assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v3'
+          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v133'
+          print('NFL_SPREAD_STEP8_FULL_FIREWALL_GREEN')
+          PY
+
+  final-step8-gate:
+    if: always()
+    needs: [regression-shield]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require regression shield green
+        env:
+          RESULT: ${{ needs.regression-shield.result }}
+        run: |
+          test "$RESULT" = "success"
+          echo 'NFL_SPREAD_STEP8_FINAL_GATE_GREEN'
