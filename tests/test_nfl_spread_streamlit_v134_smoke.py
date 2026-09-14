@@ -29,8 +29,8 @@ def test_real_streamlit_apptest_executes_v134_spread_route() -> None:
     assert cold["stake_sizing_enabled"] is False
     assert cold["wager_actions_enabled"] is False
 
-    assert at.query_params["ks_nfl_sport"] == "NFL"
-    assert at.query_params["ks_nfl_market"] == "Spread"
+    assert at.query_params["ks_nfl_sport"] == ["NFL"]
+    assert at.query_params["ks_nfl_market"] == ["Spread"]
 
     profiler = at.session_state["monster_performance_profiler_v1_last"]
     assert isinstance(profiler, dict)
