@@ -14,6 +14,7 @@ from __future__ import annotations
 from datetime import datetime
 from html import escape
 import math
+from textwrap import dedent
 from typing import Any
 
 import pandas as pd
@@ -39,6 +40,11 @@ WAGER_ACTIONS_ENABLED = False
 
 def _safe(value: Any, default: str = "") -> str:
     return prior._safe(value, default)
+
+
+def _html_fragment(value: str) -> str:
+    """Normalize multiline HTML so Markdown never treats nested tags as code."""
+    return dedent(str(value or "")).strip()
 
 
 def _num(value: Any) -> float:
@@ -306,12 +312,14 @@ def render_nfl_hub(market: str = "Spread") -> None:
     )
 
     st.markdown(
-        _summary_html(
-            games=int(len(games)),
-            upcoming=upcoming,
-            market_ready=market_ready,
-            model_ready=model_ready,
-            mc_certified=mc_certified,
+        _html_fragment(
+            _summary_html(
+                games=int(len(games)),
+                upcoming=upcoming,
+                market_ready=market_ready,
+                model_ready=model_ready,
+                mc_certified=mc_certified,
+            )
         ),
         unsafe_allow_html=True,
     )
@@ -363,8 +371,8 @@ def render_nfl_hub(market: str = "Spread") -> None:
             "error": "Independent analytics were not produced for this game.",
             "sportsbook_projection_influence": 0.0,
         }
-        cards.append(prior._matchup_card(game, market_state))
-        cards.append(_analytics_card(game, market_state, analytics))
+        cards.append(_html_fragment(prior._matchup_card(game, market_state)))
+        cards.append(_html_fragment(_analytics_card(game, market_state, analytics)))
 
     st.markdown(
         '<div class="ksp2-page">' + "".join(cards) + "</div>",
@@ -409,6 +417,7 @@ __all__ = [
     "_analytics_for_game",
     "_cached_game_mc",
     "_first_book",
+    "_html_fragment",
     "_summary_html",
     "render_nfl_hub",
 ]
