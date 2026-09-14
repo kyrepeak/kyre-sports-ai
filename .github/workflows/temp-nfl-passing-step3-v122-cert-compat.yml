@@ -1,0 +1,50 @@
+name: TEMP Passing Step3 V122 Cert Compatibility
+
+on:
+  push:
+    branches: [nfl-passing-yards-visual-parity-step3-qb-profile]
+    paths:
+      - ".github/workflows/temp-nfl-passing-step3-v122-cert-compat.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nfl-passing-yards-visual-parity-step3-qb-profile
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Add historical V122 type-check compatibility import
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('app.py')
+          text=path.read_text()
+          compat='    from streamlit_memory_lazy_router_v122 import record_bootstrap_import_ms, render_app\n'
+          anchor='    from streamlit_memory_lazy_router_v122 import render_app as _frozen_v122_render_app\n'
+          runtime='    from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app\n'
+          if runtime not in text:
+              raise SystemExit('ACTIVE_V123_RUNTIME_MISSING')
+          if compat not in text:
+              if anchor not in text:
+                  raise SystemExit('V122_TYPECHECK_ANCHOR_MISSING')
+              text=text.replace(anchor, anchor+compat, 1)
+          path.write_text(text)
+          PY
+          git config user.name "kyrepeak"
+          git config user.email "kyrewhite15@gmail.com"
+          git add app.py
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo NO_COMPAT_CHANGE_NEEDED
+            exit 0
+          fi
+          git commit -m "Preserve Passing V122 descendant cert compatibility"
+          git push origin HEAD:nfl-passing-yards-visual-parity-step3-qb-profile
