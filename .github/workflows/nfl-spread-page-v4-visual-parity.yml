@@ -5,8 +5,10 @@ on:
     branches:
       - nfl-spread-page-visual-parity-v1
     paths:
+      - 'app.py'
       - 'nfl_spread_hub_v4.py'
       - 'streamlit_memory_lazy_router_v135.py'
+      - 'tests/test_nfl_spread_v134_activation.py'
       - 'tests/test_nfl_spread_v4_visual_parity.py'
       - 'tests/test_nfl_spread_router_v135.py'
       - '.github/workflows/nfl-spread-page-v4-visual-parity.yml'
@@ -14,8 +16,10 @@ on:
     branches:
       - main
     paths:
+      - 'app.py'
       - 'nfl_spread_hub_v4.py'
       - 'streamlit_memory_lazy_router_v135.py'
+      - 'tests/test_nfl_spread_v134_activation.py'
       - 'tests/test_nfl_spread_v4_visual_parity.py'
       - 'tests/test_nfl_spread_router_v135.py'
       - '.github/workflows/nfl-spread-page-v4-visual-parity.yml'
@@ -44,18 +48,23 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q requests pandas numpy streamlit pytest
 
-      - name: Compile Spread V4 and Router V135 surfaces
+      - name: Compile Spread V4 Router V135 and active app surfaces
         run: |
+          python -m py_compile app.py
           python -m py_compile nfl_spread_hub_v4.py
           python -m py_compile streamlit_memory_lazy_router_v135.py
+          python -m py_compile tests/test_nfl_spread_v134_activation.py
           python -m py_compile tests/test_nfl_spread_v4_visual_parity.py
           python -m py_compile tests/test_nfl_spread_router_v135.py
 
-      - name: Run Spread V4 visual parity and Router V135 tests
+      - name: Run Spread V4 visual parity Router and activation tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest -q tests/test_nfl_spread_v4_visual_parity.py tests/test_nfl_spread_router_v135.py
+          pytest -q \
+            tests/test_nfl_spread_v134_activation.py \
+            tests/test_nfl_spread_v4_visual_parity.py \
+            tests/test_nfl_spread_router_v135.py
 
       - name: Prove frozen model Monte Carlo firewall
         env:
@@ -63,6 +72,7 @@ jobs:
         run: |
           python - <<'PY'
           import inspect
+          from pathlib import Path
           import nfl_spread_hub_v3 as v3
           import nfl_spread_hub_v4 as v4
           import nfl_spread_mc_v1 as mc
@@ -80,8 +90,14 @@ jobs:
           assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v134'
           assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v4'
           assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+
           source = inspect.getsource(v4)
           assert 'prior._analytics_for_game' in source
           assert 'simulate_game_spread' not in source
+
+          app = Path('app.py').read_text(encoding='utf-8')
+          assert 'FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"' in app
+          assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"' in app
+          assert 'from streamlit_memory_lazy_router_v135 import record_bootstrap_import_ms, render_app' in app
           print('NFL_SPREAD_V4_VISUAL_PARITY_FIREWALL_GREEN')
           PY
