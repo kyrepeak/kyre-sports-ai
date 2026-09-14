@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import sys
 from types import SimpleNamespace
 
+import pandas as pd
 import pytest
 
 import nfl_moneyline_hub_v12 as v12
@@ -16,6 +16,7 @@ def test_v12_permanent_safety_constants():
     assert v12.MONTE_CARLO_SIMULATIONS == 5_000_000
     assert v12.SPORTSBOOK_MODEL_INFLUENCE == 0.0
     assert v12.STAKE_SIZING_ENABLED is False
+    assert v12.HOT_MODEL_TTL_SECONDS == 30.0
 
 
 def test_request_memo_reuses_same_key_exact_value():
@@ -94,6 +95,150 @@ def test_sink_hidden_presentation_restores_after_exception():
     assert v12.st.markdown is original_markdown
 
 
+def _hot_state_fixture():
+    game = {
+        "game_id": "401872931",
+        "away_abbr": "DEN",
+        "home_abbr": "KC",
+        "away_team": "Denver Broncos",
+        "home_team": "Kansas City Chiefs",
+    }
+    return game, {
+        "nfl_v1_date": "2026-09-14",
+        "nfl_moneyline_v3_pregame": [game],
+        "nfl_moneyline_v43_probability_ready": True,
+        "nfl_moneyline_v43_probability_outputs": {"401872931": {"ready": True, "away_p": 0.45, "home_p": 0.55}},
+        "nfl_moneyline_v6_mc_ready": True,
+        "nfl_moneyline_v6_mc_outputs": {"401872931": {"ready": True, "converged": True, "away_win_rate": 0.45, "home_win_rate": 0.55, "p05_probability": 0.40, "p95_probability": 0.50, "simulations": 5_000_000}},
+        "nfl_moneyline_v4_strength_profiles": {"DEN": {"quality": "MEDIUM"}, "KC": {"quality": "HIGH"}},
+        "nfl_moneyline_v3_team_context": {},
+        "nfl_moneyline_v3_gameplan_context": {},
+        "nfl_moneyline_v3_gameplan_ready": True,
+    }
+
+
+def test_hot_state_reuses_only_same_current_pregame_identity(monkeypatch):
+    game, state = _hot_state_fixture()
+    monkeypatch.setattr(v12.st, "session_state", state)
+    monkeypatch.setattr(v12.time, "time", lambda: 1000.0)
+    v12._record_hot_state({})
+
+    schedule = pd.DataFrame([game])
+    monkeypatch.setattr(v12.foundation, "load_nfl_slate", lambda day: (schedule, {"request_ok": True}))
+    monkeypatch.setattr(v12.step1, "_pregame_partition", lambda schedule, day, now_et=None: (schedule.copy(), {}))
+
+    pregame, reason = v12._fresh_pregame_for_hot_state({})
+    assert reason == "ready"
+    assert pregame is not None
+    assert v12._pregame_ids(pregame) == ("401872931",)
+
+
+def test_hot_state_expires_fail_closed(monkeypatch):
+    game, state = _hot_state_fixture()
+    monkeypatch.setattr(v12.st, "session_state", state)
+    monkeypatch.setattr(v12.time, "time", lambda: 1000.0)
+    v12._record_hot_state({})
+    monkeypatch.setattr(v12.time, "time", lambda: 1000.0 + v12.HOT_MODEL_TTL_SECONDS + 0.01)
+
+    pregame, reason = v12._fresh_pregame_for_hot_state({})
+    assert pregame is None
+    assert reason == "expired"
+
+
+def test_hot_state_model_fingerprint_mismatch_fails_closed(monkeypatch):
+    game, state = _hot_state_fixture()
+    monkeypatch.setattr(v12.st, "session_state", state)
+    monkeypatch.setattr(v12.time, "time", lambda: 1000.0)
+    v12._record_hot_state({})
+    state["nfl_moneyline_v6_mc_outputs"]["401872931"]["away_win_rate"] = 0.99
+
+    pregame, reason = v12._fresh_pregame_for_hot_state({})
+    assert pregame is None
+    assert reason == "fingerprint-mismatch"
+
+
+def test_hot_market_refresh_runs_each_visit_and_rebuilds_frozen_v7_edge(monkeypatch):
+    game, state = _hot_state_fixture()
+    monkeypatch.setattr(v12.st, "session_state", state)
+    pregame = pd.DataFrame([game])
+    calls = []
+
+    def fetch(pregame, day):
+        calls.append(day)
+        snap = {
+            "401872931": {
+                "ready": True,
+                "quality": "HIGH",
+                "consensus_away_no_vig": 0.45,
+                "consensus_home_no_vig": 0.55,
+                "best_away": {"price": 114, "book": "FanDuel"},
+                "best_home": {"price": -134, "book": "FanDuel"},
+            }
+        }
+        return snap, {"games_with_market": 1}
+
+    edge_calls = []
+    monkeypatch.setattr(v12.kyre_market, "fetch_nfl_moneyline_markets", fetch)
+    monkeypatch.setattr(v12.frozen_v7, "_build_game_output", lambda game, snap, mc: (edge_calls.append((snap["best_away"]["price"], mc["simulations"])) or {"ready": True, "away": {}, "home": {}}))
+
+    assert v12._refresh_market_and_edge(pregame, "2026-09-14", {}) is True
+    assert v12._refresh_market_and_edge(pregame, "2026-09-14", {}) is True
+    assert calls == ["2026-09-14", "2026-09-14"]
+    assert edge_calls == [(114, 5_000_000), (114, 5_000_000)]
+    assert state["nfl_moneyline_v5_market_ready"] is True
+    assert state["nfl_moneyline_v7_edge_ready"] is True
+
+
+def test_fast_hidden_runner_hot_path_skips_full_engine(monkeypatch):
+    events = []
+    stats = {}
+    game, _ = _hot_state_fixture()
+    pregame = pd.DataFrame([game])
+
+    class Ctx:
+        def __enter__(self): return self
+        def __exit__(self, exc_type, exc, tb): return False
+        def container(self): return self
+        def empty(self): events.append("empty")
+
+    monkeypatch.setattr(v12.st, "markdown", lambda *a, **k: None)
+    monkeypatch.setattr(v12.st, "container", lambda **k: Ctx())
+    monkeypatch.setattr(v12.st, "empty", lambda: Ctx())
+    monkeypatch.setattr(v12, "_sink_hidden_presentation", lambda stats: Ctx())
+    monkeypatch.setattr(v12, "_fresh_pregame_for_hot_state", lambda stats: (pregame, "ready"))
+    monkeypatch.setattr(v12, "_selected_day", lambda: "2026-09-14")
+    monkeypatch.setattr(v12, "_refresh_market_and_edge", lambda pregame, day, stats: (events.append("hot-refresh") or True))
+    monkeypatch.setattr(v12.v11.frozen_v9.frozen, "render_nfl_moneyline_hub", lambda: (_ for _ in ()).throw(AssertionError("full engine ran")))
+
+    v12._fast_hidden_run_frozen_engine(stats)
+    assert events.count("hot-refresh") == 1
+    assert stats["hot_path"]["used"] is True
+    assert stats["hot_path"]["market_refreshed"] is True
+
+
+def test_fast_hidden_runner_falls_back_to_full_engine(monkeypatch):
+    events = []
+    stats = {}
+
+    class Ctx:
+        def __enter__(self): return self
+        def __exit__(self, exc_type, exc, tb): return False
+        def container(self): return self
+        def empty(self): return None
+
+    monkeypatch.setattr(v12.st, "markdown", lambda *a, **k: None)
+    monkeypatch.setattr(v12.st, "container", lambda **k: Ctx())
+    monkeypatch.setattr(v12.st, "empty", lambda: Ctx())
+    monkeypatch.setattr(v12, "_sink_hidden_presentation", lambda stats: Ctx())
+    monkeypatch.setattr(v12, "_fresh_pregame_for_hot_state", lambda stats: (None, "expired"))
+    monkeypatch.setattr(v12, "_record_hot_state", lambda stats: events.append("primed"))
+    monkeypatch.setattr(v12.v11.frozen_v9.frozen, "render_nfl_moneyline_hub", lambda: events.append("full-engine"))
+
+    v12._fast_hidden_run_frozen_engine(stats)
+    assert events == ["full-engine", "primed"]
+    assert stats["hot_path"]["used"] is not True
+
+
 def test_fast_hidden_runner_keeps_v11_hide_then_runs_frozen_once(monkeypatch):
     events = []
     stats = {}
@@ -116,11 +261,14 @@ def test_fast_hidden_runner_keeps_v11_hide_then_runs_frozen_once(monkeypatch):
     monkeypatch.setattr(v12.st, "empty", lambda: Ctx())
     monkeypatch.setattr(v12.v11.frozen_v9.frozen, "render_nfl_moneyline_hub", lambda: events.append("frozen-engine"))
     monkeypatch.setattr(v12, "_sink_hidden_presentation", lambda stats: Ctx())
+    monkeypatch.setattr(v12, "_fresh_pregame_for_hot_state", lambda stats: (None, "missing"))
+    monkeypatch.setattr(v12, "_record_hot_state", lambda stats: events.append("primed"))
 
     v12._fast_hidden_run_frozen_engine(stats)
     assert events[0] == "css"
     assert "hidden-container" in events
     assert events.count("frozen-engine") == 1
+    assert events.count("primed") == 1
 
 
 def test_render_rejects_non_moneyline():
