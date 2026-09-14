@@ -243,9 +243,13 @@ jobs:
                       '.kpy-qbgrid','.kpy-pgrid','.kpy-dgrid','.kpy-xgrid','.kpy-igrid',
                       '.kpy-projgrid','.kpy8-grid','.kpy9-grid','.kpy10-grid',
                   )
+                  legacy_deadline=time.time()+30
                   legacy_counts={selector:frame.locator(selector).count() for selector in legacy_grids}
+                  while time.time() < legacy_deadline and any(legacy_counts.values()):
+                      time.sleep(1)
+                      legacy_counts={selector:frame.locator(selector).count() for selector in legacy_grids}
                   if any(legacy_counts.values()):
-                      raise BrowserQAFailure(f'legacy per-step grids still rendered: {legacy_counts}')
+                      raise BrowserQAFailure(f'legacy per-step grids still rendered after reconciliation wait: {legacy_counts}')
 
                   if frame.locator('.kpass34-market-controls').count() != 1:
                       raise BrowserQAFailure('live market controls heading missing after player-card composition')
