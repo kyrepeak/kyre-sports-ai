@@ -334,6 +334,7 @@ jobs:
           SITE=http://127.0.0.1:8521 \
           LABEL=frozen_v130 \
           OUT="$GITHUB_WORKSPACE/artifacts/moneyline-v12-speed/v130.json" \
+          PYTHONPATH="$GITHUB_WORKSPACE" \
           python "$RUNNER_TEMP/moneyline_speed_probe.py"
           kill "$(cat "$RUNNER_TEMP/v130.pid")" || true
           sleep 1
@@ -356,6 +357,7 @@ jobs:
           SITE=http://127.0.0.1:8522 \
           LABEL=v12 \
           OUT="$GITHUB_WORKSPACE/artifacts/moneyline-v12-speed/v12.json" \
+          PYTHONPATH="$GITHUB_WORKSPACE" \
           python "$RUNNER_TEMP/moneyline_speed_probe.py"
           kill "$(cat "$RUNNER_TEMP/v12.pid")" || true
           sleep 1
