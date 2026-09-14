@@ -71,8 +71,9 @@ def _recommended_scope(packet: Mapping[str, Any]) -> tuple[list[str], list[str]]
     incident = packet.get("incident") if isinstance(packet.get("incident"), Mapping) else {}
     target = str(incident.get("target") or "").strip()
     if target:
+        # A caller-supplied target is always useful for inspection, but it is not
+        # an edit recommendation until deterministic evidence supports a fix.
         inspect.append(target)
-        edit_candidates.append(target)
 
     record = _memory_record(packet)
     if record:
@@ -80,6 +81,8 @@ def _recommended_scope(packet: Mapping[str, Any]) -> tuple[list[str], list[str]]
             path = str(path)
             if path and path not in inspect:
                 inspect.append(path)
+            if path and path not in edit_candidates:
+                edit_candidates.append(path)
 
     dependency = _dependency(packet)
     if dependency:
@@ -170,6 +173,9 @@ def build_fix_plan(packet: Mapping[str, Any]) -> dict[str, Any]:
     if not root_cause:
         status = "NEED_MORE_EVIDENCE"
         next_action = "Capture/replay the failing request and identify a deterministic failing boundary before editing code."
+        # An unproven target remains inspection-only. Never suggest a code edit
+        # merely because the caller happened to name a file.
+        edit_candidates = []
     else:
         status = "PLAN_READY"
 
