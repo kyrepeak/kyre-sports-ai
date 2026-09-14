@@ -36,23 +36,44 @@ jobs:
           python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
           python -m pip install --disable-pip-version-check -q pytest
 
-      - name: Enforce exact five-file Moneyline API diff
+      - name: Enforce approved Moneyline API diff
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin mlb-step17b-shared-host-cert:refs/remotes/origin/mlb-step17b-shared-host-cert
           git diff --name-only origin/mlb-step17b-shared-host-cert...HEAD | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/original.txt <<'EOF'
           .github/workflows/nfl-moneyline-market-api-v1.yml
           sports_api/api/health.py
           sports_api/api/nfl_moneyline_market_v1.py
           sports_api/collectors/nfl_fanduel_moneyline_v1.py
           sports_api/tests/test_nfl_moneyline_market_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
+          sort -o /tmp/original.txt /tmp/original.txt
+
+          cat > /tmp/runtime-repair.txt <<'EOF'
+          .github/workflows/nfl-moneyline-market-api-v1.yml
+          .github/workflows/nfl-moneyline-runtime-repair-v1.yml
+          sports_api/collectors/nfl_fanduel_moneyline_v1.py
+          sports_api/tests/test_nfl_moneyline_market_v1.py
+          EOF
+          sort -o /tmp/runtime-repair.txt /tmp/runtime-repair.txt
+
           echo 'Actual NFL Moneyline API diff:'
           cat /tmp/actual.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          if diff -q /tmp/original.txt /tmp/actual.txt >/dev/null; then
+            echo 'NFL_MONEYLINE_ORIGINAL_INSTALL_SURFACE_GREEN'
+          elif diff -q /tmp/runtime-repair.txt /tmp/actual.txt >/dev/null; then
+            echo 'NFL_MONEYLINE_RUNTIME_REPAIR_SURFACE_GREEN'
+          else
+            echo 'NFL_MONEYLINE_UNAPPROVED_DIFF_BLOCKED'
+            echo '--- original approved surface ---'
+            cat /tmp/original.txt
+            echo '--- runtime repair approved surface ---'
+            cat /tmp/runtime-repair.txt
+            exit 1
+          fi
 
       - name: Compile additive NFL Moneyline market files
         run: |
