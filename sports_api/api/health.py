@@ -19,6 +19,7 @@ from sports_api.api.nfl_receiving_yards_market_v1 import router as nfl_receiving
 from sports_api.api.nfl_rushing_yards_context_v1 import router as nfl_rushing_yards_context_router
 from sports_api.api.nfl_rushing_yards_context_v2 import router as nfl_rushing_yards_fast_context_router
 from sports_api.api.nfl_rushing_yards_market_v1 import router as nfl_rushing_yards_market_router
+from sports_api.api.nfl_spread_market_v1 import router as nfl_spread_market_router
 
 # Shared-host hotfix: swap only the outbound FanDuel GET transport. The frozen
 # CFB cache/freshness, parser, identity, and projection contracts stay intact.
@@ -38,6 +39,7 @@ router.routes.extend(nfl_receiving_yards_market_router.routes)
 router.routes.extend(nfl_rushing_yards_context_router.routes)
 router.routes.extend(nfl_rushing_yards_fast_context_router.routes)
 router.routes.extend(nfl_rushing_yards_market_router.routes)
+router.routes.extend(nfl_spread_market_router.routes)
 
 
 @router.get("/health")
