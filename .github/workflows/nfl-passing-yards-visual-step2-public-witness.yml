@@ -1,0 +1,183 @@
+name: NFL Passing Yards Visual Step 2 Public Witness
+
+on:
+  push:
+    branches: [nfl-passing-yards-visual-step2-public-witness]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-public-passing-step2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Drive actual public Streamlit Passing visual Step 2 page
+        shell: bash
+        run: |
+          mkdir -p artifacts/passing-visual-step2-public
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from time import perf_counter
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _find_app_frame,
+              _wait_for_text,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base='https://kyre-sports-ai.streamlit.app'
+          artifacts=Path('artifacts/passing-visual-step2-public')
+
+          def navigate_passing(page):
+              frame,_=_find_app_frame(page)
+              _choose(page,frame,0,'NFL')
+              nfl_market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+              nfl_market_combo.wait_for(state='visible',timeout=30000)
+              _choose(page,frame,1,'Passing Yards')
+              body=_wait_for_text(frame,'VISUAL STEP 2 / 6',120.0)
+              return frame,body
+
+          def verify(frame, body, label, require_hero=False):
+              forbidden=_body_has_forbidden_error(body)
+              if forbidden:
+                  raise BrowserQAFailure(f'{label} runtime error marker: {forbidden}')
+              for required in (
+                  'Passing Yards',
+                  'Visual Parity Build',
+                  'VISUAL STEP 2 / 6',
+                  'V28 ENGINE FROZEN',
+                  'SPORTSBOOK 0%',
+              ):
+                  if required not in body:
+                      raise BrowserQAFailure(f'{label} missing visual Step 2 marker: {required}')
+
+              hero_count=frame.locator('.kpass29-card').count()
+              headshot_count=frame.locator('.kpass29-head img').count()
+              logo_count=frame.locator('.kpass29-logo').count()
+              if require_hero and hero_count < 1:
+                  raise BrowserQAFailure(f'{label} expected at least one V29 QB hero card')
+              if hero_count > 0:
+                  if headshot_count > hero_count or logo_count > hero_count:
+                      raise BrowserQAFailure(
+                          f'{label} invalid visual identity counts: heroes={hero_count} headshots={headshot_count} logos={logo_count}'
+                      )
+                  hero_text=' '.join(frame.locator('.kpass29-card').all_inner_texts()).lower()
+                  if 'sportsbook projection influence 0.0%' not in hero_text:
+                      raise BrowserQAFailure(f'{label} hero cards missing 0.0% sportsbook marker')
+                  if 'espn athlete id' not in hero_text or 'espn team id' not in hero_text:
+                      raise BrowserQAFailure(f'{label} hero cards missing exact ESPN identity labels')
+              return hero_count,headshot_count,logo_count
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1440,'height':1800})
+              try:
+                  cold_started=perf_counter()
+                  last_error=None
+                  for attempt in range(1,7):
+                      try:
+                          response=page.goto(base,wait_until='domcontentloaded',timeout=180000)
+                          if response is None or response.status >= 500:
+                              raise BrowserQAFailure(
+                                  f'Public Streamlit HTTP failure: {None if response is None else response.status}'
+                              )
+                          frame,cold_body=navigate_passing(page)
+                          cold_heroes,cold_headshots,cold_logos=verify(frame,cold_body,'cold',False)
+                          break
+                      except Exception as exc:
+                          last_error=exc
+                          try:
+                              page.screenshot(
+                                  path=str(artifacts/f'passing_step2_public_attempt_{attempt}_failure.png'),
+                                  full_page=True,
+                              )
+                          except Exception:
+                              pass
+                          if attempt == 6:
+                              raise
+                          print(f'PUBLIC_DEPLOYMENT_NOT_READY attempt={attempt}: {exc}')
+                          time.sleep(30)
+                  cold_ms=(perf_counter()-cold_started)*1000.0
+                  page.screenshot(path=str(artifacts/'passing_visual_step2_public_cold.png'),full_page=True)
+
+                  warm_started=perf_counter()
+                  page.reload(wait_until='domcontentloaded',timeout=180000)
+                  frame,warm_body=navigate_passing(page)
+                  deadline=time.time()+60
+                  while frame.locator('.kpass29-card').count() < 1 and time.time() < deadline:
+                      time.sleep(2)
+                  warm_heroes,warm_headshots,warm_logos=verify(frame,warm_body,'warm',True)
+                  warm_ms=(perf_counter()-warm_started)*1000.0
+                  page.screenshot(path=str(artifacts/'passing_visual_step2_public_warm.png'),full_page=True)
+
+                  result={
+                      'status':'GREEN',
+                      'site':base,
+                      'visual_step':'2/6',
+                      'cold_ms':round(cold_ms,1),
+                      'warm_ms':round(warm_ms,1),
+                      'cold_hero_cards':cold_heroes,
+                      'cold_headshots':cold_headshots,
+                      'cold_team_logos':cold_logos,
+                      'warm_hero_cards':warm_heroes,
+                      'warm_headshots':warm_headshots,
+                      'warm_team_logos':warm_logos,
+                      'sportsbook_projection_influence':0.0,
+                      'projection_math_changed':False,
+                      'frozen_passing_engine':'V28',
+                      'source_main_sha':'473dc753c0c0bd87566f037f5ab86c5852d6f4f8',
+                  }
+                  (artifacts/'passing_visual_step2_public_metrics.json').write_text(json.dumps(result,indent=2))
+                  print('NFL_PASSING_YARDS_VISUAL_STEP2_PUBLIC_GREEN')
+                  print(json.dumps(result,indent=2))
+              except Exception:
+                  try:
+                      page.screenshot(path=str(artifacts/'passing_visual_step2_public_failure.png'),full_page=True)
+                  except Exception:
+                      pass
+                  raise
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload public Passing visual Step 2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-visual-step2-public-${{ github.run_id }}
+          path: artifacts/passing-visual-step2-public
+          if-no-files-found: warn
+          retention-days: 7
