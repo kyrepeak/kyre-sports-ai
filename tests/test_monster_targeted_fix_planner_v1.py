@@ -95,7 +95,7 @@ def test_unproven_named_target_is_inspection_only_not_edit_candidate():
     assert "before editing code" in plan["next_action"]
 
 
-def test_exact_failure_memory_can_drive_plan_without_fuzzy_matching():
+def test_exact_failure_memory_can_diagnose_without_inventing_edit_files():
     packet = build_incident_packet(
         IncidentInput(
             title="known cold start",
@@ -110,7 +110,10 @@ def test_exact_failure_memory_can_drive_plan_without_fuzzy_matching():
     assert plan["status"] == "PLAN_READY"
     assert plan["root_cause_confidence"] == "HIGH"
     assert any(item.startswith("exact_failure_memory:") for item in plan["evidence"])
-    assert plan["edit_candidates"]  # exact historical evidence may nominate verified files
+    assert "streamlit_memory_lazy_router_v77.py" in plan["inspect_first"]
+    # This historical record does not curate edit files, so the caller-supplied
+    # target must stay inspection-only despite the high-confidence diagnosis.
+    assert plan["edit_candidates"] == []
 
 
 def test_planner_never_authorizes_fuzzy_identity_or_projection_mutation():
