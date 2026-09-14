@@ -62,11 +62,7 @@ _GRID_MARKERS = {
     '<div class="kpy10-grid">': "market",
 }
 
-# Extract the certified card root itself rather than depending only on the
-# surrounding legacy grid shape. This keeps V34 resilient to deeply nested card
-# markup while still moving already-rendered HTML only.
 _ROOT_CARD_CLASSES = {
-    "identity": ("article", "kpass29-card"),
     "profile": ("section", "kpass30-profile"),
     "defense": ("section", "kpy-defense"),
     "pressure": ("section", "kpy-pressure"),
@@ -187,10 +183,15 @@ def _extract_elements_by_class(body: str, tag: str, class_name: str) -> list[str
 
 
 def _capture_grid(captured: dict[str, list[str]], key: str, body: str) -> None:
-    root = _ROOT_CARD_CLASSES.get(key)
-    children = _extract_elements_by_class(body, *root) if root else []
-    if not children:
+    # V29 QB hero cards are proven stable with the original top-level splitter.
+    # Later certified sections are more deeply nested, so use their root class.
+    if key == "identity":
         children = _split_top_level_children(body)
+    else:
+        root = _ROOT_CARD_CLASSES.get(key)
+        children = _extract_elements_by_class(body, *root) if root else []
+        if not children:
+            children = _split_top_level_children(body)
     if children:
         captured[key] = children[:2]
 
