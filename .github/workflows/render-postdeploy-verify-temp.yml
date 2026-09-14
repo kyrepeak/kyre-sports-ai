@@ -1,0 +1,114 @@
+name: TEMP Render Postdeploy Verification
+
+on:
+  push:
+    branches:
+      - render-postdeploy-verify-20260914
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Verify live Render identity and preserved route surface
+        env:
+          BASE_URL: https://kyre-sports-api.onrender.com
+          EXPECTED_SHA: 7f245cb6e0827dd4025155aa98e78573c454ac04
+          EXPECTED_BRANCH: mlb-step17b-shared-host-cert
+        run: |
+          set -euo pipefail
+
+          curl_json() {
+            local path="$1"
+            local out="$2"
+            curl --fail --silent --show-error --location \
+              --retry 4 --retry-delay 2 --retry-all-errors \
+              --connect-timeout 10 --max-time 30 \
+              "${BASE_URL}${path}" -o "$out"
+          }
+
+          curl_json "/health" /tmp/health.json
+          curl_json "/health/ready" /tmp/ready.json
+          curl_json "/openapi.json" /tmp/openapi.json
+
+          python - <<'PY'
+          import json, os
+          health = json.load(open('/tmp/health.json'))
+          ready = json.load(open('/tmp/ready.json'))
+          expected_sha = os.environ['EXPECTED_SHA']
+          expected_branch = os.environ['EXPECTED_BRANCH']
+          assert health.get('status') == 'ok', health
+          deployment = health.get('deployment') or {}
+          assert deployment.get('commit') == expected_sha, deployment
+          assert deployment.get('branch') == expected_branch, deployment
+          print('health identity:', deployment)
+          print('ready snapshot status:', ready.get('status', ready.get('ready')))
+          PY
+
+          paths=(
+            "/api/v1/cfb/markets/status"
+            "/api/v1/cfb/markets/identity-status"
+            "/api/v1/cfb/odds/status"
+            "/api/v1/nfl/moneyline/market/status"
+            "/api/v1/nfl/passing-yards/status"
+            "/api/v1/nfl/receiving-yards/status"
+            "/api/v1/nfl/receiving-yards/market/status"
+            "/api/v1/nfl/rushing-yards/status"
+            "/api/v1/nfl/rushing-yards/fast/status"
+            "/api/v1/nfl/rushing-yards/market/status"
+            "/api/v1/nfl/spread/market/status"
+          )
+
+          i=0
+          for path in "${paths[@]}"; do
+            i=$((i+1))
+            curl_json "$path" "/tmp/status-${i}.json"
+            python - "$path" "/tmp/status-${i}.json" <<'PY'
+          import json, sys
+          path, filename = sys.argv[1], sys.argv[2]
+          payload = json.load(open(filename))
+          assert isinstance(payload, dict), (path, payload)
+          print(path, 'OK', payload.get('status', payload.get('endpoint_ready', 'json')))
+          PY
+          done
+
+          python - <<'PY'
+          import json
+          spec = json.load(open('/tmp/openapi.json'))
+          actual = set((spec.get('paths') or {}).keys())
+          expected = {
+              '/health',
+              '/health/ready',
+              '/health/details',
+              '/api/v1/cfb/markets/status',
+              '/api/v1/cfb/markets/current',
+              '/api/v1/cfb/markets/feed',
+              '/api/v1/cfb/markets/identity-status',
+              '/api/v1/cfb/markets/reconciled',
+              '/api/v1/cfb/odds/status',
+              '/api/v1/cfb/odds',
+              '/api/v1/nfl/moneyline/market/status',
+              '/api/v1/nfl/moneyline/market',
+              '/api/v1/nfl/passing-yards/status',
+              '/api/v1/nfl/passing-yards',
+              '/api/v1/nfl/receiving-yards/status',
+              '/api/v1/nfl/receiving-yards',
+              '/api/v1/nfl/receiving-yards/market/status',
+              '/api/v1/nfl/receiving-yards/market',
+              '/api/v1/nfl/rushing-yards/status',
+              '/api/v1/nfl/rushing-yards',
+              '/api/v1/nfl/rushing-yards/fast/status',
+              '/api/v1/nfl/rushing-yards/fast',
+              '/api/v1/nfl/rushing-yards/market/status',
+              '/api/v1/nfl/rushing-yards/market',
+              '/api/v1/nfl/spread/market/status',
+              '/api/v1/nfl/spread/market',
+          }
+          missing = sorted(expected - actual)
+          assert not missing, f'missing production OpenAPI routes: {missing}'
+          print('openapi preserved routes:', len(expected), '/', len(expected))
+          PY
