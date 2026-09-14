@@ -1,0 +1,128 @@
+name: NFL Moneyline Market API V1
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - 'sports_api/collectors/nfl_fanduel_moneyline_v1.py'
+      - 'sports_api/api/nfl_moneyline_market_v1.py'
+      - 'sports_api/api/health.py'
+      - 'sports_api/tests/test_nfl_moneyline_market_v1.py'
+      - '.github/workflows/nfl-moneyline-market-api-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-moneyline-market-api-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install production API stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Enforce exact five-file Moneyline API diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin mlb-step17b-shared-host-cert:refs/remotes/origin/mlb-step17b-shared-host-cert
+          git diff --name-only origin/mlb-step17b-shared-host-cert...HEAD | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-moneyline-market-api-v1.yml
+          sports_api/api/health.py
+          sports_api/api/nfl_moneyline_market_v1.py
+          sports_api/collectors/nfl_fanduel_moneyline_v1.py
+          sports_api/tests/test_nfl_moneyline_market_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual NFL Moneyline API diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile additive NFL Moneyline market files
+        run: |
+          python -m py_compile sports_api/collectors/nfl_fanduel_moneyline_v1.py
+          python -m py_compile sports_api/api/nfl_moneyline_market_v1.py
+          python -m py_compile sports_api/tests/test_nfl_moneyline_market_v1.py
+
+      - name: Run deterministic NFL Moneyline market tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_moneyline_market_v1.py
+
+      - name: Prove frozen Moneyline model and sibling NFL owners stay untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only origin/mlb-step17b-shared-host-cert...HEAD)"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_moneyline_hub_|nfl_moneyline_market_v1\.py$|nfl_passing_yards_|nfl_receiving_yards_|nfl_rushing_yards_|sports_api/api/nfl_(passing|receiving|rushing)_|sports_api/collectors/nfl_fanduel_(passing|receiving|rushing))' || true)"
+          if [ -n "$blocked" ]; then
+            echo 'NFL_MONEYLINE_API_FROZEN_OWNER_MODIFICATION_BLOCKED'
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo 'NFL_MONEYLINE_API_FROZEN_OWNER_GUARD_GREEN'
+
+      - name: Prove Moneyline route on certified shared-host router
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from sports_api.api.health import router as health_router
+          paths = [getattr(route, 'path', '') for route in health_router.routes]
+          expected = {
+              '/api/v1/nfl/moneyline/market',
+              '/api/v1/nfl/moneyline/market/status',
+              '/api/v1/nfl/passing-yards/market',
+              '/api/v1/nfl/receiving-yards/market',
+              '/api/v1/nfl/rushing-yards/market',
+          }
+          for path in sorted(expected):
+              print(path, paths.count(path))
+              assert paths.count(path) == 1, (path, paths.count(path))
+          print('NFL_MONEYLINE_MARKET_API_SHARED_HOST_GREEN')
+          PY
+
+      - name: Prove Moneyline API remains market-only
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from sports_api.api.nfl_moneyline_market_v1 import CONTRACT
+          assert CONTRACT['official_event_id_required'] is True
+          assert CONTRACT['fuzzy_matching'] is False
+          assert CONTRACT['synthetic_event_ids'] is False
+          assert CONTRACT['projection_weight'] == 0.0
+          assert CONTRACT['market_context_only'] is True
+          assert CONTRACT['may_modify_projection'] is False
+          assert CONTRACT['model_probability_input'] is False
+          assert CONTRACT['multi_book_capable'] is True
+          assert CONTRACT['stake_sizing_enabled'] is False
+          assert CONTRACT['wager_actions'] is False
+          print('NFL_MONEYLINE_MARKET_API_SAFETY_GREEN')
+          PY
+
+      - name: Re-run certified NFL Passing market identity regression
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_passing_yards_market_v1.py
+
+      - name: Revalidate shared-host startup and observability contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_production_observability_backport_v1.py
