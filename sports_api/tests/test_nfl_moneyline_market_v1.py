@@ -112,6 +112,27 @@ def test_denver_kansas_city_exact_id_moneyline_chain():
     assert out["books"][0]["home_ml"] == -115
 
 
+def test_default_moneyline_fetch_reuses_render_safe_espn_transport(monkeypatch):
+    calls: list[str] = []
+
+    def hosted(event_id: str):
+        calls.append(event_id)
+        return _espn_summary(), "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl"
+
+    monkeypatch.setattr(collector, "fetch_espn_event_summary_hosted", hosted)
+    out = collector.collect_fanduel_nfl_moneyline(
+        EVENT_ID,
+        now_utc=CAPTURED,
+        landing_fetcher=_landing,
+        event_page_fetcher=lambda provider_event_id: _event_page(),
+    )
+    assert calls == [EVENT_ID]
+    assert out["official_event_id"] == EVENT_ID
+    assert out["identity"]["away_team_id"] == "7"
+    assert out["identity"]["home_team_id"] == "12"
+    assert out["market_semantics"]["projection_weight"] == 0.0
+
+
 def test_moneyline_requires_exactly_one_away_and_home_runner():
     broken = _moneyline_market()
     broken["runners"].append(deepcopy(broken["runners"][0]))

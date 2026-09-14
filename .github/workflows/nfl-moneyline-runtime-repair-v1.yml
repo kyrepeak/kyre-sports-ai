@@ -1,0 +1,134 @@
+name: NFL Moneyline Runtime Repair V1
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - 'sports_api/collectors/nfl_fanduel_moneyline_v1.py'
+      - 'sports_api/api/nfl_moneyline_market_v1.py'
+      - 'sports_api/tests/test_nfl_moneyline_market_v1.py'
+      - '.github/workflows/nfl-moneyline-runtime-repair-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-moneyline-runtime-repair-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose-and-certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install production API stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Moneyline repair surface
+        run: |
+          python -m py_compile sports_api/collectors/nfl_fanduel_moneyline_v1.py
+          python -m py_compile sports_api/api/nfl_moneyline_market_v1.py
+          python -m py_compile sports_api/tests/test_nfl_moneyline_market_v1.py
+
+      - name: Live exact-event repaired collector proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import json
+          from sports_api.collectors import nfl_fanduel_moneyline_v1 as moneyline
+
+          event_id = '401872931'
+          payload = moneyline.collect_fanduel_nfl_moneyline(event_id)
+          assert payload.get('official_event_id') == event_id
+          assert payload.get('ready') is True
+          assert payload.get('market_available') is True
+          books = payload.get('books') or []
+          assert len(books) >= 1
+          assert books[0].get('sportsbook') == 'FanDuel'
+          assert payload['identity']['fuzzy_matching'] is False
+          assert payload['identity']['synthetic_event_ids'] is False
+          assert payload['market_semantics']['projection_weight'] == 0.0
+          print('REPAIRED_LIVE_COLLECTOR_GREEN', json.dumps({
+              'official_event_id': payload['official_event_id'],
+              'provider_event_id': payload['identity']['provider_event_id'],
+              'book_count': len(books),
+          }, sort_keys=True))
+          PY
+
+      - name: Record current deployed Render state before repair deploy
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          event_id = '401872931'
+          base = 'https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market'
+          url = base + '?' + urllib.parse.urlencode({'event_id': event_id})
+          request = urllib.request.Request(
+              url,
+              headers={'Accept': 'application/json', 'User-Agent': 'KyreSportsAI-MoneylineRuntimeRepair/1.0'},
+              method='GET',
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=35) as response:
+                  status = int(response.status)
+                  body = response.read(200000).decode('utf-8', errors='replace')
+          except urllib.error.HTTPError as exc:
+              status = int(exc.code)
+              body = exc.read(200000).decode('utf-8', errors='replace')
+          print('PREDEPLOY_RENDER_STATUS', status)
+          print('PREDEPLOY_RENDER_BODY', body)
+          if status == 200:
+              payload = json.loads(body)
+              assert payload.get('official_event_id') == event_id
+              print('PREDEPLOY_RENDER_ALREADY_GREEN')
+          else:
+              assert status == 503
+              assert 'read-only upstream GET failed: HTTPError' in body
+              print('PREDEPLOY_OLD_RUNTIME_503_REPRODUCED')
+          PY
+
+      - name: Run deterministic Moneyline contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q sports_api/tests/test_nfl_moneyline_market_v1.py
+
+      - name: Re-run certified Passing and Rushing regressions
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q sports_api/tests/test_nfl_passing_yards_api_v1.py
+          python -m pytest -q sports_api/tests/test_nfl_passing_yards_render_espn_v2.py
+          python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_v1.py
+          python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_canonical_v2.py
+          python -m pytest -q sports_api/tests/test_nfl_rushing_yards_market_cache_v2.py
+
+      - name: Prove permanent Moneyline safety contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from sports_api.api.nfl_moneyline_market_v1 import CONTRACT
+          assert CONTRACT['official_event_id_required'] is True
+          assert CONTRACT['fuzzy_matching'] is False
+          assert CONTRACT['synthetic_event_ids'] is False
+          assert CONTRACT['projection_weight'] == 0.0
+          assert CONTRACT['market_context_only'] is True
+          assert CONTRACT['may_modify_projection'] is False
+          assert CONTRACT['model_probability_input'] is False
+          assert CONTRACT['stake_sizing_enabled'] is False
+          assert CONTRACT['wager_actions'] is False
+          print('NFL_MONEYLINE_RUNTIME_REPAIR_SAFETY_GREEN')
+          PY

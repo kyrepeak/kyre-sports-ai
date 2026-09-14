@@ -2,7 +2,8 @@
 
 Uses the already-certified NFL ESPN <-> FanDuel event reconciliation from the
 Passing Yards collector, then extracts only the canonical open pregame two-way
-Moneyline market. No model output is read or modified here.
+Moneyline market. The default official ESPN summary read reuses the certified
+Render-safe ESPN transport V2. No model output is read or modified here.
 """
 from __future__ import annotations
 
@@ -11,11 +12,13 @@ from typing import Any, Mapping
 
 from sports_api.collectors.nfl_fanduel_passing_yards import (
     NFLPassingYardsCollectorError,
-    fetch_espn_event_summary,
     fetch_fanduel_event_page,
     fetch_fanduel_nfl_landing,
     parse_official_event,
     reconcile_fanduel_event,
+)
+from sports_api.collectors.nfl_passing_yards_render_espn_v2 import (
+    fetch_espn_event_summary_hosted,
 )
 
 SCHEMA_VERSION = "nfl_moneyline_market_v1"
@@ -209,7 +212,10 @@ def collect_fanduel_nfl_moneyline(
         raise ValueError("now_utc must be timezone-aware")
 
     try:
-        summary = (espn_fetcher or fetch_espn_event_summary)(event_id)
+        if espn_fetcher is None:
+            summary, _summary_source = fetch_espn_event_summary_hosted(event_id)
+        else:
+            summary = espn_fetcher(event_id)
         official = parse_official_event(summary)
         landing = (landing_fetcher or fetch_fanduel_nfl_landing)()
         provider_event = reconcile_fanduel_event(landing, official)
