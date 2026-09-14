@@ -41,3 +41,57 @@ def test_real_streamlit_apptest_executes_v134_spread_route() -> None:
     assert "NFL Spread" in rendered
     assert "Model + 5M Monte Carlo" in rendered
     assert "independent football fair line" in rendered
+
+
+def test_v3_normalizes_nested_matchup_html_before_markdown() -> None:
+    """Prevent inherited team-panel HTML from becoming Markdown code blocks."""
+    import nfl_spread_hub_v2 as prior
+    import nfl_spread_hub_v3 as page
+
+    game = {
+        "game_id": "html-render-proof",
+        "state": "pre",
+        "season_type": "REGULAR SEASON",
+        "tip_et": "8:15 PM ET",
+        "venue": "Arrowhead Stadium",
+        "broadcast": "ESPN / ABC",
+        "away_team": "Denver Broncos",
+        "away_abbr": "DEN",
+        "away_record": "0-0",
+        "away_logo": "",
+        "home_team": "Kansas City Chiefs",
+        "home_abbr": "KC",
+        "home_record": "0-0",
+        "home_logo": "",
+    }
+    market = {
+        "ready": True,
+        "books": [
+            {
+                "sportsbook": "FanDuel",
+                "away_spread": 2.5,
+                "away_price": -115,
+                "home_spread": -2.5,
+                "home_price": -105,
+                "age_seconds": 0,
+            }
+        ],
+        "projection_weight": 0.0,
+    }
+
+    raw = prior._matchup_card(game, market)
+    normalized = page._html_fragment(raw)
+
+    assert normalized.startswith('<article class="ksp2-matchup-card"')
+    assert '\n<section class="ksp2-team-panel ksp2-away">' in normalized
+    assert '\n<section class="ksp2-team-panel ksp2-home">' in normalized
+    assert '\n    <section class="ksp2-team-panel' not in normalized
+    assert page._html_fragment(
+        page._summary_html(
+            games=1,
+            upcoming=1,
+            market_ready=1,
+            model_ready=1,
+            mc_certified=1,
+        )
+    ).startswith('<div class="ksp3-summary">')
