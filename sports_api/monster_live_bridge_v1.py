@@ -1,9 +1,9 @@
 """Monster Live Bridge V1 — one read-only operational picture across live evidence.
 
-The module intentionally performs no external network calls. ChatGPT/connectors collect
-GitHub, Render, and PostHog evidence and feed sanitized snapshots into this deterministic
-bridge. Existing Monster Runtime Lab, Continuity, Dependency Map, Failure Memory,
-Performance Profiler, Test Matrix, Error Radar, and Certification evidence are then
+The module performs no external network calls. ChatGPT/connectors collect GitHub,
+Render, and PostHog evidence and feed sanitized snapshots into this deterministic
+bridge. Existing Runtime Lab, Continuity, Failure Memory, Dependency Map,
+Performance Profiler, Test Matrix, Error Radar, and Certification evidence are
 combined into one release/incident packet.
 """
 from __future__ import annotations
@@ -34,10 +34,10 @@ SOURCE_STATES = {"AVAILABLE", "UNAVAILABLE", "NOT_CONFIGURED", "STALE"}
 FINAL_GATE_PASS = {"PASS", "PASSED", "SUCCESS", "GREEN"}
 FINAL_GATE_FAIL = {"FAIL", "FAILED", "FAILURE", "ERROR", "RED"}
 RENDER_FAIL_STATES = {"FAILED", "CANCELED", "CANCELLED", "ERROR"}
-
 MAX_TEXT_CHARS = 1600
 MAX_LIST_ITEMS = 50
 MAX_DEPTH = 8
+
 _SECRET_KEY_RE = re.compile(
     r"(?i)(authorization|cookie|set-cookie|api[-_]?key|token|secret|password|passwd|credential|private[-_]?key)"
 )
@@ -236,6 +236,7 @@ def compare_deployment_parity(github: SourceEvidence, render: SourceEvidence) ->
             "blocking": False,
             "reasons": ["GitHub and Render must both be AVAILABLE for deployment parity."],
         }
+
     expected_sha = str(gh["data"].get("expected_deploy_sha") or "")
     expected_branch = str(gh["data"].get("expected_deploy_branch") or "")
     deployed_sha = str(rd["data"].get("deployed_commit") or "")
@@ -260,13 +261,14 @@ def compare_deployment_parity(github: SourceEvidence, render: SourceEvidence) ->
 
 def _certification_summary(receipt: Mapping[str, Any] | None) -> dict[str, Any]:
     if receipt is None:
-        return {"status": "NOT_PROVIDED", "blocking": False}
+        return {"status": "NOT_PROVIDED", "blocking": False, "provided": False}
     safe = _sanitize(dict(receipt))
     status = _norm_gate(safe.get("status"))
     failed = int(safe.get("failed_check_count") or 0)
     return {
         "status": status,
         "blocking": status not in FINAL_GATE_PASS or failed > 0,
+        "provided": True,
         "passed_check_count": int(safe.get("passed_check_count") or 0),
         "required_check_count": int(safe.get("required_check_count") or 0),
         "failed_check_count": failed,
@@ -298,17 +300,21 @@ def build_live_bridge(
     current_main_commit: str | None = None,
     repo_root: str | Path = ".",
 ) -> dict[str, Any]:
-    render = render or unavailable_source("render", state="NOT_CONFIGURED", note="Render evidence was not supplied.")
-    posthog = posthog or unavailable_source("posthog", state="NOT_CONFIGURED", note="PostHog evidence was not supplied.")
+    render = render or unavailable_source(
+        "render", state="NOT_CONFIGURED", note="Render evidence was not supplied."
+    )
+    posthog = posthog or unavailable_source(
+        "posthog", state="NOT_CONFIGURED", note="PostHog evidence was not supplied."
+    )
 
+    active_incident = _has_incident(incident)
     incident_packet = build_incident_packet(incident, repo_root=repo_root)
-    fix_plan = build_fix_plan(incident_packet) if _has_incident(incident) else None
+    fix_plan = build_fix_plan(incident_packet) if active_incident else None
 
     continuity: dict[str, Any] | None = None
     if continuity_checkpoint is not None:
-        validated = validate_checkpoint(continuity_checkpoint)
         continuity = build_resume_packet(
-            validated,
+            validate_checkpoint(continuity_checkpoint),
             current_branch=current_branch,
             current_commit=current_commit,
             current_main_commit=current_main_commit,
@@ -343,14 +349,15 @@ def build_live_bridge(
 
     if certification.get("blocking"):
         blockers.append(f"Monster certification status is {certification.get('status')}.")
+    elif not certification.get("provided"):
+        warnings.append("Monster certification receipt was not provided.")
 
     if continuity is not None:
         if continuity.get("status") == "REVALIDATE":
             blockers.append("Continuity checkpoint detected repository drift and requires revalidation.")
         elif continuity.get("status") == "BLOCKED":
             blockers.append("Continuity checkpoint is blocked.")
-        elif continuity.get("status") == "COMPLETE":
-            signals.append("Continuity checkpoint marks the saved task COMPLETE.")
+        # COMPLETE is informational only; it must never manufacture an incident/action signal.
 
     for source in (gh, rd, ph):
         if source["status"] in {"UNAVAILABLE", "STALE"}:
@@ -368,8 +375,11 @@ def build_live_bridge(
 
     if blockers:
         overall = "BLOCKED"
-    elif _has_incident(incident) and fix_plan and fix_plan.get("status") == "PLAN_READY":
+    elif active_incident and fix_plan and fix_plan.get("status") == "PLAN_READY":
         overall = "ACTION_REQUIRED"
+    elif active_incident:
+        # An unresolved incident is never HEALTHY just because no exact fix is known yet.
+        overall = "DEGRADED"
     elif signals:
         overall = "ACTION_REQUIRED"
     elif warnings:
@@ -377,17 +387,20 @@ def build_live_bridge(
     else:
         overall = "HEALTHY"
 
-    release_ready = (
+    cert_pass = certification.get("provided") and certification.get("status") in FINAL_GATE_PASS
+    fully_proved = (
         not blockers
         and gate in FINAL_GATE_PASS
-        and parity.get("status") in {"ALIGNED", "UNKNOWN"}
-        and not unresolved
-        and not certification.get("blocking")
+        and parity.get("status") == "ALIGNED"
+        and unresolved == 0
+        and bool(cert_pass)
     )
-    if gate not in FINAL_GATE_PASS:
-        release_status = "UNKNOWN"
+    if blockers:
+        release_status = "BLOCKED"
+    elif fully_proved:
+        release_status = "READY"
     else:
-        release_status = "READY" if release_ready else "BLOCKED"
+        release_status = "UNKNOWN"
 
     if blockers:
         next_action = blockers[0]
@@ -409,16 +422,12 @@ def build_live_bridge(
             "blockers": _safe_list(blockers),
             "warnings": _safe_list(warnings),
         },
-        "sources": {
-            "github": gh,
-            "render": rd,
-            "posthog": ph,
-        },
+        "sources": {"github": gh, "render": rd, "posthog": ph},
         "deployment_parity": parity,
         "continuity": continuity,
         "certification": certification,
         "incident": {
-            "active": _has_incident(incident),
+            "active": active_incident,
             "packet": incident_packet,
             "fix_plan": fix_plan,
         },
