@@ -1,0 +1,172 @@
+name: NFL Moneyline V12 Performance Fast Route V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/nfl-moneyline-v12-performance-fast-route-v1.yml"
+      - "app.py"
+      - "nfl_moneyline_hub_v12.py"
+      - "streamlit_memory_lazy_router_v131.py"
+      - "tests/test_nfl_moneyline_v12_performance_fast_route_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-v12-performance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests pandas numpy streamlit scipy scikit-learn
+
+      - name: Enforce pre-activation or final exact surface
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/pre.txt <<'EOF'
+          .github/workflows/nfl-moneyline-v12-performance-fast-route-v1.yml
+          nfl_moneyline_hub_v12.py
+          streamlit_memory_lazy_router_v131.py
+          tests/test_nfl_moneyline_v12_performance_fast_route_v1.py
+          EOF
+          cat > /tmp/final.txt <<'EOF'
+          .github/workflows/nfl-moneyline-v12-performance-fast-route-v1.yml
+          app.py
+          nfl_moneyline_hub_v12.py
+          streamlit_memory_lazy_router_v131.py
+          tests/test_nfl_moneyline_v12_performance_fast_route_v1.py
+          EOF
+          sort -o /tmp/pre.txt /tmp/pre.txt
+          sort -o /tmp/final.txt /tmp/final.txt
+          echo 'Actual V12 performance diff:'
+          cat /tmp/actual.txt
+          if diff -q /tmp/pre.txt /tmp/actual.txt >/dev/null; then
+            echo PREACTIVATION_SURFACE=1 >> "$GITHUB_ENV"
+            echo FINAL_SURFACE=0 >> "$GITHUB_ENV"
+            echo NFL_MONEYLINE_V12_PREACTIVATION_FIREWALL_GREEN
+          elif diff -q /tmp/final.txt /tmp/actual.txt >/dev/null; then
+            echo PREACTIVATION_SURFACE=0 >> "$GITHUB_ENV"
+            echo FINAL_SURFACE=1 >> "$GITHUB_ENV"
+            echo NFL_MONEYLINE_V12_FINAL_FIREWALL_GREEN
+          else
+            echo NFL_MONEYLINE_V12_UNEXPECTED_FILE_SURFACE
+            diff -u /tmp/final.txt /tmp/actual.txt || true
+            exit 1
+          fi
+
+      - name: Prove frozen Moneyline V1-V11, V130, and sibling owners stay untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_moneyline_hub_v([1-9]|10|11)\.py$|nfl_moneyline_market_v1\.py$|nfl_moneyline_market_api_v1\.py$|streamlit_memory_lazy_router_v130\.py$|nfl_passing_yards_.*\.py$|nfl_receiving_yards_.*\.py$|nfl_rushing_yards_.*\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo NFL_MONEYLINE_V12_FROZEN_OWNER_MODIFICATION_BLOCKED
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo NFL_MONEYLINE_V12_FROZEN_OWNER_GUARD_GREEN
+
+      - name: Compile performance surface
+        run: |
+          python -m py_compile \
+            nfl_moneyline_hub_v12.py \
+            streamlit_memory_lazy_router_v131.py \
+            tests/test_nfl_moneyline_v12_performance_fast_route_v1.py
+          if [ "${FINAL_SURFACE:-0}" = "1" ]; then python -m py_compile app.py; fi
+
+      - name: Run V12/V131 deterministic contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v12_performance_fast_route_v1.py
+
+      - name: Re-run certified Moneyline V11 no-flash contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v11_no_flash_v1.py
+
+      - name: Re-run certified Moneyline V10 API contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v10_kyre_api_v1.py
+
+      - name: Re-run certified Moneyline V9 card contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_moneyline_v9_fresh_matchup_cards_v1.py
+
+      - name: Prove 5M / safety source firewall
+        shell: bash
+        run: |
+          python - <<'PY'
+          import inspect
+          import nfl_moneyline_hub_v12 as v12
+          import streamlit_memory_lazy_router_v131 as r131
+          assert v12.MONTE_CARLO_SIMULATIONS == 5_000_000
+          assert v12.SPORTSBOOK_MODEL_INFLUENCE == 0.0
+          assert v12.STAKE_SIZING_ENABLED is False
+          assert r131.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert r131.STAKE_SIZING_ENABLED is False
+          src=inspect.getsource(v12)
+          assert 'render_nfl_moneyline_hub()' in src
+          assert 'nfl_moneyline_hub_v11' in src
+          assert 'nfl_moneyline_hub_v8' in src
+          route=inspect.getsource(r131)
+          assert 'import streamlit_memory_lazy_router_v130' not in route
+          assert 'importlib.import_module(FROZEN_ROUTER)' in route
+          print('NFL_MONEYLINE_V12_PERMANENT_SAFETY_GREEN')
+          PY
+
+      - name: Probe deployed Kyre Sports API Moneyline safety contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          import requests
+          url='https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market/status'
+          r=requests.get(url,timeout=(5,35),headers={'Accept':'application/json','User-Agent':'KyreSportsAI-V12SpeedCert/1.0'})
+          r.raise_for_status()
+          p=r.json()
+          assert p['status'] == 'ready'
+          assert p['official_event_id_required'] is True
+          assert p['fuzzy_matching'] is False
+          assert p['synthetic_event_ids'] is False
+          assert p['projection_weight'] == 0.0
+          assert p['market_context_only'] is True
+          assert p['may_modify_projection'] is False
+          assert p['stake_sizing_enabled'] is False
+          assert p['wager_actions'] is False
+          print('NFL_MONEYLINE_V12_PUBLIC_API_SAFETY_GREEN')
+          PY
+
+      - name: Verify final app activation contract
+        if: env.FINAL_SURFACE == '1'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('app.py').read_text()
+          assert 'streamlit_memory_lazy_router_v131' in text
+          assert 'STREAMLIT_MAIN_V131_NFL_MONEYLINE_PERFORMANCE_FAST_ROUTE_2026-09-14' in text
+          assert 'STREAMLIT_MAIN_V130_NFL_MONEYLINE_NO_FLASH_2026-09-14' in text
+          print('NFL_MONEYLINE_V131_APP_ACTIVATION_GREEN')
+          PY
