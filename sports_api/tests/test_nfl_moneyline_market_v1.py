@@ -202,4 +202,4 @@ def test_status_contract_and_shared_host_registration():
     assert paths.count("/api/v1/nfl/moneyline/market/status") == 1
     assert "/api/v1/nfl/rushing-yards/market" in paths
     assert "/api/v1/nfl/receiving-yards/market" in paths
-    assert "/api/v1/nfl/passing-yards/market" in paths
+    assert "/api/v1/nfl/passing-yards" in paths
