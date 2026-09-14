@@ -1,0 +1,179 @@
+name: NFL Spread Streamlit API V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'nfl_spread_hub_v1.py'
+      - 'nfl_spread_market_api_v1.py'
+      - 'streamlit_memory_lazy_router_v132.py'
+      - 'tests/test_nfl_spread_streamlit_api_v1.py'
+      - '.github/workflows/nfl-spread-streamlit-api-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-spread-streamlit-api-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frontend test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests pandas streamlit pytest
+
+      - name: Enforce exact six-file Step 5 surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main
+          git diff --name-only origin/main...HEAD | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-spread-streamlit-api-v1.yml
+          app.py
+          nfl_spread_hub_v1.py
+          nfl_spread_market_api_v1.py
+          streamlit_memory_lazy_router_v132.py
+          tests/test_nfl_spread_streamlit_api_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual NFL Spread Step 5 diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo 'NFL_SPREAD_STEP5_EXACT_SURFACE_GREEN'
+
+      - name: Enforce exact app.py activation-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          diff = subprocess.check_output(
+              ['git', 'diff', '--unified=0', 'origin/main...HEAD', '--', 'app.py'],
+              text=True,
+          )
+          changes = sorted(
+              line for line in diff.splitlines()
+              if line.startswith(('+', '-')) and not line.startswith(('+++', '---'))
+          )
+          expected = sorted([
+              '-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V131_NFL_MONEYLINE_PERFORMANCE_FAST_ROUTE_2026-09-14"',
+              '+FROZEN_V131_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V131_NFL_MONEYLINE_PERFORMANCE_FAST_ROUTE_2026-09-14"',
+              '+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V132_NFL_SPREAD_KYRE_API_TRANSPORT_2026-09-14"',
+              '-    from streamlit_memory_lazy_router_v131 import record_bootstrap_import_ms, render_app',
+              '+    from streamlit_memory_lazy_router_v132 import record_bootstrap_import_ms, render_app',
+          ])
+          if changes != expected:
+              print('Unexpected app.py changed lines:')
+              print('\n'.join(changes))
+              raise SystemExit(1)
+          print('NFL_SPREAD_APP_ACTIVATION_ONLY_GREEN')
+          PY
+
+      - name: Prove frozen Moneyline production owners are untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --quiet origin/main...HEAD -- \
+            streamlit_memory_lazy_router_v131.py \
+            nfl_moneyline_hub_v12.py \
+            nfl_moneyline_market_api_v1.py \
+            nfl_moneyline_hub_v11.py \
+            nfl_moneyline_hub_v9.py
+          echo 'NFL_MONEYLINE_FROZEN_OWNERS_UNCHANGED_GREEN'
+
+      - name: Compile Step 5 surface
+        run: |
+          python -m py_compile nfl_spread_market_api_v1.py
+          python -m py_compile nfl_spread_hub_v1.py
+          python -m py_compile streamlit_memory_lazy_router_v132.py
+          python -m py_compile app.py
+          python -m py_compile tests/test_nfl_spread_streamlit_api_v1.py
+
+      - name: Run frontend Spread contract tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest -q tests/test_nfl_spread_streamlit_api_v1.py
+
+  live-adapter-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install adapter runtime
+        run: |
+          python -m pip install --disable-pip-version-check -q requests
+
+      - name: Call production Spread API through new frontend adapter
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import json
+          import nfl_spread_market_api_v1 as adapter
+
+          event_id = '401872931'
+          out = adapter.fetch_event_market(event_id)
+          assert out.get('ready') is True, out
+          assert out.get('market_available') is True, out
+          assert out.get('official_event_id') == event_id, out
+          assert out.get('projection_weight') == 0.0, out
+          assert out.get('market_context_only') is True, out
+          assert out.get('model_probability_input') is False, out
+          assert out.get('stake_sizing_enabled') is False, out
+          assert out.get('wager_actions') is False, out
+          identity = out.get('identity') or {}
+          assert identity.get('fuzzy_matching') is False, identity
+          assert identity.get('synthetic_event_ids') is False, identity
+          assert identity.get('away_abbr') == 'DEN', identity
+          assert identity.get('home_abbr') == 'KC', identity
+          books = out.get('books') or []
+          assert len(books) >= 1, out
+          book = books[0]
+          assert book.get('sportsbook') == 'FanDuel', book
+          assert abs(float(book['away_spread']) + float(book['home_spread'])) < 1e-9, book
+          print('NFL_SPREAD_STREAMLIT_ADAPTER_LIVE_GREEN', json.dumps({
+              'event_id': event_id,
+              'sportsbook': book.get('sportsbook'),
+              'away_spread': book.get('away_spread'),
+              'home_spread': book.get('home_spread'),
+              'away_price': book.get('away_price'),
+              'home_price': book.get('home_price'),
+              'request_attempts': out.get('request_attempts'),
+              'projection_weight': out.get('projection_weight'),
+          }, sort_keys=True))
+          PY
+
+  final-step5-gate:
+    if: always()
+    needs: [contract-tests, live-adapter-proof]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every Step 5 gate green
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ needs.contract-tests.result }}' = 'success'
+          test '${{ needs.live-adapter-proof.result }}' = 'success'
+          echo 'NFL_SPREAD_STREAMLIT_API_V1_GREEN'
