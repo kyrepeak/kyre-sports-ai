@@ -103,3 +103,16 @@ def test_v9_runtime_date_guard_never_rewrites_live_v9_widget():
     assert '"nfl_moneyline_v1_date_input"' in source
     assert '"nfl_moneyline_v2_date_input"' in source
     assert '"nfl_moneyline_v3_date_input"' in source
+
+
+def test_v9_runtime_strips_team_panel_html_boundaries():
+    def raw_panel(*args, **kwargs):
+        return "\n   <section class=\"kml9-team-panel\">TEAM</section>   \n"
+
+    wrapped = router._strip_moneyline_v9_team_panel_html(raw_panel)
+    assert wrapped() == '<section class="kml9-team-panel">TEAM</section>'
+
+    runtime = inspect.getsource(router.render_nfl_hub)
+    assert "original_side_html = page._side_html" in runtime
+    assert "page._side_html = _strip_moneyline_v9_team_panel_html(original_side_html)" in runtime
+    assert "page._side_html = original_side_html" in runtime
