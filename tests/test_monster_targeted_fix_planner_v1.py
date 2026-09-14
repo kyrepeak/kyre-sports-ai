@@ -79,6 +79,22 @@ def test_unknown_incident_refuses_to_guess_a_fix():
     assert "Capture/replay" in plan["next_action"]
 
 
+def test_unproven_named_target_is_inspection_only_not_edit_candidate():
+    packet = build_incident_packet(
+        IncidentInput(
+            title="unproven target",
+            symptom="caller suspects one file but has no deterministic evidence",
+            target="sports_api/main.py",
+        ),
+        repo_root=ROOT,
+    )
+    plan = build_fix_plan(packet)
+    assert plan["status"] == "NEED_MORE_EVIDENCE"
+    assert "sports_api/main.py" in plan["inspect_first"]
+    assert plan["edit_candidates"] == []
+    assert "before editing code" in plan["next_action"]
+
+
 def test_exact_failure_memory_can_drive_plan_without_fuzzy_matching():
     packet = build_incident_packet(
         IncidentInput(
@@ -94,6 +110,7 @@ def test_exact_failure_memory_can_drive_plan_without_fuzzy_matching():
     assert plan["status"] == "PLAN_READY"
     assert plan["root_cause_confidence"] == "HIGH"
     assert any(item.startswith("exact_failure_memory:") for item in plan["evidence"])
+    assert plan["edit_candidates"]  # exact historical evidence may nominate verified files
 
 
 def test_planner_never_authorizes_fuzzy_identity_or_projection_mutation():
