@@ -99,29 +99,50 @@ jobs:
                   descriptors.append(descriptor)
 
           print('MONEYLINE_LIKE_MARKETS', json.dumps(descriptors[:50], indent=2, sort_keys=True))
-          if not descriptors:
-              fallback = []
-              for market in markets[:50]:
-                  fallback.append({
-                      'market_id': str(market.get('marketId') or market.get('_attachment_key') or ''),
-                      'name': str(market.get('marketName') or market.get('name') or market.get('displayName') or '').strip(),
-                      'market_type': str(market.get('marketType') or market.get('marketTypeCode') or market.get('type') or '').strip(),
-                      'status': str(market.get('marketStatus') or market.get('status') or ''),
-                      'in_play': market.get('inPlay'),
-                  })
-              print('DEFAULT_MARKET_SAMPLE', json.dumps(fallback, indent=2, sort_keys=True))
+          payload = moneyline.collect_fanduel_nfl_moneyline(event_id)
+          print('CURRENT_COLLECTOR_GREEN', json.dumps({
+              'official_event_id': payload.get('official_event_id'),
+              'book_count': len(payload.get('books') or []),
+              'books': [row.get('sportsbook') for row in payload.get('books') or []],
+          }, sort_keys=True))
+          PY
 
+      - name: Probe deployed Render Moneyline endpoint
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          event_id = '401872931'
+          base = 'https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market'
+          url = base + '?' + urllib.parse.urlencode({'event_id': event_id})
+          request = urllib.request.Request(
+              url,
+              headers={
+                  'Accept': 'application/json',
+                  'User-Agent': 'KyreSportsAI-MoneylineRuntimeRepair/1.0',
+              },
+              method='GET',
+          )
           try:
-              payload = moneyline.collect_fanduel_nfl_moneyline(event_id)
-          except Exception as exc:
-              print('CURRENT_COLLECTOR_FAILURE', type(exc).__name__, str(exc))
-              raise
-          else:
-              print('CURRENT_COLLECTOR_GREEN', json.dumps({
-                  'official_event_id': payload.get('official_event_id'),
-                  'book_count': len(payload.get('books') or []),
-                  'books': [row.get('sportsbook') for row in payload.get('books') or []],
-              }, sort_keys=True))
+              with urllib.request.urlopen(request, timeout=35) as response:
+                  status = int(response.status)
+                  body = response.read(200000).decode('utf-8', errors='replace')
+          except urllib.error.HTTPError as exc:
+              status = int(exc.code)
+              body = exc.read(200000).decode('utf-8', errors='replace')
+          print('DEPLOYED_RENDER_STATUS', status)
+          print('DEPLOYED_RENDER_BODY', body)
+          if status != 200:
+              raise SystemExit(f'deployed Moneyline endpoint returned HTTP {status}')
+          payload = json.loads(body)
+          assert payload.get('official_event_id') == event_id
+          assert payload.get('ready') is True
+          assert payload.get('market_available') is True
+          assert len(payload.get('books') or []) >= 1
+          print('DEPLOYED_RENDER_MONEYLINE_GREEN')
           PY
 
       - name: Run deterministic Moneyline contracts
