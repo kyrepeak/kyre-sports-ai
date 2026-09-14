@@ -1,18 +1,11 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards visual parity Step 5.
+"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards combined player cards.
 
-Router V121 is additive over certified Router V120. It preserves the complete
-Passing Yards chain and the certified Rushing Yards V15 page while advancing
-only NFL -> Receiving Yards to the isolated V10 final page.
+Router V127 is additive over certified Router V126. It advances only exact
+NFL -> Passing Yards to V34 combined player-first 10-step cards while keeping
+the certified V33/V28 analytics frozen. Receiving Yards, Rushing Yards, and all
+other routes remain delegated through the frozen router chain unchanged.
 
-Receiving Yards exact-ID player context, descriptive metrics, opponent defense,
-exact-ID player-vs-team history, the frozen market-blind baseline projection,
-Support + Concerns, fresh exact-ID FanDuel full-lineup display, opponent matchup tiers, and final detailed-tier polish are live.
-FanDuel remains visual context only: probability, EV, Monte Carlo, betting
-grades, rankings, recommendations, staking, and wager actions remain OFF.
-Sportsbook projection influence stays 0.0%.
-
-Deployment heartbeat:
-STREAMLIT_MAIN_V123_NFL_PASSING_YARDS_VISUAL_PARITY_STEP3_QB_PROFILE_2026-09-13.
+Sportsbook projection influence stays 0.0% and stake sizing stays OFF.
 """
 from __future__ import annotations
 
@@ -92,6 +85,8 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v123 import render_app as _frozen_v123_render_app
     from streamlit_memory_lazy_router_v124 import render_app as _frozen_v124_render_app
     from streamlit_memory_lazy_router_v125 import render_app as _frozen_v125_render_app
+    from streamlit_memory_lazy_router_v126 import render_app as _frozen_v126_render_app
+    from streamlit_memory_lazy_router_v126 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v125 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v124 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app
@@ -190,12 +185,13 @@ FROZEN_V122_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V122_NFL_PASSING_YARDS_VISUAL
 FROZEN_V123_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V123_NFL_PASSING_YARDS_VISUAL_PARITY_STEP3_QB_PROFILE_2026-09-13"
 FROZEN_V124_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V124_NFL_PASSING_YARDS_VISUAL_PARITY_STEP4_CONTEXT_CARDS_2026-09-13"
 FROZEN_V125_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V125_NFL_PASSING_YARDS_VISUAL_PARITY_STEP5_ANALYTICAL_READOUTS_2026-09-13"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V126_NFL_PASSING_YARDS_VISUAL_PARITY_STEP6_FINAL_2026-09-13"
+FROZEN_V126_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V126_NFL_PASSING_YARDS_VISUAL_PARITY_STEP6_FINAL_2026-09-13"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V127_NFL_PASSING_YARDS_COMBINED_PLAYER_CARDS_2026-09-13"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v126 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v127 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
