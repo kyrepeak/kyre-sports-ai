@@ -3,13 +3,15 @@ name: NFL Spread Step 9 Real Streamlit Proof
 on:
   push:
     branches:
-      - nfl-spread-model-mc-v1
+      - nfl-spread-page-visual-parity-v1
     paths:
       - 'app.py'
       - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_hub_v4.py'
       - 'streamlit_memory_lazy_router_v132.py'
       - 'streamlit_memory_lazy_router_v133.py'
       - 'streamlit_memory_lazy_router_v134.py'
+      - 'streamlit_memory_lazy_router_v135.py'
       - 'tests/test_nfl_spread_streamlit_v134_smoke.py'
       - 'requirements.txt'
       - '.github/workflows/nfl-spread-step9-streamlit-proof.yml'
@@ -19,9 +21,11 @@ on:
     paths:
       - 'app.py'
       - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_hub_v4.py'
       - 'streamlit_memory_lazy_router_v132.py'
       - 'streamlit_memory_lazy_router_v133.py'
       - 'streamlit_memory_lazy_router_v134.py'
+      - 'streamlit_memory_lazy_router_v135.py'
       - 'tests/test_nfl_spread_streamlit_v134_smoke.py'
       - 'requirements.txt'
       - '.github/workflows/nfl-spread-step9-streamlit-proof.yml'
@@ -50,16 +54,18 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
 
-      - name: Compile active V134 Streamlit surface
+      - name: Compile active V135 Streamlit surface
         run: |
           python -m py_compile app.py
           python -m py_compile nfl_spread_hub_v3.py
+          python -m py_compile nfl_spread_hub_v4.py
           python -m py_compile streamlit_memory_lazy_router_v132.py
           python -m py_compile streamlit_memory_lazy_router_v133.py
           python -m py_compile streamlit_memory_lazy_router_v134.py
+          python -m py_compile streamlit_memory_lazy_router_v135.py
           python -m py_compile tests/test_nfl_spread_streamlit_v134_smoke.py
 
-      - name: Execute real NFL Spread route with Streamlit AppTest
+      - name: Execute real NFL Spread V135 V4 route with Streamlit AppTest
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -105,15 +111,16 @@ jobs:
 
           grep -qi 'ok' /tmp/health.txt
           kill -0 "$PID"
-          echo 'NFL_SPREAD_STEP9_REAL_STREAMLIT_SERVER_GREEN'
+          echo 'NFL_SPREAD_STEP9_V135_REAL_STREAMLIT_SERVER_GREEN'
 
-      - name: Prove active app contract is still V134
+      - name: Prove active app contract is V135 visual parity
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"' app.py
-          grep -F 'from streamlit_memory_lazy_router_v134 import record_bootstrap_import_ms, render_app' app.py
-          echo 'NFL_SPREAD_STEP9_V134_ACTIVE_GREEN'
+          grep -F 'FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"' app.py
+          grep -F 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"' app.py
+          grep -F 'from streamlit_memory_lazy_router_v135 import record_bootstrap_import_ms, render_app' app.py
+          echo 'NFL_SPREAD_STEP9_V135_ACTIVE_GREEN'
 
   final-step9-gate:
     if: always()
@@ -125,4 +132,4 @@ jobs:
           RESULT: ${{ needs.real-streamlit-proof.result }}
         run: |
           test "$RESULT" = "success"
-          echo 'NFL_SPREAD_STEP9_FINAL_GATE_GREEN'
+          echo 'NFL_SPREAD_STEP9_V135_FINAL_GATE_GREEN'
