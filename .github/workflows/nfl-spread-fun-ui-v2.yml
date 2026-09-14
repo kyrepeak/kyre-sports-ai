@@ -1,0 +1,144 @@
+name: NFL Spread Fun UI V2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'nfl_spread_hub_v2.py'
+      - 'streamlit_memory_lazy_router_v133.py'
+      - 'tests/test_nfl_spread_fun_ui_v2.py'
+      - '.github/workflows/nfl-spread-fun-ui-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-spread-fun-ui-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  presentation-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install presentation test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests pandas streamlit pytest
+
+      - name: Enforce exact five-file Step 6 surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main
+          git diff --name-only origin/main...HEAD | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-spread-fun-ui-v2.yml
+          app.py
+          nfl_spread_hub_v2.py
+          streamlit_memory_lazy_router_v133.py
+          tests/test_nfl_spread_fun_ui_v2.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual NFL Spread Step 6 diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo 'NFL_SPREAD_STEP6_EXACT_SURFACE_GREEN'
+
+      - name: Enforce exact app.py V133 activation-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          diff = subprocess.check_output(
+              ['git', 'diff', '--unified=0', 'origin/main...HEAD', '--', 'app.py'],
+              text=True,
+          )
+          changes = sorted(
+              line for line in diff.splitlines()
+              if line.startswith(('+', '-')) and not line.startswith(('+++', '---'))
+          )
+          expected = sorted([
+              '-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V132_NFL_SPREAD_KYRE_API_TRANSPORT_2026-09-14"',
+              '+FROZEN_V132_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V132_NFL_SPREAD_KYRE_API_TRANSPORT_2026-09-14"',
+              '+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"',
+              '-    from streamlit_memory_lazy_router_v132 import record_bootstrap_import_ms, render_app',
+              '+    from streamlit_memory_lazy_router_v133 import record_bootstrap_import_ms, render_app',
+          ])
+          if changes != expected:
+              print('Unexpected app.py changed lines:')
+              print('\n'.join(changes))
+              raise SystemExit(1)
+          print('NFL_SPREAD_V133_APP_ACTIVATION_GREEN')
+          PY
+
+      - name: Prove frozen transport and Moneyline owners are untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --quiet origin/main...HEAD -- \
+            nfl_spread_hub_v1.py \
+            nfl_spread_market_api_v1.py \
+            streamlit_memory_lazy_router_v132.py \
+            streamlit_memory_lazy_router_v131.py \
+            nfl_moneyline_hub_v12.py \
+            nfl_moneyline_hub_v11.py \
+            nfl_moneyline_market_api_v1.py
+          echo 'NFL_SPREAD_V1_V132_AND_MONEYLINE_FROZEN_GREEN'
+
+      - name: Compile Step 6 surface
+        run: |
+          python -m py_compile nfl_spread_hub_v2.py
+          python -m py_compile streamlit_memory_lazy_router_v133.py
+          python -m py_compile app.py
+          python -m py_compile tests/test_nfl_spread_fun_ui_v2.py
+
+      - name: Run Spread V2 presentation tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest -q tests/test_nfl_spread_fun_ui_v2.py
+
+      - name: Static presentation safety proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import nfl_spread_hub_v2 as page
+          import streamlit_memory_lazy_router_v133 as router
+
+          assert page.FROZEN_TRANSPORT == 'nfl_spread_hub_v1'
+          assert page.PRESENTATION_ONLY is True
+          assert page.PROJECTION_MODEL_ENABLED is False
+          assert page.MONTE_CARLO_ENABLED is False
+          assert page.RANKINGS_ENABLED is False
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.STAKE_SIZING_ENABLED is False
+          assert page.WAGER_ACTIONS_ENABLED is False
+          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v132'
+          assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v2'
+          print('NFL_SPREAD_V2_PRESENTATION_SAFETY_GREEN')
+          PY
+
+  final-step6-gate:
+    if: always()
+    needs: [presentation-contract]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require Step 6 presentation contract green
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ needs.presentation-contract.result }}' = 'success'
+          echo 'NFL_SPREAD_FUN_UI_V2_GREEN'
