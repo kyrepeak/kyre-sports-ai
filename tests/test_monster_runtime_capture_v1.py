@@ -39,6 +39,42 @@ def test_capture_strips_query_and_redacts_sensitive_fields():
     assert payload["json_body"]["api_key"] == "<redacted>"
 
 
+def test_capture_strips_http_userinfo_credentials_from_url():
+    artifact = capture_response(
+        route_key="userinfo",
+        url="https://user:super-secret@example.com:8443/path?token=also-secret#fragment",
+        status_code=200,
+        json_body={"status": "ok"},
+    )
+    assert artifact.url == "https://example.com:8443/path"
+    serialized = json.dumps(artifact.as_dict())
+    assert "user" not in artifact.url
+    assert "super-secret" not in serialized
+    assert "also-secret" not in serialized
+
+
+def test_capture_recursively_redacts_scalar_and_nested_sequence_credentials():
+    artifact = capture_response(
+        route_key="nested-secrets",
+        url="https://api.test/nested",
+        status_code=200,
+        json_body=[
+            "Bearer top-secret",
+            ["Basic dXNlcjpwYXNz", {"token": "nested-token", "safe": "ok"}],
+            {"items": ["Bearer another-secret", {"password": "hidden"}]},
+        ],
+        note="Bearer note-secret",
+    )
+    body = artifact.json_body
+    assert body[0] == "<redacted>"
+    assert body[1][0] == "<redacted>"
+    assert body[1][1]["token"] == "<redacted>"
+    assert body[1][1]["safe"] == "ok"
+    assert body[2]["items"][0] == "<redacted>"
+    assert body[2]["items"][1]["password"] == "<redacted>"
+    assert artifact.note == "<redacted>"
+
+
 def test_artifact_has_stable_fingerprint_for_same_sanitized_exchange():
     kwargs = dict(
         route_key="route",
