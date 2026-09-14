@@ -66,6 +66,10 @@ def _detailed_player_card_v10(
 ) -> str:
     """Add a descriptive matchup ribbon around the frozen V7 detailed stack."""
     stack = _ORIGINAL_DETAILED_CARD_V7(player, team, opponent)
+    stack = stack.replace(
+        '<span class="krecv7-badge">Page Step 7 / 10</span>',
+        '<span class="krecv7-badge">Page Step 10 / 10</span>',
+    )
     grade = _grade_for_team_opponent(team, opponent)
     tier = str(grade.get("tier") or "MEDIUM").upper()
     tier_class = tier.lower()
