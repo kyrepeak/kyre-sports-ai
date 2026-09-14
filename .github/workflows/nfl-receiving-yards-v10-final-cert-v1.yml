@@ -8,6 +8,7 @@ on:
       - "streamlit_memory_lazy_router_v121.py"
       - "app.py"
       - "tests/test_nfl_receiving_yards_v10_final_v1.py"
+      - "tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py"
       - ".github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml"
   workflow_dispatch:
 
@@ -30,7 +31,7 @@ jobs:
       - name: Install deterministic test dependencies
         run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
 
-      - name: Enforce exact five-file Step 10 diff
+      - name: Enforce certified Step 10 diff or exact stale-badge hotfix diff
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -39,17 +40,30 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+          cat > /tmp/expected-step10.txt <<'EOF'
           .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml
           app.py
           nfl_receiving_yards_hub_v10.py
           streamlit_memory_lazy_router_v121.py
           tests/test_nfl_receiving_yards_v10_final_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          echo 'Actual Step 10 diff:'
+          cat > /tmp/expected-badge-hotfix.txt <<'EOF'
+          .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml
+          nfl_receiving_yards_hub_v10.py
+          tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py
+          EOF
+          sort -o /tmp/expected-step10.txt /tmp/expected-step10.txt
+          sort -o /tmp/expected-badge-hotfix.txt /tmp/expected-badge-hotfix.txt
+          echo 'Actual Receiving final diff:'
           cat /tmp/actual.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          if diff -q /tmp/expected-step10.txt /tmp/actual.txt >/dev/null; then
+            echo STEP10_ORIGINAL_EXACT_DIFF_GREEN
+          elif diff -q /tmp/expected-badge-hotfix.txt /tmp/actual.txt >/dev/null; then
+            echo STEP10_BADGE_HOTFIX_EXACT_DIFF_GREEN
+          else
+            echo RECEIVING_FINAL_DIFF_GUARD_FAILED
+            exit 1
+          fi
 
       - name: Compile final Receiving surface
         run: |
@@ -57,7 +71,8 @@ jobs:
             nfl_receiving_yards_hub_v10.py \
             streamlit_memory_lazy_router_v121.py \
             app.py \
-            tests/test_nfl_receiving_yards_v10_final_v1.py
+            tests/test_nfl_receiving_yards_v10_final_v1.py \
+            tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py
 
       - name: Prove all prior Receiving owners remain frozen
         if: github.event_name == 'pull_request'
@@ -77,7 +92,9 @@ jobs:
           echo "STEP10_FROZEN_OWNER_GUARD_GREEN"
 
       - name: Run final Step 10 contracts
-        run: python -m pytest -q tests/test_nfl_receiving_yards_v10_final_v1.py
+        run: |
+          python -m pytest -q tests/test_nfl_receiving_yards_v10_final_v1.py
+          python -m pytest -q tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py
 
       - name: Re-run frozen Step 9 and Step 8 contracts
         run: |
@@ -206,6 +223,8 @@ jobs:
                   if required not in body:
                       raise BrowserQAFailure(f'{label} missing final marker: {required}')
               body_lower=body.lower()
+              if 'page step 7 / 10' in body_lower:
+                  raise BrowserQAFailure(f'{label} stale inherited Page Step 7 / 10 badge still visible')
               if 'projection math remains frozen' not in body_lower:
                   raise BrowserQAFailure(f'{label} missing frozen projection marker')
               if 'sportsbook influence remains 0.0%' not in body_lower:
