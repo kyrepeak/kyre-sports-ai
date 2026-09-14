@@ -1,0 +1,154 @@
+name: NFL Spread Market API V1
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - 'sports_api/collectors/nfl_fanduel_spread_v1.py'
+      - 'sports_api/api/nfl_spread_market_v1.py'
+      - 'sports_api/api/health.py'
+      - 'sports_api/tests/test_nfl_spread_market_v1.py'
+      - '.github/workflows/nfl-spread-market-api-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-spread-market-api-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install production API stack and pytest
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Enforce exact five-file Spread API surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin mlb-step17b-shared-host-cert:refs/remotes/origin/mlb-step17b-shared-host-cert
+          git diff --name-only origin/mlb-step17b-shared-host-cert...HEAD | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-spread-market-api-v1.yml
+          sports_api/api/health.py
+          sports_api/api/nfl_spread_market_v1.py
+          sports_api/collectors/nfl_fanduel_spread_v1.py
+          sports_api/tests/test_nfl_spread_market_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual NFL Spread API diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo 'NFL_SPREAD_EXACT_SURFACE_GREEN'
+
+      - name: Compile Spread API surface
+        run: |
+          python -m py_compile sports_api/collectors/nfl_fanduel_spread_v1.py
+          python -m py_compile sports_api/api/nfl_spread_market_v1.py
+          python -m py_compile sports_api/api/health.py
+          python -m py_compile sports_api/tests/test_nfl_spread_market_v1.py
+
+      - name: Run Spread contract plus Moneyline regression tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest -q \
+            sports_api/tests/test_nfl_spread_market_v1.py \
+            sports_api/tests/test_nfl_moneyline_market_v1.py
+
+      - name: Verify shared-host route uniqueness
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from sports_api.api import health
+          paths = [getattr(route, 'path', '') for route in health.router.routes]
+          required = [
+              '/api/v1/nfl/spread/market',
+              '/api/v1/nfl/spread/market/status',
+              '/api/v1/nfl/moneyline/market',
+              '/api/v1/nfl/moneyline/market/status',
+              '/api/v1/nfl/passing-yards',
+              '/api/v1/nfl/rushing-yards/market',
+              '/api/v1/nfl/receiving-yards/market',
+          ]
+          for path in required:
+              assert paths.count(path) == 1, (path, paths.count(path))
+          print('NFL_SPREAD_SHARED_HOST_ROUTE_GREEN')
+          PY
+
+  live-spread-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install production API stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+
+      - name: Live exact-event FanDuel Spread collector proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import json
+          from sports_api.collectors import nfl_fanduel_spread_v1 as spread
+          from sports_api.api import nfl_spread_market_v1 as api
+
+          event_id = '401872931'
+          payload = spread.collect_fanduel_nfl_spread(event_id)
+          validated = api._validate_market_payload(payload, event_id)
+          assert validated.get('official_event_id') == event_id
+          assert validated.get('ready') is True
+          assert validated.get('market_available') is True
+          books = validated.get('books') or []
+          assert len(books) >= 1
+          assert books[0].get('sportsbook') == 'FanDuel'
+          assert validated['identity']['fuzzy_matching'] is False
+          assert validated['identity']['synthetic_event_ids'] is False
+          assert validated['market_semantics']['projection_weight'] == 0.0
+          assert books[0]['away_spread'] + books[0]['home_spread'] == 0.0
+          print('NFL_SPREAD_LIVE_COLLECTOR_GREEN', json.dumps({
+              'official_event_id': validated['official_event_id'],
+              'provider_event_id': validated['identity']['provider_event_id'],
+              'away_abbr': validated['identity']['away_abbr'],
+              'home_abbr': validated['identity']['home_abbr'],
+              'sportsbook': books[0]['sportsbook'],
+              'away_spread': books[0]['away_spread'],
+              'home_spread': books[0]['home_spread'],
+              'away_price': books[0]['away_price'],
+              'home_price': books[0]['home_price'],
+          }, sort_keys=True))
+          PY
+
+  final-spread-api-gate:
+    if: always()
+    needs: [contract-tests, live-spread-proof]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every Spread API gate green
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ needs.contract-tests.result }}' = 'success'
+          test '${{ needs.live-spread-proof.result }}' = 'success'
+          echo 'NFL_SPREAD_MARKET_API_V1_GREEN'
