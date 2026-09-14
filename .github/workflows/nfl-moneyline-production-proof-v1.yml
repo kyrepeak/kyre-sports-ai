@@ -1,0 +1,60 @@
+name: NFL Moneyline Production Proof V1
+
+on:
+  push:
+    branches: [nfl-moneyline-production-proof-v1]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prove-production:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prove deployed Moneyline endpoint for exact ESPN event
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          event_id = '401872931'
+          base = 'https://kyre-sports-api.onrender.com/api/v1/nfl/moneyline/market'
+          url = base + '?' + urllib.parse.urlencode({'event_id': event_id})
+          req = urllib.request.Request(
+              url,
+              headers={
+                  'Accept': 'application/json',
+                  'User-Agent': 'KyreSportsAI-MoneylineProductionProof/1.0',
+              },
+              method='GET',
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=40) as response:
+                  status = int(response.status)
+                  body = response.read(200000).decode('utf-8', errors='replace')
+          except urllib.error.HTTPError as exc:
+              status = int(exc.code)
+              body = exc.read(200000).decode('utf-8', errors='replace')
+
+          print('PRODUCTION_STATUS', status)
+          print('PRODUCTION_BODY', body)
+          assert status == 200, (status, body)
+          payload = json.loads(body)
+          assert payload.get('official_event_id') == event_id
+          assert payload.get('ready') is True
+          assert payload.get('market_available') is True
+          books = payload.get('books') or []
+          assert len(books) >= 1
+          assert all(row.get('sportsbook') for row in books)
+          assert payload.get('identity', {}).get('fuzzy_matching') is False
+          assert payload.get('identity', {}).get('synthetic_event_ids') is False
+          assert payload.get('market_semantics', {}).get('projection_weight') == 0.0
+          assert payload.get('market_semantics', {}).get('stake_sizing_enabled') is False
+          print('NFL_MONEYLINE_PRODUCTION_ENDPOINT_GREEN')
+          PY
