@@ -1,0 +1,302 @@
+name: NFL Passing Yards V33 Visual Parity Step 6 Final V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_passing_yards_hub_v33.py"
+      - "streamlit_memory_lazy_router_v126.py"
+      - "app.py"
+      - "tests/test_nfl_passing_yards_v33_visual_parity_step6_final_v1.py"
+      - ".github/workflows/nfl-passing-yards-v33-visual-parity-step6-final-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-final-step6:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
+
+      - name: Enforce exact five-file Passing visual Step 6 diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-passing-yards-v33-visual-parity-step6-final-v1.yml
+          app.py
+          nfl_passing_yards_hub_v33.py
+          streamlit_memory_lazy_router_v126.py
+          tests/test_nfl_passing_yards_v33_visual_parity_step6_final_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile final Passing surface
+        run: |
+          python -m py_compile \
+            nfl_passing_yards_hub_v33.py \
+            streamlit_memory_lazy_router_v126.py \
+            app.py \
+            tests/test_nfl_passing_yards_v33_visual_parity_step6_final_v1.py
+
+      - name: Prove frozen Passing and certified sibling owners remain untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_hub_v([1-9]|1[0-9]|2[0-9]|3[0-2])\.py$|nfl_hub_v35\.py$|streamlit_memory_lazy_router_v125\.py$|nfl_receiving_yards_.*\.py$|nfl_rushing_yards_.*\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "PASSING_VISUAL_STEP6_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "PASSING_VISUAL_STEP6_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Run Passing V33 final Step 6 contracts
+        run: python -m pytest -q tests/test_nfl_passing_yards_v33_visual_parity_step6_final_v1.py
+
+      - name: Re-run frozen visual Steps 5 through 2
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_v32_visual_parity_step5_v1.py
+          python -m pytest -q tests/test_nfl_passing_yards_v31_visual_parity_step4_v1.py
+          python -m pytest -q tests/test_nfl_passing_yards_v30_visual_parity_step3_v1.py
+          python -m pytest -q tests/test_nfl_passing_yards_v29_visual_parity_step2_v1.py
+
+      - name: Re-run frozen V28 exact-ID personnel regression
+        run: python -m pytest -q tests/test_nfl_passing_yards_step5_personnel_v2.py
+
+      - name: Prove V33 remains display-only and analytical-value blind
+        shell: bash
+        run: |
+          python - <<'PY'
+          import inspect
+          import nfl_passing_yards_hub_v33 as page
+          assert page.DISPLAY_ONLY is True
+          assert page.FINAL_PAGE_COMPLETE is True
+          assert page.FROZEN_PRIOR == 'nfl_passing_yards_hub_v32'
+          assert page.FROZEN_PASSING_ENGINE == 'nfl_passing_yards_hub_v28'
+          assert page.VISUAL_BUILD_STEP == page.VISUAL_BUILD_TOTAL == 6
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.STAKE_SIZING_ENABLED is False
+          source = inspect.getsource(page.render_nfl_passing_yards_hub)
+          for forbidden in (
+              'build_baseline_projection', 'build_context_projection', 'build_distribution',
+              'evaluate_market', 'projection_yards', 'fair_odds', 'no_vig',
+              'over_ev', 'under_ev', 'stake_size', 'projection_adjustment',
+              'over_odds', 'under_odds',
+          ):
+              assert forbidden not in source, forbidden
+          print('NFL_PASSING_YARDS_V33_FINAL_DISPLAY_ONLY_GREEN')
+          PY
+
+  browser-final-step6:
+    needs: certify-final-step6
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Start clean branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/passing-final-step6
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8516 \
+            > artifacts/passing-final-step6/streamlit.log 2>&1 &
+          echo $! > /tmp/passing_final_step6_pid
+
+      - name: Drive cold and warm final Passing UI with Playwright
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from time import perf_counter
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _wait_for_text,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base='http://127.0.0.1:8516'
+          artifacts=Path('artifacts/passing-final-step6')
+          _wait_for_health(base)
+
+          expected={
+              '.kpass29-card':2,
+              '.kpass30-profile':2,
+              '.kpy-stat':5,
+              '.kpy-defense':2,
+              '.kpy-pressure':2,
+              '.kpy-personnel':2,
+              '.kpy-env':1,
+              '.kpy-proj':2,
+              '.kpy8-card':2,
+              '.kpy9-card':2,
+              '.kpy10-card':2,
+          }
+
+          def navigate_passing(page):
+              frame,_=_find_app_frame(page)
+              _choose(page,frame,0,'NFL')
+              nfl_market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+              nfl_market_combo.wait_for(state='visible',timeout=30000)
+              _choose(page,frame,1,'Passing Yards')
+              body=_wait_for_text(frame,'VISUAL STEP 6 / 6',180.0)
+              return frame,body
+
+          def wait_for_stack(frame,label,timeout=150):
+              deadline=time.time()+timeout
+              counts={}
+              while time.time() < deadline:
+                  counts={selector:frame.locator(selector).count() for selector in expected}
+                  if all(counts.get(selector,0) >= want for selector,want in expected.items()):
+                      return counts
+                  time.sleep(2)
+              raise BrowserQAFailure(f'{label} final Passing stack timed out: {counts}')
+
+          def verify(frame,body,label):
+              forbidden=_body_has_forbidden_error(body)
+              if forbidden:
+                  raise BrowserQAFailure(f'{label} runtime error marker: {forbidden}')
+              for required in ('Passing Yards','VISUAL STEP 6 / 6','FINAL CERTIFIED','V32 + V28 FROZEN','SPORTSBOOK 0%','stake sizing OFF'):
+                  if required not in body:
+                      raise BrowserQAFailure(f'{label} missing final marker: {required}')
+
+              counts=wait_for_stack(frame,label)
+              for selector,want in expected.items():
+                  if counts[selector] != want:
+                      raise BrowserQAFailure(f'{label} expected {want} {selector}, got {counts[selector]}')
+
+              build=frame.locator('.kpass29-build').first
+              style=build.evaluate("""(e)=>{const s=getComputedStyle(e);return {borderColor:s.borderColor,backgroundImage:s.backgroundImage};}""")
+              if style['borderColor'] != 'rgb(61, 118, 81)':
+                  raise BrowserQAFailure(f'{label} final build border mismatch: {style}')
+              if 'linear-gradient' not in style['backgroundImage']:
+                  raise BrowserQAFailure(f'{label} final build gradient missing: {style}')
+              fill=frame.locator('.kpass29-fill').first.evaluate("""(e)=>getComputedStyle(e).width""")
+              note_count=frame.locator('.kpass33-finalnote').count()
+              if note_count != 1:
+                  raise BrowserQAFailure(f'{label} final note count mismatch: {note_count}')
+              return counts,style,fill
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1440,'height':3000})
+              try:
+                  cold_started=perf_counter()
+                  page.goto(base,wait_until='domcontentloaded',timeout=120000)
+                  frame,cold_body=navigate_passing(page)
+                  cold_counts,cold_style,cold_fill=verify(frame,cold_body,'cold')
+                  cold_ms=(perf_counter()-cold_started)*1000.0
+                  page.screenshot(path=str(artifacts/'passing_final_cold.png'),full_page=True)
+
+                  warm_started=perf_counter()
+                  page.reload(wait_until='domcontentloaded',timeout=120000)
+                  frame,warm_body=navigate_passing(page)
+                  warm_counts,warm_style,warm_fill=verify(frame,warm_body,'warm')
+                  warm_ms=(perf_counter()-warm_started)*1000.0
+                  page.screenshot(path=str(artifacts/'passing_final_warm.png'),full_page=True)
+
+                  result={
+                      'status':'GREEN',
+                      'visual_step':'6/6',
+                      'final_certified':True,
+                      'cold_ms':round(cold_ms,1),
+                      'warm_ms':round(warm_ms,1),
+                      'warm_vs_cold_ratio':round(warm_ms/cold_ms,3) if cold_ms > 0 else None,
+                      'cold_counts':cold_counts,
+                      'warm_counts':warm_counts,
+                      'cold_build_style':cold_style,
+                      'warm_build_style':warm_style,
+                      'cold_progress_width':cold_fill,
+                      'warm_progress_width':warm_fill,
+                      'sportsbook_projection_influence':0.0,
+                      'stake_sizing_enabled':False,
+                      'analytical_values_recomputed':False,
+                      'frozen_passing_engine':'v28',
+                      'frozen_visual_prior':'v32',
+                  }
+                  (artifacts/'passing_final_metrics.json').write_text(json.dumps(result,indent=2))
+                  print('NFL_PASSING_YARDS_V33_FINAL_UI_SPEED_WITNESS_GREEN')
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Print Streamlit log
+        if: always()
+        run: tail -n 500 artifacts/passing-final-step6/streamlit.log || true
+
+      - name: Upload final Passing UI + speed evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-final-step6-${{ github.run_id }}
+          path: artifacts/passing-final-step6
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/passing_final_step6_pid ]; then
+            kill "$(cat /tmp/passing_final_step6_pid)" 2>/dev/null || true
+          fi

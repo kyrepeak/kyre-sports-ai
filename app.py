@@ -91,6 +91,8 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v122 import render_app as _frozen_v122_render_app
     from streamlit_memory_lazy_router_v123 import render_app as _frozen_v123_render_app
     from streamlit_memory_lazy_router_v124 import render_app as _frozen_v124_render_app
+    from streamlit_memory_lazy_router_v125 import render_app as _frozen_v125_render_app
+    from streamlit_memory_lazy_router_v125 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v124 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v123 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v122 import record_bootstrap_import_ms, render_app
@@ -187,12 +189,13 @@ FROZEN_V121_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP
 FROZEN_V122_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V122_NFL_PASSING_YARDS_VISUAL_PARITY_STEP2_QB_HEROES_2026-09-13"
 FROZEN_V123_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V123_NFL_PASSING_YARDS_VISUAL_PARITY_STEP3_QB_PROFILE_2026-09-13"
 FROZEN_V124_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V124_NFL_PASSING_YARDS_VISUAL_PARITY_STEP4_CONTEXT_CARDS_2026-09-13"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V125_NFL_PASSING_YARDS_VISUAL_PARITY_STEP5_ANALYTICAL_READOUTS_2026-09-13"
+FROZEN_V125_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V125_NFL_PASSING_YARDS_VISUAL_PARITY_STEP5_ANALYTICAL_READOUTS_2026-09-13"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V126_NFL_PASSING_YARDS_VISUAL_PARITY_STEP6_FINAL_2026-09-13"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v125 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v126 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     render_app()
