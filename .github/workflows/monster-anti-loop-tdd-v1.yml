@@ -7,6 +7,8 @@ on:
       - 'devsystem/checkpoint_ledger_v1.py'
       - 'devsystem/forward_motion_v1.py'
       - 'devsystem/forward_motion_policy_v1.json'
+      - 'devsystem/forward_motion_contract_v1.py'
+      - 'devsystem/a9_anti_loop_replay_v1.py'
       - 'tests/test_devsystem_checkpoint_ledger_v1.py'
       - 'tests/test_devsystem_forward_motion_v1.py'
       - 'tests/test_monster_a9_anti_loop_replay_v1.py'
@@ -31,4 +33,5 @@ jobs:
         run: |
           python -m pytest -q \
             tests/test_devsystem_checkpoint_ledger_v1.py \
-            tests/test_devsystem_forward_motion_v1.py
+            tests/test_devsystem_forward_motion_v1.py \
+            tests/test_monster_a9_anti_loop_replay_v1.py
