@@ -1,3 +1,5 @@
+"""Regression contract for Monster A8 Streamlit production telemetry activation."""
+
 from __future__ import annotations
 
 from pathlib import Path
