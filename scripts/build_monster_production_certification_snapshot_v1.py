@@ -225,7 +225,7 @@ def build_snapshot(
             ):
                 state = "IDENTITY_CONFLICT"
                 reasons = [
-                    "GitHub runtime source, Render, health, and readiness deployment identity disagree"
+                    "GitHub runtime-source, Render, health, and readiness branch/commit identity disagree"
                 ]
             elif identity["github_commit"] != render_commit:
                 state = "PRODUCTION_LAG"
