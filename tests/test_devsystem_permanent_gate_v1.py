@@ -48,6 +48,7 @@ def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
     assert result["one_active_blocker"] is True
     assert result["side_quest_deferral"] is True
     assert result["terminal_task_authoritative"] is True
+    assert result["a9_replay_permanent"] is True
 
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "permanent-contract:" in workflow
