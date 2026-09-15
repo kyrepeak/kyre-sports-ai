@@ -142,8 +142,13 @@ def _streamlit_probe_ping(marker: str, environ: Mapping[str, str]) -> bool:
         or environ.get("KYRE_API_HEALTH_URL")
         or DEFAULT_STREAMLIT_PROBE_HEALTH_URL
     ).strip()
+    posthog_configured = "1" if str(
+        environ.get("POSTHOG_PROJECT_API_KEY")
+        or environ.get("POSTHOG_API_KEY")
+        or ""
+    ).strip() else "0"
     separator = "&" if "?" in base_url else "?"
-    target = f"{base_url}{separator}{urlencode({'monster_a8_marker': marker})}"
+    target = f"{base_url}{separator}{urlencode({'monster_a8_marker': marker, 'posthog_configured': posthog_configured})}"
     request = Request(target, headers={"User-Agent": "monster-a8-streamlit-cert/1"})
     try:
         with urlopen(request, timeout=3.0) as response:
