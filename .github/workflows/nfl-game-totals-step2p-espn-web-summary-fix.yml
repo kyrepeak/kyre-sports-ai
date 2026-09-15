@@ -1,0 +1,50 @@
+name: NFL Game Totals Step 2P ESPN Web Summary Fix
+
+on:
+  push:
+    branches:
+      - monster/nfl-game-totals-step2p-espn-web-summary-fix
+  pull_request:
+    branches:
+      - mlb-step17b-shared-host-cert
+    paths:
+      - sports_api/collectors/nfl_fanduel_game_totals_v1.py
+      - tests/test_nfl_game_totals_espn_web_summary_fix.py
+      - tests/test_nfl_fanduel_game_totals_v1.py
+      - .github/workflows/nfl-game-totals-step2p-espn-web-summary-fix.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-espn-web-summary-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install narrow test dependencies
+        run: python -m pip install --upgrade pip pytest
+      - name: Freeze-scope guard
+        shell: bash
+        run: |
+          base_ref="${{ github.base_ref }}"
+          if [ -z "$base_ref" ]; then base_ref="mlb-step17b-shared-host-cert"; fi
+          changed="$(git diff --name-only "origin/${base_ref}"...HEAD)"
+          echo "$changed"
+          disallowed="$(printf '%s\n' "$changed" | grep -Ev '^(sports_api/collectors/nfl_fanduel_game_totals_v1\.py|tests/test_nfl_game_totals_espn_web_summary_fix\.py|\.github/workflows/nfl-game-totals-step2p-espn-web-summary-fix\.yml)$' || true)"
+          if [ -n "$disallowed" ]; then
+            echo "Unexpected ESPN-summary fix paths:"
+            echo "$disallowed"
+            exit 1
+          fi
+      - name: Compile collector and regression test
+        run: python -m py_compile sports_api/collectors/nfl_fanduel_game_totals_v1.py tests/test_nfl_game_totals_espn_web_summary_fix.py
+      - name: Run ESPN web-summary regression
+        run: python -m pytest -q tests/test_nfl_game_totals_espn_web_summary_fix.py
+      - name: Run existing collector contract
+        run: python -m pytest -q tests/test_nfl_fanduel_game_totals_v1.py
