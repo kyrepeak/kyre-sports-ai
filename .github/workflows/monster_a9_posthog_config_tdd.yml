@@ -1,0 +1,24 @@
+name: Monster A9 PostHog Config TDD
+
+on:
+  push:
+    branches:
+      - monster-a9-posthog-config-proof
+
+jobs:
+  a9-posthog-config-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Run A9 PostHog config proof test
+        run: python -m pytest -q tests/test_a9_posthog_config_proof.py
