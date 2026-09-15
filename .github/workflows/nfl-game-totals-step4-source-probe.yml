@@ -13,10 +13,11 @@ jobs:
   probe-pace-possession:
     runs-on: ubuntu-latest
     steps:
-      - name: Follow ESPN team statistics results schema
+      - name: Verify ESPN pace and possession stat labels
         run: |
           python - <<'PY'
           import json
+          import re
           from urllib.parse import urlencode
           from urllib.request import Request, urlopen
 
@@ -30,86 +31,51 @@ jobs:
               print('HTTP_STATUS=' + str(getattr(response, 'status', 200)))
               payload = json.load(response)
 
-          results = payload.get('results')
-          print('RESULTS_TYPE=' + type(results).__name__)
-          if isinstance(results, dict):
-              print('RESULTS_KEYS=' + ','.join(sorted(str(k) for k in results.keys())))
-          elif isinstance(results, list):
-              print('RESULTS_COUNT=' + str(len(results)))
-              if results and isinstance(results[0], dict):
-                  print('FIRST_RESULT_KEYS=' + ','.join(sorted(str(k) for k in results[0].keys())))
+          results = payload.get('results') or {}
+          stats_root = results.get('stats') if isinstance(results, dict) else {}
+          categories = stats_root.get('categories') if isinstance(stats_root, dict) else []
+          if not isinstance(categories, list):
+              categories = []
 
-          tokens = ('possess', 'play', 'drive', 'snap', 'pace')
+          print('RESULTS_KEYS=' + ','.join(sorted(str(k) for k in results.keys())) if isinstance(results, dict) else 'RESULTS_KEYS=')
+          print('CATEGORY_COUNT=' + str(len(categories)))
+          print('CATEGORY_NAMES=' + json.dumps([
+              {
+                  'name': category.get('name'),
+                  'displayName': category.get('displayName'),
+                  'stat_count': len(category.get('stats') or []) if isinstance(category.get('stats'), list) else 0,
+              }
+              for category in categories if isinstance(category, dict)
+          ], sort_keys=True))
+
+          pattern = re.compile(r'\b(possession|possessions|play|plays|drive|drives|snap|snaps|pace)\b', re.I)
           matches = []
+          for category in categories:
+              if not isinstance(category, dict):
+                  continue
+              category_name = str(category.get('displayName') or category.get('name') or '')
+              for stat in category.get('stats') or []:
+                  if not isinstance(stat, dict):
+                      continue
+                  searchable = ' '.join(str(stat.get(key) or '') for key in (
+                      'name','displayName','shortDisplayName','description','abbreviation'
+                  ))
+                  if not pattern.search(searchable):
+                      continue
+                  matches.append({
+                      'category': category_name,
+                      'name': stat.get('name'),
+                      'displayName': stat.get('displayName'),
+                      'shortDisplayName': stat.get('shortDisplayName'),
+                      'description': stat.get('description'),
+                      'value': stat.get('value'),
+                      'displayValue': stat.get('displayValue'),
+                      'perGameValue': stat.get('perGameValue'),
+                      'perGameDisplayValue': stat.get('perGameDisplayValue'),
+                      'rank': stat.get('rank'),
+                  })
 
-          def walk(value, path='results'):
-              if len(matches) >= 60:
-                  return
-              if isinstance(value, dict):
-                  blob = json.dumps(value, sort_keys=True).lower()
-                  label_parts = [
-                      str(value.get(k) or '')
-                      for k in ('name','displayName','shortDisplayName','description','label','abbreviation')
-                  ]
-                  label_blob = ' '.join(label_parts).lower()
-                  if any(token in label_blob for token in tokens):
-                      matches.append({
-                          'path': path,
-                          'name': value.get('name'),
-                          'displayName': value.get('displayName'),
-                          'shortDisplayName': value.get('shortDisplayName'),
-                          'description': value.get('description'),
-                          'value': value.get('value'),
-                          'displayValue': value.get('displayValue'),
-                          'perGameValue': value.get('perGameValue'),
-                          'rank': value.get('rank'),
-                          'keys': sorted(str(k) for k in value.keys()),
-                      })
-                  for key, child in value.items():
-                      if any(token in str(key).lower() for token in tokens):
-                          matches.append({
-                              'path': f'{path}.{key}',
-                              'key_match': str(key),
-                              'value': child if isinstance(child, (str, int, float, bool, type(None))) else type(child).__name__,
-                          })
-                          if len(matches) >= 60:
-                              return
-                      walk(child, f'{path}.{key}')
-              elif isinstance(value, list):
-                  for index, child in enumerate(value[:300]):
-                      walk(child, f'{path}[{index}]')
-                      if len(matches) >= 60:
-                          return
-
-          walk(results)
           print('MATCH_COUNT=' + str(len(matches)))
           for item in matches:
-              print('PACE_POSSESSION_MATCH=' + json.dumps(item, sort_keys=True, default=str))
-
-          # If no pace/possession match exists, print a compact sample of named stat-like objects
-          # so this exact endpoint can be gap-certified without another broad probe.
-          if not matches:
-              sample = []
-              def named_sample(value, path='results'):
-                  if len(sample) >= 40:
-                      return
-                  if isinstance(value, dict):
-                      if value.get('name') is not None or value.get('displayName') is not None:
-                          sample.append({
-                              'path': path,
-                              'name': value.get('name'),
-                              'displayName': value.get('displayName'),
-                              'value': value.get('value'),
-                              'displayValue': value.get('displayValue'),
-                              'perGameValue': value.get('perGameValue'),
-                          })
-                      for key, child in value.items():
-                          named_sample(child, f'{path}.{key}')
-                  elif isinstance(value, list):
-                      for index, child in enumerate(value[:300]):
-                          named_sample(child, f'{path}[{index}]')
-              named_sample(results)
-              print('NAMED_SAMPLE_COUNT=' + str(len(sample)))
-              for item in sample:
-                  print('NAMED_SAMPLE=' + json.dumps(item, sort_keys=True, default=str))
+              print('PACE_POSSESSION_STAT=' + json.dumps(item, sort_keys=True, default=str))
           PY
