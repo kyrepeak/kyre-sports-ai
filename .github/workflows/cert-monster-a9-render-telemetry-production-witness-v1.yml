@@ -15,9 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  red-production-identity-proof:
+  production-witness:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,35 +35,127 @@ jobs:
           diff -u /tmp/expected.txt /tmp/actual.txt
           echo 'MONSTER_A9_CERT_ONLY_SURFACE_GREEN'
 
-      - name: RED proof — old certified Render identity must reject current live runtime
+      - name: Prove exact Render telemetry runtime delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASELINE='5c3c800be729a73f4ceaaf0d1adcbdc153646df8'
+          EXPECTED='1ddd2a3b0fc52946d0eabb22ca9de34bc9e6a3c3'
+          BRANCH='mlb-step17b-shared-host-cert'
+
+          actual_branch_head="$(git rev-parse refs/remotes/origin/${BRANCH})"
+          test "$actual_branch_head" = "$EXPECTED"
+          git merge-base --is-ancestor "$BASELINE" "$EXPECTED"
+          git diff --check "$BASELINE".."$EXPECTED"
+          git diff --name-only "$BASELINE".."$EXPECTED" | sort > /tmp/runtime-actual.txt
+          cat > /tmp/runtime-expected.txt <<'EOF'
+          sports_api/api/health.py
+          sports_api/monster_telemetry_probe_v1.py
+          sports_api/posthog_error_radar_v1.py
+          tests/test_monster_telemetry_probe_v1.py
+          EOF
+          sed -i 's/^          //' /tmp/runtime-expected.txt
+          echo 'Runtime delta:'
+          cat /tmp/runtime-actual.txt
+          diff -u /tmp/runtime-expected.txt /tmp/runtime-actual.txt
+          echo 'MONSTER_A9_EXACT_RUNTIME_DELTA_GREEN'
+
+      - name: Compile telemetry runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            sports_api/api/health.py \
+            sports_api/monster_telemetry_probe_v1.py \
+            sports_api/posthog_error_radar_v1.py
+          echo 'MONSTER_A9_TELEMETRY_COMPILE_GREEN'
+
+      - name: Run telemetry regression contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/test_monster_telemetry_probe_v1.py
+          echo 'MONSTER_A9_TELEMETRY_TEST_GREEN'
+
+      - name: Prove live Render health and readiness identity
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
+          import time
           import urllib.request
+          from pathlib import Path
 
           BASE = 'https://kyre-sports-api.onrender.com'
           EXPECTED_BRANCH = 'mlb-step17b-shared-host-cert'
-          OLD_CERTIFIED_COMMIT = '5c3c800be729a73f4ceaaf0d1adcbdc153646df8'
+          EXPECTED_COMMIT = '1ddd2a3b0fc52946d0eabb22ca9de34bc9e6a3c3'
 
-          req = urllib.request.Request(
-              f'{BASE}/health',
-              headers={
-                  'Accept': 'application/json',
-                  'Cache-Control': 'no-cache',
-                  'User-Agent': 'KyreSportsAI-MonsterA9-RedWitness/1.0',
-              },
-          )
-          with urllib.request.urlopen(req, timeout=30) as response:
-              payload = json.loads(response.read().decode('utf-8'))
+          def get_json(path: str, attempts: int = 4):
+              last = None
+              for attempt in range(1, attempts + 1):
+                  try:
+                      req = urllib.request.Request(
+                          f'{BASE}{path}',
+                          headers={
+                              'Accept': 'application/json',
+                              'Cache-Control': 'no-cache',
+                              'User-Agent': 'KyreSportsAI-MonsterA9-ProductionWitness/1.0',
+                          },
+                      )
+                      with urllib.request.urlopen(req, timeout=30) as response:
+                          if int(response.status) != 200:
+                              raise RuntimeError(f'HTTP {response.status}')
+                          return json.loads(response.read().decode('utf-8'))
+                  except Exception as exc:
+                      last = exc
+                      if attempt < attempts:
+                          time.sleep(attempt * 2)
+              raise RuntimeError(f'{path} failed after {attempts} attempts: {last}')
 
-          deployment = payload.get('deployment') or {}
-          assert payload.get('status') == 'ok', payload
+          health = get_json('/health')
+          readiness = get_json('/health/ready')
+          deployment = health.get('deployment') or {}
+          ready_deployment = readiness.get('deployment') or {}
+          checks = readiness.get('checks') or {}
+
+          assert health.get('status') == 'ok', health
           assert deployment.get('branch') == EXPECTED_BRANCH, deployment
+          assert deployment.get('commit') == EXPECTED_COMMIT, deployment
           assert deployment.get('branch_aligned') is True, deployment
-          assert deployment.get('commit') == OLD_CERTIFIED_COMMIT, (
-              'RED expected: live Render has advanced beyond the old certified commit; '
-              f"old={OLD_CERTIFIED_COMMIT} live={deployment.get('commit')}"
+
+          assert readiness.get('status') == 'ready', readiness
+          assert ready_deployment.get('branch') == EXPECTED_BRANCH, ready_deployment
+          assert ready_deployment.get('commit') == EXPECTED_COMMIT, ready_deployment
+          assert ready_deployment.get('aligned') is True, ready_deployment
+          assert checks.get('process_running') is True, checks
+          assert checks.get('python_runtime') is True, checks
+          assert checks.get('deployment_identity_available') is True, checks
+          assert checks.get('runtime_branch_alignment') is True, checks
+
+          evidence = {
+              'status': 'GREEN',
+              'service': BASE,
+              'deploy_branch': deployment.get('branch'),
+              'deploy_commit': deployment.get('commit'),
+              'branch_aligned': deployment.get('branch_aligned'),
+              'readiness': readiness.get('status'),
+              'readiness_aligned': ready_deployment.get('aligned'),
+              'telemetry_delta_base': '5c3c800be729a73f4ceaaf0d1adcbdc153646df8',
+              'telemetry_delta_head': EXPECTED_COMMIT,
+          }
+          Path('monster-a9-render-telemetry-production-witness.json').write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
           )
+          print('MONSTER_A9_RENDER_TELEMETRY_PRODUCTION_GREEN', json.dumps(evidence, sort_keys=True))
           PY
+
+      - name: Upload production witness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cert-monster-a9-render-telemetry-production-witness-${{ github.run_id }}
+          path: monster-a9-render-telemetry-production-witness.json
+          if-no-files-found: warn
+          retention-days: 30
