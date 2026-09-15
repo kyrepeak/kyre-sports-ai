@@ -1,0 +1,53 @@
+name: NFL Game Totals Page Step 4
+
+on:
+  push:
+    branches:
+      - monster/nfl-game-totals-page-step4
+  pull_request:
+    branches:
+      - main
+    paths:
+      - nfl_game_totals_hub_v4.py
+      - nfl_hub_v18.py
+      - sports_api/nfl_game_totals_pace_context_v1.py
+      - tests/test_nfl_game_totals_page_step4.py
+      - .github/workflows/nfl-game-totals-page-step4.yml
+  workflow_dispatch:
+
+jobs:
+  page-step4-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install narrow test dependencies
+        run: python -m pip install --upgrade pip pytest requests
+      - name: Freeze-scope guard
+        run: |
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              'nfl_game_totals_hub_v4.py',
+              'nfl_hub_v18.py',
+              'sports_api/nfl_game_totals_pace_context_v1.py',
+              'tests/test_nfl_game_totals_page_step4.py',
+              '.github/workflows/nfl-game-totals-page-step4.yml',
+          }
+          changed = set(subprocess.check_output(['git','diff','--name-only','origin/main...HEAD'], text=True).splitlines())
+          extra = sorted(changed - allowed)
+          if extra:
+              raise SystemExit(f'Unexpected Step 4 paths: {extra}')
+          forbidden = [p for p in changed if any(token in p.lower() for token in ('spread', 'moneyline', 'rushing', 'receiving', 'v136'))]
+          if forbidden:
+              raise SystemExit(f'Frozen surface changed: {forbidden}')
+          print('freeze-scope OK:', sorted(changed))
+          PY
+      - name: Run Step 4 contract
+        run: python -m pytest -q tests/test_nfl_game_totals_page_step4.py
+      - name: Compile Step 4 runtime files
+        run: python -m py_compile nfl_game_totals_hub_v4.py sports_api/nfl_game_totals_pace_context_v1.py nfl_hub_v18.py
