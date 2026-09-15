@@ -109,7 +109,7 @@ def test_step5_preserves_steps_2_through_4_and_projection_firewall():
     assert "v4.v3._matchup_contexts(games, day_str)" in source
     assert "v4._pace_contexts(games, day_str)" in source
     assert "FanDuel" in source
-    assert "projection remains OFF" in source
+    assert "projection remains off" in source.lower()
     assert "sportsbook influence stays 0.0%" in source
 
 
