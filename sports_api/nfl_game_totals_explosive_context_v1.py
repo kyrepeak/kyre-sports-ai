@@ -1,8 +1,8 @@
 """Descriptive NFL explosive-play context for Game Totals page Step 5.
 
-Uses source-certified ESPN team-statistics fields only: totalOffensivePlays,
-rushingBigPlays, and receivingBigPlays. The combined 20+ yard big-play count is
-normalized per 100 offensive plays. This is context only, not projection math.
+Uses source-certified ESPN team-statistics fields only: rushingBigPlays,
+receivingBigPlays, and gamesPlayed. The 20+ yard big-play counts are normalized
+per game. This layer is descriptive context only, not projection math.
 """
 from __future__ import annotations
 
@@ -13,12 +13,12 @@ from typing import Any
 import requests
 
 ESPN_TEAM_STATS = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team}/statistics"
-TOTAL_OFFENSIVE_PLAYS = "totalOffensivePlays"
 RUSHING_BIG_PLAYS = "rushingBigPlays"
 RECEIVING_BIG_PLAYS = "receivingBigPlays"
+GAMES_PLAYED = "gamesPlayed"
 REQUEST_TIMEOUT_SECONDS = 8
-EXPLOSIVE_RATE_REF = 5.5
-EXPLOSIVE_RATE_BAND = 1.0
+EXPLOSIVE_HIGH_REF = 4.0
+EXPLOSIVE_LOW_REF = 2.0
 SPORTSBOOK_PROJECTION_WEIGHT = 0.0
 HEADERS = {
     "Accept": "application/json,text/plain,*/*",
@@ -57,56 +57,72 @@ def _stat_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for category in categories:
         if not isinstance(category, dict):
             continue
+        category_name = _safe(category.get("name")).lower()
         stats = category.get("stats") or []
-        if isinstance(stats, list):
-            rows.extend(stat for stat in stats if isinstance(stat, dict))
+        if not isinstance(stats, list):
+            continue
+        for stat in stats:
+            if isinstance(stat, dict):
+                row = dict(stat)
+                row["_category_name"] = category_name
+                rows.append(row)
     return rows
 
 
-def _single_total(rows: list[dict[str, Any]], name: str) -> float:
-    matches = [row for row in rows if _safe(row.get("name")) == name]
+def _single_total(rows: list[dict[str, Any]], name: str, *, category: str | None = None) -> float:
+    matches = [
+        row for row in rows
+        if _safe(row.get("name")) == name
+        and (category is None or _safe(row.get("_category_name")).lower() == category.lower())
+    ]
     if len(matches) != 1:
         return math.nan
     return _num(matches[0].get("value"))
 
 
 def extract_explosive_metrics(payload: dict[str, Any]) -> dict[str, Any]:
+    """Extract exact ESPN 20+ yard counts and normalize them by games played."""
     rows = _stat_rows(payload if isinstance(payload, dict) else {})
-    offensive_plays = _single_total(rows, TOTAL_OFFENSIVE_PLAYS)
-    rushing_big = _single_total(rows, RUSHING_BIG_PLAYS)
-    receiving_big = _single_total(rows, RECEIVING_BIG_PLAYS)
+    rushing_big = _single_total(rows, RUSHING_BIG_PLAYS, category="rushing")
+    receiving_big = _single_total(rows, RECEIVING_BIG_PLAYS, category="receiving")
+    games = _single_total(rows, GAMES_PLAYED, category="general")
     ready = bool(
-        math.isfinite(offensive_plays)
-        and offensive_plays > 0
+        math.isfinite(games)
+        and games > 0
         and math.isfinite(rushing_big)
         and rushing_big >= 0
         and math.isfinite(receiving_big)
         and receiving_big >= 0
     )
     total_big = rushing_big + receiving_big if ready else math.nan
-    rate = (total_big / offensive_plays * 100.0) if ready else math.nan
+    rush_per_game = rushing_big / games if ready else math.nan
+    receive_per_game = receiving_big / games if ready else math.nan
+    total_per_game = total_big / games if ready else math.nan
     return {
         "ready": ready,
-        "offensive_plays": float(offensive_plays) if math.isfinite(offensive_plays) else math.nan,
+        "games_played": float(games) if math.isfinite(games) else math.nan,
         "rushing_big_plays": float(rushing_big) if math.isfinite(rushing_big) else math.nan,
         "receiving_big_plays": float(receiving_big) if math.isfinite(receiving_big) else math.nan,
         "total_big_plays": float(total_big) if math.isfinite(total_big) else math.nan,
-        "explosive_plays_per_100": float(rate) if math.isfinite(rate) else math.nan,
-        "source_fields": [TOTAL_OFFENSIVE_PLAYS, RUSHING_BIG_PLAYS, RECEIVING_BIG_PLAYS],
+        "rushing_big_plays_per_game": float(rush_per_game) if math.isfinite(rush_per_game) else math.nan,
+        "receiving_big_plays_per_game": float(receive_per_game) if math.isfinite(receive_per_game) else math.nan,
+        "explosive_plays_per_game": float(total_per_game) if math.isfinite(total_per_game) else math.nan,
+        "source_fields": [RUSHING_BIG_PLAYS, RECEIVING_BIG_PLAYS, GAMES_PLAYED],
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
     }
 
 
-def classify_explosive_scoring(explosive_plays_per_100: Any) -> str:
-    rate = _num(explosive_plays_per_100)
+def classify_explosive_scoring(explosive_plays_per_game: Any) -> str:
+    """Classify descriptive explosive volume; this is not a total projection."""
+    rate = _num(explosive_plays_per_game)
     if not math.isfinite(rate):
         return "UNAVAILABLE"
-    if rate >= EXPLOSIVE_RATE_REF + EXPLOSIVE_RATE_BAND:
-        return "FAVORABLE"
-    if rate <= EXPLOSIVE_RATE_REF - EXPLOSIVE_RATE_BAND:
-        return "TOUGH"
-    return "MEDIUM"
+    if rate >= EXPLOSIVE_HIGH_REF:
+        return "HIGH"
+    if rate <= EXPLOSIVE_LOW_REF:
+        return "LOW"
+    return "BALANCED"
 
 
 def build_team_explosive_profile(team_abbr: str, team_name: str, day_str: str) -> dict[str, Any]:
@@ -118,11 +134,13 @@ def build_team_explosive_profile(team_abbr: str, team_name: str, day_str: str) -
         "season": season,
         "provider": "ESPN NFL team statistics",
         "ready": False,
+        "games_played": math.nan,
         "rushing_big_plays": math.nan,
         "receiving_big_plays": math.nan,
         "total_big_plays": math.nan,
-        "offensive_plays": math.nan,
-        "explosive_plays_per_100": math.nan,
+        "rushing_big_plays_per_game": math.nan,
+        "receiving_big_plays_per_game": math.nan,
+        "explosive_plays_per_game": math.nan,
         "signal": "UNAVAILABLE",
         "diagnostics": [],
         "descriptive_only": True,
@@ -146,18 +164,20 @@ def build_team_explosive_profile(team_abbr: str, team_name: str, day_str: str) -
         return base
 
     if metrics.get("ready") is not True:
-        base["diagnostics"] = ["exact ESPN explosive-play fields unavailable"]
+        base["diagnostics"] = ["exact ESPN explosive-play or games-played fields unavailable"]
         return base
 
-    rate = float(metrics["explosive_plays_per_100"])
+    rate = float(metrics["explosive_plays_per_game"])
     base.update(
         {
             "ready": True,
+            "games_played": float(metrics["games_played"]),
             "rushing_big_plays": float(metrics["rushing_big_plays"]),
             "receiving_big_plays": float(metrics["receiving_big_plays"]),
             "total_big_plays": float(metrics["total_big_plays"]),
-            "offensive_plays": float(metrics["offensive_plays"]),
-            "explosive_plays_per_100": rate,
+            "rushing_big_plays_per_game": float(metrics["rushing_big_plays_per_game"]),
+            "receiving_big_plays_per_game": float(metrics["receiving_big_plays_per_game"]),
+            "explosive_plays_per_game": rate,
             "signal": classify_explosive_scoring(rate),
             "source_fields": metrics["source_fields"],
         }
@@ -198,7 +218,7 @@ def build_matchup_explosive_context(
         }
 
     average_rate = (
-        float(away["explosive_plays_per_100"]) + float(home["explosive_plays_per_100"])
+        float(away["explosive_plays_per_game"]) + float(home["explosive_plays_per_game"])
     ) / 2.0
     return {
         "ready": True,
@@ -206,7 +226,7 @@ def build_matchup_explosive_context(
         "away": away,
         "home": home,
         "matchup": {
-            "average_explosive_plays_per_100": average_rate,
+            "average_explosive_plays_per_game": average_rate,
             "signal": classify_explosive_scoring(average_rate),
         },
         "diagnostics": [],
@@ -217,12 +237,12 @@ def build_matchup_explosive_context(
 
 __all__ = [
     "ESPN_TEAM_STATS",
-    "EXPLOSIVE_RATE_BAND",
-    "EXPLOSIVE_RATE_REF",
+    "EXPLOSIVE_HIGH_REF",
+    "EXPLOSIVE_LOW_REF",
+    "GAMES_PLAYED",
     "RECEIVING_BIG_PLAYS",
     "RUSHING_BIG_PLAYS",
     "SPORTSBOOK_PROJECTION_WEIGHT",
-    "TOTAL_OFFENSIVE_PLAYS",
     "build_matchup_explosive_context",
     "build_team_explosive_profile",
     "classify_explosive_scoring",
