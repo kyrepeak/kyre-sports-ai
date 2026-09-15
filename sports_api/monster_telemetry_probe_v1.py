@@ -12,7 +12,11 @@ import os
 import threading
 from typing import Any
 
-from sports_api.posthog_error_radar_v1 import capture_runtime_exception, radar_status
+from sports_api.posthog_error_radar_v1 import (
+    capture_runtime_exception,
+    get_posthog_client,
+    radar_status,
+)
 
 PROBE_VERSION = "MONSTER_TELEMETRY_PROBE_V1"
 PROBE_FINGERPRINT = "MONSTER-A6-PROBE-V1"
@@ -28,7 +32,7 @@ def telemetry_probe_enabled() -> bool:
 
 
 def run_telemetry_probe() -> dict[str, Any]:
-    """Queue one harmless synthetic exception event for production proof."""
+    """Queue and synchronously flush one harmless synthetic certification event."""
     if not telemetry_probe_enabled():
         return {
             "status": "disabled",
@@ -52,12 +56,26 @@ def run_telemetry_probe() -> dict[str, Any]:
             "probe_timestamp_utc": timestamp.isoformat(),
         },
     )
+
+    flushed = False
+    flush_error: str | None = None
+    client = get_posthog_client()
+    if accepted and client is not None:
+        try:
+            client.flush()
+            flushed = True
+        except Exception as exc_flush:  # telemetry certification must stay fail-open
+            flush_error = f"{type(exc_flush).__name__}: {exc_flush}"
+
+    radar = radar_status()
     return {
-        "status": "queued" if accepted else "not_queued",
+        "status": "flushed" if accepted and flushed else ("queued" if accepted else "not_queued"),
         "accepted": bool(accepted),
+        "flushed": flushed,
+        "flush_error": flush_error,
         "marker": marker,
         "probe_version": PROBE_VERSION,
-        "radar": radar_status(),
+        "radar": radar,
     }
 
 
@@ -74,10 +92,15 @@ def run_telemetry_probe_once() -> dict[str, Any]:
     with _PROBE_LOCK:
         if _PROBE_RESULT is None:
             _PROBE_RESULT = run_telemetry_probe()
+            radar = _PROBE_RESULT.get("radar") or {}
             _LOG.warning(
-                "MONSTER_A6_TELEMETRY_PROBE status=%s accepted=%s marker=%s",
+                "MONSTER_A6_TELEMETRY_PROBE status=%s accepted=%s flushed=%s marker=%s host=%s configured=%s flush_error=%s",
                 _PROBE_RESULT.get("status"),
                 _PROBE_RESULT.get("accepted"),
+                _PROBE_RESULT.get("flushed"),
                 _PROBE_RESULT.get("marker"),
+                radar.get("host"),
+                radar.get("configured"),
+                _PROBE_RESULT.get("flush_error"),
             )
         return dict(_PROBE_RESULT)
