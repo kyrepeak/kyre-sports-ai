@@ -57,7 +57,7 @@ def _strip_moneyline_v9_team_panel_html(original):
 def render_nfl_hub(market: str = "Slate"):
     market = str(market or "Slate")
     if market == "Game Total":
-        from nfl_game_totals_hub_v8 import render_nfl_game_totals_hub
+        from nfl_game_totals_hub_v8_1 import render_nfl_game_totals_hub
         return render_nfl_game_totals_hub()
     if market == "Moneyline":
         from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub
