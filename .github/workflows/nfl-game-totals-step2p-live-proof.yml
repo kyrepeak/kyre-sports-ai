@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  prove-live-route:
+  diagnose-espn-boundary:
     runs-on: ubuntu-latest
     steps:
       - name: Discover real upcoming ESPN NFL event
@@ -41,6 +41,33 @@ jobs:
           print(f'Using ESPN event {event_id}: {name}')
           PY
 
+      - name: Compare ESPN summary request headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          event_id="$(cat event_id.txt)"
+          url="https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${event_id}"
+
+          current_status="$(curl --silent --show-error --location --max-time 30 \
+            -H 'Accept: application/json' \
+            -H 'User-Agent: kyre-sports-ai/nfl-game-totals-v1' \
+            --output current.json --write-out '%{http_code}' "$url")"
+          echo "CURRENT_UA_HTTP=${current_status}"
+          head -c 500 current.json || true
+          echo
+
+          browser_status="$(curl --silent --show-error --location --max-time 30 \
+            -H 'Accept: application/json' \
+            -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140.0 Safari/537.36' \
+            -H 'Referer: https://www.espn.com/' \
+            --output browser.json --write-out '%{http_code}' "$url")"
+          echo "BROWSER_UA_HTTP=${browser_status}"
+          head -c 500 browser.json || true
+          echo
+
+          printf '%s' "$current_status" > current_status.txt
+          printf '%s' "$browser_status" > browser_status.txt
+
       - name: Probe production Game Totals route with real event
         shell: bash
         run: |
@@ -48,41 +75,26 @@ jobs:
           event_id="$(cat event_id.txt)"
           url="https://kyre-sports-api.onrender.com/api/v1/nfl/totals/market?event_id=${event_id}"
           status="$(curl --silent --show-error --location --max-time 45 --output response.json --write-out '%{http_code}' "$url")"
-          echo "HTTP $status"
+          echo "PRODUCTION_HTTP=${status}"
           cat response.json
           test "$status" = "200"
 
-      - name: Validate real production FanDuel total
+      - name: Report diagnostic boundary
         run: |
           python - <<'PY'
           import json
-          import math
           from pathlib import Path
 
-          event_id = Path('event_id.txt').read_text().strip()
+          current = Path('current_status.txt').read_text().strip()
+          browser = Path('browser_status.txt').read_text().strip()
           payload = json.loads(Path('response.json').read_text())
-          assert payload['event_id'] == event_id
-          assert payload['provider'] == 'fanduel'
-          assert payload['contract'] == 'nfl-game-totals-market-v1'
-          assert payload['identity_mode'] == 'exact_espn_event_id'
-          assert float(payload['sportsbook_projection_weight']) == 0.0
-          assert payload['projection_use'] == 'context_only'
-          assert payload['wager_actions_enabled'] is False
-          assert payload['ready'] is True, payload.get('diagnostics')
-          assert payload['market_available'] is True, payload.get('diagnostics')
-          markets = payload['markets']
-          assert isinstance(markets, list) and len(markets) == 1
-          market = markets[0]
-          assert market['sportsbook'] == 'fanduel'
-          assert market['active'] is True
-          for key in ('total', 'over_price', 'under_price'):
-              value = float(market[key])
-              assert math.isfinite(value)
-          print(
-              'LIVE NFL Game Totals market verified:',
-              event_id,
-              'total=', market['total'],
-              'over=', market['over_price'],
-              'under=', market['under_price'],
-          )
+          print('CURRENT_UA_HTTP=', current)
+          print('BROWSER_UA_HTTP=', browser)
+          print('PRODUCTION_DIAGNOSTICS=', payload.get('diagnostics'))
+          if current == '403' and browser == '200':
+              print('DIAGNOSIS=HEADER_REJECTION')
+          elif current == '200' and browser == '200':
+              print('DIAGNOSIS=LIKELY_RENDER_ORIGIN_REJECTION')
+          else:
+              print('DIAGNOSIS=OTHER')
           PY
