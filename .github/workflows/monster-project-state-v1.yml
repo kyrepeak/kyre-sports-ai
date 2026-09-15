@@ -100,6 +100,8 @@ jobs:
           python - <<'PY'
           from sports_api.monster_project_state_v1 import build_project_state
 
+          runtime_branch = 'mlb-step17b-shared-host-cert'
+          runtime_sha = '5' * 40
           continuity = {
               'version': 'MONSTER_CONTINUITY_V1',
               'status': 'READY_TO_RESUME',
@@ -112,7 +114,38 @@ jobs:
               'scope': {'in_scope': ['Project State V1'], 'forbidden': ['production runtime']},
               'drift': {'status': 'ALIGNED', 'requires_revalidation': False, 'reasons': []},
           }
-          production = {'version': 'MONSTER_PRODUCTION_CERTIFICATION_V1', 'state': 'GREEN', 'certified': True, 'reasons': []}
+          production = {
+              'version': 'MONSTER_PRODUCTION_CERTIFICATION_V1',
+              'state': 'GREEN',
+              'certified': True,
+              'identity': {
+                  'github_branch': runtime_branch,
+                  'github_commit': runtime_sha,
+                  'render_branch': runtime_branch,
+                  'render_commit': runtime_sha,
+                  'health_branch': runtime_branch,
+                  'health_commit': runtime_sha,
+              },
+              'render_status': 'live',
+              'render_auto_deploy': 'no',
+              'health_status': 'ok',
+              'readiness': {
+                  'status': 'ready',
+                  'checks': {
+                      'process_running': True,
+                      'python_runtime': True,
+                      'deployment_identity_available': True,
+                      'runtime_branch_alignment': True,
+                  },
+                  'deployment_aligned': True,
+              },
+              'guards': {
+                  'devsystem-final-gate': 'green',
+                  'permanent-freeze': 'green',
+                  'regression-shield': 'green',
+              },
+              'reasons': [],
+          }
           telemetry = {'source': 'posthog', 'status': 'NOT_CONFIGURED', 'data': {'active_issue_count': 0}}
           report = build_project_state(continuity=continuity, production=production, telemetry=telemetry)
           assert report['state'] == 'ACTIVE', report
