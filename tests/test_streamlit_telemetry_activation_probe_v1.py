@@ -6,6 +6,13 @@ import sports_api.posthog_error_radar_v1 as radar
 from sports_api.posthog_error_radar_v1 import run_streamlit_activation_probe
 
 
+def test_streamlit_runtime_detector_accepts_script_runner_argv(monkeypatch) -> None:
+    import streamlit.runtime as streamlit_runtime
+
+    monkeypatch.setattr(streamlit_runtime, "exists", lambda: True)
+    assert radar._is_streamlit_runtime(["/mount/src/kyre-sports-ai/app.py"]) is True
+
+
 def test_streamlit_activation_probe_emits_runtime_and_posthog_proof(monkeypatch) -> None:
     monkeypatch.setattr(radar, "_STREAMLIT_PROBE_RAN", False, raising=False)
     ping_markers: list[str] = []

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
+from types import ModuleType
 
 import sports_api.posthog_error_radar_v1 as radar
 
@@ -86,6 +88,18 @@ def test_radar_fails_open_when_telemetry_capture_fails():
         )
         is False
     )
+
+
+def test_streamlit_runtime_detector_accepts_real_script_runner(monkeypatch):
+    runtime_module = ModuleType("streamlit.runtime")
+    runtime_module.exists = lambda: True
+    streamlit_module = ModuleType("streamlit")
+    streamlit_module.__path__ = []
+    streamlit_module.runtime = runtime_module
+    monkeypatch.setitem(sys.modules, "streamlit", streamlit_module)
+    monkeypatch.setitem(sys.modules, "streamlit.runtime", runtime_module)
+
+    assert radar._is_streamlit_runtime(["/mount/src/kyre-sports-ai/app.py"]) is True
 
 
 def test_error_radar_is_wired_without_replacing_existing_contracts():
