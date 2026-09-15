@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 import streamlit_memory_lazy_router_v132 as route_v132
-import streamlit_memory_lazy_router_v135 as frozen
 import streamlit_memory_lazy_router_v136 as router
 
 
@@ -16,6 +16,7 @@ def test_v136_static_standalone_contract() -> None:
     assert router.ROUTE_QUERY_SPORT == route_v132.ROUTE_QUERY_SPORT
     assert router.ROUTE_QUERY_MARKET == route_v132.ROUTE_QUERY_MARKET
     assert router.STANDALONE_SPREAD_ROUTE is True
+    assert router.ACTIVE_SPREAD_V135_DEPENDENCY is False
     assert router.PROJECTION_MODEL_ENABLED is True
     assert router.MONTE_CARLO_ENABLED is True
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
@@ -25,23 +26,23 @@ def test_v136_static_standalone_contract() -> None:
     assert router.HTML_RENDER_GUARD_SCOPE == "route_purge_reimport_safe"
 
 
-def test_v136_reuses_frozen_route_and_guard_instead_of_reimplementing_analytics() -> None:
+def test_v136_active_spread_source_has_no_v135_or_model_dependency() -> None:
     source = Path("streamlit_memory_lazy_router_v136.py").read_text(encoding="utf-8")
 
     assert "import streamlit_memory_lazy_router_v132 as route_v132" in source
-    assert "import streamlit_memory_lazy_router_v135 as frozen" in source
+    assert "import nfl_spread_hub_v4 as spread_v4" in source
+    assert "import streamlit_memory_lazy_router_v135" not in source
     assert "import streamlit_memory_lazy_router_v134" not in source
     assert "import streamlit_memory_lazy_router_v133" not in source
+    assert "def _load_frozen_non_spread" in source
     assert "nfl_spread_model_v1" not in source
     assert "nfl_spread_mc_v1" not in source
     assert "nfl_spread_market_api_v1" not in source
     assert "simulate_game_spread" not in source
     assert "requests.get" not in source
-    assert "._matchup_card =" not in source
-    assert "._summary_html =" not in source
 
 
-def test_v136_exact_spread_route_bypasses_v135_owner_swap_chain(monkeypatch) -> None:
+def test_v136_exact_spread_route_never_loads_v135(monkeypatch) -> None:
     calls: list[tuple[str, object]] = []
     old_active_hub = route_v132.ACTIVE_SPREAD_HUB
 
@@ -49,7 +50,7 @@ def test_v136_exact_spread_route_bypasses_v135_owner_swap_chain(monkeypatch) -> 
         calls.append(("original_import", name))
         return {"name": name}
 
-    def frozen_guard(importer, name: str) -> object:
+    def guard(importer, name: str) -> object:
         calls.append(("guard", name))
         return importer(name)
 
@@ -60,14 +61,14 @@ def test_v136_exact_spread_route_bypasses_v135_owner_swap_chain(monkeypatch) -> 
         calls.append(("direct", route_v132.ACTIVE_SPREAD_HUB))
         return "V136_DIRECT_SPREAD"
 
-    def forbidden_frozen_render() -> None:
-        raise AssertionError("V135 chain must not own the active V136 Spread route")
+    def forbidden_v135_load():
+        raise AssertionError("active V136 Spread route must never load V135")
 
     monkeypatch.setattr(route_v132, "_fast_route_active", lambda: True)
     monkeypatch.setattr(route_v132, "_render_direct_spread", direct_render)
     monkeypatch.setattr(route_v132.root, "_import", original_import)
-    monkeypatch.setattr(frozen, "_guard_route_import", frozen_guard)
-    monkeypatch.setattr(frozen, "render_app", forbidden_frozen_render)
+    monkeypatch.setattr(router, "_guard_route_import", guard)
+    monkeypatch.setattr(router, "_load_frozen_non_spread", forbidden_v135_load)
 
     assert router.render_app() == "V136_DIRECT_SPREAD"
     assert calls == [
@@ -101,7 +102,7 @@ def test_v136_restores_v132_owner_and_importer_when_direct_route_raises(monkeypa
     assert route_v132.root._import is original_import
 
 
-def test_v136_restores_query_then_takes_direct_spread_route(monkeypatch) -> None:
+def test_v136_restores_query_then_takes_direct_spread_route_without_v135(monkeypatch) -> None:
     states = iter((False, True))
     restored: list[str] = []
 
@@ -113,18 +114,21 @@ def test_v136_restores_query_then_takes_direct_spread_route(monkeypatch) -> None
     )
     monkeypatch.setattr(route_v132, "_render_direct_spread", lambda: "RESTORED_DIRECT")
     monkeypatch.setattr(
-        frozen,
-        "render_app",
-        lambda: (_ for _ in ()).throw(AssertionError("frozen route should not run")),
+        router,
+        "_load_frozen_non_spread",
+        lambda: (_ for _ in ()).throw(AssertionError("V135 must not load")),
     )
 
     assert router.render_app() == "RESTORED_DIRECT"
     assert restored == ["restored"]
 
 
-def test_v136_non_spread_routes_delegate_to_frozen_v135(monkeypatch) -> None:
+def test_v136_non_spread_routes_lazy_delegate_to_frozen_v135(monkeypatch) -> None:
     restored: list[str] = []
     delegated: list[str] = []
+    frozen = SimpleNamespace(
+        render_app=lambda: delegated.append("v135") or "FROZEN_V135_ROUTE"
+    )
 
     monkeypatch.setattr(route_v132, "_fast_route_active", lambda: False)
     monkeypatch.setattr(
@@ -132,30 +136,48 @@ def test_v136_non_spread_routes_delegate_to_frozen_v135(monkeypatch) -> None:
         "_restore_spread_route_from_query",
         lambda: restored.append("checked") or False,
     )
-    monkeypatch.setattr(
-        frozen,
-        "render_app",
-        lambda: delegated.append("v135") or "FROZEN_V135_ROUTE",
-    )
+    monkeypatch.setattr(router, "_load_frozen_non_spread", lambda: frozen)
 
     assert router.render_app() == "FROZEN_V135_ROUTE"
     assert restored == ["checked"]
     assert delegated == ["v135"]
 
 
-def test_v136_guard_adapter_uses_v135_certified_guard(monkeypatch) -> None:
-    calls: list[str] = []
-    marker = object()
+def test_v136_self_contained_guard_flattens_fresh_v4_import() -> None:
+    raw_card = """
+    <article class="ksp4-matchup-card">
+      <section class="ksp4-team-panel ksp4-away">Away</section>
+      <div class="ksp4-vs">VS</div>
+      <section class="ksp4-team-panel ksp4-home">Home</section>
+    </article>
+    """
+    raw_summary = """
+    <div class="ksp4-summary-grid">
+      <div class="ksp4-summary-tile">Summary</div>
+    </div>
+    """
+    fresh_v4 = SimpleNamespace(
+        _matchup_card=lambda *args, **kwargs: raw_card,
+        _summary_html=lambda *args, **kwargs: raw_summary,
+    )
 
-    def importer(name: str) -> object:
-        calls.append(f"import:{name}")
-        return marker
+    def importer(name: str):
+        assert name == "nfl_spread_hub_v4"
+        return fresh_v4
 
-    def guard(inner_importer, name: str) -> object:
-        calls.append(f"guard:{name}")
-        return inner_importer(name)
+    guarded = router._guard_route_import(importer, "nfl_spread_hub_v4")
 
-    monkeypatch.setattr(frozen, "_guard_route_import", guard)
+    assert "\n" not in guarded._matchup_card()
+    assert "\n" not in guarded._summary_html()
+    assert '<div class="ksp4-vs">VS</div>' in guarded._matchup_card()
+    assert guarded._KSP4_HTML_RENDER_GUARD == router.HTML_RENDER_GUARD
 
-    assert router._guard_route_import(importer, "nfl_spread_hub_v4") is marker
-    assert calls == ["guard:nfl_spread_hub_v4", "import:nfl_spread_hub_v4"]
+
+def test_v136_non_spread_import_is_not_modified() -> None:
+    module = SimpleNamespace()
+
+    def importer(name: str):
+        return module
+
+    assert router._guard_route_import(importer, "not_nfl_spread_v4") is module
+    assert not hasattr(module, "_KSP4_HTML_RENDER_GUARD")
