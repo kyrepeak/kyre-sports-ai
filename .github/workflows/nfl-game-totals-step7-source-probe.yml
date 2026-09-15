@@ -1,0 +1,60 @@
+name: NFL Game Totals Step 7 Source Probe
+
+on:
+  push:
+    branches:
+      - monster/nfl-game-totals-step7-source-probe
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-game-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prove ESPN NFL venue and weather fields
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          headers = {
+              'Accept': 'application/json',
+              'User-Agent': 'Mozilla/5.0 kyre-sports-ai-step7-source-probe',
+          }
+          scoreboard = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?' + urlencode({'dates': '20260920'})
+          with urlopen(Request(scoreboard, headers=headers), timeout=20) as response:
+              print('SCOREBOARD_HTTP=' + str(getattr(response, 'status', 200)))
+              board = json.load(response)
+
+          events = board.get('events') or []
+          print('EVENT_COUNT=' + str(len(events)))
+          for event in events[:8]:
+              event_id = str(event.get('id') or '')
+              if not event_id:
+                  continue
+              name = str(event.get('name') or '')
+              comp = (event.get('competitions') or [{}])[0] or {}
+              board_venue = comp.get('venue') or {}
+              summary_url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?' + urlencode({'event': event_id})
+              try:
+                  with urlopen(Request(summary_url, headers=headers), timeout=20) as response:
+                      summary = json.load(response)
+                  info = summary.get('gameInfo') or {}
+                  header = summary.get('header') or {}
+                  header_comp = (header.get('competitions') or [{}])[0] or {}
+                  record = {
+                      'event_id': event_id,
+                      'name': name,
+                      'scoreboard_venue': board_venue,
+                      'header_venue': header_comp.get('venue'),
+                      'gameInfo_keys': sorted(info.keys()) if isinstance(info, dict) else [],
+                      'gameInfo_venue': info.get('venue') if isinstance(info, dict) else None,
+                      'gameInfo_weather': info.get('weather') if isinstance(info, dict) else None,
+                  }
+                  print('ENVIRONMENT_EVENT=' + json.dumps(record, sort_keys=True, default=str))
+              except Exception as exc:
+                  print('ENVIRONMENT_ERROR=' + json.dumps({'event_id': event_id, 'error': str(exc)[:220]}, sort_keys=True))
+          PY
