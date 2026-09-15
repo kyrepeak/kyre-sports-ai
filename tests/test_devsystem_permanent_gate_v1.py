@@ -35,22 +35,23 @@ def test_permanent_contract_is_green():
     assert result["failure_recurrence_chronology_permanent"] is True
     assert result["failure_recurrence_age_permanent"] is True
     assert result["failure_history_coverage_permanent"] is True
-    assert result["forward_motion_contract_permanent"] is True
 
 
-def test_forward_motion_contract_is_permanently_required():
-    gate_source = (ROOT / "devsystem/permanent_gate_v1.py").read_text(encoding="utf-8")
-    required = (
-        "devsystem/checkpoint_ledger_v1.py",
-        "devsystem/forward_motion_v1.py",
-        "devsystem/forward_motion_policy_v1.json",
-        "devsystem/forward_motion_contract_v1.py",
-        "tests/test_devsystem_checkpoint_ledger_v1.py",
-        "tests/test_devsystem_forward_motion_v1.py",
-        "forward_motion_contract_permanent",
-    )
-    for marker in required:
-        assert marker in gate_source
+def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
+    contract = _load("forward_motion_contract_v1", "devsystem/forward_motion_contract_v1.py")
+    result = contract.validate()
+    assert result["status"] == "GREEN"
+    assert result["mode"] == "strict_auto_continue"
+    assert result["duplicate_proof_guard"] is True
+    assert result["deterministic_zero_retry"] is True
+    assert result["transient_single_retry"] is True
+    assert result["one_active_blocker"] is True
+    assert result["side_quest_deferral"] is True
+    assert result["terminal_task_authoritative"] is True
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "permanent-contract:" in workflow
+    assert "tests/test_devsystem_permanent_gate_v1.py" in workflow
 
 
 def test_final_gate_accepts_success_and_skipped_only():
