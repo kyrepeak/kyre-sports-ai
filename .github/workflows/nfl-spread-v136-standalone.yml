@@ -11,6 +11,7 @@ on:
       - 'tests/test_nfl_spread_router_v136.py'
       - 'tests/test_nfl_spread_v136_html_leak_regression.py'
       - '.github/workflows/nfl-spread-v136-standalone.yml'
+      - '.github/workflows/nfl-spread-v136-step10-regression.yml'
   pull_request:
     branches:
       - main
@@ -21,6 +22,7 @@ on:
       - 'tests/test_nfl_spread_router_v136.py'
       - 'tests/test_nfl_spread_v136_html_leak_regression.py'
       - '.github/workflows/nfl-spread-v136-standalone.yml'
+      - '.github/workflows/nfl-spread-v136-step10-regression.yml'
   workflow_dispatch:
 
 permissions:
@@ -39,6 +41,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: actions/setup-python@v5
         with:
@@ -48,15 +51,24 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q requests pandas numpy streamlit pytest
 
+      - name: Resolve current protected-main merge base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          base="$(git merge-base origin/main HEAD)"
+          test -n "$base"
+          echo "V136_BASE=$base" >> "$GITHUB_ENV"
+          echo "V136 current-main merge base: $base"
+
       - name: Enforce exact cumulative V136 surface
         shell: bash
         run: |
           set -euo pipefail
-          BASE='bfd73b0bf0fc0c9816c1cd6aa46281d33336dedd'
-          git cat-file -e "${BASE}^{commit}"
-          git diff --name-only "$BASE"...HEAD | sort > /tmp/actual.txt
+          git diff --name-only "$V136_BASE"...HEAD | sort > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
           .github/workflows/nfl-spread-v136-standalone.yml
+          .github/workflows/nfl-spread-v136-step10-regression.yml
           app.py
           streamlit_memory_lazy_router_v136.py
           tests/test_nfl_spread_router_v136.py
@@ -74,9 +86,10 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
+          import os
           import subprocess
 
-          base = 'bfd73b0bf0fc0c9816c1cd6aa46281d33336dedd'
+          base = os.environ['V136_BASE']
           diff = subprocess.check_output(
               ['git', 'diff', '--unified=0', base, 'HEAD', '--', 'app.py'],
               text=True,
@@ -103,8 +116,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE='bfd73b0bf0fc0c9816c1cd6aa46281d33336dedd'
-          git diff --quiet "$BASE"...HEAD -- \
+          git diff --quiet "$V136_BASE"...HEAD -- \
             nfl_spread_hub_v4.py \
             nfl_spread_hub_v3.py \
             nfl_spread_model_v1.py \
@@ -148,6 +160,7 @@ jobs:
           import streamlit_memory_lazy_router_v136 as router
 
           app = Path('app.py').read_text(encoding='utf-8')
+          router_source = Path('streamlit_memory_lazy_router_v136.py').read_text(encoding='utf-8')
           assert 'FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"' in app
           assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in app
           active = 'from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app'
@@ -157,6 +170,8 @@ jobs:
           assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v4'
           assert router.SPREAD_MARKET == 'Spread'
           assert router.STANDALONE_SPREAD_ROUTE is True
+          assert router.ACTIVE_SPREAD_V135_DEPENDENCY is False
+          assert 'import streamlit_memory_lazy_router_v135' not in router_source
           assert router.HTML_RENDER_GUARD == 'flatten_generated_html'
           assert router.HTML_RENDER_GUARD_SCOPE == 'route_purge_reimport_safe'
           assert router.PROJECTION_MODEL_ENABLED is True
