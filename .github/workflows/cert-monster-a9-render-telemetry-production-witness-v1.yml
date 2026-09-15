@@ -1,0 +1,69 @@
+name: CERT Monster A9 Render Telemetry Production Witness V1
+
+on:
+  pull_request:
+    branches: [mlb-step17b-shared-host-cert]
+    paths:
+      - '.github/workflows/cert-monster-a9-render-telemetry-production-witness-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cert-monster-a9-render-telemetry-production-witness-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  red-production-identity-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce cert-only one-file surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin mlb-step17b-shared-host-cert:refs/remotes/origin/mlb-step17b-shared-host-cert
+          git diff --name-only origin/mlb-step17b-shared-host-cert...HEAD | sort > /tmp/actual.txt
+          printf '%s\n' '.github/workflows/cert-monster-a9-render-telemetry-production-witness-v1.yml' > /tmp/expected.txt
+          echo 'Actual cert-only diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo 'MONSTER_A9_CERT_ONLY_SURFACE_GREEN'
+
+      - name: RED proof — old certified Render identity must reject current live runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import urllib.request
+
+          BASE = 'https://kyre-sports-api.onrender.com'
+          EXPECTED_BRANCH = 'mlb-step17b-shared-host-cert'
+          OLD_CERTIFIED_COMMIT = '5c3c800be729a73f4ceaaf0d1adcbdc153646df8'
+
+          req = urllib.request.Request(
+              f'{BASE}/health',
+              headers={
+                  'Accept': 'application/json',
+                  'Cache-Control': 'no-cache',
+                  'User-Agent': 'KyreSportsAI-MonsterA9-RedWitness/1.0',
+              },
+          )
+          with urllib.request.urlopen(req, timeout=30) as response:
+              payload = json.loads(response.read().decode('utf-8'))
+
+          deployment = payload.get('deployment') or {}
+          assert payload.get('status') == 'ok', payload
+          assert deployment.get('branch') == EXPECTED_BRANCH, deployment
+          assert deployment.get('branch_aligned') is True, deployment
+          assert deployment.get('commit') == OLD_CERTIFIED_COMMIT, (
+              'RED expected: live Render has advanced beyond the old certified commit; '
+              f"old={OLD_CERTIFIED_COMMIT} live={deployment.get('commit')}"
+          )
+          PY
