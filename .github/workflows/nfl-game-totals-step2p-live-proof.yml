@@ -12,89 +12,106 @@ permissions:
   contents: read
 
 jobs:
-  diagnose-espn-boundary:
+  select-espn-identity-source:
     runs-on: ubuntu-latest
     steps:
-      - name: Discover real upcoming ESPN NFL event
-        shell: bash
+      - name: Pin real ESPN NFL event
         run: |
-          set -euo pipefail
-          curl --silent --show-error --location --max-time 30 \
-            'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20260920' \
-            --output slate.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
+          echo '401872933' > event_id.txt
+          echo 'Testing exact event 401872933: Carolina Panthers at Atlanta Falcons'
 
-          slate = json.loads(Path('slate.json').read_text())
-          events = slate.get('events') or []
-          candidates = []
-          for event in events:
-              state = str((((event.get('status') or {}).get('type') or {}).get('state') or '')).lower()
-              event_id = str(event.get('id') or '')
-              name = str(event.get('name') or '')
-              if event_id.isdigit() and state == 'pre':
-                  candidates.append((event_id, name))
-          assert candidates, 'No real pregame ESPN NFL event found for 2026-09-20'
-          event_id, name = candidates[0]
-          Path('event_id.txt').write_text(event_id)
-          print(f'Using ESPN event {event_id}: {name}')
-          PY
-
-      - name: Compare ESPN summary request headers
+      - name: Test three bounded ESPN identity lanes
         shell: bash
         run: |
           set -euo pipefail
           event_id="$(cat event_id.txt)"
-          url="https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${event_id}"
 
-          current_status="$(curl --silent --show-error --location --max-time 30 \
+          core_url="https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/${event_id}?lang=en&region=us"
+          core_status="$(curl --silent --show-error --location --max-time 30 \
             -H 'Accept: application/json' \
-            -H 'User-Agent: kyre-sports-ai/nfl-game-totals-v1' \
-            --output current.json --write-out '%{http_code}' "$url")"
-          echo "CURRENT_UA_HTTP=${current_status}"
-          head -c 500 current.json || true
+            --output core.json --write-out '%{http_code}' "$core_url")"
+          echo "CORE_EVENT_HTTP=${core_status}"
+          head -c 1200 core.json || true
           echo
+          printf '%s' "$core_status" > core_status.txt
 
-          browser_status="$(curl --silent --show-error --location --max-time 30 \
+          web_url="https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${event_id}"
+          web_status="$(curl --silent --show-error --location --max-time 30 \
             -H 'Accept: application/json' \
-            -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140.0 Safari/537.36' \
-            -H 'Referer: https://www.espn.com/' \
-            --output browser.json --write-out '%{http_code}' "$url")"
-          echo "BROWSER_UA_HTTP=${browser_status}"
-          head -c 500 browser.json || true
+            --output web_summary.json --write-out '%{http_code}' "$web_url")"
+          echo "WEB_SUMMARY_HTTP=${web_status}"
+          head -c 1200 web_summary.json || true
           echo
+          printf '%s' "$web_status" > web_status.txt
 
-          printf '%s' "$current_status" > current_status.txt
-          printf '%s' "$browser_status" > browser_status.txt
+          scoreboard_url="https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?event=${event_id}"
+          scoreboard_status="$(curl --silent --show-error --location --max-time 30 \
+            -H 'Accept: application/json' \
+            --output scoreboard_event.json --write-out '%{http_code}' "$scoreboard_url")"
+          echo "SCOREBOARD_EVENT_HTTP=${scoreboard_status}"
+          head -c 1200 scoreboard_event.json || true
+          echo
+          printf '%s' "$scoreboard_status" > scoreboard_status.txt
 
-      - name: Probe production Game Totals route with real event
-        shell: bash
-        run: |
-          set -euo pipefail
-          event_id="$(cat event_id.txt)"
-          url="https://kyre-sports-api.onrender.com/api/v1/nfl/totals/market?event_id=${event_id}"
-          status="$(curl --silent --show-error --location --max-time 45 --output response.json --write-out '%{http_code}' "$url")"
-          echo "PRODUCTION_HTTP=${status}"
-          cat response.json
-          test "$status" = "200"
-
-      - name: Report diagnostic boundary
+      - name: Validate exact-event identity content
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
-          current = Path('current_status.txt').read_text().strip()
-          browser = Path('browser_status.txt').read_text().strip()
-          payload = json.loads(Path('response.json').read_text())
-          print('CURRENT_UA_HTTP=', current)
-          print('BROWSER_UA_HTTP=', browser)
-          print('PRODUCTION_DIAGNOSTICS=', payload.get('diagnostics'))
-          if current == '403' and browser == '200':
-              print('DIAGNOSIS=HEADER_REJECTION')
-          elif current == '200' and browser == '200':
-              print('DIAGNOSIS=LIKELY_RENDER_ORIGIN_REJECTION')
+          event_id = Path('event_id.txt').read_text().strip()
+          statuses = {
+              'core': Path('core_status.txt').read_text().strip(),
+              'web_summary': Path('web_status.txt').read_text().strip(),
+              'scoreboard_event': Path('scoreboard_status.txt').read_text().strip(),
+          }
+          print('STATUSES=', statuses)
+
+          def load(path):
+              try:
+                  return json.loads(Path(path).read_text())
+              except Exception:
+                  return None
+
+          core = load('core.json')
+          web = load('web_summary.json')
+          scoreboard = load('scoreboard_event.json')
+
+          core_exact = isinstance(core, dict) and str(core.get('id') or '') == event_id
+          core_has_date = core_exact and bool(core.get('date'))
+          core_has_name = core_exact and bool(core.get('name') or core.get('shortName'))
+          print('CORE_EXACT=', core_exact, 'CORE_HAS_DATE=', core_has_date, 'CORE_HAS_NAME=', core_has_name)
+
+          web_exact = False
+          web_has_competitors = False
+          if isinstance(web, dict):
+              header = web.get('header') or {}
+              comps = header.get('competitions') or []
+              if comps:
+                  comp = comps[0] or {}
+                  web_exact = str(comp.get('id') or header.get('id') or '') == event_id
+                  web_has_competitors = len(comp.get('competitors') or []) == 2
+          print('WEB_EXACT=', web_exact, 'WEB_HAS_COMPETITORS=', web_has_competitors)
+
+          scoreboard_exact = False
+          scoreboard_has_competitors = False
+          if isinstance(scoreboard, dict):
+              events = scoreboard.get('events') or []
+              matches = [e for e in events if str((e or {}).get('id') or '') == event_id]
+              if len(matches) == 1:
+                  scoreboard_exact = True
+                  comps = (matches[0].get('competitions') or [])
+                  if comps:
+                      scoreboard_has_competitors = len((comps[0] or {}).get('competitors') or []) == 2
+          print('SCOREBOARD_EXACT=', scoreboard_exact, 'SCOREBOARD_HAS_COMPETITORS=', scoreboard_has_competitors)
+
+          if statuses['web_summary'] == '200' and web_exact and web_has_competitors:
+              print('SELECTED_IDENTITY_SOURCE=WEB_SUMMARY')
+          elif statuses['scoreboard_event'] == '200' and scoreboard_exact and scoreboard_has_competitors:
+              print('SELECTED_IDENTITY_SOURCE=SCOREBOARD_EVENT')
+          elif statuses['core'] == '200' and core_exact and core_has_date and core_has_name:
+              print('SELECTED_IDENTITY_SOURCE=CORE_EVENT_NEEDS_TEAM_EXPANSION')
           else:
-              print('DIAGNOSIS=OTHER')
+              print('SELECTED_IDENTITY_SOURCE=NONE')
+              raise SystemExit('No bounded alternative returned sufficient exact-event identity')
           PY
