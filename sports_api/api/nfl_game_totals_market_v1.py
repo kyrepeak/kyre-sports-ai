@@ -2,8 +2,8 @@
 
 The sportsbook total is transport/market context only. It cannot modify any
 football-only projection, Monte Carlo input, probability, grade, stake sizing,
-or wager action. This router remains isolated from the shared hosted route table
-until the later shared-host attachment certification step.
+or wager action. This router is attached to the certified shared hosted route
+table while preserving the frozen market-safety contract.
 """
 from __future__ import annotations
 
@@ -322,7 +322,7 @@ def game_totals_market_status():
         "status": "collector_ready",
         "endpoint": "/api/v1/nfl/game-totals/market",
         "live_market_route_ready": True,
-        "shared_host_attached": False,
+        "shared_host_attached": True,
         "snapshot_ttl_seconds": MARKET_SNAPSHOT_TTL_SECONDS,
         "max_snapshot_age_seconds": MAX_SNAPSHOT_AGE_SECONDS,
         **CONTRACT,
