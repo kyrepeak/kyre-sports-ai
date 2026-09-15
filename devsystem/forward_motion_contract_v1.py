@@ -1,8 +1,7 @@
 """Permanent DevSystem contract for Monster anti-loop / forward-motion controls.
 
-This validator is dependency-light and is called by ``permanent_gate_v1`` so
-anti-loop behavior rides the existing required permanent-contract lane instead of
-adding another CI fan-out job.
+This validator is dependency-light and is called by the existing required
+``permanent-contract`` test lane, avoiding an extra CI fan-out job.
 """
 from __future__ import annotations
 
@@ -15,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from devsystem.a9_anti_loop_replay_v1 import run_replay
 from devsystem.checkpoint_ledger_v1 import validate_ledger
 from devsystem.forward_motion_v1 import decide, fingerprint_action, load_policy
 
@@ -171,6 +171,13 @@ def validate() -> dict[str, Any]:
     terminal = decide(_ledger(done=True), proof, [], policy)
     _require(terminal["decision"] == "TASK_COMPLETE", "terminal finish-line guard drift")
 
+    replay = run_replay()
+    _require(replay.get("status") == "GREEN", "A9 anti-loop replay failed")
+    _require(replay.get("max_active_blockers") == 1, "A9 replay blocker cardinality drift")
+    _require(replay.get("in_scope_approval_stops") == 0, "A9 replay approval-churn drift")
+    _require(replay.get("post_finish_decision") == "TASK_COMPLETE", "A9 replay terminal drift")
+    _require(replay.get("invented_post_finish_checkpoints") == 0, "A9 replay invented work")
+
     result = {
         "status": "GREEN",
         "mode": policy["mode"],
@@ -180,6 +187,7 @@ def validate() -> dict[str, Any]:
         "one_active_blocker": True,
         "side_quest_deferral": True,
         "terminal_task_authoritative": True,
+        "a9_replay_permanent": True,
     }
     print("DEVSYSTEM_FORWARD_MOTION_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
