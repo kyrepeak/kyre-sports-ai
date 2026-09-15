@@ -142,14 +142,33 @@ def decide(
             reason="finding is unrelated to the approved finish line",
         )
 
+    active_blocker = ledger_state.get("active_blocker")
+    if active_blocker and str(action.get("action_type") or "") == "open_blocker":
+        requested_blocker = str((action.get("inputs") or {}).get("blocker_id") or "")
+        current_blocker = str(active_blocker.get("blocker_id") or "")
+        if requested_blocker and requested_blocker != current_blocker:
+            return _result(
+                "DEFER_SIDE_QUEST",
+                fingerprint=fingerprint,
+                reason=(
+                    "one active blocker is already being resolved; "
+                    f"active blocker={current_blocker} requested={requested_blocker}"
+                ),
+            )
+
     if bool(action.get("requires_user")) and not bool(
         action.get("resolvable_with_available_tools", True)
     ):
+        user_action = str(action.get("user_action") or "").strip()
+        if not user_action:
+            raise ForwardMotionFailure(
+                "external blocker requires a single concrete user_action"
+            )
         return _result(
             "STOP_EXTERNAL_BLOCKER",
             fingerprint=fingerprint,
             reason="active blocker cannot be resolved with available tools",
-            user_action=str(action.get("user_action") or "").strip() or None,
+            user_action=user_action,
         )
 
     matches = _same_fingerprint(history, fingerprint)
@@ -185,10 +204,18 @@ def decide(
             )
 
         if failure_class in {"unknown", ""} and bool(action.get("new_hypothesis")):
+            if matches:
+                return _result(
+                    "REJECT_DUPLICATE_PROOF",
+                    fingerprint=fingerprint,
+                    reason="unknown failure already consumed its unchanged evidence action",
+                    retry_budget_remaining=0,
+                )
             return _result(
                 "ALLOW_NEW_HYPOTHESIS",
                 fingerprint=fingerprint,
                 reason="unknown failure is testing a new discriminating hypothesis",
+                retry_budget_remaining=0,
             )
 
     if matches:
