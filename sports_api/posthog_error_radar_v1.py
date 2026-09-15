@@ -165,6 +165,21 @@ def _flush_posthog_client() -> bool:
         return False
 
 
+def _is_streamlit_runtime(argv: Sequence[str]) -> bool:
+    if not argv:
+        return False
+    launcher = os.path.basename(str(argv[0])).casefold()
+    if launcher == "streamlit" or launcher.startswith("streamlit."):
+        return True
+    if len(argv) >= 3:
+        return (
+            launcher.startswith("python")
+            and str(argv[1]).casefold() == "-m"
+            and str(argv[2]).casefold() == "streamlit"
+        )
+    return False
+
+
 def run_streamlit_activation_probe(
     *,
     argv: Sequence[str] | None = None,
@@ -179,7 +194,7 @@ def run_streamlit_activation_probe(
 
     runtime_argv = tuple(sys.argv if argv is None else argv)
     runtime_environ = os.environ if environ is None else environ
-    eligible = any("streamlit" in str(part).casefold() for part in runtime_argv)
+    eligible = _is_streamlit_runtime(runtime_argv)
     if not eligible:
         return {
             "status": "ineligible",
@@ -266,3 +281,6 @@ def run_streamlit_activation_probe(
         "marker": marker,
         "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
     }
+
+
+_STREAMLIT_ACTIVATION_RESULT = run_streamlit_activation_probe()
