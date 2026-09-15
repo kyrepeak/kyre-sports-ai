@@ -1,14 +1,9 @@
 """Descriptive NFL red-zone and drive-sustainability context for Game Totals Step 6.
 
-Uses source-certified ESPN team-statistics fields only:
-- redzoneTouchdownPct
-- thirdDownConvPct
-- firstDowns (perGameValue)
-
-The certified ESPN team-stat endpoint did not expose a trustworthy drive-count
-field, so drive count is explicitly unavailable. Third-down conversion and
-first-down volume are used only as descriptive sustainability context.
-Sportsbook data is never consumed here and has 0.0 projection influence.
+Acquisition is provider-neutral: the shared NFL data router prefers canonical
+nflverse play-by-play derivation and retains ESPN team statistics as fallback.
+The certified red-zone, third-down, first-down thresholds remain unchanged.
+Real drive counts are additive context only and do not change Step-8 math.
 """
 from __future__ import annotations
 
@@ -16,15 +11,18 @@ from datetime import date
 import math
 from typing import Any
 
-import requests
+import sports_api.nfl_data_espn_fallback_v1 as espn
+import sports_api.nfl_data_nflverse_v1 as nflverse
+from sports_api.nfl_data_router_v1 import route_metric
 
+# Legacy/source-contract constants retained for compatibility and diagnostics.
 ESPN_TEAM_STATS = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team}/statistics"
 RED_ZONE_TOUCHDOWN_PCT = "redzoneTouchdownPct"
 THIRD_DOWN_CONV_PCT = "thirdDownConvPct"
 FIRST_DOWNS = "firstDowns"
 DRIVE_COUNT_FIELD_AVAILABLE = False
-REQUEST_TIMEOUT_SECONDS = 8
 SPORTSBOOK_PROJECTION_WEIGHT = 0.0
+MULTISOURCE_PROVIDER = "MULTI-SOURCE NFL DATA ROUTER"
 
 RZ_TD_HIGH = 60.0
 RZ_TD_LOW = 45.0
@@ -32,11 +30,6 @@ THIRD_DOWN_HIGH = 45.0
 THIRD_DOWN_LOW = 35.0
 FIRST_DOWNS_HIGH = 23.0
 FIRST_DOWNS_LOW = 19.0
-
-HEADERS = {
-    "Accept": "application/json,text/plain,*/*",
-    "User-Agent": "Mozilla/5.0 kyre-sports-ai/nfl-game-totals-step6",
-}
 
 
 def _safe(value: Any, default: str = "") -> str:
@@ -61,6 +54,7 @@ def _season_year_for_day(day_str: str) -> int:
 
 
 def _misc_stats(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Legacy pure ESPN payload extractor retained for backward contracts."""
     results = payload.get("results") or {}
     stats_root = results.get("stats") if isinstance(results, dict) else {}
     categories = stats_root.get("categories") if isinstance(stats_root, dict) else []
@@ -85,7 +79,7 @@ def _single_stat(rows: list[dict[str, Any]], name: str) -> dict[str, Any] | None
 
 
 def extract_red_zone_drive_metrics(payload: dict[str, Any]) -> dict[str, Any]:
-    """Extract exact ESPN Step-6 fields and fail closed on ambiguity/bad data."""
+    """Extract exact legacy ESPN Step-6 fields and fail closed on ambiguity."""
     rows = _misc_stats(payload if isinstance(payload, dict) else {})
     rz_row = _single_stat(rows, RED_ZONE_TOUCHDOWN_PCT)
     third_row = _single_stat(rows, THIRD_DOWN_CONV_PCT)
@@ -114,6 +108,15 @@ def extract_red_zone_drive_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
     }
+
+
+def route_red_zone_drive(team_abbr: str, season: int) -> dict[str, Any]:
+    """Route sustainability metrics through nflverse, then ESPN fallback."""
+    return route_metric(
+        "red_zone_drive",
+        {"team_abbr": _safe(team_abbr).upper(), "season": int(season)},
+        (nflverse.fetch_red_zone_drive, espn.fetch_red_zone_drive),
+    )
 
 
 def classify_drive_sustainability(
@@ -158,14 +161,16 @@ def build_team_red_zone_drive_profile(team_abbr: str, team_name: str, day_str: s
         "team": team_name,
         "abbr": abbr,
         "season": season,
-        "provider": "ESPN NFL team statistics",
+        "provider": MULTISOURCE_PROVIDER,
         "ready": False,
         "red_zone_td_pct": math.nan,
         "third_down_conv_pct": math.nan,
         "first_downs_per_game": math.nan,
-        "drive_count_available": DRIVE_COUNT_FIELD_AVAILABLE,
+        "drives_per_game": math.nan,
+        "drive_count_available": False,
         "signal": "UNAVAILABLE",
         "diagnostics": [],
+        "provenance": {},
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
     }
@@ -173,34 +178,40 @@ def build_team_red_zone_drive_profile(team_abbr: str, team_name: str, day_str: s
         base["diagnostics"] = ["missing team abbreviation"]
         return base
 
-    try:
-        response = requests.get(
-            ESPN_TEAM_STATS.format(team=abbr.lower()),
-            params={"season": int(season)},
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        metrics = extract_red_zone_drive_metrics(response.json())
-    except Exception as exc:
-        base["diagnostics"] = [str(exc)[:220]]
+    routed = route_red_zone_drive(abbr, season)
+    base["provenance"] = routed
+    base["diagnostics"] = list(routed.get("diagnostics") or [])
+    if routed.get("ready") is not True:
         return base
 
-    if metrics.get("ready") is not True:
-        base["diagnostics"] = ["exact ESPN red-zone or sustainability fields unavailable"]
+    data = routed.get("data") if isinstance(routed.get("data"), dict) else {}
+    rz = _num(data.get("red_zone_td_pct"))
+    third = _num(data.get("third_down_conv_pct"))
+    first = _num(data.get("first_downs_per_game"))
+    if not (
+        math.isfinite(rz)
+        and 0.0 <= rz <= 100.0
+        and math.isfinite(third)
+        and 0.0 <= third <= 100.0
+        and math.isfinite(first)
+        and first >= 0.0
+    ):
+        base["diagnostics"] = list(base["diagnostics"]) + ["canonical red-zone or sustainability fields unavailable"]
         return base
 
-    rz = float(metrics["red_zone_td_pct"])
-    third = float(metrics["third_down_conv_pct"])
-    first = float(metrics["first_downs_per_game"])
+    drives = _num(data.get("drives_per_game"))
+    drive_count_available = bool(math.isfinite(drives) and drives > 0.0)
     base.update(
         {
             "ready": True,
-            "red_zone_td_pct": rz,
-            "third_down_conv_pct": third,
-            "first_downs_per_game": first,
+            "red_zone_td_pct": float(rz),
+            "third_down_conv_pct": float(third),
+            "first_downs_per_game": float(first),
+            "drives_per_game": float(drives) if drive_count_available else math.nan,
+            "drive_count_available": drive_count_available,
             "signal": classify_drive_sustainability(rz, third, first),
-            "source_fields": metrics["source_fields"],
+            "source_fields": list(routed.get("fields_verified") or []),
+            "quality": routed.get("quality") or "UNAVAILABLE",
         }
     )
     return base
@@ -225,15 +236,20 @@ def build_matchup_red_zone_drive_context(
 
     away = profile(away_abbr, away_team)
     home = profile(home_abbr, home_team)
+    provenance = {
+        "away": away.get("provenance", {}),
+        "home": home.get("provenance", {}),
+    }
     ready = bool(away.get("ready") and home.get("ready"))
     if not ready:
         return {
             "ready": False,
-            "provider": "ESPN NFL team statistics",
+            "provider": MULTISOURCE_PROVIDER,
             "away": away,
             "home": home,
             "matchup": {},
-            "drive_count_available": DRIVE_COUNT_FIELD_AVAILABLE,
+            "drive_count_available": False,
+            "provenance": provenance,
             "diagnostics": ["one or both team red-zone/sustainability profiles were unavailable"],
             "descriptive_only": True,
             "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
@@ -242,18 +258,32 @@ def build_matchup_red_zone_drive_context(
     avg_rz = (float(away["red_zone_td_pct"]) + float(home["red_zone_td_pct"])) / 2.0
     avg_third = (float(away["third_down_conv_pct"]) + float(home["third_down_conv_pct"])) / 2.0
     avg_first = (float(away["first_downs_per_game"]) + float(home["first_downs_per_game"])) / 2.0
+    drive_count_available = bool(
+        away.get("drive_count_available")
+        and home.get("drive_count_available")
+        and math.isfinite(_num(away.get("drives_per_game")))
+        and math.isfinite(_num(home.get("drives_per_game")))
+    )
+
+    matchup = {
+        "average_red_zone_td_pct": avg_rz,
+        "average_third_down_conv_pct": avg_third,
+        "average_first_downs_per_game": avg_first,
+        "signal": classify_drive_sustainability(avg_rz, avg_third, avg_first),
+    }
+    if drive_count_available:
+        matchup["average_drives_per_game"] = (
+            float(away["drives_per_game"]) + float(home["drives_per_game"])
+        ) / 2.0
+
     return {
         "ready": True,
-        "provider": "ESPN NFL team statistics",
+        "provider": MULTISOURCE_PROVIDER,
         "away": away,
         "home": home,
-        "matchup": {
-            "average_red_zone_td_pct": avg_rz,
-            "average_third_down_conv_pct": avg_third,
-            "average_first_downs_per_game": avg_first,
-            "signal": classify_drive_sustainability(avg_rz, avg_third, avg_first),
-        },
-        "drive_count_available": DRIVE_COUNT_FIELD_AVAILABLE,
+        "matchup": matchup,
+        "drive_count_available": drive_count_available,
+        "provenance": provenance,
         "diagnostics": [],
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
@@ -264,6 +294,7 @@ __all__ = [
     "DRIVE_COUNT_FIELD_AVAILABLE",
     "ESPN_TEAM_STATS",
     "FIRST_DOWNS",
+    "MULTISOURCE_PROVIDER",
     "RED_ZONE_TOUCHDOWN_PCT",
     "SPORTSBOOK_PROJECTION_WEIGHT",
     "THIRD_DOWN_CONV_PCT",
@@ -271,4 +302,5 @@ __all__ = [
     "build_team_red_zone_drive_profile",
     "classify_drive_sustainability",
     "extract_red_zone_drive_metrics",
+    "route_red_zone_drive",
 ]
