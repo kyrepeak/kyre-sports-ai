@@ -6,18 +6,29 @@ break sports data, projections, routing, or user-facing requests.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import logging
 import os
+import sys
 import threading
-from typing import Any
+from typing import Any, Callable, Mapping, Sequence
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+from uuid import uuid4
 
 _LOGGER = logging.getLogger("kyre.monster_error_radar")
 _CLIENT: Any | None = None
 _CLIENT_INITIALIZED = False
 _CLIENT_LOCK = threading.Lock()
+_STREAMLIT_PROBE_RAN = False
+_STREAMLIT_PROBE_LOCK = threading.Lock()
 
 ERROR_RADAR_VERSION = "MONSTER_ERROR_RADAR_V1"
 DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com"
+DEFAULT_STREAMLIT_PROBE_HEALTH_URL = "https://kyre-sports-api.onrender.com/health"
+STREAMLIT_PROBE_VERSION = "MONSTER_STREAMLIT_TELEMETRY_PROBE_V1"
+STREAMLIT_PROBE_FINGERPRINT = "MONSTER-A8-STREAMLIT-PROBE-V1"
+STREAMLIT_PROBE_MESSAGE = "Monster Streamlit certification synthetic exception probe"
 
 
 def _env_first(*names: str, default: str = "") -> str:
@@ -117,3 +128,156 @@ def capture_runtime_exception(
             capture_error.__class__.__name__,
         )
         return False
+
+
+def _streamlit_probe_marker() -> str:
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    return f"monster-a8-{stamp}-{uuid4().hex[:8]}"
+
+
+def _streamlit_probe_ping(marker: str, environ: Mapping[str, str]) -> bool:
+    """Ping the healthy Render API with a unique marker; failures stay fail-open."""
+    base_url = str(
+        environ.get("MONSTER_A8_RENDER_HEALTH_URL")
+        or environ.get("KYRE_API_HEALTH_URL")
+        or DEFAULT_STREAMLIT_PROBE_HEALTH_URL
+    ).strip()
+    separator = "&" if "?" in base_url else "?"
+    target = f"{base_url}{separator}{urlencode({'monster_a8_marker': marker})}"
+    request = Request(target, headers={"User-Agent": "monster-a8-streamlit-cert/1"})
+    try:
+        with urlopen(request, timeout=3.0) as response:
+            return 200 <= int(getattr(response, "status", 0)) < 300
+    except Exception as exc:
+        _LOGGER.warning("MONSTER_A8_STREAMLIT_PING_FAILED %s", exc.__class__.__name__)
+        return False
+
+
+def _flush_posthog_client() -> bool:
+    client = _posthog_client()
+    if client is None:
+        return False
+    try:
+        client.flush()
+        return True
+    except Exception as exc:
+        _LOGGER.warning("MONSTER_A8_STREAMLIT_FLUSH_FAILED %s", exc.__class__.__name__)
+        return False
+
+
+def _is_streamlit_runtime(argv: Sequence[str]) -> bool:
+    if not argv:
+        return False
+    launcher = os.path.basename(str(argv[0])).casefold()
+    if launcher == "streamlit" or launcher.startswith("streamlit."):
+        return True
+    if len(argv) >= 3:
+        return (
+            launcher.startswith("python")
+            and str(argv[1]).casefold() == "-m"
+            and str(argv[2]).casefold() == "streamlit"
+        )
+    return False
+
+
+def run_streamlit_activation_probe(
+    *,
+    argv: Sequence[str] | None = None,
+    environ: Mapping[str, str] | None = None,
+    ping_fn: Callable[[str], bool] | None = None,
+    capture_fn: Callable[..., bool] | None = None,
+    flush_fn: Callable[[], bool] | None = None,
+    marker_factory: Callable[[], str] | None = None,
+) -> dict[str, Any]:
+    """Run one fail-open A8 certification probe for a Streamlit process."""
+    global _STREAMLIT_PROBE_RAN
+
+    runtime_argv = tuple(sys.argv if argv is None else argv)
+    runtime_environ = os.environ if environ is None else environ
+    eligible = _is_streamlit_runtime(runtime_argv)
+    if not eligible:
+        return {
+            "status": "ineligible",
+            "eligible": False,
+            "runtime_pinged": False,
+            "accepted": False,
+            "flushed": False,
+            "marker": None,
+            "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
+        }
+
+    with _STREAMLIT_PROBE_LOCK:
+        if _STREAMLIT_PROBE_RAN:
+            return {
+                "status": "already_ran",
+                "eligible": True,
+                "runtime_pinged": False,
+                "accepted": False,
+                "flushed": False,
+                "marker": None,
+                "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
+            }
+        _STREAMLIT_PROBE_RAN = True
+
+    marker_builder = marker_factory or _streamlit_probe_marker
+    actual_capture = capture_fn or capture_runtime_exception
+    actual_flush = flush_fn or _flush_posthog_client
+
+    try:
+        marker = marker_builder()
+    except Exception as exc:
+        _LOGGER.warning("MONSTER_A8_STREAMLIT_MARKER_FAILED %s", exc.__class__.__name__)
+        return {
+            "status": "marker_failed",
+            "eligible": True,
+            "runtime_pinged": False,
+            "accepted": False,
+            "flushed": False,
+            "marker": None,
+            "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
+        }
+
+    actual_ping = ping_fn or (lambda value: _streamlit_probe_ping(value, runtime_environ))
+    runtime_pinged = False
+    accepted = False
+    flushed = False
+
+    try:
+        runtime_pinged = bool(actual_ping(marker))
+    except Exception as exc:
+        _LOGGER.warning("MONSTER_A8_STREAMLIT_PING_FAILED %s", exc.__class__.__name__)
+
+    probe_error = RuntimeError(STREAMLIT_PROBE_MESSAGE)
+    try:
+        accepted = bool(
+            actual_capture(
+                probe_error,
+                error_fingerprint=STREAMLIT_PROBE_FINGERPRINT,
+                surface="streamlit",
+                path="app.py",
+                properties={
+                    "monster_streamlit_certification_probe": marker,
+                    "synthetic_certification_probe": True,
+                    "probe_version": STREAMLIT_PROBE_VERSION,
+                },
+            )
+        )
+    except Exception as exc:
+        _LOGGER.warning("MONSTER_A8_STREAMLIT_CAPTURE_FAILED %s", exc.__class__.__name__)
+
+    if accepted:
+        try:
+            flushed = bool(actual_flush())
+        except Exception as exc:
+            _LOGGER.warning("MONSTER_A8_STREAMLIT_FLUSH_FAILED %s", exc.__class__.__name__)
+
+    status = "flushed" if accepted and flushed else "queued" if accepted else "not_accepted"
+    return {
+        "status": status,
+        "eligible": True,
+        "runtime_pinged": runtime_pinged,
+        "accepted": accepted,
+        "flushed": flushed,
+        "marker": marker,
+        "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
+    }

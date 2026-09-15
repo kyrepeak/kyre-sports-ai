@@ -20,7 +20,10 @@ from sports_api.monster_performance_profiler_v1 import (
     diagnose_trace,
 )
 from sports_api.observability_v1 import error_fingerprint
-from sports_api.posthog_error_radar_v1 import capture_runtime_exception
+from sports_api.posthog_error_radar_v1 import (
+    capture_runtime_exception,
+    run_streamlit_activation_probe,
+)
 
 if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v63 import render_app as _frozen_v63_render_app
@@ -211,6 +214,7 @@ try:
     from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
+    run_streamlit_activation_probe()
     render_app()
     _app_total_ms = (perf_counter() - _app_started) * 1000.0
 
