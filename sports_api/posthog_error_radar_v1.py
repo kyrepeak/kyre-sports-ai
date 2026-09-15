@@ -61,6 +61,11 @@ def _posthog_client() -> Any | None:
     return _CLIENT
 
 
+def get_posthog_client() -> Any | None:
+    """Return the shared PostHog client for explicit certification flushes."""
+    return _posthog_client()
+
+
 def radar_status() -> dict[str, Any]:
     """Return non-secret configuration state for diagnostics and CI."""
     configured = bool(_env_first("POSTHOG_PROJECT_API_KEY", "POSTHOG_API_KEY"))
