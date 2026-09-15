@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from sports_api.api import cfb_odds_v1
 from sports_api.api import health
+from sports_api.api import nfl_game_totals_analysis_v1
+from sports_api.api import nfl_game_totals_games_v1
+from sports_api.api import nfl_game_totals_market_v1
 from sports_api.api import nfl_moneyline_market_v1
 from sports_api.api import nfl_passing_yards_market_v1
 from sports_api.api import nfl_receiving_yards_context_v1
@@ -23,6 +26,12 @@ EXPECTED_SHARED_HOST_ROUTES = {
     "/api/v1/cfb/markets/reconciled",
     "/api/v1/cfb/odds/status",
     "/api/v1/cfb/odds",
+    "/api/v1/nfl/game-totals/games/status",
+    "/api/v1/nfl/game-totals/games",
+    "/api/v1/nfl/game-totals/market/status",
+    "/api/v1/nfl/game-totals/market",
+    "/api/v1/nfl/game-totals/analysis/status",
+    "/api/v1/nfl/game-totals/analysis",
     "/api/v1/nfl/moneyline/market/status",
     "/api/v1/nfl/moneyline/market",
     "/api/v1/nfl/passing-yards/status",
@@ -85,6 +94,33 @@ def test_cfb_public_odds_status_keeps_frozen_market_semantics() -> None:
     assert semantics["may_modify_projection"] is False
 
 
+def test_nfl_game_totals_hosted_status_contracts_are_network_free_and_safe() -> None:
+    games = nfl_game_totals_games_v1.game_totals_games_status()
+    market = nfl_game_totals_market_v1.game_totals_market_status()
+    analysis = nfl_game_totals_analysis_v1.game_totals_analysis_status()
+
+    assert games["shared_host_attached"] is True
+    assert games["exact_event_identity"] is True
+    assert games["fuzzy_matching"] is False
+    assert games["synthetic_event_ids"] is False
+    assert games["sportsbook_data_included"] is False
+    assert games["projection_data_included"] is False
+
+    assert market["shared_host_attached"] is True
+    _assert_market_guardrails(market)
+    assert market["model_probability_input"] is False
+
+    assert analysis["shared_host_attached"] is True
+    assert analysis["exact_event_identity"] is True
+    assert analysis["fuzzy_matching"] is False
+    assert analysis["synthetic_event_ids"] is False
+    assert analysis["sportsbook_projection_influence"] == 0.0
+    assert analysis["sportsbook_distribution_influence"] == 0.0
+    assert analysis["market_line_role"] == "evaluation_threshold_only"
+    assert analysis["stake_sizing_enabled"] is False
+    assert analysis["wager_actions"] is False
+
+
 def test_nfl_market_status_contracts_are_network_free_and_safe() -> None:
     statuses = [
         nfl_moneyline_market_v1.moneyline_market_status(),
@@ -133,6 +169,21 @@ def test_health_probe_remains_provider_free(monkeypatch) -> None:
     def _provider_call_forbidden(*_args, **_kwargs):
         raise AssertionError("health probe attempted a provider/network collector")
 
+    monkeypatch.setattr(
+        nfl_game_totals_games_v1,
+        "collect_official_nfl_slate",
+        _provider_call_forbidden,
+    )
+    monkeypatch.setattr(
+        nfl_game_totals_market_v1,
+        "collect_fanduel_nfl_game_total",
+        _provider_call_forbidden,
+    )
+    monkeypatch.setattr(
+        nfl_game_totals_analysis_v1,
+        "collect_official_nfl_slate",
+        _provider_call_forbidden,
+    )
     monkeypatch.setattr(
         nfl_moneyline_market_v1,
         "collect_fanduel_nfl_moneyline",
