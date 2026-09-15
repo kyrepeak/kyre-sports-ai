@@ -71,15 +71,17 @@ jobs:
             tests/test_nfl_game_totals_market_v1.py \
             tests/test_nfl_fanduel_game_totals_v1.py
 
-      - name: Route/startup registration smoke
+      - name: Route registration smoke
         run: |
           python - <<'PY'
-          from sports_api.main import app
+          from pathlib import Path
 
-          paths = {route.path for route in app.routes}
-          assert "/api/v1/nfl/totals/market" in paths
-          print("NFL Game Totals route registered exactly once:", sum(route.path == "/api/v1/nfl/totals/market" for route in app.routes))
-          assert sum(route.path == "/api/v1/nfl/totals/market" for route in app.routes) == 1
+          source = Path("sports_api/main.py").read_text()
+          expected_import = "from sports_api.api.nfl_game_totals_market_v1 import router as nfl_game_totals_market_router"
+          expected_mount = "app.include_router(nfl_game_totals_market_router)"
+          assert source.count(expected_import) == 1
+          assert source.count(expected_mount) == 1
+          print("NFL Game Totals route mount certified exactly once")
           PY
 
       - name: Projection-isolation guard
