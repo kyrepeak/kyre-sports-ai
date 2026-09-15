@@ -10,6 +10,7 @@ on:
       - 'tests/test_nfl_spread_v136_activation.py'
       - 'tests/test_nfl_spread_router_v136.py'
       - 'tests/test_nfl_spread_v136_html_leak_regression.py'
+      - '.github/workflows/nfl-spread-step9-streamlit-proof.yml'
       - '.github/workflows/nfl-spread-v136-standalone.yml'
       - '.github/workflows/nfl-spread-v136-step10-regression.yml'
   pull_request:
@@ -21,6 +22,7 @@ on:
       - 'tests/test_nfl_spread_v136_activation.py'
       - 'tests/test_nfl_spread_router_v136.py'
       - 'tests/test_nfl_spread_v136_html_leak_regression.py'
+      - '.github/workflows/nfl-spread-step9-streamlit-proof.yml'
       - '.github/workflows/nfl-spread-v136-standalone.yml'
       - '.github/workflows/nfl-spread-v136-step10-regression.yml'
   workflow_dispatch:
@@ -67,6 +69,7 @@ jobs:
           set -euo pipefail
           git diff --name-only "$V136_BASE"...HEAD | sort > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-spread-step9-streamlit-proof.yml
           .github/workflows/nfl-spread-v136-standalone.yml
           .github/workflows/nfl-spread-v136-step10-regression.yml
           app.py
