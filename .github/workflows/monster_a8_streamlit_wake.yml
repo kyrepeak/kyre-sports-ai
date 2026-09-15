@@ -1,0 +1,27 @@
+name: Monster A8 Streamlit Production Wake
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  wake-production-streamlit:
+    if: github.head_ref == 'monster-a8-streamlit-wake'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Wake production Streamlit once
+        shell: bash
+        run: |
+          python - <<'PY'
+          from urllib.request import Request, urlopen
+
+          url = "https://kyre-sports-ai.streamlit.app/"
+          request = Request(url, headers={"User-Agent": "monster-a8-production-wake/1"})
+          with urlopen(request, timeout=30) as response:
+              status = int(getattr(response, "status", 0))
+              print(f"production_streamlit_http_status={status}")
+              if not 200 <= status < 400:
+                  raise SystemExit(f"unexpected Streamlit status: {status}")
+          PY
