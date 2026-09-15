@@ -19,6 +19,12 @@ NETWORK_CALLS = False
 AUTO_FIX = False
 AUTHORITATIVE_MERGE_GATE = "devsystem-final-gate"
 
+_CONTINUITY_VERSION = "MONSTER_CONTINUITY_V1"
+_CONTINUITY_RESUME_STATES = {"READY_TO_RESUME", "REVALIDATE", "BLOCKED", "COMPLETE"}
+_CONTINUITY_TASK_STATES = {"ACTIVE", "BLOCKED", "READY_TO_MERGE", "COMPLETE"}
+_CONTINUITY_STEP_STATES = {"PENDING", "IN_PROGRESS", "BLOCKED", "GREEN", "COMPLETE"}
+_PRODUCTION_VERSION = "MONSTER_PRODUCTION_CERTIFICATION_V1"
+
 _UNSAFE_PRODUCTION_STATES = {
     "DEPLOY_FAILED",
     "RUNTIME_PROOF_FAILED",
@@ -104,6 +110,13 @@ def _continuity_errors(continuity: Mapping[str, Any]) -> list[str]:
     progress = _mapping(continuity.get("progress"))
     scope = _mapping(continuity.get("scope"))
 
+    if continuity.get("version") != _CONTINUITY_VERSION:
+        errors.append("continuity version is missing or unsupported")
+
+    continuity_status = _text(continuity.get("status"), default="").upper()
+    if continuity_status not in _CONTINUITY_RESUME_STATES:
+        errors.append("continuity status is missing or invalid")
+
     if task is None:
         errors.append("continuity task packet is missing or malformed")
     else:
@@ -111,8 +124,9 @@ def _continuity_errors(continuity: Mapping[str, Any]) -> list[str]:
             errors.append("continuity task.id is missing")
         if not _text(task.get("title"), default=""):
             errors.append("continuity task.title is missing")
-        if not _text(task.get("status"), default=""):
-            errors.append("continuity task.status is missing")
+        task_status = _text(task.get("status"), default="").upper()
+        if task_status not in _CONTINUITY_TASK_STATES:
+            errors.append("continuity task.status is missing or invalid")
 
     if source is None:
         errors.append("continuity source packet is missing or malformed")
@@ -126,6 +140,9 @@ def _continuity_errors(continuity: Mapping[str, Any]) -> list[str]:
     else:
         if not _text(progress.get("current_step"), default=""):
             errors.append("continuity progress.current_step is missing")
+        step_status = _text(progress.get("step_status"), default="").upper()
+        if step_status not in _CONTINUITY_STEP_STATES:
+            errors.append("continuity progress.step_status is missing or invalid")
         if not isinstance(progress.get("completed_steps"), list):
             errors.append("continuity progress.completed_steps must be a list")
         if not isinstance(progress.get("remaining_steps"), list):
@@ -142,6 +159,71 @@ def _continuity_errors(continuity: Mapping[str, Any]) -> list[str]:
         errors.append("continuity last_green_evidence must be a list")
     if not _text(continuity.get("next_action"), default=""):
         errors.append("continuity next_action is missing")
+    return errors
+
+
+def _production_errors(production: Mapping[str, Any]) -> list[str]:
+    """Validate the stable evidence shape emitted by Production Certification V1."""
+    errors: list[str] = []
+    identity = _mapping(production.get("identity"))
+    readiness = _mapping(production.get("readiness"))
+    guards = _mapping(production.get("guards"))
+
+    if production.get("version") != _PRODUCTION_VERSION:
+        errors.append("production certification version is missing or unsupported")
+
+    if not isinstance(production.get("certified"), bool):
+        errors.append("production certification certified must be boolean")
+
+    if identity is None:
+        errors.append("production certification identity packet is missing or malformed")
+    else:
+        for field in (
+            "github_branch",
+            "github_commit",
+            "render_branch",
+            "render_commit",
+            "health_branch",
+            "health_commit",
+        ):
+            if not _text(identity.get(field), default=""):
+                errors.append(f"production certification identity.{field} is missing")
+
+    for field in ("render_status", "render_auto_deploy", "health_status"):
+        if not _text(production.get(field), default=""):
+            errors.append(f"production certification {field} is missing")
+
+    if readiness is None:
+        errors.append("production certification readiness packet is missing or malformed")
+    else:
+        if not _text(readiness.get("status"), default=""):
+            errors.append("production certification readiness.status is missing")
+        checks = _mapping(readiness.get("checks"))
+        if checks is None:
+            errors.append("production certification readiness.checks is missing or malformed")
+        else:
+            for field in (
+                "process_running",
+                "python_runtime",
+                "deployment_identity_available",
+                "runtime_branch_alignment",
+            ):
+                if not isinstance(checks.get(field), bool):
+                    errors.append(
+                        f"production certification readiness.checks.{field} must be boolean"
+                    )
+        if not isinstance(readiness.get("deployment_aligned"), bool):
+            errors.append("production certification readiness.deployment_aligned must be boolean")
+
+    if guards is None:
+        errors.append("production certification guards packet is missing or malformed")
+    else:
+        for field in ("devsystem-final-gate", "permanent-freeze", "regression-shield"):
+            if not _text(guards.get(field), default=""):
+                errors.append(f"production certification guard {field} is missing")
+
+    if not isinstance(production.get("reasons"), list):
+        errors.append("production certification reasons must be a list")
     return errors
 
 
@@ -265,9 +347,11 @@ def build_project_state(
         return report
 
     production_state = ""
+    production_errors: list[str] = []
     if production_required:
         if production_map is not None:
             production_state = _text(production_map.get("state"), default="").upper()
+            production_errors = _production_errors(production_map)
         if production_state in _UNSAFE_PRODUCTION_STATES:
             report["state"] = "BLOCKED"
             reasons = _string_list(production_map.get("reasons")) if production_map else []
@@ -300,6 +384,11 @@ def build_project_state(
         if production_map is None:
             report["state"] = "UNKNOWN"
             report["reasons"] = ["required production certification evidence is missing"] + advisory_reasons
+            report["next_action"] = _UNKNOWN_ACTION
+            return report
+        if production_errors:
+            report["state"] = "UNKNOWN"
+            report["reasons"] = production_errors + advisory_reasons
             report["next_action"] = _UNKNOWN_ACTION
             return report
         if production_state == "UNKNOWN":
