@@ -33,7 +33,7 @@ concurrency:
 jobs:
   focused-api-foundation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -70,7 +70,8 @@ jobs:
             tests/test_nfl_game_totals_features_v1.py \
             tests/test_nfl_game_totals_team_profiles_v1.py \
             tests/test_nfl_game_totals_projection_v1.py \
-            tests/test_nfl_game_totals_probability_v1.py
+            tests/test_nfl_game_totals_probability_v1.py \
+            tests/test_nfl_game_totals_invariants_v1.py
 
       - name: Run Game Totals contract regressions
         run: python -m pytest -q tests/test_nfl_game_totals_contract_v1.py
@@ -98,3 +99,21 @@ jobs:
 
       - name: Run Game Totals O/U Monte Carlo regressions
         run: python -m pytest -q tests/test_nfl_game_totals_probability_v1.py
+
+      - name: Run Game Totals cross-layer invariant suite
+        run: python -m pytest -q tests/test_nfl_game_totals_invariants_v1.py
+
+      - name: Run existing shared-host reconciliation regressions
+        run: python -m pytest -q tests/test_render_main_reconciliation_v1.py
+
+      - name: Run Monster one-command certification
+        run: |
+          python -m sports_api.monster_certification_v1 --json > /tmp/monster-cert.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt = json.loads(Path('/tmp/monster-cert.json').read_text())
+          assert receipt['status'] == 'PASS', receipt
+          assert receipt['failed_check_count'] == 0, receipt
+          print('monster-certification:', receipt['passed_check_count'], '/', receipt['required_check_count'])
+          PY
