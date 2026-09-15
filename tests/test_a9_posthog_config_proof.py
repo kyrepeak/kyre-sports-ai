@@ -63,6 +63,32 @@ def test_streamlit_probe_ping_uses_streamlit_secret_without_leaking_it(monkeypat
     assert "streamlit-secret-only" not in requested_urls[0]
 
 
+def test_posthog_client_uses_streamlit_secret_configuration(monkeypatch) -> None:
+    created: dict[str, object] = {}
+
+    class FakePosthog:
+        def __init__(self, **kwargs: object) -> None:
+            created.update(kwargs)
+
+    monkeypatch.setitem(sys.modules, "posthog", SimpleNamespace(Posthog=FakePosthog))
+    monkeypatch.setattr(radar, "_CLIENT", None, raising=False)
+    monkeypatch.setattr(radar, "_CLIENT_INITIALIZED", False, raising=False)
+    monkeypatch.setattr(
+        radar,
+        "_streamlit_secret_mapping",
+        lambda: {
+            "POSTHOG_PROJECT_API_KEY": "streamlit-secret-only",
+            "POSTHOG_HOST": "https://us.i.posthog.com",
+        },
+    )
+
+    client = radar._posthog_client()
+
+    assert client is not None
+    assert created["project_api_key"] == "streamlit-secret-only"
+    assert created["host"] == "https://us.i.posthog.com"
+
+
 def test_streamlit_activation_probe_records_non_secret_session_evidence(monkeypatch) -> None:
     fake_streamlit = SimpleNamespace(session_state={})
     monkeypatch.setitem(sys.modules, "streamlit", fake_streamlit)
