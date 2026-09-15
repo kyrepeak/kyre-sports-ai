@@ -61,12 +61,12 @@ def test_game_totals_response_shape_is_frozen():
     )
 
 
-def test_status_reports_route_ready_but_not_shared_host_attached():
+def test_status_reports_route_ready_and_shared_host_attached():
     payload = totals.game_totals_market_status()
     assert payload["status"] == "collector_ready"
     assert payload["endpoint"] == "/api/v1/nfl/game-totals/market"
     assert payload["live_market_route_ready"] is True
-    assert payload["shared_host_attached"] is False
+    assert payload["shared_host_attached"] is True
     assert payload["projection_weight"] == 0.0
     assert payload["wager_actions"] is False
 
