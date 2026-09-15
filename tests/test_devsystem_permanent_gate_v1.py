@@ -37,6 +37,24 @@ def test_permanent_contract_is_green():
     assert result["failure_history_coverage_permanent"] is True
 
 
+def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
+    contract = _load("forward_motion_contract_v1", "devsystem/forward_motion_contract_v1.py")
+    result = contract.validate()
+    assert result["status"] == "GREEN"
+    assert result["mode"] == "strict_auto_continue"
+    assert result["duplicate_proof_guard"] is True
+    assert result["deterministic_zero_retry"] is True
+    assert result["transient_single_retry"] is True
+    assert result["one_active_blocker"] is True
+    assert result["side_quest_deferral"] is True
+    assert result["terminal_task_authoritative"] is True
+    assert result["a9_replay_permanent"] is True
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "permanent-contract:" in workflow
+    assert "tests/test_devsystem_permanent_gate_v1.py" in workflow
+
+
 def test_final_gate_accepts_success_and_skipped_only():
     module = _load("final_gate_v1", "devsystem/final_gate_v1.py")
     result = module.evaluate({
