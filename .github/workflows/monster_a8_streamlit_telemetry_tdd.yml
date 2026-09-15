@@ -1,0 +1,29 @@
+name: Monster A8 Streamlit Telemetry TDD
+
+on:
+  push:
+    branches:
+      - monster-a8-streamlit-telemetry-cert
+    paths:
+      - "sports_api/posthog_error_radar_v1.py"
+      - "tests/test_streamlit_telemetry_activation_probe_v1.py"
+      - ".github/workflows/monster_a8_streamlit_telemetry_tdd.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  a8-streamlit-telemetry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pytest only
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run A8 Streamlit telemetry contract
+        run: python -m pytest -q tests/test_streamlit_telemetry_activation_probe_v1.py
