@@ -22,6 +22,10 @@ on:
         description: 'Live Render deploy status from the Render control plane'
         required: true
         type: string
+      render_auto_deploy:
+        description: 'Render auto-deploy state from the Render control plane (must be off/no)'
+        required: true
+        type: string
       devsystem_final_gate:
         description: 'Observed devsystem-final-gate result (green/success or failure)'
         required: true
@@ -108,6 +112,7 @@ jobs:
       RENDER_BRANCH: ${{ inputs.render_branch }}
       RENDER_COMMIT: ${{ inputs.render_commit }}
       RENDER_STATUS: ${{ inputs.render_status }}
+      RENDER_AUTO_DEPLOY: ${{ inputs.render_auto_deploy }}
       DEVSYSTEM_FINAL_GATE: ${{ inputs.devsystem_final_gate }}
       PERMANENT_FREEZE: ${{ inputs.permanent_freeze }}
       REGRESSION_SHIELD: ${{ inputs.regression_shield }}
@@ -152,6 +157,7 @@ jobs:
                   'branch': render_branch,
                   'commit': os.environ['RENDER_COMMIT'].strip(),
                   'status': os.environ['RENDER_STATUS'].strip(),
+                  'auto_deploy': os.environ['RENDER_AUTO_DEPLOY'].strip(),
               },
               health=runtime['health'],
               readiness=runtime['readiness'],
