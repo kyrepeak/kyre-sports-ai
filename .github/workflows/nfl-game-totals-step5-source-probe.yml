@@ -1,0 +1,80 @@
+name: NFL Game Totals Step 5 Source Probe
+
+on:
+  push:
+    branches:
+      - monster/nfl-game-totals-step5-source-probe
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-explosive-fields:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prove ESPN explosive fields and games denominator
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          base = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/ari/statistics'
+          url = base + '?' + urlencode({'season': 2026})
+          request = Request(url, headers={
+              'Accept': 'application/json',
+              'User-Agent': 'Mozilla/5.0 kyre-sports-ai-step5-source-probe',
+          })
+          with urlopen(request, timeout=20) as response:
+              print('HTTP_STATUS=' + str(getattr(response, 'status', 200)))
+              payload = json.load(response)
+
+          results = payload.get('results') or {}
+          stats_root = results.get('stats') if isinstance(results, dict) else {}
+          categories = stats_root.get('categories') if isinstance(stats_root, dict) else []
+          if not isinstance(categories, list):
+              categories = []
+
+          explosive_names = {'rushingBigPlays', 'receivingBigPlays'}
+          explosive = []
+          general = []
+          game_named = []
+
+          for category in categories:
+              if not isinstance(category, dict):
+                  continue
+              category_name = str(category.get('name') or '')
+              category_display = str(category.get('displayName') or '')
+              for stat in category.get('stats') or []:
+                  if not isinstance(stat, dict):
+                      continue
+                  item = {
+                      'category': category_display or category_name,
+                      'name': stat.get('name'),
+                      'displayName': stat.get('displayName'),
+                      'shortDisplayName': stat.get('shortDisplayName'),
+                      'description': stat.get('description'),
+                      'value': stat.get('value'),
+                      'displayValue': stat.get('displayValue'),
+                      'perGameValue': stat.get('perGameValue'),
+                      'perGameDisplayValue': stat.get('perGameDisplayValue'),
+                  }
+                  if stat.get('name') in explosive_names:
+                      explosive.append(item)
+                  if category_name == 'general' or category_display.lower() == 'general':
+                      general.append(item)
+                  labels = ' '.join(str(stat.get(k) or '') for k in ('name','displayName','shortDisplayName','description')).lower()
+                  if 'game' in labels:
+                      game_named.append(item)
+
+          print('EXPLOSIVE_COUNT=' + str(len(explosive)))
+          for item in explosive:
+              print('EXPLOSIVE_STAT=' + json.dumps(item, sort_keys=True, default=str))
+          print('GENERAL_COUNT=' + str(len(general)))
+          for item in general:
+              print('GENERAL_STAT=' + json.dumps(item, sort_keys=True, default=str))
+          print('GAME_NAMED_COUNT=' + str(len(game_named)))
+          for item in game_named:
+              print('GAME_NAMED_STAT=' + json.dumps(item, sort_keys=True, default=str))
+          PY
