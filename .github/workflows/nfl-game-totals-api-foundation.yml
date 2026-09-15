@@ -73,7 +73,8 @@ jobs:
             tests/test_nfl_game_totals_projection_v1.py \
             tests/test_nfl_game_totals_probability_v1.py \
             tests/test_nfl_game_totals_invariants_v1.py \
-            tests/test_nfl_game_totals_analysis_v1.py
+            tests/test_nfl_game_totals_analysis_v1.py \
+            tests/test_nfl_game_totals_shared_host_v1.py
 
       - name: Run Game Totals contract regressions
         run: python -m pytest -q tests/test_nfl_game_totals_contract_v1.py
@@ -107,6 +108,9 @@ jobs:
 
       - name: Run Game Totals public analysis API regressions
         run: python -m pytest -q tests/test_nfl_game_totals_analysis_v1.py
+
+      - name: Run Game Totals shared-host attachment regressions
+        run: python -m pytest -q tests/test_nfl_game_totals_shared_host_v1.py
 
       - name: Run existing shared-host reconciliation regressions
         run: python -m pytest -q tests/test_render_main_reconciliation_v1.py
