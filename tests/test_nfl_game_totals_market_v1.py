@@ -1,9 +1,61 @@
 from __future__ import annotations
 
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+import sys
+from types import ModuleType
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-import sports_api.api.nfl_game_totals_market_v1 as market_api
+
+def _load_market_api():
+    """Load only the new API module, not sports_api.api package side effects.
+
+    The collector has its own executable tests. This API contract test deliberately
+    injects only the collector symbol required by the route module so unrelated WNBA
+    imports in sports_api.api.__init__ cannot affect this narrow certification lane.
+    """
+    collector_name = "sports_api.collectors.nfl_fanduel_game_totals_v1"
+    package_names = ("sports_api", "sports_api.collectors", collector_name)
+    previous = {name: sys.modules.get(name) for name in package_names}
+
+    sports_api_package = ModuleType("sports_api")
+    sports_api_package.__path__ = []  # type: ignore[attr-defined]
+    collectors_package = ModuleType("sports_api.collectors")
+    collectors_package.__path__ = []  # type: ignore[attr-defined]
+    collector_module = ModuleType(collector_name)
+
+    def _placeholder_collect(event_id: str):
+        raise AssertionError(f"collector should be monkeypatched in API contract test: {event_id}")
+
+    collector_module.collect_nfl_game_totals = _placeholder_collect  # type: ignore[attr-defined]
+
+    sys.modules["sports_api"] = sports_api_package
+    sys.modules["sports_api.collectors"] = collectors_package
+    sys.modules[collector_name] = collector_module
+
+    try:
+        module_path = (
+            Path(__file__).resolve().parents[1]
+            / "sports_api"
+            / "api"
+            / "nfl_game_totals_market_v1.py"
+        )
+        spec = spec_from_file_location("nfl_game_totals_market_v1_under_test", module_path)
+        assert spec is not None and spec.loader is not None
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        for name, prior in previous.items():
+            if prior is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = prior
+
+
+market_api = _load_market_api()
 
 
 def _client() -> TestClient:
