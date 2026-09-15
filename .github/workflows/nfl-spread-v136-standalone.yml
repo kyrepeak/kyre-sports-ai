@@ -7,6 +7,7 @@ on:
     paths:
       - 'app.py'
       - 'streamlit_memory_lazy_router_v136.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
       - 'tests/test_nfl_spread_router_v136.py'
       - 'tests/test_nfl_spread_v136_html_leak_regression.py'
       - '.github/workflows/nfl-spread-v136-standalone.yml'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'app.py'
       - 'streamlit_memory_lazy_router_v136.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
       - 'tests/test_nfl_spread_router_v136.py'
       - 'tests/test_nfl_spread_v136_html_leak_regression.py'
       - '.github/workflows/nfl-spread-v136-standalone.yml'
@@ -58,6 +60,7 @@ jobs:
           app.py
           streamlit_memory_lazy_router_v136.py
           tests/test_nfl_spread_router_v136.py
+          tests/test_nfl_spread_v136_activation.py
           tests/test_nfl_spread_v136_html_leak_regression.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
@@ -111,13 +114,15 @@ jobs:
             streamlit_memory_lazy_router_v133.py \
             streamlit_memory_lazy_router_v134.py \
             streamlit_memory_lazy_router_v135.py \
-            tests/test_nfl_spread_router_v135.py
+            tests/test_nfl_spread_router_v135.py \
+            tests/test_nfl_spread_v134_activation.py
           echo 'NFL_SPREAD_V136_FROZEN_SURFACES_UNCHANGED_GREEN'
 
       - name: Compile focused V136 surface
         run: |
           python -m py_compile app.py
           python -m py_compile streamlit_memory_lazy_router_v136.py
+          python -m py_compile tests/test_nfl_spread_v136_activation.py
           python -m py_compile tests/test_nfl_spread_router_v136.py
           python -m py_compile tests/test_nfl_spread_v136_html_leak_regression.py
 
@@ -126,7 +131,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest -q \
-            tests/test_nfl_spread_v134_activation.py \
+            tests/test_nfl_spread_v136_activation.py \
             tests/test_nfl_spread_v4_visual_parity.py \
             tests/test_nfl_spread_router_v135.py \
             tests/test_nfl_spread_router_v136.py \
