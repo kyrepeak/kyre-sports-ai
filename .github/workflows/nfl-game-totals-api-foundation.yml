@@ -55,6 +55,7 @@ jobs:
         run: |
           python -m py_compile \
             sports_api/nfl_game_totals_projection_v1.py \
+            sports_api/nfl_game_totals_probability_v1.py \
             sports_api/api/nfl_game_totals_market_v1.py \
             sports_api/api/nfl_game_totals_games_v1.py \
             sports_api/collectors/nfl_fanduel_totals_v1.py \
