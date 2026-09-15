@@ -163,7 +163,7 @@ def test_analysis_contract_is_public_read_only_and_market_is_threshold_only():
     assert contract["market_line_role"] == "evaluation_threshold_only"
     assert contract["stake_sizing_enabled"] is False
     assert contract["wager_actions"] is False
-    assert analysis_api.game_totals_analysis_status()["shared_host_attached"] is False
+    assert analysis_api.game_totals_analysis_status()["shared_host_attached"] is True
 
 
 def test_analysis_endpoint_orchestrates_certified_pipeline(monkeypatch):
