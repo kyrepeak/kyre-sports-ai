@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           BASELINE='5c3c800be729a73f4ceaaf0d1adcbdc153646df8'
-          EXPECTED='1ddd2a3b0fc52946d0eabb22ca9de34bc9e6a3c3'
+          EXPECTED='3228d1e9d1546f146a803fdb49e1e615b0e3ed5a'
           BRANCH='mlb-step17b-shared-host-cert'
 
           actual_branch_head="$(git rev-parse refs/remotes/origin/${BRANCH})"
@@ -89,7 +89,7 @@ jobs:
 
           BASE = 'https://kyre-sports-api.onrender.com'
           EXPECTED_BRANCH = 'mlb-step17b-shared-host-cert'
-          EXPECTED_COMMIT = '1ddd2a3b0fc52946d0eabb22ca9de34bc9e6a3c3'
+          EXPECTED_COMMIT = '3228d1e9d1546f146a803fdb49e1e615b0e3ed5a'
 
           def get_json(path: str, attempts: int = 4):
               last = None
