@@ -1,0 +1,31 @@
+name: Monster Production Certification V1
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/build_monster_production_certification_snapshot_v1.py'
+      - 'tests/test_monster_production_certification_snapshot_v1.py'
+      - '.github/monster-production-certification-v1-contract.md'
+      - '.github/workflows/monster-production-certification-v1.yml'
+      - 'sports_api/certification/monster_production_certification_v1_evidence.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependency
+        run: python -m pip install pytest
+
+      - name: Run Monster Production Certification V1 tests
+        run: python -m pytest -q tests/test_monster_production_certification_snapshot_v1.py
