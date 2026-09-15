@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sports_api.nfl_data_espn_fallback_v1 as espn
 from sports_api.nfl_data_router_v1 import (
     clear_router_caches,
     register_cache_clearer,
@@ -122,3 +123,119 @@ def test_router_cache_registry_clears_only_registered_functions():
 
     assert cleared == ["nflverse", "nws"]
     assert calls == ["nflverse", "nws"]
+
+
+def test_espn_fallback_adapter_exposes_all_router_provider_functions():
+    for name in (
+        "fetch_scoring_games",
+        "fetch_pace",
+        "fetch_explosive",
+        "fetch_red_zone_drive",
+        "fetch_environment",
+    ):
+        assert callable(getattr(espn, name))
+
+
+def test_espn_403_is_recoverable_when_primary_provider_is_valid():
+    def nws_provider(request):
+        return {
+            "ready": True,
+            "provider": "NWS",
+            "data": {
+                "venue_name": "Lincoln Financial Field",
+                "indoor": False,
+                "temperature": 72.0,
+                "precipitation": 20.0,
+                "gust": 12.0,
+            },
+            "fields_verified": [
+                "venue_name",
+                "indoor",
+                "temperature",
+                "precipitation",
+                "gust",
+            ],
+            "quality": "HIGH",
+            "data_freshness": "2026-09-15T22:00:00Z",
+            "diagnostics": [],
+        }
+
+    def espn_403(request):
+        return {
+            "ready": False,
+            "provider": "ESPN NFL fallback",
+            "diagnostics": ["403 Client Error: Forbidden"],
+        }
+
+    result = route_metric("environment", {}, (nws_provider, espn_403))
+
+    assert result["ready"] is True
+    assert result["provider_used"] == "NWS"
+    assert result["fallback_rank"] == 1
+    assert len(result["provider_attempts"]) == 1
+
+
+def test_espn_can_win_only_after_primary_fails_validation():
+    def broken_nflverse(request):
+        return {
+            "ready": True,
+            "provider": "nflverse",
+            "data": {
+                "plays_per_game": -1.0,
+                "possession_seconds_per_game": 1800.0,
+            },
+            "fields_verified": ["plays_per_game", "possession_seconds_per_game"],
+            "quality": "HIGH",
+            "data_freshness": "2026-09-15T22:00:00Z",
+            "diagnostics": [],
+        }
+
+    def valid_espn(request):
+        return {
+            "ready": True,
+            "provider": "ESPN NFL team statistics",
+            "data": {
+                "plays_per_game": 64.0,
+                "possession_seconds_per_game": 1810.0,
+            },
+            "fields_verified": ["plays_per_game", "possession_seconds_per_game"],
+            "quality": "HIGH",
+            "data_freshness": "2026-09-15T22:00:00Z",
+            "diagnostics": [],
+        }
+
+    result = route_metric("pace", {}, (broken_nflverse, valid_espn))
+
+    assert result["ready"] is True
+    assert result["provider_used"].startswith("ESPN")
+    assert result["fallback_rank"] == 2
+    assert result["provider_attempts"][0]["accepted"] is False
+
+
+def test_espn_pace_adapter_normalizes_exact_existing_fields_without_projection_math():
+    payload = {
+        "results": {
+            "stats": {
+                "categories": [
+                    {
+                        "name": "general",
+                        "stats": [
+                            {"name": "totalOffensivePlays", "perGameValue": 65.5},
+                            {"name": "possessionTimeSeconds", "perGameValue": 1812.0},
+                        ],
+                    }
+                ]
+            }
+        }
+    }
+
+    result = espn.fetch_pace(
+        {"team_abbr": "BUF", "season": 2026},
+        get_json=lambda url, params=None: payload,
+    )
+
+    assert result["ready"] is True
+    assert result["provider"].startswith("ESPN")
+    assert result["data"]["plays_per_game"] == 65.5
+    assert result["data"]["possession_seconds_per_game"] == 1812.0
+    assert "projection" not in " ".join(result.keys()).lower()
