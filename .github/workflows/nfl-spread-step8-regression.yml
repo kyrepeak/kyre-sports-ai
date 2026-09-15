@@ -4,17 +4,21 @@ on:
   push:
     branches:
       - nfl-spread-model-mc-v1
+      - nfl-spread-v136-fresh-router-activation
     paths:
       - 'app.py'
       - 'nfl_spread_hub_v1.py'
       - 'nfl_spread_hub_v2.py'
       - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_hub_v4.py'
       - 'nfl_spread_model_v1.py'
       - 'nfl_spread_mc_v1.py'
       - 'nfl_spread_market_api_v1.py'
       - 'streamlit_memory_lazy_router_v132.py'
       - 'streamlit_memory_lazy_router_v133.py'
       - 'streamlit_memory_lazy_router_v134.py'
+      - 'streamlit_memory_lazy_router_v135.py'
+      - 'streamlit_memory_lazy_router_v136.py'
       - 'streamlit_memory_lazy_router_v131.py'
       - 'nfl_moneyline_hub_v12.py'
       - 'nfl_moneyline_market_api_v1.py'
@@ -23,6 +27,7 @@ on:
       - 'tests/test_nfl_spread_mc_v1.py'
       - 'tests/test_nfl_spread_v3_model_mc.py'
       - 'tests/test_nfl_spread_v134_activation.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
       - '.github/workflows/nfl-spread-step8-regression.yml'
   pull_request:
     branches:
@@ -32,12 +37,15 @@ on:
       - 'nfl_spread_hub_v1.py'
       - 'nfl_spread_hub_v2.py'
       - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_hub_v4.py'
       - 'nfl_spread_model_v1.py'
       - 'nfl_spread_mc_v1.py'
       - 'nfl_spread_market_api_v1.py'
       - 'streamlit_memory_lazy_router_v132.py'
       - 'streamlit_memory_lazy_router_v133.py'
       - 'streamlit_memory_lazy_router_v134.py'
+      - 'streamlit_memory_lazy_router_v135.py'
+      - 'streamlit_memory_lazy_router_v136.py'
       - 'streamlit_memory_lazy_router_v131.py'
       - 'nfl_moneyline_hub_v12.py'
       - 'nfl_moneyline_market_api_v1.py'
@@ -46,6 +54,7 @@ on:
       - 'tests/test_nfl_spread_mc_v1.py'
       - 'tests/test_nfl_spread_v3_model_mc.py'
       - 'tests/test_nfl_spread_v134_activation.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
       - '.github/workflows/nfl-spread-step8-regression.yml'
   workflow_dispatch:
 
@@ -91,22 +100,26 @@ jobs:
             nfl_moneyline_market_api_v1.py
           echo 'NFL_SPREAD_STEP8_FROZEN_OWNERS_GREEN'
 
-      - name: Compile complete Step 8 surface
+      - name: Compile frozen Step 8 plus current V136 activation surface
         run: |
           python -m py_compile app.py
           python -m py_compile nfl_spread_hub_v2.py
           python -m py_compile nfl_spread_hub_v3.py
+          python -m py_compile nfl_spread_hub_v4.py
           python -m py_compile nfl_spread_model_v1.py
           python -m py_compile nfl_spread_mc_v1.py
           python -m py_compile streamlit_memory_lazy_router_v133.py
           python -m py_compile streamlit_memory_lazy_router_v134.py
+          python -m py_compile streamlit_memory_lazy_router_v135.py
+          python -m py_compile streamlit_memory_lazy_router_v136.py
           python -m py_compile tests/test_nfl_spread_fun_ui_v2.py
           python -m py_compile tests/test_nfl_spread_model_v1.py
           python -m py_compile tests/test_nfl_spread_mc_v1.py
           python -m py_compile tests/test_nfl_spread_v3_model_mc.py
           python -m py_compile tests/test_nfl_spread_v134_activation.py
+          python -m py_compile tests/test_nfl_spread_v136_activation.py
 
-      - name: Run complete NFL Spread regression suite
+      - name: Run complete frozen regression suite plus current V136 activation
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -115,9 +128,11 @@ jobs:
             tests/test_nfl_spread_model_v1.py \
             tests/test_nfl_spread_mc_v1.py \
             tests/test_nfl_spread_v3_model_mc.py \
-            tests/test_nfl_spread_v134_activation.py
+            tests/test_nfl_spread_v134_activation.py \
+            tests/test_nfl_spread_v136_activation.py \
+            -k 'not test_app_preserves_v134_and_activates_only_router_v135_for_current_bootstrap'
 
-      - name: Prove current V134 activation and safety contract
+      - name: Prove frozen V134 safety and current V136 activation contract
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -125,12 +140,15 @@ jobs:
           from pathlib import Path
           import nfl_spread_hub_v3 as page
           import nfl_spread_mc_v1 as mc
-          import streamlit_memory_lazy_router_v134 as router
+          import streamlit_memory_lazy_router_v134 as router_v134
+          import streamlit_memory_lazy_router_v136 as router_v136
 
           source = Path('app.py').read_text(encoding='utf-8')
           assert 'FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"' in source
-          assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"' in source
-          active = 'from streamlit_memory_lazy_router_v134 import record_bootstrap_import_ms, render_app'
+          assert 'FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"' in source
+          assert 'FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"' in source
+          assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in source
+          active = 'from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app'
           assert source.count(active) == 1
 
           assert page.FROZEN_PRESENTATION == 'nfl_spread_hub_v2'
@@ -147,14 +165,22 @@ jobs:
           assert mc.CERTIFIED_SIMULATIONS == 5_000_000
           assert mc.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
-          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v133'
-          assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v3'
-          assert router.PROJECTION_MODEL_ENABLED is True
-          assert router.MONTE_CARLO_ENABLED is True
-          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
-          assert router.STAKE_SIZING_ENABLED is False
-          assert router.WAGER_ACTIONS_ENABLED is False
-          print('NFL_SPREAD_STEP8_V134_PROTECTION_GREEN')
+          assert router_v134.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v133'
+          assert router_v134.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v3'
+          assert router_v134.PROJECTION_MODEL_ENABLED is True
+          assert router_v134.MONTE_CARLO_ENABLED is True
+          assert router_v134.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router_v134.STAKE_SIZING_ENABLED is False
+          assert router_v134.WAGER_ACTIONS_ENABLED is False
+
+          assert router_v136.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v4'
+          assert router_v136.ACTIVE_SPREAD_V135_DEPENDENCY is False
+          assert router_v136.PROJECTION_MODEL_ENABLED is True
+          assert router_v136.MONTE_CARLO_ENABLED is True
+          assert router_v136.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router_v136.STAKE_SIZING_ENABLED is False
+          assert router_v136.WAGER_ACTIONS_ENABLED is False
+          print('NFL_SPREAD_STEP8_V136_PROTECTION_GREEN')
           PY
 
   final-step8-gate:

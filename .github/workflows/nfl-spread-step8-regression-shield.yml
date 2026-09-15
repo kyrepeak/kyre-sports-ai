@@ -4,22 +4,27 @@ on:
   push:
     branches:
       - nfl-spread-model-mc-v1
+      - nfl-spread-v136-fresh-router-activation
     paths:
       - 'app.py'
       - 'nfl_spread_hub_v1.py'
       - 'nfl_spread_hub_v2.py'
       - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_hub_v4.py'
       - 'nfl_spread_market_api_v1.py'
       - 'nfl_spread_model_v1.py'
       - 'nfl_spread_mc_v1.py'
       - 'streamlit_memory_lazy_router_v132.py'
       - 'streamlit_memory_lazy_router_v133.py'
       - 'streamlit_memory_lazy_router_v134.py'
+      - 'streamlit_memory_lazy_router_v135.py'
+      - 'streamlit_memory_lazy_router_v136.py'
       - 'tests/test_nfl_spread_fun_ui_v2.py'
       - 'tests/test_nfl_spread_model_v1.py'
       - 'tests/test_nfl_spread_mc_v1.py'
       - 'tests/test_nfl_spread_v3_model_mc.py'
       - 'tests/test_nfl_spread_v134_activation.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
       - '.github/workflows/nfl-spread-step8-regression-shield.yml'
   pull_request:
     branches:
@@ -29,17 +34,21 @@ on:
       - 'nfl_spread_hub_v1.py'
       - 'nfl_spread_hub_v2.py'
       - 'nfl_spread_hub_v3.py'
+      - 'nfl_spread_hub_v4.py'
       - 'nfl_spread_market_api_v1.py'
       - 'nfl_spread_model_v1.py'
       - 'nfl_spread_mc_v1.py'
       - 'streamlit_memory_lazy_router_v132.py'
       - 'streamlit_memory_lazy_router_v133.py'
       - 'streamlit_memory_lazy_router_v134.py'
+      - 'streamlit_memory_lazy_router_v135.py'
+      - 'streamlit_memory_lazy_router_v136.py'
       - 'tests/test_nfl_spread_fun_ui_v2.py'
       - 'tests/test_nfl_spread_model_v1.py'
       - 'tests/test_nfl_spread_mc_v1.py'
       - 'tests/test_nfl_spread_v3_model_mc.py'
       - 'tests/test_nfl_spread_v134_activation.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
       - '.github/workflows/nfl-spread-step8-regression-shield.yml'
   workflow_dispatch:
 
@@ -68,23 +77,27 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q requests pandas numpy streamlit pytest
 
-      - name: Compile complete NFL Spread Step 7 surface
+      - name: Compile frozen Step 8 plus current V136 activation surface
         run: |
           python -m py_compile app.py
           python -m py_compile nfl_spread_hub_v1.py
           python -m py_compile nfl_spread_hub_v2.py
           python -m py_compile nfl_spread_hub_v3.py
+          python -m py_compile nfl_spread_hub_v4.py
           python -m py_compile nfl_spread_model_v1.py
           python -m py_compile nfl_spread_mc_v1.py
           python -m py_compile streamlit_memory_lazy_router_v133.py
           python -m py_compile streamlit_memory_lazy_router_v134.py
+          python -m py_compile streamlit_memory_lazy_router_v135.py
+          python -m py_compile streamlit_memory_lazy_router_v136.py
           python -m py_compile tests/test_nfl_spread_fun_ui_v2.py
           python -m py_compile tests/test_nfl_spread_model_v1.py
           python -m py_compile tests/test_nfl_spread_mc_v1.py
           python -m py_compile tests/test_nfl_spread_v3_model_mc.py
           python -m py_compile tests/test_nfl_spread_v134_activation.py
+          python -m py_compile tests/test_nfl_spread_v136_activation.py
 
-      - name: Run frozen presentation plus model MC V3 activation regression tests
+      - name: Run frozen presentation and model MC regressions plus current V136 activation
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -93,7 +106,9 @@ jobs:
             tests/test_nfl_spread_model_v1.py \
             tests/test_nfl_spread_mc_v1.py \
             tests/test_nfl_spread_v3_model_mc.py \
-            tests/test_nfl_spread_v134_activation.py
+            tests/test_nfl_spread_v134_activation.py \
+            tests/test_nfl_spread_v136_activation.py \
+            -k 'not test_app_preserves_v134_and_activates_only_router_v135_for_current_bootstrap'
 
       - name: Prove frozen Step 6 and Moneyline owners are untouched
         shell: bash
@@ -112,37 +127,26 @@ jobs:
             nfl_moneyline_market_api_v1.py
           echo 'NFL_SPREAD_STEP8_FROZEN_OWNERS_GREEN'
 
-      - name: Enforce exact app V134 activation-only diff
+      - name: Prove historical heartbeats frozen and V136 is the only active bootstrap
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import subprocess
+          from pathlib import Path
 
-          step6 = '29c1f0edd5931a70ab386d9ea0b9b5b46a47ce20'
-          diff = subprocess.check_output(
-              ['git', 'diff', '--unified=0', step6, 'HEAD', '--', 'app.py'],
-              text=True,
-          )
-          changes = sorted(
-              line for line in diff.splitlines()
-              if line.startswith(('+', '-')) and not line.startswith(('+++', '---'))
-          )
-          expected = sorted([
-              '-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"',
-              '+FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"',
-              '+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"',
-              '-    from streamlit_memory_lazy_router_v133 import record_bootstrap_import_ms, render_app',
-              '+    from streamlit_memory_lazy_router_v134 import record_bootstrap_import_ms, render_app',
-          ])
-          if changes != expected:
-              print('Unexpected app.py activation changes:')
-              print('\n'.join(changes))
-              raise SystemExit(1)
-          print('NFL_SPREAD_V134_APP_ACTIVATION_ONLY_GREEN')
+          source = Path('app.py').read_text(encoding='utf-8')
+          assert 'FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"' in source
+          assert 'FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"' in source
+          assert 'FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"' in source
+          assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in source
+          active = 'from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app'
+          assert source.count(active) == 1
+          assert 'from streamlit_memory_lazy_router_v135 import record_bootstrap_import_ms, render_app' not in source
+          assert 'from streamlit_memory_lazy_router_v134 import record_bootstrap_import_ms, render_app' not in source
+          print('NFL_SPREAD_V136_CURRENT_BOOTSTRAP_GREEN')
           PY
 
-      - name: Prove full model simulation page router firewall
+      - name: Prove frozen model simulation firewall plus V136 routing firewall
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -150,12 +154,13 @@ jobs:
           import nfl_spread_model_v1 as model
           import nfl_spread_mc_v1 as mc
           import nfl_spread_hub_v3 as page
-          import streamlit_memory_lazy_router_v134 as router
+          import streamlit_memory_lazy_router_v134 as router_v134
+          import streamlit_memory_lazy_router_v136 as router_v136
 
           assert model.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           assert mc.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
-          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router_v134.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           assert mc.CERTIFIED_SIMULATIONS == 5_000_000
           assert page.CERTIFIED_SIMULATIONS == 5_000_000
           assert page.MARKET_LINE_ROLE == 'settlement_only'
@@ -164,9 +169,17 @@ jobs:
           assert page.RANKINGS_ENABLED is False
           assert page.STAKE_SIZING_ENABLED is False
           assert page.WAGER_ACTIONS_ENABLED is False
-          assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v3'
-          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v133'
-          print('NFL_SPREAD_STEP8_FULL_FIREWALL_GREEN')
+          assert router_v134.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v3'
+          assert router_v134.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v133'
+
+          assert router_v136.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v4'
+          assert router_v136.ACTIVE_SPREAD_V135_DEPENDENCY is False
+          assert router_v136.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router_v136.PROJECTION_MODEL_ENABLED is True
+          assert router_v136.MONTE_CARLO_ENABLED is True
+          assert router_v136.STAKE_SIZING_ENABLED is False
+          assert router_v136.WAGER_ACTIONS_ENABLED is False
+          print('NFL_SPREAD_STEP8_V136_COMPAT_FIREWALL_GREEN')
           PY
 
   final-step8-gate:
