@@ -56,6 +56,7 @@ jobs:
             sports_api/api/nfl_game_totals_games_v1.py \
             sports_api/collectors/nfl_fanduel_totals_v1.py \
             sports_api/collectors/nfl_game_totals_schedule_v1.py \
+            sports_api/collectors/nfl_game_totals_features_v1.py \
             tests/test_nfl_game_totals_contract_v1.py \
             tests/test_nfl_game_totals_schedule_v1.py \
             tests/test_nfl_fanduel_totals_v1.py \
