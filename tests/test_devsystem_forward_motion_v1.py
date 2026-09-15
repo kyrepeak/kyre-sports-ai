@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from devsystem.forward_motion_v1 import decide, fingerprint_action
+import pytest
+
+from devsystem.forward_motion_v1 import ForwardMotionFailure, decide, fingerprint_action
 
 
 def _ledger(*, status: str = "ACTIVE") -> dict:
@@ -103,9 +105,65 @@ def test_transient_failure_gets_exactly_one_controlled_retry():
     assert second_retry["retry_budget_remaining"] == 0
 
 
+def test_unknown_failure_gets_one_evidence_gathering_action_only():
+    action = _action(
+        action_type="gather_failure_evidence",
+        target="github:job-log",
+        retry=True,
+        failure_class="unknown",
+        new_hypothesis=True,
+        inputs={"run_id": 77, "attempt": 1},
+    )
+    fingerprint = fingerprint_action(action)
+
+    first = decide(_ledger(), action, [])
+    assert first["decision"] == "ALLOW_NEW_HYPOTHESIS"
+
+    second = decide(
+        _ledger(),
+        action,
+        [{"fingerprint": fingerprint, "result": "evidence_collected"}],
+    )
+    assert second["decision"] == "REJECT_DUPLICATE_PROOF"
+
+
 def test_unrelated_finding_is_deferred_instead_of_becoming_a_side_quest():
     result = decide(_ledger(), _action(scope_relation="unrelated"), [])
     assert result["decision"] == "DEFER_SIDE_QUEST"
+
+
+def test_second_blocker_is_deferred_while_one_blocker_is_active():
+    ledger = _ledger()
+    ledger["active_blocker"] = {
+        "blocker_id": "production-identity",
+        "checkpoint_id": "2",
+        "root_cause_class": "production_identity",
+    }
+    action = _action(
+        action_type="open_blocker",
+        target="posthog:event-proof",
+        inputs={"blocker_id": "telemetry-proof"},
+        evidence_class="telemetry",
+    )
+    result = decide(ledger, action, [])
+    assert result["decision"] == "DEFER_SIDE_QUEST"
+    assert "active blocker" in result["reason"]
+
+
+def test_evidence_for_existing_active_blocker_is_allowed():
+    ledger = _ledger()
+    ledger["active_blocker"] = {
+        "blocker_id": "production-identity",
+        "checkpoint_id": "2",
+        "root_cause_class": "production_identity",
+    }
+    action = _action(
+        action_type="attach_blocker_evidence",
+        target="production-identity",
+        inputs={"blocker_id": "production-identity", "new_sha": "def456"},
+    )
+    result = decide(ledger, action, [])
+    assert result["decision"] == "ALLOW_ADVANCE"
 
 
 def test_unresolvable_external_blocker_stops_with_single_user_action():
@@ -118,6 +176,17 @@ def test_unresolvable_external_blocker_stops_with_single_user_action():
     result = decide(_ledger(), action, [])
     assert result["decision"] == "STOP_EXTERNAL_BLOCKER"
     assert result["user_action"] == "Restart the Streamlit app once."
+
+
+def test_external_blocker_without_one_concrete_user_action_fails_closed():
+    action = _action(
+        action_type="external_blocker",
+        requires_user=True,
+        resolvable_with_available_tools=False,
+        user_action="",
+    )
+    with pytest.raises(ForwardMotionFailure, match="single concrete user_action"):
+        decide(_ledger(), action, [])
 
 
 def test_done_task_is_terminal_and_cannot_spawn_more_work():
