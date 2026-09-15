@@ -30,3 +30,31 @@ def test_streamlit_probe_ping_reports_safe_posthog_configuration_bit(monkeypatch
     assert "posthog_configured=1" in requested_urls[0]
     assert "posthog_configured=0" in requested_urls[1]
     assert "test-only" not in "".join(requested_urls)
+
+
+def test_streamlit_probe_ping_uses_streamlit_secret_without_leaking_it(monkeypatch) -> None:
+    requested_urls: list[str] = []
+
+    class FakeResponse:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+    def fake_urlopen(request, timeout: float):
+        requested_urls.append(request.full_url)
+        return FakeResponse()
+
+    monkeypatch.setattr(radar, "urlopen", fake_urlopen)
+    monkeypatch.setattr(
+        radar,
+        "_streamlit_secret_mapping",
+        lambda: {"POSTHOG_PROJECT_API_KEY": "streamlit-secret-only"},
+    )
+
+    assert radar._streamlit_probe_ping("monster-a9-streamlit-secret", {}) is True
+    assert "posthog_configured=1" in requested_urls[0]
+    assert "streamlit-secret-only" not in requested_urls[0]
