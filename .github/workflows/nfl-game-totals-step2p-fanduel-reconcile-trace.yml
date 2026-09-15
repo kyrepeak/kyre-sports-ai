@@ -1,0 +1,161 @@
+name: NFL Game Totals Step 2P FanDuel Reconcile Trace
+
+on:
+  push:
+    branches:
+      - monster/nfl-game-totals-step2p-fanduel-reconcile-trace
+    paths:
+      - .github/workflows/nfl-game-totals-step2p-fanduel-reconcile-trace.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trace-fanduel-reconciliation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trace exact FanDuel landing reconciliation
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+          import re
+          from urllib.error import HTTPError
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          HOST = "https://sbapi.az.sportsbook.fanduel.com"
+          AK = "FhMFpcPWXMeyZxOx"
+          EVENT_TYPE_ID = "7522"
+          TARGET_KICKOFF = datetime.fromisoformat("2026-09-20T17:00:00+00:00")
+          ESPN_AWAY = {"carolina panthers", "panthers", "car"}
+          ESPN_HOME = {"atlanta falcons", "falcons", "atl"}
+
+          def canon(value):
+              return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
+
+          def parse_dt(value):
+              if not value:
+                  return None
+              text = str(value).strip().replace("Z", "+00:00")
+              try:
+                  dt = datetime.fromisoformat(text)
+              except ValueError:
+                  return None
+              if dt.tzinfo is None:
+                  dt = dt.replace(tzinfo=timezone.utc)
+              return dt.astimezone(timezone.utc)
+
+          def split_name(name):
+              text = str(name or "").strip()
+              for sep in (" @ ", " at ", " v ", " vs ", " vs. "):
+                  if sep in text:
+                      away, home = text.split(sep, 1)
+                      return canon(away), canon(home), sep
+              return None
+
+          params = {
+              "page": "SPORT",
+              "eventTypeId": EVENT_TYPE_ID,
+              "_ak": AK,
+              "timezone": "America/Phoenix",
+          }
+          url = f"{HOST}/api/content-managed-page?{urlencode(params)}"
+          request = Request(
+              url,
+              headers={
+                  "Accept": "application/json",
+                  "User-Agent": "kyre-sports-ai/nfl-game-totals-v1",
+              },
+          )
+          print("TRACE_URL_HOST=sbapi.az.sportsbook.fanduel.com")
+          print(f"TRACE_EVENT_TYPE_ID={EVENT_TYPE_ID}")
+          try:
+              with urlopen(request, timeout=20) as response:
+                  print(f"HTTP_STATUS={getattr(response, 'status', 200)}")
+                  payload = json.load(response)
+          except HTTPError as exc:
+              print(f"HTTP_STATUS={exc.code}")
+              print(f"HTTP_ERROR={exc.reason}")
+              raise
+
+          attachments = payload.get("attachments") or {}
+          print("ATTACHMENT_KEYS=" + ",".join(sorted(str(k) for k in attachments.keys())))
+          raw_events = attachments.get("events") if isinstance(attachments, dict) else None
+          if isinstance(raw_events, dict):
+              rows = [row for row in raw_events.values() if isinstance(row, dict)]
+              print("EVENT_CONTAINER=dict")
+          elif isinstance(raw_events, list):
+              rows = [row for row in raw_events if isinstance(row, dict)]
+              print("EVENT_CONTAINER=list")
+          else:
+              rows = []
+              print(f"EVENT_CONTAINER={type(raw_events).__name__}")
+          print(f"EVENT_COUNT={len(rows)}")
+
+          relevant = []
+          same_day = []
+          name_matches = []
+          exact_candidates = []
+          for row in rows:
+              name = str(row.get("name") or "")
+              event_id = row.get("eventId") or row.get("id")
+              kickoff_raw = row.get("openDate") or row.get("startDate")
+              kickoff = parse_dt(kickoff_raw)
+              lower = name.lower()
+              if any(token in lower for token in ("panther", "falcon", "carolina", "atlanta")):
+                  relevant.append((name, event_id, kickoff_raw, row))
+              if kickoff and kickoff.date() == TARGET_KICKOFF.date():
+                  same_day.append((name, event_id, kickoff_raw))
+
+              split = split_name(name)
+              if split:
+                  away, home, sep = split
+                  if away in ESPN_AWAY and home in ESPN_HOME:
+                      delta = abs((kickoff - TARGET_KICKOFF).total_seconds()) if kickoff else None
+                      name_matches.append((name, event_id, kickoff_raw, delta, sep))
+                      if delta is not None and delta <= 300:
+                          exact_candidates.append((name, event_id, kickoff_raw, delta))
+
+          print(f"TEAM_SUBSTRING_ROWS={len(relevant)}")
+          for name, event_id, kickoff_raw, row in relevant[:20]:
+              print("RELEVANT_ROW=" + json.dumps({
+                  "name": name,
+                  "event_id": str(event_id) if event_id is not None else None,
+                  "openDate": row.get("openDate"),
+                  "startDate": row.get("startDate"),
+                  "eventTypeId": row.get("eventTypeId"),
+                  "competitionId": row.get("competitionId"),
+                  "competitionName": row.get("competitionName"),
+                  "type": row.get("type"),
+              }, sort_keys=True))
+
+          print(f"NAME_MATCH_COUNT={len(name_matches)}")
+          for item in name_matches:
+              print("NAME_MATCH=" + json.dumps({
+                  "name": item[0],
+                  "event_id": str(item[1]) if item[1] is not None else None,
+                  "kickoff": item[2],
+                  "kickoff_delta_seconds": item[3],
+                  "separator": item[4],
+              }, sort_keys=True))
+
+          print(f"EXACT_CANDIDATE_COUNT={len(exact_candidates)}")
+          for item in exact_candidates:
+              print("EXACT_CANDIDATE=" + json.dumps({
+                  "name": item[0],
+                  "event_id": str(item[1]) if item[1] is not None else None,
+                  "kickoff": item[2],
+                  "kickoff_delta_seconds": item[3],
+              }, sort_keys=True))
+
+          if not relevant:
+              print(f"SAME_DAY_ROWS={len(same_day)}")
+              for name, event_id, kickoff_raw in same_day[:25]:
+                  print("SAME_DAY_ROW=" + json.dumps({
+                      "name": name,
+                      "event_id": str(event_id) if event_id is not None else None,
+                      "kickoff": kickoff_raw,
+                  }, sort_keys=True))
+          PY
