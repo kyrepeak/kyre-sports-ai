@@ -86,7 +86,8 @@ def _initial_date(today: date) -> date:
 
 
 def _auto_surface_next_slate(selected: date, today: date) -> date:
-    if not AUTO_ADVANCE_EMPTY_TODAY or selected != today:
+    should_auto_advance = AUTO_ADVANCE_EMPTY_TODAY and selected == today
+    if not should_auto_advance:
         return selected
 
     day_str = selected.isoformat()
