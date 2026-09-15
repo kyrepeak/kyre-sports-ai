@@ -1,0 +1,189 @@
+name: Monster Project State V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/monster_project_state_v1.py"
+      - "tests/test_monster_project_state_v1.py"
+      - ".github/monster-project-state-v1-contract.md"
+      - ".github/workflows/monster-project-state-v1.yml"
+      - "docs/superpowers/specs/2026-09-15-monster-project-state-v1-design.md"
+      - "docs/superpowers/plans/2026-09-15-monster-project-state-v1.md"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/monster_project_state_v1.py"
+      - "tests/test_monster_project_state_v1.py"
+      - ".github/monster-project-state-v1-contract.md"
+      - ".github/workflows/monster-project-state-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-project-state-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  project-state:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install Project State test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Project State
+        run: |
+          python -m py_compile sports_api/monster_project_state_v1.py
+
+      - name: Run Project State contracts
+        run: |
+          python -m pytest -q tests/test_monster_project_state_v1.py
+
+      - name: Prove Project State has no network or process clients
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          path = Path('sports_api/monster_project_state_v1.py')
+          tree = ast.parse(path.read_text(encoding='utf-8'))
+          forbidden = {'requests', 'urllib', 'http', 'socket', 'subprocess'}
+          imported = set()
+          for node in ast.walk(tree):
+              if isinstance(node, ast.Import):
+                  imported.update(alias.name.split('.')[0] for alias in node.names)
+              elif isinstance(node, ast.ImportFrom) and node.module:
+                  imported.add(node.module.split('.')[0])
+          bad = sorted(imported & forbidden)
+          assert not bad, f'forbidden network/process imports: {bad}'
+          print('Project State source safety: no network/process clients')
+          PY
+
+      - name: Prove Project State frozen safety constants
+        run: |
+          python - <<'PY'
+          from sports_api.monster_project_state_v1 import protection_snapshot
+
+          assert protection_snapshot() == {
+              'projection_weight': 0.0,
+              'may_modify_projection': False,
+              'may_modify_source_data': False,
+              'may_modify_runtime': False,
+              'network_calls': False,
+              'auto_fix': False,
+              'authoritative_merge_gate': 'devsystem-final-gate',
+          }
+          print('Project State safety constants: GREEN')
+          PY
+
+      - name: Prove ACTIVE packet with advisory PostHog degradation
+        run: |
+          python - <<'PY'
+          from sports_api.monster_project_state_v1 import build_project_state
+
+          continuity = {
+              'version': 'MONSTER_CONTINUITY_V1',
+              'status': 'READY_TO_RESUME',
+              'task': {'id': 'ci', 'title': 'Project State CI', 'status': 'ACTIVE'},
+              'source': {'branch': 'monster-project-state-v1', 'commit': 'a' * 40, 'main_commit': 'b' * 40, 'pr_number': None},
+              'progress': {'current_step': 'Certification', 'step_title': 'Focused CI', 'step_status': 'IN_PROGRESS', 'completed_steps': ['Implementation'], 'remaining_steps': ['Certification']},
+              'last_green_evidence': ['Project State focused unit tests'],
+              'blockers': [],
+              'next_action': 'Finish focused certification.',
+              'scope': {'in_scope': ['Project State V1'], 'forbidden': ['production runtime']},
+              'drift': {'status': 'ALIGNED', 'requires_revalidation': False, 'reasons': []},
+          }
+          production = {'version': 'MONSTER_PRODUCTION_CERTIFICATION_V1', 'state': 'GREEN', 'certified': True, 'reasons': []}
+          telemetry = {'source': 'posthog', 'status': 'NOT_CONFIGURED', 'data': {'active_issue_count': 0}}
+          report = build_project_state(continuity=continuity, production=production, telemetry=telemetry)
+          assert report['state'] == 'ACTIVE', report
+          assert report['telemetry']['status'] == 'NOT_CONFIGURED'
+          assert any('telemetry advisory' in reason.lower() for reason in report['reasons'])
+          print('Project State deterministic sample: ACTIVE / PostHog advisory')
+          PY
+
+      - name: Prove Project State stays outside production entrypoints
+        run: |
+          python - <<'PY'
+          from sports_api.monster_dependency_map_v1 import build_dependency_map
+
+          graph = build_dependency_map('.')
+          report = graph.impact_report('sports_api/monster_project_state_v1.py')
+          assert report['status'] == 'OK', report
+          assert report['impacted_entrypoints'] == [], report['impacted_entrypoints']
+          print('Project State blast_radius=', report['blast_radius'], 'entrypoints=[]')
+          PY
+
+      - name: Run existing Monster one-command certification
+        run: |
+          python -m sports_api.monster_certification_v1 --json > /tmp/monster-cert.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          receipt = json.loads(Path('/tmp/monster-cert.json').read_text())
+          assert receipt['status'] == 'PASS', receipt
+          assert receipt['failed_check_count'] == 0, receipt
+          print('monster-certification:', receipt['passed_check_count'], '/', receipt['required_check_count'])
+          PY
+
+      - name: Rerun Production Certification V1 deterministic contracts
+        run: |
+          python -m pytest -q tests/test_monster_production_certification_snapshot_v1.py
+
+      - name: Enforce exact Project State branch surface
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+
+          allowed = {
+              '.github/monster-project-state-v1-contract.md',
+              '.github/workflows/monster-project-state-v1.yml',
+              'docs/superpowers/specs/2026-09-15-monster-project-state-v1-design.md',
+              'docs/superpowers/plans/2026-09-15-monster-project-state-v1.md',
+              'sports_api/monster_project_state_v1.py',
+              'tests/test_monster_project_state_v1.py',
+          }
+          implementation = {
+              '.github/monster-project-state-v1-contract.md',
+              '.github/workflows/monster-project-state-v1.yml',
+              'sports_api/monster_project_state_v1.py',
+              'tests/test_monster_project_state_v1.py',
+          }
+          raw = subprocess.check_output(
+              ['git', 'diff', '--name-only', f"{os.environ['BASE_SHA']}...HEAD"],
+              text=True,
+          )
+          actual = {line.strip() for line in raw.splitlines() if line.strip()}
+          unexpected = sorted(actual - allowed)
+          missing_implementation = sorted(implementation - actual)
+          actual_implementation = {path for path in actual if not path.startswith('docs/superpowers/')}
+          assert not unexpected, f'unexpected Project State branch files: {unexpected}'
+          assert not missing_implementation, f'missing Project State implementation files: {missing_implementation}'
+          assert actual_implementation == implementation, (actual_implementation, implementation)
+          assert actual == allowed, (actual, allowed)
+          print('Project State exact six-file branch surface: GREEN')
+          PY
