@@ -17,41 +17,48 @@ jobs:
           python -m pip install --disable-pip-version-check 'playwright==1.55.0'
           python -m playwright install --with-deps chromium
 
-      - name: Open production Streamlit like a browser and wake if sleeping
+      - name: Open production Streamlit and hold a real app session
         shell: bash
         run: |
           python - <<'PY'
           import re
           import time
-          from playwright.sync_api import sync_playwright
+          from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
           url = "https://kyre-sports-ai.streamlit.app/"
           with sync_playwright() as p:
               browser = p.chromium.launch(headless=True)
               page = browser.new_page()
               page.goto(url, wait_until="domcontentloaded", timeout=60_000)
-              time.sleep(5)
-              final_url = page.url
-              title = page.title()
-              body = page.locator("body").inner_text(timeout=10_000)
-              print(f"initial_final_url={final_url}")
-              print(f"initial_title={title}")
-              print("initial_body_prefix=" + re.sub(r"\s+", " ", body)[:500])
 
               wake = page.get_by_text("Yes, get this app back up!", exact=False)
               if wake.count() > 0:
                   print("sleep_state_detected=true")
                   wake.first.click(timeout=10_000)
-                  time.sleep(25)
-                  print(f"post_wake_url={page.url}")
-                  print(f"post_wake_title={page.title()}")
-                  print("MONSTER_A8_BROWSER_WAKE_RESULT=wake_clicked")
               else:
                   print("sleep_state_detected=false")
-                  lower = (body + " " + final_url).casefold()
-                  if "sign in" in lower or "login" in lower or "log in" in lower:
-                      print("MONSTER_A8_BROWSER_WAKE_RESULT=auth_blocked")
-                      raise SystemExit(2)
-                  print("MONSTER_A8_BROWSER_WAKE_RESULT=app_reached")
+
+              try:
+                  page.wait_for_selector('[data-testid="stAppViewContainer"]', state="visible", timeout=90_000)
+                  print("streamlit_app_container_visible=true")
+              except PlaywrightTimeoutError:
+                  print("streamlit_app_container_visible=false")
+
+              # Keep the websocket/session alive long enough for Community Cloud
+              # to start the Python ScriptRunner and execute app.py.
+              time.sleep(30)
+
+              final_url = page.url
+              title = page.title()
+              body = page.locator("body").inner_text(timeout=10_000)
+              print(f"final_url={final_url}")
+              print(f"final_title={title}")
+              print("final_body_prefix=" + re.sub(r"\s+", " ", body)[:1200])
+
+              lower = (body + " " + final_url).casefold()
+              if "sign in" in lower or "login" in lower or "log in" in lower:
+                  print("MONSTER_A8_BROWSER_WAKE_RESULT=auth_blocked")
+                  raise SystemExit(2)
+              print("MONSTER_A8_BROWSER_WAKE_RESULT=session_held")
               browser.close()
           PY
