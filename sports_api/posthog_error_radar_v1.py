@@ -281,6 +281,3 @@ def run_streamlit_activation_probe(
         "marker": marker,
         "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
     }
-
-
-_STREAMLIT_ACTIVATION_RESULT = run_streamlit_activation_probe()
