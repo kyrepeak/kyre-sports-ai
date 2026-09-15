@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
-from typing import Any
+from typing import Any, Callable, Mapping, Sequence
 
 _LOGGER = logging.getLogger("kyre.monster_error_radar")
 _CLIENT: Any | None = None
@@ -18,6 +18,9 @@ _CLIENT_LOCK = threading.Lock()
 
 ERROR_RADAR_VERSION = "MONSTER_ERROR_RADAR_V1"
 DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com"
+STREAMLIT_PROBE_VERSION = "MONSTER_STREAMLIT_TELEMETRY_PROBE_V1"
+STREAMLIT_PROBE_FINGERPRINT = "MONSTER-A8-STREAMLIT-PROBE-V1"
+STREAMLIT_PROBE_MESSAGE = "Monster Streamlit certification synthetic exception probe"
 
 
 def _env_first(*names: str, default: str = "") -> str:
@@ -117,3 +120,72 @@ def capture_runtime_exception(
             capture_error.__class__.__name__,
         )
         return False
+
+
+def run_streamlit_activation_probe(
+    *,
+    argv: Sequence[str],
+    environ: Mapping[str, str],
+    ping_fn: Callable[[str], bool],
+    capture_fn: Callable[..., bool],
+    flush_fn: Callable[[], bool],
+    marker_factory: Callable[[], str],
+) -> dict[str, Any]:
+    """Run one fail-open A8 certification probe for a Streamlit process."""
+    del environ  # reserved for the production wrapper added after core certification
+    eligible = any("streamlit" in str(part).casefold() for part in argv)
+    if not eligible:
+        return {
+            "status": "ineligible",
+            "eligible": False,
+            "runtime_pinged": False,
+            "accepted": False,
+            "flushed": False,
+            "marker": None,
+            "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
+        }
+
+    marker = marker_factory()
+    runtime_pinged = False
+    accepted = False
+    flushed = False
+
+    try:
+        runtime_pinged = bool(ping_fn(marker))
+    except Exception as exc:
+        _LOGGER.warning("MONSTER_A8_STREAMLIT_PING_FAILED %s", exc.__class__.__name__)
+
+    probe_error = RuntimeError(STREAMLIT_PROBE_MESSAGE)
+    try:
+        accepted = bool(
+            capture_fn(
+                probe_error,
+                error_fingerprint=STREAMLIT_PROBE_FINGERPRINT,
+                surface="streamlit",
+                path="app.py",
+                properties={
+                    "monster_streamlit_certification_probe": marker,
+                    "synthetic_certification_probe": True,
+                    "probe_version": STREAMLIT_PROBE_VERSION,
+                },
+            )
+        )
+    except Exception as exc:
+        _LOGGER.warning("MONSTER_A8_STREAMLIT_CAPTURE_FAILED %s", exc.__class__.__name__)
+
+    if accepted:
+        try:
+            flushed = bool(flush_fn())
+        except Exception as exc:
+            _LOGGER.warning("MONSTER_A8_STREAMLIT_FLUSH_FAILED %s", exc.__class__.__name__)
+
+    status = "flushed" if accepted and flushed else "queued" if accepted else "not_accepted"
+    return {
+        "status": status,
+        "eligible": True,
+        "runtime_pinged": runtime_pinged,
+        "accepted": accepted,
+        "flushed": flushed,
+        "marker": marker,
+        "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
+    }
