@@ -17,7 +17,7 @@ from typing import Any, Iterable
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-ESPN_SUMMARY_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary"
+ESPN_SUMMARY_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/summary"
 FANDUEL_HOST = os.getenv("FANDUEL_SBAPI_HOST", "https://sbapi.az.sportsbook.fanduel.com").rstrip("/")
 FANDUEL_PUBLIC_AK = os.getenv("FANDUEL_PUBLIC_AK", "FhMFpcPWXMeyZxOx")
 FANDUEL_NFL_EVENT_TYPE_ID = os.getenv("FANDUEL_NFL_EVENT_TYPE_ID", "7522")
