@@ -1,6 +1,9 @@
 name: NFL Game Totals Market API V1
 
 on:
+  push:
+    branches:
+      - monster/nfl-game-totals-api-v1
   pull_request:
     branches: [main]
     paths:
