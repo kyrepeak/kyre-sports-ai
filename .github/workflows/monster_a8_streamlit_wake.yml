@@ -14,14 +14,11 @@ jobs:
       - name: Wake production Streamlit once
         shell: bash
         run: |
-          python - <<'PY'
-          from urllib.request import Request, urlopen
-
-          url = "https://kyre-sports-ai.streamlit.app/"
-          request = Request(url, headers={"User-Agent": "monster-a8-production-wake/1"})
-          with urlopen(request, timeout=30) as response:
-              status = int(getattr(response, "status", 0))
-              print(f"production_streamlit_http_status={status}")
-              if not 200 <= status < 400:
-                  raise SystemExit(f"unexpected Streamlit status: {status}")
-          PY
+          set -euo pipefail
+          status="$(curl --silent --show-error --location --max-redirs 3 --connect-timeout 10 --max-time 30 --output /tmp/streamlit-health.txt --write-out '%{http_code}' -A 'monster-a8-production-wake/1' 'https://kyre-sports-ai.streamlit.app/_stcore/health')"
+          echo "production_streamlit_health_status=${status}"
+          cat /tmp/streamlit-health.txt || true
+          case "${status}" in
+            2*|3*) ;;
+            *) exit 1 ;;
+          esac
