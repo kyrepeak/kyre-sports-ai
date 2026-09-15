@@ -109,11 +109,13 @@ def test_football_modules_do_not_import_market_or_frozen_spread_logic():
             assert token not in text, f"{path} illegally references {token}"
 
 
-def test_game_totals_is_still_not_attached_to_shared_host_before_step_12():
+def test_game_totals_is_now_attached_to_certified_shared_host():
     health_source = Path("sports_api/api/health.py").read_text(encoding="utf-8")
-    assert "nfl_game_totals" not in health_source
+    assert "nfl_game_totals_games_router" in health_source
+    assert "nfl_game_totals_market_router" in health_source
+    assert "nfl_game_totals_analysis_router" in health_source
     status = market.game_totals_market_status()
-    assert status["shared_host_attached"] is False
+    assert status["shared_host_attached"] is True
 
 
 def test_isolated_router_has_only_game_totals_market_paths():
