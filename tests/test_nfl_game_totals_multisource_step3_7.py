@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import inspect
 
+import sports_api.nfl_game_totals_explosive_context_v1 as explosive
 import sports_api.nfl_game_totals_pace_context_v1 as pace
+import sports_api.nfl_game_totals_red_zone_drive_context_v1 as redzone
 import sports_api.nfl_game_totals_scoring_context_v1 as scoring
 
 
@@ -176,3 +178,171 @@ def test_step3_and_step4_acquisition_no_longer_call_requests_directly():
     assert "espn.fetch_scoring_games" in scoring_source
     assert "nflverse.fetch_pace" in pace_source
     assert "espn.fetch_pace" in pace_source
+
+
+def test_step5_router_result_preserves_explosive_projection_field_and_provenance(monkeypatch):
+    def fake_explosive_route(team_abbr: str, season: int):
+        rate = 4.0 if team_abbr == "BUF" else 3.0
+        return {
+            "ready": True,
+            "metric": "explosive",
+            "data": {
+                "games_played": 2,
+                "rushing_big_plays": 3.0,
+                "receiving_big_plays": 5.0,
+                "total_big_plays": 8.0,
+                "rushing_big_plays_per_game": 1.5,
+                "receiving_big_plays_per_game": 2.5,
+                "explosive_plays_per_game": rate,
+            },
+            "provider_used": "nflverse",
+            "fallback_rank": 1,
+            "data_freshness": "2026-09-15T22:00:00Z",
+            "fields_verified": ["explosive_plays_per_game"],
+            "quality": "HIGH",
+            "diagnostics": [],
+            "provider_attempts": [],
+        }
+
+    monkeypatch.setattr(explosive, "route_explosive", fake_explosive_route)
+    result = explosive.build_matchup_explosive_context(
+        "BUF",
+        "Buffalo Bills",
+        "MIA",
+        "Miami Dolphins",
+        "2026-09-20",
+    )
+
+    assert result["ready"] is True
+    assert result["matchup"]["average_explosive_plays_per_game"] == 3.5
+    assert result["matchup"]["signal"] == "BALANCED"
+    assert result["sportsbook_projection_weight"] == 0.0
+    assert result["provenance"]["away"]["provider_used"] == "nflverse"
+
+
+def test_step6_router_preserves_existing_projection_fields_and_adds_real_drive_context(monkeypatch):
+    def fake_red_zone_route(team_abbr: str, season: int):
+        if team_abbr == "BUF":
+            data = {
+                "red_zone_td_pct": 60.0,
+                "third_down_conv_pct": 45.0,
+                "first_downs_per_game": 23.0,
+                "drives_per_game": 11.0,
+            }
+        else:
+            data = {
+                "red_zone_td_pct": 50.0,
+                "third_down_conv_pct": 40.0,
+                "first_downs_per_game": 21.0,
+                "drives_per_game": 9.0,
+            }
+        return {
+            "ready": True,
+            "metric": "red_zone_drive",
+            "data": data,
+            "provider_used": "nflverse",
+            "fallback_rank": 1,
+            "data_freshness": "2026-09-15T22:00:00Z",
+            "fields_verified": list(data),
+            "quality": "HIGH",
+            "diagnostics": [],
+            "provider_attempts": [],
+        }
+
+    monkeypatch.setattr(redzone, "route_red_zone_drive", fake_red_zone_route)
+    result = redzone.build_matchup_red_zone_drive_context(
+        "BUF",
+        "Buffalo Bills",
+        "MIA",
+        "Miami Dolphins",
+        "2026-09-20",
+    )
+
+    assert result["ready"] is True
+    assert result["matchup"]["average_red_zone_td_pct"] == 55.0
+    assert result["matchup"]["average_third_down_conv_pct"] == 42.5
+    assert result["matchup"]["average_first_downs_per_game"] == 22.0
+    assert result["drive_count_available"] is True
+    assert result["matchup"]["average_drives_per_game"] == 10.0
+    assert result["sportsbook_projection_weight"] == 0.0
+    assert result["provenance"]["home"]["provider_used"] == "nflverse"
+
+
+def test_step6_espn_fallback_remains_ready_without_drive_count(monkeypatch):
+    def fallback_route(team_abbr: str, season: int):
+        return {
+            "ready": True,
+            "metric": "red_zone_drive",
+            "data": {
+                "red_zone_td_pct": 52.0,
+                "third_down_conv_pct": 41.0,
+                "first_downs_per_game": 21.0,
+            },
+            "provider_used": "ESPN NFL team statistics",
+            "fallback_rank": 2,
+            "data_freshness": "2026-09-15T22:00:00Z",
+            "fields_verified": [
+                "red_zone_td_pct",
+                "third_down_conv_pct",
+                "first_downs_per_game",
+            ],
+            "quality": "HIGH",
+            "diagnostics": ["nflverse unavailable"],
+            "provider_attempts": [],
+        }
+
+    monkeypatch.setattr(redzone, "route_red_zone_drive", fallback_route)
+    result = redzone.build_matchup_red_zone_drive_context(
+        "BUF",
+        "Buffalo Bills",
+        "MIA",
+        "Miami Dolphins",
+        "2026-09-20",
+    )
+
+    assert result["ready"] is True
+    assert result["drive_count_available"] is False
+    assert "average_drives_per_game" not in result["matchup"]
+    assert result["provenance"]["away"]["fallback_rank"] == 2
+
+
+def test_step5_and_step6_provider_failure_stays_fail_closed(monkeypatch):
+    def unavailable(*args):
+        return {
+            "ready": False,
+            "data": {},
+            "provider_used": "",
+            "fallback_rank": 0,
+            "data_freshness": "",
+            "fields_verified": [],
+            "quality": "UNAVAILABLE",
+            "diagnostics": ["all certified providers failed"],
+            "provider_attempts": [],
+        }
+
+    monkeypatch.setattr(explosive, "route_explosive", unavailable)
+    monkeypatch.setattr(redzone, "route_red_zone_drive", unavailable)
+
+    explosive_result = explosive.build_matchup_explosive_context(
+        "BUF", "Buffalo Bills", "MIA", "Miami Dolphins", "2026-09-20"
+    )
+    redzone_result = redzone.build_matchup_red_zone_drive_context(
+        "BUF", "Buffalo Bills", "MIA", "Miami Dolphins", "2026-09-20"
+    )
+
+    assert explosive_result["ready"] is False
+    assert redzone_result["ready"] is False
+
+
+def test_step5_and_step6_acquisition_no_longer_call_requests_directly():
+    explosive_source = inspect.getsource(explosive)
+    redzone_source = inspect.getsource(redzone)
+
+    assert "requests.get(" not in explosive_source
+    assert "requests.get(" not in redzone_source
+    assert "route_metric(" in explosive_source
+    assert "route_metric(" in redzone_source
+    assert "nflverse.fetch_explosive" in explosive_source
+    assert "espn.fetch_explosive" in explosive_source
+    assert "nflverse.fetch_red_zone_drive" in redzone_source
+    assert "espn.fetch_red_zone_drive" in redzone_source
