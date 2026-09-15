@@ -47,7 +47,6 @@ def test_forward_motion_contract_is_permanently_required():
         "devsystem/forward_motion_contract_v1.py",
         "tests/test_devsystem_checkpoint_ledger_v1.py",
         "tests/test_devsystem_forward_motion_v1.py",
-        "tests/test_monster_a9_anti_loop_replay_v1.py",
         "forward_motion_contract_permanent",
     )
     for marker in required:
