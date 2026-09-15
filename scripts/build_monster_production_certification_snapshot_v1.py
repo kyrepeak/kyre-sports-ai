@@ -6,10 +6,14 @@ it does not deploy, mutate Render, or alter sports runtime/projection behavior.
 from __future__ import annotations
 
 from collections.abc import Mapping
+import json
 from typing import Any
+from urllib.request import Request, urlopen
 
 VERSION = "MONSTER_PRODUCTION_CERTIFICATION_V1"
 ALLOWED_HTTP_METHODS = frozenset({"GET"})
+HTTP_TIMEOUT_SECONDS = 20
+MAX_JSON_BYTES = 2_000_000
 _GREEN_GUARD_VALUES = frozenset({"green", "success", "passed", "pass", "ok", "true"})
 
 
@@ -28,6 +32,60 @@ def _valid_sha(value: Any) -> bool:
 
 def _normalized_guard_value(value: Any) -> str:
     return _text(value).lower()
+
+
+def get_json(url: str, *, opener=urlopen) -> dict[str, Any]:
+    """Fetch one JSON object with a bounded, GET-only request."""
+    request = Request(
+        str(url),
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "KyreSportsAI-MonsterProductionCertificationV1/1.0",
+        },
+        method="GET",
+    )
+    with opener(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+        status = int(getattr(response, "status", 0) or 0)
+        if status != 200:
+            raise RuntimeError(f"GET {url} returned HTTP {status}")
+        raw = response.read(MAX_JSON_BYTES + 1)
+    if len(raw) > MAX_JSON_BYTES:
+        raise RuntimeError(f"GET {url} exceeded {MAX_JSON_BYTES} bytes")
+    payload = json.loads(raw.decode("utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"GET {url} returned non-object JSON")
+    return payload
+
+
+def collect_runtime_health(
+    base_url: str,
+    *,
+    fetch_json=get_json,
+) -> dict[str, dict[str, Any]]:
+    """Read only the certified liveness and readiness endpoints."""
+    base = str(base_url).rstrip("/")
+    return {
+        "health": fetch_json(f"{base}/health"),
+        "readiness": fetch_json(f"{base}/health/ready"),
+    }
+
+
+def normalize_render_evidence(
+    service: Mapping[str, Any],
+    deploy: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Normalize the read-only Render service/deploy shape used by the classifier."""
+    service_map = _mapping(service) or {}
+    deploy_map = _mapping(deploy) or {}
+    commit_map = _mapping(deploy_map.get("commit")) or {}
+    return {
+        "branch": _text(service_map.get("branch")),
+        "commit": _text(commit_map.get("id")).lower(),
+        "status": _text(deploy_map.get("status")).lower(),
+        "service_id": _text(service_map.get("id")),
+        "deploy_id": _text(deploy_map.get("id")),
+        "auto_deploy": _text(service_map.get("autoDeploy")).lower(),
+    }
 
 
 def _unknown_reasons(
