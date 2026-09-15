@@ -9,8 +9,7 @@ on:
       - main
     paths:
       - nfl_game_totals_hub_v1.py
-      - streamlit_memory_lazy_router_v137.py
-      - app.py
+      - nfl_hub_v18.py
       - tests/test_nfl_game_totals_page_step1.py
       - .github/workflows/nfl-game-totals-page-step1.yml
   workflow_dispatch:
