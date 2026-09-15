@@ -1,9 +1,9 @@
-"""Official ESPN NFL schedule/identity layer for Game Totals V1.
+"""Official ESPN NFL schedule/identity + metadata layer for Game Totals V1.
 
 This module is sportsbook-free. It establishes exact official game identity for
-one requested NFL calendar date and is safe to use for current or future
-supported slates. Unknown/malformed identities fail closed; no fuzzy names or
-synthetic event/team IDs are permitted.
+one requested NFL calendar date and is safe for current/future supported slates.
+Unknown identities fail closed; optional venue metadata never fabricates values
+and never causes an otherwise valid official game to be dropped.
 """
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from datetime import date, datetime, timezone
 from typing import Any, Mapping
 
 from sports_api.collectors import nfl_fanduel_passing_yards as base
-
 
 SCHEMA_VERSION = "nfl_game_totals_schedule_v1"
 ESPN_SITE_BASES = (
@@ -62,6 +61,23 @@ def _team_identity(row: Mapping[str, Any], side: str) -> dict[str, str]:
     return {"team_id": team_id, "abbr": abbr, "name": name}
 
 
+def _venue_metadata(competition: Mapping[str, Any]) -> dict[str, Any]:
+    venue = competition.get("venue") if isinstance(competition.get("venue"), Mapping) else {}
+    address = (venue or {}).get("address") if isinstance((venue or {}).get("address"), Mapping) else {}
+    name = _text((venue or {}).get("fullName") or (venue or {}).get("name"))
+    city = _text((address or {}).get("city"))
+    state = _text((address or {}).get("state"))
+    indoor_raw = (venue or {}).get("indoor")
+    indoor = indoor_raw if isinstance(indoor_raw, bool) else None
+    return {
+        "available": bool(name),
+        "name": name or None,
+        "city": city or None,
+        "state": state or None,
+        "indoor": indoor,
+    }
+
+
 def _parse_event(raw: Mapping[str, Any]) -> dict[str, Any]:
     event_id = _text(raw.get("id"))
     if not event_id.isdigit():
@@ -107,6 +123,8 @@ def _parse_event(raw: Mapping[str, Any]) -> dict[str, Any]:
         },
         "away": sides["away"],
         "home": sides["home"],
+        "venue": _venue_metadata(competition),
+        "neutral_site": bool(competition.get("neutralSite")),
         "identity_policy": {
             "official_authority": "ESPN",
             "fuzzy_matching": False,
@@ -135,6 +153,7 @@ def parse_espn_scoreboard(payload: Mapping[str, Any], game_date: date | str) -> 
         games.append(game)
 
     games.sort(key=lambda row: (row["kickoff_utc"], row["official_event_id"]))
+    venue_available_count = sum(1 for game in games if game["venue"]["available"])
     return {
         "schema_version": SCHEMA_VERSION,
         "service": "Kyre Sports API",
@@ -142,6 +161,8 @@ def parse_espn_scoreboard(payload: Mapping[str, Any], game_date: date | str) -> 
         "official_authority": "ESPN",
         "requested_date": requested.isoformat(),
         "game_count": len(games),
+        "venue_available_count": venue_available_count,
+        "venue_missing_count": len(games) - venue_available_count,
         "games": games,
         "identity_policy": {
             "official_event_id_required": True,
