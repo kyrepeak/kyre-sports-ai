@@ -9,24 +9,26 @@ from scripts import build_monster_production_certification_snapshot_v1 as monste
 COMMIT_A = "a" * 40
 COMMIT_B = "b" * 40
 OBSERVED_AT = "2026-09-15T05:30:00+00:00"
+RUNTIME_BRANCH = "mlb-step17b-shared-host-cert"
 
 
 def _inputs():
     return {
         "github": {
-            "branch": "main",
+            "branch": RUNTIME_BRANCH,
             "commit": COMMIT_A,
         },
         "render": {
-            "branch": "mlb-step17b-shared-host-cert",
+            "branch": RUNTIME_BRANCH,
             "commit": COMMIT_A,
             "status": "live",
+            "auto_deploy": "no",
         },
         "health": {
             "status": "ok",
             "service": "kyre-sports-api",
             "deployment": {
-                "branch": "mlb-step17b-shared-host-cert",
+                "branch": RUNTIME_BRANCH,
                 "commit": COMMIT_A,
                 "branch_aligned": True,
             },
@@ -40,10 +42,10 @@ def _inputs():
                 "runtime_branch_alignment": True,
             },
             "deployment": {
-                "branch": "mlb-step17b-shared-host-cert",
+                "branch": RUNTIME_BRANCH,
                 "commit": COMMIT_A,
                 "canonical_source_branch": "main",
-                "expected_runtime_branch": "mlb-step17b-shared-host-cert",
+                "expected_runtime_branch": RUNTIME_BRANCH,
                 "aligned": True,
             },
         },
@@ -74,13 +76,14 @@ def test_green_when_commit_identity_readiness_and_guards_agree():
     assert snapshot["state"] == "GREEN"
     assert snapshot["certified"] is True
     assert snapshot["identity"] == {
-        "github_branch": "main",
+        "github_branch": RUNTIME_BRANCH,
         "github_commit": COMMIT_A,
-        "render_branch": "mlb-step17b-shared-host-cert",
+        "render_branch": RUNTIME_BRANCH,
         "render_commit": COMMIT_A,
-        "health_branch": "mlb-step17b-shared-host-cert",
+        "health_branch": RUNTIME_BRANCH,
         "health_commit": COMMIT_A,
     }
+    assert snapshot["render_auto_deploy"] == "no"
     assert snapshot["reasons"] == []
     assert monster.certification_exit_code(snapshot) == 0
 
@@ -121,6 +124,17 @@ def test_render_and_health_commit_disagreement_is_identity_conflict():
     assert snapshot["certified"] is False
 
 
+def test_intended_github_runtime_branch_must_match_render_branch():
+    values = _inputs()
+    values["github"]["branch"] = "main"
+
+    snapshot = _build(values)
+
+    assert snapshot["state"] == "IDENTITY_CONFLICT"
+    assert snapshot["certified"] is False
+    assert "branch" in " ".join(snapshot["reasons"]).lower()
+
+
 @pytest.mark.parametrize("health_status", ["error", "down", "unknown", None])
 def test_unhealthy_runtime_blocks_certification(health_status):
     values = _inputs()
@@ -158,6 +172,7 @@ def test_not_ready_when_readiness_status_is_not_ready():
     [
         lambda values: values["github"].pop("commit"),
         lambda values: values["render"].pop("commit"),
+        lambda values: values["render"].pop("auto_deploy"),
         lambda values: values["health"].pop("deployment"),
         lambda values: values["readiness"].pop("checks"),
         lambda values: values.update(guards={}),
@@ -186,6 +201,17 @@ def test_guard_failure_blocks_otherwise_aligned_identity():
     assert snapshot["guards"]["permanent-freeze"] == "failure"
 
 
+def test_auto_deploy_must_remain_off_for_certification():
+    values = _inputs()
+    values["render"]["auto_deploy"] = "yes"
+
+    snapshot = _build(values)
+
+    assert snapshot["state"] == "GUARD_FAILED"
+    assert snapshot["certified"] is False
+    assert "auto-deploy" in " ".join(snapshot["reasons"]).lower()
+
+
 def test_same_normalized_inputs_produce_identical_snapshot():
     first = _build()
     second = _build()
@@ -211,7 +237,7 @@ def test_normalize_render_evidence_uses_service_branch_and_live_deploy_commit():
     service = {
         "id": "srv-test",
         "name": "kyre-sports-api",
-        "branch": "mlb-step17b-shared-host-cert",
+        "branch": RUNTIME_BRANCH,
         "autoDeploy": "no",
     }
     deploy = {
@@ -223,7 +249,7 @@ def test_normalize_render_evidence_uses_service_branch_and_live_deploy_commit():
     normalized = monster.normalize_render_evidence(service, deploy)
 
     assert normalized == {
-        "branch": "mlb-step17b-shared-host-cert",
+        "branch": RUNTIME_BRANCH,
         "commit": COMMIT_A,
         "status": "live",
         "service_id": "srv-test",
@@ -308,7 +334,7 @@ def test_get_json_rejects_non_object_payload():
 def test_runtime_source_branch_can_be_green_independently_of_canonical_main_name():
     values = _inputs()
     values["github"] = {
-        "branch": "mlb-step17b-shared-host-cert",
+        "branch": RUNTIME_BRANCH,
         "commit": COMMIT_A,
         "canonical_branch": "main",
         "canonical_commit": COMMIT_B,
@@ -318,4 +344,4 @@ def test_runtime_source_branch_can_be_green_independently_of_canonical_main_name
 
     assert snapshot["state"] == "GREEN"
     assert snapshot["certified"] is True
-    assert snapshot["identity"]["github_branch"] == "mlb-step17b-shared-host-cert"
+    assert snapshot["identity"]["github_branch"] == RUNTIME_BRANCH
