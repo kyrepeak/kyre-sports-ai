@@ -111,7 +111,8 @@ def test_streamlit_activation_probe_has_safe_no_arg_defaults(monkeypatch) -> Non
     assert result["status"] == "ineligible"
 
 
-def test_streamlit_entrypoint_invokes_probe_before_render() -> None:
-    source = Path("app.py").read_text(encoding="utf-8")
-    assert "run_streamlit_activation_probe" in source
-    assert source.index("run_streamlit_activation_probe()") < source.index("render_app()")
+def test_streamlit_probe_self_activates_before_render() -> None:
+    radar_source = Path("sports_api/posthog_error_radar_v1.py").read_text(encoding="utf-8")
+    app_source = Path("app.py").read_text(encoding="utf-8")
+    assert "_STREAMLIT_ACTIVATION_RESULT = run_streamlit_activation_probe()" in radar_source
+    assert app_source.index("from sports_api.posthog_error_radar_v1 import") < app_source.index("render_app()")
