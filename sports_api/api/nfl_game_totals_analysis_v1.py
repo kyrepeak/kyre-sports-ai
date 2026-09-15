@@ -288,7 +288,7 @@ def game_totals_analysis_status():
     return {
         "status": "analysis_ready",
         "endpoint": "/api/v1/nfl/game-totals/analysis",
-        "shared_host_attached": False,
+        "shared_host_attached": True,
         **CONTRACT,
     }
 
