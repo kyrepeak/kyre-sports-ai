@@ -29,11 +29,56 @@ DEFAULT_STREAMLIT_PROBE_HEALTH_URL = "https://kyre-sports-api.onrender.com/healt
 STREAMLIT_PROBE_VERSION = "MONSTER_STREAMLIT_TELEMETRY_PROBE_V1"
 STREAMLIT_PROBE_FINGERPRINT = "MONSTER-A8-STREAMLIT-PROBE-V1"
 STREAMLIT_PROBE_MESSAGE = "Monster Streamlit certification synthetic exception probe"
+STREAMLIT_PROBE_SESSION_KEY = "monster_a9_streamlit_probe_v1"
+_STREAMLIT_RUNTIME_SECRET_NAMES = (
+    "POSTHOG_PROJECT_API_KEY",
+    "POSTHOG_API_KEY",
+    "POSTHOG_HOST",
+)
 
 
 def _env_first(*names: str, default: str = "") -> str:
     for name in names:
         value = os.getenv(name)
+        if value:
+            return value
+    return default
+
+
+def _streamlit_secret_mapping() -> dict[str, str]:
+    """Return only telemetry-related Streamlit secrets, never the whole store."""
+    try:
+        import streamlit as st
+
+        secrets = st.secrets
+    except Exception:
+        return {}
+
+    values: dict[str, str] = {}
+    for name in _STREAMLIT_RUNTIME_SECRET_NAMES:
+        try:
+            value = secrets.get(name)
+        except Exception:
+            continue
+        if value is not None and str(value).strip():
+            values[name] = str(value).strip()
+    return values
+
+
+def _runtime_first(
+    *names: str,
+    environ: Mapping[str, str] | None = None,
+    default: str = "",
+) -> str:
+    runtime_environ = os.environ if environ is None else environ
+    for name in names:
+        value = runtime_environ.get(name)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+
+    secrets = _streamlit_secret_mapping()
+    for name in names:
+        value = secrets.get(name)
         if value:
             return value
     return default
@@ -49,7 +94,7 @@ def _posthog_client() -> Any | None:
         if _CLIENT_INITIALIZED:
             return _CLIENT
 
-        project_key = _env_first("POSTHOG_PROJECT_API_KEY", "POSTHOG_API_KEY")
+        project_key = _runtime_first("POSTHOG_PROJECT_API_KEY", "POSTHOG_API_KEY")
         if not project_key:
             _CLIENT_INITIALIZED = True
             return None
@@ -59,7 +104,7 @@ def _posthog_client() -> Any | None:
 
             _CLIENT = Posthog(
                 project_api_key=project_key,
-                host=_env_first("POSTHOG_HOST", default=DEFAULT_POSTHOG_HOST),
+                host=_runtime_first("POSTHOG_HOST", default=DEFAULT_POSTHOG_HOST),
                 enable_exception_autocapture=True,
                 capture_exception_code_variables=False,
             )
@@ -74,11 +119,11 @@ def _posthog_client() -> Any | None:
 
 def radar_status() -> dict[str, Any]:
     """Return non-secret configuration state for diagnostics and CI."""
-    configured = bool(_env_first("POSTHOG_PROJECT_API_KEY", "POSTHOG_API_KEY"))
+    configured = bool(_runtime_first("POSTHOG_PROJECT_API_KEY", "POSTHOG_API_KEY"))
     return {
         "version": ERROR_RADAR_VERSION,
         "configured": configured,
-        "host": _env_first("POSTHOG_HOST", default=DEFAULT_POSTHOG_HOST),
+        "host": _runtime_first("POSTHOG_HOST", default=DEFAULT_POSTHOG_HOST),
     }
 
 
@@ -142,11 +187,11 @@ def _streamlit_probe_ping(marker: str, environ: Mapping[str, str]) -> bool:
         or environ.get("KYRE_API_HEALTH_URL")
         or DEFAULT_STREAMLIT_PROBE_HEALTH_URL
     ).strip()
-    posthog_configured = "1" if str(
-        environ.get("POSTHOG_PROJECT_API_KEY")
-        or environ.get("POSTHOG_API_KEY")
-        or ""
-    ).strip() else "0"
+    posthog_configured = "1" if _runtime_first(
+        "POSTHOG_PROJECT_API_KEY",
+        "POSTHOG_API_KEY",
+        environ=environ,
+    ) else "0"
     separator = "&" if "?" in base_url else "?"
     target = f"{base_url}{separator}{urlencode({'monster_a8_marker': marker, 'posthog_configured': posthog_configured})}"
     request = Request(target, headers={"User-Agent": "monster-a8-streamlit-cert/1"})
@@ -193,6 +238,50 @@ def _is_streamlit_runtime(argv: Sequence[str]) -> bool:
     return False
 
 
+def _record_streamlit_probe_state(
+    result: Mapping[str, Any],
+    environ: Mapping[str, str],
+) -> None:
+    """Store non-secret A9 probe evidence in Streamlit session state."""
+    try:
+        import streamlit as st
+
+        safe_result = dict(result)
+        safe_result["posthog_configured"] = bool(
+            _runtime_first(
+                "POSTHOG_PROJECT_API_KEY",
+                "POSTHOG_API_KEY",
+                environ=environ,
+            )
+        )
+        st.session_state[STREAMLIT_PROBE_SESSION_KEY] = safe_result
+    except Exception as exc:
+        _LOGGER.debug("MONSTER_A9_STREAMLIT_STATE_UNAVAILABLE %s", exc.__class__.__name__)
+
+
+def _probe_result(
+    *,
+    status: str,
+    eligible: bool,
+    runtime_pinged: bool,
+    accepted: bool,
+    flushed: bool,
+    marker: str | None,
+    environ: Mapping[str, str],
+) -> dict[str, Any]:
+    result = {
+        "status": status,
+        "eligible": eligible,
+        "runtime_pinged": runtime_pinged,
+        "accepted": accepted,
+        "flushed": flushed,
+        "marker": marker,
+        "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
+    }
+    _record_streamlit_probe_state(result, environ)
+    return result
+
+
 def run_streamlit_activation_probe(
     *,
     argv: Sequence[str] | None = None,
@@ -209,27 +298,27 @@ def run_streamlit_activation_probe(
     runtime_environ = os.environ if environ is None else environ
     eligible = _is_streamlit_runtime(runtime_argv)
     if not eligible:
-        return {
-            "status": "ineligible",
-            "eligible": False,
-            "runtime_pinged": False,
-            "accepted": False,
-            "flushed": False,
-            "marker": None,
-            "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
-        }
+        return _probe_result(
+            status="ineligible",
+            eligible=False,
+            runtime_pinged=False,
+            accepted=False,
+            flushed=False,
+            marker=None,
+            environ=runtime_environ,
+        )
 
     with _STREAMLIT_PROBE_LOCK:
         if _STREAMLIT_PROBE_RAN:
-            return {
-                "status": "already_ran",
-                "eligible": True,
-                "runtime_pinged": False,
-                "accepted": False,
-                "flushed": False,
-                "marker": None,
-                "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
-            }
+            return _probe_result(
+                status="already_ran",
+                eligible=True,
+                runtime_pinged=False,
+                accepted=False,
+                flushed=False,
+                marker=None,
+                environ=runtime_environ,
+            )
         _STREAMLIT_PROBE_RAN = True
 
     marker_builder = marker_factory or _streamlit_probe_marker
@@ -240,15 +329,15 @@ def run_streamlit_activation_probe(
         marker = marker_builder()
     except Exception as exc:
         _LOGGER.warning("MONSTER_A8_STREAMLIT_MARKER_FAILED %s", exc.__class__.__name__)
-        return {
-            "status": "marker_failed",
-            "eligible": True,
-            "runtime_pinged": False,
-            "accepted": False,
-            "flushed": False,
-            "marker": None,
-            "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
-        }
+        return _probe_result(
+            status="marker_failed",
+            eligible=True,
+            runtime_pinged=False,
+            accepted=False,
+            flushed=False,
+            marker=None,
+            environ=runtime_environ,
+        )
 
     actual_ping = ping_fn or (lambda value: _streamlit_probe_ping(value, runtime_environ))
     runtime_pinged = False
@@ -285,12 +374,12 @@ def run_streamlit_activation_probe(
             _LOGGER.warning("MONSTER_A8_STREAMLIT_FLUSH_FAILED %s", exc.__class__.__name__)
 
     status = "flushed" if accepted and flushed else "queued" if accepted else "not_accepted"
-    return {
-        "status": status,
-        "eligible": True,
-        "runtime_pinged": runtime_pinged,
-        "accepted": accepted,
-        "flushed": flushed,
-        "marker": marker,
-        "fingerprint": STREAMLIT_PROBE_FINGERPRINT,
-    }
+    return _probe_result(
+        status=status,
+        eligible=True,
+        runtime_pinged=runtime_pinged,
+        accepted=accepted,
+        flushed=flushed,
+        marker=marker,
+        environ=runtime_environ,
+    )
