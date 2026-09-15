@@ -111,7 +111,7 @@ def game_totals_games_status():
     return {
         "status": "metadata_ready",
         "endpoint": "/api/v1/nfl/game-totals/games",
-        "shared_host_attached": False,
+        "shared_host_attached": True,
         **CONTRACT,
     }
 
