@@ -3,6 +3,7 @@
 Optional PostHog-backed exception reporting shared by the Streamlit app and
 FastAPI service. This module is deliberately fail-open: telemetry must never
 break sports data, projections, routing, or user-facing requests.
+The A8 Streamlit activation probe provides one-shot production certification.
 """
 from __future__ import annotations
 
