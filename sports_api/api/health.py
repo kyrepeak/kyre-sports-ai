@@ -12,6 +12,9 @@ from sports_api.api.cfb_render_fanduel_transport_v1 import install_hosted_transp
 from sports_api.api.cfb_markets import router as cfb_markets_router
 from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_router
 from sports_api.api.cfb_odds_v1 import router as cfb_odds_router
+from sports_api.api.nfl_game_totals_analysis_v1 import router as nfl_game_totals_analysis_router
+from sports_api.api.nfl_game_totals_games_v1 import router as nfl_game_totals_games_router
+from sports_api.api.nfl_game_totals_market_v1 import router as nfl_game_totals_market_router
 from sports_api.api.nfl_moneyline_market_v1 import router as nfl_moneyline_market_router
 from sports_api.api.nfl_passing_yards_market_v1 import router as nfl_passing_yards_market_router
 from sports_api.api.nfl_receiving_yards_context_v1 import router as nfl_receiving_yards_context_router
@@ -32,6 +35,9 @@ router = APIRouter(tags=["system"])
 router.routes.extend(cfb_markets_router.routes)
 router.routes.extend(cfb_market_identity_router.routes)
 router.routes.extend(cfb_odds_router.routes)
+router.routes.extend(nfl_game_totals_games_router.routes)
+router.routes.extend(nfl_game_totals_market_router.routes)
+router.routes.extend(nfl_game_totals_analysis_router.routes)
 router.routes.extend(nfl_moneyline_market_router.routes)
 router.routes.extend(nfl_passing_yards_market_router.routes)
 router.routes.extend(nfl_receiving_yards_context_router.routes)
