@@ -11,6 +11,7 @@ import sports_api.wnba_reconciled_direct_sync as _wnba_reconciled_direct_sync  #
 
 from sports_api.mlb_step17b_always_on_runtime_v1 import step17b_lifespan
 from sports_api.api.health import router as health_router
+from sports_api.api.nfl_game_totals_market_v1 import router as nfl_game_totals_market_router
 from sports_api.api.mlb import router as mlb_router
 from sports_api.api.mlb_advanced_hitting import router as mlb_advanced_hitting_router
 from sports_api.api.mlb_advanced_pitching import router as mlb_advanced_pitching_router
@@ -119,6 +120,7 @@ app = FastAPI(
 install_observability(app)
 
 app.include_router(health_router)
+app.include_router(nfl_game_totals_market_router)
 app.include_router(mlb_router)
 app.include_router(mlb_stats_router)
 app.include_router(mlb_game_logs_router)
