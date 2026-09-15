@@ -15,6 +15,7 @@ ALLOWED_HTTP_METHODS = frozenset({"GET"})
 HTTP_TIMEOUT_SECONDS = 20
 MAX_JSON_BYTES = 2_000_000
 _GREEN_GUARD_VALUES = frozenset({"green", "success", "passed", "pass", "ok", "true"})
+_AUTO_DEPLOY_OFF_VALUES = frozenset({"no", "false", "off", "disabled"})
 
 
 def _text(value: Any) -> str:
@@ -109,6 +110,8 @@ def _unknown_reasons(
         reasons.append("render commit missing or malformed")
     if "status" not in render:
         reasons.append("render status missing")
+    if not _text(render.get("auto_deploy")):
+        reasons.append("render auto-deploy state missing")
 
     health_deployment = _mapping(health.get("deployment"))
     if health_deployment is None:
@@ -173,6 +176,7 @@ def build_snapshot(
         "health_branch": _text(health_deployment.get("branch")),
         "health_commit": _text(health_deployment.get("commit")).lower(),
     }
+    render_auto_deploy = _text(render_map.get("auto_deploy")).lower()
     normalized_guards = {
         str(name): _normalized_guard_value(value)
         for name, value in sorted(guards_map.items(), key=lambda item: str(item[0]))
@@ -207,6 +211,7 @@ def build_snapshot(
             render_commit = identity["render_commit"]
             health_commit = identity["health_commit"]
             readiness_commit = _text(readiness_deployment.get("commit")).lower()
+            github_branch = identity["github_branch"]
             render_branch = identity["render_branch"]
             health_branch = identity["health_branch"]
             readiness_branch = _text(readiness_deployment.get("branch"))
@@ -214,14 +219,20 @@ def build_snapshot(
             if (
                 render_commit != health_commit
                 or health_commit != readiness_commit
+                or github_branch != render_branch
                 or render_branch != health_branch
                 or health_branch != readiness_branch
             ):
                 state = "IDENTITY_CONFLICT"
-                reasons = ["Render, health, and readiness deployment identity disagree"]
+                reasons = [
+                    "GitHub runtime source, Render, health, and readiness deployment identity disagree"
+                ]
             elif identity["github_commit"] != render_commit:
                 state = "PRODUCTION_LAG"
                 reasons = ["deployed production commit differs from intended GitHub commit"]
+            elif render_auto_deploy not in _AUTO_DEPLOY_OFF_VALUES:
+                state = "GUARD_FAILED"
+                reasons = ["Render auto-deploy must remain off"]
             else:
                 failed_guards = [
                     name
@@ -239,6 +250,7 @@ def build_snapshot(
         "certified": state == "GREEN",
         "identity": identity,
         "render_status": _text(render_map.get("status")).lower(),
+        "render_auto_deploy": render_auto_deploy,
         "health_status": _text(health_map.get("status")).lower(),
         "readiness": {
             "status": _text(readiness_map.get("status")).lower(),
