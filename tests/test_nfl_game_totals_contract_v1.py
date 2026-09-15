@@ -61,15 +61,19 @@ def test_game_totals_response_shape_is_frozen():
     )
 
 
-def test_contract_status_does_not_pretend_live_market_exists():
+def test_status_reports_route_ready_but_not_shared_host_attached():
     payload = totals.game_totals_market_status()
-    assert payload["status"] == "contract_ready"
+    assert payload["status"] == "collector_ready"
     assert payload["endpoint"] == "/api/v1/nfl/game-totals/market"
-    assert payload["live_market_attached"] is False
+    assert payload["live_market_route_ready"] is True
+    assert payload["shared_host_attached"] is False
     assert payload["projection_weight"] == 0.0
     assert payload["wager_actions"] is False
 
 
-def test_only_status_route_exists_before_collector_certification():
-    paths = [route.path for route in totals.router.routes]
-    assert paths == ["/api/v1/nfl/game-totals/market/status"]
+def test_isolated_router_has_status_and_exact_id_market_routes():
+    paths = {route.path for route in totals.router.routes}
+    assert paths == {
+        "/api/v1/nfl/game-totals/market/status",
+        "/api/v1/nfl/game-totals/market",
+    }
