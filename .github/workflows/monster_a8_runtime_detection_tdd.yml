@@ -17,5 +17,5 @@ jobs:
           python-version: '3.11'
       - name: Install focused test dependencies
         run: python -m pip install --disable-pip-version-check pytest streamlit
-      - name: Run A8 ScriptRunner runtime regression
-        run: python -m pytest -q tests/test_streamlit_telemetry_activation_probe_v1.py::test_streamlit_runtime_detector_accepts_script_runner_argv
+      - name: Run complete A8 telemetry and Error Radar contracts
+        run: python -m pytest -q tests/test_streamlit_telemetry_activation_probe_v1.py tests/test_monster_error_radar_v1.py
