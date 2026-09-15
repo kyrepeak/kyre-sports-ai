@@ -35,6 +35,23 @@ def test_permanent_contract_is_green():
     assert result["failure_recurrence_chronology_permanent"] is True
     assert result["failure_recurrence_age_permanent"] is True
     assert result["failure_history_coverage_permanent"] is True
+    assert result["forward_motion_contract_permanent"] is True
+
+
+def test_forward_motion_contract_is_permanently_required():
+    gate_source = (ROOT / "devsystem/permanent_gate_v1.py").read_text(encoding="utf-8")
+    required = (
+        "devsystem/checkpoint_ledger_v1.py",
+        "devsystem/forward_motion_v1.py",
+        "devsystem/forward_motion_policy_v1.json",
+        "devsystem/forward_motion_contract_v1.py",
+        "tests/test_devsystem_checkpoint_ledger_v1.py",
+        "tests/test_devsystem_forward_motion_v1.py",
+        "tests/test_monster_a9_anti_loop_replay_v1.py",
+        "forward_motion_contract_permanent",
+    )
+    for marker in required:
+        assert marker in gate_source
 
 
 def test_final_gate_accepts_success_and_skipped_only():
