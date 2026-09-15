@@ -88,6 +88,13 @@ def test_radar_fails_open_when_telemetry_capture_fails():
     )
 
 
+def test_streamlit_runtime_detector_accepts_real_script_runner(monkeypatch):
+    import streamlit.runtime as streamlit_runtime
+
+    monkeypatch.setattr(streamlit_runtime, "exists", lambda: True)
+    assert radar._is_streamlit_runtime(["/mount/src/kyre-sports-ai/app.py"]) is True
+
+
 def test_error_radar_is_wired_without_replacing_existing_contracts():
     app_source = (ROOT / "app.py").read_text(encoding="utf-8")
     observability_source = (ROOT / "sports_api" / "observability_v1.py").read_text(encoding="utf-8")
