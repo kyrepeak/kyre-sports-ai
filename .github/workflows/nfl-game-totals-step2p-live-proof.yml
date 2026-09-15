@@ -15,33 +15,74 @@ jobs:
   prove-live-route:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe production Game Totals route
+      - name: Discover real upcoming ESPN NFL event
         shell: bash
         run: |
           set -euo pipefail
-          url='https://kyre-sports-api.onrender.com/api/v1/nfl/totals/market?event_id=1'
-          status="$(curl --silent --show-error --location --max-time 30 --output response.json --write-out '%{http_code}' "$url")"
-          echo "HTTP $status"
-          cat response.json
-          test "$status" = "200"
-
-      - name: Validate production contract
-        run: |
+          curl --silent --show-error --location --max-time 30 \
+            'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20260920' \
+            --output slate.json
           python - <<'PY'
           import json
           from pathlib import Path
 
+          slate = json.loads(Path('slate.json').read_text())
+          events = slate.get('events') or []
+          candidates = []
+          for event in events:
+              state = str((((event.get('status') or {}).get('type') or {}).get('state') or '')).lower()
+              event_id = str(event.get('id') or '')
+              name = str(event.get('name') or '')
+              if event_id.isdigit() and state == 'pre':
+                  candidates.append((event_id, name))
+          assert candidates, 'No real pregame ESPN NFL event found for 2026-09-20'
+          event_id, name = candidates[0]
+          Path('event_id.txt').write_text(event_id)
+          print(f'Using ESPN event {event_id}: {name}')
+          PY
+
+      - name: Probe production Game Totals route with real event
+        shell: bash
+        run: |
+          set -euo pipefail
+          event_id="$(cat event_id.txt)"
+          url="https://kyre-sports-api.onrender.com/api/v1/nfl/totals/market?event_id=${event_id}"
+          status="$(curl --silent --show-error --location --max-time 45 --output response.json --write-out '%{http_code}' "$url")"
+          echo "HTTP $status"
+          cat response.json
+          test "$status" = "200"
+
+      - name: Validate real production FanDuel total
+        run: |
+          python - <<'PY'
+          import json
+          import math
+          from pathlib import Path
+
+          event_id = Path('event_id.txt').read_text().strip()
           payload = json.loads(Path('response.json').read_text())
-          assert payload['event_id'] == '1'
+          assert payload['event_id'] == event_id
           assert payload['provider'] == 'fanduel'
           assert payload['contract'] == 'nfl-game-totals-market-v1'
           assert payload['identity_mode'] == 'exact_espn_event_id'
           assert float(payload['sportsbook_projection_weight']) == 0.0
           assert payload['projection_use'] == 'context_only'
           assert payload['wager_actions_enabled'] is False
-          assert isinstance(payload['ready'], bool)
-          assert isinstance(payload['market_available'], bool)
-          assert isinstance(payload['markets'], list)
-          assert isinstance(payload['diagnostics'], list)
-          print('LIVE NFL Game Totals route contract verified')
+          assert payload['ready'] is True, payload.get('diagnostics')
+          assert payload['market_available'] is True, payload.get('diagnostics')
+          markets = payload['markets']
+          assert isinstance(markets, list) and len(markets) == 1
+          market = markets[0]
+          assert market['sportsbook'] == 'fanduel'
+          assert market['active'] is True
+          for key in ('total', 'over_price', 'under_price'):
+              value = float(market[key])
+              assert math.isfinite(value)
+          print(
+              'LIVE NFL Game Totals market verified:',
+              event_id,
+              'total=', market['total'],
+              'over=', market['over_price'],
+              'under=', market['under_price'],
+          )
           PY
