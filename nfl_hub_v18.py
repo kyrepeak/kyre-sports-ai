@@ -1,8 +1,9 @@
 """NFL V1.8 routing wrapper.
 
-Preserves NFL Slate V1 and all reserved markets. Routes Moneyline through the
-fresh V9 matchup-card presentation while V9 delegates every analytical and
-eligibility decision to the frozen V8 engine underneath.
+Preserves NFL Slate V1 and all existing markets. Routes Game Total to the new
+additive NFL Game Totals V1 Step-1 page. Moneyline continues through the fresh
+V9 matchup-card presentation while V9 delegates every analytical and eligibility
+decision to the frozen V8 engine underneath.
 
 Final grading remains eligibility-gated. During preseason, unresolved Step-3 QB
 participation/rotation forces a GATED state regardless of model edge/EV. Market
@@ -20,7 +21,7 @@ import nfl_hub_v1 as base
 if TYPE_CHECKING:
     from nfl_moneyline_hub_v8 import render_nfl_moneyline_hub
 
-MODEL_VERSION = "NFL V1.8 • MONEYLINE V9 MATCHUP CARDS • V8 ENGINE FROZEN • SLATE V1 PRESERVED"
+MODEL_VERSION = "NFL V1.8 • GAME TOTAL V1 STEP 1 ADDITIVE • MONEYLINE V9 MATCHUP CARDS • V8 ENGINE FROZEN • SLATE V1 PRESERVED"
 NFL_MARKETS = base.NFL_MARKETS
 load_nfl_slate = base.load_nfl_slate
 ET = base.ET
@@ -52,6 +53,9 @@ def _strip_moneyline_v9_team_panel_html(original):
 
 def render_nfl_hub(market: str = "Slate"):
     market = str(market or "Slate")
+    if market == "Game Total":
+        from nfl_game_totals_hub_v1 import render_nfl_game_totals_hub
+        return render_nfl_game_totals_hub()
     if market == "Moneyline":
         from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub
         import nfl_moneyline_hub_v9 as page
