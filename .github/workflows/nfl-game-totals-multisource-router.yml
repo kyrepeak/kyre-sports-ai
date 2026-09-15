@@ -67,3 +67,5 @@ jobs:
         run: python -m pytest -q tests/test_nfl_data_nflverse_v1.py
       - name: Run NWS environment adapter contract
         run: python -m pytest -q tests/test_nfl_data_nws_v1.py
+      - name: Run Steps 3-7 multisource migration contract
+        run: python -m pytest -q tests/test_nfl_game_totals_multisource_step3_7.py
