@@ -29,7 +29,7 @@ DEFAULT_STREAMLIT_PROBE_HEALTH_URL = "https://kyre-sports-api.onrender.com/healt
 STREAMLIT_PROBE_VERSION = "MONSTER_STREAMLIT_TELEMETRY_PROBE_V1"
 STREAMLIT_PROBE_FINGERPRINT = "MONSTER-A8-STREAMLIT-PROBE-V1"
 STREAMLIT_PROBE_MESSAGE = "Monster Streamlit certification synthetic exception probe"
-STREAMLIT_PROBE_SESSION_KEY = "monster_a9_telemetry_probe_v1_last"
+STREAMLIT_PROBE_SESSION_KEY = "monster_a9_streamlit_probe_v1"
 _STREAMLIT_RUNTIME_SECRET_NAMES = (
     "POSTHOG_PROJECT_API_KEY",
     "POSTHOG_API_KEY",
@@ -254,7 +254,6 @@ def _record_streamlit_probe_state(
                 environ=environ,
             )
         )
-        safe_result["probe_version"] = STREAMLIT_PROBE_VERSION
         st.session_state[STREAMLIT_PROBE_SESSION_KEY] = safe_result
     except Exception as exc:
         _LOGGER.debug("MONSTER_A9_STREAMLIT_STATE_UNAVAILABLE %s", exc.__class__.__name__)
