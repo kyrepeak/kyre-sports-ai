@@ -166,6 +166,14 @@ def _flush_posthog_client() -> bool:
 
 
 def _is_streamlit_runtime(argv: Sequence[str]) -> bool:
+    try:
+        import streamlit.runtime as streamlit_runtime
+
+        if streamlit_runtime.exists():
+            return True
+    except Exception:
+        pass
+
     if not argv:
         return False
     launcher = os.path.basename(str(argv[0])).casefold()
