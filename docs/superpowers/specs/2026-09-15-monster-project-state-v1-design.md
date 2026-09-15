@@ -36,7 +36,7 @@ The missing capability is one small conductor that reads these sources and retur
 
 Create a new additive module:
 
-` sports_api/monster_project_state_v1.py `
+`sports_api/monster_project_state_v1.py`
 
 The module is pure orchestration and classification. It performs no live network calls and no source mutation. External connector evidence must be sanitized and normalized by existing adapters before being supplied to Project State.
 
@@ -164,12 +164,19 @@ Permanent constants are:
 
 ## File Plan
 
-The first implementation is limited to four additive files:
+The implementation/certification surface is limited to four additive files:
 
 - `sports_api/monster_project_state_v1.py` — deterministic classifier and packet builder.
 - `tests/test_monster_project_state_v1.py` — unit, precedence, malformed-input, and deterministic-output contracts.
 - `.github/workflows/monster-project-state-v1.yml` — focused certification lane.
 - `.github/monster-project-state-v1-contract.md` — permanent safety and authority contract.
+
+Documentation artifacts are allowed in addition to those four files:
+
+- this approved design spec under `docs/superpowers/specs/`;
+- the implementation plan under `docs/superpowers/plans/`.
+
+No other runtime, test, workflow, configuration, or documentation file is in scope unless a later review identifies a concrete repository-required compatibility change and that change receives separate approval before implementation.
 
 A later plan may add PostHog operational activation, but that is a separate subproject and is not part of Project State V1.
 
@@ -190,7 +197,7 @@ The focused test suite must prove at least:
 11. Identical inputs produce identical packets.
 12. Completed and remaining step ordering is preserved.
 13. Exact `next_action` from valid continuity evidence is preserved unless a higher-precedence state requires a revalidation/blocking action.
-14. Safety constants remain immutable by contract.
+14. Safety constants remain pinned by contract.
 15. The module exposes no production entrypoint and performs no network calls.
 
 ## CI and Certification
@@ -199,7 +206,8 @@ The dedicated workflow must:
 
 - compile `sports_api/monster_project_state_v1.py`;
 - run `tests/test_monster_project_state_v1.py`;
-- verify the exact additive implementation scope for the Project State build;
+- verify that non-document implementation changes are limited to the four approved implementation/certification files;
+- permit only the approved design and implementation-plan documents under `docs/superpowers/` in addition to those four files;
 - verify static safety constants;
 - verify no imports of network clients in the Project State module;
 - run the existing Monster one-command certification contracts;
@@ -223,7 +231,7 @@ Project State never invents missing truth.
 
 Project State V1 is complete when:
 
-- the four additive files are merged on protected `main`;
+- the four implementation/certification files and approved docs are merged on protected `main`;
 - all focused tests pass;
 - permanent Monster and DevSystem gates remain GREEN;
 - Production Certification remains authoritative and GREEN;
