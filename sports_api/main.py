@@ -226,6 +226,7 @@ def _install_flat_production_lifespan() -> None:
             lifecycle_router_names.add(name)
 
     expected = {
+        "wnba_draftkings_direct_router",
         "wnba_pregame_board_scheduler_router",
         "wnba_pregame_prediction_store_router",
     }
