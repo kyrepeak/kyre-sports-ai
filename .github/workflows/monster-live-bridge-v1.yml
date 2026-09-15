@@ -1,0 +1,128 @@
+name: Monster Live Bridge V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/monster_live_bridge_v1.py"
+      - "tests/test_monster_live_bridge_v1.py"
+      - ".github/workflows/monster-live-bridge-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/monster_live_bridge_v1.py"
+      - "tests/test_monster_live_bridge_v1.py"
+      - ".github/workflows/monster-live-bridge-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-live-bridge-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install Live Bridge dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest playwright
+
+      - name: Compile Live Bridge
+        run: python -m py_compile sports_api/monster_live_bridge_v1.py
+
+      - name: Run Live Bridge contracts
+        run: python -m pytest -q tests/test_monster_live_bridge_v1.py
+
+      - name: Prove three-source CLI health snapshot
+        run: |
+          cat > /tmp/incident.json <<'JSON'
+          {"title":"CI live health","symptom":""}
+          JSON
+          cat > /tmp/github.json <<'JSON'
+          {"source":"github","status":"AVAILABLE","observed_at_utc":"2026-09-14T23:00:00Z","data":{"main_sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","working_branch":"main","working_sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","pr_number":null,"changed_files":[],"final_gate":"SUCCESS","unresolved_review_threads":0,"expected_deploy_sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","expected_deploy_branch":"main"},"note":""}
+          JSON
+          cat > /tmp/render.json <<'JSON'
+          {"source":"render","status":"AVAILABLE","observed_at_utc":"2026-09-14T23:00:00Z","data":{"service_id":"srv-ci","service_name":"ci-api","branch":"main","deployed_commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","deploy_id":"dep-ci","deploy_status":"LIVE","log_lines":[],"metrics":{}},"note":""}
+          JSON
+          cat > /tmp/posthog.json <<'JSON'
+          {"source":"posthog","status":"AVAILABLE","observed_at_utc":"2026-09-14T23:00:00Z","data":{"project":"ci","active_issue_count":0,"recent_issues":[],"slow_request_count":0,"latest_fingerprints":[]},"note":""}
+          JSON
+          cat > /tmp/cert.json <<'JSON'
+          {"status":"PASS","passed_check_count":7,"required_check_count":7,"failed_check_count":0}
+          JSON
+          python -m sports_api.monster_live_bridge_v1 \
+            --incident /tmp/incident.json \
+            --github /tmp/github.json \
+            --render /tmp/render.json \
+            --posthog /tmp/posthog.json \
+            --certification /tmp/cert.json > /tmp/bridge.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('/tmp/bridge.json').read_text())
+          assert report['version'] == 'MONSTER_LIVE_BRIDGE_V1'
+          assert report['status'] == 'HEALTHY'
+          assert report['release']['status'] == 'READY'
+          assert report['deployment_parity']['status'] == 'ALIGNED'
+          assert report['incident']['active'] is False
+          print('live-bridge three-source health: HEALTHY / READY')
+          PY
+
+      - name: Prove Live Bridge remains outside production entrypoints
+        run: |
+          python - <<'PY'
+          from sports_api.monster_dependency_map_v1 import build_dependency_map
+          graph = build_dependency_map('.')
+          report = graph.impact_report('sports_api/monster_live_bridge_v1.py')
+          assert report['status'] == 'OK'
+          assert report['impacted_entrypoints'] == [], report['impacted_entrypoints']
+          print('live-bridge blast_radius=', report['blast_radius'], 'entrypoints=[]')
+          PY
+
+      - name: Run existing Monster one-command certification
+        run: |
+          python -m sports_api.monster_certification_v1 --json > /tmp/monster-cert.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          receipt = json.loads(Path('/tmp/monster-cert.json').read_text())
+          assert receipt['status'] == 'PASS'
+          assert receipt['failed_check_count'] == 0
+          print('monster-certification:', receipt['passed_check_count'], '/', receipt['required_check_count'])
+          PY
+
+      - name: Prove Live Bridge safety constants
+        run: |
+          python - <<'PY'
+          from sports_api.monster_live_bridge_v1 import (
+              AUTO_FIX, FUZZY_MATCHING, MAY_MODIFY_PROJECTION,
+              MAY_MODIFY_RUNTIME, MAY_MODIFY_SOURCE_DATA,
+              NETWORK_CALLS, PROJECTION_WEIGHT,
+          )
+          assert PROJECTION_WEIGHT == 0.0
+          assert MAY_MODIFY_PROJECTION is False
+          assert MAY_MODIFY_SOURCE_DATA is False
+          assert MAY_MODIFY_RUNTIME is False
+          assert NETWORK_CALLS is False
+          assert AUTO_FIX is False
+          assert FUZZY_MATCHING is False
+          print('Live Bridge is read-only and network-free by default')
+          PY
