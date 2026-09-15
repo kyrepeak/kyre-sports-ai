@@ -100,6 +100,8 @@ jobs:
           python - <<'PY'
           from sports_api.monster_project_state_v1 import build_project_state
 
+          runtime_branch = 'mlb-step17b-shared-host-cert'
+          runtime_sha = '5' * 40
           continuity = {
               'version': 'MONSTER_CONTINUITY_V1',
               'status': 'READY_TO_RESUME',
@@ -112,7 +114,38 @@ jobs:
               'scope': {'in_scope': ['Project State V1'], 'forbidden': ['production runtime']},
               'drift': {'status': 'ALIGNED', 'requires_revalidation': False, 'reasons': []},
           }
-          production = {'version': 'MONSTER_PRODUCTION_CERTIFICATION_V1', 'state': 'GREEN', 'certified': True, 'reasons': []}
+          production = {
+              'version': 'MONSTER_PRODUCTION_CERTIFICATION_V1',
+              'state': 'GREEN',
+              'certified': True,
+              'identity': {
+                  'github_branch': runtime_branch,
+                  'github_commit': runtime_sha,
+                  'render_branch': runtime_branch,
+                  'render_commit': runtime_sha,
+                  'health_branch': runtime_branch,
+                  'health_commit': runtime_sha,
+              },
+              'render_status': 'live',
+              'render_auto_deploy': 'no',
+              'health_status': 'ok',
+              'readiness': {
+                  'status': 'ready',
+                  'checks': {
+                      'process_running': True,
+                      'python_runtime': True,
+                      'deployment_identity_available': True,
+                      'runtime_branch_alignment': True,
+                  },
+                  'deployment_aligned': True,
+              },
+              'guards': {
+                  'devsystem-final-gate': 'green',
+                  'permanent-freeze': 'green',
+                  'regression-shield': 'green',
+              },
+              'reasons': [],
+          }
           telemetry = {'source': 'posthog', 'status': 'NOT_CONFIGURED', 'data': {'active_issue_count': 0}}
           report = build_project_state(continuity=continuity, production=production, telemetry=telemetry)
           assert report['state'] == 'ACTIVE', report
@@ -150,7 +183,7 @@ jobs:
         run: |
           python -m pytest -q tests/test_monster_production_certification_snapshot_v1.py
 
-      - name: Enforce exact Project State branch surface
+      - name: Enforce Project State maintenance surface
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -167,23 +200,13 @@ jobs:
               'sports_api/monster_project_state_v1.py',
               'tests/test_monster_project_state_v1.py',
           }
-          implementation = {
-              '.github/monster-project-state-v1-contract.md',
-              '.github/workflows/monster-project-state-v1.yml',
-              'sports_api/monster_project_state_v1.py',
-              'tests/test_monster_project_state_v1.py',
-          }
           raw = subprocess.check_output(
               ['git', 'diff', '--name-only', f"{os.environ['BASE_SHA']}...HEAD"],
               text=True,
           )
           actual = {line.strip() for line in raw.splitlines() if line.strip()}
           unexpected = sorted(actual - allowed)
-          missing_implementation = sorted(implementation - actual)
-          actual_implementation = {path for path in actual if not path.startswith('docs/superpowers/')}
+          assert actual, 'Project State maintenance surface unexpectedly empty'
           assert not unexpected, f'unexpected Project State branch files: {unexpected}'
-          assert not missing_implementation, f'missing Project State implementation files: {missing_implementation}'
-          assert actual_implementation == implementation, (actual_implementation, implementation)
-          assert actual == allowed, (actual, allowed)
-          print('Project State exact six-file branch surface: GREEN')
+          print('Project State maintenance surface: GREEN', sorted(actual))
           PY

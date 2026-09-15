@@ -18,6 +18,8 @@ from sports_api.monster_project_state_v1 import (
 
 SHA_A = "a" * 40
 SHA_B = "b" * 40
+PROD_SHA = "5" * 40
+PROD_BRANCH = "mlb-step17b-shared-host-cert"
 
 
 def _continuity(**overrides):
@@ -75,13 +77,26 @@ def _production(**overrides):
         "state": "GREEN",
         "certified": True,
         "identity": {
-            "github_branch": "mlb-step17b-shared-host-cert",
-            "github_commit": "5" * 40,
+            "github_branch": PROD_BRANCH,
+            "github_commit": PROD_SHA,
+            "render_branch": PROD_BRANCH,
+            "render_commit": PROD_SHA,
+            "health_branch": PROD_BRANCH,
+            "health_commit": PROD_SHA,
         },
         "render_status": "live",
         "render_auto_deploy": "no",
         "health_status": "ok",
-        "readiness": {"status": "ready", "deployment_aligned": True},
+        "readiness": {
+            "status": "ready",
+            "checks": {
+                "process_running": True,
+                "python_runtime": True,
+                "deployment_identity_available": True,
+                "runtime_branch_alignment": True,
+            },
+            "deployment_aligned": True,
+        },
         "guards": {
             "devsystem-final-gate": "green",
             "permanent-freeze": "green",
@@ -324,3 +339,63 @@ def test_inputs_are_not_mutated():
     build_project_state(continuity=continuity, production=production)
 
     assert (continuity, production) == before
+
+
+def test_wrong_continuity_version_fails_closed_unknown():
+    continuity = _continuity(version="WRONG")
+
+    report = build_project_state(continuity=continuity, production=_production())
+
+    assert report["state"] == "UNKNOWN"
+    assert any("continuity version" in reason.lower() for reason in report["reasons"])
+
+
+def test_unrecognized_continuity_resume_status_fails_closed_unknown():
+    continuity = _continuity(status="GIBBERISH")
+
+    report = build_project_state(continuity=continuity, production=_production())
+
+    assert report["state"] == "UNKNOWN"
+    assert any("continuity status" in reason.lower() for reason in report["reasons"])
+
+
+def test_unrecognized_continuity_task_status_fails_closed_unknown():
+    continuity = _continuity()
+    continuity["task"]["status"] = "GIBBERISH"
+
+    report = build_project_state(continuity=continuity, production=_production())
+
+    assert report["state"] == "UNKNOWN"
+    assert any("task.status" in reason.lower() for reason in report["reasons"])
+
+
+def test_unrecognized_continuity_step_status_fails_closed_unknown():
+    continuity = _continuity()
+    continuity["progress"]["step_status"] = "GIBBERISH"
+
+    report = build_project_state(continuity=continuity, production=_production())
+
+    assert report["state"] == "UNKNOWN"
+    assert any("step_status" in reason.lower() for reason in report["reasons"])
+
+
+def test_wrong_production_certification_version_fails_closed_unknown():
+    production = _production(version="WRONG")
+
+    report = build_project_state(continuity=_continuity(), production=production)
+
+    assert report["state"] == "UNKNOWN"
+    assert any("production certification version" in reason.lower() for reason in report["reasons"])
+
+
+def test_incomplete_green_production_packet_fails_closed_unknown():
+    production = {
+        "version": "MONSTER_PRODUCTION_CERTIFICATION_V1",
+        "state": "GREEN",
+        "certified": True,
+    }
+
+    report = build_project_state(continuity=_continuity(), production=production)
+
+    assert report["state"] == "UNKNOWN"
+    assert any("production certification" in reason.lower() for reason in report["reasons"])
