@@ -13,8 +13,8 @@ import threading
 from typing import Any
 
 from sports_api.posthog_error_radar_v1 import (
+    _posthog_client,
     capture_runtime_exception,
-    get_posthog_client,
     radar_status,
 )
 
@@ -59,7 +59,7 @@ def run_telemetry_probe() -> dict[str, Any]:
 
     flushed = False
     flush_error: str | None = None
-    client = get_posthog_client()
+    client = _posthog_client()
     if accepted and client is not None:
         try:
             client.flush()
