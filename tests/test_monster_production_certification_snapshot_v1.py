@@ -205,3 +205,117 @@ def test_input_mappings_are_not_mutated():
 
 def test_http_policy_is_read_only_get_only():
     assert monster.ALLOWED_HTTP_METHODS == frozenset({"GET"})
+
+
+def test_normalize_render_evidence_uses_service_branch_and_live_deploy_commit():
+    service = {
+        "id": "srv-test",
+        "name": "kyre-sports-api",
+        "branch": "mlb-step17b-shared-host-cert",
+        "autoDeploy": "no",
+    }
+    deploy = {
+        "id": "dep-test",
+        "status": "live",
+        "commit": {"id": COMMIT_A, "message": "certified runtime"},
+    }
+
+    normalized = monster.normalize_render_evidence(service, deploy)
+
+    assert normalized == {
+        "branch": "mlb-step17b-shared-host-cert",
+        "commit": COMMIT_A,
+        "status": "live",
+        "service_id": "srv-test",
+        "deploy_id": "dep-test",
+        "auto_deploy": "no",
+    }
+
+
+def test_collect_runtime_health_reads_only_health_and_ready_endpoints():
+    calls = []
+    health = _inputs()["health"]
+    readiness = _inputs()["readiness"]
+
+    def fake_fetch(url):
+        calls.append(url)
+        if url.endswith("/health"):
+            return deepcopy(health)
+        if url.endswith("/health/ready"):
+            return deepcopy(readiness)
+        raise AssertionError(f"unexpected URL: {url}")
+
+    result = monster.collect_runtime_health(
+        "https://kyre-sports-api.onrender.com/",
+        fetch_json=fake_fetch,
+    )
+
+    assert result == {"health": health, "readiness": readiness}
+    assert calls == [
+        "https://kyre-sports-api.onrender.com/health",
+        "https://kyre-sports-api.onrender.com/health/ready",
+    ]
+
+
+def test_get_json_uses_get_and_accepts_only_object_json():
+    seen = {}
+
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self, size):
+            seen["read_size"] = size
+            return b'{"status":"ok"}'
+
+    def opener(request, timeout):
+        seen["method"] = request.get_method()
+        seen["url"] = request.full_url
+        seen["timeout"] = timeout
+        return Response()
+
+    payload = monster.get_json("https://example.test/health", opener=opener)
+
+    assert payload == {"status": "ok"}
+    assert seen["method"] == "GET"
+    assert seen["url"] == "https://example.test/health"
+    assert seen["timeout"] == monster.HTTP_TIMEOUT_SECONDS
+    assert seen["read_size"] == monster.MAX_JSON_BYTES + 1
+
+
+def test_get_json_rejects_non_object_payload():
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self, size):
+            return b"[]"
+
+    with pytest.raises(RuntimeError, match="non-object JSON"):
+        monster.get_json("https://example.test/health", opener=lambda request, timeout: Response())
+
+
+def test_runtime_source_branch_can_be_green_independently_of_canonical_main_name():
+    values = _inputs()
+    values["github"] = {
+        "branch": "mlb-step17b-shared-host-cert",
+        "commit": COMMIT_A,
+        "canonical_branch": "main",
+        "canonical_commit": COMMIT_B,
+    }
+
+    snapshot = _build(values)
+
+    assert snapshot["state"] == "GREEN"
+    assert snapshot["certified"] is True
+    assert snapshot["identity"]["github_branch"] == "mlb-step17b-shared-host-cert"
