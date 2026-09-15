@@ -9,6 +9,31 @@ on:
       - '.github/workflows/monster-production-certification-v1.yml'
       - 'sports_api/certification/monster_production_certification_v1_evidence.json'
   workflow_dispatch:
+    inputs:
+      render_branch:
+        description: 'Render service branch from the Render control plane'
+        required: true
+        type: string
+      render_commit:
+        description: 'Live Render deploy commit SHA from the Render control plane'
+        required: true
+        type: string
+      render_status:
+        description: 'Live Render deploy status from the Render control plane'
+        required: true
+        type: string
+      devsystem_final_gate:
+        description: 'Observed devsystem-final-gate result (green/success or failure)'
+        required: true
+        type: string
+      permanent_freeze:
+        description: 'Observed permanent-freeze result (green/success or failure)'
+        required: true
+        type: string
+      regression_shield:
+        description: 'Observed regression-shield result (green/success or failure)'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -29,3 +54,128 @@ jobs:
 
       - name: Run Monster Production Certification V1 tests
         run: python -m pytest -q tests/test_monster_production_certification_snapshot_v1.py
+
+      - name: Compile Monster conductor
+        run: python -m py_compile scripts/build_monster_production_certification_snapshot_v1.py
+
+  live-runtime-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Collect read-only production health evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.build_monster_production_certification_snapshot_v1 import collect_runtime_health
+
+          evidence = collect_runtime_health('https://kyre-sports-api.onrender.com')
+          Path('monster_runtime_health_v1.json').write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+
+          health = evidence.get('health') or {}
+          readiness = evidence.get('readiness') or {}
+          assert health.get('status') == 'ok', health
+          assert readiness.get('status') == 'ready', readiness
+          print('MONSTER_RUNTIME_HEALTH_V1_GREEN')
+          PY
+
+      - name: Upload runtime health evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-runtime-health-v1
+          path: monster_runtime_health_v1.json
+          if-no-files-found: error
+          retention-days: 14
+
+  manual-certification:
+    if: github.event_name == 'workflow_dispatch'
+    needs:
+      - unit-tests
+      - live-runtime-proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RENDER_BRANCH: ${{ inputs.render_branch }}
+      RENDER_COMMIT: ${{ inputs.render_commit }}
+      RENDER_STATUS: ${{ inputs.render_status }}
+      DEVSYSTEM_FINAL_GATE: ${{ inputs.devsystem_final_gate }}
+      PERMANENT_FREEZE: ${{ inputs.permanent_freeze }}
+      REGRESSION_SHIELD: ${{ inputs.regression_shield }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build read-only production certification snapshot
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+          import os
+          from pathlib import Path
+          from urllib.parse import quote
+
+          from scripts.build_monster_production_certification_snapshot_v1 import (
+              build_snapshot,
+              certification_exit_code,
+              collect_runtime_health,
+              get_json,
+          )
+
+          render_branch = os.environ['RENDER_BRANCH'].strip()
+          branch_url = (
+              'https://api.github.com/repos/kyrepeak/kyre-sports-ai/branches/'
+              + quote(render_branch, safe='')
+          )
+          branch_payload = get_json(branch_url)
+          runtime_commit = str((branch_payload.get('commit') or {}).get('sha') or '').strip()
+
+          runtime = collect_runtime_health('https://kyre-sports-api.onrender.com')
+          snapshot = build_snapshot(
+              github={
+                  'branch': render_branch,
+                  'commit': runtime_commit,
+              },
+              render={
+                  'branch': render_branch,
+                  'commit': os.environ['RENDER_COMMIT'].strip(),
+                  'status': os.environ['RENDER_STATUS'].strip(),
+              },
+              health=runtime['health'],
+              readiness=runtime['readiness'],
+              guards={
+                  'devsystem-final-gate': os.environ['DEVSYSTEM_FINAL_GATE'],
+                  'permanent-freeze': os.environ['PERMANENT_FREEZE'],
+                  'regression-shield': os.environ['REGRESSION_SHIELD'],
+              },
+              observed_at=datetime.now(timezone.utc).isoformat(),
+          )
+
+          Path('monster_production_certification_v1_snapshot.json').write_text(
+              json.dumps(snapshot, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print('MONSTER_PRODUCTION_CERTIFICATION_V1_STATE', snapshot['state'])
+          raise SystemExit(certification_exit_code(snapshot))
+          PY
+
+      - name: Upload production certification snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monster-production-certification-v1
+          path: monster_production_certification_v1_snapshot.json
+          if-no-files-found: error
+          retention-days: 30
