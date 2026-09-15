@@ -1,25 +1,28 @@
-"""KYRE Streamlit Router V136 — standalone NFL Spread V4 fast route.
+"""KYRE Streamlit Router V136 — fresh standalone NFL Spread V4 fast route.
 
-V136 is additive over certified Router V135. It preserves V132's exact NFL ->
-Spread route/query behavior and V135's purge-safe V4 HTML guard, while removing
-the active Spread route's dependency on the V134 -> V133 owner-swap ladder.
-Every non-Spread route continues through frozen V135 unchanged.
+V136 preserves V132's exact NFL -> Spread route/query behavior and V135's
+certified purge-safe V4 HTML presentation guard, but deliberately reimplements
+that tiny presentation-only guard inside a brand-new router module. The active
+NFL -> Spread path never imports or dereferences V135, so a stale V135 object in
+``sys.modules`` cannot preserve the raw-HTML bug after deployment.
 
-V135, V4 analytics, the independent projection model, deterministic 5M Monte
-Carlo, market transport, exact event identity, and every safety flag remain
-frozen. Sportsbook projection influence stays exactly 0.0%.
+Every non-Spread route lazy-delegates to frozen V135 unchanged. V4 analytics,
+the independent projection model, deterministic 5M Monte Carlo, market
+transport, exact event identity, and every safety flag remain frozen.
+Sportsbook projection influence stays exactly 0.0%.
 """
 from __future__ import annotations
 
+import importlib
 from typing import Any, Callable
 
+import nfl_spread_hub_v4 as spread_v4
 import streamlit_memory_lazy_router_v132 as route_v132
-import streamlit_memory_lazy_router_v135 as frozen
 
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V136 • NFL SPREAD STANDALONE V4 FAST ROUTE"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V136 • NFL SPREAD FRESH STANDALONE V4 ROUTE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v135"
-ACTIVE_SPREAD_HUB = frozen.ACTIVE_SPREAD_HUB
+ACTIVE_SPREAD_HUB = "nfl_spread_hub_v4"
 SPREAD_MARKET = route_v132.SPREAD_MARKET
 ROUTE_QUERY_SPORT = route_v132.ROUTE_QUERY_SPORT
 ROUTE_QUERY_MARKET = route_v132.ROUTE_QUERY_MARKET
@@ -28,18 +31,74 @@ PROJECTION_MODEL_ENABLED = True
 MONTE_CARLO_ENABLED = True
 STAKE_SIZING_ENABLED = False
 WAGER_ACTIONS_ENABLED = False
-HTML_RENDER_GUARD = frozen.HTML_RENDER_GUARD
-HTML_RENDER_GUARD_SCOPE = frozen.HTML_RENDER_GUARD_SCOPE
+HTML_RENDER_GUARD = "flatten_generated_html"
+HTML_RENDER_GUARD_SCOPE = "route_purge_reimport_safe"
 STANDALONE_SPREAD_ROUTE = True
+ACTIVE_SPREAD_V135_DEPENDENCY = False
 
 
-def record_bootstrap_import_ms(value: float) -> None:
-    return frozen.record_bootstrap_import_ms(value)
+_RAW_MATCHUP_CARD = spread_v4._matchup_card
+_RAW_SUMMARY_HTML = spread_v4._summary_html
+
+
+def _flatten_generated_html(value: str) -> str:
+    """Keep generated V4 markup out of Markdown's indented-code path."""
+    return "".join(line.strip() for line in str(value or "").splitlines())
+
+
+def _html_safe_matchup_card(*args, **kwargs) -> str:
+    return _flatten_generated_html(_RAW_MATCHUP_CARD(*args, **kwargs))
+
+
+def _html_safe_summary_html(*args, **kwargs) -> str:
+    return _flatten_generated_html(_RAW_SUMMARY_HTML(*args, **kwargs))
+
+
+def _install_html_guard(module: Any) -> Any:
+    """Install the V4 presentation guard on initial and post-purge imports."""
+    if getattr(module, "_KSP4_HTML_RENDER_GUARD", None) == HTML_RENDER_GUARD:
+        return module
+
+    if module is spread_v4:
+        module._matchup_card = _html_safe_matchup_card
+        module._summary_html = _html_safe_summary_html
+    else:
+        raw_matchup_card = module._matchup_card
+        raw_summary_html = module._summary_html
+
+        def safe_matchup_card(*args, **kwargs) -> str:
+            return _flatten_generated_html(raw_matchup_card(*args, **kwargs))
+
+        def safe_summary_html(*args, **kwargs) -> str:
+            return _flatten_generated_html(raw_summary_html(*args, **kwargs))
+
+        module._matchup_card = safe_matchup_card
+        module._summary_html = safe_summary_html
+
+    module._KSP4_HTML_RENDER_GUARD = HTML_RENDER_GUARD
+    return module
 
 
 def _guard_route_import(importer: Callable[[str], Any], name: str) -> Any:
-    """Reuse V135's certified purge-safe V4 guard without rewriting it."""
-    return frozen._guard_route_import(importer, name)
+    """Re-apply the V4 guard after V132/root purges NFL route modules."""
+    module = importer(name)
+    if str(name or "") == ACTIVE_SPREAD_HUB:
+        return _install_html_guard(module)
+    return module
+
+
+def _load_frozen_non_spread() -> Any:
+    """Lazy-load V135 only after V136 has proven the route is not NFL Spread."""
+    return importlib.import_module(FROZEN_ROUTER)
+
+
+# Protect the initial V4 import. The direct route also protects post-purge imports.
+_install_html_guard(spread_v4)
+
+
+def record_bootstrap_import_ms(value: float) -> None:
+    # V132 owns the direct Spread cold-start telemetry used by this fast route.
+    return route_v132.record_bootstrap_import_ms(value)
 
 
 def _render_direct_spread() -> None:
@@ -60,16 +119,17 @@ def _render_direct_spread() -> None:
 
 
 def render_app() -> None:
-    """Own exact NFL -> Spread; delegate every other route to frozen V135."""
+    """Own exact NFL -> Spread; lazy-delegate every other route to frozen V135."""
     if not route_v132._fast_route_active():
         route_v132._restore_spread_route_from_query()
     if route_v132._fast_route_active():
         return _render_direct_spread()
-    return frozen.render_app()
+    return _load_frozen_non_spread().render_app()
 
 
 __all__ = [
     "ACTIVE_SPREAD_HUB",
+    "ACTIVE_SPREAD_V135_DEPENDENCY",
     "FROZEN_ROUTER",
     "HTML_RENDER_GUARD",
     "HTML_RENDER_GUARD_SCOPE",
