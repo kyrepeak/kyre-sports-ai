@@ -20,7 +20,7 @@ from urllib.request import Request, urlopen
 ESPN_SUMMARY_URL = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/summary"
 FANDUEL_HOST = os.getenv("FANDUEL_SBAPI_HOST", "https://sbapi.az.sportsbook.fanduel.com").rstrip("/")
 FANDUEL_PUBLIC_AK = os.getenv("FANDUEL_PUBLIC_AK", "FhMFpcPWXMeyZxOx")
-FANDUEL_NFL_EVENT_TYPE_ID = os.getenv("FANDUEL_NFL_EVENT_TYPE_ID", "7522")
+FANDUEL_NFL_EVENT_TYPE_ID = os.getenv("FANDUEL_NFL_EVENT_TYPE_ID", "6423")
 REQUEST_TIMEOUT_SECONDS = float(os.getenv("NFL_TOTALS_HTTP_TIMEOUT_SECONDS", "8"))
 KICKOFF_TOLERANCE_SECONDS = int(os.getenv("NFL_TOTALS_KICKOFF_TOLERANCE_SECONDS", "300"))
 
