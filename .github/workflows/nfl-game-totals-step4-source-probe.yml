@@ -1,0 +1,81 @@
+name: NFL Game Totals Step 4 Source Probe
+
+on:
+  push:
+    branches:
+      - monster/nfl-game-totals-step4-source-probe
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-pace-possession:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe ESPN team statistics fields
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          base = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/ari/statistics'
+          url = base + '?' + urlencode({'season': 2026})
+          request = Request(url, headers={
+              'Accept': 'application/json',
+              'User-Agent': 'Mozilla/5.0 kyre-sports-ai-step4-source-probe',
+          })
+          with urlopen(request, timeout=20) as response:
+              print('HTTP_STATUS=' + str(getattr(response, 'status', 200)))
+              payload = json.load(response)
+
+          print('TOP_KEYS=' + ','.join(sorted(payload.keys())))
+          splits = payload.get('splits') or {}
+          print('SPLITS_TYPE=' + type(splits).__name__)
+          categories = splits.get('categories') if isinstance(splits, dict) else None
+          if not isinstance(categories, list):
+              categories = []
+          print('CATEGORY_COUNT=' + str(len(categories)))
+
+          tokens = ('possess', 'play', 'drive', 'snap', 'pace', 'down')
+          matches = []
+          for category in categories:
+              if not isinstance(category, dict):
+                  continue
+              category_blob = json.dumps(category, sort_keys=True).lower()
+              if any(token in category_blob for token in tokens):
+                  compact = {
+                      'name': category.get('name'),
+                      'displayName': category.get('displayName'),
+                      'shortDisplayName': category.get('shortDisplayName'),
+                      'stats': [],
+                  }
+                  stats = category.get('stats') or []
+                  if isinstance(stats, list):
+                      for stat in stats:
+                          if not isinstance(stat, dict):
+                              continue
+                          stat_blob = json.dumps(stat, sort_keys=True).lower()
+                          if any(token in stat_blob for token in tokens):
+                              compact['stats'].append({
+                                  key: stat.get(key)
+                                  for key in ('name','displayName','shortDisplayName','description','value','displayValue','perGameValue','rank')
+                                  if key in stat
+                              })
+                  matches.append(compact)
+
+          print('MATCH_COUNT=' + str(len(matches)))
+          for item in matches:
+              print('PACE_POSSESSION_MATCH=' + json.dumps(item, sort_keys=True))
+
+          if not matches:
+              print('CATEGORY_NAMES=' + json.dumps([
+                  {
+                      'name': c.get('name'),
+                      'displayName': c.get('displayName'),
+                      'shortDisplayName': c.get('shortDisplayName'),
+                  }
+                  for c in categories if isinstance(c, dict)
+              ], sort_keys=True))
+          PY
