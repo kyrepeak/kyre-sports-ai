@@ -1,0 +1,57 @@
+name: NFL Game Totals API Foundation
+
+on:
+  push:
+    branches:
+      - nfl-game-totals-api-foundation
+    paths:
+      - "sports_api/api/nfl_game_totals_*.py"
+      - "sports_api/collectors/nfl_game_totals_*.py"
+      - "sports_api/collectors/nfl_fanduel_totals_*.py"
+      - "tests/test_nfl_game_totals_*.py"
+      - ".github/workflows/nfl-game-totals-api-foundation.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/api/nfl_game_totals_*.py"
+      - "sports_api/collectors/nfl_game_totals_*.py"
+      - "sports_api/collectors/nfl_fanduel_totals_*.py"
+      - "tests/test_nfl_game_totals_*.py"
+      - ".github/workflows/nfl-game-totals-api-foundation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-game-totals-api-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-api-foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install focused dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi
+
+      - name: Compile Game Totals API foundation
+        run: |
+          python -m py_compile \
+            sports_api/api/nfl_game_totals_market_v1.py \
+            sports_api/collectors/nfl_fanduel_totals_v1.py \
+            sports_api/collectors/nfl_game_totals_schedule_v1.py \
+            tests/test_nfl_game_totals_contract_v1.py \
+            tests/test_nfl_game_totals_schedule_v1.py
+
+      - name: Run focused Game Totals regressions
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_game_totals_contract_v1.py \
+            tests/test_nfl_game_totals_schedule_v1.py
