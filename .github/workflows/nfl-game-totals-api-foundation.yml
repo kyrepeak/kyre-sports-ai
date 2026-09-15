@@ -57,7 +57,8 @@ jobs:
             sports_api/collectors/nfl_game_totals_schedule_v1.py \
             tests/test_nfl_game_totals_contract_v1.py \
             tests/test_nfl_game_totals_schedule_v1.py \
-            tests/test_nfl_fanduel_totals_v1.py
+            tests/test_nfl_fanduel_totals_v1.py \
+            tests/test_nfl_game_totals_market_transport_v1.py
 
       - name: Run Game Totals contract regressions
         run: python -m pytest -q tests/test_nfl_game_totals_contract_v1.py
@@ -67,3 +68,6 @@ jobs:
 
       - name: Run FanDuel Game Totals collector regressions
         run: python -m pytest -q tests/test_nfl_fanduel_totals_v1.py
+
+      - name: Run Game Totals market transport regressions
+        run: python -m pytest -q tests/test_nfl_game_totals_market_transport_v1.py
