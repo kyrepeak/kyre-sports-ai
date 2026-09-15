@@ -26,4 +26,4 @@ jobs:
       - name: Install pytest only
         run: python -m pip install --disable-pip-version-check pytest
       - name: Run A8 Streamlit telemetry contract
-        run: python -m pytest -q tests/test_streamlit_telemetry_activation_probe_v1.py
+        run: PYTHONPATH=. python -m pytest -q tests/test_streamlit_telemetry_activation_probe_v1.py
