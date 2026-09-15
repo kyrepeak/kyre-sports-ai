@@ -16,6 +16,23 @@ This folder is the permanent development operating system around the sports app.
 10. Relevant pushes to `main` run production verification.
 11. Keep a green rollback branch after meaningful system milestones.
 
+## Monster Auto-Continue / forward-motion contract
+
+When an approved task is running in **Monster Mode**, `Go ahead Monster Mode` means strict auto-continue through normal implementation, tests, branches, PRs, CI diagnosis, and in-scope repairs until the declared finish line is reached or one genuine external blocker requires the user.
+
+Permanent anti-loop rules:
+
+- A DONE checkpoint stays closed unless new contradictory evidence invalidates its closing proof.
+- The same proof fingerprint may not run again against unchanged relevant inputs.
+- Deterministic regressions receive zero unchanged retries.
+- Transient-capable failures receive at most one inspected controlled retry.
+- Unknown failures receive one evidence-gathering action before a new discriminating hypothesis or a stop.
+- Only one blocker may be active at a time; unrelated findings are deferred rather than becoming side quests.
+- An external blocker must name one concrete user action and must genuinely be unresolvable with the available tools.
+- Once every declared exit condition is satisfied, the task is terminal (`TASK_COMPLETE`); new implementation checkpoints may not be invented afterward.
+
+The machine-readable policy lives in `devsystem/forward_motion_policy_v1.json`. `devsystem/checkpoint_ledger_v1.py` enforces checkpoint state, `devsystem/forward_motion_v1.py` makes next-action decisions, and `devsystem/forward_motion_contract_v1.py` certifies the permanent invariants. The existing required `permanent-contract` CI lane executes that validator through `tests/test_devsystem_permanent_gate_v1.py`, so these protections are enforced without adding another CI fan-out job.
+
 ## Domain activation rule
 
 A sport is not allowed to become a normal development lane until it has:
