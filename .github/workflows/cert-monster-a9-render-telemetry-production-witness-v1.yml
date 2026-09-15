@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python tests/test_monster_telemetry_probe_v1.py
+          PYTHONPATH=. python tests/test_monster_telemetry_probe_v1.py
           echo 'MONSTER_A9_TELEMETRY_TEST_GREEN'
 
       - name: Prove live Render health and readiness identity
