@@ -40,8 +40,33 @@ def _persist_game_total_route_query() -> None:
     return prior._persist_game_total_route_query()
 
 
+def _query_requests_game_total() -> bool:
+    return (
+        cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) == CFB_SPORT_LABEL
+        and cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_MARKET) == GAME_TOTAL_MARKET
+    )
+
+
 def _restore_game_total_route_from_query() -> bool:
-    return prior._restore_game_total_route_from_query()
+    """Repair exact Game Total route state after Streamlit widget reruns.
+
+    V151 only restored from query parameters when both session-state route
+    fields were blank. A date/selectbox rerun can preserve the sport while the
+    CFB market field drifts, which made V152 fall back into the legacy router
+    chain even though the URL still explicitly requested Game Total. In V152,
+    that exact query pair is authoritative until the user intentionally changes
+    market, at which point the direct renderer clears the fast-route query.
+    """
+    if not _query_requests_game_total():
+        return False
+
+    changed = (
+        str(st.session_state.get("ks_sport_touch") or "") != CFB_SPORT_LABEL
+        or str(st.session_state.get("ks_cfb_market_touch") or "") != GAME_TOTAL_MARKET
+    )
+    st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL
+    st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
+    return changed
 
 
 def _render_production_heartbeat() -> None:
@@ -113,6 +138,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_game_total_route_active",
     "_persist_game_total_route_query",
+    "_query_requests_game_total",
     "_render_cfb_game_total_v152",
     "_render_direct_cfb_game_total",
     "_render_production_heartbeat",
