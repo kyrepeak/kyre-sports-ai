@@ -8,6 +8,7 @@ on:
       - 'streamlit_memory_lazy_router_v147.py'
       - 'app.py'
       - 'tests/test_nfl_receiving_yards_v16_future_card_render.py'
+      - 'devsystem/task_ledgers/nfl-receiving-yards-v16-future-card-render-fix.json'
       - '.github/workflows/nfl-receiving-yards-v16-future-card-render.yml'
 
 jobs:
