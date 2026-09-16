@@ -1,0 +1,86 @@
+name: CFB Game Total V151 Recovery
+
+on:
+  push:
+    branches:
+      - fix/cfb-game-total-v151-recovery
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recover-and-certify:
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[v151-autopatch]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Wire protected live entrypoint to V151
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app.py')
+          text = path.read_text(encoding='utf-8')
+          old_heartbeat = 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_COMPACT_DASHBOARD_2026-09-16"'
+          new_heartbeat = 'FROZEN_V149_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_COMPACT_DASHBOARD_2026-09-16"\nDEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V151_CFB_GAME_TOTAL_LIVE_RECOVERY_2026-09-16"'
+          old_import = 'from streamlit_memory_lazy_router_v149 import record_bootstrap_import_ms, render_app'
+          new_import = 'from streamlit_memory_lazy_router_v151 import record_bootstrap_import_ms, render_app'
+
+          if old_heartbeat not in text:
+              raise SystemExit('V149 heartbeat anchor missing; refusing blind app.py rewrite')
+          if old_import not in text:
+              raise SystemExit('V149 router import anchor missing; refusing blind app.py rewrite')
+
+          text = text.replace(old_heartbeat, new_heartbeat, 1)
+          text = text.replace(old_import, new_import, 1)
+          path.write_text(text, encoding='utf-8')
+          print('V151 live entrypoint patch prepared')
+          PY
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Compile V151 recovery files
+        run: |
+          python -m py_compile app.py streamlit_memory_lazy_router_v151.py cfb_game_total_monster_page_v2.py tests/test_cfb_game_total_v151_recovery.py
+
+      - name: Run V151 recovery and inherited V150 tests
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_game_total_v151_recovery.py \
+            tests/test_cfb_game_total_dashboard_v150.py
+
+      - name: Guard frozen model influence
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import cfb_game_total_monster_page_v2 as page
+          import streamlit_memory_lazy_router_v151 as router
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.MAY_MODIFY_PROJECTION is False
+          assert router.MAY_MODIFY_PROJECTION is False
+          print('V151_FROZEN_MATH_GUARD=PASS')
+          PY
+
+      - name: Commit tested app entrypoint patch
+        run: |
+          if git diff --quiet -- app.py; then
+            echo 'No app.py patch to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Wire live app to V151 Game Total recovery [v151-autopatch]'
+          git push origin HEAD:fix/cfb-game-total-v151-recovery
