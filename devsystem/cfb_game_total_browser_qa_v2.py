@@ -65,7 +65,7 @@ def _set_target_date(page, frame) -> str:
         diag.append(f"{i}:{semantic or 'unlabeled'}->{value}")
         segment.press_sequentially(value)
 
-    spinbuttons.nth(2).press("Enter")
+    page.keyboard.press("Escape")
     page.wait_for_timeout(1800)
     frame.get_by_role("combobox", name=MATCHUP_LABEL, exact=True).wait_for(
         state="visible", timeout=45000
