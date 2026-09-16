@@ -8,6 +8,7 @@ on:
       - 'tests/test_devsystem_github_state_resolver_v1.py'
       - 'tests/test_devsystem_tool_retry_policy_v1.py'
       - 'tests/test_devsystem_agent_anti_loop_adversarial_v1.py'
+      - 'tests/test_devsystem_agent_anti_loop_pr508_replay_v1.py'
       - 'devsystem/tool_orchestration_guard_v1.py'
       - 'devsystem/github_state_resolver_v1.py'
       - 'devsystem/tool_retry_policy_v1.py'
@@ -35,4 +36,5 @@ jobs:
             tests/test_devsystem_tool_orchestration_guard_v1.py \
             tests/test_devsystem_github_state_resolver_v1.py \
             tests/test_devsystem_tool_retry_policy_v1.py \
-            tests/test_devsystem_agent_anti_loop_adversarial_v1.py
+            tests/test_devsystem_agent_anti_loop_adversarial_v1.py \
+            tests/test_devsystem_agent_anti_loop_pr508_replay_v1.py
