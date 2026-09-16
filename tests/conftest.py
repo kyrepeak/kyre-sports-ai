@@ -68,6 +68,16 @@ def pytest_collection_modifyitems(session, config, items):
     assert "_render_direct_cfb_game_total" in activation_source
     assert "cfb_route_base._persist_fast_route_query()" in activation_source
 
+    # The frozen V148 Moneyline page uses V77's selector. V149 must wrap that
+    # selector only while delegating so a Moneyline -> Game Total click survives
+    # the rerun and restores the exact V150 route instead of falling to Moneyline.
+    assert "def _persist_game_total_v150_query" in activation_source
+    assert "def _selectbox_v150_handoff" in activation_source
+    assert "_FROZEN_CFB_SELECTBOX" in activation_source
+    assert "cfb_route_base._selectbox_v77 = _selectbox_v150_handoff" in activation_source
+    assert "cfb_route_base._selectbox_v77 = original_cfb_selectbox" in activation_source
+    assert "st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET" in activation_source
+
     # Real browser proof must certify the actual Game Total page and explicitly
     # reject the legacy title visible in the user's production screenshot.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
