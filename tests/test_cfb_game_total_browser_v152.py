@@ -47,6 +47,13 @@ def test_v152_logo_certification_verifies_source_without_natural_width_hard_fail
     assert '"source_status":' in source
 
 
+def test_v152_sportsbook_marker_waits_for_final_streamlit_render() -> None:
+    source = QA.read_text(encoding="utf-8")
+    assert 'SPORTSBOOK_MARKER = "sportsbook projection influence 0.0%"' in source
+    assert 'base._wait_for_text(frame, SPORTSBOOK_MARKER' in source
+    assert 'if "SPORTSBOOK" not in body.upper() or "0.0%" not in body:' not in source
+
+
 def test_v152_browser_qa_opens_both_team_evidence_and_checks_deep_audit_collapsed() -> None:
     source = QA.read_text(encoding="utf-8")
     assert "Syracuse evidence" in source
