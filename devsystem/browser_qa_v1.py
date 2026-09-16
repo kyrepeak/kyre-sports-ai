@@ -4,10 +4,10 @@ The browser QA proves that the checked-out branch can:
 - boot Streamlit;
 - expose the expected sport choices;
 - route to College Football -> Over/Under;
-- render the active Clean Page V30 future-slate coverage shell;
-- preserve the freshness firewall, 0.0% market influence, and frozen projection marker;
-- prove official ESPN identity recovery without fuzzy or synthetic IDs;
-- preserve the certified readable Steps 4-12 shell;
+- render the active Clean Page V38 / V149 compact dashboard shell;
+- preserve Phoenix-time presentation, exact ESPN-ID logos, and Quick Read;
+- preserve compact Steps 5-10 with full evidence available in expanders;
+- preserve 0.0% sportsbook projection influence and frozen projection math;
 - do so without obvious Python/runtime error text.
 
 Dynamic schedule/odds availability is not required here because those are
@@ -36,15 +36,15 @@ CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_MARKET_LABEL = "🎯 CFB Market"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V30 ACTIVE",
-    "FUTURE SLATE COVERAGE ACTIVE",
-    "OFFICIAL ESPN IDENTITY RECOVERY",
-    "NO FUZZY MATCHING",
-    "NO SYNTHETIC IDS",
-    "FRESHNESS FIREWALL ACTIVE",
-    "0.0% PROJECTION INFLUENCE",
+    "CFB O/U • CLEAN PAGE V38 ACTIVE",
+    "V149 MONSTER COMPACT DASHBOARD",
+    "PHOENIX TIME",
+    "EXACT ESPN-ID LOGOS",
+    "QUICK READ",
+    "COMPACT STEPS 5-10",
+    "FULL EVIDENCE IN EXPANDERS",
+    "0.0% SPORTSBOOK PROJECTION INFLUENCE",
     "FROZEN PROJECTION MATH PRESERVED",
-    "READABLE STEPS 4-12 ACTIVE",
 )
 FORBIDDEN_ERROR_MARKERS = (
     "Traceback (most recent call last)",
@@ -269,7 +269,7 @@ def run_browser_qa(
             ]
             if missing_markers:
                 raise BrowserQAFailure(
-                    "CFB Clean Page V30 future-slate marker drift: "
+                    "CFB Clean Page V38 / V149 presentation marker drift: "
                     + " | ".join(missing_markers)
                 )
 
