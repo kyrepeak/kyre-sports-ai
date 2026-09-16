@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 
 import nfl_game_totals_hub_v8 as v8
+from sports_api.nfl_data_router_v1 import clear_router_caches
 from sports_api.nfl_game_totals_mobile_navigation_v1 import find_next_game_day
 
 MODEL_VERSION = "NFL GAME TOTALS V8.1 • MOBILE EMPTY-SLATE HOTFIX • STEP 8 PRESERVED"
@@ -127,6 +128,8 @@ def _clear_game_totals_caches() -> int:
         if callable(clear):
             clear()
             cleared += 1
+    clear_router_caches()
+    cleared += 1
     return cleared
 
 
