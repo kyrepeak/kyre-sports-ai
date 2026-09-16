@@ -1,8 +1,8 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Phoenix time.
+"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards Matchup Tiers 2.0.
 
-Router V143 is additive over frozen Router V142. It advances only exact
-NFL -> Receiving Yards to V12 while preserving V11 smart-slate behavior,
-the certified Passing Yards V141 route, and every other existing route.
+Router V144 is additive over frozen Router V143. It advances only exact
+NFL -> Receiving Yards to V13 while preserving V12 Phoenix time, V11 smart
+slate behavior, the certified Passing Yards V141 route, and every other route.
 
 Sportsbook projection influence stays 0.0% and stake sizing stays OFF.
 """
@@ -211,12 +211,13 @@ FROZEN_V139_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V139_NFL_PASSING_YARDS_PHOENI
 FROZEN_V140_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V140_NFL_PASSING_YARDS_PRESENTATION_GRADES_2026-09-16"
 FROZEN_V141_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V141_NFL_PASSING_YARDS_PHOENIX_SELECTOR_2026-09-16"
 FROZEN_V142_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V142_NFL_RECEIVING_YARDS_SMART_SLATE_2026-09-16"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V143_NFL_RECEIVING_YARDS_PHOENIX_TIME_2026-09-16"
+FROZEN_V143_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V143_NFL_RECEIVING_YARDS_PHOENIX_TIME_2026-09-16"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V144_NFL_RECEIVING_YARDS_MATCHUP_TIERS_V2_2026-09-16"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v143 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v144 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
@@ -258,7 +259,7 @@ try:
             ("market", "market"),
             ("athlete_market", "code"),
         ):
-            _bucket = _rush_speed.get(_stage)
+            _bucket = _rush_speed.get("stages" if False else _stage)
             if not isinstance(_bucket, dict):
                 continue
             try:
