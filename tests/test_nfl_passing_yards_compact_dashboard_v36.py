@@ -50,6 +50,15 @@ def test_v36_keeps_projection_and_market_visible_and_deep_evidence_collapsed() -
     assert "Deep Evidence" in source
 
 
+def test_v36_matchup_header_surfaces_verified_slate_kickoff_without_new_transport() -> None:
+    source = _source("nfl_passing_yards_hub_v36.py")
+    assert "kpass36-kickoff" in source
+    assert "tip_et" in source
+    assert "Verified kickoff" in source
+    assert "load_nfl_slate" not in source
+    assert "requests." not in source
+
+
 def test_v36_mobile_contract_stacks_qbs_and_hero_metrics() -> None:
     source = _source("nfl_passing_yards_hub_v36.py")
     assert "@media(max-width:900px)" in source
