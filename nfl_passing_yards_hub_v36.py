@@ -35,8 +35,6 @@ STAKE_SIZING_ENABLED = False
 
 _COMPACT_DASHBOARD_CSS = r"""
 <style>
-/* V36 is presentation-only. Keep the old certification/build banner in the
-   source chain but remove it from the customer-facing scan path. */
 .kpass29-build{display:none!important}
 
 .monster-pass-dashboard{width:100%;max-width:1180px;margin:0 auto 14px}
@@ -55,8 +53,6 @@ _COMPACT_DASHBOARD_CSS = r"""
 .monster-qb-hero .kpy10-metrics{display:block!important;margin-top:6px}.monster-qb-hero .kpy10-metrics>div{display:none!important}.monster-qb-hero .kpy10-metrics>div:nth-child(5){display:block!important;border:1px solid #304258!important;background:#0d1622!important;border-radius:10px!important;padding:8px!important;color:#8495aa!important}.monster-qb-hero .kpy10-metrics>div:nth-child(5) b{font-size:.78rem!important;color:#f1f5f9!important}
 .monster-empty{border:1px dashed #475569;border-radius:11px;padding:9px;color:#94a3b8;font-size:.55rem;background:#0c131d}
 
-/* Approved semantic color system: green favorable, red negative, amber caution,
-   blue neutral info, purple Monster/model, gray supporting/unknown. */
 .tone-positive{--tone-border:#2f765a;--tone-bg:#0b2a20;--tone-text:#79efbc}
 .tone-negative{--tone-border:#8a4b49;--tone-bg:#321716;--tone-text:#ff9d94}
 .tone-caution{--tone-border:#7a6a38;--tone-bg:#2a2412;--tone-text:#f1ca72}
@@ -75,12 +71,18 @@ _COMPACT_DASHBOARD_CSS = r"""
 .monster-reason .kpy-xgrade,.monster-reason .kpy-ilabel,.monster-reason .kpy-envlabel{display:inline-flex!important;border:0!important;background:transparent!important;padding:0!important;color:var(--tone-text)!important;font-size:.60rem!important}
 .monster-reason.reason-weather .kpy-envmetrics{display:block!important;margin:0!important}.monster-reason.reason-weather .kpy-envmetrics>div{display:none!important;border:0!important;background:transparent!important;padding:0!important}.monster-reason.reason-weather .kpy-envmetrics>div:nth-child(3){display:block!important}.monster-reason.reason-weather .kpy-envmetrics b{font-size:.68rem!important}.monster-reason.reason-weather .kpy-envmetrics span{font-size:.38rem!important;color:var(--tone-text)!important}
 
-.monster-deep-evidence{width:100%}
+.monster-deep-wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.monster-deep-evidence{min-width:0;border:1px solid #2f3b4c;border-radius:17px;background:#0b1119;padding:10px}
+.monster-deep-title{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#e8eef6;font-size:.72rem;font-weight:950;margin-bottom:7px}.monster-deep-title span{color:#8795a7;font-size:.44rem;text-transform:uppercase;letter-spacing:.08em}
+.monster-evidence-group{border:1px solid #2c394a;border-radius:11px;background:#0d151f;margin-top:6px;overflow:hidden}
+.monster-evidence-group summary{cursor:pointer;list-style:none;padding:8px 9px;color:#cbd5e1;font-size:.55rem;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:8px}.monster-evidence-group summary::-webkit-details-marker{display:none}.monster-evidence-group summary:after{content:'+';color:#9daabd;font-size:.78rem}.monster-evidence-group[open] summary:after{content:'–'}
+.monster-evidence-body{padding:0 8px 8px;overflow-x:auto}.monster-evidence-body>section,.monster-evidence-body>article,.monster-evidence-body>div{margin-top:6px!important;margin-bottom:0!important}
+.monster-evidence-body .kpass29-card{border-color:#334155!important}.monster-evidence-body .kpass29-main,.monster-evidence-body .kpass29-foot{display:grid!important}.monster-evidence-body .kpass29-foot{display:block!important}
 
 @media(max-width:900px){.monster-why-projection{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){
   .monster-matchup-header{grid-template-columns:44px minmax(0,1fr) 44px;padding:10px;gap:8px}.monster-matchup-logo{width:42px;height:42px;border-radius:11px;padding:5px}.monster-matchup-title{font-size:.86rem}.monster-matchup-time{font-size:.49rem}
-  .monster-qb-hero-grid,.monster-why-wrap{grid-template-columns:1fr}.monster-why-projection{grid-template-columns:repeat(2,minmax(0,1fr))}.monster-reason.reason-weather{grid-column:1/-1}.monster-qb-hero{padding:10px}.monster-qb-hero .kpy10-hero{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .monster-qb-hero-grid,.monster-why-wrap,.monster-deep-wrap{grid-template-columns:1fr}.monster-why-projection{grid-template-columns:repeat(2,minmax(0,1fr))}.monster-reason.reason-weather{grid-column:1/-1}.monster-qb-hero{padding:10px}.monster-qb-hero .kpy10-hero{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
 </style>
 """
@@ -104,7 +106,6 @@ def _logo_from_identity(identity_html: str) -> str:
 
 
 def _semantic_tone(rendered_html: str) -> str:
-    """Map already-rendered evidence labels to the approved visual palette only."""
     text = str(rendered_html or "").lower()
     if any(token in text for token in ("low-pressure", " help", "controlled")):
         return "tone-positive"
@@ -118,7 +119,6 @@ def _semantic_tone(rendered_html: str) -> str:
 
 
 def _matchup_header_html(captured: dict[str, list[str]]) -> str:
-    """Build a customer header from already-selected matchup display state."""
     selected = str(st.session_state.get("nfl_passing_yards_v8_matchup") or "Verified NFL Matchup").strip()
     matchup, sep, clock = selected.partition("•")
     identity_left = _piece(captured, "identity", 0)
@@ -139,24 +139,19 @@ def _matchup_header_html(captured: dict[str, list[str]]) -> str:
 
 
 def _qb_hero_card_html(captured: dict[str, list[str]], index: int) -> str:
-    """Recompose certified rendered identity/projection/market values only."""
     identity = _piece(captured, "identity", index)
     projection = _piece(captured, "projection", index)
     market = _piece(captured, "market", index)
-
     identity_top = _extract_one(identity, "div", "kpass29-top") or '<div class="monster-empty">Verified quarterback identity unavailable.</div>'
     projection_hero = _extract_one(projection, "div", "kpy-projhero") or '<div class="monster-empty">Monster projection unavailable.</div>'
     market_hero = _extract_one(market, "div", "kpy10-hero") or '<div class="monster-empty">Verified market line unavailable.</div>'
     market_metrics = _extract_one(market, "div", "kpy10-metrics") or '<div class="monster-empty">Market edge unavailable.</div>'
-
     return (
         f'<article class="monster-qb-hero" data-qb-index="{index}">'
         f'{identity_top}'
         '<div class="monster-hero-divider"></div>'
         '<div class="monster-hero-label"><span>Model read</span><strong>MONSTER PROJECTION</strong></div>'
-        f'{projection_hero}'
-        f'{market_hero}'
-        f'{market_metrics}'
+        f'{projection_hero}{market_hero}{market_metrics}'
         '</article>'
     )
 
@@ -164,22 +159,15 @@ def _qb_hero_card_html(captured: dict[str, list[str]], index: int) -> str:
 def _reason_tile(label: str, rendered_html: str, tone: str, extra_class: str = "") -> str:
     value = rendered_html or '<div class="monster-empty">Unavailable</div>'
     classes = f"monster-reason {tone} {extra_class}".strip()
-    return (
-        f'<div class="{classes}">'
-        f'<div class="monster-reason-label">{escape(label)}</div>'
-        f'<div class="monster-reason-value">{value}</div>'
-        '</div>'
-    )
+    return f'<div class="{classes}"><div class="monster-reason-label">{escape(label)}</div><div class="monster-reason-value">{value}</div></div>'
 
 
 def _why_projection_html(captured: dict[str, list[str]], index: int) -> str:
-    """Summarize five certified evidence surfaces without deriving new values."""
     identity = _piece(captured, "identity", index)
     projection = _piece(captured, "projection", index)
     pressure = _piece(captured, "pressure", index)
     personnel = _piece(captured, "personnel", index)
     environment = _piece(captured, "environment", index) or _piece(captured, "environment", 0)
-
     qb_name = _extract_one(identity, "div", "kpass29-name")
     projection_hero = _extract_one(projection, "div", "kpy-projhero")
     pressure_grade = _extract_one(pressure, "div", "kpy-xgrade")
@@ -187,7 +175,6 @@ def _why_projection_html(captured: dict[str, list[str]], index: int) -> str:
     environment_label = _extract_one(environment, "div", "kpy-envlabel")
     environment_metrics = _extract_one(environment, "div", "kpy-envmetrics")
     weather_value = (environment_label or "") + (environment_metrics or "")
-
     return (
         '<section class="monster-why-card">'
         f'<div class="monster-why-title"><div>Why This Projection • {qb_name or "Quarterback"}</div><span>Certified evidence only</span></div>'
@@ -197,35 +184,71 @@ def _why_projection_html(captured: dict[str, list[str]], index: int) -> str:
         f'{_reason_tile("Pressure", pressure_grade, _semantic_tone(pressure_grade), "reason-pressure")}'
         f'{_reason_tile("Personnel", personnel_label, _semantic_tone(personnel_label), "reason-personnel")}'
         f'{_reason_tile("Weather", weather_value, _semantic_tone(environment_label), "reason-weather")}'
-        '</div>'
+        '</div></section>'
+    )
+
+
+def _evidence_group(label: str, body: str) -> str:
+    content = body or '<div class="monster-empty">Certified evidence unavailable.</div>'
+    return (
+        '<details class="monster-evidence-group">'
+        f'<summary>{escape(label)}</summary>'
+        f'<div class="monster-evidence-body">{content}</div>'
+        '</details>'
+    )
+
+
+def _deep_evidence_html(captured: dict[str, list[str]], index: int) -> str:
+    """Keep every certified Step 1–10 rendered surface available but collapsed."""
+    identity = _piece(captured, "identity", index)
+    profile = _piece(captured, "profile", index)
+    defense = _piece(captured, "defense", index)
+    pressure = _piece(captured, "pressure", index)
+    personnel = _piece(captured, "personnel", index)
+    environment = _piece(captured, "environment", index) or _piece(captured, "environment", 0)
+    projection = _piece(captured, "projection", index)
+    context = _piece(captured, "context", index)
+    distribution = _piece(captured, "distribution", index)
+    market = _piece(captured, "market", index)
+    qb_name = _extract_one(identity, "div", "kpass29-name")
+    return (
+        '<section class="monster-deep-evidence">'
+        f'<div class="monster-deep-title"><div>{qb_name or "Quarterback"} • Deep Evidence</div><span>Steps 1–10 • collapsed</span></div>'
+        f'{_evidence_group("Passing Profile", identity + profile)}'
+        f'{_evidence_group("Opponent Pass Defense", defense)}'
+        f'{_evidence_group("Pressure + Protection", pressure)}'
+        f'{_evidence_group("Personnel + Availability", personnel)}'
+        f'{_evidence_group("Game Environment", environment)}'
+        f'{_evidence_group("Projection Recipe", projection)}'
+        f'{_evidence_group("Uncertainty + Context", context)}'
+        f'{_evidence_group("Distribution + Probability", distribution)}'
+        f'{_evidence_group("Market Math", market)}'
         '</section>'
     )
 
 
 def _compact_dashboard_html(captured: dict[str, list[str]]) -> str:
-    """Compose scan-first matchup, QB heroes, and why-projection evidence."""
     return (
         '<div class="monster-pass-dashboard">'
         f'{_matchup_header_html(captured)}'
         '<div class="monster-qb-hero-grid">'
-        f'{_qb_hero_card_html(captured, 0)}'
-        f'{_qb_hero_card_html(captured, 1)}'
+        f'{_qb_hero_card_html(captured, 0)}{_qb_hero_card_html(captured, 1)}'
         '</div>'
         '<div class="monster-why-wrap">'
-        f'{_why_projection_html(captured, 0)}'
-        f'{_why_projection_html(captured, 1)}'
+        f'{_why_projection_html(captured, 0)}{_why_projection_html(captured, 1)}'
+        '</div>'
+        '<div class="monster-deep-wrap">'
+        f'{_deep_evidence_html(captured, 0)}{_deep_evidence_html(captured, 1)}'
         '</div>'
         '</div>'
     )
 
 
 def _install_compact_dashboard_shell(streamlit_module: Any = st) -> None:
-    """Install presentation-only V36 CSS; no data or model mutation occurs."""
     streamlit_module.markdown(_COMPACT_DASHBOARD_CSS, unsafe_allow_html=True)
 
 
 def render_nfl_passing_yards_hub() -> None:
-    """Render V35 while temporarily swapping only V34's final HTML composer."""
     _install_compact_dashboard_shell()
     original_composer = composition._combined_player_cards_html
     composition._combined_player_cards_html = _compact_dashboard_html
