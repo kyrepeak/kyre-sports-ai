@@ -1,0 +1,108 @@
+name: NFL Passing Yards V36 Compact Dashboard V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "nfl_passing_yards_compact_ui_v1.py"
+      - "nfl_passing_yards_hub_v36.py"
+      - "streamlit_memory_lazy_router_v137.py"
+      - "tests/test_nfl_passing_yards_compact_dashboard_v36.py"
+      - ".github/workflows/nfl-passing-yards-v36-compact-dashboard-v1.yml"
+      - "devsystem/task_ledgers/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-compact-dashboard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
+
+      - name: Compile V36 presentation surface
+        run: |
+          python -m py_compile \
+            nfl_passing_yards_compact_ui_v1.py \
+            nfl_passing_yards_hub_v36.py \
+            streamlit_memory_lazy_router_v137.py \
+            app.py \
+            tests/test_nfl_passing_yards_compact_dashboard_v36.py
+
+      - name: Prove frozen Passing Yards analytical owners remain untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_hub_v([1-9]|1[0-9]|2[0-9]|3[0-5])\.py$|nfl_passing_yards_market_api_v[12]\.py$|streamlit_memory_lazy_router_v(12[0-9]|13[0-6])\.py$|nfl_receiving_yards_.*\.py$|nfl_rushing_yards_.*\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "PASSING_V36_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "PASSING_V36_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Run V36 compact dashboard contract
+        run: python -m pytest -q tests/test_nfl_passing_yards_compact_dashboard_v36.py
+
+      - name: Re-run frozen V35 transport and production-cleanup contracts
+        run: python -m pytest -q tests/test_nfl_passing_yards_v35_production_cleanup_v1.py
+
+      - name: Re-run frozen V34 combined-player-card contracts
+        run: python -m pytest -q tests/test_nfl_passing_yards_v34_combined_player_cards_v1.py
+
+      - name: Re-run frozen V33 final certification contracts
+        run: python -m pytest -q tests/test_nfl_passing_yards_v33_visual_parity_step6_final_v1.py
+
+      - name: Re-run frozen V28 exact-ID personnel regression
+        run: python -m pytest -q tests/test_nfl_passing_yards_step5_personnel_v2.py
+
+      - name: Prove V36 remains presentation-only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import inspect
+          import nfl_passing_yards_hub_v36 as page
+          import nfl_passing_yards_compact_ui_v1 as ui
+          import streamlit_memory_lazy_router_v137 as router
+
+          assert page.DISPLAY_ONLY is True
+          assert page.COMPACT_DASHBOARD_ONLY is True
+          assert page.FROZEN_PRIOR == 'nfl_passing_yards_hub_v35'
+          assert page.FROZEN_COMPOSITION == 'nfl_passing_yards_hub_v34'
+          assert page.FROZEN_PASSING_ENGINE == 'nfl_passing_yards_hub_v28'
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.STAKE_SIZING_ENABLED is False
+          assert router.ACTIVE_PASSING_YARDS_HUB == 'nfl_passing_yards_hub_v36'
+          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v136'
+          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router.STAKE_SIZING_ENABLED is False
+
+          source = inspect.getsource(page.render_nfl_passing_yards_hub)
+          for forbidden in (
+              'build_baseline_projection', 'build_context_projection', 'build_distribution',
+              'evaluate_market', 'fair_odds', 'no_vig', 'projection_adjustment', 'stake_size',
+          ):
+              assert forbidden not in source, forbidden
+
+          css = ui.COMPACT_DASHBOARD_CSS
+          assert '@media(max-width:900px)' in css
+          assert '.kpass36-grid{grid-template-columns:1fr}' in css
+          print('NFL_PASSING_YARDS_V36_PRESENTATION_ONLY_GREEN')
+          PY
