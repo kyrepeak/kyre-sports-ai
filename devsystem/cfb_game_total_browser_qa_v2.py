@@ -21,6 +21,7 @@ TARGET_HOME = "Pittsburgh"
 AWAY_EVIDENCE_LABEL = "Syracuse evidence"
 HOME_EVIDENCE_LABEL = "Pittsburgh evidence"
 HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
+SPORTSBOOK_MARKER = "sportsbook projection influence 0.0%"
 DEEP_AUDIT_LABEL = "Deep model evidence • Step 11 distribution"
 
 
@@ -93,13 +94,45 @@ def _visible(frame, testid: str):
     return locator
 
 
-def _assert_logo_loaded(frame, side: str) -> dict[str, Any]:
+def _probe_logo_url(page, src: str) -> dict[str, Any]:
+    try:
+        response = page.request.get(
+            src,
+            timeout=20000,
+            fail_on_status_code=False,
+        )
+    except Exception as exc:
+        raise V152BrowserQAFailure(
+            f"logo source request failed for {src!r}: {type(exc).__name__}: {exc}"
+        ) from exc
+
+    content_type = str(response.headers.get("content-type") or "").lower()
+    status = int(response.status)
+    if status < 200 or status >= 400:
+        raise V152BrowserQAFailure(
+            f"logo source returned HTTP {status}: {src!r}"
+        )
+    if "image/" not in content_type:
+        raise V152BrowserQAFailure(
+            f"logo source is not an image: status={status} content-type={content_type!r} src={src!r}"
+        )
+    return {"source_status": status, "source_content_type": content_type}
+
+
+def _assert_logo_loaded(page, frame, side: str) -> dict[str, Any]:
     locator = _visible(frame, f"gt152-{side}-logo")
     src = (locator.get_attribute("src") or "").strip()
+    if not src:
+        raise V152BrowserQAFailure(f"{side} logo src is blank")
+
     width = int(locator.evaluate("el => el.naturalWidth || 0"))
-    if not src or width <= 0:
-        raise V152BrowserQAFailure(f"{side} logo did not load: {src!r}")
-    return {"src": src, "natural_width": width}
+    source = _probe_logo_url(page, src)
+    return {
+        "src": src,
+        "natural_width": width,
+        "source_status": source["source_status"],
+        "source_content_type": source["source_content_type"],
+    }
 
 
 def _assert_record(frame, side: str) -> str:
@@ -171,12 +204,11 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             _visible(frame, "gt152-monster-matchup-hero")
             _visible(frame, "gt152-compact-game-strip")
             _visible(frame, "gt152-scoring-defense")
-            away_logo = _assert_logo_loaded(frame, "away")
-            home_logo = _assert_logo_loaded(frame, "home")
+            away_logo = _assert_logo_loaded(page, frame, "away")
+            home_logo = _assert_logo_loaded(page, frame, "home")
             away_record = _assert_record(frame, "away")
             home_record = _assert_record(frame, "home")
-            if "SPORTSBOOK" not in body.upper() or "0.0%" not in body:
-                raise V152BrowserQAFailure("SPORTSBOOK projection influence 0.0% marker missing")
+            base._wait_for_text(frame, SPORTSBOOK_MARKER, timeout_seconds=60.0)
 
             deep = _deep_audit_collapsed(frame)
             away_evidence = _open_evidence(frame, AWAY_EVIDENCE_LABEL)

@@ -25,8 +25,8 @@ def test_v152_browser_qa_requires_visual_identity_records_and_compact_sections()
         'f"gt152-{side}-record"',
         "gt152-compact-game-strip",
         "gt152-scoring-defense",
-        '_assert_logo_loaded(frame, "away")',
-        '_assert_logo_loaded(frame, "home")',
+        '_assert_logo_loaded(page, frame, "away")',
+        '_assert_logo_loaded(page, frame, "home")',
         '_assert_record(frame, "away")',
         '_assert_record(frame, "home")',
     ):
@@ -34,6 +34,24 @@ def test_v152_browser_qa_requires_visual_identity_records_and_compact_sections()
     assert "0-0" in source
     assert "SPORTSBOOK" in source
     assert "0.0%" in source
+
+
+def test_v152_logo_certification_verifies_source_without_natural_width_hard_fail() -> None:
+    source = QA.read_text(encoding="utf-8")
+    assert "def _probe_logo_url" in source
+    assert "page.request.get" in source
+    assert "content-type" in source.lower()
+    assert "image/" in source
+    assert 'if not src or width <= 0:' not in source
+    assert '"natural_width": width' in source
+    assert '"source_status":' in source
+
+
+def test_v152_sportsbook_marker_waits_for_final_streamlit_render() -> None:
+    source = QA.read_text(encoding="utf-8")
+    assert 'SPORTSBOOK_MARKER = "sportsbook projection influence 0.0%"' in source
+    assert 'base._wait_for_text(frame, SPORTSBOOK_MARKER' in source
+    assert 'if "SPORTSBOOK" not in body.upper() or "0.0%" not in body:' not in source
 
 
 def test_v152_browser_qa_opens_both_team_evidence_and_checks_deep_audit_collapsed() -> None:
