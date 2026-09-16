@@ -208,3 +208,30 @@ def test_bootstrap_rejected_after_v2_exists_on_base(tmp_path):
     head = _git(root, "rev-parse", "HEAD")
     with pytest.raises(ActionLedgerFailure, match="bootstrap is invalid after V2 activation"):
         verify_pr_ledger(base, head, root=root)
+
+
+def test_bootstrap_rejects_unapproved_non_sports_file_even_if_declared_in_scope(tmp_path):
+    root, base = _init_repo(tmp_path)
+    (root / "devsystem" / "task_ledgers").mkdir(parents=True)
+    (root / "devsystem" / "forward_motion_policy_v2.json").write_text("{}\n", encoding="utf-8")
+    (root / "app.py").write_text("print('bootstrap escape')\n", encoding="utf-8")
+    ledger_path = root / "devsystem" / "task_ledgers" / "bootstrap.json"
+    ledger_path.write_text(json.dumps({
+        "version": 2,
+        "task_id": "monster-anti-loop-v2-activation",
+        "activation_mode": "v2-bootstrap",
+        "status": "DONE",
+        "bootstrap_scope": [
+            "devsystem/forward_motion_policy_v2.json",
+            "devsystem/task_ledgers/bootstrap.json",
+            "app.py",
+        ],
+        "action_log": {"head_chain_hash": "BOOTSTRAP-V2-ACTIVATION", "events": [], "consumed_receipts": []},
+        "transition_history": [],
+        "override_events": [],
+    }, indent=2) + "\n", encoding="utf-8")
+    _git(root, "add", ".")
+    _git(root, "commit", "-m", "attempt unrelated bootstrap change")
+    head = _git(root, "rev-parse", "HEAD")
+    with pytest.raises(ActionLedgerFailure, match="unapproved paths|approved V2 control-plane paths"):
+        verify_pr_ledger(base, head, root=root)
