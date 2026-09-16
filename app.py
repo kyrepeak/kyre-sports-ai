@@ -1,9 +1,10 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards compact dashboard.
+"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards presentation grades.
 
-Router V137 is additive over frozen Router V136. It advances only exact
-NFL -> Passing Yards to display-only V36 while preserving V35 transport,
-certified V34 composition, and frozen V33/V28 analytics. Every other route
-continues through Router V136 unchanged.
+Router V140 is additive over frozen Router V139. It advances only exact
+NFL -> Passing Yards to V39 while preserving V38 Phoenix time, V37 smart-slate
+behavior, V36 presentation, V35 transport, certified V34 composition, and
+frozen V33/V28 analytics. Every other route continues through Router V139
+unchanged.
 
 Sportsbook projection influence stays 0.0% and stake sizing stays OFF.
 """
@@ -206,12 +207,15 @@ FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD
 FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"
 FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"
 FROZEN_V136_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD_2026-09-15"
+FROZEN_V137_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD_2026-09-15"
+FROZEN_V138_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V138_NFL_PASSING_YARDS_SMART_SLATE_2026-09-16"
+FROZEN_V139_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V139_NFL_PASSING_YARDS_PHOENIX_TIME_2026-09-16"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V140_NFL_PASSING_YARDS_PRESENTATION_GRADES_2026-09-16"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v137 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v140 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
