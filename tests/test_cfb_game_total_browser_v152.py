@@ -21,12 +21,14 @@ def test_v152_browser_qa_requires_visual_identity_records_and_compact_sections()
     source = QA.read_text(encoding="utf-8")
     for marker in (
         "gt152-monster-matchup-hero",
-        "gt152-away-logo",
-        "gt152-home-logo",
-        "gt152-away-record",
-        "gt152-home-record",
+        'f"gt152-{side}-logo"',
+        'f"gt152-{side}-record"',
         "gt152-compact-game-strip",
         "gt152-scoring-defense",
+        '_assert_logo_loaded(frame, "away")',
+        '_assert_logo_loaded(frame, "home")',
+        '_assert_record(frame, "away")',
+        '_assert_record(frame, "home")',
     ):
         assert marker in source
     assert "0-0" in source
