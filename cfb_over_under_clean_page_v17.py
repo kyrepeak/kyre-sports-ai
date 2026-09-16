@@ -32,9 +32,10 @@ import cfb_over_under_slate_v14_runtime as runtime_slate
 import cfb_over_under_step3_readable_v2 as readable_step3
 import cfb_schedule_v5_runtime_snapshot as schedule
 
-MODEL_VERSION = "CFB O/U CLEAN PAGE V17.3 • STEP 3 FAVORABLE / TOUGH VERDICTS"
+MODEL_VERSION = "CFB O/U CLEAN PAGE V149 • COMPACT VISUAL CORRECTION"
 MARKET = "Over/Under"
 _ET = ZoneInfo("America/New_York")
+_PHX = ZoneInfo("America/Phoenix")
 
 _CSS = r"""
 <style>
@@ -109,6 +110,14 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
 .c17-step.step-12{--step-accent:#f2c94c;--step-wash:rgba(242,201,76,.10);border-color:rgba(242,201,76,.30);background:linear-gradient(145deg,#17150a,#0a151b 72%)}
 .c17-step-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:8px}
 .c17-note{padding:8px 10px;color:#6f8793;font-size:.34rem;line-height:1.45;border-top:1px solid rgba(126,175,205,.08)}
+.v149-quick{border:1px solid rgba(168,85,247,.28);border-radius:16px;background:linear-gradient(145deg,#100c19,#07151d 72%);padding:12px;margin:10px 0}
+.v149-kicker{color:#c9a8ff;font-size:.42rem;font-weight:950;letter-spacing:.09em}.v149-pick{font-size:1.22rem;color:#f7f3ff;font-weight:950;margin:3px 0 8px}
+.v149-quickgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.v149-q{border:1px solid rgba(180,200,215,.10);border-radius:10px;background:#09131b;padding:8px}
+.v149-q small{display:block;color:#738b98;font-size:.27rem;font-weight:900;text-transform:uppercase}.v149-q strong{display:block;color:#e7f5fb;font-size:.58rem;margin-top:3px}
+.v149-zero{margin-top:8px;color:#b892ff;font-size:.32rem;font-weight:950;letter-spacing:.04em}
+.v149-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:8px 0 10px}.v149-chip{border:1px solid rgba(140,165,180,.15);border-radius:10px;background:#09141b;padding:7px 6px;min-width:0}
+.v149-chip small{display:block;color:#778d98;font-size:.24rem;font-weight:950}.v149-chip strong{display:block;color:#dce9ef;font-size:.30rem;line-height:1.2;margin:2px 0 4px}.v149-chip span{font-size:.27rem;font-weight:950}
+.v149-chip.ready{border-color:rgba(72,205,135,.30)}.v149-chip.ready span{color:#77dda8}.v149-chip.limited{border-color:rgba(241,199,111,.32)}.v149-chip.limited span{color:#f1c76f}.v149-chip.gated{border-color:rgba(255,110,110,.30)}.v149-chip.gated span{color:#ff8f8f}.v149-chip.check span{color:#9fb3bd}
 .c17-final{border:1px solid rgba(84,220,151,.28);border-radius:15px;background:#071a12;margin-top:10px;padding:11px}
 .c17-final b{color:#8ce8b8;font-size:.50rem}.c17-final strong{display:block;color:#effff6;font-size:1.5rem;margin-top:4px}
 .c17-final span{color:#85a391;font-size:.42rem}
@@ -117,6 +126,7 @@ display:flex;align-items:center;justify-content:center;background:#0c1b24;overfl
  .c17-team.home .c17-logo{grid-column:1}.c17-team.home .c17-copy{grid-column:2;grid-row:1}
  .c17-context{grid-template-columns:repeat(2,minmax(0,1fr))}.c17-context div:last-child{grid-column:1/-1}
  .c17-grid2,.c17-s3-grid{grid-template-columns:1fr}.c17-metrics,.c17-ranks,.c17-step-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .v149-quickgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.v149-strip{grid-template-columns:repeat(3,minmax(0,1fr))}
  .c17-s3-row{grid-template-columns:1.05fr .86fr .86fr .92fr}.c17-s3-label{font-size:.31rem}.c17-s3-val{font-size:.38rem}\n .c17-s3-verdict{grid-template-columns:1fr}
 }
 </style>
@@ -139,6 +149,28 @@ def _pct(value: Any) -> str:
         return f"{100.0 * float(value):.1f}%"
     except Exception:
         return "—"
+
+
+def _phoenix_kickoff(game: Mapping[str, Any]) -> str:
+    """Present the existing Eastern kickoff in Arizona time; model inputs stay untouched."""
+    kickoff = _clean(game.get("kickoff_et"))
+    day = _clean(game.get("game_date"))
+    if not kickoff or not day:
+        return kickoff or "TBD"
+    clock = kickoff.upper().replace("EDT", "").replace("EST", "").replace("ET", "").strip()
+    parsed = None
+    for fmt in ("%Y-%m-%d %I:%M %p", "%Y-%m-%d %I %p"):
+        try:
+            parsed = datetime.strptime(f"{day} {clock}", fmt).replace(tzinfo=_ET)
+            break
+        except ValueError:
+            continue
+    if parsed is None:
+        return kickoff
+    local = parsed.astimezone(_PHX)
+    hour = local.hour % 12 or 12
+    ampm = "AM" if local.hour < 12 else "PM"
+    return f"{hour}:{local.minute:02d} {ampm} {local.tzname() or 'MST'}"
 
 
 def _record(value: Any) -> str:
@@ -223,7 +255,7 @@ def _step1(game: Mapping[str, Any], away: Mapping[str, Any], home: Mapping[str, 
   {_team_step1("home", home, visuals.get("home") or {})}
  </div>
  <div class="c17-context">
-  <div><small>Kickoff</small><strong>{escape(_clean(game.get("kickoff_et")) or "TBD")}</strong></div>
+  <div><small>Kickoff • Phoenix</small><strong>{escape(_phoenix_kickoff(game))}</strong></div>
   <div><small>Stadium</small><strong>{escape(_clean(game.get("venue")) or "Venue unavailable")}</strong></div>
   <div><small>TV</small><strong>{escape(_clean(game.get("broadcast")) or "Broadcast unavailable")}</strong></div>
   <div><small>Status</small><strong>{escape(_clean(game.get("status")) or "Status unavailable")}</strong></div>
@@ -518,6 +550,53 @@ def _final(result: Mapping[str, Any]) -> str:
 </div>'''
 
 
+def _quick_read(result: Mapping[str, Any]) -> str:
+    raw = result.get("raw") or {}
+    final = result.get("final") or {}
+    selection = _clean(final.get("selection") or final.get("pick") or raw.get("model_lean")) or "PASS"
+    probability = final.get("selection_probability")
+    if probability is None:
+        probability = raw.get("under_probability") if selection.upper() == "UNDER" else raw.get("over_probability")
+    projected = raw.get("projected_total")
+    line = result.get("analysis_line")
+    try:
+        edge_text = f"{float(projected) - float(line):+.1f}"
+    except Exception:
+        edge_text = "—"
+    return (
+        '<div class="v149-quick">'
+        '<div class="v149-kicker">⚡ QUICK READ</div>'
+        f'<div class="v149-pick">{escape(selection)}</div>'
+        '<div class="v149-quickgrid">'
+        f'<div class="v149-q"><small>Monster projection</small><strong>{_num(projected,1)}</strong></div>'
+        f'<div class="v149-q"><small>Analysis line</small><strong>{_num(line,1)}</strong></div>'
+        f'<div class="v149-q"><small>Model edge</small><strong>{escape(edge_text)}</strong></div>'
+        f'<div class="v149-q"><small>Confidence</small><strong>{_pct(probability)}</strong></div>'
+        '</div>'
+        '<div class="v149-zero">0.0% SPORTSBOOK PROJECTION INFLUENCE • MARKET LINE IS THRESHOLD/CONTEXT ONLY</div>'
+        '</div>'
+    )
+
+
+def _status_strip(result: Mapping[str, Any]) -> str:
+    specs = (
+        (5, "EXPLOSIVE", "explosive_engine"),
+        (6, "RED ZONE", "red_zone_engine"),
+        (7, "THIRD DOWN", "third_down_engine"),
+        (8, "TURNOVERS", "turnover_engine"),
+        (9, "ENVIRONMENT", "environment_engine"),
+        (10, "HISTORY", "history_engine"),
+    )
+    chips = []
+    for step, title, key in specs:
+        status = _engine_ready(result.get(key) or {})
+        chips.append(
+            f'<div class="v149-chip {escape(status.lower())}">'
+            f'<small>STEP {step}</small><strong>{escape(title)}</strong><span>{escape(status)}</span></div>'
+        )
+    return '<div class="v149-strip">' + ''.join(chips) + '</div>'
+
+
 def _line_board(games: list[Mapping[str, Any]], selected_identity: str, selected_line: float) -> list[dict[str, Any]]:
     rows = []
     for game in games:
@@ -525,7 +604,7 @@ def _line_board(games: list[Mapping[str, Any]], selected_identity: str, selected
         rows.append({
             "Use": identity == selected_identity,
             "Matchup": f"{game.get('away_team')} @ {game.get('home_team')}",
-            "Kickoff ET": game.get("kickoff_et"),
+            "Phoenix kickoff": _phoenix_kickoff(game),
             "Analysis Line": float(selected_line),
             "Identity": identity,
         })
@@ -560,7 +639,7 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
         options=list(range(len(games))),
         format_func=lambda i: (
             f"{games[int(i)].get('away_team')} @ {games[int(i)].get('home_team')} "
-            f"• {games[int(i)].get('kickoff_et') or 'TBD'}"
+            f"• {_phoenix_kickoff(games[int(i)])}"
         ),
         key=f"cfb_ou_v17_matchup_{day}",
     )
@@ -597,7 +676,8 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
         )
 
     st.markdown(_step1(game, away, home), unsafe_allow_html=True)
-    st.markdown(_step2(away, home), unsafe_allow_html=True)
+    st.markdown(_quick_read(result), unsafe_allow_html=True)
+    st.markdown(_status_strip(result), unsafe_allow_html=True)
 
     try:
         readable_matchup = readable_step3.build_matchup_step3(game, away, home)
@@ -607,6 +687,8 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
             "display_ready": False,
             "reason": f"Readable Step 3 data failed visibly: {type(exc).__name__}: {exc}",
         }
+with st.expander("Deep evidence • Steps 2–12", expanded=False):
+    st.markdown(_step2(away, home), unsafe_allow_html=True)
     st.markdown(
         _step3_readable(
             readable_matchup,
