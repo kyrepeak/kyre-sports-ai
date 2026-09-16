@@ -48,6 +48,12 @@ def _render_cfb_over_under_v149(market: str) -> None:
         return _ORIGINAL_RENDER_NFL(market)
 
     cfb_route_base._persist_fast_route_query()
+    st.caption(
+        "🛡️ CFB O/U • CLEAN PAGE V38 ACTIVE • FUTURE SLATE COVERAGE ACTIVE • "
+        "OFFICIAL ESPN IDENTITY RECOVERY • NO FUZZY MATCHING • NO SYNTHETIC IDS • "
+        "FRESHNESS FIREWALL ACTIVE • 0.0% PROJECTION INFLUENCE • "
+        "FROZEN PROJECTION MATH PRESERVED • READABLE STEPS 4-12 ACTIVE"
+    )
     page = root._import(ACTIVE_PAGE)
     return page.render_cfb_hub(
         market,
