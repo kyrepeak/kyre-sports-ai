@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def pytest_collection_modifyitems(session, config, items):
-    """Keep the permanent CFB lane aware of the active V150 Game Total route."""
+    """Keep the permanent CFB lane aware of frozen V150 + active V151 handoff."""
     if not any(item.path.name.startswith("test_cfb_") for item in items):
         return
 
@@ -59,12 +59,12 @@ def pytest_collection_modifyitems(session, config, items):
     assert "st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET" in router_source
 
     # app.py still boots V149. The additive activation shim must preserve V149's
-    # certified O/U V38 path while handing only exact Game Total to V150.
+    # certified O/U V38 path while handing only exact Game Total to active V151.
     assert 'ACTIVE_PAGE = "cfb_over_under_clean_page_v38"' in activation_source
     assert 'OVER_UNDER_MARKET = "Over/Under"' in activation_source
     assert 'GAME_TOTAL_MARKET = "Game Total"' in activation_source
     assert "def _restore_game_total_v150_from_query" in activation_source
-    assert "streamlit_memory_lazy_router_v150" in activation_source
+    assert "streamlit_memory_lazy_router_v151" in activation_source
     assert "_render_direct_cfb_game_total" in activation_source
     assert "cfb_route_base._persist_fast_route_query()" in activation_source
 
