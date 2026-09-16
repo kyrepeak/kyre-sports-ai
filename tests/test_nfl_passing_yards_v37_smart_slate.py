@@ -14,68 +14,51 @@ def _controller():
     return importlib.import_module("nfl_passing_yards_slate_controller_v1")
 
 
-class _Games:
-    def __init__(self, empty: bool) -> None:
-        self.empty = empty
-
-
-def test_smart_slate_advances_from_empty_day_to_next_verified_games() -> None:
+def test_smart_slate_adapter_accepts_verified_future_slate_from_frozen_v12() -> None:
     controller = _controller()
-    seen: list[str] = []
-    empty_by_day = {
-        "2026-09-15": True,
-        "2026-09-16": True,
-        "2026-09-17": False,
-    }
 
-    def loader(day_str: str):
-        seen.append(day_str)
-        return _Games(empty_by_day[day_str]), {"request_ok": True}
+    def finder(start_day: date, max_forward_days: int):
+        assert start_day == date(2026, 9, 15)
+        assert max_forward_days == 7
+        return date(2026, 9, 17), 2, "verified"
 
     result = controller.resolve_next_verified_slate_date(
-        date(2026, 9, 15), loader, max_lookahead_days=3
+        date(2026, 9, 15), finder, max_lookahead_days=7
     )
 
     assert result["state"] == "FOUND"
     assert result["resolved_date"] == date(2026, 9, 17)
     assert result["advanced"] is True
-    assert seen == ["2026-09-15", "2026-09-16", "2026-09-17"]
 
 
-def test_smart_slate_keeps_selected_day_when_games_already_exist() -> None:
+def test_smart_slate_adapter_keeps_selected_day_when_v12_finds_games_now() -> None:
     controller = _controller()
-    seen: list[str] = []
 
-    def loader(day_str: str):
-        seen.append(day_str)
-        return _Games(False), {"request_ok": True}
+    def finder(start_day: date, max_forward_days: int):
+        return start_day, 0, "verified"
 
     result = controller.resolve_next_verified_slate_date(
-        date(2026, 9, 17), loader, max_lookahead_days=7
+        date(2026, 9, 17), finder, max_lookahead_days=7
     )
 
     assert result["state"] == "FOUND"
     assert result["resolved_date"] == date(2026, 9, 17)
     assert result["advanced"] is False
-    assert seen == ["2026-09-17"]
 
 
-def test_smart_slate_fails_closed_when_schedule_provider_fails() -> None:
+def test_smart_slate_adapter_fails_closed_when_v12_verification_fails() -> None:
     controller = _controller()
-    seen: list[str] = []
 
-    def loader(day_str: str):
-        seen.append(day_str)
-        return _Games(True), {"request_ok": False, "error": "provider down"}
+    def finder(start_day: date, max_forward_days: int):
+        return start_day, None, "verification_failed"
 
     result = controller.resolve_next_verified_slate_date(
-        date(2026, 9, 15), loader, max_lookahead_days=7
+        date(2026, 9, 15), finder, max_lookahead_days=7
     )
 
     assert result["state"] == "PROVIDER_ERROR"
     assert result["resolved_date"] == date(2026, 9, 15)
     assert result["advanced"] is False
-    assert seen == ["2026-09-15"]
 
 
 def test_empty_slate_notice_filter_matches_old_and_auto_advance_messages() -> None:
@@ -86,18 +69,23 @@ def test_empty_slate_notice_filter_matches_old_and_auto_advance_messages() -> No
     assert controller.is_empty_slate_notice(
         "No verified NFL games were returned for this ET date."
     )
+    assert controller.is_empty_slate_notice(
+        "No NFL games were returned for this selected ET calendar date."
+    )
     assert not controller.is_empty_slate_notice("NFL schedule verification failed.")
 
 
-def test_v37_is_additive_over_frozen_v36_and_primes_v8_slate_state() -> None:
+def test_v37_is_additive_over_frozen_v36_and_reuses_v12_auto_slate_finder() -> None:
     source = _source("nfl_passing_yards_hub_v37.py")
     assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v36"' in source
+    assert 'FROZEN_AUTO_SLATE = "nfl_passing_yards_hub_v12"' in source
     assert "SMART_NEXT_SLATE = True" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "STAKE_SIZING_ENABLED = False" in source
     assert "nfl_passing_yards_v8_date_input" in source
     assert "nfl_passing_yards_v8_date" in source
     assert "nfl_passing_yards_v8_matchup" in source
+    assert "auto_slate.find_next_verified_slate" in source
     assert "resolve_next_verified_slate_date" in source
 
 
