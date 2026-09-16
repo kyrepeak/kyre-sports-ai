@@ -12,7 +12,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-from devsystem import browser_qa_v1 as base
+import browser_qa_v1 as base
 
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
