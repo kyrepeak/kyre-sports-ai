@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-16T21:12:00Z",
+  "purpose": "Game-Total-only deterministic production fallback when deployed Streamlit cannot complete live reconciliation. This file does not feed frozen Step 11/12 model math.",
+  "games": [
+    {
+      "game_date": "2026-09-17",
+      "away_team": "Syracuse",
+      "home_team": "Pittsburgh",
+      "venue": "Acrisure Stadium",
+      "broadcast": "ESPN",
+      "status": "Scheduled",
+      "espn_week": 3,
+      "away": {
+        "team_id": "183",
+        "record_text": "1-1",
+        "conference_record_text": "0-1",
+        "home_record": {"wins": 1, "losses": 1, "ties": 0, "games": 2},
+        "away_record": {"wins": 0, "losses": 0, "ties": 0, "games": 0},
+        "neutral_record": {"wins": 0, "losses": 0, "ties": 0, "games": 0},
+        "recent_form": "WL",
+        "ppg": 42.0,
+        "points_allowed_pg": 12.0,
+        "point_diff_pg": 30.0,
+        "recent_ppg": 42.0,
+        "recent_points_allowed_pg": 12.0,
+        "recent_point_diff_pg": 30.0,
+        "sos_opponent_win_pct": 0.42,
+        "sos_coverage": 1.0,
+        "head_coach": "Fran Brown",
+        "division_context": "FBS",
+        "conference": "ACC",
+        "data_source": "Syracuse Athletics verified 2026 schedule/results + ESPN exact team identity",
+        "completed_games": [
+          {
+            "date": "2026-09-05",
+            "location": "home",
+            "points_for": 66.0,
+            "points_against": 3.0,
+            "result": "W",
+            "score": "66-3",
+            "opponent": "New Hampshire Wildcats"
+          },
+          {
+            "date": "2026-09-12",
+            "location": "home",
+            "points_for": 18.0,
+            "points_against": 21.0,
+            "result": "L",
+            "score": "18-21",
+            "opponent": "California Golden Bears"
+          }
+        ]
+      },
+      "home": {
+        "team_id": "221",
+        "record_text": "2-0",
+        "conference_record_text": "0-0",
+        "home_record": {"wins": 2, "losses": 0, "ties": 0, "games": 2},
+        "away_record": {"wins": 0, "losses": 0, "ties": 0, "games": 0},
+        "neutral_record": {"wins": 0, "losses": 0, "ties": 0, "games": 0},
+        "recent_form": "WW",
+        "ppg": 35.5,
+        "points_allowed_pg": 10.5,
+        "point_diff_pg": 25.0,
+        "recent_ppg": 35.5,
+        "recent_points_allowed_pg": 10.5,
+        "recent_point_diff_pg": 25.0,
+        "head_coach": "Pat Narduzzi",
+        "division_context": "FBS",
+        "conference": "ACC",
+        "data_source": "Pitt Athletics verified 2026 schedule/results + ESPN exact team identity",
+        "completed_games": [
+          {
+            "date": "2026-09-05",
+            "location": "home",
+            "points_for": 59.0,
+            "points_against": 14.0,
+            "result": "W",
+            "score": "59-14",
+            "opponent": "Miami (OH)"
+          },
+          {
+            "date": "2026-09-12",
+            "location": "home",
+            "points_for": 12.0,
+            "points_against": 7.0,
+            "result": "W",
+            "score": "12-7",
+            "opponent": "UCF"
+          }
+        ]
+      },
+      "sources": [
+        "Syracuse University Athletics 2026 football schedule/results",
+        "University of Pittsburgh Athletics 2026 football schedule/results",
+        "ESPN exact team identity/logo IDs"
+      ]
+    }
+  ]
+}
