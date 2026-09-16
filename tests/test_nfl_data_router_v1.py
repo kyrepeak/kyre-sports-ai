@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import pandas as pd
+
 import sports_api.nfl_data_espn_fallback_v1 as espn
+import sports_api.nfl_game_totals_environment_context_v1 as environment
+import sports_api.nfl_game_totals_scoring_context_v1 as scoring
 from sports_api.nfl_data_router_v1 import (
     clear_router_caches,
     register_cache_clearer,
     route_metric,
 )
+from sports_api.nfl_game_totals_total_projection_v1 import build_total_projection
 
 
 def test_router_falls_back_after_primary_transport_failure():
@@ -239,3 +244,129 @@ def test_espn_pace_adapter_normalizes_exact_existing_fields_without_projection_m
     assert result["data"]["plays_per_game"] == 65.5
     assert result["data"]["possession_seconds_per_game"] == 1812.0
     assert "projection" not in " ".join(result.keys()).lower()
+
+
+def test_forced_primary_failures_use_certified_fallback_and_all_failures_block_projection(monkeypatch):
+    def primary_transport_failure(request):
+        raise TimeoutError("forced primary transport failure")
+
+    def espn_scoring_fallback(request):
+        season = int(request["season"])
+        team = str(request["team_abbr"])
+        games = [
+            {
+                "date": f"{season}-09-{index:02d}",
+                "pf": 24.0 + (1.0 if team == "BUF" else 0.0),
+                "pa": 21.0,
+                "opponent_abbr": "OPP",
+            }
+            for index in range(1, 17)
+        ]
+        return {
+            "ready": True,
+            "provider": "ESPN NFL scoring fallback",
+            "data": {"games": games},
+            "fields_verified": ["date", "pf", "pa", "opponent_abbr"],
+            "quality": "HIGH",
+            "data_freshness": "2026-09-15T22:00:00Z",
+            "diagnostics": [],
+        }
+
+    monkeypatch.setattr(scoring.nflverse, "fetch_scoring_games", primary_transport_failure)
+    monkeypatch.setattr(scoring.espn, "fetch_scoring_games", espn_scoring_fallback)
+
+    scoring_context = scoring.build_matchup_scoring_context(
+        "BUF", "Buffalo Bills", "MIA", "Miami Dolphins", "2026-09-20"
+    )
+    assert scoring_context["ready"] is True
+    assert scoring_context["provenance"]["away"]["prior"]["fallback_rank"] == 2
+    assert scoring_context["provenance"]["home"]["current"]["fallback_rank"] == 2
+
+    monkeypatch.setattr(
+        environment,
+        "load_nfl_slate",
+        lambda day: (
+            pd.DataFrame(
+                [
+                    {
+                        "game_id": "event-1",
+                        "away_abbr": "MIA",
+                        "home_abbr": "BUF",
+                        "game_date": "2026-09-20",
+                        "tip_et": "1:00 PM ET",
+                        "venue": "Highmark Stadium",
+                    }
+                ]
+            ),
+            {"request_ok": True, "games": 1},
+        ),
+    )
+    monkeypatch.setattr(environment.nws, "fetch_environment", primary_transport_failure)
+
+    def espn_environment_fallback(request):
+        return {
+            "ready": True,
+            "provider": "ESPN NFL environment fallback",
+            "data": {
+                "venue_name": "Highmark Stadium",
+                "indoor": False,
+                "temperature": 61.0,
+                "precipitation": 20.0,
+                "gust": 14.0,
+            },
+            "fields_verified": [
+                "venue_name",
+                "indoor",
+                "temperature",
+                "precipitation",
+                "gust",
+            ],
+            "quality": "HIGH",
+            "data_freshness": "2026-09-20T17:00:00Z",
+            "diagnostics": [],
+        }
+
+    monkeypatch.setattr(environment.espn, "fetch_environment", espn_environment_fallback)
+    environment_context = environment.build_slate_environment_context(
+        "2026-09-20", ["event-1"]
+    )["event-1"]
+    assert environment_context["ready"] is True
+    assert environment_context["provenance"]["fallback_rank"] == 2
+    assert environment_context["provider"].startswith("ESPN")
+
+    def unavailable_fallback(request):
+        return {
+            "ready": False,
+            "provider": "ESPN NFL fallback",
+            "diagnostics": ["forced fallback failure"],
+        }
+
+    monkeypatch.setattr(scoring.espn, "fetch_scoring_games", unavailable_fallback)
+    monkeypatch.setattr(environment.espn, "fetch_environment", unavailable_fallback)
+
+    failed_scoring = scoring.build_matchup_scoring_context(
+        "BUF", "Buffalo Bills", "MIA", "Miami Dolphins", "2026-09-20"
+    )
+    failed_environment = environment.build_slate_environment_context(
+        "2026-09-20", ["event-1"]
+    )["event-1"]
+    assert failed_scoring["ready"] is False
+    assert failed_environment["ready"] is False
+
+    projection = build_total_projection(
+        failed_scoring,
+        {"ready": True, "matchup": {"average_plays_per_game": 65.0}},
+        {"ready": True, "matchup": {"average_explosive_plays_per_game": 3.5}},
+        {
+            "ready": True,
+            "matchup": {
+                "average_red_zone_td_pct": 55.0,
+                "average_third_down_conv_pct": 42.0,
+                "average_first_downs_per_game": 22.0,
+            },
+        },
+        failed_environment,
+    )
+    assert projection["ready"] is False
+    assert projection["projected_total"] is None
+    assert projection["sportsbook_projection_weight"] == 0.0
