@@ -1,7 +1,8 @@
 """KYRE Streamlit Router V128 — NFL Passing Yards production cleanup.
 
 V128 is additive over frozen Router V127. It advances only exact
-NFL -> Passing Yards to V35 transport/caption cleanup. Receiving Yards,
+NFL -> Passing Yards through the additive V36 compact-dashboard presentation
+wrapper over certified V35 transport/caption cleanup. Receiving Yards,
 Rushing Yards, and every other route remain delegated to V127 unchanged.
 """
 from __future__ import annotations
@@ -14,7 +15,7 @@ MODEL_VERSION = "KYRE STREAMLIT ROUTER V128 • NFL PASSING YARDS PRODUCTION CLE
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v127"
 NFL_SPORT_LABEL = "NFL"
 PASSING_YARDS_MARKET = "Passing Yards"
-ACTIVE_PASSING_YARDS_HUB = "nfl_passing_yards_hub_v35"
+ACTIVE_PASSING_YARDS_HUB = "nfl_passing_yards_hub_v36"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 
