@@ -8,17 +8,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def pytest_collection_modifyitems(session, config, items):
-    """Keep the permanent CFB lane aware of frozen V150 + active V151 handoff."""
+    """Keep the permanent CFB lane aware of frozen V150/V151 + active V152."""
     if not any(item.path.name.startswith("test_cfb_") for item in items):
         return
 
     page = ROOT / "cfb_game_total_clean_page_v1.py"
     router = ROOT / "streamlit_memory_lazy_router_v150.py"
     activation = ROOT / "streamlit_memory_lazy_router_v149.py"
+    active_router = ROOT / "streamlit_memory_lazy_router_v152.py"
+    app_entry = ROOT / "app.py"
     browser = ROOT / "devsystem" / "cfb_game_total_browser_qa_v1.py"
-    required = (page, router, activation, browser)
+    required = (page, router, activation, active_router, app_entry, browser)
     missing = [path.name for path in required if not path.exists()]
-    assert not missing, "missing active CFB V150 contract files: " + ", ".join(missing)
+    assert not missing, "missing active CFB V152 contract files: " + ", ".join(missing)
 
     for path in required:
         py_compile.compile(str(path), doraise=True)
@@ -26,6 +28,8 @@ def pytest_collection_modifyitems(session, config, items):
     page_source = page.read_text(encoding="utf-8")
     router_source = router.read_text(encoding="utf-8")
     activation_source = activation.read_text(encoding="utf-8")
+    active_router_source = active_router.read_text(encoding="utf-8")
+    app_source = app_entry.read_text(encoding="utf-8")
     browser_source = browser.read_text(encoding="utf-8")
 
     # Presentation-only Game Total page over the frozen Step-12 hub.
@@ -58,8 +62,8 @@ def pytest_collection_modifyitems(session, config, items):
     assert "def _restore_game_total_route_from_query" in router_source
     assert "st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET" in router_source
 
-    # app.py still boots V149. The additive activation shim must preserve V149's
-    # certified O/U V38 path while handing only exact Game Total to active V151.
+    # Frozen V149 activation still preserves certified O/U V38 and the V151
+    # Game Total handoff used underneath the new V152 production entrypoint.
     assert 'ACTIVE_PAGE = "cfb_over_under_clean_page_v38"' in activation_source
     assert 'OVER_UNDER_MARKET = "Over/Under"' in activation_source
     assert 'GAME_TOTAL_MARKET = "Game Total"' in activation_source
@@ -77,6 +81,16 @@ def pytest_collection_modifyitems(session, config, items):
     assert "cfb_route_base._selectbox_v77 = _selectbox_v150_handoff" in activation_source
     assert "cfb_route_base._selectbox_v77 = original_cfb_selectbox" in activation_source
     assert "st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET" in activation_source
+
+    # V152 is the real production entrypoint while preserving the entire V151
+    # route chain and frozen projection boundary.
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v151"' in active_router_source
+    assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"' in active_router_source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in active_router_source
+    assert "MAY_MODIFY_PROJECTION = False" in active_router_source
+    assert "return prior.render_app()" in active_router_source
+    assert "from streamlit_memory_lazy_router_v152 import record_bootstrap_import_ms, render_app" in app_source
+    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V152_CFB_GAME_TOTAL_PRODUCTION_REBUILD_2026-09-16"' in app_source
 
     # Real browser proof must certify the actual Game Total page and explicitly
     # reject the legacy title visible in the user's production screenshot.
