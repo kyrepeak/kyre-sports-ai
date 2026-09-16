@@ -75,7 +75,7 @@ def _dashboard_banner_v36() -> str:
         '<strong>🏈 NFL Passing Yards • Compact Dashboard</strong>'
         '<div class="kpass36-preludechips">'
         '<span class="kpass36-chip kpass36-tone-purple">MONSTER MODEL</span>'
-        '<span class="kpass36-chip kpass36-tone-blue">LIVE MARKET</span>'
+        '<span class="kpass36-chip kpass36-tone-blue">MARKET CONTEXT</span>'
         '<span class="kpass36-chip kpass36-tone-gray">V33 + V28 FROZEN</span>'
         '</div></div>'
     )
@@ -149,7 +149,7 @@ def _compact_player(captured: dict[str, list[str]], index: int) -> str:
             '<section class="kpass36-metric kpass36-projection"><div class="kpass36-metrichead"><b>Monster Projection</b><span class="kpass36-chip kpass36-tone-purple">MODEL</span></div>',
             projection,
             '</section>',
-            '<section class="kpass36-metric kpass36-market"><div class="kpass36-metrichead"><b>Market + Edge</b><span class="kpass36-chip kpass36-tone-blue">LIVE</span></div>',
+            '<section class="kpass36-metric kpass36-market"><div class="kpass36-metrichead"><b>Market + Edge</b><span class="kpass36-chip kpass36-tone-blue">MARKET CONTEXT</span></div>',
             market,
             '</section>',
             '</div>',
