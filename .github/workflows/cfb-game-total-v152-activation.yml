@@ -60,6 +60,7 @@ jobs:
           python -m py_compile streamlit_memory_lazy_router_v152.py
           python -m py_compile devsystem/cfb_game_total_v152_activation_qa.py
           python -m py_compile devsystem/cfb_game_total_live_evidence_qa_v2.py
+          python -m py_compile devsystem/cfb_game_total_browser_qa_v2.py
           python -m py_compile devsystem/production_verify_v3.py
           python -m py_compile cfb_game_total_clean_page_v3.py
           python -m py_compile cfb_game_total_clean_page_v4.py
