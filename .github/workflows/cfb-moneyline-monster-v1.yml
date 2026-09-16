@@ -1,0 +1,73 @@
+name: CFB Moneyline Monster Dashboard V1
+
+on:
+  push:
+    branches:
+      - monster-cfb-moneyline-refresh-v1
+    paths:
+      - app.py
+      - cfb_moneyline_clean_page_v1.py
+      - streamlit_memory_lazy_router_v148.py
+      - tests/test_cfb_moneyline_*.py
+      - .github/workflows/cfb-moneyline-monster-v1.yml
+  pull_request:
+    paths:
+      - app.py
+      - cfb_moneyline_clean_page_v1.py
+      - streamlit_memory_lazy_router_v148.py
+      - tests/test_cfb_moneyline_*.py
+      - .github/workflows/cfb-moneyline-monster-v1.yml
+
+permissions:
+  contents: read
+
+jobs:
+  cfb-moneyline-monster-v1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install focused runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest
+
+      - name: Compile additive page and router
+        run: |
+          python -m py_compile cfb_moneyline_clean_page_v1.py streamlit_memory_lazy_router_v148.py
+
+      - name: Run CFB Moneyline V148 focused tests
+        run: |
+          python -m pytest -q \
+            tests/test_cfb_moneyline_refresh_v1.py \
+            tests/test_cfb_moneyline_router_v148.py \
+            tests/test_cfb_moneyline_app_v148.py
+
+      - name: Prove frozen Moneyline and Receiving Yards owners are untouched
+        run: |
+          git fetch origin main --depth=1
+          for path in \
+            cfb_moneyline_model_v1.py \
+            cfb_moneyline_final_v1.py \
+            cfb_moneyline_slate_v1.py \
+            cfb_moneyline_hub_v5.py \
+            streamlit_memory_lazy_router_v147.py; do
+            if ! git diff --quiet origin/main -- "$path"; then
+              echo "FROZEN FILE CHANGED: $path"
+              git diff -- origin/main -- "$path"
+              exit 1
+            fi
+          done
+          echo "Frozen owners unchanged."
+
+      - name: Prove app bootstrap is additive
+        run: |
+          grep -F 'FROZEN_V147_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V147_NFL_RECEIVING_YARDS_FUTURE_CARD_RENDER_FIX_2026-09-16"' app.py
+          grep -F 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V148_CFB_MONEYLINE_MONSTER_DASHBOARD_2026-09-16"' app.py
+          grep -F 'from streamlit_memory_lazy_router_v148 import record_bootstrap_import_ms, render_app' app.py
