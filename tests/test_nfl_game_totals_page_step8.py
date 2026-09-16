@@ -150,8 +150,8 @@ def test_step8_progress_preserves_steps_1_through_8_and_leaves_9_10_off():
     assert "WAGER_ACTIONS_ENABLED = False" in source
 
 
-def test_existing_nfl_router_advances_only_game_total_to_v8():
+def test_existing_nfl_router_preserves_current_game_total_target():
     source = _read(ROUTER)
     assert 'if market == "Game Total":' in source
-    assert "from nfl_game_totals_hub_v8 import render_nfl_game_totals_hub" in source
+    assert "from nfl_game_totals_hub_v8_1 import render_nfl_game_totals_hub" in source
     assert "from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub" in source

@@ -1,18 +1,27 @@
 """Descriptive NFL game-environment context for Game Totals page Step 7.
 
-Uses exact ESPN event identity. Venue name + indoor status come from the ESPN
-scoreboard event; weather comes from the exact ESPN event summary. Indoor games
-always neutralize weather even when ESPN returns an outside-weather object.
-Sportsbook data is never consumed here and has 0.0 projection influence.
+Exact verified slate metadata supplies game identity, home team, venue, and
+kickoff. Weather acquisition is routed through the shared multi-source layer:
+NWS is primary and the isolated ESPN adapter is fallback only. Indoor games
+neutralize outside weather. Sportsbook data is never consumed here and has
+0.0 projection influence.
 """
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 import math
+import re
 from typing import Any
+from zoneinfo import ZoneInfo
 
-import requests
+from nfl_hub_v1 import load_nfl_slate
+from sports_api import nfl_data_espn_fallback_v1 as espn
+from sports_api import nfl_data_nws_v1 as nws
+from sports_api.nfl_data_router_v1 import route_metric
 
+# Preserved Step-7 public constants/backward-compatible source evidence. Direct
+# transport is intentionally owned by provider adapters, not this context module.
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 ESPN_SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary"
 VENUE_INDOOR_FIELD = "indoor"
@@ -23,6 +32,9 @@ HEADERS = {
     "Accept": "application/json,text/plain,*/*",
     "User-Agent": "Mozilla/5.0 kyre-sports-ai/nfl-game-totals-step7",
 }
+
+_ET = ZoneInfo("America/New_York")
+PROVIDER = "MULTI-SOURCE NFL environment router"
 
 
 def _safe(value: Any, default: str = "") -> str:
@@ -60,13 +72,19 @@ def classify_weather_pressure(temperature: Any, precipitation: Any, gust: Any, *
 
 
 def extract_environment_metrics(scoreboard_event: dict[str, Any], summary_payload: dict[str, Any]) -> dict[str, Any]:
-    """Extract venue/indoor truth and exact-summary weather for one ESPN event."""
+    """Preserve the original exact-ESPN extraction contract for compatibility."""
     event = scoreboard_event if isinstance(scoreboard_event, dict) else {}
     summary = summary_payload if isinstance(summary_payload, dict) else {}
     event_id = _safe(event.get("id"))
 
     competitions = event.get("competitions") or []
-    competition = competitions[0] if isinstance(competitions, list) and len(competitions) == 1 and isinstance(competitions[0], dict) else {}
+    competition = (
+        competitions[0]
+        if isinstance(competitions, list)
+        and len(competitions) == 1
+        and isinstance(competitions[0], dict)
+        else {}
+    )
     venue = competition.get("venue") if isinstance(competition, dict) else None
     venue = venue if isinstance(venue, dict) else {}
     venue_name = _safe(venue.get("fullName"))
@@ -110,7 +128,11 @@ def extract_environment_metrics(scoreboard_event: dict[str, Any], summary_payloa
         and math.isfinite(gust)
         and gust >= 0.0
     )
-    pressure = classify_weather_pressure(temperature, precipitation, gust, indoor=False) if weather_ready else "UNAVAILABLE"
+    pressure = (
+        classify_weather_pressure(temperature, precipitation, gust, indoor=False)
+        if weather_ready
+        else "UNAVAILABLE"
+    )
     return {
         "event_id": event_id,
         "ready": weather_ready,
@@ -129,125 +151,219 @@ def extract_environment_metrics(scoreboard_event: dict[str, Any], summary_payloa
     }
 
 
-def _fetch_scoreboard(day_str: str) -> tuple[list[dict[str, Any]], str]:
-    day_key = _safe(day_str).replace("-", "")[:8]
-    if len(day_key) != 8 or not day_key.isdigit():
-        return [], "invalid scoreboard day"
+def _kickoff_utc(row: Any) -> str:
+    """Convert the verified slate's ET game date/clock into an exact UTC instant."""
     try:
-        response = requests.get(
-            ESPN_SCOREBOARD,
-            params={"dates": day_key},
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        payload = response.json()
-    except Exception as exc:
-        return [], str(exc)[:220]
-    events = payload.get("events") or []
-    return ([event for event in events if isinstance(event, dict)] if isinstance(events, list) else []), ""
+        game_date = _safe(row.get("game_date"))
+        tip_et = _safe(row.get("tip_et"))
+    except Exception:
+        return ""
+    if not game_date or not tip_et or tip_et.upper().startswith("TBD"):
+        return ""
 
-
-def _fetch_summary(event_id: str) -> tuple[dict[str, Any], str]:
+    clock = re.sub(r"\s+(?:ET|EST|EDT)\s*$", "", tip_et, flags=re.IGNORECASE).strip()
     try:
-        response = requests.get(
-            ESPN_SUMMARY,
-            params={"event": str(event_id)},
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        return (payload if isinstance(payload, dict) else {}), ""
+        eastern = datetime.strptime(f"{game_date} {clock}", "%Y-%m-%d %I:%M %p").replace(tzinfo=_ET)
+    except (TypeError, ValueError):
+        return ""
+    return eastern.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def route_environment(request: dict[str, Any]) -> dict[str, Any]:
+    """Route canonical environment data through NWS first, ESPN second."""
+    return route_metric(
+        "environment",
+        request,
+        (
+            nws.fetch_environment,
+            espn.fetch_environment,
+        ),
+    )
+
+
+def _provenance(routed: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "provider_used": _safe(routed.get("provider_used")),
+        "fallback_rank": int(routed.get("fallback_rank") or 0),
+        "data_freshness": _safe(routed.get("data_freshness")),
+        "fields_verified": list(routed.get("fields_verified") or []),
+        "quality": _safe(routed.get("quality"), "UNAVAILABLE"),
+        "provider_attempts": list(routed.get("provider_attempts") or []),
+    }
+
+
+def _display_provider(provider_used: Any) -> str:
+    provider = _safe(provider_used)
+    if provider.upper().startswith("NWS"):
+        return "NWS"
+    return provider or PROVIDER
+
+
+def _unavailable(
+    event_id: str,
+    diagnostics: list[str] | tuple[str, ...] | None = None,
+    *,
+    routed: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    route = routed if isinstance(routed, dict) else {}
+    return {
+        "event_id": event_id,
+        "ready": False,
+        "venue_name": "",
+        "indoor": False,
+        "weather_applies": False,
+        "temperature": math.nan,
+        "precipitation": math.nan,
+        "gust": math.nan,
+        "condition_id": "",
+        "weather_pressure": "UNAVAILABLE",
+        "provider": _display_provider(route.get("provider_used")),
+        "diagnostics": [str(item) for item in (diagnostics or route.get("diagnostics") or []) if str(item).strip()]
+        or ["certified environment context unavailable"],
+        "descriptive_only": True,
+        "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
+        "provenance": _provenance(route),
+    }
+
+
+def _context_from_route(event_id: str, routed: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(routed, dict) or routed.get("ready") is not True:
+        return _unavailable(event_id, routed=routed if isinstance(routed, dict) else {})
+
+    data = routed.get("data") if isinstance(routed.get("data"), dict) else {}
+    venue_name = _safe(data.get("venue_name"))
+    indoor = data.get("indoor") is True
+    temperature = _num(data.get("temperature"))
+    precipitation = _num(data.get("precipitation"))
+    gust = _num(data.get("gust"))
+
+    if indoor:
+        weather_applies = False
+        pressure = "INDOOR"
+    else:
+        weather_applies = True
+        pressure = classify_weather_pressure(temperature, precipitation, gust, indoor=False)
+        if pressure == "UNAVAILABLE":
+            return _unavailable(
+                event_id,
+                ["routed outdoor environment fields were non-numeric"],
+                routed=routed,
+            )
+
+    return {
+        "event_id": event_id,
+        "ready": True,
+        "venue_name": venue_name,
+        "indoor": indoor,
+        "weather_applies": weather_applies,
+        "temperature": math.nan if indoor else float(temperature),
+        "precipitation": math.nan if indoor else float(precipitation),
+        "gust": math.nan if indoor else float(gust),
+        "condition_id": _safe(data.get("condition_id")),
+        "weather_pressure": pressure,
+        "provider": _display_provider(routed.get("provider_used")),
+        "diagnostics": [str(item) for item in (routed.get("diagnostics") or []) if str(item).strip()],
+        "descriptive_only": True,
+        "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
+        "provenance": _provenance(routed),
+    }
+
+
+def _verified_rows(day_str: str, requested: list[str]) -> tuple[dict[str, Any], list[str]]:
+    """Resolve requested event IDs from the already-certified exact slate path."""
+    try:
+        games, diag = load_nfl_slate(day_str)
     except Exception as exc:
-        return {}, str(exc)[:220]
+        return {}, [f"verified slate transport error: {type(exc).__name__}: {str(exc)[:180]}"]
 
+    diagnostics: list[str] = []
+    if not isinstance(diag, dict) or diag.get("request_ok") is not True:
+        detail = _safe(diag.get("error") if isinstance(diag, dict) else "")
+        diagnostics.append(detail or "verified exact slate metadata unavailable")
+        return {}, diagnostics
 
-def build_slate_environment_context(day_str: str, event_ids: list[str] | tuple[str, ...]) -> dict[str, dict[str, Any]]:
-    """Build environment context for exact requested ESPN event IDs only."""
-    requested = list(dict.fromkeys(_safe(event_id) for event_id in event_ids if _safe(event_id)))
-    if not requested:
-        return {}
-
-    events, board_error = _fetch_scoreboard(day_str)
-    if board_error:
-        return {
-            event_id: {
-                "event_id": event_id,
-                "ready": False,
-                "weather_applies": False,
-                "weather_pressure": "UNAVAILABLE",
-                "provider": "ESPN NFL scoreboard + exact event summary",
-                "diagnostics": [board_error],
-                "descriptive_only": True,
-                "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
-            }
-            for event_id in requested
-        }
-
-    by_id: dict[str, dict[str, Any]] = {}
+    by_id: dict[str, Any] = {}
     duplicate_ids: set[str] = set()
-    for event in events:
-        event_id = _safe(event.get("id"))
+    try:
+        rows = games.iterrows() if games is not None else ()
+    except Exception:
+        return {}, ["verified slate rows unavailable"]
+
+    for _, row in rows:
+        event_id = _safe(row.get("game_id"))
         if event_id not in requested:
             continue
         if event_id in by_id:
             duplicate_ids.add(event_id)
         else:
-            by_id[event_id] = event
+            by_id[event_id] = row
 
+    for event_id in duplicate_ids:
+        by_id.pop(event_id, None)
+    if duplicate_ids:
+        diagnostics.extend(f"ambiguous verified event identity: {event_id}" for event_id in sorted(duplicate_ids))
+    return by_id, diagnostics
+
+
+def build_slate_environment_context(
+    day_str: str,
+    event_ids: list[str] | tuple[str, ...],
+) -> dict[str, dict[str, Any]]:
+    """Build routed environment context for exact requested NFL event IDs only."""
+    requested = list(dict.fromkeys(_safe(event_id) for event_id in event_ids if _safe(event_id)))
+    if not requested:
+        return {}
+
+    by_id, slate_diagnostics = _verified_rows(day_str, requested)
     output: dict[str, dict[str, Any]] = {}
-    fetchable: list[str] = []
-    for event_id in requested:
-        if event_id in duplicate_ids:
-            output[event_id] = {
-                "event_id": event_id,
-                "ready": False,
-                "weather_applies": False,
-                "weather_pressure": "UNAVAILABLE",
-                "provider": "ESPN NFL scoreboard + exact event summary",
-                "diagnostics": ["ambiguous exact ESPN event identity"],
-                "descriptive_only": True,
-                "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
-            }
-        elif event_id not in by_id:
-            output[event_id] = {
-                "event_id": event_id,
-                "ready": False,
-                "weather_applies": False,
-                "weather_pressure": "UNAVAILABLE",
-                "provider": "ESPN NFL scoreboard + exact event summary",
-                "diagnostics": ["exact ESPN event not present on requested scoreboard day"],
-                "descriptive_only": True,
-                "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
-            }
-        else:
-            fetchable.append(event_id)
+    requests_by_id: dict[str, dict[str, Any]] = {}
 
-    if fetchable:
-        with ThreadPoolExecutor(max_workers=min(8, len(fetchable))) as pool:
-            futures = {pool.submit(_fetch_summary, event_id): event_id for event_id in fetchable}
+    for event_id in requested:
+        row = by_id.get(event_id)
+        if row is None:
+            detail = next(
+                (item for item in slate_diagnostics if event_id in item),
+                slate_diagnostics[0] if slate_diagnostics else "exact verified event not present on requested slate day",
+            )
+            output[event_id] = _unavailable(event_id, [detail])
+            continue
+
+        home_abbr = _safe(row.get("home_abbr")).upper()
+        venue_name = _safe(row.get("venue"))
+        kickoff_utc = _kickoff_utc(row)
+        if not home_abbr or not venue_name or venue_name.lower() == "venue tbd" or not kickoff_utc:
+            output[event_id] = _unavailable(
+                event_id,
+                ["verified slate missing exact home team, venue, or kickoff metadata"],
+            )
+            continue
+
+        requests_by_id[event_id] = {
+            "event_id": event_id,
+            "day_str": _safe(day_str)[:10],
+            "home_abbr": home_abbr,
+            "venue_name": venue_name,
+            "kickoff_utc": kickoff_utc,
+        }
+
+    if requests_by_id:
+        with ThreadPoolExecutor(max_workers=min(8, len(requests_by_id))) as pool:
+            futures = {
+                pool.submit(route_environment, dict(request)): event_id
+                for event_id, request in requests_by_id.items()
+            }
             for future in as_completed(futures):
                 event_id = futures[future]
                 try:
-                    summary, summary_error = future.result()
+                    routed = future.result()
                 except Exception as exc:
-                    summary, summary_error = {}, str(exc)[:220]
-                if summary_error:
-                    output[event_id] = {
-                        "event_id": event_id,
+                    routed = {
                         "ready": False,
-                        "weather_applies": False,
-                        "weather_pressure": "UNAVAILABLE",
-                        "provider": "ESPN NFL scoreboard + exact event summary",
-                        "diagnostics": [summary_error],
-                        "descriptive_only": True,
-                        "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
+                        "diagnostics": [f"environment router error: {type(exc).__name__}: {str(exc)[:180]}"],
                     }
-                else:
-                    output[event_id] = extract_environment_metrics(by_id[event_id], summary)
+                output[event_id] = _context_from_route(event_id, routed)
 
-    return {event_id: output[event_id] for event_id in requested}
+    return {event_id: output.get(event_id, _unavailable(event_id)) for event_id in requested}
 
 
 __all__ = [
@@ -259,4 +375,5 @@ __all__ = [
     "build_slate_environment_context",
     "classify_weather_pressure",
     "extract_environment_metrics",
+    "route_environment",
 ]

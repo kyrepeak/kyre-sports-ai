@@ -1,8 +1,8 @@
 """Descriptive NFL scoring context for Game Totals page Step 3.
 
-This module intentionally stays independent from the frozen Moneyline model.
-It uses completed ESPN regular-season team schedules to summarize points scored
-and points allowed, then produces simple offense-vs-defense context labels.
+Acquisition is provider-neutral: the shared NFL data router tries certified
+free/open sources in priority order, with ESPN retained only as fallback.
+Existing prior/current blending and matchup classification are preserved.
 Sportsbook data is never consumed here and has 0.0 projection influence.
 """
 from __future__ import annotations
@@ -11,17 +11,18 @@ from datetime import date
 import math
 from typing import Any
 
-import requests
+import sports_api.nfl_data_espn_fallback_v1 as espn
+import sports_api.nfl_data_nflverse_v1 as nflverse
+from sports_api.nfl_data_router_v1 import route_metric
 
+# Compatibility constants retained for older Step-3 source-contract readers.
+# Transport now lives in provider adapters; this module performs no HTTP calls.
 ESPN_TEAM_SCHEDULE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team}/schedule"
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1",
-    "Accept": "application/json,text/plain,*/*",
-}
-REQUEST_TIMEOUT_SECONDS = 8
+ESPN_COMPAT_PARAMS = {"seasontype": 2}
 PRIOR_GAMES = 6.0
 LEAGUE_PPG_REF = 22.5
 SPORTSBOOK_PROJECTION_WEIGHT = 0.0
+MULTISOURCE_PROVIDER = "MULTI-SOURCE NFL DATA ROUTER"
 
 
 def _safe(value: Any, default: str = "") -> str:
@@ -45,94 +46,46 @@ def _season_year_for_day(day_str: str) -> int:
     return parsed.year - 1 if parsed.month <= 2 else parsed.year
 
 
-def _completed_regular_games(team_abbr: str, season: int, cutoff_day: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Return completed regular-season scoring rows, failing closed on bad data."""
-    abbr = _safe(team_abbr).upper()
-    diag = {
-        "ok": False,
+def route_scoring_games(team_abbr: str, season: int, cutoff_day: str) -> dict[str, Any]:
+    """Route one team's completed regular-season scoring rows through free sources."""
+    return route_metric(
+        "scoring_games",
+        {
+            "team_abbr": _safe(team_abbr).upper(),
+            "season": int(season),
+            "cutoff_day": str(cutoff_day)[:10],
+        },
+        (nflverse.fetch_scoring_games, espn.fetch_scoring_games),
+    )
+
+
+def _route_diag(result: dict[str, Any], *, team: str, season: int, games: int) -> dict[str, Any]:
+    diagnostics = [str(item) for item in (result.get("diagnostics") or []) if str(item).strip()]
+    return {
+        "ok": result.get("ready") is True,
         "http": None,
-        "error": "",
-        "team": abbr,
+        "error": "; ".join(diagnostics),
+        "team": _safe(team).upper(),
         "season": int(season),
-        "games": 0,
-        "provider": "ESPN NFL team schedule",
+        "games": int(games),
+        "provider": result.get("provider_used") or MULTISOURCE_PROVIDER,
+        "fallback_rank": int(result.get("fallback_rank") or 0),
+        "quality": result.get("quality") or "UNAVAILABLE",
+        "data_freshness": result.get("data_freshness") or "",
     }
-    if not abbr:
-        diag["error"] = "missing team abbreviation"
-        return [], diag
 
-    try:
-        response = requests.get(
-            ESPN_TEAM_SCHEDULE.format(team=abbr.lower()),
-            params={"season": int(season), "seasontype": 2},
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        diag["http"] = int(response.status_code)
-        response.raise_for_status()
-        payload = response.json()
-    except Exception as exc:
-        diag["error"] = str(exc)[:220]
-        return [], diag
 
-    try:
-        cutoff = date.fromisoformat(str(cutoff_day)[:10])
-    except ValueError:
-        diag["error"] = "invalid cutoff day"
-        return [], diag
-
-    rows: list[dict[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
-    for event in payload.get("events", []) or []:
-        status_type = ((event.get("status") or {}).get("type") or {})
-        if not bool(status_type.get("completed")) and _safe(status_type.get("state")).lower() != "post":
-            continue
-        event_date = _safe(event.get("date"))[:10]
-        try:
-            event_day = date.fromisoformat(event_date)
-        except ValueError:
-            continue
-        if event_day > cutoff:
-            continue
-
-        competitions = event.get("competitions") or []
-        if not competitions:
-            continue
-        competitors = (competitions[0] or {}).get("competitors") or []
-        ours = None
-        opponent = None
-        for competitor in competitors:
-            team = competitor.get("team") or {}
-            if _safe(team.get("abbreviation")).upper() == abbr:
-                ours = competitor
-            else:
-                opponent = competitor
-        if not ours or not opponent:
-            continue
-
-        points_for = _num(ours.get("score"))
-        points_against = _num(opponent.get("score"))
-        if not math.isfinite(points_for) or not math.isfinite(points_against):
-            continue
-
-        opponent_abbr = _safe((opponent.get("team") or {}).get("abbreviation")).upper()
-        key = (event_day.isoformat(), opponent_abbr)
-        if key in seen:
-            continue
-        seen.add(key)
-        rows.append(
-            {
-                "date": event_day.isoformat(),
-                "pf": float(points_for),
-                "pa": float(points_against),
-                "opponent_abbr": opponent_abbr,
-            }
-        )
-
-    rows.sort(key=lambda row: row["date"])
-    diag["ok"] = True
-    diag["games"] = len(rows)
-    return rows, diag
+def _completed_regular_games(
+    team_abbr: str,
+    season: int,
+    cutoff_day: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Compatibility wrapper around the canonical multi-source scoring route."""
+    result = route_scoring_games(team_abbr, season, cutoff_day)
+    data = result.get("data") if isinstance(result, dict) else {}
+    rows = data.get("games") if isinstance(data, dict) else []
+    rows = [dict(row) for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+    return rows, _route_diag(result, team=team_abbr, season=season, games=len(rows))
 
 
 def _summarize_games(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -194,21 +147,33 @@ def build_team_scoring_profile(team_abbr: str, team_name: str, day_str: str) -> 
     season_year = _season_year_for_day(day_str)
     prior_year = season_year - 1
 
-    prior_rows, prior_diag = _completed_regular_games(team_abbr, prior_year, f"{prior_year + 1}-02-28")
-    current_rows, current_diag = _completed_regular_games(team_abbr, season_year, day_str)
+    prior_result = route_scoring_games(team_abbr, prior_year, f"{prior_year + 1}-02-28")
+    current_result = route_scoring_games(team_abbr, season_year, day_str)
+
+    prior_data = prior_result.get("data") if isinstance(prior_result, dict) else {}
+    current_data = current_result.get("data") if isinstance(current_result, dict) else {}
+    prior_rows = prior_data.get("games") if isinstance(prior_data, dict) else []
+    current_rows = current_data.get("games") if isinstance(current_data, dict) else []
+    prior_rows = [dict(row) for row in prior_rows if isinstance(row, dict)] if isinstance(prior_rows, list) else []
+    current_rows = [dict(row) for row in current_rows if isinstance(row, dict)] if isinstance(current_rows, list) else []
+
     prior = _summarize_games(prior_rows)
     current = _summarize_games(current_rows)
+    prior_diag = _route_diag(prior_result, team=team_abbr, season=prior_year, games=len(prior_rows))
+    current_diag = _route_diag(current_result, team=team_abbr, season=season_year, games=len(current_rows))
+    provenance = {"prior": prior_result, "current": current_result}
 
-    ready = bool(prior_diag.get("ok") and int(prior.get("games") or 0) >= 12)
+    ready = bool(prior_result.get("ready") is True and int(prior.get("games") or 0) >= 12)
     if not ready:
         return {
             "team": team_name,
             "abbr": _safe(team_abbr).upper(),
             "ready": False,
             "error": "insufficient completed prior regular-season scoring data",
-            "provider": "ESPN NFL team schedule",
+            "provider": MULTISOURCE_PROVIDER,
             "prior_diag": prior_diag,
             "current_diag": current_diag,
+            "provenance": provenance,
             "descriptive_only": True,
             "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
         }
@@ -224,9 +189,10 @@ def build_team_scoring_profile(team_abbr: str, team_name: str, day_str: str) -> 
         "current": current,
         "blended": blended,
         "quality": "HIGH" if int(prior.get("games") or 0) >= 16 else "MEDIUM",
-        "provider": "ESPN NFL team schedule",
+        "provider": MULTISOURCE_PROVIDER,
         "prior_diag": prior_diag,
         "current_diag": current_diag,
+        "provenance": provenance,
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
     }
@@ -251,15 +217,20 @@ def build_matchup_scoring_context(
 
     away_profile = profile(away_abbr, away_team)
     home_profile = profile(home_abbr, home_team)
+    provenance = {
+        "away": away_profile.get("provenance", {}),
+        "home": home_profile.get("provenance", {}),
+    }
     ready = bool(away_profile.get("ready") and home_profile.get("ready"))
     if not ready:
         return {
             "ready": False,
-            "provider": "ESPN NFL team schedule",
+            "provider": MULTISOURCE_PROVIDER,
             "descriptive_only": True,
             "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
             "away": {},
             "home": {},
+            "provenance": provenance,
             "diagnostics": ["one or both team scoring profiles were unavailable"],
         }
 
@@ -272,7 +243,7 @@ def build_matchup_scoring_context(
 
     return {
         "ready": True,
-        "provider": "ESPN NFL team schedule",
+        "provider": MULTISOURCE_PROVIDER,
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
         "away": {
@@ -291,6 +262,7 @@ def build_matchup_scoring_context(
             "signal": classify_scoring_matchup(home_offense, away_defense_allowed),
             "quality": home_profile.get("quality"),
         },
+        "provenance": provenance,
         "diagnostics": [],
     }
 
@@ -298,9 +270,11 @@ def build_matchup_scoring_context(
 __all__ = [
     "ESPN_TEAM_SCHEDULE",
     "LEAGUE_PPG_REF",
+    "MULTISOURCE_PROVIDER",
     "PRIOR_GAMES",
     "SPORTSBOOK_PROJECTION_WEIGHT",
     "build_matchup_scoring_context",
     "build_team_scoring_profile",
     "classify_scoring_matchup",
+    "route_scoring_games",
 ]

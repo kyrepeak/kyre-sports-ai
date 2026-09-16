@@ -1,8 +1,9 @@
 """Descriptive NFL pace + possession context for Game Totals page Step 4.
 
-Uses the ESPN team-statistics endpoint and only the exact source fields certified
-for this step: totalOffensivePlays and possessionTimeSeconds. The output is
-context only. It does not consume sportsbook values and does not feed a model.
+Acquisition is provider-neutral: the shared NFL data router prefers certified
+free/open data and retains ESPN only as fallback. The existing pace classifier,
+possession display, and public output fields remain unchanged. Sportsbook data
+is never consumed here and has 0.0 projection influence.
 """
 from __future__ import annotations
 
@@ -10,19 +11,18 @@ from datetime import date
 import math
 from typing import Any
 
-import requests
+import sports_api.nfl_data_espn_fallback_v1 as espn
+import sports_api.nfl_data_nflverse_v1 as nflverse
+from sports_api.nfl_data_router_v1 import route_metric
 
+# Compatibility constants retained for older Step-4 extraction tests/readers.
 ESPN_TEAM_STATS = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team}/statistics"
 TOTAL_OFFENSIVE_PLAYS = "totalOffensivePlays"
 POSSESSION_TIME_SECONDS = "possessionTimeSeconds"
-REQUEST_TIMEOUT_SECONDS = 8
 OPPORTUNITY_PACE_REF = 64.0
 OPPORTUNITY_PACE_BAND = 3.0
 SPORTSBOOK_PROJECTION_WEIGHT = 0.0
-HEADERS = {
-    "Accept": "application/json,text/plain,*/*",
-    "User-Agent": "Mozilla/5.0 kyre-sports-ai/nfl-game-totals-step4",
-}
+MULTISOURCE_PROVIDER = "MULTI-SOURCE NFL DATA ROUTER"
 
 
 def _safe(value: Any, default: str = "") -> str:
@@ -47,6 +47,7 @@ def _season_year_for_day(day_str: str) -> int:
 
 
 def _stat_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Legacy pure extractor retained for source-contract compatibility."""
     results = payload.get("results") or {}
     stats_root = results.get("stats") if isinstance(results, dict) else {}
     categories = stats_root.get("categories") if isinstance(stats_root, dict) else []
@@ -71,7 +72,7 @@ def _per_game_stat(rows: list[dict[str, Any]], name: str) -> float:
 
 
 def extract_pace_metrics(payload: dict[str, Any]) -> dict[str, Any]:
-    """Extract the two exact source-certified ESPN Step-4 fields."""
+    """Legacy pure ESPN payload extractor; transport now lives in the fallback adapter."""
     rows = _stat_rows(payload if isinstance(payload, dict) else {})
     plays = _per_game_stat(rows, TOTAL_OFFENSIVE_PLAYS)
     possession = _per_game_stat(rows, POSSESSION_TIME_SECONDS)
@@ -84,6 +85,15 @@ def extract_pace_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
     }
+
+
+def route_pace(team_abbr: str, season: int) -> dict[str, Any]:
+    """Route one team's pace metric through nflverse, then ESPN fallback."""
+    return route_metric(
+        "pace",
+        {"team_abbr": _safe(team_abbr).upper(), "season": int(season)},
+        (nflverse.fetch_pace, espn.fetch_pace),
+    )
 
 
 def classify_opportunity_pace(plays_per_game: Any) -> str:
@@ -114,13 +124,14 @@ def build_team_pace_profile(team_abbr: str, team_name: str, day_str: str) -> dic
         "team": team_name,
         "abbr": abbr,
         "season": season,
-        "provider": "ESPN NFL team statistics",
+        "provider": MULTISOURCE_PROVIDER,
         "ready": False,
         "plays_per_game": math.nan,
         "possession_seconds_per_game": math.nan,
         "possession_clock": "—",
         "pace_signal": "UNAVAILABLE",
         "diagnostics": [],
+        "provenance": {},
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
     }
@@ -128,34 +139,28 @@ def build_team_pace_profile(team_abbr: str, team_name: str, day_str: str) -> dic
         base["diagnostics"] = ["missing team abbreviation"]
         return base
 
-    try:
-        response = requests.get(
-            ESPN_TEAM_STATS.format(team=abbr.lower()),
-            params={"season": int(season)},
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        metrics = extract_pace_metrics(payload)
-    except Exception as exc:
-        base["diagnostics"] = [str(exc)[:220]]
+    routed = route_pace(abbr, season)
+    base["provenance"] = routed
+    base["diagnostics"] = list(routed.get("diagnostics") or [])
+    if routed.get("ready") is not True:
         return base
 
-    if metrics.get("ready") is not True:
-        base["diagnostics"] = ["exact ESPN pace/possession fields unavailable"]
+    data = routed.get("data") if isinstance(routed.get("data"), dict) else {}
+    plays = _num(data.get("plays_per_game"))
+    possession = _num(data.get("possession_seconds_per_game"))
+    if not math.isfinite(plays) or plays <= 0 or not math.isfinite(possession) or possession <= 0:
+        base["diagnostics"] = list(base["diagnostics"]) + ["canonical pace/possession fields unavailable"]
         return base
 
-    plays = float(metrics["plays_per_game"])
-    possession = float(metrics["possession_seconds_per_game"])
     base.update(
         {
             "ready": True,
-            "plays_per_game": plays,
-            "possession_seconds_per_game": possession,
+            "plays_per_game": float(plays),
+            "possession_seconds_per_game": float(possession),
             "possession_clock": format_possession_clock(possession),
             "pace_signal": classify_opportunity_pace(plays),
-            "source_fields": metrics["source_fields"],
+            "source_fields": list(routed.get("fields_verified") or []),
+            "quality": routed.get("quality") or "UNAVAILABLE",
         }
     )
     return base
@@ -180,14 +185,19 @@ def build_matchup_pace_context(
 
     away = profile(away_abbr, away_team)
     home = profile(home_abbr, home_team)
+    provenance = {
+        "away": away.get("provenance", {}),
+        "home": home.get("provenance", {}),
+    }
     ready = bool(away.get("ready") and home.get("ready"))
     if not ready:
         return {
             "ready": False,
-            "provider": "ESPN NFL team statistics",
+            "provider": MULTISOURCE_PROVIDER,
             "away": away,
             "home": home,
             "matchup": {},
+            "provenance": provenance,
             "diagnostics": ["one or both team pace profiles were unavailable"],
             "descriptive_only": True,
             "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
@@ -196,13 +206,14 @@ def build_matchup_pace_context(
     matchup_plays = (float(away["plays_per_game"]) + float(home["plays_per_game"])) / 2.0
     return {
         "ready": True,
-        "provider": "ESPN NFL team statistics",
+        "provider": MULTISOURCE_PROVIDER,
         "away": away,
         "home": home,
         "matchup": {
             "average_plays_per_game": matchup_plays,
             "pace_signal": classify_opportunity_pace(matchup_plays),
         },
+        "provenance": provenance,
         "diagnostics": [],
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
@@ -211,6 +222,7 @@ def build_matchup_pace_context(
 
 __all__ = [
     "ESPN_TEAM_STATS",
+    "MULTISOURCE_PROVIDER",
     "OPPORTUNITY_PACE_BAND",
     "OPPORTUNITY_PACE_REF",
     "POSSESSION_TIME_SECONDS",
@@ -221,4 +233,5 @@ __all__ = [
     "classify_opportunity_pace",
     "extract_pace_metrics",
     "format_possession_clock",
+    "route_pace",
 ]

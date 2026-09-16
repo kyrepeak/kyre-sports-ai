@@ -1,8 +1,9 @@
 """Descriptive NFL explosive-play context for Game Totals page Step 5.
 
-Uses source-certified ESPN team-statistics fields only: rushingBigPlays,
-receivingBigPlays, and gamesPlayed. The 20+ yard big-play counts are normalized
-per game. This layer is descriptive context only, not projection math.
+Acquisition is provider-neutral: the shared NFL data router prefers canonical
+nflverse play-by-play derivation and keeps the existing ESPN statistics fields
+as a fallback. The certified 20+ yard explosive definition/classifier and
+projection-facing output stay unchanged. Sportsbook data is never consumed.
 """
 from __future__ import annotations
 
@@ -10,20 +11,19 @@ from datetime import date
 import math
 from typing import Any
 
-import requests
+import sports_api.nfl_data_espn_fallback_v1 as espn
+import sports_api.nfl_data_nflverse_v1 as nflverse
+from sports_api.nfl_data_router_v1 import route_metric
 
+# Legacy/source-contract constants remain for compatibility and diagnostics.
 ESPN_TEAM_STATS = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{team}/statistics"
 RUSHING_BIG_PLAYS = "rushingBigPlays"
 RECEIVING_BIG_PLAYS = "receivingBigPlays"
 GAMES_PLAYED = "gamesPlayed"
-REQUEST_TIMEOUT_SECONDS = 8
 EXPLOSIVE_HIGH_REF = 4.0
 EXPLOSIVE_LOW_REF = 2.0
 SPORTSBOOK_PROJECTION_WEIGHT = 0.0
-HEADERS = {
-    "Accept": "application/json,text/plain,*/*",
-    "User-Agent": "Mozilla/5.0 kyre-sports-ai/nfl-game-totals-step5",
-}
+MULTISOURCE_PROVIDER = "MULTI-SOURCE NFL DATA ROUTER"
 
 
 def _safe(value: Any, default: str = "") -> str:
@@ -48,6 +48,7 @@ def _season_year_for_day(day_str: str) -> int:
 
 
 def _stat_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Legacy pure ESPN extractor retained for backward contract tests."""
     results = payload.get("results") or {}
     stats_root = results.get("stats") if isinstance(results, dict) else {}
     categories = stats_root.get("categories") if isinstance(stats_root, dict) else []
@@ -81,7 +82,7 @@ def _single_total(rows: list[dict[str, Any]], name: str, *, category: str | None
 
 
 def extract_explosive_metrics(payload: dict[str, Any]) -> dict[str, Any]:
-    """Extract exact ESPN 20+ yard counts and normalize them by games played."""
+    """Extract exact legacy ESPN 20+ yard counts and normalize by games played."""
     rows = _stat_rows(payload if isinstance(payload, dict) else {})
     rushing_big = _single_total(rows, RUSHING_BIG_PLAYS, category="rushing")
     receiving_big = _single_total(rows, RECEIVING_BIG_PLAYS, category="receiving")
@@ -113,6 +114,15 @@ def extract_explosive_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def route_explosive(team_abbr: str, season: int) -> dict[str, Any]:
+    """Route canonical explosive metrics through nflverse then ESPN fallback."""
+    return route_metric(
+        "explosive",
+        {"team_abbr": _safe(team_abbr).upper(), "season": int(season)},
+        (nflverse.fetch_explosive, espn.fetch_explosive),
+    )
+
+
 def classify_explosive_scoring(explosive_plays_per_game: Any) -> str:
     """Classify descriptive explosive volume; this is not a total projection."""
     rate = _num(explosive_plays_per_game)
@@ -132,7 +142,7 @@ def build_team_explosive_profile(team_abbr: str, team_name: str, day_str: str) -
         "team": team_name,
         "abbr": abbr,
         "season": season,
-        "provider": "ESPN NFL team statistics",
+        "provider": MULTISOURCE_PROVIDER,
         "ready": False,
         "games_played": math.nan,
         "rushing_big_plays": math.nan,
@@ -143,6 +153,7 @@ def build_team_explosive_profile(team_abbr: str, team_name: str, day_str: str) -
         "explosive_plays_per_game": math.nan,
         "signal": "UNAVAILABLE",
         "diagnostics": [],
+        "provenance": {},
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
     }
@@ -150,36 +161,41 @@ def build_team_explosive_profile(team_abbr: str, team_name: str, day_str: str) -
         base["diagnostics"] = ["missing team abbreviation"]
         return base
 
-    try:
-        response = requests.get(
-            ESPN_TEAM_STATS.format(team=abbr.lower()),
-            params={"season": int(season)},
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        metrics = extract_explosive_metrics(response.json())
-    except Exception as exc:
-        base["diagnostics"] = [str(exc)[:220]]
+    routed = route_explosive(abbr, season)
+    base["provenance"] = routed
+    base["diagnostics"] = list(routed.get("diagnostics") or [])
+    if routed.get("ready") is not True:
         return base
 
-    if metrics.get("ready") is not True:
-        base["diagnostics"] = ["exact ESPN explosive-play or games-played fields unavailable"]
+    data = routed.get("data") if isinstance(routed.get("data"), dict) else {}
+    required = (
+        "games_played",
+        "rushing_big_plays",
+        "receiving_big_plays",
+        "total_big_plays",
+        "rushing_big_plays_per_game",
+        "receiving_big_plays_per_game",
+        "explosive_plays_per_game",
+    )
+    numbers = {key: _num(data.get(key)) for key in required}
+    if not all(math.isfinite(value) for value in numbers.values()):
+        base["diagnostics"] = list(base["diagnostics"]) + ["canonical explosive-play fields unavailable"]
         return base
 
-    rate = float(metrics["explosive_plays_per_game"])
+    rate = float(numbers["explosive_plays_per_game"])
     base.update(
         {
             "ready": True,
-            "games_played": float(metrics["games_played"]),
-            "rushing_big_plays": float(metrics["rushing_big_plays"]),
-            "receiving_big_plays": float(metrics["receiving_big_plays"]),
-            "total_big_plays": float(metrics["total_big_plays"]),
-            "rushing_big_plays_per_game": float(metrics["rushing_big_plays_per_game"]),
-            "receiving_big_plays_per_game": float(metrics["receiving_big_plays_per_game"]),
+            "games_played": float(numbers["games_played"]),
+            "rushing_big_plays": float(numbers["rushing_big_plays"]),
+            "receiving_big_plays": float(numbers["receiving_big_plays"]),
+            "total_big_plays": float(numbers["total_big_plays"]),
+            "rushing_big_plays_per_game": float(numbers["rushing_big_plays_per_game"]),
+            "receiving_big_plays_per_game": float(numbers["receiving_big_plays_per_game"]),
             "explosive_plays_per_game": rate,
             "signal": classify_explosive_scoring(rate),
-            "source_fields": metrics["source_fields"],
+            "source_fields": list(routed.get("fields_verified") or []),
+            "quality": routed.get("quality") or "UNAVAILABLE",
         }
     )
     return base
@@ -204,14 +220,19 @@ def build_matchup_explosive_context(
 
     away = profile(away_abbr, away_team)
     home = profile(home_abbr, home_team)
+    provenance = {
+        "away": away.get("provenance", {}),
+        "home": home.get("provenance", {}),
+    }
     ready = bool(away.get("ready") and home.get("ready"))
     if not ready:
         return {
             "ready": False,
-            "provider": "ESPN NFL team statistics",
+            "provider": MULTISOURCE_PROVIDER,
             "away": away,
             "home": home,
             "matchup": {},
+            "provenance": provenance,
             "diagnostics": ["one or both team explosive profiles were unavailable"],
             "descriptive_only": True,
             "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
@@ -222,13 +243,14 @@ def build_matchup_explosive_context(
     ) / 2.0
     return {
         "ready": True,
-        "provider": "ESPN NFL team statistics",
+        "provider": MULTISOURCE_PROVIDER,
         "away": away,
         "home": home,
         "matchup": {
             "average_explosive_plays_per_game": average_rate,
             "signal": classify_explosive_scoring(average_rate),
         },
+        "provenance": provenance,
         "diagnostics": [],
         "descriptive_only": True,
         "sportsbook_projection_weight": SPORTSBOOK_PROJECTION_WEIGHT,
@@ -240,6 +262,7 @@ __all__ = [
     "EXPLOSIVE_HIGH_REF",
     "EXPLOSIVE_LOW_REF",
     "GAMES_PLAYED",
+    "MULTISOURCE_PROVIDER",
     "RECEIVING_BIG_PLAYS",
     "RUSHING_BIG_PLAYS",
     "SPORTSBOOK_PROJECTION_WEIGHT",
@@ -247,4 +270,5 @@ __all__ = [
     "build_team_explosive_profile",
     "classify_explosive_scoring",
     "extract_explosive_metrics",
+    "route_explosive",
 ]
