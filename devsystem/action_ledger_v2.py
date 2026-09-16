@@ -43,6 +43,25 @@ REQUIRED_RECEIPT_FIELDS = {
     "event_nonce",
     "override_event_id",
 }
+BOOTSTRAP_ALLOWED_PATHS = {
+    ".github/workflows/devsystem-targeted-ci.yml",
+    "devsystem/README.md",
+    "devsystem/action_ledger_v2.py",
+    "devsystem/anti_loop_replay_v2.py",
+    "devsystem/checkpoint_ledger_v2.py",
+    "devsystem/forward_motion_contract_v2.py",
+    "devsystem/forward_motion_policy_v2.json",
+    "devsystem/forward_motion_v2.py",
+    "devsystem/permanent_gate_v1.py",
+    "devsystem/task_ledgers/monster-anti-loop-v2-bootstrap.json",
+    "tests/test_devsystem_action_ledger_v2.py",
+    "tests/test_devsystem_anti_loop_replay_v2.py",
+    "tests/test_devsystem_checkpoint_ledger_v2.py",
+    "tests/test_devsystem_forward_motion_v2.py",
+    "tests/test_devsystem_permanent_gate_v1.py",
+    "docs/superpowers/specs/2026-09-15-monster-anti-loop-v2-design.md",
+    "docs/superpowers/plans/2026-09-15-monster-anti-loop-v2-hard-gate-implementation.md",
+}
 
 
 class ActionLedgerFailure(RuntimeError):
@@ -258,8 +277,20 @@ def verify_pr_ledger(base: str, head: str, *, root: Path = ROOT) -> dict[str, An
     scope = ledger.get("bootstrap_scope")
     if not isinstance(scope, list) or not scope:
         raise ActionLedgerFailure("bootstrap_scope must be a non-empty list")
-    if set(changed) - set(map(str, scope)):
-        raise ActionLedgerFailure("bootstrap scope does not cover every changed file")
+    scope_paths = {str(path) for path in scope}
+    unexpected_scope = sorted(scope_paths - BOOTSTRAP_ALLOWED_PATHS)
+    if unexpected_scope:
+        raise ActionLedgerFailure(
+            "bootstrap scope contains unapproved paths: " + ", ".join(unexpected_scope)
+        )
+    uncovered = sorted(set(changed) - scope_paths)
+    if uncovered:
+        raise ActionLedgerFailure("bootstrap scope does not cover every changed file: " + ", ".join(uncovered))
+    unexpected_changed = sorted(set(changed) - BOOTSTRAP_ALLOWED_PATHS)
+    if unexpected_changed:
+        raise ActionLedgerFailure(
+            "bootstrap may change only approved V2 control-plane paths: " + ", ".join(unexpected_changed)
+        )
     forbidden = [
         path for path in changed
         if path.startswith(("sports_api/", "cfb_", "mlb_", "wnba_", "nfl_"))
