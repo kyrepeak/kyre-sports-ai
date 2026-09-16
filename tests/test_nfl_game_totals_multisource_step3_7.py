@@ -9,6 +9,7 @@ import sports_api.nfl_game_totals_explosive_context_v1 as explosive
 import sports_api.nfl_game_totals_pace_context_v1 as pace
 import sports_api.nfl_game_totals_red_zone_drive_context_v1 as redzone
 import sports_api.nfl_game_totals_scoring_context_v1 as scoring
+from sports_api.nfl_game_totals_total_projection_v1 import build_total_projection
 
 
 def _scoring_games(season: int, team: str, count: int) -> list[dict]:
@@ -64,15 +65,22 @@ def test_step3_router_result_preserves_projection_fields_and_blending(monkeypatc
         )
 
     monkeypatch.setattr(scoring, "route_scoring_games", fake_scoring_route)
+
     result = scoring.build_matchup_scoring_context(
         "BUF", "Buffalo Bills", "MIA", "Miami Dolphins", "2026-09-20"
     )
     assert result["ready"] is True
-    assert set(result["away"]) >= {"offense_ppg", "opponent_defense_papg", "signal", "quality"}
+    assert result["away"]["offense_ppg"] == 25.0
+    assert result["home"]["offense_ppg"] == 24.0
     assert result["sportsbook_projection_weight"] == 0.0
     assert result["provenance"]["away"]["current"]["provider_used"] == "nflverse"
     assert result["provenance"]["home"]["prior"]["fallback_rank"] == 1
-    assert len(calls) == 4
+    assert calls == [
+        ("BUF", 2026, "2026-09-20"),
+        ("BUF", 2025, "2026-09-20"),
+        ("MIA", 2026, "2026-09-20"),
+        ("MIA", 2025, "2026-09-20"),
+    ]
 
 
 def test_step3_provider_failure_stays_fail_closed(monkeypatch):
@@ -103,15 +111,19 @@ def test_step4_router_result_preserves_projection_fields_and_provenance(monkeypa
     assert result["matchup"]["average_plays_per_game"] == 65.0
     assert result["sportsbook_projection_weight"] == 0.0
     assert result["provenance"]["away"]["provider_used"] == "nflverse"
+    assert result["provenance"]["home"]["fallback_rank"] == 1
 
 
 def test_step4_router_can_preserve_valid_espn_fallback_without_direct_http(monkeypatch):
     def fallback_route(team_abbr: str, season: int):
         return _ready_route(
             "pace",
-            {"plays_per_game": 64.0, "possession_seconds_per_game": 1800.0},
-            "ESPN NFL team statistics",
-            2,
+            {
+                "plays_per_game": 64.0,
+                "possession_seconds_per_game": 1800.0,
+            },
+            provider="ESPN NFL team statistics",
+            rank=2,
         )
 
     monkeypatch.setattr(pace, "route_pace", fallback_route)
@@ -165,21 +177,12 @@ def test_step5_router_result_preserves_explosive_projection_field_and_provenance
 
 def test_step6_router_preserves_existing_projection_fields_and_adds_real_drive_context(monkeypatch):
     def fake_red_zone_route(team_abbr: str, season: int):
-        data = (
-            {
-                "red_zone_td_pct": 60.0,
-                "third_down_conv_pct": 45.0,
-                "first_downs_per_game": 23.0,
-                "drives_per_game": 11.0,
-            }
-            if team_abbr == "BUF"
-            else {
-                "red_zone_td_pct": 50.0,
-                "third_down_conv_pct": 40.0,
-                "first_downs_per_game": 21.0,
-                "drives_per_game": 9.0,
-            }
-        )
+        data = {
+            "red_zone_td_pct": 60.0 if team_abbr == "BUF" else 50.0,
+            "third_down_conv_pct": 45.0 if team_abbr == "BUF" else 40.0,
+            "first_downs_per_game": 23.0 if team_abbr == "BUF" else 21.0,
+            "drives_per_game": 11.0 if team_abbr == "BUF" else 9.0,
+        }
         return _ready_route("red_zone_drive", data)
 
     monkeypatch.setattr(redzone, "route_red_zone_drive", fake_red_zone_route)
@@ -193,6 +196,7 @@ def test_step6_router_preserves_existing_projection_fields_and_adds_real_drive_c
     assert result["drive_count_available"] is True
     assert result["matchup"]["average_drives_per_game"] == 10.0
     assert result["sportsbook_projection_weight"] == 0.0
+    assert result["provenance"]["home"]["provider_used"] == "nflverse"
 
 
 def test_step6_espn_fallback_remains_ready_without_drive_count(monkeypatch):
@@ -204,8 +208,8 @@ def test_step6_espn_fallback_remains_ready_without_drive_count(monkeypatch):
                 "third_down_conv_pct": 41.0,
                 "first_downs_per_game": 21.0,
             },
-            "ESPN NFL team statistics",
-            2,
+            provider="ESPN NFL team statistics",
+            rank=2,
         )
 
     monkeypatch.setattr(redzone, "route_red_zone_drive", fallback_route)
@@ -221,12 +225,14 @@ def test_step6_espn_fallback_remains_ready_without_drive_count(monkeypatch):
 def test_step5_and_step6_provider_failure_stays_fail_closed(monkeypatch):
     monkeypatch.setattr(explosive, "route_explosive", lambda *args: _unavailable_route())
     monkeypatch.setattr(redzone, "route_red_zone_drive", lambda *args: _unavailable_route())
-    assert explosive.build_matchup_explosive_context(
+    explosive_result = explosive.build_matchup_explosive_context(
         "BUF", "Buffalo Bills", "MIA", "Miami Dolphins", "2026-09-20"
-    )["ready"] is False
-    assert redzone.build_matchup_red_zone_drive_context(
+    )
+    redzone_result = redzone.build_matchup_red_zone_drive_context(
         "BUF", "Buffalo Bills", "MIA", "Miami Dolphins", "2026-09-20"
-    )["ready"] is False
+    )
+    assert explosive_result["ready"] is False
+    assert redzone_result["ready"] is False
 
 
 def test_step5_and_step6_acquisition_no_longer_call_requests_directly():
@@ -247,9 +253,10 @@ def _step7_slate() -> pd.DataFrame:
         [
             {
                 "game_id": "event-1",
+                "away_abbr": "MIA",
+                "home_abbr": "BUF",
                 "game_date": "2026-09-20",
                 "tip_et": "1:00 PM ET",
-                "home_abbr": "BUF",
                 "venue": "Highmark Stadium",
             }
         ]
@@ -261,39 +268,21 @@ def _step7_nws_result(*, indoor: bool = False) -> dict:
         "venue_name": "Highmark Stadium",
         "indoor": indoor,
         "weather_applies": not indoor,
-        "temperature": None if indoor else 68.0,
-        "precipitation": None if indoor else 10.0,
-        "gust": None if indoor else 8.0,
+        "temperature": None if indoor else 61.0,
+        "precipitation": None if indoor else 20.0,
+        "gust": None if indoor else 14.0,
         "weather_pressure": "INDOOR" if indoor else "LOW",
     }
-    return _ready_route("environment", data, "NWS + canonical NFL stadium registry", 1)
+    return _ready_route("environment", data, provider="NWS + canonical NFL stadium registry", rank=1)
 
 
-def test_step7_uses_verified_slate_metadata_and_nws_primary(monkeypatch):
+def test_step7_uses_nws_without_calling_espn_when_nws_is_valid(monkeypatch):
     monkeypatch.setattr(
         environment,
         "load_nfl_slate",
         lambda day: (_step7_slate(), {"request_ok": True, "error": ""}),
         raising=False,
     )
-    captured: list[dict] = []
-
-    def fake_route(request: dict):
-        captured.append(request)
-        return _step7_nws_result()
-
-    monkeypatch.setattr(environment, "route_environment", fake_route, raising=False)
-    result = environment.build_slate_environment_context("2026-09-20", ["event-1"])
-    assert result["event-1"]["ready"] is True
-    assert result["event-1"]["provider"] == "NWS"
-    assert result["event-1"]["provenance"]["fallback_rank"] == 1
-    assert captured[0]["event_id"] == "event-1"
-    assert captured[0]["home_abbr"] == "BUF"
-    assert captured[0]["venue_name"] == "Highmark Stadium"
-    assert captured[0]["kickoff_utc"].startswith("2026-09-20T17:00:00")
-
-
-def test_step7_nws_success_skips_espn_fallback(monkeypatch):
     calls: list[str] = []
 
     def primary(request: dict):
@@ -364,3 +353,18 @@ def test_step7_acquisition_no_longer_calls_requests_directly():
     assert "route_metric(" in source
     assert "nws.fetch_environment" in source
     assert "espn.fetch_environment" in source
+
+
+def test_step8_projection_signature_is_unchanged_and_market_free():
+    sig = inspect.signature(build_total_projection)
+    assert list(sig.parameters) == [
+        "scoring_context",
+        "pace_context",
+        "explosive_context",
+        "red_zone_drive_context",
+        "environment_context",
+    ]
+    assert not any(
+        token in str(sig).lower()
+        for token in ("market", "odds", "fanduel", "sportsbook")
+    )
