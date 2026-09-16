@@ -21,6 +21,7 @@ TARGET_HOME = "Pittsburgh"
 AWAY_EVIDENCE_LABEL = "Syracuse evidence"
 HOME_EVIDENCE_LABEL = "Pittsburgh evidence"
 HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
+SPORTSBOOK_MARKER = "sportsbook projection influence 0.0%"
 DEEP_AUDIT_LABEL = "Deep model evidence • Step 11 distribution"
 
 
@@ -207,8 +208,7 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             home_logo = _assert_logo_loaded(page, frame, "home")
             away_record = _assert_record(frame, "away")
             home_record = _assert_record(frame, "home")
-            if "SPORTSBOOK" not in body.upper() or "0.0%" not in body:
-                raise V152BrowserQAFailure("SPORTSBOOK projection influence 0.0% marker missing")
+            base._wait_for_text(frame, SPORTSBOOK_MARKER, timeout_seconds=60.0)
 
             deep = _deep_audit_collapsed(frame)
             away_evidence = _open_evidence(frame, AWAY_EVIDENCE_LABEL)
