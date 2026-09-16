@@ -14,23 +14,25 @@ def pytest_collection_modifyitems(session, config, items):
 
     page = ROOT / "cfb_game_total_clean_page_v1.py"
     router = ROOT / "streamlit_memory_lazy_router_v150.py"
-    frozen_v149 = ROOT / "streamlit_memory_lazy_router_v149.py"
-    app = ROOT / "app.py"
-    required = (page, router, frozen_v149, app)
+    activation = ROOT / "streamlit_memory_lazy_router_v149.py"
+    browser = ROOT / "devsystem" / "cfb_game_total_browser_qa_v1.py"
+    required = (page, router, activation, browser)
     missing = [path.name for path in required if not path.exists()]
     assert not missing, "missing active CFB V150 contract files: " + ", ".join(missing)
 
-    py_compile.compile(str(page), doraise=True)
-    py_compile.compile(str(router), doraise=True)
-    py_compile.compile(str(app), doraise=True)
+    for path in required:
+        py_compile.compile(str(path), doraise=True)
 
     page_source = page.read_text(encoding="utf-8")
     router_source = router.read_text(encoding="utf-8")
-    v149_source = frozen_v149.read_text(encoding="utf-8")
-    app_source = app.read_text(encoding="utf-8")
+    activation_source = activation.read_text(encoding="utf-8")
+    browser_source = browser.read_text(encoding="utf-8")
 
+    # Presentation-only Game Total page over the frozen Step-12 hub.
     assert 'FROZEN_GAME_TOTAL_HUB = "cfb_game_total_hub_v3"' in page_source
+    assert 'MARKET = "Game Total"' in page_source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page_source
+    assert "MAY_MODIFY_PROJECTION = False" in page_source
     assert "frozen_page.slate.analyze_game" in page_source
     assert "frozen_page.slate.scan_slate" in page_source
     assert "frozen_page.final_model.rank_slate" in page_source
@@ -38,29 +40,37 @@ def pytest_collection_modifyitems(session, config, items):
     assert "logo_v3.resolve_visuals" in page_source
     assert "⚡ QUICK READ" in page_source
     assert 'with st.expander("Deep evidence • certified team audit"' in page_source
+    assert "frozen_page.render_game_total_hub(" not in page_source
 
+    # V150 targets only exact CFB -> Game Total and delegates everything else.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v149"' in router_source
     assert 'GAME_TOTAL_MARKET = "Game Total"' in router_source
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v1"' in router_source
     assert "return prior.render_app()" in router_source
     assert "finally:" in router_source
+    assert "root.st.selectbox = original_selectbox" in router_source
+    assert "root._render_nfl = original_render_nfl" in router_source
+
+    # Critical anti-drift rule: V77's persistence helper is O/U-only. V150 must
+    # persist and restore Game Total using its own exact query contract.
     assert "cfb_route_base._persist_fast_route_query()" not in router_source
-    assert "cfb_route_base._clear_fast_route_query()" in router_source
+    assert "def _persist_game_total_route_query" in router_source
+    assert "def _restore_game_total_route_from_query" in router_source
+    assert "st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET" in router_source
 
-    # V149 is a frozen release. V150 must be additive above it, not injected into it.
-    assert 'GAME_TOTAL_MARKET = "Game Total"' not in v149_source
-    assert "_game_total_v150_route_active" not in v149_source
-    assert "streamlit_memory_lazy_router_v150" not in v149_source
+    # app.py still boots V149. The additive activation shim must preserve V149's
+    # certified O/U V38 path while handing only exact Game Total to V150.
+    assert 'ACTIVE_PAGE = "cfb_over_under_clean_page_v38"' in activation_source
+    assert 'OVER_UNDER_MARKET = "Over/Under"' in activation_source
+    assert 'GAME_TOTAL_MARKET = "Game Total"' in activation_source
+    assert "def _restore_game_total_v150_from_query" in activation_source
+    assert "streamlit_memory_lazy_router_v150" in activation_source
+    assert "_render_direct_cfb_game_total" in activation_source
+    assert "cfb_route_base._persist_fast_route_query()" in activation_source
 
-    # The Streamlit entrypoint must activate V150 explicitly.
-    assert (
-        'FROZEN_V149_DEPLOYMENT_HEARTBEAT = '
-        '"STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_COMPACT_DASHBOARD_2026-09-16"'
-        in app_source
-    )
-    assert (
-        'DEPLOYMENT_HEARTBEAT = '
-        '"STREAMLIT_MAIN_V150_CFB_GAME_TOTAL_MONSTER_COMPACT_DASHBOARD_2026-09-16"'
-        in app_source
-    )
-    assert "from streamlit_memory_lazy_router_v150 import record_bootstrap_import_ms, render_app" in app_source
+    # Real browser proof must certify the actual Game Total page and explicitly
+    # reject the legacy title visible in the user's production screenshot.
+    assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
+    assert '"CFB GAME TOTAL • MONSTER DASHBOARD"' in browser_source
+    assert '"College Football Game Total — Final"' in browser_source
+    assert "FORBIDDEN_VISIBLE" in browser_source
