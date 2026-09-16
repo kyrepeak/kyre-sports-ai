@@ -106,12 +106,20 @@ def _display_bundle(
             safe_game,
             selected_day,
         )
-        return (
-            dict(display_game or safe_game),
-            dict(display_away or frozen_away),
-            dict(display_home or frozen_home),
-            dict(display_diag or {}),
-        )
+        display_game = dict(display_game or safe_game)
+        display_away = dict(display_away or frozen_away)
+        display_home = dict(display_home or frozen_home)
+        display_diag = dict(display_diag or {})
+
+        # Deep reconciliation stores exact ESPN IDs on the reconciled profiles.
+        # Promote only those exact numeric IDs into the DISPLAY game copy so the
+        # strict V3 logo resolver can render without fuzzy/name-based matching.
+        for side, profile in (("away", display_away), ("home", display_home)):
+            team_id = _clean(profile.get("espn_team_id"))
+            if team_id.isdigit():
+                display_game[f"{side}_espn_team_id"] = team_id
+
+        return display_game, display_away, display_home, display_diag
     except Exception as exc:
         fallback = prior._display_game(safe_game)
         return (
@@ -209,8 +217,8 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     st.markdown(
         """
 <div class="gt151-head">
-  <div class="gt151-kicker">CFB GAME TOTAL • V151 LIVE EVIDENCE</div>
-  <div class="gt151-title">🏁 Monster Game Total Dashboard</div>
+  <div class="gt151-kicker">CFB GAME TOTAL • MONSTER DASHBOARD • V151 LIVE EVIDENCE</div>
+  <div class="gt151-title">🏁 College Football Game Total • Monster Dashboard</div>
   <div class="gt151-sub">Compact first. Current team evidence is reconciled live for display while the certified Step-11/12 Game Total math stays frozen.</div>
   <div class="gt151-chips"><span class="gt151-chip live">LIVE EVIDENCE ✅</span><span class="gt151-chip purple">FROZEN MODEL ✅</span><span class="gt151-chip live">EXACT-ID LOGOS ✅</span><span class="gt151-chip">PHOENIX TIME ✅</span><span class="gt151-chip amber">SPORTSBOOK 0.0%</span></div>
 </div>
