@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - 'tests/test_devsystem_tool_orchestration_guard_v1.py'
+      - 'tests/test_devsystem_github_state_resolver_v1.py'
       - 'devsystem/tool_orchestration_guard_v1.py'
+      - 'devsystem/github_state_resolver_v1.py'
       - '.github/workflows/devsystem-agent-anti-loop-v1.yml'
       - 'devsystem/task_ledgers/agent-anti-loop-step2-no-progress.json'
   workflow_dispatch:
@@ -24,5 +26,8 @@ jobs:
           python-version: '3.12'
       - name: Install pytest
         run: python -m pip install --disable-pip-version-check -q pytest
-      - name: Prove third unchanged tool call is blocked
-        run: python -m pytest -q tests/test_devsystem_tool_orchestration_guard_v1.py
+      - name: Prove anti-loop orchestration contracts
+        run: |
+          python -m pytest -q \
+            tests/test_devsystem_tool_orchestration_guard_v1.py \
+            tests/test_devsystem_github_state_resolver_v1.py
