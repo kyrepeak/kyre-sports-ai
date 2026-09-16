@@ -46,7 +46,7 @@ def test_v152_selector_preserves_game_total_query_during_page_widget_reruns() ->
         "def _render_production_heartbeat()", 1
     )[0]
     assert 'label == "🎯 NFL Market"' in selector
-    assert "selected == GAME_TOTAL_MARKET" in selector
+    assert "str(selected) == GAME_TOTAL_MARKET" in selector
     assert "_persist_game_total_route_query()" in selector
     direct = source.split("def _render_direct_cfb_game_total() -> None:", 1)[1].split(
         "def render_app() -> None:", 1
