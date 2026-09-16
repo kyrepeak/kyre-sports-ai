@@ -1,0 +1,72 @@
+name: CFB O/U visual correction V149
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [v149-cfb-over-under-visual-correction]
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: V149 scope firewall
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          allowed = {
+              ".github/workflows/cfb-over-under-visual-v149.yml",
+              "cfb_over_under_clean_page_v17.py",
+              "tests/test_cfb_over_under_visual_v149.py",
+          }
+          actual = set(subprocess.check_output(
+              ["git", "diff", "--name-only", "origin/main...HEAD"], text=True
+          ).splitlines())
+          unexpected = sorted(actual - allowed)
+          if unexpected:
+              raise SystemExit(f"V149 crossed visual-only scope: {unexpected}")
+          print("CFB_OU_V149_SCOPE=PASS")
+          PY
+
+      - name: Compile V149
+        run: |
+          python -m py_compile cfb_over_under_clean_page_v17.py tests/test_cfb_over_under_visual_v149.py
+
+      - name: Run V149 visual contract and inherited clean-page regression
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_over_under_visual_v149.py \
+            tests/test_cfb_over_under_clean_page_v17.py
+
+      - name: Frozen model firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path("cfb_over_under_clean_page_v17.py").read_text().lower()
+          forbidden = ("sportsbook_api", "np.random", "import random", "monte_carlo(")
+          leaked = [token for token in forbidden if token in text]
+          if leaked:
+              raise SystemExit(f"V149 crossed frozen model firewall: {leaked}")
+          if "0.0% sportsbook projection influence" not in text:
+              raise SystemExit("V149 missing explicit 0.0% sportsbook projection influence marker")
+          print("CFB_OU_V149_MODEL_FIREWALL=PASS")
+          PY
+
+      - run: echo CFB_OU_VISUAL_V149_GREEN
