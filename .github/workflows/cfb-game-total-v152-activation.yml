@@ -11,6 +11,7 @@ on:
       - "cfb_game_total_clean_page_v5.py"
       - "cfb_game_total_clean_page_v6.py"
       - "cfb_game_total_runtime_display_v1.py"
+      - "data/cfb_game_total_runtime_snapshot_v1.json"
       - "cfb_over_under_runtime_team_data_v1.py"
       - "devsystem/cfb_game_total_v152_activation_qa.py"
       - "devsystem/cfb_game_total_live_evidence_qa_v2.py"
@@ -22,6 +23,7 @@ on:
       - "tests/test_cfb_game_total_v152_evidence_center.py"
       - "tests/test_cfb_game_total_v152_layout.py"
       - "tests/test_cfb_game_total_browser_v152.py"
+      - "tests/test_cfb_game_total_v153_production_fallback.py"
       - "tests/test_devsystem_production_verify_v3.py"
       - "tests/conftest.py"
       - ".github/workflows/cfb-game-total-v152-activation.yml"
@@ -69,7 +71,7 @@ jobs:
           python -m py_compile cfb_game_total_runtime_display_v1.py
           python -m py_compile cfb_over_under_runtime_team_data_v1.py
 
-      - name: Run V152 activation, freshness, identity, stats, evidence, layout, and browser contracts
+      - name: Run V152 activation, freshness, identity, stats, evidence, layout, browser, and production-fallback contracts
         run: |
           python -m pytest -q \
             tests/test_cfb_game_total_v152_activation.py \
@@ -79,7 +81,8 @@ jobs:
             tests/test_cfb_game_total_v152_team_stats.py \
             tests/test_cfb_game_total_v152_evidence_center.py \
             tests/test_cfb_game_total_v152_layout.py \
-            tests/test_cfb_game_total_browser_v152.py
+            tests/test_cfb_game_total_browser_v152.py \
+            tests/test_cfb_game_total_v153_production_fallback.py
 
       - name: Prove Syracuse at Pittsburgh live team evidence
         run: python -m devsystem.cfb_game_total_live_evidence_qa_v2
