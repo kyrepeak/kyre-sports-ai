@@ -58,6 +58,7 @@ jobs:
           python -m py_compile devsystem/production_verify_v3.py
           python -m py_compile cfb_game_total_clean_page_v3.py
           python -m py_compile cfb_game_total_clean_page_v4.py
+          python -m py_compile cfb_game_total_clean_page_v5.py
           python -m py_compile cfb_game_total_runtime_display_v1.py
           python -m py_compile cfb_over_under_runtime_team_data_v1.py
 
