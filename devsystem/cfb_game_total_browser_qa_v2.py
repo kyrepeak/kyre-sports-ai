@@ -95,7 +95,7 @@ def _visible(frame, testid: str):
     return locator
 
 
-def _logo(frame, side: str) -> dict[str, Any]:
+def _assert_logo_loaded(frame, side: str) -> dict[str, Any]:
     locator = _visible(frame, f"gt152-{side}-logo")
     src = (locator.get_attribute("src") or "").strip()
     width = int(locator.evaluate("el => el.naturalWidth || 0"))
@@ -104,7 +104,7 @@ def _logo(frame, side: str) -> dict[str, Any]:
     return {"src": src, "natural_width": width}
 
 
-def _record(frame, side: str) -> str:
+def _assert_record(frame, side: str) -> str:
     value = _visible(frame, f"gt152-{side}-record").inner_text().strip()
     if value in {"", "—", "0-0"}:
         raise V152BrowserQAFailure(f"{side} record is a placeholder: {value!r}")
@@ -169,10 +169,10 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             _visible(frame, "gt152-monster-matchup-hero")
             _visible(frame, "gt152-compact-game-strip")
             _visible(frame, "gt152-scoring-defense")
-            away_logo = _logo(frame, "away")
-            home_logo = _logo(frame, "home")
-            away_record = _record(frame, "away")
-            home_record = _record(frame, "home")
+            away_logo = _assert_logo_loaded(frame, "away")
+            home_logo = _assert_logo_loaded(frame, "home")
+            away_record = _assert_record(frame, "away")
+            home_record = _assert_record(frame, "home")
             if "SPORTSBOOK" not in body.upper() or "0.0%" not in body:
                 raise V152BrowserQAFailure("SPORTSBOOK projection influence 0.0% marker missing")
 
