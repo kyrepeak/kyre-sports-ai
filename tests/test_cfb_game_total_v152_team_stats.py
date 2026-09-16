@@ -26,8 +26,8 @@ def _completed_games() -> list[dict]:
     ]
 
 
-def test_runtime_snapshot_preserves_completed_games_and_recent_context() -> None:
-    import cfb_over_under_runtime_team_data_v1 as runtime
+def test_game_total_snapshot_overlay_preserves_completed_games_and_recent_context() -> None:
+    import cfb_game_total_runtime_display_v1 as runtime
 
     side_snap = {
         "record_text": "1-1",
@@ -47,7 +47,7 @@ def test_runtime_snapshot_preserves_completed_games_and_recent_context() -> None
         "completed_games": _completed_games(),
     }
 
-    profile = runtime._profile_from_snapshot({"team": "Syracuse"}, side_snap)
+    profile = runtime._overlay_snapshot_evidence({"team": "Syracuse"}, side_snap)
 
     assert profile["completed_games"] == _completed_games()
     assert profile["recent_record"]["games"] == 2
@@ -58,7 +58,7 @@ def test_runtime_snapshot_preserves_completed_games_and_recent_context() -> None
 
 
 def test_display_stats_rebuild_record_and_averages_from_completed_games() -> None:
-    from cfb_game_total_clean_page_v3 import _team_stats_state
+    from cfb_game_total_clean_page_v4 import _team_stats_state
 
     profile = {
         "team": "Syracuse",
@@ -80,7 +80,7 @@ def test_display_stats_rebuild_record_and_averages_from_completed_games() -> Non
 
 
 def test_display_stats_fail_closed_when_completed_evidence_is_absent() -> None:
-    from cfb_game_total_clean_page_v3 import _team_stats_state
+    from cfb_game_total_clean_page_v4 import _team_stats_state
 
     state = _team_stats_state(
         {"team": "Syracuse", "record_text": "0-0"},
@@ -96,7 +96,7 @@ def test_display_stats_fail_closed_when_completed_evidence_is_absent() -> None:
 
 
 def test_display_stats_prefers_more_complete_completed_sample_over_stale_record() -> None:
-    from cfb_game_total_clean_page_v3 import _team_stats_state
+    from cfb_game_total_clean_page_v4 import _team_stats_state
 
     rows = _completed_games() + [
         {
