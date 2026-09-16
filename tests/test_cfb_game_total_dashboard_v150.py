@@ -63,6 +63,31 @@ def test_router_v150_targets_only_exact_cfb_game_total_and_freezes_v149():
     assert "root._render_nfl = original_render_nfl" in source
 
 
+def test_router_v150_does_not_write_over_under_query_state_for_game_total():
+    source = _source("streamlit_memory_lazy_router_v150.py")
+
+    # V77's persist helper always writes ks_cfb_market=Over/Under. Game Total
+    # must clear that frozen fast-route query instead of corrupting refresh state.
+    assert "cfb_route_base._persist_fast_route_query()" not in source
+    assert "cfb_route_base._clear_fast_route_query()" in source
+
+
+def test_app_bootstraps_router_v150_game_total_release():
+    source = _source("app.py")
+
+    assert (
+        'FROZEN_V149_DEPLOYMENT_HEARTBEAT = '
+        '"STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_COMPACT_DASHBOARD_2026-09-16"'
+        in source
+    )
+    assert (
+        'DEPLOYMENT_HEARTBEAT = '
+        '"STREAMLIT_MAIN_V150_CFB_GAME_TOTAL_MONSTER_COMPACT_DASHBOARD_2026-09-16"'
+        in source
+    )
+    assert "from streamlit_memory_lazy_router_v150 import record_bootstrap_import_ms, render_app" in source
+
+
 def test_router_v150_does_not_change_game_total_math_or_sportsbook_influence():
     source = _source("streamlit_memory_lazy_router_v150.py")
 
