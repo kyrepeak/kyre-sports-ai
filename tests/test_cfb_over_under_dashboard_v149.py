@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import inspect
 
-import cfb_over_under_clean_page_v37 as page
+import cfb_over_under_clean_page_v38 as page
 import streamlit_memory_lazy_router_v149 as router
 
 
-def test_v37_is_presentation_only_over_certified_v36() -> None:
-    assert page.FROZEN_PAGE == "cfb_over_under_clean_page_v36"
+def test_v38_is_presentation_only_over_certified_v37() -> None:
+    assert page.FROZEN_PAGE == "cfb_over_under_clean_page_v37"
     assert page.MARKET == "Over/Under"
     assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert page.MAY_MODIFY_PROJECTION is False
     assert page.ACTIVE_LOGO_RESOLVER == "cfb_over_under_logo_resolver_v3"
 
 
-def test_v37_uses_phoenix_time_and_exact_logo_resolver() -> None:
+def test_v38_uses_phoenix_time_and_exact_logo_resolver() -> None:
     source = inspect.getsource(page)
     assert 'ZoneInfo("America/Phoenix")' in source
     assert "_kickoff_phoenix" in source
@@ -23,7 +23,7 @@ def test_v37_uses_phoenix_time_and_exact_logo_resolver() -> None:
     assert "runtime_display._merge_game_snapshot" in source
 
 
-def test_v37_keeps_model_flow_but_compacts_steps_5_through_10() -> None:
+def test_v38_keeps_model_flow_but_compacts_steps_5_through_10() -> None:
     source = inspect.getsource(page.render_over_under_hub)
     assert "runtime_slate.analyze_game" in source
     assert 'result.get("explosive_engine")' in source
@@ -36,7 +36,7 @@ def test_v37_keeps_model_flow_but_compacts_steps_5_through_10() -> None:
     assert "st.expander" in source
 
 
-def test_v37_preserves_deep_evidence_and_full_slate_scan() -> None:
+def test_v38_preserves_deep_evidence_and_full_slate_scan() -> None:
     source = inspect.getsource(page.render_over_under_hub)
     assert "_model_step" in source
     assert "_step3_readable" in source
@@ -47,7 +47,7 @@ def test_v37_preserves_deep_evidence_and_full_slate_scan() -> None:
 
 def test_v149_is_additive_over_v148_and_targets_only_cfb_over_under() -> None:
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v148"
-    assert router.ACTIVE_PAGE == "cfb_over_under_clean_page_v37"
+    assert router.ACTIVE_PAGE == "cfb_over_under_clean_page_v38"
     assert router.CFB_SPORT_LABEL == "College Football"
     assert router.OVER_UNDER_MARKET == "Over/Under"
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
