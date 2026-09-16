@@ -104,3 +104,13 @@ def test_browser_qa_waits_for_named_cfb_market_selector_before_game_total_click(
     assert 'get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)' in source
     assert "cfb_market_combo.wait_for(" in source
     assert "if frame.get_by_role(\"combobox\").count() >= 2" not in source
+
+
+def test_v150_handoff_does_not_rewrite_instantiated_cfb_market_widget_state():
+    source = _source("streamlit_memory_lazy_router_v149.py")
+    handoff = source.split("def _selectbox_v150_handoff", 1)[1].split(
+        "def _restore_game_total_v150_from_query", 1
+    )[0]
+
+    assert 'st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET' not in handoff
+    assert "_persist_game_total_v150_query()" in handoff
