@@ -50,6 +50,13 @@ def test_v36_keeps_projection_and_market_visible_and_deep_evidence_collapsed() -
     assert "Deep Evidence" in source
 
 
+def test_v36_market_badges_remain_neutral_when_frozen_market_can_fail_closed() -> None:
+    source = _source("nfl_passing_yards_hub_v36.py")
+    assert "MARKET CONTEXT" in source
+    assert '>LIVE</span>' not in source
+    assert '>LIVE MARKET</span>' not in source
+
+
 def test_v36_matchup_header_surfaces_verified_slate_kickoff_without_new_transport() -> None:
     source = _source("nfl_passing_yards_hub_v36.py")
     assert "kpass36-kickoff" in source
