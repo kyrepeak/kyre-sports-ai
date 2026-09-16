@@ -14,17 +14,20 @@ def pytest_collection_modifyitems(session, config, items):
 
     page = ROOT / "cfb_game_total_clean_page_v1.py"
     router = ROOT / "streamlit_memory_lazy_router_v150.py"
-    activation = ROOT / "streamlit_memory_lazy_router_v149.py"
-    required = (page, router, activation)
+    frozen_v149 = ROOT / "streamlit_memory_lazy_router_v149.py"
+    app = ROOT / "app.py"
+    required = (page, router, frozen_v149, app)
     missing = [path.name for path in required if not path.exists()]
     assert not missing, "missing active CFB V150 contract files: " + ", ".join(missing)
 
     py_compile.compile(str(page), doraise=True)
     py_compile.compile(str(router), doraise=True)
+    py_compile.compile(str(app), doraise=True)
 
     page_source = page.read_text(encoding="utf-8")
     router_source = router.read_text(encoding="utf-8")
-    activation_source = activation.read_text(encoding="utf-8")
+    v149_source = frozen_v149.read_text(encoding="utf-8")
+    app_source = app.read_text(encoding="utf-8")
 
     assert 'FROZEN_GAME_TOTAL_HUB = "cfb_game_total_hub_v3"' in page_source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page_source
@@ -41,8 +44,23 @@ def pytest_collection_modifyitems(session, config, items):
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v1"' in router_source
     assert "return prior.render_app()" in router_source
     assert "finally:" in router_source
+    assert "cfb_route_base._persist_fast_route_query()" not in router_source
+    assert "cfb_route_base._clear_fast_route_query()" in router_source
 
-    # app.py still boots V149; V149 must hand off only exact CFB Game Total.
-    assert "_game_total_v150_route_active" in activation_source
-    assert "streamlit_memory_lazy_router_v150" in activation_source
-    assert "_render_direct_cfb_game_total" in activation_source
+    # V149 is a frozen release. V150 must be additive above it, not injected into it.
+    assert 'GAME_TOTAL_MARKET = "Game Total"' not in v149_source
+    assert "_game_total_v150_route_active" not in v149_source
+    assert "streamlit_memory_lazy_router_v150" not in v149_source
+
+    # The Streamlit entrypoint must activate V150 explicitly.
+    assert (
+        'FROZEN_V149_DEPLOYMENT_HEARTBEAT = '
+        '"STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_COMPACT_DASHBOARD_2026-09-16"'
+        in app_source
+    )
+    assert (
+        'DEPLOYMENT_HEARTBEAT = '
+        '"STREAMLIT_MAIN_V150_CFB_GAME_TOTAL_MONSTER_COMPACT_DASHBOARD_2026-09-16"'
+        in app_source
+    )
+    assert "from streamlit_memory_lazy_router_v150 import record_bootstrap_import_ms, render_app" in app_source
