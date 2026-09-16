@@ -45,6 +45,22 @@ def test_v38_preserves_deep_evidence_and_full_slate_scan() -> None:
     assert "st.data_editor" in source
 
 
+def test_v38_surfaces_inherited_safety_contract_for_browser_qa() -> None:
+    source = inspect.getsource(page.render_over_under_hub)
+    for marker in (
+        "CFB O/U • CLEAN PAGE V38 ACTIVE",
+        "FUTURE SLATE COVERAGE ACTIVE",
+        "OFFICIAL ESPN IDENTITY RECOVERY",
+        "NO FUZZY MATCHING",
+        "NO SYNTHETIC IDS",
+        "FRESHNESS FIREWALL ACTIVE",
+        "0.0% PROJECTION INFLUENCE",
+        "FROZEN PROJECTION MATH PRESERVED",
+        "READABLE STEPS 4-12 ACTIVE",
+    ):
+        assert marker in source
+
+
 def test_v149_is_additive_over_v148_and_targets_only_cfb_over_under() -> None:
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v148"
     assert router.ACTIVE_PAGE == "cfb_over_under_clean_page_v38"
