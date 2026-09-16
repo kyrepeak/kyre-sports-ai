@@ -1,9 +1,9 @@
 """KYRE Streamlit Router V152 — CFB Game Total production rebuild.
 
 Additive over frozen Router V151. V152 advances only exact College Football ->
-Game Total to Clean Page V3 while every other route delegates to V151. The
-exact Game Total route exposes a production heartbeat so stale Streamlit
-releases fail verification instead of passing on a generic HTTP 200.
+Game Total to the current V152 clean page while every other route delegates to
+V151. The exact Game Total route exposes a production heartbeat so stale
+Streamlit releases fail verification instead of passing on a generic HTTP 200.
 
 Frozen Game Total Step-11/Step-12 calculations remain untouched. Sportsbook
 projection influence stays 0.0%.
@@ -21,7 +21,7 @@ PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v151"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
-ACTIVE_PAGE = "cfb_game_total_clean_page_v3"
+ACTIVE_PAGE = "cfb_game_total_clean_page_v4"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
