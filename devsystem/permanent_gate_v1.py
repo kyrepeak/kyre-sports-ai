@@ -34,6 +34,16 @@ REQUIRED_DEVSYSTEM_FILES = (
     ".github/workflows/devsystem-failure-packet-v1.yml",
     ".github/workflows/devsystem-production-verification.yml",
     ".github/workflows/devsystem-api-observability-v1.yml",
+    "devsystem/forward_motion_policy_v2.json",
+    "devsystem/action_ledger_v2.py",
+    "devsystem/checkpoint_ledger_v2.py",
+    "devsystem/forward_motion_v2.py",
+    "devsystem/anti_loop_replay_v2.py",
+    "devsystem/forward_motion_contract_v2.py",
+    "tests/test_devsystem_action_ledger_v2.py",
+    "tests/test_devsystem_checkpoint_ledger_v2.py",
+    "tests/test_devsystem_forward_motion_v2.py",
+    "tests/test_devsystem_anti_loop_replay_v2.py",
 )
 
 
@@ -103,6 +113,9 @@ def validate() -> dict:
         "devsystem-final-gate:",
         'allowed="success skipped"',
         "DEVSYSTEM_FINAL_GATE_GREEN",
+        "python devsystem/forward_motion_contract_v2.py",
+        "python devsystem/action_ledger_v2.py verify-pr",
+        "fetch-depth: 0",
     )
     workflow_missing = [m for m in required_workflow_markers if m not in workflow]
     for key in active:
@@ -255,6 +268,8 @@ def validate() -> dict:
         "failure_recurrence_chronology_permanent": True,
         "failure_recurrence_age_permanent": True,
         "failure_history_coverage_permanent": True,
+        "forward_motion_v2_permanent": True,
+        "forward_motion_v2_pr_enforcement": True,
     }
     print("DEVSYSTEM_PERMANENT_CONTRACT_GREEN")
     print(json.dumps(result, indent=2, sort_keys=True))
