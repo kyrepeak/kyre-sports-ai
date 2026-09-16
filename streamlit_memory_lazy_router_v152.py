@@ -22,6 +22,7 @@ FROZEN_ROUTER = "streamlit_memory_lazy_router_v151"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 ACTIVE_PAGE = "cfb_game_total_clean_page_v6"
+ROUTE_LATCH_KEY = "cfb_game_total_v152_route_active"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
@@ -32,8 +33,46 @@ def record_bootstrap_import_ms(value: float) -> None:
     return prior.record_bootstrap_import_ms(value)
 
 
+def _clear_game_total_route_latch() -> None:
+    st.session_state.pop(ROUTE_LATCH_KEY, None)
+
+
+def _latch_game_total_route() -> None:
+    st.session_state[ROUTE_LATCH_KEY] = True
+
+
 def _game_total_route_active() -> bool:
-    return prior._game_total_route_active()
+    """Resolve V152 Game Total route state without trapping intentional nav.
+
+    Page-only widget reruns may lose the legacy sport/market fields or URL query
+    before V152 re-enters. The V152 latch survives those reruns. Explicit sport
+    or CFB-market changes are authoritative and clear the latch immediately.
+    """
+    sport = str(st.session_state.get("ks_sport_touch") or "").strip()
+    market = str(st.session_state.get("ks_cfb_market_touch") or "").strip()
+    latched = st.session_state.get(ROUTE_LATCH_KEY) is True
+
+    if sport and sport != CFB_SPORT_LABEL:
+        if latched:
+            _clear_game_total_route_latch()
+        return False
+
+    if sport == CFB_SPORT_LABEL and market and market != GAME_TOTAL_MARKET:
+        if latched:
+            _clear_game_total_route_latch()
+        return False
+
+    if sport == CFB_SPORT_LABEL and market == GAME_TOTAL_MARKET:
+        _latch_game_total_route()
+        return True
+
+    if _query_requests_game_total() or latched:
+        st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL
+        st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
+        _latch_game_total_route()
+        return True
+
+    return False
 
 
 def _persist_game_total_route_query() -> None:
@@ -48,7 +87,7 @@ def _query_requests_game_total() -> bool:
 
 
 def _restore_game_total_route_from_query() -> bool:
-    """Repair exact Game Total route state after Streamlit widget reruns."""
+    """Repair exact Game Total route state from the explicit URL query."""
     if not _query_requests_game_total():
         return False
 
@@ -58,24 +97,19 @@ def _restore_game_total_route_from_query() -> bool:
     )
     st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL
     st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
+    _latch_game_total_route()
     return changed
 
 
 def _selectbox_v152(label, options, *args, **kwargs):
-    """V77 selector behavior plus Game Total route persistence.
-
-    Frozen V77 intentionally clears the fast-route query for every CFB market
-    except Over/Under. V152 temporarily reuses that selector while rendering the
-    direct Game Total route, so widget reruns could erase the Game Total query
-    before the page finished rendering. This wrapper preserves all V77 behavior
-    but treats exact Game Total as a V152 fast route too.
-    """
+    """V77 selector behavior plus V152 Game Total route ownership."""
     if label == "🏟️ Sport":
         choices = list(options)
         if CFB_SPORT_LABEL not in choices:
             choices.append(CFB_SPORT_LABEL)
         selected = cfb_route_base._ORIGINAL_SELECTBOX(label, choices, *args, **kwargs)
         if str(selected) != CFB_SPORT_LABEL:
+            _clear_game_total_route_latch()
             cfb_route_base._clear_fast_route_query()
         return selected
 
@@ -96,11 +130,15 @@ def _selectbox_v152(label, options, *args, **kwargs):
             key="ks_cfb_market_touch",
             **clean_kwargs,
         )
-        if str(selected) == GAME_TOTAL_MARKET:
+        selected = str(selected)
+        if selected == GAME_TOTAL_MARKET:
+            _latch_game_total_route()
             _persist_game_total_route_query()
-        elif str(selected) == cfb_route_base.OVER_UNDER_MARKET:
+        elif selected == cfb_route_base.OVER_UNDER_MARKET:
+            _clear_game_total_route_latch()
             cfb_route_base._persist_fast_route_query()
         else:
+            _clear_game_total_route_latch()
             cfb_route_base._clear_fast_route_query()
         return selected
 
@@ -121,12 +159,18 @@ def _render_cfb_game_total_v152(market: str) -> None:
     market = str(market or "")
 
     if sport == CFB_SPORT_LABEL and market != GAME_TOTAL_MARKET:
-        cfb_route_base._clear_fast_route_query()
+        _clear_game_total_route_latch()
+        if market == cfb_route_base.OVER_UNDER_MARKET:
+            cfb_route_base._persist_fast_route_query()
+        else:
+            cfb_route_base._clear_fast_route_query()
         st.rerun()
 
     if sport != CFB_SPORT_LABEL or market != GAME_TOTAL_MARKET:
+        _clear_game_total_route_latch()
         return _ORIGINAL_RENDER_NFL(market)
 
+    _latch_game_total_route()
     _persist_game_total_route_query()
     _render_production_heartbeat()
     page = root._import(ACTIVE_PAGE)
@@ -173,8 +217,11 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "PRODUCTION_HEARTBEAT",
+    "ROUTE_LATCH_KEY",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_clear_game_total_route_latch",
     "_game_total_route_active",
+    "_latch_game_total_route",
     "_persist_game_total_route_query",
     "_query_requests_game_total",
     "_render_cfb_game_total_v152",
