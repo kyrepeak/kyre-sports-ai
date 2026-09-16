@@ -21,7 +21,7 @@ PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v151"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
-ACTIVE_PAGE = "cfb_game_total_clean_page_v5"
+ACTIVE_PAGE = "cfb_game_total_clean_page_v6"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
