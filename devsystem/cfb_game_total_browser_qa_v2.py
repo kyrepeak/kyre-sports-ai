@@ -24,6 +24,8 @@ MATCHUP_LABEL = "🏟️ Game Total matchup"
 TARGET_DAY = "2026-09-17"
 TARGET_AWAY = "Syracuse"
 TARGET_HOME = "Pittsburgh"
+AWAY_EVIDENCE_LABEL = "Syracuse evidence"
+HOME_EVIDENCE_LABEL = "Pittsburgh evidence"
 HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
 SPORTSBOOK_MARKER = "sportsbook projection influence 0.0%"
 DEEP_AUDIT_LABEL = "Deep model evidence • Step 11 distribution"
@@ -112,7 +114,12 @@ def _assert_record(frame, side: str) -> str:
 
 
 def _open_team_evidence(frame, team: str) -> dict[str, Any]:
-    label_text = f"{team} evidence"
+    if team == TARGET_AWAY:
+        label_text = AWAY_EVIDENCE_LABEL
+    elif team == TARGET_HOME:
+        label_text = HOME_EVIDENCE_LABEL
+    else:
+        label_text = f"{team} evidence"
     label = frame.get_by_text(label_text, exact=True).first
     label.wait_for(state="visible", timeout=30000)
     details = label.locator("xpath=ancestor::details[1]")
