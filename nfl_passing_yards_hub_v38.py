@@ -14,11 +14,12 @@ import streamlit as st
 
 import nfl_passing_yards_hub_v36 as header
 import nfl_passing_yards_hub_v37 as prior
-from nfl_passing_yards_phoenix_time_v1 import PHOENIX_TZ_NAME, phoenix_kickoff
+from nfl_passing_yards_phoenix_time_v1 import phoenix_kickoff
 
 MODEL_VERSION = "NFL PASSING YARDS V38 • PHOENIX GAME TIMES"
 FROZEN_PRIOR = "nfl_passing_yards_hub_v37"
 FROZEN_HEADER = "nfl_passing_yards_hub_v36"
+PHOENIX_TZ_NAME = "America/Phoenix"
 DISPLAY_ONLY = True
 TIMEZONE_DISPLAY_ONLY = True
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
