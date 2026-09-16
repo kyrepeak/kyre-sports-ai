@@ -18,9 +18,6 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Callable
 
-import streamlit as st
-
-import nfl_passing_yards_hub_v39 as prior
 from nfl_passing_yards_phoenix_time_v1 import phoenix_kickoff
 
 MODEL_VERSION = "NFL PASSING YARDS V40 • PHOENIX MATCHUP SELECTOR"
@@ -47,6 +44,8 @@ def _coerce_date(value: Any) -> str:
 
 
 def _selected_slate_date() -> str:
+    import streamlit as st
+
     value = st.session_state.get(
         V8_DATE_INPUT_KEY,
         st.session_state.get(V8_DATE_KEY, ""),
@@ -67,6 +66,9 @@ def _phoenix_matchup_option(option: Any, slate_date: Any) -> str:
 
 
 def render_nfl_passing_yards_hub() -> None:
+    import streamlit as st
+    import nfl_passing_yards_hub_v39 as prior
+
     original_selectbox = st.selectbox
 
     def phoenix_selectbox(label: str, options: Any, *args: Any, **kwargs: Any):
