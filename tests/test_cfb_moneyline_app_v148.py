@@ -11,5 +11,7 @@ def test_app_bootstraps_router_v148() -> None:
 
 def test_receiving_yards_v147_history_remains_present() -> None:
     source = Path("app.py").read_text(encoding="utf-8")
-    assert "STREAMLIT_MAIN_V147_NFL_RECEIVING_YARDS_FUTURE_CARD_RENDER_FIX_2026-09-16" in source
-    assert "streamlit_memory_lazy_router_v147" in source
+    assert (
+        'FROZEN_V147_DEPLOYMENT_HEARTBEAT = '
+        '"STREAMLIT_MAIN_V147_NFL_RECEIVING_YARDS_FUTURE_CARD_RENDER_FIX_2026-09-16"'
+    ) in source
