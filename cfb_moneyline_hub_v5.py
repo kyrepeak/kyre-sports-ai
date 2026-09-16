@@ -23,6 +23,7 @@ import streamlit as st
 
 import cfb_moneyline_final_v1 as final_model
 import cfb_moneyline_hub_v4 as prior
+import cfb_moneyline_phoenix_time_v1 as phoenix_time
 import cfb_moneyline_slate_v1 as slate
 import cfb_schedule_v3 as schedule_v3
 
@@ -92,6 +93,30 @@ def _num(value: Any, digits: int = 1, signed: bool = False) -> str:
         return "—"
     prefix = "+" if signed and x > 0 else ""
     return f"{prefix}{x:.{digits}f}"
+
+
+def _phoenix_kickoff(game: Mapping[str, Any], selected_day: str) -> dict[str, str] | None:
+    """Build a Phoenix display label without mutating the verified schedule row."""
+    return phoenix_time.phoenix_kickoff(selected_day, game.get("kickoff_et"))
+
+
+def _phoenix_matchup_label(game: Mapping[str, Any], selected_day: str) -> str:
+    """Reuse the verified matchup label while replacing only its displayed clock."""
+    base = prior.frozen_step5.frozen_v1.identity_ui._matchup_label(game)
+    phoenix = _phoenix_kickoff(game, selected_day)
+    if not phoenix:
+        return base
+    matchup = base.rsplit("•", 1)[0].rstrip()
+    return f"{matchup} • {phoenix['clock_with_location']}"
+
+
+def _phoenix_game_for_display(game: Mapping[str, Any], selected_day: str) -> dict[str, Any]:
+    """Return a presentation-only copy with Phoenix kickoff text."""
+    display_game = dict(game)
+    phoenix = _phoenix_kickoff(game, selected_day)
+    if phoenix:
+        display_game["kickoff_et"] = phoenix["clock_with_location"]
+    return display_game
 
 
 def _final_card(
@@ -258,10 +283,11 @@ def render_moneyline_hub(
     index = st.selectbox(
         "🏟️ Moneyline matchup",
         options=list(range(len(games))),
-        format_func=lambda i: prior.frozen_step5.frozen_v1.identity_ui._matchup_label(games[int(i)]),
+        format_func=lambda i: _phoenix_matchup_label(games[int(i)], selected_day),
         key=f"cfb_step6_moneyline_matchup_{selected_day}",
     )
     game = games[int(index)]
+    display_game = _phoenix_game_for_display(game, selected_day)
 
     selected_result = slate.analyze_game(game, selected_day)
     away = selected_result.get("away") or {}
@@ -271,7 +297,7 @@ def render_moneyline_hub(
     team_diag = selected_result.get("team_diag") or {}
 
     st.markdown(
-        prior.frozen_step5.frozen_v1._moneyline_hero(game, away, home),
+        prior.frozen_step5.frozen_v1._moneyline_hero(display_game, away, home),
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -383,6 +409,8 @@ __all__ = [
     "MARKET",
     "MODEL_VERSION",
     "_final_card",
+    "_phoenix_game_for_display",
+    "_phoenix_matchup_label",
     "_top_game_card",
     "render_cfb_hub",
     "render_moneyline_hub",
