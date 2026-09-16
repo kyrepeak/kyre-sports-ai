@@ -687,24 +687,24 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
             "display_ready": False,
             "reason": f"Readable Step 3 data failed visibly: {type(exc).__name__}: {exc}",
         }
-with st.expander("Deep evidence • Steps 2–12", expanded=False):
-    st.markdown(_step2(away, home), unsafe_allow_html=True)
-    st.markdown(
-        _step3_readable(
-            readable_matchup,
-            result.get("matchup_engine") or {},
-        ),
-        unsafe_allow_html=True,
-    )
-    st.markdown(_model_step(4, "PACE / EXPECTED POSSESSIONS", result.get("pace_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_model_step(5, "EXPLOSIVE PLAY PROFILE", result.get("explosive_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_model_step(6, "RED ZONE", result.get("red_zone_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_model_step(7, "THIRD DOWN", result.get("third_down_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_model_step(8, "TURNOVER VOLATILITY", result.get("turnover_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_model_step(9, "GAME-DAY ENVIRONMENT", result.get("environment_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_model_step(10, "HISTORICAL MATCHUP CONTEXT", result.get("history_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_model_step(11, "CURRENT FORM + SCHEDULE STRENGTH", result.get("form_strength_engine") or {}), unsafe_allow_html=True)
-    st.markdown(_cert_step(result), unsafe_allow_html=True)
+    with st.expander("Deep evidence • Steps 2–12", expanded=False):
+        st.markdown(_step2(away, home), unsafe_allow_html=True)
+        st.markdown(
+            _step3_readable(
+                readable_matchup,
+                result.get("matchup_engine") or {},
+            ),
+            unsafe_allow_html=True,
+        )
+        st.markdown(_model_step(4, "PACE / EXPECTED POSSESSIONS", result.get("pace_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_model_step(5, "EXPLOSIVE PLAY PROFILE", result.get("explosive_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_model_step(6, "RED ZONE", result.get("red_zone_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_model_step(7, "THIRD DOWN", result.get("third_down_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_model_step(8, "TURNOVER VOLATILITY", result.get("turnover_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_model_step(9, "GAME-DAY ENVIRONMENT", result.get("environment_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_model_step(10, "HISTORICAL MATCHUP CONTEXT", result.get("history_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_model_step(11, "CURRENT FORM + SCHEDULE STRENGTH", result.get("form_strength_engine") or {}), unsafe_allow_html=True)
+        st.markdown(_cert_step(result), unsafe_allow_html=True)
     st.markdown(_final(result), unsafe_allow_html=True)
 
     st.markdown("### Full-slate scan")
