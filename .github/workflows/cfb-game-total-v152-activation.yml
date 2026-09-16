@@ -7,6 +7,8 @@ on:
       - "app.py"
       - "streamlit_memory_lazy_router_v152.py"
       - "cfb_game_total_clean_page_v3.py"
+      - "cfb_game_total_clean_page_v4.py"
+      - "cfb_game_total_runtime_display_v1.py"
       - "cfb_over_under_runtime_team_data_v1.py"
       - "devsystem/cfb_game_total_v152_activation_qa.py"
       - "devsystem/production_verify_v3.py"
@@ -51,6 +53,8 @@ jobs:
           python -m py_compile devsystem/cfb_game_total_v152_activation_qa.py
           python -m py_compile devsystem/production_verify_v3.py
           python -m py_compile cfb_game_total_clean_page_v3.py
+          python -m py_compile cfb_game_total_clean_page_v4.py
+          python -m py_compile cfb_game_total_runtime_display_v1.py
           python -m py_compile cfb_over_under_runtime_team_data_v1.py
 
       - name: Run V152 activation, freshness, identity, and stats contracts
