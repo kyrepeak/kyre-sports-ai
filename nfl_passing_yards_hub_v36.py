@@ -36,8 +36,8 @@ STAKE_SIZING_ENABLED = False
 _COMPACT_DASHBOARD_CSS = r"""
 <style>
 .kpass29-build{display:none!important}
-
 .monster-pass-dashboard{width:100%;max-width:1180px;margin:0 auto 14px}
+.monster-pass-dashboard *{min-width:0}
 .monster-matchup-header{display:grid;grid-template-columns:58px minmax(0,1fr) 58px;align-items:center;gap:12px;border:1px solid #334155;border-radius:18px;background:linear-gradient(145deg,#101722,#0b111a);padding:12px 14px;margin:4px 0 12px;box-shadow:0 12px 28px rgba(0,0,0,.16)}
 .monster-matchup-logo{width:54px;height:54px;border:1px solid #334155;border-radius:14px;background:#0b1118;padding:7px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
 .monster-matchup-logo img{width:100%;height:100%;object-fit:contain;display:block}
@@ -75,14 +75,22 @@ _COMPACT_DASHBOARD_CSS = r"""
 .monster-deep-evidence{min-width:0;border:1px solid #2f3b4c;border-radius:17px;background:#0b1119;padding:10px}
 .monster-deep-title{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#e8eef6;font-size:.72rem;font-weight:950;margin-bottom:7px}.monster-deep-title span{color:#8795a7;font-size:.44rem;text-transform:uppercase;letter-spacing:.08em}
 .monster-evidence-group{border:1px solid #2c394a;border-radius:11px;background:#0d151f;margin-top:6px;overflow:hidden}
-.monster-evidence-group summary{cursor:pointer;list-style:none;padding:8px 9px;color:#cbd5e1;font-size:.55rem;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:8px}.monster-evidence-group summary::-webkit-details-marker{display:none}.monster-evidence-group summary:after{content:'+';color:#9daabd;font-size:.78rem}.monster-evidence-group[open] summary:after{content:'–'}
-.monster-evidence-body{padding:0 8px 8px;overflow-x:auto}.monster-evidence-body>section,.monster-evidence-body>article,.monster-evidence-body>div{margin-top:6px!important;margin-bottom:0!important}
+.monster-evidence-group summary{cursor:pointer;list-style:none;padding:8px 9px;color:#cbd5e1;font-size:.55rem;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;box-sizing:border-box;touch-action:manipulation}.monster-evidence-group summary::-webkit-details-marker{display:none}.monster-evidence-group summary:after{content:'+';color:#9daabd;font-size:.78rem}.monster-evidence-group[open] summary:after{content:'–'}
+.monster-evidence-body{padding:0 8px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}.monster-evidence-body>section,.monster-evidence-body>article,.monster-evidence-body>div{margin-top:6px!important;margin-bottom:0!important}
 .monster-evidence-body .kpass29-card{border-color:#334155!important}.monster-evidence-body .kpass29-main,.monster-evidence-body .kpass29-foot{display:grid!important}.monster-evidence-body .kpass29-foot{display:block!important}
+.monster-matchup-title,.monster-why-title,.monster-deep-title,.monster-evidence-group summary{overflow-wrap:anywhere}
 
 @media(max-width:900px){.monster-why-projection{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){
   .monster-matchup-header{grid-template-columns:44px minmax(0,1fr) 44px;padding:10px;gap:8px}.monster-matchup-logo{width:42px;height:42px;border-radius:11px;padding:5px}.monster-matchup-title{font-size:.86rem}.monster-matchup-time{font-size:.49rem}
-  .monster-qb-hero-grid,.monster-why-wrap,.monster-deep-wrap{grid-template-columns:1fr}.monster-why-projection{grid-template-columns:repeat(2,minmax(0,1fr))}.monster-reason.reason-weather{grid-column:1/-1}.monster-qb-hero{padding:10px}.monster-qb-hero .kpy10-hero{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .monster-qb-hero-grid,.monster-why-wrap,.monster-deep-wrap{grid-template-columns:1fr}.monster-why-projection{grid-template-columns:repeat(2,minmax(0,1fr))}.monster-reason.reason-weather{grid-column:1/-1}.monster-qb-hero{padding:10px}
+  .monster-evidence-body .kpy-xmetrics,.monster-evidence-body .kpy-imetrics,.monster-evidence-body .kpy-envmetrics,.monster-evidence-body .kpy10-metrics,.monster-evidence-body .kpy-projmeta{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:480px){
+  .monster-matchup-header{grid-template-columns:36px minmax(0,1fr) 36px;gap:6px;padding:9px 8px}.monster-matchup-logo{width:36px;height:36px;padding:4px}.monster-matchup-title{font-size:.78rem;white-space:normal;line-height:1.25}.monster-matchup-time{font-size:.46rem}
+  .monster-qb-hero{padding:9px}.monster-qb-hero .kpass29-head{width:44px;height:44px;flex-basis:44px}.monster-qb-hero .kpy10-hero{grid-template-columns:repeat(2,minmax(0,1fr))!important}.monster-qb-hero .kpy10-hero>div:first-child{grid-column:1/-1}
+  .monster-why-projection{grid-template-columns:1fr}.monster-reason.reason-weather{grid-column:auto}
+  .monster-evidence-body .kpy-xmetrics,.monster-evidence-body .kpy-imetrics,.monster-evidence-body .kpy-envmetrics,.monster-evidence-body .kpy10-metrics,.monster-evidence-body .kpy-projmeta{grid-template-columns:1fr!important}
 }
 </style>
 """
@@ -190,16 +198,10 @@ def _why_projection_html(captured: dict[str, list[str]], index: int) -> str:
 
 def _evidence_group(label: str, body: str) -> str:
     content = body or '<div class="monster-empty">Certified evidence unavailable.</div>'
-    return (
-        '<details class="monster-evidence-group">'
-        f'<summary>{escape(label)}</summary>'
-        f'<div class="monster-evidence-body">{content}</div>'
-        '</details>'
-    )
+    return '<details class="monster-evidence-group">' f'<summary>{escape(label)}</summary>' f'<div class="monster-evidence-body">{content}</div>' '</details>'
 
 
 def _deep_evidence_html(captured: dict[str, list[str]], index: int) -> str:
-    """Keep every certified Step 1–10 rendered surface available but collapsed."""
     identity = _piece(captured, "identity", index)
     profile = _piece(captured, "profile", index)
     defense = _piece(captured, "defense", index)
