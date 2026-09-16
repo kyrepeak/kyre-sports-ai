@@ -55,7 +55,8 @@ def _prove_bootstrap_self_expiring() -> bool:
         (root / "devsystem" / "task_ledgers").mkdir(parents=True)
         policy_path = root / "devsystem" / "forward_motion_policy_v2.json"
         policy_path.write_text("{}\n", encoding="utf-8")
-        ledger_path = root / "devsystem" / "task_ledgers" / "bootstrap.json"
+        ledger_rel = "devsystem/task_ledgers/monster-anti-loop-v2-bootstrap.json"
+        ledger_path = root / ledger_rel
         bootstrap = {
             "version": 2,
             "task_id": "monster-anti-loop-v2-activation",
@@ -63,7 +64,7 @@ def _prove_bootstrap_self_expiring() -> bool:
             "status": "DONE",
             "bootstrap_scope": [
                 "devsystem/forward_motion_policy_v2.json",
-                "devsystem/task_ledgers/bootstrap.json",
+                ledger_rel,
             ],
             "action_log": {
                 "head_chain_hash": "BOOTSTRAP-V2-ACTIVATION",
