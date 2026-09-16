@@ -45,8 +45,8 @@ def test_v38_preserves_deep_evidence_and_full_slate_scan() -> None:
     assert "st.data_editor" in source
 
 
-def test_v38_surfaces_inherited_safety_contract_for_browser_qa() -> None:
-    source = inspect.getsource(page.render_over_under_hub)
+def test_v149_surfaces_inherited_safety_contract_for_browser_qa() -> None:
+    source = inspect.getsource(router._render_cfb_over_under_v149)
     for marker in (
         "CFB O/U • CLEAN PAGE V38 ACTIVE",
         "FUTURE SLATE COVERAGE ACTIVE",
