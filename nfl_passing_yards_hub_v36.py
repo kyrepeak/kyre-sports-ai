@@ -16,6 +16,7 @@ Frozen:
 """
 from __future__ import annotations
 
+from html import escape
 from typing import Any
 
 import nfl_passing_yards_hub_v34 as composition
@@ -41,7 +42,8 @@ _COMPACT_DASHBOARD_CSS = r'''
 }
 .kpass36-dashboard{margin:8px 0 16px;color:var(--k36-text)}
 .kpass36-matchup{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin:0 0 12px;border:1px solid #303a4f;border-radius:18px;background:linear-gradient(135deg,#111827 0%,#0b1020 58%,#17112a 100%);box-shadow:0 12px 34px rgba(0,0,0,.18)}
-.kpass36-matchup h3{margin:0;color:#f8fafc;font-size:1rem;font-weight:950;letter-spacing:.01em}.kpass36-matchup p{margin:4px 0 0;color:#94a3b8;font-size:.68rem;line-height:1.45}.kpass36-matchupchips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kpass36-matchup h3{margin:0;color:#f8fafc;font-size:1rem;font-weight:950;letter-spacing:.01em}.kpass36-matchup p{margin:4px 0 0;color:#94a3b8;font-size:.68rem;line-height:1.45}.kpass36-matchupchips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.kpass36-kickoff{font-size:.48rem;font-weight:950;letter-spacing:.025em}
+.kpass36-prelude{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 8px;color:#94a3b8;font-size:.48rem}.kpass36-prelude strong{color:#c4b5fd;letter-spacing:.055em;text-transform:uppercase}.kpass36-preludechips{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
 .kpass36-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
 .kpass36-hero{min-width:0;overflow:hidden;border:1px solid #2c3649;border-radius:20px;background:linear-gradient(155deg,#0d1420 0%,#090e16 62%,#120e1b 100%);box-shadow:0 14px 34px rgba(0,0,0,.18)}
 .kpass36-herotop{padding:12px 12px 10px;border-bottom:1px solid #222c3c;background:rgba(15,23,42,.58)}
@@ -56,21 +58,45 @@ _COMPACT_DASHBOARD_CSS = r'''
 .kpass36-hero .kpass29-card,.kpass36-hero .kpass30-profile,.kpass36-hero section.kpy-defense,.kpass36-hero section.kpy-pressure,.kpass36-hero section.kpy-personnel,.kpass36-hero section.kpy-env,.kpass36-hero section.kpy-proj,.kpass36-hero section.kpy8-card,.kpass36-hero section.kpy9-card,.kpass36-hero section.kpy10-card{margin:0!important;width:auto!important;box-sizing:border-box!important;border-radius:12px!important;border-color:#334155!important;box-shadow:none!important}
 .kpass36-projection section.kpy-proj{border-color:rgba(167,139,250,.55)!important}.kpass36-market section.kpy10-card{border-color:rgba(96,165,250,.52)!important}.kpass36-evidence section.kpy-pressure{border-color:rgba(251,191,36,.42)!important}.kpass36-evidence section.kpy-env{border-color:rgba(96,165,250,.38)!important}.kpass36-evidence .kpass30-profile{border-color:rgba(96,165,250,.38)!important}.kpass36-evidence section.kpy-personnel{border-color:#475569!important}
 .kpass36-hero .kpy-envteams{grid-template-columns:1fr!important}.kpass36-hero .kpy9-q{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-@media(max-width:900px){.kpass36-grid{grid-template-columns:1fr}.kpass36-matchup{align-items:flex-start;flex-direction:column}.kpass36-matchupchips{justify-content:flex-start}.kpass36-hero{border-radius:17px}}
+@media(max-width:900px){.kpass36-grid{grid-template-columns:1fr}.kpass36-matchup{align-items:flex-start;flex-direction:column}.kpass36-matchupchips{justify-content:flex-start}.kpass36-prelude{align-items:flex-start;flex-direction:column}.kpass36-preludechips{justify-content:flex-start}.kpass36-hero{border-radius:17px}}
 @media(max-width:640px){.kpass36-metrics{grid-template-columns:1fr}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}}
 </style>
 '''
 
 
+def _safe(value: Any, default: str = "") -> str:
+    text = str(value if value is not None else "").strip()
+    return text or default
+
+
 def _dashboard_banner_v36() -> str:
     return (
-        '<section class="kpass36-matchup">'
-        '<div><h3>🏈 NFL Passing Yards • Matchup Dashboard</h3>'
-        '<p>Verified quarterback identity, game context, Monster projection, and live market edge — compact first, deep evidence on demand.</p></div>'
-        '<div class="kpass36-matchupchips">'
+        '<div class="kpass36-prelude">'
+        '<strong>🏈 NFL Passing Yards • Compact Dashboard</strong>'
+        '<div class="kpass36-preludechips">'
         '<span class="kpass36-chip kpass36-tone-purple">MONSTER MODEL</span>'
         '<span class="kpass36-chip kpass36-tone-blue">LIVE MARKET</span>'
         '<span class="kpass36-chip kpass36-tone-gray">V33 + V28 FROZEN</span>'
+        '</div></div>'
+    )
+
+
+def _matchup_header(matchup: dict[str, str]) -> str:
+    away = _safe(matchup.get("away_team"), "Away")
+    home = _safe(matchup.get("home_team"), "Home")
+    tip_et = _safe(matchup.get("tip_et"))
+    venue = _safe(matchup.get("venue"))
+    kickoff = f"Verified kickoff • {tip_et}" if tip_et else "Kickoff • TBD"
+    context = " • ".join(value for value in (venue, "Verified ESPN matchup") if value)
+    return (
+        '<section class="kpass36-matchup" data-verified-matchup="true">'
+        '<div>'
+        f'<h3>{escape(away)} @ {escape(home)}</h3>'
+        f'<p>{escape(context)}</p>'
+        '</div>'
+        '<div class="kpass36-matchupchips">'
+        f'<span class="kpass36-chip kpass36-tone-blue kpass36-kickoff">🕒 {escape(kickoff)}</span>'
+        '<span class="kpass36-chip kpass36-tone-purple">PASSING YARDS</span>'
         '</div></section>'
     )
 
@@ -83,14 +109,14 @@ def _piece(captured: dict[str, list[str]], key: str, index: int) -> str:
 
 
 def _fallback(label: str) -> str:
-    return f'<div class="kpass36-missing">{label} is unavailable for this verified matchup.</div>'
+    return f'<div class="kpass36-missing">{escape(label)} is unavailable for this verified matchup.</div>'
 
 
 def _evidence(label: str, hint: str, content: str, tone: str = "gray") -> str:
     body = content or _fallback(label)
     return (
         '<details class="kpass36-deep">'
-        f'<summary><span>{label}</span><span class="kpass36-evidencehint kpass36-tone-{tone}">{hint}</span></summary>'
+        f'<summary><span>{escape(label)}</span><span class="kpass36-evidencehint kpass36-tone-{escape(tone)}">{escape(hint)}</span></summary>'
         f'<div class="kpass36-evidencebody">{body}</div>'
         '</details>'
     )
@@ -151,10 +177,12 @@ def _compact_player(captured: dict[str, list[str]], index: int) -> str:
     )
 
 
-def _compact_dashboard_html(captured: dict[str, list[str]]) -> str:
+def _compact_dashboard_html(captured: dict[str, list[str]], matchup: dict[str, str] | None = None) -> str:
+    matchup = matchup or {}
     return (
         '<section class="kpass36-dashboard">'
-        '<div class="kpass36-grid">'
+        + _matchup_header(matchup)
+        + '<div class="kpass36-grid">'
         + _compact_player(captured, 0)
         + _compact_player(captured, 1)
         + '</div></section>'
@@ -166,13 +194,34 @@ def render_nfl_passing_yards_hub() -> None:
     original_css = composition._PLAYER_CARD_CSS
     original_banner = composition._visual_build_banner_v34
     original_combined = composition._combined_player_cards_html
+    identity_module = composition.identity_visual_ui.step7_ui.identity
+    original_identity_resolver = identity_module.resolve_matchup_identity
+    matchup: dict[str, str] = {}
+
+    def capture_verified_matchup(game: Any, *args: Any, **kwargs: Any):
+        if isinstance(game, dict):
+            matchup.clear()
+            matchup.update(
+                {
+                    "away_team": _safe(game.get("away_team")),
+                    "home_team": _safe(game.get("home_team")),
+                    "tip_et": _safe(game.get("tip_et")),
+                    "venue": _safe(game.get("venue")),
+                }
+            )
+        return original_identity_resolver(game, *args, **kwargs)
+
+    def compact_with_matchup(captured: dict[str, list[str]]) -> str:
+        return _compact_dashboard_html(captured, matchup)
 
     composition._PLAYER_CARD_CSS = _COMPACT_DASHBOARD_CSS
     composition._visual_build_banner_v34 = _dashboard_banner_v36
-    composition._combined_player_cards_html = _compact_dashboard_html
+    composition._combined_player_cards_html = compact_with_matchup
+    identity_module.resolve_matchup_identity = capture_verified_matchup
     try:
         return prior.render_nfl_passing_yards_hub()
     finally:
+        identity_module.resolve_matchup_identity = original_identity_resolver
         composition._PLAYER_CARD_CSS = original_css
         composition._visual_build_banner_v34 = original_banner
         composition._combined_player_cards_html = original_combined
@@ -197,6 +246,7 @@ __all__ = [
     "_compact_dashboard_html",
     "_compact_player",
     "_dashboard_banner_v36",
+    "_matchup_header",
     "render_nfl_hub",
     "render_nfl_passing_yards_hub",
 ]
