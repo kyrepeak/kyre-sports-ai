@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "cfb_game_total_clean_page_v6.py"
@@ -51,7 +52,10 @@ def test_deep_sections_stay_collapsed_and_mobile_reflows() -> None:
     assert 'st.expander("🏆 Top-5 slate scanner", expanded=False)' in source
     assert "@media(max-width:760px)" in source
     assert "grid-template-columns:1fr" in source
-    assert "max-width:" not in source
+    # Responsive media-query max-width is required. What we reject is a fixed
+    # outer dashboard width that would make the phone layout scatter/overflow.
+    assert not re.search(r"\.gt152-shell\{[^}]*max-width:", source)
+    assert not re.search(r"\.gt152-hero\{[^}]*max-width:", source)
 
 
 def test_color_roles_are_explicit_without_green_border_everywhere() -> None:
