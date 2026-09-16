@@ -1,10 +1,8 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards Phoenix selector.
+"""Kyre Sports AI Streamlit entrypoint — NFL Receiving Yards smart slate.
 
-Router V141 is additive over frozen Router V140. It advances only exact
-NFL -> Passing Yards to V40 while preserving V39 presentation grades,
-V38 Phoenix time, V37 smart-slate behavior, V36 presentation, V35 transport,
-certified V34 composition, and frozen V33/V28 analytics. Every other route
-continues through Router V140 unchanged.
+Router V142 is additive over frozen Router V141. It advances only exact
+NFL -> Receiving Yards to V11 while preserving the certified Passing Yards
+V141 route and every other existing route unchanged.
 
 Sportsbook projection influence stays 0.0% and stake sizing stays OFF.
 """
@@ -211,12 +209,13 @@ FROZEN_V137_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPAC
 FROZEN_V138_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V138_NFL_PASSING_YARDS_SMART_SLATE_2026-09-16"
 FROZEN_V139_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V139_NFL_PASSING_YARDS_PHOENIX_TIME_2026-09-16"
 FROZEN_V140_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V140_NFL_PASSING_YARDS_PRESENTATION_GRADES_2026-09-16"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V141_NFL_PASSING_YARDS_PHOENIX_SELECTOR_2026-09-16"
+FROZEN_V141_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V141_NFL_PASSING_YARDS_PHOENIX_SELECTOR_2026-09-16"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V142_NFL_RECEIVING_YARDS_SMART_SLATE_2026-09-16"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v141 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v142 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
