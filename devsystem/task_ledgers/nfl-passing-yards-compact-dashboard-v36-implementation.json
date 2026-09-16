@@ -1,0 +1,61 @@
+{
+  "version": 2,
+  "task_id": "nfl-passing-yards-compact-dashboard-v36-implementation",
+  "title": "NFL Passing Yards compact dashboard V36 implementation",
+  "status": "DONE",
+  "current_checkpoint": null,
+  "total_checkpoints": 5,
+  "completed_checkpoints": 5,
+  "remaining_checkpoints": 0,
+  "active_blocker": null,
+  "scope": [
+    "nfl_passing_yards_compact_ui_v1.py",
+    "nfl_passing_yards_hub_v36.py",
+    "streamlit_memory_lazy_router_v137.py",
+    "app.py",
+    "tests/test_nfl_passing_yards_compact_dashboard_v36.py",
+    ".github/workflows/nfl-passing-yards-v36-compact-dashboard-v1.yml"
+  ],
+  "frozen_guards": {
+    "projection_math": "UNCHANGED",
+    "probability_math": "UNCHANGED",
+    "sportsbook_projection_influence": 0.0,
+    "api_logic": "UNCHANGED",
+    "certified_model_behavior": "UNCHANGED",
+    "stake_sizing_enabled": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "checkpoints": [
+    {
+      "id": "1",
+      "state": "DONE",
+      "evidence": {"render_path_and_frozen_boundary": "LOCKED"}
+    },
+    {
+      "id": "2",
+      "state": "DONE",
+      "evidence": {"compact_dashboard_shell": "IMPLEMENTED"}
+    },
+    {
+      "id": "3",
+      "state": "DONE",
+      "evidence": {"qb_hero_and_reason_signals": "IMPLEMENTED"}
+    },
+    {
+      "id": "4",
+      "state": "DONE",
+      "evidence": {"deep_evidence_and_mobile_layout": "IMPLEMENTED"}
+    },
+    {
+      "id": "5",
+      "state": "DONE",
+      "evidence": {"v36_certification_lane": "ADDED"}
+    }
+  ]
+}
