@@ -163,7 +163,8 @@ def test_bootstrap_allowed_only_when_base_lacks_v2_policy(tmp_path):
     root, base = _init_repo(tmp_path)
     (root / "devsystem" / "task_ledgers").mkdir(parents=True)
     (root / "devsystem" / "forward_motion_policy_v2.json").write_text("{}\n", encoding="utf-8")
-    ledger_path = root / "devsystem" / "task_ledgers" / "bootstrap.json"
+    ledger_rel = "devsystem/task_ledgers/monster-anti-loop-v2-bootstrap.json"
+    ledger_path = root / ledger_rel
     ledger_path.write_text(json.dumps({
         "version": 2,
         "task_id": "monster-anti-loop-v2-activation",
@@ -171,7 +172,7 @@ def test_bootstrap_allowed_only_when_base_lacks_v2_policy(tmp_path):
         "status": "DONE",
         "bootstrap_scope": [
             "devsystem/forward_motion_policy_v2.json",
-            "devsystem/task_ledgers/bootstrap.json",
+            ledger_rel,
         ],
         "action_log": {"head_chain_hash": "BOOTSTRAP-V2-ACTIVATION", "events": [], "consumed_receipts": []},
         "transition_history": [],
@@ -215,7 +216,8 @@ def test_bootstrap_rejects_unapproved_non_sports_file_even_if_declared_in_scope(
     (root / "devsystem" / "task_ledgers").mkdir(parents=True)
     (root / "devsystem" / "forward_motion_policy_v2.json").write_text("{}\n", encoding="utf-8")
     (root / "app.py").write_text("print('bootstrap escape')\n", encoding="utf-8")
-    ledger_path = root / "devsystem" / "task_ledgers" / "bootstrap.json"
+    ledger_rel = "devsystem/task_ledgers/monster-anti-loop-v2-bootstrap.json"
+    ledger_path = root / ledger_rel
     ledger_path.write_text(json.dumps({
         "version": 2,
         "task_id": "monster-anti-loop-v2-activation",
@@ -223,7 +225,7 @@ def test_bootstrap_rejects_unapproved_non_sports_file_even_if_declared_in_scope(
         "status": "DONE",
         "bootstrap_scope": [
             "devsystem/forward_motion_policy_v2.json",
-            "devsystem/task_ledgers/bootstrap.json",
+            ledger_rel,
             "app.py",
         ],
         "action_log": {"head_chain_hash": "BOOTSTRAP-V2-ACTIVATION", "events": [], "consumed_receipts": []},
