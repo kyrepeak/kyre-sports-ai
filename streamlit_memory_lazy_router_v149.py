@@ -25,6 +25,7 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
 _ORIGINAL_RENDER_NFL = root._render_nfl
+_FROZEN_CFB_SELECTBOX = cfb_route_base._selectbox_v77
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -43,6 +44,30 @@ def _game_total_v150_route_active() -> bool:
         str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
         and str(st.session_state.get("ks_cfb_market_touch") or "") == GAME_TOTAL_MARKET
     )
+
+
+def _persist_game_total_v150_query() -> None:
+    """Persist exact Game Total before frozen V148 reruns away from Moneyline."""
+    try:
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) != CFB_SPORT_LABEL:
+            st.query_params[cfb_route_base.ROUTE_QUERY_SPORT] = CFB_SPORT_LABEL
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_MARKET) != GAME_TOTAL_MARKET:
+            st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET
+    except Exception:
+        pass
+
+
+def _selectbox_v150_handoff(label, options, *args, **kwargs):
+    """Preserve V77 behavior while making the Game Total transition restorable."""
+    selected = _FROZEN_CFB_SELECTBOX(label, options, *args, **kwargs)
+    if (
+        label == "🎯 NFL Market"
+        and str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
+        and str(selected or "") == GAME_TOTAL_MARKET
+    ):
+        st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
+        _persist_game_total_v150_query()
+    return selected
 
 
 def _restore_game_total_v150_from_query() -> bool:
@@ -121,7 +146,17 @@ def render_app() -> None:
         return _render_direct_cfb_game_total()
     if _over_under_route_active():
         return _render_direct_cfb_over_under()
-    return prior.render_app()
+
+    # Frozen V148 owns Moneyline. It installs V77's selector while rendering,
+    # so wrap that one selector reference only for the duration of delegation.
+    # This lets a Moneyline -> Game Total click persist the exact V150 route
+    # before V148 calls st.rerun(), then restores V77 byte-for-byte afterward.
+    original_cfb_selectbox = cfb_route_base._selectbox_v77
+    cfb_route_base._selectbox_v77 = _selectbox_v150_handoff
+    try:
+        return prior.render_app()
+    finally:
+        cfb_route_base._selectbox_v77 = original_cfb_selectbox
 
 
 __all__ = [
@@ -135,9 +170,11 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_game_total_v150_route_active",
     "_over_under_route_active",
+    "_persist_game_total_v150_query",
     "_render_cfb_over_under_v149",
     "_render_direct_cfb_over_under",
     "_restore_game_total_v150_from_query",
+    "_selectbox_v150_handoff",
     "record_bootstrap_import_ms",
     "render_app",
 ]
