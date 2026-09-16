@@ -55,13 +55,32 @@ _COMPACT_DASHBOARD_CSS = r"""
 .monster-qb-hero .kpy10-metrics{display:block!important;margin-top:6px}.monster-qb-hero .kpy10-metrics>div{display:none!important}.monster-qb-hero .kpy10-metrics>div:nth-child(5){display:block!important;border:1px solid #304258!important;background:#0d1622!important;border-radius:10px!important;padding:8px!important;color:#8495aa!important}.monster-qb-hero .kpy10-metrics>div:nth-child(5) b{font-size:.78rem!important;color:#f1f5f9!important}
 .monster-empty{border:1px dashed #475569;border-radius:11px;padding:9px;color:#94a3b8;font-size:.55rem;background:#0c131d}
 
-/* Stable hooks reserved for the next approved presentation steps. */
-.monster-why-projection{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.65rem}
+/* Approved semantic color system: green favorable, red negative, amber caution,
+   blue neutral info, purple Monster/model, gray supporting/unknown. */
+.tone-positive{--tone-border:#2f765a;--tone-bg:#0b2a20;--tone-text:#79efbc}
+.tone-negative{--tone-border:#8a4b49;--tone-bg:#321716;--tone-text:#ff9d94}
+.tone-caution{--tone-border:#7a6a38;--tone-bg:#2a2412;--tone-text:#f1ca72}
+.tone-info{--tone-border:#416d8d;--tone-bg:#0b2234;--tone-text:#9ed3ff}
+.tone-model{--tone-border:#6653a3;--tone-bg:#19142f;--tone-text:#c4b5fd}
+.tone-muted{--tone-border:#475569;--tone-bg:#111827;--tone-text:#a8b3c2}
+
+.monster-why-wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.monster-why-card{min-width:0;border:1px solid #303d50;border-radius:17px;background:#0c131d;padding:11px}
+.monster-why-title{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#f1f5f9;font-size:.74rem;font-weight:950;margin-bottom:8px}.monster-why-title span{color:#8d9aae;font-size:.46rem;text-transform:uppercase;letter-spacing:.09em}
+.monster-why-projection{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.monster-reason{min-width:0;border:1px solid var(--tone-border);border-radius:11px;background:var(--tone-bg);padding:8px}
+.monster-reason-label{color:var(--tone-text);font-size:.44rem;font-weight:950;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.monster-reason-value{min-width:0;color:#edf2f7;font-size:.60rem;font-weight:850;line-height:1.25;overflow:hidden}.monster-reason-value b{color:#f8fafc!important}
+.monster-reason .kpy-projhero{display:block!important;margin:0!important}.monster-reason .kpy-projhero>div{display:none!important;border:0!important;background:transparent!important;padding:0!important}.monster-reason.reason-volume .kpy-projhero>div:nth-child(2),.monster-reason.reason-efficiency .kpy-projhero>div:nth-child(3){display:block!important}.monster-reason .kpy-projhero b{font-size:.78rem!important}.monster-reason .kpy-projhero span{font-size:.38rem!important;color:var(--tone-text)!important}
+.monster-reason .kpy-xgrade,.monster-reason .kpy-ilabel,.monster-reason .kpy-envlabel{display:inline-flex!important;border:0!important;background:transparent!important;padding:0!important;color:var(--tone-text)!important;font-size:.60rem!important}
+.monster-reason.reason-weather .kpy-envmetrics{display:block!important;margin:0!important}.monster-reason.reason-weather .kpy-envmetrics>div{display:none!important;border:0!important;background:transparent!important;padding:0!important}.monster-reason.reason-weather .kpy-envmetrics>div:nth-child(3){display:block!important}.monster-reason.reason-weather .kpy-envmetrics b{font-size:.68rem!important}.monster-reason.reason-weather .kpy-envmetrics span{font-size:.38rem!important;color:var(--tone-text)!important}
+
 .monster-deep-evidence{width:100%}
 
+@media(max-width:900px){.monster-why-projection{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){
   .monster-matchup-header{grid-template-columns:44px minmax(0,1fr) 44px;padding:10px;gap:8px}.monster-matchup-logo{width:42px;height:42px;border-radius:11px;padding:5px}.monster-matchup-title{font-size:.86rem}.monster-matchup-time{font-size:.49rem}
-  .monster-qb-hero-grid,.monster-why-projection{grid-template-columns:1fr}.monster-qb-hero{padding:10px}.monster-qb-hero .kpy10-hero{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .monster-qb-hero-grid,.monster-why-wrap{grid-template-columns:1fr}.monster-why-projection{grid-template-columns:repeat(2,minmax(0,1fr))}.monster-reason.reason-weather{grid-column:1/-1}.monster-qb-hero{padding:10px}.monster-qb-hero .kpy10-hero{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
 </style>
 """
@@ -82,6 +101,20 @@ def _extract_one(body: str, tag: str, class_name: str) -> str:
 def _logo_from_identity(identity_html: str) -> str:
     match = _LOGO_RE.search(str(identity_html or ""))
     return match.group(0) if match else ""
+
+
+def _semantic_tone(rendered_html: str) -> str:
+    """Map already-rendered evidence labels to the approved visual palette only."""
+    text = str(rendered_html or "").lower()
+    if any(token in text for token in ("low-pressure", " help", "controlled")):
+        return "tone-positive"
+    if any(token in text for token in ("high-pressure", " hurt")):
+        return "tone-negative"
+    if any(token in text for token in ("moderate", "mixed", "watch")):
+        return "tone-caution"
+    if any(token in text for token in ("neutral", "normal")):
+        return "tone-info"
+    return "tone-muted"
 
 
 def _matchup_header_html(captured: dict[str, list[str]]) -> str:
@@ -128,14 +161,59 @@ def _qb_hero_card_html(captured: dict[str, list[str]], index: int) -> str:
     )
 
 
+def _reason_tile(label: str, rendered_html: str, tone: str, extra_class: str = "") -> str:
+    value = rendered_html or '<div class="monster-empty">Unavailable</div>'
+    classes = f"monster-reason {tone} {extra_class}".strip()
+    return (
+        f'<div class="{classes}">'
+        f'<div class="monster-reason-label">{escape(label)}</div>'
+        f'<div class="monster-reason-value">{value}</div>'
+        '</div>'
+    )
+
+
+def _why_projection_html(captured: dict[str, list[str]], index: int) -> str:
+    """Summarize five certified evidence surfaces without deriving new values."""
+    identity = _piece(captured, "identity", index)
+    projection = _piece(captured, "projection", index)
+    pressure = _piece(captured, "pressure", index)
+    personnel = _piece(captured, "personnel", index)
+    environment = _piece(captured, "environment", index) or _piece(captured, "environment", 0)
+
+    qb_name = _extract_one(identity, "div", "kpass29-name")
+    projection_hero = _extract_one(projection, "div", "kpy-projhero")
+    pressure_grade = _extract_one(pressure, "div", "kpy-xgrade")
+    personnel_label = _extract_one(personnel, "div", "kpy-ilabel")
+    environment_label = _extract_one(environment, "div", "kpy-envlabel")
+    environment_metrics = _extract_one(environment, "div", "kpy-envmetrics")
+    weather_value = (environment_label or "") + (environment_metrics or "")
+
+    return (
+        '<section class="monster-why-card">'
+        f'<div class="monster-why-title"><div>Why This Projection • {qb_name or "Quarterback"}</div><span>Certified evidence only</span></div>'
+        '<div class="monster-why-projection">'
+        f'{_reason_tile("Volume", projection_hero, "tone-model", "reason-volume")}'
+        f'{_reason_tile("Efficiency", projection_hero, "tone-model", "reason-efficiency")}'
+        f'{_reason_tile("Pressure", pressure_grade, _semantic_tone(pressure_grade), "reason-pressure")}'
+        f'{_reason_tile("Personnel", personnel_label, _semantic_tone(personnel_label), "reason-personnel")}'
+        f'{_reason_tile("Weather", weather_value, _semantic_tone(environment_label), "reason-weather")}'
+        '</div>'
+        '</section>'
+    )
+
+
 def _compact_dashboard_html(captured: dict[str, list[str]]) -> str:
-    """Compose the V36 scan-first header + two QB heroes from certified HTML."""
+    """Compose scan-first matchup, QB heroes, and why-projection evidence."""
     return (
         '<div class="monster-pass-dashboard">'
         f'{_matchup_header_html(captured)}'
         '<div class="monster-qb-hero-grid">'
         f'{_qb_hero_card_html(captured, 0)}'
         f'{_qb_hero_card_html(captured, 1)}'
+        '</div>'
+        '<div class="monster-why-wrap">'
+        f'{_why_projection_html(captured, 0)}'
+        f'{_why_projection_html(captured, 1)}'
         '</div>'
         '</div>'
     )
