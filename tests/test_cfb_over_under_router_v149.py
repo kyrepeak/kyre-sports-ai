@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import inspect
+from pathlib import Path
 
 
 def _load(name: str):
@@ -54,3 +55,10 @@ def test_v149_router_restores_root_hooks_after_direct_render() -> None:
     assert "root.st.selectbox = original_selectbox" in source
     assert "root._render_nfl = original_render_nfl" in source
     assert "root._ROUTE_MODULE_PREFIXES = original_prefixes" in source
+
+
+def test_v149_app_bootstrap_is_active_and_v148_is_frozen() -> None:
+    source = Path("app.py").read_text(encoding="utf-8")
+    assert 'FROZEN_V148_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V148_CFB_MONEYLINE_MONSTER_DASHBOARD_2026-09-16"' in source
+    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_DASHBOARD_2026-09-16"' in source
+    assert "from streamlit_memory_lazy_router_v149 import record_bootstrap_import_ms, render_app" in source
