@@ -76,12 +76,13 @@ Every positive decision returns an authorization receipt. Denied decisions do no
 
 ### 4.3 `devsystem/action_ledger_v2.py`
 
-Owns the append-only logical action history for a task and validates receipt use.
+Owns the append-only logical action history for a task and validates receipt use. Task ledger artifacts are stored under `devsystem/task_ledgers_v2/<task_id>.json` so protected CI can independently replay the committed history.
 
 Each meaningful recorded action includes:
 
 - task ID;
 - checkpoint ID;
+- action event ID;
 - action type and target;
 - action fingerprint;
 - root-cause fingerprint;
@@ -95,15 +96,13 @@ Each meaningful recorded action includes:
 - blocker relation;
 - override reference if applicable.
 
-A state-changing ledger transition is invalid unless it references an unused valid authorization receipt that matches the same task, checkpoint, action, relevant inputs, and evidence basis.
-
-Receipt reuse is rejected.
+An action record is invalid unless it consumes one unused valid authorization receipt matching the same task, checkpoint, action, relevant inputs, and evidence basis. Receipt reuse is rejected.
 
 The ledger maintains a hash chain so later edits to earlier recorded events are detectable during validation. This provides tamper evidence, not human-identity proof.
 
 ### 4.4 `devsystem/checkpoint_ledger_v2.py`
 
-Extends the V1 checkpoint invariants with receipt-aware transitions and strict monotonicity.
+Extends the V1 checkpoint invariants with authorized-action references and strict monotonicity.
 
 Rules:
 
@@ -111,18 +110,19 @@ Rules:
 - DONE checkpoints remain immutable unless new contradictory evidence explicitly invalidates their closing proof;
 - backward checkpoint movement without such evidence is denied;
 - the next checkpoint is the only ordinary advancement target;
+- a checkpoint transition references the already-recorded authorized `action_event_id`; it does not consume the authorization receipt a second time;
 - terminal tasks have no current checkpoint, no blocker, and zero remaining checkpoints;
 - a terminal task cannot accept a new progress event.
 
 ### 4.5 `devsystem/forward_motion_contract_v2.py`
 
-Dependency-light permanent validator covering the V2 policy, controller, ledgers, receipt-chain rules, stagnation rules, override rules, and regression replays.
+Dependency-light permanent validator covering the V2 policy, controller, ledgers, receipt-chain rules, stagnation rules, override rules, and regression replay.
 
 It must fail closed on contract drift.
 
-### 4.6 Regression replay
+### 4.6 `devsystem/anti_loop_replay_v2.py`
 
-Add a V2 replay, either as `devsystem/anti_loop_replay_v2.py` or a clearly named successor to the V1 A9 replay. It must replay both the historical A9 failure pattern and new adversarial cases designed to bypass V1 through superficial changes.
+A deterministic V2 regression replay. It must replay both the historical A9 failure pattern and new adversarial cases designed to bypass V1 through superficial changes.
 
 ## 5. Fingerprints and loop detection
 
@@ -218,14 +218,16 @@ A positive controller decision creates a deterministic receipt payload containin
 
 The exact encoding must be canonical before hashing.
 
-A checkpoint/action-ledger transition validates that:
+The action ledger consumes the receipt exactly once and creates an authorized `action_event_id`. Receipt validation requires that:
 
 1. the receipt hash is valid for the canonical payload;
 2. the receipt belongs to the same task/checkpoint/action;
-3. its relevant-input/evidence fingerprints match the attempted transition;
+3. its relevant-input/evidence fingerprints match the attempted action record;
 4. the previous-chain reference matches the current ledger head;
 5. the receipt has not already been consumed;
 6. the decision is one of the authorized decision classes.
+
+Checkpoint transitions then reference that authorized `action_event_id` and validate its result/evidence. They do not consume or replay the original receipt.
 
 Missing, mismatched, replayed, or tampered receipts fail closed.
 
@@ -237,12 +239,13 @@ Requirements:
 
 - the exact denied action is identified;
 - the checkpoint is identified;
-- the prior denial decision/receipt context is referenced;
-- an explicit user authorization event is recorded;
+- the prior denial context is referenced;
+- an explicit user authorization event is supplied to the controller as external workflow input;
 - the reason is recorded;
 - the override is single-use;
 - the override does not alter retry budgets, policy, or future decisions;
-- the controller itself cannot infer an override from silence, previous approvals, or its own reasoning.
+- the controller itself cannot manufacture an override event when none was supplied;
+- the controller cannot infer an override from silence, previous approvals, or its own reasoning.
 
 The controller may consume an override event only for the exact blocked action it references.
 
@@ -253,6 +256,7 @@ Without an external user-signing mechanism or identity-bound secret outside the 
 The practical guarantee is therefore:
 
 - Monster Mode is prohibited by contract from self-authorizing an override;
+- the controller API has no branch that synthesizes an override event from its own state;
 - override use is explicit, narrow, single-use, auditable, and CI-validated;
 - protected certification fails if the override record is missing, malformed, mismatched, reused, or broader than the denied action.
 
@@ -269,15 +273,15 @@ Normal path:
 5. If denied, no authorization receipt is issued and the action cannot advance the authoritative ledger.
 6. If authorized, V2 issues a receipt tied to the exact action and current ledger head.
 7. The action runs.
-8. Result/evidence is recorded in the action ledger by consuming that receipt.
-9. Any checkpoint transition validates the same receipt chain and resulting evidence.
+8. Result/evidence is recorded by consuming that receipt exactly once and producing an authorized `action_event_id`.
+9. Any checkpoint transition references the authorized `action_event_id` and validates its result/evidence; it does not consume the receipt again.
 10. CI independently revalidates the full committed task ledger/receipt chain before protected certification can pass.
 
 Override path:
 
 1. V2 denies an action.
 2. The user explicitly authorizes that exact denied action.
-3. A single-use override event referencing the denial is recorded.
+3. A single-use override event referencing the denial is supplied to the controller and recorded.
 4. V2 reevaluates only that action with the override event.
 5. If structurally valid, V2 issues a one-action override authorization receipt.
 6. Normal recording and CI validation continue; V2 remains fully active afterward.
@@ -308,12 +312,13 @@ CI must verify at minimum:
 - one-blocker rule;
 - side-quest deferral;
 - receipt validity and single-use consumption;
+- action-event linkage for checkpoint transitions;
 - receipt-chain tamper detection;
 - terminal-task immutability;
 - user-override structural validity, narrowness, and single use;
-- no self-declared/broad override path;
+- no controller-generated/broad override path;
 - V1 historical anti-loop replay still passes during migration;
-- new V2 adversarial replay passes.
+- `devsystem/anti_loop_replay_v2.py` passes.
 
 ## 11. Adversarial certification cases
 
@@ -336,11 +341,12 @@ Required cases:
 13. An unrelated finding is deferred.
 14. A receipt cannot be consumed twice.
 15. A receipt cannot authorize a different action/checkpoint/input set.
-16. Editing an earlier ledger event breaks the hash chain and fails validation.
-17. A controller-generated/self-declared override record is rejected by contract rules.
-18. A structurally valid explicit user override applies to only one exact denied action.
-19. Reusing the same override is denied.
-20. After `TASK_COMPLETE`, an attempted extra proof returns `TASK_COMPLETE` and creates no checkpoint.
+16. A checkpoint transition cannot reference an unknown or unauthorized action event.
+17. Editing an earlier ledger event breaks the hash chain and fails validation.
+18. Calling the controller without an externally supplied override event cannot create an override authorization.
+19. A structurally valid explicit user override applies to only one exact denied action.
+20. Reusing the same override is denied.
+21. After `TASK_COMPLETE`, an attempted extra proof returns `TASK_COMPLETE` and creates no checkpoint.
 
 ## 12. Error handling
 
@@ -358,6 +364,7 @@ Examples that raise a contract/validation failure instead of defaulting to permi
 - invalid progress classification;
 - override without a referenced denial;
 - receipt/action mismatch;
+- unknown/unauthorized action-event reference;
 - unrecognized decision class.
 
 Control-plane errors must never be fixed by modifying sports projection/model logic.
@@ -365,7 +372,7 @@ Control-plane errors must never be fixed by modifying sports projection/model lo
 ## 13. Migration strategy
 
 1. Keep V1 unchanged as the green baseline.
-2. Add V2 policy/controller/action ledger/checkpoint ledger/contract and tests in isolation.
+2. Add V2 policy/controller/action ledger/checkpoint ledger/contract/replay and tests in isolation.
 3. Run V1 and V2 replay/contract tests together.
 4. Wire V2 into the existing permanent-contract lane.
 5. Update the permanent gate's required-file/workflow invariants.
@@ -391,14 +398,16 @@ Therefore the strongest practical guarantee is: **a disallowed action cannot bec
 
 The implementation is complete only when all of the following are freshly proven:
 
-- V2 policy/controller/action-ledger/checkpoint-ledger/contract exist and pass tests;
+- V2 policy/controller/action-ledger/checkpoint-ledger/contract/replay exist and pass tests;
 - root-cause-level loop detection works against superficial action changes;
 - the three-action stagnation rule works;
 - authorization receipts are required, bound to the exact action, single-use, and tamper-evident;
+- each consumed receipt creates one authorized action event and checkpoint transitions reference that event without consuming the receipt again;
 - denied actions cannot advance the authoritative ledger;
 - valid contradictory evidence is the only ordinary path to reopen DONE work;
 - terminal tasks reject invented follow-up work;
 - user overrides are exact-action, explicit, single-use, and auditable;
+- the controller cannot synthesize an override when none is supplied;
 - the permanent DevSystem CI lane executes V2 validation;
 - `devsystem-final-gate` remains the stable required aggregate check;
 - V1 historical regression replay remains green during migration;
