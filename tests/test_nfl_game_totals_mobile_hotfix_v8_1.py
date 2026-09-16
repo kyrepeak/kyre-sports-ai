@@ -101,6 +101,13 @@ def test_reload_data_clears_only_game_totals_cache_functions():
     assert "st.cache_data.clear()" not in source
 
 
+def test_reload_data_also_clears_multisource_router_caches_without_global_clear():
+    source = _read(PAGE)
+    assert "from sports_api.nfl_data_router_v1 import clear_router_caches" in source
+    assert "clear_router_caches()" in source
+    assert "st.cache_data.clear()" not in source
+
+
 def test_hotfix_preserves_certified_step8_projection_firewall():
     source = _read(PAGE)
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
