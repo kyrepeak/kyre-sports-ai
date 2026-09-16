@@ -193,6 +193,34 @@ def _display_game(game: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _display_profiles(
+    game: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Fresh visible identity copies; frozen model profiles are never mutated."""
+    away_out = dict(away or {})
+    home_out = dict(home or {})
+    try:
+        snapshot = runtime_display._find_snapshot(game)
+        if snapshot:
+            away_snap = snapshot.get("away") or {}
+            home_snap = snapshot.get("home") or {}
+            if isinstance(away_snap, Mapping):
+                away_out = runtime_display._profile_from_snapshot(away_out, away_snap)
+            if isinstance(home_snap, Mapping):
+                home_out = runtime_display._profile_from_snapshot(home_out, home_snap)
+    except Exception:
+        pass
+
+    try:
+        away_out = runtime_display._apply_game_event_fallback(away_out, game, "away")
+        home_out = runtime_display._apply_game_event_fallback(home_out, game, "home")
+    except Exception:
+        pass
+    return away_out, home_out
+
+
 def _resolve_visuals(game: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     try:
         return logo_v3.resolve_visuals(game)
@@ -480,8 +508,9 @@ def render_moneyline_hub(section_header=None, status_info=None, team_logo=None, 
     final = selected_result.get("final") or {}
     team_diag = selected_result.get("team_diag") or {}
     display_game = _display_game(game)
+    display_away, display_home = _display_profiles(display_game, away, home)
 
-    st.markdown(_hero(display_game, away, home), unsafe_allow_html=True)
+    st.markdown(_hero(display_game, display_away, display_home), unsafe_allow_html=True)
     st.markdown(_quick_read(display_game, away, home, raw, final), unsafe_allow_html=True)
     st.markdown(_why_model(raw, final), unsafe_allow_html=True)
 
@@ -564,6 +593,7 @@ __all__ = [
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_display_game",
+    "_display_profiles",
     "_kickoff_phoenix",
     "_matchup_label",
     "_resolve_visuals",
