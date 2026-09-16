@@ -3,6 +3,9 @@
 Additive over frozen Router V148. Advances only exact College Football ->
 Over/Under to Clean Page V38 while preserving the V148 CFB Moneyline dashboard,
 NFL routes, every other certified market, and all frozen calculations.
+
+V150 activation note: the certified V149 Over/Under path below is preserved;
+only exact College Football -> Game Total is handed to the additive V150 router.
 """
 from __future__ import annotations
 
@@ -16,6 +19,7 @@ MODEL_VERSION = "KYRE STREAMLIT ROUTER V149 • CFB O/U MONSTER COMPACT DASHBOAR
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v148"
 CFB_SPORT_LABEL = "College Football"
 OVER_UNDER_MARKET = "Over/Under"
+GAME_TOTAL_MARKET = "Game Total"
 ACTIVE_PAGE = "cfb_over_under_clean_page_v38"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
@@ -31,6 +35,13 @@ def _over_under_route_active() -> bool:
     return (
         str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
         and str(st.session_state.get("ks_cfb_market_touch") or "") == OVER_UNDER_MARKET
+    )
+
+
+def _game_total_v150_route_active() -> bool:
+    return (
+        str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
+        and str(st.session_state.get("ks_cfb_market_touch") or "") == GAME_TOTAL_MARKET
     )
 
 
@@ -84,8 +95,13 @@ def _render_direct_cfb_over_under() -> None:
 
 
 def render_app() -> None:
-    if not _over_under_route_active():
+    if not _over_under_route_active() and not _game_total_v150_route_active():
         cfb_route_base._restore_fast_route_from_query()
+    if _game_total_v150_route_active():
+        # Late import avoids touching V149's certified O/U import path and avoids
+        # an eager circular dependency while V150 freezes V149 as its prior router.
+        from streamlit_memory_lazy_router_v150 import _render_direct_cfb_game_total
+        return _render_direct_cfb_game_total()
     if _over_under_route_active():
         return _render_direct_cfb_over_under()
     return prior.render_app()
@@ -95,10 +111,12 @@ __all__ = [
     "ACTIVE_PAGE",
     "CFB_SPORT_LABEL",
     "FROZEN_ROUTER",
+    "GAME_TOTAL_MARKET",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "OVER_UNDER_MARKET",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_game_total_v150_route_active",
     "_over_under_route_active",
     "_render_cfb_over_under_v149",
     "_render_direct_cfb_over_under",
