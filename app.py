@@ -1,10 +1,10 @@
-"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards production cleanup.
+"""Kyre Sports AI Streamlit entrypoint — NFL Passing Yards compact dashboard.
 
-Router V128 is additive over certified Router V127. It advances only exact
-NFL -> Passing Yards to V35 transport/caption cleanup while preserving the
-certified V34 player-first cards and frozen V33/V28 analytics. Receiving Yards,
-Rushing Yards, and all other routes remain delegated through the frozen router
-chain unchanged.
+Router V137 is additive over frozen Router V136. It advances only exact
+NFL -> Passing Yards to display-only V36 while preserving certified V35/V34
+transport/composition and frozen V33/V28 analytics. Spread, Moneyline,
+Receiving Yards, Rushing Yards, and all other routes remain delegated through
+the frozen router chain unchanged.
 
 Sportsbook projection influence stays 0.0% and stake sizing stays OFF.
 """
@@ -206,12 +206,13 @@ FROZEN_V132_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V132_NFL_SPREAD_KYRE_API_TRAN
 FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"
 FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"
 FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
+FROZEN_V136_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD_2026-09-15"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v137 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
