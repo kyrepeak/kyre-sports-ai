@@ -95,3 +95,12 @@ def test_router_v150_does_not_change_game_total_math_or_sportsbook_influence():
     assert "MAY_MODIFY_PROJECTION = False" in source
     assert "cfb_game_total_model_v1" not in source
     assert "projected_combined_total =" not in source
+
+
+def test_browser_qa_waits_for_named_cfb_market_selector_before_game_total_click():
+    source = _source("devsystem/cfb_game_total_browser_qa_v1.py")
+
+    assert 'CFB_MARKET_LABEL = "🎯 CFB Market"' in source
+    assert 'get_by_role("combobox", name=CFB_MARKET_LABEL, exact=True)' in source
+    assert "cfb_market_combo.wait_for(" in source
+    assert "if frame.get_by_role(\"combobox\").count() >= 2" not in source
