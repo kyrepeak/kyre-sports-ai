@@ -56,4 +56,4 @@ jobs:
         run: python -m pytest -q tests/test_cfb_game_total_dashboard_v151.py
 
       - name: Prove Syracuse at Pittsburgh live display evidence
-        run: python devsystem/cfb_game_total_live_evidence_qa_v1.py
+        run: python -m devsystem.cfb_game_total_live_evidence_qa_v1
