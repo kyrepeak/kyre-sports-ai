@@ -16,6 +16,7 @@ import browser_qa_v1 as base
 
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
+CFB_MARKET_LABEL = "🎯 CFB Market"
 REQUIRED_VISIBLE = (
     "CFB GAME TOTAL • MONSTER DASHBOARD",
     "College Football Game Total",
@@ -59,18 +60,18 @@ def run(
 
             base._choose(page, frame, 0, CFB_SPORT)
 
-            # Wait for the CFB market selector to become the second combobox.
-            deadline_ms = 45000
-            elapsed = 0
-            while elapsed < deadline_ms:
-                if frame.get_by_role("combobox").count() >= 2:
-                    break
-                page.wait_for_timeout(1000)
-                elapsed += 1000
-            else:
-                raise GameTotalBrowserQAFailure(
-                    "CFB route did not expose the market selector"
-                )
+            # The initial MLB page can already have two comboboxes. Wait for
+            # the CFB-specific market selector so the sport rerun is complete
+            # before choosing Game Total.
+            cfb_market_combo = frame.get_by_role(
+                "combobox",
+                name=CFB_MARKET_LABEL,
+                exact=True,
+            )
+            cfb_market_combo.wait_for(
+                state="visible",
+                timeout=45000,
+            )
 
             base._choose(page, frame, 1, GAME_TOTAL_MARKET)
             body = base._wait_for_text(
