@@ -45,6 +45,22 @@ def _game_total_v150_route_active() -> bool:
     )
 
 
+def _restore_game_total_v150_from_query() -> bool:
+    """Restore exact V150 Game Total before V77 considers its O/U-only query."""
+    current_sport = str(st.session_state.get("ks_sport_touch") or "").strip()
+    current_market = str(st.session_state.get("ks_cfb_market_touch") or "").strip()
+    if current_sport or current_market:
+        return False
+    if (
+        cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) != CFB_SPORT_LABEL
+        or cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_MARKET) != GAME_TOTAL_MARKET
+    ):
+        return False
+    st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL
+    st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
+    return True
+
+
 def _render_cfb_over_under_v149(market: str) -> None:
     sport = str(st.session_state.get("ks_sport_touch") or "")
     market = str(market or "")
@@ -96,7 +112,8 @@ def _render_direct_cfb_over_under() -> None:
 
 def render_app() -> None:
     if not _over_under_route_active() and not _game_total_v150_route_active():
-        cfb_route_base._restore_fast_route_from_query()
+        if not _restore_game_total_v150_from_query():
+            cfb_route_base._restore_fast_route_from_query()
     if _game_total_v150_route_active():
         # Late import avoids touching V149's certified O/U import path and avoids
         # an eager circular dependency while V150 freezes V149 as its prior router.
@@ -120,6 +137,7 @@ __all__ = [
     "_over_under_route_active",
     "_render_cfb_over_under_v149",
     "_render_direct_cfb_over_under",
+    "_restore_game_total_v150_from_query",
     "record_bootstrap_import_ms",
     "render_app",
 ]
