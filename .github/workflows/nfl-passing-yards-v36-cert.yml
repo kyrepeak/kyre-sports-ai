@@ -1,0 +1,39 @@
+name: NFL Passing Yards V36 Certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - app.py
+      - nfl_passing_yards_hub_v36.py
+      - streamlit_memory_lazy_router_v137.py
+      - tests/test_nfl_passing_yards_compact_dashboard_v36.py
+      - .github/workflows/nfl-passing-yards-v36-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Compile active Passing Yards route
+        run: |
+          python -m py_compile app.py
+          python -m py_compile nfl_passing_yards_hub_v36.py
+          python -m py_compile streamlit_memory_lazy_router_v137.py
+
+      - name: Run V36 compact-dashboard contract
+        run: python -m pytest -q tests/test_nfl_passing_yards_compact_dashboard_v36.py
