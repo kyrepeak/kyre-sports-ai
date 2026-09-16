@@ -26,16 +26,17 @@ def test_browser_qa_contract_is_explicit_and_safe():
     assert module.CFB_SPORT == "College Football"
     assert module.CFB_MARKET == "Over/Under"
     assert module.CFB_MARKET_LABEL == "🎯 CFB Market"
-    assert "CFB O/U • CLEAN PAGE V30 ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "FUTURE SLATE COVERAGE ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "OFFICIAL ESPN IDENTITY RECOVERY" in module.CFB_REQUIRED_MARKERS
-    assert "NO FUZZY MATCHING" in module.CFB_REQUIRED_MARKERS
-    assert "NO SYNTHETIC IDS" in module.CFB_REQUIRED_MARKERS
-    assert "STEP 5C MARKET INTELLIGENCE LIVE" not in module.CFB_REQUIRED_MARKERS
-    assert "FRESHNESS FIREWALL ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "0.0% PROJECTION INFLUENCE" in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V38 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "V149 MONSTER COMPACT DASHBOARD" in module.CFB_REQUIRED_MARKERS
+    assert "PHOENIX TIME" in module.CFB_REQUIRED_MARKERS
+    assert "EXACT ESPN-ID LOGOS" in module.CFB_REQUIRED_MARKERS
+    assert "QUICK READ" in module.CFB_REQUIRED_MARKERS
+    assert "COMPACT STEPS 5-10" in module.CFB_REQUIRED_MARKERS
+    assert "FULL EVIDENCE IN EXPANDERS" in module.CFB_REQUIRED_MARKERS
+    assert "0.0% SPORTSBOOK PROJECTION INFLUENCE" in module.CFB_REQUIRED_MARKERS
     assert "FROZEN PROJECTION MATH PRESERVED" in module.CFB_REQUIRED_MARKERS
-    assert "READABLE STEPS 4-12 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V30 ACTIVE" not in module.CFB_REQUIRED_MARKERS
+    assert "STEP 5C MARKET INTELLIGENCE LIVE" not in module.CFB_REQUIRED_MARKERS
 
 
 def test_runtime_error_detector_fails_on_obvious_python_errors():
