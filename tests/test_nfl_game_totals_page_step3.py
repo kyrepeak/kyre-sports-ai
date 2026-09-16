@@ -79,6 +79,6 @@ def test_step3_preserves_step2_market_and_projection_firewall():
 def test_existing_nfl_router_advances_only_game_total_to_v3():
     source = _read(ROUTER)
     assert 'if market == "Game Total":' in source
-    assert "from nfl_game_totals_hub_v3 import render_nfl_game_totals_hub" in source
+    assert "from nfl_game_totals_hub_v8_1 import render_nfl_game_totals_hub" in source
     assert "from nfl_moneyline_hub_v9 import render_nfl_moneyline_hub" in source
     assert "return base.render_nfl_hub(market)" in source
