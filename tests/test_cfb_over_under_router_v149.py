@@ -12,16 +12,16 @@ def _load(name: str):
     return importlib.import_module(name)
 
 
-def test_v149_page_is_additive_over_frozen_v35() -> None:
-    page = _load("cfb_over_under_clean_page_v36")
-    assert page.FROZEN_PAGE == "cfb_over_under_clean_page_v35"
+def test_v149_page_is_additive_over_frozen_v36() -> None:
+    page = _load("cfb_over_under_clean_page_v37")
+    assert page.FROZEN_PAGE == "cfb_over_under_clean_page_v36"
     assert page.MARKET == "Over/Under"
     assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert page.MAY_MODIFY_PROJECTION is False
 
 
 def test_v149_page_exposes_compact_presentation_contract() -> None:
-    page = _load("cfb_over_under_clean_page_v36")
+    page = _load("cfb_over_under_clean_page_v37")
     assert page.PHOENIX_TIMEZONE == "America/Phoenix"
     assert page.ACTIVE_LOGO_RESOLVER == "cfb_over_under_logo_resolver_v3"
     source = inspect.getsource(page)
@@ -33,7 +33,7 @@ def test_v149_page_exposes_compact_presentation_contract() -> None:
 def test_v149_router_targets_only_exact_cfb_over_under_state() -> None:
     router = _load("streamlit_memory_lazy_router_v149")
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v148"
-    assert router.ACTIVE_PAGE == "cfb_over_under_clean_page_v36"
+    assert router.ACTIVE_PAGE == "cfb_over_under_clean_page_v37"
     assert router.CFB_SPORT_LABEL == "College Football"
     assert router.OVER_UNDER_MARKET == "Over/Under"
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
