@@ -41,7 +41,8 @@ jobs:
             tests/test_devsystem_failure_packet_v1.py \
             tests/test_devsystem_failure_log_excerpt_v1.py \
             tests/test_devsystem_failure_fingerprint_v1.py \
-            tests/test_devsystem_failure_history_v1.py
+            tests/test_devsystem_failure_history_v1.py \
+            tests/test_devsystem_failure_packet_workflow_file_inputs_v1.py
 
       - name: Collect completed DevSystem job evidence
         if: github.event_name == 'workflow_run'
@@ -303,12 +304,36 @@ jobs:
           DEVSYSTEM_SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
           DEVSYSTEM_SOURCE_REF: ${{ github.event.workflow_run.head_branch }}
         run: |
-          python devsystem/failure_packet_v1.py \
-            --needs-json "$(cat /tmp/devsystem-needs.json)" \
-            --failed-steps-json "$(cat /tmp/devsystem-failed-steps.json)" \
-            --history-json "$(cat /tmp/devsystem-history.json)" \
-            --source-created-at "$(cat /tmp/devsystem-source-created-at.txt)" \
-            --output-dir artifacts/devsystem-failure-packet
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from devsystem import failure_packet_v1
+
+          needs = json.loads(Path("/tmp/devsystem-needs.json").read_text(encoding="utf-8"))
+          failed_steps = json.loads(
+              Path("/tmp/devsystem-failed-steps.json").read_text(encoding="utf-8")
+          )
+          history = json.loads(Path("/tmp/devsystem-history.json").read_text(encoding="utf-8"))
+          source_created_at = Path("/tmp/devsystem-source-created-at.txt").read_text(
+              encoding="utf-8"
+          ).strip()
+
+          packet = failure_packet_v1.build_packet(
+              needs,
+              run_id=os.environ.get("DEVSYSTEM_SOURCE_RUN_ID", ""),
+              sha=os.environ.get("DEVSYSTEM_SOURCE_SHA", ""),
+              ref=os.environ.get("DEVSYSTEM_SOURCE_REF", ""),
+              source_created_at=source_created_at,
+              failed_steps=failed_steps,
+              history_packets=history,
+          )
+          output_dir = Path("artifacts/devsystem-failure-packet")
+          failure_packet_v1.write_packet(packet, output_dir)
+          print("DEVSYSTEM_FAILURE_PACKET_WRITTEN")
+          print(failure_packet_v1.render_markdown(packet))
+          PY
 
       - name: Build certification packet
         if: github.event_name != 'workflow_run'
