@@ -48,15 +48,7 @@ def _query_requests_game_total() -> bool:
 
 
 def _restore_game_total_route_from_query() -> bool:
-    """Repair exact Game Total route state after Streamlit widget reruns.
-
-    V151 only restored from query parameters when both session-state route
-    fields were blank. A date/selectbox rerun can preserve the sport while the
-    CFB market field drifts, which made V152 fall back into the legacy router
-    chain even though the URL still explicitly requested Game Total. In V152,
-    that exact query pair is authoritative until the user intentionally changes
-    market, at which point the direct renderer clears the fast-route query.
-    """
+    """Repair exact Game Total route state after Streamlit widget reruns."""
     if not _query_requests_game_total():
         return False
 
@@ -67,6 +59,52 @@ def _restore_game_total_route_from_query() -> bool:
     st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL
     st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
     return changed
+
+
+def _selectbox_v152(label, options, *args, **kwargs):
+    """V77 selector behavior plus Game Total route persistence.
+
+    Frozen V77 intentionally clears the fast-route query for every CFB market
+    except Over/Under. V152 temporarily reuses that selector while rendering the
+    direct Game Total route, so widget reruns could erase the Game Total query
+    before the page finished rendering. This wrapper preserves all V77 behavior
+    but treats exact Game Total as a V152 fast route too.
+    """
+    if label == "🏟️ Sport":
+        choices = list(options)
+        if CFB_SPORT_LABEL not in choices:
+            choices.append(CFB_SPORT_LABEL)
+        selected = cfb_route_base._ORIGINAL_SELECTBOX(label, choices, *args, **kwargs)
+        if str(selected) != CFB_SPORT_LABEL:
+            cfb_route_base._clear_fast_route_query()
+        return selected
+
+    if (
+        label == "🎯 NFL Market"
+        and str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
+    ):
+        if str(st.session_state.get("ks_cfb_market_touch") or "") not in cfb_route_base.CFB_MARKETS:
+            st.session_state.pop("ks_cfb_market_touch", None)
+
+        clean_kwargs = dict(kwargs)
+        clean_kwargs.pop("key", None)
+        clean_kwargs.pop("index", None)
+        selected = cfb_route_base._ORIGINAL_SELECTBOX(
+            "🎯 CFB Market",
+            list(cfb_route_base.CFB_MARKETS),
+            *args,
+            key="ks_cfb_market_touch",
+            **clean_kwargs,
+        )
+        if str(selected) == GAME_TOTAL_MARKET:
+            _persist_game_total_route_query()
+        elif str(selected) == cfb_route_base.OVER_UNDER_MARKET:
+            cfb_route_base._persist_fast_route_query()
+        else:
+            cfb_route_base._clear_fast_route_query()
+        return selected
+
+    return cfb_route_base._ORIGINAL_SELECTBOX(label, options, *args, **kwargs)
 
 
 def _render_production_heartbeat() -> None:
@@ -106,7 +144,7 @@ def _render_direct_cfb_game_total() -> None:
     original_render_nfl = root._render_nfl
     original_prefixes = root._ROUTE_MODULE_PREFIXES
 
-    root.st.selectbox = cfb_route_base._selectbox_v77
+    root.st.selectbox = _selectbox_v152
     root._render_nfl = _render_cfb_game_total_v152
     if "cfb_" not in root._ROUTE_MODULE_PREFIXES:
         root._ROUTE_MODULE_PREFIXES = root._ROUTE_MODULE_PREFIXES + ("cfb_",)
@@ -143,6 +181,7 @@ __all__ = [
     "_render_direct_cfb_game_total",
     "_render_production_heartbeat",
     "_restore_game_total_route_from_query",
+    "_selectbox_v152",
     "record_bootstrap_import_ms",
     "render_app",
 ]
