@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v151-live-evidence",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
