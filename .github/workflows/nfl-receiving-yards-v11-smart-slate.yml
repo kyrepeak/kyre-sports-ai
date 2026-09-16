@@ -1,0 +1,24 @@
+name: NFL Receiving Yards V11 Smart Slate
+
+on:
+  pull_request:
+    paths:
+      - "nfl_receiving_yards_slate_controller_v1.py"
+      - "nfl_receiving_yards_hub_v11.py"
+      - "streamlit_memory_lazy_router_v142.py"
+      - "app.py"
+      - "tests/test_nfl_receiving_yards_smart_slate_v11.py"
+      - ".github/workflows/nfl-receiving-yards-v11-smart-slate.yml"
+  workflow_dispatch:
+
+jobs:
+  receiving-v11-smart-slate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run Receiving Yards V11 smart-slate contract
+        run: python -m pytest -q tests/test_nfl_receiving_yards_smart_slate_v11.py
