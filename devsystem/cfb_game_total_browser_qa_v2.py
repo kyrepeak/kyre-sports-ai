@@ -79,12 +79,10 @@ def _choose_target_matchup(page, frame) -> str:
     combo.click()
     page.keyboard.type(TARGET_AWAY)
     page.keyboard.press("Enter")
-    page.wait_for_timeout(1800)
     observed = combo.input_value(timeout=5000).strip()
-    body = frame.locator("body").inner_text(timeout=5000)
-    if TARGET_AWAY not in body or TARGET_HOME not in body:
+    if TARGET_AWAY not in observed or TARGET_HOME not in observed:
         raise V152BrowserQAFailure(
-            f"Target matchup missing after selection; combobox={observed!r}"
+            f"Target matchup was not selected; combobox={observed!r}"
         )
     return observed
 
@@ -162,6 +160,10 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             observed_date = _set_target_date(page, frame)
             matchup = _choose_target_matchup(page, frame)
             body = base._wait_for_text(frame, "MONSTER MATCHUP", timeout_seconds=60.0)
+            if TARGET_AWAY not in body or TARGET_HOME not in body:
+                raise V152BrowserQAFailure(
+                    f"Rendered Monster matchup missing {TARGET_AWAY} or {TARGET_HOME}"
+                )
             forbidden = base._body_has_forbidden_error(body)
             if forbidden:
                 raise V152BrowserQAFailure(f"Runtime error marker: {forbidden}")
