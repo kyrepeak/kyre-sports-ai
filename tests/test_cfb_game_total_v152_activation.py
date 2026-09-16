@@ -25,3 +25,15 @@ def test_v152_activation_keeps_sportsbook_and_model_frozen() -> None:
     source = router.read_text(encoding="utf-8")
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
+
+
+def test_v152_game_total_query_repairs_partial_session_state_on_widget_rerun() -> None:
+    source = (ROOT / "streamlit_memory_lazy_router_v152.py").read_text(encoding="utf-8")
+    assert "def _query_requests_game_total() -> bool:" in source
+    restore = source.split("def _restore_game_total_route_from_query() -> bool:", 1)[1].split(
+        "def _render_production_heartbeat()", 1
+    )[0]
+    assert "_query_requests_game_total()" in restore
+    assert 'st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL' in restore
+    assert 'st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET' in restore
+    assert "current_sport or current_market" not in restore
