@@ -61,7 +61,7 @@ jobs:
 
       - name: Prove app.py reaches V152 Game Total heartbeat
         run: |
-          python -m devsystem.cfb_game_total_v152_activation_qa \
+          python devsystem/cfb_game_total_v152_activation_qa.py \
             --base-url http://127.0.0.1:8501 \
             --artifact-dir artifacts/cfb-game-total-v152-activation
 
