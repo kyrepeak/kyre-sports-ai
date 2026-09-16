@@ -1,0 +1,72 @@
+name: CFB Over Under V149 Certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - app.py
+      - cfb_over_under_clean_page_v38.py
+      - streamlit_memory_lazy_router_v149.py
+      - tests/test_cfb_over_under_router_v149.py
+      - .github/workflows/cfb-over-under-v149.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-over-under-v149-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-v149:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install focused runtime
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile V149 page and router
+        run: |
+          python -m py_compile \
+            cfb_over_under_clean_page_v38.py \
+            streamlit_memory_lazy_router_v149.py
+
+      - name: Run V149 focused contract
+        run: python -m pytest -q tests/test_cfb_over_under_router_v149.py
+
+      - name: Prove frozen V37 and V148 owners are untouched
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE_SHA:-}" ]; then
+            echo "workflow_dispatch: frozen-owner diff check skipped"
+            exit 0
+          fi
+          git diff --exit-code "$BASE_SHA"...HEAD -- \
+            cfb_over_under_clean_page_v37.py \
+            streamlit_memory_lazy_router_v148.py
+
+      - name: Prove sportsbook influence remains zero
+        run: |
+          python - <<'PY'
+          import cfb_over_under_clean_page_v38 as page
+          import streamlit_memory_lazy_router_v149 as router
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.MAY_MODIFY_PROJECTION is False
+          assert router.MAY_MODIFY_PROJECTION is False
+          print("V149_PROJECTION_FREEZE_GREEN")
+          PY
