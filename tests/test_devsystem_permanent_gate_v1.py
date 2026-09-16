@@ -35,6 +35,8 @@ def test_permanent_contract_is_green():
     assert result["failure_recurrence_chronology_permanent"] is True
     assert result["failure_recurrence_age_permanent"] is True
     assert result["failure_history_coverage_permanent"] is True
+    assert result["forward_motion_v2_permanent"] is True
+    assert result["forward_motion_v2_pr_enforcement"] is True
 
 
 def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
@@ -53,6 +55,27 @@ def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
     workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
     assert "permanent-contract:" in workflow
     assert "tests/test_devsystem_permanent_gate_v1.py" in workflow
+
+
+def test_forward_motion_v2_contract_is_permanently_enforced():
+    contract = _load("forward_motion_contract_v2", "devsystem/forward_motion_contract_v2.py")
+    result = contract.validate()
+    assert result["status"] == "GREEN"
+    assert result["mode"] == "strict_auto_continue_v2"
+    assert result["semantic_root_cause_guard"] is True
+    assert result["stagnation_guard"] is True
+    assert result["monotonic_checkpoint_guard"] is True
+    assert result["single_use_receipts"] is True
+    assert result["receipt_chain_tamper_guard"] is True
+    assert result["terminal_task_authoritative"] is True
+    assert result["user_override_exact_single_use"] is True
+    assert result["bootstrap_self_expiring"] is True
+    assert result["v1_replay_still_green"] is True
+    assert result["v2_replay_green"] is True
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/forward_motion_contract_v2.py" in workflow
+    assert "python devsystem/action_ledger_v2.py verify-pr" in workflow
 
 
 def test_final_gate_accepts_success_and_skipped_only():

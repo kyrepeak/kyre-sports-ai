@@ -117,6 +117,8 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -131,6 +133,20 @@ jobs:
           fi
       - name: Validate permanent DevSystem contract
         run: python devsystem/permanent_gate_v1.py
+      - name: Validate Monster Anti-Loop V2 hard gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python devsystem/forward_motion_contract_v2.py
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            python devsystem/action_ledger_v2.py verify-pr \
+              --base "$PR_BASE" \
+              --head "$PR_HEAD"
+          fi
       - name: Self-test classifier and final gate
         run: |
           python -m pip install --disable-pip-version-check -q pytest
