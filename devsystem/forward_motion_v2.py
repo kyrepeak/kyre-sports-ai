@@ -133,6 +133,61 @@ def _decision(decision: str, reason: str, **extra: Any) -> dict[str, Any]:
     return payload
 
 
+def _denial_payload(action: dict[str, Any], decision: str, reason: str, **extra: Any) -> dict[str, Any]:
+    action_fp = fingerprint_action(action)
+    denial_fp = _hash({
+        "decision": decision,
+        "reason": reason,
+        "task_id": str(action.get("task_id") or ""),
+        "checkpoint_id": str(action.get("checkpoint_id") or ""),
+        "action_fingerprint": action_fp,
+    })
+    payload = {
+        "decision": decision,
+        "reason": reason,
+        "action_fingerprint": action_fp,
+        "denial_fingerprint": denial_fp,
+    }
+    payload.update(extra)
+    return payload
+
+
+def _validate_override_event(
+    task_ledger: dict[str, Any],
+    action: dict[str, Any],
+    denial: dict[str, Any],
+    override_event: dict[str, Any],
+) -> str | None:
+    if not isinstance(override_event, dict):
+        return "override event must be an object"
+    event_id = str(override_event.get("event_id") or "").strip()
+    if not event_id:
+        return "override event requires event_id"
+    recorded = [
+        item for item in (task_ledger.get("override_events") or [])
+        if isinstance(item, dict) and str(item.get("event_id") or "") == event_id
+    ]
+    if len(recorded) != 1 or recorded[0] != override_event:
+        return "override event must be explicitly recorded exactly once in the task ledger"
+    if override_event.get("source") != "user_explicit":
+        return "override source must be user_explicit"
+    if bool(override_event.get("consumed")):
+        return "override event is already consumed"
+    if str(override_event.get("task_id") or "") != str(task_ledger.get("task_id") or ""):
+        return "override task mismatch"
+    if str(override_event.get("checkpoint_id") or "") != str(action.get("checkpoint_id") or ""):
+        return "override checkpoint mismatch"
+    if str(override_event.get("blocked_action_fingerprint") or "") != str(denial.get("action_fingerprint") or ""):
+        return "override action fingerprint mismatch"
+    if not str(override_event.get("denial_fingerprint") or "").strip():
+        return "override requires denial fingerprint"
+    if str(override_event.get("denial_fingerprint") or "") != str(denial.get("denial_fingerprint") or ""):
+        return "override denial fingerprint mismatch"
+    if not str(override_event.get("reason") or "").strip():
+        return "override requires a reason"
+    return None
+
+
 def _authorize(
     task_ledger: dict[str, Any],
     action: dict[str, Any],
@@ -184,7 +239,6 @@ def decide(
     policy: dict[str, Any] | None = None,
     override_event: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    del override_event
     active_policy = policy or load_policy()
     if str(action.get("task_id") or "") != str(task_ledger.get("task_id") or ""):
         raise ForwardMotionV2Failure("action task_id does not match ledger task_id")
@@ -197,14 +251,39 @@ def decide(
     if state["task_status"] == "DONE":
         return _decision("TASK_COMPLETE", "declared finish line is already satisfied")
 
+    def deny(decision: str, reason: str, *, retry_budget_remaining: int | None = None) -> dict[str, Any]:
+        extra: dict[str, Any] = {}
+        if retry_budget_remaining is not None:
+            extra["retry_budget_remaining"] = retry_budget_remaining
+        denial = _denial_payload(action, decision, reason, **extra)
+        if override_event is None:
+            return denial
+        error = _validate_override_event(task_ledger, action, denial, override_event)
+        if error is not None:
+            return _denial_payload(
+                action,
+                "DENIED_UNAUTHORIZED_OVERRIDE",
+                error,
+                original_denial_fingerprint=denial["denial_fingerprint"],
+            )
+        return _authorize(
+            task_ledger,
+            action,
+            history,
+            "AUTHORIZED_USER_OVERRIDE",
+            "explicit user override authorizes this exact denied action once",
+            override_event_id=str(override_event["event_id"]),
+            retry_budget_remaining=retry_budget_remaining,
+        )
+
     checkpoint_id = str(action.get("checkpoint_id") or "")
     checkpoint = _checkpoint(task_ledger, checkpoint_id)
     current = str(task_ledger.get("current_checkpoint") or "")
     if checkpoint_id != current:
         if checkpoint.get("state") == "DONE" and not action.get("contradictory_evidence"):
-            return _decision("DENIED_CLOSED_CHECKPOINT", "closed checkpoint cannot reopen without contradictory evidence")
+            return deny("DENIED_CLOSED_CHECKPOINT", "closed checkpoint cannot reopen without contradictory evidence")
         if not action.get("contradictory_evidence"):
-            return _decision("DENIED_BACKTRACK", "action does not target the active checkpoint")
+            return deny("DENIED_BACKTRACK", "action does not target the active checkpoint")
 
     if str(action.get("scope_relation") or "in_scope") == "unrelated":
         return _decision("DEFER_SIDE_QUEST", "finding is unrelated to the active finish line")
@@ -234,12 +313,28 @@ def decide(
         and str(item.get("relevant_input_fingerprint") or "") == input_fp
     ]
 
+    for resolved in task_ledger.get("resolved_root_causes") or []:
+        if not isinstance(resolved, dict):
+            continue
+        if str(resolved.get("root_cause_fingerprint") or "") != root_fp:
+            continue
+        closing_fp = str(resolved.get("closing_evidence_fingerprint") or "")
+        if bool(action.get("contradictory_evidence")) and evidence_fp and evidence_fp != closing_fp:
+            return _authorize(
+                task_ledger,
+                action,
+                history,
+                "AUTHORIZED_NEW_HYPOTHESIS",
+                "new contradictory evidence invalidates the resolved root cause closing proof",
+            )
+        return deny("DENIED_STALE_FAILURE", "resolved root cause stays closed without new contradictory evidence")
+
     retry = bool(action.get("retry"))
     failure_class = str(action.get("failure_class") or "")
     budgets = active_policy.get("retry_budgets") or {}
 
     if retry and failure_class == "deterministic-regression":
-        return _decision(
+        return deny(
             "DENIED_STALE_FAILURE",
             "deterministic failures receive zero unchanged retries",
             retry_budget_remaining=0,
@@ -247,7 +342,7 @@ def decide(
 
     if retry and failure_class == "transient-capable":
         if not bool(action.get("evidence_inspected")):
-            return _decision(
+            return deny(
                 "DENIED_STALE_FAILURE",
                 "transient retry requires evidence inspection first",
                 retry_budget_remaining=int(budgets.get("transient-capable", 1)),
@@ -255,6 +350,8 @@ def decide(
         allowed = int(budgets.get("transient-capable", 1))
         used = sum(bool(item.get("controlled_retry")) for item in root_matches)
         if used < allowed:
+            if override_event is not None:
+                return _denial_payload(action, "DENIED_UNAUTHORIZED_OVERRIDE", "override is unnecessary for an authorized controlled retry")
             return _authorize(
                 task_ledger,
                 action,
@@ -263,7 +360,7 @@ def decide(
                 "one inspected transient-capable retry is allowed",
                 retry_budget_remaining=allowed - used - 1,
             )
-        return _decision(
+        return deny(
             "DENIED_STALE_FAILURE",
             "controlled transient retry budget exhausted",
             retry_budget_remaining=0,
@@ -273,11 +370,13 @@ def decide(
         allowed = int(budgets.get("unknown_evidence_actions", 1))
         used = sum(bool(item.get("evidence_action")) for item in root_matches)
         if used >= allowed:
-            return _decision(
+            return deny(
                 "DENIED_STALE_FAILURE",
                 "unknown failure evidence-gathering budget exhausted",
                 retry_budget_remaining=0,
             )
+        if override_event is not None:
+            return _denial_payload(action, "DENIED_UNAUTHORIZED_OVERRIDE", "override is unnecessary for an authorized evidence action")
         return _authorize(
             task_ledger,
             action,
@@ -288,12 +387,27 @@ def decide(
         )
 
     if exact_matches:
-        return _decision("DENIED_LOOP", "exact action fingerprint already produced evidence")
+        return deny("DENIED_LOOP", "exact action fingerprint already produced evidence")
+
+    threshold = int((active_policy.get("stagnation") or {}).get("max_no_progress_actions", 3))
+    same_path = [
+        item for item in root_matches
+        if str(item.get("relevant_input_fingerprint") or "") == input_fp
+    ]
+    consecutive_no_progress = 0
+    for item in reversed(same_path):
+        if str(item.get("progress_class") or "") != "no_progress":
+            break
+        consecutive_no_progress += 1
+    if consecutive_no_progress >= threshold:
+        return deny("DENIED_STAGNATION", f"{threshold} no-progress actions locked this root-cause path")
 
     if unchanged_root and not bool(action.get("new_hypothesis")):
-        return _decision("DENIED_STALE_FAILURE", "same root cause has no new evidence or relevant input")
+        return deny("DENIED_STALE_FAILURE", "same root cause has no new evidence or relevant input")
 
     if bool(action.get("new_hypothesis")):
+        if override_event is not None:
+            return _denial_payload(action, "DENIED_UNAUTHORIZED_OVERRIDE", "override is unnecessary for a new hypothesis")
         return _authorize(
             task_ledger,
             action,
@@ -302,6 +416,8 @@ def decide(
             "action tests a genuinely new discriminating hypothesis",
         )
 
+    if override_event is not None:
+        return _denial_payload(action, "DENIED_UNAUTHORIZED_OVERRIDE", "override is unnecessary for an otherwise authorized action")
     return _authorize(
         task_ledger,
         action,

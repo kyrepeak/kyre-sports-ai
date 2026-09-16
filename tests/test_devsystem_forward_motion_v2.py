@@ -242,3 +242,133 @@ def test_new_hypothesis_gets_authorization_receipt():
     result = decide(_active_ledger(), action, [_history(old)])
     assert result["decision"] == "AUTHORIZED_NEW_HYPOTHESIS"
     assert result["receipt"]["payload"]["decision"] == "AUTHORIZED_NEW_HYPOTHESIS"
+
+
+def test_three_same_path_no_progress_actions_trigger_stagnation_lock():
+    action = _action(root_cause_hint="ROOT-X")
+    history = [
+        _history(action, progress_class="no_progress"),
+        _history(action, progress_class="no_progress"),
+        _history(action, progress_class="no_progress"),
+    ]
+    proposed = _action(root_cause_hint="ROOT-X", action_type="different_probe", evidence={"signal": "different"})
+    result = decide(_active_ledger(), proposed, history)
+    assert result["decision"] == "DENIED_STAGNATION"
+    assert "receipt" not in result
+
+
+def test_changed_relevant_input_breaks_stagnation_path_and_allows_fresh_action():
+    old = _action(root_cause_hint="ROOT-X", inputs={"commit": "old"})
+    history = [
+        _history(old, progress_class="no_progress"),
+        _history(old, progress_class="no_progress"),
+        _history(old, progress_class="no_progress"),
+    ]
+    proposed = _action(root_cause_hint="ROOT-X", inputs={"commit": "new"}, action_type="fresh_proof")
+    result = decide(_active_ledger(), proposed, history)
+    assert result["decision"] == "AUTHORIZED"
+    assert "receipt" in result
+
+
+def test_resolved_root_cause_stays_closed_without_contradictory_evidence():
+    action = _action(root_cause_hint="CLOSED-X")
+    ledger = _active_ledger()
+    ledger["resolved_root_causes"] = [{
+        "root_cause_fingerprint": fingerprint_root_cause(action),
+        "closing_evidence_fingerprint": "f" * 64,
+        "closed_by_event_id": "ACT-CLOSED",
+    }]
+    result = decide(ledger, action, [])
+    assert result["decision"] == "DENIED_STALE_FAILURE"
+
+
+def test_new_contradictory_evidence_can_reopen_resolved_root_cause_as_new_hypothesis():
+    old = _action(root_cause_hint="CLOSED-X", evidence={"signal": "old"})
+    ledger = _active_ledger()
+    ledger["resolved_root_causes"] = [{
+        "root_cause_fingerprint": fingerprint_root_cause(old),
+        "closing_evidence_fingerprint": fingerprint_evidence(old),
+        "closed_by_event_id": "ACT-CLOSED",
+    }]
+    proposed = _action(
+        root_cause_hint="CLOSED-X",
+        evidence={"signal": "new-contradiction"},
+        contradictory_evidence=True,
+        action_type="reopen_root_cause",
+    )
+    result = decide(ledger, proposed, [])
+    assert result["decision"] == "AUTHORIZED_NEW_HYPOTHESIS"
+    assert "receipt" in result
+
+
+def _override_for(ledger: dict, action: dict, denial: dict, **overrides) -> dict:
+    event = {
+        "event_id": "OVR-EXACT-1",
+        "source": "user_explicit",
+        "task_id": ledger["task_id"],
+        "checkpoint_id": action["checkpoint_id"],
+        "blocked_action_fingerprint": denial["action_fingerprint"],
+        "denial_fingerprint": denial["denial_fingerprint"],
+        "reason": "User explicitly authorizes this exact exception.",
+        "consumed": False,
+    }
+    event.update(overrides)
+    return event
+
+
+def _denied_deterministic(ledger: dict | None = None, action: dict | None = None):
+    ledger = ledger or _active_ledger()
+    action = action or _action(retry=True, failure_class="deterministic-regression")
+    denial = decide(ledger, action, [_history(action)])
+    assert denial["decision"] == "DENIED_STALE_FAILURE"
+    assert "denial_fingerprint" in denial
+    return ledger, action, denial
+
+
+@pytest.mark.parametrize(
+    "override_changes",
+    [
+        {"source": "agent_self_declared"},
+        {"task_id": "wrong-task"},
+        {"checkpoint_id": "1"},
+        {"blocked_action_fingerprint": "0" * 64},
+        {"denial_fingerprint": "1" * 64},
+        {"denial_fingerprint": ""},
+        {"consumed": True},
+    ],
+)
+def test_invalid_override_shapes_are_denied(override_changes):
+    ledger, action, denial = _denied_deterministic()
+    override = _override_for(ledger, action, denial, **override_changes)
+    ledger["override_events"] = [override]
+    result = decide(ledger, action, [_history(action)], override_event=override)
+    assert result["decision"] == "DENIED_UNAUTHORIZED_OVERRIDE"
+    assert "receipt" not in result
+
+
+def test_valid_exact_user_override_authorizes_only_one_exact_action():
+    ledger, action, denial = _denied_deterministic()
+    override = _override_for(ledger, action, denial)
+    ledger["override_events"] = [override]
+    result = decide(ledger, action, [_history(action)], override_event=override)
+    assert result["decision"] == "AUTHORIZED_USER_OVERRIDE"
+    assert result["receipt"]["payload"]["override_event_id"] == override["event_id"]
+    assert load_policy()["retry_budgets"]["deterministic-regression"] == 0
+
+    other = _action(
+        retry=True,
+        failure_class="deterministic-regression",
+        target="render:/different",
+    )
+    other_denial = decide(ledger, other, [_history(other)])
+    assert other_denial["decision"] == "DENIED_STALE_FAILURE"
+    reused = decide(ledger, other, [_history(other)], override_event=override)
+    assert reused["decision"] == "DENIED_UNAUTHORIZED_OVERRIDE"
+
+
+def test_consumed_override_cannot_be_reused():
+    ledger, action, denial = _denied_deterministic()
+    override = _override_for(ledger, action, denial, consumed=True)
+    ledger["override_events"] = [override]
+    result = decide(ledger, action, [_history(action)], override_event=override)
+    assert result["decision"] == "DENIED_UNAUTHORIZED_OVERRIDE"
