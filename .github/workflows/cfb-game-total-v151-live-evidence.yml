@@ -1,0 +1,57 @@
+name: CFB Game Total V151 live evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "cfb_game_total_clean_page_v2.py"
+      - "streamlit_memory_lazy_router_v149.py"
+      - "streamlit_memory_lazy_router_v151.py"
+      - "devsystem/cfb_game_total_live_evidence_qa_v1.py"
+      - "tests/test_cfb_game_total_dashboard_v151.py"
+      - ".github/workflows/cfb-game-total-v151-live-evidence.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cfb_game_total_clean_page_v2.py"
+      - "streamlit_memory_lazy_router_v149.py"
+      - "streamlit_memory_lazy_router_v151.py"
+      - "devsystem/cfb_game_total_live_evidence_qa_v1.py"
+      - "tests/test_cfb_game_total_dashboard_v151.py"
+      - ".github/workflows/cfb-game-total-v151-live-evidence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-game-total-v151-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-v151:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project dependencies
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt
+
+      - name: Compile V151 repair surface
+        run: |
+          python -m py_compile cfb_game_total_clean_page_v2.py
+          python -m py_compile streamlit_memory_lazy_router_v151.py
+          python -m py_compile devsystem/cfb_game_total_live_evidence_qa_v1.py
+
+      - name: Run V151 contract tests
+        run: python -m pytest -q tests/test_cfb_game_total_dashboard_v151.py
+
+      - name: Prove Syracuse at Pittsburgh live display evidence
+        run: python devsystem/cfb_game_total_live_evidence_qa_v1.py
