@@ -4,8 +4,8 @@ Additive over frozen Router V148. Advances only exact College Football ->
 Over/Under to Clean Page V38 while preserving the V148 CFB Moneyline dashboard,
 NFL routes, every other certified market, and all frozen calculations.
 
-V150 activation note: the certified V149 Over/Under path below is preserved;
-only exact College Football -> Game Total is handed to the additive V150 router.
+V151 activation note: the certified V149 Over/Under path below is preserved;
+only exact College Football -> Game Total is handed to the additive V151 router.
 """
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ def _selectbox_v150_handoff(label, options, *args, **kwargs):
 
 
 def _restore_game_total_v150_from_query() -> bool:
-    """Restore exact V150 Game Total before V77 considers its O/U-only query."""
+    """Restore exact Game Total before V77 considers its O/U-only query."""
     current_sport = str(st.session_state.get("ks_sport_touch") or "").strip()
     current_market = str(st.session_state.get("ks_cfb_market_touch") or "").strip()
     if current_sport or current_market:
@@ -141,17 +141,17 @@ def render_app() -> None:
         if not _restore_game_total_v150_from_query():
             cfb_route_base._restore_fast_route_from_query()
     if _game_total_v150_route_active():
-        # Late import avoids touching V149's certified O/U import path and avoids
-        # an eager circular dependency while V150 freezes V149 as its prior router.
-        from streamlit_memory_lazy_router_v150 import _render_direct_cfb_game_total
+        # Late import keeps the certified V149 O/U path untouched while Game
+        # Total advances through the additive V151 display/data-repair router.
+        from streamlit_memory_lazy_router_v151 import _render_direct_cfb_game_total
         return _render_direct_cfb_game_total()
     if _over_under_route_active():
         return _render_direct_cfb_over_under()
 
     # Frozen V148 owns Moneyline. It installs V77's selector while rendering,
     # so wrap that one selector reference only for the duration of delegation.
-    # This lets a Moneyline -> Game Total click persist the exact V150 route
-    # before V148 calls st.rerun(), then restores V77 byte-for-byte afterward.
+    # This lets a Moneyline -> Game Total click persist the exact route before
+    # V148 calls st.rerun(), then restores V77 byte-for-byte afterward.
     original_cfb_selectbox = cfb_route_base._selectbox_v77
     cfb_route_base._selectbox_v77 = _selectbox_v150_handoff
     try:
