@@ -65,7 +65,8 @@ def _selectbox_v150_handoff(label, options, *args, **kwargs):
         and str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
         and str(selected or "") == GAME_TOTAL_MARKET
     ):
-        st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
+        # The keyed CFB selectbox already owns ks_cfb_market_touch. Rewriting
+        # that key after widget instantiation raises StreamlitWidgetAlreadyInstantiatedError.
         _persist_game_total_v150_query()
     return selected
 
