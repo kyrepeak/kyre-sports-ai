@@ -7,6 +7,7 @@ qualification thresholds, and full-slate Top-5 ranking are reused unchanged.
 V150 changes only presentation:
 - Phoenix, Arizona kickoff-time display,
 - exact ESPN team-ID logos with fail-closed monograms,
+- display-only runtime enrichment for venue/broadcast/identity,
 - compact matchup hero and Quick Read,
 - compact Step 11 / Step 12 status cards,
 - deep evidence preserved inside collapsed expanders,
@@ -26,6 +27,7 @@ import streamlit as st
 
 import cfb_game_total_hub_v3 as frozen_page
 import cfb_over_under_logo_resolver_v3 as logo_v3
+import cfb_over_under_runtime_team_data_v1 as runtime_display
 
 MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V1 • MONSTER COMPACT DASHBOARD"
 MARKET = "Game Total"
@@ -92,6 +94,19 @@ def _logo_html(name: str, visual: Mapping[str, Any]) -> str:
     return f'<div class="gt150-logo"><span class="gt150-mono">{escape(_monogram(name))}</span></div>'
 
 
+def _display_game(game: Mapping[str, Any]) -> dict[str, Any]:
+    """Enrich a copy for visuals only; frozen analysis receives original game."""
+    out = dict(game)
+    try:
+        snapshot = runtime_display._find_snapshot(out)
+        if snapshot:
+            runtime_display._merge_game_snapshot(out, snapshot)
+            out["gt150_display_snapshot_enriched"] = True
+    except Exception:
+        pass
+    return out
+
+
 def _kickoff_datetime(game: Mapping[str, Any]) -> datetime | None:
     raw = _clean(game.get("kickoff_iso"))
     if raw:
@@ -133,17 +148,23 @@ def _hero(game: Mapping[str, Any], away: Mapping[str, Any], home: Mapping[str, A
     visuals = _visuals(game)
     away_name = _clean(away.get("team")) or _clean(game.get("away_team")) or "Away"
     home_name = _clean(home.get("team")) or _clean(game.get("home_team")) or "Home"
+    away_record = _record(away)
+    home_record = _record(home)
+    if away_record == "0-0":
+        away_record = _clean(game.get("away_record_summary")) or away_record
+    if home_record == "0-0":
+        home_record = _clean(game.get("home_record_summary")) or home_record
     return f"""
 <div class="gt150-hero">
   <div class="gt150-match">
     <div class="gt150-team">
       {_logo_html(away_name, visuals.get('away') or {})}
-      <div class="gt150-team-copy"><div class="gt150-rank">{escape(_rank(away))}</div><div class="gt150-name">{escape(away_name)}</div><div class="gt150-meta">{escape(_clean(away.get('conference')) or _clean(game.get('away_conference')) or 'Conference unavailable')} • {_record(away)}</div></div>
+      <div class="gt150-team-copy"><div class="gt150-rank">{escape(_rank(away))}</div><div class="gt150-name">{escape(away_name)}</div><div class="gt150-meta">{escape(_clean(away.get('conference')) or _clean(game.get('away_conference')) or 'Conference unavailable')} • {escape(away_record)}</div></div>
     </div>
     <div class="gt150-at"><span>GAME TOTAL</span><b>@</b></div>
     <div class="gt150-team home">
       {_logo_html(home_name, visuals.get('home') or {})}
-      <div class="gt150-team-copy"><div class="gt150-rank">{escape(_rank(home))}</div><div class="gt150-name">{escape(home_name)}</div><div class="gt150-meta">{escape(_clean(home.get('conference')) or _clean(game.get('home_conference')) or 'Conference unavailable')} • {_record(home)}</div></div>
+      <div class="gt150-team-copy"><div class="gt150-rank">{escape(_rank(home))}</div><div class="gt150-name">{escape(home_name)}</div><div class="gt150-meta">{escape(_clean(home.get('conference')) or _clean(game.get('home_conference')) or 'Conference unavailable')} • {escape(home_record)}</div></div>
     </div>
   </div>
   <div class="gt150-context">
@@ -244,7 +265,10 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     final = selected_result.get("final") or {}
     team_diag = selected_result.get("team_diag") or {}
 
-    st.markdown(_hero(game, away, home), unsafe_allow_html=True)
+    # Runtime snapshot enrichment is presentation-only and cannot flow into the
+    # frozen Step 11/12 analysis above.
+    display_game = _display_game(game)
+    st.markdown(_hero(display_game, away, home), unsafe_allow_html=True)
     st.markdown(_quick_read(raw, final), unsafe_allow_html=True)
     st.markdown(_status_cards(raw, final), unsafe_allow_html=True)
 
@@ -321,6 +345,7 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_display_game",
     "_kickoff_phoenix",
     "render_cfb_hub",
     "render_game_total_hub",
