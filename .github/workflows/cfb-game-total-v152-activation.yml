@@ -69,7 +69,7 @@ jobs:
             tests/test_cfb_game_total_v152_team_stats.py
 
       - name: Prove Syracuse at Pittsburgh live team evidence
-        run: python devsystem/cfb_game_total_live_evidence_qa_v2.py
+        run: python -m devsystem.cfb_game_total_live_evidence_qa_v2
 
       - name: Start real production entrypoint locally
         shell: bash
