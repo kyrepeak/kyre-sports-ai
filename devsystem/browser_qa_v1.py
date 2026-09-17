@@ -4,11 +4,10 @@ The browser QA proves that the checked-out branch can:
 - boot Streamlit;
 - expose the expected sport choices;
 - route to College Football -> Over/Under;
-- render the active Clean Page V38 Monster compact dashboard;
-- preserve future-slate coverage, freshness firewall, 0.0% market influence,
-  and frozen projection markers;
-- prove official ESPN identity recovery without fuzzy or synthetic IDs;
-- preserve the certified readable Steps 4-12 shell;
+- render the active Clean Page V39 compact evidence dashboard;
+- expose V39's compact matchup foundation and frozen-model presentation strip;
+- preserve 0.0% sportsbook projection influence and mutation-off boundaries;
+- expose the compact Steps 5-10 evidence flow and Steps 11-12 certification shell;
 - do so without obvious Python/runtime error text.
 
 Dynamic schedule/odds availability is not required here because those are
@@ -37,15 +36,16 @@ CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_MARKET_LABEL = "🎯 CFB Market"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V38 ACTIVE",
-    "FUTURE SLATE COVERAGE ACTIVE",
-    "OFFICIAL ESPN IDENTITY RECOVERY",
-    "NO FUZZY MATCHING",
-    "NO SYNTHETIC IDS",
-    "FRESHNESS FIREWALL ACTIVE",
-    "0.0% PROJECTION INFLUENCE",
-    "FROZEN PROJECTION MATH PRESERVED",
-    "READABLE STEPS 4-12 ACTIVE",
+    "CFB O/U • CLEAN PAGE V39 ACTIVE",
+    "COMPACT EVIDENCE RENDERER",
+    "VERIFIED IDENTITY ≠ MISSING STEP METRIC",
+    "0.0% SPORTSBOOK PROJECTION INFLUENCE",
+    "Matchup Foundation",
+    "Steps 1–4 • compact verified evidence",
+    "Frozen O/U math • Mutation OFF • Sportsbook 0.0%",
+    "Step 5 • Explosive Plays",
+    "Step 10 • Historical Matchup",
+    "Steps 11–12 • current form + certification",
 )
 FORBIDDEN_ERROR_MARKERS = (
     "Traceback (most recent call last)",
@@ -262,7 +262,10 @@ def run_browser_qa(
             )
 
             _choose(page, frame, 1, CFB_MARKET)
-            body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[0], 60.0)
+            # The V39 ACTIVE caption renders before the lower dashboard. Waiting
+            # for the final required marker proves the full Streamlit rerun has
+            # reached the Steps 11-12 shell before we snapshot the body.
+            body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[-1], 60.0)
 
             missing_markers = [
                 marker for marker in CFB_REQUIRED_MARKERS
@@ -270,7 +273,7 @@ def run_browser_qa(
             ]
             if missing_markers:
                 raise BrowserQAFailure(
-                    "CFB Clean Page V38 safety marker drift: "
+                    "CFB Clean Page V39 presentation marker drift: "
                     + " | ".join(missing_markers)
                 )
 
