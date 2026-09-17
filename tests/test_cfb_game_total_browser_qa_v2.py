@@ -69,3 +69,14 @@ def test_v156_persists_game_total_query_without_requiring_cached_v155_helper():
     assert "cfb_route_base.ROUTE_QUERY_SPORT" in helper
     assert "cfb_route_base.ROUTE_QUERY_MARKET" in helper
     assert "st.query_params" in helper
+
+
+def test_v161_cache_bust_activates_new_router_v157_module():
+    router = ROOT / "streamlit_memory_lazy_router_v157.py"
+    assert router.exists(), "production cache bust requires a new Router V157 module name"
+    app_source = (ROOT / "app.py").read_text(encoding="utf-8")
+    assert "from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app" in app_source
+    source = router.read_text(encoding="utf-8")
+    assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in source
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v156"' in source
+    assert "prior._persist_game_total_route_query" not in source
