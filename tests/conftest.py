@@ -13,6 +13,7 @@ def pytest_collection_modifyitems(session, config, items):
         return
 
     page = ROOT / "cfb_game_total_clean_page_v1.py"
+    visual_page = ROOT / "cfb_game_total_clean_page_v10.py"
     router = ROOT / "streamlit_memory_lazy_router_v150.py"
     activation = ROOT / "streamlit_memory_lazy_router_v149.py"
     frozen_router = ROOT / "streamlit_memory_lazy_router_v152.py"
@@ -23,6 +24,7 @@ def pytest_collection_modifyitems(session, config, items):
     browser = ROOT / "devsystem" / "cfb_game_total_browser_qa_v1.py"
     required = (
         page,
+        visual_page,
         router,
         activation,
         frozen_router,
@@ -39,6 +41,7 @@ def pytest_collection_modifyitems(session, config, items):
         py_compile.compile(str(path), doraise=True)
 
     page_source = page.read_text(encoding="utf-8")
+    visual_page_source = visual_page.read_text(encoding="utf-8")
     router_source = router.read_text(encoding="utf-8")
     activation_source = activation.read_text(encoding="utf-8")
     frozen_router_source = frozen_router.read_text(encoding="utf-8")
@@ -61,6 +64,25 @@ def pytest_collection_modifyitems(session, config, items):
     assert "⚡ QUICK READ" in page_source
     assert 'with st.expander("Deep evidence • certified team audit"' in page_source
     assert "frozen_page.render_game_total_hub(" not in page_source
+
+    # V160 remains presentation-only over frozen V159 but must render the approved
+    # compact Monster dashboard on the real tablet/mobile production surface.
+    assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v9"' in visual_page_source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in visual_page_source
+    assert "MAY_MODIFY_PROJECTION = False" in visual_page_source
+    assert "MONSTER SPORTS INTELLIGENCE" in visual_page_source
+    assert ".gt159-gamefacts{grid-template-columns:repeat(4,minmax(0,1fr))" in visual_page_source
+    assert ".gt159-totalgrid{grid-template-columns:repeat(4,minmax(0,1fr))" in visual_page_source
+    assert ".gt159-badges{grid-template-columns:repeat(3,minmax(0,1fr))" in visual_page_source
+    assert ".gt159-teamgrid{grid-template-columns:repeat(2,minmax(0,1fr))" in visual_page_source
+    assert ".gt159-stepgrid{grid-template-columns:repeat(2,minmax(0,1fr))" in visual_page_source
+    assert ".gt159-finalgrid{grid-template-columns:repeat(5,minmax(0,1fr))" in visual_page_source
+    assert ".gt159-notes{grid-template-columns:repeat(2,minmax(0,1fr))" in visual_page_source
+    assert ".gt159-teamgrid{grid-template-columns:1fr}" not in visual_page_source
+    assert ".gt159-badges{grid-template-columns:1fr}" not in visual_page_source
+    assert ".gt159-notes{grid-template-columns:1fr}" not in visual_page_source
+    assert ".gt159-stepgrid{grid-template-columns:1fr}" not in visual_page_source
+    assert ".gt159-finalgrid{grid-template-columns:repeat(2,minmax(0,1fr))}" not in visual_page_source
 
     # V150 targets only exact CFB -> Game Total and delegates everything else.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v149"' in router_source
