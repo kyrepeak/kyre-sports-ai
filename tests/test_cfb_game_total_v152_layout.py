@@ -217,6 +217,11 @@ def test_step4_v8_has_connected_step11_step12_and_final_summary() -> None:
     assert ".gt156-model-grid{grid-template-columns:1fr}" in source
 
 
-def test_router_stays_on_frozen_v7_until_final_step5_integration() -> None:
+def test_step5_router_targets_v8_and_top5_stays_in_connected_shell() -> None:
     router = (ROOT / "streamlit_memory_lazy_router_v152.py").read_text(encoding="utf-8")
-    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v7"' in router
+    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v8"' in router
+
+    source = _source()
+    shell = source.index('data-testid="gt153-connected-evidence-shell"')
+    top5 = source.index('st.expander("🏆 Top-5 slate scanner", expanded=False)', shell)
+    assert shell < top5
