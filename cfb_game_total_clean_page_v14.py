@@ -41,6 +41,7 @@ GAME_TOTAL_MARKET = "Game Total"
 MATCHUP_STATE_KEY_PREFIX = "cfb_v152_game_total_matchup_"
 SELECTOR_IDENTITY_ENDPOINT = "/api/v1/cfb/selector/verified-games"
 SELECTOR_IDENTITY_SOURCE = "Kyre Sports API full-slate verified identity"
+WRAPPER_HISTORY_SYNC_JS = "try{window.parent.history.replaceState(null,\'\',this.search)}catch(e){}"
 
 _V163_CSS = r"""
 <style>
@@ -303,7 +304,9 @@ def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], s
             prefix = "✓ " if selected else ""
             cards.append(
                 f'<a class="gt163-game-link{selected_class}" data-event-id="{escape(event_id)}" '
-                f'href="{escape(href, quote=True)}" target="_self"{aria}>{escape(prefix + label)}</a>'
+                f'href="{escape(href, quote=True)}" target="_self" '
+                f'onclick="{escape(WRAPPER_HISTORY_SYNC_JS, quote=True)}"{aria}>'
+                f'{escape(prefix + label)}</a>'
             )
         else:
             cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ESPN ID unavailable</span>')
@@ -359,6 +362,7 @@ __all__ = [
     "ROUTE_QUERY_MARKET",
     "ROUTE_QUERY_SPORT",
     "SELECTOR_IDENTITY_ENDPOINT",
+    "WRAPPER_HISTORY_SYNC_JS",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_enrich_selector_ids_from_api",
     "_fetch_selector_identity_payload",
