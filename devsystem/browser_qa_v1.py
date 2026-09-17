@@ -4,7 +4,7 @@ The browser QA proves that the checked-out branch can:
 - boot Streamlit;
 - expose the expected sport choices;
 - route to College Football -> Over/Under;
-- render the active Clean Page V38 Monster compact dashboard;
+- render the active Clean Page V39 Monster compact dashboard;
 - preserve future-slate coverage, freshness firewall, 0.0% market influence,
   and frozen projection markers;
 - prove official ESPN identity recovery without fuzzy or synthetic IDs;
@@ -37,7 +37,7 @@ CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_MARKET_LABEL = "🎯 CFB Market"
 CFB_REQUIRED_MARKERS = (
-    "CFB O/U • CLEAN PAGE V38 ACTIVE",
+    "CFB O/U • CLEAN PAGE V39 ACTIVE",
     "FUTURE SLATE COVERAGE ACTIVE",
     "OFFICIAL ESPN IDENTITY RECOVERY",
     "NO FUZZY MATCHING",
@@ -270,7 +270,7 @@ def run_browser_qa(
             ]
             if missing_markers:
                 raise BrowserQAFailure(
-                    "CFB Clean Page V38 safety marker drift: "
+                    "CFB Clean Page V39 safety marker drift: "
                     + " | ".join(missing_markers)
                 )
 
