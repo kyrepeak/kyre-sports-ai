@@ -1,8 +1,8 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB Game Total V162 activation.
+"""Kyre Sports AI Streamlit entrypoint — CFB Game Total V163 activation.
 
-The production entrypoint now boots additive Router V158. V158 preserves the
-certified router chain for every existing market while advancing only exact
-College Football -> Game Total through a fresh page-cache boundary.
+The production entrypoint now boots additive Router V159. V159 preserves the
+certified Router V158 chain for every existing market while advancing only exact
+College Football -> Game Total through the visible ESPN event selector.
 
 Sportsbook projection influence stays 0.0% and frozen model behavior remains
 unchanged.
@@ -25,8 +25,9 @@ from sports_api.posthog_error_radar_v1 import (
 )
 
 if TYPE_CHECKING:
-    # Frozen V161 source-level certification compatibility only; runtime boots V158 below.
+    # Frozen V161/V162 source-level certification compatibility only; runtime boots V159 below.
     from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v63 import render_app as _frozen_v63_render_app
     from streamlit_memory_lazy_router_v64 import render_app as _frozen_v64_render_app
     from streamlit_memory_lazy_router_v65 import render_app as _frozen_v65_render_app
@@ -190,7 +191,7 @@ FROZEN_V115_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V115_NFL_RECEIVING_YARDS_STEP
 FROZEN_V116_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V116_NFL_RECEIVING_YARDS_STEP5_DEFENSE_H2H_2026-09-13"
 FROZEN_V117_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V117_NFL_RECEIVING_YARDS_STEP6_PROJECTION_RECIPE_2026-09-13"
 FROZEN_V118_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V118_NFL_RECEIVING_YARDS_STEP7_SUPPORT_CONCERNS_2026-09-13"
-FROZEN_V119_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_STEP8_FANDUEL_FULL_LINEUP_2026-09-13"
+FROZEN_V119_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V119_NFL_RECEIVING_YARDS_FANDUEL_FULL_LINEUP_2026-09-13"
 FROZEN_V120_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V120_NFL_RECEIVING_YARDS_STEP9_MATCHUP_TIERS_2026-09-13"
 FROZEN_V121_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V121_NFL_RECEIVING_YARDS_STEP10_FINAL_POLISH_SPEED_CERT_2026-09-13"
 FROZEN_V122_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V122_NFL_PASSING_YARDS_VISUAL_PARITY_STEP2_QB_HEROES_2026-09-13"
@@ -226,7 +227,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v159 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
