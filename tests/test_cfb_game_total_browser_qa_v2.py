@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CERT = ROOT / "devsystem" / "cfb_game_total_browser_qa_v3.py"
 WORKFLOW = ROOT / ".github" / "workflows" / "cfb-game-total-v161-browser.yml"
+ROUTER = ROOT / "streamlit_memory_lazy_router_v156.py"
 
 
 def _source() -> str:
@@ -58,3 +59,15 @@ def test_v161_has_its_own_additive_browser_workflow():
     assert "devsystem/cfb_game_total_browser_qa_v3.py" in source
     assert "tests/test_cfb_game_total_browser_qa_v2.py" in source
     assert "python -m devsystem.cfb_game_total_browser_qa_v3" in source
+
+
+def test_v161_router_owns_route_state_helpers_without_private_v155_delegation():
+    source = ROUTER.read_text(encoding="utf-8")
+    forbidden = (
+        "return prior._game_total_route_active()",
+        "return prior._persist_game_total_route_query()",
+        "return prior._query_requests_game_total()",
+        "return prior._restore_game_total_route_from_query()",
+    )
+    for token in forbidden:
+        assert token not in source, f"V161 must not depend on V155 private helper: {token}"
