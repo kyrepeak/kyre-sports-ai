@@ -13,10 +13,12 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from html import escape
+import os
 from typing import Any, Mapping, Sequence
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
+import requests
 import streamlit as st
 
 import cfb_game_total_clean_page_v13 as prior_v162
@@ -37,6 +39,9 @@ ROUTE_QUERY_MARKET = "ks_cfb_market"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 MATCHUP_STATE_KEY_PREFIX = "cfb_v152_game_total_matchup_"
+IDENTITY_API_BASE_ENV = "KYRE_SPORTS_API_BASE_URL"
+IDENTITY_API_BASE_DEFAULT = "https://kyre-sports-api.onrender.com"
+IDENTITY_ENDPOINT = "/api/v1/cfb/selector/verified-games"
 
 _V163_CSS = r"""
 <style>
@@ -125,13 +130,11 @@ def _kickoff_text(game: Mapping[str, Any]) -> str:
         raw = _clean(game.get(key))
         if not raw:
             continue
-        # A bare YYYY-MM-DD is a slate date, not a kickoff clock.
         if "T" not in raw and ":" not in raw:
             continue
         try:
             parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         except ValueError:
-            # Preserve provider-formatted clocks such as "7:30 PM ET".
             if len(raw) <= 24:
                 return raw
             continue
@@ -164,13 +167,100 @@ def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
 
 
 @st.cache_data(ttl=120, show_spinner=False)
-def _fetch_selector_espn_payload(selected_day: date) -> dict[str, Any]:
-    """Fetch the date-scoped ESPN scoreboard without the groups=80 filter.
+def _fetch_selector_server_games(selected_day: date) -> list[dict[str, Any]]:
+    """Fetch official selector identities from the Render CFB identity service."""
+    base = _clean(os.environ.get(IDENTITY_API_BASE_ENV)) or IDENTITY_API_BASE_DEFAULT
+    url = f"{base.rstrip('/')}{IDENTITY_ENDPOINT}"
+    try:
+        response = requests.get(
+            url,
+            params={"game_date": selected_day.isoformat()},
+            timeout=10,
+            headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-CFB-GameTotal-V163"},
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return []
+    if not isinstance(payload, Mapping):
+        return []
+    if payload.get("synthetic_ids") is not False:
+        return []
+    try:
+        if float(payload.get("projection_weight")) != 0.0:
+            return []
+    except (TypeError, ValueError):
+        return []
+    games = payload.get("games")
+    if not isinstance(games, list):
+        return []
+    verified: list[dict[str, Any]] = []
+    for row in games:
+        if not isinstance(row, Mapping):
+            continue
+        if _clean(row.get("game_date")) != selected_day.isoformat():
+            continue
+        if not _clean(row.get("event_id")):
+            continue
+        verified.append(dict(row))
+    return verified
 
-    This is a V163 presentation-identity fallback only. The frozen schedule/model
-    remains the data owner; the payload is used solely to recover an official
-    ESPN event_id when the grouped enrichment path leaves a verified NCAA row
-    unmatched.
+
+def _server_games_as_espn_payload(
+    server_games: Sequence[Mapping[str, Any]],
+    selected_day: date,
+) -> dict[str, Any]:
+    """Adapt normalized server identities to the frozen ESPN matcher contract."""
+    events: list[dict[str, Any]] = []
+    day = selected_day.isoformat()
+    for row in server_games:
+        event_id = _clean(row.get("event_id"))
+        away = _clean(row.get("away_team"))
+        home = _clean(row.get("home_team"))
+        if not event_id or not away or not home or _clean(row.get("game_date")) != day:
+            continue
+        timestamp = f"{day}T16:00:00Z"
+        events.append(
+            {
+                "id": event_id,
+                "date": timestamp,
+                "competitions": [
+                    {
+                        "date": timestamp,
+                        "competitors": [
+                            {
+                                "homeAway": "away",
+                                "team": {
+                                    "id": _clean(row.get("away_team_id")),
+                                    "displayName": away,
+                                    "shortDisplayName": away,
+                                },
+                            },
+                            {
+                                "homeAway": "home",
+                                "team": {
+                                    "id": _clean(row.get("home_team_id")),
+                                    "displayName": home,
+                                    "shortDisplayName": home,
+                                },
+                            },
+                        ],
+                        "venue": {"fullName": _clean(row.get("venue"))},
+                    }
+                ],
+                "status": {"type": {"description": _clean(row.get("status"))}},
+            }
+        )
+    return {"events": events}
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def _fetch_selector_espn_payload(selected_day: date) -> dict[str, Any]:
+    """Last-resort direct ESPN identity fallback.
+
+    Production normally resolves identity through the Render CFB service above.
+    This path remains presentation-only and is used only if the server identity
+    surface cannot match a frozen NCAA row.
     """
     payload, _attempts = schedule_v1._fetch_json_with_fallback(
         schedule_v1.ESPN_SCOREBOARD_URL,
@@ -187,6 +277,17 @@ def _load_games(selected_day: date) -> list[Mapping[str, Any]]:
     schedule = v161.prior.frozen_page.frozen_v2.frozen_v1.schedule
     games, _diag = schedule.load_with_diagnostics(selected_day)
     copied = [dict(game) for game in (games or []) if isinstance(game, Mapping)]
+
+    missing = [game for game in copied if not _game_id(game)]
+    if missing:
+        server_games = _fetch_selector_server_games(selected_day)
+        server_payload = _server_games_as_espn_payload(server_games, selected_day)
+        if server_payload.get("events"):
+            schedule_v1._enrich_with_espn(
+                missing,
+                server_payload,
+                selected_day.isoformat(),
+            )
 
     missing = [game for game in copied if not _game_id(game)]
     if missing:
@@ -282,6 +383,7 @@ __all__ = [
     "DATE_QUERY_KEY",
     "EVENT_QUERY_KEY",
     "FROZEN_PRESENTATION",
+    "IDENTITY_ENDPOINT",
     "MARKET",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
@@ -289,12 +391,14 @@ __all__ = [
     "ROUTE_QUERY_SPORT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_fetch_selector_espn_payload",
+    "_fetch_selector_server_games",
     "_game_id",
     "_game_label",
     "_load_games",
     "_query_event_id",
     "_selected_game_index",
     "_selector_href",
+    "_server_games_as_espn_payload",
     "_set_query_event_id",
     "render_cfb_hub",
     "render_game_total_hub",
