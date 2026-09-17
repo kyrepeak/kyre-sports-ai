@@ -35,7 +35,7 @@ V160_REQUIRED_MARKERS = (
 # V159 owns the complete structural stylesheet and frozen dashboard DOM. V160
 # must never replace or mutate that stylesheet because V9 emits it more than
 # once inside the dashboard HTML. Inject this override sheet as its own
-# Streamlit style element after the frozen render so CSS cannot leak as text.
+# Streamlit style element before the frozen render so CSS cannot leak as text.
 _V160_OVERRIDES = r"""
 :root{--gt160-green:#58efb2;--gt160-teal:#3fd8ca;--gt160-blue:#6bbcff;--gt160-purple:#b48aff;--gt160-amber:#f0c96a;--gt160-red:#ff796f;--gt160-text:#f4f8fc;--gt160-muted:#8ca2b5}
 
@@ -114,14 +114,13 @@ def _render_v160_identity() -> None:
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
-    # Render the frozen V159 page with its own stylesheet completely untouched.
-    # The V160 CSS is emitted as a separate style element afterwards so the
-    # cascade wins without ever becoming nested inside V159's repeated HTML.
+    # Emit V160 as its own safe style element first. V159 then renders its
+    # untouched structural stylesheet/DOM underneath, while V160's later CSS
+    # specificity and source order inside Streamlit keep the Monster surface.
+    st.markdown(_V160_CSS, unsafe_allow_html=True)
     _render_v160_masthead()
     _render_v160_identity()
-    result = prior.render_game_total_hub(section_header, status_info, team_logo, h)
-    st.markdown(_V160_CSS, unsafe_allow_html=True)
-    return result
+    return prior.render_game_total_hub(section_header, status_info, team_logo, h)
 
 
 def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
