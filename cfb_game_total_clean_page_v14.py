@@ -56,7 +56,8 @@ def _clean(value: Any) -> str:
 
 
 def _game_id(game: Mapping[str, Any]) -> str:
-    for key in ("event_id", "game_id", "id"):
+    """Return only an authoritative ESPN event identity for selector state."""
+    for key in ("espn_event_id", "event_id"):
         value = _clean(game.get(key))
         if value:
             return value
@@ -119,7 +120,7 @@ def _team_name(game: Mapping[str, Any], side: str) -> str:
 
 
 def _kickoff_text(game: Mapping[str, Any]) -> str:
-    for key in ("start_time_utc", "kickoff_utc", "start_time", "kickoff", "start_date", "date"):
+    for key in ("kickoff_et", "kickoff_iso", "start_time_utc", "kickoff_utc", "start_time", "kickoff", "start_date", "date"):
         raw = _clean(game.get(key))
         if not raw:
             continue
@@ -129,7 +130,7 @@ def _kickoff_text(game: Mapping[str, Any]) -> str:
         try:
             parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         except ValueError:
-            # Preserve a provider-formatted clock when it cannot be parsed as ISO.
+            # Preserve provider-formatted clocks such as "7:30 PM ET".
             if len(raw) <= 24:
                 return raw
             continue
@@ -201,7 +202,7 @@ def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], s
                 f'href="{escape(href, quote=True)}" target="_self"{aria}>{escape(prefix + label)}</a>'
             )
         else:
-            cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ID unavailable</span>')
+            cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ESPN ID unavailable</span>')
     st.markdown(
         '<div class="gt163-game-wrap" data-testid="gt163-game-strip">'
         '<div class="gt163-game-title"><b>🏟️ GAMES ON THIS DAY</b><span>Swipe or scroll • tap a matchup to load its full analysis</span></div>'
