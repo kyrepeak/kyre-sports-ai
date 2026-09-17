@@ -39,8 +39,8 @@ ROUTE_QUERY_MARKET = "ks_cfb_market"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 MATCHUP_STATE_KEY_PREFIX = "cfb_v152_game_total_matchup_"
-SELECTOR_IDENTITY_ENDPOINT = "/api/v1/cfb/markets/reconciled"
-SELECTOR_IDENTITY_SOURCE = "Kyre Sports API reconciled identity"
+SELECTOR_IDENTITY_ENDPOINT = "/api/v1/cfb/selector/verified-games"
+SELECTOR_IDENTITY_SOURCE = "Kyre Sports API full-slate verified identity"
 
 _V163_CSS = r"""
 <style>
@@ -129,13 +129,11 @@ def _kickoff_text(game: Mapping[str, Any]) -> str:
         raw = _clean(game.get(key))
         if not raw:
             continue
-        # A bare YYYY-MM-DD is a slate date, not a kickoff clock.
         if "T" not in raw and ":" not in raw:
             continue
         try:
             parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         except ValueError:
-            # Preserve provider-formatted clocks such as "7:30 PM ET".
             if len(raw) <= 24:
                 return raw
             continue
@@ -194,23 +192,28 @@ def _same_school(left: Any, right: Any) -> bool:
 
 @st.cache_data(ttl=60, show_spinner=False)
 def _fetch_selector_identity_payload(selected_day: date) -> dict[str, Any]:
-    """Read official CFB event identities through the certified Kyre Sports API.
-
-    The API owns the provider fallback chain (verified snapshot -> GitHub hourly
-    snapshot -> live ESPN FBS/FCS exact-date resolution). V163 never calls ESPN
-    directly and uses only identity-verified rows from the reconciled contract.
-    """
+    """Read the full selected-day official identity slate from Kyre Sports API."""
     base = _clean(os.environ.get(v161.ODDS_API_BASE_ENV)) or v161.ODDS_API_BASE_DEFAULT
     try:
         response = requests.get(
             f"{base.rstrip('/')}{SELECTOR_IDENTITY_ENDPOINT}",
+            params={"game_date": selected_day.isoformat()},
             timeout=20.0,
         )
         response.raise_for_status()
         payload = response.json()
     except (requests.RequestException, ValueError, TypeError):
         return {}
-    return payload if isinstance(payload, dict) else {}
+    if not isinstance(payload, dict):
+        return {}
+    if payload.get("synthetic_ids") is not False:
+        return {}
+    try:
+        if float(payload.get("projection_weight")) != 0.0:
+            return {}
+    except (TypeError, ValueError):
+        return {}
+    return payload
 
 
 def _enrich_selector_ids_from_api(
@@ -219,7 +222,7 @@ def _enrich_selector_ids_from_api(
     selected_day: date,
 ) -> int:
     target_date = selected_day.isoformat()
-    rows = payload.get("lines") if isinstance(payload, Mapping) else None
+    rows = payload.get("games") if isinstance(payload, Mapping) else None
     if not isinstance(rows, list):
         return 0
 
@@ -236,17 +239,15 @@ def _enrich_selector_ids_from_api(
                 continue
             if _clean(row.get("game_date")) != target_date:
                 continue
-            official_id = _clean(row.get("official_game_id"))
+            official_id = _clean(row.get("event_id"))
             if not official_id or official_id in used_ids:
                 continue
-            if not _same_school(away, row.get("official_away_team")):
+            if not _same_school(away, row.get("away_team")):
                 continue
-            if not _same_school(home, row.get("official_home_team")):
+            if not _same_school(home, row.get("home_team")):
                 continue
             candidate_ids[official_id] = row
 
-        # Fail closed on ambiguity. Multiple sportsbook rows for the same
-        # official game collapse to one official ID before this check.
         if len(candidate_ids) != 1:
             continue
         official_id = next(iter(candidate_ids))
