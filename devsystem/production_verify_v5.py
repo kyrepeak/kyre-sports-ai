@@ -84,7 +84,7 @@ def _find_v163_frame(page, timeout_seconds: float = 120.0):
 def _selected_link_event(frame) -> str:
     selected = frame.locator(
         '[data-testid="gt163-game-strip"] '
-        'a.gt163-game-link[aria-current="true"]'
+        'button.gt163-game-link[aria-current="true"]'
     )
     if selected.count() != 1:
         raise ProductionVerificationFailure(
@@ -123,7 +123,7 @@ def _wait_for_initial_top_level_selection(
 
 
 def _switch_target(frame):
-    links = frame.locator('[data-testid="gt163-game-strip"] a.gt163-game-link')
+    links = frame.locator('[data-testid="gt163-game-strip"] button.gt163-game-link')
     count = links.count()
     if count < 2:
         raise ProductionVerificationFailure(
@@ -207,13 +207,31 @@ def _browser_verify_v163_selector(
             )
             v4._assert_v163_surface(body)
 
-            target, target_event, link_count = _switch_target(frame)
-            href = str(target.get_attribute("href") or "")
-            target_scope = str(target.get_attribute("target") or "")
-            if not href.startswith("/?") or target_scope != "_top":
+            target, target_event, button_count = _switch_target(frame)
+            form = target.locator("xpath=ancestor::form[1]")
+            if form.count() != 1:
                 raise ProductionVerificationFailure(
-                    "V163 game card is not top-level persistence safe: "
-                    f"href={href!r} target={target_scope!r}"
+                    "V163 game card is not wrapped in exactly one persistence form"
+                )
+            action = str(form.get_attribute("action") or "")
+            method = str(form.get_attribute("method") or "").casefold()
+            target_scope = str(form.get_attribute("target") or "")
+            hidden_event = form.locator(f'input[name="{EVENT_QUERY_KEY}"]')
+            hidden_event_value = (
+                str(hidden_event.first.get_attribute("value") or "")
+                if hidden_event.count() == 1
+                else ""
+            )
+            if (
+                action != "/"
+                or method != "get"
+                or target_scope != "_top"
+                or hidden_event_value != target_event
+            ):
+                raise ProductionVerificationFailure(
+                    "V163 game form is not top-level persistence safe: "
+                    f"action={action!r} method={method!r} target={target_scope!r} "
+                    f"hidden_event={hidden_event_value!r} expected={target_event!r}"
                 )
 
             target.click(timeout=30000)
@@ -249,7 +267,7 @@ def _browser_verify_v163_selector(
                 **evidence,
                 "game_total_route": f"{CFB_SPORT} -> {GAME_TOTAL_MARKET}",
                 "certification_date": CERT_DATE,
-                "game_link_count": link_count,
+                "game_button_count": button_count,
                 "initial_event_id": initial_event,
                 "clicked_event_id": target_event,
                 "reloaded_event_id": reloaded_event,
