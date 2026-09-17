@@ -28,7 +28,7 @@ class V152BrowserQAFailure(RuntimeError):
     pass
 
 
-def _set_target_date(page, frame) -> str:
+def _set_target_date(page, frame) -> tuple[str, Any]:
     widget = frame.get_by_test_id("stDateInput").filter(has_text=DATE_LABEL).first
     if widget.count() == 0:
         widget = frame.get_by_test_id("stDateInput").first
@@ -70,19 +70,21 @@ def _set_target_date(page, frame) -> str:
     page.keyboard.press("Tab")
     page.keyboard.press("Escape")
     page.wait_for_timeout(2200)
-    combo = frame.get_by_role("combobox", name=MATCHUP_LABEL, exact=True)
+
+    fresh_frame, _ = base._find_app_frame(page, timeout_seconds=60.0)
+    combo = fresh_frame.get_by_role("combobox", name=MATCHUP_LABEL, exact=True)
     try:
         combo.wait_for(state="visible", timeout=45000)
     except Exception as exc:
-        body = frame.locator("body").inner_text(timeout=5000)
+        body = fresh_frame.locator("body").inner_text(timeout=5000)
         raise V152BrowserQAFailure(
             "Game Total matchup selector did not appear after setting "
             f"{TARGET_DAY}; page tail={body[-1200:]!r}"
         ) from exc
-    return f"{TARGET_DAY} ({', '.join(diag)})"
+    return f"{TARGET_DAY} ({', '.join(diag)})", fresh_frame
 
 
-def _choose_target_matchup(page, frame) -> str:
+def _choose_target_matchup(page, frame) -> tuple[str, Any]:
     combo = frame.get_by_role("combobox", name=MATCHUP_LABEL, exact=True)
     combo.wait_for(state="visible", timeout=45000)
     combo.click()
@@ -93,7 +95,8 @@ def _choose_target_matchup(page, frame) -> str:
         raise V152BrowserQAFailure(
             f"Target matchup was not selected; combobox={observed!r}"
         )
-    return observed
+    fresh_frame, _ = base._find_app_frame(page, timeout_seconds=60.0)
+    return observed, fresh_frame
 
 
 def _visible(frame, testid: str):
@@ -224,8 +227,8 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             if HEARTBEAT not in body:
                 raise V152BrowserQAFailure("V152 production heartbeat is missing")
 
-            observed_date = _set_target_date(page, frame)
-            matchup = _choose_target_matchup(page, frame)
+            observed_date, frame = _set_target_date(page, frame)
+            matchup, frame = _choose_target_matchup(page, frame)
             body = base._wait_for_text(frame, "MONSTER MATCHUP", timeout_seconds=60.0)
             if TARGET_AWAY not in body or TARGET_HOME not in body:
                 raise V152BrowserQAFailure(
