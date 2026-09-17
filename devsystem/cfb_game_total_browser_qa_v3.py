@@ -37,6 +37,7 @@ REQUIRED_VISIBLE = (
     "TOP-5 SLATE SCANNER",
 )
 FULL_RENDER_MARKER = "VIEW TOP 5 →"
+EMPTY_SLATE_MARKER = "No verified FBS-scoped games were returned for this date."
 FORBIDDEN_VISIBLE = (
     "MONSTER SPORTS INTELLIGENCE",
     "College Football Game Total — Final",
@@ -75,8 +76,21 @@ def _selected_date_from_query(page) -> str:
     return (parsed.get(DATE_QUERY_KEY) or [""])[-1]
 
 
+def _is_direct_v161_surface(body: str) -> bool:
+    return (
+        PRODUCTION_HEARTBEAT in body
+        and "GAME DAY" in body
+        and (FULL_RENDER_MARKER in body or EMPTY_SLATE_MARKER in body)
+    )
+
+
 def _assert_visible_contract(body: str) -> None:
-    missing = [text for text in REQUIRED_VISIBLE if text not in body]
+    required = (
+        ("GAME DAY", EMPTY_SLATE_MARKER)
+        if EMPTY_SLATE_MARKER in body
+        else REQUIRED_VISIBLE
+    )
+    missing = [text for text in required if text not in body]
     if missing:
         raise GameTotalV161BrowserQAFailure(
             "V161 Game Total visible contract missing: " + " | ".join(missing)
@@ -93,6 +107,23 @@ def _assert_visible_contract(body: str) -> None:
         )
 
 
+def _wait_for_v161_body(frame, timeout_seconds: float = 45.0) -> str:
+    deadline = time.monotonic() + timeout_seconds
+    last_body = ""
+    while time.monotonic() < deadline:
+        try:
+            last_body = frame.locator("body").inner_text(timeout=5000)
+        except Exception:
+            last_body = ""
+        if _is_direct_v161_surface(last_body):
+            return last_body
+        frame.page.wait_for_timeout(500)
+    raise GameTotalV161BrowserQAFailure(
+        "V161 Game Total surface did not reach full or valid empty-slate state: "
+        + last_body[:700]
+    )
+
+
 def _find_direct_v161_frame(page, timeout_seconds: float = 45.0):
     deadline = time.monotonic() + timeout_seconds
     last_scan: list[dict] = []
@@ -104,7 +135,7 @@ def _find_direct_v161_frame(page, timeout_seconds: float = 45.0):
             except Exception:
                 body = ""
             scans.append({"index": index, "url": frame.url, "body_start": body[:700]})
-            if PRODUCTION_HEARTBEAT in body and FULL_RENDER_MARKER in body:
+            if _is_direct_v161_surface(body):
                 return frame, scans
         last_scan = scans
         page.wait_for_timeout(1000)
@@ -194,11 +225,7 @@ def run(
 
             date_after_click, day_buttons = _click_different_day(page, frame)
             frame_after_click, click_scan = _find_direct_v161_frame(page, timeout_seconds=90.0)
-            body_after_click = base._wait_for_text(
-                frame_after_click,
-                FULL_RENDER_MARKER,
-                timeout_seconds=90.0,
-            )
+            body_after_click = _wait_for_v161_body(frame_after_click, timeout_seconds=90.0)
             _assert_visible_contract(body_after_click)
             _day_buttons(frame_after_click)
 
@@ -207,9 +234,8 @@ def run(
                 page,
                 timeout_seconds=90.0,
             )
-            body_after_reload = base._wait_for_text(
+            body_after_reload = _wait_for_v161_body(
                 frame_after_reload,
-                FULL_RENDER_MARKER,
                 timeout_seconds=90.0,
             )
             _assert_visible_contract(body_after_reload)
