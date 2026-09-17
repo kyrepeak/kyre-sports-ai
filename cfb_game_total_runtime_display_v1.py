@@ -121,6 +121,27 @@ def _overlay_snapshot_evidence(
     return out
 
 
+def _overlay_game_snapshot_evidence(
+    display_game: Mapping[str, Any],
+    snap: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Copy verified Game-Total-only environment evidence onto the display game."""
+    out = dict(display_game)
+    for key in (
+        "weather",
+        "temperature",
+        "wind",
+        "wind_mph",
+        "forecast",
+        "weather_source",
+        "weather_updated_at",
+    ):
+        value = snap.get(key)
+        if value not in (None, ""):
+            out[key] = value
+    return out
+
+
 def _apply_deterministic_snapshot(
     safe_game: dict[str, Any],
     frozen_away: Mapping[str, Any],
@@ -129,6 +150,7 @@ def _apply_deterministic_snapshot(
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     display_game = dict(safe_game)
     frozen_runtime._merge_game_snapshot(display_game, snap)
+    display_game = _overlay_game_snapshot_evidence(display_game, snap)
 
     away_snap = snap.get("away") if isinstance(snap.get("away"), Mapping) else {}
     home_snap = snap.get("home") if isinstance(snap.get("home"), Mapping) else {}
@@ -202,6 +224,7 @@ def reconcile_display_bundle(
             home_snap = snap.get("home") if isinstance(snap.get("home"), Mapping) else {}
             away = _overlay_snapshot_evidence(away, away_snap)
             home = _overlay_snapshot_evidence(home, home_snap)
+            display_game = _overlay_game_snapshot_evidence(display_game, snap)
             diag["game_total_snapshot_overlay"] = True
         else:
             diag["game_total_snapshot_overlay"] = False
@@ -241,6 +264,7 @@ __all__ = [
     "MODEL_VERSION",
     "_find_game_total_snapshot",
     "_load_game_total_snapshot",
+    "_overlay_game_snapshot_evidence",
     "_overlay_snapshot_evidence",
     "reconcile_display_bundle",
 ]
