@@ -156,11 +156,13 @@ def _assert_record(frame, side: str) -> str:
 def _assert_compact_team_card(frame, side: str, team_name: str) -> dict[str, str]:
     card = _visible(frame, f"gt155-{side}-team-card")
     text = card.inner_text().strip()
-    if team_name not in text:
+    normalized = text.casefold()
+    if team_name.casefold() not in normalized:
         raise V152BrowserQAFailure(
             f"{side} compact team card is missing {team_name!r}: {text!r}"
         )
-    if "PPG" not in text or "Allowed" not in text or "Recent form" not in text:
+    required_labels = ("ppg", "allowed", "recent form")
+    if any(label not in normalized for label in required_labels):
         raise V152BrowserQAFailure(
             f"{side} compact team card is missing required evidence labels: {text!r}"
         )
