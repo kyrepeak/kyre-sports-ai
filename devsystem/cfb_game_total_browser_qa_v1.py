@@ -1,8 +1,8 @@
-"""Real-browser QA for the CFB Game Total V150 route.
+"""Real-browser QA for the active CFB Game Total V160 route.
 
 This is deliberately separate from the frozen O/U V38 browser contract. It
 proves the user-visible selector routes College Football -> Game Total to the
-V150 page itself, rather than certifying a generic router caption.
+V160 visual-parity page itself, rather than certifying a generic router caption.
 """
 from __future__ import annotations
 
@@ -18,10 +18,15 @@ CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 CFB_MARKET_LABEL = "🎯 CFB Market"
 REQUIRED_VISIBLE = (
-    "CFB GAME TOTAL • MONSTER DASHBOARD",
-    "College Football Game Total",
+    "CFB GAME TOTAL • CLEAN PAGE V160 ACTIVE",
+    "GAME TOTAL ANALYSIS",
+    "TEAM EVIDENCE",
+    "GAME TOTAL EVIDENCE • STEPS 1–12",
+    "FINAL MODEL SUMMARY",
+    "TOP-5 SLATE SCANNER",
     "CFB Game Total slate date",
 )
+FULL_RENDER_MARKER = "TOP-5 SLATE SCANNER"
 FORBIDDEN_VISIBLE = (
     "College Football Game Total — Final",
 )
@@ -74,16 +79,20 @@ def run(
             )
 
             base._choose(page, frame, 1, GAME_TOTAL_MARKET)
+
+            # Streamlit can expose the V160 identity badge before the frozen
+            # dashboard body has finished streaming. Certify completion using
+            # the final visible dashboard section, then inspect the full body.
             body = base._wait_for_text(
                 frame,
-                REQUIRED_VISIBLE[0],
-                timeout_seconds=60.0,
+                FULL_RENDER_MARKER,
+                timeout_seconds=90.0,
             )
 
             missing = [text for text in REQUIRED_VISIBLE if text not in body]
             if missing:
                 raise GameTotalBrowserQAFailure(
-                    "V150 Game Total visible contract missing: " + " | ".join(missing)
+                    "V160 Game Total visible contract missing: " + " | ".join(missing)
                 )
 
             stale = [text for text in FORBIDDEN_VISIBLE if text in body]
@@ -98,23 +107,24 @@ def run(
                     f"Game Total route runtime error marker: {forbidden_error}"
                 )
 
-            screenshot = artifacts / "cfb_game_total_v150_green.png"
+            screenshot = artifacts / "cfb_game_total_v160_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
             result = {
                 "status": "GREEN",
                 "sport": CFB_SPORT,
                 "market": GAME_TOTAL_MARKET,
                 "required_visible": list(REQUIRED_VISIBLE),
+                "full_render_marker": FULL_RENDER_MARKER,
                 "forbidden_visible": list(FORBIDDEN_VISIBLE),
                 "health": health,
                 "initial_frame_scan": scans,
                 "screenshot": str(screenshot),
             }
-            (artifacts / "cfb_game_total_v150.json").write_text(
+            (artifacts / "cfb_game_total_v160.json").write_text(
                 json.dumps(result, indent=2, sort_keys=True),
                 encoding="utf-8",
             )
-            print("CFB_GAME_TOTAL_V150_BROWSER_GREEN")
+            print("CFB_GAME_TOTAL_V160_BROWSER_GREEN")
             print(json.dumps(result, indent=2, sort_keys=True))
             return result
         finally:
