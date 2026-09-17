@@ -36,6 +36,7 @@ def test_v5_proves_switch_and_hard_refresh_persistence_without_weakening_gate():
     source = (ROOT / "devsystem" / "production_verify_v5.py").read_text(
         encoding="utf-8"
     )
+    assert "_wait_for_initial_top_level_selection" in source
     assert "_switch_target" in source
     assert "_wait_for_top_level_selection" in source
     assert "page.reload" in source
