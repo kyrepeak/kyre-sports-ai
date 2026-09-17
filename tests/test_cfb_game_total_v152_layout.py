@@ -38,15 +38,17 @@ def test_compact_visual_hierarchy_precedes_model_and_deep_audits() -> None:
     hero = source.index("_monster_matchup_hero(")
     game_strip = source.index("_compact_game_strip(", hero)
     scoring = source.index("_scoring_defense_summary(", game_strip)
-    evidence = source.index("_render_evidence_center(", scoring)
-    model = source.index("_status_cards(", evidence)
+    evidence = source.index("_render_steps_1_10_rail(", scoring)
+    raw_evidence = source.index('st.expander("🔬 Raw Steps 1–10 evidence', evidence)
+    model = source.index("_status_cards(", raw_evidence)
     deep = source.index('st.expander("📊 Deep model evidence', model)
     top5 = source.index('st.expander("🏆 Top-5 slate scanner', deep)
-    assert hero < game_strip < scoring < evidence < model < deep < top5
+    assert hero < game_strip < scoring < evidence < raw_evidence < model < deep < top5
 
 
 def test_deep_sections_stay_collapsed_and_mobile_reflows() -> None:
     source = _source()
+    assert 'st.expander("🔬 Raw Steps 1–10 evidence", expanded=False)' in source
     assert 'st.expander("📊 Deep model evidence • Step 11 distribution", expanded=False)' in source
     assert 'st.expander("🏁 Deep model evidence • Step 12 final synthesis", expanded=False)' in source
     assert 'st.expander("🏆 Top-5 slate scanner", expanded=False)' in source
@@ -78,14 +80,16 @@ def test_connected_evidence_shell_wraps_existing_flow_without_changing_math() ->
     assert "with st.container(border=True):" in source
 
     shell = source.index('data-testid="gt153-connected-evidence-shell"')
-    evidence = source.index("_render_evidence_center(", shell)
+    steps = source.index("_render_steps_1_10_rail(", shell)
+    raw_evidence = source.index('st.expander("🔬 Raw Steps 1–10 evidence', steps)
+    evidence = source.index("prior._render_evidence_center(", raw_evidence)
     model = source.index("_status_cards(", evidence)
     step11 = source.index('st.expander("📊 Deep model evidence', model)
     step12 = source.index('st.expander("🏁 Deep model evidence', step11)
     top5 = source.index('st.expander("🏆 Top-5 slate scanner', step12)
-    assert shell < evidence < model < step11 < step12 < top5
+    assert shell < steps < raw_evidence < evidence < model < step11 < step12 < top5
 
-    # Step 1 is presentation-only. The frozen model must still run exactly once
+    # Step 2 is presentation-only. The frozen model must still run exactly once
     # on the untouched selected game before display reconciliation.
     assert source.count("selected_result = frozen_page.slate.analyze_game(game, selected_day)") == 1
     assert source.index("selected_result = frozen_page.slate.analyze_game(game, selected_day)") < source.index(
@@ -93,6 +97,49 @@ def test_connected_evidence_shell_wraps_existing_flow_without_changing_math() ->
     )
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
+
+
+def test_step2_has_one_compact_steps_1_10_rail_with_approved_labels() -> None:
+    source = _source()
+    assert 'data-testid="gt154-steps-1-10-rail"' in source
+    assert 'data-testid="gt154-step-summary"' in source
+    assert "def _render_steps_1_10_rail(" in source
+
+    approved_labels = (
+        "Team Identity",
+        "Team Profile",
+        "Matchup",
+        "Pace",
+        "Explosive Plays",
+        "Red Zone",
+        "Third Down",
+        "Turnovers",
+        "Environment",
+        "History",
+    )
+    for number, label in enumerate(approved_labels, start=1):
+        assert f'({number}, "{label}"' in source
+        assert f'gt154-step-{number}' in source
+
+
+def test_step2_cards_use_right_status_badges_and_preserve_ready_check_truth() -> None:
+    source = _source()
+    assert ".gt154-step-status" in source
+    assert "margin-left:auto" in source
+    assert "READY" in source
+    assert "CHECK" in source
+    assert "_existing_step_status(" in source
+    # Step 10 History must fail closed when the existing history evidence is absent.
+    assert '10: "CHECK"' in source
+
+
+def test_step2_raw_evidence_is_collapsed_below_compact_story() -> None:
+    source = _source()
+    rail = source.index("_render_steps_1_10_rail(")
+    raw = source.index('st.expander("🔬 Raw Steps 1–10 evidence", expanded=False)', rail)
+    legacy = source.index("prior._render_evidence_center(", raw)
+    summary = source.index('data-testid="gt154-step-summary"')
+    assert summary < raw < legacy
 
 
 def test_router_targets_v6_only_for_v152_game_total() -> None:
