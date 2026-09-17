@@ -262,7 +262,10 @@ def run_browser_qa(
             )
 
             _choose(page, frame, 1, CFB_MARKET)
-            body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[0], 60.0)
+            # The V39 ACTIVE caption renders before the lower dashboard. Waiting
+            # for the final required marker proves the full Streamlit rerun has
+            # reached the Steps 11-12 shell before we snapshot the body.
+            body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[-1], 60.0)
 
             missing_markers = [
                 marker for marker in CFB_REQUIRED_MARKERS
