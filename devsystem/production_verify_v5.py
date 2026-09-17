@@ -93,6 +93,35 @@ def _selected_link_event(frame) -> str:
     return str(selected.first.get_attribute("data-event-id") or "").strip()
 
 
+def _wait_for_initial_top_level_selection(
+    page,
+    *,
+    timeout_seconds: float = 120.0,
+):
+    """Wait until Streamlit finishes its initial query-param persistence rerun."""
+    deadline = time.monotonic() + timeout_seconds
+    last_scans: list[dict[str, Any]] = []
+    last_selected = ""
+    last_outer = ""
+    while time.monotonic() < deadline:
+        frame, body, scans = _scan_v163_frame(page)
+        last_scans = scans
+        if frame is not None:
+            try:
+                last_selected = _selected_link_event(frame)
+            except Exception:
+                last_selected = ""
+            last_outer = _event_from_url(page.url)
+            if last_outer and last_selected and last_outer == last_selected:
+                return frame, body, scans, last_outer
+        page.wait_for_timeout(750)
+    raise ProductionVerificationFailure(
+        "V163 initial selected game did not finish persisting before switch: "
+        f"outer={last_outer!r} selected={last_selected!r} url={page.url!r} scans="
+        + json.dumps(last_scans, ensure_ascii=False)
+    )
+
+
 def _switch_target(frame):
     links = frame.locator('[data-testid="gt163-game-strip"] a.gt163-game-link')
     count = links.count()
@@ -173,6 +202,11 @@ def _browser_verify_v163_selector(
                     f"Production Game Total V163 runtime error marker: {forbidden}"
                 )
 
+            frame, body, initial_scans, initial_event = _wait_for_initial_top_level_selection(
+                page,
+            )
+            v4._assert_v163_surface(body)
+
             target, target_event, link_count = _switch_target(frame)
             href = str(target.get_attribute("href") or "")
             target_scope = str(target.get_attribute("target") or "")
@@ -216,6 +250,7 @@ def _browser_verify_v163_selector(
                 "game_total_route": f"{CFB_SPORT} -> {GAME_TOTAL_MARKET}",
                 "certification_date": CERT_DATE,
                 "game_link_count": link_count,
+                "initial_event_id": initial_event,
                 "clicked_event_id": target_event,
                 "reloaded_event_id": reloaded_event,
                 "outer_wrapper_url": page.url,
