@@ -5,10 +5,15 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "cfb_game_total_clean_page_v6.py"
+V7 = ROOT / "cfb_game_total_clean_page_v7.py"
 
 
 def _source() -> str:
     return PAGE.read_text(encoding="utf-8")
+
+
+def _v7_source() -> str:
+    return V7.read_text(encoding="utf-8")
 
 
 def test_v6_is_additive_over_closed_v5_and_keeps_frozen_boundaries() -> None:
@@ -54,8 +59,6 @@ def test_deep_sections_stay_collapsed_and_mobile_reflows() -> None:
     assert 'st.expander("🏆 Top-5 slate scanner", expanded=False)' in source
     assert "@media(max-width:760px)" in source
     assert "grid-template-columns:1fr" in source
-    # Responsive media-query max-width is required. What we reject is a fixed
-    # outer dashboard width that would make the phone layout scatter/overflow.
     assert not re.search(r"\.gt152-shell\{[^}]*max-width:", source)
     assert not re.search(r"\.gt152-hero\{[^}]*max-width:", source)
 
@@ -89,8 +92,6 @@ def test_connected_evidence_shell_wraps_existing_flow_without_changing_math() ->
     top5 = source.index('st.expander("🏆 Top-5 slate scanner', step12)
     assert shell < steps < raw_evidence < evidence < model < step11 < step12 < top5
 
-    # Step 2 is presentation-only. The frozen model must still run exactly once
-    # on the untouched selected game before display reconciliation.
     assert source.count("selected_result = frozen_page.slate.analyze_game(game, selected_day)") == 1
     assert source.index("selected_result = frozen_page.slate.analyze_game(game, selected_day)") < source.index(
         "runtime_display.reconcile_display_bundle("
@@ -129,7 +130,6 @@ def test_step2_cards_use_right_status_badges_and_preserve_ready_check_truth() ->
     assert "READY" in source
     assert "CHECK" in source
     assert "_existing_step_status(" in source
-    # Step 10 History must fail closed when the existing history evidence is absent.
     assert '10: "CHECK"' in source
 
 
@@ -142,6 +142,41 @@ def test_step2_raw_evidence_is_collapsed_below_compact_story() -> None:
     assert summary < raw < legacy
 
 
-def test_router_targets_v6_only_for_v152_game_total() -> None:
+def test_step3_v7_is_additive_over_closed_v6_and_keeps_frozen_boundaries() -> None:
+    source = _v7_source()
+    assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v6"' in source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
+    assert "MAY_MODIFY_PROJECTION = False" in source
+    assert "import cfb_game_total_clean_page_v6 as prior" in source
+
+
+def test_step3_team_cards_join_connected_story_before_raw_drawer() -> None:
+    source = _v7_source()
+    assert 'data-testid="gt155-team-evidence-flow"' in source
+    assert 'data-testid="gt155-away-team-card"' in source
+    assert 'data-testid="gt155-home-team-card"' in source
+    assert "_ORIGINAL_STEPS_1_10(identity, away, home, display_game)" in source
+    assert "_render_compact_team_cards(away, home)" in source
+    assert source.index("_ORIGINAL_STEPS_1_10(identity, away, home, display_game)") < source.index(
+        "_render_compact_team_cards(away, home)"
+    )
+
+
+def test_step3_uses_one_existing_raw_drawer_for_both_full_team_bodies() -> None:
+    source = _v7_source()
+    assert "def _render_raw_team_evidence(" in source
+    assert source.count("prior.prior._render_team_evidence_body(") == 2
+    assert "st.expander(" not in source
+    assert "prior.prior._render_evidence_center = _render_raw_team_evidence" in source
+
+
+def test_step3_hooks_are_restored_after_render() -> None:
+    source = _v7_source()
+    assert "finally:" in source
+    assert "prior._render_steps_1_10_rail = original_steps" in source
+    assert "prior.prior._render_evidence_center = original_evidence" in source
+
+
+def test_router_targets_v7_only_for_v152_game_total() -> None:
     router = (ROOT / "streamlit_memory_lazy_router_v152.py").read_text(encoding="utf-8")
-    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v6"' in router
+    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v7"' in router
