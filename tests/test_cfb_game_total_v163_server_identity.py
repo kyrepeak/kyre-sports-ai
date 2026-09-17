@@ -7,19 +7,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_render_identity_route_exists_and_is_fail_closed() -> None:
-    source = (ROOT / "sports_api" / "api" / "cfb_market_identity_v1.py").read_text(encoding="utf-8")
-    assert '@router.get("/verified-games")' in source
-    assert "def verified_games_for_date(" in source
+def test_live_cfb_router_exposes_selector_identity_and_is_fail_closed() -> None:
+    source = (ROOT / "sports_api" / "api" / "cfb_odds_v1.py").read_text(encoding="utf-8")
+    assert '@router.get("/selector/verified-games")' in source
+    assert "def selector_verified_games(" in source
     assert '"synthetic_ids": False' in source
     assert '"projection_weight": 0.0' in source
+    assert "load_verified_games()" in source
     assert "_fetch_github_verified_games()" in source
     assert "_fetch_espn_verified_games(requested_day)" in source
 
 
 def test_v163_selector_uses_render_identity_before_direct_espn() -> None:
     source = (ROOT / "cfb_game_total_clean_page_v14.py").read_text(encoding="utf-8")
-    assert 'IDENTITY_ENDPOINT = "/api/v1/cfb/markets/verified-games"' in source
+    assert 'IDENTITY_ENDPOINT = "/api/v1/cfb/selector/verified-games"' in source
     assert "def _fetch_selector_server_games(" in source
     assert "def _server_games_as_espn_payload(" in source
     load_start = source.index("def _load_games(")
@@ -31,8 +32,6 @@ def test_v163_selector_uses_render_identity_before_direct_espn() -> None:
 
 
 def test_server_identity_adapter_preserves_official_event_id_shape() -> None:
-    # Contract fixture mirrors the normalized server response. The implementation
-    # must adapt it to the frozen ESPN matcher instead of accepting NCAA game_id.
     row = {
         "event_id": "401752999",
         "game_date": date(2026, 9, 19).isoformat(),
