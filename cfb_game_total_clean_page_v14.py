@@ -21,6 +21,7 @@ import streamlit as st
 
 import cfb_game_total_clean_page_v13 as prior_v162
 import cfb_game_total_clean_page_v11 as v161
+import cfb_schedule_v1 as schedule_v1
 
 MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V14 • V163 VISIBLE GAME SELECTOR"
 MARKET = prior_v162.MARKET
@@ -162,9 +163,41 @@ def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
     return "?" + urlencode(params)
 
 
+@st.cache_data(ttl=120, show_spinner=False)
+def _fetch_selector_espn_payload(selected_day: date) -> dict[str, Any]:
+    """Fetch the date-scoped ESPN scoreboard without the groups=80 filter.
+
+    This is a V163 presentation-identity fallback only. The frozen schedule/model
+    remains the data owner; the payload is used solely to recover an official
+    ESPN event_id when the grouped enrichment path leaves a verified NCAA row
+    unmatched.
+    """
+    payload, _attempts = schedule_v1._fetch_json_with_fallback(
+        schedule_v1.ESPN_SCOREBOARD_URL,
+        {
+            "dates": selected_day.strftime("%Y%m%d"),
+            "limit": 500,
+        },
+        "ESPN ungrouped V163 selector identity",
+    )
+    return payload if isinstance(payload, dict) else {}
+
+
 def _load_games(selected_day: date) -> list[Mapping[str, Any]]:
-    games, _diag = v161.prior.frozen_page.frozen_v2.frozen_v1.schedule.load_with_diagnostics(selected_day)
-    return [game for game in (games or []) if isinstance(game, Mapping)]
+    schedule = v161.prior.frozen_page.frozen_v2.frozen_v1.schedule
+    games, _diag = schedule.load_with_diagnostics(selected_day)
+    copied = [dict(game) for game in (games or []) if isinstance(game, Mapping)]
+
+    missing = [game for game in copied if not _game_id(game)]
+    if missing:
+        payload = _fetch_selector_espn_payload(selected_day)
+        if payload:
+            schedule_v1._enrich_with_espn(
+                missing,
+                payload,
+                selected_day.isoformat(),
+            )
+    return copied
 
 
 def _sync_frozen_matchup_state(selected_day: date, games: Sequence[Mapping[str, Any]]) -> int:
@@ -255,8 +288,10 @@ __all__ = [
     "ROUTE_QUERY_MARKET",
     "ROUTE_QUERY_SPORT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_fetch_selector_espn_payload",
     "_game_id",
     "_game_label",
+    "_load_games",
     "_query_event_id",
     "_selected_game_index",
     "_selector_href",
