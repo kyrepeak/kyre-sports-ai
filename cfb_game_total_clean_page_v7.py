@@ -20,6 +20,7 @@ FROZEN_GAME_TOTAL_HUB = prior.FROZEN_GAME_TOTAL_HUB
 FROZEN_PRESENTATION = "cfb_game_total_clean_page_v6"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
+V155_ACTIVE_MARKER = "CFB_GAME_TOTAL_V155_TEAM_EVIDENCE_ACTIVE"
 
 frozen_page = prior.frozen_page
 logo_v3 = prior.logo_v3
@@ -85,40 +86,45 @@ def _render_compact_team_cards(away: Mapping[str, Any], home: Mapping[str, Any])
 
 def _render_raw_team_evidence(away: Mapping[str, Any], home: Mapping[str, Any]) -> None:
     """Render both full team bodies inside V6's one existing raw drawer."""
+    render_globals = prior.render_game_total_hub.__globals__
+    v5_module = render_globals["prior"]
     away_team = _clean(away.get("team")) or "Away team"
     home_team = _clean(home.get("team")) or "Home team"
     st.markdown(f"**{away_team} • full evidence**")
-    prior.prior._render_team_evidence_body(away)
+    v5_module._render_team_evidence_body(away)
     st.divider()
     st.markdown(f"**{home_team} • full evidence**")
-    prior.prior._render_team_evidence_body(home)
-
-
-_ORIGINAL_STEPS_1_10 = prior._render_steps_1_10_rail
-_ORIGINAL_EVIDENCE_CENTER = prior.prior._render_evidence_center
-
-
-def _render_steps_1_10_with_team_cards(
-    identity: Mapping[str, Any],
-    away: Mapping[str, Any],
-    home: Mapping[str, Any],
-    display_game: Mapping[str, Any],
-) -> None:
-    _ORIGINAL_STEPS_1_10(identity, away, home, display_game)
-    _render_compact_team_cards(away, home)
+    v5_module._render_team_evidence_body(home)
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
     """Run frozen V6 with presentation-only evidence hooks, then restore them."""
-    original_steps = prior._render_steps_1_10_rail
-    original_evidence = prior.prior._render_evidence_center
-    prior._render_steps_1_10_rail = _render_steps_1_10_with_team_cards
-    prior.prior._render_evidence_center = _render_raw_team_evidence
+    st.markdown(
+        f'<div data-testid="gt155-active" style="display:none">{V155_ACTIVE_MARKER}</div>',
+        unsafe_allow_html=True,
+    )
+
+    render_globals = prior.render_game_total_hub.__globals__
+    v5_module = render_globals["prior"]
+    original_steps = render_globals["_render_steps_1_10_rail"]
+    original_evidence = v5_module._render_evidence_center
+
+    def render_steps_with_team_cards(
+        identity: Mapping[str, Any],
+        away: Mapping[str, Any],
+        home: Mapping[str, Any],
+        display_game: Mapping[str, Any],
+    ) -> None:
+        original_steps(identity, away, home, display_game)
+        _render_compact_team_cards(away, home)
+
+    render_globals["_render_steps_1_10_rail"] = render_steps_with_team_cards
+    v5_module._render_evidence_center = _render_raw_team_evidence
     try:
         return prior.render_game_total_hub(section_header, status_info, team_logo, h)
     finally:
-        prior._render_steps_1_10_rail = original_steps
-        prior.prior._render_evidence_center = original_evidence
+        render_globals["_render_steps_1_10_rail"] = original_steps
+        v5_module._render_evidence_center = original_evidence
 
 
 def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
@@ -133,6 +139,7 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "V155_ACTIVE_MARKER",
     "render_cfb_hub",
     "render_game_total_hub",
 ]
