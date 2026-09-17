@@ -29,19 +29,40 @@ def record_bootstrap_import_ms(value: float) -> None:
 
 
 def _game_total_route_active() -> bool:
-    return prior._game_total_route_active()
+    return (
+        str(st.session_state.get("ks_sport_touch") or "") == CFB_SPORT_LABEL
+        and str(st.session_state.get("ks_cfb_market_touch") or "") == GAME_TOTAL_MARKET
+    )
 
 
 def _persist_game_total_route_query() -> None:
-    return prior._persist_game_total_route_query()
+    """Persist exact V161 Game Total state without a private V155 dependency."""
+    try:
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) != CFB_SPORT_LABEL:
+            st.query_params[cfb_route_base.ROUTE_QUERY_SPORT] = CFB_SPORT_LABEL
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_MARKET) != GAME_TOTAL_MARKET:
+            st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET
+    except Exception:
+        pass
 
 
 def _query_requests_game_total() -> bool:
-    return prior._query_requests_game_total()
+    return (
+        cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) == CFB_SPORT_LABEL
+        and cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_MARKET) == GAME_TOTAL_MARKET
+    )
 
 
 def _restore_game_total_route_from_query() -> bool:
-    return prior._restore_game_total_route_from_query()
+    current_sport = str(st.session_state.get("ks_sport_touch") or "").strip()
+    current_market = str(st.session_state.get("ks_cfb_market_touch") or "").strip()
+    if current_sport or current_market:
+        return False
+    if not _query_requests_game_total():
+        return False
+    st.session_state["ks_sport_touch"] = CFB_SPORT_LABEL
+    st.session_state["ks_cfb_market_touch"] = GAME_TOTAL_MARKET
+    return True
 
 
 def _render_production_heartbeat() -> None:
