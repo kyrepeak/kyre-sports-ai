@@ -1,0 +1,77 @@
+name: DevSystem production verification V5
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "streamlit_*.py"
+      - "cfb_*.py"
+      - "sports_api/**"
+      - "data/**"
+      - "requirements*.txt"
+      - "devsystem/production_verify_v1.py"
+      - "devsystem/production_verify_v2.py"
+      - "devsystem/production_verify_v3.py"
+      - "devsystem/production_verify_v4.py"
+      - "devsystem/production_verify_v5.py"
+      - "devsystem/production_identity_verify_v1.py"
+      - "devsystem/production_targets_v1.json"
+      - "tests/test_devsystem_production_verify_v1.py"
+      - "tests/test_devsystem_production_verify_v2.py"
+      - "tests/test_devsystem_production_verify_v3.py"
+      - "tests/test_devsystem_production_verify_v4.py"
+      - "tests/test_devsystem_production_verify_v5.py"
+      - ".github/workflows/devsystem-production-verification-v5.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devsystem-production-main-v5
+  cancel-in-progress: true
+
+jobs:
+  production-verification-v5:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install production verification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests pytest playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Self-test production verification V5 contract
+        run: |
+          python -m pytest -q \
+            tests/test_devsystem_production_verify_v1.py \
+            tests/test_devsystem_production_verify_v2.py \
+            tests/test_devsystem_production_verify_v3.py \
+            tests/test_devsystem_production_verify_v4.py \
+            tests/test_devsystem_production_verify_v5.py \
+            tests/test_devsystem_production_identity_verify_v1.py
+
+      - name: Verify immutable Render production identity
+        run: python devsystem/production_identity_verify_v1.py
+
+      - name: Verify deployed Streamlit freshness and frame-aware V163 event persistence
+        run: |
+          python devsystem/production_verify_v5.py \
+            --artifact-dir artifacts/production-verification-v5
+
+      - name: Upload production V5 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devsystem-production-verification-v5-${{ github.run_id }}
+          path: artifacts/production-verification-v5
+          if-no-files-found: warn
+          retention-days: 7
