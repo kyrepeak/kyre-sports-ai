@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-CERT = Path(__file__).resolve().parents[1] / "devsystem" / "cfb_game_total_browser_qa_v2.py"
+CERT = Path(__file__).resolve().parents[1] / "devsystem" / "cfb_game_total_browser_qa_v3.py"
 
 
 def _source() -> str:
