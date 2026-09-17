@@ -1,13 +1,14 @@
 """CFB Over/Under Clean Page V39 — compact evidence renderer.
 
-Presentation-only additive page over certified Clean Page V38. V39 replaces the
-legacy lower-page Step 1-10 audit wall with compact, truthful evidence cards.
-Frozen projection/probability math, schedule/runtime analysis, final model,
-thresholds, ranking behavior and sportsbook projection influence are unchanged.
+Presentation-only additive page over certified Clean Page V38. Schedule, market,
+runtime analysis, frozen model engines, thresholds, probabilities, full-slate
+ranking, and sportsbook influence are reused unchanged. V39 replaces only the
+visible lower Steps 1-10 presentation so verified team identity is not confused
+with a missing step-specific provider metric.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from copy import deepcopy
 from html import escape
 from time import perf_counter
 from typing import Any, Mapping
@@ -17,13 +18,14 @@ import streamlit as st
 import cfb_over_under_clean_page_v38 as frozen_page
 
 MODEL_VERSION = "CFB O/U CLEAN PAGE V39 • COMPACT EVIDENCE RENDERER"
-MARKET = "Over/Under"
-FROZEN_PAGE = "cfb_over_under_clean_page_v38"
+MARKET = frozen_page.MARKET
+FROZEN_PRESENTATION = "cfb_over_under_clean_page_v38"
+FROZEN_PAGE = frozen_page.FROZEN_PAGE
+FROZEN_RUNTIME_SLATE = frozen_page.FROZEN_RUNTIME_SLATE
 ACTIVE_LOGO_RESOLVER = frozen_page.ACTIVE_LOGO_RESOLVER
 ACTIVE_MARKET_ADAPTER = frozen_page.ACTIVE_MARKET_ADAPTER
 ACTIVE_MARKET_INTELLIGENCE = frozen_page.ACTIVE_MARKET_INTELLIGENCE
 ACTIVE_SCHEDULE = frozen_page.ACTIVE_SCHEDULE
-FROZEN_RUNTIME_SLATE = frozen_page.FROZEN_RUNTIME_SLATE
 ACTIVE_RUNTIME_SLATE = frozen_page.ACTIVE_RUNTIME_SLATE
 ACTIVE_PERFORMANCE_PROFILER = frozen_page.ACTIVE_PERFORMANCE_PROFILER
 ACTIVE_ANALYSIS_PREWARM = frozen_page.ACTIVE_ANALYSIS_PREWARM
@@ -37,155 +39,269 @@ final_model = frozen_page.final_model
 profiler = frozen_page.profiler
 _line_board = frozen_page._line_board
 _market_caption = frozen_page._market_caption
-_presentation = frozen_page._presentation
+_clean = frozen_page._clean
+_num = frozen_page._num
+_market_line = frozen_page._market_line
+_kickoff_phoenix = frozen_page._kickoff_phoenix
+_display_game = frozen_page._display_game
+_resolve_visuals = frozen_page._resolve_visuals
+_hero_html = frozen_page._hero_html
+_quick_read_html = frozen_page._quick_read_html
+_EASTERN = frozen_page._EASTERN
 
 _CSS = r"""
 <style>
-.ou39-wrap{margin:9px 0 5px}.ou39-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}.ou39-head b{color:#eef5fa;font-size:.58rem;letter-spacing:.07em}.ou39-head span{color:#768b9e;font-size:.34rem}
-.ou39-freeze{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 8px}.ou39-chip{border:1px solid rgba(132,151,174,.18);border-radius:999px;background:#0a1621;color:#98a8b8;padding:4px 7px;font-size:.31rem;font-weight:900}.ou39-chip.good{border-color:rgba(60,207,137,.27);color:#9aecc0;background:rgba(19,74,51,.18)}.ou39-chip.purple{border-color:rgba(157,112,255,.28);color:#cab2ff;background:rgba(75,42,123,.18)}
-.ou39-foundation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.ou39-card{border:1px solid rgba(130,151,172,.14);border-radius:11px;background:#09151f;padding:8px;min-width:0}.ou39-card small{display:block;color:#71879a;font-size:.27rem;font-weight:950;text-transform:uppercase}.ou39-card b{display:block;color:#edf4f8;font-size:.52rem;line-height:1.25;margin-top:3px}.ou39-card span{display:block;color:#8ea0ae;font-size:.31rem;line-height:1.38;margin-top:3px}.ou39-card.ready{border-color:rgba(60,207,137,.25);background:rgba(17,70,50,.15)}.ou39-card.ready b{color:#9deac0}.ou39-card.check{border-color:rgba(69,166,232,.23);background:rgba(15,58,86,.14)}.ou39-card.check b{color:#9fdcff}.ou39-card.limited{border-color:rgba(244,191,77,.23);background:rgba(89,66,17,.14)}.ou39-card.limited b{color:#f0d27a}.ou39-card.gated{border-color:rgba(255,102,111,.24);background:rgba(88,30,36,.14)}.ou39-card.gated b{color:#ffb0b5}
-.ou39-teamrow{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}.ou39-team{border:1px solid rgba(132,151,174,.12);border-radius:9px;padding:7px;background:#0a1620}.ou39-team b{font-size:.48rem}.ou39-team span{font-size:.29rem}.ou39-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ou39-step{border:1px solid rgba(130,151,172,.14);border-radius:10px;background:#09151f;padding:8px;min-width:0}.ou39-step .top{display:flex;justify-content:space-between;gap:6px;align-items:center}.ou39-step small{color:#71879a;font-size:.26rem;font-weight:950;text-transform:uppercase}.ou39-badge{border-radius:999px;padding:3px 6px;font-size:.24rem;font-weight:950}.ou39-step.ready{border-color:rgba(60,207,137,.24)}.ou39-step.ready .ou39-badge{background:rgba(30,116,78,.28);color:#9cecc0}.ou39-step.check{border-color:rgba(69,166,232,.23)}.ou39-step.check .ou39-badge{background:rgba(26,86,125,.30);color:#9edbff}.ou39-step.limited{border-color:rgba(244,191,77,.23)}.ou39-step.limited .ou39-badge{background:rgba(114,82,21,.27);color:#efd27b}.ou39-step.gated{border-color:rgba(255,102,111,.24)}.ou39-step.gated .ou39-badge{background:rgba(116,40,46,.28);color:#ffb1b6}.ou39-step b{display:block;color:#eef4f8;font-size:.48rem;margin-top:5px}.ou39-step span{display:block;color:#889aa8;font-size:.29rem;line-height:1.38;margin-top:3px}.ou39-note{margin-top:7px;border-left:3px solid #8d6cff;background:rgba(86,59,138,.11);padding:7px 8px;border-radius:0 8px 8px 0;color:#9eabba;font-size:.31rem;line-height:1.42}
-@media(max-width:760px){.ou39-foundation{grid-template-columns:repeat(2,minmax(0,1fr))}.ou39-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:430px){.ou39-foundation,.ou39-steps,.ou39-teamrow{grid-template-columns:1fr}}
+.ou39-freeze{margin:9px 0 7px;border:1px solid rgba(154,111,255,.27);border-radius:10px;background:rgba(76,47,122,.16);padding:7px 9px;color:#bcaaff;font-size:.38rem;font-weight:900;letter-spacing:.015em}
+.ou39-foundation{margin-top:8px;border:1px solid rgba(92,126,255,.20);border-radius:14px;background:#091622;padding:9px}
+.ou39-foundation-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:7px}.ou39-foundation-head b{color:#eef5fa;font-size:.60rem}.ou39-foundation-head span{color:#7f94a7;font-size:.31rem}
+.ou39-foundation-teams{display:grid;grid-template-columns:1fr 1fr;gap:7px}.ou39-foundation-team{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:center;border:1px solid rgba(136,156,176,.13);border-radius:11px;background:#0b1824;padding:7px;min-width:0}.ou39-foundation-logo{width:52px;height:52px;border-radius:10px;background:#0f1f2d;display:flex;align-items:center;justify-content:center;overflow:hidden}.ou39-foundation-logo img{width:46px;height:46px;max-width:56px;object-fit:contain}.ou39-foundation-logo span{color:#dce8f0;font-size:.72rem;font-weight:950}.ou39-team-name{color:#f5f9fc;font-size:.68rem;font-weight:950;line-height:1.12}.ou39-team-meta{color:#8196a8;font-size:.34rem;font-weight:800;line-height:1.45;margin-top:2px}.ou39-id{color:#8ed7ff;font-size:.29rem;font-weight:900;margin-top:2px}
+.ou39-context{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:7px}.ou39-chip{border:1px solid rgba(127,148,170,.14);border-radius:9px;background:#0a151f;padding:6px 7px;min-width:0}.ou39-chip small{display:block;color:#708599;font-size:.25rem;font-weight:950;letter-spacing:.06em}.ou39-chip b{display:block;color:#dae6ee;font-size:.37rem;line-height:1.25;margin-top:2px;overflow-wrap:anywhere}
+.ou39-foundation-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:7px}.ou39-mini{border:1px solid rgba(128,148,169,.13);border-radius:9px;background:#0a151f;padding:6px 7px}.ou39-mini small{display:block;color:#74899b;font-size:.25rem;font-weight:950}.ou39-mini b{display:block;color:#e8f1f6;font-size:.39rem;margin-top:2px}.ou39-mini span{display:block;color:#8798a6;font-size:.29rem;line-height:1.35;margin-top:2px}
+.ou39-step{border:1px solid rgba(126,147,169,.16);border-radius:10px;background:#0a151f;padding:8px;margin:2px 0 5px}.ou39-step-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.ou39-step-title{color:#edf4f8;font-size:.48rem;font-weight:950}.ou39-badge{border-radius:999px;padding:3px 7px;font-size:.27rem;font-weight:950}.ou39-badge.ready{background:rgba(30,120,78,.25);color:#9aefbf}.ou39-badge.check{background:rgba(116,79,20,.24);color:#f0d37f}.ou39-badge.gated{background:rgba(124,42,48,.24);color:#ffafb5}.ou39-step-reason{color:#9aabb8;font-size:.32rem;line-height:1.45;margin-top:5px}.ou39-metrics{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.ou39-metric{border:1px solid rgba(128,149,171,.15);border-radius:8px;background:#0d1b27;padding:4px 6px;color:#bed0dd;font-size:.28rem}.ou39-metric b{color:#eef5f8}.ou39-audit{color:#7f91a0;font-size:.30rem;line-height:1.45}
+@media(max-width:760px){.ou39-foundation-teams{grid-template-columns:1fr}.ou39-context{grid-template-columns:repeat(2,minmax(0,1fr))}.ou39-foundation-steps{grid-template-columns:1fr}.ou39-foundation-logo{width:48px;height:48px}.ou39-foundation-logo img{width:42px;height:42px}.ou39-foundation-team{grid-template-columns:48px minmax(0,1fr)}}
+@media(max-width:430px){.ou39-context{grid-template-columns:1fr}.ou39-foundation-head{align-items:flex-start;flex-direction:column}.ou39-step-head{align-items:flex-start;flex-direction:column}}
 </style>
 """
 
-_STEP_TITLES = {
-    4: "Pace / Expected Possessions",
-    5: "Explosive Plays",
-    6: "Red Zone",
-    7: "Third Down",
-    8: "Turnover Volatility",
-    9: "Game-Day Environment",
-    10: "Historical Matchup",
-}
 
-
-def _clean(value: Any) -> str:
-    return str(value or "").strip()
-
-
-def _team_id(game: Mapping[str, Any], side: str) -> str:
-    for key in (f"{side}_espn_id", f"{side}_team_id", f"{side}_id"):
-        value = _clean(game.get(key))
-        if value:
+def _first(mapping: Mapping[str, Any] | None, *keys: str) -> Any:
+    if not isinstance(mapping, Mapping):
+        return None
+    for key in keys:
+        value = mapping.get(key)
+        if value not in (None, "", [], {}):
             return value
-    try:
-        visual = (frozen_page._resolve_visuals(frozen_page._display_game(game)).get(side) or {})
-    except Exception:
-        visual = {}
-    for key in ("espn_id", "team_id", "id"):
-        value = _clean(visual.get(key))
-        if value:
-            return value
-    return ""
+    return None
 
 
-def _verified_identity(game: Mapping[str, Any]) -> bool:
-    return bool(_team_id(game, "away") and _team_id(game, "home"))
+def _record(profile: Mapping[str, Any]) -> str:
+    value = _first(profile, "record", "overall_record", "team_record")
+    if isinstance(value, Mapping):
+        wins = int(value.get("wins") or 0)
+        losses = int(value.get("losses") or 0)
+        ties = int(value.get("ties") or 0)
+        return f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+    return _clean(value) or "—"
 
 
-def _engine_status(engine: Mapping[str, Any]) -> str:
-    try:
-        return _clean(_presentation._engine_ready(engine)).upper() or "CHECK"
-    except Exception:
-        return _clean(engine.get("status")).upper() or "CHECK"
-
-
-def _metrics(engine: Mapping[str, Any], limit: int = 2) -> list[tuple[str, str]]:
-    try:
-        return [(str(a), str(b)) for a, b in _presentation._interesting(engine, limit=limit)]
-    except Exception:
-        return []
-
-
-def _compact_step_state(step: int, engine: Mapping[str, Any], game: Mapping[str, Any]) -> dict[str, str]:
-    model_status = _engine_status(engine)
-    reason = _clean(engine.get("reason")) or "Certified engine output available."
-    status = model_status
-    lower_reason = reason.lower()
-    false_identity_gate = (
-        step in {5, 6, 7, 8}
-        and model_status == "GATED"
-        and _verified_identity(game)
-        and "identity" in lower_reason
-        and ("unavailable" in lower_reason or "missing" in lower_reason)
+def _team_id(side: str, game: Mapping[str, Any], profile: Mapping[str, Any], visual: Mapping[str, Any]) -> str:
+    value = _first(
+        visual,
+        "team_id",
+        "espn_team_id",
+        "espn_id",
+        "id",
+    ) or _first(
+        profile,
+        "team_id",
+        "espn_team_id",
+        "espn_id",
+        "id",
+    ) or _first(
+        game,
+        f"{side}_team_id",
+        f"{side}_espn_team_id",
+        f"{side}_espn_id",
     )
-    if false_identity_gate:
-        status = "CHECK"
-        reason = "Teams verified. Step-specific NCAA evidence unavailable; frozen prior preserved."
-    return {"status": status, "model_status": model_status, "reason": reason}
+    return _clean(value)
 
 
-def _tone(status: str) -> str:
-    value = _clean(status).lower()
-    return value if value in {"ready", "check", "limited", "gated"} else "check"
-
-
-def _record(value: Any) -> str:
-    return frozen_page._record(value)
-
-
-def _compact_foundation_html(game: Mapping[str, Any], away: Mapping[str, Any], home: Mapping[str, Any], result: Mapping[str, Any]) -> str:
-    display = frozen_page._display_game(game)
-    away_name = _clean(display.get("away_team")) or "Away"
-    home_name = _clean(display.get("home_team")) or "Home"
-    away_id = _team_id(display, "away") or "—"
-    home_id = _team_id(display, "home") or "—"
-    identity_status = "READY" if away_id != "—" and home_id != "—" else "CHECK"
-    pace = _compact_step_state(4, result.get("pace_engine") or {}, display)
-    pace_metrics = _metrics(result.get("pace_engine") or {}, limit=2)
-    pace_text = " • ".join(f"{a}: {b}" for a, b in pace_metrics) or pace["reason"]
-    venue = _clean(display.get("venue")) or "Venue unavailable"
-    broadcast = _clean(display.get("broadcast")) or "Broadcast unavailable"
-    day = _clean(display.get("game_date")) or "Date TBD"
-    matchup_engine = result.get("matchup_engine") or {}
-    matchup_status = _engine_status(matchup_engine)
-    matchup_metrics = _metrics(matchup_engine, limit=2)
-    matchup_text = " • ".join(f"{a}: {b}" for a, b in matchup_metrics) or (_clean(matchup_engine.get("reason")) or "Matchup evidence available below.")
-    return f'''<div class="ou39-wrap"><div class="ou39-head"><b>🏟️ MATCHUP FOUNDATION • STEPS 1–4</b><span>compact verified identity + matchup context</span></div><div class="ou39-freeze"><span class="ou39-chip good">FROZEN O/U MATH</span><span class="ou39-chip">MUTATION OFF</span><span class="ou39-chip purple">SPORTSBOOK 0.0%</span></div><div class="ou39-foundation"><div class="ou39-card {_tone(identity_status)}"><small>Step 1 • {escape(identity_status)}</small><b>Verified Team Identity</b><div class="ou39-teamrow"><div class="ou39-team"><b>{escape(away_name)}</b><span>Record {escape(_record(away.get("record") or display.get("away_record")))} • ESPN {escape(away_id)}</span></div><div class="ou39-team"><b>{escape(home_name)}</b><span>Record {escape(_record(home.get("record") or display.get("home_record")))} • ESPN {escape(home_id)}</span></div></div></div><div class="ou39-card check"><small>Step 2 • TEAM PROFILE</small><b>Game Context</b><span>{escape(day)} • {escape(venue)} • {escape(broadcast)}</span></div><div class="ou39-card {_tone(matchup_status)}"><small>Step 3 • {escape(matchup_status)}</small><b>Matchup Evidence</b><span>{escape(matchup_text[:180])}</span></div><div class="ou39-card {_tone(pace['status'])}"><small>Step 4 • {escape(pace['status'])}</small><b>Pace / Expected Possessions</b><span>{escape(pace_text[:180])}</span></div></div></div>'''
-
-
-def _compact_steps_html(game: Mapping[str, Any], result: Mapping[str, Any]) -> str:
-    engines = [
-        (5, result.get("explosive_engine") or {}),
-        (6, result.get("red_zone_engine") or {}),
-        (7, result.get("third_down_engine") or {}),
-        (8, result.get("turnover_engine") or {}),
-        (9, result.get("environment_engine") or {}),
-        (10, result.get("history_engine") or {}),
-    ]
-    cards: list[str] = []
-    for step, engine in engines:
-        state = _compact_step_state(step, engine, game)
-        metrics = _metrics(engine, limit=2)
-        metric_text = " • ".join(f"{a}: {b}" for a, b in metrics)
-        body = metric_text or state["reason"]
-        if metric_text and state["reason"]:
-            body = f"{metric_text}<br>{state['reason']}"
-        cards.append(
-            f'<div class="ou39-step {_tone(state["status"])}"><div class="top"><small>Step {step}</small><span class="ou39-badge">{escape(state["status"])}</span></div><b>{escape(_STEP_TITLES[step])}</b><span>{body if "<br>" in body else escape(body[:190])}</span></div>'
-        )
-    return '<div class="ou39-wrap"><div class="ou39-head"><b>🧠 WHAT MOVES THE TOTAL • STEPS 5–10</b><span>truthful display states • model gates preserved</span></div><div class="ou39-freeze"><span class="ou39-chip good">FROZEN O/U MATH</span><span class="ou39-chip">MUTATION OFF</span><span class="ou39-chip purple">SPORTSBOOK 0.0%</span></div><div class="ou39-steps">' + "".join(cards) + '</div><div class="ou39-note">CHECK means the teams are verified but that specific NCAA evidence category is unavailable. A true frozen-model blocker remains GATED.</div></div>'
-
-
-def _audit_payload(game: Mapping[str, Any], result: Mapping[str, Any]) -> dict[str, Any]:
-    engines = {
-        4: result.get("pace_engine") or {},
-        5: result.get("explosive_engine") or {},
-        6: result.get("red_zone_engine") or {},
-        7: result.get("third_down_engine") or {},
-        8: result.get("turnover_engine") or {},
-        9: result.get("environment_engine") or {},
-        10: result.get("history_engine") or {},
-    }
+def _identity_state(game: Mapping[str, Any], away: Mapping[str, Any], home: Mapping[str, Any]) -> dict[str, Any]:
+    display = _display_game(game)
+    visuals = _resolve_visuals(display)
+    away_name = _clean(display.get("away_team")) or _clean(away.get("team")) or "Away"
+    home_name = _clean(display.get("home_team")) or _clean(home.get("team")) or "Home"
+    away_id = _team_id("away", display, away, visuals.get("away") or {})
+    home_id = _team_id("home", display, home, visuals.get("home") or {})
     return {
-        f"step_{step}": {
-            "display": _compact_step_state(step, engine, game),
-            "raw_engine": dict(engine),
-        }
-        for step, engine in engines.items()
+        "verified": bool(away_name and home_name and away_id and home_id),
+        "away_team": away_name,
+        "home_team": home_name,
+        "away_id": away_id,
+        "home_id": home_id,
+        "visuals": visuals,
+        "display_game": display,
     }
+
+
+def _scalar_metrics(engine: Mapping[str, Any]) -> list[tuple[str, str]]:
+    ignored = {"status", "reason", "ready", "display_ready", "coverage", "errors", "error", "source", "sources"}
+    rows: list[tuple[str, str]] = []
+    for key, value in engine.items():
+        if key in ignored or isinstance(value, (Mapping, list, tuple, set)) or value in (None, ""):
+            continue
+        if isinstance(value, bool):
+            continue
+        label = str(key).replace("_", " ").title()
+        if isinstance(value, float):
+            if "rate" in key.lower() or "prob" in key.lower() or "pct" in key.lower():
+                shown = f"{100.0 * value:.1f}%" if abs(value) <= 1.0 else f"{value:.1f}%"
+            else:
+                shown = f"{value:.2f}".rstrip("0").rstrip(".")
+        else:
+            shown = str(value)
+        rows.append((label, shown))
+        if len(rows) >= 4:
+            break
+    return rows
+
+
+def _step_evidence_state(step: int, title: str, engine: Mapping[str, Any], identity_state: Mapping[str, Any]) -> dict[str, Any]:
+    """Map frozen engine evidence to truthful display state without mutation."""
+    frozen = deepcopy(dict(engine or {}))
+    frozen_status = _clean(frozen.get("status") or ("READY" if frozen.get("ready") else "CHECK")).upper()
+    frozen_reason = _clean(frozen.get("reason"))
+    identity_verified = bool(identity_state.get("verified"))
+    metrics = _scalar_metrics(frozen)
+    reason_lower = frozen_reason.lower()
+
+    if not identity_verified:
+        display_status = "GATED"
+        display_reason = frozen_reason or "Team identity is unresolved for one or both teams."
+    elif frozen_status in {"READY", "GREEN", "PASS", "OK"} and (metrics or frozen.get("ready") is not False):
+        display_status = "READY"
+        display_reason = frozen_reason or f"Certified {title.lower()} evidence is available for both verified teams."
+    else:
+        provider_gap = any(
+            token in reason_lower
+            for token in (
+                "identity is unavailable",
+                "identity unavailable",
+                "evidence unavailable",
+                "data unavailable",
+                "not available",
+                "missing",
+                "insufficient",
+                "no certified",
+                "provider",
+            )
+        )
+        if provider_gap or not metrics:
+            display_status = "CHECK"
+            display_reason = f"Teams verified. NCAA {title.lower()} evidence is unavailable or incomplete. Frozen prior preserved."
+        else:
+            display_status = "GATED"
+            display_reason = frozen_reason or f"Frozen Step {step} model gate remains active."
+
+    return {
+        "step": int(step),
+        "title": title,
+        "display_status": display_status,
+        "display_reason": display_reason,
+        "identity_verified": identity_verified,
+        "metrics": metrics,
+        "frozen_status": frozen_status,
+        "frozen_reason": frozen_reason,
+        "frozen_engine": frozen,
+    }
+
+
+def _monogram(name: str) -> str:
+    tokens = [token for token in _clean(name).replace("&", " ").split() if token]
+    return "".join(token[0].upper() for token in tokens[:2]) or "CFB"
+
+
+def _foundation_logo(name: str, visual: Mapping[str, Any]) -> str:
+    url = _clean(_first(visual, "logo", "logo_url", "image"))
+    if url:
+        return f'<div class="ou39-foundation-logo"><img src="{escape(url, quote=True)}" alt="{escape(name)} logo"></div>'
+    return f'<div class="ou39-foundation-logo"><span>{escape(_monogram(name))}</span></div>'
+
+
+def _profile_meta(profile: Mapping[str, Any]) -> str:
+    bits: list[str] = []
+    record = _record(profile)
+    if record != "—":
+        bits.append(record)
+    conference = _clean(_first(profile, "conference", "conference_name", "league"))
+    if conference:
+        bits.append(conference)
+    rank = _first(profile, "rank", "ap_rank", "ranking")
+    try:
+        rank_int = int(rank)
+        if rank_int > 0:
+            bits.append(f"AP #{rank_int}")
+    except Exception:
+        pass
+    return " • ".join(bits) or "Verified team profile"
+
+
+def _compact_engine_summary(label: str, engine: Mapping[str, Any]) -> str:
+    status = _clean(engine.get("status") or ("READY" if engine.get("ready") else "CHECK")).upper()
+    metrics = _scalar_metrics(engine)
+    short = " • ".join(f"{name}: {value}" for name, value in metrics[:2])
+    reason = _clean(engine.get("reason"))
+    detail = short or reason or "Frozen engine evidence preserved."
+    return f'<div class="ou39-mini"><small>{escape(label.upper())}</small><b>{escape(status)}</b><span>{escape(detail)}</span></div>'
+
+
+def _render_compact_foundation(game: Mapping[str, Any], away: Mapping[str, Any], home: Mapping[str, Any], result: Mapping[str, Any]) -> dict[str, Any]:
+    identity = _identity_state(game, away, home)
+    display = identity["display_game"]
+    visuals = identity["visuals"]
+    away_name = identity["away_team"]
+    home_name = identity["home_team"]
+    venue = _clean(_first(display, "venue", "venue_name")) or "Venue unavailable"
+    broadcast = _clean(_first(display, "broadcast", "network", "tv")) or "Broadcast unavailable"
+    status = _clean(_first(display, "status", "game_status")) or "Scheduled"
+    kickoff = _kickoff_phoenix(display)
+
+    html = f'''
+<div class="ou39-foundation" data-testid="ou39-matchup-foundation">
+  <div class="ou39-foundation-head"><b>🏟️ Matchup Foundation</b><span>Steps 1–4 • compact verified evidence</span></div>
+  <div class="ou39-foundation-teams">
+    <div class="ou39-foundation-team">{_foundation_logo(away_name, visuals.get("away") or {})}<div><div class="ou39-team-name">{escape(away_name)}</div><div class="ou39-team-meta">{escape(_profile_meta(away))}</div><div class="ou39-id">ESPN ID {escape(identity["away_id"] or "—")}</div></div></div>
+    <div class="ou39-foundation-team">{_foundation_logo(home_name, visuals.get("home") or {})}<div><div class="ou39-team-name">{escape(home_name)}</div><div class="ou39-team-meta">{escape(_profile_meta(home))}</div><div class="ou39-id">ESPN ID {escape(identity["home_id"] or "—")}</div></div></div>
+  </div>
+  <div class="ou39-context">
+    <div class="ou39-chip"><small>KICKOFF</small><b>{escape(kickoff)}</b></div>
+    <div class="ou39-chip"><small>VENUE</small><b>{escape(venue)}</b></div>
+    <div class="ou39-chip"><small>BROADCAST</small><b>{escape(broadcast)}</b></div>
+    <div class="ou39-chip"><small>STATUS</small><b>{escape(status)}</b></div>
+  </div>
+  <div class="ou39-foundation-steps">
+    {_compact_engine_summary("Step 2 • Team Scoring", result.get("team_scoring_engine") or result.get("scoring_engine") or {})}
+    {_compact_engine_summary("Step 3 • Matchup", result.get("matchup_engine") or {})}
+    {_compact_engine_summary("Step 4 • Pace", result.get("pace_engine") or {})}
+  </div>
+</div>'''
+    st.markdown(html, unsafe_allow_html=True)
+    return identity
+
+
+def _metric_html(metrics: list[tuple[str, str]]) -> str:
+    if not metrics:
+        return ""
+    return '<div class="ou39-metrics">' + "".join(
+        f'<div class="ou39-metric"><b>{escape(name)}</b> {escape(value)}</div>' for name, value in metrics
+    ) + "</div>"
+
+
+def _compact_step_card(state: Mapping[str, Any]) -> str:
+    status = _clean(state.get("display_status")).upper() or "CHECK"
+    css = status.lower() if status in {"READY", "CHECK", "GATED"} else "check"
+    reason = _clean(state.get("display_reason"))
+    return f'''
+<div class="ou39-step" data-testid="ou39-step-{int(state.get('step') or 0)}">
+  <div class="ou39-step-head"><div class="ou39-step-title">Step {int(state.get('step') or 0)} • {escape(_clean(state.get('title')))}</div><span class="ou39-badge {css}">{escape(status)}</span></div>
+  <div class="ou39-step-reason">{escape(reason)}</div>
+  {_metric_html(list(state.get("metrics") or []))}
+</div>'''
+
+
+def _render_compact_step_expanders(factors: list[tuple[int, str, Mapping[str, Any]]], identity: Mapping[str, Any]) -> None:
+    st.markdown('<div class="ou39-freeze">Frozen O/U math • Mutation OFF • Sportsbook 0.0%</div>', unsafe_allow_html=True)
+    for step, title, engine in factors:
+        state = _step_evidence_state(step, title, engine, identity)
+        with st.expander(f"Step {step} • {title}", expanded=False):
+            st.markdown(_compact_step_card(state), unsafe_allow_html=True)
+            with st.expander("Model Audit", expanded=False):
+                frozen_status = escape(_clean(state.get("frozen_status")) or "CHECK")
+                frozen_reason = escape(_clean(state.get("frozen_reason")) or "No frozen reason supplied.")
+                st.markdown(
+                    f'<div class="ou39-audit"><b>Frozen engine status:</b> {frozen_status}<br><b>Frozen reason:</b> {frozen_reason}<br>Presentation mapping only — the frozen engine object is not modified.</div>',
+                    unsafe_allow_html=True,
+                )
 
 
 def render_over_under_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
@@ -194,9 +310,9 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
     perf_slot = st.empty()
     started = perf_counter()
     try:
-        st.caption("🟣 CFB O/U • CLEAN PAGE V39 ACTIVE • COMPACT EVIDENCE RENDERER • V38 HERO PRESERVED • TRUTHFUL STEP STATES • 0.0% SPORTSBOOK PROJECTION INFLUENCE")
+        st.caption("🟣 CFB O/U • CLEAN PAGE V39 ACTIVE • COMPACT EVIDENCE RENDERER • VERIFIED IDENTITY ≠ MISSING STEP METRIC • PHOENIX TIME • 0.0% SPORTSBOOK PROJECTION INFLUENCE")
         st.markdown(frozen_page._CSS + _CSS, unsafe_allow_html=True)
-        selected = st.date_input("📅 CFB Over/Under slate date", value=datetime.now(frozen_page._EASTERN).date(), key="cfb_ou_v18_date")
+        selected = st.date_input("📅 CFB Over/Under slate date", value=frozen_page.datetime.now(_EASTERN).date(), key="cfb_ou_v18_date")
         day = selected.isoformat()
         games, schedule_diag = schedule_v6.load_with_diagnostics(day)
         if not games:
@@ -204,12 +320,24 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
             return
         odds_payload, market_diag = market_adapter.load_odds_for_date(day, "FanDuel")
         games, attach_diag = market_adapter.attach_market_lines(games, odds_payload)
-        index = st.selectbox("🏟️ Over/Under matchup", options=list(range(len(games))), format_func=lambda i: f"{games[int(i)].get('away_team')} @ {games[int(i)].get('home_team')} • {frozen_page._kickoff_phoenix(games[int(i)])} " + (f"• O/U {frozen_page._market_line(games[int(i)]):.1f}" if frozen_page._market_line(games[int(i)]) is not None else "• O/U unavailable"), key=f"cfb_ou_v18_matchup_{day}")
+        index = st.selectbox(
+            "🏟️ Over/Under matchup",
+            options=list(range(len(games))),
+            format_func=lambda i: f"{games[int(i)].get('away_team')} @ {games[int(i)].get('home_team')} • {_kickoff_phoenix(games[int(i)])} " + (f"• O/U {_market_line(games[int(i)]):.1f}" if _market_line(games[int(i)]) is not None else "• O/U unavailable"),
+            key=f"cfb_ou_v18_matchup_{day}",
+        )
         selected_game = dict(games[int(index)])
-        identity = _clean(selected_game.get("identity_key") or selected_game.get("game_id") or index)
-        live_line = frozen_page._market_line(selected_game)
+        game_identity = _clean(selected_game.get("identity_key") or selected_game.get("game_id") or index)
+        live_line = _market_line(selected_game)
         default_line = float(live_line) if live_line is not None else 50.5
-        line = st.number_input("🎯 Analysis total line — threshold only (0.0% projection weight)", min_value=20.0, max_value=100.0, value=default_line, step=0.5, key=f"cfb_ou_v18_line_{day}_{identity}")
+        line = st.number_input(
+            "🎯 Analysis total line — threshold only (0.0% projection weight)",
+            min_value=20.0,
+            max_value=100.0,
+            value=default_line,
+            step=0.5,
+            key=f"cfb_ou_v18_line_{day}_{game_identity}",
+        )
         if live_line is not None and abs(float(line) - float(live_line)) > 0.001:
             st.caption(f"✏️ Manual threshold override: {float(line):.1f} • live {selected_game.get('market_sportsbook') or 'market'} total {float(live_line):.1f}.")
         try:
@@ -217,12 +345,13 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
         except Exception as exc:
             st.error(f"Current runtime analysis failed visibly: {type(exc).__name__}: {exc}")
             return
+
         game = dict(result.get("game") or selected_game)
         away = dict(result.get("away") or {})
         home = dict(result.get("home") or {})
         diag = result.get("team_diag") or {}
-        st.markdown(frozen_page._hero_html(game, away, home, live_line, attach_diag), unsafe_allow_html=True)
-        st.markdown(frozen_page._quick_read_html(result, float(line)), unsafe_allow_html=True)
+        st.markdown(_hero_html(game, away, home, live_line, attach_diag), unsafe_allow_html=True)
+        st.markdown(_quick_read_html(result, float(line)), unsafe_allow_html=True)
         runtime_status = _clean(diag.get("runtime_status")) or "CHECK"
         issue_count = len(diag.get("runtime_issues") or [])
         market_state = _clean(market_diag.get("status")) or "CHECK"
@@ -231,21 +360,25 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
         with st.expander("📈 Market context • sportsbook details", expanded=False):
             st.markdown(_market_caption(selected_game, market_diag), unsafe_allow_html=True)
 
-        st.markdown(_compact_foundation_html(game, away, home, result), unsafe_allow_html=True)
-        st.markdown(_compact_steps_html(game, result), unsafe_allow_html=True)
-
-        with st.expander("🔬 Model Audit • raw technical evidence", expanded=False):
-            st.caption("Raw engine evidence is preserved here for auditability. Display-only CHECK corrections never feed back into frozen model status or calculations.")
-            st.json(_audit_payload(game, result), expanded=False)
+        identity = _render_compact_foundation(game, away, home, result)
+        factors = [
+            (5, "Explosive Plays", result.get("explosive_engine") or {}),
+            (6, "Red Zone", result.get("red_zone_engine") or {}),
+            (7, "Third Down", result.get("third_down_engine") or {}),
+            (8, "Turnover Volatility", result.get("turnover_engine") or {}),
+            (9, "Game-Day Environment", result.get("environment_engine") or {}),
+            (10, "Historical Matchup", result.get("history_engine") or {}),
+        ]
+        _render_compact_step_expanders(factors, identity)
 
         with st.expander("🧪 Steps 11–12 • current form + certification", expanded=False):
-            st.markdown(_presentation._model_step(11, "CURRENT FORM + SCHEDULE STRENGTH", result.get("form_strength_engine") or {}), unsafe_allow_html=True)
-            st.markdown(_presentation._cert_step(result), unsafe_allow_html=True)
-            st.markdown(_presentation._final(result), unsafe_allow_html=True)
+            st.markdown(frozen_page._presentation._model_step(11, "CURRENT FORM + SCHEDULE STRENGTH", result.get("form_strength_engine") or {}), unsafe_allow_html=True)
+            st.markdown(frozen_page._presentation._cert_step(result), unsafe_allow_html=True)
+            st.markdown(frozen_page._presentation._final(result), unsafe_allow_html=True)
 
         with st.expander("📋 Full-slate scan workspace", expanded=False):
             st.caption("Every game keeps its own live FanDuel total when available. Analysis Line is editable and remains a threshold only.")
-            editor = st.data_editor(_line_board(games, identity, float(line)), use_container_width=True, hide_index=True, key=f"cfb_ou_v18_board_{day}")
+            editor = st.data_editor(_line_board(games, game_identity, float(line)), use_container_width=True, hide_index=True, key=f"cfb_ou_v18_board_{day}")
             try:
                 records = editor.to_dict("records")
             except Exception:
@@ -274,12 +407,23 @@ def render_over_under_hub(section_header=None, status_info=None, team_logo=None,
                 game_row = row.get("game") or {}
                 final_row = row.get("final") or {}
                 raw_row = row.get("raw") or {}
-                st.markdown(f"**#{rank} {game_row.get('away_team')} @ {game_row.get('home_team')} — {final_row.get('selection') or raw_row.get('model_lean') or 'PASS'}** • projected total {frozen_page._num(raw_row.get('projected_total'),1)} • analysis line {frozen_page._num(row.get('analysis_line'),1)}")
+                st.markdown(f"**#{rank} {game_row.get('away_team')} @ {game_row.get('home_team')} — {final_row.get('selection') or raw_row.get('model_lean') or 'PASS'}** • projected total {_num(raw_row.get('projected_total'),1)} • analysis line {_num(row.get('analysis_line'),1)}")
     finally:
         trace.add("page.total_server_render", perf_counter() - started)
         profiler.reset_active_trace(token)
         try:
-            st.session_state["cfb_ou_perf_v1_last"] = {"version": profiler.MODEL_VERSION, "active_page": MODEL_VERSION, "active_runtime_slate": ACTIVE_RUNTIME_SLATE, "active_market_adapter": ACTIVE_MARKET_ADAPTER, "active_prewarm": ACTIVE_ANALYSIS_PREWARM, "active_logo_resolver": ACTIVE_LOGO_RESOLVER, "total_ms": trace.total_ms(), "stages": trace.aggregate(), "projection_weight": 0.0, "may_modify_projection": False}
+            st.session_state["cfb_ou_perf_v1_last"] = {
+                "version": profiler.MODEL_VERSION,
+                "active_page": MODEL_VERSION,
+                "active_runtime_slate": ACTIVE_RUNTIME_SLATE,
+                "active_market_adapter": ACTIVE_MARKET_ADAPTER,
+                "active_prewarm": ACTIVE_ANALYSIS_PREWARM,
+                "active_logo_resolver": ACTIVE_LOGO_RESOLVER,
+                "total_ms": trace.total_ms(),
+                "stages": trace.aggregate(),
+                "projection_weight": 0.0,
+                "may_modify_projection": False,
+            }
         except Exception:
             pass
         perf_slot.caption(trace.compact_caption(limit=8))
@@ -300,14 +444,16 @@ __all__ = [
     "ACTIVE_RUNTIME_SLATE",
     "ACTIVE_SCHEDULE",
     "FROZEN_PAGE",
+    "FROZEN_PRESENTATION",
     "FROZEN_RUNTIME_SLATE",
     "MARKET",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
-    "_compact_foundation_html",
-    "_compact_step_state",
-    "_compact_steps_html",
+    "_identity_state",
+    "_render_compact_foundation",
+    "_render_compact_step_expanders",
+    "_step_evidence_state",
     "render_cfb_hub",
     "render_over_under_hub",
 ]
