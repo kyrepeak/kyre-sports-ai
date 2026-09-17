@@ -8,15 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_real_app_boots_v152_router_or_additive_successor() -> None:
     app_source = (ROOT / "app.py").read_text(encoding="utf-8")
     direct_v152 = "from streamlit_memory_lazy_router_v152 import record_bootstrap_import_ms, render_app"
-    additive_v153 = "from streamlit_memory_lazy_router_v153 import record_bootstrap_import_ms, render_app"
+    additive_v155 = "from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app"
 
     if direct_v152 in app_source:
         return
 
-    assert additive_v153 in app_source
-    v153_source = (ROOT / "streamlit_memory_lazy_router_v153.py").read_text(encoding="utf-8")
-    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v152"' in v153_source
-    assert "import streamlit_memory_lazy_router_v152 as prior" in v153_source
+    assert additive_v155 in app_source
+    v155_source = (ROOT / "streamlit_memory_lazy_router_v155.py").read_text(encoding="utf-8")
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v154"' in v155_source
+    assert "import streamlit_memory_lazy_router_v154 as prior" in v155_source
 
 
 def test_v152_router_exposes_production_heartbeat() -> None:
