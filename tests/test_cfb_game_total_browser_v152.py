@@ -54,14 +54,29 @@ def test_v152_sportsbook_marker_waits_for_final_streamlit_render() -> None:
     assert 'if "SPORTSBOOK" not in body.upper() or "0.0%" not in body:' not in source
 
 
-def test_v152_browser_qa_opens_both_team_evidence_and_checks_deep_audit_collapsed() -> None:
+def test_v155_browser_qa_certifies_compact_team_cards_and_one_raw_drawer() -> None:
     source = QA.read_text(encoding="utf-8")
-    assert "Syracuse evidence" in source
-    assert "Pittsburgh evidence" in source
-    assert "Deep model evidence • Step 11 distribution" in source
-    assert "aria-expanded" in source
+    assert 'RAW_EVIDENCE_LABEL = "Raw Steps 1–10 evidence"' in source
+    assert 'f"gt155-{side}-team-card"' in source
+    assert '_assert_compact_team_card(frame, "away", TARGET_AWAY)' in source
+    assert '_assert_compact_team_card(frame, "home", TARGET_HOME)' in source
+    assert "def _open_raw_evidence" in source
     assert "Recent completed games" in source
     assert "DATA SOURCE" in source
+    assert "Syracuse evidence" not in source
+    assert "Pittsburgh evidence" not in source
+
+
+def test_v155_date_entry_clears_each_segment_before_typing() -> None:
+    source = QA.read_text(encoding="utf-8")
+    assert 'segment.press("Control+A")' in source
+    assert "segment.fill(value)" in source
+
+
+def test_v152_browser_qa_checks_deep_audit_collapsed() -> None:
+    source = QA.read_text(encoding="utf-8")
+    assert "Deep model evidence • Step 11 distribution" in source
+    assert "aria-expanded" in source
 
 
 def test_v152_browser_qa_writes_json_and_screenshot_evidence() -> None:
