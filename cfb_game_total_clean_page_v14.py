@@ -125,13 +125,11 @@ def _kickoff_text(game: Mapping[str, Any]) -> str:
         raw = _clean(game.get(key))
         if not raw:
             continue
-        # A bare YYYY-MM-DD is a slate date, not a kickoff clock.
         if "T" not in raw and ":" not in raw:
             continue
         try:
             parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
         except ValueError:
-            # Preserve provider-formatted clocks such as "7:30 PM ET".
             if len(raw) <= 24:
                 return raw
             continue
@@ -160,7 +158,7 @@ def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
         DATE_QUERY_KEY: selected_day.isoformat(),
         EVENT_QUERY_KEY: event_id,
     }
-    return "?" + urlencode(params)
+    return "/?" + urlencode(params)
 
 
 @st.cache_data(ttl=120, show_spinner=False)
