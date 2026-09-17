@@ -193,15 +193,15 @@ def run(
 
             href = str(target.get_attribute("href") or "")
             target_scope = str(target.get_attribute("target") or "")
-            onclick = str(target.get_attribute("onclick") or "")
+            bridge = frame.locator('[data-testid="gt163-wrapper-history-bridge"]')
             if (
                 not href.startswith("?")
                 or target_scope != "_self"
-                or "window.parent.history.replaceState" not in onclick
+                or bridge.count() != 1
             ):
                 raise GameTotalV163BrowserQAFailure(
-                    "V163 selector is missing wrapper-history synchronization: "
-                    f"href={href!r} target={target_scope!r} onclick={onclick!r}"
+                    "V163 selector is missing wrapper-history component synchronization: "
+                    f"href={href!r} target={target_scope!r} bridge_count={bridge.count()}"
                 )
 
             target.click(timeout=30000)
