@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "cfb-v163-wrapper-history-sync",
+  "status": "DONE",
+  "scope": "Keep frame-local V163 query synchronization and mirror the selected official ESPN event query into the same-origin Streamlit wrapper history so full browser refresh preserves the selected game.",
+  "trigger": "Production Verification V5 run #6 proved the app frame and selected card changed to the target event while only the outer Streamlit wrapper URL remained on the prior event.",
+  "guardrails": {
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "identity_source_changed": false,
+    "render_service_changed": false,
+    "frame_query_sync_preserved": true,
+    "wrapper_history_sync_only": true,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
