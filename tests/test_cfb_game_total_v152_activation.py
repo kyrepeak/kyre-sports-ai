@@ -83,3 +83,37 @@ def test_v152_route_latch_survives_page_reruns_but_clears_on_intentional_navigat
         "def _render_direct_cfb_game_total()", 1
     )[0]
     assert "_clear_game_total_route_latch()" in renderer
+
+
+def test_v152_final_repaired_evidence_steps_are_ready_together() -> None:
+    import cfb_game_total_clean_page_v6 as page
+    import cfb_game_total_runtime_display_v1 as runtime
+
+    payload = runtime._load_game_total_snapshot()
+    game = (payload.get("games") or [])[0]
+    display_game, away, home, diag = runtime._apply_deterministic_snapshot(
+        {
+            "away_team": game["away_team"],
+            "home_team": game["home_team"],
+            "game_date": game["game_date"],
+        },
+        {},
+        {},
+        game,
+    )
+    statuses = page._existing_step_status(
+        {"away": {"exact_identity": True}, "home": {"exact_identity": True}},
+        away,
+        home,
+        display_game,
+    )
+
+    assert {step: statuses[step] for step in (4, 5, 6, 7, 9, 10)} == {
+        4: "READY",
+        5: "READY",
+        6: "READY",
+        7: "READY",
+        9: "READY",
+        10: "READY",
+    }
+    assert diag["game_total_deterministic_snapshot_used"] is True
