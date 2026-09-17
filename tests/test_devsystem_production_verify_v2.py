@@ -14,14 +14,26 @@ def _load_module():
     return module
 
 
-def test_v2_advances_only_cfb_active_page_marker_to_v39():
+def test_v2_uses_full_certified_cfb_v39_marker_contract():
     module = _load_module()
 
     assert module.FROZEN_VERIFIER == "devsystem.production_verify_v1"
-    assert module.CFB_REQUIRED_MARKERS[0] == "CFB O/U • CLEAN PAGE V39 ACTIVE"
+    assert module.CFB_REQUIRED_MARKERS == (
+        "CFB O/U • CLEAN PAGE V39 ACTIVE",
+        "COMPACT EVIDENCE RENDERER",
+        "VERIFIED IDENTITY ≠ MISSING STEP METRIC",
+        "0.0% SPORTSBOOK PROJECTION INFLUENCE",
+        "Matchup Foundation",
+        "Steps 1–4 • compact verified evidence",
+        "Frozen O/U math • Mutation OFF • Sportsbook 0.0%",
+        "Step 5 • Explosive Plays",
+        "Step 10 • Historical Matchup",
+        "Steps 11–12 • current form + certification",
+    )
     assert "CFB O/U • CLEAN PAGE V30 ACTIVE" not in module.CFB_REQUIRED_MARKERS
     assert "CFB O/U • CLEAN PAGE V38 ACTIVE" not in module.CFB_REQUIRED_MARKERS
-    assert module.CFB_REQUIRED_MARKERS[1:] == module.frozen.CFB_REQUIRED_MARKERS[1:]
+    assert "FUTURE SLATE COVERAGE ACTIVE" not in module.CFB_REQUIRED_MARKERS
+    assert "READABLE STEPS 4-12 ACTIVE" not in module.CFB_REQUIRED_MARKERS
 
 
 def test_v2_delegates_full_production_verification_to_frozen_v1():
