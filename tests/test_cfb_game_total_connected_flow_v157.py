@@ -16,6 +16,7 @@ def test_v9_connected_flow_is_presentation_only_over_v8() -> None:
     assert "step_owner._existing_step_status(" in source
     assert "step_owner._step_details(" in source
     assert "evidence_owner._render_compact_team_cards(away, home)" in source
+    assert "import cfb_game_total_clean_page_v1 as status_owner" in source
 
 
 def test_v9_puts_steps_1_through_12_in_one_connected_flow() -> None:
@@ -58,10 +59,21 @@ def test_v9_suppresses_only_old_visible_step_rail() -> None:
     assert "_ORIGINAL_STEPS_1_10" not in capture
 
 
+def test_v9_binds_connected_presenter_to_live_v1_owner() -> None:
+    source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
+
+    assert "original_status_cards = status_owner._status_cards" in source
+    assert "status_owner._status_cards = _combined_model_summary" in source
+    assert "evidence_owner._render_steps_1_10_with_team_cards = _capture_steps_1_10_context" in source
+    assert "return evidence_owner.render_game_total_hub(" in source
+    assert "status_owner._status_cards = original_status_cards" in source
+    assert "prior._compact_model_summary(raw, final)" in source
+
+
 def test_v9_keeps_step_11_12_and_top5_math_owned_by_frozen_path() -> None:
     source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
 
-    assert "prior.render_game_total_hub(" in source
+    assert "evidence_owner.render_game_total_hub(" in source
     assert "projected_combined_total" in source
     assert "core_50_range" in source
     assert "most_likely_band" in source
