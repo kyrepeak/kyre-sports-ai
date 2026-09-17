@@ -32,13 +32,15 @@ def test_v163_selected_event_controls_frozen_matchup_index_and_survives_refresh(
     assert "return selected_index" in source
 
 
-def test_v163_game_links_preserve_date_route_and_exact_event_identity():
+def test_v163_game_links_preserve_date_route_exact_event_and_top_level_navigation():
     source = _read(PAGE)
     assert "DATE_QUERY_KEY" in source
     assert "ROUTE_QUERY_SPORT" in source
     assert "ROUTE_QUERY_MARKET" in source
     assert "EVENT_QUERY_KEY" in source
     assert "urlencode" in source
+    assert 'target="_top"' in source
+    assert 'target="_self"' not in source
 
 
 def test_v163_router_activates_fresh_page_successor_and_preserves_frozen_heartbeats():
