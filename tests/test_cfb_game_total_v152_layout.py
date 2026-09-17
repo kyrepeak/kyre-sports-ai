@@ -72,6 +72,29 @@ def test_color_roles_are_explicit_without_green_border_everywhere() -> None:
     assert "border:1px solid var(--gt-green)" not in source
 
 
+def test_connected_evidence_shell_wraps_existing_flow_without_changing_math() -> None:
+    source = _source()
+    assert 'data-testid="gt153-connected-evidence-shell"' in source
+    assert "with st.container(border=True):" in source
+
+    shell = source.index('data-testid="gt153-connected-evidence-shell"')
+    evidence = source.index("_render_evidence_center(", shell)
+    model = source.index("_status_cards(", evidence)
+    step11 = source.index('st.expander("📊 Deep model evidence', model)
+    step12 = source.index('st.expander("🏁 Deep model evidence', step11)
+    top5 = source.index('st.expander("🏆 Top-5 slate scanner', step12)
+    assert shell < evidence < model < step11 < step12 < top5
+
+    # Step 1 is presentation-only. The frozen model must still run exactly once
+    # on the untouched selected game before display reconciliation.
+    assert source.count("selected_result = frozen_page.slate.analyze_game(game, selected_day)") == 1
+    assert source.index("selected_result = frozen_page.slate.analyze_game(game, selected_day)") < source.index(
+        "runtime_display.reconcile_display_bundle("
+    )
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
+    assert "MAY_MODIFY_PROJECTION = False" in source
+
+
 def test_router_targets_v6_only_for_v152_game_total() -> None:
     router = (ROOT / "streamlit_memory_lazy_router_v152.py").read_text(encoding="utf-8")
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v6"' in router
