@@ -40,7 +40,10 @@ _V152_MONSTER_CSS = r"""
 .gt152-hero{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:stretch;margin:8px 0 7px}.gt152-hero-team{display:flex;align-items:center;gap:9px;padding:10px;border-radius:14px;background:#0a1925;border:1px solid rgba(116,145,170,.16);min-width:0}.gt152-hero-team.home{flex-direction:row-reverse;text-align:right}.gt152-logo{width:64px;height:64px;object-fit:contain;flex:0 0 64px}.gt152-logo-fallback{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#12293a;color:var(--gt-blue);font-size:1rem;font-weight:950;flex:0 0 64px}.gt152-herotext{min-width:0}.gt152-teamname{color:#f6f9fc;font-size:.86rem;font-weight:950;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gt152-record{display:inline-block;margin-top:3px;padding:3px 7px;border-radius:999px;background:rgba(112,73,176,.20);color:var(--gt-purple);font-size:.39rem;font-weight:950}.gt152-teammeta{color:var(--gt-gray);font-size:.30rem;margin-top:4px;line-height:1.35}.gt152-herometrics{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.gt152-mini{padding:3px 5px;border-radius:6px;background:#0e202e;color:#aebdcc;font-size:.27rem}.gt152-at{display:flex;align-items:center;justify-content:center;color:var(--gt-gray);font-size:.65rem;font-weight:950}
 .gt152-game-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:0 0 7px}.gt152-gamefact{padding:7px 8px;border-radius:9px;background:#0a1823;border:1px solid rgba(119,142,163,.12);min-width:0}.gt152-gamefact b{display:block;color:#e7f1f8;font-size:.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gt152-gamefact span{display:block;color:var(--gt-blue);font-size:.23rem;font-weight:900;text-transform:uppercase;margin-top:2px}
 .gt152-svd{margin:0 0 8px;padding:9px;border-radius:13px;background:linear-gradient(145deg,#0a1622,#0b1a27);border:1px solid rgba(108,139,166,.16)}.gt152-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.gt152-section-title b{color:#eef5fb;font-size:.53rem;font-weight:950;letter-spacing:.07em}.gt152-section-title span{color:var(--gt-gray);font-size:.29rem}.gt152-svdgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.gt152-svdcard{padding:8px;border-radius:10px;background:#0c1b27}.gt152-svdteam{color:#f5f9fc;font-size:.56rem;font-weight:950}.gt152-svdline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.gt152-svdmetric{padding:5px;border-radius:7px;background:#102330}.gt152-svdmetric b{display:block;color:#edf4f9;font-size:.47rem}.gt152-svdmetric span{display:block;color:var(--gt-gray);font-size:.22rem;margin-top:2px;text-transform:uppercase}.gt152-favorable{color:var(--gt-green)!important}.gt152-concern{color:var(--gt-red)!important}.gt152-caution{color:var(--gt-amber)!important}.gt152-info{color:var(--gt-blue)!important}.gt152-model{color:var(--gt-purple)!important}
-@media(max-width:760px){.gt152-shelltop{display:block}.gt152-live{display:inline-block;margin-top:6px}.gt152-hero{grid-template-columns:1fr}.gt152-at{padding:0}.gt152-hero-team.home{flex-direction:row;text-align:left}.gt152-game-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.gt152-svdgrid{grid-template-columns:1fr}}
+.gt153-connected-head{margin:0 0 4px;padding:3px 2px 7px;border-bottom:1px solid rgba(121,146,169,.15)}.gt153-connected-kicker{color:var(--gt-purple);font-size:.34rem;font-weight:950;letter-spacing:.10em;text-transform:uppercase}.gt153-connected-title{color:#eef5fb;font-size:.66rem;font-weight:950;margin-top:2px}.gt153-connected-sub{color:var(--gt-gray);font-size:.31rem;line-height:1.42;margin-top:3px}
+div[data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="gt153-connected-evidence-shell"]){border:1px solid rgba(116,145,170,.22)!important;border-radius:16px!important;background:linear-gradient(180deg,rgba(8,20,31,.92),rgba(7,15,24,.92))!important;padding:4px 7px 7px!important}
+div[data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="gt153-connected-evidence-shell"]) div[data-testid="stExpander"]{margin-top:4px}
+@media(max-width:760px){.gt152-shelltop{display:block}.gt152-live{display:inline-block;margin-top:6px}.gt152-hero{grid-template-columns:1fr}.gt152-at{padding:0}.gt152-hero-team.home{flex-direction:row;text-align:left}.gt152-game-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.gt152-svdgrid{grid-template-columns:1fr}.gt153-connected-title{font-size:.60rem}}
 </style>
 """
 
@@ -190,42 +193,54 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     st.markdown(_monster_matchup_hero(identity, away_stats, home_stats), unsafe_allow_html=True)
     st.markdown(_compact_game_strip(identity), unsafe_allow_html=True)
     st.markdown(_scoring_defense_summary(away_stats, home_stats), unsafe_allow_html=True)
-    prior._render_evidence_center(away_evidence, home_evidence)
-    st.markdown(prior.prior.prior.prior.prior._status_cards(raw, final), unsafe_allow_html=True)
 
-    with st.expander("📊 Deep model evidence • Step 11 distribution", expanded=False):
-        st.markdown(frozen_page.frozen_v2._distribution_card(raw), unsafe_allow_html=True)
-        for panel in (
-            frozen_page.frozen_v2._band_panel(raw),
-            frozen_page.frozen_v2._around_projection_panel(raw),
-            frozen_page.frozen_v2._exact_panel(raw),
-            frozen_page.frozen_v2._components_panel(raw),
-        ):
-            if panel:
-                st.markdown(panel, unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(
+            """
+<div class="gt153-connected-head" data-testid="gt153-connected-evidence-shell">
+  <div class="gt153-connected-kicker">CONNECTED GAME TOTAL FLOW • STEP 1</div>
+  <div class="gt153-connected-title">Evidence → Model Status → Distribution → Final → Top-5</div>
+  <div class="gt153-connected-sub">One continuous analysis rail. Existing evidence and frozen model outputs are preserved exactly while the page becomes easier to scan.</div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        prior._render_evidence_center(away_evidence, home_evidence)
+        st.markdown(prior.prior.prior.prior.prior._status_cards(raw, final), unsafe_allow_html=True)
 
-    with st.expander("🏁 Deep model evidence • Step 12 final synthesis", expanded=False):
-        st.markdown(frozen_page._final_card(game, final), unsafe_allow_html=True)
+        with st.expander("📊 Deep model evidence • Step 11 distribution", expanded=False):
+            st.markdown(frozen_page.frozen_v2._distribution_card(raw), unsafe_allow_html=True)
+            for panel in (
+                frozen_page.frozen_v2._band_panel(raw),
+                frozen_page.frozen_v2._around_projection_panel(raw),
+                frozen_page.frozen_v2._exact_panel(raw),
+                frozen_page.frozen_v2._components_panel(raw),
+            ):
+                if panel:
+                    st.markdown(panel, unsafe_allow_html=True)
 
-    with st.expander("🏆 Top-5 slate scanner", expanded=False):
-        scan_key = f"cfb_v152_top5_{selected_day}"
-        diag_key = f"cfb_v152_scan_diag_{selected_day}"
-        if st.button("Run final Game Total Top-5 scan", type="primary", key=f"cfb_v152_scan_button_{selected_day}"):
-            with st.spinner("Scanning the verified CFB slate through frozen Steps 11–12..."):
-                rows, diag = frozen_page.slate.scan_slate(games, selected_day)
-                st.session_state[scan_key] = frozen_page.final_model.rank_slate(rows, limit=5)
-                st.session_state[diag_key] = diag
-        top5 = st.session_state.get(scan_key) or []
-        diag = st.session_state.get(diag_key) or {}
-        if diag:
-            st.caption(f"Final scanner: {int(diag.get('games_analyzed') or 0)} analyzed • {int(diag.get('final_ready') or 0)} final-ready • {int(diag.get('qualified_forecasts') or 0)} ranked-eligible • {len(diag.get('errors') or [])} errors")
-        if top5:
-            for row in top5:
-                st.markdown(frozen_page._top_card(row), unsafe_allow_html=True)
-        elif diag:
-            st.warning("No game cleared the frozen Step-12 qualification thresholds. V152 will not force a Top-5.")
-        else:
-            st.caption("Run the final slate scan to rank the strongest qualified Game Total forecasts.")
+        with st.expander("🏁 Deep model evidence • Step 12 final synthesis", expanded=False):
+            st.markdown(frozen_page._final_card(game, final), unsafe_allow_html=True)
+
+        with st.expander("🏆 Top-5 slate scanner", expanded=False):
+            scan_key = f"cfb_v152_top5_{selected_day}"
+            diag_key = f"cfb_v152_scan_diag_{selected_day}"
+            if st.button("Run final Game Total Top-5 scan", type="primary", key=f"cfb_v152_scan_button_{selected_day}"):
+                with st.spinner("Scanning the verified CFB slate through frozen Steps 11–12..."):
+                    rows, diag = frozen_page.slate.scan_slate(games, selected_day)
+                    st.session_state[scan_key] = frozen_page.final_model.rank_slate(rows, limit=5)
+                    st.session_state[diag_key] = diag
+            top5 = st.session_state.get(scan_key) or []
+            diag = st.session_state.get(diag_key) or {}
+            if diag:
+                st.caption(f"Final scanner: {int(diag.get('games_analyzed') or 0)} analyzed • {int(diag.get('final_ready') or 0)} final-ready • {int(diag.get('qualified_forecasts') or 0)} ranked-eligible • {len(diag.get('errors') or [])} errors")
+            if top5:
+                for row in top5:
+                    st.markdown(frozen_page._top_card(row), unsafe_allow_html=True)
+            elif diag:
+                st.warning("No game cleared the frozen Step-12 qualification thresholds. V152 will not force a Top-5.")
+            else:
+                st.caption("Run the final slate scan to rank the strongest qualified Game Total forecasts.")
 
     st.caption("🛡️ V152 compact display only • frozen Game Total math preserved • sportsbook projection influence 0.0%")
 
