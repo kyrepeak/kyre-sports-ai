@@ -29,7 +29,9 @@ def test_v163_game_links_use_frame_query_sync_plus_wrapper_history():
     )
     assert 'return "?" + urlencode(params)' in source
     assert 'target="_self"' in source
-    assert "window.parent.history.replaceState" in source
+    assert "components.html(" in source
+    assert "window.parent && window.parent.parent" in source
+    assert 'data-testid="gt163-wrapper-history-bridge"' in source
     assert 'target="_top"' not in source
 
 
@@ -43,7 +45,8 @@ def test_v5_proves_switch_and_hard_refresh_persistence_without_weakening_gate():
     assert "page.reload" in source
     assert 'target_scope != "_self"' in source
     assert 'not href.startswith("?")' in source
-    assert '"window.parent.history.replaceState" not in onclick' in source
+    assert 'bridge = frame.locator(\'[data-testid="gt163-wrapper-history-bridge"]\')' in source
+    assert "bridge.count() != 1" in source
     assert "_event_from_url(page.url) != target_event" in source
     assert "reloaded_event != target_event" in source
     assert "production_verify_v3" in source
