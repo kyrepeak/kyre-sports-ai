@@ -1,0 +1,201 @@
+name: CFB Game Total V161 permanent freeze
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [cfb-game-total-v161-permanent-freeze]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest playwright
+
+      - name: Freeze scope guard
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"], text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-game-total-v161-permanent-freeze.yml",
+              "cfb_game_total_v161_freeze_manifest_v1.json",
+              "devsystem/task_ledgers/cfb-game-total-v161-permanent-freeze.json",
+          }
+          if changed != expected:
+              raise SystemExit(
+                  "V161 freeze branch changed active code: " + str(sorted(changed))
+              )
+          print("CFB_GAME_TOTAL_V161_FREEZE_SCOPE=PASS")
+          PY
+
+      - name: Verify permanent-freeze manifest metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v161_freeze_manifest_v1.json").read_text())
+          assert m["version"] == 1
+          assert m["baseline_commit"] == "65d21a0618dfbf6862bc467373da7820c83f829d"
+          assert m["certified_feature_pr"] == 566
+          assert m["certified_production_hotfix_pr"] == 567
+          assert m["production_verification_run"] == 211
+          assert m["v161_browser_run"] == 4
+          c=m["contract"]
+          assert c["projection_math_changed"] is False
+          assert c["distribution_math_changed"] is False
+          assert c["step12_qualification_changed"] is False
+          assert c["top5_ranking_changed"] is False
+          assert c["api_model_behavior_changed"] is False
+          assert c["sportsbook_projection_influence"] == 0.0
+          assert c["visible_seven_day_navigation"] is True
+          assert c["selected_day_query_persistence"] is True
+          assert c["monster_sports_intelligence_masthead_removed"] is True
+          assert c["official_espn_identity_required"] is True
+          assert c["sportsbook_provider"] == "FanDuel"
+          assert c["sportsbook_identity_match"] == "official ESPN event_id only"
+          assert c["sportsbook_freshness_gated"] is True
+          assert c["market_unavailable_fails_closed"] is True
+          assert c["future_changes_must_be_additive"] is True
+          assert c["permanently_frozen"] is True
+          print("CFB_GAME_TOTAL_V161_FREEZE_METADATA=PASS")
+          PY
+
+      - name: Verify every frozen blob exactly
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v161_freeze_manifest_v1.json").read_text())
+          failures=[]
+          for path, expected in m["exact_blobs"].items():
+              actual=subprocess.check_output(
+                  ["git","rev-parse",f"HEAD:{path}"], text=True
+              ).strip()
+              if actual != expected:
+                  failures.append(f"{path}: expected {expected}, got {actual}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("CFB_GAME_TOTAL_V161_EXACT_BLOBS=PASS", len(m["exact_blobs"]))
+          PY
+
+      - name: Enforce V161 frozen boundaries and route firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          page11=Path("cfb_game_total_clean_page_v11.py").read_text(encoding="utf-8")
+          page12=Path("cfb_game_total_clean_page_v12.py").read_text(encoding="utf-8")
+          runtime=Path("cfb_game_total_runtime_display_v2.py").read_text(encoding="utf-8")
+          router=Path("streamlit_memory_lazy_router_v156.py").read_text(encoding="utf-8")
+          browser=Path("devsystem/cfb_game_total_browser_qa_v3.py").read_text(encoding="utf-8")
+          production=Path("devsystem/production_verify_v3.py").read_text(encoding="utf-8")
+          app=Path("app.py").read_text(encoding="utf-8")
+
+          required_page11=[
+              'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v10"',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'MAY_MODIFY_PROJECTION = False',
+              'ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V161 ACTIVE"',
+              'DATE_QUERY_KEY = "ks_cfb_game_total_date"',
+              'ODDS_MATCH_METHOD = "official ESPN event_id only"',
+              'ODDS_PROVIDER = "FanDuel"',
+              '.gt160-masthead{display:none!important}',
+          ]
+          required_page12=[
+              'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v11"',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'MAY_MODIFY_PROJECTION = False',
+              '"espn_event_id"',
+              'f"{side}_espn_team_id"',
+          ]
+          required_runtime=[
+              'FROZEN_RUNTIME_DISPLAY = "cfb_game_total_runtime_display_v1"',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'MAY_MODIFY_PROJECTION = False',
+          ]
+          required_router=[
+              'FROZEN_ROUTER = "streamlit_memory_lazy_router_v155"',
+              'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"',
+              'ACTIVE_PAGE = "cfb_game_total_clean_page_v12"',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'MAY_MODIFY_PROJECTION = False',
+          ]
+          required_browser=[
+              'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"',
+              'DATE_QUERY_KEY = "ks_cfb_game_total_date"',
+              '"MONSTER SPORTS INTELLIGENCE"',
+              '"width": 1067',
+              '"height": 1536',
+              'EMPTY_SLATE_MARKER = "No verified FBS-scoped games were returned for this date."',
+          ]
+          required_production=[
+              'EXPECTED_ROUTER = "streamlit_memory_lazy_router_v156"',
+              'GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"',
+              'GAME_TOTAL_MARKET = "Game Total"',
+              'production_game_total_v161_green.png',
+          ]
+          required_app=[
+              'CFB Game Total V161 activation',
+              'streamlit_memory_lazy_router_v156',
+              'Sportsbook projection influence stays 0.0%',
+          ]
+
+          for label, source, tokens in (
+              ("page11", page11, required_page11),
+              ("page12", page12, required_page12),
+              ("runtime", runtime, required_runtime),
+              ("router", router, required_router),
+              ("browser", browser, required_browser),
+              ("production", production, required_production),
+              ("app", app, required_app),
+          ):
+              for token in tokens:
+                  if token not in source:
+                      raise SystemExit(f"missing frozen {label} marker: {token}")
+
+          print("CFB_GAME_TOTAL_V161_ROUTE_FIREWALL=PASS")
+          PY
+
+      - name: Compile frozen V161 surface
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_game_total_clean_page_v11.py \
+            cfb_game_total_clean_page_v12.py \
+            cfb_game_total_runtime_display_v2.py \
+            streamlit_memory_lazy_router_v156.py \
+            devsystem/cfb_game_total_browser_qa_v3.py \
+            devsystem/production_verify_v3.py
+
+      - name: Run focused V161 regression contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_game_total_v161_days_branding_odds.py \
+            tests/test_cfb_game_total_clean_page_v11.py \
+            tests/test_cfb_game_total_clean_page_v12.py \
+            tests/test_cfb_game_total_runtime_display_v2.py \
+            tests/test_cfb_game_total_browser_qa_v2.py \
+            tests/test_devsystem_production_verify_v3.py \
+            tests/test_cfb_game_total_v152_activation.py
+
+      - name: Certification marker
+        run: echo "CFB_GAME_TOTAL_V161_PERMANENT_FREEZE_GREEN"
