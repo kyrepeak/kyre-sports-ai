@@ -115,7 +115,7 @@ def _wait_for_event_query(page, expected: str | None = None, timeout_seconds: fl
 
 
 def _selected_link_event(frame) -> str:
-    selected = frame.locator('[data-testid="gt163-game-strip"] a.gt163-game-link[aria-current="true"]')
+    selected = frame.locator('[data-testid="gt163-game-strip"] button.gt163-game-link[aria-current="true"]')
     if selected.count() != 1:
         raise GameTotalV163BrowserQAFailure(
             f"Expected exactly one selected game link, found {selected.count()}"
@@ -164,7 +164,7 @@ def run(
 
             initial_event = _wait_for_event_query(page)
             strip = frame.locator('[data-testid="gt163-game-strip"]')
-            links = strip.locator("a.gt163-game-link")
+            links = strip.locator("button.gt163-game-link")
             count = links.count()
             if count < 2:
                 raise GameTotalV163BrowserQAFailure(
@@ -225,7 +225,7 @@ def run(
                 "health": health,
                 "date": CERT_DATE,
                 "viewport": {"width": 1067, "height": 1536},
-                "game_link_count": count,
+                "game_button_count": count,
                 "initial_event_id": initial_event,
                 "clicked_event_id": clicked_event,
                 "reloaded_event_id": reloaded_event,
