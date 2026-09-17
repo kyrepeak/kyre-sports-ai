@@ -34,6 +34,7 @@ ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V163 ACTIVE"
 
 DATE_QUERY_KEY = v161.DATE_QUERY_KEY
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
+SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
 CFB_SPORT_LABEL = "College Football"
@@ -86,6 +87,24 @@ def _set_query_event_id(event_id: str) -> None:
     try:
         if _query_event_id() != event_id:
             st.query_params[EVENT_QUERY_KEY] = event_id
+    except Exception:
+        pass
+
+
+def _selector_sync_event_id() -> str:
+    try:
+        raw = st.query_params.get(SELECTOR_SYNC_QUERY_KEY)
+    except Exception:
+        return ""
+    if isinstance(raw, (list, tuple)):
+        raw = raw[-1] if raw else ""
+    return _clean(raw)
+
+
+def _clear_selector_sync() -> None:
+    try:
+        if SELECTOR_SYNC_QUERY_KEY in st.query_params:
+            del st.query_params[SELECTOR_SYNC_QUERY_KEY]
     except Exception:
         pass
 
@@ -161,6 +180,7 @@ def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
         ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
         DATE_QUERY_KEY: selected_day.isoformat(),
         EVENT_QUERY_KEY: event_id,
+        SELECTOR_SYNC_QUERY_KEY: event_id,
     }
     # Navigate the Streamlit app frame; Streamlit mirrors query params to the wrapper URL.
     return "?" + urlencode(params)
@@ -274,10 +294,17 @@ def _load_games(selected_day: date) -> list[Mapping[str, Any]]:
 def _sync_frozen_matchup_state(selected_day: date, games: Sequence[Mapping[str, Any]]) -> int:
     if not games:
         return 0
+    sync_event_id = _selector_sync_event_id()
     selected_index = _selected_game_index(games, _query_event_id())
     event_id = _game_id(games[selected_index])
     if event_id:
         _set_query_event_id(event_id)
+    # The transient marker guarantees one real st.query_params mutation after
+    # frame-local navigation. Deleting it makes Streamlit synchronize the full
+    # current query (including the selected official ESPN event_id) to the
+    # outer Community Cloud wrapper without changing model behavior.
+    if sync_event_id:
+        _clear_selector_sync()
     st.session_state[f"{MATCHUP_STATE_KEY_PREFIX}{selected_day}"] = selected_index
     return selected_index
 
@@ -352,6 +379,7 @@ __all__ = [
     "ACTIVE_MARKER",
     "DATE_QUERY_KEY",
     "EVENT_QUERY_KEY",
+    "SELECTOR_SYNC_QUERY_KEY",
     "FROZEN_PRESENTATION",
     "MARKET",
     "MAY_MODIFY_PROJECTION",
@@ -366,10 +394,12 @@ __all__ = [
     "_game_label",
     "_load_games",
     "_query_event_id",
+    "_selector_sync_event_id",
     "_same_school",
     "_selected_game_index",
     "_selector_href",
     "_set_query_event_id",
+    "_clear_selector_sync",
     "render_cfb_hub",
     "render_game_total_hub",
 ]
