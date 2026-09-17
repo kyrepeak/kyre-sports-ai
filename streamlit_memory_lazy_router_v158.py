@@ -22,6 +22,7 @@ import streamlit_memory_lazy_router_v157 as prior
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V158 • CFB GAME TOTAL V162 PAGE CACHE BOUNDARY"
 PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V162_PRODUCTION_ACTIVE"
+LEGACY_V161_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v157"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
@@ -103,10 +104,11 @@ def _purge_game_total_page_modules() -> int:
 
 
 def _render_production_heartbeat() -> None:
+    """Render V162 identity plus the frozen V161 browser-cert compatibility marker."""
     st.markdown(
         f'<div data-testid="cfb-game-total-v162-heartbeat" '
         f'style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;font-size:1px">'
-        f'{PRODUCTION_HEARTBEAT}</div>',
+        f'{PRODUCTION_HEARTBEAT} • {LEGACY_V161_HEARTBEAT}</div>',
         unsafe_allow_html=True,
     )
 
@@ -170,6 +172,7 @@ __all__ = [
     "FROZEN_ROUTER",
     "GAME_TOTAL_MARKET",
     "GAME_TOTAL_PAGE_PREFIX",
+    "LEGACY_V161_HEARTBEAT",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "PRODUCTION_HEARTBEAT",
