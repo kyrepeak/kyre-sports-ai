@@ -42,6 +42,7 @@ ROUTE_QUERY_MARKET = v4.ROUTE_QUERY_MARKET
 CFB_SPORT = v4.CFB_SPORT
 GAME_TOTAL_MARKET = v4.GAME_TOTAL_MARKET
 CERT_DATE = v4.CERT_DATE
+SELECTOR_WIDGET_LABEL = "SELECT MATCHUP"
 ProductionVerificationFailure = base.ProductionVerificationFailure
 
 
@@ -84,13 +85,25 @@ def _find_v163_frame(page, timeout_seconds: float = 120.0):
 def _selected_link_event(frame) -> str:
     selected = frame.locator(
         '[data-testid="gt163-game-strip"] '
-        'a.gt163-game-link[aria-current="true"]'
+        'span.gt163-game-link[aria-current="true"]'
     )
     if selected.count() != 1:
         raise ProductionVerificationFailure(
             "V163 production selector did not expose exactly one selected game card"
         )
     return str(selected.first.get_attribute("data-event-id") or "").strip()
+
+
+def _native_selector_radios(frame):
+    selector = frame.locator('[data-testid="stRadio"]').filter(
+        has_text=SELECTOR_WIDGET_LABEL
+    )
+    if selector.count() != 1:
+        raise ProductionVerificationFailure(
+            f"V163 production selector expected one native {SELECTOR_WIDGET_LABEL!r} "
+            f"radio group; found {selector.count()}"
+        )
+    return selector.locator('input[type="radio"]')
 
 
 def _wait_for_initial_top_level_selection(
@@ -123,21 +136,36 @@ def _wait_for_initial_top_level_selection(
 
 
 def _switch_target(frame):
-    links = frame.locator('[data-testid="gt163-game-strip"] a.gt163-game-link')
-    count = links.count()
-    if count < 2:
+    cards = frame.locator('[data-testid="gt163-game-strip"] span.gt163-game-link')
+    radios = _native_selector_radios(frame)
+    count = cards.count()
+    if count < 2 or radios.count() != count:
         raise ProductionVerificationFailure(
-            f"V163 production selector needs at least two verified games; got {count}"
+            "V163 production selector card/radio coverage mismatch: "
+            f"cards={count} radios={radios.count()}"
         )
+
     current = _selected_link_event(frame)
+    current_index = None
+    target_index = None
+    target_event = ""
     for index in range(count):
-        candidate = links.nth(index)
-        event_id = str(candidate.get_attribute("data-event-id") or "").strip()
-        if event_id and event_id != current:
-            return candidate, event_id, count
-    raise ProductionVerificationFailure(
-        "V163 production selector had no second official ESPN event to switch to"
-    )
+        event_id = str(cards.nth(index).get_attribute("data-event-id") or "").strip()
+        if event_id == current:
+            current_index = index
+        elif event_id and target_index is None:
+            target_index = index
+            target_event = event_id
+
+    if current_index is None or not radios.nth(current_index).is_checked():
+        raise ProductionVerificationFailure(
+            "V163 native selector checked state does not match the selected game card"
+        )
+    if target_index is None:
+        raise ProductionVerificationFailure(
+            "V163 production selector had no second official ESPN event to switch to"
+        )
+    return radios.nth(target_index), target_event, count
 
 
 def _wait_for_top_level_selection(
@@ -207,16 +235,13 @@ def _browser_verify_v163_selector(
             )
             v4._assert_v163_surface(body)
 
-            target, target_event, link_count = _switch_target(frame)
-            href = str(target.get_attribute("href") or "")
-            target_scope = str(target.get_attribute("target") or "")
-            if not href.startswith("?") or target_scope != "_self":
+            target, target_event, radio_count = _switch_target(frame)
+            if target.is_checked():
                 raise ProductionVerificationFailure(
-                    "V163 game link is not Streamlit query-sync safe: "
-                    f"href={href!r} target={target_scope!r}"
+                    "V163 switch target was already checked before selection"
                 )
 
-            target.click(timeout=30000)
+            target.check(timeout=30000, force=True)
             switched_frame, switched_body, click_scans = _wait_for_top_level_selection(
                 page,
                 target_event,
@@ -249,7 +274,7 @@ def _browser_verify_v163_selector(
                 **evidence,
                 "game_total_route": f"{CFB_SPORT} -> {GAME_TOTAL_MARKET}",
                 "certification_date": CERT_DATE,
-                "game_link_count": link_count,
+                "game_radio_count": radio_count,
                 "initial_event_id": initial_event,
                 "clicked_event_id": target_event,
                 "reloaded_event_id": reloaded_event,
