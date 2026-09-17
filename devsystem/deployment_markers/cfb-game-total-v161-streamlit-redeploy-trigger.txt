@@ -1,0 +1,8 @@
+CFB_GAME_TOTAL_V161_STREAMLIT_REDEPLOY_TRIGGER
+
+Purpose: force Streamlit Cloud to consume the already-merged Router V156 cache-safe hotfix from PR #569.
+Baseline before trigger: 2b729b16f958cc4797aaef5ef1effacfac5b0d95.
+Production evidence: DevSystem production verification #212 attempts 1 and 2 still served the pre-#569 Router V156 helper.
+
+This marker changes no runtime behavior, projection math, distribution math, Step-12 qualification, Top-5 ranking, API/model behavior, sportsbook influence, routing, or page presentation.
+Sportsbook projection influence remains exactly 0.0%.
