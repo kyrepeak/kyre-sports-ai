@@ -199,9 +199,9 @@ def pytest_collection_modifyitems(session, config, items):
     assert "import streamlit_memory_lazy_router_v156 as prior" in cache_bust_router_source
     assert "return prior.render_app()" in cache_bust_router_source
 
-    # Production entrypoint must activate V157/V161 exactly.
+    # Production entrypoint must activate V157/V161 while preserving the frozen global heartbeat.
     assert "from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app" in app_source
-    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V157_CFB_GAME_TOTAL_V161_CACHE_BUST_2026-09-17"' in app_source
+    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in app_source
 
     # Frozen V160 browser proof remains part of the inherited tablet regression contract.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
