@@ -18,15 +18,20 @@ def test_v153_router_targets_only_connected_game_total_page() -> None:
     assert "MAY_MODIFY_PROJECTION = False" in source
 
 
-def test_v153_delegates_frozen_navigation_and_swaps_only_renderer_and_heartbeat() -> None:
+def test_v153_delegates_frozen_navigation_but_imports_v9_directly_for_exact_game_total() -> None:
     source = (ROOT / "streamlit_memory_lazy_router_v153.py").read_text(encoding="utf-8")
 
     assert "import streamlit_memory_lazy_router_v152 as prior" in source
     assert "_FROZEN_GAME_TOTAL_RENDER = prior._render_cfb_game_total_v152" in source
-    assert "prior.ACTIVE_PAGE = ACTIVE_PAGE" in source
-    assert "prior._render_production_heartbeat = _render_production_heartbeat" in source
+    assert "if sport != CFB_SPORT_LABEL or market != GAME_TOTAL_MARKET:" in source
+    assert "return _FROZEN_GAME_TOTAL_RENDER(market)" in source
+    assert "prior._latch_game_total_route()" in source
+    assert "prior._persist_game_total_route_query()" in source
+    assert "page = prior.root._import(ACTIVE_PAGE)" in source
+    assert "return page.render_cfb_hub(" in source
     assert "prior._render_cfb_game_total_v152 = _render_cfb_game_total_v153" in source
     assert "return prior.render_app()" in source
+    assert "prior.ACTIVE_PAGE = ACTIVE_PAGE" not in source
     assert "analyze_game(" not in source
 
 
@@ -37,10 +42,8 @@ def test_v153_keeps_v152_production_heartbeat_compatibility() -> None:
     assert "{LEGACY_PRODUCTION_HEARTBEAT}" in source
 
 
-def test_v153_restores_v152_module_state_after_render() -> None:
+def test_v153_restores_v152_renderer_after_render() -> None:
     source = (ROOT / "streamlit_memory_lazy_router_v153.py").read_text(encoding="utf-8")
 
     assert "finally:" in source
-    assert "prior.ACTIVE_PAGE = original_page" in source
-    assert "prior._render_production_heartbeat = original_heartbeat" in source
     assert "prior._render_cfb_game_total_v152 = original_renderer" in source
