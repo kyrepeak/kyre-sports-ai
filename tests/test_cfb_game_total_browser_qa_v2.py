@@ -71,30 +71,12 @@ def test_v156_persists_game_total_query_without_requiring_cached_v155_helper():
     assert "st.query_params" in helper
 
 
-def test_v161_cache_bust_accepts_only_v157_or_verified_additive_v158_successor():
+def test_v161_cache_bust_activates_new_router_v157_module():
     router = ROOT / "streamlit_memory_lazy_router_v157.py"
-    assert router.exists(), "production cache bust requires the frozen Router V157 module"
-
+    assert router.exists(), "production cache bust requires a new Router V157 module name"
     app_source = (ROOT / "app.py").read_text(encoding="utf-8")
-    v157_active = (
-        "from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app"
-        in app_source
-    )
-    v158_active = (
-        "from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app"
-        in app_source
-    )
-    assert v157_active or v158_active
-
+    assert "from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app" in app_source
     source = router.read_text(encoding="utf-8")
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in source
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v156"' in source
     assert "prior._persist_game_total_route_query" not in source
-
-    if v158_active:
-        successor = ROOT / "streamlit_memory_lazy_router_v158.py"
-        assert successor.exists(), "V158 activation requires the additive successor module"
-        successor_source = successor.read_text(encoding="utf-8")
-        assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v157"' in successor_source
-        assert 'LEGACY_V161_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in successor_source
-        assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V162_PRODUCTION_ACTIVE"' in successor_source
