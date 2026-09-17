@@ -1,0 +1,170 @@
+name: CFB Game Total V160 permanent freeze
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [cfb-game-total-v160-permanent-freeze]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest playwright
+
+      - name: Freeze scope guard
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"], text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-game-total-v160-permanent-freeze.yml",
+              "cfb_game_total_v160_freeze_manifest_v1.json",
+              "devsystem/task_ledgers/cfb-game-total-v160-permanent-freeze.json",
+          }
+          if changed != expected:
+              raise SystemExit(
+                  "V160 freeze branch changed active code: " + str(sorted(changed))
+              )
+          print("CFB_GAME_TOTAL_V160_FREEZE_SCOPE=PASS")
+          PY
+
+      - name: Verify permanent-freeze manifest metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v160_freeze_manifest_v1.json").read_text())
+          assert m["version"] == 1
+          assert m["baseline_commit"] == "bab5ec5573c1d28736e57cad58b68a8da4196bab"
+          assert m["certified_visual_pr"] == 563
+          assert m["certified_cert_hotfix_pr"] == 564
+          assert m["production_verification_run"] == 209
+          assert m["main_browser_run"] == 122
+          c=m["contract"]
+          assert c["projection_math_changed"] is False
+          assert c["distribution_math_changed"] is False
+          assert c["step12_qualification_changed"] is False
+          assert c["top5_ranking_changed"] is False
+          assert c["api_model_behavior_changed"] is False
+          assert c["sportsbook_projection_influence"] == 0.0
+          assert c["exact_game_total_query_persistence"] is True
+          assert c["over_under_fallback_after_refresh_forbidden"] is True
+          assert c["future_changes_must_be_additive"] is True
+          assert c["permanently_frozen"] is True
+          print("CFB_GAME_TOTAL_V160_FREEZE_METADATA=PASS")
+          PY
+
+      - name: Verify every frozen blob exactly
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v160_freeze_manifest_v1.json").read_text())
+          failures=[]
+          for path, expected in m["exact_blobs"].items():
+              actual=subprocess.check_output(
+                  ["git","rev-parse",f"HEAD:{path}"], text=True
+              ).strip()
+              if actual != expected:
+                  failures.append(f"{path}: expected {expected}, got {actual}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("CFB_GAME_TOTAL_V160_EXACT_BLOBS=PASS", len(m["exact_blobs"]))
+          PY
+
+      - name: Enforce V160 frozen boundaries and route firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          page=Path("cfb_game_total_clean_page_v10.py").read_text(encoding="utf-8")
+          router=Path("streamlit_memory_lazy_router_v155.py").read_text(encoding="utf-8")
+          browser=Path("devsystem/cfb_game_total_browser_qa_v1.py").read_text(encoding="utf-8")
+          production=Path("devsystem/production_verify_v3.py").read_text(encoding="utf-8")
+          app=Path("app.py").read_text(encoding="utf-8")
+
+          required_page=[
+              'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v9"',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'MAY_MODIFY_PROJECTION = False',
+              'MONSTER SPORTS INTELLIGENCE',
+          ]
+          required_router=[
+              'GAME_TOTAL_MARKET = "Game Total"',
+              'ACTIVE_PAGE = "cfb_game_total_clean_page_v10"',
+              'def _persist_game_total_route_query',
+              'st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET',
+              'def _render_exact_game_total_surface',
+          ]
+          required_browser=[
+              'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"',
+              'def _find_direct_game_total_frame',
+              'page.reload(',
+              '"width": 1067',
+              '"height": 1536',
+              '"CFB OVER / UNDER • MONSTER DASHBOARD"',
+              'FULL_RENDER_MARKER = "VIEW TOP 5 →"',
+          ]
+          required_production=[
+              'EXPECTED_ROUTER = "streamlit_memory_lazy_router_v155"',
+              'GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"',
+              'GAME_TOTAL_MARKET = "Game Total"',
+              'production_game_total_v160_green.png',
+          ]
+          for token in required_page:
+              if token not in page:
+                  raise SystemExit(f"missing frozen page marker: {token}")
+          for token in required_router:
+              if token not in router:
+                  raise SystemExit(f"missing frozen router marker: {token}")
+          if "cfb_route_base._persist_fast_route_query()" in router:
+              raise SystemExit("O/U persistence helper re-entered V155 Game Total route")
+          for token in required_browser:
+              if token not in browser:
+                  raise SystemExit(f"missing frozen browser marker: {token}")
+          for token in required_production:
+              if token not in production:
+                  raise SystemExit(f"missing frozen production marker: {token}")
+          if "from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app" not in app:
+              raise SystemExit("app.py no longer activates V155")
+          if 'STREAMLIT_MAIN_V155_CFB_GAME_TOTAL_V160_VISUAL_PARITY_2026-09-17' not in app:
+              raise SystemExit("V160 deployment heartbeat missing from app.py")
+          print("CFB_GAME_TOTAL_V160_ROUTE_FIREWALL=PASS")
+          PY
+
+      - name: Compile frozen V160 surface
+        run: |
+          python -m py_compile \
+            cfb_game_total_clean_page_v10.py \
+            streamlit_memory_lazy_router_v155.py \
+            devsystem/cfb_game_total_browser_qa_v1.py \
+            devsystem/production_verify_v3.py
+
+      - name: Run focused V160 regression contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_game_total_v160_live_visual_parity.py \
+            tests/test_cfb_game_total_v160_cert_hotfix.py \
+            tests/test_devsystem_production_verify_v3.py \
+            tests/test_cfb_game_total_v152_activation.py
+
+      - name: Certification marker
+        run: echo "CFB_GAME_TOTAL_V160_PERMANENT_FREEZE_GREEN"

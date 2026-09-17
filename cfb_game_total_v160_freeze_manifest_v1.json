@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "scope": "cfb_game_total_v160_exact_monster_target",
+  "policy": "Permanently freeze the certified College Football Game Total V160 presentation/router/browser/production-cert contract at the final production baseline. Future Game Total work must be additive through new versioned pages, routers, and certification contracts. V160 must not be edited in place.",
+  "baseline_commit": "bab5ec5573c1d28736e57cad58b68a8da4196bab",
+  "certified_visual_pr": 563,
+  "certified_cert_hotfix_pr": 564,
+  "production_verification_run": 209,
+  "main_browser_run": 122,
+  "exact_blobs": {
+    "cfb_game_total_clean_page_v10.py": "d4b81b19e18391d3ddc0a1f22201594ddf4d7ee1",
+    "streamlit_memory_lazy_router_v155.py": "43360a24e631df4cc269928c5aa597a8a44c1e18",
+    "devsystem/cfb_game_total_browser_qa_v1.py": "5ac22a7f199d7dc5b522b6753bc3f13b6204738b",
+    "devsystem/production_verify_v3.py": "3e43a8c51068d87502bbd9f0a14149b2b8147623"
+  },
+  "contract": {
+    "active_page": "cfb_game_total_clean_page_v10",
+    "active_router": "streamlit_memory_lazy_router_v155",
+    "production_verifier": "devsystem/production_verify_v3.py",
+    "frozen_presentation_parent": "cfb_game_total_clean_page_v9",
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "exact_game_total_query_persistence": true,
+    "over_under_fallback_after_refresh_forbidden": true,
+    "direct_monster_surface": true,
+    "ipad_refresh_contract": "1067x1536",
+    "router_v155_production_heartbeat": "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE",
+    "future_changes_must_be_additive": true,
+    "new_versioned_page_router_or_cert_required": true,
+    "production_proof_required_before_freeze_merge": true,
+    "permanently_frozen": true
+  },
+  "guarantees": [
+    "V159 remains the frozen data/model owner beneath V160 presentation",
+    "Projection, distribution, qualification, Top-5, API/model behavior remain unchanged",
+    "Sportsbook projection influence remains exactly 0.0%",
+    "College Football -> Game Total persists exact Game Total query state across hard refresh",
+    "The direct Monster Sports Intelligence surface cannot silently fall back to the Over/Under dashboard",
+    "Real-browser certification keeps the supplied iPad-sized refresh path under contract",
+    "Production verification certifies Router V155 through CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE",
+    "Future work must advance through additive versioned successors rather than modifying V160 in place"
+  ]
+}
