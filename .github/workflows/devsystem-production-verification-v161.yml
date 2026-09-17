@@ -1,0 +1,67 @@
+name: DevSystem production verification V161
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "devsystem/production_verify_v4.py"
+      - "tests/test_devsystem_production_verify_v4.py"
+      - ".github/workflows/devsystem-production-verification-v161.yml"
+  push:
+    branches: [main]
+    paths:
+      - "devsystem/production_verify_v4.py"
+      - "tests/test_devsystem_production_verify_v4.py"
+      - ".github/workflows/devsystem-production-verification-v161.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devsystem-production-v161-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  v161-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install contract dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest playwright requests
+      - name: Prove V161 production freshness contract
+        run: python -m pytest -q tests/test_devsystem_production_verify_v4.py
+
+  v161-production:
+    if: github.event_name != 'pull_request'
+    needs: [v161-contract]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install production verification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests pytest playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify immutable Render production identity
+        run: python devsystem/production_identity_verify_v1.py
+      - name: Verify deployed V161 Streamlit freshness and Render API
+        run: |
+          python devsystem/production_verify_v4.py \
+            --artifact-dir artifacts/production-verification-v161
+      - name: Upload V161 production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devsystem-production-v161-${{ github.run_id }}
+          path: artifacts/production-verification-v161
+          if-no-files-found: warn
+          retention-days: 14
