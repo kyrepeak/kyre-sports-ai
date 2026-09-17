@@ -20,7 +20,7 @@ def test_v161_is_additive_successor_of_v160():
 def test_v161_exposes_visible_seven_day_game_strip():
     source = _source()
     assert "range(7)" in source
-    assert "V161_GAME_DAY" in source
+    assert "DATE_QUERY_KEY" in source
     assert "st.columns(7" in source or "st.columns([1] * 7" in source
 
 
@@ -34,3 +34,20 @@ def test_v161_keeps_frozen_date_engine_and_hides_sidebar_date_picker():
 def test_v161_does_not_render_monster_masthead():
     source = _source()
     assert "_render_v160_masthead()" not in source
+    assert ".gt160-masthead{display:none!important}" in source
+
+
+def test_v161_market_verifier_reads_official_espn_event_identity():
+    source = _source()
+    assert '"espn_event_id"' in source
+    assert 'f"{side}_espn_team_id"' in source
+    assert 'ODDS_MATCH_METHOD = "official ESPN event_id only"' in source
+
+
+def test_v161_market_verifier_is_fresh_unique_and_projection_independent():
+    source = _source()
+    assert "MAX_VERIFIED_FEED_AGE_SECONDS = 180.0" in source
+    assert "len(matches) != 1" in source
+    assert 'semantics.get("projection_weight") != 0.0' in source
+    assert 'semantics.get("may_modify_projection") not in (None, False)' in source
+    assert 'row.get("identity_verified") is not True' in source
