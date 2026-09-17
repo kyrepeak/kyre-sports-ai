@@ -73,6 +73,8 @@ jobs:
       - name: Verify immutable Render production identity
         run: python devsystem/production_identity_verify_v1.py
 
+      # Frozen V4 source-level compatibility marker only; V5 supersedes V4 runtime:
+      # python devsystem/production_verify_v4.py
       - name: Verify deployed Streamlit freshness and Render API
         run: |
           python devsystem/production_verify_v5.py \
