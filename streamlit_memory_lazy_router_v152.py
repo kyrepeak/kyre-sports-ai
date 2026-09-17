@@ -21,7 +21,7 @@ PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v151"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
-ACTIVE_PAGE = "cfb_game_total_clean_page_v6"
+ACTIVE_PAGE = "cfb_game_total_clean_page_v7"
 ROUTE_LATCH_KEY = "cfb_game_total_v152_route_active"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
@@ -42,12 +42,6 @@ def _latch_game_total_route() -> None:
 
 
 def _game_total_route_active() -> bool:
-    """Resolve V152 Game Total route state without trapping intentional nav.
-
-    Page-only widget reruns may lose the legacy sport/market fields or URL query
-    before V152 re-enters. The V152 latch survives those reruns. Explicit sport
-    or CFB-market changes are authoritative and clear the latch immediately.
-    """
     sport = str(st.session_state.get("ks_sport_touch") or "").strip()
     market = str(st.session_state.get("ks_cfb_market_touch") or "").strip()
     latched = st.session_state.get(ROUTE_LATCH_KEY) is True
@@ -87,7 +81,6 @@ def _query_requests_game_total() -> bool:
 
 
 def _restore_game_total_route_from_query() -> bool:
-    """Repair exact Game Total route state from the explicit URL query."""
     if not _query_requests_game_total():
         return False
 
@@ -102,7 +95,6 @@ def _restore_game_total_route_from_query() -> bool:
 
 
 def _selectbox_v152(label, options, *args, **kwargs):
-    """V77 selector behavior plus V152 Game Total route ownership."""
     if label == "🏟️ Sport":
         choices = list(options)
         if CFB_SPORT_LABEL not in choices:
