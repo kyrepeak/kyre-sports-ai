@@ -30,7 +30,8 @@ REQUIRED_VISIBLE = (
     "FINAL MODEL SUMMARY",
     "TOP-5 SLATE SCANNER",
 )
-FULL_RENDER_MARKER = "TOP-5 SLATE SCANNER"
+# Use the visible CTA rather than the same-named hidden sidebar expander.
+FULL_RENDER_MARKER = "VIEW TOP 5 →"
 FORBIDDEN_VISIBLE = (
     "College Football Game Total — Final",
     ".gt160-masthead{max-width:",
