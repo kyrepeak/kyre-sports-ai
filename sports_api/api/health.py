@@ -12,6 +12,7 @@ from sports_api.monster_telemetry_probe_v1 import (
     run_telemetry_probe_once,
     telemetry_probe_enabled,
 )
+from sports_api.api.cfb_official_games_v1 import router as cfb_official_games_router
 from sports_api.api.cfb_render_fanduel_transport_v1 import install_hosted_transport
 from sports_api.api.cfb_markets import router as cfb_markets_router
 from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_router
@@ -35,6 +36,7 @@ router = APIRouter(tags=["system"])
 # lifespan and the Render startup-recursion fix from CFB Step 1.
 router.routes.extend(cfb_markets_router.routes)
 router.routes.extend(cfb_market_identity_router.routes)
+router.routes.extend(cfb_official_games_router.routes)
 router.routes.extend(cfb_odds_router.routes)
 router.routes.extend(nfl_moneyline_market_router.routes)
 router.routes.extend(nfl_passing_yards_market_router.routes)
