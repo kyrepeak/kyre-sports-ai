@@ -25,6 +25,8 @@ from sports_api.posthog_error_radar_v1 import (
 )
 
 if TYPE_CHECKING:
+    # Frozen V161 source-level certification compatibility only; runtime boots V158 below.
+    from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v63 import render_app as _frozen_v63_render_app
     from streamlit_memory_lazy_router_v64 import render_app as _frozen_v64_render_app
     from streamlit_memory_lazy_router_v65 import render_app as _frozen_v65_render_app
