@@ -1,9 +1,9 @@
-"""DevSystem production verification V3 — CFB Game Total freshness proof.
+"""DevSystem production verification V3 — CFB Game Total V160 freshness proof.
 
 Additive over frozen production_verify_v2. V3 preserves every existing Render,
 API, observability, safety, and CFB Over/Under production check, then drives the
 real deployed Streamlit app to College Football -> Game Total and requires the
-exact V152 production heartbeat. A healthy HTTP 200 is not sufficient when the
+exact V160 production heartbeat. A healthy HTTP 200 is not sufficient when the
 visible deployed router is stale.
 """
 from __future__ import annotations
@@ -25,14 +25,14 @@ except ModuleNotFoundError:  # direct `python devsystem/production_verify_v3.py`
     import production_verify_v2 as prior
 
 FROZEN_VERIFIER = "devsystem.production_verify_v2"
-EXPECTED_ROUTER = "streamlit_memory_lazy_router_v152"
-GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
+EXPECTED_ROUTER = "streamlit_memory_lazy_router_v155"
+GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 ProductionVerificationFailure = base.ProductionVerificationFailure
 
 
-def _assert_v152_heartbeat(body: str) -> str:
+def _assert_v160_heartbeat(body: str) -> str:
     if GAME_TOTAL_REQUIRED_HEARTBEAT not in str(body or ""):
         raise ProductionVerificationFailure(
             "stale Streamlit Game Total deployment: "
@@ -46,11 +46,11 @@ def _build_freshness_evidence(
     expected_commit: str,
     observed_body: str,
 ) -> dict[str, Any]:
-    observed = _assert_v152_heartbeat(observed_body)
+    observed = _assert_v160_heartbeat(observed_body)
     return {
         "expected_commit": str(expected_commit or "unknown"),
         "expected_router": EXPECTED_ROUTER,
-        "observed_router": "V152",
+        "observed_router": "V155/V160",
         "observed_build_marker": observed,
         "freshness_verified": True,
     }
@@ -104,7 +104,7 @@ def _browser_verify_game_total_freshness(
                 if GAME_TOTAL_REQUIRED_HEARTBEAT in final_body:
                     break
                 page.wait_for_timeout(1500)
-            _assert_v152_heartbeat(final_body)
+            _assert_v160_heartbeat(final_body)
 
             forbidden = base._body_has_forbidden_error(final_body)
             if forbidden:
@@ -112,7 +112,7 @@ def _browser_verify_game_total_freshness(
                     f"Production Game Total runtime error marker: {forbidden}"
                 )
 
-            screenshot = artifact_dir / "production_game_total_v152_green.png"
+            screenshot = artifact_dir / "production_game_total_v160_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
             return {
                 **_build_freshness_evidence(
@@ -127,7 +127,7 @@ def _browser_verify_game_total_freshness(
         except Exception:
             try:
                 page.screenshot(
-                    path=str(artifact_dir / "production_game_total_v152_failure.png"),
+                    path=str(artifact_dir / "production_game_total_v160_failure.png"),
                     full_page=True,
                 )
             except Exception:
