@@ -26,7 +26,8 @@ def test_browser_qa_contract_is_explicit_and_safe():
     assert module.CFB_SPORT == "College Football"
     assert module.CFB_MARKET == "Over/Under"
     assert module.CFB_MARKET_LABEL == "🎯 CFB Market"
-    assert "CFB O/U • CLEAN PAGE V38 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V39 ACTIVE" in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V38 ACTIVE" not in module.CFB_REQUIRED_MARKERS
     assert "CFB O/U • CLEAN PAGE V30 ACTIVE" not in module.CFB_REQUIRED_MARKERS
     assert "FUTURE SLATE COVERAGE ACTIVE" in module.CFB_REQUIRED_MARKERS
     assert "OFFICIAL ESPN IDENTITY RECOVERY" in module.CFB_REQUIRED_MARKERS
