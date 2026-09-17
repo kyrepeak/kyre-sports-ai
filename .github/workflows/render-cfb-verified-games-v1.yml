@@ -1,0 +1,55 @@
+name: Render CFB verified-games V1 certification
+
+on:
+  push:
+    branches:
+      - hotfix/render-cfb-verified-games-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install exact Render runtime dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Run focused verified-games and existing identity contracts
+        run: |
+          python -m pytest -q \
+            tests/test_cfb_verified_games_endpoint_v1.py \
+            tests/test_cfb_market_identity_snapshot_v1.py
+
+      - name: Compile additive backend surface
+        run: |
+          python -m py_compile \
+            sports_api/api/cfb_verified_games_v1.py \
+            sports_api/main_cfb_verified_v1.py
+
+      - name: Prove real Render app mounts exact endpoint
+        run: |
+          python - <<'PY'
+          from sports_api.main_cfb_verified_v1 import app
+
+          paths = {getattr(route, 'path', '') for route in app.routes}
+          expected = '/api/v1/cfb/markets/verified-games'
+          assert expected in paths, f'missing Render route: {expected}'
+          print('RENDER_CFB_VERIFIED_GAMES_V1_GREEN', expected)
+          PY
+
+      - name: Prove Docker entrypoint uses additive wrapper
+        run: |
+          grep -F 'sports_api.main_cfb_verified_v1:app' sports_api/Dockerfile
