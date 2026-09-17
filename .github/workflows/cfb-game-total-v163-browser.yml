@@ -8,8 +8,11 @@ on:
       - "streamlit_memory_lazy_router_v159.py"
       - "cfb_game_total_clean_page_v14.py"
       - "devsystem/cfb_game_total_browser_qa_v4.py"
+      - "devsystem/production_verify_v4.py"
       - "tests/test_cfb_game_total_v163_game_selector.py"
+      - "tests/test_devsystem_production_verify_v4.py"
       - ".github/workflows/cfb-game-total-v163-browser.yml"
+      - ".github/workflows/devsystem-production-verification.yml"
   workflow_dispatch:
 
 permissions:
@@ -44,12 +47,14 @@ jobs:
           python -m py_compile streamlit_memory_lazy_router_v159.py
           python -m py_compile cfb_game_total_clean_page_v14.py
           python -m py_compile devsystem/cfb_game_total_browser_qa_v4.py
+          python -m py_compile devsystem/production_verify_v4.py
 
       - name: Run focused V163 contracts
         run: |
           PYTHONPATH=. python -m pytest -q \
             tests/test_cfb_game_total_v162_cache_boundary.py \
-            tests/test_cfb_game_total_v163_game_selector.py
+            tests/test_cfb_game_total_v163_game_selector.py \
+            tests/test_devsystem_production_verify_v4.py
 
       - name: Start real production entrypoint locally
         shell: bash
