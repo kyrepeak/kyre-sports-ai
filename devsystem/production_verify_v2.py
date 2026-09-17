@@ -1,17 +1,19 @@
 """DevSystem production verification V2 — CFB Clean Page V39 activation.
 
 Additive over frozen production_verify_v1. V2 preserves V1's Render API,
-identity, observability, safety, and HTTP checks, but delegates the CFB
-Over/Under browser proof to the already-certified V39 browser driver. That
-single readiness contract waits for the final Steps 11–12 marker before
-judging the rendered page, eliminating duplicate timing logic between PR and
-production certification.
+identity, observability, safety, and HTTP checks. For the CFB Over/Under browser
+proof it reuses the certified V39 browser navigation/readiness primitives but
+intentionally skips the branch-local sport-option inventory interaction, which
+is not required for production route certification and is unreliable across a
+remote Streamlit dropdown portal.
 """
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 from typing import Any
+
+from playwright.sync_api import sync_playwright
 
 try:
     from devsystem import browser_qa_v1 as certified_browser
@@ -39,15 +41,115 @@ def _browser_verify_v39(
     streamlit_url: str,
     artifact_dir: Path,
 ) -> dict[str, Any]:
-    result = dict(
-        certified_browser.run_browser_qa(
-            base_url=streamlit_url,
-            artifact_dir=artifact_dir,
+    artifacts = Path(artifact_dir)
+    artifacts.mkdir(parents=True, exist_ok=True)
+    certified_browser._wait_for_health(streamlit_url)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-dev-shm-usage", "--no-sandbox"],
         )
-    )
-    # V1 owns the top-level production status. Keep browser evidence additive.
-    result.pop("status", None)
-    return result
+        page = browser.new_page(viewport={"width": 1440, "height": 1400})
+        try:
+            page.goto(
+                streamlit_url.rstrip("/") + "/",
+                wait_until="domcontentloaded",
+                timeout=120000,
+            )
+            frame, scan = certified_browser._find_app_frame(page)
+
+            initial_body = frame.locator("body").inner_text()
+            forbidden = certified_browser._body_has_forbidden_error(initial_body)
+            if forbidden:
+                raise frozen.ProductionVerificationFailure(
+                    f"Production Streamlit runtime error marker: {forbidden}"
+                )
+
+            sport_combo = frame.get_by_role("combobox").nth(0)
+            if sport_combo.count() == 0:
+                raise frozen.ProductionVerificationFailure(
+                    "Production sport selector is missing"
+                )
+            try:
+                initial_sport_value = sport_combo.input_value(timeout=3000)
+            except Exception:
+                try:
+                    initial_sport_value = sport_combo.inner_text(timeout=3000)
+                except Exception:
+                    initial_sport_value = ""
+
+            # Production needs the certified route, not a complete dropdown
+            # inventory. Type-select the exact sport and wait for the CFB-only
+            # market selector to prove the Streamlit rerun completed.
+            certified_browser._choose(
+                page,
+                frame,
+                0,
+                certified_browser.CFB_SPORT,
+            )
+            cfb_market_combo = frame.get_by_role(
+                "combobox",
+                name=certified_browser.CFB_MARKET_LABEL,
+                exact=True,
+            )
+            cfb_market_combo.wait_for(state="visible", timeout=45000)
+
+            certified_browser._choose(
+                page,
+                frame,
+                1,
+                certified_browser.CFB_MARKET,
+            )
+
+            # The V39 ACTIVE caption can appear before lower evidence cards.
+            # Waiting for the final marker proves the full dashboard is ready.
+            final_body = certified_browser._wait_for_text(
+                frame,
+                CFB_REQUIRED_MARKERS[-1],
+                90.0,
+            )
+            missing_markers = [
+                marker for marker in CFB_REQUIRED_MARKERS
+                if marker not in final_body
+            ]
+            if missing_markers:
+                raise frozen.ProductionVerificationFailure(
+                    "Production CFB V39 presentation marker drift: "
+                    + " | ".join(missing_markers)
+                )
+
+            forbidden = certified_browser._body_has_forbidden_error(final_body)
+            if forbidden:
+                raise frozen.ProductionVerificationFailure(
+                    f"Production CFB route runtime error marker: {forbidden}"
+                )
+
+            screenshot = artifacts / "production_browser_green.png"
+            page.screenshot(path=str(screenshot), full_page=True)
+            return {
+                "initial_sport_value": initial_sport_value,
+                "sport_option_inventory_verified_by": "branch-local DevSystem browser QA",
+                "cfb_route": (
+                    f"{certified_browser.CFB_SPORT} -> "
+                    f"{certified_browser.CFB_MARKET}"
+                ),
+                "cfb_markers": list(CFB_REQUIRED_MARKERS),
+                "app_frame_url": frame.url,
+                "frame_scan_count": len(scan),
+                "screenshot": str(screenshot),
+            }
+        except Exception:
+            try:
+                page.screenshot(
+                    path=str(artifacts / "production_browser_failure.png"),
+                    full_page=True,
+                )
+            except Exception:
+                pass
+            raise
+        finally:
+            browser.close()
 
 
 def run(*, artifact_dir: str = "artifacts/production-verification"):
