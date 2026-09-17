@@ -1,9 +1,8 @@
-"""Branch-local browser proof for the real CFB Game Total V152 entrypoint.
+"""Branch-local browser proof for the CFB Game Total activation chain.
 
-This QA intentionally verifies only Step 1 of the V152 rebuild: app.py must boot
-Router V152 and the exact College Football -> Game Total route must expose the
-V152 production heartbeat. Deeper identity/evidence/layout checks belong to the
-later V152 production browser certification.
+This legacy-named QA preserves the V152 activation route while allowing its
+certified additive successor. The real app must reach College Football -> Game
+Total and expose the current V160 production heartbeat through Router V155.
 """
 from __future__ import annotations
 
@@ -18,7 +17,7 @@ import browser_qa_v1 as base
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 CFB_MARKET_LABEL = "🎯 CFB Market"
-HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
+HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"
 
 
 class V152ActivationFailure(RuntimeError):
@@ -63,12 +62,12 @@ def run(
 
             body = base._wait_for_text(frame, HEARTBEAT, timeout_seconds=60.0)
             if HEARTBEAT not in body:
-                raise V152ActivationFailure("V152 production heartbeat is not visible")
+                raise V152ActivationFailure("V160 production heartbeat is not visible")
 
             forbidden_error = base._body_has_forbidden_error(body)
             if forbidden_error:
                 raise V152ActivationFailure(
-                    f"V152 route runtime error marker: {forbidden_error}"
+                    f"Game Total route runtime error marker: {forbidden_error}"
                 )
 
             screenshot = artifacts / "cfb_game_total_v152_activation_green.png"
