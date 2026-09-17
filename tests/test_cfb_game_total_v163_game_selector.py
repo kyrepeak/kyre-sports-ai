@@ -18,6 +18,7 @@ def test_v163_adds_visible_scrollable_game_selector_with_espn_event_query():
     assert "overflow-x:auto" in source.replace(" ", "")
     assert "GAMES ON THIS DAY" in source
     assert "event_id" in source
+    assert 'aria-current="true"' in source
 
 
 def test_v163_selected_event_controls_frozen_matchup_index_and_survives_refresh():
