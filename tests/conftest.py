@@ -94,7 +94,7 @@ def pytest_collection_modifyitems(session, config, items):
     # V153 may advance presentation/routing only while proving V152 is its frozen base.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v152"' in active_router_source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V153_CONNECTED_FLOW_ACTIVE"' in active_router_source
-    assert "LEGACY_PRODUCTION_HEARTBEAT = prior.PRODUCTION_HEARTBEAT" in active_router_source
+    assert 'LEGACY_PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"' in active_router_source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in active_router_source
     assert "MAY_MODIFY_PROJECTION = False" in active_router_source
     assert "return prior.render_app()" in active_router_source
