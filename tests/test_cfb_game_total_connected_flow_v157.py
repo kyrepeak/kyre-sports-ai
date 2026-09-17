@@ -19,16 +19,32 @@ def test_v9_connected_flow_is_presentation_only_over_v8() -> None:
 
 
 def test_v9_puts_steps_1_through_12_in_one_connected_flow() -> None:
-    source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
+    import cfb_game_total_clean_page_v9 as page
 
-    assert 'data-testid="gt157-connected-all-steps"' in source
-    assert 'data-testid="gt157-step-{number}"' in source
-    assert "STEP 11" in source
-    assert "Distribution" in source
-    assert "STEP 12" in source
-    assert "Final Synthesis" in source
-    assert "TOP-5" in source
-    assert "Frozen ranking unchanged" in source
+    statuses = {step: "READY" for step in range(1, 11)}
+    details = {step: f"Step {step} verified" for step in range(1, 11)}
+    raw = {
+        "ready": True,
+        "projected_combined_total": 52.4,
+    }
+    final = {
+        "ready": True,
+        "projected_combined_total": 52.4,
+        "core_50_range": {"low": 48, "high": 57},
+        "most_likely_band": {"label": "49–56"},
+        "grade": "A",
+        "forecast_strength": 0.78,
+    }
+
+    html = page._combined_flow_html(statuses, details, raw, final)
+
+    assert 'data-testid="gt157-connected-all-steps"' in html
+    for step in range(1, 13):
+        assert f'data-testid="gt157-step-{step}"' in html
+    assert "STEP 11 • Distribution" in html
+    assert "STEP 12 • Final Synthesis" in html
+    assert "TOP-5 • SLATE SCANNER" in html
+    assert "Frozen ranking unchanged" in html
 
 
 def test_v9_suppresses_only_old_visible_step_rail() -> None:
