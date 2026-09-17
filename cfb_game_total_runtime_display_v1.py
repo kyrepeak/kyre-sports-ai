@@ -125,7 +125,7 @@ def _overlay_game_snapshot_evidence(
     display_game: Mapping[str, Any],
     snap: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Copy verified Game-Total-only environment evidence onto the display game."""
+    """Copy verified Game-Total-only environment/history evidence onto the display game."""
     out = dict(display_game)
     for key in (
         "weather",
@@ -135,10 +135,14 @@ def _overlay_game_snapshot_evidence(
         "forecast",
         "weather_source",
         "weather_updated_at",
+        "history",
+        "series_history",
+        "head_to_head",
+        "history_source",
     ):
         value = snap.get(key)
-        if value not in (None, ""):
-            out[key] = value
+        if value not in (None, "", [], {}):
+            out[key] = dict(value) if isinstance(value, Mapping) else value
     return out
 
 
@@ -201,9 +205,6 @@ def reconcile_display_bundle(
                 deterministic,
             )
         except Exception as exc:
-            # Fall through to the existing live/shared display path. The
-            # deterministic snapshot is a production reliability layer, not a
-            # reason to make the page less resilient if its file is malformed.
             deterministic_error = f"{type(exc).__name__}: {exc}"[:500]
     else:
         deterministic_error = ""
