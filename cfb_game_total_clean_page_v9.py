@@ -17,7 +17,7 @@ import cfb_game_total_clean_page_v6 as step_owner
 import cfb_game_total_clean_page_v7 as evidence_owner
 import cfb_game_total_clean_page_v8 as prior
 
-MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V9 • V157 CONNECTED ALL-STEPS FLOW"
+MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V9 • V157 COMPACT CONNECTED FLOW"
 MARKET = prior.MARKET
 FROZEN_GAME_TOTAL_HUB = prior.FROZEN_GAME_TOTAL_HUB
 FROZEN_PRESENTATION = "cfb_game_total_clean_page_v8"
@@ -30,14 +30,14 @@ runtime_display = step_owner.runtime_display
 
 _V157_CSS = r"""
 <style>
-.gt157-flow{margin:9px 0 3px;padding:10px;border:1px solid rgba(153,112,255,.22);border-radius:15px;background:linear-gradient(180deg,rgba(11,24,36,.98),rgba(7,17,27,.98))}
+.gt157-flow{margin:9px 0 3px;padding:10px;border:1px solid rgba(116,145,170,.15);border-radius:15px;background:linear-gradient(180deg,rgba(11,24,36,.98),rgba(7,17,27,.98))}
 .gt157-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:8px}.gt157-head b{color:#eee8ff;font-size:.56rem;font-weight:950;letter-spacing:.06em}.gt157-head span{color:var(--gt-gray);font-size:.27rem;text-align:right}
-.gt157-progress{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px}.gt157-progress span{padding:4px 7px;border-radius:999px;background:rgba(93,63,145,.16);border:1px solid rgba(189,152,255,.17);color:#cdb9f3;font-size:.25rem;font-weight:900}.gt157-progress strong{color:#f2ecff}
-.gt157-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.gt157-step{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:7px;align-items:center;min-height:48px;padding:7px 8px;border:1px solid rgba(116,145,170,.14);border-radius:10px;background:#0a1823;position:relative;overflow:hidden}.gt157-step:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gt-blue)}.gt157-step.ready:before{background:var(--gt-green)}.gt157-step.check:before,.gt157-step.gated:before{background:var(--gt-amber)}
-.gt157-num{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:rgba(119,185,232,.10);color:var(--gt-blue);font-size:.37rem;font-weight:950}.gt157-step.ready .gt157-num{background:rgba(38,111,77,.15);color:var(--gt-green)}.gt157-copy{min-width:0}.gt157-copy b{display:block;color:#edf4f9;font-size:.44rem;font-weight:950}.gt157-copy span{display:block;color:var(--gt-gray);font-size:.26rem;line-height:1.35;margin-top:2px;white-space:normal}.gt157-state{padding:3px 6px;border-radius:999px;font-size:.24rem;font-weight:950;white-space:nowrap}.gt157-state.ready{background:rgba(34,197,94,.13);color:var(--gt-green)}.gt157-state.check,.gt157-state.gated{background:rgba(245,158,11,.13);color:var(--gt-amber)}
-.gt157-model{margin-top:7px;padding-top:7px;border-top:1px solid rgba(121,146,169,.13)}.gt157-final{margin-top:6px;border:1px solid rgba(160,112,255,.20);border-radius:11px;background:linear-gradient(145deg,rgba(75,41,127,.17),#0a1723);padding:8px}.gt157-finaltop{display:flex;align-items:center;justify-content:space-between;gap:8px}.gt157-finaltop b{color:#d9c8ff;font-size:.33rem;font-weight:950;letter-spacing:.05em}.gt157-finaltop span{color:var(--gt-purple);font-size:.24rem;font-weight:950}.gt157-finalgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:6px}.gt157-metric{background:#102330;border-radius:7px;padding:5px;min-width:0}.gt157-metric b{display:block;color:#edf4f9;font-size:.39rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gt157-metric span{display:block;color:var(--gt-gray);font-size:.19rem;font-weight:850;text-transform:uppercase;margin-top:2px}
-.gt157-top5{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:7px 8px;border:1px dashed rgba(119,185,232,.22);border-radius:9px;background:rgba(18,38,54,.38)}.gt157-top5 b{color:var(--gt-blue);font-size:.31rem;font-weight:950}.gt157-top5 span{color:var(--gt-gray);font-size:.24rem;text-align:right}.gt157-note{margin-top:6px;color:#7f91a1;font-size:.22rem;line-height:1.4}.gt157-note strong{color:var(--gt-purple)}
-@media(max-width:760px){.gt157-grid{grid-template-columns:1fr}.gt157-head{align-items:flex-start;flex-direction:column}.gt157-head span{text-align:left}.gt157-finalgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.gt157-finalgrid .gt157-metric:first-child{grid-column:1/-1}.gt157-top5{align-items:flex-start;flex-direction:column}.gt157-top5 span{text-align:left}}
+.gt157-progress{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:9px}.gt157-progress span{padding:4px 7px;border-radius:999px;background:#102330;border:1px solid rgba(121,146,169,.13);color:#aebdca;font-size:.25rem;font-weight:900}.gt157-progress span:first-child{background:rgba(119,185,232,.10);color:var(--gt-blue)}.gt157-progress span:nth-child(2){background:rgba(245,158,11,.09);color:var(--gt-amber)}.gt157-progress span:last-child{background:rgba(160,112,255,.09);color:#cdb9f3}.gt157-progress strong{color:#f3f7fa}
+.gt157-lanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.gt157-lane{padding:7px;border:1px solid rgba(116,145,170,.13);border-radius:11px;background:rgba(9,22,33,.72)}.gt157-lane.wide{grid-column:1/-1}.gt157-lanehead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 1px 6px}.gt157-lanehead b{color:#edf4f9;font-size:.31rem;font-weight:950;letter-spacing:.04em}.gt157-lanehead span{color:#7f91a1;font-size:.21rem;font-weight:850}.gt157-lane.identity .gt157-lanehead b{color:var(--gt-blue)}.gt157-lane.scoring .gt157-lanehead b{color:#cdb9f3}.gt157-lane.risk .gt157-lanehead b{color:var(--gt-amber)}.gt157-lane.model .gt157-lanehead b{color:var(--gt-purple)}
+.gt157-rows{display:grid;gap:4px}.gt157-step{display:grid;grid-template-columns:25px minmax(0,1fr) auto;gap:6px;align-items:center;min-height:42px;padding:6px 7px;border:1px solid rgba(116,145,170,.11);border-radius:9px;background:#0d1c28}.gt157-num{display:flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:7px;background:rgba(119,185,232,.09);color:var(--gt-blue);font-size:.33rem;font-weight:950}.gt157-copy{min-width:0}.gt157-copy b{display:block;color:#edf4f9;font-size:.37rem;font-weight:950}.gt157-copy span{display:block;color:var(--gt-gray);font-size:.24rem;line-height:1.35;margin-top:1px;white-space:normal}.gt157-state{padding:3px 6px;border-radius:999px;font-size:.21rem;font-weight:950;white-space:nowrap;border:1px solid transparent}.gt157-state.ready{background:rgba(34,197,94,.10);color:var(--gt-green);border-color:rgba(34,197,94,.12)}.gt157-state.check,.gt157-state.gated{background:rgba(245,158,11,.10);color:var(--gt-amber);border-color:rgba(245,158,11,.12)}
+.gt157-model{margin-top:8px;padding-top:7px;border-top:1px solid rgba(121,146,169,.13)}.gt157-final{margin-top:6px;border:1px solid rgba(160,112,255,.18);border-radius:11px;background:linear-gradient(145deg,rgba(75,41,127,.14),#0a1723);padding:8px}.gt157-finaltop{display:flex;align-items:center;justify-content:space-between;gap:8px}.gt157-finaltop b{color:#d9c8ff;font-size:.33rem;font-weight:950;letter-spacing:.05em}.gt157-finaltop span{color:var(--gt-purple);font-size:.24rem;font-weight:950}.gt157-finalgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:6px}.gt157-metric{background:#102330;border-radius:7px;padding:5px;min-width:0}.gt157-metric b{display:block;color:#edf4f9;font-size:.39rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gt157-metric span{display:block;color:var(--gt-gray);font-size:.19rem;font-weight:850;text-transform:uppercase;margin-top:2px}
+.gt157-top5{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:7px 8px;border:1px dashed rgba(119,185,232,.20);border-radius:9px;background:rgba(18,38,54,.38)}.gt157-top5 b{color:var(--gt-blue);font-size:.31rem;font-weight:950}.gt157-top5 span{color:var(--gt-gray);font-size:.24rem;text-align:right}.gt157-note{margin-top:6px;color:#7f91a1;font-size:.22rem;line-height:1.4}.gt157-note strong{color:var(--gt-purple)}
+@media(max-width:760px){.gt157-lanes{grid-template-columns:1fr}.gt157-lane.wide{grid-column:auto}.gt157-head{align-items:flex-start;flex-direction:column}.gt157-head span{text-align:left}.gt157-finalgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.gt157-finalgrid .gt157-metric:first-child{grid-column:1/-1}.gt157-top5{align-items:flex-start;flex-direction:column}.gt157-top5 span{text-align:left}}
 </style>
 """
 
@@ -71,21 +71,29 @@ def _step_row(number: int, title: str, status: str, detail: str) -> str:
 """
 
 
+def _lane(title: str, subtitle: str, lane_class: str, rows: list[str], *, wide: bool = False) -> str:
+    wide_class = " wide" if wide else ""
+    return f"""
+<div class="gt157-lane {escape(lane_class)}{wide_class}">
+  <div class="gt157-lanehead"><b>{escape(title)}</b><span>{escape(subtitle)}</span></div>
+  <div class="gt157-rows">{''.join(rows)}</div>
+</div>
+"""
+
+
 def _combined_flow_html(
     statuses: Mapping[int, str],
     details: Mapping[int, str],
     raw: Mapping[str, Any],
     final: Mapping[str, Any],
 ) -> str:
-    rows: list[str] = []
+    step_rows: dict[int, str] = {}
     for number, title, _test_id in step_owner._STEP_1_10:
-        rows.append(
-            _step_row(
-                number,
-                title,
-                _clean(statuses.get(number)) or "CHECK",
-                _clean(details.get(number)) or "Verified evidence check",
-            )
+        step_rows[number] = _step_row(
+            number,
+            title,
+            _clean(statuses.get(number)) or "CHECK",
+            _clean(details.get(number)) or "Verified evidence check",
         )
 
     step11_ready = bool(raw.get("ready"))
@@ -102,8 +110,15 @@ def _combined_flow_html(
         if step12_ready
         else " • ".join(str(x) for x in final.get("reasons") or ["Final qualification unavailable"])
     )
-    rows.append(_step_row(11, "Distribution", step11_status, step11_detail))
-    rows.append(_step_row(12, "Final Synthesis", step12_status, step12_detail))
+    step_rows[11] = _step_row(11, "Distribution", step11_status, step11_detail)
+    step_rows[12] = _step_row(12, "Final Synthesis", step12_status, step12_detail)
+
+    lanes = [
+        _lane("IDENTITY & MATCHUP", "Steps 1–3", "identity", [step_rows[n] for n in range(1, 4)]),
+        _lane("SCORING DRIVERS", "Steps 4–7", "scoring", [step_rows[n] for n in range(4, 8)]),
+        _lane("RISK & CONTEXT", "Steps 8–10", "risk", [step_rows[n] for n in range(8, 11)]),
+        _lane("MODEL FINISH", "Steps 11–12", "model", [step_rows[11], step_rows[12]]),
+    ]
 
     ready_count = sum(1 for number in range(1, 11) if statuses.get(number) == "READY")
     ready_count += int(step11_ready) + int(step12_ready)
@@ -125,18 +140,18 @@ def _combined_flow_html(
     return _V157_CSS + f"""
 <div class="gt157-flow" data-testid="gt157-connected-all-steps">
   <div class="gt157-head">
-    <b>🧩 CONNECTED GAME TOTAL FLOW • ALL STEPS</b>
-    <span>Evidence → Distribution → Final → Top-5 • one scan</span>
+    <b>🧩 GAME TOTAL READOUT • 12 STEPS</b>
+    <span>Matchup → Drivers → Risk → Model finish</span>
   </div>
   <div class="gt157-progress">
     <span><strong>{ready_count}/12</strong> READY</span>
-    <span><strong>{attention_count}</strong> CHECK / GATED</span>
+    <span><strong>{attention_count}</strong> NEED ATTENTION</span>
     <span>0.0% sportsbook projection influence</span>
   </div>
-  <div class="gt157-grid">{''.join(rows)}</div>
+  <div class="gt157-lanes">{''.join(lanes)}</div>
   <div class="gt157-model">
     <div class="gt157-final" data-testid="gt157-final-summary">
-      <div class="gt157-finaltop"><b>FINAL • MODEL SUMMARY</b><span>{escape(final_state)}</span></div>
+      <div class="gt157-finaltop"><b>MONSTER MODEL • FINAL SNAPSHOT</b><span>{escape(final_state)}</span></div>
       <div class="gt157-finalgrid">
         <div class="gt157-metric"><b>{escape(_num(projected))}</b><span>Projection</span></div>
         <div class="gt157-metric"><b>{escape(core_text)}</b><span>Core 50%</span></div>
@@ -146,7 +161,7 @@ def _combined_flow_html(
       </div>
     </div>
     <div class="gt157-top5" data-testid="gt157-top5-connector">
-      <b>TOP-5 • SLATE SCANNER</b><span>Frozen ranking unchanged • full scanner remains in the inherited drawer below</span>
+      <b>TOP-5 • SLATE SCANNER</b><span>Frozen ranking unchanged • open the deep drawer below when you want the full slate</span>
     </div>
     <div class="gt157-note"><strong>Presentation only.</strong> Steps 1–10 reuse existing evidence readiness; Steps 11–12 reuse frozen model outputs. No projection, probability, qualification, or Top-5 calculation is changed.</div>
   </div>
@@ -168,7 +183,7 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
 <div class="gt152-shell">
   <div class="gt152-shelltop">
     <div><div class="gt152-kicker">CFB GAME TOTAL • MONSTER DASHBOARD</div><div class="gt152-title">College Football Game Total</div><div class="gt152-sub">Matchup first. Evidence next. Deep model machinery stays out of the way until you want it.</div></div>
-    <div class="gt152-live">V153 • V157 CONNECTED FLOW ACTIVE ✅</div>
+    <div class="gt152-live">V153 • V157 COMPACT FLOW ACTIVE ✅</div>
   </div>
 </div>
 """,
@@ -227,9 +242,9 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
         st.markdown(
             """
 <div class="gt153-connected-head" data-testid="gt157-connected-evidence-shell">
-  <div class="gt153-connected-kicker">CONNECTED GAME TOTAL FLOW • V157</div>
-  <div class="gt153-connected-title">Steps 1–12 → Final → Top-5</div>
-  <div class="gt153-connected-sub">One connected evidence/model flow. Frozen calculations and deep evidence remain preserved exactly.</div>
+  <div class="gt153-connected-kicker">COMPACT GAME TOTAL FLOW • V157</div>
+  <div class="gt153-connected-title">Read the matchup fast. Open the machinery only when needed.</div>
+  <div class="gt153-connected-sub">All 12 certified steps remain visible, grouped by purpose. Frozen calculations and deep evidence stay exactly where they were.</div>
 </div>
 """,
             unsafe_allow_html=True,
@@ -274,7 +289,7 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             else:
                 st.caption("Run the final slate scan to rank the strongest qualified Game Total forecasts.")
 
-    st.caption("🛡️ V157 connected display only • frozen Game Total math preserved • sportsbook projection influence 0.0%")
+    st.caption("🛡️ V157 compact display only • frozen Game Total math preserved • sportsbook projection influence 0.0%")
 
 
 def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
