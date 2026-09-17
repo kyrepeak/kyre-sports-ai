@@ -13,15 +13,17 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from html import escape
+import os
+import re
 from typing import Any, Mapping, Sequence
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
+import requests
 import streamlit as st
 
 import cfb_game_total_clean_page_v13 as prior_v162
 import cfb_game_total_clean_page_v11 as v161
-import cfb_schedule_v1 as schedule_v1
 
 MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V14 • V163 VISIBLE GAME SELECTOR"
 MARKET = prior_v162.MARKET
@@ -37,6 +39,8 @@ ROUTE_QUERY_MARKET = "ks_cfb_market"
 CFB_SPORT_LABEL = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 MATCHUP_STATE_KEY_PREFIX = "cfb_v152_game_total_matchup_"
+SELECTOR_IDENTITY_ENDPOINT = "/api/v1/cfb/markets/reconciled"
+SELECTOR_IDENTITY_SOURCE = "Kyre Sports API reconciled identity"
 
 _V163_CSS = r"""
 <style>
@@ -163,24 +167,94 @@ def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
     return "?" + urlencode(params)
 
 
-@st.cache_data(ttl=120, show_spinner=False)
-def _fetch_selector_espn_payload(selected_day: date) -> dict[str, Any]:
-    """Fetch the date-scoped ESPN scoreboard without the groups=80 filter.
-
-    This is a V163 presentation-identity fallback only. The frozen schedule/model
-    remains the data owner; the payload is used solely to recover an official
-    ESPN event_id when the grouped enrichment path leaves a verified NCAA row
-    unmatched.
-    """
-    payload, _attempts = schedule_v1._fetch_json_with_fallback(
-        schedule_v1.ESPN_SCOREBOARD_URL,
-        {
-            "dates": selected_day.strftime("%Y%m%d"),
-            "limit": 500,
-        },
-        "ESPN ungrouped V163 selector identity",
+def _school_tokens(value: Any) -> tuple[str, ...]:
+    text = _clean(value).casefold().replace("&", " and ")
+    text = re.sub(r"\([^)]*\)", " ", text)
+    raw_tokens = re.findall(r"[a-z0-9]+", text)
+    replacements = {"st": "state"}
+    generic = {"the", "university", "college"}
+    return tuple(
+        replacements.get(token, token)
+        for token in raw_tokens
+        if token not in generic
     )
+
+
+def _same_school(left: Any, right: Any) -> bool:
+    left_tokens = set(_school_tokens(left))
+    right_tokens = set(_school_tokens(right))
+    if not left_tokens or not right_tokens:
+        return False
+    return (
+        left_tokens == right_tokens
+        or left_tokens.issubset(right_tokens)
+        or right_tokens.issubset(left_tokens)
+    )
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _fetch_selector_identity_payload(selected_day: date) -> dict[str, Any]:
+    """Read official CFB event identities through the certified Kyre Sports API.
+
+    The API owns the provider fallback chain (verified snapshot -> GitHub hourly
+    snapshot -> live ESPN FBS/FCS exact-date resolution). V163 never calls ESPN
+    directly and uses only identity-verified rows from the reconciled contract.
+    """
+    base = _clean(os.environ.get(v161.ODDS_API_BASE_ENV)) or v161.ODDS_API_BASE_DEFAULT
+    try:
+        response = requests.get(
+            f"{base.rstrip('/')}{SELECTOR_IDENTITY_ENDPOINT}",
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError, TypeError):
+        return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def _enrich_selector_ids_from_api(
+    games: list[dict[str, Any]],
+    payload: Mapping[str, Any],
+    selected_day: date,
+) -> int:
+    target_date = selected_day.isoformat()
+    rows = payload.get("lines") if isinstance(payload, Mapping) else None
+    if not isinstance(rows, list):
+        return 0
+
+    used_ids = {_game_id(game) for game in games if _game_id(game)}
+    matched = 0
+    for game in games:
+        if _game_id(game):
+            continue
+        away = _team_name(game, "away")
+        home = _team_name(game, "home")
+        candidate_ids: dict[str, Mapping[str, Any]] = {}
+        for row in rows:
+            if not isinstance(row, Mapping) or row.get("identity_verified") is not True:
+                continue
+            if _clean(row.get("game_date")) != target_date:
+                continue
+            official_id = _clean(row.get("official_game_id"))
+            if not official_id or official_id in used_ids:
+                continue
+            if not _same_school(away, row.get("official_away_team")):
+                continue
+            if not _same_school(home, row.get("official_home_team")):
+                continue
+            candidate_ids[official_id] = row
+
+        # Fail closed on ambiguity. Multiple sportsbook rows for the same
+        # official game collapse to one official ID before this check.
+        if len(candidate_ids) != 1:
+            continue
+        official_id = next(iter(candidate_ids))
+        game["espn_event_id"] = official_id
+        game["selector_identity_source"] = SELECTOR_IDENTITY_SOURCE
+        used_ids.add(official_id)
+        matched += 1
+    return matched
 
 
 def _load_games(selected_day: date) -> list[Mapping[str, Any]]:
@@ -188,15 +262,10 @@ def _load_games(selected_day: date) -> list[Mapping[str, Any]]:
     games, _diag = schedule.load_with_diagnostics(selected_day)
     copied = [dict(game) for game in (games or []) if isinstance(game, Mapping)]
 
-    missing = [game for game in copied if not _game_id(game)]
-    if missing:
-        payload = _fetch_selector_espn_payload(selected_day)
+    if any(not _game_id(game) for game in copied):
+        payload = _fetch_selector_identity_payload(selected_day)
         if payload:
-            schedule_v1._enrich_with_espn(
-                missing,
-                payload,
-                selected_day.isoformat(),
-            )
+            _enrich_selector_ids_from_api(copied, payload, selected_day)
     return copied
 
 
@@ -287,12 +356,15 @@ __all__ = [
     "MODEL_VERSION",
     "ROUTE_QUERY_MARKET",
     "ROUTE_QUERY_SPORT",
+    "SELECTOR_IDENTITY_ENDPOINT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
-    "_fetch_selector_espn_payload",
+    "_enrich_selector_ids_from_api",
+    "_fetch_selector_identity_payload",
     "_game_id",
     "_game_label",
     "_load_games",
     "_query_event_id",
+    "_same_school",
     "_selected_game_index",
     "_selector_href",
     "_set_query_event_id",
