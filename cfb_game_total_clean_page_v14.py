@@ -162,7 +162,8 @@ def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
         DATE_QUERY_KEY: selected_day.isoformat(),
         EVENT_QUERY_KEY: event_id,
     }
-    # Absolute root + _top keeps the selected game in the real browser URL on Streamlit Cloud.\n    return "/?" + urlencode(params)
+    # Absolute root + _top keeps the selected game in the real browser URL on Streamlit Cloud.
+    return "/?" + urlencode(params)
 
 
 def _school_tokens(value: Any) -> tuple[str, ...]:
