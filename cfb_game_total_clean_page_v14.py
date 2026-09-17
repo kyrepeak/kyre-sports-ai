@@ -297,13 +297,19 @@ def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], s
         event_id = _game_id(game)
         selected = index == selected_index
         if event_id:
-            href = _selector_href(game, selected_day)
             selected_class = " selected" if selected else ""
             aria = ' aria-current="true"' if selected else ""
             prefix = "✓ " if selected else ""
+            hidden = (
+                f'<input type="hidden" name="{ROUTE_QUERY_SPORT}" value="{escape(CFB_SPORT_LABEL, quote=True)}">'
+                f'<input type="hidden" name="{ROUTE_QUERY_MARKET}" value="{escape(GAME_TOTAL_MARKET, quote=True)}">'
+                f'<input type="hidden" name="{DATE_QUERY_KEY}" value="{escape(selected_day.isoformat(), quote=True)}">'
+                f'<input type="hidden" name="{EVENT_QUERY_KEY}" value="{escape(event_id, quote=True)}">'
+            )
             cards.append(
-                f'<a class="gt163-game-link{selected_class}" data-event-id="{escape(event_id)}" '
-                f'href="{escape(href, quote=True)}" target="_top"{aria}>{escape(prefix + label)}</a>'
+                '<form class="gt163-game-form" action="/" method="get" target="_top">'
+                f'{hidden}<button type="submit" class="gt163-game-link{selected_class}" '
+                f'data-event-id="{escape(event_id)}"{aria}>{escape(prefix + label)}</button></form>'
             )
         else:
             cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ESPN ID unavailable</span>')
