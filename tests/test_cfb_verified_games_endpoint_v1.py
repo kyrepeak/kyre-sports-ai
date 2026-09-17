@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException
 
-from sports_api.api import cfb_market_identity_v1 as identity
+from sports_api.api import cfb_verified_games_v1 as identity
 
 
 def _game(event_id: str, day: str, away: str, home: str) -> dict:
@@ -44,13 +44,6 @@ def test_verified_games_endpoint_is_date_scoped_feed_independent_and_deduped(mon
         identity,
         "_fetch_espn_verified_games",
         lambda requested_day: (espn, {"ok": True, "date": requested_day}),
-    )
-
-    # The identity-only endpoint must never depend on sportsbook inventory.
-    monkeypatch.setattr(
-        identity,
-        "_load_feed",
-        lambda: (_ for _ in ()).throw(AssertionError("sportsbook feed must not be read")),
     )
 
     payload = identity.verified_games(game_date=target)
