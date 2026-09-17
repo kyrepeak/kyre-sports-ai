@@ -65,12 +65,14 @@ def pytest_collection_modifyitems(session, config, items):
     assert 'with st.expander("Deep evidence • certified team audit"' in page_source
     assert "frozen_page.render_game_total_hub(" not in page_source
 
-    # V160 remains presentation-only over frozen V159 but must render the approved
-    # compact Monster dashboard on the real tablet/mobile production surface.
+    # V160 remains presentation-only over frozen V159 but owns the exact target
+    # surface on the real tablet/mobile route. Interactive controls/deep evidence
+    # move to the sidebar; the main canvas is only the Monster dashboard.
     assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v9"' in visual_page_source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in visual_page_source
     assert "MAY_MODIFY_PROJECTION = False" in visual_page_source
     assert "MONSTER SPORTS INTELLIGENCE" in visual_page_source
+    assert 'data-testid="cfb-game-total-monster-masthead"' in visual_page_source
     assert ".gt159-gamefacts{grid-template-columns:repeat(4,minmax(0,1fr))" in visual_page_source
     assert ".gt159-totalgrid{grid-template-columns:repeat(4,minmax(0,1fr))" in visual_page_source
     assert ".gt159-badges{grid-template-columns:repeat(3,minmax(0,1fr))" in visual_page_source
@@ -83,6 +85,10 @@ def pytest_collection_modifyitems(session, config, items):
     assert ".gt159-notes{grid-template-columns:1fr}" not in visual_page_source
     assert ".gt159-stepgrid{grid-template-columns:1fr}" not in visual_page_source
     assert ".gt159-finalgrid{grid-template-columns:repeat(2,minmax(0,1fr))}" not in visual_page_source
+    assert "prior.st.date_input = st.sidebar.date_input" in visual_page_source
+    assert "prior.st.selectbox = st.sidebar.selectbox" in visual_page_source
+    assert "prior.st.expander = st.sidebar.expander" in visual_page_source
+    assert "gt160-evidence-logo" in visual_page_source
 
     # V150 targets only exact CFB -> Game Total and delegates everything else.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v149"' in router_source
@@ -145,12 +151,19 @@ def pytest_collection_modifyitems(session, config, items):
     assert "return prior.render_app()" in successor_router_source
 
     # V155 advances only exact CFB Game Total to V160 while preserving V154.
+    # Never reuse V77 persistence here: it is intentionally O/U-only and would
+    # reproduce the real iPad refresh bug by writing Over/Under into the URL.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v154"' in game_total_router_source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"' in game_total_router_source
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v10"' in game_total_router_source
     assert 'GAME_TOTAL_MARKET = "Game Total"' in game_total_router_source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in game_total_router_source
     assert "MAY_MODIFY_PROJECTION = False" in game_total_router_source
+    assert "cfb_route_base._persist_fast_route_query()" not in game_total_router_source
+    assert "def _persist_game_total_route_query" in game_total_router_source
+    assert "st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET" in game_total_router_source
+    assert "def _render_exact_game_total_surface" in game_total_router_source
+    assert 'page_title="Monster Sports Intelligence • CFB Game Total"' in game_total_router_source
     assert "return page.render_cfb_hub(" in game_total_router_source
     assert "return prior.render_app()" in game_total_router_source
 
@@ -158,15 +171,21 @@ def pytest_collection_modifyitems(session, config, items):
     assert "from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app" in app_source
     assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V155_CFB_GAME_TOTAL_V160_VISUAL_PARITY_2026-09-17"' in app_source
 
-    # Real browser proof must certify the actual V160 visual-parity surface and
-    # explicitly reject the legacy title visible in the old production page.
+    # Real browser proof must reproduce the tablet refresh path and reject both
+    # the legacy Game Total title and the generic/O-U shells after activation.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
-    assert '"CFB GAME TOTAL • CLEAN PAGE V160 ACTIVE"' in browser_source
+    assert 'ROUTE_QUERY_MARKET = "ks_cfb_market"' in browser_source
+    assert 'FULL_RENDER_MARKER = "VIEW TOP 5 →"' in browser_source
     assert '"GAME TOTAL ANALYSIS"' in browser_source
     assert '"TEAM EVIDENCE"' in browser_source
     assert '"GAME TOTAL EVIDENCE • STEPS 1–12"' in browser_source
     assert '"FINAL MODEL SUMMARY"' in browser_source
     assert '"TOP-5 SLATE SCANNER"' in browser_source
     assert '"College Football Game Total — Final"' in browser_source
+    assert '"CFB OVER / UNDER • MONSTER DASHBOARD"' in browser_source
+    assert '"KYRE SPORTS AI"' in browser_source
+    assert 'page.reload(' in browser_source
+    assert '"width": 1067' in browser_source
+    assert '"height": 1536' in browser_source
     assert 'print("CFB_GAME_TOTAL_V160_BROWSER_GREEN")' in browser_source
     assert "FORBIDDEN_VISIBLE" in browser_source
