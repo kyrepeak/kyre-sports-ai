@@ -14,12 +14,13 @@ def _load_module():
     return module
 
 
-def test_v2_advances_only_cfb_active_page_marker_to_v38():
+def test_v2_advances_only_cfb_active_page_marker_to_v39():
     module = _load_module()
 
     assert module.FROZEN_VERIFIER == "devsystem.production_verify_v1"
-    assert module.CFB_REQUIRED_MARKERS[0] == "CFB O/U • CLEAN PAGE V38 ACTIVE"
+    assert module.CFB_REQUIRED_MARKERS[0] == "CFB O/U • CLEAN PAGE V39 ACTIVE"
     assert "CFB O/U • CLEAN PAGE V30 ACTIVE" not in module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V38 ACTIVE" not in module.CFB_REQUIRED_MARKERS
     assert module.CFB_REQUIRED_MARKERS[1:] == module.frozen.CFB_REQUIRED_MARKERS[1:]
 
 
