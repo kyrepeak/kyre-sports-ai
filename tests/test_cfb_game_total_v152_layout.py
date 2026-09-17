@@ -59,6 +59,8 @@ def test_deep_sections_stay_collapsed_and_mobile_reflows() -> None:
     assert 'st.expander("🏆 Top-5 slate scanner", expanded=False)' in source
     assert "@media(max-width:760px)" in source
     assert "grid-template-columns:1fr" in source
+    # Responsive media-query max-width is required. What we reject is a fixed
+    # outer dashboard width that would make the phone layout scatter/overflow.
     assert not re.search(r"\.gt152-shell\{[^}]*max-width:", source)
     assert not re.search(r"\.gt152-hero\{[^}]*max-width:", source)
 
@@ -92,6 +94,8 @@ def test_connected_evidence_shell_wraps_existing_flow_without_changing_math() ->
     top5 = source.index('st.expander("🏆 Top-5 slate scanner', step12)
     assert shell < steps < raw_evidence < evidence < model < step11 < step12 < top5
 
+    # Step 2 is presentation-only. The frozen model must still run exactly once
+    # on the untouched selected game before display reconciliation.
     assert source.count("selected_result = frozen_page.slate.analyze_game(game, selected_day)") == 1
     assert source.index("selected_result = frozen_page.slate.analyze_game(game, selected_day)") < source.index(
         "runtime_display.reconcile_display_bundle("
@@ -130,6 +134,7 @@ def test_step2_cards_use_right_status_badges_and_preserve_ready_check_truth() ->
     assert "READY" in source
     assert "CHECK" in source
     assert "_existing_step_status(" in source
+    # Step 10 History must fail closed when the existing history evidence is absent.
     assert '10: "CHECK"' in source
 
 
