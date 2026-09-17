@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-16T21:12:00Z",
+  "generated_at": "2026-09-17T02:20:00Z",
   "purpose": "Game-Total-only deterministic production fallback when deployed Streamlit cannot complete live reconciliation. This file does not feed frozen Step 11/12 model math.",
   "games": [
     {
@@ -30,7 +30,22 @@
         "head_coach": "Fran Brown",
         "division_context": "FBS",
         "conference": "ACC",
-        "data_source": "Syracuse Athletics verified 2026 schedule/results + ESPN exact team identity",
+        "data_source": "Syracuse Athletics verified 2026 schedule/results + team cumulative statistics + ESPN exact team identity",
+        "official_stats": {
+          "plays_per_game": {
+            "label": "Plays Per Game (Pace)",
+            "value": 82.5,
+            "display_value": "82.5",
+            "source": "Syracuse University Athletics 2026 cumulative team statistics",
+            "derivation": "165 total offensive plays / 2 completed games"
+          },
+          "yards_per_play": {
+            "label": "Yards Per Play",
+            "value": 5.8,
+            "display_value": "5.8",
+            "source": "Syracuse University Athletics 2026 cumulative team statistics"
+          }
+        },
         "completed_games": [
           {
             "date": "2026-09-05",
@@ -69,7 +84,22 @@
         "head_coach": "Pat Narduzzi",
         "division_context": "FBS",
         "conference": "ACC",
-        "data_source": "Pitt Athletics verified 2026 schedule/results + ESPN exact team identity",
+        "data_source": "Pitt Athletics verified 2026 schedule/results + team cumulative statistics + ESPN exact team identity",
+        "official_stats": {
+          "plays_per_game": {
+            "label": "Plays Per Game (Pace)",
+            "value": 73.5,
+            "display_value": "73.5",
+            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics",
+            "derivation": "147 total offensive plays / 2 completed games"
+          },
+          "yards_per_play": {
+            "label": "Yards Per Play",
+            "value": 6.5,
+            "display_value": "6.5",
+            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"
+          }
+        },
         "completed_games": [
           {
             "date": "2026-09-05",
@@ -92,8 +122,8 @@
         ]
       },
       "sources": [
-        "Syracuse University Athletics 2026 football schedule/results",
-        "University of Pittsburgh Athletics 2026 football schedule/results",
+        "Syracuse University Athletics 2026 football schedule/results and cumulative statistics",
+        "University of Pittsburgh Athletics 2026 football schedule/results and cumulative statistics",
         "ESPN exact team identity/logo IDs"
       ]
     }
