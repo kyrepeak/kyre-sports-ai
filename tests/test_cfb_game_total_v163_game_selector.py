@@ -40,8 +40,10 @@ def test_v163_game_links_preserve_date_route_exact_event_and_wrapper_history():
     assert "EVENT_QUERY_KEY" in source
     assert 'return "?" + urlencode(params)' in source
     assert 'target="_self"' in source
-    assert 'WRAPPER_HISTORY_SYNC_JS = "try{window.parent.history.replaceState' in source
-    assert 'onclick="{escape(WRAPPER_HISTORY_SYNC_JS, quote=True)}"' in source
+    assert 'WRAPPER_HISTORY_BRIDGE_MARKER = "CFB_V163_WRAPPER_HISTORY_BRIDGE_ACTIVE"' in source
+    assert "components.html(" in source
+    assert "window.parent && window.parent.parent" in source
+    assert 'data-testid="gt163-wrapper-history-bridge"' in source
 
 
 def test_v163_router_activates_fresh_page_successor_and_preserves_frozen_heartbeats():
