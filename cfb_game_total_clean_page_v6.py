@@ -41,11 +41,26 @@ _V152_MONSTER_CSS = r"""
 .gt152-game-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:0 0 7px}.gt152-gamefact{padding:7px 8px;border-radius:9px;background:#0a1823;border:1px solid rgba(119,142,163,.12);min-width:0}.gt152-gamefact b{display:block;color:#e7f1f8;font-size:.45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gt152-gamefact span{display:block;color:var(--gt-blue);font-size:.23rem;font-weight:900;text-transform:uppercase;margin-top:2px}
 .gt152-svd{margin:0 0 8px;padding:9px;border-radius:13px;background:linear-gradient(145deg,#0a1622,#0b1a27);border:1px solid rgba(108,139,166,.16)}.gt152-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.gt152-section-title b{color:#eef5fb;font-size:.53rem;font-weight:950;letter-spacing:.07em}.gt152-section-title span{color:var(--gt-gray);font-size:.29rem}.gt152-svdgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.gt152-svdcard{padding:8px;border-radius:10px;background:#0c1b27}.gt152-svdteam{color:#f5f9fc;font-size:.56rem;font-weight:950}.gt152-svdline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.gt152-svdmetric{padding:5px;border-radius:7px;background:#102330}.gt152-svdmetric b{display:block;color:#edf4f9;font-size:.47rem}.gt152-svdmetric span{display:block;color:var(--gt-gray);font-size:.22rem;margin-top:2px;text-transform:uppercase}.gt152-favorable{color:var(--gt-green)!important}.gt152-concern{color:var(--gt-red)!important}.gt152-caution{color:var(--gt-amber)!important}.gt152-info{color:var(--gt-blue)!important}.gt152-model{color:var(--gt-purple)!important}
 .gt153-connected-head{margin:0 0 4px;padding:3px 2px 7px;border-bottom:1px solid rgba(121,146,169,.15)}.gt153-connected-kicker{color:var(--gt-purple);font-size:.34rem;font-weight:950;letter-spacing:.10em;text-transform:uppercase}.gt153-connected-title{color:#eef5fb;font-size:.66rem;font-weight:950;margin-top:2px}.gt153-connected-sub{color:var(--gt-gray);font-size:.31rem;line-height:1.42;margin-top:3px}
+.gt154-steps{margin:8px 0 6px}.gt154-step{display:flex;align-items:center;gap:8px;min-height:42px;padding:7px 8px;margin-top:5px;border:1px solid rgba(116,145,170,.14);border-radius:10px;background:#0a1722;position:relative;overflow:hidden}.gt154-step:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gt-blue)}.gt154-step-number{display:flex;align-items:center;justify-content:center;width:25px;height:25px;flex:0 0 25px;border-radius:8px;background:rgba(119,185,232,.10);color:var(--gt-blue);font-size:.38rem;font-weight:950}.gt154-step-copy{min-width:0}.gt154-step-copy b{display:block;color:#edf4f9;font-size:.48rem;font-weight:950}.gt154-step-copy span{display:block;color:var(--gt-gray);font-size:.29rem;line-height:1.35;margin-top:2px}.gt154-step-status{margin-left:auto;flex:0 0 auto;padding:4px 7px;border-radius:999px;font-size:.29rem;font-weight:950}.gt154-step-status.ready{color:var(--gt-green);background:rgba(38,111,77,.18);border:1px solid rgba(111,216,167,.20)}.gt154-step-status.check{color:var(--gt-amber);background:rgba(106,77,22,.18);border:1px solid rgba(240,201,109,.20)}.gt154-summary{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;padding:8px 9px;border-radius:10px;background:rgba(89,61,139,.12);border:1px solid rgba(189,152,255,.18)}.gt154-summary b{color:var(--gt-purple);font-size:.42rem}.gt154-summary span{color:#aab7c3;font-size:.30rem}.gt154-summary strong{color:#f2ecff}
 div[data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="gt153-connected-evidence-shell"]){border:1px solid rgba(116,145,170,.22)!important;border-radius:16px!important;background:linear-gradient(180deg,rgba(8,20,31,.92),rgba(7,15,24,.92))!important;padding:4px 7px 7px!important}
 div[data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="gt153-connected-evidence-shell"]) div[data-testid="stExpander"]{margin-top:4px}
-@media(max-width:760px){.gt152-shelltop{display:block}.gt152-live{display:inline-block;margin-top:6px}.gt152-hero{grid-template-columns:1fr}.gt152-at{padding:0}.gt152-hero-team.home{flex-direction:row;text-align:left}.gt152-game-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.gt152-svdgrid{grid-template-columns:1fr}.gt153-connected-title{font-size:.60rem}}
+@media(max-width:760px){.gt152-shelltop{display:block}.gt152-live{display:inline-block;margin-top:6px}.gt152-hero{grid-template-columns:1fr}.gt152-at{padding:0}.gt152-hero-team.home{flex-direction:row;text-align:left}.gt152-game-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.gt152-svdgrid{grid-template-columns:1fr}.gt153-connected-title{font-size:.60rem}.gt154-step{align-items:flex-start}.gt154-step-status{margin-top:1px}}
 </style>
 """
+
+
+_STEP_1_10 = (
+    (1, "Team Identity", "gt154-step-1"),
+    (2, "Team Profile", "gt154-step-2"),
+    (3, "Matchup", "gt154-step-3"),
+    (4, "Pace", "gt154-step-4"),
+    (5, "Explosive Plays", "gt154-step-5"),
+    (6, "Red Zone", "gt154-step-6"),
+    (7, "Third Down", "gt154-step-7"),
+    (8, "Turnovers", "gt154-step-8"),
+    (9, "Environment", "gt154-step-9"),
+    (10, "History", "gt154-step-10"),
+)
 
 
 def _clean(value: Any) -> str:
@@ -129,6 +144,119 @@ def _scoring_defense_summary(away: Mapping[str, Any], home: Mapping[str, Any]) -
 """
 
 
+def _official_has(state: Mapping[str, Any], *needles: str) -> bool:
+    rows = state.get("official_stats") or {}
+    haystack = " ".join(
+        " ".join((str(key), str((row or {}).get("label") or ""))).lower()
+        for key, row in rows.items()
+        if isinstance(row, Mapping)
+    )
+    return any(needle.lower() in haystack for needle in needles)
+
+
+def _existing_step_status(
+    identity: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+    display_game: Mapping[str, Any],
+) -> dict[int, str]:
+    """Mirror existing display evidence only; do not create model grades."""
+    status = {
+        1: "CHECK",
+        2: "CHECK",
+        3: "CHECK",
+        4: "CHECK",
+        5: "CHECK",
+        6: "CHECK",
+        7: "CHECK",
+        8: "CHECK",
+        9: "CHECK",
+        10: "CHECK",
+    }
+    away_id = identity.get("away") or {}
+    home_id = identity.get("home") or {}
+    if bool(away_id.get("exact_identity")) and bool(home_id.get("exact_identity")):
+        status[1] = "READY"
+    if all(int(team.get("sample_games") or 0) > 0 for team in (away, home)):
+        status[2] = "READY"
+    if all(team.get("ppg") is not None and team.get("allowed_pg") is not None for team in (away, home)):
+        status[3] = "READY"
+    if all(_official_has(team, "pace", "tempo", "plays per game", "seconds per play") for team in (away, home)):
+        status[4] = "READY"
+    if all(_official_has(team, "explosive", "yards per play", "20+", "10+") for team in (away, home)):
+        status[5] = "READY"
+    if all(_official_has(team, "red zone") for team in (away, home)):
+        status[6] = "READY"
+    if all(_official_has(team, "third down", "3rd down") for team in (away, home)):
+        status[7] = "READY"
+    if all(_official_has(team, "turnover", "giveaway", "takeaway") for team in (away, home)):
+        status[8] = "READY"
+    if any(
+        display_game.get(key) not in (None, "")
+        for key in ("weather", "temperature", "wind", "wind_mph", "forecast")
+    ):
+        status[9] = "READY"
+    if any(display_game.get(key) not in (None, "", [], {}) for key in ("history", "series_history", "head_to_head")):
+        status[10] = "READY"
+    return status
+
+
+def _step_details(
+    identity: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+    statuses: Mapping[int, str],
+) -> dict[int, str]:
+    away_name = _clean(away.get("team")) or _clean((identity.get("away") or {}).get("team")) or "Away"
+    home_name = _clean(home.get("team")) or _clean((identity.get("home") or {}).get("team")) or "Home"
+    return {
+        1: "Exact team identity + logos" if statuses[1] == "READY" else "Exact identity evidence needs review",
+        2: f"{away_name} {_clean(away.get('record')) or '—'} • {home_name} {_clean(home.get('record')) or '—'}",
+        3: f"{away_name} {_num(away.get('ppg'))} PPG vs {_num(home.get('allowed_pg'))} allowed • {home_name} {_num(home.get('ppg'))} vs {_num(away.get('allowed_pg'))}",
+        4: "Verified pace/tempo rows present" if statuses[4] == "READY" else "No verified pace row in current evidence",
+        5: "Verified explosive-play rows present" if statuses[5] == "READY" else "No verified explosive-play row in current evidence",
+        6: "Verified red-zone rows present" if statuses[6] == "READY" else "No verified red-zone row in current evidence",
+        7: "Verified third-down rows present" if statuses[7] == "READY" else "No verified third-down row in current evidence",
+        8: "Verified turnover rows present" if statuses[8] == "READY" else "No verified turnover row in current evidence",
+        9: "Verified environment field present" if statuses[9] == "READY" else "Environment evidence not verified on this display object",
+        10: "Verified matchup-history field present" if statuses[10] == "READY" else "History evidence not verified on this display object",
+    }
+
+
+def _render_steps_1_10_rail(
+    identity: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+    display_game: Mapping[str, Any],
+) -> None:
+    statuses = _existing_step_status(identity, away, home, display_game)
+    details = _step_details(identity, away, home, statuses)
+    cards = []
+    for number, label, testid in _STEP_1_10:
+        state = statuses[number]
+        cards.append(
+            f"""
+<div class="gt154-step" data-testid="{testid}">
+  <div class="gt154-step-number">{number}</div>
+  <div class="gt154-step-copy"><b>{escape(label)}</b><span>{escape(details[number])}</span></div>
+  <div class="gt154-step-status {'ready' if state == 'READY' else 'check'}">{state}</div>
+</div>
+"""
+        )
+    ready = sum(1 for value in statuses.values() if value == "READY")
+    check = len(statuses) - ready
+    st.markdown(
+        f"""
+<div class="gt154-steps" data-testid="gt154-steps-1-10-rail">
+  <div class="gt152-section-title"><b>🧱 STEPS 1–10</b><span>Compact evidence status • no new model grading</span></div>
+  {''.join(cards)}
+  <div class="gt154-summary" data-testid="gt154-step-summary"><b>STEPS 1–10 SUMMARY</b><span><strong>{ready} READY</strong> • {check} CHECK</span></div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
     st.markdown(
         prior.prior.prior.prior.prior._CSS
@@ -198,14 +326,18 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
         st.markdown(
             """
 <div class="gt153-connected-head" data-testid="gt153-connected-evidence-shell">
-  <div class="gt153-connected-kicker">CONNECTED GAME TOTAL FLOW • STEP 1</div>
-  <div class="gt153-connected-title">Evidence → Model Status → Distribution → Final → Top-5</div>
-  <div class="gt153-connected-sub">One continuous analysis rail. Existing evidence and frozen model outputs are preserved exactly while the page becomes easier to scan.</div>
+  <div class="gt153-connected-kicker">CONNECTED GAME TOTAL FLOW • STEP 2</div>
+  <div class="gt153-connected-title">Steps 1–10 → Model Status → Distribution → Final → Top-5</div>
+  <div class="gt153-connected-sub">One compact evidence rail replaces repeated Step 1–10 blocks. Existing evidence and frozen model outputs remain preserved exactly.</div>
 </div>
 """,
             unsafe_allow_html=True,
         )
-        prior._render_evidence_center(away_evidence, home_evidence)
+        _render_steps_1_10_rail(identity, away_evidence, home_evidence, display_game)
+
+        with st.expander("🔬 Raw Steps 1–10 evidence", expanded=False):
+            prior._render_evidence_center(away_evidence, home_evidence)
+
         st.markdown(prior.prior.prior.prior.prior._status_cards(raw, final), unsafe_allow_html=True)
 
         with st.expander("📊 Deep model evidence • Step 11 distribution", expanded=False):
@@ -259,7 +391,9 @@ __all__ = [
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_compact_game_strip",
+    "_existing_step_status",
     "_monster_matchup_hero",
+    "_render_steps_1_10_rail",
     "_scoring_defense_summary",
     "render_cfb_hub",
     "render_game_total_hub",
