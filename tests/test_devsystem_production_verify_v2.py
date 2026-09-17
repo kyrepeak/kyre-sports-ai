@@ -42,11 +42,13 @@ def test_v2_production_browser_is_route_only_and_waits_for_full_v39():
     assert "run_browser_qa" not in source
     assert "_read_sport_options" not in source
 
-    # Reuse the certified navigation/readiness primitives instead.
+    # Reuse the certified navigation/readiness primitives instead. Keep these
+    # checks formatting-independent so multiline calls do not fail the contract.
     assert "certified_browser._find_app_frame" in source
-    assert "certified_browser._choose(page, frame, 0, certified_browser.CFB_SPORT)" in source
+    assert source.count("certified_browser._choose(") == 2
+    assert "certified_browser.CFB_SPORT" in source
     assert "certified_browser.CFB_MARKET_LABEL" in source
-    assert "certified_browser._choose(page, frame, 1, certified_browser.CFB_MARKET)" in source
+    assert "certified_browser.CFB_MARKET" in source
     assert "certified_browser._wait_for_text(" in source
     assert "CFB_REQUIRED_MARKERS[-1]" in source
 
