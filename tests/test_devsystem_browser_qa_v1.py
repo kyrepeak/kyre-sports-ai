@@ -26,18 +26,28 @@ def test_browser_qa_contract_is_explicit_and_safe():
     assert module.CFB_SPORT == "College Football"
     assert module.CFB_MARKET == "Over/Under"
     assert module.CFB_MARKET_LABEL == "🎯 CFB Market"
-    assert "CFB O/U • CLEAN PAGE V39 ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "CFB O/U • CLEAN PAGE V38 ACTIVE" not in module.CFB_REQUIRED_MARKERS
-    assert "CFB O/U • CLEAN PAGE V30 ACTIVE" not in module.CFB_REQUIRED_MARKERS
-    assert "FUTURE SLATE COVERAGE ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "OFFICIAL ESPN IDENTITY RECOVERY" in module.CFB_REQUIRED_MARKERS
-    assert "NO FUZZY MATCHING" in module.CFB_REQUIRED_MARKERS
-    assert "NO SYNTHETIC IDS" in module.CFB_REQUIRED_MARKERS
-    assert "STEP 5C MARKET INTELLIGENCE LIVE" not in module.CFB_REQUIRED_MARKERS
-    assert "FRESHNESS FIREWALL ACTIVE" in module.CFB_REQUIRED_MARKERS
-    assert "0.0% PROJECTION INFLUENCE" in module.CFB_REQUIRED_MARKERS
-    assert "FROZEN PROJECTION MATH PRESERVED" in module.CFB_REQUIRED_MARKERS
-    assert "READABLE STEPS 4-12 ACTIVE" in module.CFB_REQUIRED_MARKERS
+
+    markers = module.CFB_REQUIRED_MARKERS
+    assert "CFB O/U • CLEAN PAGE V39 ACTIVE" in markers
+    assert "COMPACT EVIDENCE RENDERER" in markers
+    assert "VERIFIED IDENTITY ≠ MISSING STEP METRIC" in markers
+    assert "0.0% SPORTSBOOK PROJECTION INFLUENCE" in markers
+    assert "Matchup Foundation" in markers
+    assert "Steps 1–4 • compact verified evidence" in markers
+    assert "Frozen O/U math • Mutation OFF • Sportsbook 0.0%" in markers
+    assert "Step 5 • Explosive Plays" in markers
+    assert "Step 10 • Historical Matchup" in markers
+    assert "Steps 11–12 • current form + certification" in markers
+
+    assert "CFB O/U • CLEAN PAGE V38 ACTIVE" not in markers
+    assert "CFB O/U • CLEAN PAGE V30 ACTIVE" not in markers
+    assert "FUTURE SLATE COVERAGE ACTIVE" not in markers
+    assert "OFFICIAL ESPN IDENTITY RECOVERY" not in markers
+    assert "NO FUZZY MATCHING" not in markers
+    assert "NO SYNTHETIC IDS" not in markers
+    assert "FRESHNESS FIREWALL ACTIVE" not in markers
+    assert "FROZEN PROJECTION MATH PRESERVED" not in markers
+    assert "READABLE STEPS 4-12 ACTIVE" not in markers
 
 
 def test_runtime_error_detector_fails_on_obvious_python_errors():
