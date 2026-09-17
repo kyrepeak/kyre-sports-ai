@@ -32,7 +32,7 @@ def test_v163_selected_event_controls_frozen_matchup_index_and_survives_refresh(
     assert "return selected_index" in source
 
 
-def test_v163_game_links_preserve_date_route_and_exact_event_identity():
+def test_v163_game_links_preserve_date_route_exact_event_and_wrapper_history():
     source = _read(PAGE)
     assert "DATE_QUERY_KEY" in source
     assert "ROUTE_QUERY_SPORT" in source
@@ -40,6 +40,8 @@ def test_v163_game_links_preserve_date_route_and_exact_event_identity():
     assert "EVENT_QUERY_KEY" in source
     assert 'return "?" + urlencode(params)' in source
     assert 'target="_self"' in source
+    assert 'WRAPPER_HISTORY_SYNC_JS = "try{window.parent.history.replaceState' in source
+    assert 'onclick="{escape(WRAPPER_HISTORY_SYNC_JS, quote=True)}"' in source
 
 
 def test_v163_router_activates_fresh_page_successor_and_preserves_frozen_heartbeats():
