@@ -1,4 +1,4 @@
-from sports_api.api import cfb_market_identity_v1 as identity
+from sports_api.api import cfb_official_games_v1 as identity
 
 
 def test_official_games_returns_only_requested_verified_date(monkeypatch):
