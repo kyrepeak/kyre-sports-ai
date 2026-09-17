@@ -23,14 +23,15 @@ def test_v5_remains_fail_closed_without_event_identity():
     ) == ""
 
 
-def test_v163_game_forms_promote_selection_to_top_level_browser_url():
+def test_v163_native_selector_promotes_selection_through_streamlit_query_params():
     source = (ROOT / "cfb_game_total_clean_page_v14.py").read_text(
         encoding="utf-8"
     )
-    assert '<form class="gt163-game-form" action="/" method="get" target="_top">' in source
-    assert 'button type="submit"' in source
-    assert 'name="{EVENT_QUERY_KEY}"' in source
-    assert 'target="_self"' not in source
+    assert 'SELECTOR_WIDGET_LABEL = "SELECT MATCHUP"' in source
+    assert "st.radio(" in source
+    assert "on_change=_on_native_selector_change" in source
+    assert "_set_query_event_id(event_id)" in source
+    assert "<form" not in source
 
 
 def test_v5_proves_switch_and_hard_refresh_persistence_without_weakening_gate():
@@ -41,9 +42,10 @@ def test_v5_proves_switch_and_hard_refresh_persistence_without_weakening_gate():
     assert "_switch_target" in source
     assert "_wait_for_top_level_selection" in source
     assert "page.reload" in source
-    assert 'target_scope != "_top"' in source
-    assert 'method != "get"' in source
-    assert 'hidden_event_value != target_event' in source
+    assert "_native_selector_radios" in source
+    assert 'input[type="radio"]' in source
+    assert "target.check" in source
+    assert "target.is_checked()" in source
     assert "_event_from_url(page.url) != target_event" in source
     assert "reloaded_event != target_event" in source
     assert "production_verify_v3" in source
