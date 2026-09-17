@@ -15,8 +15,8 @@ def test_v9_connected_flow_is_presentation_only_over_v8() -> None:
     assert "MAY_MODIFY_PROJECTION = False" in source
     assert "step_owner._existing_step_status(" in source
     assert "step_owner._step_details(" in source
-    assert "evidence_owner._render_compact_team_cards(away, home)" in source
-    assert "import cfb_game_total_clean_page_v1 as status_owner" in source
+    assert "evidence_owner._render_compact_team_cards(away_evidence, home_evidence)" in source
+    assert "evidence_owner._render_raw_team_evidence(away_evidence, home_evidence)" in source
 
 
 def test_v9_puts_steps_1_through_12_in_one_connected_flow() -> None:
@@ -48,41 +48,35 @@ def test_v9_puts_steps_1_through_12_in_one_connected_flow() -> None:
     assert "Frozen ranking unchanged" in html
 
 
-def test_v9_capture_binds_final_presenter_to_exact_step_context() -> None:
-    source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
-    capture = source.split("def _capture_steps_1_10_context(", 1)[1].split(
-        "def _combined_model_summary(", 1
-    )[0]
-
-    assert "step_owner._existing_step_status(" in capture
-    assert "step_owner._step_details(" in capture
-    assert "status_owner._status_cards = _bound_model_summary" in capture
-    assert "evidence_owner._render_compact_team_cards(away, home)" in capture
-    assert "_ORIGINAL_STEPS_1_10" not in capture
-
-
-def test_v9_hooks_the_exact_v6_presentation_owners() -> None:
+def test_v9_renders_connected_flow_directly_without_monkeypatching() -> None:
     source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
 
-    assert "original_steps = step_owner._render_steps_1_10_rail" in source
-    assert "original_evidence = step_owner.prior._render_evidence_center" in source
-    assert "original_status_cards = status_owner._status_cards" in source
-    assert "step_owner._render_steps_1_10_rail = _capture_steps_1_10_context" in source
-    assert "step_owner.prior._render_evidence_center = evidence_owner._render_raw_team_evidence" in source
-    assert "status_owner._status_cards = _combined_model_summary" in source
-    assert "return step_owner.render_game_total_hub(" in source
-    assert "step_owner._render_steps_1_10_rail = original_steps" in source
-    assert "step_owner.prior._render_evidence_center = original_evidence" in source
-    assert "status_owner._status_cards = original_status_cards" in source
+    assert "statuses = step_owner._existing_step_status(identity, away_evidence, home_evidence, display_game)" in source
+    assert "details = step_owner._step_details(identity, away_evidence, home_evidence, statuses)" in source
+    assert "st.markdown(_combined_flow_html(statuses, details, raw, final), unsafe_allow_html=True)" in source
+    assert "_render_steps_1_10_rail =" not in source
+    assert "_status_cards =" not in source
+    assert "render_game_total_hub(section_header" in source
 
 
-def test_v9_keeps_step_11_12_and_top5_math_owned_by_frozen_path() -> None:
+def test_v9_reuses_exact_frozen_model_and_top5_owners() -> None:
     source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
 
-    assert "step_owner.render_game_total_hub(" in source
+    assert "selected_result = frozen_page.slate.analyze_game(game, selected_day)" in source
+    assert "runtime_display.reconcile_display_bundle(" in source
+    assert "frozen_page.slate.scan_slate(games, selected_day)" in source
+    assert "frozen_page.final_model.rank_slate(rows, limit=5)" in source
     assert "projected_combined_total" in source
     assert "core_50_range" in source
     assert "most_likely_band" in source
     assert "forecast_strength" in source
-    assert "analyze_game(" not in source
-    assert "rank" not in source.lower().split("Frozen ranking unchanged".lower(), 1)[0] or "TOP-5" in source
+
+
+def test_v9_keeps_deep_evidence_collapsed_and_sportsbook_influence_zero() -> None:
+    source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
+
+    assert 'st.expander("🔬 Raw Steps 1–10 evidence", expanded=False)' in source
+    assert 'st.expander("📊 Deep model evidence • Step 11 distribution", expanded=False)' in source
+    assert 'st.expander("🏁 Deep model evidence • Step 12 final synthesis", expanded=False)' in source
+    assert 'st.expander("🏆 Top-5 slate scanner", expanded=False)' in source
+    assert "sportsbook projection influence 0.0%" in source
