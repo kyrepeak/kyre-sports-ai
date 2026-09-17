@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "cfb-v163-form-navigation-persistence",
+  "status": "DONE",
+  "scope": "Replace V163 raw anchor navigation with top-level GET form submission so official ESPN event selection survives Streamlit Cloud wrapper navigation and hard refresh.",
+  "trigger": "Production Verification V5 run #3 proved anchor-based target=_top navigation kept the prior selected event in production.",
+  "guardrails": {
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "identity_source_changed": false,
+    "render_service_changed": false,
+    "selector_navigation_only": true,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
