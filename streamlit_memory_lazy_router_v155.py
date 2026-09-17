@@ -35,6 +35,17 @@ def _game_total_route_active() -> bool:
     )
 
 
+def _persist_game_total_route_query() -> None:
+    """Persist exact CFB Game Total without reusing V77's O/U-only helper."""
+    try:
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) != CFB_SPORT_LABEL:
+            st.query_params[cfb_route_base.ROUTE_QUERY_SPORT] = CFB_SPORT_LABEL
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_MARKET) != GAME_TOTAL_MARKET:
+            st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET
+    except Exception:
+        pass
+
+
 def _query_requests_game_total() -> bool:
     return (
         cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) == CFB_SPORT_LABEL
@@ -74,7 +85,7 @@ def _render_cfb_game_total_v155(market: str) -> None:
     if sport != CFB_SPORT_LABEL or market != GAME_TOTAL_MARKET:
         return _ORIGINAL_RENDER_NFL(market)
 
-    cfb_route_base._persist_fast_route_query()
+    _persist_game_total_route_query()
     _render_production_heartbeat()
     page = root._import(ACTIVE_PAGE)
     return page.render_cfb_hub(
@@ -91,6 +102,8 @@ def _render_direct_cfb_game_total() -> None:
     original_render_nfl = root._render_nfl
     original_prefixes = root._ROUTE_MODULE_PREFIXES
 
+    # Reuse V77's selector behavior only. Its query persistence is O/U-only,
+    # so exact Game Total owns persistence locally just as certified V150 did.
     root.st.selectbox = cfb_route_base._selectbox_v77
     root._render_nfl = _render_cfb_game_total_v155
     if "cfb_" not in root._ROUTE_MODULE_PREFIXES:
@@ -122,6 +135,7 @@ __all__ = [
     "PRODUCTION_HEARTBEAT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_game_total_route_active",
+    "_persist_game_total_route_query",
     "_query_requests_game_total",
     "_render_cfb_game_total_v155",
     "_render_direct_cfb_game_total",
