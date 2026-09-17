@@ -1,7 +1,11 @@
+from pathlib import Path
+
 import pytest
 from fastapi import HTTPException
 
 from sports_api.api import cfb_verified_games_v1 as identity
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _game(event_id: str, day: str, away: str, home: str) -> dict:
@@ -88,3 +92,12 @@ def test_verified_games_endpoint_fails_closed_when_all_identity_sources_fail(mon
 
     assert exc_info.value.status_code == 503
     assert "verified CFB identity unavailable" in str(exc_info.value.detail)
+
+
+def test_render_entrypoint_explicitly_mounts_verified_games_router():
+    wrapper = (ROOT / "sports_api/main_cfb_verified_v1.py").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "sports_api/Dockerfile").read_text(encoding="utf-8")
+
+    assert "from sports_api.main import app" in wrapper
+    assert "app.include_router(cfb_verified_games_router)" in wrapper
+    assert "sports_api.main_cfb_verified_v1:app" in dockerfile
