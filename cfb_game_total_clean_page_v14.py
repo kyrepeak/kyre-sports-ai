@@ -162,7 +162,7 @@ def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
         DATE_QUERY_KEY: selected_day.isoformat(),
         EVENT_QUERY_KEY: event_id,
     }
-    return "?" + urlencode(params)
+    # Absolute root + _top keeps the selected game in the real browser URL on Streamlit Cloud.\n    return "/?" + urlencode(params)
 
 
 def _school_tokens(value: Any) -> tuple[str, ...]:
@@ -302,7 +302,7 @@ def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], s
             prefix = "✓ " if selected else ""
             cards.append(
                 f'<a class="gt163-game-link{selected_class}" data-event-id="{escape(event_id)}" '
-                f'href="{escape(href, quote=True)}" target="_self"{aria}>{escape(prefix + label)}</a>'
+                f'href="{escape(href, quote=True)}" target="_top"{aria}>{escape(prefix + label)}</a>'
             )
         else:
             cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ESPN ID unavailable</span>')
