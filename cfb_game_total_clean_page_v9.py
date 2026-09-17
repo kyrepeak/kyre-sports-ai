@@ -1,19 +1,18 @@
-"""CFB Game Total Clean Page V9 — connected all-steps flow.
+"""CFB Game Total Clean Page V9 — deterministic connected all-steps flow.
 
-Presentation-only wrapper over frozen V8. V9 removes only the duplicate visible
-Steps 1–10 rail and re-presents the already-existing Step 1–10 readiness truth
-beside frozen Step 11 distribution and Step 12 final synthesis in one connected
-flow. Team evidence, raw evidence drawers, deep model evidence, final summary,
-and the Top-5 scanner remain owned by the inherited V8/V7/V6 path.
+Presentation-only successor to frozen V8. V9 reuses the exact frozen V6 model
+and display-data owners but renders the approved compact team evidence and the
+connected Steps 1–12 presentation directly. No projection, distribution,
+qualification, Top-5 ranking, API, or sportsbook-influence math is changed.
 """
 from __future__ import annotations
 
+from datetime import datetime
 from html import escape
 from typing import Any, Mapping
 
 import streamlit as st
 
-import cfb_game_total_clean_page_v1 as status_owner
 import cfb_game_total_clean_page_v6 as step_owner
 import cfb_game_total_clean_page_v7 as evidence_owner
 import cfb_game_total_clean_page_v8 as prior
@@ -25,11 +24,9 @@ FROZEN_PRESENTATION = "cfb_game_total_clean_page_v8"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
-frozen_page = prior.frozen_page
-logo_v3 = prior.logo_v3
-runtime_display = prior.runtime_display
-
-_FLOW_CONTEXT_KEY = "cfb_game_total_v157_connected_flow_context"
+frozen_page = step_owner.frozen_page
+logo_v3 = step_owner.logo_v3
+runtime_display = step_owner.runtime_display
 
 _V157_CSS = r"""
 <style>
@@ -80,7 +77,6 @@ def _combined_flow_html(
     raw: Mapping[str, Any],
     final: Mapping[str, Any],
 ) -> str:
-    """Build one presentation-only 1→12 flow from existing frozen truth."""
     rows: list[str] = []
     for number, title, _test_id in step_owner._STEP_1_10:
         rows.append(
@@ -158,61 +154,127 @@ def _combined_flow_html(
 """
 
 
-def _combined_model_summary(raw: Mapping[str, Any], final: Mapping[str, Any]) -> str:
-    context = st.session_state.get(_FLOW_CONTEXT_KEY)
-    if not isinstance(context, Mapping):
-        return prior._compact_model_summary(raw, final)
-
-    identity = context.get("identity") or {}
-    away = context.get("away") or {}
-    home = context.get("home") or {}
-    display_game = context.get("display_game") or {}
-    statuses = step_owner._existing_step_status(identity, away, home, display_game)
-    details = step_owner._step_details(identity, away, home, statuses)
-    return _combined_flow_html(statuses, details, raw, final)
-
-
-def _capture_steps_1_10_context(
-    identity: Mapping[str, Any],
-    away: Mapping[str, Any],
-    home: Mapping[str, Any],
-    display_game: Mapping[str, Any],
-) -> None:
-    """Capture exact V6 readiness truth and bind the final presenter to it."""
-    statuses = step_owner._existing_step_status(identity, away, home, display_game)
-    details = step_owner._step_details(identity, away, home, statuses)
-    st.session_state[_FLOW_CONTEXT_KEY] = {
-        "identity": dict(identity),
-        "away": dict(away),
-        "home": dict(home),
-        "display_game": dict(display_game),
-    }
-
-    def _bound_model_summary(raw: Mapping[str, Any], final: Mapping[str, Any]) -> str:
-        return _combined_flow_html(statuses, details, raw, final)
-
-    # V6 later calls the V1 status owner directly. Bind it here after the exact
-    # Step 1–10 truth is known so the live render cannot fall back to V8.
-    status_owner._status_cards = _bound_model_summary
-    evidence_owner._render_compact_team_cards(away, home)
-
-
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
-    """Run frozen V6 while swapping only its three presentation owners."""
-    original_steps = step_owner._render_steps_1_10_rail
-    original_evidence = step_owner.prior._render_evidence_center
-    original_status_cards = status_owner._status_cards
+    """Render V157 directly while reusing the exact frozen V6 owners."""
+    st.markdown(
+        step_owner.prior.prior.prior.prior.prior._CSS
+        + step_owner.prior.prior.prior.prior._V151_CSS
+        + step_owner.prior._V152_EVIDENCE_CSS
+        + step_owner._V152_MONSTER_CSS,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+<div class="gt152-shell">
+  <div class="gt152-shelltop">
+    <div><div class="gt152-kicker">CFB GAME TOTAL • MONSTER DASHBOARD</div><div class="gt152-title">College Football Game Total</div><div class="gt152-sub">Matchup first. Evidence next. Deep model machinery stays out of the way until you want it.</div></div>
+    <div class="gt152-live">V153 • V157 CONNECTED FLOW ACTIVE ✅</div>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-    step_owner._render_steps_1_10_rail = _capture_steps_1_10_context
-    step_owner.prior._render_evidence_center = evidence_owner._render_raw_team_evidence
-    status_owner._status_cards = _combined_model_summary
-    try:
-        return step_owner.render_game_total_hub(section_header, status_info, team_logo, h)
-    finally:
-        step_owner._render_steps_1_10_rail = original_steps
-        step_owner.prior._render_evidence_center = original_evidence
-        status_owner._status_cards = original_status_cards
-        st.session_state.pop(_FLOW_CONTEXT_KEY, None)
+    selected = st.date_input(
+        "📅 CFB Game Total slate date",
+        value=datetime.now(step_owner.prior.prior.prior.prior.prior._PHOENIX).date(),
+        key="cfb_v152_game_total_date",
+    )
+    selected_day = selected.isoformat()
+    games, schedule_diag = frozen_page.frozen_v2.frozen_v1.schedule.load_with_diagnostics(selected_day)
+    st.markdown(frozen_page.frozen_v2.frozen_v1.identity_ui._diagnostic_badges(schedule_diag), unsafe_allow_html=True)
+    if not games:
+        st.warning("No verified FBS-scoped games were returned for this date. V157 fails closed—no Game Total forecast is invented.")
+        return
+
+    index = st.selectbox(
+        "🏟️ Game Total matchup",
+        options=list(range(len(games))),
+        format_func=lambda i: frozen_page.frozen_v2.frozen_v1.identity_ui._matchup_label(games[int(i)]),
+        key=f"cfb_v152_game_total_matchup_{selected_day}",
+    )
+    game = games[int(index)]
+
+    # FROZEN MODEL PATH: exact certified owner and untouched selected game.
+    selected_result = frozen_page.slate.analyze_game(game, selected_day)
+    frozen_away = selected_result.get("away") or {}
+    frozen_home = selected_result.get("home") or {}
+    raw = selected_result.get("raw") or {}
+    final = selected_result.get("final") or {}
+
+    # DISPLAY-ONLY PATH: same certified reconciliation owner used by V6.
+    display_game, display_away, display_home, _display_diag = runtime_display.reconcile_display_bundle(
+        game,
+        selected_day,
+        frozen_away,
+        frozen_home,
+    )
+    visuals = logo_v3.resolve_visuals(display_game)
+    identity = step_owner.prior.prior.prior._identity_state(display_game, display_away, display_home, visuals)
+    away_stats = step_owner.prior.prior._team_stats_state(display_away, display_game, "away")
+    home_stats = step_owner.prior.prior._team_stats_state(display_home, display_game, "home")
+    away_evidence = step_owner.prior._team_evidence_state(display_away, display_game, "away")
+    home_evidence = step_owner.prior._team_evidence_state(display_home, display_game, "home")
+
+    st.markdown(step_owner._monster_matchup_hero(identity, away_stats, home_stats), unsafe_allow_html=True)
+    st.markdown(step_owner._compact_game_strip(identity), unsafe_allow_html=True)
+    st.markdown(step_owner._scoring_defense_summary(away_stats, home_stats), unsafe_allow_html=True)
+
+    statuses = step_owner._existing_step_status(identity, away_evidence, home_evidence, display_game)
+    details = step_owner._step_details(identity, away_evidence, home_evidence, statuses)
+
+    with st.container(border=True):
+        st.markdown(
+            """
+<div class="gt153-connected-head" data-testid="gt157-connected-evidence-shell">
+  <div class="gt153-connected-kicker">CONNECTED GAME TOTAL FLOW • V157</div>
+  <div class="gt153-connected-title">Steps 1–12 → Final → Top-5</div>
+  <div class="gt153-connected-sub">One connected evidence/model flow. Frozen calculations and deep evidence remain preserved exactly.</div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+        evidence_owner._render_compact_team_cards(away_evidence, home_evidence)
+        st.markdown(_combined_flow_html(statuses, details, raw, final), unsafe_allow_html=True)
+
+        with st.expander("🔬 Raw Steps 1–10 evidence", expanded=False):
+            evidence_owner._render_raw_team_evidence(away_evidence, home_evidence)
+
+        with st.expander("📊 Deep model evidence • Step 11 distribution", expanded=False):
+            st.markdown(frozen_page.frozen_v2._distribution_card(raw), unsafe_allow_html=True)
+            for panel in (
+                frozen_page.frozen_v2._band_panel(raw),
+                frozen_page.frozen_v2._around_projection_panel(raw),
+                frozen_page.frozen_v2._exact_panel(raw),
+                frozen_page.frozen_v2._components_panel(raw),
+            ):
+                if panel:
+                    st.markdown(panel, unsafe_allow_html=True)
+
+        with st.expander("🏁 Deep model evidence • Step 12 final synthesis", expanded=False):
+            st.markdown(frozen_page._final_card(game, final), unsafe_allow_html=True)
+
+        with st.expander("🏆 Top-5 slate scanner", expanded=False):
+            scan_key = f"cfb_v152_top5_{selected_day}"
+            diag_key = f"cfb_v152_scan_diag_{selected_day}"
+            if st.button("Run final Game Total Top-5 scan", type="primary", key=f"cfb_v152_scan_button_{selected_day}"):
+                with st.spinner("Scanning the verified CFB slate through frozen Steps 11–12..."):
+                    rows, diag = frozen_page.slate.scan_slate(games, selected_day)
+                    st.session_state[scan_key] = frozen_page.final_model.rank_slate(rows, limit=5)
+                    st.session_state[diag_key] = diag
+            top5 = st.session_state.get(scan_key) or []
+            diag = st.session_state.get(diag_key) or {}
+            if diag:
+                st.caption(f"Final scanner: {int(diag.get('games_analyzed') or 0)} analyzed • {int(diag.get('final_ready') or 0)} final-ready • {int(diag.get('qualified_forecasts') or 0)} ranked-eligible • {len(diag.get('errors') or [])} errors")
+            if top5:
+                for row in top5:
+                    st.markdown(frozen_page._top_card(row), unsafe_allow_html=True)
+            elif diag:
+                st.warning("No game cleared the frozen Step-12 qualification thresholds. V157 will not force a Top-5.")
+            else:
+                st.caption("Run the final slate scan to rank the strongest qualified Game Total forecasts.")
+
+    st.caption("🛡️ V157 connected display only • frozen Game Total math preserved • sportsbook projection influence 0.0%")
 
 
 def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
@@ -228,8 +290,6 @@ __all__ = [
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_combined_flow_html",
-    "_combined_model_summary",
-    "_capture_steps_1_10_context",
     "render_cfb_hub",
     "render_game_total_hub",
 ]
