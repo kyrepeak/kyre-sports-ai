@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import time
 from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import sync_playwright
@@ -20,6 +21,7 @@ GAME_TOTAL_MARKET = "Game Total"
 CFB_MARKET_LABEL = "🎯 CFB Market"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
+PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"
 REQUIRED_VISIBLE = (
     "MONSTER",
     "GAME TOTAL ANALYSIS",
@@ -77,6 +79,39 @@ def _assert_visible_contract(body: str) -> None:
         )
 
 
+def _find_direct_game_total_frame(page, timeout_seconds: float = 45.0):
+    """Find the post-refresh direct Game Total surface without router heuristics."""
+    deadline = time.monotonic() + timeout_seconds
+    last_scan: list[dict] = []
+    while time.monotonic() < deadline:
+        scans: list[dict] = []
+        for index, frame in enumerate(page.frames):
+            try:
+                body = frame.locator("body").inner_text(timeout=5000)
+            except Exception:
+                body = ""
+            try:
+                combo_count = frame.get_by_role("combobox").count()
+            except Exception:
+                combo_count = 0
+            scans.append(
+                {
+                    "index": index,
+                    "url": frame.url,
+                    "comboboxes": combo_count,
+                    "body_start": body[:500],
+                }
+            )
+            if PRODUCTION_HEARTBEAT in body and FULL_RENDER_MARKER in body:
+                return frame, scans
+        last_scan = scans
+        page.wait_for_timeout(1000)
+    raise GameTotalBrowserQAFailure(
+        "Could not find direct V160 Game Total surface after refresh. "
+        + json.dumps(last_scan, ensure_ascii=False)
+    )
+
+
 def run(
     *,
     base_url: str = base.DEFAULT_BASE_URL,
@@ -122,9 +157,10 @@ def run(
             query_after_selection = _assert_game_total_query(page)
 
             # Reproduce the user's actual refresh path. The direct target page
-            # intentionally has no generic sport/market selectors after reload.
+            # intentionally has no generic sport/market selectors after reload,
+            # so locate it by its V155 heartbeat + visible target CTA instead.
             page.reload(wait_until="domcontentloaded", timeout=120000)
-            frame_after_reload, reload_scans = base._find_app_frame(page)
+            frame_after_reload, reload_scans = _find_direct_game_total_frame(page)
             body_after_reload = base._wait_for_text(
                 frame_after_reload,
                 FULL_RENDER_MARKER,
