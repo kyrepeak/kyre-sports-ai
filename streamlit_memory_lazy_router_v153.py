@@ -13,6 +13,7 @@ import streamlit_memory_lazy_router_v152 as prior
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V153 • CFB GAME TOTAL CONNECTED FLOW"
 PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V153_CONNECTED_FLOW_ACTIVE"
+LEGACY_PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v152"
 ACTIVE_PAGE = "cfb_game_total_clean_page_v9"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -33,7 +34,7 @@ def _render_production_heartbeat() -> None:
     st.markdown(
         f'<div data-testid="cfb-game-total-v153-heartbeat" '
         f'style="font-size:.58rem;font-weight:800;color:#a7b6c5;margin:0 0 4px 2px">'
-        f'{PRODUCTION_HEARTBEAT}</div>',
+        f'{PRODUCTION_HEARTBEAT} · {LEGACY_PRODUCTION_HEARTBEAT}</div>',
         unsafe_allow_html=True,
     )
 
@@ -66,6 +67,7 @@ __all__ = [
     "CFB_SPORT_LABEL",
     "FROZEN_ROUTER",
     "GAME_TOTAL_MARKET",
+    "LEGACY_PRODUCTION_HEARTBEAT",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "PRODUCTION_HEARTBEAT",
