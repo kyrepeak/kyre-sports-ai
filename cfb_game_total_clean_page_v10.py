@@ -32,11 +32,12 @@ V160_REQUIRED_MARKERS = (
     "Top 5",
 )
 
-# IMPORTANT: V159 owns the complete structural stylesheet. Earlier V160 builds
-# accidentally replaced it with a partial override sheet, dropping critical
-# display:grid / display:flex / display:block rules. Compose instead of replace:
-# keep the frozen V159 structure intact, then append V160 presentation overrides.
+# V159 owns the complete structural stylesheet and frozen dashboard DOM. V160
+# must never replace or mutate that stylesheet because V9 emits it more than
+# once inside the dashboard HTML. Inject this override sheet as its own
+# Streamlit style element after the frozen render so CSS cannot leak as text.
 _V160_OVERRIDES = r"""
+:root{--gt160-green:#58efb2;--gt160-teal:#3fd8ca;--gt160-blue:#6bbcff;--gt160-purple:#b48aff;--gt160-amber:#f0c96a;--gt160-red:#ff796f;--gt160-text:#f4f8fc;--gt160-muted:#8ca2b5}
 
 /* ---------- V160 Monster Sports Intelligence presentation layer ---------- */
 html,body,[data-testid="stAppViewContainer"]{background:#020a13!important}
@@ -87,7 +88,7 @@ html,body,[data-testid="stAppViewContainer"]{background:#020a13!important}
 }
 """
 
-_V160_CSS = prior._V159_CSS.replace("</style>", _V160_OVERRIDES + "\n</style>")
+_V160_CSS = "<style>\n" + _V160_OVERRIDES + "\n</style>"
 
 
 def _render_v160_masthead() -> None:
@@ -113,16 +114,14 @@ def _render_v160_identity() -> None:
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
-    # V9 owns all real values and the full dashboard DOM. V160 swaps in a
-    # composed stylesheet only; no model/data/ranking call is altered here.
-    original_css = prior._V159_CSS
-    prior._V159_CSS = _V160_CSS
-    try:
-        _render_v160_masthead()
-        _render_v160_identity()
-        return prior.render_game_total_hub(section_header, status_info, team_logo, h)
-    finally:
-        prior._V159_CSS = original_css
+    # Render the frozen V159 page with its own stylesheet completely untouched.
+    # The V160 CSS is emitted as a separate style element afterwards so the
+    # cascade wins without ever becoming nested inside V159's repeated HTML.
+    _render_v160_masthead()
+    _render_v160_identity()
+    result = prior.render_game_total_hub(section_header, status_info, team_logo, h)
+    st.markdown(_V160_CSS, unsafe_allow_html=True)
+    return result
 
 
 def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
