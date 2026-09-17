@@ -264,8 +264,7 @@ def run_browser_qa(
             # query parameters for cold-start route restoration.
             page.close()
             page = browser.new_page(viewport={"width": 1440, "height": 1400})
-            page.goto(
-                _cfb_over_under_url(base_url),
+            page.goto(_cfb_over_under_url(base_url),
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
