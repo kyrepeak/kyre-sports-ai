@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def pytest_collection_modifyitems(session, config, items):
-    """Keep the permanent CFB lane aware of frozen V150/V151/V152 + active V153."""
+    """Keep the permanent CFB lane aware of frozen V150/V151/V152/V153 + active V154."""
     if not any(item.path.name.startswith("test_cfb_") for item in items):
         return
 
@@ -17,11 +17,12 @@ def pytest_collection_modifyitems(session, config, items):
     activation = ROOT / "streamlit_memory_lazy_router_v149.py"
     frozen_router = ROOT / "streamlit_memory_lazy_router_v152.py"
     active_router = ROOT / "streamlit_memory_lazy_router_v153.py"
+    successor_router = ROOT / "streamlit_memory_lazy_router_v154.py"
     app_entry = ROOT / "app.py"
     browser = ROOT / "devsystem" / "cfb_game_total_browser_qa_v1.py"
-    required = (page, router, activation, frozen_router, active_router, app_entry, browser)
+    required = (page, router, activation, frozen_router, active_router, successor_router, app_entry, browser)
     missing = [path.name for path in required if not path.exists()]
-    assert not missing, "missing active CFB V153 contract files: " + ", ".join(missing)
+    assert not missing, "missing active CFB V154 contract files: " + ", ".join(missing)
 
     for path in required:
         py_compile.compile(str(path), doraise=True)
@@ -31,6 +32,7 @@ def pytest_collection_modifyitems(session, config, items):
     activation_source = activation.read_text(encoding="utf-8")
     frozen_router_source = frozen_router.read_text(encoding="utf-8")
     active_router_source = active_router.read_text(encoding="utf-8")
+    successor_router_source = successor_router.read_text(encoding="utf-8")
     app_source = app_entry.read_text(encoding="utf-8")
     browser_source = browser.read_text(encoding="utf-8")
 
@@ -84,22 +86,31 @@ def pytest_collection_modifyitems(session, config, items):
     assert "cfb_route_base._selectbox_v77 = original_cfb_selectbox" in activation_source
     assert "st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET" in activation_source
 
-    # V152 stays frozen beneath the additive V153 production successor.
+    # V152 stays frozen beneath the additive V153 Game Total successor.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v151"' in frozen_router_source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"' in frozen_router_source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in frozen_router_source
     assert "MAY_MODIFY_PROJECTION = False" in frozen_router_source
     assert "return prior.render_app()" in frozen_router_source
 
-    # V153 may advance presentation/routing only while proving V152 is its frozen base.
+    # V153 remains the frozen Game Total owner beneath additive V154.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v152"' in active_router_source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V153_CONNECTED_FLOW_ACTIVE"' in active_router_source
     assert 'LEGACY_PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"' in active_router_source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in active_router_source
     assert "MAY_MODIFY_PROJECTION = False" in active_router_source
     assert "return prior.render_app()" in active_router_source
-    assert "from streamlit_memory_lazy_router_v153 import record_bootstrap_import_ms, render_app" in app_source
-    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V153_CFB_GAME_TOTAL_CONNECTED_FLOW_2026-09-17"' in app_source
+
+    # V154 advances only exact CFB Over/Under while delegating every other route to V153.
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v153"' in successor_router_source
+    assert 'PRODUCTION_HEARTBEAT = "CFB_OVER_UNDER_V39_PRODUCTION_ACTIVE"' in successor_router_source
+    assert 'ACTIVE_PAGE = "cfb_over_under_clean_page_v39"' in successor_router_source
+    assert 'OVER_UNDER_MARKET = "Over/Under"' in successor_router_source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in successor_router_source
+    assert "MAY_MODIFY_PROJECTION = False" in successor_router_source
+    assert "return prior.render_app()" in successor_router_source
+    assert "from streamlit_memory_lazy_router_v154 import record_bootstrap_import_ms, render_app" in app_source
+    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V154_CFB_OVER_UNDER_COMPACT_EVIDENCE_2026-09-17"' in app_source
 
     # Real browser proof must certify the actual Game Total page and explicitly
     # reject the legacy title visible in the user's production screenshot.
