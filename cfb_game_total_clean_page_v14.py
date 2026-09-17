@@ -232,7 +232,7 @@ def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], s
             prefix = "✓ " if selected else ""
             cards.append(
                 f'<a class="gt163-game-link{selected_class}" data-event-id="{escape(event_id)}" '
-                f'href="{escape(href, quote=True)}" target="_self"{aria}>{escape(prefix + label)}</a>'
+                f'href="{escape(href, quote=True)}" target="_top"{aria}>{escape(prefix + label)}</a>'
             )
         else:
             cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ESPN ID unavailable</span>')
