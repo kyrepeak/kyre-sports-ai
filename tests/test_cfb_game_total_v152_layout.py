@@ -6,6 +6,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 PAGE = ROOT / "cfb_game_total_clean_page_v6.py"
 V7 = ROOT / "cfb_game_total_clean_page_v7.py"
+V8 = ROOT / "cfb_game_total_clean_page_v8.py"
 
 
 def _source() -> str:
@@ -14,6 +15,10 @@ def _source() -> str:
 
 def _v7_source() -> str:
     return V7.read_text(encoding="utf-8")
+
+
+def _v8_source() -> str:
+    return V8.read_text(encoding="utf-8")
 
 
 def test_v6_is_additive_over_closed_v5_and_keeps_frozen_boundaries() -> None:
@@ -182,6 +187,36 @@ def test_step3_hooks_are_restored_after_render() -> None:
     assert "prior.prior._render_evidence_center = original_evidence" in source
 
 
-def test_router_targets_v7_only_for_v152_game_total() -> None:
+def test_step4_v8_compacts_existing_model_truth_without_new_math() -> None:
+    source = _v8_source()
+    assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v7"' in source
+    assert "import cfb_game_total_clean_page_v7 as prior" in source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
+    assert "MAY_MODIFY_PROJECTION = False" in source
+    assert 'step11_ready = bool(raw.get("ready"))' in source
+    assert 'step12_ready = bool(final.get("ready"))' in source
+    assert "slate.analyze_game" not in source
+    assert "scan_slate" not in source
+
+
+def test_step4_v8_has_connected_step11_step12_and_final_summary() -> None:
+    source = _v8_source()
+    for marker in (
+        'data-testid="gt156-step11-card"',
+        'data-testid="gt156-step12-card"',
+        'data-testid="gt156-final-summary"',
+        "STEP 11 • DISTRIBUTION",
+        "STEP 12 • FINAL SYNTHESIS",
+        "FINAL • MODEL SUMMARY",
+    ):
+        assert marker in source
+    assert "st.expander(" not in source
+    assert "status_owner._status_cards = _compact_model_summary" in source
+    assert "status_owner._status_cards = original_status_cards" in source
+    assert "@media(max-width:760px)" in source
+    assert ".gt156-model-grid{grid-template-columns:1fr}" in source
+
+
+def test_router_stays_on_frozen_v7_until_final_step5_integration() -> None:
     router = (ROOT / "streamlit_memory_lazy_router_v152.py").read_text(encoding="utf-8")
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v7"' in router
