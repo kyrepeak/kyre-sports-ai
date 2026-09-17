@@ -13,6 +13,7 @@ from typing import Any, Mapping
 
 import streamlit as st
 
+import cfb_game_total_clean_page_v1 as status_owner
 import cfb_game_total_clean_page_v6 as step_owner
 import cfb_game_total_clean_page_v7 as evidence_owner
 import cfb_game_total_clean_page_v8 as prior
@@ -189,16 +190,18 @@ def _combined_model_summary(raw: Mapping[str, Any], final: Mapping[str, Any]) ->
 
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
-    """Run frozen V8 while swapping only the two visible presentation hooks."""
+    """Run frozen V7 while V9 replaces V8's visible presenter deterministically."""
     original_steps = evidence_owner._render_steps_1_10_with_team_cards
-    original_summary = prior._compact_model_summary
+    original_status_cards = status_owner._status_cards
     evidence_owner._render_steps_1_10_with_team_cards = _capture_steps_1_10_context
-    prior._compact_model_summary = _combined_model_summary
+    status_owner._status_cards = _combined_model_summary
     try:
-        return prior.render_game_total_hub(section_header, status_info, team_logo, h)
+        # V8 adds presentation only. V9 supersedes that presenter, so delegate to
+        # V7's frozen evidence path while keeping every V6/V5 model call intact.
+        return evidence_owner.render_game_total_hub(section_header, status_info, team_logo, h)
     finally:
         evidence_owner._render_steps_1_10_with_team_cards = original_steps
-        prior._compact_model_summary = original_summary
+        status_owner._status_cards = original_status_cards
         st.session_state.pop(_FLOW_CONTEXT_KEY, None)
 
 
