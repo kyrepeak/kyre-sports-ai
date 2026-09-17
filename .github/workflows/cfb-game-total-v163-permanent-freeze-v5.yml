@@ -1,0 +1,151 @@
+name: CFB Game Total V163 V5 superseding permanent freeze
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cfb-game-total-v163-permanent-freeze-v5.yml"
+      - "cfb_game_total_v163_freeze_manifest_v5.json"
+      - "devsystem/task_ledgers/cfb-game-total-v163-permanent-freeze-v5.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cfb-game-total-v163-permanent-freeze-v5.yml"
+      - "cfb_game_total_v163_freeze_manifest_v5.json"
+      - "devsystem/task_ledgers/cfb-game-total-v163-permanent-freeze-v5.json"
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Freeze scope guard
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"], text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-game-total-v163-permanent-freeze-v5.yml",
+              "cfb_game_total_v163_freeze_manifest_v5.json",
+              "devsystem/task_ledgers/cfb-game-total-v163-permanent-freeze-v5.json",
+          }
+          if changed != expected:
+              raise SystemExit("V163/V5 freeze branch changed active code: " + str(sorted(changed)))
+          print("CFB_GAME_TOTAL_V163_V5_FREEZE_SCOPE=PASS")
+          PY
+
+      - name: Verify superseding freeze metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v163_freeze_manifest_v5.json").read_text())
+          assert m["version"] == 5
+          assert m["baseline_commit"] == "cd70c716633855389506a4a5ac389821ed8573e6"
+          assert m["feature_pr"] == 599
+          assert m["devsystem_pr_run"] == 1034
+          assert m["browser_certification_run"] == 30
+          assert m["production_verification_run"] == 6
+          assert m["production_verification_run_id"] == 35288333874
+          assert m["production_verification_status"] == "SUCCESS"
+          assert m["freeze_ready"] is True
+          r=m["render"]
+          assert r["service_id"] == "srv-da84q6ifngtc73bdbm6g"
+          assert r["source_branch"] == "mlb-step17b-shared-host-cert"
+          assert r["certified_commit"] == "6f65c868c7b92e8813280462c6679a98df24ff00"
+          assert r["auto_deploy"] is False
+          c=m["contract"]
+          assert c["active_page"] == "cfb_game_total_clean_page_v14"
+          assert c["active_router"] == "streamlit_memory_lazy_router_v159"
+          assert c["production_verifier"] == "devsystem.production_verify_v5"
+          assert c["selector_navigation"] == "Streamlit frame query-sync anchor"
+          assert c["official_espn_event_identity"] is True
+          assert c["full_slate_identity_without_sportsbook_line"] is True
+          assert c["selected_game_survives_refresh"] is True
+          assert c["selected_game_switches_full_analysis"] is True
+          assert c["render_api_identity_pinned"] is True
+          assert c["projection_math_changed"] is False
+          assert c["distribution_math_changed"] is False
+          assert c["step12_qualification_changed"] is False
+          assert c["top5_ranking_changed"] is False
+          assert c["api_model_behavior_changed"] is False
+          assert c["sportsbook_projection_influence"] == 0.0
+          assert c["future_changes_must_be_additive"] is True
+          assert c["permanently_frozen"] is True
+          print("CFB_GAME_TOTAL_V163_V5_FREEZE_METADATA=PASS")
+          PY
+
+      - name: Verify every frozen blob exactly
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v163_freeze_manifest_v5.json").read_text())
+          failures=[]
+          for path, expected in m["exact_blobs"].items():
+              actual=subprocess.check_output(["git","rev-parse",f"HEAD:{path}"], text=True).strip()
+              if actual != expected:
+                  failures.append(f"{path}: expected {expected}, got {actual}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("CFB_GAME_TOTAL_V163_V5_EXACT_BLOBS=PASS", len(m["exact_blobs"]))
+          PY
+
+      - name: Enforce frozen V163 V5 boundaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          page=Path("cfb_game_total_clean_page_v14.py").read_text(encoding="utf-8")
+          verifier=Path("devsystem/production_verify_v5.py").read_text(encoding="utf-8")
+          targets=Path("devsystem/production_targets_v1.json").read_text(encoding="utf-8")
+          required_page=[
+              'EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"',
+              'GAMES ON THIS DAY',
+              'data-testid="gt163-game-strip"',
+              'return "?" + urlencode(params)',
+              'target="_self"',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'MAY_MODIFY_PROJECTION = False',
+          ]
+          required_verifier=[
+              '_wait_for_initial_top_level_selection',
+              '_wait_for_top_level_selection',
+              'target_scope != "_self"',
+              'not href.startswith("?")',
+              'page.reload',
+              'DEVSYSTEM_PRODUCTION_VERIFICATION_V5_GREEN',
+          ]
+          for token in required_page:
+              assert token in page, token
+          for token in required_verifier:
+              assert token in verifier, token
+          assert '"certified_commit": "6f65c868c7b92e8813280462c6679a98df24ff00"' in targets
+          print("CFB_GAME_TOTAL_V163_V5_ROUTE_SELECTOR_FIREWALL=PASS")
+          PY
+
+      - name: Compile frozen V163 V5 surface
+        run: |
+          python -m py_compile             app.py             cfb_game_total_clean_page_v14.py             streamlit_memory_lazy_router_v159.py             sports_api/api/cfb_odds_v1.py             devsystem/cfb_game_total_browser_qa_v4.py             devsystem/production_verify_v5.py             devsystem/production_identity_verify_v1.py             tests/test_cfb_game_total_v163_game_selector.py             tests/test_cfb_game_total_v163_server_identity.py             tests/test_devsystem_production_verify_v5.py
+
+      - name: Certification marker
+        run: echo "CFB_GAME_TOTAL_V163_V5_SUPERSEDING_PERMANENT_FREEZE_GREEN"
+
+      - name: Final protected-main proof marker
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: echo "CFB_GAME_TOTAL_V163_V5_PROTECTED_MAIN_FINAL_GREEN"
