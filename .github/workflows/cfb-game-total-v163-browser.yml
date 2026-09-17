@@ -1,0 +1,96 @@
+name: CFB Game Total V163 game selector browser certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "streamlit_memory_lazy_router_v159.py"
+      - "cfb_game_total_clean_page_v14.py"
+      - "devsystem/cfb_game_total_browser_qa_v4.py"
+      - "devsystem/production_verify_v4.py"
+      - "tests/test_cfb_game_total_v163_game_selector.py"
+      - "tests/test_devsystem_production_verify_v4.py"
+      - ".github/workflows/cfb-game-total-v163-browser.yml"
+      - ".github/workflows/devsystem-production-verification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-game-total-v163-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-v163-game-selector:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install browser certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Compile V163 selector surface
+        run: |
+          python -m py_compile app.py
+          python -m py_compile streamlit_memory_lazy_router_v159.py
+          python -m py_compile cfb_game_total_clean_page_v14.py
+          python -m py_compile devsystem/cfb_game_total_browser_qa_v4.py
+          python -m py_compile devsystem/production_verify_v4.py
+
+      - name: Run focused V163 contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_game_total_v162_cache_boundary.py \
+            tests/test_cfb_game_total_v163_game_selector.py \
+            tests/test_devsystem_production_verify_v4.py
+
+      - name: Start real production entrypoint locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/cfb-game-total-v163
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            > artifacts/cfb-game-total-v163/streamlit.log 2>&1 &
+          echo $! > /tmp/cfb_game_total_v163_browser_pid
+
+      - name: Certify visible game switching and event persistence
+        run: |
+          python -m devsystem.cfb_game_total_browser_qa_v4 \
+            --base-url http://127.0.0.1:8501 \
+            --artifact-dir artifacts/cfb-game-total-v163
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 600 artifacts/cfb-game-total-v163/streamlit.log || true
+
+      - name: Upload V163 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-game-total-v163-browser-${{ github.run_id }}
+          path: artifacts/cfb-game-total-v163
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/cfb_game_total_v163_browser_pid ]; then
+            kill "$(cat /tmp/cfb_game_total_v163_browser_pid)" 2>/dev/null || true
+          fi

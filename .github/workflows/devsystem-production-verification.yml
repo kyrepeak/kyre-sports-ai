@@ -19,6 +19,7 @@ on:
       - "devsystem/production_verify_v1.py"
       - "devsystem/production_verify_v2.py"
       - "devsystem/production_verify_v3.py"
+      - "devsystem/production_verify_v4.py"
       - "devsystem/production_identity_verify_v1.py"
       - "devsystem/production_targets_v1.json"
       - "devsystem/devsystem_manifest_v1.json"
@@ -28,6 +29,7 @@ on:
       - "tests/test_devsystem_production_verify_v1.py"
       - "tests/test_devsystem_production_verify_v2.py"
       - "tests/test_devsystem_production_verify_v3.py"
+      - "tests/test_devsystem_production_verify_v4.py"
       - "tests/test_devsystem_production_identity_verify_v1.py"
       - ".github/workflows/devsystem-production-verification.yml"
   workflow_dispatch:
@@ -62,6 +64,7 @@ jobs:
             tests/test_devsystem_production_verify_v1.py \
             tests/test_devsystem_production_verify_v2.py \
             tests/test_devsystem_production_verify_v3.py \
+            tests/test_devsystem_production_verify_v4.py \
             tests/test_devsystem_production_identity_verify_v1.py
 
       - name: Verify immutable Render production identity
@@ -69,7 +72,7 @@ jobs:
 
       - name: Verify deployed Streamlit freshness and Render API
         run: |
-          python devsystem/production_verify_v3.py \
+          python devsystem/production_verify_v4.py \
             --artifact-dir artifacts/production-verification
 
       - name: Upload production evidence
