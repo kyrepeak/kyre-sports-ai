@@ -32,17 +32,18 @@ def test_v163_selected_event_controls_frozen_matchup_index_and_survives_refresh(
     assert "return selected_index" in source
 
 
-def test_v163_game_links_preserve_date_route_and_exact_event_identity():
+def test_v163_native_selector_persists_exact_event_identity():
     source = _read(PAGE)
     assert "DATE_QUERY_KEY" in source
     assert "ROUTE_QUERY_SPORT" in source
     assert "ROUTE_QUERY_MARKET" in source
     assert "EVENT_QUERY_KEY" in source
-    assert 'return "?" + urlencode(params)' in source
-    assert 'target="_self"' in source
-    assert 'SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"' in source
-    assert 'SELECTOR_SYNC_QUERY_KEY: event_id' in source
-    assert 'del st.query_params[SELECTOR_SYNC_QUERY_KEY]' in source
+    assert 'SELECTOR_WIDGET_LABEL = "SELECT MATCHUP"' in source
+    assert 'SELECTOR_WIDGET_KEY_PREFIX = "cfb_v163_event_selector_"' in source
+    assert "st.radio(" in source
+    assert "horizontal=True" in source
+    assert "on_change=_on_native_selector_change" in source
+    assert "_set_query_event_id(event_id)" in source
 
 
 def test_v163_router_activates_fresh_page_successor_and_preserves_frozen_heartbeats():
