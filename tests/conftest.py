@@ -136,9 +136,15 @@ def pytest_collection_modifyitems(session, config, items):
     assert "from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app" in app_source
     assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V155_CFB_GAME_TOTAL_V160_VISUAL_PARITY_2026-09-17"' in app_source
 
-    # Real browser proof must certify the actual Game Total page and explicitly
-    # reject the legacy title visible in the user's production screenshot.
+    # Real browser proof must certify the actual V160 visual-parity surface and
+    # explicitly reject the legacy title visible in the old production page.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
-    assert '"CFB GAME TOTAL • MONSTER DASHBOARD"' in browser_source
+    assert '"CFB GAME TOTAL • CLEAN PAGE V160 ACTIVE"' in browser_source
+    assert '"GAME TOTAL ANALYSIS"' in browser_source
+    assert '"TEAM EVIDENCE"' in browser_source
+    assert '"GAME TOTAL EVIDENCE • STEPS 1–12"' in browser_source
+    assert '"FINAL MODEL SUMMARY"' in browser_source
+    assert '"TOP-5 SLATE SCANNER"' in browser_source
     assert '"College Football Game Total — Final"' in browser_source
+    assert 'print("CFB_GAME_TOTAL_V160_BROWSER_GREEN")' in browser_source
     assert "FORBIDDEN_VISIBLE" in browser_source
