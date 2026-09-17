@@ -26,6 +26,7 @@ REQUIRED_VISIBLE = (
     "TOP-5 SLATE SCANNER",
     "CFB Game Total slate date",
 )
+FULL_RENDER_MARKER = "TOP-5 SLATE SCANNER"
 FORBIDDEN_VISIBLE = (
     "College Football Game Total — Final",
 )
@@ -78,10 +79,14 @@ def run(
             )
 
             base._choose(page, frame, 1, GAME_TOTAL_MARKET)
+
+            # Streamlit can expose the V160 identity badge before the frozen
+            # dashboard body has finished streaming. Certify completion using
+            # the final visible dashboard section, then inspect the full body.
             body = base._wait_for_text(
                 frame,
-                REQUIRED_VISIBLE[0],
-                timeout_seconds=60.0,
+                FULL_RENDER_MARKER,
+                timeout_seconds=90.0,
             )
 
             missing = [text for text in REQUIRED_VISIBLE if text not in body]
@@ -109,6 +114,7 @@ def run(
                 "sport": CFB_SPORT,
                 "market": GAME_TOTAL_MARKET,
                 "required_visible": list(REQUIRED_VISIBLE),
+                "full_render_marker": FULL_RENDER_MARKER,
                 "forbidden_visible": list(FORBIDDEN_VISIBLE),
                 "health": health,
                 "initial_frame_scan": scans,
