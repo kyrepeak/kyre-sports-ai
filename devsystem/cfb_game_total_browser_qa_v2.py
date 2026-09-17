@@ -45,7 +45,9 @@ def _set_target_date(page, frame) -> str:
             f"Expected 3 Streamlit date segments, found {spinbuttons.count()}"
         )
 
-    fallback = ("2026", "09", "17")
+    # Streamlit's U.S. segmented date control falls back to month/day/year when
+    # browser accessibility metadata does not expose semantic segment labels.
+    fallback = ("09", "17", "2026")
     semantic_values = {"year": "2026", "month": "09", "day": "17"}
     diag: list[str] = []
     for i in range(3):
@@ -64,9 +66,12 @@ def _set_target_date(page, frame) -> str:
             fallback[i],
         )
         diag.append(f"{i}:{semantic or 'unlabeled'}->{value}")
+        segment.click()
+        segment.press("ControlOrMeta+A")
         segment.press_sequentially(value)
 
-    page.keyboard.press("Escape")
+    # Commit the segmented control by moving focus out of the final segment.
+    page.keyboard.press("Tab")
     page.wait_for_timeout(1800)
     frame.get_by_role("combobox", name=MATCHUP_LABEL, exact=True).wait_for(
         state="visible", timeout=45000
