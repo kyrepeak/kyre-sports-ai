@@ -94,10 +94,11 @@ def test_verified_games_endpoint_fails_closed_when_all_identity_sources_fail(mon
     assert "verified CFB identity unavailable" in str(exc_info.value.detail)
 
 
-def test_render_entrypoint_explicitly_mounts_verified_games_router():
+def test_render_entrypoint_explicitly_mounts_verified_games_route():
     wrapper = (ROOT / "sports_api/main_cfb_verified_v1.py").read_text(encoding="utf-8")
     dockerfile = (ROOT / "sports_api/Dockerfile").read_text(encoding="utf-8")
 
     assert "from sports_api.main import app" in wrapper
-    assert "app.include_router(cfb_verified_games_router)" in wrapper
+    assert "app.add_api_route(" in wrapper
+    assert '"/api/v1/cfb/markets/verified-games"' in wrapper
     assert "sports_api.main_cfb_verified_v1:app" in dockerfile
