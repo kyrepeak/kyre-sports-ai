@@ -3,7 +3,7 @@
 The browser QA proves that the checked-out branch can:
 - boot Streamlit;
 - expose the expected sport choices;
-- route to College Football -> Over/Under;
+- enter the certified College Football -> Over/Under fast route directly;
 - render the active Clean Page V39 compact evidence dashboard;
 - expose V39's compact matchup foundation and frozen-model presentation strip;
 - preserve 0.0% sportsbook projection influence and mutation-off boundaries;
@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 import time
 from typing import Any
+from urllib.parse import urlencode
 
 import requests
 from playwright.sync_api import sync_playwright
@@ -66,6 +67,16 @@ def _artifact_dir(path: str | Path) -> Path:
     result = Path(path)
     result.mkdir(parents=True, exist_ok=True)
     return result
+
+
+def _cfb_over_under_url(base_url: str) -> str:
+    query = urlencode(
+        (
+            ("ks_sport", CFB_SPORT),
+            ("ks_cfb_market", CFB_MARKET),
+        )
+    )
+    return base_url.rstrip("/") + "/?" + query
 
 
 def _wait_for_health(base_url: str, timeout_seconds: float = 120.0) -> dict[str, Any]:
@@ -227,7 +238,7 @@ def run_browser_qa(
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
-            frame, scan = _find_app_frame(page)
+            frame, initial_scan = _find_app_frame(page)
 
             initial_body = frame.locator("body").inner_text()
             forbidden = _body_has_forbidden_error(initial_body)
@@ -246,11 +257,20 @@ def run_browser_qa(
                     f"Sport selector is missing {missing_sports}; saw {options}"
                 )
 
-            _choose(page, frame, 0, CFB_SPORT)
+            # Use a fresh Streamlit browser session for the exact certified O/U
+            # route. Clicking College Football first briefly renders default CFB
+            # Moneyline, whose cfb_* purge/re-import graph can race before the
+            # browser reaches Over/Under. V154/V77 already certify these exact
+            # query parameters for cold-start route restoration.
+            page.close()
+            page = browser.new_page(viewport={"width": 1440, "height": 1400})
+            page.goto(
+                _cfb_over_under_url(base_url),
+                wait_until="domcontentloaded",
+                timeout=120000,
+            )
+            frame, route_scan = _find_app_frame(page)
 
-            # The initial MLB page can already have two comboboxes, so a count
-            # is not a safe rerun barrier. Wait for the CFB-specific market
-            # selector that only exists after Streamlit finishes the sport rerun.
             cfb_market_combo = frame.get_by_role(
                 "combobox",
                 name=CFB_MARKET_LABEL,
@@ -261,10 +281,6 @@ def run_browser_qa(
                 timeout=CFB_RERUN_TIMEOUT_MS,
             )
 
-            _choose(page, frame, 1, CFB_MARKET)
-            # The V39 ACTIVE caption renders before the lower dashboard. Waiting
-            # for the final required marker proves the full Streamlit rerun has
-            # reached the Steps 11-12 shell before we snapshot the body.
             body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[-1], 60.0)
 
             missing_markers = [
@@ -296,7 +312,7 @@ def run_browser_qa(
                 "cfb_route": f"{CFB_SPORT} -> {CFB_MARKET}",
                 "cfb_markers": list(CFB_REQUIRED_MARKERS),
                 "app_frame_url": frame.url,
-                "frame_scan_count": len(scan),
+                "frame_scan_count": len(initial_scan) + len(route_scan),
                 "screenshot": str(screenshot),
             }
             print("DEVSYSTEM_BROWSER_QA_GREEN")
