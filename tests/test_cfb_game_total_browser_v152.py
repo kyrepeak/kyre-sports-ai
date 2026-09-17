@@ -17,6 +17,13 @@ def test_v152_browser_qa_exists_and_targets_real_game_total_page() -> None:
     assert "Game Total" in source
 
 
+def test_v152_browser_date_fallback_matches_us_segment_order_and_commits() -> None:
+    source = QA.read_text(encoding="utf-8")
+    assert 'fallback = ("09", "17", "2026")' in source
+    assert 'fallback = ("2026", "09", "17")' not in source
+    assert 'page.keyboard.press("Tab")' in source
+
+
 def test_v152_browser_qa_requires_visual_identity_records_and_compact_sections() -> None:
     source = QA.read_text(encoding="utf-8")
     for marker in (
