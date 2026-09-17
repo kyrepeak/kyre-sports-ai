@@ -153,6 +153,10 @@ def test_step3_v7_is_additive_over_closed_v6_and_keeps_frozen_boundaries() -> No
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
     assert "import cfb_game_total_clean_page_v6 as prior" in source
+    assert source.count("selected_result = frozen_page.slate.analyze_game(game, selected_day)") == 1
+    assert source.index("selected_result = frozen_page.slate.analyze_game(game, selected_day)") < source.index(
+        "runtime_display.reconcile_display_bundle("
+    )
 
 
 def test_step3_team_cards_join_connected_story_before_raw_drawer() -> None:
@@ -160,26 +164,34 @@ def test_step3_team_cards_join_connected_story_before_raw_drawer() -> None:
     assert 'data-testid="gt155-team-evidence-flow"' in source
     assert 'data-testid="gt155-away-team-card"' in source
     assert 'data-testid="gt155-home-team-card"' in source
-    assert "_ORIGINAL_STEPS_1_10(identity, away, home, display_game)" in source
-    assert "_render_compact_team_cards(away, home)" in source
-    assert source.index("_ORIGINAL_STEPS_1_10(identity, away, home, display_game)") < source.index(
-        "_render_compact_team_cards(away, home)"
-    )
+    rail = source.index("prior._render_steps_1_10_rail(identity, away_evidence, home_evidence, display_game)")
+    cards = source.index("_render_compact_team_cards(away_evidence, home_evidence)", rail)
+    raw = source.index('st.expander("🔬 Raw Steps 1–10 evidence", expanded=False)', cards)
+    assert rail < cards < raw
 
 
-def test_step3_uses_one_existing_raw_drawer_for_both_full_team_bodies() -> None:
+def test_step3_uses_one_raw_drawer_for_both_full_team_bodies() -> None:
     source = _v7_source()
     assert "def _render_raw_team_evidence(" in source
     assert source.count("prior.prior._render_team_evidence_body(") == 2
-    assert "st.expander(" not in source
-    assert "prior.prior._render_evidence_center = _render_raw_team_evidence" in source
+    assert source.count('st.expander("🔬 Raw Steps 1–10 evidence", expanded=False)') == 1
+    raw = source.index('st.expander("🔬 Raw Steps 1–10 evidence", expanded=False)')
+    evidence = source.index("_render_raw_team_evidence(away_evidence, home_evidence)", raw)
+    assert raw < evidence
 
 
-def test_step3_hooks_are_restored_after_render() -> None:
+def test_step3_direct_renderer_keeps_v6_frozen_and_avoids_runtime_monkeypatches() -> None:
     source = _v7_source()
-    assert "finally:" in source
-    assert "prior._render_steps_1_10_rail = original_steps" in source
-    assert "prior.prior._render_evidence_center = original_evidence" in source
+    assert "prior.render_game_total_hub(" not in source
+    assert "prior._render_steps_1_10_rail =" not in source
+    assert "prior.prior._render_evidence_center =" not in source
+    assert "finally:" not in source
+    for marker in (
+        'st.expander("📊 Deep model evidence • Step 11 distribution", expanded=False)',
+        'st.expander("🏁 Deep model evidence • Step 12 final synthesis", expanded=False)',
+        'st.expander("🏆 Top-5 slate scanner", expanded=False)',
+    ):
+        assert marker in source
 
 
 def test_router_targets_v7_only_for_v152_game_total() -> None:
