@@ -1,0 +1,148 @@
+name: CFB Game Total V164 Render identity browser certification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "streamlit_memory_lazy_router_v160.py"
+      - "cfb_game_total_clean_page_v15.py"
+      - "sports_api/api/cfb_official_games_v1.py"
+      - "sports_api/api/health.py"
+      - "devsystem/cfb_game_total_browser_qa_v5.py"
+      - "tests/test_cfb_market_identity_official_games_v1.py"
+      - "tests/test_cfb_game_total_v164_render_identity.py"
+      - ".github/workflows/cfb-game-total-v164-browser.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-game-total-v164-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-v164-render-identity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install V164 certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Compile V164 transport surface
+        run: |
+          python -m py_compile app.py
+          python -m py_compile streamlit_memory_lazy_router_v160.py
+          python -m py_compile cfb_game_total_clean_page_v15.py
+          python -m py_compile sports_api/api/cfb_official_games_v1.py
+          python -m py_compile sports_api/api/health.py
+          python -m py_compile devsystem/cfb_game_total_browser_qa_v5.py
+
+      - name: Run focused V164 contracts
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_market_identity_official_games_v1.py \
+            tests/test_cfb_game_total_v164_render_identity.py
+
+      - name: Start branch-local Kyre Sports API
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/cfb-game-total-v164
+          nohup python -m uvicorn sports_api.main:app \
+            --host 127.0.0.1 \
+            --port 8001 \
+            > artifacts/cfb-game-total-v164/api.log 2>&1 &
+          echo $! > /tmp/cfb_game_total_v164_api_pid
+          for attempt in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8001/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "V164 branch-local API did not become healthy"
+          tail -n 400 artifacts/cfb-game-total-v164/api.log || true
+          exit 1
+
+      - name: Prove official-games API contract over HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import requests
+
+          url = "http://127.0.0.1:8001/api/v1/cfb/identity/official-games"
+          response = requests.get(url, params={"game_date": "2026-09-19"}, timeout=30)
+          response.raise_for_status()
+          payload = response.json()
+          assert payload["game_date"] == "2026-09-19", payload
+          assert payload["synthetic_ids"] is False, payload
+          assert payload["sportsbook_projection_influence_pct"] == 0.0, payload
+          assert payload["game_count"] >= 2, payload
+          assert all(str(row.get("event_id") or "").strip() for row in payload["games"]), payload
+          print("CFB_GAME_TOTAL_V164_OFFICIAL_GAMES_HTTP_GREEN")
+          print({"game_count": payload["game_count"], "verified": payload["verified"]})
+          PY
+
+      - name: Start real V164 Streamlit entrypoint locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          export KYRE_SPORTS_API_BASE_URL=http://127.0.0.1:8001
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            > artifacts/cfb-game-total-v164/streamlit.log 2>&1 &
+          echo $! > /tmp/cfb_game_total_v164_browser_pid
+
+      - name: Certify V164 selector identity end-to-end
+        run: |
+          python -m devsystem.cfb_game_total_browser_qa_v5 \
+            --base-url http://127.0.0.1:8501 \
+            --artifact-dir artifacts/cfb-game-total-v164
+
+      - name: Print service logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Streamlit ==="
+          tail -n 600 artifacts/cfb-game-total-v164/streamlit.log || true
+          echo "=== Kyre Sports API ==="
+          tail -n 600 artifacts/cfb-game-total-v164/api.log || true
+
+      - name: Upload V164 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-game-total-v164-browser-${{ github.run_id }}
+          path: artifacts/cfb-game-total-v164
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop branch-local services
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/cfb_game_total_v164_browser_pid ]; then
+            kill "$(cat /tmp/cfb_game_total_v164_browser_pid)" 2>/dev/null || true
+          fi
+          if [ -f /tmp/cfb_game_total_v164_api_pid ]; then
+            kill "$(cat /tmp/cfb_game_total_v164_api_pid)" 2>/dev/null || true
+          fi
