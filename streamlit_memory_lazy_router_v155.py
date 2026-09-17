@@ -68,8 +68,7 @@ def _restore_game_total_route_from_query() -> bool:
 def _render_production_heartbeat() -> None:
     st.markdown(
         f'<div data-testid="cfb-game-total-v160-heartbeat" '
-        f'style="font-size:.58rem;font-weight:800;color:#a7b6c5;margin:0 0 4px 2px">'
-        f'{PRODUCTION_HEARTBEAT}</div>',
+        f'style="display:none;font-size:.01rem">{PRODUCTION_HEARTBEAT}</div>',
         unsafe_allow_html=True,
     )
 
@@ -85,43 +84,51 @@ def _render_cfb_game_total_v155(market: str) -> None:
     if sport != CFB_SPORT_LABEL or market != GAME_TOTAL_MARKET:
         return _ORIGINAL_RENDER_NFL(market)
 
-    _persist_game_total_route_query()
-    _render_production_heartbeat()
-    page = root._import(ACTIVE_PAGE)
-    return page.render_cfb_hub(
-        market,
-        root.section_header,
-        root.status_info,
-        root.team_logo,
-        root.h,
+    return _render_exact_game_total_surface()
+
+
+def _render_exact_game_total_surface() -> None:
+    """Render Game Total as the page itself, not inside the generic router shell."""
+    st.set_page_config(
+        page_title="Monster Sports Intelligence • CFB Game Total",
+        page_icon="👾",
+        layout="wide",
+        initial_sidebar_state="collapsed",
     )
+    _persist_game_total_route_query()
+
+    # Preserve the memory-safe route transition behavior while keeping the
+    # generic KYRE shell/selectors off the final Game Total surface.
+    original_prefixes = root._ROUTE_MODULE_PREFIXES
+    if "cfb_" not in root._ROUTE_MODULE_PREFIXES:
+        root._ROUTE_MODULE_PREFIXES = root._ROUTE_MODULE_PREFIXES + ("cfb_",)
+    try:
+        root._purge_route_modules_if_needed(
+            root._route_token(CFB_SPORT_LABEL, GAME_TOTAL_MARKET)
+        )
+        _render_production_heartbeat()
+        page = root._import(ACTIVE_PAGE)
+        return page.render_cfb_hub(
+            GAME_TOTAL_MARKET,
+            root.section_header,
+            root.status_info,
+            root.team_logo,
+            root.h,
+        )
+    finally:
+        root._ROUTE_MODULE_PREFIXES = original_prefixes
 
 
 def _render_direct_cfb_game_total() -> None:
-    original_selectbox = root.st.selectbox
-    original_render_nfl = root._render_nfl
-    original_prefixes = root._ROUTE_MODULE_PREFIXES
-
-    # Reuse V77's selector behavior only. Its query persistence is O/U-only,
-    # so exact Game Total owns persistence locally just as certified V150 did.
-    root.st.selectbox = cfb_route_base._selectbox_v77
-    root._render_nfl = _render_cfb_game_total_v155
-    if "cfb_" not in root._ROUTE_MODULE_PREFIXES:
-        root._ROUTE_MODULE_PREFIXES = root._ROUTE_MODULE_PREFIXES + ("cfb_",)
-
-    try:
-        return root.render_app()
-    finally:
-        root.st.selectbox = original_selectbox
-        root._render_nfl = original_render_nfl
-        root._ROUTE_MODULE_PREFIXES = original_prefixes
+    # Compatibility alias retained for frozen activation tests and callers.
+    return _render_exact_game_total_surface()
 
 
 def render_app() -> None:
     if not _game_total_route_active():
         _restore_game_total_route_from_query()
     if _game_total_route_active():
-        return _render_direct_cfb_game_total()
+        return _render_exact_game_total_surface()
     return prior.render_app()
 
 
@@ -139,6 +146,7 @@ __all__ = [
     "_query_requests_game_total",
     "_render_cfb_game_total_v155",
     "_render_direct_cfb_game_total",
+    "_render_exact_game_total_surface",
     "_render_production_heartbeat",
     "_restore_game_total_route_from_query",
     "record_bootstrap_import_ms",
