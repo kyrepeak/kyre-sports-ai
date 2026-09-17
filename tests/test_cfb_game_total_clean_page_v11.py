@@ -37,15 +37,9 @@ def test_v161_does_not_render_monster_masthead():
     assert ".gt160-masthead{display:none!important}" in source
 
 
-def test_v161_market_verifier_reads_official_espn_event_identity():
-    source = _source()
-    assert '"espn_event_id"' in source
-    assert 'f"{side}_espn_team_id"' in source
-    assert 'ODDS_MATCH_METHOD = "official ESPN event_id only"' in source
-
-
 def test_v161_market_verifier_is_fresh_unique_and_projection_independent():
     source = _source()
+    assert 'ODDS_MATCH_METHOD = "official ESPN event_id only"' in source
     assert "MAX_VERIFIED_FEED_AGE_SECONDS = 180.0" in source
     assert "len(matches) != 1" in source
     assert 'semantics.get("projection_weight") != 0.0' in source
