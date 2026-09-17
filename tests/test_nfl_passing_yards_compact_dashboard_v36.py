@@ -82,7 +82,9 @@ def test_router_v137_owns_only_exact_passing_yards_and_delegates_elsewhere() -> 
     assert "return prior.render_app()" in source
 
 
-def test_app_bootstraps_router_v137() -> None:
+def test_app_preserves_frozen_v137_heartbeat_without_requiring_active_boot() -> None:
     source = _source("app.py")
-    assert "streamlit_memory_lazy_router_v137" in source
-    assert "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD" in source
+    assert (
+        'FROZEN_V137_DEPLOYMENT_HEARTBEAT = '
+        '"STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD_2026-09-15"'
+    ) in source
