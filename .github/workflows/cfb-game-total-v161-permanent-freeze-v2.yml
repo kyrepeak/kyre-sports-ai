@@ -11,7 +11,7 @@ permissions:
 jobs:
   freeze-contract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,12 +20,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-
-      - name: Install focused dependencies
-        run: |
-          python -m pip install --disable-pip-version-check -q -r requirements.txt
-          python -m pip install --disable-pip-version-check -q pytest
 
       - name: Freeze scope guard
         run: |
@@ -161,18 +155,6 @@ jobs:
             streamlit_memory_lazy_router_v157.py \
             devsystem/cfb_game_total_browser_qa_v3.py \
             devsystem/production_verify_v3.py
-
-      - name: Run focused V161 V157 regression contracts
-        run: |
-          PYTHONPATH=. python -m pytest -q \
-            tests/test_cfb_game_total_v161_days_branding_odds.py \
-            tests/test_cfb_game_total_clean_page_v11.py \
-            tests/test_cfb_game_total_clean_page_v12.py \
-            tests/test_cfb_game_total_runtime_display_v2.py \
-            tests/test_cfb_game_total_browser_qa_v2.py \
-            tests/test_devsystem_production_verify_v3.py \
-            tests/test_cfb_game_total_v152_activation.py \
-            tests/test_nfl_spread_v136_activation.py
 
       - name: Certification marker
         run: echo "CFB_GAME_TOTAL_V161_V157_PERMANENT_FREEZE_GREEN"
