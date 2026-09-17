@@ -22,6 +22,7 @@ def pytest_collection_modifyitems(session, config, items):
     successor_router = ROOT / "streamlit_memory_lazy_router_v154.py"
     game_total_router = ROOT / "streamlit_memory_lazy_router_v155.py"
     v161_router = ROOT / "streamlit_memory_lazy_router_v156.py"
+    cache_bust_router = ROOT / "streamlit_memory_lazy_router_v157.py"
     app_entry = ROOT / "app.py"
     browser = ROOT / "devsystem" / "cfb_game_total_browser_qa_v1.py"
     required = (
@@ -35,6 +36,7 @@ def pytest_collection_modifyitems(session, config, items):
         successor_router,
         game_total_router,
         v161_router,
+        cache_bust_router,
         app_entry,
         browser,
     )
@@ -54,6 +56,7 @@ def pytest_collection_modifyitems(session, config, items):
     successor_router_source = successor_router.read_text(encoding="utf-8")
     game_total_router_source = game_total_router.read_text(encoding="utf-8")
     v161_router_source = v161_router.read_text(encoding="utf-8")
+    cache_bust_router_source = cache_bust_router.read_text(encoding="utf-8")
     app_source = app_entry.read_text(encoding="utf-8")
     browser_source = browser.read_text(encoding="utf-8")
 
@@ -174,7 +177,7 @@ def pytest_collection_modifyitems(session, config, items):
     assert "return page.render_cfb_hub(" in game_total_router_source
     assert "return prior.render_app()" in game_total_router_source
 
-    # V156 advances only exact CFB Game Total to V161/V12 while preserving V155.
+    # V156 remains frozen as the original V161 owner beneath additive V157.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v155"' in v161_router_source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in v161_router_source
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v12"' in v161_router_source
@@ -186,9 +189,19 @@ def pytest_collection_modifyitems(session, config, items):
     assert "return page.render_cfb_hub(" in v161_router_source
     assert "return prior.render_app()" in v161_router_source
 
-    # Production entrypoint must activate V156/V161 exactly.
-    assert "from streamlit_memory_lazy_router_v156 import record_bootstrap_import_ms, render_app" in app_source
-    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V156_CFB_GAME_TOTAL_V161_GAME_DAY_NAV_2026-09-17"' in app_source
+    # V157 cache-bust successor preserves V156 behavior under a fresh module identity.
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v156"' in cache_bust_router_source
+    assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in cache_bust_router_source
+    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v12"' in cache_bust_router_source
+    assert 'GAME_TOTAL_MARKET = "Game Total"' in cache_bust_router_source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in cache_bust_router_source
+    assert "MAY_MODIFY_PROJECTION = False" in cache_bust_router_source
+    assert "import streamlit_memory_lazy_router_v156 as prior" in cache_bust_router_source
+    assert "return prior.render_app()" in cache_bust_router_source
+
+    # Production entrypoint must activate V157/V161 while preserving the frozen global heartbeat.
+    assert "from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app" in app_source
+    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in app_source
 
     # Frozen V160 browser proof remains part of the inherited tablet regression contract.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
