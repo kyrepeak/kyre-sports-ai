@@ -42,6 +42,12 @@ def _latch_game_total_route() -> None:
 
 
 def _game_total_route_active() -> bool:
+    """Resolve V152 Game Total route state without trapping intentional nav.
+
+    Page-only widget reruns may lose the legacy sport/market fields or URL query
+    before V152 re-enters. The V152 latch survives those reruns. Explicit sport
+    or CFB-market changes are authoritative and clear the latch immediately.
+    """
     sport = str(st.session_state.get("ks_sport_touch") or "").strip()
     market = str(st.session_state.get("ks_cfb_market_touch") or "").strip()
     latched = st.session_state.get(ROUTE_LATCH_KEY) is True
@@ -81,6 +87,7 @@ def _query_requests_game_total() -> bool:
 
 
 def _restore_game_total_route_from_query() -> bool:
+    """Repair exact Game Total route state from the explicit URL query."""
     if not _query_requests_game_total():
         return False
 
@@ -95,6 +102,7 @@ def _restore_game_total_route_from_query() -> bool:
 
 
 def _selectbox_v152(label, options, *args, **kwargs):
+    """V77 selector behavior plus V152 Game Total route ownership."""
     if label == "🏟️ Sport":
         choices = list(options)
         if CFB_SPORT_LABEL not in choices:
