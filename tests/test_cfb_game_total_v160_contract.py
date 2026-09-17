@@ -28,6 +28,14 @@ def test_v160_renderer_is_additive_over_frozen_v159_presentation():
         assert marker in source
 
 
+def test_v160_temporarily_replaces_only_frozen_v9_stylesheet_then_restores_it():
+    source = RENDERER.read_text(encoding="utf-8")
+    assert "original_css = prior._V159_CSS" in source
+    assert "prior._V159_CSS = _V160_CSS" in source
+    assert "finally:" in source
+    assert "prior._V159_CSS = original_css" in source
+
+
 def test_v155_router_changes_only_cfb_game_total_and_delegates_everything_else():
     assert ROUTER.exists(), "V160 must add a new router instead of mutating V154"
     source = ROUTER.read_text(encoding="utf-8")
