@@ -1,13 +1,13 @@
-"""DevSystem production verification V5 — Streamlit Cloud frame-aware V163 proof.
+"""DevSystem production verification V5 — real browser V163 persistence proof.
 
-V4's V163 proof reads the top-level browser URL. Streamlit Community Cloud
-hosts the app inside a /~/+ iframe, so st.query_params can persist the selected
-ESPN event_id on the app frame URL while the outer wrapper URL remains unchanged.
+Streamlit Community Cloud hosts the app inside a /~/+ iframe. V163 game-card
+navigation must therefore promote the selected official ESPN event_id to the
+TOP-LEVEL browser URL, not merely the embedded app frame. This verifier proves
+that real production behavior by switching games, checking the selected card,
+hard-refreshing, and requiring the same event to survive.
 
-V5 keeps the frozen V3 production proof, preserves every V4 V163 surface check,
-then reads the event query from the actual matched V163 app frame first and
-cross-checks it against the selected game card. No projection/model behavior is
-changed and the production gate is not weakened.
+Frozen V3 production proof and V4 V163 surface requirements are preserved.
+No projection/model behavior is changed and no gate is weakened.
 """
 from __future__ import annotations
 
@@ -50,12 +50,35 @@ def _event_from_url(url: str) -> str:
     return str((parsed.get(EVENT_QUERY_KEY) or [""])[-1] or "").strip()
 
 
-def _event_from_candidates(*urls: str) -> str:
-    for url in urls:
-        event_id = _event_from_url(url)
-        if event_id:
-            return event_id
-    return ""
+def _scan_v163_frame(page):
+    scans: list[dict[str, Any]] = []
+    for index, frame in enumerate(page.frames):
+        try:
+            body = frame.locator("body").inner_text(timeout=5000)
+        except Exception:
+            body = ""
+        scans.append({"index": index, "url": frame.url, "body_start": body[:500]})
+        if (
+            GAME_TOTAL_REQUIRED_HEARTBEAT in body
+            and GAME_SELECTOR_REQUIRED_TEXT in body
+        ):
+            return frame, body, scans
+    return None, "", scans
+
+
+def _find_v163_frame(page, timeout_seconds: float = 120.0):
+    deadline = time.monotonic() + timeout_seconds
+    last_scans: list[dict[str, Any]] = []
+    while time.monotonic() < deadline:
+        frame, body, scans = _scan_v163_frame(page)
+        last_scans = scans
+        if frame is not None:
+            return frame, body, scans
+        page.wait_for_timeout(750)
+    raise ProductionVerificationFailure(
+        "stale Streamlit Game Total V163 deployment: active V163 app frame not found; "
+        + json.dumps(last_scans, ensure_ascii=False)
+    )
 
 
 def _selected_link_event(frame) -> str:
@@ -68,6 +91,53 @@ def _selected_link_event(frame) -> str:
             "V163 production selector did not expose exactly one selected game card"
         )
     return str(selected.first.get_attribute("data-event-id") or "").strip()
+
+
+def _switch_target(frame):
+    links = frame.locator('[data-testid="gt163-game-strip"] a.gt163-game-link')
+    count = links.count()
+    if count < 2:
+        raise ProductionVerificationFailure(
+            f"V163 production selector needs at least two verified games; got {count}"
+        )
+    current = _selected_link_event(frame)
+    for index in range(count):
+        candidate = links.nth(index)
+        event_id = str(candidate.get_attribute("data-event-id") or "").strip()
+        if event_id and event_id != current:
+            return candidate, event_id, count
+    raise ProductionVerificationFailure(
+        "V163 production selector had no second official ESPN event to switch to"
+    )
+
+
+def _wait_for_top_level_selection(
+    page,
+    expected_event: str,
+    *,
+    timeout_seconds: float = 120.0,
+):
+    deadline = time.monotonic() + timeout_seconds
+    last_scans: list[dict[str, Any]] = []
+    last_selected = ""
+    while time.monotonic() < deadline:
+        frame, body, scans = _scan_v163_frame(page)
+        last_scans = scans
+        if frame is not None:
+            try:
+                last_selected = _selected_link_event(frame)
+            except Exception:
+                last_selected = ""
+            outer_event = _event_from_url(page.url)
+            if outer_event == expected_event and last_selected == expected_event:
+                return frame, body, scans
+        page.wait_for_timeout(750)
+    raise ProductionVerificationFailure(
+        "V163 selected game did not persist at top-level browser URL: "
+        f"expected={expected_event!r} outer={_event_from_url(page.url)!r} "
+        f"selected={last_selected!r} url={page.url!r} scans="
+        + json.dumps(last_scans, ensure_ascii=False)
+    )
 
 
 def _browser_verify_v163_selector(
@@ -95,72 +165,66 @@ def _browser_verify_v163_selector(
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
-            deadline = time.monotonic() + 120.0
-            final_body = ""
-            selected_event = ""
-            matched_frame = None
-            scans: list[dict[str, Any]] = []
-            while time.monotonic() < deadline:
-                scans = []
-                matched_frame = None
-                for index, frame in enumerate(page.frames):
-                    try:
-                        body = frame.locator("body").inner_text(timeout=5000)
-                    except Exception:
-                        body = ""
-                    scans.append(
-                        {"index": index, "url": frame.url, "body_start": body[:500]}
-                    )
-                    if (
-                        GAME_TOTAL_REQUIRED_HEARTBEAT in body
-                        and GAME_SELECTOR_REQUIRED_TEXT in body
-                    ):
-                        final_body = body
-                        matched_frame = frame
-                        break
-
-                if matched_frame is not None:
-                    selected_event = _event_from_candidates(
-                        matched_frame.url,
-                        page.url,
-                    )
-                    if selected_event:
-                        break
-                page.wait_for_timeout(1000)
-
-            v4._assert_v163_surface(final_body)
-            if matched_frame is None:
-                raise ProductionVerificationFailure(
-                    "stale Streamlit Game Total V163 deployment: active V163 app frame not found"
-                )
-            forbidden = base._body_has_forbidden_error(final_body)
+            frame, body, initial_scans = _find_v163_frame(page)
+            v4._assert_v163_surface(body)
+            forbidden = base._body_has_forbidden_error(body)
             if forbidden:
                 raise ProductionVerificationFailure(
                     f"Production Game Total V163 runtime error marker: {forbidden}"
                 )
 
-            evidence = v4._build_v163_evidence(
-                expected_commit=expected_commit,
-                event_id=selected_event,
-            )
-            selected_card_event = _selected_link_event(matched_frame)
-            if selected_card_event != selected_event:
+            target, target_event, link_count = _switch_target(frame)
+            href = str(target.get_attribute("href") or "")
+            target_scope = str(target.get_attribute("target") or "")
+            if not href.startswith("/?") or target_scope != "_top":
                 raise ProductionVerificationFailure(
-                    "V163 persisted ESPN event_id does not match the selected game card: "
-                    f"query={selected_event!r} card={selected_card_event!r}"
+                    "V163 game card is not top-level persistence safe: "
+                    f"href={href!r} target={target_scope!r}"
                 )
 
+            target.click(timeout=30000)
+            switched_frame, switched_body, click_scans = _wait_for_top_level_selection(
+                page,
+                target_event,
+            )
+            v4._assert_v163_surface(switched_body)
+            if _event_from_url(page.url) != target_event:
+                raise ProductionVerificationFailure(
+                    "V163 switch did not write official ESPN event_id to browser URL"
+                )
+
+            page.reload(wait_until="domcontentloaded", timeout=120000)
+            reload_frame, reload_body, reload_scans = _wait_for_top_level_selection(
+                page,
+                target_event,
+            )
+            v4._assert_v163_surface(reload_body)
+            reloaded_event = _selected_link_event(reload_frame)
+            if reloaded_event != target_event:
+                raise ProductionVerificationFailure(
+                    "V163 selected ESPN event_id did not survive hard refresh"
+                )
+
+            evidence = v4._build_v163_evidence(
+                expected_commit=expected_commit,
+                event_id=target_event,
+            )
             screenshot = artifact_dir / "production_game_total_v163_v5_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
             return {
                 **evidence,
                 "game_total_route": f"{CFB_SPORT} -> {GAME_TOTAL_MARKET}",
                 "certification_date": CERT_DATE,
+                "game_link_count": link_count,
+                "clicked_event_id": target_event,
+                "reloaded_event_id": reloaded_event,
                 "outer_wrapper_url": page.url,
-                "game_total_app_frame_url": matched_frame.url,
-                "game_total_frame_scan_count": len(scans),
-                "selected_card_event_id": selected_card_event,
-                "streamlit_wrapper_aware_event_proof": True,
+                "game_total_app_frame_url": reload_frame.url,
+                "initial_frame_scan_count": len(initial_scans),
+                "click_frame_scan_count": len(click_scans),
+                "reload_frame_scan_count": len(reload_scans),
+                "top_level_event_persistence_verified": True,
+                "hard_refresh_persistence_verified": True,
                 "game_total_v163_screenshot": str(screenshot),
             }
         except Exception:
@@ -185,8 +249,6 @@ def run(
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
 
-    # Preserve the complete frozen V3 Render/API/Streamlit proof. V5 replaces
-    # only V4's wrapper-unaware event URL read with a stricter frame-aware proof.
     result = dict(frozen_v3.run(artifact_dir=artifacts))
 
     targets = base._load_targets()
