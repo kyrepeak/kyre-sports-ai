@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-17T02:32:00Z",
+  "generated_at": "2026-09-17T02:45:00Z",
   "purpose": "Game-Total-only deterministic production fallback when deployed Streamlit cannot complete live reconciliation. This file does not feed frozen Step 11/12 model math.",
   "games": [
     {
@@ -18,6 +18,14 @@
       "forecast": "77 F around 7 PM EDT with NW wind near 6 mph and 20% precipitation potential",
       "weather_source": "National Weather Service Pittsburgh point forecast for 40.46N 79.98W",
       "weather_updated_at": "2026-09-16T19:21:00-04:00",
+      "series_history": {
+        "meetings": 82,
+        "leader": "Pittsburgh",
+        "record": "45-33-3",
+        "series_start": 1916,
+        "recent_streak": "Pittsburgh won the last two meetings"
+      },
+      "history_source": "Syracuse University Athletics 2026 road-opener preview + University of Pittsburgh Athletics 2026 Game Central",
       "away": {
         "team_id": "183",
         "record_text": "1-1",
@@ -156,7 +164,9 @@
         "Syracuse University Athletics 2026 football schedule/results and cumulative statistics",
         "University of Pittsburgh Athletics 2026 football schedule/results and cumulative statistics",
         "ESPN exact team identity/logo IDs",
-        "National Weather Service Pittsburgh point forecast"
+        "National Weather Service Pittsburgh point forecast",
+        "Syracuse University Athletics 2026 road-opener preview",
+        "University of Pittsburgh Athletics 2026 Game Central"
       ]
     }
   ]
