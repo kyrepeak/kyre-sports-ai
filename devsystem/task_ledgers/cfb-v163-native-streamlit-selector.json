@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "cfb-v163-native-streamlit-selector",
+  "status": "DONE",
+  "scope": "Move V163 game selection off raw iframe HTML navigation and onto a native Streamlit radio callback that persists official ESPN event_id through st.query_params.",
+  "trigger": "Production Verification V5 proved both raw anchor and top-level GET-form navigation retained the prior event on Streamlit Cloud, while Streamlit's own initial st.query_params persistence reached the real browser URL.",
+  "guardrails": {
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "identity_source_changed": false,
+    "render_service_changed": false,
+    "selector_control_only": true,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
