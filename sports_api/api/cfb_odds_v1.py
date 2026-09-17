@@ -9,11 +9,15 @@ remains context-only and carries 0% projection weight.
 """
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Mapping
 
 from fastapi import APIRouter, HTTPException, Query
 
 from sports_api.api.cfb_market_identity_v1 import (
+    _fetch_espn_verified_games,
+    _fetch_github_verified_games,
+    load_verified_games,
     reconcile_market_feed,
     resolve_verified_games,
 )
@@ -57,6 +61,27 @@ def _public_row(line: Mapping[str, Any]) -> dict[str, Any]:
         "identity_verified": True,
         "identity_method": _clean(line.get("match_method")),
         "identity_confidence": line.get("match_confidence"),
+    }
+
+
+def _selector_public_row(game: Mapping[str, Any]) -> dict[str, Any] | None:
+    event_id = _clean(game.get("event_id"))
+    game_date = _clean(game.get("game_date"))
+    away_team = _clean(game.get("away_team"))
+    home_team = _clean(game.get("home_team"))
+    if not event_id or not game_date or not away_team or not home_team:
+        return None
+    return {
+        "event_id": event_id,
+        "game_date": game_date,
+        "away_team": away_team,
+        "home_team": home_team,
+        "away_team_id": _clean(game.get("away_team_id")),
+        "home_team_id": _clean(game.get("home_team_id")),
+        "venue": _clean(game.get("venue")),
+        "broadcast": _clean(game.get("broadcast")),
+        "status": _clean(game.get("status")),
+        "identity_verified": True,
     }
 
 
@@ -198,9 +223,73 @@ def odds(
     )
 
 
+@router.get("/selector/verified-games")
+def selector_verified_games(
+    game_date: str = Query(..., min_length=10, max_length=10),
+):
+    """Return official identities for every verified game on one CFB slate date.
+
+    This read-only selector contract is independent of sportsbook availability.
+    It unions the certified runtime snapshot, GitHub verified snapshot, and the
+    server-side ESPN FBS/FCS exact-date source, then dedupes by official event_id.
+    No synthetic identity can enter this response and it cannot affect models.
+    """
+    try:
+        requested_day = date.fromisoformat(game_date).isoformat()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="game_date must be YYYY-MM-DD") from exc
+
+    local_games, local_diag = load_verified_games()
+    github_games, github_diag = _fetch_github_verified_games()
+    espn_games, espn_diag = _fetch_espn_verified_games(requested_day)
+
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    source_counts = {"runtime_snapshot": 0, "github_snapshot": 0, "server_espn": 0}
+    for source_name, candidates in (
+        ("runtime_snapshot", local_games),
+        ("github_snapshot", github_games),
+        ("server_espn", espn_games),
+    ):
+        for game in candidates:
+            if _clean(game.get("game_date")) != requested_day:
+                continue
+            row = _selector_public_row(game)
+            if row is None:
+                continue
+            event_id = row["event_id"]
+            if event_id in seen:
+                continue
+            seen.add(event_id)
+            row["identity_source"] = source_name
+            rows.append(row)
+            source_counts[source_name] += 1
+
+    rows.sort(key=lambda row: (row["away_team"].casefold(), row["home_team"].casefold(), row["event_id"]))
+    return {
+        "service": "Kyre Sports API",
+        "sport": "college_football",
+        "consumer": "CFB Game Total V163 selector",
+        "requested_date": requested_day,
+        "game_count": len(rows),
+        "games": rows,
+        "synthetic_ids": False,
+        "projection_weight": 0.0,
+        "may_modify_projection": False,
+        "diagnostics": {
+            "fail_closed": True,
+            "runtime_snapshot": local_diag,
+            "github_snapshot": github_diag,
+            "server_espn": espn_diag,
+            "source_counts": source_counts,
+        },
+    }
+
+
 __all__ = [
     "MODEL_VERSION",
     "SCHEMA_VERSION",
     "build_odds_payload",
     "router",
+    "selector_verified_games",
 ]
