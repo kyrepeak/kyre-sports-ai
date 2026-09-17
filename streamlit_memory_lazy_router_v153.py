@@ -40,16 +40,27 @@ def _render_production_heartbeat() -> None:
 
 
 def _render_cfb_game_total_v153(market: str) -> None:
-    """Reuse frozen V152 renderer while swapping only page target + heartbeat."""
-    original_page = prior.ACTIVE_PAGE
-    original_heartbeat = prior._render_production_heartbeat
-    prior.ACTIVE_PAGE = ACTIVE_PAGE
-    prior._render_production_heartbeat = _render_production_heartbeat
-    try:
+    """Render exact Game Total through V9; delegate every other case to V152."""
+    sport = str(st.session_state.get("ks_sport_touch") or "")
+    market = str(market or "")
+
+    if sport != CFB_SPORT_LABEL or market != GAME_TOTAL_MARKET:
         return _FROZEN_GAME_TOTAL_RENDER(market)
-    finally:
-        prior.ACTIVE_PAGE = original_page
-        prior._render_production_heartbeat = original_heartbeat
+
+    # Preserve V152 route ownership/query behavior, then import the additive V9
+    # page directly so Streamlit reruns cannot fall back through a temporary
+    # ACTIVE_PAGE mutation.
+    prior._latch_game_total_route()
+    prior._persist_game_total_route_query()
+    _render_production_heartbeat()
+    page = prior.root._import(ACTIVE_PAGE)
+    return page.render_cfb_hub(
+        market,
+        prior.root.section_header,
+        prior.root.status_info,
+        prior.root.team_logo,
+        prior.root.h,
+    )
 
 
 def render_app() -> None:
