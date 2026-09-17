@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from html import escape
+import json
 import os
 import re
 from typing import Any, Mapping, Sequence
@@ -21,6 +22,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 import cfb_game_total_clean_page_v13 as prior_v162
 import cfb_game_total_clean_page_v11 as v161
@@ -41,7 +43,7 @@ GAME_TOTAL_MARKET = "Game Total"
 MATCHUP_STATE_KEY_PREFIX = "cfb_v152_game_total_matchup_"
 SELECTOR_IDENTITY_ENDPOINT = "/api/v1/cfb/selector/verified-games"
 SELECTOR_IDENTITY_SOURCE = "Kyre Sports API full-slate verified identity"
-WRAPPER_HISTORY_SYNC_JS = "try{window.parent.history.replaceState(null,\'\',this.search)}catch(e){}"
+WRAPPER_HISTORY_BRIDGE_MARKER = "CFB_V163_WRAPPER_HISTORY_BRIDGE_ACTIVE"
 
 _V163_CSS = r"""
 <style>
@@ -283,6 +285,41 @@ def _sync_frozen_matchup_state(selected_day: date, games: Sequence[Mapping[str, 
     return selected_index
 
 
+def _sync_wrapper_history(selected_day: date, event_id: str) -> None:
+    """Mirror the canonical app-frame query into the Streamlit Cloud wrapper URL."""
+    event_id = _clean(event_id)
+    if not event_id:
+        return
+    query = "?" + urlencode(
+        {
+            ROUTE_QUERY_SPORT: CFB_SPORT_LABEL,
+            ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
+            DATE_QUERY_KEY: selected_day.isoformat(),
+            EVENT_QUERY_KEY: event_id,
+        }
+    )
+    st.markdown(
+        '<span data-testid="gt163-wrapper-history-bridge" style="display:none"></span>',
+        unsafe_allow_html=True,
+    )
+    components.html(
+        f"""
+        <script>
+        (() => {{
+          try {{
+            const query = {json.dumps(query)};
+            const wrapper = window.parent && window.parent.parent;
+            if (wrapper && wrapper.history && wrapper.location.search !== query) {{
+              wrapper.history.replaceState(null, "", query);
+            }}
+          }} catch (e) {{}}
+        }})();
+        </script>
+        """,
+        height=0,
+    )
+
+
 def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], selected_index: int) -> None:
     st.markdown(_V163_CSS, unsafe_allow_html=True)
     if not games:
@@ -304,9 +341,7 @@ def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], s
             prefix = "✓ " if selected else ""
             cards.append(
                 f'<a class="gt163-game-link{selected_class}" data-event-id="{escape(event_id)}" '
-                f'href="{escape(href, quote=True)}" target="_self" '
-                f'onclick="{escape(WRAPPER_HISTORY_SYNC_JS, quote=True)}"{aria}>'
-                f'{escape(prefix + label)}</a>'
+                f'href="{escape(href, quote=True)}" target="_self"{aria}>{escape(prefix + label)}</a>'
             )
         else:
             cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ESPN ID unavailable</span>')
@@ -334,6 +369,8 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
         selected_day = original_day_strip()
         games = _load_games(selected_day)
         selected_index = _sync_frozen_matchup_state(selected_day, games)
+        selected_event = _game_id(games[selected_index]) if games else ""
+        _sync_wrapper_history(selected_day, selected_event)
         _render_game_strip(selected_day, games, selected_index)
         _render_v163_identity()
         return selected_day
@@ -362,7 +399,7 @@ __all__ = [
     "ROUTE_QUERY_MARKET",
     "ROUTE_QUERY_SPORT",
     "SELECTOR_IDENTITY_ENDPOINT",
-    "WRAPPER_HISTORY_SYNC_JS",
+    "WRAPPER_HISTORY_BRIDGE_MARKER",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_enrich_selector_ids_from_api",
     "_fetch_selector_identity_payload",
@@ -374,6 +411,7 @@ __all__ = [
     "_selected_game_index",
     "_selector_href",
     "_set_query_event_id",
+    "_sync_wrapper_history",
     "render_cfb_hub",
     "render_game_total_hub",
 ]
