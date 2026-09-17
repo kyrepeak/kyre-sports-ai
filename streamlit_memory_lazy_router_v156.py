@@ -33,7 +33,14 @@ def _game_total_route_active() -> bool:
 
 
 def _persist_game_total_route_query() -> None:
-    return prior._persist_game_total_route_query()
+    """Persist exact V161 Game Total without requiring a cached V155 helper."""
+    try:
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_SPORT) != CFB_SPORT_LABEL:
+            st.query_params[cfb_route_base.ROUTE_QUERY_SPORT] = CFB_SPORT_LABEL
+        if cfb_route_base._query_value(cfb_route_base.ROUTE_QUERY_MARKET) != GAME_TOTAL_MARKET:
+            st.query_params[cfb_route_base.ROUTE_QUERY_MARKET] = GAME_TOTAL_MARKET
+    except Exception:
+        pass
 
 
 def _query_requests_game_total() -> bool:

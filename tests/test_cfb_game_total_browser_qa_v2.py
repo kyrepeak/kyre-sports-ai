@@ -58,3 +58,14 @@ def test_v161_has_its_own_additive_browser_workflow():
     assert "devsystem/cfb_game_total_browser_qa_v3.py" in source
     assert "tests/test_cfb_game_total_browser_qa_v2.py" in source
     assert "python -m devsystem.cfb_game_total_browser_qa_v3" in source
+
+
+def test_v156_persists_game_total_query_without_requiring_cached_v155_helper():
+    source = (ROOT / "streamlit_memory_lazy_router_v156.py").read_text(encoding="utf-8")
+    helper = source.split("def _persist_game_total_route_query() -> None:", 1)[1].split(
+        "def _query_requests_game_total()", 1
+    )[0]
+    assert "prior._persist_game_total_route_query" not in helper
+    assert "cfb_route_base.ROUTE_QUERY_SPORT" in helper
+    assert "cfb_route_base.ROUTE_QUERY_MARKET" in helper
+    assert "st.query_params" in helper
