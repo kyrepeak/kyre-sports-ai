@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-17T02:23:00Z",
+  "generated_at": "2026-09-17T02:32:00Z",
   "purpose": "Game-Total-only deterministic production fallback when deployed Streamlit cannot complete live reconciliation. This file does not feed frozen Step 11/12 model math.",
   "games": [
     {
@@ -11,6 +11,13 @@
       "broadcast": "ESPN",
       "status": "Scheduled",
       "espn_week": 3,
+      "temperature": 77,
+      "wind": "NW 6 mph",
+      "wind_mph": 6,
+      "weather": "Partly cloudy around kickoff",
+      "forecast": "77 F around 7 PM EDT with NW wind near 6 mph and 20% precipitation potential",
+      "weather_source": "National Weather Service Pittsburgh point forecast for 40.46N 79.98W",
+      "weather_updated_at": "2026-09-16T19:21:00-04:00",
       "away": {
         "team_id": "183",
         "record_text": "1-1",
@@ -148,7 +155,8 @@
       "sources": [
         "Syracuse University Athletics 2026 football schedule/results and cumulative statistics",
         "University of Pittsburgh Athletics 2026 football schedule/results and cumulative statistics",
-        "ESPN exact team identity/logo IDs"
+        "ESPN exact team identity/logo IDs",
+        "National Weather Service Pittsburgh point forecast"
       ]
     }
   ]
