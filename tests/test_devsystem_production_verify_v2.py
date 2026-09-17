@@ -34,21 +34,16 @@ def test_v2_uses_full_certified_cfb_v39_marker_contract():
     assert "CFB O/U • CLEAN PAGE V38 ACTIVE" not in module.CFB_REQUIRED_MARKERS
 
 
-def test_v2_production_browser_is_route_only_and_waits_for_full_v39():
+def test_v2_production_browser_uses_exact_fast_route_and_waits_for_full_v39():
     module = _load_module()
     source = inspect.getsource(module._browser_verify_v39)
 
-    # Production must not depend on the local-only dropdown inventory behavior.
     assert "run_browser_qa" not in source
     assert "_read_sport_options" not in source
-
-    # Reuse the certified navigation/readiness primitives instead. Keep these
-    # checks formatting-independent so multiline calls do not fail the contract.
+    assert "certified_browser._choose(" not in source
+    assert "certified_browser._cfb_over_under_url(streamlit_url)" in source
     assert "certified_browser._find_app_frame" in source
-    assert source.count("certified_browser._choose(") == 2
-    assert "certified_browser.CFB_SPORT" in source
     assert "certified_browser.CFB_MARKET_LABEL" in source
-    assert "certified_browser.CFB_MARKET" in source
     assert "certified_browser._wait_for_text(" in source
     assert "CFB_REQUIRED_MARKERS[-1]" in source
 
