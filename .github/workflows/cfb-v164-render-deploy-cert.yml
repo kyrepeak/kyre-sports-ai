@@ -1,0 +1,117 @@
+name: CFB V164 Render deployment certification
+
+on:
+  push:
+    branches:
+      - deploy/cfb-game-total-v164-render-identity
+    paths:
+      - "sports_api/api/cfb_official_games_v1.py"
+      - "sports_api/api/health.py"
+      - ".github/workflows/cfb-v164-render-deploy-cert.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-v164-render-deploy-cert
+  cancel-in-progress: true
+
+jobs:
+  certify-render-transplant:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install Render certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile exact Render transplant
+        run: |
+          python -m py_compile sports_api/api/cfb_official_games_v1.py
+          python -m py_compile sports_api/api/health.py
+
+      - name: Run existing shared-host reconciliation regression
+        run: python -m pytest -q tests/test_render_main_reconciliation_v1.py
+
+      - name: Prove route and telemetry preservation
+        run: |
+          python - <<'PY'
+          from sports_api.api.health import router
+
+          paths = {getattr(route, "path", "") for route in router.routes}
+          assert "/api/v1/cfb/identity/official-games" in paths, paths
+          assert "/health" in paths, paths
+          assert "/health/telemetry/probe" in paths, paths
+          print("CFB_V164_RENDER_ROUTE_REGISTRATION_GREEN")
+          PY
+
+      - name: Start exact branch-local Render API
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/cfb-v164-render-deploy
+          nohup python -m uvicorn sports_api.main:app \
+            --host 127.0.0.1 \
+            --port 8002 \
+            > artifacts/cfb-v164-render-deploy/api.log 2>&1 &
+          echo $! > /tmp/cfb_v164_render_api_pid
+          for attempt in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8002/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          tail -n 500 artifacts/cfb-v164-render-deploy/api.log || true
+          exit 1
+
+      - name: Prove official-games endpoint over HTTP
+        run: |
+          python - <<'PY'
+          import requests
+
+          response = requests.get(
+              "http://127.0.0.1:8002/api/v1/cfb/identity/official-games",
+              params={"game_date": "2026-09-19"},
+              timeout=30,
+          )
+          response.raise_for_status()
+          payload = response.json()
+          assert payload["game_date"] == "2026-09-19", payload
+          assert payload["synthetic_ids"] is False, payload
+          assert payload["sportsbook_projection_influence_pct"] == 0.0, payload
+          assert payload["game_count"] >= 2, payload
+          assert all(str(row.get("event_id") or "").strip() for row in payload["games"]), payload
+          print("CFB_V164_RENDER_HTTP_GREEN", payload["game_count"])
+          PY
+
+      - name: Print API log on failure
+        if: failure()
+        run: tail -n 500 artifacts/cfb-v164-render-deploy/api.log || true
+
+      - name: Upload Render deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-v164-render-deploy-${{ github.run_id }}
+          path: artifacts/cfb-v164-render-deploy
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop branch-local API
+        if: always()
+        run: |
+          if [ -f /tmp/cfb_v164_render_api_pid ]; then
+            kill "$(cat /tmp/cfb_v164_render_api_pid)" 2>/dev/null || true
+          fi
