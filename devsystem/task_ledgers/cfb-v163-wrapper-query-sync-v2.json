@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "cfb-v163-wrapper-query-sync-v2",
+  "status": "DONE",
+  "scope": "Add a one-time transient selector sync marker so Streamlit performs a real st.query_params mutation after frame-local navigation and mirrors the selected official ESPN event_id to the Community Cloud wrapper URL.",
+  "trigger": "Production Verification V5 run #6 proved the selected V163 card changed correctly inside the app frame while the outer wrapper retained the previous event_id.",
+  "guardrails": {
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "identity_source_changed": false,
+    "render_service_changed": false,
+    "selector_navigation_only": true,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
