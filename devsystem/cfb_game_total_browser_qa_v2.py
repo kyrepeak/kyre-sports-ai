@@ -1,4 +1,9 @@
-"""Real-browser certification for the CFB Game Total V152 dashboard."""
+"""Real-browser certification for the active CFB Game Total connected dashboard.
+
+The historical V152 browser lane remains the workflow owner, but this driver
+certifies the additive V153 production successor: V152 must remain visible as a
+legacy heartbeat while V153 renders the connected Steps 1–12 presentation.
+"""
 from __future__ import annotations
 
 import argparse
@@ -18,11 +23,14 @@ MATCHUP_LABEL = "🏟️ Game Total matchup"
 TARGET_DAY = "2026-09-17"
 TARGET_AWAY = "Syracuse"
 TARGET_HOME = "Pittsburgh"
-AWAY_EVIDENCE_LABEL = "Syracuse evidence"
-HOME_EVIDENCE_LABEL = "Pittsburgh evidence"
-HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
+RAW_EVIDENCE_LABEL = "🔬 Raw Steps 1–10 evidence"
+HEARTBEAT = "CFB_GAME_TOTAL_V153_CONNECTED_FLOW_ACTIVE"
+LEGACY_HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
 SPORTSBOOK_MARKER = "sportsbook projection influence 0.0%"
 DEEP_AUDIT_LABEL = "Deep model evidence • Step 11 distribution"
+CONNECTED_FLOW_TESTID = "gt157-connected-all-steps"
+FINAL_SUMMARY_TESTID = "gt157-final-summary"
+TOP5_CONNECTOR_TESTID = "gt157-top5-connector"
 
 
 class V152BrowserQAFailure(RuntimeError):
@@ -147,21 +155,44 @@ def _assert_record(frame, side: str) -> str:
     return value
 
 
-def _open_evidence(frame, label_text: str) -> dict[str, bool]:
-    label = frame.get_by_text(label_text, exact=True).first
+def _open_raw_evidence(frame) -> dict[str, bool]:
+    """Open V7/V9's single preserved raw-evidence drawer and prove both teams."""
+    label = frame.get_by_text(RAW_EVIDENCE_LABEL, exact=False).first
     label.wait_for(state="visible", timeout=30000)
     details = label.locator("xpath=ancestor::details[1]")
     if details.count() == 0:
-        raise V152BrowserQAFailure(f"Evidence expander missing: {label_text}")
+        raise V152BrowserQAFailure("Raw Steps 1–10 evidence drawer is missing")
     if details.get_attribute("open") is None:
         label.click()
-    details.get_by_text("Recent completed games", exact=True).wait_for(
-        state="visible", timeout=20000
-    )
-    details.get_by_text("DATA SOURCE", exact=False).first.wait_for(
-        state="visible", timeout=20000
-    )
-    return {"recent_games_visible": True, "data_source_visible": True}
+
+    away_label = details.get_by_text(f"{TARGET_AWAY} • full evidence", exact=True).first
+    home_label = details.get_by_text(f"{TARGET_HOME} • full evidence", exact=True).first
+    away_label.wait_for(state="visible", timeout=20000)
+    home_label.wait_for(state="visible", timeout=20000)
+
+    recent = details.get_by_text("Recent completed games", exact=True)
+    if recent.count() < 2:
+        raise V152BrowserQAFailure(
+            f"Expected completed-game evidence for both teams, found {recent.count()}"
+        )
+    recent.nth(0).wait_for(state="visible", timeout=20000)
+    recent.nth(1).wait_for(state="visible", timeout=20000)
+
+    data_sources = details.get_by_text("DATA SOURCE", exact=False)
+    if data_sources.count() < 2:
+        raise V152BrowserQAFailure(
+            f"Expected DATA SOURCE evidence for both teams, found {data_sources.count()}"
+        )
+    data_sources.nth(0).wait_for(state="visible", timeout=20000)
+    data_sources.nth(1).wait_for(state="visible", timeout=20000)
+
+    return {
+        "drawer_open": True,
+        "away_full_evidence_visible": True,
+        "home_full_evidence_visible": True,
+        "recent_games_visible": True,
+        "data_source_visible": True,
+    }
 
 
 def _deep_audit_collapsed(frame) -> dict[str, Any]:
@@ -193,7 +224,9 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             base._choose(page, frame, 1, GAME_TOTAL_MARKET)
             body = base._wait_for_text(frame, HEARTBEAT, timeout_seconds=60.0)
             if HEARTBEAT not in body:
-                raise V152BrowserQAFailure("V152 production heartbeat is missing")
+                raise V152BrowserQAFailure("V153 connected-flow production heartbeat is missing")
+            if LEGACY_HEARTBEAT not in body:
+                raise V152BrowserQAFailure("Frozen V152 legacy heartbeat is missing under V153")
 
             observed_date = _set_target_date(page, frame)
             matchup = _choose_target_matchup(page, frame)
@@ -209,6 +242,9 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             _visible(frame, "gt152-monster-matchup-hero")
             _visible(frame, "gt152-compact-game-strip")
             _visible(frame, "gt152-scoring-defense")
+            _visible(frame, CONNECTED_FLOW_TESTID)
+            _visible(frame, FINAL_SUMMARY_TESTID)
+            _visible(frame, TOP5_CONNECTOR_TESTID)
             away_logo = _assert_logo_loaded(page, frame, "away")
             home_logo = _assert_logo_loaded(page, frame, "home")
             away_record = _assert_record(frame, "away")
@@ -216,13 +252,14 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             base._wait_for_text(frame, SPORTSBOOK_MARKER, timeout_seconds=60.0)
 
             deep = _deep_audit_collapsed(frame)
-            away_evidence = _open_evidence(frame, AWAY_EVIDENCE_LABEL)
-            home_evidence = _open_evidence(frame, HOME_EVIDENCE_LABEL)
+            raw_evidence = _open_raw_evidence(frame)
 
             screenshot = artifacts / "cfb_game_total_v152.png"
             page.screenshot(path=str(screenshot), full_page=True)
             result = {
                 "status": "GREEN",
+                "active_heartbeat": HEARTBEAT,
+                "legacy_heartbeat": LEGACY_HEARTBEAT,
                 "target_day": TARGET_DAY,
                 "observed_date": observed_date,
                 "matchup": matchup,
@@ -230,8 +267,10 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
                 "home_record": home_record,
                 "away_logo": away_logo,
                 "home_logo": home_logo,
-                "away_evidence": away_evidence,
-                "home_evidence": home_evidence,
+                "connected_flow_visible": True,
+                "final_summary_visible": True,
+                "top5_connector_visible": True,
+                "raw_evidence": raw_evidence,
                 "deep_audit": deep,
                 "sportsbook_projection_influence": "0.0%",
                 "health": health,
@@ -240,7 +279,7 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             }
             evidence = artifacts / "cfb_game_total_v152.json"
             evidence.write_text(json.dumps(result, indent=2, sort_keys=True), encoding="utf-8")
-            print("CFB_GAME_TOTAL_V152_BROWSER_GREEN")
+            print("CFB_GAME_TOTAL_V153_CONNECTED_BROWSER_GREEN")
             print(json.dumps(result, indent=2, sort_keys=True))
             return result
         finally:

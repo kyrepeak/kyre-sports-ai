@@ -12,6 +12,7 @@ def test_v152_browser_qa_exists_and_targets_real_game_total_page() -> None:
     assert 'TARGET_DAY = "2026-09-17"' in source
     assert 'TARGET_AWAY = "Syracuse"' in source
     assert 'TARGET_HOME = "Pittsburgh"' in source
+    assert 'CFB_GAME_TOTAL_V153_CONNECTED_FLOW_ACTIVE' in source
     assert 'CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE' in source
     assert "College Football" in source
     assert "Game Total" in source
@@ -24,7 +25,7 @@ def test_v152_browser_date_fallback_matches_us_segment_order_and_commits() -> No
     assert 'page.keyboard.press("Tab")' in source
 
 
-def test_v152_browser_qa_requires_visual_identity_records_and_compact_sections() -> None:
+def test_v152_browser_qa_requires_visual_identity_records_and_connected_sections() -> None:
     source = QA.read_text(encoding="utf-8")
     for marker in (
         "gt152-monster-matchup-hero",
@@ -32,6 +33,9 @@ def test_v152_browser_qa_requires_visual_identity_records_and_compact_sections()
         'f"gt152-{side}-record"',
         "gt152-compact-game-strip",
         "gt152-scoring-defense",
+        "gt157-connected-all-steps",
+        "gt157-final-summary",
+        "gt157-top5-connector",
         '_assert_logo_loaded(page, frame, "away")',
         '_assert_logo_loaded(page, frame, "home")',
         '_assert_record(frame, "away")',
@@ -61,14 +65,16 @@ def test_v152_sportsbook_marker_waits_for_final_streamlit_render() -> None:
     assert 'if "SPORTSBOOK" not in body.upper() or "0.0%" not in body:' not in source
 
 
-def test_v152_browser_qa_opens_both_team_evidence_and_checks_deep_audit_collapsed() -> None:
+def test_v152_browser_qa_opens_preserved_raw_evidence_and_checks_deep_audit_collapsed() -> None:
     source = QA.read_text(encoding="utf-8")
-    assert "Syracuse evidence" in source
-    assert "Pittsburgh evidence" in source
+    assert "🔬 Raw Steps 1–10 evidence" in source
+    assert 'f"{TARGET_AWAY} • full evidence"' in source
+    assert 'f"{TARGET_HOME} • full evidence"' in source
     assert "Deep model evidence • Step 11 distribution" in source
     assert "aria-expanded" in source
     assert "Recent completed games" in source
     assert "DATA SOURCE" in source
+    assert "_open_raw_evidence(frame)" in source
 
 
 def test_v152_browser_qa_writes_json_and_screenshot_evidence() -> None:
@@ -77,6 +83,7 @@ def test_v152_browser_qa_writes_json_and_screenshot_evidence() -> None:
     assert "cfb_game_total_v152.json" in source
     assert "page.screenshot" in source
     assert "json.dumps" in source
+    assert "CFB_GAME_TOTAL_V153_CONNECTED_BROWSER_GREEN" in source
 
 
 def test_v152_browser_workflow_launches_real_app_and_uploads_evidence() -> None:
