@@ -9,8 +9,15 @@ def test_real_app_boots_v152_router_or_additive_successor() -> None:
     app_source = (ROOT / "app.py").read_text(encoding="utf-8")
     direct_v152 = "from streamlit_memory_lazy_router_v152 import record_bootstrap_import_ms, render_app"
     additive_v155 = "from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app"
+    additive_v156 = "from streamlit_memory_lazy_router_v156 import record_bootstrap_import_ms, render_app"
 
     if direct_v152 in app_source:
+        return
+
+    if additive_v156 in app_source:
+        v156_source = (ROOT / "streamlit_memory_lazy_router_v156.py").read_text(encoding="utf-8")
+        assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v155"' in v156_source
+        assert "import streamlit_memory_lazy_router_v155 as prior" in v156_source
         return
 
     assert additive_v155 in app_source
