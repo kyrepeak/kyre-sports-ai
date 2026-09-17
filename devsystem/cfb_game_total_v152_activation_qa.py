@@ -2,7 +2,7 @@
 
 This legacy-named QA preserves the V152 activation route while allowing its
 certified additive successor. The real app must reach College Football -> Game
-Total and expose the current V160 production heartbeat through Router V155.
+Total and expose the current V161 production heartbeat through Router V156.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import browser_qa_v1 as base
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 CFB_MARKET_LABEL = "🎯 CFB Market"
-HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"
+HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
 
 
 class V152ActivationFailure(RuntimeError):
@@ -62,7 +62,7 @@ def run(
 
             body = base._wait_for_text(frame, HEARTBEAT, timeout_seconds=60.0)
             if HEARTBEAT not in body:
-                raise V152ActivationFailure("V160 production heartbeat is not visible")
+                raise V152ActivationFailure("V161 production heartbeat is not visible")
 
             forbidden_error = base._body_has_forbidden_error(body)
             if forbidden_error:
