@@ -29,6 +29,20 @@ def test_v161_browser_cert_proves_day_navigation_and_reload_persistence():
     assert "date_after_reload != date_after_click" in source
 
 
+def test_v161_browser_cert_accepts_valid_empty_slate_after_reload():
+    from devsystem import cfb_game_total_browser_qa_v3 as cert
+
+    body = (
+        f"{cert.PRODUCTION_HEARTBEAT}\n"
+        "📅 GAME DAY\n"
+        "Select a day to load that CFB slate\n"
+        "No verified FBS-scoped games were returned for this date. "
+        "V159 fails closed—no Game Total forecast is invented."
+    )
+    assert cert._is_direct_v161_surface(body)
+    cert._assert_visible_contract(body)
+
+
 def test_v161_browser_cert_rejects_removed_masthead_and_old_shells():
     source = _source()
     assert '"MONSTER SPORTS INTELLIGENCE"' in source
