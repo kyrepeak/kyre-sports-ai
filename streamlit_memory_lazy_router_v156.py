@@ -56,8 +56,8 @@ def _render_production_heartbeat() -> None:
 def _render_exact_game_total_surface() -> None:
     """Render V161 Game Total directly while preserving V155 route isolation."""
     st.set_page_config(
-        page_title="Monster Sports Intelligence • CFB Game Total",
-        page_icon="👾",
+        page_title="Kyre Sports AI • CFB Game Total",
+        page_icon="🏈",
         layout="wide",
         initial_sidebar_state="collapsed",
     )
