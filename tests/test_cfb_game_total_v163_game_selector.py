@@ -26,7 +26,8 @@ def test_v163_selected_event_controls_frozen_matchup_index_and_survives_refresh(
     assert "_set_query_event_id" in source
     assert "_query_event_id" in source
     assert "_game_id" in source
-    assert "prior.st.selectbox = matchup_selector_wrapper" in source
+    assert 'MATCHUP_STATE_KEY_PREFIX = "cfb_v152_game_total_matchup_"' in source
+    assert 'st.session_state[f"{MATCHUP_STATE_KEY_PREFIX}{selected_day}"] = selected_index' in source
     assert "return selected_index" in source
 
 
@@ -48,6 +49,7 @@ def test_v163_router_activates_fresh_page_successor_and_preserves_frozen_heartbe
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v158"' in source
 
 
-def test_app_activates_router_v159():
+def test_app_activates_router_v159_and_preserves_v158_source_contract():
     source = _read(APP)
     assert "streamlit_memory_lazy_router_v159" in source
+    assert "from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app" in source
