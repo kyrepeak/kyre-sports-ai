@@ -1,7 +1,9 @@
 from pathlib import Path
 
 
-CERT = Path(__file__).resolve().parents[1] / "devsystem" / "cfb_game_total_browser_qa_v3.py"
+ROOT = Path(__file__).resolve().parents[1]
+CERT = ROOT / "devsystem" / "cfb_game_total_browser_qa_v3.py"
+WORKFLOW = ROOT / ".github" / "workflows" / "cfb-game-total-v161-browser.yml"
 
 
 def _source() -> str:
@@ -33,3 +35,12 @@ def test_v161_browser_cert_rejects_removed_masthead_and_old_shells():
     assert '"College Football Game Total — Final"' in source
     assert '"CFB OVER / UNDER • MONSTER DASHBOARD"' in source
     assert 'print("CFB_GAME_TOTAL_V161_BROWSER_GREEN")' in source
+
+
+def test_v161_has_its_own_additive_browser_workflow():
+    assert WORKFLOW.exists(), "V161 browser workflow must be additive, not overwrite frozen lanes"
+    source = WORKFLOW.read_text(encoding="utf-8")
+    assert "CFB Game Total V161 browser certification" in source
+    assert "devsystem/cfb_game_total_browser_qa_v3.py" in source
+    assert "tests/test_cfb_game_total_browser_qa_v2.py" in source
+    assert "python -m devsystem.cfb_game_total_browser_qa_v3" in source
