@@ -1,9 +1,8 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB Game Total V153 activation.
+"""Kyre Sports AI Streamlit entrypoint — CFB Game Total V160 activation.
 
-The production entrypoint now boots additive Router V153. V153 preserves the
-certified router chain for every existing market while adding an exact
-College Football -> Game Total production heartbeat so stale Streamlit
-releases can be detected automatically.
+The production entrypoint now boots additive Router V155. V155 preserves the
+certified router chain for every existing market while advancing only exact
+College Football -> Game Total to the V160 visual-parity presentation shell.
 
 Sportsbook projection influence stays 0.0% and frozen model behavior remains
 unchanged.
@@ -220,12 +219,12 @@ FROZEN_V146_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V146_NFL_RECEIVING_YARDS_PLAY
 FROZEN_V147_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V147_NFL_RECEIVING_YARDS_FUTURE_CARD_RENDER_FIX_2026-09-16"
 FROZEN_V148_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V148_CFB_MONEYLINE_MONSTER_DASHBOARD_2026-09-16"
 FROZEN_V149_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_COMPACT_DASHBOARD_2026-09-16"
-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V154_CFB_OVER_UNDER_COMPACT_EVIDENCE_2026-09-17"
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V155_CFB_GAME_TOTAL_V160_VISUAL_PARITY_2026-09-17"
 
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v154 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()

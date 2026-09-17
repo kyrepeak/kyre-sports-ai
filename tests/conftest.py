@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def pytest_collection_modifyitems(session, config, items):
-    """Keep the permanent CFB lane aware of frozen V150/V151/V152/V153 + active V154."""
+    """Keep the permanent CFB lane aware of frozen V150–V154 + active V155."""
     if not any(item.path.name.startswith("test_cfb_") for item in items):
         return
 
@@ -18,11 +18,22 @@ def pytest_collection_modifyitems(session, config, items):
     frozen_router = ROOT / "streamlit_memory_lazy_router_v152.py"
     active_router = ROOT / "streamlit_memory_lazy_router_v153.py"
     successor_router = ROOT / "streamlit_memory_lazy_router_v154.py"
+    game_total_router = ROOT / "streamlit_memory_lazy_router_v155.py"
     app_entry = ROOT / "app.py"
     browser = ROOT / "devsystem" / "cfb_game_total_browser_qa_v1.py"
-    required = (page, router, activation, frozen_router, active_router, successor_router, app_entry, browser)
+    required = (
+        page,
+        router,
+        activation,
+        frozen_router,
+        active_router,
+        successor_router,
+        game_total_router,
+        app_entry,
+        browser,
+    )
     missing = [path.name for path in required if not path.exists()]
-    assert not missing, "missing active CFB V154 contract files: " + ", ".join(missing)
+    assert not missing, "missing active CFB V155 contract files: " + ", ".join(missing)
 
     for path in required:
         py_compile.compile(str(path), doraise=True)
@@ -33,6 +44,7 @@ def pytest_collection_modifyitems(session, config, items):
     frozen_router_source = frozen_router.read_text(encoding="utf-8")
     active_router_source = active_router.read_text(encoding="utf-8")
     successor_router_source = successor_router.read_text(encoding="utf-8")
+    game_total_router_source = game_total_router.read_text(encoding="utf-8")
     app_source = app_entry.read_text(encoding="utf-8")
     browser_source = browser.read_text(encoding="utf-8")
 
@@ -101,7 +113,7 @@ def pytest_collection_modifyitems(session, config, items):
     assert "MAY_MODIFY_PROJECTION = False" in active_router_source
     assert "return prior.render_app()" in active_router_source
 
-    # V154 advances only exact CFB Over/Under while delegating every other route to V153.
+    # V154 remains frozen and advances only exact CFB Over/Under over V153.
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v153"' in successor_router_source
     assert 'PRODUCTION_HEARTBEAT = "CFB_OVER_UNDER_V39_PRODUCTION_ACTIVE"' in successor_router_source
     assert 'ACTIVE_PAGE = "cfb_over_under_clean_page_v39"' in successor_router_source
@@ -109,8 +121,20 @@ def pytest_collection_modifyitems(session, config, items):
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in successor_router_source
     assert "MAY_MODIFY_PROJECTION = False" in successor_router_source
     assert "return prior.render_app()" in successor_router_source
-    assert "from streamlit_memory_lazy_router_v154 import record_bootstrap_import_ms, render_app" in app_source
-    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V154_CFB_OVER_UNDER_COMPACT_EVIDENCE_2026-09-17"' in app_source
+
+    # V155 advances only exact CFB Game Total to V160 while preserving V154.
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v154"' in game_total_router_source
+    assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"' in game_total_router_source
+    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v10"' in game_total_router_source
+    assert 'GAME_TOTAL_MARKET = "Game Total"' in game_total_router_source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in game_total_router_source
+    assert "MAY_MODIFY_PROJECTION = False" in game_total_router_source
+    assert "return page.render_cfb_hub(" in game_total_router_source
+    assert "return prior.render_app()" in game_total_router_source
+
+    # Production entrypoint must activate V155/V160 exactly.
+    assert "from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app" in app_source
+    assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V155_CFB_GAME_TOTAL_V160_VISUAL_PARITY_2026-09-17"' in app_source
 
     # Real browser proof must certify the actual Game Total page and explicitly
     # reject the legacy title visible in the user's production screenshot.
