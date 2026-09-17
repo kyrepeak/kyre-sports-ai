@@ -7,7 +7,7 @@ def test_v161_freshness_contract_constants() -> None:
     from devsystem import production_verify_v3 as verify
 
     assert verify.GAME_TOTAL_REQUIRED_HEARTBEAT == "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
-    assert verify.EXPECTED_ROUTER == "streamlit_memory_lazy_router_v156"
+    assert verify.EXPECTED_ROUTER == "streamlit_memory_lazy_router_v157"
     assert verify.GAME_TOTAL_MARKET == "Game Total"
 
 
@@ -19,7 +19,7 @@ def test_stale_streamlit_body_is_rejected() -> None:
         verify._assert_v152_heartbeat(stale)
 
 
-def test_exact_v156_production_heartbeat_is_accepted() -> None:
+def test_exact_v157_production_heartbeat_is_accepted() -> None:
     from devsystem import production_verify_v3 as verify
 
     body = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE\nGAME TOTAL ANALYSIS"
@@ -35,8 +35,8 @@ def test_freshness_evidence_records_expected_commit_and_observed_build() -> None
     )
     assert evidence == {
         "expected_commit": "abc123",
-        "expected_router": "streamlit_memory_lazy_router_v156",
-        "observed_router": "V156",
+        "expected_router": "streamlit_memory_lazy_router_v157",
+        "observed_router": "V157",
         "observed_build_marker": "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE",
         "freshness_verified": True,
     }

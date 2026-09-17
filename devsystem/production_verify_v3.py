@@ -3,7 +3,7 @@
 Additive over frozen production_verify_v2. V3 preserves every existing Render,
 API, observability, safety, and CFB Over/Under production check, then drives the
 real deployed Streamlit app to College Football -> Game Total and requires the
-exact Router V156 production heartbeat. A healthy HTTP 200 is not sufficient
+exact Router V157 production heartbeat. A healthy HTTP 200 is not sufficient
 when the deployed router/page is stale.
 """
 from __future__ import annotations
@@ -25,7 +25,7 @@ except ModuleNotFoundError:  # direct `python devsystem/production_verify_v3.py`
     import production_verify_v2 as prior
 
 FROZEN_VERIFIER = "devsystem.production_verify_v2"
-EXPECTED_ROUTER = "streamlit_memory_lazy_router_v156"
+EXPECTED_ROUTER = "streamlit_memory_lazy_router_v157"
 GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
@@ -50,7 +50,7 @@ def _build_freshness_evidence(
     return {
         "expected_commit": str(expected_commit or "unknown"),
         "expected_router": EXPECTED_ROUTER,
-        "observed_router": "V156",
+        "observed_router": "V157",
         "observed_build_marker": observed,
         "freshness_verified": True,
     }
