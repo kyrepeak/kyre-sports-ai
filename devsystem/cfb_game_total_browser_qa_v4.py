@@ -26,6 +26,7 @@ DATE_QUERY_KEY = "ks_cfb_game_total_date"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 CERT_DATE = "2026-09-19"
 PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"
+SELECTOR_WIDGET_LABEL = "SELECT MATCHUP"
 FULL_RENDER_MARKER = "VIEW TOP 5 →"
 REQUIRED_VISIBLE = (
     "GAME DAY",
@@ -115,12 +116,21 @@ def _wait_for_event_query(page, expected: str | None = None, timeout_seconds: fl
 
 
 def _selected_link_event(frame) -> str:
-    selected = frame.locator('[data-testid="gt163-game-strip"] button.gt163-game-link[aria-current="true"]')
+    selected = frame.locator('[data-testid="gt163-game-strip"] span.gt163-game-link[aria-current="true"]')
     if selected.count() != 1:
         raise GameTotalV163BrowserQAFailure(
-            f"Expected exactly one selected game link, found {selected.count()}"
+            f"Expected exactly one selected game card, found {selected.count()}"
         )
     return str(selected.first.get_attribute("data-event-id") or "")
+
+
+def _native_selector_radios(frame):
+    selector = frame.locator('[data-testid="stRadio"]').filter(has_text=SELECTOR_WIDGET_LABEL)
+    if selector.count() != 1:
+        raise GameTotalV163BrowserQAFailure(
+            f"Expected one native {SELECTOR_WIDGET_LABEL!r} selector, found {selector.count()}"
+        )
+    return selector.locator('input[type="radio"]')
 
 
 def _team_names_from_label(label: str) -> tuple[str, str]:
@@ -164,34 +174,36 @@ def run(
 
             initial_event = _wait_for_event_query(page)
             strip = frame.locator('[data-testid="gt163-game-strip"]')
-            links = strip.locator("button.gt163-game-link")
-            count = links.count()
-            if count < 2:
+            cards = strip.locator("span.gt163-game-link")
+            radios = _native_selector_radios(frame)
+            count = cards.count()
+            if count < 2 or radios.count() != count:
                 raise GameTotalV163BrowserQAFailure(
-                    f"Expected at least two verified games on {CERT_DATE}, got {count}"
+                    f"Expected matching verified game cards/radios on {CERT_DATE}; "
+                    f"cards={count} radios={radios.count()}"
                 )
             if _selected_link_event(frame) != initial_event:
                 raise GameTotalV163BrowserQAFailure(
-                    "Initial selected link does not match persisted ESPN event_id"
+                    "Initial selected card does not match persisted ESPN event_id"
                 )
 
             target_event = ""
             target_label = ""
             target = None
             for index in range(count):
-                candidate = links.nth(index)
+                candidate = cards.nth(index)
                 event_id = str(candidate.get_attribute("data-event-id") or "")
                 if event_id and event_id != initial_event:
                     target_event = event_id
                     target_label = candidate.inner_text().strip()
-                    target = candidate
+                    target = radios.nth(index)
                     break
             if target is None:
                 raise GameTotalV163BrowserQAFailure(
-                    "No second exact-event matchup was available to click"
+                    "No second exact-event matchup was available to select"
                 )
 
-            target.click(timeout=30000)
+            target.check(timeout=30000, force=True)
             clicked_event = _wait_for_event_query(page, target_event)
             frame_after_click, body_after_click, click_scan = _find_v163_frame(page)
             _assert_visible_contract(body_after_click)
@@ -225,7 +237,7 @@ def run(
                 "health": health,
                 "date": CERT_DATE,
                 "viewport": {"width": 1067, "height": 1536},
-                "game_button_count": count,
+                "game_radio_count": count,
                 "initial_event_id": initial_event,
                 "clicked_event_id": clicked_event,
                 "reloaded_event_id": reloaded_event,
