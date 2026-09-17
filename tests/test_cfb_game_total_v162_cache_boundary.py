@@ -29,10 +29,12 @@ def test_v162_router_unconditionally_evicts_cached_game_total_page_modules():
     assert source.index("_purge_game_total_page_modules()") < source.index("root._import(ACTIVE_PAGE)")
 
 
-def test_v162_router_uses_new_page_and_new_production_heartbeat():
+def test_v162_router_uses_new_page_and_preserves_v161_browser_heartbeat():
     source = _read(ROUTER)
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v13"' in source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V162_PRODUCTION_ACTIVE"' in source
+    assert 'LEGACY_V161_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in source
+    assert "LEGACY_V161_HEARTBEAT" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
 
