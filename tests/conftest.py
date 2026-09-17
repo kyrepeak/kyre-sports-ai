@@ -174,7 +174,8 @@ def pytest_collection_modifyitems(session, config, items):
     # Real browser proof must reproduce the tablet refresh path and reject both
     # the legacy Game Total title and the generic/O-U shells after activation.
     assert 'GAME_TOTAL_MARKET = "Game Total"' in browser_source
-    assert '"CFB GAME TOTAL • CLEAN PAGE V160 ACTIVE"' in browser_source
+    assert 'ROUTE_QUERY_MARKET = "ks_cfb_market"' in browser_source
+    assert 'FULL_RENDER_MARKER = "VIEW TOP 5 →"' in browser_source
     assert '"GAME TOTAL ANALYSIS"' in browser_source
     assert '"TEAM EVIDENCE"' in browser_source
     assert '"GAME TOTAL EVIDENCE • STEPS 1–12"' in browser_source
