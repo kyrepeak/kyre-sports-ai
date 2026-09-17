@@ -191,6 +191,19 @@ def run(
                     "No second exact-event matchup was available to click"
                 )
 
+            href = str(target.get_attribute("href") or "")
+            target_scope = str(target.get_attribute("target") or "")
+            onclick = str(target.get_attribute("onclick") or "")
+            if (
+                not href.startswith("?")
+                or target_scope != "_self"
+                or "window.parent.history.replaceState" not in onclick
+            ):
+                raise GameTotalV163BrowserQAFailure(
+                    "V163 selector is missing wrapper-history synchronization: "
+                    f"href={href!r} target={target_scope!r} onclick={onclick!r}"
+                )
+
             target.click(timeout=30000)
             clicked_event = _wait_for_event_query(page, target_event)
             frame_after_click, body_after_click, click_scan = _find_v163_frame(page)
