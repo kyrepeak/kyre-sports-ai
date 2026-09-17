@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-17T02:20:00Z",
+  "generated_at": "2026-09-17T02:23:00Z",
   "purpose": "Game-Total-only deterministic production fallback when deployed Streamlit cannot complete live reconciliation. This file does not feed frozen Step 11/12 model math.",
   "games": [
     {
@@ -43,6 +43,18 @@
             "label": "Yards Per Play",
             "value": 5.8,
             "display_value": "5.8",
+            "source": "Syracuse University Athletics 2026 cumulative team statistics"
+          },
+          "red_zone": {
+            "label": "Red Zone Attempts-Scores",
+            "value": "11-14",
+            "display_value": "11-14",
+            "source": "Syracuse University Athletics 2026 cumulative team statistics"
+          },
+          "third_down": {
+            "label": "Third Down Conversions",
+            "value": 0.51724,
+            "display_value": "15-29 (51.724%)",
             "source": "Syracuse University Athletics 2026 cumulative team statistics"
           }
         },
@@ -97,6 +109,18 @@
             "label": "Yards Per Play",
             "value": 6.5,
             "display_value": "6.5",
+            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"
+          },
+          "red_zone": {
+            "label": "Red Zone Attempts-Scores",
+            "value": "5-6",
+            "display_value": "5-6",
+            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"
+          },
+          "third_down": {
+            "label": "Third Down Conversions",
+            "value": 0.41379,
+            "display_value": "12-29 (41.379%)",
             "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"
           }
         },
