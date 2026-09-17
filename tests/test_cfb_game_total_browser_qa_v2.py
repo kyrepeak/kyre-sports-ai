@@ -1,0 +1,35 @@
+from pathlib import Path
+
+
+CERT = Path(__file__).resolve().parents[1] / "devsystem" / "cfb_game_total_browser_qa_v2.py"
+
+
+def _source() -> str:
+    assert CERT.exists(), "V161 tablet browser cert must exist"
+    return CERT.read_text(encoding="utf-8")
+
+
+def test_v161_browser_cert_targets_real_ipad_surface():
+    source = _source()
+    assert '"width": 1067' in source
+    assert '"height": 1536' in source
+    assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in source
+    assert 'DATE_QUERY_KEY = "cfb_game_total_date_v161"' in source
+
+
+def test_v161_browser_cert_proves_day_navigation_and_reload_persistence():
+    source = _source()
+    assert '"GAME DAY"' in source
+    assert "day_buttons" in source
+    assert "page.reload(" in source
+    assert "date_after_click" in source
+    assert "date_after_reload" in source
+    assert "date_after_reload != date_after_click" in source
+
+
+def test_v161_browser_cert_rejects_removed_masthead_and_old_shells():
+    source = _source()
+    assert '"MONSTER SPORTS INTELLIGENCE"' in source
+    assert '"College Football Game Total — Final"' in source
+    assert '"CFB OVER / UNDER • MONSTER DASHBOARD"' in source
+    assert 'print("CFB_GAME_TOTAL_V161_BROWSER_GREEN")' in source
