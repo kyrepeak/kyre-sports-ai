@@ -7,27 +7,25 @@ import cfb_game_total_clean_page_v14 as v163
 
 def _identity_payload() -> dict:
     return {
-        "lines": [
+        "games": [
             {
-                "official_game_id": "401752801",
+                "event_id": "401752801",
                 "game_date": "2026-09-19",
-                "official_away_team": "Bowling Green Falcons",
-                "official_home_team": "Iowa State Cyclones",
+                "away_team": "Bowling Green Falcons",
+                "home_team": "Iowa State Cyclones",
                 "identity_verified": True,
             },
             {
-                "official_game_id": "SHOULD-NOT-MATCH",
+                "event_id": "SHOULD-NOT-MATCH",
                 "game_date": "2026-09-19",
-                "official_away_team": "Akron Zips",
-                "official_home_team": "Minnesota Golden Gophers",
+                "away_team": "Akron Zips",
+                "home_team": "Minnesota Golden Gophers",
                 "identity_verified": True,
             },
         ],
-        "market_semantics": {
-            "projection_weight": 0.0,
-            "market_context_only": True,
-            "may_modify_projection": False,
-        },
+        "synthetic_ids": False,
+        "projection_weight": 0.0,
+        "may_modify_projection": False,
     }
 
 
@@ -60,7 +58,7 @@ def test_load_games_recovers_official_espn_event_id_from_api_without_using_ncaa_
     loaded = v163._load_games(date(2026, 9, 19))
 
     assert loaded[0]["espn_event_id"] == "401752801"
-    assert loaded[0]["selector_identity_source"] == "Kyre Sports API reconciled identity"
+    assert loaded[0]["selector_identity_source"] == "Kyre Sports API full-slate verified identity"
     assert v163._game_id(loaded[0]) == "401752801"
     assert frozen_row["espn_event_id"] == "", "V163 must not mutate the frozen schedule row"
     assert v163._game_id({"game_id": "NCAA-only"}) == "", "NCAA game_id is not an ESPN event identity"
@@ -76,29 +74,31 @@ def test_api_identity_matching_is_exact_date_two_team_and_fail_closed():
         }
     ]
     payload = {
-        "lines": [
+        "games": [
             {
-                "official_game_id": "WRONG-DATE",
+                "event_id": "WRONG-DATE",
                 "game_date": "2026-09-20",
-                "official_away_team": "Tulane Green Wave",
-                "official_home_team": "Kansas State Wildcats",
+                "away_team": "Tulane Green Wave",
+                "home_team": "Kansas State Wildcats",
                 "identity_verified": True,
             },
             {
-                "official_game_id": "UNVERIFIED",
+                "event_id": "UNVERIFIED",
                 "game_date": "2026-09-19",
-                "official_away_team": "Tulane Green Wave",
-                "official_home_team": "Kansas State Wildcats",
+                "away_team": "Tulane Green Wave",
+                "home_team": "Kansas State Wildcats",
                 "identity_verified": False,
             },
             {
-                "official_game_id": "401752999",
+                "event_id": "401752999",
                 "game_date": "2026-09-19",
-                "official_away_team": "Tulane Green Wave",
-                "official_home_team": "Kansas State Wildcats",
+                "away_team": "Tulane Green Wave",
+                "home_team": "Kansas State Wildcats",
                 "identity_verified": True,
             },
-        ]
+        ],
+        "synthetic_ids": False,
+        "projection_weight": 0.0,
     }
 
     v163._enrich_selector_ids_from_api(games, payload, date(2026, 9, 19))
