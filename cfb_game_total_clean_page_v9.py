@@ -63,23 +63,6 @@ def _pct(value: Any) -> str:
         return "—"
 
 
-def _capture_steps_1_10_context(
-    identity: Mapping[str, Any],
-    away: Mapping[str, Any],
-    home: Mapping[str, Any],
-    display_game: Mapping[str, Any],
-) -> None:
-    """Capture existing display truth and suppress only the old visible rail."""
-    st.session_state[_FLOW_CONTEXT_KEY] = {
-        "identity": dict(identity),
-        "away": dict(away),
-        "home": dict(home),
-        "display_game": dict(display_game),
-    }
-    # Keep V7's compact team evidence exactly where it already lives.
-    evidence_owner._render_compact_team_cards(away, home)
-
-
 def _step_row(number: int, title: str, status: str, detail: str) -> str:
     state = "ready" if status == "READY" else ("gated" if status == "GATED" else "check")
     return f"""
@@ -189,18 +172,45 @@ def _combined_model_summary(raw: Mapping[str, Any], final: Mapping[str, Any]) ->
     return _combined_flow_html(statuses, details, raw, final)
 
 
+def _capture_steps_1_10_context(
+    identity: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+    display_game: Mapping[str, Any],
+) -> None:
+    """Capture exact V6 readiness truth and bind the final presenter to it."""
+    statuses = step_owner._existing_step_status(identity, away, home, display_game)
+    details = step_owner._step_details(identity, away, home, statuses)
+    st.session_state[_FLOW_CONTEXT_KEY] = {
+        "identity": dict(identity),
+        "away": dict(away),
+        "home": dict(home),
+        "display_game": dict(display_game),
+    }
+
+    def _bound_model_summary(raw: Mapping[str, Any], final: Mapping[str, Any]) -> str:
+        return _combined_flow_html(statuses, details, raw, final)
+
+    # V6 later calls the V1 status owner directly. Bind it here after the exact
+    # Step 1–10 truth is known so the live render cannot fall back to V8.
+    status_owner._status_cards = _bound_model_summary
+    evidence_owner._render_compact_team_cards(away, home)
+
+
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
-    """Run frozen V7 while V9 replaces V8's visible presenter deterministically."""
-    original_steps = evidence_owner._render_steps_1_10_with_team_cards
+    """Run frozen V6 while swapping only its three presentation owners."""
+    original_steps = step_owner._render_steps_1_10_rail
+    original_evidence = step_owner.prior._render_evidence_center
     original_status_cards = status_owner._status_cards
-    evidence_owner._render_steps_1_10_with_team_cards = _capture_steps_1_10_context
+
+    step_owner._render_steps_1_10_rail = _capture_steps_1_10_context
+    step_owner.prior._render_evidence_center = evidence_owner._render_raw_team_evidence
     status_owner._status_cards = _combined_model_summary
     try:
-        # V8 adds presentation only. V9 supersedes that presenter, so delegate to
-        # V7's frozen evidence path while keeping every V6/V5 model call intact.
-        return evidence_owner.render_game_total_hub(section_header, status_info, team_logo, h)
+        return step_owner.render_game_total_hub(section_header, status_info, team_logo, h)
     finally:
-        evidence_owner._render_steps_1_10_with_team_cards = original_steps
+        step_owner._render_steps_1_10_rail = original_steps
+        step_owner.prior._render_evidence_center = original_evidence
         status_owner._status_cards = original_status_cards
         st.session_state.pop(_FLOW_CONTEXT_KEY, None)
 
