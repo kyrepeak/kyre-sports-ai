@@ -18,8 +18,7 @@ MATCHUP_LABEL = "🏟️ Game Total matchup"
 TARGET_DAY = "2026-09-17"
 TARGET_AWAY = "Syracuse"
 TARGET_HOME = "Pittsburgh"
-AWAY_EVIDENCE_LABEL = "Syracuse evidence"
-HOME_EVIDENCE_LABEL = "Pittsburgh evidence"
+RAW_EVIDENCE_LABEL = "Raw Steps 1–10 evidence"
 HEARTBEAT = "CFB_GAME_TOTAL_V152_PRODUCTION_ACTIVE"
 SPORTSBOOK_MARKER = "sportsbook projection influence 0.0%"
 DEEP_AUDIT_LABEL = "Deep model evidence • Step 11 distribution"
@@ -64,13 +63,22 @@ def _set_target_date(page, frame) -> str:
             fallback[i],
         )
         diag.append(f"{i}:{semantic or 'unlabeled'}->{value}")
-        segment.press_sequentially(value)
+        segment.click()
+        segment.press("Control+A")
+        segment.fill(value)
 
+    page.keyboard.press("Tab")
     page.keyboard.press("Escape")
-    page.wait_for_timeout(1800)
-    frame.get_by_role("combobox", name=MATCHUP_LABEL, exact=True).wait_for(
-        state="visible", timeout=45000
-    )
+    page.wait_for_timeout(2200)
+    combo = frame.get_by_role("combobox", name=MATCHUP_LABEL, exact=True)
+    try:
+        combo.wait_for(state="visible", timeout=45000)
+    except Exception as exc:
+        body = frame.locator("body").inner_text(timeout=5000)
+        raise V152BrowserQAFailure(
+            "Game Total matchup selector did not appear after setting "
+            f"{TARGET_DAY}; page tail={body[-1200:]!r}"
+        ) from exc
     return f"{TARGET_DAY} ({', '.join(diag)})"
 
 
@@ -142,21 +150,47 @@ def _assert_record(frame, side: str) -> str:
     return value
 
 
-def _open_evidence(frame, label_text: str) -> dict[str, bool]:
-    label = frame.get_by_text(label_text, exact=True).first
+def _assert_compact_team_card(frame, side: str, team_name: str) -> dict[str, str]:
+    card = _visible(frame, f"gt155-{side}-team-card")
+    text = card.inner_text().strip()
+    if team_name not in text:
+        raise V152BrowserQAFailure(
+            f"{side} compact team card is missing {team_name!r}: {text!r}"
+        )
+    if "PPG" not in text or "Allowed" not in text or "Recent form" not in text:
+        raise V152BrowserQAFailure(
+            f"{side} compact team card is missing required evidence labels: {text!r}"
+        )
+    return {"team": team_name, "text": text}
+
+
+def _open_raw_evidence(frame) -> dict[str, bool]:
+    label = frame.get_by_text(RAW_EVIDENCE_LABEL, exact=False).first
     label.wait_for(state="visible", timeout=30000)
     details = label.locator("xpath=ancestor::details[1]")
     if details.count() == 0:
-        raise V152BrowserQAFailure(f"Evidence expander missing: {label_text}")
+        raise V152BrowserQAFailure("Raw Steps 1–10 evidence drawer is missing")
     if details.get_attribute("open") is None:
         label.click()
-    details.get_by_text("Recent completed games", exact=True).wait_for(
+
+    details.get_by_text(f"{TARGET_AWAY} • full evidence", exact=True).wait_for(
+        state="visible", timeout=20000
+    )
+    details.get_by_text(f"{TARGET_HOME} • full evidence", exact=True).wait_for(
+        state="visible", timeout=20000
+    )
+    details.get_by_text("Recent completed games", exact=True).first.wait_for(
         state="visible", timeout=20000
     )
     details.get_by_text("DATA SOURCE", exact=False).first.wait_for(
         state="visible", timeout=20000
     )
-    return {"recent_games_visible": True, "data_source_visible": True}
+    return {
+        "away_full_evidence_visible": True,
+        "home_full_evidence_visible": True,
+        "recent_games_visible": True,
+        "data_source_visible": True,
+    }
 
 
 def _deep_audit_collapsed(frame) -> dict[str, Any]:
@@ -208,11 +242,12 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
             home_logo = _assert_logo_loaded(page, frame, "home")
             away_record = _assert_record(frame, "away")
             home_record = _assert_record(frame, "home")
+            away_team_card = _assert_compact_team_card(frame, "away", TARGET_AWAY)
+            home_team_card = _assert_compact_team_card(frame, "home", TARGET_HOME)
             base._wait_for_text(frame, SPORTSBOOK_MARKER, timeout_seconds=60.0)
 
             deep = _deep_audit_collapsed(frame)
-            away_evidence = _open_evidence(frame, AWAY_EVIDENCE_LABEL)
-            home_evidence = _open_evidence(frame, HOME_EVIDENCE_LABEL)
+            raw_evidence = _open_raw_evidence(frame)
 
             screenshot = artifacts / "cfb_game_total_v152.png"
             page.screenshot(path=str(screenshot), full_page=True)
@@ -225,8 +260,9 @@ def run(*, base_url: str = base.DEFAULT_BASE_URL, artifact_dir: str | Path = "ar
                 "home_record": home_record,
                 "away_logo": away_logo,
                 "home_logo": home_logo,
-                "away_evidence": away_evidence,
-                "home_evidence": home_evidence,
+                "away_team_card": away_team_card,
+                "home_team_card": home_team_card,
+                "raw_evidence": raw_evidence,
                 "deep_audit": deep,
                 "sportsbook_projection_influence": "0.0%",
                 "health": health,
