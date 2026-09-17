@@ -92,3 +92,15 @@ def test_cfb_marker_wait_is_event_driven_not_polling_driven():
     assert 'time.monotonic' not in wait_source
     assert 'while ' not in wait_source
     assert 'inner_text(timeout=5000)' in wait_source
+
+
+def test_browser_qa_enters_cfb_over_under_through_certified_fast_route():
+    module = _load_module()
+    run_source = inspect.getsource(module.run_browser_qa)
+
+    assert module._cfb_over_under_url("http://127.0.0.1:8501") == (
+        "http://127.0.0.1:8501/?ks_sport=College+Football&ks_cfb_market=Over%2FUnder"
+    )
+    assert "page.goto(_cfb_over_under_url(base_url)" in run_source
+    assert "_choose(page, frame, 0, CFB_SPORT)" not in run_source
+    assert "_choose(page, frame, 1, CFB_MARKET)" not in run_source
