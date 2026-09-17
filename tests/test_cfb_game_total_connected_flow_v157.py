@@ -48,32 +48,38 @@ def test_v9_puts_steps_1_through_12_in_one_connected_flow() -> None:
     assert "Frozen ranking unchanged" in html
 
 
-def test_v9_suppresses_only_old_visible_step_rail() -> None:
+def test_v9_capture_binds_final_presenter_to_exact_step_context() -> None:
     source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
-
     capture = source.split("def _capture_steps_1_10_context(", 1)[1].split(
         "def _combined_model_summary(", 1
     )[0]
-    assert "st.session_state[_FLOW_CONTEXT_KEY]" in capture
+
+    assert "step_owner._existing_step_status(" in capture
+    assert "step_owner._step_details(" in capture
+    assert "status_owner._status_cards = _bound_model_summary" in capture
     assert "evidence_owner._render_compact_team_cards(away, home)" in capture
     assert "_ORIGINAL_STEPS_1_10" not in capture
 
 
-def test_v9_binds_connected_presenter_to_live_v1_owner() -> None:
+def test_v9_hooks_the_exact_v6_presentation_owners() -> None:
     source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
 
+    assert "original_steps = step_owner._render_steps_1_10_rail" in source
+    assert "original_evidence = step_owner.prior._render_evidence_center" in source
     assert "original_status_cards = status_owner._status_cards" in source
+    assert "step_owner._render_steps_1_10_rail = _capture_steps_1_10_context" in source
+    assert "step_owner.prior._render_evidence_center = evidence_owner._render_raw_team_evidence" in source
     assert "status_owner._status_cards = _combined_model_summary" in source
-    assert "evidence_owner._render_steps_1_10_with_team_cards = _capture_steps_1_10_context" in source
-    assert "return evidence_owner.render_game_total_hub(" in source
+    assert "return step_owner.render_game_total_hub(" in source
+    assert "step_owner._render_steps_1_10_rail = original_steps" in source
+    assert "step_owner.prior._render_evidence_center = original_evidence" in source
     assert "status_owner._status_cards = original_status_cards" in source
-    assert "prior._compact_model_summary(raw, final)" in source
 
 
 def test_v9_keeps_step_11_12_and_top5_math_owned_by_frozen_path() -> None:
     source = (ROOT / "cfb_game_total_clean_page_v9.py").read_text(encoding="utf-8")
 
-    assert "evidence_owner.render_game_total_hub(" in source
+    assert "step_owner.render_game_total_hub(" in source
     assert "projected_combined_total" in source
     assert "core_50_range" in source
     assert "most_likely_band" in source
