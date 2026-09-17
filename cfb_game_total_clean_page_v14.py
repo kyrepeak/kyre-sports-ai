@@ -16,7 +16,6 @@ from html import escape
 import os
 import re
 from typing import Any, Mapping, Sequence
-from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 import requests
@@ -34,7 +33,6 @@ ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V163 ACTIVE"
 
 DATE_QUERY_KEY = v161.DATE_QUERY_KEY
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
-SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"
 ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
 CFB_SPORT_LABEL = "College Football"
@@ -42,6 +40,8 @@ GAME_TOTAL_MARKET = "Game Total"
 MATCHUP_STATE_KEY_PREFIX = "cfb_v152_game_total_matchup_"
 SELECTOR_IDENTITY_ENDPOINT = "/api/v1/cfb/selector/verified-games"
 SELECTOR_IDENTITY_SOURCE = "Kyre Sports API full-slate verified identity"
+SELECTOR_WIDGET_LABEL = "SELECT MATCHUP"
+SELECTOR_WIDGET_KEY_PREFIX = "cfb_v163_event_selector_"
 
 _V163_CSS = r"""
 <style>
@@ -51,6 +51,7 @@ _V163_CSS = r"""
 .gt163-game-link{display:flex;align-items:center;min-width:225px;max-width:310px;min-height:44px;padding:7px 11px;border:1px solid rgba(79,153,194,.34);border-radius:10px;background:#071824;color:#c7d8e6!important;text-decoration:none!important;font-size:10px;font-weight:900;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;scroll-snap-align:start;box-sizing:border-box}
 .gt163-game-link:hover{border-color:rgba(102,185,255,.70);background:#0a2130;color:#f6fbff!important}.gt163-game-link.selected{border-color:rgba(69,240,173,.72);background:linear-gradient(145deg,rgba(19,105,76,.70),rgba(7,35,40,.95));color:#f7fbff!important;box-shadow:0 0 14px rgba(69,240,173,.12)}
 .gt163-game-disabled{display:flex;align-items:center;min-width:225px;min-height:44px;padding:7px 11px;border:1px solid rgba(244,206,99,.28);border-radius:10px;background:rgba(84,63,16,.14);color:#bcae80;font-size:10px;font-weight:850;box-sizing:border-box}
+[data-testid="stRadio"] [role="radiogroup"]{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:8px;padding-bottom:4px;scrollbar-width:thin}[data-testid="stRadio"] [role="radiogroup"] label{min-width:max-content}
 .gt163-identity{display:none!important}
 @media(max-width:760px){.gt163-game-wrap{padding:7px 7px 7px;margin-bottom:9px}.gt163-game-title span{display:none}.gt163-game-link,.gt163-game-disabled{min-width:205px;min-height:40px;padding:6px 9px;font-size:9px;border-radius:8px}}
 </style>
@@ -87,24 +88,6 @@ def _set_query_event_id(event_id: str) -> None:
     try:
         if _query_event_id() != event_id:
             st.query_params[EVENT_QUERY_KEY] = event_id
-    except Exception:
-        pass
-
-
-def _selector_sync_event_id() -> str:
-    try:
-        raw = st.query_params.get(SELECTOR_SYNC_QUERY_KEY)
-    except Exception:
-        return ""
-    if isinstance(raw, (list, tuple)):
-        raw = raw[-1] if raw else ""
-    return _clean(raw)
-
-
-def _clear_selector_sync() -> None:
-    try:
-        if SELECTOR_SYNC_QUERY_KEY in st.query_params:
-            del st.query_params[SELECTOR_SYNC_QUERY_KEY]
     except Exception:
         pass
 
@@ -169,21 +152,6 @@ def _game_label(game: Mapping[str, Any], fallback: str = "") -> str:
     if away and home:
         return f"{_kickoff_text(game)} • {away} @ {home}"
     return _clean(fallback) or "Game"
-
-
-def _selector_href(game: Mapping[str, Any], selected_day: date) -> str:
-    event_id = _game_id(game)
-    if not event_id:
-        return ""
-    params = {
-        ROUTE_QUERY_SPORT: CFB_SPORT_LABEL,
-        ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
-        DATE_QUERY_KEY: selected_day.isoformat(),
-        EVENT_QUERY_KEY: event_id,
-        SELECTOR_SYNC_QUERY_KEY: event_id,
-    }
-    # Navigate the Streamlit app frame; Streamlit mirrors query params to the wrapper URL.
-    return "?" + urlencode(params)
 
 
 def _school_tokens(value: Any) -> tuple[str, ...]:
@@ -291,20 +259,58 @@ def _load_games(selected_day: date) -> list[Mapping[str, Any]]:
     return copied
 
 
-def _sync_frozen_matchup_state(selected_day: date, games: Sequence[Mapping[str, Any]]) -> int:
-    if not games:
-        return 0
-    sync_event_id = _selector_sync_event_id()
-    selected_index = _selected_game_index(games, _query_event_id())
-    event_id = _game_id(games[selected_index])
+def _on_native_selector_change(widget_key: str) -> None:
+    """Persist a user-selected official event through Streamlit's own URL channel."""
+    event_id = _clean(st.session_state.get(widget_key))
     if event_id:
         _set_query_event_id(event_id)
-    # The transient marker guarantees one real st.query_params mutation after
-    # frame-local navigation. Deleting it makes Streamlit synchronize the full
-    # current query (including the selected official ESPN event_id) to the
-    # outer Community Cloud wrapper without changing model behavior.
-    if sync_event_id:
-        _clear_selector_sync()
+
+
+def _render_native_game_selector(
+    selected_day: date,
+    games: Sequence[Mapping[str, Any]],
+) -> int:
+    """Render the production-safe selector and sync the frozen matchup widget state."""
+    verified = [
+        (index, _game_id(game))
+        for index, game in enumerate(games)
+        if _game_id(game)
+    ]
+    if not verified:
+        st.caption("Verified ESPN game identities are not available for this slate yet.")
+        st.session_state[f"{MATCHUP_STATE_KEY_PREFIX}{selected_day}"] = 0
+        return 0
+
+    event_to_index = {event_id: index for index, event_id in verified}
+    query_event = _query_event_id()
+    default_event = query_event if query_event in event_to_index else verified[0][1]
+    widget_key = f"{SELECTOR_WIDGET_KEY_PREFIX}{selected_day.isoformat()}"
+
+    current_widget = _clean(st.session_state.get(widget_key))
+    if widget_key not in st.session_state:
+        st.session_state[widget_key] = default_event
+    elif query_event in event_to_index and current_widget != query_event:
+        # Deep links / hard refreshes are authoritative. A widget callback updates
+        # query_event before this rerun, so genuine user changes are preserved too.
+        st.session_state[widget_key] = query_event
+    elif current_widget not in event_to_index:
+        st.session_state[widget_key] = default_event
+
+    labels = {
+        event_id: _game_label(games[index], f"Game {index + 1}")
+        for index, event_id in verified
+    }
+    selected_event = st.radio(
+        SELECTOR_WIDGET_LABEL,
+        options=[event_id for _, event_id in verified],
+        format_func=lambda event_id: labels[event_id],
+        key=widget_key,
+        horizontal=True,
+        on_change=_on_native_selector_change,
+        args=(widget_key,),
+    )
+    selected_index = event_to_index[_clean(selected_event)]
+    _set_query_event_id(_clean(selected_event))
     st.session_state[f"{MATCHUP_STATE_KEY_PREFIX}{selected_day}"] = selected_index
     return selected_index
 
@@ -324,19 +330,18 @@ def _render_game_strip(selected_day: date, games: Sequence[Mapping[str, Any]], s
         event_id = _game_id(game)
         selected = index == selected_index
         if event_id:
-            href = _selector_href(game, selected_day)
             selected_class = " selected" if selected else ""
             aria = ' aria-current="true"' if selected else ""
             prefix = "✓ " if selected else ""
             cards.append(
-                f'<a class="gt163-game-link{selected_class}" data-event-id="{escape(event_id)}" '
-                f'href="{escape(href, quote=True)}" target="_self"{aria}>{escape(prefix + label)}</a>'
+                f'<span class="gt163-game-link{selected_class}" data-event-id="{escape(event_id)}"'
+                f'{aria}>{escape(prefix + label)}</span>'
             )
         else:
             cards.append(f'<span class="gt163-game-disabled">{escape(label)} • ESPN ID unavailable</span>')
     st.markdown(
         '<div class="gt163-game-wrap" data-testid="gt163-game-strip">'
-        '<div class="gt163-game-title"><b>🏟️ GAMES ON THIS DAY</b><span>Swipe or scroll • tap a matchup to load its full analysis</span></div>'
+        '<div class="gt163-game-title"><b>🏟️ GAMES ON THIS DAY</b><span>Use SELECT MATCHUP above • cards track the active analysis</span></div>'
         f'<div class="gt163-game-scroller">{"".join(cards)}</div></div>',
         unsafe_allow_html=True,
     )
@@ -357,7 +362,7 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     def day_strip_wrapper() -> date:
         selected_day = original_day_strip()
         games = _load_games(selected_day)
-        selected_index = _sync_frozen_matchup_state(selected_day, games)
+        selected_index = _render_native_game_selector(selected_day, games)
         _render_game_strip(selected_day, games, selected_index)
         _render_v163_identity()
         return selected_day
@@ -379,7 +384,6 @@ __all__ = [
     "ACTIVE_MARKER",
     "DATE_QUERY_KEY",
     "EVENT_QUERY_KEY",
-    "SELECTOR_SYNC_QUERY_KEY",
     "FROZEN_PRESENTATION",
     "MARKET",
     "MAY_MODIFY_PROJECTION",
@@ -394,12 +398,11 @@ __all__ = [
     "_game_label",
     "_load_games",
     "_query_event_id",
-    "_selector_sync_event_id",
     "_same_school",
+    "_on_native_selector_change",
+    "_render_native_game_selector",
     "_selected_game_index",
-    "_selector_href",
     "_set_query_event_id",
-    "_clear_selector_sync",
     "render_cfb_hub",
     "render_game_total_hub",
 ]
