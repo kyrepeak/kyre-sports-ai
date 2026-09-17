@@ -210,10 +210,15 @@ def _browser_verify_v163_selector(
             target, target_event, link_count = _switch_target(frame)
             href = str(target.get_attribute("href") or "")
             target_scope = str(target.get_attribute("target") or "")
-            if not href.startswith("?") or target_scope != "_self":
+            onclick = str(target.get_attribute("onclick") or "")
+            if (
+                not href.startswith("?")
+                or target_scope != "_self"
+                or "window.parent.history.replaceState" not in onclick
+            ):
                 raise ProductionVerificationFailure(
-                    "V163 game link is not Streamlit query-sync safe: "
-                    f"href={href!r} target={target_scope!r}"
+                    "V163 game link is not wrapper-history query-sync safe: "
+                    f"href={href!r} target={target_scope!r} onclick={onclick!r}"
                 )
 
             target.click(timeout=30000)
