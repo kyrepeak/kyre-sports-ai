@@ -52,9 +52,9 @@ def _team_card(state: Mapping[str, Any], side: str) -> str:
     record = _clean(state.get("record")) or "—"
     source = _clean(state.get("data_source")) or "Completed-game evidence"
     form = _clean(state.get("recent_form")) or "—"
-    test_id = "gt155-away-team-card" if side == "away" else "gt155-home-team-card"
+    test_id_attr = 'data-testid="gt155-away-team-card"' if side == "away" else 'data-testid="gt155-home-team-card"'
     return f"""
-<div class="gt155-team-card" data-testid="{test_id}">
+<div class="gt155-team-card" {test_id_attr}>
   <div class="gt155-team-cardhead">
     <div class="gt155-team-name">{escape(team)}</div>
     <div class="gt155-team-record">{escape(record)}</div>
