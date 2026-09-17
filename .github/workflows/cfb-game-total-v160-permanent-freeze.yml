@@ -25,7 +25,7 @@ jobs:
       - name: Install focused dependencies
         run: |
           python -m pip install --disable-pip-version-check -q -r requirements.txt
-          python -m pip install --disable-pip-version-check -q pytest
+          python -m pip install --disable-pip-version-check -q pytest playwright
 
       - name: Freeze scope guard
         run: |
