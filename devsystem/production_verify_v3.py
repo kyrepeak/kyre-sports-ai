@@ -3,8 +3,8 @@
 Additive over frozen production_verify_v2. V3 preserves every existing Render,
 API, observability, safety, and CFB Over/Under production check, then drives the
 real deployed Streamlit app to College Football -> Game Total and requires the
-exact V160 production marker through Router V155. A healthy HTTP 200 is not
-sufficient when the visible deployed router/page is stale.
+exact Router V155 production heartbeat. A healthy HTTP 200 is not sufficient
+when the deployed router/page is stale.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ except ModuleNotFoundError:  # direct `python devsystem/production_verify_v3.py`
 
 FROZEN_VERIFIER = "devsystem.production_verify_v2"
 EXPECTED_ROUTER = "streamlit_memory_lazy_router_v155"
-GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB GAME TOTAL • CLEAN PAGE V160 ACTIVE"
+GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V160_PRODUCTION_ACTIVE"
 CFB_SPORT = "College Football"
 GAME_TOTAL_MARKET = "Game Total"
 ProductionVerificationFailure = base.ProductionVerificationFailure
@@ -36,7 +36,7 @@ def _assert_v152_heartbeat(body: str) -> str:
     if GAME_TOTAL_REQUIRED_HEARTBEAT not in str(body or ""):
         raise ProductionVerificationFailure(
             "stale Streamlit Game Total deployment: "
-            f"required heartbeat {GAME_TOTAL_REQUIRED_HEARTBEAT!r} was not visible"
+            f"required production heartbeat {GAME_TOTAL_REQUIRED_HEARTBEAT!r} was not present"
         )
     return GAME_TOTAL_REQUIRED_HEARTBEAT
 
