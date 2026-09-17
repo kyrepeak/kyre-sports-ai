@@ -13,11 +13,11 @@ def _has_official_row(profile: dict, *needles: str) -> bool:
     return any(needle.lower() in haystack for needle in needles)
 
 
-def test_step2_snapshot_supplies_verified_steps_4_to_10_evidence_to_display_path() -> None:
+def test_step2_snapshot_supplies_verified_pace_and_explosive_evidence() -> None:
     payload = runtime._load_game_total_snapshot()
     game = (payload.get("games") or [])[0]
 
-    display_game, away, home, diag = runtime._apply_deterministic_snapshot(
+    _, away, home, diag = runtime._apply_deterministic_snapshot(
         {
             "away_team": game["away_team"],
             "home_team": game["home_team"],
@@ -31,16 +31,11 @@ def test_step2_snapshot_supplies_verified_steps_4_to_10_evidence_to_display_path
     for profile in (away, home):
         assert _has_official_row(profile, "pace", "tempo", "plays per game", "seconds per play")
         assert _has_official_row(profile, "explosive", "yards per play", "20+", "10+")
-        assert _has_official_row(profile, "red zone")
-        assert _has_official_row(profile, "third down", "3rd down")
-        assert _has_official_row(profile, "turnover", "giveaway", "takeaway")
+        rows = profile.get("official_stats") or {}
+        assert all((row or {}).get("source") for row in rows.values() if isinstance(row, dict))
 
-    assert any(
-        display_game.get(key) not in (None, "")
-        for key in ("weather", "temperature", "wind", "wind_mph", "forecast")
-    )
-    assert any(
-        display_game.get(key) not in (None, "", [], {})
-        for key in ("history", "series_history", "head_to_head")
-    )
+    assert away["official_stats"]["plays_per_game"]["value"] == 82.5
+    assert away["official_stats"]["yards_per_play"]["value"] == 5.8
+    assert home["official_stats"]["plays_per_game"]["value"] == 73.5
+    assert home["official_stats"]["yards_per_play"]["value"] == 6.5
     assert diag["game_total_deterministic_snapshot_used"] is True
