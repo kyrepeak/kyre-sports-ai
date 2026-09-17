@@ -1,8 +1,8 @@
 """KYRE Streamlit Router V156 — CFB Game Total V161 activation.
 
 Additive over frozen Router V155. V156 advances only exact College Football ->
-Game Total from Clean Page V10 to V11. Every other certified route remains
-delegated through frozen V155 unchanged.
+Game Total from Clean Page V10 to the V161 V12 successor. Every other certified
+route remains delegated through frozen V155 unchanged.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v155"
 CFB_SPORT_LABEL = prior.CFB_SPORT_LABEL
 GAME_TOTAL_MARKET = prior.GAME_TOTAL_MARKET
-ACTIVE_PAGE = "cfb_game_total_clean_page_v11"
+ACTIVE_PAGE = "cfb_game_total_clean_page_v12"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
