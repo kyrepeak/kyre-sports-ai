@@ -51,7 +51,8 @@ _V163_CSS = r"""
 .gt163-game-link{display:flex;align-items:center;min-width:225px;max-width:310px;min-height:44px;padding:7px 11px;border:1px solid rgba(79,153,194,.34);border-radius:10px;background:#071824;color:#c7d8e6!important;text-decoration:none!important;font-size:10px;font-weight:900;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;scroll-snap-align:start;box-sizing:border-box}
 .gt163-game-link:hover{border-color:rgba(102,185,255,.70);background:#0a2130;color:#f6fbff!important}.gt163-game-link.selected{border-color:rgba(69,240,173,.72);background:linear-gradient(145deg,rgba(19,105,76,.70),rgba(7,35,40,.95));color:#f7fbff!important;box-shadow:0 0 14px rgba(69,240,173,.12)}
 .gt163-game-disabled{display:flex;align-items:center;min-width:225px;min-height:44px;padding:7px 11px;border:1px solid rgba(244,206,99,.28);border-radius:10px;background:rgba(84,63,16,.14);color:#bcae80;font-size:10px;font-weight:850;box-sizing:border-box}
-[data-testid="stRadio"] [role="radiogroup"]{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:8px;padding-bottom:4px;scrollbar-width:thin}[data-testid="stRadio"] [role="radiogroup"] label{min-width:max-content}\n.gt163-identity{display:none!important}
+[data-testid="stRadio"] [role="radiogroup"]{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:8px;padding-bottom:4px;scrollbar-width:thin}[data-testid="stRadio"] [role="radiogroup"] label{min-width:max-content}
+.gt163-identity{display:none!important}
 @media(max-width:760px){.gt163-game-wrap{padding:7px 7px 7px;margin-bottom:9px}.gt163-game-title span{display:none}.gt163-game-link,.gt163-game-disabled{min-width:205px;min-height:40px;padding:6px 9px;font-size:9px;border-radius:8px}}
 </style>
 """
