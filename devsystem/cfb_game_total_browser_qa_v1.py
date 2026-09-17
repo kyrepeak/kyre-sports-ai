@@ -1,9 +1,8 @@
 """Real-browser QA for the active CFB Game Total V160 route.
 
-This is deliberately separate from the frozen O/U V38 browser contract. It
-proves the user-visible selector routes College Football -> Game Total to the
-V160 visual-parity page itself, survives a real browser refresh, and never
-silently falls back to Over/Under through stale query persistence.
+This cert reproduces the real iPad path: choose College Football -> Game Total,
+verify the exact Game Total query state, hard-refresh, and prove the direct
+Monster surface remains active without falling back to the legacy O/U shell.
 """
 from __future__ import annotations
 
@@ -23,18 +22,22 @@ ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
 REQUIRED_VISIBLE = (
     "CFB GAME TOTAL • CLEAN PAGE V160 ACTIVE",
+    "MONSTER",
     "GAME TOTAL ANALYSIS",
+    "5M CERTIFIED",
     "TEAM EVIDENCE",
     "GAME TOTAL EVIDENCE • STEPS 1–12",
     "FINAL MODEL SUMMARY",
     "TOP-5 SLATE SCANNER",
-    "CFB Game Total slate date",
 )
 FULL_RENDER_MARKER = "TOP-5 SLATE SCANNER"
 FORBIDDEN_VISIBLE = (
     "College Football Game Total — Final",
     ".gt160-masthead{max-width:",
     "CFB OVER / UNDER • MONSTER DASHBOARD",
+    "KYRE SPORTS AI",
+    "🏟️ Sport",
+    "🎯 CFB Market",
 )
 
 
@@ -87,7 +90,6 @@ def run(
             headless=True,
             args=["--disable-dev-shm-usage", "--no-sandbox"],
         )
-        # Match the real iPad/tablet capture used for visual acceptance.
         page = browser.new_page(viewport={"width": 1067, "height": 1536})
         try:
             page.goto(
@@ -103,7 +105,6 @@ def run(
                 )
 
             base._choose(page, frame, 0, CFB_SPORT)
-
             cfb_market_combo = frame.get_by_role(
                 "combobox",
                 name=CFB_MARKET_LABEL,
@@ -120,8 +121,8 @@ def run(
             _assert_visible_contract(body)
             query_after_selection = _assert_game_total_query(page)
 
-            # Reproduce the user's real iPad refresh path. Game Total must remain
-            # Game Total after a full browser reload; it must never revive O/U.
+            # Reproduce the user's actual refresh path. The direct target page
+            # intentionally has no generic sport/market selectors after reload.
             page.reload(wait_until="domcontentloaded", timeout=120000)
             frame_after_reload, reload_scans = base._find_app_frame(page)
             body_after_reload = base._wait_for_text(
@@ -131,18 +132,6 @@ def run(
             )
             _assert_visible_contract(body_after_reload)
             query_after_reload = _assert_game_total_query(page)
-
-            reloaded_market = frame_after_reload.get_by_role(
-                "combobox",
-                name=CFB_MARKET_LABEL,
-                exact=True,
-            )
-            reloaded_market.wait_for(state="visible", timeout=45000)
-            if reloaded_market.input_value() != GAME_TOTAL_MARKET:
-                raise GameTotalBrowserQAFailure(
-                    "Game Total selector did not survive reload: "
-                    f"{reloaded_market.input_value()!r}"
-                )
 
             screenshot = artifacts / "cfb_game_total_v160_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
