@@ -210,15 +210,15 @@ def _browser_verify_v163_selector(
             target, target_event, link_count = _switch_target(frame)
             href = str(target.get_attribute("href") or "")
             target_scope = str(target.get_attribute("target") or "")
-            onclick = str(target.get_attribute("onclick") or "")
+            bridge = frame.locator('[data-testid="gt163-wrapper-history-bridge"]')
             if (
                 not href.startswith("?")
                 or target_scope != "_self"
-                or "window.parent.history.replaceState" not in onclick
+                or bridge.count() != 1
             ):
                 raise ProductionVerificationFailure(
                     "V163 game link is not wrapper-history query-sync safe: "
-                    f"href={href!r} target={target_scope!r} onclick={onclick!r}"
+                    f"href={href!r} target={target_scope!r} bridge_count={bridge.count()}"
                 )
 
             target.click(timeout=30000)
