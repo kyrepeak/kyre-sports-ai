@@ -30,6 +30,8 @@ def test_v163_game_links_use_streamlit_query_sync():
     assert 'return "?" + urlencode(params)' in source
     assert 'target="_self"' in source
     assert 'target="_top"' not in source
+    assert 'SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"' in source
+    assert 'del st.query_params[SELECTOR_SYNC_QUERY_KEY]' in source
 
 
 def test_v5_proves_switch_and_hard_refresh_persistence_without_weakening_gate():
