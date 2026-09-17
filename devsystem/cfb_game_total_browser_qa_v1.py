@@ -29,6 +29,7 @@ REQUIRED_VISIBLE = (
 FULL_RENDER_MARKER = "TOP-5 SLATE SCANNER"
 FORBIDDEN_VISIBLE = (
     "College Football Game Total — Final",
+    ".gt160-masthead{max-width:",
 )
 
 
@@ -98,7 +99,7 @@ def run(
             stale = [text for text in FORBIDDEN_VISIBLE if text in body]
             if stale:
                 raise GameTotalBrowserQAFailure(
-                    "Legacy Game Total page is still visible: " + " | ".join(stale)
+                    "Forbidden Game Total content is visible: " + " | ".join(stale)
                 )
 
             forbidden_error = base._body_has_forbidden_error(body)
