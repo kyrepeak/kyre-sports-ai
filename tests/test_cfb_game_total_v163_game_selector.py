@@ -40,6 +40,9 @@ def test_v163_game_links_preserve_date_route_and_exact_event_identity():
     assert "EVENT_QUERY_KEY" in source
     assert 'return "?" + urlencode(params)' in source
     assert 'target="_self"' in source
+    assert 'SELECTOR_SYNC_QUERY_KEY = "ks_cfb_game_total_selector_sync"' in source
+    assert 'SELECTOR_SYNC_QUERY_KEY: event_id' in source
+    assert 'del st.query_params[SELECTOR_SYNC_QUERY_KEY]' in source
 
 
 def test_v163_router_activates_fresh_page_successor_and_preserves_frozen_heartbeats():
