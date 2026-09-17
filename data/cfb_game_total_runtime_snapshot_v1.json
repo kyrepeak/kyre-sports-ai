@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-17T02:23:00Z",
+  "generated_at": "2026-09-17T02:25:00Z",
   "purpose": "Game-Total-only deterministic production fallback when deployed Streamlit cannot complete live reconciliation. This file does not feed frozen Step 11/12 model math.",
   "games": [
     {
@@ -11,6 +11,13 @@
       "broadcast": "ESPN",
       "status": "Scheduled",
       "espn_week": 3,
+      "weather": "Slight chance of showers and thunderstorms near kickoff; humid",
+      "temperature": 77,
+      "wind": "NW 6 mph",
+      "wind_mph": 6,
+      "forecast": "Nearest NWS hourly point before 7:30 PM kickoff: 7 PM EDT, 77 F, NW wind 6 mph, 20% precipitation potential",
+      "environment_source": "National Weather Service Pittsburgh digital forecast for Pittsburgh PA",
+      "forecast_updated_at": "2026-09-16T19:21:00-04:00",
       "away": {
         "team_id": "183",
         "record_text": "1-1",
@@ -32,51 +39,14 @@
         "conference": "ACC",
         "data_source": "Syracuse Athletics verified 2026 schedule/results + team cumulative statistics + ESPN exact team identity",
         "official_stats": {
-          "plays_per_game": {
-            "label": "Plays Per Game (Pace)",
-            "value": 82.5,
-            "display_value": "82.5",
-            "source": "Syracuse University Athletics 2026 cumulative team statistics",
-            "derivation": "165 total offensive plays / 2 completed games"
-          },
-          "yards_per_play": {
-            "label": "Yards Per Play",
-            "value": 5.8,
-            "display_value": "5.8",
-            "source": "Syracuse University Athletics 2026 cumulative team statistics"
-          },
-          "red_zone": {
-            "label": "Red Zone Attempts-Scores",
-            "value": "11-14",
-            "display_value": "11-14",
-            "source": "Syracuse University Athletics 2026 cumulative team statistics"
-          },
-          "third_down": {
-            "label": "Third Down Conversions",
-            "value": 0.51724,
-            "display_value": "15-29 (51.724%)",
-            "source": "Syracuse University Athletics 2026 cumulative team statistics"
-          }
+          "plays_per_game": {"label": "Plays Per Game (Pace)", "value": 82.5, "display_value": "82.5", "source": "Syracuse University Athletics 2026 cumulative team statistics", "derivation": "165 total offensive plays / 2 completed games"},
+          "yards_per_play": {"label": "Yards Per Play", "value": 5.8, "display_value": "5.8", "source": "Syracuse University Athletics 2026 cumulative team statistics"},
+          "red_zone": {"label": "Red Zone Attempts-Scores", "value": "11-14", "display_value": "11-14", "source": "Syracuse University Athletics 2026 cumulative team statistics"},
+          "third_down": {"label": "Third Down Conversions", "value": 0.51724, "display_value": "15-29 (51.724%)", "source": "Syracuse University Athletics 2026 cumulative team statistics"}
         },
         "completed_games": [
-          {
-            "date": "2026-09-05",
-            "location": "home",
-            "points_for": 66.0,
-            "points_against": 3.0,
-            "result": "W",
-            "score": "66-3",
-            "opponent": "New Hampshire Wildcats"
-          },
-          {
-            "date": "2026-09-12",
-            "location": "home",
-            "points_for": 18.0,
-            "points_against": 21.0,
-            "result": "L",
-            "score": "18-21",
-            "opponent": "California Golden Bears"
-          }
+          {"date": "2026-09-05", "location": "home", "points_for": 66.0, "points_against": 3.0, "result": "W", "score": "66-3", "opponent": "New Hampshire Wildcats"},
+          {"date": "2026-09-12", "location": "home", "points_for": 18.0, "points_against": 21.0, "result": "L", "score": "18-21", "opponent": "California Golden Bears"}
         ]
       },
       "home": {
@@ -98,56 +68,20 @@
         "conference": "ACC",
         "data_source": "Pitt Athletics verified 2026 schedule/results + team cumulative statistics + ESPN exact team identity",
         "official_stats": {
-          "plays_per_game": {
-            "label": "Plays Per Game (Pace)",
-            "value": 73.5,
-            "display_value": "73.5",
-            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics",
-            "derivation": "147 total offensive plays / 2 completed games"
-          },
-          "yards_per_play": {
-            "label": "Yards Per Play",
-            "value": 6.5,
-            "display_value": "6.5",
-            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"
-          },
-          "red_zone": {
-            "label": "Red Zone Attempts-Scores",
-            "value": "5-6",
-            "display_value": "5-6",
-            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"
-          },
-          "third_down": {
-            "label": "Third Down Conversions",
-            "value": 0.41379,
-            "display_value": "12-29 (41.379%)",
-            "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"
-          }
+          "plays_per_game": {"label": "Plays Per Game (Pace)", "value": 73.5, "display_value": "73.5", "source": "University of Pittsburgh Athletics 2026 cumulative team statistics", "derivation": "147 total offensive plays / 2 completed games"},
+          "yards_per_play": {"label": "Yards Per Play", "value": 6.5, "display_value": "6.5", "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"},
+          "red_zone": {"label": "Red Zone Attempts-Scores", "value": "5-6", "display_value": "5-6", "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"},
+          "third_down": {"label": "Third Down Conversions", "value": 0.41379, "display_value": "12-29 (41.379%)", "source": "University of Pittsburgh Athletics 2026 cumulative team statistics"}
         },
         "completed_games": [
-          {
-            "date": "2026-09-05",
-            "location": "home",
-            "points_for": 59.0,
-            "points_against": 14.0,
-            "result": "W",
-            "score": "59-14",
-            "opponent": "Miami (OH)"
-          },
-          {
-            "date": "2026-09-12",
-            "location": "home",
-            "points_for": 12.0,
-            "points_against": 7.0,
-            "result": "W",
-            "score": "12-7",
-            "opponent": "UCF"
-          }
+          {"date": "2026-09-05", "location": "home", "points_for": 59.0, "points_against": 14.0, "result": "W", "score": "59-14", "opponent": "Miami (OH)"},
+          {"date": "2026-09-12", "location": "home", "points_for": 12.0, "points_against": 7.0, "result": "W", "score": "12-7", "opponent": "UCF"}
         ]
       },
       "sources": [
         "Syracuse University Athletics 2026 football schedule/results and cumulative statistics",
         "University of Pittsburgh Athletics 2026 football schedule/results and cumulative statistics",
+        "National Weather Service Pittsburgh forecast",
         "ESPN exact team identity/logo IDs"
       ]
     }
