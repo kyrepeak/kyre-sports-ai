@@ -14,7 +14,7 @@ def test_v161_browser_cert_targets_real_ipad_surface():
     assert '"width": 1067' in source
     assert '"height": 1536' in source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"' in source
-    assert 'DATE_QUERY_KEY = "cfb_game_total_date_v161"' in source
+    assert 'DATE_QUERY_KEY = "ks_cfb_game_total_date"' in source
 
 
 def test_v161_browser_cert_proves_day_navigation_and_reload_persistence():
