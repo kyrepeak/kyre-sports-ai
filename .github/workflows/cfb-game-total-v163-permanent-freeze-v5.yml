@@ -8,6 +8,12 @@ on:
       - ".github/workflows/cfb-game-total-v163-permanent-freeze-v5.yml"
       - "cfb_game_total_v163_freeze_manifest_v5.json"
       - "devsystem/task_ledgers/cfb-game-total-v163-permanent-freeze-v5.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cfb-game-total-v163-permanent-freeze-v5.yml"
+      - "cfb_game_total_v163_freeze_manifest_v5.json"
+      - "devsystem/task_ledgers/cfb-game-total-v163-permanent-freeze-v5.json"
 
 permissions:
   contents: read
@@ -137,3 +143,7 @@ jobs:
 
       - name: Certification marker
         run: echo "CFB_GAME_TOTAL_V163_V5_SUPERSEDING_PERMANENT_FREEZE_GREEN"
+
+      - name: Final protected-main proof marker
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: echo "CFB_GAME_TOTAL_V163_V5_PROTECTED_MAIN_FINAL_GREEN"
