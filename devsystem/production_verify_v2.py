@@ -2,10 +2,9 @@
 
 Additive over frozen production_verify_v1. V2 preserves V1's Render API,
 identity, observability, safety, and HTTP checks. For the CFB Over/Under browser
-proof it reuses the certified V39 browser navigation/readiness primitives but
-intentionally skips the branch-local sport-option inventory interaction, which
-is not required for production route certification and is unreliable across a
-remote Streamlit dropdown portal.
+proof it reuses the certified V39 readiness primitives and enters the exact
+V154/V77 fast route directly, avoiding the transient default CFB Moneyline
+render whose cfb_* purge/re-import graph can race before Over/Under is selected.
 """
 from __future__ import annotations
 
@@ -53,7 +52,7 @@ def _browser_verify_v39(
         page = browser.new_page(viewport={"width": 1440, "height": 1400})
         try:
             page.goto(
-                streamlit_url.rstrip("/") + "/",
+                certified_browser._cfb_over_under_url(streamlit_url),
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
@@ -79,28 +78,12 @@ def _browser_verify_v39(
                 except Exception:
                     initial_sport_value = ""
 
-            # Production needs the certified route, not a complete dropdown
-            # inventory. Type-select the exact sport and wait for the CFB-only
-            # market selector to prove the Streamlit rerun completed.
-            certified_browser._choose(
-                page,
-                frame,
-                0,
-                certified_browser.CFB_SPORT,
-            )
             cfb_market_combo = frame.get_by_role(
                 "combobox",
                 name=certified_browser.CFB_MARKET_LABEL,
                 exact=True,
             )
             cfb_market_combo.wait_for(state="visible", timeout=45000)
-
-            certified_browser._choose(
-                page,
-                frame,
-                1,
-                certified_browser.CFB_MARKET,
-            )
 
             # The V39 ACTIVE caption can appear before lower evidence cards.
             # Waiting for the final marker proves the full dashboard is ready.
