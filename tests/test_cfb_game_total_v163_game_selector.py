@@ -39,6 +39,7 @@ def test_v163_game_links_preserve_date_route_exact_event_and_top_level_navigatio
     assert "ROUTE_QUERY_MARKET" in source
     assert "EVENT_QUERY_KEY" in source
     assert "urlencode" in source
+    assert 'return "/?" + urlencode(params)' in source
     assert 'target="_top"' in source
     assert 'target="_self"' not in source
 
