@@ -299,3 +299,70 @@ def test_v164_per_team_hook_uses_certified_selector_ids_before_network_fallback(
     assert home["team_id"] == "48"
     assert away["logo"].endswith("/324.png")
     assert home["logo"].endswith("/48.png")
+
+
+def test_v164_blank_ncaa_event_placeholder_uses_exact_query_event_for_logos(monkeypatch):
+    """Regression: NCAA creates espn_event_id='' before optional ESPN enrichment."""
+    monkeypatch.setattr(
+        page_v164.prior_v163,
+        "_query_event_id",
+        lambda: "401869940",
+    )
+    monkeypatch.setattr(
+        page_v164,
+        "_selector_payload_for_day",
+        lambda selected_day: {
+            "games": [
+                {
+                    "event_id": "401869940",
+                    "away_team_id": "324",
+                    "home_team_id": "48",
+                    "identity_verified": True,
+                }
+            ],
+            "synthetic_ids": False,
+            "projection_weight": 0.0,
+            "may_modify_projection": False,
+        },
+    )
+    monkeypatch.setattr(
+        logo_identity,
+        "_api_rows",
+        lambda _day: (_ for _ in ()).throw(
+            AssertionError("selector IDs should resolve before secondary API fallback")
+        ),
+    )
+    monkeypatch.setattr(
+        logo_identity,
+        "_espn_rows",
+        lambda _day: (_ for _ in ()).throw(
+            AssertionError("direct ESPN fallback should not run")
+        ),
+    )
+
+    game = {
+        "game_id": "NCAA-PLACEHOLDER-ID",
+        "espn_event_id": "",
+        "game_date": "2026-09-19",
+        "away_team": "Coastal Carolina",
+        "home_team": "Delaware",
+    }
+    away = page_v164._team_identity_v164(
+        game,
+        {"team": "Coastal Carolina", "conference": "Sun Belt"},
+        {},
+        "away",
+    )
+    home = page_v164._team_identity_v164(
+        game,
+        {"team": "Delaware", "conference": "CUSA"},
+        {},
+        "home",
+    )
+
+    assert away["exact_identity"] is True
+    assert home["exact_identity"] is True
+    assert away["team_id"] == "324"
+    assert home["team_id"] == "48"
+    assert away["logo"].endswith("/324.png")
+    assert home["logo"].endswith("/48.png")

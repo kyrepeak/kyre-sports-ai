@@ -26,7 +26,7 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V164 ACTIVE"
 LOGO_POLICY = "official ESPN event_id -> exact ESPN team IDs -> ESPN NCAA logo CDN"
-DEPLOYMENT_PROOF_MARKER = "CFB_GAME_TOTAL_V164_SELECTOR_ID_LOGO_PATCH_ACTIVE"
+DEPLOYMENT_PROOF_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"
 
 _FROZEN_RESOLVE_VISUALS = frozen_logo.resolve_visuals
 _FROZEN_TEAM_IDENTITY = identity_owner._team_identity
@@ -101,8 +101,11 @@ def _team_identity_v164(
     enriched = dict(game)
     event_id = logo_identity._event_id(enriched) or prior_v163._query_event_id()
     selected_day = logo_identity._game_date(enriched) or _query_selected_day()
-    if event_id:
-        enriched.setdefault("espn_event_id", event_id)
+    # NCAA schedule rows deliberately carry espn_event_id="" until ESPN
+    # enrichment succeeds. setdefault() cannot replace that blank placeholder,
+    # so explicitly fill the recovered exact query event before logo resolution.
+    if event_id and not logo_identity._event_id(enriched):
+        enriched["espn_event_id"] = event_id
     if selected_day:
         enriched.setdefault("game_date", selected_day)
 
