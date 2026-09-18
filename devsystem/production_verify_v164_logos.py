@@ -372,13 +372,80 @@ def _assert_step3_current_form(frame) -> dict:
             f"Step 3 missing required universal current-form content: {missing}"
         )
 
+    if "INSUFFICIENT SAMPLE" in live_text_upper:
+        raise ProductionVerificationV164Failure(
+            "Step 3 still exposes obsolete 'Insufficient sample' trend wording"
+        )
+
+    game_rows_by_side: dict[str, int] = {}
+    opponent_quality_values: dict[str, list[str]] = {}
+    for side_name, card in (("away", away), ("home", home)):
+        game_rows = card.locator(".gt168-table tbody tr")
+        game_count = game_rows.count()
+        game_rows_by_side[side_name] = game_count
+        if game_count < 1:
+            raise ProductionVerificationV164Failure(
+                f"Step 3 {side_name} card has no completed-game rows"
+            )
+        if "NO VERIFIED COMPLETED-GAME ROWS" in card.inner_text().upper():
+            raise ProductionVerificationV164Failure(
+                f"Step 3 {side_name} card rendered the empty completed-game fallback"
+            )
+
+        quality_rows = card.locator(".gt168-opp-row")
+        if quality_rows.count() != 5:
+            raise ProductionVerificationV164Failure(
+                f"Step 3 {side_name} Opponent Quality expected 5 rows; "
+                f"found {quality_rows.count()}"
+            )
+        values = [
+            str(quality_rows.nth(i).locator("b").inner_text() or "").strip()
+            for i in range(quality_rows.count())
+        ]
+        opponent_quality_values[side_name] = values
+
+    status_reasons = step.locator(
+        '[data-testid="gt168-step3-status-reason"]'
+    )
+    if state == "READY":
+        blank_values = {
+            side_name: [
+                value for value in values
+                if value.strip() in {"", "—", "-"}
+            ]
+            for side_name, values in opponent_quality_values.items()
+        }
+        if any(blank_values.values()):
+            raise ProductionVerificationV164Failure(
+                f"Step 3 READY contains blank Opponent Quality values: {blank_values}"
+            )
+        if status_reasons.count() != 0:
+            raise ProductionVerificationV164Failure(
+                "Step 3 READY must not render a CHECK/DATA LIMITED reason"
+            )
+    else:
+        if status_reasons.count() < 1:
+            raise ProductionVerificationV164Failure(
+                "Step 3 CHECK must explain why opponent-quality evidence is incomplete"
+            )
+        reason_text = " ".join(
+            status_reasons.nth(i).inner_text()
+            for i in range(status_reasons.count())
+        ).upper()
+        if "COVERAGE" not in reason_text and "STILL CHECKING" not in reason_text:
+            raise ProductionVerificationV164Failure(
+                f"Step 3 CHECK reason is not explicit enough: {reason_text!r}"
+            )
+
     logos = _assert_exact_pair(frame, "img.gt168-logo", "Step 3 current form")
     return {
         "status": state,
         "text": text,
         "logos": logos,
-        "game_rows": step.locator(".gt168-table tbody tr").count(),
+        "game_rows_by_side": game_rows_by_side,
+        "opponent_quality_values": opponent_quality_values,
         "opponent_quality_rows": step.locator(".gt168-opp-row").count(),
+        "status_reason_rows": status_reasons.count(),
         "takeaway_rows": takeaways.locator("div").count(),
     }
 
