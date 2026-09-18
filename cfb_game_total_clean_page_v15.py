@@ -80,6 +80,45 @@ def _resolve_visuals_v164(game: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     )
 
 
+def _query_selected_day() -> str:
+    try:
+        raw = st.query_params.get(prior_v163.DATE_QUERY_KEY)
+    except Exception:
+        return ""
+    if isinstance(raw, (list, tuple)):
+        raw = raw[-1] if raw else ""
+    return str(raw or "")[:10]
+
+
+def _identity_with_v164_logos(
+    identity: Mapping[str, Any],
+    display_game: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Force exact logo identity onto the visible header/evidence identity object."""
+    game = dict(display_game)
+    requested_day = logo_identity._game_date(game) or _query_selected_day()
+    if requested_day and not logo_identity._game_date(game):
+        game["game_date"] = requested_day
+
+    payload = _selector_payload_for_day(requested_day) if requested_day else {}
+    enriched_game = logo_identity.enrich_exact_team_ids(game, payload)
+    visuals = _FROZEN_RESOLVE_VISUALS(enriched_game)
+
+    enriched_identity = dict(identity)
+    for side in ("away", "home"):
+        side_identity = dict(enriched_identity.get(side) or {})
+        visual = visuals.get(side) if isinstance(visuals.get(side), Mapping) else {}
+        if visual.get("exact_identity") is True:
+            team_id = str(visual.get("team_id") or "").strip()
+            logo = str(visual.get("logo") or "").strip()
+            if team_id.isdigit() and logo:
+                side_identity["team_id"] = team_id
+                side_identity["logo"] = logo
+                side_identity["exact_identity"] = True
+        enriched_identity[side] = side_identity
+    return enriched_identity
+
+
 def _render_v164_identity() -> None:
     st.markdown(
         '<div data-testid="cfb-game-total-v164-active" '
@@ -93,13 +132,25 @@ def _render_v164_identity() -> None:
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
     original_resolver = frozen_logo.resolve_visuals
     original_reconcile = runtime_display.reconcile_display_bundle
+    target_owner = prior_v163.v161.prior_v160
+    original_target_matchup = target_owner._target_matchup_header_html
+
+    def target_matchup_wrapper(identity, away, home, display_game):
+        enriched_identity = _identity_with_v164_logos(identity, display_game)
+        if isinstance(identity, dict):
+            identity.clear()
+            identity.update(enriched_identity)
+        return original_target_matchup(enriched_identity, away, home, display_game)
+
     frozen_logo.resolve_visuals = _resolve_visuals_v164
     runtime_display.reconcile_display_bundle = _reconcile_display_bundle_v164
+    target_owner._target_matchup_header_html = target_matchup_wrapper
     try:
         result = prior_v163.render_game_total_hub(section_header, status_info, team_logo, h)
         _render_v164_identity()
         return result
     finally:
+        target_owner._target_matchup_header_html = original_target_matchup
         runtime_display.reconcile_display_bundle = original_reconcile
         frozen_logo.resolve_visuals = original_resolver
 
@@ -119,6 +170,8 @@ __all__ = [
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_reconcile_display_bundle_v164",
+    "_identity_with_v164_logos",
+    "_query_selected_day",
     "_resolve_visuals_v164",
     "_selector_payload_for_day",
     "_selector_payload_for_game",
