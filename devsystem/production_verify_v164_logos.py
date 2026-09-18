@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import time
 from urllib.parse import urlencode
 
 from playwright.sync_api import sync_playwright
@@ -24,10 +25,32 @@ HOME_TEAM = "Delaware"
 AWAY_TEAM_ID = "324"
 HOME_TEAM_ID = "48"
 REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
+REQUIRED_REVISION = "CFB_GAME_TOTAL_V164_SELECTOR_IDS_R2"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
     pass
+
+
+def _wait_for_v164_revision(page, timeout_seconds: float = 180.0):
+    """Reload until Streamlit Cloud serves this exact V164 logo revision."""
+    deadline = time.monotonic() + timeout_seconds
+    last_scans = []
+    while time.monotonic() < deadline:
+        try:
+            frame, body, scans = v163._find_v163_frame(page, timeout_seconds=20.0)
+            last_scans = scans
+            if REQUIRED_REVISION in body:
+                return frame, body, scans
+        except Exception:
+            pass
+        page.wait_for_timeout(3000)
+        page.reload(wait_until="domcontentloaded", timeout=120000)
+    raise ProductionVerificationV164Failure(
+        "latest V164 logo revision did not reach Streamlit Cloud before timeout: "
+        f"required={REQUIRED_REVISION!r} url={page.url!r} scans="
+        + json.dumps(last_scans, ensure_ascii=False)
+    )
 
 
 def _image_state(locator) -> dict:
@@ -119,6 +142,7 @@ def verify_live_v164(
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
+            frame, body, scans = _wait_for_v164_revision(page)
             frame, body, scans = v163._wait_for_top_level_selection(
                 page,
                 CERT_EVENT_ID,
@@ -126,6 +150,10 @@ def verify_live_v164(
             if REQUIRED_HEARTBEAT not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing V164 production heartbeat: {REQUIRED_HEARTBEAT}"
+                )
+            if REQUIRED_REVISION not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing V164 logo revision: {REQUIRED_REVISION}"
                 )
             if AWAY_TEAM not in body or HOME_TEAM not in body:
                 raise ProductionVerificationV164Failure(

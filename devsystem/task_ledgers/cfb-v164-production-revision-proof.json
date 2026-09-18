@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "cfb-v164-production-revision-proof",
+  "status": "DONE",
+  "scope": "Add an exact V164 logo revision marker and require the production logo verifier to reload until Streamlit Cloud serves that revision before checking exact team logo images.",
+  "trigger": "V164 production logo verification #8 and its single freshness-gated rerun both hit zero logo images while local V164 browser certification was green, proving the production verifier could race a stale V164 deployment that shared the same generic heartbeat.",
+  "guardrails": {
+    "active_logo_logic_changed": false,
+    "frozen_v163_edited_in_place": false,
+    "production_gate_weakened": false,
+    "exact_revision_required": true,
+    "actual_image_load_still_required": true,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
