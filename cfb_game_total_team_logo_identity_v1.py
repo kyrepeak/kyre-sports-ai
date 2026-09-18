@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from functools import lru_cache
+import os
 from typing import Any, Mapping
 from zoneinfo import ZoneInfo
 
@@ -20,6 +21,9 @@ ESPN_SCOREBOARD_URL = (
 ESPN_GROUPS = (80, 81)
 ESPN_LOGO_CDN_TEMPLATE = "https://a.espncdn.com/i/teamlogos/ncaa/500/{team_id}.png"
 NETWORK_TIMEOUT_SECONDS = 6.0
+TEAM_IDENTITY_API_BASE_ENV = "KYRE_SPORTS_API_BASE_URL"
+TEAM_IDENTITY_API_BASE_DEFAULT = "https://kyre-sports-api.onrender.com"
+TEAM_IDENTITY_ENDPOINT = "/api/v1/cfb/identity/team-logos"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
@@ -95,6 +99,51 @@ def _rows_from_payload(payload: Mapping[str, Any], requested_day: str) -> list[d
 
 
 @lru_cache(maxsize=32)
+def _api_rows(requested_day: str) -> tuple[dict[str, str], ...]:
+    """Read exact team IDs from the Kyre Sports API's server-side ESPN resolver."""
+    base = _clean(os.environ.get(TEAM_IDENTITY_API_BASE_ENV)) or TEAM_IDENTITY_API_BASE_DEFAULT
+    try:
+        response = requests.get(
+            f"{base.rstrip('/')}{TEAM_IDENTITY_ENDPOINT}",
+            params={"game_date": requested_day},
+            headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-CFB-V164-Logos/1.0"},
+            timeout=NETWORK_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError, TypeError):
+        return ()
+
+    if not isinstance(payload, Mapping):
+        return ()
+    if payload.get("synthetic_ids") is not False:
+        return ()
+    if payload.get("may_modify_projection") is not False:
+        return ()
+    try:
+        if float(payload.get("projection_weight")) != 0.0:
+            return ()
+    except (TypeError, ValueError):
+        return ()
+
+    rows: list[dict[str, str]] = []
+    for raw in payload.get("games") or []:
+        if not isinstance(raw, Mapping) or raw.get("identity_verified") is not True:
+            continue
+        event_id = _clean(raw.get("event_id"))
+        away_id = _clean(raw.get("away_team_id"))
+        home_id = _clean(raw.get("home_team_id"))
+        if not event_id or not away_id.isdigit() or not home_id.isdigit():
+            continue
+        rows.append({
+            "event_id": event_id,
+            "away_team_id": away_id,
+            "home_team_id": home_id,
+        })
+    return tuple(rows)
+
+
+@lru_cache(maxsize=32)
 def _espn_rows(requested_day: str) -> tuple[dict[str, str], ...]:
     combined: dict[str, dict[str, str]] = {}
     for group_id in ESPN_GROUPS:
@@ -148,8 +197,11 @@ def enrich_exact_team_ids(
     if row is None:
         requested_day = _game_date(game)
         if requested_day:
-            exact = [candidate for candidate in _espn_rows(requested_day) if candidate["event_id"] == event_id]
+            exact = [candidate for candidate in _api_rows(requested_day) if candidate["event_id"] == event_id]
             row = exact[0] if len(exact) == 1 else None
+            if row is None:
+                exact = [candidate for candidate in _espn_rows(requested_day) if candidate["event_id"] == event_id]
+                row = exact[0] if len(exact) == 1 else None
     if row is None:
         return enriched
 
@@ -176,6 +228,7 @@ def resolve_visuals(
 
 
 def clear_cache() -> None:
+    _api_rows.cache_clear()
     _espn_rows.cache_clear()
 
 
@@ -183,6 +236,7 @@ __all__ = [
     "ESPN_GROUPS",
     "ESPN_LOGO_CDN_TEMPLATE",
     "ESPN_SCOREBOARD_URL",
+    "TEAM_IDENTITY_ENDPOINT",
     "MAY_MODIFY_PROJECTION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "clear_cache",

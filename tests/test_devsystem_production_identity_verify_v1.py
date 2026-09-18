@@ -20,7 +20,7 @@ def test_identity_target_is_pinned_to_certified_render_release():
 
     assert render["service_id"] == "srv-da84q6ifngtc73bdbm6g"
     assert render["source_branch"] == "mlb-step17b-shared-host-cert"
-    assert render["certified_commit"] == "6f65c868c7b92e8813280462c6679a98df24ff00"
+    assert render["certified_commit"] == "ecbcab44020e51f9237ccfeafc85eaaf688ffcee"
     assert render["auto_deploy"] is False
 
 
