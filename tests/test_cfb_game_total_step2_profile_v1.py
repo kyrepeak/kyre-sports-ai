@@ -289,8 +289,15 @@ def test_step2_drive_enrichment_fills_only_missing_metrics(monkeypatch):
     }
     monkeypatch.setattr(
         step2_drive,
-        "_fetch_ppd_table",
-        lambda season, stat: tables[stat],
+        "_load_drive_snapshot",
+        lambda season: {
+            "version": 1,
+            "season": season,
+            "generated_at": "2026-09-18T21:00:00Z",
+            "offense": tables["offense"],
+            "defense": tables["defense"],
+            "_snapshot_source": "test-snapshot",
+        },
     )
     away, home, diag = step2_drive.enrich_step2_drive_metrics(
         {"team": "Coastal Carolina"},
@@ -313,8 +320,15 @@ def test_step2_drive_enrichment_preserves_existing_verified_metrics(monkeypatch)
     }
     monkeypatch.setattr(
         step2_drive,
-        "_fetch_ppd_table",
-        lambda season, stat: tables[stat],
+        "_load_drive_snapshot",
+        lambda season: {
+            "version": 1,
+            "season": season,
+            "generated_at": "2026-09-18T21:00:00Z",
+            "offense": tables["offense"],
+            "defense": tables["defense"],
+            "_snapshot_source": "test-snapshot",
+        },
     )
     away, home, diag = step2_drive.enrich_step2_drive_metrics(
         {
@@ -332,11 +346,18 @@ def test_step2_drive_enrichment_preserves_existing_verified_metrics(monkeypatch)
     assert diag["status"] == "READY"
 
 
-def test_step2_drive_enrichment_fails_closed_when_source_is_unavailable(monkeypatch):
-    def fail_fetch(season, stat):
-        raise RuntimeError("source unavailable")
-
-    monkeypatch.setattr(step2_drive, "_fetch_ppd_table", fail_fetch)
+def test_step2_drive_enrichment_fails_closed_when_snapshot_is_unavailable(monkeypatch):
+    monkeypatch.setattr(
+        step2_drive,
+        "_load_drive_snapshot",
+        lambda season: {
+            "version": 1,
+            "season": season,
+            "offense": {},
+            "defense": {},
+            "_snapshot_source": "unavailable",
+        },
+    )
     away_in = {"team": "Coastal Carolina"}
     home_in = {"team": "Delaware"}
     away, home, diag = step2_drive.enrich_step2_drive_metrics(
@@ -347,4 +368,24 @@ def test_step2_drive_enrichment_fails_closed_when_source_is_unavailable(monkeypa
     assert away == away_in
     assert home == home_in
     assert diag["status"] == "CHECK"
-    assert "source unavailable" in diag["error"]
+    assert diag["snapshot_source"] == "unavailable"
+
+
+def test_step2_drive_snapshot_validation_requires_full_current_season_tables():
+    payload = {
+        "version": 1,
+        "season": 2026,
+        "generated_at": "2026-09-18T21:00:00Z",
+        "offense": {f"Team {i}": float(i) / 10 for i in range(25)},
+        "defense": {f"Team {i}": float(i) / 20 for i in range(25)},
+    }
+    row = step2_drive._validated_snapshot(
+        payload,
+        2026,
+        source="test",
+    )
+    assert row is not None
+    assert row["_snapshot_source"] == "test"
+    assert len(row["offense"]) == 25
+    assert len(row["defense"]) == 25
+    assert step2_drive._validated_snapshot(payload, 2025, source="test") is None
