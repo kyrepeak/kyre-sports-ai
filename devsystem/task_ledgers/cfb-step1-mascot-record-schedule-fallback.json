@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-mascot-record-schedule-fallback",
+  "status": "DONE",
+  "scope": "Step 1 only: recover mascot, current record, and exact current FBS/FCS classification from the exact ESPN team schedule metadata when the event summary/team directory path is incomplete. No Steps 2-12 or model behavior changed.",
+  "root_cause": "Production V164 proof #14 showed Step 1 exact logos/identity and head coach were correct, but mascot and record were still missing; Delaware also inherited stale FCS classification. The exact event summary/directory path was incomplete in production.",
+  "guardrails": {
+    "step1_only": true,
+    "exact_team_id_only": true,
+    "schedule_fallback_only": true,
+    "fuzzy_team_matching_added": false,
+    "steps_2_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
