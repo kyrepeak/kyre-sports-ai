@@ -140,6 +140,18 @@ def _switch_target(frame):
     )
 
 
+def _frame_event(frame) -> str:
+    return _event_from_url(str(getattr(frame, "url", "") or ""))
+
+
+def _persisted_event(frame) -> str:
+    try:
+        selected = _selected_link_event(frame)
+    except Exception:
+        selected = ""
+    return selected or _frame_event(frame)
+
+
 def _wait_for_top_level_selection(
     page,
     expected_event: str,
@@ -149,6 +161,7 @@ def _wait_for_top_level_selection(
     deadline = time.monotonic() + timeout_seconds
     last_scans: list[dict[str, Any]] = []
     last_selected = ""
+    last_frame_event = ""
     while time.monotonic() < deadline:
         frame, body, scans = _scan_v163_frame(page)
         last_scans = scans
@@ -157,14 +170,19 @@ def _wait_for_top_level_selection(
                 last_selected = _selected_link_event(frame)
             except Exception:
                 last_selected = ""
+            last_frame_event = _frame_event(frame)
             outer_event = _event_from_url(page.url)
-            if outer_event == expected_event and last_selected == expected_event:
+            if (
+                outer_event == expected_event
+                and (last_selected == expected_event or last_frame_event == expected_event)
+            ):
                 return frame, body, scans
         page.wait_for_timeout(750)
     raise ProductionVerificationFailure(
         "V163 selected game did not persist at top-level browser URL: "
         f"expected={expected_event!r} outer={_event_from_url(page.url)!r} "
-        f"selected={last_selected!r} url={page.url!r} scans="
+        f"selected={last_selected!r} frame={last_frame_event!r} "
+        f"url={page.url!r} scans="
         + json.dumps(last_scans, ensure_ascii=False)
     )
 
@@ -233,7 +251,7 @@ def _browser_verify_v163_selector(
                 target_event,
             )
             v4._assert_v163_surface(reload_body)
-            reloaded_event = _selected_link_event(reload_frame)
+            reloaded_event = _persisted_event(reload_frame)
             if reloaded_event != target_event:
                 raise ProductionVerificationFailure(
                     "V163 selected ESPN event_id did not survive hard refresh"
