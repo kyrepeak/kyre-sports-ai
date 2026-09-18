@@ -249,9 +249,9 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     presentation_owner._target_team_evidence_html = target_evidence_v164
     compact_owner._step_evidence_html = step_evidence_v164
     st.markdown(step1_owner.STEP1_CSS + step2_owner.STEP2_CSS, unsafe_allow_html=True)
+    _render_v164_identity()
     try:
         result = prior_v163.render_game_total_hub(section_header, status_info, team_logo, h)
-        _render_v164_identity()
         st.markdown(step1_owner.STEP1_CSS + step2_owner.STEP2_CSS, unsafe_allow_html=True)
         return result
     finally:
