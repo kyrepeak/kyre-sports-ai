@@ -247,7 +247,7 @@ def _exact_team_id(
     return value if value.isdigit() else ""
 
 
-def _record_pct_from_text(value: Any) -> float | None:
+def _record_pct(value: Any) -> float | None:
     text = _clean(value)
     match = re.fullmatch(r"(\d+)-(\d+)(?:-(\d+))?", text)
     if not match:
@@ -261,185 +261,235 @@ def _record_pct_from_text(value: Any) -> float | None:
     return (wins + 0.5 * ties) / games
 
 
-def _competition_ranks(
-    values: Mapping[str, float],
-    *,
-    lower_is_better: bool,
-) -> dict[str, int]:
-    ordered = sorted(
-        ((str(key), float(value)) for key, value in values.items()),
-        key=lambda item: item[1],
-        reverse=not lower_is_better,
-    )
-    out: dict[str, int] = {}
-    previous: float | None = None
-    current_rank = 0
-    for index, (key, value) in enumerate(ordered, start=1):
-        if previous is None or abs(value - previous) > 1e-12:
-            current_rank = index
-            previous = value
-        out[key] = current_rank
-    return out
-
-
-def _snapshot_profiles(payload: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
-    profiles: dict[str, dict[str, Any]] = {}
-    for game_row in payload.get("games") or []:
-        if not isinstance(game_row, Mapping):
+def _snapshot_team_index(payload: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    index: dict[str, dict[str, Any]] = {}
+    for matchup in payload.get("games") or []:
+        if not isinstance(matchup, Mapping):
             continue
-        game_date = _clean(game_row.get("game_date"))
         for side in ("away", "home"):
-            profile = game_row.get(side) or {}
-            if not isinstance(profile, Mapping):
+            raw = matchup.get(side) or {}
+            if not isinstance(raw, Mapping):
                 continue
-            team_id = _clean(profile.get("team_id"))
+            team_id = _clean(raw.get("team_id"))
             if not team_id.isdigit():
                 continue
-            row = dict(profile)
-            row["_snapshot_game_date"] = game_date
-            row["_snapshot_team"] = _clean(game_row.get(f"{side}_team"))
-            previous = profiles.get(team_id)
-            row_games = len(row.get("completed_games") or [])
-            previous_games = len((previous or {}).get("completed_games") or [])
-            if (
-                previous is None
-                or row_games > previous_games
-                or (
-                    row_games == previous_games
-                    and game_date >= _clean(previous.get("_snapshot_game_date"))
-                )
-            ):
-                profiles[team_id] = row
-    return profiles
+            row = dict(raw)
+            row["team"] = _clean(matchup.get(f"{side}_team"))
+            current = index.get(team_id) or {}
+            if len(row.get("completed_games") or []) >= len(current.get("completed_games") or []):
+                index[team_id] = row
+    return index
 
 
-def _snapshot_match(
-    payload: Mapping[str, Any],
-    game: Mapping[str, Any],
-    away_id: str,
-    home_id: str,
-) -> dict[str, Any]:
-    games = [
-        row for row in (payload.get("games") or [])
-        if isinstance(row, Mapping)
-    ]
-    event_id = _clean(game.get("espn_event_id"))
-    if event_id:
-        matches = [
-            row for row in games
-            if _clean(row.get("event_id")) == event_id
-        ]
-        if len(matches) == 1:
-            return dict(matches[0])
+def _snapshot_rows(
+    snapshot: Mapping[str, Any],
+    side: str,
+    team_id: str,
+) -> list[dict[str, Any]]:
+    raw_side = snapshot.get(side) or {}
+    if not isinstance(raw_side, Mapping):
+        return []
+    snapshot_team_id = _clean(raw_side.get("team_id"))
+    if team_id and snapshot_team_id and snapshot_team_id != team_id:
+        return []
 
-    target_day = _clean(game.get("game_date"))[:10]
-    matches = []
-    for row in games:
-        row_away = row.get("away") or {}
-        row_home = row.get("home") or {}
-        if not isinstance(row_away, Mapping) or not isinstance(row_home, Mapping):
+    rows: list[dict[str, Any]] = []
+    for raw in raw_side.get("completed_games") or []:
+        if not isinstance(raw, Mapping):
             continue
-        if target_day and _clean(row.get("game_date"))[:10] != target_day:
-            continue
-        if (
-            _clean(row_away.get("team_id")) == away_id
-            and _clean(row_home.get("team_id")) == home_id
-        ):
-            matches.append(row)
-    return dict(matches[0]) if len(matches) == 1 else {}
+        row = dict(raw)
+        row["opponent_name"] = _clean(raw.get("opponent") or raw.get("opponent_name"))
+        rows.append(row)
+    return rows
 
 
-def _snapshot_quality_context(
-    game: Mapping[str, Any],
-    away_id: str,
-    home_id: str,
-) -> dict[str, Any]:
-    try:
-        payload = runtime_snapshot._load_v2_snapshot()
-    except Exception as exc:
-        return {
-            "away": {"rows": [], "strength_of_schedule_rank": None},
-            "home": {"rows": [], "strength_of_schedule_rank": None},
-            "source": "runtime_snapshot_v2_unavailable",
-            "error": f"{type(exc).__name__}: {exc}"[:260],
-        }
-
-    if not isinstance(payload, Mapping):
-        payload = {}
-    exact = _snapshot_match(payload, game, away_id, home_id)
-    if not exact:
-        return {
-            "away": {"rows": [], "strength_of_schedule_rank": None},
-            "home": {"rows": [], "strength_of_schedule_rank": None},
-            "source": _clean(payload.get("_runtime_snapshot_source")) or "runtime_snapshot_v2",
-            "generated_at": _clean(payload.get("generated_at")),
-            "reason": "exact_matchup_not_in_runtime_snapshot",
-        }
-
-    profiles = _snapshot_profiles(payload)
-    defense_values: dict[str, float] = {}
-    for team_id, profile in profiles.items():
-        allowed = _float(profile.get("points_allowed_pg"))
+def _snapshot_defense_ranks(
+    team_index: Mapping[str, Mapping[str, Any]],
+) -> dict[str, int]:
+    values: list[tuple[str, float]] = []
+    for team_id, team in team_index.items():
+        allowed = _float(team.get("points_allowed_pg"))
         if allowed is not None:
-            defense_values[team_id] = allowed
-    defense_ranks = _competition_ranks(
-        defense_values,
-        lower_is_better=True,
-    )
+            values.append((team_id, allowed))
+    values.sort(key=lambda item: (item[1], item[0]))
 
-    sos_values: dict[str, float] = {}
-    for team_id, profile in profiles.items():
+    ranks: dict[str, int] = {}
+    prior: float | None = None
+    rank = 0
+    for position, (team_id, allowed) in enumerate(values, start=1):
+        if prior is None or abs(allowed - prior) > 1e-9:
+            rank = position
+            prior = allowed
+        ranks[team_id] = rank
+    return ranks
+
+
+def _snapshot_sos_ranks(
+    team_index: Mapping[str, Mapping[str, Any]],
+) -> dict[str, int]:
+    scores: list[tuple[str, float]] = []
+    for team_id, team in team_index.items():
         pcts: list[float] = []
-        for completed in profile.get("completed_games") or []:
-            if not isinstance(completed, Mapping):
+        for game in team.get("completed_games") or []:
+            if not isinstance(game, Mapping):
                 continue
-            opponent_id = _clean(completed.get("opponent_id"))
-            opponent_profile = profiles.get(opponent_id) or {}
-            pct = _record_pct_from_text(opponent_profile.get("record_text"))
+            opponent = team_index.get(_clean(game.get("opponent_id"))) or {}
+            pct = _record_pct(opponent.get("record_text"))
             if pct is not None:
                 pcts.append(pct)
         if pcts:
-            sos_values[team_id] = float(fmean(pcts))
-    sos_ranks = _competition_ranks(
-        sos_values,
-        lower_is_better=False,
-    )
+            scores.append((team_id, float(fmean(pcts))))
 
-    out: dict[str, Any] = {
-        "source": _clean(payload.get("_runtime_snapshot_source")) or "runtime_snapshot_v2",
-        "generated_at": _clean(payload.get("generated_at")),
-        "away": {},
-        "home": {},
+    scores.sort(key=lambda item: (-item[1], item[0]))
+    ranks: dict[str, int] = {}
+    prior: float | None = None
+    rank = 0
+    for position, (team_id, score) in enumerate(scores, start=1):
+        if prior is None or abs(score - prior) > 1e-9:
+            rank = position
+            prior = score
+        ranks[team_id] = rank
+    return ranks
+
+
+def _rank_from_stat_item(item: Mapping[str, Any]) -> int | None:
+    headers = [str(value or "") for value in (item.get("headers") or [])]
+    row = [str(value or "") for value in (item.get("row") or [])]
+    if not row:
+        return None
+    rank_index = 0
+    for index, header in enumerate(headers):
+        if "rank" in header.lower():
+            rank_index = index
+            break
+    if rank_index >= len(row):
+        rank_index = 0
+    return _int(row[rank_index])
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _official_defense_ranks(opponent_names: tuple[str, ...]) -> dict[str, int]:
+    names = tuple(_clean(name) for name in opponent_names if _clean(name))
+    targets = {
+        ncaa_team_data._canonical_name(name): ncaa_team_data._team_keys(name)
+        for name in names
     }
-    for side, team_id in (("away", away_id), ("home", home_id)):
-        exact_profile = exact.get(side) or {}
-        if not isinstance(exact_profile, Mapping):
-            exact_profile = {}
-        rows: list[dict[str, Any]] = []
-        hydrated_records = 0
-        hydrated_defense = 0
-        for completed in exact_profile.get("completed_games") or []:
-            if not isinstance(completed, Mapping):
+    targets = {key: value for key, value in targets.items() if key}
+    if not targets:
+        return {}
+
+    out: dict[str, int] = {}
+    sources = (
+        (
+            ncaa_team_data.NCAA_STATS_INDEX,
+            ncaa_team_data._discover_stat_categories,
+        ),
+        (
+            ncaa_mixed.NCAA_FCS_STATS_INDEX,
+            ncaa_mixed._fcs_categories,
+        ),
+    )
+    for index_url, category_builder in sources:
+        try:
+            index_html, _ = ncaa_team_data._fetch_text_with_fallback(
+                index_url,
+                "NCAA scoring-defense category index for Step 3",
+            )
+            categories = category_builder(index_html)
+            cfg = categories.get("scoring_defense") or {}
+            if not cfg:
                 continue
-            row = dict(completed)
-            opponent_id = _clean(row.get("opponent_id"))
-            opponent_profile = profiles.get(opponent_id) or {}
-            opponent_pct = _record_pct_from_text(opponent_profile.get("record_text"))
-            opponent_def_rank = defense_ranks.get(opponent_id)
-            row["opponent_record_pct"] = opponent_pct
-            row["opponent_def_rank"] = opponent_def_rank
-            if opponent_pct is not None:
-                hydrated_records += 1
-            if opponent_def_rank is not None:
-                hydrated_defense += 1
-            rows.append(row)
-        out[side] = {
-            "rows": rows,
-            "strength_of_schedule_rank": sos_ranks.get(team_id),
-            "hydrated_opponent_records": hydrated_records,
-            "hydrated_opponent_defense_ranks": hydrated_defense,
-        }
+            _, found, _ = ncaa_team_data._fetch_stat_metric(
+                "scoring_defense",
+                cfg,
+                targets,
+            )
+            for key, item in found.items():
+                rank = _rank_from_stat_item(item)
+                if rank is not None and rank > 0:
+                    out.setdefault(key, rank)
+        except Exception:
+            continue
     return out
+
+
+def _unique_ledger_key(
+    name: str,
+    ledgers: Mapping[str, Any],
+    meta: Mapping[str, Mapping[str, Any]],
+) -> str:
+    target_keys = ncaa_team_data._team_keys(name)
+    exact = [key for key in ledgers if key in target_keys]
+    if len(exact) == 1:
+        return exact[0]
+
+    candidates: set[str] = set()
+    for key in ledgers:
+        for target in target_keys:
+            if min(len(key), len(target)) >= 5 and (key in target or target in key):
+                candidates.add(key)
+    for key, info in meta.items():
+        info_keys = ncaa_team_data._team_keys(
+            info.get("team"),
+            info.get("team_slug"),
+        )
+        if info_keys & target_keys:
+            candidates.add(key)
+            continue
+        for info_key in info_keys:
+            for target in target_keys:
+                if min(len(info_key), len(target)) >= 5 and (
+                    info_key in target or target in info_key
+                ):
+                    candidates.add(key)
+    return next(iter(candidates)) if len(candidates) == 1 else ""
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _ncaa_record_pcts(
+    opponent_names: tuple[str, ...],
+    day: str,
+) -> dict[str, float]:
+    names = tuple(_clean(name) for name in opponent_names if _clean(name))
+    if not names or not day:
+        return {}
+
+    try:
+        season = int(ncaa_schedule.frozen._season_year(day))
+    except Exception:
+        return {}
+
+    best: dict[str, tuple[int, float]] = {}
+    for division in (11, ncaa_schedule.NCAA_FCS_DIVISION):
+        try:
+            payload, _ = ncaa_schedule._fetch_ncaa_division_payload(
+                season,
+                division,
+            )
+            if not payload:
+                continue
+            ledgers, meta, _ = ncaa_team_data._season_games_from_payload(
+                payload,
+                day,
+            )
+        except Exception:
+            continue
+
+        for name in names:
+            canonical = ncaa_team_data._canonical_name(name)
+            key = _unique_ledger_key(name, ledgers, meta)
+            if not key:
+                continue
+            record = ncaa_team_data._record(ledgers.get(key) or [])
+            pct = ncaa_team_data._win_pct(record)
+            games = int(record.get("games") or 0)
+            if pct is None or games <= 0:
+                continue
+            previous = best.get(canonical)
+            if previous is None or games > previous[0]:
+                best[canonical] = (games, float(pct))
+
+    return {key: value[1] for key, value in best.items()}
 
 
 def _overlay_exact_rows(
@@ -454,6 +504,12 @@ def _overlay_exact_rows(
     for row in rows:
         pf = _float(row.get("points_for"))
         pa = _float(row.get("points_against"))
+        if pf is None or pa is None:
+            score_for, score_against = _parse_score(row.get("score"))
+            if pf is None:
+                pf = score_for
+            if pa is None:
+                pa = score_against
         if pf is None or pa is None:
             continue
         result = "W" if pf > pa else "L" if pf < pa else "T"
@@ -489,14 +545,6 @@ def _overlay_exact_rows(
         float(row["points_for"]) - float(row["points_against"])
         for row in recent
     ])
-    opp_pcts = [
-        float(row["opponent_record_pct"])
-        for row in completed
-        if row.get("opponent_record_pct") is not None
-    ]
-    out["sos_coverage"] = len(opp_pcts) / len(completed)
-    if opp_pcts:
-        out["sos_opponent_win_pct"] = _avg(opp_pcts)
     return out
 
 
@@ -506,7 +554,7 @@ def enrich_step3_inputs(
     home: Mapping[str, Any] | None,
     game: Mapping[str, Any] | None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Fill Step 3 form + opponent quality from the verified runtime snapshot."""
+    """Fill Step 3 from production-accessible snapshots + official NCAA context."""
     identity = identity or {}
     game = game or {}
     outputs: dict[str, dict[str, Any]] = {
@@ -515,29 +563,22 @@ def enrich_step3_inputs(
     }
     diag: dict[str, Any] = {"away": {}, "home": {}}
 
-    away_id = _exact_team_id(
-        (identity.get("away") or {}) if isinstance(identity, Mapping) else {},
-        outputs["away"],
-        game,
-        "away",
-    )
-    home_id = _exact_team_id(
-        (identity.get("home") or {}) if isinstance(identity, Mapping) else {},
-        outputs["home"],
-        game,
-        "home",
-    )
-    if not (away_id and home_id):
-        for side, team_id in (("away", away_id), ("home", home_id)):
-            diag[side] = {
-                "fallback_used": False,
-                "reason": "exact_team_id_unavailable",
-                "team_id": team_id,
-            }
-        return outputs["away"], outputs["home"], diag
+    day = _clean(game.get("game_date") or game.get("date"))[:10]
+    try:
+        snapshot_payload = runtime_snapshot._load_v2_snapshot()
+    except Exception:
+        snapshot_payload = {}
+    try:
+        exact_snapshot = runtime_snapshot._find_v2_snapshot(game)
+    except Exception:
+        exact_snapshot = {}
 
-    context = _snapshot_quality_context(game, away_id, home_id)
-    for side, team_id in (("away", away_id), ("home", home_id)):
+    team_index = _snapshot_team_index(snapshot_payload)
+    snapshot_defense_ranks = _snapshot_defense_ranks(team_index)
+    snapshot_sos_ranks = _snapshot_sos_ranks(team_index)
+
+    ncaa_profiles: dict[str, Any] = {}
+    for side in ("away", "home"):
         current = outputs[side]
         current_contract = build_team_form_contract(
             current,
@@ -548,34 +589,140 @@ def enrich_step3_inputs(
             diag[side] = {
                 "fallback_used": False,
                 "reason": "step3_already_ready",
-                "team_id": team_id,
             }
             continue
 
-        side_context = context.get(side) or {}
-        rows = list(side_context.get("rows") or [])
-        enriched = _overlay_exact_rows(current, rows)
-        sos_rank = _int(side_context.get("strength_of_schedule_rank"))
-        if sos_rank is not None:
-            enriched["strength_of_schedule_rank"] = sos_rank
-        outputs[side] = enriched
+        team_id = _exact_team_id(
+            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
+            current,
+            game,
+            side,
+        )
+        rows = _snapshot_rows(exact_snapshot, side, team_id)
+        provider = "Verified runtime snapshot V2"
+
+        if not rows and day:
+            if not ncaa_profiles:
+                try:
+                    profiles, _ = ncaa_mixed.load_matchup_team_data(game, day)
+                    ncaa_profiles = dict(profiles or {})
+                except Exception:
+                    ncaa_profiles = {}
+            profile = ncaa_profiles.get(side) or {}
+            rows = [
+                dict(row)
+                for row in (profile.get("completed_games") or [])
+                if isinstance(row, Mapping)
+            ]
+            provider = "NCAA official current-season schedule"
+
+        if rows:
+            outputs[side] = _overlay_exact_rows(current, rows)
+
         diag[side] = {
             "fallback_used": bool(rows),
             "team_id": team_id,
             "rows": len(rows),
-            "hydrated_opponent_records": int(
-                side_context.get("hydrated_opponent_records") or 0
-            ),
-            "hydrated_opponent_defense_ranks": int(
-                side_context.get("hydrated_opponent_defense_ranks") or 0
-            ),
-            "strength_of_schedule_rank": sos_rank,
-            "provider": context.get("source"),
-            "snapshot_generated_at": context.get("generated_at"),
-            "reason": context.get("reason"),
+            "provider": provider if rows else "unavailable",
         }
 
+    opponent_names = sorted({
+        _clean(row.get("opponent"))
+        for side in ("away", "home")
+        for row in (outputs[side].get("completed_games") or [])
+        if isinstance(row, Mapping) and _clean(row.get("opponent"))
+    })
+    try:
+        official_defense = _official_defense_ranks(tuple(opponent_names))
+    except Exception:
+        official_defense = {}
+    try:
+        ncaa_record_pcts = _ncaa_record_pcts(tuple(opponent_names), day)
+    except Exception:
+        ncaa_record_pcts = {}
+
+    for side in ("away", "home"):
+        current = outputs[side]
+        team_id = _exact_team_id(
+            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
+            current,
+            game,
+            side,
+        )
+        completed = [
+            dict(row)
+            for row in (current.get("completed_games") or [])
+            if isinstance(row, Mapping)
+        ]
+
+        pcts: list[float] = []
+        defense_ranks: list[int] = []
+        winning_results: list[str] = []
+        for row in completed:
+            opponent_id = _clean(row.get("opponent_id"))
+            opponent_name = _clean(row.get("opponent"))
+            canonical = ncaa_team_data._canonical_name(opponent_name)
+
+            pct = None
+            opponent_snapshot = team_index.get(opponent_id) or {}
+            if opponent_snapshot:
+                pct = _record_pct(opponent_snapshot.get("record_text"))
+            if pct is None:
+                pct = ncaa_record_pcts.get(canonical)
+            if pct is not None:
+                row["opponent_record_pct"] = float(pct)
+                pcts.append(float(pct))
+                if float(pct) > 0.5:
+                    winning_results.append(_clean(row.get("result")).upper()[:1])
+
+            defense_rank = official_defense.get(canonical)
+            if defense_rank is None:
+                defense_rank = snapshot_defense_ranks.get(opponent_id)
+            if defense_rank is not None and int(defense_rank) > 0:
+                row["opponent_def_rank"] = int(defense_rank)
+                defense_ranks.append(int(defense_rank))
+
+        if completed:
+            current["completed_games"] = completed
+        if pcts:
+            current["sos_opponent_win_pct"] = float(fmean(pcts))
+            current["sos_coverage"] = len(pcts) / len(completed) if completed else 0.0
+        elif completed and current.get("sos_coverage") is None:
+            current["sos_coverage"] = 0.0
+
+        if defense_ranks:
+            current["avg_opponent_def_rank"] = float(fmean(defense_ranks))
+            current["top40_defenses_faced"] = sum(
+                1 for rank in defense_ranks if rank <= 40
+            )
+
+        if pcts:
+            wins = sum(result == "W" for result in winning_results)
+            losses = sum(result == "L" for result in winning_results)
+            ties = sum(result == "T" for result in winning_results)
+            current["record_vs_winning_teams"] = (
+                f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+            )
+            current["winning_opponents_faced"] = len(winning_results)
+
+        sos_rank = snapshot_sos_ranks.get(team_id)
+        if sos_rank is not None:
+            current["strength_of_schedule_rank"] = int(sos_rank)
+
+        current["step3_history_source"] = (
+            "Verified GitHub runtime snapshot V2 + NCAA official opponent context"
+        )
+        outputs[side] = current
+        diag[side]["opponent_record_coverage"] = float(
+            current.get("sos_coverage") or 0.0
+        )
+        diag[side]["official_defense_ranks"] = len(defense_ranks)
+        diag[side]["strength_of_schedule_rank"] = current.get(
+            "strength_of_schedule_rank"
+        )
+
     return outputs["away"], outputs["home"], diag
+
 
 def build_team_form_contract(
     evidence: Mapping[str, Any] | None,
