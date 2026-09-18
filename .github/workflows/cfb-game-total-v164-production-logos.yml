@@ -7,6 +7,7 @@ on:
       - "app.py"
       - "streamlit_memory_lazy_router_v160.py"
       - "cfb_game_total_clean_page_v15.py"
+      - "cfb_game_total_step1_identity_v1.py"
       - "cfb_game_total_team_logo_identity_v1.py"
       - "devsystem/production_verify_v164_logos.py"
       - "tests/test_devsystem_production_verify_v164_logos.py"
@@ -41,6 +42,7 @@ jobs:
       - name: Compile V164 production proof
         run: |
           python -m py_compile cfb_game_total_clean_page_v15.py
+          python -m py_compile cfb_game_total_step1_identity_v1.py
           python -m py_compile cfb_game_total_team_logo_identity_v1.py
           python -m py_compile streamlit_memory_lazy_router_v160.py
           python -m py_compile devsystem/production_verify_v164_logos.py
@@ -49,6 +51,7 @@ jobs:
         run: |
           PYTHONPATH=. python -m pytest -q \
             tests/test_cfb_game_total_v164_team_logos.py \
+            tests/test_cfb_game_total_step1_identity_v1.py \
             tests/test_devsystem_production_verify_v164_logos.py
 
       - name: Verify live V164 exact team logos
