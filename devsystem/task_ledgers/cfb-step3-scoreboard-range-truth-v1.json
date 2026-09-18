@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-scoreboard-range-truth-v1",
+  "status": "DONE",
+  "scope": "Step 3 only: recover completed pre-kickoff games from ESPN scoreboard date ranges across both FBS and FCS, exact team ID only, and make production GREEN require two live completed rows plus complete Opponent Quality for the certified 1-1 teams.",
+  "trigger": "Production #47 still showed one completed row per certified team after selected-date handoff was fixed, proving NCAA candidate-date discovery was still preventing scoreboard recovery from reaching the missing game.",
+  "guardrails": {
+    "step3_only": true,
+    "other_steps_untouched": true,
+    "exact_team_id_required": true,
+    "fbs_and_fcs_scoreboard_ranges": true,
+    "target_and_future_games_excluded": true,
+    "max_recent_games": 5,
+    "fabricated_scores": false,
+    "fabricated_opponent_quality": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "proof_target": "Certified 1-1 teams must render at least two completed Step 3 rows each, Step 3 state READY, five nonblank Opponent Quality values on both cards, and no CHECK reason.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
