@@ -701,7 +701,13 @@ def _scoreboard_range_events(
     *,
     lookback_days: int = 70,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Return deduped completed pre-target ESPN CFB events for FBS + FCS."""
+    """Return deduped completed pre-target ESPN CFB events for FBS + FCS.
+
+    ESPN's scoreboard is reliable with explicit season/week buckets in the live
+    app. We therefore scan only the regular-season weeks that can contain games
+    inside the requested lookback window instead of depending on a multi-day
+    `dates=start-end` response.
+    """
     target_text = _clean(target_day)[:10]
     if not target_text:
         return [], []
@@ -710,40 +716,54 @@ def _scoreboard_range_events(
     except Exception:
         return [], []
 
-    start_day = target - timedelta(days=max(14, int(lookback_days)))
-    end_day = target - timedelta(days=1)
-    if end_day < start_day:
-        return [], []
+    season_year = target.year if target.month >= 7 else target.year - 1
+    season_anchor = date(season_year, 8, 20)
+    earliest = target - timedelta(days=max(14, int(lookback_days)))
 
-    date_range = f"{start_day.strftime('%Y%m%d')}-{end_day.strftime('%Y%m%d')}"
+    # Query only weeks that could overlap [earliest, target). Add a small
+    # boundary cushion because ESPN week numbering can straddle calendar weeks.
+    first_week = max(0, ((earliest - season_anchor).days // 7) - 2)
+    last_week = min(20, max(1, ((target - season_anchor).days // 7) + 2))
+
     events: dict[str, dict[str, Any]] = {}
     attempts: list[dict[str, Any]] = []
 
-    for group in ("80", "81"):
-        payload, these_attempts = ncaa_schedule._fetch_json_with_fallback(
-            ncaa_schedule.ESPN_SCOREBOARD_URL,
-            {"dates": date_range, "limit": 1000, "groups": group},
-            f"ESPN CFB scoreboard range group {group} for Step 3",
-        )
-        attempts.extend(list(these_attempts or []))
-        for event in payload.get("events") or []:
-            if not isinstance(event, Mapping):
-                continue
-            if not deep.history_engine._completed(event):
-                continue
-            event_id = _clean(event.get("id"))
-            if not event_id:
-                comp = deep.history_engine._competition(event)
-                event_id = _clean(comp.get("id"))
-            if not event_id:
-                continue
-            raw_date = _clean(
-                event.get("date")
-                or deep.history_engine._competition(event).get("date")
-            )[:10]
-            if raw_date and raw_date >= target_text:
-                continue
-            events[event_id] = dict(event)
+    for week in range(first_week, last_week + 1):
+        for group in ("80", "81"):
+            payload, these_attempts = ncaa_schedule._fetch_json_with_fallback(
+                ncaa_schedule.ESPN_SCOREBOARD_URL,
+                {
+                    "year": int(season_year),
+                    "seasontype": 2,
+                    "week": int(week),
+                    "limit": 1000,
+                    "groups": group,
+                },
+                (
+                    f"ESPN CFB scoreboard season {season_year} week {week} "
+                    f"group {group} for Step 3"
+                ),
+            )
+            attempts.extend(list(these_attempts or []))
+            for event in payload.get("events") or []:
+                if not isinstance(event, Mapping):
+                    continue
+                if not deep.history_engine._completed(event):
+                    continue
+                raw_date = _clean(
+                    event.get("date")
+                    or deep.history_engine._competition(event).get("date")
+                )[:10]
+                if not raw_date or raw_date < earliest.isoformat() or raw_date >= target_text:
+                    continue
+                event_id = _clean(event.get("id"))
+                if not event_id:
+                    event_id = _clean(
+                        deep.history_engine._competition(event).get("id")
+                    )
+                if not event_id:
+                    continue
+                events[event_id] = dict(event)
 
     ordered = sorted(
         events.values(),
