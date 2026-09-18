@@ -330,3 +330,74 @@ def test_step1_exact_fallback_fills_schedule_profile_and_coach(monkeypatch):
     assert diag["home"]["schedule_loaded"] is True
     assert diag["away"]["head_coach_ready"] is True
     assert diag["home"]["head_coach_ready"] is True
+
+
+
+def test_step1_exact_core_fallback_fills_mascot_and_record(monkeypatch):
+    monkeypatch.setattr(profile, "_exact_event_summary", lambda event_id: ({}, []))
+    monkeypatch.setattr(profile, "_exact_team_detail", lambda team_id: ({}, []))
+    monkeypatch.setattr(profile.history, "_fetch_team_schedule", lambda team_id, season: ({}, []))
+    monkeypatch.setattr(
+        profile,
+        "_exact_core_team_profile",
+        lambda team_id, season: (
+            {
+                "id": team_id,
+                "name": {"324": "Chanticleers", "48": "Blue Hens"}[team_id],
+            },
+            [{"provider": "core team"}],
+        ),
+    )
+    monkeypatch.setattr(
+        profile,
+        "_exact_core_team_record",
+        lambda team_id, season: (
+            {
+                "items": [{
+                    "type": "total",
+                    "summary": {"324": "2-1", "48": "3-0"}[team_id],
+                }]
+            },
+            [{"provider": "core record"}],
+        ),
+    )
+    monkeypatch.setattr(
+        profile.deep,
+        "_head_coach",
+        lambda team_id, season: (
+            {
+                "ready": True,
+                "name": {"324": "Ryan Beard", "48": "Ryan Carty"}[team_id],
+            },
+            [],
+        ),
+    )
+
+    away, home, diag = profile.enrich_step1_inputs(
+        _identity(),
+        {"conference": "Sun Belt", "classification": "FBS"},
+        {"conference": "CUSA", "classification": "FCS"},
+        {"espn_event_id": "401869940", "game_date": "2026-09-19"},
+    )
+
+    assert away["mascot"] == "Chanticleers"
+    assert home["mascot"] == "Blue Hens"
+    assert away["record"] == "2-1"
+    assert home["record"] == "3-0"
+    assert away["head_coach"] == "Ryan Beard"
+    assert home["head_coach"] == "Ryan Carty"
+    assert diag["away"]["core_team_exact"] is True
+    assert diag["home"]["core_team_exact"] is True
+    assert diag["away"]["core_record_loaded"] is True
+    assert diag["home"]["core_record_loaded"] is True
+
+
+def test_step1_core_record_prefers_total_split():
+    payload = {
+        "items": [
+            {"type": "home", "summary": "1-0"},
+            {"type": "total", "summary": "2-1"},
+            {"type": "away", "summary": "1-1"},
+        ]
+    }
+    assert profile._record_from_core(payload) == "2-1"

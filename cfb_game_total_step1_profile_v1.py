@@ -24,6 +24,10 @@ ESPN_TEAM_DETAIL_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/college-football/"
     "teams/{team_id}"
 )
+ESPN_CORE_ROOT = (
+    "https://sports.core.api.espn.com/v2/sports/football/leagues/"
+    "college-football"
+)
 FAST_PROFILE_TIMEOUT_SECONDS = 4.0
 
 _UNAVAILABLE = {
@@ -184,6 +188,70 @@ def _exact_team_detail(team_id: str) -> tuple[dict[str, Any], list[dict[str, Any
     if isinstance(payload, Mapping) and _clean(payload.get("id")) == team_id:
         return dict(payload), attempts
     return {}, attempts
+
+def _exact_core_team_profile(
+    team_id: str,
+    season: int,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    team_id = _clean(team_id)
+    if not team_id.isdigit():
+        return {}, []
+    url = (
+        f"{ESPN_CORE_ROOT}/seasons/{int(season)}/teams/{team_id}"
+        "?lang=en&region=us"
+    )
+    payload, attempts = deep._core_json(
+        url,
+        f"ESPN Core exact CFB team {team_id} Step 1 profile",
+    )
+    if isinstance(payload, Mapping) and _clean(payload.get("id")) == team_id:
+        return dict(payload), attempts
+    return {}, attempts
+
+
+def _exact_core_team_record(
+    team_id: str,
+    season: int,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    team_id = _clean(team_id)
+    if not team_id.isdigit():
+        return {}, []
+    url = (
+        f"{ESPN_CORE_ROOT}/seasons/{int(season)}/types/2/teams/{team_id}/record"
+        "?lang=en&region=us"
+    )
+    payload, attempts = deep._core_json(
+        url,
+        f"ESPN Core exact CFB team {team_id} Step 1 record",
+    )
+    return (dict(payload), attempts) if isinstance(payload, Mapping) else ({}, attempts)
+
+
+def _record_from_core(payload: Mapping[str, Any]) -> str:
+    items = payload.get("items") or []
+    if isinstance(items, Mapping):
+        items = [items]
+    preferred: list[str] = []
+    fallback: list[str] = []
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, Mapping):
+            continue
+        text = _clean(
+            item.get("summary")
+            or item.get("displayValue")
+            or item.get("record")
+        )
+        if not _usable(text):
+            continue
+        typ = _clean(item.get("type") or item.get("name")).casefold()
+        if typ in {"total", "overall", "all splits"}:
+            preferred.append(text)
+        else:
+            fallback.append(text)
+    if preferred:
+        return preferred[0]
+    return fallback[0] if len(fallback) == 1 else ""
+
 
 def _schedule_team_object(payload: Mapping[str, Any], team_id: str) -> dict[str, Any]:
     team_id = _clean(team_id)
@@ -364,6 +432,54 @@ def _enrich_side(
                     out["record"] = schedule_record
                     out["record_text"] = schedule_record
 
+    core_team: dict[str, Any] = {}
+    core_team_attempts: list[dict[str, Any]] = []
+    core_record: dict[str, Any] = {}
+    core_record_attempts: list[dict[str, Any]] = []
+    if team_id.isdigit() and (
+        not _usable(out.get("mascot"))
+        or not _usable(out.get("record"))
+    ):
+        try:
+            core_team, core_team_attempts = _exact_core_team_profile(
+                team_id,
+                int(season),
+            )
+        except Exception as exc:
+            core_team = {}
+            core_team_attempts = [{
+                "provider": f"ESPN Core exact CFB team {team_id} Step 1 profile",
+                "transport": "existing deep-data helper",
+                "http": None,
+                "bytes": 0,
+                "error": f"{type(exc).__name__}: {exc}"[:260],
+            }]
+        if core_team:
+            _fill(out, "mascot", core_team.get("name") or core_team.get("nickname"))
+            if _clean(out.get("classification")).upper() not in {"FBS", "FCS"}:
+                _fill(out, "classification", _classification(out, core_team))
+                _fill(out, "division_context", out.get("classification"))
+
+        if not _usable(out.get("record")):
+            try:
+                core_record, core_record_attempts = _exact_core_team_record(
+                    team_id,
+                    int(season),
+                )
+            except Exception as exc:
+                core_record = {}
+                core_record_attempts = [{
+                    "provider": f"ESPN Core exact CFB team {team_id} Step 1 record",
+                    "transport": "existing deep-data helper",
+                    "http": None,
+                    "bytes": 0,
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }]
+            record = _record_from_core(core_record)
+            if _usable(record):
+                out["record"] = record
+                out["record_text"] = record
+
     coach_attempts: list[dict[str, Any]] = []
     if not _usable(out.get("head_coach")) and team_id.isdigit():
         try:
@@ -394,9 +510,13 @@ def _enrich_side(
         "classification_ready": _clean(out.get("classification")).upper() in {"FBS", "FCS"},
         "record_ready": _usable(out.get("record")),
         "head_coach_ready": _usable(out.get("head_coach")),
+        "core_team_exact": bool(core_team),
+        "core_record_loaded": bool(core_record),
         "coach_attempts": coach_attempts,
         "detail_attempts": detail_attempts,
         "schedule_attempts": schedule_attempts,
+        "core_team_attempts": core_team_attempts,
+        "core_record_attempts": core_record_attempts,
     }
     out["step1_profile_enriched"] = True
     out["step1_profile_exact_team_id"] = team_id
@@ -421,9 +541,9 @@ def enrich_step1_inputs(
     event_id = _event_id(display_game)
 
     summary, summary_attempts = _exact_event_summary(event_id)
-    # Broad team-directory and schedule fallbacks can each take tens of
-    # seconds per transport. Step 1 stays exact and fast: event summary +
-    # exact team detail only, otherwise fail closed to CHECK.
+    # Broad team-directory guessing remains disabled. Step 1 stays exact-ID
+    # only: event summary/team detail first, then exact team-id schedule/Core
+    # fallbacks only when required display fields are still missing.
     directory: dict[str, Any] = {}
 
     season = _season(display_game)
@@ -463,6 +583,7 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "ESPN_TEAM_DETAIL_URL",
+    "ESPN_CORE_ROOT",
     "FAST_PROFILE_TIMEOUT_SECONDS",
     "enrich_step1_inputs",
 ]

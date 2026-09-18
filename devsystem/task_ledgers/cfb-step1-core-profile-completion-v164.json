@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-core-profile-completion-v164",
+  "status": "DONE",
+  "scope": "Complete the final Step 1 mascot and current-record fields from exact ESPN Core team-id resources when exact summary/site/schedule data remains incomplete.",
+  "trigger": "Production proof #26 passed deployment, logos, classification, and head-coach checks, but both certified teams remained 9/11 with Mascot and Record unavailable.",
+  "guardrails": {
+    "exact_team_id_required": true,
+    "season_scoped": true,
+    "name_guessing_added": false,
+    "frozen_v163_edited_in_place": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
