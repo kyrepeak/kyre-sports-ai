@@ -344,13 +344,13 @@ def _assert_step3_current_form(frame) -> dict:
         )
 
     state = str(step.get_attribute("data-step3-state") or "").strip().upper()
+    text = step.inner_text()
     if state != "READY":
         raise ProductionVerificationV164Failure(
             "Step 3 certified matchup must be fully READY after current-form and "
-            f"opponent-quality hydration: state={state!r}"
+            f"opponent-quality hydration: state={state!r} live_text={text[:2400]!r}"
         )
 
-    text = step.inner_text()
     required_text = (
         "Current Form & Opponent Quality",
         AWAY_TEAM,
