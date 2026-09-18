@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import time
 from urllib.parse import urlencode
 
 from playwright.sync_api import sync_playwright
@@ -24,6 +25,7 @@ HOME_TEAM = "Delaware"
 AWAY_TEAM_ID = "324"
 HOME_TEAM_ID = "48"
 REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
+REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_SELECTOR_ID_LOGO_PATCH_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -92,6 +94,46 @@ def _assert_exact_pair(frame, selector: str, label: str) -> list[dict]:
     return states
 
 
+
+def _wait_for_v164_patch_deployment(
+    page,
+    *,
+    timeout_seconds: float = 240.0,
+):
+    """Reload until the live app proves this exact logo patch is deployed."""
+    deadline = time.monotonic() + timeout_seconds
+    last_body = ""
+    last_scans: list[dict] = []
+    last_error = ""
+    while time.monotonic() < deadline:
+        try:
+            frame, body, scans = v163._wait_for_top_level_selection(
+                page,
+                CERT_EVENT_ID,
+                timeout_seconds=45.0,
+            )
+            last_body = body
+            last_scans = scans
+            last_error = ""
+            if (
+                REQUIRED_HEARTBEAT in body
+                and REQUIRED_PATCH_MARKER in body
+            ):
+                return frame, body, scans
+        except Exception as exc:
+            last_error = f"{type(exc).__name__}: {exc}"
+
+        page.wait_for_timeout(5000)
+        page.reload(wait_until="domcontentloaded", timeout=120000)
+
+    raise ProductionVerificationV164Failure(
+        "V164 logo proof timed out waiting for the current Streamlit patch: "
+        f"required_marker={REQUIRED_PATCH_MARKER!r} "
+        f"last_error={last_error!r} scans={last_scans!r} "
+        f"body_start={last_body[:500]!r}"
+    )
+
+
 def verify_live_v164(
     streamlit_url: str,
     *,
@@ -119,13 +161,14 @@ def verify_live_v164(
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
-            frame, body, scans = v163._wait_for_top_level_selection(
-                page,
-                CERT_EVENT_ID,
-            )
+            frame, body, scans = _wait_for_v164_patch_deployment(page)
             if REQUIRED_HEARTBEAT not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing V164 production heartbeat: {REQUIRED_HEARTBEAT}"
+                )
+            if REQUIRED_PATCH_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing current V164 logo patch marker: {REQUIRED_PATCH_MARKER}"
                 )
             if AWAY_TEAM not in body or HOME_TEAM not in body:
                 raise ProductionVerificationV164Failure(
