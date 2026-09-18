@@ -39,8 +39,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import cfb_over_under_deep_data_reconciliation_v1 as project_deep
+import cfb_game_total_step2_drive_v1 as step2_drive
 
 OUT = ROOT / "data" / "cfb_runtime_snapshot_v2.json"
+DRIVE_OUT = ROOT / "data" / "cfb_step2_drive_snapshot_v1.json"
 
 ET = ZoneInfo("America/New_York")
 TIMEOUT = 18
@@ -760,8 +762,43 @@ def normalize_for_compare(payload: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
+def build_drive_snapshot(season: int, now_utc: datetime) -> dict[str, Any]:
+    offense = step2_drive._fetch_ppd_table(int(season), "offense")
+    defense = step2_drive._fetch_ppd_table(int(season), "defense")
+    shared = set(offense) & set(defense)
+    if len(offense) < 100 or len(defense) < 100 or len(shared) < 100:
+        raise SystemExit(
+            "Step 2 drive snapshot coverage too small: "
+            f"offense={len(offense)} defense={len(defense)} shared={len(shared)}"
+        )
+    return {
+        "version": 1,
+        "season": int(season),
+        "generated_at": now_utc.replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
+        "upstream": "Punt & Rally",
+        "source_urls": {
+            "offense": (
+                f"{step2_drive.PUNT_RALLY_URL}?metric=ppd&stat=offense&year={int(season)}"
+            ),
+            "defense": (
+                f"{step2_drive.PUNT_RALLY_URL}?metric=ppd&stat=defense&year={int(season)}"
+            ),
+        },
+        "offense": dict(sorted(offense.items())),
+        "defense": dict(sorted(defense.items())),
+    }
+
+
 def main() -> int:
+    now_et = datetime.now(ET)
+    now_utc = now_et.astimezone(timezone.utc)
+    season = now_et.year if now_et.month >= 7 else now_et.year - 1
+
     new = build_snapshot()
+    drive_new = build_drive_snapshot(season, now_utc)
+
     old: dict[str, Any] = {}
     if OUT.exists():
         try:
@@ -770,17 +807,45 @@ def main() -> int:
         except Exception:
             old = {}
 
-    if normalize_for_compare(old) == normalize_for_compare(new):
+    drive_old: dict[str, Any] = {}
+    if DRIVE_OUT.exists():
+        try:
+            parsed = json.loads(DRIVE_OUT.read_text(encoding="utf-8"))
+            drive_old = parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            drive_old = {}
+
+    runtime_changed = normalize_for_compare(old) != normalize_for_compare(new)
+    drive_changed = (
+        normalize_for_compare(drive_old) != normalize_for_compare(drive_new)
+    )
+    if not runtime_changed and not drive_changed:
         print("CFB_RUNTIME_SNAPSHOT_NO_SUBSTANTIVE_CHANGE")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(new, indent=2, sort_keys=False) + "\n", encoding="utf-8")
-    print(
-        "CFB_RUNTIME_SNAPSHOT_UPDATED",
-        f"games={len(new.get('games') or [])}",
-        f"window={new.get('window')}",
-    )
+    if runtime_changed:
+        OUT.write_text(
+            json.dumps(new, indent=2, sort_keys=False) + "\n",
+            encoding="utf-8",
+        )
+        print(
+            "CFB_RUNTIME_SNAPSHOT_UPDATED",
+            f"games={len(new.get('games') or [])}",
+            f"window={new.get('window')}",
+        )
+
+    if drive_changed:
+        DRIVE_OUT.write_text(
+            json.dumps(drive_new, indent=2, sort_keys=False) + "\n",
+            encoding="utf-8",
+        )
+        print(
+            "CFB_STEP2_DRIVE_SNAPSHOT_UPDATED",
+            f"season={drive_new.get('season')}",
+            f"offense={len(drive_new.get('offense') or {})}",
+            f"defense={len(drive_new.get('defense') or {})}",
+        )
     return 0
 
 
