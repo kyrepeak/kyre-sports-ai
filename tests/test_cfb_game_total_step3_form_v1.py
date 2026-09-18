@@ -1161,11 +1161,13 @@ def test_step3_scoreboard_range_recovers_exact_team_across_fbs_and_fcs(monkeypat
     )
 
     assert [row["event_id"] for row in rows] == ["g1", "g2"]
-    assert len(calls) == 2
+    assert len(calls) >= 4
     assert {str(call["groups"]) for call in calls} == {"80", "81"}
-    assert all(call["dates"].endswith("-20260918") for call in calls)
+    assert all(int(call["year"]) == 2026 for call in calls)
+    assert all(int(call["seasontype"]) == 2 for call in calls)
+    assert all("week" in call for call in calls)
     assert all(int(call["limit"]) == 1000 for call in calls)
-    assert len(attempts) == 2
+    assert len(attempts) == len(calls)
 
 
 def test_step3_range_recovery_wins_when_candidate_dates_are_empty(monkeypatch):
@@ -1359,15 +1361,17 @@ def test_step3_scoreboard_quality_populates_all_required_opponent_rows():
     assert row["state"] == "READY"
 
 
-def test_step3_scoreboard_range_events_queries_fbs_and_fcs_once(monkeypatch):
+def test_step3_scoreboard_range_events_queries_explicit_fbs_and_fcs_weeks(monkeypatch):
     calls = []
+
+    def fake_fetch(url, params, provider):
+        calls.append(dict(params))
+        return {"events": []}, [{"provider": provider}]
+
     monkeypatch.setattr(
         step3.ncaa_schedule,
         "_fetch_json_with_fallback",
-        lambda url, params, provider: (
-            {"events": []},
-            [{"provider": provider}],
-        ) if not calls.append(dict(params)) else ({}, []),
+        fake_fetch,
     )
     try:
         step3._scoreboard_range_events.clear()
@@ -1380,7 +1384,10 @@ def test_step3_scoreboard_range_events_queries_fbs_and_fcs_once(monkeypatch):
     )
 
     assert events == []
-    assert len(calls) == 2
+    assert len(calls) >= 4
     assert {str(call["groups"]) for call in calls} == {"80", "81"}
+    assert all(int(call["year"]) == 2026 for call in calls)
+    assert all(int(call["seasontype"]) == 2 for call in calls)
+    assert all(isinstance(call["week"], int) for call in calls)
     assert all(int(call["limit"]) == 1000 for call in calls)
-    assert all(call["dates"].endswith("-20261001") for call in calls)
+    assert len(attempts) == len(calls)
