@@ -274,10 +274,12 @@ def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch)
     assert contract["home"]["last5_record"] == "1-1"
     assert contract["away"]["required_complete"] is True
     assert contract["home"]["required_complete"] is True
-    assert diag["away"]["fallback_used"] is True
-    assert diag["home"]["fallback_used"] is True
-    assert diag["away"]["opponent_record_mode"] == "inline_only"
-    assert diag["home"]["opponent_record_mode"] == "inline_only"
+    assert diag["away"]["refresh_used"] is True
+    assert diag["home"]["refresh_used"] is True
+    assert diag["away"]["fallback_used"] is False
+    assert diag["home"]["fallback_used"] is False
+    assert diag["away"]["source"] == "live_exact_schedule"
+    assert diag["home"]["source"] == "live_exact_schedule"
 
 
 
@@ -324,7 +326,7 @@ def test_step3_lightweight_fallback_does_not_call_heavy_opponent_hydration(monke
 
 
 
-def test_step3_checked_in_snapshot_fills_core_before_live_network(monkeypatch, tmp_path):
+def test_step3_checked_in_snapshot_fills_core_only_when_live_refresh_fails(monkeypatch, tmp_path):
     snapshot = {
         "games": [
             {
@@ -378,7 +380,7 @@ def test_step3_checked_in_snapshot_fills_core_before_live_network(monkeypatch, t
         step3.deep.history_engine,
         "_fetch_team_schedule",
         lambda *args, **kwargs: (_ for _ in ()).throw(
-            AssertionError("live schedule must not run when snapshot completes core form")
+            RuntimeError("live schedule unavailable")
         ),
     )
 
@@ -408,8 +410,10 @@ def test_step3_checked_in_snapshot_fills_core_before_live_network(monkeypatch, t
     assert contract["home"]["last5_record"] == "1-0"
     assert contract["away"]["recent_ppg"] == 24.0
     assert contract["home"]["recent_ppg"] == 42.0
-    assert diag["away"]["fallback_source"] == "checked_in_runtime_snapshot"
-    assert diag["home"]["fallback_source"] == "checked_in_runtime_snapshot"
+    assert diag["away"]["source"] == "checked_in_runtime_snapshot"
+    assert diag["home"]["source"] == "checked_in_runtime_snapshot"
+    assert diag["away"]["fallback_used"] is True
+    assert diag["home"]["fallback_used"] is True
 
 
 def test_step3_snapshot_filters_rows_on_or_after_target_day(monkeypatch, tmp_path):
@@ -445,3 +449,121 @@ def test_step3_snapshot_filters_rows_on_or_after_target_day(monkeypatch, tmp_pat
 
     rows = step3._snapshot_rows_for_team("324", "2026-09-19")
     assert [row["event_id"] for row in rows] == ["old"]
+
+
+
+def test_step3_live_schedule_refreshes_even_when_existing_core_looks_complete(monkeypatch):
+    identity = {
+        "away": {"team": "Miami (FL)", "team_id": "2390"},
+        "home": {"team": "Wake Forest", "team_id": "154"},
+    }
+    game = {
+        "game_date": "2026-09-18",
+        "espn_event_id": "target",
+        "away_espn_team_id": "2390",
+        "home_espn_team_id": "154",
+    }
+    stale_away = {
+        "team": "Miami (FL)",
+        "completed_games": [
+            {
+                "event_id": "mia1",
+                "date": "2026-09-05T01:00:00Z",
+                "opponent": "Stanford Cardinal",
+                "points_for": 45,
+                "points_against": 6,
+                "result": "W",
+            }
+        ],
+        "recent_record": {"wins": 1, "losses": 0, "games": 1},
+        "recent_ppg": 45.0,
+        "recent_points_allowed_pg": 6.0,
+        "recent_point_diff_pg": 39.0,
+    }
+    stale_home = {
+        "team": "Wake Forest",
+        "completed_games": [
+            {
+                "event_id": "wf1",
+                "date": "2026-09-03T23:00:00Z",
+                "opponent": "Akron Zips",
+                "points_for": 38,
+                "points_against": 16,
+                "result": "W",
+            }
+        ],
+        "recent_record": {"wins": 1, "losses": 0, "games": 1},
+        "recent_ppg": 38.0,
+        "recent_points_allowed_pg": 16.0,
+        "recent_point_diff_pg": 22.0,
+    }
+    rows = {
+        "2390": [
+            {
+                "event_id": "mia1",
+                "date": "2026-09-05T01:00:00Z",
+                "opponent_name": "Stanford Cardinal",
+                "opponent_id": "24",
+                "points_for": 45,
+                "points_against": 6,
+            },
+            {
+                "event_id": "mia2",
+                "date": "2026-09-10T23:30:00Z",
+                "opponent_name": "Florida A&M Rattlers",
+                "opponent_id": "50",
+                "points_for": 42,
+                "points_against": 14,
+            },
+        ],
+        "154": [
+            {
+                "event_id": "wf1",
+                "date": "2026-09-03T23:00:00Z",
+                "opponent_name": "Akron Zips",
+                "opponent_id": "2006",
+                "points_for": 38,
+                "points_against": 16,
+            },
+            {
+                "event_id": "wf2",
+                "date": "2026-09-12T16:00:00Z",
+                "opponent_name": "Purdue Boilermakers",
+                "opponent_id": "2509",
+                "points_for": 27,
+                "points_against": 24,
+            },
+        ],
+    }
+
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda team_id, season: ({"team_id": team_id}, [{"provider": "exact schedule"}]),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_current_season_rows",
+        lambda payload, team_id, season, cutoff, event_id: list(rows[team_id]),
+    )
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        stale_away,
+        stale_home,
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert contract["away"]["last5_record"] == "2-0"
+    assert contract["home"]["last5_record"] == "2-0"
+    assert round(contract["away"]["recent_ppg"], 1) == 43.5
+    assert round(contract["home"]["recent_ppg"], 1) == 32.5
+    assert diag["away"]["refresh_used"] is True
+    assert diag["home"]["refresh_used"] is True
+    assert diag["away"]["source"] == "live_exact_schedule"
+    assert diag["home"]["source"] == "live_exact_schedule"
