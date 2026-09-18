@@ -46,3 +46,12 @@ def test_v164_production_verifier_waits_for_exact_step1_profile_patch():
     assert 'REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"' in source
     assert "REQUIRED_STEP1_PROFILE_MARKER in body" in source
     assert "missing Step 1 exact-profile marker" in source
+
+
+
+def test_v164_deployment_gate_reads_hidden_markers_from_dom_text():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'frame.locator("body").text_content()' in source
+    assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" in source
+    assert "REQUIRED_STEP1_MARKER in dom_text" in source
+    assert "REQUIRED_PATCH_MARKER in dom_text" in source
