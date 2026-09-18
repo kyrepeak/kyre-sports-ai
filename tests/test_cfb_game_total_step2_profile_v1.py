@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import cfb_game_total_step2_profile_v1 as step2
 import cfb_game_total_step2_drive_v1 as step2_drive
 
@@ -289,8 +291,12 @@ def test_step2_drive_enrichment_fills_only_missing_metrics(monkeypatch):
     }
     monkeypatch.setattr(
         step2_drive,
-        "_fetch_ppd_table",
-        lambda season, stat: tables[stat],
+        "_fetch_snapshot_tables",
+        lambda season: (
+            tables["offense"],
+            tables["defense"],
+            {"delivery": "checked_in_snapshot"},
+        ),
     )
     away, home, diag = step2_drive.enrich_step2_drive_metrics(
         {"team": "Coastal Carolina"},
@@ -301,8 +307,8 @@ def test_step2_drive_enrichment_fills_only_missing_metrics(monkeypatch):
     assert away["points_per_drive_allowed"] == 1.73
     assert home["points_per_drive"] == 3.05
     assert home["points_per_drive_allowed"] == 1.75
-    assert away["step2_drive_source"] == "Punt & Rally"
-    assert home["step2_drive_source"] == "Punt & Rally"
+    assert away["step2_drive_source"] == "Punt & Rally via verified snapshot"
+    assert home["step2_drive_source"] == "Punt & Rally via verified snapshot"
     assert diag["status"] == "READY"
 
 
@@ -332,11 +338,21 @@ def test_step2_drive_enrichment_preserves_existing_verified_metrics(monkeypatch)
     assert diag["status"] == "READY"
 
 
-def test_step2_drive_enrichment_fails_closed_when_source_is_unavailable(monkeypatch):
-    def fail_fetch(season, stat):
-        raise RuntimeError("source unavailable")
-
-    monkeypatch.setattr(step2_drive, "_fetch_ppd_table", fail_fetch)
+def test_step2_drive_enrichment_fails_closed_when_all_delivery_paths_fail(monkeypatch):
+    monkeypatch.setattr(
+        step2_drive,
+        "_fetch_snapshot_tables",
+        lambda season: (_ for _ in ()).throw(
+            RuntimeError("snapshot unavailable")
+        ),
+    )
+    monkeypatch.setattr(
+        step2_drive,
+        "_fetch_ppd_table",
+        lambda season, stat: (_ for _ in ()).throw(
+            RuntimeError("source unavailable")
+        ),
+    )
     away_in = {"team": "Coastal Carolina"}
     home_in = {"team": "Delaware"}
     away, home, diag = step2_drive.enrich_step2_drive_metrics(
@@ -347,4 +363,95 @@ def test_step2_drive_enrichment_fails_closed_when_source_is_unavailable(monkeypa
     assert away == away_in
     assert home == home_in
     assert diag["status"] == "CHECK"
+    assert "snapshot unavailable" in diag["error"]
     assert "source unavailable" in diag["error"]
+
+
+def test_step2_checked_in_drive_snapshot_has_universal_2026_coverage():
+    payload = json.loads(
+        step2_drive.LOCAL_SNAPSHOT_PATH.read_text(encoding="utf-8")
+    )
+    offense, defense, diag = step2_drive._snapshot_tables_from_payload(
+        payload,
+        2026,
+    )
+    assert len(offense) == 138
+    assert len(defense) == 138
+    assert offense["coastalcarolina"] == 2.58
+    assert defense["coastalcarolina"] == 1.73
+    assert offense["delaware"] == 3.05
+    assert defense["delaware"] == 1.75
+    assert diag["snapshot_team_count"] == 138
+
+
+def test_step2_drive_enrichment_prefers_snapshot_before_direct_upstream(monkeypatch):
+    monkeypatch.setattr(
+        step2_drive,
+        "_fetch_snapshot_tables",
+        lambda season: (
+            {"coastalcarolina": 2.58, "delaware": 3.05},
+            {"coastalcarolina": 1.73, "delaware": 1.75},
+            {"delivery": "github_raw_snapshot"},
+        ),
+    )
+    monkeypatch.setattr(
+        step2_drive,
+        "_fetch_ppd_table",
+        lambda season, stat: (_ for _ in ()).throw(
+            AssertionError("direct upstream should not run")
+        ),
+    )
+    away, home, diag = step2_drive.enrich_step2_drive_metrics(
+        {"team": "Coastal Carolina"},
+        {"team": "Delaware"},
+        2026,
+    )
+    assert away["points_per_drive"] == 2.58
+    assert away["points_per_drive_allowed"] == 1.73
+    assert home["points_per_drive"] == 3.05
+    assert home["points_per_drive_allowed"] == 1.75
+    assert diag["delivery"] == "github_raw_snapshot"
+    assert diag["status"] == "READY"
+
+
+def test_step2_split_summary_derives_from_verified_completed_game_locations():
+    away_evidence = {
+        "team": "Coastal Carolina",
+        "record": "1-1",
+        "ppg": 34.5,
+        "points_allowed_pg": 19.0,
+        "point_diff_pg": 15.5,
+        "recent_form": "LW",
+        "completed_games": [
+            {"location": "away", "result": "L", "points_for": 24, "points_against": 31},
+            {"location": "home", "result": "W", "points_for": 45, "points_against": 7},
+        ],
+    }
+    home_evidence = {
+        "team": "Delaware",
+        "record": "1-1",
+        "ppg": 34.0,
+        "points_allowed_pg": 21.0,
+        "point_diff_pg": 13.0,
+        "recent_form": "WL",
+        "completed_games": [
+            {"location": "home", "result": "W", "points_for": 42, "points_against": 7},
+            {"location": "away", "result": "L", "points_for": 26, "points_against": 35},
+        ],
+    }
+    away = step2.build_team_profile_contract(
+        away_evidence,
+        {"team": "Coastal Carolina"},
+        side="away",
+    )
+    home = step2.build_team_profile_contract(
+        home_evidence,
+        {"team": "Delaware"},
+        side="home",
+    )
+    assert away["sample_games"] == 2
+    assert away["recent_form"] == "LW"
+    assert away["split_summary"] == "Away 0-1"
+    assert home["sample_games"] == 2
+    assert home["recent_form"] == "WL"
+    assert home["split_summary"] == "Home 1-0"

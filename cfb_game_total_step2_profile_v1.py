@@ -268,6 +268,35 @@ def _split_summary(evidence: Mapping[str, Any], side: str) -> str:
     text = _record_text(record)
     if text:
         return f"{'Home' if side == 'home' else 'Away'} {text}"
+
+    completed = evidence.get("completed_games")
+    if isinstance(completed, list):
+        wins = losses = ties = 0
+        for row in completed:
+            if not isinstance(row, Mapping):
+                continue
+            if _clean(row.get("location")).casefold() != side:
+                continue
+            result = _clean(row.get("result")).upper()
+            if not result:
+                margin = _float(row.get("margin"))
+                if margin is None:
+                    pf = _float(row.get("points_for"))
+                    pa = _float(row.get("points_against"))
+                    if pf is not None and pa is not None:
+                        margin = pf - pa
+                if margin is not None:
+                    result = "W" if margin > 0 else "L" if margin < 0 else "T"
+            if result == "W":
+                wins += 1
+            elif result == "L":
+                losses += 1
+            elif result == "T":
+                ties += 1
+        games = wins + losses + ties
+        if games:
+            record_text = f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+            return f"{'Home' if side == 'home' else 'Away'} {record_text}"
     return ""
 
 
