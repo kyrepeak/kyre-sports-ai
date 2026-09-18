@@ -195,8 +195,10 @@ def _trend(games: list[Mapping[str, Any]]) -> tuple[str, float | None]:
         for row in games
         if row.get("points_for") is not None and row.get("points_against") is not None
     ]
-    if len(margins) < 2:
-        return "Insufficient sample", None
+    # One or two completed games are real evidence, just not a stable trend.
+    # Say that directly instead of making a valid early-season sample look broken.
+    if len(margins) < 3:
+        return "Early-season sample", None
     split = max(1, len(margins) // 2)
     older = margins[:split]
     newer = margins[split:]
@@ -910,6 +912,11 @@ def build_team_form_contract(
     )
 
     trend_direction, trend_delta = _trend(games)
+    trend_detail = (
+        f"{len(games)} completed game" + ("" if len(games) == 1 else "s")
+        if len(games) < 3
+        else (_record_from_games(games) or "Current sample")
+    )
 
     contract: dict[str, Any] = {
         "side": side,
@@ -931,6 +938,7 @@ def build_team_form_contract(
         "strength_of_schedule_rank": sos_rank,
         "trend_direction": trend_direction,
         "trend_delta": trend_delta,
+        "trend_detail": trend_detail,
         "opponent_quality_label": _opponent_quality_label(avg_opp_pct),
     }
 
@@ -1147,8 +1155,8 @@ def render_step3_html(
   <div class="gt168-center-card">
     <div class="gt168-center-title">TREND</div>
     <div class="gt168-trends">
-      <div class="gt168-trend {'bad' if a_trend == 'Slipping' else ''}"><b>{escape(a_trend)}</b><span>{escape(_clean(a.get('last5_record')) or '—')}</span></div>
-      <div class="gt168-trend {'bad' if h_trend == 'Slipping' else ''}"><b>{escape(h_trend)}</b><span>{escape(_clean(h.get('last5_record')) or '—')}</span></div>
+      <div class="gt168-trend {'bad' if a_trend == 'Slipping' else ''}"><b>{escape(a_trend)}</b><span>{escape(_clean(a.get('trend_detail')) or '—')}</span></div>
+      <div class="gt168-trend {'bad' if h_trend == 'Slipping' else ''}"><b>{escape(h_trend)}</b><span>{escape(_clean(h.get('trend_detail')) or '—')}</span></div>
     </div>
   </div>
   <div class="gt168-center-card gt168-takeaways" data-testid="gt168-step3-takeaways"><h4>💡 KEY TAKEAWAYS</h4>{takeaway_html}</div>
