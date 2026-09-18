@@ -524,3 +524,30 @@ def test_v164_step2_uses_certified_foundation_and_public_drive_adapter():
     assert block.index("_step3_certified_foundation(") < block.index(
         "step2_drive_owner.enrich_step2_drive_metrics("
     )
+
+
+def test_v164_step2_prefers_exact_runtime_v2_team_snapshot_before_ncaa_fallback():
+    source = _read(PAGE)
+    assert "def _step2_certified_foundation(display_game):" in source
+    start = source.index("def _step2_certified_foundation(display_game):")
+    end = source.index("def step_evidence_v164", start)
+    block = source[start:end]
+    assert "step2_runtime_snapshot._load_v2_snapshot()" in block
+    assert "step3_owner._runtime_v2_selected_row(" in block
+    assert 'away_out.setdefault("team", selected.get("away_team"))' in block
+    assert 'home_out.setdefault("team", selected.get("home_team"))' in block
+    assert "return _step3_certified_foundation(display_game)" in block
+
+
+def test_step2_runtime_refresh_publishes_drive_snapshot_on_main_push():
+    workflow = _read(ROOT / ".github/workflows/cfb-runtime-snapshot-refresh-v2.yml")
+    builder = _read(ROOT / "scripts/build_cfb_runtime_snapshot_v2.py")
+    assert "- main" in workflow
+    assert "data/cfb_step2_drive_snapshot_v1.json" in workflow
+    assert "drive_offense=" in workflow
+    assert "drive_defense=" in workflow
+    assert "Refresh CFB runtime data snapshot V2 + Step 2 drives" in workflow
+    assert "DRIVE_OUT = ROOT / \"data\" / \"cfb_step2_drive_snapshot_v1.json\"" in builder
+    assert "def build_drive_snapshot(" in builder
+    assert 'step2_drive._fetch_ppd_table(int(season), "offense")' in builder
+    assert 'step2_drive._fetch_ppd_table(int(season), "defense")' in builder
