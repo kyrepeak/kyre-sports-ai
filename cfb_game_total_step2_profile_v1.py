@@ -193,6 +193,26 @@ def _rank_from_row(row: Mapping[str, Any]) -> int | None:
     return None
 
 
+def _official_stat_value(row: Mapping[str, Any]) -> float | None:
+    """Read the numeric value from one already-matched NCAA stat category row."""
+    for key in ("value_numeric", "value", "display_value", "stat"):
+        value = _float(row.get(key))
+        if value is not None:
+            return value
+    direct = _row_value(
+        row,
+        ("ppg", "points per game", "pts/game", "pts per game", "avg", "average"),
+    )
+    if direct is not None:
+        return direct
+    cells = list(row.get("row") or [])
+    for cell in reversed(cells):
+        value = _float(cell)
+        if value is not None:
+            return value
+    return None
+
+
 def _yards_per_play_from_row(row: Mapping[str, Any]) -> float | None:
     direct = _row_value(
         row,
@@ -366,6 +386,16 @@ def build_team_profile_contract(
     total_defense = _stat_row(evidence, "total_defense")
     scoring_offense = _stat_row(evidence, "scoring_offense")
     scoring_defense = _stat_row(evidence, "scoring_defense")
+
+    # The completed-game display sample can legitimately be empty even when
+    # NCAA already has current scoring tables for the exact team. Reuse those
+    # verified category rows before failing the universal Step 2 core profile.
+    if ppg is None:
+        ppg = _official_stat_value(scoring_offense)
+    if allowed is None:
+        allowed = _official_stat_value(scoring_defense)
+    if point_diff is None and ppg is not None and allowed is not None:
+        point_diff = ppg - allowed
 
     ypp = _direct_metric(
         evidence,
