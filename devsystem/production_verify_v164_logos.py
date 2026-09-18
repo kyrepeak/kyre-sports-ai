@@ -89,7 +89,10 @@ def verify_live_v164(
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
-            frame, body, scans = v163._find_v163_frame(page)
+            frame, body, scans = v163._wait_for_top_level_selection(
+                page,
+                CERT_EVENT_ID,
+            )
             if REQUIRED_HEARTBEAT not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing V164 production heartbeat: {REQUIRED_HEARTBEAT}"
@@ -98,7 +101,12 @@ def verify_live_v164(
                 raise ProductionVerificationV164Failure(
                     f"certified matchup not visible: {AWAY_TEAM} @ {HOME_TEAM}"
                 )
-            event_id = v163._wait_for_event_query(page, CERT_EVENT_ID)
+            event_id = v163._event_from_url(page.url)
+            if event_id != CERT_EVENT_ID:
+                raise ProductionVerificationV164Failure(
+                    f"certified event did not persist: expected={CERT_EVENT_ID!r} "
+                    f"actual={event_id!r}"
+                )
 
             header = _assert_exact_pair(frame, "img.gt159-logo", "matchup header")
             evidence = _assert_exact_pair(
