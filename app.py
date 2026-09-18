@@ -1,4 +1,4 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB Game Total V163 activation.
+"""Kyre Sports AI Streamlit entrypoint — CFB Game Total V164 activation.
 
 The production entrypoint now boots additive Router V159. V159 preserves the
 certified Router V158 chain for every existing market while advancing only exact
@@ -209,6 +209,7 @@ FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD
 FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"
 FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"
 FROZEN_V136_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
+FROZEN_V163_ROUTER = "streamlit_memory_lazy_router_v159"
 FROZEN_V137_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD_2026-09-15"
 FROZEN_V138_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V138_NFL_PASSING_YARDS_SMART_SLATE_2026-09-16"
 FROZEN_V139_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V139_NFL_PASSING_YARDS_PHOENIX_TIME_2026-09-16"
@@ -227,7 +228,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v159 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
