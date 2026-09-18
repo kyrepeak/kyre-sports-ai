@@ -77,7 +77,10 @@ def test_v164_production_verifier_requires_step2_performance_profile_surface():
     assert 'data-testid="gt167-step2-insights"' in source
     assert 'data-testid="gt167-step2-summary"' in source
     assert '"img.gt167-logo"' in source
-    assert '"READY", "CHECK"' in source
+    assert 'state != "READY"' in source
+    assert "Step 2 certified matchup must be fully READY" in source
+    assert "Step 2 READY contains blank universal metric values" in source
+    assert "Step 2 READY must not render a Data still limited warning" in source
     assert '"step2_team_performance_profile": step2' in source
 
 
