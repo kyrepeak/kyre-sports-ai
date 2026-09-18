@@ -82,6 +82,11 @@ def _stub_quality_sources(monkeypatch, *, record_pct=0.50):
     )
     monkeypatch.setattr(
         step3,
+        "_scoreboard_range_rows_for_team",
+        lambda team_id, target_day: ([], []),
+    )
+    monkeypatch.setattr(
+        step3,
         "_opponent_defense_rank_map",
         lambda names: ({}, {"requested": len(names), "resolved": 0, "attempts": []}),
     )
@@ -1094,3 +1099,150 @@ def test_step3_candidate_dates_exclude_target_and_future_games(monkeypatch):
         2026,
     )
     assert found == ["2026-09-04", "2026-09-10"]
+
+
+
+def test_step3_scoreboard_range_recovers_exact_team_across_fbs_and_fcs(monkeypatch):
+    def _event(event_id, day, mine_id, opp_id, mine_score, opp_score):
+        return {
+            "id": event_id,
+            "date": f"{day}T16:00:00Z",
+            "status": {"type": {"completed": True, "name": "STATUS_FINAL"}},
+            "competitions": [{
+                "competitors": [
+                    {
+                        "homeAway": "home",
+                        "score": str(mine_score),
+                        "team": {
+                            "id": mine_id,
+                            "displayName": "Target Team",
+                        },
+                    },
+                    {
+                        "homeAway": "away",
+                        "score": str(opp_score),
+                        "team": {
+                            "id": opp_id,
+                            "displayName": "Opponent",
+                        },
+                    },
+                ]
+            }],
+        }
+
+    calls = []
+    def fake_fetch(url, params, provider):
+        calls.append(dict(params))
+        group = str(params["groups"])
+        if group == "80":
+            return {
+                "events": [
+                    _event("g1", "2026-09-05", "324", "277", 24, 31),
+                    # Exact-team filter must reject this unrelated completed game.
+                    _event("other", "2026-09-06", "999", "998", 30, 20),
+                ]
+            }, [{"provider": provider}]
+        return {
+            "events": [
+                _event("g2", "2026-09-12", "324", "2230", 45, 17),
+            ]
+        }, [{"provider": provider}]
+
+    monkeypatch.setattr(step3.ncaa_schedule, "_fetch_json_with_fallback", fake_fetch)
+
+    rows, attempts = step3._scoreboard_range_rows_for_team(
+        "324",
+        "2026-09-19",
+    )
+
+    assert [row["event_id"] for row in rows] == ["g1", "g2"]
+    assert len(calls) == 2
+    assert {str(call["groups"]) for call in calls} == {"80", "81"}
+    assert all(call["dates"].endswith("-20260918") for call in calls)
+    assert all(int(call["limit"]) == 1000 for call in calls)
+    assert len(attempts) == 2
+
+
+def test_step3_range_recovery_wins_when_candidate_dates_are_empty(monkeypatch):
+    _stub_quality_sources(monkeypatch)
+    identity = {
+        "away": {"team": "Miami (FL)", "team_id": "2390"},
+        "home": {"team": "Wake Forest", "team_id": "154"},
+    }
+    game = {
+        "game_date": "2026-09-18",
+        "espn_event_id": "target",
+        "away_espn_team_id": "2390",
+        "home_espn_team_id": "154",
+    }
+    one_game = {
+        "2390": [{
+            "event_id": "mia1",
+            "date": "2026-09-05T01:00:00Z",
+            "opponent_name": "Stanford Cardinal",
+            "opponent_id": "24",
+            "points_for": 45,
+            "points_against": 6,
+        }],
+        "154": [{
+            "event_id": "wf1",
+            "date": "2026-09-03T23:00:00Z",
+            "opponent_name": "Akron Zips",
+            "opponent_id": "2006",
+            "points_for": 38,
+            "points_against": 16,
+        }],
+    }
+    recovered = {
+        "2390": one_game["2390"] + [{
+            "event_id": "mia2",
+            "date": "2026-09-10T23:30:00Z",
+            "opponent_name": "Florida A&M Rattlers",
+            "opponent_id": "50",
+            "points_for": 77,
+            "points_against": 7,
+        }],
+        "154": one_game["154"] + [{
+            "event_id": "wf2",
+            "date": "2026-09-12T16:00:00Z",
+            "opponent_name": "Purdue Boilermakers",
+            "opponent_id": "2509",
+            "points_for": 38,
+            "points_against": 36,
+        }],
+    }
+
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda team_id, season: ({"team_id": team_id}, []),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_current_season_rows",
+        lambda payload, team_id, season, cutoff, event_id: list(one_game[team_id]),
+    )
+    monkeypatch.setattr(
+        step3,
+        "_scoreboard_range_rows_for_team",
+        lambda team_id, target_day: (list(recovered[team_id]), []),
+    )
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Miami (FL)"},
+        {"team": "Wake Forest"},
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert contract["away"]["last5_record"] == "2-0"
+    assert contract["home"]["last5_record"] == "2-0"
+    assert diag["away"]["scoreboard_range_rows"] == 2
+    assert diag["home"]["scoreboard_range_rows"] == 2
+    assert "scoreboard_range" in diag["away"]["source"]
+    assert "scoreboard_range" in diag["home"]["source"]
