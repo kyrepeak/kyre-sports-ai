@@ -441,3 +441,12 @@ def test_v164_step3_uses_rich_verified_completed_game_evidence():
     assert "step3_home = _merge_step2_evidence(" in source
     assert "return step3_owner.render_step3_html(" in source
     assert "step3_owner.STEP3_CSS" in source
+
+
+
+def test_v164_step3_uses_exact_id_fallback_once_before_render():
+    source = _read(PAGE)
+    assert source.count("if int(number) == 3:") == 1
+    assert "step3_owner.enrich_step3_inputs(" in source
+    assert 'step3_game["espn_event_id"] = event_id' in source
+    assert "logo_identity.enrich_exact_team_ids(" in source
