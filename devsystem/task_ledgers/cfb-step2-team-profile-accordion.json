@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-team-profile-accordion",
+  "status": "DONE",
+  "scope": "Presentation-only Step 2 Team Profile redesign. Uses existing record/sample/PPG/allowed/point-diff/recent-form evidence. Steps 1 and 3-12 plus all model/math/ranking/API behavior remain unchanged.",
+  "root_cause": "Step 2 was a single compact text line, making both teams' scoring profile, defensive allowance, differential, sample size, and recent form difficult to scan.",
+  "guardrails": {
+    "step2_only": true,
+    "step1_modified": false,
+    "steps_3_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
