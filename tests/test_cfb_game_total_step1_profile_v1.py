@@ -64,8 +64,8 @@ def _directory():
 
 def test_step1_exact_profile_fills_required_display_fields(monkeypatch):
     monkeypatch.setattr(
-        profile.environment,
-        "_fetch_summary",
+        profile,
+        "_exact_event_summary",
         lambda event_id: (_summary(), [{"provider": "summary"}]),
     )
     monkeypatch.setattr(profile.recovery, "_fetch_espn_teams", _directory)
