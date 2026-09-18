@@ -13,7 +13,7 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     assert "_event_from_url(page.url)" in source
     assert "_wait_for_event_query" not in source
     assert 'REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"' in source
-    assert 'REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_SELECTOR_ID_LOGO_PATCH_ACTIVE"' in source
+    assert 'REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"' in source
     assert "_wait_for_v164_patch_deployment" in source
     assert "page.reload(" in source
     assert "time.monotonic()" in source
