@@ -304,7 +304,7 @@ def test_v164_per_team_hook_uses_certified_selector_ids_before_network_fallback(
 def test_v164_blank_ncaa_event_placeholder_uses_exact_query_event_for_logos(monkeypatch):
     """Regression: NCAA creates espn_event_id='' before optional ESPN enrichment."""
     monkeypatch.setattr(
-        prior_v163 := page_v164.prior_v163,
+        page_v164.prior_v163,
         "_query_event_id",
         lambda: "401869940",
     )
