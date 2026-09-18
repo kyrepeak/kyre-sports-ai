@@ -16,6 +16,7 @@ import streamlit_memory_lazy_router_v159 as prior
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V160 • CFB GAME TOTAL V164 UNIVERSAL EXACT TEAM LOGOS"
 PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
+STEP1_PROFILE_HEARTBEAT = "CFB_GAME_TOTAL_STEP1_EXACT_EVENT_PROFILE_HANDOFF_ACTIVE"
 LEGACY_V163_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"
 LEGACY_V162_HEARTBEAT = "CFB_GAME_TOTAL_V162_PRODUCTION_ACTIVE"
 LEGACY_V161_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
@@ -58,7 +59,7 @@ def _render_production_heartbeat() -> None:
     st.markdown(
         f'<div data-testid="cfb-game-total-v164-heartbeat" '
         f'style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;font-size:1px">'
-        f'{PRODUCTION_HEARTBEAT} • {LEGACY_V163_HEARTBEAT} • {LEGACY_V162_HEARTBEAT} • {LEGACY_V161_HEARTBEAT}</div>',
+        f'{PRODUCTION_HEARTBEAT} • {STEP1_PROFILE_HEARTBEAT} • {LEGACY_V163_HEARTBEAT} • {LEGACY_V162_HEARTBEAT} • {LEGACY_V161_HEARTBEAT}</div>',
         unsafe_allow_html=True,
     )
 
@@ -130,6 +131,7 @@ __all__ = [
     "ROUTE_QUERY_MARKET",
     "ROUTE_QUERY_SPORT",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "STEP1_PROFILE_HEARTBEAT",
     "_clear_game_total_route_query",
     "_game_total_route_active",
     "_persist_game_total_route_query",
