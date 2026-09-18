@@ -252,6 +252,7 @@ def test_step1_exact_fallback_fills_schedule_profile_and_coach(monkeypatch):
                 {
                     "id": "a1",
                     "date": "2026-09-01T00:00:00Z",
+                    "status": {"type": {"completed": True}},
                     "competitions": [{
                         "competitors": [
                             {"homeAway": "away", "score": "31", "team": {"id": "324"}},
@@ -262,6 +263,7 @@ def test_step1_exact_fallback_fills_schedule_profile_and_coach(monkeypatch):
                 {
                     "id": "h1",
                     "date": "2026-09-01T00:00:00Z",
+                    "status": {"type": {"completed": True}},
                     "competitions": [{
                         "competitors": [
                             {"homeAway": "away", "score": "14", "team": {"id": "998"}},
@@ -281,6 +283,7 @@ def test_step1_exact_fallback_fills_schedule_profile_and_coach(monkeypatch):
                 {
                     "id": "h1",
                     "date": "2026-09-01T00:00:00Z",
+                    "status": {"type": {"completed": True}},
                     "competitions": [{
                         "competitors": [
                             {"homeAway": "away", "score": "14", "team": {"id": "998"}},
