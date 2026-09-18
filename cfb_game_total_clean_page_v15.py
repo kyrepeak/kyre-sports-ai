@@ -268,9 +268,23 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             return away_foundation, home_foundation, dict(runtime_diag or {})
         runtime_away = runtime_bundle.get("away") if isinstance(runtime_bundle.get("away"), Mapping) else {}
         runtime_home = runtime_bundle.get("home") if isinstance(runtime_bundle.get("home"), Mapping) else {}
+        merged_away = _merge_step2_evidence(away_foundation, runtime_away)
+        merged_home = _merge_step2_evidence(home_foundation, runtime_home)
+        for merged, runtime_side in (
+            (merged_away, runtime_away),
+            (merged_home, runtime_home),
+        ):
+            verified_record = str(
+                runtime_side.get("record_text")
+                or runtime_side.get("record")
+                or ""
+            ).strip()
+            if verified_record and verified_record not in {"—", "record unavailable"}:
+                merged["record"] = verified_record
+                merged["record_text"] = verified_record
         return (
-            _merge_step2_evidence(away_foundation, runtime_away),
-            _merge_step2_evidence(home_foundation, runtime_home),
+            merged_away,
+            merged_home,
             dict(runtime_diag or {}),
         )
 

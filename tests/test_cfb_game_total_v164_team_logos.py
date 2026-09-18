@@ -530,3 +530,13 @@ def test_v164_step2_uses_runtime_v2_foundation_and_drive_snapshot_adapter():
     assert block.index("_step2_certified_foundation(") < block.index(
         "step2_drive_owner.enrich_step2_drive_metrics("
     )
+
+
+def test_v164_step2_promotes_verified_runtime_record_over_stale_foundation_text():
+    source = _read(PAGE)
+    start = source.index("def _step2_certified_foundation(display_game):")
+    end = source.index("def step_evidence_v164", start)
+    block = source[start:end]
+    assert 'runtime_side.get("record")' in block
+    assert 'merged["record"] = verified_record' in block
+    assert 'merged["record_text"] = verified_record' in block

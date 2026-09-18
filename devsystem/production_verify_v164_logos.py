@@ -319,6 +319,23 @@ def _assert_step2_performance_profile(frame) -> dict:
             "Step 2 READY must not render a Data still limited warning"
         )
 
+    for side_name, card in (("away", away), ("home", home)):
+        record_value = str(
+            card.locator(".gt167-record b").inner_text() or ""
+        ).strip()
+        sample_value = str(
+            card.locator(".gt167-metric").nth(0).locator("b").inner_text() or ""
+        ).strip()
+        try:
+            sample_games = int(float(sample_value))
+        except (TypeError, ValueError):
+            sample_games = 0
+        if sample_games > 0 and record_value in {"", "—", "-", "0-0", "0-0-0"}:
+            raise ProductionVerificationV164Failure(
+                f"Step 2 {side_name} READY record is stale/empty despite "
+                f"{sample_games} completed sample games: record={record_value!r}"
+            )
+
     logos = _assert_exact_pair(frame, "img.gt167-logo", "Step 2 performance profile")
     return {
         "status": state,
