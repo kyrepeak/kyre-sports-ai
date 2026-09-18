@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-step4-certified-scoring-handoff-v1",
+  "status": "DONE",
+  "scope": "Repair only Step 4 live readiness by allowing the already-certified Step 3 recent scoring fields to satisfy Step 4's Offense-vs-Defense scoring comparison.",
+  "trigger": "Production run #39 rendered Step 4 but reported DATA LIMITED because Step 4 ignored verified recent_ppg and recent_points_allowed_pg fields already passed forward from frozen Step 3.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step3_frozen_and_untouched": true,
+    "step5_plus_not_started": true,
+    "new_provider_added": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
