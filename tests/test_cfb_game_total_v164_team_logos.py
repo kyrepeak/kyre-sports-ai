@@ -458,6 +458,7 @@ def test_v164_step3_uses_certified_team_data_foundation_before_render():
 def test_v164_step3_runs_exact_recent_game_enrichment_before_render():
     source = _read(PAGE)
     assert "step3_owner.enrich_step3_inputs(" in source
+    assert source.count("if int(number) == 3:") == 1
     enrich_index = source.index("step3_owner.enrich_step3_inputs(")
     render_index = source.index("step3_owner.render_step3_html(")
     assert enrich_index < render_index
