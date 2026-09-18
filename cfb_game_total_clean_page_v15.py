@@ -19,6 +19,7 @@ import cfb_game_total_clean_page_v9 as compact_owner
 import cfb_game_total_step1_identity_v1 as step1_owner
 import cfb_game_total_step1_profile_v1 as step1_profile_owner
 import cfb_game_total_step2_profile_v1 as step2_owner
+import cfb_game_total_step3_form_v1 as step3_owner
 import cfb_game_total_team_logo_identity_v1 as logo_identity
 import cfb_game_total_runtime_display_v1 as runtime_display
 import cfb_over_under_logo_resolver_v3 as frozen_logo
@@ -34,6 +35,7 @@ DEPLOYMENT_PROOF_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTI
 STEP1_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
 STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"
 STEP2_PRESENTATION_MARKER = step2_owner.STEP2_PRESENTATION_MARKER
+STEP3_PRESENTATION_MARKER = step3_owner.STEP3_PRESENTATION_MARKER
 
 _FROZEN_RESOLVE_VISUALS = frozen_logo.resolve_visuals
 _FROZEN_TEAM_IDENTITY = identity_owner._team_identity
@@ -166,7 +168,7 @@ def _render_v164_identity() -> None:
     st.markdown(
         '<div data-testid="cfb-game-total-v164-active" '
         'style="display:none!important">'
-        f'{ACTIVE_MARKER} • {DEPLOYMENT_PROOF_MARKER} • {STEP1_PRESENTATION_MARKER} • {STEP1_PROFILE_MARKER} • {STEP2_PRESENTATION_MARKER} • exact ESPN team logos • V163 frozen parent • '
+        f'{ACTIVE_MARKER} • {DEPLOYMENT_PROOF_MARKER} • {STEP1_PRESENTATION_MARKER} • {STEP1_PROFILE_MARKER} • {STEP2_PRESENTATION_MARKER} • {STEP3_PRESENTATION_MARKER} • exact ESPN team logos • V163 frozen parent • '
         'sportsbook projection influence 0.0%</div>',
         unsafe_allow_html=True,
     )
@@ -269,6 +271,24 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 step2_away,
                 step2_home,
             )
+        if int(number) == 3:
+            exact_identity = rendered_identity.get("value") or identity
+            step3_away = _merge_step2_evidence(
+                rendered_identity.get("away_stats") or {},
+                rendered_identity.get("step1_away") or {},
+                away,
+            )
+            step3_home = _merge_step2_evidence(
+                rendered_identity.get("home_stats") or {},
+                rendered_identity.get("step1_home") or {},
+                home,
+            )
+            return step3_owner.render_step3_html(
+                status,
+                exact_identity,
+                step3_away,
+                step3_home,
+            )
         return original_step_evidence(number, title, status, detail, identity, away, home, display_game, model)
 
     frozen_logo.resolve_visuals = _resolve_visuals_v164
@@ -277,11 +297,11 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     presentation_owner._target_matchup_header_html = target_matchup_v164
     presentation_owner._target_team_evidence_html = target_evidence_v164
     compact_owner._step_evidence_html = step_evidence_v164
-    st.markdown(step1_owner.STEP1_CSS + step2_owner.STEP2_CSS, unsafe_allow_html=True)
+    st.markdown(step1_owner.STEP1_CSS + step2_owner.STEP2_CSS + step3_owner.STEP3_CSS, unsafe_allow_html=True)
     _render_v164_identity()
     try:
         result = prior_v163.render_game_total_hub(section_header, status_info, team_logo, h)
-        st.markdown(step1_owner.STEP1_CSS + step2_owner.STEP2_CSS, unsafe_allow_html=True)
+        st.markdown(step1_owner.STEP1_CSS + step2_owner.STEP2_CSS + step3_owner.STEP3_CSS, unsafe_allow_html=True)
         return result
     finally:
         compact_owner._step_evidence_html = original_step_evidence
@@ -310,6 +330,7 @@ __all__ = [
     "STEP1_PRESENTATION_MARKER",
     "STEP1_PROFILE_MARKER",
     "STEP2_PRESENTATION_MARKER",
+    "STEP3_PRESENTATION_MARKER",
     "_final_presentation_identity_v164",
     "_team_identity_v164",
     "_query_selected_day",
