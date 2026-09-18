@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "cfb-v164-narrow-team-identity-hook",
+  "status": "DONE",
+  "scope": "Replace the broad V164 identity-state monkeypatch that caused a production KeyError with a narrow per-team identity hook. Preserve the V163 identity-state pipeline while injecting exact ESPN logo identity only at the away/home team boundary.",
+  "trigger": "V164 production logo verification run #5 reached the live V164 page but Streamlit crashed with KeyError after the broad identity-state wrapper was introduced.",
+  "guardrails": {
+    "frozen_v163_edited_in_place": false,
+    "identity_state_replaced": false,
+    "per_team_identity_only": true,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
