@@ -79,3 +79,10 @@ def test_v164_production_verifier_requires_step2_performance_profile_surface():
     assert '"img.gt167-logo"' in source
     assert '"READY", "CHECK"' in source
     assert '"step2_team_performance_profile": step2' in source
+
+
+
+def test_v164_step2_required_text_check_is_case_normalized():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert "live_text_upper = text.upper()" in source
+    assert "label.upper() not in live_text_upper" in source

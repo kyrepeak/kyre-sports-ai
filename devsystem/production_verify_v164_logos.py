@@ -286,7 +286,8 @@ def _assert_step2_performance_profile(frame) -> dict:
         "WHAT STEP 2 TELLS YOU",
         "STEP 2 SUMMARY",
     )
-    missing = [label for label in required_text if label not in text.upper()]
+    live_text_upper = text.upper()
+    missing = [label for label in required_text if label.upper() not in live_text_upper]
     if missing:
         raise ProductionVerificationV164Failure(
             f"Step 2 missing required universal performance-profile content: {missing}"
