@@ -416,3 +416,15 @@ def test_v164_step2_uses_rich_verified_evidence_and_step1_exact_profile():
     assert 'rendered_identity.get("step1_away") or {}' in source
     assert "step2_away," in source
     assert "step2_home," in source
+
+
+
+def test_v164_step3_is_connected_after_frozen_steps_1_and_2():
+    source = _read(PAGE)
+    assert "import cfb_game_total_step3_form_v1 as step3_owner" in source
+    assert "STEP3_PRESENTATION_MARKER = step3_owner.STEP3_PRESENTATION_MARKER" in source
+    assert "if int(number) == 3:" in source
+    assert "step3_owner.render_step3_html(" in source
+    assert "rendered_identity.get(\"step2_away\") or {}" in source
+    assert "rendered_identity.get(\"step2_home\") or {}" in source
+    assert "step1_owner.STEP1_CSS + step2_owner.STEP2_CSS + step3_owner.STEP3_CSS" in source
