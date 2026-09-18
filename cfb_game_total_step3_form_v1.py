@@ -1136,7 +1136,8 @@ def _team_card(team: Mapping[str, Any], *, home_side: bool) -> str:
     diff_css = "good" if diff is not None and float(diff) >= 0 else "bad"
     missing = list(team.get("missing_required") or []) + list(team.get("missing_advanced") or [])
     reason = _clean(team.get("status_reason"))
-    coverage = _float(team.get("opponent_quality_coverage"))
+    raw_coverage = team.get("opponent_quality_coverage")
+    coverage = float(raw_coverage) if raw_coverage is not None else None
     missing_html = ""
     if team.get("state") != "READY":
         coverage_text = (
