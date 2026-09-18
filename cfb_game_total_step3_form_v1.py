@@ -568,6 +568,11 @@ def enrich_step3_inputs(
         snapshot_payload = runtime_snapshot._load_v2_snapshot()
     except Exception:
         snapshot_payload = {}
+    snapshot_source = _clean(
+        snapshot_payload.get("_runtime_snapshot_source")
+        if isinstance(snapshot_payload, Mapping)
+        else ""
+    ) or "Verified runtime snapshot V2"
     try:
         exact_snapshot = runtime_snapshot._find_v2_snapshot(game)
     except Exception:
@@ -599,7 +604,7 @@ def enrich_step3_inputs(
             side,
         )
         rows = _snapshot_rows(exact_snapshot, side, team_id)
-        provider = "Verified runtime snapshot V2"
+        provider = snapshot_source
 
         if not rows and day:
             if not ncaa_profiles:
@@ -632,12 +637,45 @@ def enrich_step3_inputs(
         for row in (outputs[side].get("completed_games") or [])
         if isinstance(row, Mapping) and _clean(row.get("opponent"))
     })
+    missing_defense_names = sorted({
+        _clean(row.get("opponent"))
+        for side in ("away", "home")
+        for row in (outputs[side].get("completed_games") or [])
+        if (
+            isinstance(row, Mapping)
+            and _clean(row.get("opponent"))
+            and snapshot_defense_ranks.get(_clean(row.get("opponent_id"))) is None
+        )
+    })
     try:
-        official_defense = _official_defense_ranks(tuple(opponent_names))
+        official_defense = (
+            _official_defense_ranks(tuple(missing_defense_names))
+            if missing_defense_names
+            else {}
+        )
     except Exception:
         official_defense = {}
+
+    missing_record_names = sorted({
+        _clean(row.get("opponent"))
+        for side in ("away", "home")
+        for row in (outputs[side].get("completed_games") or [])
+        if (
+            isinstance(row, Mapping)
+            and _clean(row.get("opponent"))
+            and _record_pct(
+                (team_index.get(_clean(row.get("opponent_id"))) or {}).get(
+                    "record_text"
+                )
+            ) is None
+        )
+    })
     try:
-        ncaa_record_pcts = _ncaa_record_pcts(tuple(opponent_names), day)
+        ncaa_record_pcts = (
+            _ncaa_record_pcts(tuple(missing_record_names), day)
+            if missing_record_names
+            else {}
+        )
     except Exception:
         ncaa_record_pcts = {}
 
