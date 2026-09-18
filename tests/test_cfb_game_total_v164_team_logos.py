@@ -144,3 +144,34 @@ def test_v164_display_reconcile_enriches_exact_team_ids_before_frozen_logo_resol
     visuals = frozen_logo.resolve_visuals(display_game)
     assert visuals["away"]["logo"].endswith("/324.png")
     assert visuals["home"]["logo"].endswith("/48.png")
+
+
+def test_v164_summary_payload_resolves_exact_team_ids_by_event():
+    payload = {
+        "header": {
+            "competitions": [
+                {
+                    "competitors": [
+                        {"homeAway": "away", "team": {"id": "324"}},
+                        {"homeAway": "home", "team": {"id": "48"}},
+                    ]
+                }
+            ]
+        }
+    }
+    row = logo_identity._event_row_from_summary_payload(payload, "401869940")
+    assert row == {
+        "event_id": "401869940",
+        "away_team_id": "324",
+        "home_team_id": "48",
+    }
+
+
+def test_v164_direct_event_lookup_is_before_date_scoreboard_fallback():
+    source = (ROOT / "cfb_game_total_team_logo_identity_v1.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'ESPN_SUMMARY_URL' in source
+    assert 'params={"event": event_id}' in source
+    assert 'row = _espn_event_row(event_id)' in source
+    assert source.index('row = _espn_event_row(event_id)') < source.index('requested_day = _game_date(game)')
