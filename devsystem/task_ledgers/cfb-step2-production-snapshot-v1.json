@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-production-snapshot-v1",
+  "status": "DONE",
+  "scope": "Step 2 production-only repair: prefer raw certified Runtime Snapshot V2 team evidence for current record/form/splits and deliver Punt & Rally points-per-drive through the certified runtime-data branch instead of depending on a live Streamlit scrape.",
+  "trigger": "Merged Step 2 passed branch CI but live production remained DATA LIMITED because the NCAA-only foundation returned no completed sample and deployed Streamlit did not hydrate Punt & Rally drive metrics.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step3_logic_frozen_and_untouched": true,
+    "step4_plus_untouched": true,
+    "projection_math_changed": false,
+    "probability_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "odds_logic_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "drive_snapshot_is_display_evidence_only": true,
+    "source_values_not_hardcoded_to_matchup": true,
+    "fail_closed_on_invalid_or_missing_snapshot": true
+  },
+  "proof_requirements": {
+    "exact_runtime_v2_event_selected": true,
+    "current_record_form_splits_populated": true,
+    "drive_snapshot_full_table_coverage_required": true,
+    "drive_snapshot_published_on_main_push": true,
+    "step2_ready_required_in_production": true,
+    "no_blank_step2_metrics_when_ready": true,
+    "branch_ci_required": true,
+    "production_verification_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
