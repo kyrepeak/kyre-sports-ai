@@ -695,63 +695,90 @@ def _scoreboard_rows_for_team(
 
 
 @st.cache_data(ttl=120, show_spinner=False)
+@st.cache_data(ttl=120, show_spinner=False)
+def _scoreboard_range_events(
+    target_day: str,
+    *,
+    lookback_days: int = 70,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return deduped completed pre-target ESPN CFB events for FBS + FCS."""
+    target_text = _clean(target_day)[:10]
+    if not target_text:
+        return [], []
+    try:
+        target = date.fromisoformat(target_text)
+    except Exception:
+        return [], []
+
+    start_day = target - timedelta(days=max(14, int(lookback_days)))
+    end_day = target - timedelta(days=1)
+    if end_day < start_day:
+        return [], []
+
+    date_range = f"{start_day.strftime('%Y%m%d')}-{end_day.strftime('%Y%m%d')}"
+    events: dict[str, dict[str, Any]] = {}
+    attempts: list[dict[str, Any]] = []
+
+    for group in ("80", "81"):
+        payload, these_attempts = ncaa_schedule._fetch_json_with_fallback(
+            ncaa_schedule.ESPN_SCOREBOARD_URL,
+            {"dates": date_range, "limit": 1000, "groups": group},
+            f"ESPN CFB scoreboard range group {group} for Step 3",
+        )
+        attempts.extend(list(these_attempts or []))
+        for event in payload.get("events") or []:
+            if not isinstance(event, Mapping):
+                continue
+            if not deep.history_engine._completed(event):
+                continue
+            event_id = _clean(event.get("id"))
+            if not event_id:
+                comp = deep.history_engine._competition(event)
+                event_id = _clean(comp.get("id"))
+            if not event_id:
+                continue
+            raw_date = _clean(
+                event.get("date")
+                or deep.history_engine._competition(event).get("date")
+            )[:10]
+            if raw_date and raw_date >= target_text:
+                continue
+            events[event_id] = dict(event)
+
+    ordered = sorted(
+        events.values(),
+        key=lambda event: _clean(
+            event.get("date")
+            or deep.history_engine._competition(event).get("date")
+        ),
+    )
+    return ordered, attempts
+
+
 def _scoreboard_range_rows_for_team(
     team_id: str,
     target_day: str,
     *,
     lookback_days: int = 70,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Recover exact pre-kickoff results from ESPN date-range scoreboards.
-
-    This path deliberately does not depend on NCAA candidate-date discovery.
-    It checks both FBS and FCS group universes, filters by exact ESPN team ID,
-    accepts completed events only, and excludes the target/future dates.
-    """
+    """Recover exact completed results from the shared pre-kickoff event universe."""
     team_id = _clean(team_id)
-    target_text = _clean(target_day)[:10]
-    if not team_id.isdigit() or not target_text:
+    if not team_id.isdigit():
         return [], []
-
-    try:
-        target = date.fromisoformat(target_text)
-    except Exception:
-        return [], []
-
-    start = target - timedelta(days=max(14, int(lookback_days)))
-    end = target - timedelta(days=1)
-    if end < start:
-        return [], []
-
-    date_range = f"{start.strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
+    events, attempts = _scoreboard_range_events(
+        target_day,
+        lookback_days=lookback_days,
+    )
     rows: dict[str, dict[str, Any]] = {}
-    attempts: list[dict[str, Any]] = []
-
-    for group in ("80", "81"):
-        payload, these_attempts = ncaa_schedule._fetch_json_with_fallback(
-            ncaa_schedule.ESPN_SCOREBOARD_URL,
-            {
-                "dates": date_range,
-                "limit": 1000,
-                "groups": group,
-            },
-            f"ESPN CFB scoreboard range group {group} for Step 3 team {team_id}",
+    for event in events:
+        row = deep.history_engine._event_row(event, team_id)
+        if not row:
+            continue
+        key = _clean(row.get("event_id")) or (
+            f"{_clean(row.get('date'))}|{_clean(row.get('opponent_id'))}"
         )
-        attempts.extend(list(these_attempts or []))
-        for event in payload.get("events") or []:
-            if not isinstance(event, Mapping):
-                continue
-            row = deep.history_engine._event_row(event, team_id)
-            if not row:
-                continue
-            row_date = _clean(row.get("date"))[:10]
-            if row_date and row_date >= target_text:
-                continue
-            key = _clean(row.get("event_id")) or (
-                f"{row_date}|{_clean(row.get('opponent_id'))}"
-            )
-            if key:
-                rows[key] = dict(row)
-
+        if key:
+            rows[key] = dict(row)
     ordered = sorted(
         rows.values(),
         key=lambda row: _clean(
@@ -760,6 +787,203 @@ def _scoreboard_range_rows_for_team(
         ),
     )
     return ordered[-5:], attempts
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def _scoreboard_quality_universe(
+    target_day: str,
+    *,
+    lookback_days: int = 70,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build pregame opponent records, scoring-defense ranks, and SOS ranks."""
+    events, attempts = _scoreboard_range_events(
+        target_day,
+        lookback_days=lookback_days,
+    )
+    games: dict[str, list[dict[str, Any]]] = {}
+
+    for event in events:
+        comp = deep.history_engine._competition(event)
+        competitors = [
+            row for row in (comp.get("competitors") or [])
+            if isinstance(row, Mapping)
+        ]
+        if len(competitors) < 2:
+            continue
+
+        parsed: list[dict[str, Any]] = []
+        for competitor in competitors:
+            team = competitor.get("team") or {}
+            if not isinstance(team, Mapping):
+                team = {}
+            team_id = _clean(team.get("id"))
+            score = deep.history_engine._float(competitor.get("score"))
+            if not team_id.isdigit() or score is None:
+                continue
+            parsed.append({
+                "team_id": team_id,
+                "team_name": _clean(
+                    team.get("displayName")
+                    or team.get("shortDisplayName")
+                    or team.get("location")
+                ),
+                "score": float(score),
+            })
+        if len(parsed) != 2:
+            continue
+
+        a, b = parsed
+        for mine, opp in ((a, b), (b, a)):
+            pf = float(mine["score"])
+            pa = float(opp["score"])
+            result = "W" if pf > pa else "L" if pf < pa else "T"
+            games.setdefault(mine["team_id"], []).append({
+                "opponent_id": opp["team_id"],
+                "opponent": opp["team_name"],
+                "points_for": pf,
+                "points_against": pa,
+                "result": result,
+            })
+
+    records: dict[str, float] = {}
+    allowed_pg: dict[str, float] = {}
+    for team_id, rows in games.items():
+        if not rows:
+            continue
+        wins = sum(1 for row in rows if row["result"] == "W")
+        ties = sum(1 for row in rows if row["result"] == "T")
+        records[team_id] = (wins + 0.5 * ties) / len(rows)
+        allowed_value = _avg([float(row["points_against"]) for row in rows])
+        if allowed_value is not None:
+            allowed_pg[team_id] = float(allowed_value)
+
+    defense_order = sorted(
+        allowed_pg.items(),
+        key=lambda item: (item[1], item[0]),
+    )
+    defense_ranks = {
+        team_id: idx + 1
+        for idx, (team_id, _) in enumerate(defense_order)
+    }
+
+    sos_values: dict[str, float] = {}
+    for team_id, rows in games.items():
+        opponent_pcts = [
+            records[row["opponent_id"]]
+            for row in rows
+            if row.get("opponent_id") in records
+        ]
+        value = _avg([float(v) for v in opponent_pcts])
+        if value is not None:
+            sos_values[team_id] = float(value)
+
+    sos_order = sorted(
+        sos_values.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    sos_ranks = {
+        team_id: idx + 1
+        for idx, (team_id, _) in enumerate(sos_order)
+    }
+
+    return {
+        "records": records,
+        "defense_allowed_pg": allowed_pg,
+        "defense_ranks": defense_ranks,
+        "sos_values": sos_values,
+        "sos_ranks": sos_ranks,
+        "team_count": len(games),
+        "event_count": len(events),
+    }, {
+        "events": len(events),
+        "teams": len(games),
+        "record_teams": len(records),
+        "defense_rank_teams": len(defense_ranks),
+        "sos_rank_teams": len(sos_ranks),
+        "attempts": attempts,
+    }
+
+
+def _apply_scoreboard_quality(
+    evidence: Mapping[str, Any],
+    team_id: str,
+    universe: Mapping[str, Any],
+) -> dict[str, Any]:
+    out = dict(evidence or {})
+    completed = [
+        dict(row)
+        for row in out.get("completed_games") or []
+        if isinstance(row, Mapping)
+    ]
+    recent = completed[-5:]
+    records = universe.get("records") or {}
+    defense_ranks = universe.get("defense_ranks") or {}
+
+    for row in recent:
+        opponent_id = _clean(row.get("opponent_id"))
+        if opponent_id in records:
+            row["opponent_record_pct"] = float(records[opponent_id])
+        if opponent_id in defense_ranks:
+            row["opponent_def_rank"] = int(defense_ranks[opponent_id])
+
+    if recent:
+        completed = completed[:-len(recent)] + recent
+    out["completed_games"] = completed
+
+    pcts = [
+        float(row["opponent_record_pct"])
+        for row in recent
+        if row.get("opponent_record_pct") is not None
+    ]
+    ranks = [
+        int(row["opponent_def_rank"])
+        for row in recent
+        if row.get("opponent_def_rank") is not None
+    ]
+    out["sos_opponent_win_pct"] = _avg(pcts)
+    out["sos_coverage"] = len(pcts) / len(recent) if recent else 0.0
+    out["avg_opponent_def_rank"] = (
+        _avg([float(rank) for rank in ranks]) if ranks else None
+    )
+    out["top40_defenses_faced"] = (
+        sum(1 for rank in ranks if rank <= 40) if ranks else None
+    )
+
+    known = [
+        row for row in recent
+        if row.get("opponent_record_pct") is not None
+    ]
+    winning = [
+        row for row in known
+        if float(row["opponent_record_pct"]) > 0.5
+    ]
+    if known:
+        wins = sum(
+            1 for row in winning
+            if _clean(row.get("result")).upper() == "W"
+        )
+        losses = sum(
+            1 for row in winning
+            if _clean(row.get("result")).upper() == "L"
+        )
+        ties = sum(
+            1 for row in winning
+            if _clean(row.get("result")).upper() == "T"
+        )
+        out["record_vs_winning_teams"] = (
+            f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+        )
+        out["winning_opponents_faced"] = len(winning)
+
+    sos_ranks = universe.get("sos_ranks") or {}
+    sos_values = universe.get("sos_values") or {}
+    team_key = _clean(team_id)
+    if team_key in sos_ranks:
+        out["strength_of_schedule_rank"] = int(sos_ranks[team_key])
+    if team_key in sos_values:
+        out["sos_opponent_win_pct"] = float(sos_values[team_key])
+
+    return out
 
 
 def _merge_exact_game_rows(
@@ -982,6 +1206,42 @@ def enrich_step3_inputs(
             "required_complete": bool(snapshot_contract.get("required_complete")),
             "attempts": attempts,
         }
+
+    # Phase 1B — derive opponent quality from the same exact pregame
+    # scoreboard universe before any per-opponent fallback is attempted.
+    quality_universe: dict[str, Any] = {}
+    quality_universe_diag: dict[str, Any] = {"attempts": []}
+    if target_day:
+        try:
+            quality_universe, quality_universe_diag = _scoreboard_quality_universe(
+                target_day
+            )
+        except Exception as exc:
+            quality_universe_diag = {
+                "attempts": [{
+                    "provider": "ESPN scoreboard Step 3 quality universe",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }]
+            }
+
+    for side in ("away", "home"):
+        team_id = _clean((diag.get(side) or {}).get("team_id"))
+        if team_id and quality_universe:
+            outputs[side] = _apply_scoreboard_quality(
+                outputs[side],
+                team_id,
+                quality_universe,
+            )
+        diag[side]["scoreboard_quality_universe"] = {
+            key: value
+            for key, value in quality_universe_diag.items()
+            if key != "attempts"
+        }
+        diag[side].setdefault("attempts", [])
+        diag[side]["attempts"] = (
+            list(diag[side].get("attempts") or [])
+            + list(quality_universe_diag.get("attempts") or [])
+        )
 
     # Phase 2 — exact opponent records for only the displayed recent window.
     opponent_names: list[str] = []
@@ -1502,4 +1762,7 @@ __all__ = [
     "build_team_form_contract",
     "render_step3_html",
     "_scoreboard_range_rows_for_team",
+    "_apply_scoreboard_quality",
+    "_scoreboard_quality_universe",
+    "_scoreboard_range_events",
 ]
