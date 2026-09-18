@@ -344,15 +344,30 @@ def enrich_step3_inputs(
             continue
 
         try:
-            rows, hydration, attempts = deep._current_rows(
+            payload, attempts = deep.history_engine._fetch_team_schedule(
                 team_id,
-                season,
+                int(season),
+            )
+            rows = deep.form_engine._current_season_rows(
+                payload,
+                team_id,
+                int(season),
                 cutoff,
                 event_id,
             )
+            # The form helper returns newest-first. Step 3 wants chronological
+            # display order so its "recent" slice and trend direction remain
+            # deterministic.
+            rows = sorted(
+                rows,
+                key=lambda row: _clean(
+                    row.get("date")
+                    or getattr(row.get("date_dt"), "isoformat", lambda: "")()
+                ),
+            )
         except Exception as exc:
-            rows, hydration, attempts = [], {}, [{
-                "provider": f"ESPN exact team {team_id} current-season Step 3 fallback",
+            rows, attempts = [], [{
+                "provider": f"ESPN exact team {team_id} lightweight Step 3 schedule fallback",
                 "error": f"{type(exc).__name__}: {exc}"[:260],
             }]
         outputs[side] = _overlay_exact_rows(current, rows)
@@ -360,8 +375,7 @@ def enrich_step3_inputs(
             "fallback_used": bool(rows),
             "team_id": team_id,
             "rows": len(rows),
-            "hydrated_opponents": int(hydration.get("fallback_resolved") or 0)
-            if isinstance(hydration, Mapping) else 0,
+            "opponent_record_mode": "inline_only",
             "attempts": attempts,
         }
 
