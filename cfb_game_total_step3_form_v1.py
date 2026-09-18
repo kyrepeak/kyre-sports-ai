@@ -211,9 +211,16 @@ def _trend(games: list[Mapping[str, Any]]) -> tuple[str, float | None]:
 
 
 def _record_vs_winning(games: list[Mapping[str, Any]]) -> tuple[str, int]:
-    qualifying = [row for row in games if row.get("opponent_win_pct") is not None and float(row["opponent_win_pct"]) > 0.5]
-    if not qualifying:
+    known = [
+        row for row in games
+        if row.get("opponent_win_pct") is not None
+    ]
+    if not known:
         return "", 0
+    qualifying = [
+        row for row in known
+        if float(row["opponent_win_pct"]) > 0.5
+    ]
     wins = sum(1 for row in qualifying if row.get("result") == "W")
     losses = sum(1 for row in qualifying if row.get("result") == "L")
     ties = sum(1 for row in qualifying if row.get("result") == "T")
@@ -599,7 +606,7 @@ def enrich_step3_inputs(
     home: Mapping[str, Any] | None,
     game: Mapping[str, Any] | None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Refresh Step 3 from exact current team schedules; fail back deterministically."""
+    """Refresh Step 3 core form and hydrate opponent quality fail-closed."""
     identity = identity or {}
     game = game or {}
     outputs: dict[str, dict[str, Any]] = {
@@ -617,6 +624,7 @@ def enrich_step3_inputs(
     event_id = _clean(game.get("espn_event_id"))
     target_day = _clean(game.get("game_date"))[:10]
 
+    # Phase 1 — exact completed-game truth for each selected team.
     for side in ("away", "home"):
         current = outputs[side]
         identity_side = (
@@ -635,9 +643,6 @@ def enrich_step3_inputs(
             }
             continue
 
-        # 1) Truth source: always try the exact current-season team schedule.
-        # This prevents an older but internally-complete snapshot from freezing
-        # Step 3 at one game when newer completed games exist before kickoff.
         attempts: list[dict[str, Any]] = []
         live_rows: list[Mapping[str, Any]] = []
         if season and cutoff is not None:
@@ -681,8 +686,6 @@ def enrich_step3_inputs(
             }
             continue
 
-        # 2) Preserve current evidence if it is already usable and the live
-        # refresh was unavailable. Never downgrade a valid current surface.
         current_contract = build_team_form_contract(
             current,
             identity_side,
@@ -700,7 +703,6 @@ def enrich_step3_inputs(
             }
             continue
 
-        # 3) Deterministic repository snapshot is last-resort core evidence.
         snapshot_rows = _snapshot_rows_for_team(team_id, target_day)
         snapshot_overlay = _overlay_exact_rows(current, snapshot_rows)
         snapshot_contract = build_team_form_contract(
@@ -718,6 +720,110 @@ def enrich_step3_inputs(
             "required_complete": bool(snapshot_contract.get("required_complete")),
             "attempts": attempts,
         }
+
+    # Phase 2 — exact opponent records for only the displayed recent window.
+    opponent_names: list[str] = []
+    for side in ("away", "home"):
+        current = dict(outputs[side])
+        completed = [
+            dict(row)
+            for row in current.get("completed_games") or []
+            if isinstance(row, Mapping)
+        ]
+        recent = completed[-5:]
+        quality_attempts: list[dict[str, Any]] = []
+        record_diag: dict[str, Any] = {
+            "inline_records": 0,
+            "fallback_requested": 0,
+            "fallback_resolved": 0,
+            "attempts": [],
+        }
+        if recent and season and cutoff is not None:
+            try:
+                hydrated, record_diag = deep.form_engine._hydrate_opponent_records(
+                    recent,
+                    int(season),
+                    cutoff,
+                    event_id,
+                )
+                quality_attempts.extend(record_diag.get("attempts") or [])
+                completed = completed[:-len(recent)] + hydrated
+                current["completed_games"] = completed
+            except Exception as exc:
+                quality_attempts.append({
+                    "provider": "ESPN exact opponent records for Step 3",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                })
+
+        outputs[side] = current
+        for row in (current.get("completed_games") or [])[-5:]:
+            if isinstance(row, Mapping) and _usable(row.get("opponent")):
+                opponent_names.append(_clean(row.get("opponent")))
+        diag[side]["opponent_record_resolution"] = {
+            key: value
+            for key, value in record_diag.items()
+            if key != "attempts"
+        }
+        diag[side].setdefault("attempts", [])
+        diag[side]["attempts"] = (
+            list(diag[side].get("attempts") or []) + quality_attempts
+        )
+
+    # Phase 3 — official NCAA scoring-defense ranks and pre-target SOS rank.
+    defense_ranks: dict[str, int] = {}
+    defense_diag: dict[str, Any] = {"requested": 0, "resolved": 0, "attempts": []}
+    if opponent_names:
+        try:
+            defense_ranks, defense_diag = _opponent_defense_rank_map(
+                tuple(opponent_names)
+            )
+        except Exception as exc:
+            defense_diag = {
+                "requested": len(opponent_names),
+                "resolved": 0,
+                "attempts": [{
+                    "provider": "NCAA opponent scoring-defense ranks for Step 3",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }],
+            }
+
+    sos_ranks: dict[str, int] = {}
+    sos_diag: dict[str, Any] = {"ranked_teams": 0, "attempts": []}
+    if target_day:
+        try:
+            sos_ranks, sos_diag = _strength_of_schedule_rank_map(target_day)
+        except Exception as exc:
+            sos_diag = {
+                "ranked_teams": 0,
+                "attempts": [{
+                    "provider": "NCAA schedule-strength rank for Step 3",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }],
+            }
+
+    for side in ("away", "home"):
+        team_name = (
+            outputs[side].get("team")
+            or (identity.get(side) or {}).get("team")
+            or (identity.get(side) or {}).get("team_name")
+        )
+        sos_rank = _lookup_sos_rank(team_name, sos_ranks)
+        outputs[side] = _apply_opponent_quality(
+            outputs[side],
+            defense_ranks,
+            sos_rank,
+        )
+        diag[side]["opponent_defense_rank_resolution"] = {
+            "requested": int(defense_diag.get("requested") or 0),
+            "resolved": int(defense_diag.get("resolved") or 0),
+        }
+        diag[side]["strength_of_schedule_rank"] = sos_rank
+        diag[side].setdefault("attempts", [])
+        diag[side]["attempts"] = (
+            list(diag[side].get("attempts") or [])
+            + list(defense_diag.get("attempts") or [])
+            + list(sos_diag.get("attempts") or [])
+        )
 
     return outputs["away"], outputs["home"], diag
 
