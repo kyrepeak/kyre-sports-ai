@@ -15,6 +15,8 @@ import re
 from statistics import fmean
 from typing import Any, Mapping
 
+import cfb_over_under_deep_data_reconciliation_v1 as deep
+
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
@@ -219,6 +221,151 @@ def _opponent_quality_label(avg_pct: float | None) -> str:
     if avg_pct <= 0.40:
         return "Soft opponent slate"
     return "Average opponent slate"
+
+
+def _exact_team_id(
+    identity_side: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    game: Mapping[str, Any],
+    side: str,
+) -> str:
+    value = _clean(
+        identity_side.get("team_id")
+        or identity_side.get("espn_team_id")
+        or evidence.get("espn_team_id")
+        or game.get(f"{side}_espn_team_id")
+    )
+    return value if value.isdigit() else ""
+
+
+def _overlay_exact_rows(
+    evidence: Mapping[str, Any],
+    rows: list[Mapping[str, Any]],
+) -> dict[str, Any]:
+    out = dict(evidence or {})
+    if not rows:
+        return out
+
+    completed: list[dict[str, Any]] = []
+    for row in rows:
+        pf = _float(row.get("points_for"))
+        pa = _float(row.get("points_against"))
+        if pf is None or pa is None:
+            continue
+        result = "W" if pf > pa else "L" if pf < pa else "T"
+        completed.append({
+            "event_id": _clean(row.get("event_id")),
+            "date": _clean(row.get("date"))[:10],
+            "opponent": _clean(row.get("opponent_name") or row.get("opponent")),
+            "opponent_id": _clean(row.get("opponent_id")),
+            "location": _clean(row.get("location")),
+            "result": result,
+            "points_for": pf,
+            "points_against": pa,
+            "score": f"{int(pf)}-{int(pa)}",
+            "opponent_record_pct": row.get("opponent_record_pct"),
+        })
+
+    if not completed:
+        return out
+
+    recent = completed[-5:]
+    out["completed_games"] = completed
+    out["recent_record"] = {
+        "wins": sum(1 for row in recent if row["result"] == "W"),
+        "losses": sum(1 for row in recent if row["result"] == "L"),
+        "ties": sum(1 for row in recent if row["result"] == "T"),
+        "games": len(recent),
+    }
+    out["recent_form"] = "".join(row["result"] for row in recent)
+    out["recent_ppg"] = _avg([float(row["points_for"]) for row in recent])
+    out["recent_points_allowed_pg"] = _avg([float(row["points_against"]) for row in recent])
+    out["recent_point_diff_pg"] = _avg([
+        float(row["points_for"]) - float(row["points_against"])
+        for row in recent
+    ])
+    opp_pcts = [
+        float(row["opponent_record_pct"])
+        for row in completed
+        if row.get("opponent_record_pct") is not None
+    ]
+    if opp_pcts:
+        out["sos_opponent_win_pct"] = _avg(opp_pcts)
+        out["sos_coverage"] = len(opp_pcts) / len(completed)
+    return out
+
+
+def enrich_step3_inputs(
+    identity: Mapping[str, Any] | None,
+    away: Mapping[str, Any] | None,
+    home: Mapping[str, Any] | None,
+    game: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Fill missing Step 3 recent-form evidence from exact ESPN team IDs only."""
+    identity = identity or {}
+    game = game or {}
+    outputs: dict[str, dict[str, Any]] = {
+        "away": dict(away or {}),
+        "home": dict(home or {}),
+    }
+    diag: dict[str, Any] = {"away": {}, "home": {}}
+
+    try:
+        season = int(deep._season(game))
+        cutoff = deep._cutoff(game)
+    except Exception:
+        season = 0
+        cutoff = None
+    event_id = _clean(game.get("espn_event_id"))
+
+    for side in ("away", "home"):
+        current = outputs[side]
+        current_contract = build_team_form_contract(
+            current,
+            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
+            side=side,
+        )
+        if current_contract.get("required_complete"):
+            diag[side] = {"fallback_used": False, "reason": "core_recent_form_already_complete"}
+            continue
+
+        team_id = _exact_team_id(
+            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
+            current,
+            game,
+            side,
+        )
+        if not (team_id and season and cutoff is not None):
+            diag[side] = {
+                "fallback_used": False,
+                "reason": "exact_team_id_or_date_unavailable",
+                "team_id": team_id,
+            }
+            continue
+
+        try:
+            rows, hydration, attempts = deep._current_rows(
+                team_id,
+                season,
+                cutoff,
+                event_id,
+            )
+        except Exception as exc:
+            rows, hydration, attempts = [], {}, [{
+                "provider": f"ESPN exact team {team_id} current-season Step 3 fallback",
+                "error": f"{type(exc).__name__}: {exc}"[:260],
+            }]
+        outputs[side] = _overlay_exact_rows(current, rows)
+        diag[side] = {
+            "fallback_used": bool(rows),
+            "team_id": team_id,
+            "rows": len(rows),
+            "hydrated_opponents": int(hydration.get("fallback_resolved") or 0)
+            if isinstance(hydration, Mapping) else 0,
+            "attempts": attempts,
+        }
+
+    return outputs["away"], outputs["home"], diag
 
 
 def build_team_form_contract(
@@ -570,6 +717,7 @@ __all__ = [
     "STEP3_PRESENTATION_MARKER",
     "STEP3_REQUIRED_FIELDS",
     "build_step3_contract",
+    "enrich_step3_inputs",
     "build_team_form_contract",
     "render_step3_html",
 ]
