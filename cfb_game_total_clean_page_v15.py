@@ -155,7 +155,7 @@ def _render_v164_identity() -> None:
     st.markdown(
         '<div data-testid="cfb-game-total-v164-active" '
         'style="display:none!important">'
-        f'{ACTIVE_MARKER} • exact ESPN team logos • V163 frozen parent • '
+        f'{ACTIVE_MARKER} • {DEPLOYMENT_PROOF_MARKER} • exact ESPN team logos • V163 frozen parent • '
         'sportsbook projection influence 0.0%</div>',
         unsafe_allow_html=True,
     )
