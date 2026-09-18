@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-marker-before-render-v164",
+  "status": "DONE",
+  "scope": "Render the V164 hidden deployment proof marker before handing control to the frozen V163 hub so Streamlit reruns/stops cannot prevent the marker from ever entering the DOM.",
+  "trigger": "Production proof #23 still timed out even though branch-local V164 tests and both production baselines were GREEN; the marker call occurred after the frozen hub render, so runtime control-flow could exit before the marker rendered.",
+  "guardrails": {
+    "frozen_v163_edited_in_place": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
