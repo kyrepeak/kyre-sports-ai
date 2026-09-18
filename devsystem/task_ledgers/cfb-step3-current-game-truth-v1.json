@@ -14,7 +14,15 @@
     "projection_math_changed": false,
     "distribution_math_changed": false,
     "api_model_behavior_changed": false,
-    "sportsbook_projection_influence": 0
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
   },
-  "proof_target": "Focused Step 3 tests must prove a stale one-game sample refreshes to all completed pre-kickoff games and snapshot evidence is used only when live refresh fails."
+  "proof_target": "Focused Step 3 tests must prove a stale one-game sample refreshes to all completed pre-kickoff games and snapshot evidence is used only when live refresh fails.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
