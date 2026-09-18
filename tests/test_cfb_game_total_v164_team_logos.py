@@ -441,3 +441,14 @@ def test_v164_step3_uses_rich_verified_completed_game_evidence():
     assert "step3_home = _merge_step2_evidence(" in source
     assert "return step3_owner.render_step3_html(" in source
     assert "step3_owner.STEP3_CSS" in source
+
+
+
+def test_v164_step3_uses_certified_team_data_foundation_before_render():
+    source = _read(PAGE)
+    assert "import cfb_team_data_v1 as step3_data_owner" in source
+    assert "def _step3_certified_foundation(display_game):" in source
+    assert "step3_data_owner.load_matchup_team_data(" in source
+    assert "step3_foundation_away, step3_foundation_home = _step3_certified_foundation(" in source
+    assert "step3_foundation_away," in source
+    assert "step3_foundation_home," in source
