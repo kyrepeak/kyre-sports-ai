@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-live-hydration-diagnostics-v1",
+  "status": "DONE",
+  "scope": "Step 3 only: expose nonvisual production diagnostics for exact game/team/date hydration, scoreboard recovery row counts, quality-universe counts, and provider errors.",
+  "trigger": "Production #50 still rendered the stale one-game sample after weekly scoreboard recovery, so the next move is to observe the exact live hydration inputs/results instead of guessing.",
+  "guardrails": {
+    "step3_only": true,
+    "visual_layout_changed": false,
+    "other_steps_untouched": true,
+    "projection_math_changed": false,
+    "model_behavior_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "proof_target": "Production failure must include the exact Step 3 game date, selected day, ESPN team IDs, live source, row counts, quality-universe counts, and provider attempts.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
