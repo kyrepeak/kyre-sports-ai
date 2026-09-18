@@ -345,10 +345,12 @@ def _assert_step3_current_form(frame) -> dict:
 
     state = str(step.get_attribute("data-step3-state") or "").strip().upper()
     text = step.inner_text()
+    diag_attr = str(step.get_attribute("data-step3-diag") or "")
     if state != "READY":
         raise ProductionVerificationV164Failure(
             "Step 3 certified matchup must be fully READY after current-form and "
-            f"opponent-quality hydration: state={state!r} live_text={text[:2400]!r}"
+            f"opponent-quality hydration: state={state!r} "
+            f"diag={diag_attr[:9000]!r} live_text={text[:2400]!r}"
         )
 
     required_text = (
