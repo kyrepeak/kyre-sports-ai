@@ -17,6 +17,10 @@ ESPN_SCOREBOARD_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/"
     "college-football/scoreboard"
 )
+ESPN_SUMMARY_URL = (
+    "https://site.api.espn.com/apis/site/v2/sports/football/"
+    "college-football/summary"
+)
 ESPN_GROUPS = (80, 81)
 ESPN_LOGO_CDN_TEMPLATE = "https://a.espncdn.com/i/teamlogos/ncaa/500/{team_id}.png"
 NETWORK_TIMEOUT_SECONDS = 6.0
@@ -50,6 +54,68 @@ def _game_date(game: Mapping[str, Any]) -> str:
         except ValueError:
             continue
     return ""
+
+
+
+def _event_row_from_summary_payload(
+    payload: Mapping[str, Any],
+    event_id: str,
+) -> dict[str, str] | None:
+    header = payload.get("header")
+    if not isinstance(header, Mapping):
+        return None
+    competitions = header.get("competitions") or []
+    if not competitions or not isinstance(competitions[0], Mapping):
+        return None
+    comp = competitions[0]
+    sides: dict[str, Mapping[str, Any]] = {}
+    for competitor in comp.get("competitors") or []:
+        if not isinstance(competitor, Mapping):
+            continue
+        side = _clean(competitor.get("homeAway")).casefold()
+        if side in {"away", "home"}:
+            sides[side] = competitor
+    if set(sides) != {"away", "home"}:
+        return None
+
+    def team_id(side: str) -> str:
+        raw = sides[side].get("team")
+        team = raw if isinstance(raw, Mapping) else {}
+        return _clean(team.get("id"))
+
+    away_id = team_id("away")
+    home_id = team_id("home")
+    if not away_id.isdigit() or not home_id.isdigit():
+        return None
+    return {
+        "event_id": event_id,
+        "away_team_id": away_id,
+        "home_team_id": home_id,
+    }
+
+
+@lru_cache(maxsize=512)
+def _espn_event_row(event_id: str) -> dict[str, str] | None:
+    event_id = _clean(event_id)
+    if not event_id:
+        return None
+    try:
+        response = requests.get(
+            ESPN_SUMMARY_URL,
+            params={"event": event_id},
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "KyreSportsAI-CFB-V164-Logos/2.0",
+            },
+            timeout=NETWORK_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, Mapping):
+            return None
+        return _event_row_from_summary_payload(payload, event_id)
+    except (requests.RequestException, ValueError, TypeError):
+        return None
 
 
 def _rows_from_payload(payload: Mapping[str, Any], requested_day: str) -> list[dict[str, str]]:
@@ -146,6 +212,8 @@ def enrich_exact_team_ids(
 
     row = _selector_row(game, selector_payload)
     if row is None:
+        row = _espn_event_row(event_id)
+    if row is None:
         requested_day = _game_date(game)
         if requested_day:
             exact = [candidate for candidate in _espn_rows(requested_day) if candidate["event_id"] == event_id]
@@ -176,6 +244,7 @@ def resolve_visuals(
 
 
 def clear_cache() -> None:
+    _espn_event_row.cache_clear()
     _espn_rows.cache_clear()
 
 
@@ -183,8 +252,10 @@ __all__ = [
     "ESPN_GROUPS",
     "ESPN_LOGO_CDN_TEMPLATE",
     "ESPN_SCOREBOARD_URL",
+    "ESPN_SUMMARY_URL",
     "MAY_MODIFY_PROJECTION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_event_row_from_summary_payload",
     "clear_cache",
     "enrich_exact_team_ids",
     "resolve_visuals",
