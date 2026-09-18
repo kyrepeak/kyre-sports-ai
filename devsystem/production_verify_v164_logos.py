@@ -28,6 +28,7 @@ REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
 REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"
 REQUIRED_STEP1_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
 REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"
+REQUIRED_STEP2_MARKER = "CFB_GAME_TOTAL_STEP2_PERFORMANCE_PROFILE_V2_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -137,6 +138,7 @@ def _wait_for_v164_patch_deployment(
                 and REQUIRED_PATCH_MARKER in dom_text
                 and REQUIRED_STEP1_MARKER in dom_text
                 and REQUIRED_STEP1_PROFILE_MARKER in dom_text
+                and REQUIRED_STEP2_MARKER in dom_text
             ):
                 return frame, dom_text, scans
         except Exception as exc:
@@ -150,6 +152,7 @@ def _wait_for_v164_patch_deployment(
         f"required_marker={REQUIRED_PATCH_MARKER!r} "
         f"required_step1_marker={REQUIRED_STEP1_MARKER!r} "
         f"required_step1_profile_marker={REQUIRED_STEP1_PROFILE_MARKER!r} "
+        f"required_step2_marker={REQUIRED_STEP2_MARKER!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
     )
@@ -224,6 +227,80 @@ def _assert_step1_identity(frame) -> dict:
         "logos": logos,
     }
 
+
+
+def _assert_step2_performance_profile(frame) -> dict:
+    step = frame.locator('details[data-testid="gt157-step-2"]')
+    try:
+        step.wait_for(state="attached", timeout=30000)
+    except Exception as exc:
+        raise ProductionVerificationV164Failure(
+            "Step 2 timed out waiting for the Team Performance Profile to render"
+        ) from exc
+    if step.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 2 expected one connected accordion; found {step.count()}"
+        )
+    if step.get_attribute("open") is None:
+        raise ProductionVerificationV164Failure(
+            "Step 2 Team Performance Profile must render expanded by default"
+        )
+
+    away = frame.locator('[data-testid="gt167-step2-away"]')
+    home = frame.locator('[data-testid="gt167-step2-home"]')
+    insights = frame.locator('[data-testid="gt167-step2-insights"]')
+    summary = frame.locator('[data-testid="gt167-step2-summary"]')
+    if away.count() != 1 or home.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 2 expected two universal team cards; away={away.count()} home={home.count()}"
+        )
+    if insights.count() != 1 or summary.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 2 missing insight/summary surfaces; insights={insights.count()} summary={summary.count()}"
+        )
+
+    state = str(step.get_attribute("data-step2-state") or "").strip().upper()
+    if state not in {"READY", "CHECK"}:
+        raise ProductionVerificationV164Failure(
+            f"Step 2 core performance profile is not production-usable: state={state!r}"
+        )
+
+    text = step.inner_text()
+    required_text = (
+        "Team Performance Profile",
+        AWAY_TEAM,
+        HOME_TEAM,
+        "SAMPLE GAMES",
+        "POINTS / GAME",
+        "ALLOWED / GAME",
+        "YARDS / PLAY",
+        "PTS / DRIVE",
+        "OFF EFF RANK",
+        "YPP ALLOWED",
+        "PTS/DRIVE ALLOWED",
+        "DEF EFF RANK",
+        "POINT DIFF / GAME",
+        "HOME/AWAY SPLIT",
+        "RECENT FORM",
+        "PROFILE EDGE",
+        "WHAT STEP 2 TELLS YOU",
+        "STEP 2 SUMMARY",
+    )
+    missing = [label for label in required_text if label not in text.upper()]
+    if missing:
+        raise ProductionVerificationV164Failure(
+            f"Step 2 missing required universal performance-profile content: {missing}"
+        )
+
+    logos = _assert_exact_pair(frame, "img.gt167-logo", "Step 2 performance profile")
+    return {
+        "status": state,
+        "text": text,
+        "logos": logos,
+        "insight_cards": insights.locator(".gt167-insight").count(),
+        "metric_cards": step.locator(".gt167-metric").count(),
+    }
+
 def verify_live_v164(
     streamlit_url: str,
     *,
@@ -268,6 +345,10 @@ def verify_live_v164(
                 raise ProductionVerificationV164Failure(
                     f"missing Step 1 exact-profile marker: {REQUIRED_STEP1_PROFILE_MARKER}"
                 )
+            if REQUIRED_STEP2_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 2 performance-profile marker: {REQUIRED_STEP2_MARKER}"
+                )
             if AWAY_TEAM not in body or HOME_TEAM not in body:
                 raise ProductionVerificationV164Failure(
                     f"certified matchup not visible: {AWAY_TEAM} @ {HOME_TEAM}"
@@ -286,6 +367,7 @@ def verify_live_v164(
                 "team evidence",
             )
             step1 = _assert_step1_identity(frame)
+            step2 = _assert_step2_performance_profile(frame)
 
             screenshot = artifacts / "production_cfb_game_total_v164_logos_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
@@ -300,6 +382,7 @@ def verify_live_v164(
                 "header_logos": header,
                 "evidence_logos": evidence,
                 "step1_team_identity": step1,
+                "step2_team_performance_profile": step2,
                 "frame_scan_count": len(scans),
                 "screenshot": str(screenshot),
             }
