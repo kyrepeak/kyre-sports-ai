@@ -133,9 +133,10 @@ def verify_live_v164(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    targets = base._load_targets()
     parser.add_argument(
         "--streamlit-url",
-        default=v163.DEFAULT_STREAMLIT_URL,
+        default=str(targets["streamlit"]["url"]).rstrip("/"),
     )
     parser.add_argument(
         "--artifact-dir",
