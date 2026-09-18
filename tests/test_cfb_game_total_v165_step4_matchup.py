@@ -1,3 +1,4 @@
+# V165 CI trigger checkpoint — no behavior change
 from __future__ import annotations
 
 from pathlib import Path
