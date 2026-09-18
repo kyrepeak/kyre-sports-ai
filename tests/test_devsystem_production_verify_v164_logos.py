@@ -8,6 +8,9 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     source = VERIFIER.read_text(encoding="utf-8")
     assert "from devsystem import production_verify_v5 as v163" in source
     assert "prior = v163.run()" in source
+    assert "_wait_for_top_level_selection" in source
+    assert "_event_from_url(page.url)" in source
+    assert "_wait_for_event_query" not in source
     assert 'REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"' in source
     assert 'CERT_EVENT_ID = "401869940"' in source
     assert 'AWAY_TEAM_ID = "324"' in source
