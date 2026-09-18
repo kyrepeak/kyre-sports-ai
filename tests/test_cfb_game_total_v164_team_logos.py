@@ -395,6 +395,7 @@ def test_v164_hidden_identity_marker_renders_without_runtime_name_error(monkeypa
     assert page_v164.STEP1_PROFILE_MARKER in body
     assert page_v164.STEP2_PRESENTATION_MARKER in body
     assert page_v164.STEP3_PRESENTATION_MARKER in body
+    assert page_v164.STEP4_PRESENTATION_MARKER in body
 
 
 def test_v164_deployment_marker_renders_before_frozen_hub_handoff():
@@ -476,3 +477,15 @@ def test_v164_step3_runs_exact_id_live_fallback_after_certified_foundation():
     assert 'step3_game["espn_event_id"] = event_id' in step3_block
     assert "logo_identity.enrich_exact_team_ids(" in step3_block
     assert "return step3_owner.render_step3_html(" in step3_block
+
+
+
+def test_v164_step4_is_connected_after_frozen_steps_1_to_3():
+    source = _read(PAGE)
+    assert "import cfb_game_total_step4_matchup_v1 as step4_owner" in source
+    assert "STEP4_PRESENTATION_MARKER = step4_owner.STEP4_PRESENTATION_MARKER" in source
+    assert "if int(number) == 4:" in source
+    assert "step4_owner.render_step4_html(" in source
+    assert 'rendered_identity.get("step3_away") or {}' in source
+    assert 'rendered_identity.get("step3_home") or {}' in source
+    assert "step1_owner.STEP1_CSS + step2_owner.STEP2_CSS + step3_owner.STEP3_CSS + step4_owner.STEP4_CSS" in source
