@@ -307,8 +307,8 @@ def test_step2_drive_enrichment_fills_only_missing_metrics(monkeypatch):
     assert away["points_per_drive_allowed"] == 1.73
     assert home["points_per_drive"] == 3.05
     assert home["points_per_drive_allowed"] == 1.75
-    assert away["step2_drive_source"] == "Punt & Rally"
-    assert home["step2_drive_source"] == "Punt & Rally"
+    assert away["step2_drive_source"] == "Punt & Rally via verified snapshot"
+    assert home["step2_drive_source"] == "Punt & Rally via verified snapshot"
     assert diag["status"] == "READY"
 
 
