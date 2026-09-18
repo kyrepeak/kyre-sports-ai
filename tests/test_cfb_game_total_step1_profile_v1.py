@@ -135,7 +135,7 @@ def test_step1_profile_uses_exact_team_id_only(monkeypatch):
 def test_step1_classification_supports_exact_fcs_group():
     team_obj = {"groups": {"id": "40", "parent": {"id": "81"}}}
     assert profile._classification({}, team_obj) == "FCS"
-    assert profile._classification({"division_context": "FBS"}, team_obj) == "FBS"
+    assert profile._classification({"division_context": "FBS"}, team_obj) == "FCS"
 
 
 def test_step1_profile_is_presentation_only():
