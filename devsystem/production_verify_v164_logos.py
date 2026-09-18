@@ -1,8 +1,9 @@
 """Production verification for CFB Game Total V164 exact team logos.
 
-V164 is presentation-only. First preserve the complete V163 production proof,
-then require exact ESPN team-logo rendering for the certified matchup in the
-live Streamlit deployment.
+V164 is presentation-only. The existing V5 production workflow remains the
+separate required V163 persistence gate. This verifier proves only the additive
+V164 exact ESPN team-logo rendering in the live Streamlit deployment, avoiding
+duplicate concurrent browser certification against the same app process.
 """
 from __future__ import annotations
 
@@ -152,15 +153,13 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Preserve the full existing V163 production contract first.
-    prior = v163.run()
     logos = verify_live_v164(
         args.streamlit_url,
         artifact_dir=args.artifact_dir,
     )
     result = {
         "status": "GREEN",
-        "v163_production_proof": prior,
+        "required_separate_gate": "DevSystem production verification V5",
         "v164_exact_team_logos": logos,
     }
     print(json.dumps(result, indent=2, sort_keys=True))
