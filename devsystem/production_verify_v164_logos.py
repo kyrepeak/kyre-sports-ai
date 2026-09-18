@@ -20,7 +20,7 @@ from devsystem import production_verify_v1 as base
 
 CERT_DATE = "2026-09-18"
 CERT_EVENT_ID = "401858226"
-AWAY_TEAM = "Miami (FL)"
+AWAY_TEAM = "Miami"
 HOME_TEAM = "Wake Forest"
 AWAY_TEAM_ID = "2390"
 HOME_TEAM_ID = "154"
