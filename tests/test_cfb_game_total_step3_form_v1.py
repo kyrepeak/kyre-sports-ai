@@ -87,6 +87,11 @@ def _stub_quality_sources(monkeypatch, *, record_pct=0.50):
     )
     monkeypatch.setattr(
         step3,
+        "_scoreboard_quality_universe",
+        lambda target_day: ({}, {"attempts": []}),
+    )
+    monkeypatch.setattr(
+        step3,
         "_opponent_defense_rank_map",
         lambda names: ({}, {"requested": len(names), "resolved": 0, "attempts": []}),
     )
@@ -1246,3 +1251,136 @@ def test_step3_range_recovery_wins_when_candidate_dates_are_empty(monkeypatch):
     assert diag["home"]["scoreboard_range_rows"] == 2
     assert "scoreboard_range" in diag["away"]["source"]
     assert "scoreboard_range" in diag["home"]["source"]
+
+
+
+def test_step3_scoreboard_quality_universe_builds_records_defense_and_sos(monkeypatch):
+    def event(event_id, a_id, a_score, b_id, b_score):
+        return {
+            "id": event_id,
+            "date": "2026-09-10T16:00:00Z",
+            "status": {"type": {"completed": True}},
+            "competitions": [{
+                "competitors": [
+                    {
+                        "homeAway": "home",
+                        "score": str(a_score),
+                        "team": {"id": a_id, "displayName": f"Team {a_id}"},
+                    },
+                    {
+                        "homeAway": "away",
+                        "score": str(b_score),
+                        "team": {"id": b_id, "displayName": f"Team {b_id}"},
+                    },
+                ]
+            }],
+        }
+
+    events = [
+        event("1", "100", 30, "200", 10),
+        event("2", "100", 20, "300", 10),
+        event("3", "200", 24, "400", 7),
+        event("4", "400", 21, "300", 14),
+    ]
+    monkeypatch.setattr(
+        step3,
+        "_scoreboard_range_events",
+        lambda target_day, lookback_days=70: (
+            events,
+            [{"provider": "range"}],
+        ),
+    )
+
+    universe, diag = step3._scoreboard_quality_universe("2026-09-18")
+
+    assert universe["records"]["100"] == 1.0
+    assert universe["records"]["200"] == 0.5
+    assert universe["records"]["300"] == 0.0
+    assert universe["records"]["400"] == 0.5
+    assert set(universe["defense_ranks"]) == {"100", "200", "300", "400"}
+    assert set(universe["sos_ranks"]) == {"100", "200", "300", "400"}
+    assert universe["event_count"] == 4
+    assert diag["events"] == 4
+    assert diag["teams"] == 4
+
+
+def test_step3_scoreboard_quality_populates_all_required_opponent_rows():
+    universe = {
+        "records": {
+            "200": 0.75,
+            "300": 0.25,
+            "100": 1.0,
+        },
+        "defense_ranks": {
+            "200": 12,
+            "300": 55,
+            "100": 3,
+        },
+        "sos_values": {"100": 0.50},
+        "sos_ranks": {"100": 24},
+    }
+    evidence = {
+        "team": "Target",
+        "completed_games": [
+            {
+                "date": "2026-09-05",
+                "opponent": "Opponent 200",
+                "opponent_id": "200",
+                "result": "W",
+                "points_for": 35,
+                "points_against": 14,
+            },
+            {
+                "date": "2026-09-12",
+                "opponent": "Opponent 300",
+                "opponent_id": "300",
+                "result": "W",
+                "points_for": 28,
+                "points_against": 17,
+            },
+        ],
+    }
+
+    hydrated = step3._apply_scoreboard_quality(evidence, "100", universe)
+    row = step3.build_team_form_contract(
+        hydrated,
+        {"team": "Target"},
+        side="away",
+    )
+
+    assert row["sample_games"] == 2
+    assert row["avg_opponent_win_pct"] == 0.50
+    assert row["avg_opponent_def_rank"] == 33.5
+    assert row["top40_defenses_faced"] == 1
+    assert row["record_vs_winning_teams"] == "1-0"
+    assert row["strength_of_schedule_rank"] == 24
+    assert row["opponent_record_coverage"] == 1.0
+    assert row["opponent_defense_rank_coverage"] == 1.0
+    assert row["state"] == "READY"
+
+
+def test_step3_scoreboard_range_events_queries_fbs_and_fcs_once(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        step3.ncaa_schedule,
+        "_fetch_json_with_fallback",
+        lambda url, params, provider: (
+            {"events": []},
+            [{"provider": provider}],
+        ) if not calls.append(dict(params)) else ({}, []),
+    )
+    try:
+        step3._scoreboard_range_events.clear()
+    except Exception:
+        pass
+
+    events, attempts = step3._scoreboard_range_events(
+        "2026-10-02",
+        lookback_days=70,
+    )
+
+    assert events == []
+    assert len(calls) == 2
+    assert {str(call["groups"]) for call in calls} == {"80", "81"}
+    assert all(int(call["limit"]) == 1000 for call in calls)
+    assert all(call["dates"].endswith("-20261001") for call in calls)
