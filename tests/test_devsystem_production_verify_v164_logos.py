@@ -43,6 +43,6 @@ def test_v164_production_verifier_requires_complete_step1_identity_surface():
 
 def test_v164_production_verifier_waits_for_exact_step1_profile_patch():
     source = VERIFIER.read_text(encoding="utf-8")
-    assert 'REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_EXACT_SCHEDULE_PROFILE_PATCH_ACTIVE"' in source
+    assert 'REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_EXACT_EVENT_PROFILE_HANDOFF_ACTIVE"' in source
     assert "REQUIRED_STEP1_PROFILE_MARKER in body" in source
     assert "missing Step 1 exact-profile marker" in source
