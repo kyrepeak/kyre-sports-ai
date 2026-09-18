@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "cfb-v164-direct-event-team-ids",
+  "status": "DONE",
+  "scope": "Resolve missing V164 CFB logo team IDs directly from the official ESPN event summary by exact selected event_id before falling back to any date-based scoreboard lookup.",
+  "trigger": "Production V164 logo proof found zero logo images even though V5 #8 and legacy #225 were green, proving the remaining defect was exact team-ID enrichment in production.",
+  "guardrails": {
+    "frozen_v163_edited_in_place": false,
+    "event_identity_required": true,
+    "name_based_logo_guessing": false,
+    "fuzzy_logo_matching": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
