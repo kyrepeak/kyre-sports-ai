@@ -180,3 +180,92 @@ def test_step3_css_keeps_purple_expanded_screenshot_style():
     assert ".gt168-center-card" in step3.STEP3_CSS
     assert ".gt168-edge" in step3.STEP3_CSS
     assert "@media(max-width:920px)" in step3.STEP3_CSS
+
+
+
+def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch):
+    identity = {
+        "away": {"team": "Coastal Carolina", "team_id": "324", "logo": "https://example.test/324.png"},
+        "home": {"team": "Delaware", "team_id": "48", "logo": "https://example.test/48.png"},
+    }
+    game = {
+        "game_date": "2026-09-19",
+        "espn_event_id": "401869940",
+        "away_espn_team_id": "324",
+        "home_espn_team_id": "48",
+    }
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+
+    rows = {
+        "324": [
+            {
+                "event_id": "a1",
+                "date": "2026-09-05T00:00:00Z",
+                "opponent_name": "Opponent A",
+                "opponent_id": "901",
+                "location": "home",
+                "points_for": 35,
+                "points_against": 14,
+                "opponent_record_pct": 0.50,
+            },
+            {
+                "event_id": "a2",
+                "date": "2026-09-12T00:00:00Z",
+                "opponent_name": "Opponent B",
+                "opponent_id": "902",
+                "location": "away",
+                "points_for": 28,
+                "points_against": 24,
+                "opponent_record_pct": 0.60,
+            },
+        ],
+        "48": [
+            {
+                "event_id": "h1",
+                "date": "2026-09-06T00:00:00Z",
+                "opponent_name": "Opponent C",
+                "opponent_id": "903",
+                "location": "home",
+                "points_for": 31,
+                "points_against": 10,
+                "opponent_record_pct": 0.45,
+            },
+            {
+                "event_id": "h2",
+                "date": "2026-09-13T00:00:00Z",
+                "opponent_name": "Opponent D",
+                "opponent_id": "904",
+                "location": "home",
+                "points_for": 21,
+                "points_against": 24,
+                "opponent_record_pct": 0.70,
+            },
+        ],
+    }
+    monkeypatch.setattr(
+        step3.deep,
+        "_current_rows",
+        lambda team_id, season, cutoff, event_id: (
+            rows[team_id],
+            {"fallback_resolved": 2},
+            [{"provider": "exact schedule"}],
+        ),
+    )
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Coastal Carolina"},
+        {"team": "Delaware"},
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+    assert contract["state"] == "CHECK"
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert contract["away"]["last5_record"] == "2-0"
+    assert contract["home"]["last5_record"] == "1-1"
+    assert contract["away"]["required_complete"] is True
+    assert contract["home"]["required_complete"] is True
+    assert diag["away"]["fallback_used"] is True
+    assert diag["home"]["fallback_used"] is True

@@ -465,3 +465,14 @@ def test_v164_step3_certified_foundation_is_reachable_and_unique():
     assert 'rendered_identity.get("step2_away") or {}' in step3_block
     assert 'rendered_identity.get("step2_home") or {}' in step3_block
     assert "return step3_owner.render_step3_html(" in step3_block
+
+
+
+def test_v164_step3_runs_exact_id_live_fallback_after_certified_foundation():
+    source = _read(PAGE)
+    step3_block = source[source.index("if int(number) == 3:"):source.index("return original_step_evidence")]
+    assert "_step3_certified_foundation(" in step3_block
+    assert "step3_owner.enrich_step3_inputs(" in step3_block
+    assert 'step3_game["espn_event_id"] = event_id' in step3_block
+    assert "logo_identity.enrich_exact_team_ids(" in step3_block
+    assert "return step3_owner.render_step3_html(" in step3_block
