@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import cfb_game_total_step3_form_v1 as step3
 
 
@@ -317,3 +319,127 @@ def test_step3_lightweight_fallback_does_not_call_heavy_opponent_hydration(monke
     assert home["team"] == "Home"
     assert diag["away"]["rows"] == 0
     assert diag["home"]["rows"] == 0
+
+
+
+def test_step3_checked_in_snapshot_fills_core_before_live_network(monkeypatch, tmp_path):
+    snapshot = {
+        "games": [
+            {
+                "event_id": "401868008",
+                "game_date": "2026-09-12",
+                "away_team": "Fordham",
+                "home_team": "Coastal Carolina",
+                "away": {"team_id": "2230", "completed_games": []},
+                "home": {
+                    "team_id": "324",
+                    "completed_games": [
+                        {
+                            "event_id": "401856780",
+                            "date": "2026-09-05T16:00Z",
+                            "location": "away",
+                            "points_for": 24,
+                            "points_against": 31,
+                            "opponent": "West Virginia Mountaineers",
+                            "opponent_id": "277",
+                        }
+                    ],
+                },
+            },
+            {
+                "event_id": "401856684",
+                "game_date": "2026-09-12",
+                "away_team": "Delaware",
+                "home_team": "Vanderbilt",
+                "away": {
+                    "team_id": "48",
+                    "completed_games": [
+                        {
+                            "event_id": "401864424",
+                            "date": "2026-09-03T23:00Z",
+                            "location": "home",
+                            "points_for": 42,
+                            "points_against": 7,
+                            "opponent": "Merrimack Warriors",
+                            "opponent_id": "2771",
+                        }
+                    ],
+                },
+                "home": {"team_id": "238", "completed_games": []},
+            },
+        ]
+    }
+    snapshot_path = tmp_path / "cfb_runtime_snapshot_v2.json"
+    snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+    monkeypatch.setattr(step3, "STEP3_RUNTIME_SNAPSHOT_PATH", snapshot_path)
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("live schedule must not run when snapshot completes core form")
+        ),
+    )
+
+    identity = {
+        "away": {"team": "Coastal Carolina", "team_id": "324"},
+        "home": {"team": "Delaware", "team_id": "48"},
+    }
+    game = {
+        "game_date": "2026-09-19",
+        "espn_event_id": "401869940",
+        "away_espn_team_id": "324",
+        "home_espn_team_id": "48",
+    }
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Coastal Carolina"},
+        {"team": "Delaware"},
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["state"] == "CHECK"
+    assert contract["away"]["sample_games"] == 1
+    assert contract["home"]["sample_games"] == 1
+    assert contract["away"]["last5_record"] == "0-1"
+    assert contract["home"]["last5_record"] == "1-0"
+    assert contract["away"]["recent_ppg"] == 24.0
+    assert contract["home"]["recent_ppg"] == 42.0
+    assert diag["away"]["fallback_source"] == "checked_in_runtime_snapshot"
+    assert diag["home"]["fallback_source"] == "checked_in_runtime_snapshot"
+
+
+def test_step3_snapshot_filters_rows_on_or_after_target_day(monkeypatch, tmp_path):
+    snapshot = {
+        "games": [
+            {
+                "away": {
+                    "team_id": "324",
+                    "completed_games": [
+                        {
+                            "event_id": "old",
+                            "date": "2026-09-05T16:00Z",
+                            "points_for": 24,
+                            "points_against": 31,
+                            "opponent": "Old Opponent",
+                        },
+                        {
+                            "event_id": "target",
+                            "date": "2026-09-19T16:00Z",
+                            "points_for": 99,
+                            "points_against": 0,
+                            "opponent": "Future Opponent",
+                        },
+                    ],
+                },
+                "home": {},
+            }
+        ]
+    }
+    snapshot_path = tmp_path / "cfb_runtime_snapshot_v2.json"
+    snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+    monkeypatch.setattr(step3, "STEP3_RUNTIME_SNAPSHOT_PATH", snapshot_path)
+
+    rows = step3._snapshot_rows_for_team("324", "2026-09-19")
+    assert [row["event_id"] for row in rows] == ["old"]
