@@ -104,7 +104,8 @@ def _team_identity_v164(
     if selected_day:
         enriched.setdefault("game_date", selected_day)
 
-    enriched = logo_identity.enrich_exact_team_ids(enriched, None)
+    selector_payload = _selector_payload_for_day(selected_day)
+    enriched = logo_identity.enrich_exact_team_ids(enriched, selector_payload)
     exact_visuals = _FROZEN_RESOLVE_VISUALS(enriched)
     side_visual = exact_visuals.get(side) if isinstance(exact_visuals.get(side), Mapping) else {}
     return _FROZEN_TEAM_IDENTITY(enriched, profile, side_visual, side)
