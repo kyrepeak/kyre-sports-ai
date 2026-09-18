@@ -58,6 +58,38 @@ def _clean(value: Any) -> str:
     return str(value or "").strip()
 
 
+_UNAVAILABLE = {
+    "",
+    "—",
+    "-",
+    "n/a",
+    "na",
+    "none",
+    "unavailable",
+    "mascot unavailable",
+    "conference unavailable",
+    "fbs/fcs unavailable",
+    "head coach unavailable",
+    "record unavailable",
+}
+
+
+def _usable(value: Any) -> bool:
+    if isinstance(value, Mapping):
+        return bool(value)
+    text = _clean(value)
+    return bool(text) and text.casefold() not in _UNAVAILABLE
+
+
+def _format_mapping(value: Mapping[str, Any]) -> str:
+    if {"wins", "losses"} <= set(value):
+        wins = int(value.get("wins") or 0)
+        losses = int(value.get("losses") or 0)
+        ties = int(value.get("ties") or 0)
+        return f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+    return ""
+
+
 def _nested(mapping: Mapping[str, Any], key: str) -> Any:
     value = mapping.get(key)
     return value if value not in (None, "", [], {}) else None
@@ -65,8 +97,11 @@ def _nested(mapping: Mapping[str, Any], key: str) -> Any:
 
 def _pick(*values: Any) -> str:
     for value in values:
-        text = _clean(value)
-        if text:
+        if isinstance(value, Mapping):
+            text = _format_mapping(value)
+        else:
+            text = _clean(value)
+        if _usable(text):
             return text
     return ""
 
@@ -116,8 +151,8 @@ def build_team_identity_contract(
     team = _side_value(side, identity_side, evidence_side, display_game, "team", "team_name", "display_name", "school", "name")
     mascot = _side_value(side, identity_side, evidence_side, display_game, "mascot", "nickname", "team_nickname")
     conference = _side_value(side, identity_side, evidence_side, display_game, "conference", "conference_name", "conf")
-    classification = _side_value(side, identity_side, evidence_side, display_game, "classification", "subdivision", "division", "level", "fbs_fcs")
-    record = _side_value(side, identity_side, evidence_side, display_game, "record", "overall_record", "season_record")
+    classification = _side_value(side, identity_side, evidence_side, display_game, "classification", "division_context", "subdivision", "division", "level", "fbs_fcs")
+    record = _side_value(side, identity_side, evidence_side, display_game, "record", "record_text", "record_summary", "overall_record", "season_record")
     rank = _side_value(side, identity_side, evidence_side, display_game, "rank", "ranking", "ap_rank", "cfp_rank", "coaches_rank")
     head_coach = _side_value(side, identity_side, evidence_side, display_game, "head_coach", "coach", "coach_name")
     logo = _side_value(side, identity_side, evidence_side, display_game, "logo", "logo_url")
@@ -141,7 +176,7 @@ def build_team_identity_contract(
     }
     missing = [
         field for field in STEP1_REQUIRED_FIELDS
-        if field != "identity_verified" and not _clean(contract.get(field))
+        if field != "identity_verified" and not _usable(contract.get(field))
     ]
     if not exact_identity:
         missing.append("identity_verified")
@@ -179,7 +214,11 @@ def _logo_html(team: Mapping[str, Any]) -> str:
 
 
 def _display(value: Any, fallback: str = "Unavailable") -> str:
-    return _clean(value) or fallback
+    if isinstance(value, Mapping):
+        text = _format_mapping(value)
+    else:
+        text = _clean(value)
+    return text if _usable(text) else fallback
 
 
 def _team_card(team: Mapping[str, Any], *, home_side: bool) -> str:
