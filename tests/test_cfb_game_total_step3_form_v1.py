@@ -244,13 +244,17 @@ def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch)
         ],
     }
     monkeypatch.setattr(
-        step3.deep,
-        "_current_rows",
-        lambda team_id, season, cutoff, event_id: (
-            rows[team_id],
-            {"fallback_resolved": 2},
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda team_id, season: (
+            {"team_id": team_id, "events": ["fixture"]},
             [{"provider": "exact schedule"}],
         ),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_current_season_rows",
+        lambda payload, team_id, season, cutoff, event_id: list(reversed(rows[team_id])),
     )
 
     away, home, diag = step3.enrich_step3_inputs(
@@ -269,3 +273,47 @@ def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch)
     assert contract["home"]["required_complete"] is True
     assert diag["away"]["fallback_used"] is True
     assert diag["home"]["fallback_used"] is True
+    assert diag["away"]["opponent_record_mode"] == "inline_only"
+    assert diag["home"]["opponent_record_mode"] == "inline_only"
+
+
+
+def test_step3_lightweight_fallback_does_not_call_heavy_opponent_hydration(monkeypatch):
+    identity = {
+        "away": {"team": "Away", "team_id": "324"},
+        "home": {"team": "Home", "team_id": "48"},
+    }
+    game = {
+        "game_date": "2026-09-19",
+        "espn_event_id": "401869940",
+        "away_espn_team_id": "324",
+        "home_espn_team_id": "48",
+    }
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda team_id, season: ({"events": []}, [{"provider": "schedule"}]),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_current_season_rows",
+        lambda payload, team_id, season, cutoff, event_id: [],
+    )
+    monkeypatch.setattr(
+        step3.deep,
+        "_current_rows",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("heavy fallback must not run")),
+    )
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Away"},
+        {"team": "Home"},
+        game,
+    )
+    assert away["team"] == "Away"
+    assert home["team"] == "Home"
+    assert diag["away"]["rows"] == 0
+    assert diag["home"]["rows"] == 0

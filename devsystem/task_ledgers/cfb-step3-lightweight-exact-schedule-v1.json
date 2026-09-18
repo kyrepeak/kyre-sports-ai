@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-lightweight-exact-schedule-v1",
+  "status": "DONE",
+  "scope": "Replace the heavy Step 3 exact-ID fallback with one direct team-schedule fetch plus local current-season parsing, avoiding opponent-record network fanout while preserving fail-closed opponent-quality context.",
+  "trigger": "Production proof #36 still rendered Step 3 DATA LIMITED even though the exact-ID fallback was wired; the fallback called deep._current_rows, which also hydrates opponent records and can fail or stall before returning the core recent-game rows Step 3 requires.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step4_plus_not_started": true,
+    "exact_team_id_required": true,
+    "opponent_hydration_not_required_for_core": true,
+    "name_guessing_added": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
