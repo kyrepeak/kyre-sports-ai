@@ -19,4 +19,8 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     assert 'img.gt159-logo' in source
     assert 'img.gt160-evidence-logo' in source
     assert "naturalWidth" in source
+    assert "def _wait_for_exact_pair(" in source
+    assert "time.monotonic()" in source
+    assert "page.wait_for_timeout(500)" in source
+    assert "_scan_v163_frame(page)" in source
     assert "CFB_GAME_TOTAL_V164_PRODUCTION_LOGOS_GREEN" in source
