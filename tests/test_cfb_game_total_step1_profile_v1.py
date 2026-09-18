@@ -137,6 +137,17 @@ def test_step1_classification_supports_exact_fcs_group():
     assert profile._classification({"division_context": "FBS"}, team_obj) == "FCS"
 
 
+def test_step1_current_fbs_conference_overrides_stale_fcs_group():
+    stale_team_obj = {
+        "classification": "FCS",
+        "groups": {"id": "12", "parent": {"id": "81"}},
+    }
+    assert profile._classification({"conference": "CUSA"}, stale_team_obj) == "FBS"
+    assert profile._classification({"conference": "Sun Belt"}, stale_team_obj) == "FBS"
+
+
+
+
 def test_step1_profile_is_presentation_only():
     assert profile.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert profile.MAY_MODIFY_PROJECTION is False
@@ -321,7 +332,7 @@ def test_step1_exact_fallback_fills_schedule_profile_and_coach(monkeypatch):
     assert away["mascot"] == "Chanticleers"
     assert home["mascot"] == "Blue Hens"
     assert away["classification"] == "FBS"
-    assert home["classification"] == "FCS"
+    assert home["classification"] == "FBS"
     assert away["record"] == "1-0"
     assert home["record"] == "1-0"
     assert away["head_coach"] == "Ryan Beard"
