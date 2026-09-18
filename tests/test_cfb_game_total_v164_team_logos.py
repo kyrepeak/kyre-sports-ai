@@ -452,3 +452,16 @@ def test_v164_step3_uses_certified_team_data_foundation_before_render():
     assert "step3_foundation_away, step3_foundation_home = _step3_certified_foundation(" in source
     assert "step3_foundation_away," in source
     assert "step3_foundation_home," in source
+
+
+
+def test_v164_step3_certified_foundation_is_reachable_and_unique():
+    source = _read(PAGE)
+    assert source.count("if int(number) == 3:") == 1
+    step3_block = source[source.index("if int(number) == 3:"):source.index("return original_step_evidence")]
+    assert "_step3_certified_foundation(" in step3_block
+    assert "step3_foundation_away" in step3_block
+    assert "step3_foundation_home" in step3_block
+    assert 'rendered_identity.get("step2_away") or {}' in step3_block
+    assert 'rendered_identity.get("step2_home") or {}' in step3_block
+    assert "return step3_owner.render_step3_html(" in step3_block
