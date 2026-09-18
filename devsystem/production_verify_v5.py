@@ -102,6 +102,7 @@ def _wait_for_initial_top_level_selection(
     deadline = time.monotonic() + timeout_seconds
     last_scans: list[dict[str, Any]] = []
     last_selected = ""
+    last_frame_event = ""
     last_outer = ""
     while time.monotonic() < deadline:
         frame, body, scans = _scan_v163_frame(page)
@@ -111,13 +112,21 @@ def _wait_for_initial_top_level_selection(
                 last_selected = _selected_link_event(frame)
             except Exception:
                 last_selected = ""
+            last_frame_event = _frame_event(frame)
             last_outer = _event_from_url(page.url)
-            if last_outer and last_selected and last_outer == last_selected:
+            if (
+                last_outer
+                and (
+                    last_selected == last_outer
+                    or last_frame_event == last_outer
+                )
+            ):
                 return frame, body, scans, last_outer
         page.wait_for_timeout(750)
     raise ProductionVerificationFailure(
         "V163 initial selected game did not finish persisting before switch: "
-        f"outer={last_outer!r} selected={last_selected!r} url={page.url!r} scans="
+        f"outer={last_outer!r} selected={last_selected!r} "
+        f"frame={last_frame_event!r} url={page.url!r} scans="
         + json.dumps(last_scans, ensure_ascii=False)
     )
 

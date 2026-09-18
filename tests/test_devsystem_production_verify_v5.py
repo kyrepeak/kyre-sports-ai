@@ -62,6 +62,17 @@ def test_v5_accepts_exact_frame_url_when_selected_card_marker_is_absent():
     assert v5._frame_event(Frame()) == "401856798"
 
 
+def test_v5_initial_persistence_uses_selected_card_or_exact_frame_url():
+    source = (ROOT / "devsystem" / "production_verify_v5.py").read_text(
+        encoding="utf-8"
+    )
+    assert "last_frame_event = _frame_event(frame)" in source
+    assert "last_selected == last_outer" in source
+    assert "last_frame_event == last_outer" in source
+    assert "and (" in source
+    assert "frame={last_frame_event!r}" in source
+
+
 def test_v5_hard_refresh_persistence_uses_selected_card_or_exact_frame_url():
     source = (ROOT / "devsystem" / "production_verify_v5.py").read_text(
         encoding="utf-8"
