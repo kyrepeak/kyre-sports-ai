@@ -237,3 +237,65 @@ def test_v164_render_monkeypatches_only_per_team_identity_temporarily():
     assert "identity_owner._team_identity = _team_identity_v164" in source
     assert "identity_owner._team_identity = original_team_identity" in source
     assert "identity_owner._identity_state =" not in source
+
+
+def test_v164_per_team_hook_uses_certified_selector_ids_before_network_fallback(monkeypatch):
+    monkeypatch.setattr(
+        page_v164,
+        "_selector_payload_for_day",
+        lambda _day: {
+            "games": [
+                {
+                    "event_id": "401869940",
+                    "away_team_id": "324",
+                    "home_team_id": "48",
+                    "identity_verified": True,
+                }
+            ],
+            "synthetic_ids": False,
+            "projection_weight": 0.0,
+            "may_modify_projection": False,
+        },
+    )
+    monkeypatch.setattr(
+        logo_identity,
+        "_api_rows",
+        lambda _day: (_ for _ in ()).throw(
+            AssertionError("secondary API fallback should not run")
+        ),
+    )
+    monkeypatch.setattr(
+        logo_identity,
+        "_espn_rows",
+        lambda _day: (_ for _ in ()).throw(
+            AssertionError("direct ESPN fallback should not run")
+        ),
+    )
+
+    away = page_v164._team_identity_v164(
+        {
+            "espn_event_id": "401869940",
+            "game_date": "2026-09-19",
+            "away_team": "Coastal Carolina",
+            "home_team": "Delaware",
+        },
+        {"team": "Coastal Carolina", "conference": "Sun Belt"},
+        {},
+        "away",
+    )
+    home = page_v164._team_identity_v164(
+        {
+            "espn_event_id": "401869940",
+            "game_date": "2026-09-19",
+            "away_team": "Coastal Carolina",
+            "home_team": "Delaware",
+        },
+        {"team": "Delaware", "conference": "CUSA"},
+        {},
+        "home",
+    )
+
+    assert away["team_id"] == "324"
+    assert home["team_id"] == "48"
+    assert away["logo"].endswith("/324.png")
+    assert home["logo"].endswith("/48.png")
