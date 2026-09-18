@@ -13,7 +13,7 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     assert "_event_from_url(page.url)" in source
     assert "_wait_for_event_query" not in source
     assert 'REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"' in source
-    assert 'CERT_EVENT_ID = "401869940"' in source
+    assert 'REQUIRED_REVISION = "CFB_GAME_TOTAL_V164_SELECTOR_IDS_R2"' in source\n    assert "_wait_for_v164_revision" in source\n    assert "page.reload" in source\n    assert 'CERT_EVENT_ID = "401869940"' in source
     assert 'AWAY_TEAM_ID = "324"' in source
     assert 'HOME_TEAM_ID = "48"' in source
     assert 'img.gt159-logo' in source
