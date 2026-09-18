@@ -2446,10 +2446,11 @@ def _game_rows(team: Mapping[str, Any]) -> str:
 
 
 def _opp_rows(team: Mapping[str, Any]) -> str:
+    top40 = _int(team.get("top40_defenses_faced"))
     rows = (
         ("Avg Opponent Win %", _fmt_pct(team.get("avg_opponent_win_pct"))),
         ("Avg Opponent Defense Rank", _fmt_num(team.get("avg_opponent_def_rank"))),
-        ("Top 40 Defenses Faced", _clean(team.get("top40_defenses_faced")) or "—"),
+        ("Top 40 Defenses Faced", str(top40) if top40 is not None else "—"),
         ("Record vs Winning Teams", _clean(team.get("record_vs_winning_teams")) or "—"),
         ("Strength of Schedule", f"#{int(team['strength_of_schedule_rank'])}" if team.get("strength_of_schedule_rank") is not None else "—"),
     )
