@@ -109,3 +109,22 @@ def test_step1_render_is_open_connected_accordion_and_contains_both_team_cards()
 def test_step1_css_keeps_step_one_full_width_inside_existing_connected_grid():
     assert ".gt165-step1{grid-column:1/-1!important" in step1.STEP1_CSS
     assert ".gt165-team-pair{display:grid" in step1.STEP1_CSS
+
+
+
+def test_step1_skips_placeholder_record_and_reads_verified_record_summary():
+    identity = _complete_identity()
+    contract = step1.build_step1_contract(
+        identity,
+        {"record": "—", "division_context": "FBS", "head_coach": "Tim Beck", "mascot": "Chanticleers"},
+        {"record": "—", "division_context": "FBS", "head_coach": "Ryan Carty", "mascot": "Blue Hens"},
+        {
+            "game_date": "2026-09-19",
+            "away_record_summary": "2-1",
+            "home_record_summary": "3-0",
+        },
+    )
+    assert contract["away"]["record"] == "2-1"
+    assert contract["home"]["record"] == "3-0"
+    assert contract["away"]["classification"] == "FBS"
+    assert contract["home"]["classification"] == "FBS"
