@@ -521,6 +521,8 @@ def test_v164_step2_uses_runtime_v2_foundation_and_drive_snapshot_adapter():
     foundation_end = source.index("def step_evidence_v164(", foundation_start)
     foundation = source[foundation_start:foundation_end]
     assert "step3_owner._runtime_v2_step3_bundle(" in foundation
+    assert 'merged["record"] = runtime_record' in foundation
+    assert 'merged["record_text"] = runtime_record' in foundation
 
     start = source.index("if int(number) == 2:")
     end = source.index("if int(number) == 3:", start)

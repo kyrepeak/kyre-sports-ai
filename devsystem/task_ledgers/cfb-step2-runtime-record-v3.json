@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-runtime-record-v3",
+  "status": "DONE",
+  "scope": "Step 2 only: synchronize verified Runtime Snapshot V2 pre-kickoff record into both record and record_text, and require 1-1/1-1 in production certification for the certified matchup.",
+  "trigger": "Strict live V164 passed Step 2 READY but exposed stale 0-0 record labels while Step 1 and Step 3 correctly showed verified 1-1 records.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step3_frozen_and_untouched": true,
+    "step4_plus_untouched": true,
+    "drive_snapshot_logic_untouched": true,
+    "projection_math_changed": false,
+    "probability_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "proof_requirements": {
+    "runtime_record_overrides_stale_ncaa_record_text": true,
+    "away_record_expected": "1-1",
+    "home_record_expected": "1-1",
+    "step2_state_ready_required": true,
+    "production_verifier_requires_exact_records": true,
+    "branch_ci_required": true,
+    "production_verification_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
