@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-profile-router-heartbeat",
+  "status": "DONE",
+  "scope": "Production proof only. Emit the already-required Step 1 exact-profile deployment marker from Router V160 before importing/rendering the Game Total page, so Streamlit reruns cannot hide the deployment proof marker.",
+  "root_cause": "V164 production proof #17 attempt 2 timed out waiting for the Step 1 exact-profile marker even though Router V160 was live. The marker existed only in Page V15 after the nested page render, so Streamlit query-param reruns could terminate the pass before that tail marker was emitted.",
+  "guardrails": {
+    "proof_marker_only": true,
+    "step1_only": true,
+    "route_behavior_changed": false,
+    "active_page_changed": false,
+    "steps_2_12_modified": false,
+    "projection_math_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
