@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-exact-form-fallback-v1",
+  "status": "DONE",
+  "scope": "Repair only Step 3 live current-form availability by filling missing recent completed-game evidence from exact ESPN team IDs and current-season schedules.",
+  "trigger": "Production proof #33 rendered the new Step 3 surface but failed closed as DATA LIMITED because the certified matchup was not covered by the deterministic snapshot and arrived without completed-game rows.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step4_plus_not_started": true,
+    "exact_team_id_required": true,
+    "name_guessing_added": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
