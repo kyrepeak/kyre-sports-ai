@@ -20,6 +20,7 @@ import cfb_game_total_step1_identity_v1 as step1_owner
 import cfb_game_total_step1_profile_v1 as step1_profile_owner
 import cfb_game_total_step2_profile_v1 as step2_owner
 import cfb_game_total_step3_form_v1 as step3_owner
+import cfb_team_data_v1 as step3_data_owner
 import cfb_game_total_team_logo_identity_v1 as logo_identity
 import cfb_game_total_runtime_display_v1 as runtime_display
 import cfb_over_under_logo_resolver_v3 as frozen_logo
@@ -211,6 +212,23 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 merged[key] = value
         return merged
 
+    def _step3_certified_foundation(display_game):
+        selected_day = logo_identity._game_date(display_game) or _query_selected_day()
+        if not selected_day:
+            return {}, {}
+        try:
+            bundle, _diag = step3_data_owner.load_matchup_team_data(
+                dict(display_game or {}),
+                selected_day,
+            )
+        except Exception:
+            return {}, {}
+        if not isinstance(bundle, Mapping):
+            return {}, {}
+        away_foundation = bundle.get("away") if isinstance(bundle.get("away"), Mapping) else {}
+        home_foundation = bundle.get("home") if isinstance(bundle.get("home"), Mapping) else {}
+        return dict(away_foundation), dict(home_foundation)
+
     def step_evidence_v164(number, title, status, detail, identity, away, home, display_game, model):
         if int(number) == 1:
             exact_identity = rendered_identity.get("value") or identity
@@ -295,12 +313,17 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             )
         if int(number) == 3:
             exact_identity = rendered_identity.get("value") or identity
+            step3_foundation_away, step3_foundation_home = _step3_certified_foundation(
+                display_game
+            )
             step3_away = _merge_step2_evidence(
+                step3_foundation_away,
                 rendered_identity.get("away_stats") or {},
                 rendered_identity.get("step1_away") or {},
                 away,
             )
             step3_home = _merge_step2_evidence(
+                step3_foundation_home,
                 rendered_identity.get("home_stats") or {},
                 rendered_identity.get("step1_home") or {},
                 home,
