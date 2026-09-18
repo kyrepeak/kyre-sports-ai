@@ -35,13 +35,42 @@ def _image_state(locator) -> dict:
     )
 
 
+def _wait_image_state(locator, timeout_ms: int = 15000) -> dict:
+    """Wait for the external logo request to settle, then return strict image state."""
+    locator.wait_for(state="attached", timeout=timeout_ms)
+    return locator.evaluate(
+        """(img, timeout) => new Promise((resolve) => {
+            const snapshot = () => ({
+                src: img.currentSrc || img.src || "",
+                complete: Boolean(img.complete),
+                naturalWidth: Number(img.naturalWidth || 0),
+                naturalHeight: Number(img.naturalHeight || 0)
+            });
+            if (img.complete) {
+                resolve(snapshot());
+                return;
+            }
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                resolve(snapshot());
+            };
+            img.addEventListener("load", finish, {once: true});
+            img.addEventListener("error", finish, {once: true});
+            setTimeout(finish, timeout);
+        })""",
+        timeout_ms,
+    )
+
+
 def _assert_logo_group(frame, selector: str, label: str) -> list[dict]:
     images = frame.locator(selector)
     if images.count() != 2:
         raise GameTotalV164LogoQAFailure(
             f"{label} expected exactly two logo images; found {images.count()}"
         )
-    states = [_image_state(images.nth(i)) for i in range(images.count())]
+    states = [_wait_image_state(images.nth(i)) for i in range(images.count())]
     sources = [str(row["src"]) for row in states]
     for suffix in EXPECTED_LOGO_SUFFIXES:
         if not any(src.endswith(suffix) for src in sources):
