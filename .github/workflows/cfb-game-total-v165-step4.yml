@@ -37,7 +37,7 @@ jobs:
             app.py
       - name: Run Step 4 and frozen-boundary regression tests
         run: |
-          pytest -q \
+          PYTHONPATH="$PWD" python -m pytest -q \
             tests/test_cfb_game_total_v165_step4_matchup.py \
             tests/test_cfb_game_total_step4_matchup_v1.py \
             tests/test_cfb_game_total_v164_team_logos.py \
