@@ -1391,3 +1391,207 @@ def test_step3_scoreboard_range_events_queries_explicit_fbs_and_fcs_weeks(monkey
     assert all(isinstance(call["week"], int) for call in calls)
     assert all(int(call["limit"]) == 1000 for call in calls)
     assert len(attempts) == len(calls)
+
+
+
+def test_step3_merges_ncaa_fbs_fcs_crossovers_without_duplicates():
+    tg = step3.ncaa_team_data.TeamGame
+    fbs_ledgers = {
+        "coastalcarolina": [
+            tg("2026-09-05", "West Virginia", "west-virginia", "away", 24, 31, "L", -7),
+        ],
+        "delaware": [
+            tg("2026-09-12", "Vanderbilt", "vanderbilt", "away", 26, 35, "L", -9),
+        ],
+    }
+    fcs_ledgers = {
+        "coastalcarolina": [
+            tg("2026-09-12", "Fordham", "fordham", "home", 45, 7, "W", 38),
+        ],
+        "delaware": [
+            tg("2026-09-03", "Merrimack", "merrimack", "home", 42, 7, "W", 35),
+            # Duplicate crossover row must not be doubled.
+            tg("2026-09-12", "Vanderbilt", "vanderbilt", "away", 26, 35, "L", -9),
+        ],
+    }
+
+    ledgers, meta = step3._merge_ncaa_ledgers(
+        (fbs_ledgers, {
+            "coastalcarolina": {"team": "Coastal Carolina", "team_slug": "coastal-carolina"},
+            "delaware": {"team": "Delaware", "team_slug": "delaware"},
+        }),
+        (fcs_ledgers, {}),
+    )
+
+    assert len(ledgers["coastalcarolina"]) == 2
+    assert len(ledgers["delaware"]) == 2
+    assert [g.opponent for g in ledgers["coastalcarolina"]] == [
+        "West Virginia",
+        "Fordham",
+    ]
+    assert [g.opponent for g in ledgers["delaware"]] == [
+        "Merrimack",
+        "Vanderbilt",
+    ]
+    assert meta["coastalcarolina"]["team"] == "Coastal Carolina"
+
+
+def test_step3_ncaa_evidence_builds_ready_two_game_profiles():
+    tg = step3.ncaa_team_data.TeamGame
+    universe = {
+        "ledgers": {
+            "coastalcarolina": [
+                tg("2026-09-05", "West Virginia", "west-virginia", "away", 24, 31, "L", -7),
+                tg("2026-09-12", "Fordham", "fordham", "home", 45, 7, "W", 38),
+            ],
+            "delaware": [
+                tg("2026-09-03", "Merrimack", "merrimack", "home", 42, 7, "W", 35),
+                tg("2026-09-12", "Vanderbilt", "vanderbilt", "away", 26, 35, "L", -9),
+            ],
+        },
+        "meta": {
+            "coastalcarolina": {
+                "team": "Coastal Carolina",
+                "team_slug": "coastal-carolina",
+                "conference": "Sun Belt",
+            },
+            "delaware": {
+                "team": "Delaware",
+                "team_slug": "delaware",
+                "conference": "CUSA",
+            },
+        },
+        "records": {
+            "westvirginia": 0.50,
+            "fordham": 1.00,
+            "merrimack": 0.00,
+            "vanderbilt": 1.00,
+        },
+        "defense_ranks": {
+            "westvirginia": 38,
+            "fordham": 92,
+            "merrimack": 110,
+            "vanderbilt": 24,
+        },
+        "sos_ranks": {
+            "coastalcarolina": 61,
+            "delaware": 49,
+        },
+    }
+
+    away = step3._ncaa_step3_evidence(
+        "Coastal Carolina",
+        "coastal-carolina",
+        universe,
+    )
+    home = step3._ncaa_step3_evidence(
+        "Delaware",
+        "delaware",
+        universe,
+    )
+    identity = {
+        "away": {"team": "Coastal Carolina"},
+        "home": {"team": "Delaware"},
+    }
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["state"] == "READY"
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert contract["away"]["last5_record"] == "1-1"
+    assert contract["home"]["last5_record"] == "1-1"
+    assert contract["away"]["top40_defenses_faced"] == 1
+    assert contract["home"]["top40_defenses_faced"] == 1
+    assert contract["away"]["strength_of_schedule_rank"] == 61
+    assert contract["home"]["strength_of_schedule_rank"] == 49
+    assert contract["away"]["opponent_quality_ready"] is True
+    assert contract["home"]["opponent_quality_ready"] is True
+
+
+def test_step3_ncaa_ready_short_circuits_blocked_espn(monkeypatch):
+    tg = step3.ncaa_team_data.TeamGame
+    universe = {
+        "ledgers": {
+            "coastalcarolina": [
+                tg("2026-09-05", "West Virginia", "west-virginia", "away", 24, 31, "L", -7),
+                tg("2026-09-12", "Fordham", "fordham", "home", 45, 7, "W", 38),
+            ],
+            "delaware": [
+                tg("2026-09-03", "Merrimack", "merrimack", "home", 42, 7, "W", 35),
+                tg("2026-09-12", "Vanderbilt", "vanderbilt", "away", 26, 35, "L", -9),
+            ],
+        },
+        "meta": {
+            "coastalcarolina": {"team": "Coastal Carolina", "team_slug": "coastal-carolina"},
+            "delaware": {"team": "Delaware", "team_slug": "delaware"},
+        },
+        "records": {
+            "westvirginia": 0.50,
+            "fordham": 1.00,
+            "merrimack": 0.00,
+            "vanderbilt": 1.00,
+        },
+        "defense_ranks": {
+            "westvirginia": 38,
+            "fordham": 92,
+            "merrimack": 110,
+            "vanderbilt": 24,
+        },
+        "sos_ranks": {
+            "coastalcarolina": 61,
+            "delaware": 49,
+        },
+    }
+    monkeypatch.setattr(
+        step3,
+        "_ncaa_combined_step3_universe",
+        lambda target_day, season: (
+            universe,
+            {
+                "strict_day": "2026-09-18",
+                "fbs": {"teams": 130, "completed_contests": 100},
+                "fcs": {"teams": 120, "completed_contests": 90},
+                "combined_teams": 250,
+                "attempts": [],
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("ESPN must not run after NCAA Step 3 reaches READY")
+        ),
+    )
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+
+    identity = {
+        "away": {"team": "Coastal Carolina", "team_id": "324"},
+        "home": {"team": "Delaware", "team_id": "48"},
+    }
+    game = {
+        "game_date": "2026-09-19",
+        "away_team": "Coastal Carolina",
+        "away_team_slug": "coastal-carolina",
+        "home_team": "Delaware",
+        "home_team_slug": "delaware",
+        "away_espn_team_id": "324",
+        "home_espn_team_id": "48",
+    }
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Coastal Carolina"},
+        {"team": "Delaware"},
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["state"] == "READY"
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert diag["away"]["source"] == "ncaa_combined_fbs_fcs"
+    assert diag["home"]["source"] == "ncaa_combined_fbs_fcs"
+    assert diag["away"]["ncaa_contract_state"] == "READY"
+    assert diag["home"]["ncaa_contract_state"] == "READY"
