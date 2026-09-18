@@ -23,6 +23,7 @@ import cfb_game_total_step1_profile_v1 as step1_profile_owner
 import cfb_game_total_step2_profile_v1 as step2_owner
 import cfb_game_total_step2_drive_v1 as step2_drive_owner
 import cfb_game_total_step3_form_v1 as step3_owner
+import cfb_schedule_v6_runtime_snapshot as step2_runtime_snapshot
 import cfb_game_total_step4_matchup_v1 as step4_owner
 import cfb_team_data_v1 as step3_data_owner
 import cfb_game_total_team_logo_identity_v1 as logo_identity
@@ -234,6 +235,54 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
         home_foundation = bundle.get("home") if isinstance(bundle.get("home"), Mapping) else {}
         return dict(away_foundation), dict(home_foundation)
 
+    def _step2_certified_foundation(display_game):
+        selected_day = logo_identity._game_date(display_game) or _query_selected_day()
+        if not selected_day:
+            return _step3_certified_foundation(display_game)
+
+        step2_game = dict(display_game or {})
+        event_id = logo_identity._event_id(step2_game) or prior_v163._query_event_id()
+        if event_id and not logo_identity._event_id(step2_game):
+            step2_game["espn_event_id"] = event_id
+        if not str(step2_game.get("game_date") or "").strip():
+            step2_game["game_date"] = selected_day
+
+        try:
+            payload = step2_runtime_snapshot._load_v2_snapshot()
+            selected = step3_owner._runtime_v2_selected_row(
+                payload,
+                step2_game,
+                selected_day,
+            )
+        except Exception:
+            selected = {}
+
+        if isinstance(selected, Mapping) and selected:
+            away_side = (
+                selected.get("away")
+                if isinstance(selected.get("away"), Mapping)
+                else {}
+            )
+            home_side = (
+                selected.get("home")
+                if isinstance(selected.get("home"), Mapping)
+                else {}
+            )
+            if away_side and home_side:
+                away_out = dict(away_side)
+                home_out = dict(home_side)
+                away_out.setdefault("team", selected.get("away_team"))
+                home_out.setdefault("team", selected.get("home_team"))
+                away_out["data_source"] = (
+                    "Certified Runtime Snapshot V2 • Step 2 current-season profile"
+                )
+                home_out["data_source"] = (
+                    "Certified Runtime Snapshot V2 • Step 2 current-season profile"
+                )
+                return away_out, home_out
+
+        return _step3_certified_foundation(display_game)
+
     def step_evidence_v164(number, title, status, detail, identity, away, home, display_game, model):
         if int(number) == 1:
             exact_identity = rendered_identity.get("value") or identity
@@ -278,7 +327,7 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             )
         if int(number) == 2:
             exact_identity = rendered_identity.get("value") or identity
-            step2_foundation_away, step2_foundation_home = _step3_certified_foundation(
+            step2_foundation_away, step2_foundation_home = _step2_certified_foundation(
                 display_game
             )
             # Certified NCAA/runtime current-season evidence wins over stale
