@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "cfb-v164-production-logo-rerender-wait-v2",
+  "status": "DONE",
+  "scope": "Make the V164 production logo verifier wait through Streamlit's post-query rerender until the exact ESPN header and Team Evidence images exist and finish loading, rebased onto the current V164 identity-state implementation.",
+  "trigger": "V164 production verification #7 still used the old instant logo assertion and reported zero img elements, while PR #617's local V164 browser certification #19 was green on the same app identity fix.",
+  "guardrails": {
+    "active_page_changed": false,
+    "router_changed": false,
+    "logo_identity_changed": false,
+    "v5_gate_changed": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
