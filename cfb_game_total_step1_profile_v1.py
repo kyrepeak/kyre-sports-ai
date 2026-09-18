@@ -98,8 +98,70 @@ def _group_ids(value: Any) -> set[str]:
     return out
 
 
+_CURRENT_FBS_CONFERENCE_KEYS = {
+    "acc",
+    "atlanticcoast",
+    "atlanticcoastconference",
+    "aac",
+    "american",
+    "americanathletic",
+    "americanathleticconference",
+    "big12",
+    "big12conference",
+    "bigten",
+    "bigtenconference",
+    "b1g",
+    "conferenceusa",
+    "cusa",
+    "mac",
+    "midamerican",
+    "midamericanconference",
+    "mountainwest",
+    "mountainwestconference",
+    "mwc",
+    "pac12",
+    "pac12conference",
+    "sec",
+    "southeastern",
+    "southeasternconference",
+    "sunbelt",
+    "sunbeltconference",
+}
+
+
+def _conference_key(value: Any) -> str:
+    if isinstance(value, Mapping):
+        for key in ("slug", "abbreviation", "shortName", "name", "displayName"):
+            candidate = _conference_key(value.get(key))
+            if candidate:
+                return candidate
+        return ""
+    return "".join(ch for ch in _clean(value).casefold() if ch.isalnum())
+
+
+def _current_fbs_conference(profile: Mapping[str, Any], team_obj: Mapping[str, Any]) -> bool:
+    candidates = (
+        profile.get("conference"),
+        profile.get("conference_name"),
+        profile.get("conference_slug"),
+        team_obj.get("conference"),
+        team_obj.get("conferenceName"),
+    )
+    return any(
+        _conference_key(candidate) in _CURRENT_FBS_CONFERENCE_KEYS
+        for candidate in candidates
+        if candidate not in (None, "")
+    )
+
+
 def _classification(profile: Mapping[str, Any], team_obj: Mapping[str, Any]) -> str:
-    # Exact current ESPN team metadata outranks inherited/stale profile labels.
+    # Current conference membership can be newer than legacy subdivision/group
+    # metadata for programs that have recently transitioned into the FBS.
+    if _current_fbs_conference(profile, team_obj):
+        return "FBS"
+
+    # Exact current team metadata remains authoritative when conference context
+    # does not prove current FBS membership.
     for key in ("classification", "subdivision", "division"):
         value = _clean(team_obj.get(key)).upper()
         if "FCS" in value:
