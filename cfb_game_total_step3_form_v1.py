@@ -1028,6 +1028,290 @@ def _merge_exact_game_rows(
     )[-5:]
 
 
+def _merge_ncaa_ledgers(
+    *sources: tuple[
+        Mapping[str, list[Any]],
+        Mapping[str, Mapping[str, Any]],
+    ],
+) -> tuple[dict[str, list[Any]], dict[str, dict[str, Any]]]:
+    """Merge FBS/FCS NCAA ledgers without duplicating crossover games."""
+    ledgers: dict[str, list[Any]] = {}
+    meta: dict[str, dict[str, Any]] = {}
+
+    for source_ledgers, source_meta in sources:
+        for key, info in (source_meta or {}).items():
+            current = meta.setdefault(str(key), {})
+            for field, value in dict(info or {}).items():
+                if _usable(value):
+                    current[field] = value
+
+        for key, games in (source_ledgers or {}).items():
+            bucket = ledgers.setdefault(str(key), [])
+            seen = {
+                (
+                    _clean(game.date),
+                    ncaa_team_data._canonical_name(
+                        game.opponent_slug or game.opponent
+                    ),
+                    int(game.points_for),
+                    int(game.points_against),
+                )
+                for game in bucket
+            }
+            for game in games or []:
+                signature = (
+                    _clean(game.date),
+                    ncaa_team_data._canonical_name(
+                        game.opponent_slug or game.opponent
+                    ),
+                    int(game.points_for),
+                    int(game.points_against),
+                )
+                if signature in seen:
+                    continue
+                seen.add(signature)
+                bucket.append(game)
+
+    for games in ledgers.values():
+        games.sort(key=lambda game: _clean(game.date))
+    return ledgers, meta
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def _ncaa_combined_step3_universe(
+    target_day: str,
+    season: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build one pregame NCAA FBS+FCS truth universe for Step 3."""
+    target_text = _clean(target_day)[:10]
+    if not target_text or int(season or 0) < 1900:
+        return {}, {"attempts": [], "reason": "missing_target_or_season"}
+
+    try:
+        strict_day = (
+            date.fromisoformat(target_text) - timedelta(days=1)
+        ).isoformat()
+    except Exception:
+        return {}, {"attempts": [], "reason": "invalid_target_day"}
+
+    attempts: list[dict[str, Any]] = []
+    parsed_sources: list[
+        tuple[Mapping[str, list[Any]], Mapping[str, Mapping[str, Any]]]
+    ] = []
+    division_diag: dict[str, Any] = {}
+
+    for division, label in (
+        (11, "fbs"),
+        (ncaa_schedule_v2.NCAA_FCS_DIVISION, "fcs"),
+    ):
+        payload, fetch_attempts = ncaa_schedule_v2._fetch_ncaa_division_payload(
+            int(season),
+            int(division),
+        )
+        attempts.extend(list(fetch_attempts or []))
+        if not payload:
+            division_diag[label] = {
+                "teams": 0,
+                "completed_contests": 0,
+            }
+            continue
+
+        ledgers, meta, parsed_diag = ncaa_team_data._season_games_from_payload(
+            payload,
+            strict_day,
+        )
+        parsed_sources.append((ledgers, meta))
+        division_diag[label] = {
+            "teams": len(ledgers),
+            "completed_contests": int(
+                parsed_diag.get("completed_contests") or 0
+            ),
+        }
+
+    if not parsed_sources:
+        return {}, {
+            "attempts": attempts,
+            "strict_day": strict_day,
+            **division_diag,
+            "combined_teams": 0,
+        }
+
+    ledgers, meta = _merge_ncaa_ledgers(*parsed_sources)
+
+    records: dict[str, float] = {}
+    defense_allowed: dict[str, float] = {}
+    for key, games in ledgers.items():
+        record = ncaa_team_data._record(games)
+        pct = ncaa_team_data._win_pct(record)
+        if pct is not None:
+            records[key] = float(pct)
+        if games:
+            defense_allowed[key] = sum(
+                float(game.points_against) for game in games
+            ) / len(games)
+
+    defense_order = sorted(
+        defense_allowed.items(),
+        key=lambda item: (item[1], item[0]),
+    )
+    defense_ranks = {
+        key: idx + 1
+        for idx, (key, _) in enumerate(defense_order)
+    }
+
+    sos_values: dict[str, float] = {}
+    for key, games in ledgers.items():
+        opponent_pcts: list[float] = []
+        for game in games:
+            opp_key = ncaa_team_data._canonical_name(
+                game.opponent_slug or game.opponent
+            )
+            if opp_key in records:
+                opponent_pcts.append(float(records[opp_key]))
+        if opponent_pcts:
+            sos_values[key] = sum(opponent_pcts) / len(opponent_pcts)
+
+    sos_order = sorted(
+        sos_values.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    sos_ranks = {
+        key: idx + 1
+        for idx, (key, _) in enumerate(sos_order)
+    }
+
+    return {
+        "ledgers": ledgers,
+        "meta": meta,
+        "records": records,
+        "defense_ranks": defense_ranks,
+        "sos_values": sos_values,
+        "sos_ranks": sos_ranks,
+        "strict_day": strict_day,
+    }, {
+        "attempts": attempts,
+        "strict_day": strict_day,
+        **division_diag,
+        "combined_teams": len(ledgers),
+        "record_teams": len(records),
+        "defense_rank_teams": len(defense_ranks),
+        "sos_rank_teams": len(sos_ranks),
+    }
+
+
+def _ncaa_step3_evidence(
+    team_name: str,
+    team_slug: str,
+    universe: Mapping[str, Any],
+) -> dict[str, Any]:
+    ledgers = universe.get("ledgers") or {}
+    meta = universe.get("meta") or {}
+    if not ledgers:
+        return {}
+
+    key = ncaa_team_data._resolve_key(
+        ledgers,
+        meta,
+        _clean(team_name),
+        _clean(team_slug),
+    )
+    games = list(ledgers.get(key) or [])
+    if not games:
+        return {}
+
+    recent = games[-5:]
+    records = universe.get("records") or {}
+    defense_ranks = universe.get("defense_ranks") or {}
+
+    completed: list[dict[str, Any]] = []
+    opponent_pcts: list[float] = []
+    opponent_def_ranks: list[int] = []
+    winning_results: list[str] = []
+
+    for game in recent:
+        opp_key = ncaa_team_data._canonical_name(
+            game.opponent_slug or game.opponent
+        )
+        opp_pct = records.get(opp_key)
+        opp_def_rank = defense_ranks.get(opp_key)
+        row = {
+            "date": game.date,
+            "opponent": game.opponent,
+            "opponent_slug": game.opponent_slug,
+            "location": game.location,
+            "result": game.result,
+            "score": f"{game.points_for}-{game.points_against}",
+            "points_for": float(game.points_for),
+            "points_against": float(game.points_against),
+            "margin": float(game.margin),
+            "opponent_record_pct": (
+                float(opp_pct) if opp_pct is not None else None
+            ),
+            "opponent_def_rank": (
+                int(opp_def_rank) if opp_def_rank is not None else None
+            ),
+        }
+        completed.append(row)
+        if opp_pct is not None:
+            opponent_pcts.append(float(opp_pct))
+            if float(opp_pct) > 0.5:
+                winning_results.append(_clean(game.result).upper())
+        if opp_def_rank is not None:
+            opponent_def_ranks.append(int(opp_def_rank))
+
+    wins = sum(result == "W" for result in winning_results)
+    losses = sum(result == "L" for result in winning_results)
+    ties = sum(result == "T" for result in winning_results)
+    record_vs_winning = (
+        f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+        if len(opponent_pcts) == len(recent)
+        else ""
+    )
+
+    recent_record = ncaa_team_data._record(recent)
+    recent_ppg = sum(float(g.points_for) for g in recent) / len(recent)
+    recent_allowed = (
+        sum(float(g.points_against) for g in recent) / len(recent)
+    )
+
+    info = dict(meta.get(key) or {})
+    return {
+        "team": _clean(team_name) or _clean(info.get("team")),
+        "team_slug": _clean(team_slug) or _clean(info.get("team_slug")),
+        "conference": _clean(info.get("conference")),
+        "completed_games": completed,
+        "recent_record": recent_record,
+        "recent_record_text": ncaa_team_data._record_text(recent_record),
+        "recent_ppg": recent_ppg,
+        "recent_points_allowed_pg": recent_allowed,
+        "recent_point_diff_pg": recent_ppg - recent_allowed,
+        "sos_opponent_win_pct": (
+            sum(opponent_pcts) / len(opponent_pcts)
+            if opponent_pcts else None
+        ),
+        "sos_coverage": (
+            len(opponent_pcts) / len(recent)
+            if recent else 0.0
+        ),
+        "avg_opponent_def_rank": (
+            sum(opponent_def_ranks) / len(opponent_def_ranks)
+            if opponent_def_ranks else None
+        ),
+        "top40_defenses_faced": (
+            sum(rank <= 40 for rank in opponent_def_ranks)
+            if opponent_def_ranks else None
+        ),
+        "record_vs_winning_teams": record_vs_winning,
+        "winning_opponents_faced": len(winning_results),
+        "strength_of_schedule_rank": (
+            int((universe.get("sos_ranks") or {}).get(key))
+            if (universe.get("sos_ranks") or {}).get(key) is not None
+            else None
+        ),
+        "data_source": "NCAA official combined FBS+FCS pregame schedule",
+    }
+
+
 def enrich_step3_inputs(
     identity: Mapping[str, Any] | None,
     away: Mapping[str, Any] | None,
