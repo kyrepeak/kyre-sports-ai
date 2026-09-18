@@ -17,9 +17,12 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     assert "_wait_for_v164_patch_deployment" in source
     assert "page.reload(" in source
     assert "time.monotonic()" in source
-    assert 'CERT_DATE = "2026-09-18"' in source\n    assert 'CERT_EVENT_ID = "401858226"' in source
-    assert 'AWAY_TEAM = "Miami"' in source\n    assert 'AWAY_TEAM_ID = "2390"' in source
-    assert 'HOME_TEAM = "Wake Forest"' in source\n    assert 'HOME_TEAM_ID = "154"' in source
+    assert 'CERT_DATE = "2026-09-18"' in source
+    assert 'CERT_EVENT_ID = "401858226"' in source
+    assert 'AWAY_TEAM = "Miami"' in source
+    assert 'AWAY_TEAM_ID = "2390"' in source
+    assert 'HOME_TEAM = "Wake Forest"' in source
+    assert 'HOME_TEAM_ID = "154"' in source
     assert 'img.gt159-logo' in source
     assert 'img.gt160-evidence-logo' in source
     assert "naturalWidth" in source
