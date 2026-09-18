@@ -603,6 +603,118 @@ def _snapshot_rows_for_team(
     )
 
 
+@st.cache_data(ttl=120, show_spinner=False)
+def _candidate_game_days(
+    team_name: str,
+    team_slug: str,
+    target_day: str,
+    season: int,
+) -> tuple[list[str], list[dict[str, Any]]]:
+    """Find this team's scheduled pre-target dates from the NCAA season slate."""
+    keys = ncaa_team_data._team_keys(team_name, team_slug)
+    if not keys or not _clean(target_day) or int(season or 0) < 1900:
+        return [], []
+
+    payload, attempts = ncaa_schedule._fetch_json_with_fallback(
+        ncaa_schedule.NCAA_SCHEDULE_URL,
+        ncaa_schedule._ncaa_params(int(season)),
+        f"NCAA season schedule dates for Step 3 {team_name}",
+    )
+    if not payload:
+        return [], list(attempts or [])
+
+    target = _clean(target_day)[:10]
+    days: set[str] = set()
+    for contest in ncaa_schedule._walk_contests(payload):
+        if not isinstance(contest, Mapping):
+            continue
+        pair = ncaa_team_data._contest_teams(contest)
+        if pair is None:
+            continue
+        away_meta, home_meta = pair
+        matched = False
+        for meta in (away_meta, home_meta):
+            meta_keys = ncaa_team_data._team_keys(
+                meta.get("name"),
+                meta.get("slug"),
+            )
+            if keys & meta_keys:
+                matched = True
+                break
+        if not matched:
+            continue
+
+        dt = ncaa_schedule._contest_datetime(contest)
+        if dt is None:
+            continue
+        day = dt.astimezone(ncaa_schedule._ET).date().isoformat()
+        if day < target:
+            days.add(day)
+
+    # Five displayed games only need the five most recent scheduled dates.
+    return sorted(days)[-5:], list(attempts or [])
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def _scoreboard_rows_for_team(
+    team_id: str,
+    game_days: tuple[str, ...],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Recover exact completed results from ESPN's proven daily scoreboard."""
+    rows: dict[str, dict[str, Any]] = {}
+    attempts: list[dict[str, Any]] = []
+    for day in game_days:
+        try:
+            payload, these_attempts = ncaa_schedule_v2._fetch_espn_fbs_payload(day)
+        except Exception as exc:
+            payload, these_attempts = {}, [{
+                "provider": f"ESPN daily scoreboard Step 3 recovery {day}",
+                "error": f"{type(exc).__name__}: {exc}"[:260],
+            }]
+        attempts.extend(list(these_attempts or []))
+        for event in payload.get("events") or []:
+            if not isinstance(event, Mapping):
+                continue
+            row = deep.history_engine._event_row(event, _clean(team_id))
+            if not row:
+                continue
+            key = _clean(row.get("event_id")) or (
+                f"{_clean(row.get('date'))}|{_clean(row.get('opponent_id'))}"
+            )
+            rows[key] = dict(row)
+
+    ordered = sorted(
+        rows.values(),
+        key=lambda row: _clean(
+            row.get("date")
+            or getattr(row.get("date_dt"), "isoformat", lambda: "")()
+        ),
+    )
+    return ordered[-5:], attempts
+
+
+def _merge_exact_game_rows(
+    *groups: list[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: dict[str, dict[str, Any]] = {}
+    for group in groups:
+        for raw in group or []:
+            if not isinstance(raw, Mapping):
+                continue
+            key = _clean(raw.get("event_id")) or (
+                f"{_clean(raw.get('date'))}|{_clean(raw.get('opponent_id'))}"
+            )
+            if key:
+                rows[key] = dict(raw)
+    return sorted(
+        rows.values(),
+        key=lambda row: _clean(
+            row.get("date")
+            or getattr(row.get("date_dt"), "isoformat", lambda: "")()
+        ),
+    )[-5:]
+
+
 def enrich_step3_inputs(
     identity: Mapping[str, Any] | None,
     away: Mapping[str, Any] | None,
@@ -677,15 +789,68 @@ def enrich_step3_inputs(
                     "error": f"{type(exc).__name__}: {exc}"[:260],
                 }]
 
-        if live_rows:
-            outputs[side] = _overlay_exact_rows(current, list(live_rows))
+        # The team-schedule endpoint is not reliable enough by itself in the
+        # live app. Recover the same exact team from ESPN's daily scoreboard
+        # on NCAA-scheduled pre-kickoff dates, then merge/dedupe the two feeds.
+        team_name = _clean(
+            current.get("team")
+            or identity_side.get("team")
+            or identity_side.get("team_name")
+        )
+        team_slug = _clean(
+            current.get("team_slug")
+            or identity_side.get("team_slug")
+        )
+        candidate_days: list[str] = []
+        date_attempts: list[dict[str, Any]] = []
+        scoreboard_rows: list[Mapping[str, Any]] = []
+        scoreboard_attempts: list[dict[str, Any]] = []
+        if season and target_day:
+            try:
+                candidate_days, date_attempts = _candidate_game_days(
+                    team_name,
+                    team_slug,
+                    target_day,
+                    int(season),
+                )
+                if candidate_days:
+                    scoreboard_rows, scoreboard_attempts = _scoreboard_rows_for_team(
+                        team_id,
+                        tuple(candidate_days),
+                    )
+            except Exception as exc:
+                scoreboard_attempts = [{
+                    "provider": f"Step 3 scoreboard recovery for exact team {team_id}",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }]
+
+        exact_rows = _merge_exact_game_rows(
+            list(live_rows),
+            list(scoreboard_rows),
+        )
+        combined_attempts = (
+            list(attempts or [])
+            + list(date_attempts or [])
+            + list(scoreboard_attempts or [])
+        )
+        if exact_rows:
+            outputs[side] = _overlay_exact_rows(current, exact_rows)
             diag[side] = {
                 "refresh_used": True,
                 "fallback_used": False,
-                "source": "live_exact_schedule",
+                "source": (
+                    "live_exact_schedule+daily_scoreboard"
+                    if live_rows and scoreboard_rows
+                    else "daily_scoreboard_recovery"
+                    if scoreboard_rows
+                    else "live_exact_schedule"
+                ),
                 "team_id": team_id,
-                "rows": len(live_rows),
-                "attempts": attempts,
+                "rows": len(exact_rows),
+                "team_schedule_rows": len(live_rows),
+                "scoreboard_rows": len(scoreboard_rows),
+                "candidate_days": list(candidate_days),
+                "attempts": combined_attempts,
             }
             continue
 

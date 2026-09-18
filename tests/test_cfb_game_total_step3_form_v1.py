@@ -72,6 +72,16 @@ def _home():
 def _stub_quality_sources(monkeypatch, *, record_pct=0.50):
     monkeypatch.setattr(
         step3,
+        "_candidate_game_days",
+        lambda team_name, team_slug, target_day, season: ([], []),
+    )
+    monkeypatch.setattr(
+        step3,
+        "_scoreboard_rows_for_team",
+        lambda team_id, game_days: ([], []),
+    )
+    monkeypatch.setattr(
+        step3,
         "_opponent_defense_rank_map",
         lambda names: ({}, {"requested": len(names), "resolved": 0, "attempts": []}),
     )
@@ -901,3 +911,186 @@ def test_step3_missing_core_remains_data_limited_with_reason():
     assert row["state"] == "DATA LIMITED"
     assert row["required_complete"] is False
     assert "Core recent-form evidence is incomplete" in row["status_reason"]
+
+
+
+def test_step3_scoreboard_recovery_repairs_stale_one_game_miami_wake_sample(monkeypatch):
+    _stub_quality_sources(monkeypatch)
+    identity = {
+        "away": {"team": "Miami (FL)", "team_id": "2390"},
+        "home": {"team": "Wake Forest", "team_id": "154"},
+    }
+    game = {
+        "game_date": "2026-09-18",
+        "espn_event_id": "target",
+        "away_espn_team_id": "2390",
+        "home_espn_team_id": "154",
+    }
+
+    stale_rows = {
+        "2390": [
+            {
+                "event_id": "mia-stanford",
+                "date": "2026-09-05T01:00:00Z",
+                "opponent_name": "Stanford Cardinal",
+                "opponent_id": "24",
+                "points_for": 45,
+                "points_against": 6,
+            }
+        ],
+        "154": [
+            {
+                "event_id": "wf-akron",
+                "date": "2026-09-03T23:00:00Z",
+                "opponent_name": "Akron Zips",
+                "opponent_id": "2006",
+                "points_for": 38,
+                "points_against": 16,
+            }
+        ],
+    }
+    recovered = {
+        "2390": [
+            stale_rows["2390"][0],
+            {
+                "event_id": "mia-famu",
+                "date": "2026-09-11T00:00:00Z",
+                "opponent_name": "Florida A&M Rattlers",
+                "opponent_id": "50",
+                "points_for": 77,
+                "points_against": 7,
+            },
+        ],
+        "154": [
+            stale_rows["154"][0],
+            {
+                "event_id": "wf-purdue",
+                "date": "2026-09-12T16:00:00Z",
+                "opponent_name": "Purdue Boilermakers",
+                "opponent_id": "2509",
+                "points_for": 38,
+                "points_against": 36,
+            },
+        ],
+    }
+
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda team_id, season: ({"team_id": team_id}, [{"provider": "team schedule"}]),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_current_season_rows",
+        lambda payload, team_id, season, cutoff, event_id: list(stale_rows[team_id]),
+    )
+    monkeypatch.setattr(
+        step3,
+        "_candidate_game_days",
+        lambda team_name, team_slug, target_day, season: (
+            ["2026-09-04", "2026-09-10"]
+            if "Miami" in team_name
+            else ["2026-09-03", "2026-09-12"],
+            [{"provider": "NCAA candidate dates"}],
+        ),
+    )
+    monkeypatch.setattr(
+        step3,
+        "_scoreboard_rows_for_team",
+        lambda team_id, game_days: (
+            list(recovered[team_id]),
+            [{"provider": "ESPN daily scoreboard"}],
+        ),
+    )
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Miami (FL)"},
+        {"team": "Wake Forest"},
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert contract["away"]["last5_record"] == "2-0"
+    assert contract["home"]["last5_record"] == "2-0"
+    assert contract["away"]["recent_ppg"] == 61.0
+    assert contract["away"]["recent_allowed_pg"] == 6.5
+    assert contract["home"]["recent_ppg"] == 38.0
+    assert contract["home"]["recent_allowed_pg"] == 26.0
+    assert diag["away"]["team_schedule_rows"] == 1
+    assert diag["away"]["scoreboard_rows"] == 2
+    assert diag["home"]["team_schedule_rows"] == 1
+    assert diag["home"]["scoreboard_rows"] == 2
+    assert diag["away"]["source"] == "live_exact_schedule+daily_scoreboard"
+    assert diag["home"]["source"] == "live_exact_schedule+daily_scoreboard"
+
+
+def test_step3_candidate_dates_exclude_target_and_future_games(monkeypatch):
+    class _DT:
+        def __init__(self, day):
+            self._day = day
+        def astimezone(self, tz):
+            return self
+        def date(self):
+            from datetime import date
+            return date.fromisoformat(self._day)
+
+    contests = [
+        {"id": "old1"},
+        {"id": "old2"},
+        {"id": "target"},
+        {"id": "future"},
+    ]
+    pairs = {
+        "old1": (
+            {"name": "Miami (FL)", "slug": "miami-fl"},
+            {"name": "Stanford", "slug": "stanford"},
+        ),
+        "old2": (
+            {"name": "Florida A&M", "slug": "florida-am"},
+            {"name": "Miami (FL)", "slug": "miami-fl"},
+        ),
+        "target": (
+            {"name": "Miami (FL)", "slug": "miami-fl"},
+            {"name": "Wake Forest", "slug": "wake-forest"},
+        ),
+        "future": (
+            {"name": "Central Michigan", "slug": "central-michigan"},
+            {"name": "Miami (FL)", "slug": "miami-fl"},
+        ),
+    }
+    days = {
+        "old1": "2026-09-04",
+        "old2": "2026-09-10",
+        "target": "2026-09-18",
+        "future": "2026-09-26",
+    }
+
+    monkeypatch.setattr(
+        step3.ncaa_schedule,
+        "_fetch_json_with_fallback",
+        lambda *args, **kwargs: ({"ok": True}, [{"provider": "NCAA"}]),
+    )
+    monkeypatch.setattr(step3.ncaa_schedule, "_walk_contests", lambda payload: contests)
+    monkeypatch.setattr(
+        step3.ncaa_team_data,
+        "_contest_teams",
+        lambda contest: pairs[contest["id"]],
+    )
+    monkeypatch.setattr(
+        step3.ncaa_schedule,
+        "_contest_datetime",
+        lambda contest: _DT(days[contest["id"]]),
+    )
+
+    found, _ = step3._candidate_game_days(
+        "Miami (FL)",
+        "miami-fl",
+        "2026-09-18",
+        2026,
+    )
+    assert found == ["2026-09-04", "2026-09-10"]
