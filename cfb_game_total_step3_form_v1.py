@@ -15,7 +15,7 @@ import re
 from statistics import fmean
 from typing import Any, Mapping
 
-import cfb_over_under_deep_data_reconciliation_v1 as deep
+import cfb_schedule_v6_runtime_snapshot as runtime_snapshot
 
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
@@ -202,9 +202,18 @@ def _trend(games: list[Mapping[str, Any]]) -> tuple[str, float | None]:
 
 
 def _record_vs_winning(games: list[Mapping[str, Any]]) -> tuple[str, int]:
-    qualifying = [row for row in games if row.get("opponent_win_pct") is not None and float(row["opponent_win_pct"]) > 0.5]
-    if not qualifying:
+    known = [
+        row for row in games
+        if row.get("opponent_win_pct") is not None
+    ]
+    if not known:
         return "", 0
+    qualifying = [
+        row for row in known
+        if float(row["opponent_win_pct"]) > 0.5
+    ]
+    if not qualifying:
+        return "0-0", 0
     wins = sum(1 for row in qualifying if row.get("result") == "W")
     losses = sum(1 for row in qualifying if row.get("result") == "L")
     ties = sum(1 for row in qualifying if row.get("result") == "T")
@@ -238,6 +247,201 @@ def _exact_team_id(
     return value if value.isdigit() else ""
 
 
+def _record_pct_from_text(value: Any) -> float | None:
+    text = _clean(value)
+    match = re.fullmatch(r"(\d+)-(\d+)(?:-(\d+))?", text)
+    if not match:
+        return None
+    wins = int(match.group(1))
+    losses = int(match.group(2))
+    ties = int(match.group(3) or 0)
+    games = wins + losses + ties
+    if games <= 0:
+        return None
+    return (wins + 0.5 * ties) / games
+
+
+def _competition_ranks(
+    values: Mapping[str, float],
+    *,
+    lower_is_better: bool,
+) -> dict[str, int]:
+    ordered = sorted(
+        ((str(key), float(value)) for key, value in values.items()),
+        key=lambda item: item[1],
+        reverse=not lower_is_better,
+    )
+    out: dict[str, int] = {}
+    previous: float | None = None
+    current_rank = 0
+    for index, (key, value) in enumerate(ordered, start=1):
+        if previous is None or abs(value - previous) > 1e-12:
+            current_rank = index
+            previous = value
+        out[key] = current_rank
+    return out
+
+
+def _snapshot_profiles(payload: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    profiles: dict[str, dict[str, Any]] = {}
+    for game_row in payload.get("games") or []:
+        if not isinstance(game_row, Mapping):
+            continue
+        game_date = _clean(game_row.get("game_date"))
+        for side in ("away", "home"):
+            profile = game_row.get(side) or {}
+            if not isinstance(profile, Mapping):
+                continue
+            team_id = _clean(profile.get("team_id"))
+            if not team_id.isdigit():
+                continue
+            row = dict(profile)
+            row["_snapshot_game_date"] = game_date
+            row["_snapshot_team"] = _clean(game_row.get(f"{side}_team"))
+            previous = profiles.get(team_id)
+            row_games = len(row.get("completed_games") or [])
+            previous_games = len((previous or {}).get("completed_games") or [])
+            if (
+                previous is None
+                or row_games > previous_games
+                or (
+                    row_games == previous_games
+                    and game_date >= _clean(previous.get("_snapshot_game_date"))
+                )
+            ):
+                profiles[team_id] = row
+    return profiles
+
+
+def _snapshot_match(
+    payload: Mapping[str, Any],
+    game: Mapping[str, Any],
+    away_id: str,
+    home_id: str,
+) -> dict[str, Any]:
+    games = [
+        row for row in (payload.get("games") or [])
+        if isinstance(row, Mapping)
+    ]
+    event_id = _clean(game.get("espn_event_id"))
+    if event_id:
+        matches = [
+            row for row in games
+            if _clean(row.get("event_id")) == event_id
+        ]
+        if len(matches) == 1:
+            return dict(matches[0])
+
+    target_day = _clean(game.get("game_date"))[:10]
+    matches = []
+    for row in games:
+        row_away = row.get("away") or {}
+        row_home = row.get("home") or {}
+        if not isinstance(row_away, Mapping) or not isinstance(row_home, Mapping):
+            continue
+        if target_day and _clean(row.get("game_date"))[:10] != target_day:
+            continue
+        if (
+            _clean(row_away.get("team_id")) == away_id
+            and _clean(row_home.get("team_id")) == home_id
+        ):
+            matches.append(row)
+    return dict(matches[0]) if len(matches) == 1 else {}
+
+
+def _snapshot_quality_context(
+    game: Mapping[str, Any],
+    away_id: str,
+    home_id: str,
+) -> dict[str, Any]:
+    try:
+        payload = runtime_snapshot._load_v2_snapshot()
+    except Exception as exc:
+        return {
+            "away": {"rows": [], "strength_of_schedule_rank": None},
+            "home": {"rows": [], "strength_of_schedule_rank": None},
+            "source": "runtime_snapshot_v2_unavailable",
+            "error": f"{type(exc).__name__}: {exc}"[:260],
+        }
+
+    if not isinstance(payload, Mapping):
+        payload = {}
+    exact = _snapshot_match(payload, game, away_id, home_id)
+    if not exact:
+        return {
+            "away": {"rows": [], "strength_of_schedule_rank": None},
+            "home": {"rows": [], "strength_of_schedule_rank": None},
+            "source": _clean(payload.get("_runtime_snapshot_source")) or "runtime_snapshot_v2",
+            "generated_at": _clean(payload.get("generated_at")),
+            "reason": "exact_matchup_not_in_runtime_snapshot",
+        }
+
+    profiles = _snapshot_profiles(payload)
+    defense_values: dict[str, float] = {}
+    for team_id, profile in profiles.items():
+        allowed = _float(profile.get("points_allowed_pg"))
+        if allowed is not None:
+            defense_values[team_id] = allowed
+    defense_ranks = _competition_ranks(
+        defense_values,
+        lower_is_better=True,
+    )
+
+    sos_values: dict[str, float] = {}
+    for team_id, profile in profiles.items():
+        pcts: list[float] = []
+        for completed in profile.get("completed_games") or []:
+            if not isinstance(completed, Mapping):
+                continue
+            opponent_id = _clean(completed.get("opponent_id"))
+            opponent_profile = profiles.get(opponent_id) or {}
+            pct = _record_pct_from_text(opponent_profile.get("record_text"))
+            if pct is not None:
+                pcts.append(pct)
+        if pcts:
+            sos_values[team_id] = float(fmean(pcts))
+    sos_ranks = _competition_ranks(
+        sos_values,
+        lower_is_better=False,
+    )
+
+    out: dict[str, Any] = {
+        "source": _clean(payload.get("_runtime_snapshot_source")) or "runtime_snapshot_v2",
+        "generated_at": _clean(payload.get("generated_at")),
+        "away": {},
+        "home": {},
+    }
+    for side, team_id in (("away", away_id), ("home", home_id)):
+        exact_profile = exact.get(side) or {}
+        if not isinstance(exact_profile, Mapping):
+            exact_profile = {}
+        rows: list[dict[str, Any]] = []
+        hydrated_records = 0
+        hydrated_defense = 0
+        for completed in exact_profile.get("completed_games") or []:
+            if not isinstance(completed, Mapping):
+                continue
+            row = dict(completed)
+            opponent_id = _clean(row.get("opponent_id"))
+            opponent_profile = profiles.get(opponent_id) or {}
+            opponent_pct = _record_pct_from_text(opponent_profile.get("record_text"))
+            opponent_def_rank = defense_ranks.get(opponent_id)
+            row["opponent_record_pct"] = opponent_pct
+            row["opponent_def_rank"] = opponent_def_rank
+            if opponent_pct is not None:
+                hydrated_records += 1
+            if opponent_def_rank is not None:
+                hydrated_defense += 1
+            rows.append(row)
+        out[side] = {
+            "rows": rows,
+            "strength_of_schedule_rank": sos_ranks.get(team_id),
+            "hydrated_opponent_records": hydrated_records,
+            "hydrated_opponent_defense_ranks": hydrated_defense,
+        }
+    return out
+
+
 def _overlay_exact_rows(
     evidence: Mapping[str, Any],
     rows: list[Mapping[str, Any]],
@@ -264,6 +468,7 @@ def _overlay_exact_rows(
             "points_against": pa,
             "score": f"{int(pf)}-{int(pa)}",
             "opponent_record_pct": row.get("opponent_record_pct"),
+            "opponent_def_rank": row.get("opponent_def_rank"),
         })
 
     if not completed:
@@ -289,9 +494,9 @@ def _overlay_exact_rows(
         for row in completed
         if row.get("opponent_record_pct") is not None
     ]
+    out["sos_coverage"] = len(opp_pcts) / len(completed)
     if opp_pcts:
         out["sos_opponent_win_pct"] = _avg(opp_pcts)
-        out["sos_coverage"] = len(opp_pcts) / len(completed)
     return out
 
 
@@ -301,7 +506,7 @@ def enrich_step3_inputs(
     home: Mapping[str, Any] | None,
     game: Mapping[str, Any] | None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Fill missing Step 3 recent-form evidence from exact ESPN IDs only."""
+    """Fill Step 3 form + opponent quality from the verified runtime snapshot."""
     identity = identity or {}
     game = game or {}
     outputs: dict[str, dict[str, Any]] = {
@@ -310,63 +515,67 @@ def enrich_step3_inputs(
     }
     diag: dict[str, Any] = {"away": {}, "home": {}}
 
-    try:
-        season = int(deep._season(game))
-        cutoff = deep._cutoff(game)
-    except Exception:
-        season = 0
-        cutoff = None
-    event_id = _clean(game.get("espn_event_id"))
+    away_id = _exact_team_id(
+        (identity.get("away") or {}) if isinstance(identity, Mapping) else {},
+        outputs["away"],
+        game,
+        "away",
+    )
+    home_id = _exact_team_id(
+        (identity.get("home") or {}) if isinstance(identity, Mapping) else {},
+        outputs["home"],
+        game,
+        "home",
+    )
+    if not (away_id and home_id):
+        for side, team_id in (("away", away_id), ("home", home_id)):
+            diag[side] = {
+                "fallback_used": False,
+                "reason": "exact_team_id_unavailable",
+                "team_id": team_id,
+            }
+        return outputs["away"], outputs["home"], diag
 
-    for side in ("away", "home"):
+    context = _snapshot_quality_context(game, away_id, home_id)
+    for side, team_id in (("away", away_id), ("home", home_id)):
         current = outputs[side]
         current_contract = build_team_form_contract(
             current,
             (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
             side=side,
         )
-        if current_contract.get("required_complete"):
-            diag[side] = {"fallback_used": False, "reason": "core_recent_form_already_complete"}
-            continue
-
-        team_id = _exact_team_id(
-            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
-            current,
-            game,
-            side,
-        )
-        if not (team_id and season and cutoff is not None):
+        if current_contract.get("state") == "READY":
             diag[side] = {
                 "fallback_used": False,
-                "reason": "exact_team_id_or_date_unavailable",
+                "reason": "step3_already_ready",
                 "team_id": team_id,
             }
             continue
 
-        try:
-            rows, hydration, attempts = deep._current_rows(
-                team_id,
-                season,
-                cutoff,
-                event_id,
-            )
-        except Exception as exc:
-            rows, hydration, attempts = [], {}, [{
-                "provider": f"ESPN exact team {team_id} current-season Step 3 fallback",
-                "error": f"{type(exc).__name__}: {exc}"[:260],
-            }]
-        outputs[side] = _overlay_exact_rows(current, rows)
+        side_context = context.get(side) or {}
+        rows = list(side_context.get("rows") or [])
+        enriched = _overlay_exact_rows(current, rows)
+        sos_rank = _int(side_context.get("strength_of_schedule_rank"))
+        if sos_rank is not None:
+            enriched["strength_of_schedule_rank"] = sos_rank
+        outputs[side] = enriched
         diag[side] = {
             "fallback_used": bool(rows),
             "team_id": team_id,
             "rows": len(rows),
-            "hydrated_opponents": int(hydration.get("fallback_resolved") or 0)
-            if isinstance(hydration, Mapping) else 0,
-            "attempts": attempts,
+            "hydrated_opponent_records": int(
+                side_context.get("hydrated_opponent_records") or 0
+            ),
+            "hydrated_opponent_defense_ranks": int(
+                side_context.get("hydrated_opponent_defense_ranks") or 0
+            ),
+            "strength_of_schedule_rank": sos_rank,
+            "provider": context.get("source"),
+            "snapshot_generated_at": context.get("generated_at"),
+            "reason": context.get("reason"),
         }
 
     return outputs["away"], outputs["home"], diag
-
 
 def build_team_form_contract(
     evidence: Mapping[str, Any] | None,
@@ -479,7 +688,7 @@ def build_team_form_contract(
     for field in STEP3_REQUIRED_FIELDS:
         value = contract.get(field)
         if field == "sample_games":
-            if int(value or 0) <= 0:
+            if int(value or 0) < 2:
                 missing_required.append(field)
         elif field in {"recent_ppg", "recent_allowed_pg", "recent_diff_pg"}:
             if value is None:
