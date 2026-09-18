@@ -180,3 +180,72 @@ def test_step3_css_keeps_purple_expanded_screenshot_style():
     assert ".gt168-center-card" in step3.STEP3_CSS
     assert ".gt168-edge" in step3.STEP3_CSS
     assert "@media(max-width:920px)" in step3.STEP3_CSS
+
+
+
+def test_step3_exact_espn_recent_game_fallback_fills_empty_live_sample(monkeypatch):
+    monkeypatch.setattr(
+        step3,
+        "_exact_recent_games_from_espn",
+        lambda team_id, season, excluded_event_id="": (
+            [
+                {
+                    "date": "2026-09-01T00:00:00Z",
+                    "opponent": "Opponent A",
+                    "result": "W",
+                    "points_for": 31.0,
+                    "points_against": 17.0,
+                    "location": "away",
+                },
+                {
+                    "date": "2026-09-08T00:00:00Z",
+                    "opponent": "Opponent B",
+                    "result": "L",
+                    "points_for": 20.0,
+                    "points_against": 24.0,
+                    "location": "home",
+                },
+            ],
+            [{"provider": "exact espn schedule"}],
+        ),
+    )
+
+    identity = {
+        "away": {"team": "Coastal Carolina", "team_id": "324"},
+        "home": {"team": "Delaware", "team_id": "48"},
+    }
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Coastal Carolina", "completed_games": []},
+        {"team": "Delaware", "completed_games": []},
+        {
+            "game_date": "2026-09-19",
+            "espn_event_id": "401869940",
+        },
+    )
+
+    assert len(away["completed_games"]) == 2
+    assert len(home["completed_games"]) == 2
+    assert diag["away"]["exact_fallback_used"] is True
+    assert diag["home"]["exact_fallback_used"] is True
+
+    contract = step3.build_step3_contract(identity, away, home)
+    assert contract["state"] in {"CHECK", "READY"}
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+
+
+def test_step3_exact_fallback_never_runs_without_exact_team_id(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        step3,
+        "_exact_recent_games_from_espn",
+        lambda *args, **kwargs: calls.append(args) or ([], []),
+    )
+    step3.enrich_step3_inputs(
+        {"away": {"team": "A"}, "home": {"team": "B"}},
+        {"team": "A", "completed_games": []},
+        {"team": "B", "completed_games": []},
+        {"game_date": "2026-09-19"},
+    )
+    assert calls == []
