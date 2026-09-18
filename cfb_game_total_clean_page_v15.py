@@ -12,6 +12,7 @@ from typing import Any, Mapping
 
 import streamlit as st
 
+import cfb_game_total_clean_page_v3 as identity_owner
 import cfb_game_total_clean_page_v14 as prior_v163
 import cfb_game_total_team_logo_identity_v1 as logo_identity
 import cfb_game_total_runtime_display_v1 as runtime_display
@@ -26,6 +27,7 @@ ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V164 ACTIVE"
 LOGO_POLICY = "official ESPN event_id -> exact ESPN team IDs -> ESPN NCAA logo CDN"
 
 _FROZEN_RESOLVE_VISUALS = frozen_logo.resolve_visuals
+_FROZEN_IDENTITY_STATE = identity_owner._identity_state
 _FROZEN_RECONCILE_DISPLAY_BUNDLE = runtime_display.reconcile_display_bundle
 
 
@@ -72,6 +74,46 @@ def _reconcile_display_bundle_v164(
     return enriched, away, home, out_diag
 
 
+
+def _query_selected_day() -> str:
+    try:
+        raw = st.query_params.get(prior_v163.DATE_QUERY_KEY)
+    except Exception:
+        return ""
+    if isinstance(raw, (list, tuple)):
+        raw = raw[-1] if raw else ""
+    return str(raw or "")[:10]
+
+
+def _identity_state_v164(
+    display_game: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+    visuals: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Guarantee exact-logo identity at the final display identity boundary."""
+    current = {
+        side: dict(visuals.get(side) or {}) if isinstance(visuals.get(side), Mapping) else {}
+        for side in ("away", "home")
+    }
+    if all(bool(current[side].get("exact_identity")) for side in ("away", "home")):
+        return _FROZEN_IDENTITY_STATE(display_game, away, home, current)
+
+    enriched = dict(display_game)
+    event_id = logo_identity._event_id(enriched) or prior_v163._query_event_id()
+    selected_day = logo_identity._game_date(enriched) or _query_selected_day()
+    if event_id:
+        enriched.setdefault("espn_event_id", event_id)
+    if selected_day:
+        enriched.setdefault("game_date", selected_day)
+
+    enriched = logo_identity.enrich_exact_team_ids(enriched, None)
+    exact_visuals = _FROZEN_RESOLVE_VISUALS(enriched)
+    if all(bool((exact_visuals.get(side) or {}).get("exact_identity")) for side in ("away", "home")):
+        current = exact_visuals
+    return _FROZEN_IDENTITY_STATE(enriched, away, home, current)
+
+
 def _resolve_visuals_v164(game: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     return logo_identity.resolve_visuals(
         game,
@@ -93,13 +135,16 @@ def _render_v164_identity() -> None:
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None) -> None:
     original_resolver = frozen_logo.resolve_visuals
     original_reconcile = runtime_display.reconcile_display_bundle
+    original_identity_state = identity_owner._identity_state
     frozen_logo.resolve_visuals = _resolve_visuals_v164
     runtime_display.reconcile_display_bundle = _reconcile_display_bundle_v164
+    identity_owner._identity_state = _identity_state_v164
     try:
         result = prior_v163.render_game_total_hub(section_header, status_info, team_logo, h)
         _render_v164_identity()
         return result
     finally:
+        identity_owner._identity_state = original_identity_state
         runtime_display.reconcile_display_bundle = original_reconcile
         frozen_logo.resolve_visuals = original_resolver
 
@@ -118,6 +163,8 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_identity_state_v164",
+    "_query_selected_day",
     "_reconcile_display_bundle_v164",
     "_resolve_visuals_v164",
     "_selector_payload_for_day",

@@ -180,3 +180,47 @@ def test_v164_display_reconcile_enriches_exact_team_ids_before_frozen_logo_resol
     visuals = frozen_logo.resolve_visuals(display_game)
     assert visuals["away"]["logo"].endswith("/324.png")
     assert visuals["home"]["logo"].endswith("/48.png")
+
+
+def test_v164_final_identity_state_injects_exact_api_logos(monkeypatch):
+    monkeypatch.setattr(
+        logo_identity,
+        "_api_rows",
+        lambda _day: (
+            {
+                "event_id": "401869940",
+                "away_team_id": "324",
+                "home_team_id": "48",
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        logo_identity,
+        "_espn_rows",
+        lambda _day: (_ for _ in ()).throw(
+            AssertionError("direct ESPN fallback should not run")
+        ),
+    )
+
+    state = page_v164._identity_state_v164(
+        {
+            "espn_event_id": "401869940",
+            "game_date": "2026-09-19",
+            "away_team": "Coastal Carolina",
+            "home_team": "Delaware",
+        },
+        {"team": "Coastal Carolina", "conference": "Sun Belt"},
+        {"team": "Delaware", "conference": "CUSA"},
+        {"away": {}, "home": {}},
+    )
+    assert state["verified"] is True
+    assert state["away"]["team_id"] == "324"
+    assert state["home"]["team_id"] == "48"
+    assert state["away"]["logo"].endswith("/324.png")
+    assert state["home"]["logo"].endswith("/48.png")
+
+
+def test_v164_render_monkeypatches_final_identity_owner_only_temporarily():
+    source = _read(PAGE)
+    assert "identity_owner._identity_state = _identity_state_v164" in source
+    assert "identity_owner._identity_state = original_identity_state" in source
