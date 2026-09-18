@@ -69,7 +69,18 @@ def test_step1_exact_profile_fills_required_display_fields(monkeypatch):
         lambda event_id: (_summary(), [{"provider": "summary"}]),
     )
     monkeypatch.setattr(profile.recovery, "_fetch_espn_teams", _directory)
-    monkeypatch.setattr(profile, "_exact_team_detail", lambda team_id: ({}, []))
+    monkeypatch.setattr(
+        profile,
+        "_exact_team_detail",
+        lambda team_id: (
+            {
+                "id": team_id,
+                "name": {"324": "Chanticleers", "48": "Blue Hens"}[team_id],
+                "groups": {"id": "9", "parent": {"id": "80"}},
+            },
+            [],
+        ),
+    )
     monkeypatch.setattr(profile.history, "_fetch_team_schedule", lambda team_id, season: ({}, []))
 
     away, home, diag = profile.enrich_step1_inputs(
