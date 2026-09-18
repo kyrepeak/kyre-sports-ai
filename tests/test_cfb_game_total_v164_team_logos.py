@@ -378,3 +378,11 @@ def test_v164_router_emits_step1_profile_marker_before_page_import():
     assert marker_index < import_index
     assert render_index < import_index
     assert "{STEP1_PROFILE_HEARTBEAT}" in source
+
+
+
+def test_v164_router_heartbeat_matches_current_fast_step1_profile_marker():
+    source = _read(ROUTER)
+    assert 'STEP1_PROFILE_HEARTBEAT = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"' in source
+    page_source = _read(PAGE)
+    assert 'STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"' in page_source
