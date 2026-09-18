@@ -460,10 +460,10 @@ def build_team_profile_contract(
 
     if missing_required:
         state = "DATA LIMITED"
-    elif advanced_available >= 5:
-        state = "READY"
-    else:
+    elif missing_advanced:
         state = "CHECK"
+    else:
+        state = "READY"
     contract["state"] = state
     return contract
 
