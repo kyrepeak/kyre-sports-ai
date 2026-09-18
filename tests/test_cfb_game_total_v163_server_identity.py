@@ -29,3 +29,14 @@ def test_v163_consumes_full_slate_identity_not_market_lines() -> None:
     assert 'row.get("away_team")' in enrich_body
     assert 'row.get("home_team")' in enrich_body
     assert 'payload.get("lines")' not in enrich_body
+
+
+def test_selector_github_fallback_uses_certified_runtime_v2_branch() -> None:
+    source = (
+        ROOT / "sports_api" / "api" / "cfb_market_identity_v1.py"
+    ).read_text(encoding="utf-8")
+    assert (
+        "cfb-runtime-snapshot-auto-refresh-v2/"
+        "data/cfb_runtime_snapshot_v2.json"
+    ) in source
+    assert "main/data/cfb_runtime_snapshot_v1.json" not in source
