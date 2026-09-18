@@ -69,6 +69,7 @@ def test_step1_exact_profile_fills_required_display_fields(monkeypatch):
         lambda event_id: (_summary(), [{"provider": "summary"}]),
     )
     monkeypatch.setattr(profile.recovery, "_fetch_espn_teams", _directory)
+    monkeypatch.setattr(profile, "_exact_team_detail", lambda team_id: ({}, []))
     monkeypatch.setattr(profile.history, "_fetch_team_schedule", lambda team_id, season: ({}, []))
 
     def coach(team_id, season):
@@ -147,6 +148,7 @@ def test_step1_profile_is_presentation_only():
 def test_step1_schedule_fallback_recovers_mascot_record_and_current_classification(monkeypatch):
     monkeypatch.setattr(profile.environment, "_fetch_summary", lambda event_id: ({}, []))
     monkeypatch.setattr(profile.recovery, "_fetch_espn_teams", lambda: {})
+    monkeypatch.setattr(profile, "_exact_team_detail", lambda team_id: ({}, []))
 
     def schedule(team_id, season):
         names = {"324": ("Coastal Carolina", "Chanticleers"), "48": ("Delaware", "Blue Hens")}
@@ -231,3 +233,47 @@ def test_step1_schedule_fallback_recovers_mascot_record_and_current_classificati
     assert home["classification"] == "FBS"
     assert diag["away"]["schedule_team_exact"] is True
     assert diag["home"]["schedule_loaded"] is True
+
+
+
+def test_step1_exact_team_detail_overrides_stale_profile_classification(monkeypatch):
+    monkeypatch.setattr(profile.environment, "_fetch_summary", lambda event_id: (_summary(), []))
+    monkeypatch.setattr(profile.recovery, "_fetch_espn_teams", lambda: {})
+    monkeypatch.setattr(profile.history, "_fetch_team_schedule", lambda team_id, season: ({}, []))
+
+    def detail(team_id):
+        names = {"324": "Chanticleers", "48": "Blue Hens"}
+        return (
+            {
+                "id": team_id,
+                "name": names[team_id],
+                "groups": {"id": "9", "parent": {"id": "80"}},
+            },
+            [],
+        )
+
+    monkeypatch.setattr(profile, "_exact_team_detail", detail)
+    monkeypatch.setattr(
+        profile.deep,
+        "_head_coach",
+        lambda team_id, season: (
+            {"ready": True, "name": "Coach Name", "id": "1", "source": "ESPN Core"},
+            [],
+        ),
+    )
+
+    away, home, diag = profile.enrich_step1_inputs(
+        _identity(),
+        {"conference": "Sun Belt", "division_context": "FCS"},
+        {"conference": "CUSA", "division_context": "FCS"},
+        {"espn_event_id": "401869940", "game_date": "2026-09-19"},
+    )
+
+    assert away["classification"] == "FBS"
+    assert home["classification"] == "FBS"
+    assert away["mascot"] == "Chanticleers"
+    assert home["mascot"] == "Blue Hens"
+    assert away["record"] == "2-1"
+    assert home["record"] == "3-0"
+    assert diag["away"]["detail_team_exact"] is True
+    assert diag["home"]["detail_team_exact"] is True

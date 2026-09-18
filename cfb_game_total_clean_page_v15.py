@@ -31,7 +31,7 @@ ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V164 ACTIVE"
 LOGO_POLICY = "official ESPN event_id -> exact ESPN team IDs -> ESPN NCAA logo CDN"
 DEPLOYMENT_PROOF_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"
 STEP1_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
-STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_EXACT_SCHEDULE_PROFILE_PATCH_ACTIVE"
+STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_EXACT_EVENT_PROFILE_HANDOFF_ACTIVE"
 
 _FROZEN_RESOLVE_VISUALS = frozen_logo.resolve_visuals
 _FROZEN_TEAM_IDENTITY = identity_owner._team_identity
@@ -201,18 +201,34 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 step_away["record"] = away_stats.get("record")
             if home_stats.get("record") not in (None, "", "—"):
                 step_home["record"] = home_stats.get("record")
+
+            # Step 1 needs the same exact event handoff already proven for V164
+            # logos. The V9 display copy can still carry espn_event_id="" even
+            # when final presentation identity has exact team IDs.
+            step_game = dict(display_game or {})
+            event_id = logo_identity._event_id(step_game) or prior_v163._query_event_id()
+            selected_day = logo_identity._game_date(step_game) or _query_selected_day()
+            if event_id and not logo_identity._event_id(step_game):
+                step_game["espn_event_id"] = event_id
+            if selected_day:
+                step_game.setdefault("game_date", selected_day)
+            step_game = logo_identity.enrich_exact_team_ids(
+                step_game,
+                _selector_payload_for_day(selected_day),
+            )
+
             step_away, step_home, _ = step1_profile_owner.enrich_step1_inputs(
                 exact_identity,
                 step_away,
                 step_home,
-                display_game,
+                step_game,
             )
             return step1_owner.render_step1_html(
                 status,
                 exact_identity,
                 step_away,
                 step_home,
-                display_game,
+                step_game,
             )
         return original_step_evidence(number, title, status, detail, identity, away, home, display_game, model)
 

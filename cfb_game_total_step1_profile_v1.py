@@ -14,9 +14,14 @@ import cfb_over_under_data_recovery_v1 as recovery
 import cfb_over_under_deep_data_reconciliation_v1 as deep
 import cfb_over_under_environment_engine_v1 as environment
 import cfb_over_under_history_engine_v1 as history
+import cfb_schedule_v3 as schedule
 
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
+ESPN_TEAM_DETAIL_URL = (
+    "https://site.api.espn.com/apis/site/v2/sports/football/college-football/"
+    "teams/{team_id}"
+)
 
 _UNAVAILABLE = {
     "",
@@ -115,6 +120,27 @@ def _classification(profile: Mapping[str, Any], team_obj: Mapping[str, Any]) -> 
     return ""
 
 
+
+
+def _exact_team_detail(team_id: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    team_id = _clean(team_id)
+    if not team_id.isdigit():
+        return {}, []
+    try:
+        payload, attempts = schedule.frozen.frozen._fetch_json_with_fallback(
+            ESPN_TEAM_DETAIL_URL.format(team_id=team_id),
+            {},
+            f"ESPN exact CFB team {team_id} Step 1 profile",
+        )
+    except Exception:
+        return {}, []
+
+    candidate = payload.get("team") if isinstance(payload, Mapping) else {}
+    if isinstance(candidate, Mapping) and _clean(candidate.get("id")) == team_id:
+        return dict(candidate), list(attempts or [])
+    if isinstance(payload, Mapping) and _clean(payload.get("id")) == team_id:
+        return dict(payload), list(attempts or [])
+    return {}, list(attempts or [])
 
 def _schedule_team_object(payload: Mapping[str, Any], team_id: str) -> dict[str, Any]:
     team_id = _clean(team_id)
@@ -229,6 +255,7 @@ def _enrich_side(
         or display_game.get(f"{side}_espn_team_id")
     )
     directory_team = _exact_directory_team(team_id, directory)
+    detail_team, detail_attempts = _exact_team_detail(team_id)
     schedule_payload: dict[str, Any] = {}
     schedule_attempts: list[dict[str, Any]] = []
     if team_id.isdigit():
@@ -240,8 +267,11 @@ def _enrich_side(
         except Exception:
             schedule_payload, schedule_attempts = {}, []
     schedule_team = _schedule_team_object(schedule_payload, team_id)
-    team_obj = _merge_team_meta(directory_team, schedule_team)
     competitor = _summary_competitor(summary, side, team_id)
+    summary_team = competitor.get("team") if isinstance(competitor, Mapping) else {}
+    if not isinstance(summary_team, Mapping):
+        summary_team = {}
+    team_obj = _merge_team_meta(directory_team, schedule_team, detail_team, summary_team)
 
     _fill(out, "mascot", _mascot(competitor, team_obj))
     _fill(out, "classification", _classification(out, team_obj))
@@ -274,6 +304,7 @@ def _enrich_side(
         "side": side,
         "team_id": team_id,
         "directory_exact": bool(directory_team),
+        "detail_team_exact": bool(detail_team),
         "schedule_team_exact": bool(schedule_team),
         "schedule_loaded": bool(schedule_payload),
         "summary_exact": bool(competitor),
@@ -282,6 +313,7 @@ def _enrich_side(
         "record_ready": _usable(out.get("record")),
         "head_coach_ready": _usable(out.get("head_coach")),
         "coach_attempts": coach_attempts,
+        "detail_attempts": detail_attempts,
         "schedule_attempts": schedule_attempts,
     }
     out["step1_profile_enriched"] = True
@@ -355,5 +387,6 @@ def enrich_step1_inputs(
 __all__ = [
     "MAY_MODIFY_PROJECTION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "ESPN_TEAM_DETAIL_URL",
     "enrich_step1_inputs",
 ]
