@@ -318,8 +318,8 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             selected_day = logo_identity._game_date(step3_game) or _query_selected_day()
             if event_id and not logo_identity._event_id(step3_game):
                 step3_game["espn_event_id"] = event_id
-            if selected_day:
-                step3_game.setdefault("game_date", selected_day)
+            if selected_day and not str(step3_game.get("game_date") or "").strip():
+                step3_game["game_date"] = selected_day
             step3_game = logo_identity.enrich_exact_team_ids(
                 step3_game,
                 _selector_payload_for_day(selected_day),
