@@ -192,6 +192,23 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
         rendered_identity["home_stats"] = dict(home or {})
         return original_target_evidence(exact_identity, away, home)
 
+    def _merge_step2_evidence(*rows):
+        merged: dict[str, Any] = {}
+        for row in rows:
+            if not isinstance(row, Mapping):
+                continue
+            for key, value in row.items():
+                if value in (None, "", "—", [], {}):
+                    continue
+                if isinstance(value, str) and value.strip().lower() in {
+                    "unavailable",
+                    "data limited",
+                    "record unavailable",
+                }:
+                    continue
+                merged[key] = value
+        return merged
+
     def step_evidence_v164(number, title, status, detail, identity, away, home, display_game, model):
         if int(number) == 1:
             exact_identity = rendered_identity.get("value") or identity
@@ -225,6 +242,8 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 step_home,
                 step_game,
             )
+            rendered_identity["step1_away"] = dict(step_away)
+            rendered_identity["step1_home"] = dict(step_home)
             return step1_owner.render_step1_html(
                 status,
                 exact_identity,
@@ -234,11 +253,21 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             )
         if int(number) == 2:
             exact_identity = rendered_identity.get("value") or identity
+            step2_away = _merge_step2_evidence(
+                away,
+                rendered_identity.get("away_stats") or {},
+                rendered_identity.get("step1_away") or {},
+            )
+            step2_home = _merge_step2_evidence(
+                home,
+                rendered_identity.get("home_stats") or {},
+                rendered_identity.get("step1_home") or {},
+            )
             return step2_owner.render_step2_html(
                 status,
                 exact_identity,
-                away,
-                home,
+                step2_away,
+                step2_home,
             )
         return original_step_evidence(number, title, status, detail, identity, away, home, display_game, model)
 
