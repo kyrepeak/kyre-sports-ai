@@ -14,6 +14,7 @@ import streamlit as st
 
 import cfb_game_total_clean_page_v3 as identity_owner
 import cfb_game_total_clean_page_v14 as prior_v163
+import cfb_game_total_clean_page_v10 as presentation_owner
 import cfb_game_total_team_logo_identity_v1 as logo_identity
 import cfb_game_total_runtime_display_v1 as runtime_display
 import cfb_over_under_logo_resolver_v3 as frozen_logo
@@ -115,6 +116,37 @@ def _team_identity_v164(
     return _FROZEN_TEAM_IDENTITY(enriched, profile, side_visual, side)
 
 
+def _final_presentation_identity_v164(
+    identity: Mapping[str, Any],
+    display_game: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Inject exact ESPN logo identity at the final V160 presentation boundary."""
+    output = dict(identity or {})
+    enriched = dict(display_game or {})
+    event_id = logo_identity._event_id(enriched) or prior_v163._query_event_id()
+    selected_day = logo_identity._game_date(enriched) or _query_selected_day()
+    if event_id:
+        enriched.setdefault("espn_event_id", event_id)
+    if selected_day:
+        enriched.setdefault("game_date", selected_day)
+
+    selector_payload = _selector_payload_for_day(selected_day)
+    enriched = logo_identity.enrich_exact_team_ids(enriched, selector_payload)
+    visuals = _FROZEN_RESOLVE_VISUALS(enriched)
+    for side in ("away", "home"):
+        visual = visuals.get(side) if isinstance(visuals.get(side), Mapping) else {}
+        team_id = str(visual.get("team_id") or "").strip()
+        logo = str(visual.get("logo") or "").strip()
+        if not (bool(visual.get("exact_identity")) and team_id.isdigit() and logo):
+            continue
+        side_state = dict(output.get(side) or {})
+        side_state["team_id"] = team_id
+        side_state["logo"] = logo
+        side_state["exact_identity"] = True
+        output[side] = side_state
+    return output
+
+
 def _resolve_visuals_v164(game: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     return logo_identity.resolve_visuals(
         game,
@@ -137,14 +169,31 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     original_resolver = frozen_logo.resolve_visuals
     original_reconcile = runtime_display.reconcile_display_bundle
     original_team_identity = identity_owner._team_identity
+    original_target_matchup = presentation_owner._target_matchup_header_html
+    original_target_evidence = presentation_owner._target_team_evidence_html
+    rendered_identity: dict[str, Any] = {}
+
+    def target_matchup_v164(identity, away, home, display_game):
+        exact_identity = _final_presentation_identity_v164(identity, display_game)
+        rendered_identity["value"] = exact_identity
+        return original_target_matchup(exact_identity, away, home, display_game)
+
+    def target_evidence_v164(identity, away, home):
+        exact_identity = rendered_identity.get("value") or identity
+        return original_target_evidence(exact_identity, away, home)
+
     frozen_logo.resolve_visuals = _resolve_visuals_v164
     runtime_display.reconcile_display_bundle = _reconcile_display_bundle_v164
     identity_owner._team_identity = _team_identity_v164
+    presentation_owner._target_matchup_header_html = target_matchup_v164
+    presentation_owner._target_team_evidence_html = target_evidence_v164
     try:
         result = prior_v163.render_game_total_hub(section_header, status_info, team_logo, h)
         _render_v164_identity()
         return result
     finally:
+        presentation_owner._target_team_evidence_html = original_target_evidence
+        presentation_owner._target_matchup_header_html = original_target_matchup
         identity_owner._team_identity = original_team_identity
         runtime_display.reconcile_display_bundle = original_reconcile
         frozen_logo.resolve_visuals = original_resolver
@@ -165,6 +214,7 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "_final_presentation_identity_v164",
     "_team_identity_v164",
     "_query_selected_day",
     "_reconcile_display_bundle_v164",
