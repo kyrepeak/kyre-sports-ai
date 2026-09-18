@@ -11,7 +11,9 @@ model behavior.
 from __future__ import annotations
 
 from html import escape
+import json
 import re
+from pathlib import Path
 from statistics import fmean
 from typing import Any, Mapping
 
@@ -21,6 +23,7 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
 STEP3_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"
+STEP3_RUNTIME_SNAPSHOT_PATH = Path(__file__).resolve().parent / "data" / "cfb_runtime_snapshot_v2.json"
 
 STEP3_REQUIRED_FIELDS = (
     "team",
@@ -295,6 +298,45 @@ def _overlay_exact_rows(
     return out
 
 
+def _snapshot_rows_for_team(
+    team_id: str,
+    target_day: str,
+) -> list[dict[str, Any]]:
+    """Return deterministic pre-target completed rows from the checked-in runtime snapshot."""
+    if not _clean(team_id).isdigit():
+        return []
+    try:
+        payload = json.loads(STEP3_RUNTIME_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+    cutoff = _clean(target_day)[:10]
+    rows: dict[str, dict[str, Any]] = {}
+    for game in payload.get("games") or []:
+        if not isinstance(game, Mapping):
+            continue
+        for side in ("away", "home"):
+            profile = game.get(side)
+            if not isinstance(profile, Mapping):
+                continue
+            if _clean(profile.get("team_id")) != _clean(team_id):
+                continue
+            for row in profile.get("completed_games") or []:
+                if not isinstance(row, Mapping):
+                    continue
+                row_day = _clean(row.get("date"))[:10]
+                if cutoff and row_day and row_day >= cutoff:
+                    continue
+                key = _clean(row.get("event_id")) or f"{row_day}|{_clean(row.get('opponent_id'))}"
+                if key:
+                    rows[key] = dict(row)
+
+    return sorted(
+        rows.values(),
+        key=lambda row: _clean(row.get("date")),
+    )
+
+
 def enrich_step3_inputs(
     identity: Mapping[str, Any] | None,
     away: Mapping[str, Any] | None,
@@ -335,11 +377,42 @@ def enrich_step3_inputs(
             game,
             side,
         )
-        if not (team_id and season and cutoff is not None):
+        if not team_id:
             diag[side] = {
                 "fallback_used": False,
-                "reason": "exact_team_id_or_date_unavailable",
+                "reason": "exact_team_id_unavailable",
                 "team_id": team_id,
+            }
+            continue
+
+        target_day = _clean(game.get("game_date"))[:10]
+        snapshot_rows = _snapshot_rows_for_team(team_id, target_day)
+        snapshot_overlay = _overlay_exact_rows(current, snapshot_rows)
+        snapshot_contract = build_team_form_contract(
+            snapshot_overlay,
+            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
+            side=side,
+        )
+        if snapshot_contract.get("required_complete"):
+            outputs[side] = snapshot_overlay
+            diag[side] = {
+                "fallback_used": True,
+                "fallback_source": "checked_in_runtime_snapshot",
+                "team_id": team_id,
+                "rows": len(snapshot_rows),
+                "opponent_record_mode": "snapshot_core_only",
+                "attempts": [],
+            }
+            continue
+
+        if not (season and cutoff is not None):
+            outputs[side] = snapshot_overlay
+            diag[side] = {
+                "fallback_used": bool(snapshot_rows),
+                "fallback_source": "checked_in_runtime_snapshot",
+                "reason": "live_schedule_date_unavailable",
+                "team_id": team_id,
+                "rows": len(snapshot_rows),
             }
             continue
 
@@ -355,9 +428,6 @@ def enrich_step3_inputs(
                 cutoff,
                 event_id,
             )
-            # The form helper returns newest-first. Step 3 wants chronological
-            # display order so its "recent" slice and trend direction remain
-            # deterministic.
             rows = sorted(
                 rows,
                 key=lambda row: _clean(
@@ -370,11 +440,15 @@ def enrich_step3_inputs(
                 "provider": f"ESPN exact team {team_id} lightweight Step 3 schedule fallback",
                 "error": f"{type(exc).__name__}: {exc}"[:260],
             }]
-        outputs[side] = _overlay_exact_rows(current, rows)
+
+        base_for_live = snapshot_overlay if snapshot_rows else current
+        outputs[side] = _overlay_exact_rows(base_for_live, rows)
+        final_rows = rows if rows else snapshot_rows
         diag[side] = {
-            "fallback_used": bool(rows),
+            "fallback_used": bool(final_rows),
+            "fallback_source": "live_exact_schedule" if rows else "checked_in_runtime_snapshot",
             "team_id": team_id,
-            "rows": len(rows),
+            "rows": len(final_rows),
             "opponent_record_mode": "inline_only",
             "attempts": attempts,
         }
@@ -729,6 +803,7 @@ __all__ = [
     "STEP3_ADVANCED_FIELDS",
     "STEP3_CSS",
     "STEP3_PRESENTATION_MARKER",
+    "STEP3_RUNTIME_SNAPSHOT_PATH",
     "STEP3_REQUIRED_FIELDS",
     "build_step3_contract",
     "enrich_step3_inputs",
