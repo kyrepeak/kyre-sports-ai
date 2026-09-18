@@ -74,8 +74,8 @@ def test_step2_contract_is_presentation_only():
         "ppg",
         "allowed_pg",
         "point_diff_pg",
-        "recent_form",
     )
+    assert "recent_form" in step2.STEP2_ADVANCED_FIELDS
     assert "points_per_drive" in step2.STEP2_ADVANCED_FIELDS
     assert "yards_per_play" in step2.STEP2_ADVANCED_FIELDS
 
@@ -121,12 +121,21 @@ def test_step2_advanced_gaps_fail_closed_to_check_not_fake_ready():
     assert contract["away"]["required_complete"] is True
 
 
-def test_step2_missing_core_profile_field_is_data_limited():
+def test_step2_missing_recent_form_fails_closed_to_check_not_data_limited():
     away = _away()
     away["recent_form"] = ""
     contract = step2.build_step2_contract(_identity(), away, _home())
+    assert contract["state"] == "CHECK"
+    assert "recent_form" in contract["away"]["missing_advanced"]
+    assert contract["away"]["required_complete"] is True
+
+
+def test_step2_missing_core_scoring_field_is_data_limited():
+    away = _away()
+    away["ppg"] = None
+    contract = step2.build_step2_contract(_identity(), away, _home())
     assert contract["state"] == "DATA LIMITED"
-    assert "recent_form" in contract["away"]["missing_required"]
+    assert "ppg" in contract["away"]["missing_required"]
 
 
 def test_step2_can_derive_ypp_and_rank_from_official_ncaa_rows():

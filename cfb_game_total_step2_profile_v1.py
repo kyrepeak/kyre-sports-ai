@@ -25,10 +25,10 @@ STEP2_REQUIRED_FIELDS = (
     "ppg",
     "allowed_pg",
     "point_diff_pg",
-    "recent_form",
 )
 
 STEP2_ADVANCED_FIELDS = (
+    "recent_form",
     "yards_per_play",
     "yards_per_play_allowed",
     "points_per_drive",
@@ -443,8 +443,11 @@ def build_team_profile_contract(
     missing_advanced = [
         field
         for field in STEP2_ADVANCED_FIELDS
-        if contract.get(field) is None
-        or (field == "split_summary" and not _usable(contract.get(field)))
+        if (
+            not _usable(contract.get(field))
+            if field in {"recent_form", "split_summary"}
+            else contract.get(field) is None
+        )
     ]
     advanced_available = len(STEP2_ADVANCED_FIELDS) - len(missing_advanced)
 
@@ -460,10 +463,10 @@ def build_team_profile_contract(
 
     if missing_required:
         state = "DATA LIMITED"
-    elif advanced_available >= 5:
-        state = "READY"
-    else:
+    elif missing_advanced:
         state = "CHECK"
+    else:
+        state = "READY"
     contract["state"] = state
     return contract
 
