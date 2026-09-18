@@ -185,3 +185,31 @@ def test_step4_css_is_wide_and_mobile_safe():
     assert ".gt170-step4" in step4.STEP4_CSS
     assert ".gt170-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))" in step4.STEP4_CSS
     assert "@media(max-width:760px)" in step4.STEP4_CSS
+
+
+
+def test_step4_accepts_certified_step3_recent_scoring_handoff():
+    away = {
+        "team": "Coastal Carolina",
+        "recent_ppg": 24.0,
+        "recent_points_allowed_pg": 31.0,
+    }
+    home = {
+        "team": "Delaware",
+        "recent_ppg": 42.0,
+        "recent_points_allowed_pg": 7.0,
+    }
+    contract = step4.build_step4_contract(_identity(), away, home)
+    assert contract["state"] == "CHECK"
+    away_rows = {
+        row["label"]: row
+        for row in contract["away_offense_vs_home_defense"]["rows"]
+    }
+    home_rows = {
+        row["label"]: row
+        for row in contract["home_offense_vs_away_defense"]["rows"]
+    }
+    assert away_rows["Off vs Def"]["offense_value"] == 24.0
+    assert away_rows["Off vs Def"]["defense_value"] == 7.0
+    assert home_rows["Off vs Def"]["offense_value"] == 42.0
+    assert home_rows["Off vs Def"]["defense_value"] == 31.0
