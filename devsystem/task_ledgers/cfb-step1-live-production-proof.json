@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-live-production-proof",
+  "status": "DONE",
+  "scope": "Add strict production acceptance for Step 1 Team Identity only: connected accordion present, both team cards present, required labels visible, no unavailable/missing-data placeholders, READY state, two identity-verified badges, and exact ESPN logos loaded. No product/model behavior changed.",
+  "guardrails": {
+    "production_proof_only": true,
+    "step1_only": true,
+    "steps_2_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "api_behavior_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

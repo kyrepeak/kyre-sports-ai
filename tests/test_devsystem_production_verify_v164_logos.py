@@ -24,3 +24,17 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     assert 'img.gt160-evidence-logo' in source
     assert "naturalWidth" in source
     assert "CFB_GAME_TOTAL_V164_PRODUCTION_LOGOS_GREEN" in source
+
+
+
+def test_v164_production_verifier_requires_complete_step1_identity_surface():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'REQUIRED_STEP1_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"' in source
+    assert "_assert_step1_identity" in source
+    assert 'details[data-testid="gt157-step-1"]' in source
+    assert 'data-testid="gt165-step1-away"' in source
+    assert 'data-testid="gt165-step1-home"' in source
+    assert '"img.gt165-idlogo"' in source
+    assert '"Needs data:" in text' in source
+    assert 'state != "READY"' in source
+    assert '"IDENTITY VERIFIED"' in source
