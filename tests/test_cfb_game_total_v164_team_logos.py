@@ -465,3 +465,13 @@ def test_v164_step3_certified_foundation_is_reachable_and_unique():
     assert 'rendered_identity.get("step2_away") or {}' in step3_block
     assert 'rendered_identity.get("step2_home") or {}' in step3_block
     assert "return step3_owner.render_step3_html(" in step3_block
+
+
+
+def test_v164_step3_runs_exact_recent_game_enrichment_before_render():
+    source = _read(PAGE)
+    assert source.count("if int(number) == 3:") == 1
+    assert "step3_owner.enrich_step3_inputs(" in source
+    enrich_index = source.index("step3_owner.enrich_step3_inputs(")
+    render_index = source.index("step3_owner.render_step3_html(", enrich_index)
+    assert enrich_index < render_index
