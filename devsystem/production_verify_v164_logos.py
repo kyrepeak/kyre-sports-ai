@@ -74,8 +74,22 @@ def _wait_image_state(locator, timeout_ms: int = 15000) -> dict:
     )
 
 
-def _assert_exact_pair(frame, selector: str, label: str) -> list[dict]:
+def _assert_exact_pair(
+    frame,
+    selector: str,
+    label: str,
+    *,
+    render_timeout_ms: int = 30000,
+) -> list[dict]:
+    """Wait for the full Streamlit surface before enforcing the exact two-logo contract."""
     images = frame.locator(selector)
+    try:
+        images.nth(0).wait_for(state="attached", timeout=render_timeout_ms)
+        images.nth(1).wait_for(state="attached", timeout=render_timeout_ms)
+    except Exception as exc:
+        raise ProductionVerificationV164Failure(
+            f"{label} timed out waiting for two exact logo images; found {images.count()}"
+        ) from exc
     if images.count() != 2:
         raise ProductionVerificationV164Failure(
             f"{label} expected two exact logo images; found {images.count()}"
@@ -144,6 +158,12 @@ def _wait_for_v164_patch_deployment(
 
 def _assert_step1_identity(frame) -> dict:
     step = frame.locator('details[data-testid="gt157-step-1"]')
+    try:
+        step.wait_for(state="attached", timeout=30000)
+    except Exception as exc:
+        raise ProductionVerificationV164Failure(
+            "Step 1 timed out waiting for the connected accordion to render"
+        ) from exc
     if step.count() != 1:
         raise ProductionVerificationV164Failure(
             f"Step 1 expected one connected accordion; found {step.count()}"
