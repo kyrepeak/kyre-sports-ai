@@ -186,6 +186,7 @@ def test_step3_css_keeps_purple_expanded_screenshot_style():
 
 
 def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch):
+    monkeypatch.setattr(step3, "_snapshot_rows_for_team", lambda team_id, target_day: [])
     identity = {
         "away": {"team": "Coastal Carolina", "team_id": "324", "logo": "https://example.test/324.png"},
         "home": {"team": "Delaware", "team_id": "48", "logo": "https://example.test/48.png"},
@@ -281,6 +282,7 @@ def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch)
 
 
 def test_step3_lightweight_fallback_does_not_call_heavy_opponent_hydration(monkeypatch):
+    monkeypatch.setattr(step3, "_snapshot_rows_for_team", lambda team_id, target_day: [])
     identity = {
         "away": {"team": "Away", "team_id": "324"},
         "home": {"team": "Home", "team_id": "48"},
