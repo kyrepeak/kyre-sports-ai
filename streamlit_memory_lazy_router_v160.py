@@ -1,8 +1,8 @@
 """KYRE Streamlit Router V160 — CFB Game Total V164 universal exact team logos.
 
 Additive over permanently frozen Router V159. V160 advances only exact College
-Football -> Game Total to fresh Page V14, preserving the V162 cache-boundary
-repair and every non-target route through V158.
+Football -> Game Total to fresh Page V15, preserving the V163 production baseline
+and every non-target route through V159.
 
 Projection math, distribution math, Step-12 qualification, Top-5 ranking,
 API/model behavior, and sportsbook projection influence remain unchanged.
@@ -14,8 +14,9 @@ import streamlit as st
 import streamlit_memory_lazy_router_v1 as root
 import streamlit_memory_lazy_router_v159 as prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V159 • CFB GAME TOTAL V164 UNIVERSAL EXACT TEAM LOGOS"
-PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"\nLEGACY_V163_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V160 • CFB GAME TOTAL V164 UNIVERSAL EXACT TEAM LOGOS"
+PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
+LEGACY_V163_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"
 LEGACY_V162_HEARTBEAT = "CFB_GAME_TOTAL_V162_PRODUCTION_ACTIVE"
 LEGACY_V161_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v159"
