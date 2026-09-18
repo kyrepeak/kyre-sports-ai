@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-live-profile-handoff-v1",
+  "status": "DONE",
+  "scope": "Repair only the live Step 2 evidence handoff so the universal performance profile receives the richest verified team stats plus the exact Step 1 identity/profile fields already proven in production.",
+  "trigger": "Production Step 2 proof #28 rendered the new UI but failed closed as DATA LIMITED because Step 2 still received the older narrow step payload instead of the richer verified evidence and exact Step 1 profile.",
+  "guardrails": {
+    "step1_logic_changed": false,
+    "step1_frozen_surface_reopened": false,
+    "step3_plus_not_started": true,
+    "ui_redesign_changed": false,
+    "frozen_v163_edited_in_place": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
