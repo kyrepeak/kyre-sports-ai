@@ -27,6 +27,7 @@ import cfb_game_total_step4_matchup_v1 as step4_owner
 import cfb_team_data_v1 as step3_data_owner
 import cfb_game_total_team_logo_identity_v1 as logo_identity
 import cfb_game_total_runtime_display_v1 as runtime_display
+import cfb_schedule_v6_runtime_snapshot as runtime_snapshot_v2
 import cfb_over_under_logo_resolver_v3 as frozen_logo
 
 MODEL_VERSION = "CFB GAME TOTAL CLEAN PAGE V15 • V164 UNIVERSAL EXACT TEAM LOGOS"
@@ -48,14 +49,149 @@ _FROZEN_TEAM_IDENTITY = identity_owner._team_identity
 _FROZEN_RECONCILE_DISPLAY_BUNDLE = runtime_display.reconcile_display_bundle
 
 
+def _runtime_v2_identity_rows_for_day(requested_day: str) -> list[dict[str, Any]]:
+    try:
+        payload = runtime_snapshot_v2._load_v2_snapshot()
+    except Exception:
+        return []
+    rows: list[dict[str, Any]] = []
+    for raw in payload.get("games") or []:
+        if not isinstance(raw, Mapping):
+            continue
+        if str(raw.get("game_date") or "")[:10] != requested_day:
+            continue
+        away = raw.get("away") if isinstance(raw.get("away"), Mapping) else {}
+        home = raw.get("home") if isinstance(raw.get("home"), Mapping) else {}
+        event_id = str(raw.get("event_id") or "").strip()
+        away_id = str(away.get("team_id") or "").strip()
+        home_id = str(home.get("team_id") or "").strip()
+        away_team = str(raw.get("away_team") or "").strip()
+        home_team = str(raw.get("home_team") or "").strip()
+        if not (
+            event_id.isdigit()
+            and away_id.isdigit()
+            and home_id.isdigit()
+            and away_team
+            and home_team
+        ):
+            continue
+        rows.append(
+            {
+                "event_id": event_id,
+                "game_date": requested_day,
+                "away_team": away_team,
+                "home_team": home_team,
+                "away_team_id": away_id,
+                "home_team_id": home_id,
+                "identity_verified": True,
+                "identity_source": "certified_runtime_snapshot_v2",
+            }
+        )
+    return rows
+
+
 def _selector_payload_for_day(selected_day: Any) -> dict[str, Any]:
-    requested_day = selected_day.isoformat() if isinstance(selected_day, date) else str(selected_day or "")[:10]
+    requested_day = (
+        selected_day.isoformat()
+        if isinstance(selected_day, date)
+        else str(selected_day or "")[:10]
+    )
     if not requested_day:
         return {}
+
+    api_payload: dict[str, Any] = {}
     try:
-        return prior_v163._fetch_selector_identity_payload(date.fromisoformat(requested_day))
+        raw = prior_v163._fetch_selector_identity_payload(
+            date.fromisoformat(requested_day)
+        )
+        if isinstance(raw, Mapping):
+            api_payload = dict(raw)
     except (TypeError, ValueError):
-        return {}
+        api_payload = {}
+
+    combined: dict[str, dict[str, Any]] = {}
+    for raw in api_payload.get("games") or []:
+        if not isinstance(raw, Mapping):
+            continue
+        event_id = str(raw.get("event_id") or "").strip()
+        if event_id:
+            combined[event_id] = dict(raw)
+
+    for row in _runtime_v2_identity_rows_for_day(requested_day):
+        combined.setdefault(row["event_id"], row)
+
+    if not combined:
+        return api_payload
+
+    return {
+        **api_payload,
+        "requested_date": requested_day,
+        "games": sorted(
+            combined.values(),
+            key=lambda row: (
+                str(row.get("away_team") or "").casefold(),
+                str(row.get("home_team") or "").casefold(),
+                str(row.get("event_id") or ""),
+            ),
+        ),
+        "game_count": len(combined),
+        "synthetic_ids": False,
+        "projection_weight": 0.0,
+        "may_modify_projection": False,
+        "identity_union_source": (
+            "Kyre Sports API selector + certified Runtime Snapshot V2"
+        ),
+    }
+
+
+def _recover_exact_runtime_event_v164(
+    game: Mapping[str, Any],
+    selected_day: Any,
+) -> dict[str, Any]:
+    enriched = dict(game or {})
+    requested_day = (
+        selected_day.isoformat()
+        if isinstance(selected_day, date)
+        else str(selected_day or "")[:10]
+    )
+    if not requested_day:
+        requested_day = logo_identity._game_date(enriched)
+    if not requested_day:
+        return enriched
+
+    current_event = logo_identity._event_id(enriched)
+    rows = _runtime_v2_identity_rows_for_day(requested_day)
+    if current_event:
+        exact = [
+            row for row in rows
+            if str(row.get("event_id") or "") == current_event
+        ]
+        if len(exact) != 1:
+            return enriched
+        match = exact[0]
+    else:
+        away = prior_v163._team_name(enriched, "away")
+        home = prior_v163._team_name(enriched, "home")
+        matches = [
+            row for row in rows
+            if prior_v163._same_school(away, row.get("away_team"))
+            and prior_v163._same_school(home, row.get("home_team"))
+        ]
+        if len(matches) != 1:
+            return enriched
+        match = matches[0]
+
+    enriched["espn_event_id"] = str(match["event_id"])
+    enriched["game_date"] = requested_day
+    for side in ("away", "home"):
+        team_id = str(match.get(f"{side}_team_id") or "").strip()
+        if team_id.isdigit():
+            enriched[f"{side}_espn_team_id"] = team_id
+            enriched[f"{side}_team_id"] = team_id
+    enriched["logo_identity_source"] = (
+        "Certified Runtime Snapshot V2 exact date + school identity"
+    )
+    return enriched
 
 
 def _selector_payload_for_game(game: Mapping[str, Any]) -> dict[str, Any]:
@@ -75,7 +211,10 @@ def _reconcile_display_bundle_v164(
         frozen_away,
         frozen_home,
     )
-    enriched = dict(display_game or game)
+    enriched = _recover_exact_runtime_event_v164(
+        dict(display_game or game),
+        selected_day,
+    )
     event_id = logo_identity._event_id(game) or logo_identity._event_id(enriched)
     if event_id and not logo_identity._event_id(enriched):
         enriched["espn_event_id"] = event_id
@@ -113,9 +252,9 @@ def _team_identity_v164(
     if bool(current.get("exact_identity")):
         return current
 
-    enriched = dict(game)
+    selected_day = logo_identity._game_date(game) or _query_selected_day()
+    enriched = _recover_exact_runtime_event_v164(dict(game), selected_day)
     event_id = logo_identity._event_id(enriched) or prior_v163._query_event_id()
-    selected_day = logo_identity._game_date(enriched) or _query_selected_day()
     # NCAA schedule rows deliberately carry espn_event_id="" until ESPN
     # enrichment succeeds. setdefault() cannot replace that blank placeholder,
     # so explicitly fill the recovered exact query event before logo resolution.
@@ -137,9 +276,12 @@ def _final_presentation_identity_v164(
 ) -> dict[str, Any]:
     """Inject exact ESPN logo identity at the final V160 presentation boundary."""
     output = dict(identity or {})
-    enriched = dict(display_game or {})
+    selected_day = logo_identity._game_date(display_game or {}) or _query_selected_day()
+    enriched = _recover_exact_runtime_event_v164(
+        dict(display_game or {}),
+        selected_day,
+    )
     event_id = logo_identity._event_id(enriched) or prior_v163._query_event_id()
-    selected_day = logo_identity._game_date(enriched) or _query_selected_day()
     if event_id:
         enriched.setdefault("espn_event_id", event_id)
     if selected_day:
