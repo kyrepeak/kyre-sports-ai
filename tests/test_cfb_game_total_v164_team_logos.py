@@ -513,14 +513,20 @@ def test_v164_step3_embeds_live_hydration_diagnostics_for_production_proof():
     assert 'data-step3-diag=' in step3_block
 
 
-def test_v164_step2_uses_certified_foundation_and_public_drive_adapter():
+def test_v164_step2_uses_runtime_v2_foundation_and_drive_snapshot_adapter():
     source = PAGE.read_text(encoding="utf-8")
     assert "import cfb_game_total_step2_drive_v1 as step2_drive_owner" in source
+    assert "def _step2_certified_foundation(" in source
+    foundation_start = source.index("def _step2_certified_foundation(")
+    foundation_end = source.index("def step_evidence_v164(", foundation_start)
+    foundation = source[foundation_start:foundation_end]
+    assert "step3_owner._runtime_v2_step3_bundle(" in foundation
+
     start = source.index("if int(number) == 2:")
     end = source.index("if int(number) == 3:", start)
     block = source[start:end]
-    assert "_step3_certified_foundation(" in block
+    assert "_step2_certified_foundation(" in block
     assert "step2_drive_owner.enrich_step2_drive_metrics(" in block
-    assert block.index("_step3_certified_foundation(") < block.index(
+    assert block.index("_step2_certified_foundation(") < block.index(
         "step2_drive_owner.enrich_step2_drive_metrics("
     )
