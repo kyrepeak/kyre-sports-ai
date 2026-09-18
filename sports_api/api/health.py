@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from sports_api.observability_v1 import (
     OBSERVABILITY_VERSION,
@@ -8,14 +8,11 @@ from sports_api.observability_v1 import (
     readiness_snapshot,
     runtime_metadata,
 )
-from sports_api.monster_telemetry_probe_v1 import (
-    run_telemetry_probe_once,
-    telemetry_probe_enabled,
-)
 from sports_api.api.cfb_render_fanduel_transport_v1 import install_hosted_transport
 from sports_api.api.cfb_markets import router as cfb_markets_router
 from sports_api.api.cfb_market_identity_v1 import router as cfb_market_identity_router
 from sports_api.api.cfb_odds_v1 import router as cfb_odds_router
+from sports_api.api.cfb_team_identity_v1 import router as cfb_team_identity_router
 from sports_api.api.nfl_moneyline_market_v1 import router as nfl_moneyline_market_router
 from sports_api.api.nfl_passing_yards_market_v1 import router as nfl_passing_yards_market_router
 from sports_api.api.nfl_receiving_yards_context_v1 import router as nfl_receiving_yards_context_router
@@ -36,6 +33,7 @@ router = APIRouter(tags=["system"])
 router.routes.extend(cfb_markets_router.routes)
 router.routes.extend(cfb_market_identity_router.routes)
 router.routes.extend(cfb_odds_router.routes)
+router.routes.extend(cfb_team_identity_router.routes)
 router.routes.extend(nfl_moneyline_market_router.routes)
 router.routes.extend(nfl_passing_yards_market_router.routes)
 router.routes.extend(nfl_receiving_yards_context_router.routes)
@@ -49,8 +47,6 @@ router.routes.extend(nfl_spread_market_router.routes)
 @router.get("/health")
 def health_check():
     """Fast liveness probe kept intentionally lightweight for Render."""
-    if telemetry_probe_enabled():
-        run_telemetry_probe_once()
     runtime = runtime_metadata()
     return {
         "status": "ok",
@@ -80,11 +76,3 @@ def health_details():
     snapshot = diagnostics_snapshot()
     snapshot["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
     return snapshot
-
-
-@router.get("/health/telemetry/probe", include_in_schema=False)
-def monster_telemetry_probe():
-    """Return the cached one-shot certification probe result while enabled."""
-    if not telemetry_probe_enabled():
-        raise HTTPException(status_code=404, detail="Not found")
-    return run_telemetry_probe_once()
