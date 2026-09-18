@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "cfb-v164-direct-header-logo-enrichment",
+  "status": "DONE",
+  "scope": "Enrich the actual V10/V11 visible matchup identity object with exact ESPN team IDs and logo URLs at render time so the V164 header and Team Evidence render real logos in production.",
+  "trigger": "V164 production logo verification #4 found zero logo img elements even after the additive team-identity API and Render deployment were live, proving the remaining gap was the visible identity object, not the API.",
+  "guardrails": {
+    "frozen_v163_edited_in_place": false,
+    "frozen_v10_v11_edited_in_place": false,
+    "official_espn_event_identity_required": true,
+    "name_based_logo_guessing": false,
+    "fuzzy_logo_matching": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
