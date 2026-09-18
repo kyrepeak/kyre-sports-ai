@@ -182,7 +182,7 @@ def test_v164_display_reconcile_enriches_exact_team_ids_before_frozen_logo_resol
     assert visuals["home"]["logo"].endswith("/48.png")
 
 
-def test_v164_final_identity_state_injects_exact_api_logos(monkeypatch):
+def test_v164_per_team_identity_hook_injects_exact_api_logo(monkeypatch):
     monkeypatch.setattr(
         logo_identity,
         "_api_rows",
@@ -202,7 +202,7 @@ def test_v164_final_identity_state_injects_exact_api_logos(monkeypatch):
         ),
     )
 
-    state = page_v164._identity_state_v164(
+    away = page_v164._team_identity_v164(
         {
             "espn_event_id": "401869940",
             "game_date": "2026-09-19",
@@ -210,17 +210,30 @@ def test_v164_final_identity_state_injects_exact_api_logos(monkeypatch):
             "home_team": "Delaware",
         },
         {"team": "Coastal Carolina", "conference": "Sun Belt"},
-        {"team": "Delaware", "conference": "CUSA"},
-        {"away": {}, "home": {}},
+        {},
+        "away",
     )
-    assert state["verified"] is True
-    assert state["away"]["team_id"] == "324"
-    assert state["home"]["team_id"] == "48"
-    assert state["away"]["logo"].endswith("/324.png")
-    assert state["home"]["logo"].endswith("/48.png")
+    home = page_v164._team_identity_v164(
+        {
+            "espn_event_id": "401869940",
+            "game_date": "2026-09-19",
+            "away_team": "Coastal Carolina",
+            "home_team": "Delaware",
+        },
+        {"team": "Delaware", "conference": "CUSA"},
+        {},
+        "home",
+    )
+    assert away["exact_identity"] is True
+    assert home["exact_identity"] is True
+    assert away["team_id"] == "324"
+    assert home["team_id"] == "48"
+    assert away["logo"].endswith("/324.png")
+    assert home["logo"].endswith("/48.png")
 
 
-def test_v164_render_monkeypatches_final_identity_owner_only_temporarily():
+def test_v164_render_monkeypatches_only_per_team_identity_temporarily():
     source = _read(PAGE)
-    assert "identity_owner._identity_state = _identity_state_v164" in source
-    assert "identity_owner._identity_state = original_identity_state" in source
+    assert "identity_owner._team_identity = _team_identity_v164" in source
+    assert "identity_owner._team_identity = original_team_identity" in source
+    assert "identity_owner._identity_state =" not in source
