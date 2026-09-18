@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-status-integrity-v1",
+  "status": "DONE",
+  "scope": "Tighten Step 3 READY/CHECK/DATA LIMITED semantics using real opponent-record and defense-rank coverage, and expose an explicit status reason in the live card.",
+  "trigger": "Live Step 3 could display CHECK/READY without explaining incomplete opponent-quality coverage. READY must require both complete core form and at least 60% opponent-record plus defense-rank coverage with all advanced fields present.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step4_frozen_and_untouched": true,
+    "step5_plus_not_started": true,
+    "ready_requires_opponent_quality_coverage": true,
+    "check_explains_missing_context": true,
+    "data_limited_requires_core_gap": true,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
