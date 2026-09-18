@@ -107,3 +107,19 @@ def test_v164_production_verifier_requires_step3_current_form_surface():
 def test_v164_step3_required_text_check_is_case_normalized():
     source = VERIFIER.read_text(encoding="utf-8")
     assert "label.upper() not in live_text_upper" in source
+
+
+
+def test_v164_production_verifier_requires_step4_matchup_surface():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_STEP4_MATCHUP_OFF_DEF_PASS_RUSH_EPA_ACTIVE"' in source
+    assert "REQUIRED_STEP4_MARKER in dom_text" in source
+    assert "_assert_step4_matchup" in source
+    assert 'details[data-testid="gt157-step-4"]' in source
+    assert 'data-testid="gt170-step4-away-off-home-def"' in source
+    assert 'data-testid="gt170-step4-home-off-away-def"' in source
+    assert 'data-testid="gt170-step4-matchup-read"' in source
+    assert 'data-testid="gt170-step4-epa-integrity"' in source
+    assert '"img.gt170-logo"' in source
+    assert '"step4_matchup": step4' in source
+    assert "Step 4 Matchup must render collapsed by default" in source
