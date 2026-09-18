@@ -120,8 +120,21 @@ def _metric(
 
 
 def _side_metrics(evidence: Mapping[str,Any]) -> dict[str,dict[str,Any]]:
-    off_points=_direct_metric(evidence,"ppg","points_pg","scoring_offense_pg")
-    def_points=_direct_metric(evidence,"points_allowed_pg","allowed_pg","scoring_defense_pg")
+    off_points=_direct_metric(
+        evidence,
+        "ppg",
+        "points_pg",
+        "scoring_offense_pg",
+        "recent_ppg",
+    )
+    def_points=_direct_metric(
+        evidence,
+        "points_allowed_pg",
+        "allowed_pg",
+        "scoring_defense_pg",
+        "recent_points_allowed_pg",
+        "recent_allowed_pg",
+    )
 
     pass_off,pass_off_rank=_metric(
         evidence,
