@@ -328,6 +328,12 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 rendered_identity.get("step1_home") or {},
                 home,
             )
+            step3_away, step3_home, _ = step3_owner.enrich_step3_inputs(
+                exact_identity,
+                step3_away,
+                step3_home,
+                display_game,
+            )
             return step3_owner.render_step3_html(
                 status,
                 exact_identity,
