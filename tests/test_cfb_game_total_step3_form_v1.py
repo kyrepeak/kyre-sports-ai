@@ -183,7 +183,7 @@ def test_step3_css_keeps_purple_expanded_screenshot_style():
 
 
 
-def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch):
+def test_step3_runtime_snapshot_fills_form_and_opponent_quality_to_ready(monkeypatch):
     identity = {
         "away": {"team": "Coastal Carolina", "team_id": "324", "logo": "https://example.test/324.png"},
         "home": {"team": "Delaware", "team_id": "48", "logo": "https://example.test/48.png"},
@@ -194,63 +194,109 @@ def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch)
         "away_espn_team_id": "324",
         "home_espn_team_id": "48",
     }
-    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
-    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
-
-    rows = {
-        "324": [
+    payload = {
+        "version": 2,
+        "generated_at": "2026-09-18T18:28:25Z",
+        "_runtime_snapshot_source": "remote:cfb-runtime-snapshot-auto-refresh-v2",
+        "games": [
             {
-                "event_id": "a1",
-                "date": "2026-09-05T00:00:00Z",
-                "opponent_name": "Opponent A",
-                "opponent_id": "901",
-                "location": "home",
-                "points_for": 35,
-                "points_against": 14,
-                "opponent_record_pct": 0.50,
+                "event_id": "401869940",
+                "game_date": "2026-09-19",
+                "away_team": "Coastal Carolina",
+                "home_team": "Delaware",
+                "away": {
+                    "team_id": "324",
+                    "record_text": "1-1",
+                    "points_allowed_pg": 19.0,
+                    "completed_games": [
+                        {
+                            "event_id": "a1",
+                            "date": "2026-09-05T00:00:00Z",
+                            "opponent": "Opponent A",
+                            "opponent_id": "901",
+                            "location": "away",
+                            "points_for": 24,
+                            "points_against": 31,
+                        },
+                        {
+                            "event_id": "a2",
+                            "date": "2026-09-12T00:00:00Z",
+                            "opponent": "Opponent B",
+                            "opponent_id": "902",
+                            "location": "home",
+                            "points_for": 45,
+                            "points_against": 7,
+                        },
+                    ],
+                },
+                "home": {
+                    "team_id": "48",
+                    "record_text": "1-1",
+                    "points_allowed_pg": 21.0,
+                    "completed_games": [
+                        {
+                            "event_id": "h1",
+                            "date": "2026-09-03T00:00:00Z",
+                            "opponent": "Opponent C",
+                            "opponent_id": "903",
+                            "location": "home",
+                            "points_for": 42,
+                            "points_against": 7,
+                        },
+                        {
+                            "event_id": "h2",
+                            "date": "2026-09-12T00:00:00Z",
+                            "opponent": "Opponent D",
+                            "opponent_id": "904",
+                            "location": "away",
+                            "points_for": 26,
+                            "points_against": 35,
+                        },
+                    ],
+                },
             },
             {
-                "event_id": "a2",
-                "date": "2026-09-12T00:00:00Z",
-                "opponent_name": "Opponent B",
-                "opponent_id": "902",
-                "location": "away",
-                "points_for": 28,
-                "points_against": 24,
-                "opponent_record_pct": 0.60,
-            },
-        ],
-        "48": [
-            {
-                "event_id": "h1",
-                "date": "2026-09-06T00:00:00Z",
-                "opponent_name": "Opponent C",
-                "opponent_id": "903",
-                "location": "home",
-                "points_for": 31,
-                "points_against": 10,
-                "opponent_record_pct": 0.45,
+                "event_id": "opponents-1",
+                "game_date": "2026-09-19",
+                "away_team": "Opponent A",
+                "home_team": "Opponent B",
+                "away": {
+                    "team_id": "901",
+                    "record_text": "2-0",
+                    "points_allowed_pg": 10.0,
+                    "completed_games": [],
+                },
+                "home": {
+                    "team_id": "902",
+                    "record_text": "1-1",
+                    "points_allowed_pg": 20.0,
+                    "completed_games": [],
+                },
             },
             {
-                "event_id": "h2",
-                "date": "2026-09-13T00:00:00Z",
-                "opponent_name": "Opponent D",
-                "opponent_id": "904",
-                "location": "home",
-                "points_for": 21,
-                "points_against": 24,
-                "opponent_record_pct": 0.70,
+                "event_id": "opponents-2",
+                "game_date": "2026-09-19",
+                "away_team": "Opponent C",
+                "home_team": "Opponent D",
+                "away": {
+                    "team_id": "903",
+                    "record_text": "3-0",
+                    "points_allowed_pg": 7.0,
+                    "completed_games": [],
+                },
+                "home": {
+                    "team_id": "904",
+                    "record_text": "0-2",
+                    "points_allowed_pg": 40.0,
+                    "completed_games": [],
+                },
             },
         ],
     }
     monkeypatch.setattr(
-        step3.deep,
-        "_current_rows",
-        lambda team_id, season, cutoff, event_id: (
-            rows[team_id],
-            {"fallback_resolved": 2},
-            [{"provider": "exact schedule"}],
-        ),
+        step3.runtime_snapshot,
+        "_load_v2_snapshot",
+        lambda: payload,
     )
 
     away, home, diag = step3.enrich_step3_inputs(
@@ -260,12 +306,56 @@ def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch)
         game,
     )
     contract = step3.build_step3_contract(identity, away, home)
-    assert contract["state"] == "CHECK"
+
+    assert contract["state"] == "READY"
     assert contract["away"]["sample_games"] == 2
     assert contract["home"]["sample_games"] == 2
-    assert contract["away"]["last5_record"] == "2-0"
+    assert contract["away"]["last5_record"] == "1-1"
     assert contract["home"]["last5_record"] == "1-1"
-    assert contract["away"]["required_complete"] is True
-    assert contract["home"]["required_complete"] is True
+    assert contract["away"]["sos_coverage"] == 1.0
+    assert contract["home"]["sos_coverage"] == 1.0
+    assert contract["away"]["avg_opponent_win_pct"] == 0.75
+    assert contract["home"]["avg_opponent_win_pct"] == 0.5
+    assert contract["away"]["avg_opponent_def_rank"] is not None
+    assert contract["home"]["avg_opponent_def_rank"] is not None
+    assert contract["away"]["top40_defenses_faced"] is not None
+    assert contract["home"]["top40_defenses_faced"] is not None
+    assert contract["away"]["record_vs_winning_teams"] == "0-1"
+    assert contract["home"]["record_vs_winning_teams"] == "1-0"
+    assert contract["away"]["strength_of_schedule_rank"] == 1
+    assert contract["home"]["strength_of_schedule_rank"] == 2
     assert diag["away"]["fallback_used"] is True
     assert diag["home"]["fallback_used"] is True
+    assert diag["away"]["provider"] == "remote:cfb-runtime-snapshot-auto-refresh-v2"
+
+
+def test_step3_one_game_is_not_enough_for_ready():
+    identity = {
+        "away": {"team": "A"},
+        "home": {"team": "B"},
+    }
+    one = {
+        "team": "A",
+        "completed_games": [
+            {
+                "date": "2026-09-12",
+                "opponent": "X",
+                "result": "W",
+                "points_for": 30,
+                "points_against": 20,
+                "opponent_record_pct": 0.75,
+                "opponent_def_rank": 12,
+            }
+        ],
+        "recent_record": {"wins": 1, "losses": 0, "ties": 0, "games": 1},
+        "recent_ppg": 30.0,
+        "recent_points_allowed_pg": 20.0,
+        "recent_point_diff_pg": 10.0,
+        "sos_opponent_win_pct": 0.75,
+        "sos_coverage": 1.0,
+        "strength_of_schedule_rank": 10,
+    }
+    row = step3.build_team_form_contract(one, identity["away"], side="away")
+    assert row["state"] == "DATA LIMITED"
+    assert "sample_games" in row["missing_required"]
+
