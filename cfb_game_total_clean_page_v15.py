@@ -21,6 +21,7 @@ import cfb_game_total_clean_page_v9 as compact_owner
 import cfb_game_total_step1_identity_v1 as step1_owner
 import cfb_game_total_step1_profile_v1 as step1_profile_owner
 import cfb_game_total_step2_profile_v1 as step2_owner
+import cfb_game_total_step2_drive_v1 as step2_drive_owner
 import cfb_game_total_step3_form_v1 as step3_owner
 import cfb_game_total_step4_matchup_v1 as step4_owner
 import cfb_team_data_v1 as step3_data_owner
@@ -277,16 +278,37 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             )
         if int(number) == 2:
             exact_identity = rendered_identity.get("value") or identity
+            step2_foundation_away, step2_foundation_home = _step3_certified_foundation(
+                display_game
+            )
+            # Certified NCAA/runtime current-season evidence wins over stale
+            # presentation/profile values for scoring, form and split fields.
             step2_away = _merge_step2_evidence(
                 away,
                 rendered_identity.get("away_stats") or {},
                 rendered_identity.get("step1_away") or {},
+                step2_foundation_away,
             )
             step2_home = _merge_step2_evidence(
                 home,
                 rendered_identity.get("home_stats") or {},
                 rendered_identity.get("step1_home") or {},
+                step2_foundation_home,
             )
+
+            selected_day = logo_identity._game_date(display_game) or _query_selected_day()
+            try:
+                step2_season = int(str(selected_day or "")[:4])
+            except (TypeError, ValueError):
+                step2_season = date.today().year
+            step2_away, step2_home, step2_drive_diag = (
+                step2_drive_owner.enrich_step2_drive_metrics(
+                    step2_away,
+                    step2_home,
+                    step2_season,
+                )
+            )
+            rendered_identity["step2_drive_diag"] = dict(step2_drive_diag)
             rendered_identity["step2_away"] = dict(step2_away)
             rendered_identity["step2_home"] = dict(step2_home)
             return step2_owner.render_step2_html(
