@@ -3,6 +3,7 @@ name: CFB runtime snapshot V2 refresh
 on:
   push:
     branches:
+      - main
       - cfb-runtime-snapshot-auto-refresh-v2
   schedule:
     - cron: "19 * * * *"
@@ -109,7 +110,7 @@ jobs:
           PY
 
   refresh:
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.actor != 'github-actions[bot]'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     concurrency:
       group: cfb-runtime-snapshot-v2-refresh
@@ -136,7 +137,7 @@ jobs:
 
       - name: Validate and publish certified runtime branch
         run: |
-          if git diff --quiet -- data/cfb_runtime_snapshot_v2.json; then
+          if git diff --quiet -- data/cfb_runtime_snapshot_v2.json data/cfb_step2_drive_snapshot_v1.json; then
             echo "CFB_RUNTIME_SNAPSHOT_V2_NO_COMMIT_NEEDED"
             exit 0
           fi
@@ -148,7 +149,24 @@ jobs:
           payload = json.loads(
               Path("data/cfb_runtime_snapshot_v2.json").read_text(encoding="utf-8")
           )
+          drive = json.loads(
+              Path("data/cfb_step2_drive_snapshot_v1.json").read_text(encoding="utf-8")
+          )
           games = payload.get("games") or []
+
+          if int(drive.get("version") or 0) != 1:
+              raise SystemExit("Step 2 drive snapshot version drift")
+          offense = drive.get("offense") or {}
+          defense = drive.get("defense") or {}
+          shared = set(offense) & set(defense)
+          if len(offense) < 100 or len(defense) < 100 or len(shared) < 100:
+              raise SystemExit(
+                  "Step 2 drive snapshot coverage unexpectedly small: "
+                  f"offense={len(offense)} defense={len(defense)} shared={len(shared)}"
+              )
+          for key in ("coastalcarolina", "delaware"):
+              if key not in offense or key not in defense:
+                  raise SystemExit(f"Step 2 drive witness missing: {key}")
           if int(payload.get("version") or 0) != 2:
               raise SystemExit("Snapshot V2 version drift")
           if len(games) < 25:
@@ -197,14 +215,16 @@ jobs:
               f"games={len(games)}",
               f"unique_event_ids={len(seen)}",
               f"generated_at={payload.get('generated_at')}",
+              f"drive_offense={len(offense)}",
+              f"drive_defense={len(defense)}",
           )
           PY
 
           refresh_branch="cfb-runtime-snapshot-auto-refresh-v2"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/cfb_runtime_snapshot_v2.json
-          git commit -m "Refresh CFB runtime data snapshot V2"
+          git add data/cfb_runtime_snapshot_v2.json data/cfb_step2_drive_snapshot_v1.json
+          git commit -m "Refresh CFB runtime data snapshot V2 + Step 2 drives"
 
           # Runtime data lives on its dedicated branch. Protected main is never
           # written by this job, and Schedule V6 validates/falls back locally.
