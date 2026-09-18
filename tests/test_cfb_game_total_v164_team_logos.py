@@ -40,6 +40,42 @@ def test_v164_selector_payload_supplies_exact_espn_team_ids_without_name_guessin
     assert enriched["logo_identity_source"] == "ESPN exact event_id -> exact team IDs"
 
 
+
+def test_v164_uses_kyre_api_exact_ids_before_direct_espn_fallback(monkeypatch):
+    game = {
+        "espn_event_id": "401869940",
+        "game_date": "2026-09-19",
+        "away_team": "Coastal Carolina",
+        "home_team": "Delaware",
+    }
+    monkeypatch.setattr(
+        logo_identity,
+        "_api_rows",
+        lambda _day: (
+            {
+                "event_id": "401869940",
+                "away_team_id": "324",
+                "home_team_id": "48",
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        logo_identity,
+        "_espn_rows",
+        lambda _day: (_ for _ in ()).throw(AssertionError("direct ESPN fallback should not run")),
+    )
+    enriched = logo_identity.enrich_exact_team_ids(game, {"games": []})
+    assert enriched["away_espn_team_id"] == "324"
+    assert enriched["home_espn_team_id"] == "48"
+
+
+def test_v164_team_identity_endpoint_is_additive_and_projection_neutral():
+    source = _read(ROOT / "cfb_game_total_team_logo_identity_v1.py")
+    assert 'TEAM_IDENTITY_ENDPOINT = "/api/v1/cfb/identity/team-logos"' in source
+    assert "_api_rows" in source
+    assert "projection_weight" in source
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
+
 def test_v164_exact_ids_resolve_to_official_espn_logo_cdn():
     game = {
         "away_espn_team_id": "324",
