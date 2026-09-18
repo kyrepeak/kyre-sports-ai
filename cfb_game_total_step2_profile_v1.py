@@ -443,8 +443,11 @@ def build_team_profile_contract(
     missing_advanced = [
         field
         for field in STEP2_ADVANCED_FIELDS
-        if contract.get(field) is None
-        or (field == "split_summary" and not _usable(contract.get(field)))
+        if (
+            not _usable(contract.get(field))
+            if field in {"recent_form", "split_summary"}
+            else contract.get(field) is None
+        )
     ]
     advanced_available = len(STEP2_ADVANCED_FIELDS) - len(missing_advanced)
 
