@@ -401,3 +401,18 @@ def test_v164_deployment_marker_renders_before_frozen_hub_handoff():
     marker_call = source.index("    _render_v164_identity()")
     frozen_call = source.index("        result = prior_v163.render_game_total_hub")
     assert marker_call < frozen_call
+
+
+
+def test_v164_step2_uses_rich_verified_evidence_and_step1_exact_profile():
+    source = _read(PAGE)
+    assert 'rendered_identity["away_stats"] = dict(away or {})' in source
+    assert 'rendered_identity["home_stats"] = dict(home or {})' in source
+    assert 'rendered_identity["step1_away"] = dict(step_away)' in source
+    assert 'rendered_identity["step1_home"] = dict(step_home)' in source
+    assert "step2_away = _merge_step2_evidence(" in source
+    assert "step2_home = _merge_step2_evidence(" in source
+    assert 'rendered_identity.get("away_stats") or {}' in source
+    assert 'rendered_identity.get("step1_away") or {}' in source
+    assert "step2_away," in source
+    assert "step2_home," in source
