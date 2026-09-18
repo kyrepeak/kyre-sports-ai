@@ -123,6 +123,7 @@ def test_v164_router_advances_only_game_total_page():
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v159"' in source
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v15"' in source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"' in source
+    assert 'STEP1_PROFILE_HEARTBEAT = "CFB_GAME_TOTAL_STEP1_EXACT_EVENT_PROFILE_HANDOFF_ACTIVE"' in source
     assert 'LEGACY_V163_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"' in source
     assert "return prior._render_cfb_game_total_v159(market)" in source
     assert "return prior.render_app()" in source
@@ -366,3 +367,14 @@ def test_v164_blank_ncaa_event_placeholder_uses_exact_query_event_for_logos(monk
     assert home["team_id"] == "48"
     assert away["logo"].endswith("/324.png")
     assert home["logo"].endswith("/48.png")
+
+
+
+def test_v164_router_emits_step1_profile_marker_before_page_import():
+    source = _read(ROUTER)
+    marker_index = source.index("STEP1_PROFILE_HEARTBEAT")
+    render_index = source.index("_render_production_heartbeat()")
+    import_index = source.index("page = root._import(ACTIVE_PAGE)")
+    assert marker_index < import_index
+    assert render_index < import_index
+    assert "{STEP1_PROFILE_HEARTBEAT}" in source
