@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-profile-deployment-marker",
+  "status": "DONE",
+  "scope": "Step 1 proof only: require a new exact-profile deployment marker before production browser acceptance so verification cannot certify the stale pre-profile surface.",
+  "root_cause": "Production proof #15 rendered the exact same pre-fallback Step 1 state as proof #14 because the verifier only waited for the older Step 1 marker and could race ahead of the newly deployed exact-schedule profile patch.",
+  "guardrails": {
+    "proof_only": true,
+    "step1_only": true,
+    "product_data_logic_changed": false,
+    "steps_2_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

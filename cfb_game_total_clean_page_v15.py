@@ -31,6 +31,7 @@ ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V164 ACTIVE"
 LOGO_POLICY = "official ESPN event_id -> exact ESPN team IDs -> ESPN NCAA logo CDN"
 DEPLOYMENT_PROOF_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"
 STEP1_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
+STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_EXACT_SCHEDULE_PROFILE_PATCH_ACTIVE"
 
 _FROZEN_RESOLVE_VISUALS = frozen_logo.resolve_visuals
 _FROZEN_TEAM_IDENTITY = identity_owner._team_identity
@@ -163,7 +164,7 @@ def _render_v164_identity() -> None:
     st.markdown(
         '<div data-testid="cfb-game-total-v164-active" '
         'style="display:none!important">'
-        f'{ACTIVE_MARKER} • {DEPLOYMENT_PROOF_MARKER} • {STEP1_PRESENTATION_MARKER} • exact ESPN team logos • V163 frozen parent • '
+        f'{ACTIVE_MARKER} • {DEPLOYMENT_PROOF_MARKER} • {STEP1_PRESENTATION_MARKER} • {STEP1_PROFILE_MARKER} • exact ESPN team logos • V163 frozen parent • '
         'sportsbook projection influence 0.0%</div>',
         unsafe_allow_html=True,
     )
@@ -252,6 +253,7 @@ __all__ = [
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP1_PRESENTATION_MARKER",
+    "STEP1_PROFILE_MARKER",
     "_final_presentation_identity_v164",
     "_team_identity_v164",
     "_query_selected_day",
