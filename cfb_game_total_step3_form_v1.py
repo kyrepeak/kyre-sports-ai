@@ -29,6 +29,7 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
 STEP3_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"
+STEP3_MIN_OPPONENT_QUALITY_COVERAGE = 0.60
 STEP3_RUNTIME_SNAPSHOT_PATH = Path(__file__).resolve().parent / "data" / "cfb_runtime_snapshot_v2.json"
 
 STEP3_REQUIRED_FIELDS = (
@@ -960,12 +961,43 @@ def build_team_form_contract(
         or (field == "record_vs_winning_teams" and not _usable(contract.get(field)))
     ]
 
+    record_coverage = float(sos_coverage or 0.0)
+    defense_rank_coverage = (
+        len(opp_def_ranks) / len(games)
+        if games
+        else 0.0
+    )
+    opponent_quality_coverage = min(record_coverage, defense_rank_coverage)
+    opponent_quality_ready = bool(
+        not missing_advanced
+        and record_coverage >= STEP3_MIN_OPPONENT_QUALITY_COVERAGE
+        and defense_rank_coverage >= STEP3_MIN_OPPONENT_QUALITY_COVERAGE
+    )
+
     if missing_required:
         state = "DATA LIMITED"
-    elif missing_advanced:
+        status_reason = (
+            "Core recent-form evidence is incomplete: "
+            + ", ".join(str(field).replace("_", " ") for field in missing_required)
+        )
+    elif not opponent_quality_ready:
         state = "CHECK"
+        if missing_advanced:
+            status_reason = (
+                "Opponent quality is still checking: "
+                + ", ".join(str(field).replace("_", " ") for field in missing_advanced)
+            )
+        else:
+            status_reason = (
+                "Opponent quality coverage is below the 60% READY threshold "
+                f"(records {record_coverage:.0%}, defense ranks {defense_rank_coverage:.0%})."
+            )
     else:
         state = "READY"
+        status_reason = (
+            "Recent form and opponent quality meet the Step 3 READY contract "
+            f"(records {record_coverage:.0%}, defense ranks {defense_rank_coverage:.0%})."
+        )
 
     wins = sum(1 for row in games if row.get("result") == "W")
     win_rate = wins / len(games) if games else 0.0
@@ -976,6 +1008,11 @@ def build_team_form_contract(
     contract["missing_required"] = missing_required
     contract["missing_advanced"] = missing_advanced
     contract["required_complete"] = not missing_required
+    contract["opponent_record_coverage"] = record_coverage
+    contract["opponent_defense_rank_coverage"] = defense_rank_coverage
+    contract["opponent_quality_coverage"] = opponent_quality_coverage
+    contract["opponent_quality_ready"] = opponent_quality_ready
+    contract["status_reason"] = status_reason
     contract["state"] = state
     contract["form_score"] = form_score
     return contract
@@ -1098,10 +1135,26 @@ def _team_card(team: Mapping[str, Any], *, home_side: bool) -> str:
     diff = team.get("recent_diff_pg")
     diff_css = "good" if diff is not None and float(diff) >= 0 else "bad"
     missing = list(team.get("missing_required") or []) + list(team.get("missing_advanced") or [])
+    reason = _clean(team.get("status_reason"))
+    raw_coverage = team.get("opponent_quality_coverage")
+    coverage = float(raw_coverage) if raw_coverage is not None else None
     missing_html = ""
-    if missing:
-        readable = ", ".join(str(x).replace("_", " ").title() for x in missing)
-        missing_html = f'<div class="gt168-missing">Still checking: {escape(readable)}</div>'
+    if team.get("state") != "READY":
+        coverage_text = (
+            f" • Opponent-quality coverage {coverage:.0%}"
+            if coverage is not None
+            else ""
+        )
+        detail = reason or (
+            "Still checking: "
+            + ", ".join(str(x).replace("_", " ").title() for x in missing)
+            if missing
+            else "Step 3 evidence is still checking."
+        )
+        missing_html = (
+            f'<div class="gt168-missing" data-testid="gt168-step3-status-reason">'
+            f'{escape(_clean(team.get("state")))} — {escape(detail)}{escape(coverage_text)}</div>'
+        )
     return f"""
 <div class="gt168-team {'home' if home_side else 'away'}" data-testid="gt168-step3-{'home' if home_side else 'away'}">
   <div class="gt168-head">
@@ -1182,6 +1235,7 @@ __all__ = [
     "STEP3_ADVANCED_FIELDS",
     "STEP3_CSS",
     "STEP3_PRESENTATION_MARKER",
+    "STEP3_MIN_OPPONENT_QUALITY_COVERAGE",
     "STEP3_RUNTIME_SNAPSHOT_PATH",
     "STEP3_REQUIRED_FIELDS",
     "build_step3_contract",

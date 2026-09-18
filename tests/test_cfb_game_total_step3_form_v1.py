@@ -823,3 +823,81 @@ def test_step3_render_never_uses_insufficient_sample_wording():
     assert "Early-season sample" in html
     assert "1 completed game" in html
     assert "Insufficient sample" not in html
+
+
+
+def test_step3_ready_requires_minimum_opponent_quality_coverage():
+    evidence = _away()
+    games = evidence["completed_games"]
+    # Keep all summary scalars populated, but only one of five recent games
+    # has opponent-record/defense-rank coverage.
+    for idx, row in enumerate(games):
+        row["opponent_record_pct"] = 0.60 if idx == 0 else None
+        row["opponent_def_rank"] = 25 if idx == 0 else None
+    evidence["sos_opponent_win_pct"] = 0.60
+    evidence["sos_coverage"] = 0.20
+    evidence["avg_opponent_def_rank"] = 25.0
+    evidence["top40_defenses_faced"] = 1
+    evidence["record_vs_winning_teams"] = "1-0"
+    evidence["strength_of_schedule_rank"] = 40
+
+    row = step3.build_team_form_contract(
+        evidence,
+        _identity()["away"],
+        side="away",
+    )
+    assert row["required_complete"] is True
+    assert row["opponent_record_coverage"] == 0.20
+    assert row["opponent_defense_rank_coverage"] == 0.20
+    assert row["opponent_quality_ready"] is False
+    assert row["state"] == "CHECK"
+    assert "below the 60% READY threshold" in row["status_reason"]
+
+
+def test_step3_full_opponent_quality_coverage_is_ready():
+    row = step3.build_team_form_contract(
+        _away(),
+        _identity()["away"],
+        side="away",
+    )
+    assert row["opponent_record_coverage"] == 1.0
+    assert row["opponent_defense_rank_coverage"] == 1.0
+    assert row["opponent_quality_coverage"] == 1.0
+    assert row["opponent_quality_ready"] is True
+    assert row["state"] == "READY"
+    assert "meet the Step 3 READY contract" in row["status_reason"]
+
+
+def test_step3_status_reason_is_visible_when_checking():
+    away = _away()
+    for row in away["completed_games"]:
+        row["opponent_record_pct"] = None
+        row["opponent_def_rank"] = None
+    away["sos_opponent_win_pct"] = None
+    away["sos_coverage"] = 0.0
+    away["avg_opponent_def_rank"] = None
+    away["top40_defenses_faced"] = None
+    away["record_vs_winning_teams"] = ""
+    away["strength_of_schedule_rank"] = None
+
+    html = step3.render_step3_html("CHECK", _identity(), away, _home())
+    assert 'data-testid="gt168-step3-status-reason"' in html
+    assert "CHECK — Opponent quality is still checking:" in html
+    assert "Opponent-quality coverage 0%" in html
+
+
+def test_step3_missing_core_remains_data_limited_with_reason():
+    away = _away()
+    away["completed_games"] = []
+    away["recent_record"] = {}
+    away["recent_ppg"] = None
+    away["recent_points_allowed_pg"] = None
+    away["recent_point_diff_pg"] = None
+    row = step3.build_team_form_contract(
+        away,
+        _identity()["away"],
+        side="away",
+    )
+    assert row["state"] == "DATA LIMITED"
+    assert row["required_complete"] is False
+    assert "Core recent-form evidence is incomplete" in row["status_reason"]
