@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-zero-opponent-quality-render-v1",
+  "status": "DONE",
+  "scope": "Step 3 only: preserve valid numeric zero in the visible Opponent Quality rows so READY production cards do not render zero as missing.",
+  "trigger": "Production verification run 35388313546 failed because Step 3 READY rendered one blank Opponent Quality value per side; the Top 40 Defenses Faced count was valid zero data formatted as an em dash.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step4_plus_not_started": true,
+    "data_provider_logic_changed": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "step3_ready_gate_changed": false
+  },
+  "proof_requirements": {
+    "zero_top40_renders_as_zero": true,
+    "focused_regression_test_added": true,
+    "branch_ci_required": true,
+    "production_verification_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

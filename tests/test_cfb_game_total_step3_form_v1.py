@@ -893,6 +893,21 @@ def test_step3_full_opponent_quality_coverage_is_ready():
     assert "meet the Step 3 READY contract" in row["status_reason"]
 
 
+def test_step3_ready_renders_zero_top40_as_zero_not_blank():
+    away = _away()
+    home = _home()
+    away["top40_defenses_faced"] = 0
+    home["top40_defenses_faced"] = 0
+
+    contract = step3.build_step3_contract(_identity(), away, home)
+    assert contract["state"] == "READY"
+
+    html = step3.render_step3_html("READY", _identity(), away, home)
+    assert html.count("Top 40 Defenses Faced") == 2
+    assert html.count("<b>0</b>") >= 2
+    assert "Top 40 Defenses Faced</span><b>—</b>" not in html
+
+
 def test_step3_status_reason_is_visible_when_checking():
     away = _away()
     for row in away["completed_games"]:
