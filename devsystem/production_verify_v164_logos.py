@@ -156,6 +156,7 @@ def _wait_for_v164_patch_deployment(
         f"required_step1_profile_marker={REQUIRED_STEP1_PROFILE_MARKER!r} "
         f"required_step2_marker={REQUIRED_STEP2_MARKER!r} "
         f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
+        f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
     )
@@ -426,6 +427,10 @@ def verify_live_v164(
             if REQUIRED_STEP2_MARKER not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 2 performance-profile marker: {REQUIRED_STEP2_MARKER}"
+                )
+            if REQUIRED_STEP3_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 3 current-form marker: {REQUIRED_STEP3_MARKER}"
                 )
             if REQUIRED_STEP3_MARKER not in body:
                 raise ProductionVerificationV164Failure(
