@@ -10,6 +10,7 @@ on:
       - "cfb_game_total_step1_identity_v1.py"
       - "cfb_game_total_step1_profile_v1.py"
       - "cfb_game_total_step2_profile_v1.py"
+      - "cfb_game_total_step3_form_v1.py"
       - "cfb_game_total_team_logo_identity_v1.py"
       - "devsystem/cfb_game_total_logo_browser_qa_v1.py"
       - "tests/test_cfb_game_total_v164_team_logos.py"
@@ -50,6 +51,7 @@ jobs:
           python -m py_compile cfb_game_total_step1_identity_v1.py
           python -m py_compile cfb_game_total_step1_profile_v1.py
           python -m py_compile cfb_game_total_step2_profile_v1.py
+          python -m py_compile cfb_game_total_step3_form_v1.py
           python -m py_compile cfb_game_total_team_logo_identity_v1.py
           python -m py_compile devsystem/cfb_game_total_logo_browser_qa_v1.py
           python -m py_compile devsystem/production_verify_v164_logos.py
@@ -61,6 +63,7 @@ jobs:
             tests/test_cfb_game_total_step1_identity_v1.py \
             tests/test_cfb_game_total_step1_profile_v1.py \
             tests/test_cfb_game_total_step2_profile_v1.py \
+            tests/test_cfb_game_total_step3_form_v1.py \
             tests/test_devsystem_production_verify_v164_logos.py
 
       - name: Start real production entrypoint locally

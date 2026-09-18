@@ -86,3 +86,24 @@ def test_v164_step2_required_text_check_is_case_normalized():
     source = VERIFIER.read_text(encoding="utf-8")
     assert "live_text_upper = text.upper()" in source
     assert "label.upper() not in live_text_upper" in source
+
+
+
+def test_v164_production_verifier_requires_step3_current_form_surface():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'REQUIRED_STEP3_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"' in source
+    assert "REQUIRED_STEP3_MARKER in dom_text" in source
+    assert "_assert_step3_current_form" in source
+    assert 'details[data-testid="gt157-step-3"]' in source
+    assert 'data-testid="gt168-step3-away"' in source
+    assert 'data-testid="gt168-step3-home"' in source
+    assert 'data-testid="gt168-step3-comparison"' in source
+    assert 'data-testid="gt168-step3-takeaways"' in source
+    assert 'data-testid="gt168-step3-edge"' in source
+    assert '"img.gt168-logo"' in source
+    assert '"step3_current_form_opponent_quality": step3' in source
+
+
+def test_v164_step3_required_text_check_is_case_normalized():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert "label.upper() not in live_text_upper" in source

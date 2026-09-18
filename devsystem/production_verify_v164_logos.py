@@ -29,6 +29,7 @@ REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE
 REQUIRED_STEP1_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
 REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"
 REQUIRED_STEP2_MARKER = "CFB_GAME_TOTAL_STEP2_PERFORMANCE_PROFILE_V2_ACTIVE"
+REQUIRED_STEP3_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -139,6 +140,7 @@ def _wait_for_v164_patch_deployment(
                 and REQUIRED_STEP1_MARKER in dom_text
                 and REQUIRED_STEP1_PROFILE_MARKER in dom_text
                 and REQUIRED_STEP2_MARKER in dom_text
+                and REQUIRED_STEP3_MARKER in dom_text
             ):
                 return frame, dom_text, scans
         except Exception as exc:
@@ -153,6 +155,8 @@ def _wait_for_v164_patch_deployment(
         f"required_step1_marker={REQUIRED_STEP1_MARKER!r} "
         f"required_step1_profile_marker={REQUIRED_STEP1_PROFILE_MARKER!r} "
         f"required_step2_marker={REQUIRED_STEP2_MARKER!r} "
+        f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
+        f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
     )
@@ -302,6 +306,80 @@ def _assert_step2_performance_profile(frame) -> dict:
         "metric_cards": step.locator(".gt167-metric").count(),
     }
 
+
+
+def _assert_step3_current_form(frame) -> dict:
+    step = frame.locator('details[data-testid="gt157-step-3"]')
+    try:
+        step.wait_for(state="attached", timeout=30000)
+    except Exception as exc:
+        raise ProductionVerificationV164Failure(
+            "Step 3 timed out waiting for Current Form & Opponent Quality"
+        ) from exc
+    if step.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 3 expected one connected accordion; found {step.count()}"
+        )
+    if step.get_attribute("open") is None:
+        raise ProductionVerificationV164Failure(
+            "Step 3 Current Form & Opponent Quality must render expanded by default"
+        )
+
+    away = frame.locator('[data-testid="gt168-step3-away"]')
+    home = frame.locator('[data-testid="gt168-step3-home"]')
+    comparison = frame.locator('[data-testid="gt168-step3-comparison"]')
+    takeaways = frame.locator('[data-testid="gt168-step3-takeaways"]')
+    edge = frame.locator('[data-testid="gt168-step3-edge"]')
+    if away.count() != 1 or home.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 3 expected two universal form cards; away={away.count()} home={home.count()}"
+        )
+    if comparison.count() != 1 or takeaways.count() != 1 or edge.count() != 1:
+        raise ProductionVerificationV164Failure(
+            "Step 3 missing comparison/takeaway/form-edge surfaces: "
+            f"comparison={comparison.count()} takeaways={takeaways.count()} edge={edge.count()}"
+        )
+
+    state = str(step.get_attribute("data-step3-state") or "").strip().upper()
+    if state not in {"READY", "CHECK"}:
+        raise ProductionVerificationV164Failure(
+            f"Step 3 current-form profile is not production-usable: state={state!r}"
+        )
+
+    text = step.inner_text()
+    required_text = (
+        "Current Form & Opponent Quality",
+        AWAY_TEAM,
+        HOME_TEAM,
+        "Last 5 Games",
+        "Recent Averages",
+        "Opponent Quality",
+        "FORM COMPARISON",
+        "TREND",
+        "KEY TAKEAWAYS",
+        "FORM EDGE",
+        "Avg PPG",
+        "Avg Allowed",
+        "Avg Diff",
+    )
+    live_text_upper = text.upper()
+    missing = [label for label in required_text if label.upper() not in live_text_upper]
+    if missing:
+        raise ProductionVerificationV164Failure(
+            f"Step 3 missing required universal current-form content: {missing}"
+        )
+
+    logos = _assert_exact_pair(frame, "img.gt168-logo", "Step 3 current form")
+    return {
+        "status": state,
+        "text": text,
+        "logos": logos,
+        "game_rows": step.locator(".gt168-table tbody tr").count(),
+        "opponent_quality_rows": step.locator(".gt168-opp-row").count(),
+        "takeaway_rows": takeaways.locator("div").count(),
+    }
+
+
 def verify_live_v164(
     streamlit_url: str,
     *,
@@ -350,6 +428,14 @@ def verify_live_v164(
                 raise ProductionVerificationV164Failure(
                     f"missing Step 2 performance-profile marker: {REQUIRED_STEP2_MARKER}"
                 )
+            if REQUIRED_STEP3_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 3 current-form marker: {REQUIRED_STEP3_MARKER}"
+                )
+            if REQUIRED_STEP3_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 3 current-form marker: {REQUIRED_STEP3_MARKER}"
+                )
             if AWAY_TEAM not in body or HOME_TEAM not in body:
                 raise ProductionVerificationV164Failure(
                     f"certified matchup not visible: {AWAY_TEAM} @ {HOME_TEAM}"
@@ -369,6 +455,7 @@ def verify_live_v164(
             )
             step1 = _assert_step1_identity(frame)
             step2 = _assert_step2_performance_profile(frame)
+            step3 = _assert_step3_current_form(frame)
 
             screenshot = artifacts / "production_cfb_game_total_v164_logos_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
@@ -384,6 +471,7 @@ def verify_live_v164(
                 "evidence_logos": evidence,
                 "step1_team_identity": step1,
                 "step2_team_performance_profile": step2,
+                "step3_current_form_opponent_quality": step3,
                 "frame_scan_count": len(scans),
                 "screenshot": str(screenshot),
             }
