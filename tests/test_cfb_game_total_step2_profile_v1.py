@@ -222,3 +222,43 @@ def test_step2_css_keeps_mockup_style_and_responsive_layout():
     assert ".gt167-team-pair{display:grid" in step2.STEP2_CSS
     assert ".gt167-metrics{display:grid;grid-template-columns:repeat(4" in step2.STEP2_CSS
     assert "@media(max-width:760px)" in step2.STEP2_CSS
+
+
+
+def test_step2_uses_verified_ncaa_scoring_rows_when_completed_sample_is_empty():
+    evidence = {
+        "side": "away",
+        "team": "Coastal Carolina",
+        "conference": "Sun Belt",
+        "division_context": "FBS",
+        "record_text": "2-1",
+        "record": "2-1",
+        "recent_form": "",
+        "official_stats": {
+            "scoring_offense": {
+                "label": "NCAA Scoring Offense",
+                "value": "31.3",
+                "value_numeric": 31.3,
+                "headers": ["Rank", "Team", "G", "PPG"],
+                "row": ["44", "Coastal Carolina", "3", "31.3"],
+            },
+            "scoring_defense": {
+                "label": "NCAA Scoring Defense",
+                "value": "22.0",
+                "value_numeric": 22.0,
+                "headers": ["Rank", "Team", "G", "PPG"],
+                "row": ["51", "Coastal Carolina", "3", "22.0"],
+            },
+        },
+    }
+    row = step2.build_team_profile_contract(
+        evidence,
+        {"team": "Coastal Carolina", "logo": "https://example.test/324.png"},
+        side="away",
+    )
+    assert row["ppg"] == 31.3
+    assert row["allowed_pg"] == 22.0
+    assert round(row["point_diff_pg"], 1) == 9.3
+    assert row["sample_games"] == 3
+    assert row["required_complete"] is True
+    assert row["state"] == "CHECK"

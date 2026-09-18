@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-official-scoring-fallback-v1",
+  "status": "DONE",
+  "scope": "Allow universal Step 2 to fill its core scoring profile from already-verified NCAA scoring offense/defense rows when the completed-game display sample is empty or incomplete.",
+  "trigger": "Production proof #30 still rendered Step 2 as DATA LIMITED after the live handoff and readiness fixes. Source inspection showed the old completed-game stats state can be empty while the richer evidence object still carries exact NCAA scoring category rows.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step3_plus_not_started": true,
+    "official_verified_rows_only": true,
+    "name_guessing_added": false,
+    "frozen_v163_edited_in_place": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
