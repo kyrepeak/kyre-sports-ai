@@ -87,6 +87,8 @@ STEP3_CSS = r"""
 
 
 def _clean(value: Any) -> str:
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and value == 0:
+        return "0"
     return re.sub(r"\s+", " ", str(value or "")).strip()
 
 
