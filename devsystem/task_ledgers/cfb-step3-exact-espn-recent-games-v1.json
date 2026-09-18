@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-exact-espn-recent-games-v1",
+  "status": "DONE",
+  "scope": "Recover missing Step 3 recent-game samples from exact ESPN team-ID schedules before rendering Current Form & Opponent Quality.",
+  "trigger": "Production proof #34 still rendered Step 3 DATA LIMITED after the certified NCAA team-data fallback. Exact ESPN team schedules are already proven by Step 1 and provide completed recent-game rows keyed by verified team IDs.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step4_plus_not_started": true,
+    "exact_team_id_required": true,
+    "target_event_excluded": true,
+    "completed_games_only": true,
+    "name_guessing_added": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
