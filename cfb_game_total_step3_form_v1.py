@@ -17,7 +17,13 @@ from pathlib import Path
 from statistics import fmean
 from typing import Any, Mapping
 
+import streamlit as st
+
 import cfb_over_under_deep_data_reconciliation_v1 as deep
+import cfb_schedule_v1 as ncaa_schedule
+import cfb_schedule_v2 as ncaa_schedule_v2
+import cfb_team_data_v1 as ncaa_team_data
+import cfb_team_data_v2 as ncaa_team_data_v2
 
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
@@ -205,9 +211,16 @@ def _trend(games: list[Mapping[str, Any]]) -> tuple[str, float | None]:
 
 
 def _record_vs_winning(games: list[Mapping[str, Any]]) -> tuple[str, int]:
-    qualifying = [row for row in games if row.get("opponent_win_pct") is not None and float(row["opponent_win_pct"]) > 0.5]
-    if not qualifying:
+    known = [
+        row for row in games
+        if row.get("opponent_win_pct") is not None
+    ]
+    if not known:
         return "", 0
+    qualifying = [
+        row for row in known
+        if float(row["opponent_win_pct"]) > 0.5
+    ]
     wins = sum(1 for row in qualifying if row.get("result") == "W")
     losses = sum(1 for row in qualifying if row.get("result") == "L")
     ties = sum(1 for row in qualifying if row.get("result") == "T")
@@ -224,6 +237,256 @@ def _opponent_quality_label(avg_pct: float | None) -> str:
     if avg_pct <= 0.40:
         return "Soft opponent slate"
     return "Average opponent slate"
+
+
+def _stat_rank(item: Mapping[str, Any]) -> int | None:
+    headers = [_clean(x).lower() for x in item.get("headers") or []]
+    row = list(item.get("row") or [])
+    for idx, header in enumerate(headers):
+        if header in {"rank", "rk"} or "rank" in header:
+            if idx < len(row):
+                rank = _int(row[idx])
+                if rank is not None and rank > 0:
+                    return rank
+    if row:
+        rank = _int(row[0])
+        if rank is not None and rank > 0:
+            return rank
+    return None
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _opponent_defense_rank_map(
+    opponent_names: tuple[str, ...],
+) -> tuple[dict[str, int], dict[str, Any]]:
+    """Resolve current NCAA scoring-defense ranks for recent opponents.
+
+    FBS is checked first, then unresolved names are checked against the FCS
+    universe. Missing teams stay missing; no synthetic rank is created.
+    """
+    names = tuple(dict.fromkeys(_clean(name) for name in opponent_names if _usable(name)))
+    if not names:
+        return {}, {"requested": 0, "resolved": 0, "attempts": []}
+
+    targets = {
+        f"opp_{idx}": ncaa_team_data._team_keys(name, "")
+        for idx, name in enumerate(names)
+    }
+    target_name = {f"opp_{idx}": name for idx, name in enumerate(names)}
+    attempts: list[dict[str, Any]] = []
+    ranks: dict[str, int] = {}
+
+    index_html, index_attempts = ncaa_team_data._fetch_text_with_fallback(
+        ncaa_team_data.NCAA_STATS_INDEX,
+        "NCAA FBS scoring-defense index for Step 3 opponent quality",
+    )
+    attempts.extend(index_attempts)
+    categories = (
+        ncaa_team_data._discover_stat_categories(index_html)
+        if index_html
+        else {}
+    )
+    scoring_cfg = categories.get("scoring_defense")
+    found: dict[str, dict[str, Any]] = {}
+    if scoring_cfg:
+        _, found, metric_attempts = ncaa_team_data._fetch_stat_metric(
+            "scoring_defense",
+            scoring_cfg,
+            targets,
+        )
+        attempts.extend(metric_attempts)
+
+    unresolved = dict(targets)
+    for target, item in found.items():
+        rank = _stat_rank(item)
+        if rank is None:
+            continue
+        name = target_name[target]
+        ranks[ncaa_team_data._canonical_name(name)] = rank
+        unresolved.pop(target, None)
+
+    if unresolved:
+        fcs_html, fcs_index_attempts = ncaa_team_data._fetch_text_with_fallback(
+            ncaa_team_data_v2.NCAA_FCS_STATS_INDEX,
+            "NCAA FCS scoring-defense index for Step 3 opponent quality",
+        )
+        attempts.extend(fcs_index_attempts)
+        fcs_categories = (
+            ncaa_team_data_v2._fcs_categories(fcs_html)
+            if fcs_html
+            else {}
+        )
+        fcs_cfg = fcs_categories.get("scoring_defense")
+        if fcs_cfg:
+            _, fcs_found, fcs_attempts = ncaa_team_data._fetch_stat_metric(
+                "scoring_defense",
+                fcs_cfg,
+                unresolved,
+            )
+            attempts.extend(fcs_attempts)
+            for target, item in fcs_found.items():
+                rank = _stat_rank(item)
+                if rank is None:
+                    continue
+                name = target_name[target]
+                ranks[ncaa_team_data._canonical_name(name)] = rank
+
+    return ranks, {
+        "requested": len(names),
+        "resolved": len(ranks),
+        "attempts": attempts,
+    }
+
+
+def _rank_sos_universe(
+    ledgers: Mapping[str, Any],
+) -> dict[str, int]:
+    rows: list[tuple[str, float]] = []
+    for key in ledgers:
+        foundation = ncaa_team_data._schedule_foundation(key, ledgers)
+        pct = _float(foundation.get("sos_opponent_win_pct"))
+        coverage = _float(foundation.get("sos_coverage"))
+        if pct is None or coverage is None or coverage <= 0:
+            continue
+        rows.append((str(key), float(pct)))
+    rows.sort(key=lambda item: (-item[1], item[0]))
+    return {key: idx + 1 for idx, (key, _) in enumerate(rows)}
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _strength_of_schedule_rank_map(
+    target_day: str,
+) -> tuple[dict[str, int], dict[str, Any]]:
+    """Rank current pre-target SOS from official NCAA schedule universes."""
+    day = ncaa_schedule._day(target_day)
+    season = ncaa_schedule._season_year(day)
+    attempts: list[dict[str, Any]] = []
+    ranks: dict[str, int] = {}
+
+    fbs_payload, fbs_attempts = ncaa_schedule._fetch_json_with_fallback(
+        ncaa_schedule.NCAA_SCHEDULE_URL,
+        ncaa_schedule._ncaa_params(season),
+        "NCAA FBS schedule for Step 3 SOS rank",
+    )
+    attempts.extend(fbs_attempts)
+    if fbs_payload:
+        fbs_ledgers, _, _ = ncaa_team_data._season_games_from_payload(
+            fbs_payload,
+            day,
+        )
+        ranks.update(_rank_sos_universe(fbs_ledgers))
+
+    try:
+        fcs_payload, fcs_attempts = ncaa_schedule_v2._fetch_ncaa_division_payload(
+            season,
+            ncaa_schedule_v2.NCAA_FCS_DIVISION,
+        )
+    except Exception as exc:
+        fcs_payload, fcs_attempts = {}, [{
+            "provider": "NCAA FCS schedule for Step 3 SOS rank",
+            "error": f"{type(exc).__name__}: {exc}"[:260],
+        }]
+    attempts.extend(fcs_attempts)
+    if fcs_payload:
+        fcs_ledgers, _, _ = ncaa_team_data._season_games_from_payload(
+            fcs_payload,
+            day,
+        )
+        for key, rank in _rank_sos_universe(fcs_ledgers).items():
+            ranks.setdefault(key, rank)
+
+    return ranks, {
+        "season": season,
+        "ranked_teams": len(ranks),
+        "attempts": attempts,
+    }
+
+
+def _lookup_sos_rank(team: Any, rank_map: Mapping[str, int]) -> int | None:
+    key = ncaa_team_data._canonical_name(team)
+    if key in rank_map:
+        return int(rank_map[key])
+    candidates = ncaa_team_data._team_keys(team, "")
+    for row_key, rank in rank_map.items():
+        if row_key in candidates or any(
+            len(row_key) >= 5
+            and len(candidate) >= 5
+            and (row_key in candidate or candidate in row_key)
+            for candidate in candidates
+        ):
+            return int(rank)
+    return None
+
+
+def _apply_opponent_quality(
+    evidence: Mapping[str, Any],
+    defense_ranks: Mapping[str, int],
+    sos_rank: int | None,
+) -> dict[str, Any]:
+    out = dict(evidence or {})
+    completed = [
+        dict(row)
+        for row in out.get("completed_games") or []
+        if isinstance(row, Mapping)
+    ]
+    if not completed:
+        if sos_rank is not None:
+            out["strength_of_schedule_rank"] = int(sos_rank)
+        return out
+
+    for row in completed:
+        opponent = _clean(row.get("opponent"))
+        key = ncaa_team_data._canonical_name(opponent)
+        rank = defense_ranks.get(key)
+        if rank is not None:
+            row["opponent_def_rank"] = int(rank)
+
+    recent = completed[-5:]
+    pcts = [
+        float(row["opponent_record_pct"])
+        for row in recent
+        if row.get("opponent_record_pct") is not None
+    ]
+    ranks = [
+        int(row["opponent_def_rank"])
+        for row in recent
+        if row.get("opponent_def_rank") is not None
+        and int(row["opponent_def_rank"]) > 0
+    ]
+    out["completed_games"] = completed
+    out["sos_opponent_win_pct"] = _avg(pcts)
+    out["sos_coverage"] = len(pcts) / len(recent) if recent else 0.0
+    out["avg_opponent_def_rank"] = (
+        _avg([float(rank) for rank in ranks])
+        if ranks
+        else None
+    )
+    out["top40_defenses_faced"] = (
+        sum(1 for rank in ranks if rank <= 40)
+        if ranks
+        else None
+    )
+
+    known = [
+        row for row in recent
+        if row.get("opponent_record_pct") is not None
+    ]
+    winning = [
+        row for row in known
+        if float(row["opponent_record_pct"]) > 0.5
+    ]
+    if known:
+        wins = sum(1 for row in winning if _clean(row.get("result")).upper() == "W")
+        losses = sum(1 for row in winning if _clean(row.get("result")).upper() == "L")
+        ties = sum(1 for row in winning if _clean(row.get("result")).upper() == "T")
+        out["record_vs_winning_teams"] = (
+            f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+        )
+        out["winning_opponents_faced"] = len(winning)
+
+    if sos_rank is not None:
+        out["strength_of_schedule_rank"] = int(sos_rank)
+    return out
 
 
 def _exact_team_id(
@@ -343,7 +606,7 @@ def enrich_step3_inputs(
     home: Mapping[str, Any] | None,
     game: Mapping[str, Any] | None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Refresh Step 3 from exact current team schedules; fail back deterministically."""
+    """Refresh Step 3 core form and hydrate opponent quality fail-closed."""
     identity = identity or {}
     game = game or {}
     outputs: dict[str, dict[str, Any]] = {
@@ -361,6 +624,7 @@ def enrich_step3_inputs(
     event_id = _clean(game.get("espn_event_id"))
     target_day = _clean(game.get("game_date"))[:10]
 
+    # Phase 1 — exact completed-game truth for each selected team.
     for side in ("away", "home"):
         current = outputs[side]
         identity_side = (
@@ -379,9 +643,6 @@ def enrich_step3_inputs(
             }
             continue
 
-        # 1) Truth source: always try the exact current-season team schedule.
-        # This prevents an older but internally-complete snapshot from freezing
-        # Step 3 at one game when newer completed games exist before kickoff.
         attempts: list[dict[str, Any]] = []
         live_rows: list[Mapping[str, Any]] = []
         if season and cutoff is not None:
@@ -425,8 +686,6 @@ def enrich_step3_inputs(
             }
             continue
 
-        # 2) Preserve current evidence if it is already usable and the live
-        # refresh was unavailable. Never downgrade a valid current surface.
         current_contract = build_team_form_contract(
             current,
             identity_side,
@@ -444,7 +703,6 @@ def enrich_step3_inputs(
             }
             continue
 
-        # 3) Deterministic repository snapshot is last-resort core evidence.
         snapshot_rows = _snapshot_rows_for_team(team_id, target_day)
         snapshot_overlay = _overlay_exact_rows(current, snapshot_rows)
         snapshot_contract = build_team_form_contract(
@@ -462,6 +720,110 @@ def enrich_step3_inputs(
             "required_complete": bool(snapshot_contract.get("required_complete")),
             "attempts": attempts,
         }
+
+    # Phase 2 — exact opponent records for only the displayed recent window.
+    opponent_names: list[str] = []
+    for side in ("away", "home"):
+        current = dict(outputs[side])
+        completed = [
+            dict(row)
+            for row in current.get("completed_games") or []
+            if isinstance(row, Mapping)
+        ]
+        recent = completed[-5:]
+        quality_attempts: list[dict[str, Any]] = []
+        record_diag: dict[str, Any] = {
+            "inline_records": 0,
+            "fallback_requested": 0,
+            "fallback_resolved": 0,
+            "attempts": [],
+        }
+        if recent and season and cutoff is not None:
+            try:
+                hydrated, record_diag = deep.form_engine._hydrate_opponent_records(
+                    recent,
+                    int(season),
+                    cutoff,
+                    event_id,
+                )
+                quality_attempts.extend(record_diag.get("attempts") or [])
+                completed = completed[:-len(recent)] + hydrated
+                current["completed_games"] = completed
+            except Exception as exc:
+                quality_attempts.append({
+                    "provider": "ESPN exact opponent records for Step 3",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                })
+
+        outputs[side] = current
+        for row in (current.get("completed_games") or [])[-5:]:
+            if isinstance(row, Mapping) and _usable(row.get("opponent")):
+                opponent_names.append(_clean(row.get("opponent")))
+        diag[side]["opponent_record_resolution"] = {
+            key: value
+            for key, value in record_diag.items()
+            if key != "attempts"
+        }
+        diag[side].setdefault("attempts", [])
+        diag[side]["attempts"] = (
+            list(diag[side].get("attempts") or []) + quality_attempts
+        )
+
+    # Phase 3 — official NCAA scoring-defense ranks and pre-target SOS rank.
+    defense_ranks: dict[str, int] = {}
+    defense_diag: dict[str, Any] = {"requested": 0, "resolved": 0, "attempts": []}
+    if opponent_names:
+        try:
+            defense_ranks, defense_diag = _opponent_defense_rank_map(
+                tuple(opponent_names)
+            )
+        except Exception as exc:
+            defense_diag = {
+                "requested": len(opponent_names),
+                "resolved": 0,
+                "attempts": [{
+                    "provider": "NCAA opponent scoring-defense ranks for Step 3",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }],
+            }
+
+    sos_ranks: dict[str, int] = {}
+    sos_diag: dict[str, Any] = {"ranked_teams": 0, "attempts": []}
+    if target_day:
+        try:
+            sos_ranks, sos_diag = _strength_of_schedule_rank_map(target_day)
+        except Exception as exc:
+            sos_diag = {
+                "ranked_teams": 0,
+                "attempts": [{
+                    "provider": "NCAA schedule-strength rank for Step 3",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }],
+            }
+
+    for side in ("away", "home"):
+        team_name = (
+            outputs[side].get("team")
+            or (identity.get(side) or {}).get("team")
+            or (identity.get(side) or {}).get("team_name")
+        )
+        sos_rank = _lookup_sos_rank(team_name, sos_ranks)
+        outputs[side] = _apply_opponent_quality(
+            outputs[side],
+            defense_ranks,
+            sos_rank,
+        )
+        diag[side]["opponent_defense_rank_resolution"] = {
+            "requested": int(defense_diag.get("requested") or 0),
+            "resolved": int(defense_diag.get("resolved") or 0),
+        }
+        diag[side]["strength_of_schedule_rank"] = sos_rank
+        diag[side].setdefault("attempts", [])
+        diag[side]["attempts"] = (
+            list(diag[side].get("attempts") or [])
+            + list(defense_diag.get("attempts") or [])
+            + list(sos_diag.get("attempts") or [])
+        )
 
     return outputs["away"], outputs["home"], diag
 

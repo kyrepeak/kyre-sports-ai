@@ -68,6 +68,48 @@ def _home():
     return _team("Wake Forest", ["W", "L", "W", "L", "L"], side="home", ppg=27.1, allowed=30.8, sos=0.61)
 
 
+
+def _stub_quality_sources(monkeypatch, *, record_pct=0.50):
+    monkeypatch.setattr(
+        step3,
+        "_opponent_defense_rank_map",
+        lambda names: ({}, {"requested": len(names), "resolved": 0, "attempts": []}),
+    )
+    monkeypatch.setattr(
+        step3,
+        "_strength_of_schedule_rank_map",
+        lambda target_day: ({}, {"ranked_teams": 0, "attempts": []}),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_hydrate_opponent_records",
+        lambda rows, season, cutoff, excluded_event_id="": (
+            [
+                {
+                    **dict(row),
+                    "opponent_record_pct": (
+                        row.get("opponent_record_pct")
+                        if row.get("opponent_record_pct") is not None
+                        else record_pct
+                    ),
+                }
+                for row in rows
+            ],
+            {
+                "inline_records": sum(
+                    row.get("opponent_record_pct") is not None for row in rows
+                ),
+                "fallback_requested": sum(
+                    row.get("opponent_record_pct") is None for row in rows
+                ),
+                "fallback_resolved": sum(
+                    row.get("opponent_record_pct") is None for row in rows
+                ),
+                "attempts": [],
+            },
+        ),
+    )
+
 def test_step3_is_presentation_only():
     assert step3.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert step3.MAY_MODIFY_PROJECTION is False
@@ -186,6 +228,7 @@ def test_step3_css_keeps_purple_expanded_screenshot_style():
 
 
 def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch):
+    _stub_quality_sources(monkeypatch)
     monkeypatch.setattr(step3, "_snapshot_rows_for_team", lambda team_id, target_day: [])
     identity = {
         "away": {"team": "Coastal Carolina", "team_id": "324", "logo": "https://example.test/324.png"},
@@ -284,6 +327,7 @@ def test_step3_exact_id_schedule_fallback_fills_missing_recent_core(monkeypatch)
 
 
 def test_step3_lightweight_fallback_does_not_call_heavy_opponent_hydration(monkeypatch):
+    _stub_quality_sources(monkeypatch)
     monkeypatch.setattr(step3, "_snapshot_rows_for_team", lambda team_id, target_day: [])
     identity = {
         "away": {"team": "Away", "team_id": "324"},
@@ -327,6 +371,7 @@ def test_step3_lightweight_fallback_does_not_call_heavy_opponent_hydration(monke
 
 
 def test_step3_checked_in_snapshot_fills_core_only_when_live_refresh_fails(monkeypatch, tmp_path):
+    _stub_quality_sources(monkeypatch)
     snapshot = {
         "games": [
             {
@@ -453,6 +498,7 @@ def test_step3_snapshot_filters_rows_on_or_after_target_day(monkeypatch, tmp_pat
 
 
 def test_step3_live_schedule_refreshes_even_when_existing_core_looks_complete(monkeypatch):
+    _stub_quality_sources(monkeypatch)
     identity = {
         "away": {"team": "Miami (FL)", "team_id": "2390"},
         "home": {"team": "Wake Forest", "team_id": "154"},
@@ -567,3 +613,135 @@ def test_step3_live_schedule_refreshes_even_when_existing_core_looks_complete(mo
     assert diag["home"]["refresh_used"] is True
     assert diag["away"]["source"] == "live_exact_schedule"
     assert diag["home"]["source"] == "live_exact_schedule"
+
+
+
+def test_step3_opponent_quality_populates_all_five_rows(monkeypatch):
+    _stub_quality_sources(monkeypatch)
+    identity = {
+        "away": {"team": "Miami (FL)", "team_id": "2390"},
+        "home": {"team": "Wake Forest", "team_id": "154"},
+    }
+    game = {
+        "game_date": "2026-09-18",
+        "espn_event_id": "target",
+        "away_espn_team_id": "2390",
+        "home_espn_team_id": "154",
+    }
+    rows = {
+        "2390": [
+            {
+                "event_id": "mia1",
+                "date": "2026-09-05T01:00:00Z",
+                "opponent_name": "Stanford Cardinal",
+                "opponent_id": "24",
+                "points_for": 45,
+                "points_against": 6,
+            },
+            {
+                "event_id": "mia2",
+                "date": "2026-09-10T23:30:00Z",
+                "opponent_name": "Florida A&M Rattlers",
+                "opponent_id": "50",
+                "points_for": 42,
+                "points_against": 14,
+            },
+        ],
+        "154": [
+            {
+                "event_id": "wf1",
+                "date": "2026-09-03T23:00:00Z",
+                "opponent_name": "Akron Zips",
+                "opponent_id": "2006",
+                "points_for": 38,
+                "points_against": 16,
+            },
+            {
+                "event_id": "wf2",
+                "date": "2026-09-12T16:00:00Z",
+                "opponent_name": "Purdue Boilermakers",
+                "opponent_id": "2509",
+                "points_for": 27,
+                "points_against": 24,
+            },
+        ],
+    }
+    pcts = {
+        "24": 0.67,
+        "50": 0.25,
+        "2006": 0.50,
+        "2509": 0.75,
+    }
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda team_id, season: ({"team_id": team_id}, [{"provider": "exact schedule"}]),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_current_season_rows",
+        lambda payload, team_id, season, cutoff, event_id: list(rows[team_id]),
+    )
+    monkeypatch.setattr(
+        step3.deep.form_engine,
+        "_hydrate_opponent_records",
+        lambda recent, season, cutoff, excluded_event_id="": (
+            [
+                {**dict(row), "opponent_record_pct": pcts[row["opponent_id"]]}
+                for row in recent
+            ],
+            {
+                "inline_records": 0,
+                "fallback_requested": len(recent),
+                "fallback_resolved": len(recent),
+                "attempts": [],
+            },
+        ),
+    )
+    defense = {
+        step3.ncaa_team_data._canonical_name("Stanford Cardinal"): 18,
+        step3.ncaa_team_data._canonical_name("Florida A&M Rattlers"): 64,
+        step3.ncaa_team_data._canonical_name("Akron Zips"): 92,
+        step3.ncaa_team_data._canonical_name("Purdue Boilermakers"): 27,
+    }
+    monkeypatch.setattr(
+        step3,
+        "_opponent_defense_rank_map",
+        lambda names: (
+            defense,
+            {"requested": 4, "resolved": 4, "attempts": []},
+        ),
+    )
+    monkeypatch.setattr(
+        step3,
+        "_strength_of_schedule_rank_map",
+        lambda target_day: (
+            {
+                step3.ncaa_team_data._canonical_name("Miami (FL)"): 41,
+                step3.ncaa_team_data._canonical_name("Wake Forest"): 24,
+            },
+            {"ranked_teams": 2, "attempts": []},
+        ),
+    )
+
+    away, home, _ = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Miami (FL)"},
+        {"team": "Wake Forest"},
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["away"]["avg_opponent_win_pct"] == 0.46
+    assert contract["home"]["avg_opponent_win_pct"] == 0.625
+    assert contract["away"]["avg_opponent_def_rank"] == 41.0
+    assert contract["home"]["avg_opponent_def_rank"] == 59.5
+    assert contract["away"]["top40_defenses_faced"] == 1
+    assert contract["home"]["top40_defenses_faced"] == 1
+    assert contract["away"]["record_vs_winning_teams"] == "1-0"
+    assert contract["home"]["record_vs_winning_teams"] == "1-0"
+    assert contract["away"]["strength_of_schedule_rank"] == 41
+    assert contract["home"]["strength_of_schedule_rank"] == 24
+    assert contract["state"] == "READY"
