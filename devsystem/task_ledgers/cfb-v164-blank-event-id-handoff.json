@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "task_id": "cfb-v164-blank-event-id-handoff",
+  "status": "DONE",
+  "scope": "Replace the frozen NCAA schedule's blank espn_event_id placeholder with the exact selected ESPN query event before V164 logo identity resolution.",
+  "trigger": "Live V164 production proof reached the current patch but rendered zero logo images. The frozen NCAA schedule always seeds espn_event_id as an empty string; V164 recovered event 401869940 from the certified query but setdefault could not overwrite the existing blank key, so exact team-ID resolution returned before selector/API fallback.",
+  "guardrails": {
+    "frozen_v163_edited_in_place": false,
+    "schedule_loader_changed": false,
+    "selector_behavior_changed": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "exact_event_id_required": true,
+    "synthetic_identity_allowed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
