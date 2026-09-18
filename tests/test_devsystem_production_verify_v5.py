@@ -48,3 +48,26 @@ def test_v5_proves_switch_and_hard_refresh_persistence_without_weakening_gate():
     assert "reloaded_event != target_event" in source
     assert "production_verify_v3" in source
     assert "production_verify_v4" in source
+
+
+
+def test_v5_accepts_exact_frame_url_when_selected_card_marker_is_absent():
+    class Frame:
+        url = (
+            "https://kyre-sports-ai.streamlit.app/~/+/"
+            "?ks_sport=College+Football&ks_cfb_market=Game+Total"
+            "&ks_cfb_game_total_event_id=401856798"
+        )
+
+    assert v5._frame_event(Frame()) == "401856798"
+
+
+def test_v5_hard_refresh_persistence_uses_selected_card_or_exact_frame_url():
+    source = (ROOT / "devsystem" / "production_verify_v5.py").read_text(
+        encoding="utf-8"
+    )
+    assert "def _frame_event(frame)" in source
+    assert "def _persisted_event(frame)" in source
+    assert "last_frame_event == expected_event" in source
+    assert "reloaded_event = _persisted_event(reload_frame)" in source
+    assert "outer_event == expected_event" in source
