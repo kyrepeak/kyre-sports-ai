@@ -343,7 +343,7 @@ def enrich_step3_inputs(
     home: Mapping[str, Any] | None,
     game: Mapping[str, Any] | None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Fill missing Step 3 recent-form evidence from exact ESPN team IDs only."""
+    """Refresh Step 3 from exact current team schedules; fail back deterministically."""
     identity = identity or {}
     game = game or {}
     outputs: dict[str, dict[str, Any]] = {
@@ -359,102 +359,111 @@ def enrich_step3_inputs(
         season = 0
         cutoff = None
     event_id = _clean(game.get("espn_event_id"))
+    target_day = _clean(game.get("game_date"))[:10]
 
     for side in ("away", "home"):
         current = outputs[side]
-        current_contract = build_team_form_contract(
-            current,
-            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
-            side=side,
+        identity_side = (
+            identity.get(side) or {}
+            if isinstance(identity, Mapping)
+            else {}
         )
-        if current_contract.get("required_complete"):
-            diag[side] = {"fallback_used": False, "reason": "core_recent_form_already_complete"}
-            continue
+        team_id = _exact_team_id(identity_side, current, game, side)
 
-        team_id = _exact_team_id(
-            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
-            current,
-            game,
-            side,
-        )
         if not team_id:
             diag[side] = {
+                "refresh_used": False,
                 "fallback_used": False,
                 "reason": "exact_team_id_unavailable",
-                "team_id": team_id,
+                "team_id": "",
             }
             continue
 
-        target_day = _clean(game.get("game_date"))[:10]
+        # 1) Truth source: always try the exact current-season team schedule.
+        # This prevents an older but internally-complete snapshot from freezing
+        # Step 3 at one game when newer completed games exist before kickoff.
+        attempts: list[dict[str, Any]] = []
+        live_rows: list[Mapping[str, Any]] = []
+        if season and cutoff is not None:
+            try:
+                payload, attempts = deep.history_engine._fetch_team_schedule(
+                    team_id,
+                    int(season),
+                )
+                live_rows = deep.form_engine._current_season_rows(
+                    payload,
+                    team_id,
+                    int(season),
+                    cutoff,
+                    event_id,
+                )
+                live_rows = sorted(
+                    live_rows,
+                    key=lambda row: _clean(
+                        row.get("date")
+                        or getattr(row.get("date_dt"), "isoformat", lambda: "")()
+                    ),
+                )
+            except Exception as exc:
+                live_rows = []
+                attempts = [{
+                    "provider": (
+                        f"ESPN exact team {team_id} current-season Step 3 truth refresh"
+                    ),
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }]
+
+        if live_rows:
+            outputs[side] = _overlay_exact_rows(current, list(live_rows))
+            diag[side] = {
+                "refresh_used": True,
+                "fallback_used": False,
+                "source": "live_exact_schedule",
+                "team_id": team_id,
+                "rows": len(live_rows),
+                "attempts": attempts,
+            }
+            continue
+
+        # 2) Preserve current evidence if it is already usable and the live
+        # refresh was unavailable. Never downgrade a valid current surface.
+        current_contract = build_team_form_contract(
+            current,
+            identity_side,
+            side=side,
+        )
+        if current_contract.get("required_complete"):
+            diag[side] = {
+                "refresh_used": False,
+                "fallback_used": False,
+                "source": "existing_verified_evidence",
+                "reason": "live_schedule_unavailable_current_core_preserved",
+                "team_id": team_id,
+                "rows": int(current_contract.get("sample_games") or 0),
+                "attempts": attempts,
+            }
+            continue
+
+        # 3) Deterministic repository snapshot is last-resort core evidence.
         snapshot_rows = _snapshot_rows_for_team(team_id, target_day)
         snapshot_overlay = _overlay_exact_rows(current, snapshot_rows)
         snapshot_contract = build_team_form_contract(
             snapshot_overlay,
-            (identity.get(side) or {}) if isinstance(identity, Mapping) else {},
+            identity_side,
             side=side,
         )
-        if snapshot_contract.get("required_complete"):
-            outputs[side] = snapshot_overlay
-            diag[side] = {
-                "fallback_used": True,
-                "fallback_source": "checked_in_runtime_snapshot",
-                "team_id": team_id,
-                "rows": len(snapshot_rows),
-                "opponent_record_mode": "snapshot_core_only",
-                "attempts": [],
-            }
-            continue
-
-        if not (season and cutoff is not None):
-            outputs[side] = snapshot_overlay
-            diag[side] = {
-                "fallback_used": bool(snapshot_rows),
-                "fallback_source": "checked_in_runtime_snapshot",
-                "reason": "live_schedule_date_unavailable",
-                "team_id": team_id,
-                "rows": len(snapshot_rows),
-            }
-            continue
-
-        try:
-            payload, attempts = deep.history_engine._fetch_team_schedule(
-                team_id,
-                int(season),
-            )
-            rows = deep.form_engine._current_season_rows(
-                payload,
-                team_id,
-                int(season),
-                cutoff,
-                event_id,
-            )
-            rows = sorted(
-                rows,
-                key=lambda row: _clean(
-                    row.get("date")
-                    or getattr(row.get("date_dt"), "isoformat", lambda: "")()
-                ),
-            )
-        except Exception as exc:
-            rows, attempts = [], [{
-                "provider": f"ESPN exact team {team_id} lightweight Step 3 schedule fallback",
-                "error": f"{type(exc).__name__}: {exc}"[:260],
-            }]
-
-        base_for_live = snapshot_overlay if snapshot_rows else current
-        outputs[side] = _overlay_exact_rows(base_for_live, rows)
-        final_rows = rows if rows else snapshot_rows
+        outputs[side] = snapshot_overlay
         diag[side] = {
-            "fallback_used": bool(final_rows),
-            "fallback_source": "live_exact_schedule" if rows else "checked_in_runtime_snapshot",
+            "refresh_used": False,
+            "fallback_used": bool(snapshot_rows),
+            "source": "checked_in_runtime_snapshot",
             "team_id": team_id,
-            "rows": len(final_rows),
-            "opponent_record_mode": "inline_only",
+            "rows": len(snapshot_rows),
+            "required_complete": bool(snapshot_contract.get("required_complete")),
             "attempts": attempts,
         }
 
     return outputs["away"], outputs["home"], diag
-
 
 def build_team_form_contract(
     evidence: Mapping[str, Any] | None,
