@@ -25,10 +25,10 @@ STEP2_REQUIRED_FIELDS = (
     "ppg",
     "allowed_pg",
     "point_diff_pg",
-    "recent_form",
 )
 
 STEP2_ADVANCED_FIELDS = (
+    "recent_form",
     "yards_per_play",
     "yards_per_play_allowed",
     "points_per_drive",
