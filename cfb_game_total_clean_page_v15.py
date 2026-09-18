@@ -293,40 +293,22 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             )
         if int(number) == 3:
             exact_identity = rendered_identity.get("value") or identity
+            step3_foundation_away, step3_foundation_home = _step3_certified_foundation(
+                display_game
+            )
             step3_away = _merge_step2_evidence(
+                step3_foundation_away,
                 away,
                 rendered_identity.get("away_stats") or {},
                 rendered_identity.get("step1_away") or {},
                 rendered_identity.get("step2_away") or {},
             )
             step3_home = _merge_step2_evidence(
+                step3_foundation_home,
                 home,
                 rendered_identity.get("home_stats") or {},
                 rendered_identity.get("step1_home") or {},
                 rendered_identity.get("step2_home") or {},
-            )
-            return step3_owner.render_step3_html(
-                status,
-                exact_identity,
-                step3_away,
-                step3_home,
-            )
-        if int(number) == 3:
-            exact_identity = rendered_identity.get("value") or identity
-            step3_foundation_away, step3_foundation_home = _step3_certified_foundation(
-                display_game
-            )
-            step3_away = _merge_step2_evidence(
-                step3_foundation_away,
-                rendered_identity.get("away_stats") or {},
-                rendered_identity.get("step1_away") or {},
-                away,
-            )
-            step3_home = _merge_step2_evidence(
-                step3_foundation_home,
-                rendered_identity.get("home_stats") or {},
-                rendered_identity.get("step1_home") or {},
-                home,
             )
             return step3_owner.render_step3_html(
                 status,
