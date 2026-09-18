@@ -8,6 +8,8 @@ identity before the frozen exact-ID logo resolver runs.
 from __future__ import annotations
 
 from datetime import date
+from html import escape
+import json
 from typing import Any, Mapping
 
 import streamlit as st
@@ -324,7 +326,7 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 step3_game,
                 _selector_payload_for_day(selected_day),
             )
-            step3_away, step3_home, _ = step3_owner.enrich_step3_inputs(
+            step3_away, step3_home, step3_diag = step3_owner.enrich_step3_inputs(
                 exact_identity,
                 step3_away,
                 step3_home,
@@ -332,11 +334,56 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             )
             rendered_identity["step3_away"] = dict(step3_away)
             rendered_identity["step3_home"] = dict(step3_home)
-            return step3_owner.render_step3_html(
+            rendered_identity["step3_diag"] = dict(step3_diag or {})
+
+            diag_summary = {}
+            for side_name in ("away", "home"):
+                row = dict((step3_diag or {}).get(side_name) or {})
+                attempts = []
+                for attempt in list(row.get("attempts") or [])[:20]:
+                    if isinstance(attempt, Mapping):
+                        attempts.append({
+                            "provider": str(attempt.get("provider") or "")[:120],
+                            "http": attempt.get("http"),
+                            "bytes": attempt.get("bytes"),
+                            "error": str(attempt.get("error") or "")[:220],
+                        })
+                diag_summary[side_name] = {
+                    "team_id": row.get("team_id"),
+                    "source": row.get("source"),
+                    "rows": row.get("rows"),
+                    "team_schedule_rows": row.get("team_schedule_rows"),
+                    "scoreboard_rows": row.get("scoreboard_rows"),
+                    "scoreboard_range_rows": row.get("scoreboard_range_rows"),
+                    "candidate_days": row.get("candidate_days"),
+                    "scoreboard_quality_universe": row.get("scoreboard_quality_universe"),
+                    "strength_of_schedule_rank": row.get("strength_of_schedule_rank"),
+                    "opponent_record_resolution": row.get("opponent_record_resolution"),
+                    "opponent_defense_rank_resolution": row.get("opponent_defense_rank_resolution"),
+                    "attempts": attempts,
+                }
+            diag_summary["game"] = {
+                "game_date": step3_game.get("game_date"),
+                "espn_event_id": step3_game.get("espn_event_id"),
+                "away_espn_team_id": step3_game.get("away_espn_team_id"),
+                "home_espn_team_id": step3_game.get("home_espn_team_id"),
+                "selected_day": selected_day,
+            }
+
+            step3_html = step3_owner.render_step3_html(
                 status,
                 exact_identity,
                 step3_away,
                 step3_home,
+            )
+            diag_attr = escape(
+                json.dumps(diag_summary, sort_keys=True, default=str),
+                quote=True,
+            )
+            return step3_html.replace(
+                'data-step3-state="',
+                f'data-step3-diag="{diag_attr}" data-step3-state="',
+                1,
             )
         if int(number) == 4:
             exact_identity = rendered_identity.get("value") or identity
