@@ -123,3 +123,17 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     assert '"img.gt170-logo"' in source
     assert '"step4_matchup": step4' in source
     assert "Step 4 Matchup must render collapsed by default" in source
+
+
+
+def test_v164_step3_production_proof_locks_live_completeness_contract():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert '"INSUFFICIENT SAMPLE" in live_text_upper' in source
+    assert 'game_rows_by_side' in source
+    assert 'NO VERIFIED COMPLETED-GAME ROWS' in source
+    assert 'Opponent Quality expected 5 rows' in source
+    assert 'opponent_quality_values' in source
+    assert 'Step 3 READY contains blank Opponent Quality values' in source
+    assert 'data-testid="gt168-step3-status-reason"' in source
+    assert 'Step 3 CHECK must explain why opponent-quality evidence is incomplete' in source
+    assert '"COVERAGE" not in reason_text and "STILL CHECKING" not in reason_text' in source
