@@ -17,6 +17,7 @@ import cfb_game_total_clean_page_v14 as prior_v163
 import cfb_game_total_clean_page_v10 as presentation_owner
 import cfb_game_total_clean_page_v9 as compact_owner
 import cfb_game_total_step1_identity_v1 as step1_owner
+import cfb_game_total_step1_profile_v1 as step1_profile_owner
 import cfb_game_total_team_logo_identity_v1 as logo_identity
 import cfb_game_total_runtime_display_v1 as runtime_display
 import cfb_over_under_logo_resolver_v3 as frozen_logo
@@ -184,12 +185,34 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
 
     def target_evidence_v164(identity, away, home):
         exact_identity = rendered_identity.get("value") or identity
+        rendered_identity["away_stats"] = dict(away or {})
+        rendered_identity["home_stats"] = dict(home or {})
         return original_target_evidence(exact_identity, away, home)
 
     def step_evidence_v164(number, title, status, detail, identity, away, home, display_game, model):
         if int(number) == 1:
             exact_identity = rendered_identity.get("value") or identity
-            return step1_owner.render_step1_html(status, exact_identity, away, home, display_game)
+            step_away = dict(away or {})
+            step_home = dict(home or {})
+            away_stats = rendered_identity.get("away_stats") or {}
+            home_stats = rendered_identity.get("home_stats") or {}
+            if away_stats.get("record") not in (None, "", "—"):
+                step_away["record"] = away_stats.get("record")
+            if home_stats.get("record") not in (None, "", "—"):
+                step_home["record"] = home_stats.get("record")
+            step_away, step_home, _ = step1_profile_owner.enrich_step1_inputs(
+                exact_identity,
+                step_away,
+                step_home,
+                display_game,
+            )
+            return step1_owner.render_step1_html(
+                status,
+                exact_identity,
+                step_away,
+                step_home,
+                display_game,
+            )
         return original_step_evidence(number, title, status, detail, identity, away, home, display_game, model)
 
     frozen_logo.resolve_visuals = _resolve_visuals_v164
