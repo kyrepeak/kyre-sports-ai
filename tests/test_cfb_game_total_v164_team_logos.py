@@ -87,6 +87,7 @@ def test_v164_router_advances_only_game_total_page():
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v15"' in source
     assert 'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"' in source
     assert 'LEGACY_V163_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"' in source
+    assert "return prior._render_cfb_game_total_v159(market)" in source
     assert "return prior.render_app()" in source
 
 
