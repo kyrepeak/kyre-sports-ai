@@ -101,7 +101,8 @@ def test_step1_exact_profile_fills_required_display_fields(monkeypatch):
     assert home["record"] == "3-0"
     assert away["head_coach"] == "Tim Beck"
     assert home["head_coach"] == "Ryan Carty"
-    assert diag["away"]["directory_exact"] is True
+    assert diag["away"]["directory_exact"] is False
+    assert diag["away"]["detail_team_exact"] is True
     assert diag["home"]["summary_exact"] is True
     assert diag["sportsbook_projection_influence"] == 0.0
     assert diag["may_modify_projection"] is False
