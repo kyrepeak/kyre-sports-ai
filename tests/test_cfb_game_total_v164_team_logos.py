@@ -489,3 +489,13 @@ def test_v164_step4_is_connected_after_frozen_steps_1_to_3():
     assert 'rendered_identity.get("step3_away") or {}' in source
     assert 'rendered_identity.get("step3_home") or {}' in source
     assert "step1_owner.STEP1_CSS + step2_owner.STEP2_CSS + step3_owner.STEP3_CSS + step4_owner.STEP4_CSS" in source
+
+
+
+def test_v164_step3_replaces_blank_game_date_before_hydration():
+    source = _read(PAGE)
+    step3_block = source[source.index("if int(number) == 3:"):source.index("if int(number) == 4:")]
+    assert 'if selected_day and not str(step3_game.get("game_date") or "").strip():' in step3_block
+    assert 'step3_game["game_date"] = selected_day' in step3_block
+    assert 'step3_game.setdefault("game_date", selected_day)' not in step3_block
+    assert "step3_owner.enrich_step3_inputs(" in step3_block
