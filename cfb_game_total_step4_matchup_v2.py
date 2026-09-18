@@ -270,10 +270,8 @@ def _safe_engine(
     away: Mapping[str, Any],
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
-    if not game:
-        return {}
     try:
-        result = matchup_engine.build_matchup_engine(game, away, home)
+        result = matchup_engine.build_matchup_engine(game or {}, away, home)
         return dict(result or {})
     except Exception as exc:
         return {
@@ -395,6 +393,7 @@ def build_step4_contract(
     game: Mapping[str, Any] | None = None,
     *,
     engine: Mapping[str, Any] | None = None,
+    load_engine: bool = False,
 ) -> dict[str, Any]:
     identity = identity or {}
     away = away or {}
@@ -403,7 +402,7 @@ def build_step4_contract(
     hi = identity.get("home") if isinstance(identity.get("home"), Mapping) else {}
 
     legacy_contract = legacy.build_step4_contract(identity, away, home)
-    engine_contract = dict(engine or _safe_engine(game, away, home))
+    engine_contract = dict(engine or (_safe_engine(game, away, home) if load_engine else {}))
 
     away_battle = _battle_contract(
         offense_identity=ai,
@@ -503,7 +502,14 @@ def render_step4_html(
     *,
     engine: Mapping[str, Any] | None = None,
 ) -> str:
-    contract = build_step4_contract(identity, away, home, game, engine=engine)
+    contract = build_step4_contract(
+        identity,
+        away,
+        home,
+        game,
+        engine=engine,
+        load_engine=engine is None,
+    )
     state = _clean(contract.get("state"))
     state_css = "ready" if state == "READY" else "limited" if state == "DATA LIMITED" else "check"
     missing = ", ".join(contract.get("advanced_missing") or []) or "None"
