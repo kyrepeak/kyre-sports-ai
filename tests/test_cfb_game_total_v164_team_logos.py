@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import cfb_game_total_clean_page_v15 as page_v164
 import cfb_game_total_team_logo_identity_v1 as logo_identity
 import cfb_over_under_logo_resolver_v3 as frozen_logo
 
@@ -94,3 +95,52 @@ def test_v164_router_advances_only_game_total_page():
 def test_app_activates_router_v160():
     source = _read(APP)
     assert "from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app" in source
+
+
+def test_v164_display_reconcile_enriches_exact_team_ids_before_frozen_logo_resolution(monkeypatch):
+    def frozen_reconcile(game, selected_day, frozen_away, frozen_home):
+        return (
+            {
+                "espn_event_id": "401869940",
+                "game_date": "2026-09-19",
+                "away_team": "Coastal Carolina",
+                "home_team": "Delaware",
+            },
+            dict(frozen_away),
+            dict(frozen_home),
+            {"runtime_status": "GREEN"},
+        )
+
+    monkeypatch.setattr(
+        page_v164,
+        "_FROZEN_RECONCILE_DISPLAY_BUNDLE",
+        frozen_reconcile,
+    )
+    monkeypatch.setattr(
+        page_v164,
+        "_selector_payload_for_day",
+        lambda selected_day: {
+            "games": [
+                {
+                    "event_id": "401869940",
+                    "away_team_id": "324",
+                    "home_team_id": "48",
+                    "identity_verified": True,
+                }
+            ]
+        },
+    )
+
+    display_game, away, home, diag = page_v164._reconcile_display_bundle_v164(
+        {"espn_event_id": "401869940"},
+        "2026-09-19",
+        {"team": "Coastal Carolina"},
+        {"team": "Delaware"},
+    )
+    assert display_game["away_espn_team_id"] == "324"
+    assert display_game["home_espn_team_id"] == "48"
+    assert diag["v164_logo_team_ids_enriched"] is True
+
+    visuals = frozen_logo.resolve_visuals(display_game)
+    assert visuals["away"]["logo"].endswith("/324.png")
+    assert visuals["home"]["logo"].endswith("/48.png")
