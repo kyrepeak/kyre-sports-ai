@@ -81,6 +81,8 @@ def test_v164_production_verifier_requires_step2_performance_profile_surface():
     assert "Step 2 certified matchup must be fully READY" in source
     assert "Step 2 READY contains blank universal metric values" in source
     assert "Step 2 READY must not render a Data still limited warning" in source
+    assert "Step 2 {side_name} READY record is stale/empty" in source
+    assert '"0-0", "0-0-0"' in source
     assert '"step2_team_performance_profile": step2' in source
 
 
