@@ -1,0 +1,134 @@
+name: CFB Game Total V164 permanent freeze V1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [freeze/cfb-game-total-v164-team-logos-v1]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Freeze scope guard
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"], text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-game-total-v164-permanent-freeze-v1.yml",
+              "cfb_game_total_v164_freeze_manifest_v1.json",
+              "devsystem/task_ledgers/cfb-game-total-v164-permanent-freeze-v1.json",
+          }
+          if changed != expected:
+              raise SystemExit("V164 freeze branch changed active code: " + str(sorted(changed)))
+          print("CFB_GAME_TOTAL_V164_V1_FREEZE_SCOPE=PASS")
+          PY
+
+      - name: Verify permanent-freeze metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v164_freeze_manifest_v1.json").read_text())
+          assert m["version"] == 1
+          assert m["baseline_commit"] == "614763edc54d7ef1aad568dbb7497bbe4afa7296"
+          assert m["production_logo_verification_run"] == 5
+          assert m["production_logo_verification_status"] == "GREEN"
+          assert m["legacy_production_verification_run"] == 228
+          assert m["v5_production_verification_run"] == 11
+          c=m["contract"]
+          assert c["active_page"] == "cfb_game_total_clean_page_v15"
+          assert c["active_router"] == "streamlit_memory_lazy_router_v160"
+          assert c["production_heartbeat"] == "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
+          assert c["team_identity_endpoint"] == "/api/v1/cfb/identity/team-logos"
+          assert c["exact_event_identity_required"] is True
+          assert c["fuzzy_logo_matching"] is False
+          assert c["name_based_logo_matching"] is False
+          assert c["header_exact_logos_required"] is True
+          assert c["team_evidence_exact_logos_required"] is True
+          assert c["projection_math_changed"] is False
+          assert c["distribution_math_changed"] is False
+          assert c["step12_qualification_changed"] is False
+          assert c["top5_ranking_changed"] is False
+          assert c["api_model_behavior_changed"] is False
+          assert c["sportsbook_projection_influence"] == 0.0
+          assert c["future_changes_must_be_additive"] is True
+          assert c["permanently_frozen"] is True
+          print("CFB_GAME_TOTAL_V164_V1_FREEZE_METADATA=PASS")
+          PY
+
+      - name: Verify every frozen blob exactly
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v164_freeze_manifest_v1.json").read_text())
+          failures=[]
+          for path, expected in m["exact_blobs"].items():
+              actual=subprocess.check_output(["git","rev-parse",f"HEAD:{path}"], text=True).strip()
+              if actual != expected:
+                  failures.append(f"{path}: expected {expected}, got {actual}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("CFB_GAME_TOTAL_V164_V1_EXACT_BLOBS=PASS", len(m["exact_blobs"]))
+          PY
+
+      - name: Enforce V164 logo boundaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          page=Path("cfb_game_total_clean_page_v15.py").read_text(encoding="utf-8")
+          router=Path("streamlit_memory_lazy_router_v160.py").read_text(encoding="utf-8")
+          adapter=Path("cfb_game_total_team_logo_identity_v1.py").read_text(encoding="utf-8")
+          api=Path("sports_api/api/cfb_team_identity_v1.py").read_text(encoding="utf-8")
+          required={
+              "page": (page, [
+                  'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v14"',
+                  'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+                  'MAY_MODIFY_PROJECTION = False',
+                  'identity_owner._identity_state = _identity_state_v164',
+              ]),
+              "router": (router, [
+                  'FROZEN_ROUTER = "streamlit_memory_lazy_router_v159"',
+                  'ACTIVE_PAGE = "cfb_game_total_clean_page_v15"',
+                  'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"',
+              ]),
+              "adapter": (adapter, [
+                  'TEAM_IDENTITY_ENDPOINT = "/api/v1/cfb/identity/team-logos"',
+                  'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+                  'MAY_MODIFY_PROJECTION = False',
+              ]),
+              "api": (api, [
+                  'projection_weight',
+                  'synthetic_ids',
+                  'may_modify_projection',
+              ]),
+          }
+          for label,(source,tokens) in required.items():
+              for token in tokens:
+                  if token not in source:
+                      raise SystemExit(f"missing frozen {label} marker: {token}")
+          print("CFB_GAME_TOTAL_V164_V1_LOGO_FIREWALL=PASS")
+          PY
+
+      - name: Compile frozen V164 surface
+        run: |
+          python -m py_compile             app.py             streamlit_memory_lazy_router_v160.py             cfb_game_total_clean_page_v15.py             cfb_game_total_team_logo_identity_v1.py             sports_api/api/cfb_team_identity_v1.py             devsystem/production_verify_v164_logos.py             tests/test_cfb_game_total_v164_team_logos.py             tests/test_cfb_team_identity_v1.py             tests/test_devsystem_production_verify_v164_logos.py
+
+      - name: Certification marker
+        run: echo "CFB_GAME_TOTAL_V164_TEAM_LOGOS_V1_PERMANENT_FREEZE_GREEN"
