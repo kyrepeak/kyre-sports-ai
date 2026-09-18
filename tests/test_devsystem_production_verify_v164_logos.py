@@ -63,3 +63,19 @@ def test_v164_production_verifier_waits_for_full_streamlit_logo_surface():
     assert 'images.nth(0).wait_for(state="attached", timeout=render_timeout_ms)' in source
     assert 'images.nth(1).wait_for(state="attached", timeout=render_timeout_ms)' in source
     assert 'step.wait_for(state="attached", timeout=30000)' in source
+
+
+
+def test_v164_production_verifier_requires_step2_performance_profile_surface():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'REQUIRED_STEP2_MARKER = "CFB_GAME_TOTAL_STEP2_PERFORMANCE_PROFILE_V2_ACTIVE"' in source
+    assert "REQUIRED_STEP2_MARKER in dom_text" in source
+    assert "_assert_step2_performance_profile" in source
+    assert 'details[data-testid="gt157-step-2"]' in source
+    assert 'data-testid="gt167-step2-away"' in source
+    assert 'data-testid="gt167-step2-home"' in source
+    assert 'data-testid="gt167-step2-insights"' in source
+    assert 'data-testid="gt167-step2-summary"' in source
+    assert '"img.gt167-logo"' in source
+    assert '"READY", "CHECK"' in source
+    assert '"step2_team_performance_profile": step2' in source
