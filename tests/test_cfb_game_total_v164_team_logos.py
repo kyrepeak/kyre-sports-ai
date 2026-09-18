@@ -378,3 +378,19 @@ def test_v164_router_emits_step1_profile_marker_before_page_import():
     assert marker_index < import_index
     assert render_index < import_index
     assert "{STEP1_PROFILE_HEARTBEAT}" in source
+
+
+def test_v164_hidden_identity_marker_renders_without_runtime_name_error(monkeypatch):
+    rendered = []
+    monkeypatch.setattr(
+        page_v164.st,
+        "markdown",
+        lambda html, **kwargs: rendered.append(str(html)),
+    )
+    page_v164._render_v164_identity()
+    assert len(rendered) == 1
+    body = rendered[0]
+    assert page_v164.DEPLOYMENT_PROOF_MARKER in body
+    assert page_v164.STEP1_PRESENTATION_MARKER in body
+    assert page_v164.STEP1_PROFILE_MARKER in body
+    assert page_v164.STEP2_PRESENTATION_MARKER in body

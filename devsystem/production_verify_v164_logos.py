@@ -124,7 +124,7 @@ def _wait_for_v164_patch_deployment(
                 and REQUIRED_STEP1_MARKER in dom_text
                 and REQUIRED_STEP1_PROFILE_MARKER in dom_text
             ):
-                return frame, body, scans
+                return frame, dom_text, scans
         except Exception as exc:
             last_error = f"{type(exc).__name__}: {exc}"
 
