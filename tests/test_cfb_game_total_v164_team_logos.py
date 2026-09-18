@@ -116,7 +116,7 @@ def test_v164_page_is_additive_over_frozen_v163():
     assert "_FROZEN_RESOLVE_VISUALS" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
-
+    assert 'LOGO_REVISION = "CFB_GAME_TOTAL_V164_SELECTOR_IDS_R2"' in source\n
 
 def test_v164_router_advances_only_game_total_page():
     source = _read(ROUTER)
