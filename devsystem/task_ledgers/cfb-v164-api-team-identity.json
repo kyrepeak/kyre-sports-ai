@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "cfb-v164-api-team-identity",
+  "status": "DONE",
+  "scope": "Add a V164-only exact ESPN team-identity API surface and make the V164 logo adapter consume it before direct ESPN fallback, while preserving the permanently frozen V163 selector contract.",
+  "trigger": "V164 local browser certification proved official ESPN logos, but production V164 logo verification found zero real logo images because the old selector contract can dedupe an event before later ESPN rows fill missing away/home team IDs.",
+  "guardrails": {
+    "frozen_v163_selector_modified": false,
+    "new_additive_endpoint_only": true,
+    "official_espn_event_identity_required": true,
+    "name_based_logo_guessing": false,
+    "fuzzy_logo_matching": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
