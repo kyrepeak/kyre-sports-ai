@@ -18,12 +18,12 @@ from playwright.sync_api import sync_playwright
 from devsystem import production_verify_v5 as v163
 from devsystem import production_verify_v1 as base
 
-CERT_DATE = "2026-09-19"
-CERT_EVENT_ID = "401869940"
-AWAY_TEAM = "Coastal Carolina"
-HOME_TEAM = "Delaware"
-AWAY_TEAM_ID = "324"
-HOME_TEAM_ID = "48"
+CERT_DATE = "2026-09-18"
+CERT_EVENT_ID = "401858226"
+AWAY_TEAM = "Miami (FL)"
+HOME_TEAM = "Wake Forest"
+AWAY_TEAM_ID = "2390"
+HOME_TEAM_ID = "154"
 REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
 REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"
 REQUIRED_STEP1_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
@@ -425,7 +425,7 @@ def _assert_step3_current_form(frame) -> dict:
         if game_count < 2:
             raise ProductionVerificationV164Failure(
                 f"Step 3 {side_name} card expected at least 2 verified completed-game "
-                f"rows for the certified 1-1 team record; found {game_count}"
+                f"rows for the certified completed-game sample; found {game_count}"
             )
         if "NO VERIFIED COMPLETED-GAME ROWS" in card.inner_text().upper():
             raise ProductionVerificationV164Failure(
