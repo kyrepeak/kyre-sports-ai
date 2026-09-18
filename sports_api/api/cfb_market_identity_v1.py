@@ -41,7 +41,7 @@ ESPN_SCOREBOARD_URL = (
 GITHUB_VERIFIED_SNAPSHOT_URL_ENV = "CFB_GITHUB_VERIFIED_SNAPSHOT_URL"
 DEFAULT_GITHUB_VERIFIED_SNAPSHOT_URL = (
     "https://raw.githubusercontent.com/kyrepeak/kyre-sports-ai/"
-    "main/data/cfb_runtime_snapshot_v1.json"
+    "cfb-runtime-snapshot-auto-refresh-v2/data/cfb_runtime_snapshot_v2.json"
 )
 MATCH_THRESHOLD = 0.88
 AMBIGUITY_MARGIN = 0.08

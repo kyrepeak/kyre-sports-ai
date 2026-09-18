@@ -540,3 +540,92 @@ def test_v164_step2_promotes_verified_runtime_record_over_stale_foundation_text(
     assert 'runtime_side.get("record")' in block
     assert 'merged["record"] = verified_record' in block
     assert 'merged["record_text"] = verified_record' in block
+
+
+def _runtime_v2_miami_wake_payload():
+    return {
+        "version": 2,
+        "generated_at": "2026-09-18T21:41:15Z",
+        "games": [
+            {
+                "event_id": "401858226",
+                "game_date": "2026-09-18",
+                "away_team": "Miami",
+                "home_team": "Wake Forest",
+                "away": {"team_id": "2390"},
+                "home": {"team_id": "154"},
+            }
+        ],
+    }
+
+
+def test_v164_recovers_blank_selected_event_from_runtime_v2_exact_school_pair(monkeypatch):
+    monkeypatch.setattr(
+        page_v164.runtime_snapshot_v2,
+        "_load_v2_snapshot",
+        _runtime_v2_miami_wake_payload,
+    )
+    recovered = page_v164._recover_exact_runtime_event_v164(
+        {
+            "game_date": "2026-09-18",
+            "away_team": "Miami (FL)",
+            "home_team": "Wake Forest",
+            "espn_event_id": "",
+        },
+        "2026-09-18",
+    )
+    assert recovered["espn_event_id"] == "401858226"
+    assert recovered["away_espn_team_id"] == "2390"
+    assert recovered["home_espn_team_id"] == "154"
+    assert recovered["away_team_id"] == "2390"
+    assert recovered["home_team_id"] == "154"
+    assert "Runtime Snapshot V2" in recovered["logo_identity_source"]
+
+
+def test_v164_runtime_v2_recovery_fails_closed_on_ambiguous_school_pair(monkeypatch):
+    payload = _runtime_v2_miami_wake_payload()
+    duplicate = dict(payload["games"][0])
+    duplicate["event_id"] = "999999999"
+    payload["games"].append(duplicate)
+    monkeypatch.setattr(
+        page_v164.runtime_snapshot_v2,
+        "_load_v2_snapshot",
+        lambda: payload,
+    )
+    recovered = page_v164._recover_exact_runtime_event_v164(
+        {
+            "game_date": "2026-09-18",
+            "away_team": "Miami (FL)",
+            "home_team": "Wake Forest",
+            "espn_event_id": "",
+        },
+        "2026-09-18",
+    )
+    assert not recovered.get("espn_event_id")
+
+
+def test_v164_selector_payload_unions_api_with_certified_runtime_v2(monkeypatch):
+    monkeypatch.setattr(
+        page_v164.prior_v163,
+        "_fetch_selector_identity_payload",
+        lambda _day: {
+            "games": [],
+            "synthetic_ids": False,
+            "projection_weight": 0.0,
+            "may_modify_projection": False,
+        },
+    )
+    monkeypatch.setattr(
+        page_v164.runtime_snapshot_v2,
+        "_load_v2_snapshot",
+        _runtime_v2_miami_wake_payload,
+    )
+    payload = page_v164._selector_payload_for_day("2026-09-18")
+    assert payload["game_count"] == 1
+    row = payload["games"][0]
+    assert row["event_id"] == "401858226"
+    assert row["away_team_id"] == "2390"
+    assert row["home_team_id"] == "154"
+    assert row["identity_verified"] is True
+    assert payload["synthetic_ids"] is False
+    assert payload["projection_weight"] == 0.0
