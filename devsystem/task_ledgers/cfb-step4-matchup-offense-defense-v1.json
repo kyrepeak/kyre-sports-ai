@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "task_id": "cfb-step4-matchup-offense-defense-v1",
+  "status": "DONE",
+  "scope": "Build only Step 4 as a universal Matchup surface comparing each offense with the opponent defense through scoring, passing, rushing, and verified EPA/play evidence.",
+  "trigger": "Step 3 reached live production GREEN and was frozen; the latest approved Step 4 target is Matchup — Off vs Def, Pass, Rush, EPA.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step3_frozen_and_untouched": true,
+    "step5_plus_not_started": true,
+    "epa_fabricated": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "internal_steps": {
+    "4.1": "universal matchup contract locked",
+    "4.2": "wide two-direction matchup UI built",
+    "4.3": "scoring, passing and rushing evidence wired",
+    "4.4": "EPA integrity fail-closed behavior built",
+    "4.5": "multi-matchup and production contract tests added",
+    "4.6": "branch and production proof required before freeze"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
