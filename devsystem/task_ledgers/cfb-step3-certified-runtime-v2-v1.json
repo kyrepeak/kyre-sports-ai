@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-certified-runtime-v2-v1",
+  "status": "DONE",
+  "scope": "Step 3 only: consume Schedule V6's validated certified Runtime Snapshot V2 branch before all live providers, derive pre-kickoff recent form and all five opponent-quality fields from its broad team universe, and short-circuit NCAA/ESPN when READY.",
+  "trigger": "Production #52 diagnostics proved Streamlit fell to stale main snapshot while the dedicated runtime branch held fresh 2-game histories. Step 3 bypassed the existing Schedule V6 remote snapshot loader.",
+  "guardrails": {
+    "step3_only": true,
+    "other_steps_untouched": true,
+    "certified_runtime_branch_first": true,
+    "checked_in_main_snapshot_last_resort": true,
+    "target_and_future_rows_filtered": true,
+    "opponent_quality_from_same_pregame_universe": true,
+    "live_ncaa_and_espn_not_required_when_ready": true,
+    "fabricated_values": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "proof_target": "Certified 2026-09-19 Coastal Carolina-Delaware witness must use fresh Runtime V2, show 2 completed games and 1-1 record per side, populate all five Opponent Quality fields, reach READY, and bypass NCAA/ESPN live fallbacks.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

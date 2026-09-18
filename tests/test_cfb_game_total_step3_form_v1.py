@@ -72,6 +72,11 @@ def _home():
 def _stub_quality_sources(monkeypatch, *, record_pct=0.50):
     monkeypatch.setattr(
         step3,
+        "_runtime_v2_step3_bundle",
+        lambda game, target_day: ({}, {"source": "test_disabled"}),
+    )
+    monkeypatch.setattr(
+        step3,
         "_candidate_game_days",
         lambda team_name, team_slug, target_day, season: ([], []),
     )
@@ -1509,6 +1514,11 @@ def test_step3_ncaa_evidence_builds_ready_two_game_profiles():
 
 
 def test_step3_ncaa_ready_short_circuits_blocked_espn(monkeypatch):
+    monkeypatch.setattr(
+        step3,
+        "_runtime_v2_step3_bundle",
+        lambda game, target_day: ({}, {"source": "test_disabled"}),
+    )
     tg = step3.ncaa_team_data.TeamGame
     universe = {
         "ledgers": {
@@ -1595,3 +1605,285 @@ def test_step3_ncaa_ready_short_circuits_blocked_espn(monkeypatch):
     assert diag["home"]["source"] == "ncaa_combined_fbs_fcs"
     assert diag["away"]["ncaa_contract_state"] == "READY"
     assert diag["home"]["ncaa_contract_state"] == "READY"
+
+
+
+def _runtime_v2_test_payload():
+    def side(team_id, team, record_text, completed):
+        return {
+            "team_id": str(team_id),
+            "record_text": record_text,
+            "completed_games": completed,
+        }
+
+    coastal_games = [
+        {
+            "event_id": "cc-wvu",
+            "date": "2026-09-05T16:00Z",
+            "location": "away",
+            "points_for": 24,
+            "points_against": 31,
+            "opponent": "West Virginia Mountaineers",
+            "opponent_id": "277",
+        },
+        {
+            "event_id": "cc-fordham",
+            "date": "2026-09-12T23:30Z",
+            "location": "home",
+            "points_for": 45,
+            "points_against": 7,
+            "opponent": "Fordham Rams",
+            "opponent_id": "2230",
+        },
+        {
+            "event_id": "cc-target-day-leak",
+            "date": "2026-09-19T12:00Z",
+            "location": "home",
+            "points_for": 99,
+            "points_against": 0,
+            "opponent": "Future Leak",
+            "opponent_id": "9999",
+        },
+    ]
+    delaware_games = [
+        {
+            "event_id": "del-merrimack",
+            "date": "2026-09-03T23:00Z",
+            "location": "home",
+            "points_for": 42,
+            "points_against": 7,
+            "opponent": "Merrimack Warriors",
+            "opponent_id": "2771",
+        },
+        {
+            "event_id": "del-vandy",
+            "date": "2026-09-12T20:15Z",
+            "location": "away",
+            "points_for": 26,
+            "points_against": 35,
+            "opponent": "Vanderbilt Commodores",
+            "opponent_id": "238",
+        },
+    ]
+
+    return {
+        "version": 2,
+        "generated_at": "2026-09-18T18:28:25Z",
+        "window": {"start": "2026-09-17", "end": "2026-09-24"},
+        "_runtime_snapshot_source": "certified-runtime-branch",
+        "games": [
+            {
+                "event_id": "401869940",
+                "game_date": "2026-09-19",
+                "away_team": "Coastal Carolina",
+                "home_team": "Delaware",
+                "away": side("324", "Coastal Carolina", "1-1", coastal_games),
+                "home": side("48", "Delaware", "1-1", delaware_games),
+            },
+            {
+                "event_id": "wvu-next",
+                "game_date": "2026-09-20",
+                "away_team": "West Virginia",
+                "home_team": "Dummy A",
+                "away": side(
+                    "277",
+                    "West Virginia",
+                    "2-0",
+                    [
+                        {
+                            "event_id": "wvu-1",
+                            "date": "2026-09-05T16:00Z",
+                            "points_for": 31,
+                            "points_against": 24,
+                            "opponent": "Coastal Carolina",
+                            "opponent_id": "324",
+                        },
+                        {
+                            "event_id": "wvu-2",
+                            "date": "2026-09-12T17:00Z",
+                            "points_for": 52,
+                            "points_against": 7,
+                            "opponent": "UT Martin",
+                            "opponent_id": "2630",
+                        },
+                    ],
+                ),
+                "home": side(
+                    "9001",
+                    "Dummy A",
+                    "1-1",
+                    [
+                        {"date": "2026-09-05", "points_for": 20, "points_against": 10, "opponent_id": "9002"},
+                        {"date": "2026-09-12", "points_for": 7, "points_against": 17, "opponent_id": "9003"},
+                    ],
+                ),
+            },
+            {
+                "event_id": "fordham-next",
+                "game_date": "2026-09-20",
+                "away_team": "Fordham",
+                "home_team": "Dummy B",
+                "away": side(
+                    "2230",
+                    "Fordham",
+                    "0-2",
+                    [
+                        {"date": "2026-09-05", "points_for": 0, "points_against": 38, "opponent_id": "2449"},
+                        {"date": "2026-09-12", "points_for": 7, "points_against": 45, "opponent_id": "324"},
+                    ],
+                ),
+                "home": side(
+                    "9002",
+                    "Dummy B",
+                    "1-0",
+                    [{"date": "2026-09-06", "points_for": 17, "points_against": 10, "opponent_id": "9001"}],
+                ),
+            },
+            {
+                "event_id": "merrimack-next",
+                "game_date": "2026-09-20",
+                "away_team": "Merrimack",
+                "home_team": "Dummy C",
+                "away": side(
+                    "2771",
+                    "Merrimack",
+                    "1-1",
+                    [
+                        {"date": "2026-09-03", "points_for": 7, "points_against": 42, "opponent_id": "48"},
+                        {"date": "2026-09-12", "points_for": 23, "points_against": 14, "opponent_id": "311"},
+                    ],
+                ),
+                "home": side(
+                    "9003",
+                    "Dummy C",
+                    "0-1",
+                    [{"date": "2026-09-07", "points_for": 3, "points_against": 21, "opponent_id": "9002"}],
+                ),
+            },
+            {
+                "event_id": "vandy-next",
+                "game_date": "2026-09-20",
+                "away_team": "Vanderbilt",
+                "home_team": "Dummy D",
+                "away": side(
+                    "238",
+                    "Vanderbilt",
+                    "2-0",
+                    [
+                        {"date": "2026-09-05", "points_for": 28, "points_against": 9, "opponent_id": "2046"},
+                        {"date": "2026-09-12", "points_for": 35, "points_against": 26, "opponent_id": "48"},
+                    ],
+                ),
+                "home": side(
+                    "9004",
+                    "Dummy D",
+                    "0-1",
+                    [{"date": "2026-09-08", "points_for": 10, "points_against": 24, "opponent_id": "9001"}],
+                ),
+            },
+        ],
+    }
+
+
+def test_step3_runtime_v2_bundle_filters_target_day_and_reaches_ready(monkeypatch):
+    payload = _runtime_v2_test_payload()
+    monkeypatch.setattr(
+        step3.runtime_snapshot_v2,
+        "_load_v2_snapshot",
+        lambda: payload,
+    )
+    game = {
+        "game_date": "2026-09-19",
+        "espn_event_id": "401869940",
+        "away_espn_team_id": "324",
+        "home_espn_team_id": "48",
+    }
+    bundle, diag = step3._runtime_v2_step3_bundle(
+        game,
+        "2026-09-19",
+    )
+    identity = {
+        "away": {"team": "Coastal Carolina"},
+        "home": {"team": "Delaware"},
+    }
+    contract = step3.build_step3_contract(
+        identity,
+        bundle["away"],
+        bundle["home"],
+    )
+
+    assert diag["source"] == "certified-runtime-branch"
+    assert diag["selected_event_found"] is True
+    assert diag["away_rows"] == 2
+    assert diag["home_rows"] == 2
+    assert contract["state"] == "READY"
+    assert contract["away"]["last5_record"] == "1-1"
+    assert contract["home"]["last5_record"] == "1-1"
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert round(contract["away"]["avg_opponent_win_pct"], 3) == 0.5
+    assert round(contract["home"]["avg_opponent_win_pct"], 3) == 0.75
+    assert contract["away"]["avg_opponent_def_rank"] is not None
+    assert contract["home"]["avg_opponent_def_rank"] is not None
+    assert contract["away"]["top40_defenses_faced"] is not None
+    assert contract["home"]["top40_defenses_faced"] is not None
+    assert contract["away"]["record_vs_winning_teams"] == "0-1"
+    assert contract["home"]["record_vs_winning_teams"] == "0-1"
+    assert contract["away"]["strength_of_schedule_rank"] is not None
+    assert contract["home"]["strength_of_schedule_rank"] is not None
+    assert all(
+        row["event_id"] != "cc-target-day-leak"
+        for row in bundle["away"]["completed_games"]
+    )
+
+
+def test_step3_runtime_v2_ready_short_circuits_all_live_provider_fallbacks(monkeypatch):
+    payload = _runtime_v2_test_payload()
+    monkeypatch.setattr(
+        step3.runtime_snapshot_v2,
+        "_load_v2_snapshot",
+        lambda: payload,
+    )
+    monkeypatch.setattr(
+        step3,
+        "_ncaa_combined_step3_universe",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("NCAA must not run after Runtime V2 reaches READY")
+        ),
+    )
+    monkeypatch.setattr(
+        step3.deep.history_engine,
+        "_fetch_team_schedule",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("ESPN must not run after Runtime V2 reaches READY")
+        ),
+    )
+    monkeypatch.setattr(step3.deep, "_season", lambda game: 2026)
+    monkeypatch.setattr(step3.deep, "_cutoff", lambda game: object())
+
+    identity = {
+        "away": {"team": "Coastal Carolina", "team_id": "324"},
+        "home": {"team": "Delaware", "team_id": "48"},
+    }
+    game = {
+        "game_date": "2026-09-19",
+        "espn_event_id": "401869940",
+        "away_espn_team_id": "324",
+        "home_espn_team_id": "48",
+    }
+
+    away, home, diag = step3.enrich_step3_inputs(
+        identity,
+        {"team": "Coastal Carolina"},
+        {"team": "Delaware"},
+        game,
+    )
+    contract = step3.build_step3_contract(identity, away, home)
+
+    assert contract["state"] == "READY"
+    assert contract["away"]["sample_games"] == 2
+    assert contract["home"]["sample_games"] == 2
+    assert diag["away"]["source"] == "certified_runtime_snapshot_v2"
+    assert diag["home"]["source"] == "certified_runtime_snapshot_v2"
+    assert diag["away"]["runtime_v2_contract_state"] == "READY"
+    assert diag["home"]["runtime_v2_contract_state"] == "READY"

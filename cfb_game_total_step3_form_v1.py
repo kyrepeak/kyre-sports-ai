@@ -23,6 +23,7 @@ import streamlit as st
 import cfb_over_under_deep_data_reconciliation_v1 as deep
 import cfb_schedule_v1 as ncaa_schedule
 import cfb_schedule_v2 as ncaa_schedule_v2
+import cfb_schedule_v6_runtime_snapshot as runtime_snapshot_v2
 import cfb_team_data_v1 as ncaa_team_data
 import cfb_team_data_v2 as ncaa_team_data_v2
 
@@ -563,6 +564,380 @@ def _overlay_exact_rows(
         out["sos_opponent_win_pct"] = _avg(opp_pcts)
         out["sos_coverage"] = len(opp_pcts) / len(completed)
     return out
+
+
+def _runtime_v2_profile_index(
+    payload: Mapping[str, Any],
+    target_day: str,
+) -> dict[str, dict[str, Any]]:
+    """Index the richest exact team profile from certified Runtime Snapshot V2."""
+    cutoff = _clean(target_day)[:10]
+    profiles: dict[str, dict[str, Any]] = {}
+
+    for game in payload.get("games") or []:
+        if not isinstance(game, Mapping):
+            continue
+        for side in ("away", "home"):
+            raw = game.get(side)
+            if not isinstance(raw, Mapping):
+                continue
+            team_id = _clean(raw.get("team_id"))
+            if not team_id.isdigit():
+                continue
+            team_name = _clean(
+                game.get(f"{side}_team")
+                or raw.get("team")
+            )
+            completed = [
+                dict(row)
+                for row in raw.get("completed_games") or []
+                if isinstance(row, Mapping)
+                and (
+                    not cutoff
+                    or not _clean(row.get("date"))[:10]
+                    or _clean(row.get("date"))[:10] < cutoff
+                )
+            ]
+            completed.sort(key=lambda row: _clean(row.get("date")))
+            candidate = {
+                **dict(raw),
+                "team_id": team_id,
+                "team": team_name,
+                "completed_games": completed,
+            }
+            existing = profiles.get(team_id)
+            if (
+                existing is None
+                or len(completed) > len(existing.get("completed_games") or [])
+            ):
+                profiles[team_id] = candidate
+
+    return profiles
+
+
+def _runtime_v2_record_pct(profile: Mapping[str, Any]) -> float | None:
+    games = [
+        row for row in profile.get("completed_games") or []
+        if isinstance(row, Mapping)
+        and _float(row.get("points_for")) is not None
+        and _float(row.get("points_against")) is not None
+    ]
+    if not games:
+        return None
+    wins = ties = 0
+    for row in games:
+        pf = float(_float(row.get("points_for")) or 0.0)
+        pa = float(_float(row.get("points_against")) or 0.0)
+        if pf > pa:
+            wins += 1
+        elif pf == pa:
+            ties += 1
+    return (wins + 0.5 * ties) / len(games)
+
+
+def _runtime_v2_quality_universe(
+    profiles: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Derive time-correct quality ranks from the certified snapshot universe."""
+    records: dict[str, float] = {}
+    allowed_pg: dict[str, float] = {}
+
+    for team_id, profile in profiles.items():
+        pct = _runtime_v2_record_pct(profile)
+        if pct is not None:
+            records[str(team_id)] = float(pct)
+        allowed = [
+            float(_float(row.get("points_against")) or 0.0)
+            for row in profile.get("completed_games") or []
+            if isinstance(row, Mapping)
+            and _float(row.get("points_against")) is not None
+        ]
+        if allowed:
+            allowed_pg[str(team_id)] = sum(allowed) / len(allowed)
+
+    defense_order = sorted(
+        allowed_pg.items(),
+        key=lambda item: (item[1], item[0]),
+    )
+    defense_ranks = {
+        team_id: idx + 1
+        for idx, (team_id, _) in enumerate(defense_order)
+    }
+
+    sos_values: dict[str, float] = {}
+    for team_id, profile in profiles.items():
+        opponent_pcts = [
+            records[opponent_id]
+            for opponent_id in (
+                _clean(row.get("opponent_id"))
+                for row in profile.get("completed_games") or []
+                if isinstance(row, Mapping)
+            )
+            if opponent_id in records
+        ]
+        if opponent_pcts:
+            sos_values[str(team_id)] = (
+                sum(opponent_pcts) / len(opponent_pcts)
+            )
+
+    sos_order = sorted(
+        sos_values.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    sos_ranks = {
+        team_id: idx + 1
+        for idx, (team_id, _) in enumerate(sos_order)
+    }
+    return {
+        "records": records,
+        "defense_ranks": defense_ranks,
+        "sos_values": sos_values,
+        "sos_ranks": sos_ranks,
+        "team_count": len(profiles),
+        "defense_rank_count": len(defense_ranks),
+        "sos_rank_count": len(sos_ranks),
+    }
+
+
+def _runtime_v2_selected_row(
+    payload: Mapping[str, Any],
+    game: Mapping[str, Any],
+    target_day: str,
+) -> dict[str, Any]:
+    event_id = _clean(
+        game.get("espn_event_id")
+        or game.get("event_id")
+    )
+    rows = [
+        row for row in payload.get("games") or []
+        if isinstance(row, Mapping)
+    ]
+    if event_id:
+        exact = [
+            row for row in rows
+            if _clean(row.get("event_id")) == event_id
+        ]
+        if len(exact) == 1:
+            return dict(exact[0])
+        if len(exact) > 1:
+            return {}
+
+    away_id = _clean(
+        game.get("away_espn_team_id")
+        or game.get("away_team_id")
+    )
+    home_id = _clean(
+        game.get("home_espn_team_id")
+        or game.get("home_team_id")
+    )
+    if not away_id.isdigit() or not home_id.isdigit():
+        return {}
+
+    matches: list[Mapping[str, Any]] = []
+    for row in rows:
+        if _clean(row.get("game_date")) != _clean(target_day)[:10]:
+            continue
+        away = row.get("away") if isinstance(row.get("away"), Mapping) else {}
+        home = row.get("home") if isinstance(row.get("home"), Mapping) else {}
+        if (
+            _clean(away.get("team_id")) == away_id
+            and _clean(home.get("team_id")) == home_id
+        ):
+            matches.append(row)
+    return dict(matches[0]) if len(matches) == 1 else {}
+
+
+def _runtime_v2_side_evidence(
+    side: str,
+    selected: Mapping[str, Any],
+    profiles: Mapping[str, Mapping[str, Any]],
+    quality: Mapping[str, Any],
+) -> dict[str, Any]:
+    selected_side = (
+        selected.get(side)
+        if isinstance(selected.get(side), Mapping)
+        else {}
+    )
+    team_id = _clean(selected_side.get("team_id"))
+    profile = dict(profiles.get(team_id) or selected_side or {})
+    if not team_id or not profile:
+        return {}
+
+    team_name = _clean(
+        selected.get(f"{side}_team")
+        or profile.get("team")
+    )
+    records = quality.get("records") or {}
+    defense_ranks = quality.get("defense_ranks") or {}
+
+    completed: list[dict[str, Any]] = []
+    opponent_pcts: list[float] = []
+    opponent_def_ranks: list[int] = []
+    winning_results: list[str] = []
+
+    for raw in (profile.get("completed_games") or [])[-5:]:
+        if not isinstance(raw, Mapping):
+            continue
+        pf = _float(raw.get("points_for"))
+        pa = _float(raw.get("points_against"))
+        if pf is None or pa is None:
+            continue
+        opponent_id = _clean(raw.get("opponent_id"))
+        opp_pct = records.get(opponent_id)
+        opp_rank = defense_ranks.get(opponent_id)
+        result = "W" if pf > pa else "L" if pf < pa else "T"
+        row = {
+            "event_id": _clean(raw.get("event_id")),
+            "date": _clean(raw.get("date"))[:10],
+            "opponent": _clean(raw.get("opponent")),
+            "opponent_id": opponent_id,
+            "location": _clean(raw.get("location")),
+            "result": result,
+            "points_for": float(pf),
+            "points_against": float(pa),
+            "score": f"{int(pf)}-{int(pa)}",
+            "opponent_record_pct": (
+                float(opp_pct) if opp_pct is not None else None
+            ),
+            "opponent_def_rank": (
+                int(opp_rank) if opp_rank is not None else None
+            ),
+        }
+        completed.append(row)
+        if opp_pct is not None:
+            opponent_pcts.append(float(opp_pct))
+            if float(opp_pct) > 0.5:
+                winning_results.append(result)
+        if opp_rank is not None:
+            opponent_def_ranks.append(int(opp_rank))
+
+    if not completed:
+        return {}
+
+    recent_ppg = _avg([
+        float(row["points_for"]) for row in completed
+    ])
+    recent_allowed = _avg([
+        float(row["points_against"]) for row in completed
+    ])
+    recent_diff = (
+        recent_ppg - recent_allowed
+        if recent_ppg is not None and recent_allowed is not None
+        else None
+    )
+    wins = sum(row["result"] == "W" for row in completed)
+    losses = sum(row["result"] == "L" for row in completed)
+    ties = sum(row["result"] == "T" for row in completed)
+
+    winning_wins = sum(result == "W" for result in winning_results)
+    winning_losses = sum(result == "L" for result in winning_results)
+    winning_ties = sum(result == "T" for result in winning_results)
+    full_record_coverage = len(opponent_pcts) == len(completed)
+    record_vs_winning = (
+        f"{winning_wins}-{winning_losses}"
+        + (f"-{winning_ties}" if winning_ties else "")
+        if full_record_coverage
+        else ""
+    )
+
+    return {
+        "team": team_name,
+        "team_id": team_id,
+        "record": _clean(profile.get("record_text")),
+        "completed_games": completed,
+        "recent_record": {
+            "wins": wins,
+            "losses": losses,
+            "ties": ties,
+            "games": len(completed),
+        },
+        "recent_record_text": (
+            f"{wins}-{losses}" + (f"-{ties}" if ties else "")
+        ),
+        "recent_form": "".join(row["result"] for row in completed),
+        "recent_ppg": recent_ppg,
+        "recent_points_allowed_pg": recent_allowed,
+        "recent_point_diff_pg": recent_diff,
+        "sos_opponent_win_pct": (
+            _avg(opponent_pcts) if opponent_pcts else None
+        ),
+        "sos_coverage": (
+            len(opponent_pcts) / len(completed)
+            if completed else 0.0
+        ),
+        "avg_opponent_def_rank": (
+            _avg([float(rank) for rank in opponent_def_ranks])
+            if opponent_def_ranks else None
+        ),
+        "top40_defenses_faced": (
+            sum(rank <= 40 for rank in opponent_def_ranks)
+            if opponent_def_ranks else None
+        ),
+        "record_vs_winning_teams": record_vs_winning,
+        "winning_opponents_faced": len(winning_results),
+        "strength_of_schedule_rank": (
+            int((quality.get("sos_ranks") or {}).get(team_id))
+            if (quality.get("sos_ranks") or {}).get(team_id) is not None
+            else None
+        ),
+        "data_source": (
+            "Certified Runtime Snapshot V2 • pre-kickoff team universe"
+        ),
+    }
+
+
+def _runtime_v2_step3_bundle(
+    game: Mapping[str, Any],
+    target_day: str,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Build Step 3 from Schedule V6's validated fresh runtime branch."""
+    try:
+        payload = runtime_snapshot_v2._load_v2_snapshot()
+    except Exception as exc:
+        return {}, {
+            "source": "runtime_v2_loader_error",
+            "error": f"{type(exc).__name__}: {exc}"[:260],
+        }
+
+    source = _clean(payload.get("_runtime_snapshot_source"))
+    selected = _runtime_v2_selected_row(payload, game, target_day)
+    if not selected:
+        return {}, {
+            "source": source or "runtime_v2",
+            "generated_at": payload.get("generated_at"),
+            "window": payload.get("window"),
+            "selected_event_found": False,
+        }
+
+    profiles = _runtime_v2_profile_index(payload, target_day)
+    quality = _runtime_v2_quality_universe(profiles)
+    away = _runtime_v2_side_evidence(
+        "away",
+        selected,
+        profiles,
+        quality,
+    )
+    home = _runtime_v2_side_evidence(
+        "home",
+        selected,
+        profiles,
+        quality,
+    )
+    return {
+        "away": away,
+        "home": home,
+    }, {
+        "source": source or "runtime_v2",
+        "generated_at": payload.get("generated_at"),
+        "window": payload.get("window"),
+        "selected_event_found": True,
+        "event_id": selected.get("event_id"),
+        "team_count": quality.get("team_count"),
+        "defense_rank_count": quality.get("defense_rank_count"),
+        "sos_rank_count": quality.get("sos_rank_count"),
+        "away_rows": len(away.get("completed_games") or []),
+        "home_rows": len(home.get("completed_games") or []),
+    }
 
 
 def _snapshot_rows_for_team(
@@ -1336,6 +1711,47 @@ def enrich_step3_inputs(
     event_id = _clean(game.get("espn_event_id"))
     target_day = _clean(game.get("game_date"))[:10]
 
+    # Phase -1 — certified fresh Runtime Snapshot V2. Schedule V6 already
+    # prefers the dedicated auto-refresh branch and validates official event and
+    # team IDs before returning it. Step 3 must consume that same source instead
+    # of opening main's stale checked-in JSON directly.
+    runtime_bundle: dict[str, dict[str, Any]] = {}
+    runtime_diag: dict[str, Any] = {}
+    if target_day:
+        runtime_bundle, runtime_diag = _runtime_v2_step3_bundle(
+            game,
+            target_day,
+        )
+    if runtime_bundle.get("away") and runtime_bundle.get("home"):
+        for side in ("away", "home"):
+            outputs[side] = {
+                **outputs[side],
+                **dict(runtime_bundle[side]),
+            }
+            diag[side] = {
+                "refresh_used": True,
+                "fallback_used": False,
+                "source": "certified_runtime_snapshot_v2",
+                "team_id": _clean(
+                    runtime_bundle[side].get("team_id")
+                ),
+                "rows": len(
+                    runtime_bundle[side].get("completed_games") or []
+                ),
+                "runtime_v2": dict(runtime_diag),
+                "attempts": [],
+            }
+
+        runtime_contract = build_step3_contract(
+            identity,
+            outputs["away"],
+            outputs["home"],
+        )
+        if runtime_contract.get("state") == "READY":
+            for side in ("away", "home"):
+                diag[side]["runtime_v2_contract_state"] = "READY"
+            return outputs["away"], outputs["home"], diag
+
     # Phase 0 — production-safe NCAA truth. Combine FBS + FCS season ledgers
     # before any ESPN request. This is the preferred live path because ESPN's
     # site API returns HTTP 403 from the deployed Streamlit environment.
@@ -1740,6 +2156,10 @@ def enrich_step3_inputs(
             + list(defense_diag.get("attempts") or [])
             + list(sos_diag.get("attempts") or [])
         )
+
+    for side in ("away", "home"):
+        diag.setdefault(side, {})
+        diag[side].setdefault("runtime_v2", dict(runtime_diag))
 
     return outputs["away"], outputs["home"], diag
 
@@ -2156,6 +2576,11 @@ __all__ = [
     "build_team_form_contract",
     "render_step3_html",
     "_scoreboard_range_rows_for_team",
+    "_runtime_v2_step3_bundle",
+    "_runtime_v2_side_evidence",
+    "_runtime_v2_selected_row",
+    "_runtime_v2_quality_universe",
+    "_runtime_v2_profile_index",
     "_apply_scoreboard_quality",
     "_scoreboard_quality_universe",
     "_scoreboard_range_events",
