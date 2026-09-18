@@ -56,3 +56,10 @@ def test_v164_deployment_gate_reads_hidden_markers_from_dom_text():
     assert "REQUIRED_STEP1_MARKER in dom_text" in source
     assert "REQUIRED_PATCH_MARKER in dom_text" in source
     assert "return frame, dom_text, scans" in source
+
+
+def test_v164_production_verifier_waits_for_full_streamlit_logo_surface():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'images.nth(0).wait_for(state="attached", timeout=render_timeout_ms)' in source
+    assert 'images.nth(1).wait_for(state="attached", timeout=render_timeout_ms)' in source
+    assert 'step.wait_for(state="attached", timeout=30000)' in source
