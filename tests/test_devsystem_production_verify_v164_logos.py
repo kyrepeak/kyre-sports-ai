@@ -130,10 +130,13 @@ def test_v164_step3_production_proof_locks_live_completeness_contract():
     source = VERIFIER.read_text(encoding="utf-8")
     assert '"INSUFFICIENT SAMPLE" in live_text_upper' in source
     assert 'game_rows_by_side' in source
+    assert 'game_count < 2' in source
+    assert 'expected at least 2 verified completed-game' in source
     assert 'NO VERIFIED COMPLETED-GAME ROWS' in source
     assert 'Opponent Quality expected 5 rows' in source
     assert 'opponent_quality_values' in source
+    assert 'state != "READY"' in source
+    assert 'certified matchup must be fully READY' in source
     assert 'Step 3 READY contains blank Opponent Quality values' in source
     assert 'data-testid="gt168-step3-status-reason"' in source
-    assert 'Step 3 CHECK must explain why opponent-quality evidence is incomplete' in source
-    assert '"COVERAGE" not in reason_text and "STILL CHECKING" not in reason_text' in source
+    assert 'Step 3 READY must not render a CHECK/DATA LIMITED reason' in source

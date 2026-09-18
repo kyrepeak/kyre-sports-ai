@@ -344,9 +344,10 @@ def _assert_step3_current_form(frame) -> dict:
         )
 
     state = str(step.get_attribute("data-step3-state") or "").strip().upper()
-    if state not in {"READY", "CHECK"}:
+    if state != "READY":
         raise ProductionVerificationV164Failure(
-            f"Step 3 current-form profile is not production-usable: state={state!r}"
+            "Step 3 certified matchup must be fully READY after current-form and "
+            f"opponent-quality hydration: state={state!r}"
         )
 
     text = step.inner_text()
@@ -383,9 +384,10 @@ def _assert_step3_current_form(frame) -> dict:
         game_rows = card.locator(".gt168-table tbody tr")
         game_count = game_rows.count()
         game_rows_by_side[side_name] = game_count
-        if game_count < 1:
+        if game_count < 2:
             raise ProductionVerificationV164Failure(
-                f"Step 3 {side_name} card has no completed-game rows"
+                f"Step 3 {side_name} card expected at least 2 verified completed-game "
+                f"rows for the certified 1-1 team record; found {game_count}"
             )
         if "NO VERIFIED COMPLETED-GAME ROWS" in card.inner_text().upper():
             raise ProductionVerificationV164Failure(
@@ -407,35 +409,21 @@ def _assert_step3_current_form(frame) -> dict:
     status_reasons = step.locator(
         '[data-testid="gt168-step3-status-reason"]'
     )
-    if state == "READY":
-        blank_values = {
-            side_name: [
-                value for value in values
-                if value.strip() in {"", "—", "-"}
-            ]
-            for side_name, values in opponent_quality_values.items()
-        }
-        if any(blank_values.values()):
-            raise ProductionVerificationV164Failure(
-                f"Step 3 READY contains blank Opponent Quality values: {blank_values}"
-            )
-        if status_reasons.count() != 0:
-            raise ProductionVerificationV164Failure(
-                "Step 3 READY must not render a CHECK/DATA LIMITED reason"
-            )
-    else:
-        if status_reasons.count() < 1:
-            raise ProductionVerificationV164Failure(
-                "Step 3 CHECK must explain why opponent-quality evidence is incomplete"
-            )
-        reason_text = " ".join(
-            status_reasons.nth(i).inner_text()
-            for i in range(status_reasons.count())
-        ).upper()
-        if "COVERAGE" not in reason_text and "STILL CHECKING" not in reason_text:
-            raise ProductionVerificationV164Failure(
-                f"Step 3 CHECK reason is not explicit enough: {reason_text!r}"
-            )
+    blank_values = {
+        side_name: [
+            value for value in values
+            if value.strip() in {"", "—", "-"}
+        ]
+        for side_name, values in opponent_quality_values.items()
+    }
+    if any(blank_values.values()):
+        raise ProductionVerificationV164Failure(
+            f"Step 3 READY contains blank Opponent Quality values: {blank_values}"
+        )
+    if status_reasons.count() != 0:
+        raise ProductionVerificationV164Failure(
+            "Step 3 READY must not render a CHECK/DATA LIMITED reason"
+        )
 
     logos = _assert_exact_pair(frame, "img.gt168-logo", "Step 3 current form")
     return {
