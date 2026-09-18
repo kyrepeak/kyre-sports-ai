@@ -394,6 +394,7 @@ def test_v164_hidden_identity_marker_renders_without_runtime_name_error(monkeypa
     assert page_v164.STEP1_PRESENTATION_MARKER in body
     assert page_v164.STEP1_PROFILE_MARKER in body
     assert page_v164.STEP2_PRESENTATION_MARKER in body
+    assert page_v164.STEP3_PRESENTATION_MARKER in body
 
 
 def test_v164_deployment_marker_renders_before_frozen_hub_handoff():
@@ -428,3 +429,15 @@ def test_v164_step3_is_connected_after_frozen_steps_1_and_2():
     assert "rendered_identity.get(\"step2_away\") or {}" in source
     assert "rendered_identity.get(\"step2_home\") or {}" in source
     assert "step1_owner.STEP1_CSS + step2_owner.STEP2_CSS + step3_owner.STEP3_CSS" in source
+
+
+
+def test_v164_step3_uses_rich_verified_completed_game_evidence():
+    source = _read(PAGE)
+    assert "import cfb_game_total_step3_form_v1 as step3_owner" in source
+    assert "STEP3_PRESENTATION_MARKER = step3_owner.STEP3_PRESENTATION_MARKER" in source
+    assert "if int(number) == 3:" in source
+    assert "step3_away = _merge_step2_evidence(" in source
+    assert "step3_home = _merge_step2_evidence(" in source
+    assert "return step3_owner.render_step3_html(" in source
+    assert "step3_owner.STEP3_CSS" in source
