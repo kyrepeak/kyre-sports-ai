@@ -745,3 +745,81 @@ def test_step3_opponent_quality_populates_all_five_rows(monkeypatch):
     assert contract["away"]["strength_of_schedule_rank"] == 41
     assert contract["home"]["strength_of_schedule_rank"] == 24
     assert contract["state"] == "READY"
+
+
+
+def test_step3_one_game_uses_early_season_sample_language():
+    row = step3.build_team_form_contract(
+        {
+            "team": "Miami (FL)",
+            "completed_games": [
+                {
+                    "date": "2026-09-05",
+                    "opponent": "Stanford",
+                    "result": "W",
+                    "score": "45-6",
+                }
+            ],
+            "recent_ppg": 45.0,
+            "recent_points_allowed_pg": 6.0,
+            "recent_point_diff_pg": 39.0,
+        },
+        {"team": "Miami (FL)"},
+        side="away",
+    )
+    assert row["trend_direction"] == "Early-season sample"
+    assert row["trend_detail"] == "1 completed game"
+
+
+def test_step3_two_games_remain_early_season_sample():
+    row = step3.build_team_form_contract(
+        {
+            "team": "Wake Forest",
+            "completed_games": [
+                {
+                    "date": "2026-09-03",
+                    "opponent": "Akron",
+                    "result": "W",
+                    "score": "38-16",
+                },
+                {
+                    "date": "2026-09-12",
+                    "opponent": "Purdue",
+                    "result": "W",
+                    "score": "27-24",
+                },
+            ],
+            "recent_ppg": 32.5,
+            "recent_points_allowed_pg": 20.0,
+            "recent_point_diff_pg": 12.5,
+        },
+        {"team": "Wake Forest"},
+        side="home",
+    )
+    assert row["trend_direction"] == "Early-season sample"
+    assert row["trend_detail"] == "2 completed games"
+
+
+def test_step3_render_never_uses_insufficient_sample_wording():
+    away = {
+        "team": "Miami (FL)",
+        "completed_games": [
+            {"date": "2026-09-05", "opponent": "Stanford", "result": "W", "score": "45-6"}
+        ],
+        "recent_ppg": 45.0,
+        "recent_points_allowed_pg": 6.0,
+        "recent_point_diff_pg": 39.0,
+    }
+    home = {
+        "team": "Wake Forest",
+        "completed_games": [
+            {"date": "2026-09-03", "opponent": "Akron", "result": "W", "score": "38-16"}
+        ],
+        "recent_ppg": 38.0,
+        "recent_points_allowed_pg": 16.0,
+        "recent_point_diff_pg": 22.0,
+    }
+    html = step3.render_step3_html("CHECK", _identity(), away, home)
+    assert "Early-season sample" in html
+    assert "1 completed game" in html
+    assert "Insufficient sample" not in html
