@@ -325,11 +325,62 @@ def _enrich_side(
         out["record"] = record
         out["record_text"] = record
 
-    # Do not block the live page on another provider round-trip. Step 1 uses
-    # the already-reconciled head-coach field and fails closed if it is absent.
-    coach_name = _clean(out.get("head_coach"))
+    # Production proved the exact summary/team-detail fast path can return a
+    # verified identity with profile gaps. Fall back only by exact ESPN team ID
+    # and season; never by team-name guessing.
+    if team_id.isdigit() and (
+        not _usable(out.get("mascot"))
+        or not _usable(out.get("record"))
+        or _clean(out.get("classification")).upper() not in {"FBS", "FCS"}
+    ):
+        try:
+            schedule_payload, schedule_attempts = history._fetch_team_schedule(
+                team_id,
+                int(season),
+            )
+        except Exception as exc:
+            schedule_payload = {}
+            schedule_attempts = [{
+                "provider": f"ESPN exact CFB team {team_id} schedule Step 1 fallback",
+                "transport": "existing history helper",
+                "http": None,
+                "bytes": 0,
+                "error": f"{type(exc).__name__}: {exc}"[:260],
+            }]
+
+        if isinstance(schedule_payload, Mapping) and schedule_payload:
+            schedule_team = _schedule_team_object(schedule_payload, team_id)
+            team_obj = _merge_team_meta(detail_team, summary_team, schedule_team)
+            _fill(out, "mascot", _mascot(competitor, team_obj))
+            _fill(out, "classification", _classification(out, team_obj))
+            _fill(out, "division_context", out.get("classification"))
+            if not _usable(out.get("record")):
+                schedule_record = _record_from_schedule(
+                    schedule_payload,
+                    team_id,
+                    display_game,
+                )
+                if _usable(schedule_record):
+                    out["record"] = schedule_record
+                    out["record_text"] = schedule_record
+
     coach_attempts: list[dict[str, Any]] = []
-    _fill(out, "head_coach", coach_name)
+    if not _usable(out.get("head_coach")) and team_id.isdigit():
+        try:
+            coach, coach_attempts = deep._head_coach(team_id, int(season))
+        except Exception as exc:
+            coach = {}
+            coach_attempts = [{
+                "provider": f"ESPN Core exact CFB team {team_id} head coach Step 1 fallback",
+                "transport": "existing deep-data helper",
+                "http": None,
+                "bytes": 0,
+                "error": f"{type(exc).__name__}: {exc}"[:260],
+            }]
+        if isinstance(coach, Mapping):
+            _fill(out, "head_coach", coach.get("name"))
+
+    _fill(out, "head_coach", out.get("head_coach"))
 
     diag = {
         "side": side,
