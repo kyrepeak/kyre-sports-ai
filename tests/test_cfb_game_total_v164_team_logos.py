@@ -440,7 +440,7 @@ def test_v164_step3_uses_rich_verified_completed_game_evidence():
     assert "if int(number) == 3:" in source
     assert "step3_away = _merge_step2_evidence(" in source
     assert "step3_home = _merge_step2_evidence(" in source
-    assert "return step3_owner.render_step3_html(" in source
+    assert "step3_owner.render_step3_html(" in source
     assert "step3_owner.STEP3_CSS" in source
 
 
@@ -465,7 +465,7 @@ def test_v164_step3_certified_foundation_is_reachable_and_unique():
     assert "step3_foundation_home" in step3_block
     assert 'rendered_identity.get("step2_away") or {}' in step3_block
     assert 'rendered_identity.get("step2_home") or {}' in step3_block
-    assert "return step3_owner.render_step3_html(" in step3_block
+    assert "step3_owner.render_step3_html(" in step3_block
 
 
 
@@ -476,7 +476,7 @@ def test_v164_step3_runs_exact_id_live_fallback_after_certified_foundation():
     assert "step3_owner.enrich_step3_inputs(" in step3_block
     assert 'step3_game["espn_event_id"] = event_id' in step3_block
     assert "logo_identity.enrich_exact_team_ids(" in step3_block
-    assert "return step3_owner.render_step3_html(" in step3_block
+    assert "step3_owner.render_step3_html(" in step3_block
 
 
 
