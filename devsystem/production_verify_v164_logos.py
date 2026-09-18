@@ -26,6 +26,7 @@ AWAY_TEAM_ID = "324"
 HOME_TEAM_ID = "48"
 REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V164_PRODUCTION_ACTIVE"
 REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"
+REQUIRED_STEP1_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -118,6 +119,7 @@ def _wait_for_v164_patch_deployment(
             if (
                 REQUIRED_HEARTBEAT in body
                 and REQUIRED_PATCH_MARKER in body
+                and REQUIRED_STEP1_MARKER in body
             ):
                 return frame, body, scans
         except Exception as exc:
@@ -129,10 +131,74 @@ def _wait_for_v164_patch_deployment(
     raise ProductionVerificationV164Failure(
         "V164 logo proof timed out waiting for the current Streamlit patch: "
         f"required_marker={REQUIRED_PATCH_MARKER!r} "
+        f"required_step1_marker={REQUIRED_STEP1_MARKER!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
     )
 
+
+
+def _assert_step1_identity(frame) -> dict:
+    step = frame.locator('details[data-testid="gt157-step-1"]')
+    if step.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 1 expected one connected accordion; found {step.count()}"
+        )
+    if step.get_attribute("open") is None:
+        raise ProductionVerificationV164Failure("Step 1 must render expanded by default")
+
+    away = frame.locator('[data-testid="gt165-step1-away"]')
+    home = frame.locator('[data-testid="gt165-step1-home"]')
+    if away.count() != 1 or home.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 1 expected two team identity cards; away={away.count()} home={home.count()}"
+        )
+
+    text = step.inner_text()
+    required_text = (
+        "Team Identity",
+        AWAY_TEAM,
+        HOME_TEAM,
+        "Mascot",
+        "Conference",
+        "FBS/FCS",
+        "Record",
+        "Rank",
+        "Coach",
+        "Home/Away",
+        "Season",
+        "Identity Verified",
+    )
+    missing = [label for label in required_text if label not in text]
+    if missing:
+        raise ProductionVerificationV164Failure(
+            f"Step 1 missing required visible labels/content: {missing}"
+        )
+    if "Unavailable" in text or "unavailable" in text or "Needs data:" in text:
+        raise ProductionVerificationV164Failure(
+            f"Step 1 is not complete for the certified matchup: {text[:1200]}"
+        )
+
+    state = step.locator(".gt159-state").first.inner_text().strip()
+    if state != "READY":
+        raise ProductionVerificationV164Failure(
+            f"Step 1 expected READY but rendered {state!r}"
+        )
+
+    verified = step.locator(".gt165-verify b")
+    verified_text = [verified.nth(i).inner_text().strip() for i in range(verified.count())]
+    if verified.count() != 2 or any("IDENTITY VERIFIED" not in value for value in verified_text):
+        raise ProductionVerificationV164Failure(
+            f"Step 1 identity verification badges are incomplete: {verified_text}"
+        )
+
+    logos = _assert_exact_pair(frame, "img.gt165-idlogo", "Step 1 identity")
+    return {
+        "status": state,
+        "text": text,
+        "verification_badges": verified_text,
+        "logos": logos,
+    }
 
 def verify_live_v164(
     streamlit_url: str,
@@ -170,6 +236,10 @@ def verify_live_v164(
                 raise ProductionVerificationV164Failure(
                     f"missing current V164 logo patch marker: {REQUIRED_PATCH_MARKER}"
                 )
+            if REQUIRED_STEP1_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 1 production marker: {REQUIRED_STEP1_MARKER}"
+                )
             if AWAY_TEAM not in body or HOME_TEAM not in body:
                 raise ProductionVerificationV164Failure(
                     f"certified matchup not visible: {AWAY_TEAM} @ {HOME_TEAM}"
@@ -187,6 +257,7 @@ def verify_live_v164(
                 "img.gt160-evidence-logo",
                 "team evidence",
             )
+            step1 = _assert_step1_identity(frame)
 
             screenshot = artifacts / "production_cfb_game_total_v164_logos_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
@@ -200,6 +271,7 @@ def verify_live_v164(
                 "home_team_id": HOME_TEAM_ID,
                 "header_logos": header,
                 "evidence_logos": evidence,
+                "step1_team_identity": step1,
                 "frame_scan_count": len(scans),
                 "screenshot": str(screenshot),
             }
