@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -41,26 +42,47 @@ def _image_state(locator) -> dict:
     )
 
 
-def _assert_exact_pair(frame, selector: str, label: str) -> list[dict]:
-    images = frame.locator(selector)
-    if images.count() != 2:
-        raise ProductionVerificationV164Failure(
-            f"{label} expected two exact logo images; found {images.count()}"
-        )
-    states = [_image_state(images.nth(i)) for i in range(images.count())]
-    urls = [str(row["src"]) for row in states]
-    for team_id in (AWAY_TEAM_ID, HOME_TEAM_ID):
-        suffix = f"/{team_id}.png"
-        if not any(url.endswith(suffix) for url in urls):
-            raise ProductionVerificationV164Failure(
-                f"{label} missing ESPN team logo {suffix}: {urls}"
-            )
-    for row in states:
-        if not row["complete"] or row["naturalWidth"] <= 0 or row["naturalHeight"] <= 0:
-            raise ProductionVerificationV164Failure(
-                f"{label} image failed to load: {row}"
-            )
-    return states
+def _wait_for_exact_pair(
+    page,
+    selector: str,
+    label: str,
+    *,
+    timeout_seconds: float = 45.0,
+) -> list[dict]:
+    """Wait through Streamlit's post-query rerender until exact logos are live."""
+    deadline = time.monotonic() + timeout_seconds
+    last_count = 0
+    last_states: list[dict] = []
+    last_scans: list[dict] = []
+    while time.monotonic() < deadline:
+        frame, _body, scans = v163._scan_v163_frame(page)
+        last_scans = scans
+        if frame is not None:
+            images = frame.locator(selector)
+            last_count = images.count()
+            if last_count == 2:
+                states = [_image_state(images.nth(i)) for i in range(last_count)]
+                last_states = states
+                urls = [str(row["src"]) for row in states]
+                exact_urls = all(
+                    any(url.endswith(f"/{team_id}.png") for url in urls)
+                    for team_id in (AWAY_TEAM_ID, HOME_TEAM_ID)
+                )
+                loaded = all(
+                    row["complete"]
+                    and row["naturalWidth"] > 0
+                    and row["naturalHeight"] > 0
+                    for row in states
+                )
+                if exact_urls and loaded:
+                    return states
+        page.wait_for_timeout(500)
+
+    raise ProductionVerificationV164Failure(
+        f"{label} exact logos did not become ready after Streamlit rerender: "
+        f"count={last_count} states={last_states} scans="
+        + json.dumps(last_scans, ensure_ascii=False)
+    )
 
 
 def verify_live_v164(
@@ -109,9 +131,13 @@ def verify_live_v164(
                     f"actual={event_id!r}"
                 )
 
-            header = _assert_exact_pair(frame, "img.gt159-logo", "matchup header")
-            evidence = _assert_exact_pair(
-                frame,
+            header = _wait_for_exact_pair(
+                page,
+                "img.gt159-logo",
+                "matchup header",
+            )
+            evidence = _wait_for_exact_pair(
+                page,
                 "img.gt160-evidence-logo",
                 "team evidence",
             )
