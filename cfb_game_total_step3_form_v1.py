@@ -15,6 +15,8 @@ import re
 from statistics import fmean
 from typing import Any, Mapping
 
+import cfb_over_under_history_engine_v1 as history_owner
+
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
@@ -146,6 +148,97 @@ def _normalize_game(row: Mapping[str, Any]) -> dict[str, Any]:
         "opponent_def_rank": opp_def_rank,
         "location": _clean(row.get("location")),
     }
+
+
+def _exact_recent_games_from_espn(
+    team_id: str,
+    season: int,
+    excluded_event_id: str = "",
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    team_id = _clean(team_id)
+    if not team_id.isdigit():
+        return [], []
+    payload, attempts = history_owner._fetch_team_schedule(team_id, int(season))
+    rows: list[dict[str, Any]] = []
+    for event in history_owner._iter_events(payload if isinstance(payload, Mapping) else {}):
+        row = history_owner._event_row(event, team_id)
+        if not row:
+            continue
+        if excluded_event_id and _clean(row.get("event_id")) == _clean(excluded_event_id):
+            continue
+        rows.append(
+            {
+                "date": _clean(row.get("date")),
+                "opponent": _clean(row.get("opponent_name")) or "Opponent unavailable",
+                "result": "W" if bool(row.get("won")) else "L",
+                "points_for": row.get("points_for"),
+                "points_against": row.get("points_against"),
+                "location": _clean(row.get("home_away")),
+            }
+        )
+    rows.sort(key=lambda row: _clean(row.get("date")))
+    return rows[-5:], list(attempts or [])
+
+
+def enrich_step3_inputs(
+    identity: Mapping[str, Any] | None,
+    away: Mapping[str, Any] | None,
+    home: Mapping[str, Any] | None,
+    display_game: Mapping[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Fill missing recent-game samples from exact ESPN team IDs only."""
+    identity = identity or {}
+    display_game = display_game or {}
+    output: dict[str, dict[str, Any]] = {
+        "away": dict(away or {}),
+        "home": dict(home or {}),
+    }
+    diag: dict[str, Any] = {"away": {}, "home": {}}
+
+    raw_date = _clean(display_game.get("game_date") or display_game.get("date"))
+    try:
+        season = int(raw_date[:4]) if len(raw_date) >= 4 else 0
+    except Exception:
+        season = 0
+    excluded_event_id = _clean(
+        display_game.get("espn_event_id")
+        or display_game.get("event_id")
+        or display_game.get("game_id")
+    )
+
+    for side in ("away", "home"):
+        row = output[side]
+        existing = _recent_games(row)
+        side_identity = identity.get(side) if isinstance(identity.get(side), Mapping) else {}
+        team_id = _clean(
+            side_identity.get("team_id")
+            or display_game.get(f"{side}_espn_team_id")
+        )
+        attempts: list[dict[str, Any]] = []
+        exact_rows: list[dict[str, Any]] = []
+        if not existing and team_id.isdigit() and season >= 1900:
+            try:
+                exact_rows, attempts = _exact_recent_games_from_espn(
+                    team_id,
+                    season,
+                    excluded_event_id,
+                )
+            except Exception as exc:
+                attempts = [{
+                    "provider": f"ESPN exact CFB team {team_id} Step 3 recent form",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }]
+            if exact_rows:
+                row["completed_games"] = exact_rows
+        diag[side] = {
+            "team_id": team_id,
+            "existing_completed_games": len(existing),
+            "exact_recent_games": len(exact_rows),
+            "exact_fallback_used": bool(exact_rows),
+            "attempts": attempts,
+        }
+
+    return output["away"], output["home"], diag
 
 
 def _recent_games(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -571,5 +664,6 @@ __all__ = [
     "STEP3_REQUIRED_FIELDS",
     "build_step3_contract",
     "build_team_form_contract",
+    "enrich_step3_inputs",
     "render_step3_html",
 ]
