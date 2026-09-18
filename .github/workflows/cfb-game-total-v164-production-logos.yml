@@ -34,7 +34,8 @@ jobs:
 
       - name: Install production verification dependencies
         run: |
-          python -m pip install --disable-pip-version-check -q requests pytest playwright
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest playwright
           python -m playwright install --with-deps chromium
 
       - name: Compile V164 production proof
@@ -46,11 +47,14 @@ jobs:
 
       - name: Self-test V164 production logo contract
         run: |
-          PYTHONPATH=. python -m pytest -q             tests/test_cfb_game_total_v164_team_logos.py             tests/test_devsystem_production_verify_v164_logos.py
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_cfb_game_total_v164_team_logos.py \
+            tests/test_devsystem_production_verify_v164_logos.py
 
       - name: Verify live V164 exact team logos
         run: |
-          python devsystem/production_verify_v164_logos.py             --artifact-dir artifacts/production-v164-logos
+          python -m devsystem.production_verify_v164_logos \
+            --artifact-dir artifacts/production-v164-logos
 
       - name: Upload V164 production logo evidence
         if: always()
