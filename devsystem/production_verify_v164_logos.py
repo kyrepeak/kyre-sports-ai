@@ -319,6 +319,17 @@ def _assert_step2_performance_profile(frame) -> dict:
             "Step 2 READY must not render a Data still limited warning"
         )
 
+    record_values = {
+        "away": str(away.locator(".gt167-record b").inner_text() or "").strip(),
+        "home": str(home.locator(".gt167-record b").inner_text() or "").strip(),
+    }
+    expected_records = {"away": "1-1", "home": "1-1"}
+    if record_values != expected_records:
+        raise ProductionVerificationV164Failure(
+            "Step 2 certified pre-kickoff records are incorrect: "
+            f"expected={expected_records} actual={record_values}"
+        )
+
     logos = _assert_exact_pair(frame, "img.gt167-logo", "Step 2 performance profile")
     return {
         "status": state,
