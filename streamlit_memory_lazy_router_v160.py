@@ -1,6 +1,6 @@
 """KYRE Streamlit Router V160 — CFB Game Total V164 universal exact team logos.
 
-Additive over permanently frozen Router V158. V160 advances only exact College
+Additive over permanently frozen Router V159. V160 advances only exact College
 Football -> Game Total to fresh Page V14, preserving the V162 cache-boundary
 repair and every non-target route through V158.
 
@@ -99,7 +99,7 @@ def _render_cfb_game_total_v160(market: str) -> None:
         _clear_game_total_route_query()
         st.rerun()
     if sport != CFB_SPORT_LABEL or market != GAME_TOTAL_MARKET:
-        return prior._render_cfb_game_total_v158(market)
+        return prior._render_cfb_game_total_v159(market)
     return _render_exact_game_total_surface()
 
 
