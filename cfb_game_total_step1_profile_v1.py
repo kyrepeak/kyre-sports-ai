@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+import requests
+
 import cfb_over_under_data_recovery_v1 as recovery
 import cfb_over_under_deep_data_reconciliation_v1 as deep
 import cfb_over_under_environment_engine_v1 as environment
@@ -22,6 +24,7 @@ ESPN_TEAM_DETAIL_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/college-football/"
     "teams/{team_id}"
 )
+FAST_PROFILE_TIMEOUT_SECONDS = 4.0
 
 _UNAVAILABLE = {
     "",
@@ -122,25 +125,65 @@ def _classification(profile: Mapping[str, Any], team_obj: Mapping[str, Any]) -> 
 
 
 
+def _fast_get_json(
+    url: str,
+    params: Mapping[str, Any] | None,
+    provider: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    try:
+        response = requests.get(
+            url,
+            params=dict(params or {}),
+            timeout=FAST_PROFILE_TIMEOUT_SECONDS,
+            headers={"User-Agent": "KyreSportsAI/Step1", "Accept": "application/json"},
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("provider returned non-object JSON")
+        return payload, [{
+            "provider": provider,
+            "transport": "requests",
+            "http": int(response.status_code),
+            "bytes": len(response.content or b""),
+            "error": "",
+        }]
+    except Exception as exc:
+        return {}, [{
+            "provider": provider,
+            "transport": "requests",
+            "http": None,
+            "bytes": 0,
+            "error": f"{type(exc).__name__}: {exc}"[:260],
+        }]
+
+
+def _exact_event_summary(event_id: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    event_id = _clean(event_id)
+    if not event_id:
+        return {}, []
+    return _fast_get_json(
+        environment.ESPN_SUMMARY_URL,
+        {"event": event_id},
+        f"ESPN exact event {event_id} Step 1 summary",
+    )
+
+
 def _exact_team_detail(team_id: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     team_id = _clean(team_id)
     if not team_id.isdigit():
         return {}, []
-    try:
-        payload, attempts = schedule.frozen.frozen._fetch_json_with_fallback(
-            ESPN_TEAM_DETAIL_URL.format(team_id=team_id),
-            {},
-            f"ESPN exact CFB team {team_id} Step 1 profile",
-        )
-    except Exception:
-        return {}, []
-
+    payload, attempts = _fast_get_json(
+        ESPN_TEAM_DETAIL_URL.format(team_id=team_id),
+        {},
+        f"ESPN exact CFB team {team_id} Step 1 profile",
+    )
     candidate = payload.get("team") if isinstance(payload, Mapping) else {}
     if isinstance(candidate, Mapping) and _clean(candidate.get("id")) == team_id:
-        return dict(candidate), list(attempts or [])
+        return dict(candidate), attempts
     if isinstance(payload, Mapping) and _clean(payload.get("id")) == team_id:
-        return dict(payload), list(attempts or [])
-    return {}, list(attempts or [])
+        return dict(payload), attempts
+    return {}, attempts
 
 def _schedule_team_object(payload: Mapping[str, Any], team_id: str) -> dict[str, Any]:
     team_id = _clean(team_id)
@@ -254,32 +297,22 @@ def _enrich_side(
         or profile.get("espn_team_id")
         or display_game.get(f"{side}_espn_team_id")
     )
-    directory_team = _exact_directory_team(team_id, directory)
+    directory_team: dict[str, Any] = {}
     detail_team, detail_attempts = _exact_team_detail(team_id)
     schedule_payload: dict[str, Any] = {}
     schedule_attempts: list[dict[str, Any]] = []
-    if team_id.isdigit():
-        try:
-            schedule_payload, schedule_attempts = history._fetch_team_schedule(
-                team_id,
-                season,
-            )
-        except Exception:
-            schedule_payload, schedule_attempts = {}, []
-    schedule_team = _schedule_team_object(schedule_payload, team_id)
+    schedule_team: dict[str, Any] = {}
     competitor = _summary_competitor(summary, side, team_id)
     summary_team = competitor.get("team") if isinstance(competitor, Mapping) else {}
     if not isinstance(summary_team, Mapping):
         summary_team = {}
-    team_obj = _merge_team_meta(directory_team, schedule_team, detail_team, summary_team)
+    team_obj = _merge_team_meta(detail_team, summary_team)
 
     _fill(out, "mascot", _mascot(competitor, team_obj))
     _fill(out, "classification", _classification(out, team_obj))
     _fill(out, "division_context", out.get("classification"))
 
     record = _record_from_summary(competitor)
-    if not _usable(record):
-        record = _record_from_schedule(schedule_payload, team_id, display_game)
     if not _usable(record):
         for candidate in (
             out.get("record_text"),
@@ -292,12 +325,10 @@ def _enrich_side(
         out["record"] = record
         out["record_text"] = record
 
+    # Do not block the live page on another provider round-trip. Step 1 uses
+    # the already-reconciled head-coach field and fails closed if it is absent.
     coach_name = _clean(out.get("head_coach"))
     coach_attempts: list[dict[str, Any]] = []
-    if not _usable(coach_name) and team_id.isdigit():
-        coach, coach_attempts = deep._head_coach(team_id, season)
-        if coach.get("ready"):
-            coach_name = _clean(coach.get("name"))
     _fill(out, "head_coach", coach_name)
 
     diag = {
@@ -338,18 +369,11 @@ def enrich_step1_inputs(
     home = home or {}
     event_id = _event_id(display_game)
 
-    summary: dict[str, Any] = {}
-    summary_attempts: list[dict[str, Any]] = []
-    if event_id:
-        try:
-            summary, summary_attempts = environment._fetch_summary(event_id)
-        except Exception:
-            summary, summary_attempts = {}, []
-
-    try:
-        directory = recovery._fetch_espn_teams()
-    except Exception:
-        directory = {}
+    summary, summary_attempts = _exact_event_summary(event_id)
+    # Broad team-directory and schedule fallbacks can each take tens of
+    # seconds per transport. Step 1 stays exact and fast: event summary +
+    # exact team detail only, otherwise fail closed to CHECK.
+    directory: dict[str, Any] = {}
 
     season = _season(display_game)
     away_out, away_diag = _enrich_side(
@@ -388,5 +412,6 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "ESPN_TEAM_DETAIL_URL",
+    "FAST_PROFILE_TIMEOUT_SECONDS",
     "enrich_step1_inputs",
 ]
