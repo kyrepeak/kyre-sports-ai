@@ -182,3 +182,38 @@ def test_app_activates_v161_and_keeps_v160_source_compatibility():
     source = APP.read_text()
     assert "from streamlit_memory_lazy_router_v161 import record_bootstrap_import_ms, render_app" in source
     assert "from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app" in source
+
+
+def test_v165_production_render_calls_verified_matchup_engine_without_model_mutation(monkeypatch):
+    calls = []
+
+    def fake_build(game, away, home):
+        calls.append({
+            "game": dict(game or {}),
+            "away": dict(away or {}),
+            "home": dict(home or {}),
+        })
+        return _fake_engine()
+
+    monkeypatch.setattr(
+        step4.matchup_engine,
+        "build_matchup_engine",
+        fake_build,
+    )
+
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+    )
+
+    assert len(calls) == 1
+    assert calls[0]["away"]["team"] == "Miami (FL)"
+    assert calls[0]["home"]["team"] == "Wake Forest"
+    assert "Miami (FL) Offense" in html
+    assert "Wake Forest Offense" in html
+    assert "Projection mutation: OFF" in html
+    assert "sportsbook influence: 0.0%" in html
+    assert step4.MAY_MODIFY_PROJECTION is False
+    assert step4.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
