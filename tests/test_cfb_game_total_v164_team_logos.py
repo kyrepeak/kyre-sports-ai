@@ -180,3 +180,64 @@ def test_v164_display_reconcile_enriches_exact_team_ids_before_frozen_logo_resol
     visuals = frozen_logo.resolve_visuals(display_game)
     assert visuals["away"]["logo"].endswith("/324.png")
     assert visuals["home"]["logo"].endswith("/48.png")
+
+
+def test_v164_visible_header_identity_receives_exact_logo_fields(monkeypatch):
+    monkeypatch.setattr(
+        page_v164.logo_identity,
+        "_game_date",
+        lambda _game: "2026-09-19",
+    )
+    monkeypatch.setattr(
+        page_v164,
+        "_selector_payload_for_day",
+        lambda _day: {"games": []},
+    )
+    monkeypatch.setattr(
+        page_v164.logo_identity,
+        "enrich_exact_team_ids",
+        lambda game, _payload: {
+            **dict(game),
+            "away_espn_team_id": "324",
+            "home_espn_team_id": "48",
+        },
+    )
+    monkeypatch.setattr(
+        page_v164,
+        "_FROZEN_RESOLVE_VISUALS",
+        lambda _game: {
+            "away": {
+                "team_id": "324",
+                "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/324.png",
+                "exact_identity": True,
+            },
+            "home": {
+                "team_id": "48",
+                "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/48.png",
+                "exact_identity": True,
+            },
+        },
+    )
+
+    identity = {
+        "away": {"team": "Coastal Carolina", "logo": "", "exact_identity": False},
+        "home": {"team": "Delaware", "logo": "", "exact_identity": False},
+    }
+    enriched = page_v164._identity_with_v164_logos(
+        identity,
+        {"espn_event_id": "401869940", "game_date": "2026-09-19"},
+    )
+    assert enriched["away"]["team_id"] == "324"
+    assert enriched["home"]["team_id"] == "48"
+    assert enriched["away"]["logo"].endswith("/324.png")
+    assert enriched["home"]["logo"].endswith("/48.png")
+    assert enriched["away"]["exact_identity"] is True
+    assert enriched["home"]["exact_identity"] is True
+
+
+def test_v164_render_patches_the_actual_v10_visible_matchup_owner():
+    source = _read(PAGE)
+    assert "target_owner = prior_v163.v161.prior_v160" in source
+    assert "target_owner._target_matchup_header_html = target_matchup_wrapper" in source
+    assert "identity.clear()" in source
+    assert "identity.update(enriched_identity)" in source
