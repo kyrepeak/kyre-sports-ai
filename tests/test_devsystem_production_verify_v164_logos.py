@@ -140,3 +140,10 @@ def test_v164_step3_production_proof_locks_live_completeness_contract():
     assert 'Step 3 READY contains blank Opponent Quality values' in source
     assert 'data-testid="gt168-step3-status-reason"' in source
     assert 'Step 3 READY must not render a CHECK/DATA LIMITED reason' in source
+
+
+
+def test_v164_step3_failure_prints_live_hydration_diagnostics():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'get_attribute("data-step3-diag")' in source
+    assert "diag={diag_attr[:9000]!r}" in source
