@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import cfb_game_total_step2_profile_v1 as step2
+import cfb_game_total_step2_drive_v1 as step2_drive
 
 
 def _identity(away_team="Miami (FL)", home_team="Wake Forest"):
@@ -262,3 +263,88 @@ def test_step2_uses_verified_ncaa_scoring_rows_when_completed_sample_is_empty():
     assert row["sample_games"] == 3
     assert row["required_complete"] is True
     assert row["state"] == "CHECK"
+
+
+def test_step2_drive_table_parser_reads_offense_and_defense():
+    off_html = """
+    <div>1. Coastal Carolina : 2.58 pts/drive (offense)</div>
+    <div>2. Delaware : 3.05 pts/drive (offense)</div>
+    """
+    def_html = """
+    <div>1. Coastal Carolina : 1.73 pts/drive (defense)</div>
+    <div>2. Delaware : 1.75 pts/drive (defense)</div>
+    """
+    offense = step2_drive._parse_ppd_table(off_html, "offense")
+    defense = step2_drive._parse_ppd_table(def_html, "defense")
+    assert offense["coastalcarolina"] == 2.58
+    assert offense["delaware"] == 3.05
+    assert defense["coastalcarolina"] == 1.73
+    assert defense["delaware"] == 1.75
+
+
+def test_step2_drive_enrichment_fills_only_missing_metrics(monkeypatch):
+    tables = {
+        "offense": {"coastalcarolina": 2.58, "delaware": 3.05},
+        "defense": {"coastalcarolina": 1.73, "delaware": 1.75},
+    }
+    monkeypatch.setattr(
+        step2_drive,
+        "_fetch_ppd_table",
+        lambda season, stat: tables[stat],
+    )
+    away, home, diag = step2_drive.enrich_step2_drive_metrics(
+        {"team": "Coastal Carolina"},
+        {"team": "Delaware"},
+        2026,
+    )
+    assert away["points_per_drive"] == 2.58
+    assert away["points_per_drive_allowed"] == 1.73
+    assert home["points_per_drive"] == 3.05
+    assert home["points_per_drive_allowed"] == 1.75
+    assert away["step2_drive_source"] == "Punt & Rally"
+    assert home["step2_drive_source"] == "Punt & Rally"
+    assert diag["status"] == "READY"
+
+
+def test_step2_drive_enrichment_preserves_existing_verified_metrics(monkeypatch):
+    tables = {
+        "offense": {"coastalcarolina": 2.58, "delaware": 3.05},
+        "defense": {"coastalcarolina": 1.73, "delaware": 1.75},
+    }
+    monkeypatch.setattr(
+        step2_drive,
+        "_fetch_ppd_table",
+        lambda season, stat: tables[stat],
+    )
+    away, home, diag = step2_drive.enrich_step2_drive_metrics(
+        {
+            "team": "Coastal Carolina",
+            "points_per_drive": 9.99,
+            "points_per_drive_allowed": 8.88,
+        },
+        {"team": "Delaware"},
+        2026,
+    )
+    assert away["points_per_drive"] == 9.99
+    assert away["points_per_drive_allowed"] == 8.88
+    assert home["points_per_drive"] == 3.05
+    assert home["points_per_drive_allowed"] == 1.75
+    assert diag["status"] == "READY"
+
+
+def test_step2_drive_enrichment_fails_closed_when_source_is_unavailable(monkeypatch):
+    def fail_fetch(season, stat):
+        raise RuntimeError("source unavailable")
+
+    monkeypatch.setattr(step2_drive, "_fetch_ppd_table", fail_fetch)
+    away_in = {"team": "Coastal Carolina"}
+    home_in = {"team": "Delaware"}
+    away, home, diag = step2_drive.enrich_step2_drive_metrics(
+        away_in,
+        home_in,
+        2026,
+    )
+    assert away == away_in
+    assert home == home_in
+    assert diag["status"] == "CHECK"
+    assert "source unavailable" in diag["error"]

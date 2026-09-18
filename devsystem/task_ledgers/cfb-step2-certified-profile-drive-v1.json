@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-certified-profile-drive-v1",
+  "status": "DONE",
+  "scope": "Step 2 only: make the Team Performance Profile use certified current-season foundation evidence and real public points-per-drive offense/defense data, then require READY in production certification.",
+  "trigger": "Live production Step 2 remained CHECK with missing Recent Form, Home/Away Split, Points/Drive and Points/Drive Allowed, and stale scoring values could outrank the certified current-season sample.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step3_frozen_and_untouched": true,
+    "step4_plus_untouched": true,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "external_drive_source_is_display_evidence_only": true,
+    "fail_closed_on_drive_source_failure": true
+  },
+  "proof_requirements": {
+    "certified_foundation_wins_over_stale_profile_values": true,
+    "recent_form_populated": true,
+    "home_away_split_populated": true,
+    "points_per_drive_populated": true,
+    "points_per_drive_allowed_populated": true,
+    "step2_state_ready_required": true,
+    "blank_metric_values_forbidden_when_ready": true,
+    "branch_ci_required": true,
+    "production_verification_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

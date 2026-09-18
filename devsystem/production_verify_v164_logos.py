@@ -267,12 +267,12 @@ def _assert_step2_performance_profile(frame) -> dict:
         )
 
     state = str(step.get_attribute("data-step2-state") or "").strip().upper()
-    if state not in {"READY", "CHECK"}:
-        raise ProductionVerificationV164Failure(
-            f"Step 2 core performance profile is not production-usable: state={state!r}"
-        )
-
     text = step.inner_text()
+    if state != "READY":
+        raise ProductionVerificationV164Failure(
+            "Step 2 certified matchup must be fully READY after certified profile "
+            f"and drive hydration: state={state!r} live_text={text[:2400]!r}"
+        )
     required_text = (
         "Team Performance Profile",
         AWAY_TEAM,
@@ -298,6 +298,25 @@ def _assert_step2_performance_profile(frame) -> dict:
     if missing:
         raise ProductionVerificationV164Failure(
             f"Step 2 missing required universal performance-profile content: {missing}"
+        )
+
+    metric_cards = step.locator(".gt167-metric")
+    metric_values = [
+        str(metric_cards.nth(i).locator("b").inner_text() or "").strip()
+        for i in range(metric_cards.count())
+    ]
+    blank_metric_values = [
+        value for value in metric_values
+        if value.strip() in {"", "—", "-"}
+    ]
+    if blank_metric_values:
+        raise ProductionVerificationV164Failure(
+            "Step 2 READY contains blank universal metric values: "
+            f"{blank_metric_values}"
+        )
+    if "DATA STILL LIMITED:" in live_text_upper:
+        raise ProductionVerificationV164Failure(
+            "Step 2 READY must not render a Data still limited warning"
         )
 
     logos = _assert_exact_pair(frame, "img.gt167-logo", "Step 2 performance profile")

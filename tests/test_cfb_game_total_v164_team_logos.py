@@ -511,3 +511,16 @@ def test_v164_step3_embeds_live_hydration_diagnostics_for_production_proof():
     assert '"scoreboard_quality_universe"' in step3_block
     assert '"away_espn_team_id"' in step3_block
     assert 'data-step3-diag=' in step3_block
+
+
+def test_v164_step2_uses_certified_foundation_and_public_drive_adapter():
+    source = PAGE.read_text(encoding="utf-8")
+    assert "import cfb_game_total_step2_drive_v1 as step2_drive_owner" in source
+    start = source.index("if int(number) == 2:")
+    end = source.index("if int(number) == 3:", start)
+    block = source[start:end]
+    assert "_step3_certified_foundation(" in block
+    assert "step2_drive_owner.enrich_step2_drive_metrics(" in block
+    assert block.index("_step3_certified_foundation(") < block.index(
+        "step2_drive_owner.enrich_step2_drive_metrics("
+    )
