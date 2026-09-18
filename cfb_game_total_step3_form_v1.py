@@ -1336,7 +1336,97 @@ def enrich_step3_inputs(
     event_id = _clean(game.get("espn_event_id"))
     target_day = _clean(game.get("game_date"))[:10]
 
-    # Phase 1 — exact completed-game truth for each selected team.
+    # Phase 0 — production-safe NCAA truth. Combine FBS + FCS season ledgers
+    # before any ESPN request. This is the preferred live path because ESPN's
+    # site API returns HTTP 403 from the deployed Streamlit environment.
+    ncaa_universe: dict[str, Any] = {}
+    ncaa_diag: dict[str, Any] = {"attempts": []}
+    if season and target_day:
+        try:
+            ncaa_universe, ncaa_diag = _ncaa_combined_step3_universe(
+                target_day,
+                int(season),
+            )
+        except Exception as exc:
+            ncaa_diag = {
+                "attempts": [{
+                    "provider": "NCAA combined FBS+FCS Step 3 universe",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }]
+            }
+
+    ncaa_sides = 0
+    if ncaa_universe:
+        for side in ("away", "home"):
+            current = outputs[side]
+            identity_side = (
+                identity.get(side) or {}
+                if isinstance(identity, Mapping)
+                else {}
+            )
+            team_name = _clean(
+                current.get("team")
+                or identity_side.get("team")
+                or identity_side.get("team_name")
+                or game.get(f"{side}_team")
+            )
+            team_slug = _clean(
+                current.get("team_slug")
+                or identity_side.get("team_slug")
+                or game.get(f"{side}_team_slug")
+            )
+            ncaa_evidence = _ncaa_step3_evidence(
+                team_name,
+                team_slug,
+                ncaa_universe,
+            )
+            team_id = _exact_team_id(
+                identity_side,
+                current,
+                game,
+                side,
+            )
+            if ncaa_evidence:
+                outputs[side] = {
+                    **current,
+                    **ncaa_evidence,
+                }
+                ncaa_sides += 1
+                diag[side] = {
+                    "refresh_used": True,
+                    "fallback_used": False,
+                    "source": "ncaa_combined_fbs_fcs",
+                    "team_id": team_id,
+                    "rows": len(
+                        ncaa_evidence.get("completed_games") or []
+                    ),
+                    "ncaa_combined": {
+                        key: value
+                        for key, value in ncaa_diag.items()
+                        if key != "attempts"
+                    },
+                    "attempts": list(ncaa_diag.get("attempts") or []),
+                }
+
+        if ncaa_sides == 2:
+            ncaa_contract = build_step3_contract(
+                identity,
+                outputs["away"],
+                outputs["home"],
+            )
+            if ncaa_contract.get("state") == "READY":
+                for side in ("away", "home"):
+                    diag[side]["ncaa_contract_state"] = "READY"
+                    diag[side]["scoreboard_quality_universe"] = {
+                        "events": 0,
+                        "teams": 0,
+                        "source": "not_needed_ncaa_ready",
+                    }
+                return outputs["away"], outputs["home"], diag
+
+    # Phase 1 — fallback only. Exact ESPN paths are retained for environments
+    # where they are available, but they are no longer the production-critical
+    # source for Step 3.
     for side in ("away", "home"):
         current = outputs[side]
         identity_side = (
