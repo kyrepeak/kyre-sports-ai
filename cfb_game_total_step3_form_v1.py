@@ -10,6 +10,7 @@ model behavior.
 """
 from __future__ import annotations
 
+from datetime import date, timedelta
 from html import escape
 import json
 import re
@@ -693,6 +694,74 @@ def _scoreboard_rows_for_team(
     return ordered[-5:], attempts
 
 
+@st.cache_data(ttl=120, show_spinner=False)
+def _scoreboard_range_rows_for_team(
+    team_id: str,
+    target_day: str,
+    *,
+    lookback_days: int = 70,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Recover exact pre-kickoff results from ESPN date-range scoreboards.
+
+    This path deliberately does not depend on NCAA candidate-date discovery.
+    It checks both FBS and FCS group universes, filters by exact ESPN team ID,
+    accepts completed events only, and excludes the target/future dates.
+    """
+    team_id = _clean(team_id)
+    target_text = _clean(target_day)[:10]
+    if not team_id.isdigit() or not target_text:
+        return [], []
+
+    try:
+        target = date.fromisoformat(target_text)
+    except Exception:
+        return [], []
+
+    start = target - timedelta(days=max(14, int(lookback_days)))
+    end = target - timedelta(days=1)
+    if end < start:
+        return [], []
+
+    date_range = f"{start.strftime('%Y%m%d')}-{end.strftime('%Y%m%d')}"
+    rows: dict[str, dict[str, Any]] = {}
+    attempts: list[dict[str, Any]] = []
+
+    for group in ("80", "81"):
+        payload, these_attempts = ncaa_schedule._fetch_json_with_fallback(
+            ncaa_schedule.ESPN_SCOREBOARD_URL,
+            {
+                "dates": date_range,
+                "limit": 1000,
+                "groups": group,
+            },
+            f"ESPN CFB scoreboard range group {group} for Step 3 team {team_id}",
+        )
+        attempts.extend(list(these_attempts or []))
+        for event in payload.get("events") or []:
+            if not isinstance(event, Mapping):
+                continue
+            row = deep.history_engine._event_row(event, team_id)
+            if not row:
+                continue
+            row_date = _clean(row.get("date"))[:10]
+            if row_date and row_date >= target_text:
+                continue
+            key = _clean(row.get("event_id")) or (
+                f"{row_date}|{_clean(row.get('opponent_id'))}"
+            )
+            if key:
+                rows[key] = dict(row)
+
+    ordered = sorted(
+        rows.values(),
+        key=lambda row: _clean(
+            row.get("date")
+            or getattr(row.get("date_dt"), "isoformat", lambda: "")()
+        ),
+    )
+    return ordered[-5:], attempts
+
+
 def _merge_exact_game_rows(
     *groups: list[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -824,14 +893,30 @@ def enrich_step3_inputs(
                     "error": f"{type(exc).__name__}: {exc}"[:260],
                 }]
 
+        range_rows: list[Mapping[str, Any]] = []
+        range_attempts: list[dict[str, Any]] = []
+        if target_day:
+            try:
+                range_rows, range_attempts = _scoreboard_range_rows_for_team(
+                    team_id,
+                    target_day,
+                )
+            except Exception as exc:
+                range_attempts = [{
+                    "provider": f"Step 3 scoreboard range recovery for exact team {team_id}",
+                    "error": f"{type(exc).__name__}: {exc}"[:260],
+                }]
+
         exact_rows = _merge_exact_game_rows(
             list(live_rows),
             list(scoreboard_rows),
+            list(range_rows),
         )
         combined_attempts = (
             list(attempts or [])
             + list(date_attempts or [])
             + list(scoreboard_attempts or [])
+            + list(range_attempts or [])
         )
         if exact_rows:
             outputs[side] = _overlay_exact_rows(current, exact_rows)
@@ -839,7 +924,15 @@ def enrich_step3_inputs(
                 "refresh_used": True,
                 "fallback_used": False,
                 "source": (
-                    "live_exact_schedule+daily_scoreboard"
+                    "scoreboard_range_recovery"
+                    if range_rows and not live_rows and not scoreboard_rows
+                    else "live_exact_schedule+scoreboard_range"
+                    if range_rows and live_rows and not scoreboard_rows
+                    else "daily_scoreboard+scoreboard_range"
+                    if range_rows and scoreboard_rows and not live_rows
+                    else "live_exact_schedule+daily_scoreboard+scoreboard_range"
+                    if range_rows and scoreboard_rows and live_rows
+                    else "live_exact_schedule+daily_scoreboard"
                     if live_rows and scoreboard_rows
                     else "daily_scoreboard_recovery"
                     if scoreboard_rows
@@ -849,6 +942,7 @@ def enrich_step3_inputs(
                 "rows": len(exact_rows),
                 "team_schedule_rows": len(live_rows),
                 "scoreboard_rows": len(scoreboard_rows),
+                "scoreboard_range_rows": len(range_rows),
                 "candidate_days": list(candidate_days),
                 "attempts": combined_attempts,
             }
@@ -1407,4 +1501,5 @@ __all__ = [
     "enrich_step3_inputs",
     "build_team_form_contract",
     "render_step3_html",
+    "_scoreboard_range_rows_for_team",
 ]
