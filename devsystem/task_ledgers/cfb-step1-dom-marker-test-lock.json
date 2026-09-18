@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-dom-marker-test-lock",
+  "status": "DONE",
+  "scope": "Step 1 production proof only: align the stale self-test assertion with the already-merged DOM textContent deployment-marker proof. No product, model, API, or UI behavior changed.",
+  "root_cause": "Production verification #21 failed before live Step 1 proof because one test still asserted REQUIRED_STEP1_PROFILE_MARKER in body after the verifier intentionally moved hidden deployment-marker reads to dom_text.",
+  "guardrails": {
+    "proof_only": true,
+    "step1_only": true,
+    "product_logic_changed": false,
+    "ui_changed": false,
+    "step2_modified": false,
+    "steps_3_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "api_behavior_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
