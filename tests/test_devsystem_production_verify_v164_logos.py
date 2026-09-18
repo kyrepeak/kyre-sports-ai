@@ -55,3 +55,4 @@ def test_v164_deployment_gate_reads_hidden_markers_from_dom_text():
     assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" in source
     assert "REQUIRED_STEP1_MARKER in dom_text" in source
     assert "REQUIRED_PATCH_MARKER in dom_text" in source
+    assert "return frame, dom_text, scans" in source
