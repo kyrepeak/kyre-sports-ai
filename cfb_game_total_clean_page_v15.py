@@ -268,9 +268,25 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             return away_foundation, home_foundation, dict(runtime_diag or {})
         runtime_away = runtime_bundle.get("away") if isinstance(runtime_bundle.get("away"), Mapping) else {}
         runtime_home = runtime_bundle.get("home") if isinstance(runtime_bundle.get("home"), Mapping) else {}
+        merged_away = _merge_step2_evidence(away_foundation, runtime_away)
+        merged_home = _merge_step2_evidence(home_foundation, runtime_home)
+
+        # Runtime V2 is the certified pre-kickoff record truth. NCAA's schedule
+        # foundation can legitimately carry a stale/empty record_text even when
+        # Runtime V2 has the verified completed-game record. Keep both aliases
+        # synchronized because the Step 2 contract prefers record_text.
+        for merged, runtime_row in (
+            (merged_away, runtime_away),
+            (merged_home, runtime_home),
+        ):
+            runtime_record = str(runtime_row.get("record") or "").strip()
+            if runtime_record and runtime_record not in {"—", "-"}:
+                merged["record"] = runtime_record
+                merged["record_text"] = runtime_record
+
         return (
-            _merge_step2_evidence(away_foundation, runtime_away),
-            _merge_step2_evidence(home_foundation, runtime_home),
+            merged_away,
+            merged_home,
             dict(runtime_diag or {}),
         )
 
