@@ -499,3 +499,15 @@ def test_v164_step3_replaces_blank_game_date_before_hydration():
     assert 'step3_game["game_date"] = selected_day' in step3_block
     assert 'step3_game.setdefault("game_date", selected_day)' not in step3_block
     assert "step3_owner.enrich_step3_inputs(" in step3_block
+
+
+
+def test_v164_step3_embeds_live_hydration_diagnostics_for_production_proof():
+    source = _read(PAGE)
+    step3_block = source[source.index("if int(number) == 3:"):source.index("if int(number) == 4:")]
+    assert "step3_diag = step3_owner.enrich_step3_inputs" in step3_block
+    assert 'rendered_identity["step3_diag"]' in step3_block
+    assert '"scoreboard_range_rows"' in step3_block
+    assert '"scoreboard_quality_universe"' in step3_block
+    assert '"away_espn_team_id"' in step3_block
+    assert 'data-step3-diag=' in step3_block
