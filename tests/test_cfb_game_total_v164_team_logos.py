@@ -394,3 +394,10 @@ def test_v164_hidden_identity_marker_renders_without_runtime_name_error(monkeypa
     assert page_v164.STEP1_PRESENTATION_MARKER in body
     assert page_v164.STEP1_PROFILE_MARKER in body
     assert page_v164.STEP2_PRESENTATION_MARKER in body
+
+
+def test_v164_deployment_marker_renders_before_frozen_hub_handoff():
+    source = _read(PAGE)
+    marker_call = source.index("    _render_v164_identity()")
+    frozen_call = source.index("        result = prior_v163.render_game_total_hub")
+    assert marker_call < frozen_call
