@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-runtime-record-text-v1",
+  "status": "DONE",
+  "scope": "Step 2 only: promote the verified runtime record into record_text so stale NCAA 0-0 text cannot mask a nonzero completed-game sample; tighten production certification to reject stale/empty records when sample games exist.",
+  "trigger": "Live production Step 2 reached READY with all advanced metrics populated but displayed 0-0 records while Step 1 and Step 3 correctly showed 1-1.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step3_frozen_and_untouched": true,
+    "step4_plus_untouched": true,
+    "projection_math_changed": false,
+    "probability_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "odds_logic_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "proof_requirements": {
+    "verified_runtime_record_promoted_to_record_text": true,
+    "stale_zero_record_rejected_with_nonzero_sample": true,
+    "branch_ci_required": true,
+    "production_step2_ready_required": true,
+    "production_record_accuracy_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}
