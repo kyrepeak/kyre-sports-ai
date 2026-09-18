@@ -226,11 +226,104 @@ def test_step1_exact_team_detail_overrides_stale_profile_classification(monkeypa
 
 
 
-def test_step1_fast_profile_timeout_and_no_broad_fallback_contract(monkeypatch):
+def test_step1_fast_profile_timeout_and_no_name_guessing_contract(monkeypatch):
     assert profile.FAST_PROFILE_TIMEOUT_SECONDS <= 4.0
     source = __import__("pathlib").Path(profile.__file__).read_text(encoding="utf-8")
     enrich_source = source[source.index("def enrich_step1_inputs"):]
     assert "recovery._fetch_espn_teams()" not in enrich_source
     side_source = source[source.index("def _enrich_side"):source.index("def enrich_step1_inputs")]
-    assert "history._fetch_team_schedule(" not in side_source
-    assert "deep._head_coach(" not in side_source
+    assert "team_id.isdigit()" in side_source
+    assert "history._fetch_team_schedule(" in side_source
+    assert "deep._head_coach(" in side_source
+
+
+def test_step1_exact_fallback_fills_schedule_profile_and_coach(monkeypatch):
+    monkeypatch.setattr(profile, "_exact_event_summary", lambda event_id: ({}, []))
+    monkeypatch.setattr(profile, "_exact_team_detail", lambda team_id: ({}, []))
+
+    schedules = {
+        "324": {
+            "team": {
+                "id": "324",
+                "name": "Chanticleers",
+                "groups": {"id": "37", "parent": {"id": "80"}},
+            },
+            "events": [
+                {
+                    "id": "a1",
+                    "date": "2026-09-01T00:00:00Z",
+                    "competitions": [{
+                        "competitors": [
+                            {"homeAway": "away", "score": "31", "team": {"id": "324"}},
+                            {"homeAway": "home", "score": "17", "team": {"id": "999"}},
+                        ]
+                    }],
+                },
+                {
+                    "id": "h1",
+                    "date": "2026-09-01T00:00:00Z",
+                    "competitions": [{
+                        "competitors": [
+                            {"homeAway": "away", "score": "14", "team": {"id": "998"}},
+                            {"homeAway": "home", "score": "28", "team": {"id": "48"}},
+                        ]
+                    }],
+                },
+            ],
+        },
+        "48": {
+            "team": {
+                "id": "48",
+                "name": "Blue Hens",
+                "groups": {"id": "12", "parent": {"id": "81"}},
+            },
+            "events": [
+                {
+                    "id": "h1",
+                    "date": "2026-09-01T00:00:00Z",
+                    "competitions": [{
+                        "competitors": [
+                            {"homeAway": "away", "score": "14", "team": {"id": "998"}},
+                            {"homeAway": "home", "score": "28", "team": {"id": "48"}},
+                        ]
+                    }],
+                }
+            ],
+        },
+    }
+    monkeypatch.setattr(
+        profile.history,
+        "_fetch_team_schedule",
+        lambda team_id, season: (schedules[team_id], [{"provider": "schedule"}]),
+    )
+    monkeypatch.setattr(
+        profile.deep,
+        "_head_coach",
+        lambda team_id, season: (
+            {
+                "ready": True,
+                "name": {"324": "Ryan Beard", "48": "Manny Rojas"}[team_id],
+            },
+            [{"provider": "coach"}],
+        ),
+    )
+
+    away, home, diag = profile.enrich_step1_inputs(
+        _identity(),
+        {"conference": "Sun Belt"},
+        {"conference": "CUSA"},
+        {"espn_event_id": "401869940", "game_date": "2026-09-19"},
+    )
+
+    assert away["mascot"] == "Chanticleers"
+    assert home["mascot"] == "Blue Hens"
+    assert away["classification"] == "FBS"
+    assert home["classification"] == "FCS"
+    assert away["record"] == "1-0"
+    assert home["record"] == "1-0"
+    assert away["head_coach"] == "Ryan Beard"
+    assert home["head_coach"] == "Manny Rojas"
+    assert diag["away"]["schedule_loaded"] is True
+    assert diag["home"]["schedule_loaded"] is True
+    assert diag["away"]["head_coach_ready"] is True
+    assert diag["home"]["head_coach_ready"] is True
