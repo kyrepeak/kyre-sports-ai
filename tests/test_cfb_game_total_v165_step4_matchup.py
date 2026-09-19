@@ -373,8 +373,9 @@ def test_v165_step4_multisource_deployment_marker_is_emitted_through_v16():
     )
     source = PAGE.read_text()
     assert "STEP4_DEPLOYMENT_MARKER = step4_owner.STEP4_DEPLOYMENT_MARKER" in source
+    assert "STEP4_VISUAL_MARKER = step4_owner.STEP4_VISUAL_MARKER" in source
     assert "original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER" in source
-    assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER}"' in source
+    assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER} • {STEP4_VISUAL_MARKER}"' in source
     assert "prior_v164.STEP4_PRESENTATION_MARKER = original_step4_marker" in source
 
 
@@ -510,3 +511,37 @@ def test_v166_visual_step6_integrity_and_mobile_polish_match_target_contract():
     assert ".gt165-notechips" in step4.STEP4_CSS
     assert "@media(max-width:420px)" in step4.STEP4_CSS
     assert "grid-template-columns:repeat(2,minmax(0,1fr))" in step4.STEP4_CSS
+
+
+def test_v166_visual_step7_final_freeze_contract():
+    assert (
+        step4.STEP4_VISUAL_MARKER
+        == "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"
+    )
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        engine=_fake_engine(),
+        fallback=_fake_fallback(),
+    )
+    assert (
+        'data-step4-visual-marker="CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"'
+        in html
+    )
+    assert html.count('data-testid="gt165-step4-header-coverage"') == 1
+    assert html.count('class="gt165-battletag"') == 2
+    assert html.count('class="gt165-teamhead"') == 2
+    assert html.count('class="gt165-teamhead right"') == 2
+    assert html.count('class="gt165-vs">VS</div>') == 2
+    assert html.count('data-testid="gt165-step4-stat-tile"') == 12
+    assert html.count('data-testid="gt165-step4-biggest-edge"') == 2
+    assert html.count('data-testid="gt165-step4-biggest-risk"') == 2
+    assert html.count('data-testid="gt165-step4-ou-impact"') == 2
+    assert html.count('class="gt165-note-icon"') == 2
+    assert "MATCHUP 1" in html
+    assert "MATCHUP 2" in html
+    assert "100% VISIBLE" in html
+    assert "MODEL SAFE" in html
+    assert "SPORTSBOOK 0.0%" in html
