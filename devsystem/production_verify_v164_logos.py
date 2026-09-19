@@ -771,6 +771,38 @@ def _assert_step5_pace(frame) -> dict:
             f"Step 5 READY contains incomplete pace tiles: {invalid_tiles}"
         )
 
+    away_delivery = str(
+        step.get_attribute("data-step5-away-pbp-delivery") or ""
+    ).strip()
+    home_delivery = str(
+        step.get_attribute("data-step5-home-pbp-delivery") or ""
+    ).strip()
+    if (
+        away_delivery != "sportsdataverse_github_raw"
+        or home_delivery != "sportsdataverse_github_raw"
+    ):
+        raise ProductionVerificationV164Failure(
+            "Step 5 did not prove SportsDataverse PBP delivery for both teams: "
+            f"away={away_delivery!r} home={home_delivery!r}"
+        )
+
+    try:
+        away_pbp_games = int(
+            str(step.get_attribute("data-step5-away-pbp-games") or "0")
+        )
+        home_pbp_games = int(
+            str(step.get_attribute("data-step5-home-pbp-games") or "0")
+        )
+    except ValueError as exc:
+        raise ProductionVerificationV164Failure(
+            "Step 5 SportsDataverse game-count proof is not numeric"
+        ) from exc
+    if away_pbp_games < 1 or home_pbp_games < 1:
+        raise ProductionVerificationV164Failure(
+            "Step 5 requires at least one SportsDataverse completed game per team: "
+            f"away={away_pbp_games} home={home_pbp_games}"
+        )
+
     text = step.inner_text()
     required_text = (
         "PACE & EXPECTED POSSESSIONS",
@@ -819,6 +851,10 @@ def _assert_step5_pace(frame) -> dict:
         "status": state,
         "pace_coverage": coverage,
         "tile_count": tiles.count(),
+        "away_pbp_delivery": away_delivery,
+        "home_pbp_delivery": home_delivery,
+        "away_pbp_games": away_pbp_games,
+        "home_pbp_games": home_pbp_games,
         "marker": marker,
         "data_marker": data_marker,
         "visual_marker": visual_marker,
