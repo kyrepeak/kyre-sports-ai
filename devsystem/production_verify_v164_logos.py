@@ -551,6 +551,14 @@ def _assert_step4_matchup(frame) -> dict:
         raise ProductionVerificationV164Failure(
             f"Step 4 missing required V165 matchup content: {missing}"
         )
+    if "VISIBLE MATCHUP COVERAGE: 100%" not in live_text_upper:
+        raise ProductionVerificationV164Failure(
+            "Step 4 source-integrity card does not prove 100% visible coverage"
+        )
+    if "CFBSTATS" not in live_text_upper and "MULTI-SOURCE" not in live_text_upper:
+        raise ProductionVerificationV164Failure(
+            "Step 4 source-integrity card does not prove the multi-source fallback path"
+        )
 
     logos = _assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")
     return {
