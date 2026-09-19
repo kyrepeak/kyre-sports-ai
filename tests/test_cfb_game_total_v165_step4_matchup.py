@@ -402,3 +402,24 @@ def test_v166_visual_step1_header_shell_matches_target_contract():
     assert ".gt165-step4:after" in step4.STEP4_CSS
     assert ".gt165-coverage" in step4.STEP4_CSS
     assert "width:50px!important;height:50px!important" in step4.STEP4_CSS
+
+
+def test_v166_visual_step2_team_headers_match_target_contract():
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        engine=_fake_engine(),
+        fallback=_fake_fallback(),
+    )
+    assert html.count('class="gt165-vs">VS</div>') == 2
+    assert html.count('class="gt165-teamhead"') == 2
+    assert html.count('class="gt165-teamhead right"') == 2
+    assert ">AWAY<" in html
+    assert ">HOME<" in html
+    assert "Miami (FL)" in html
+    assert "Wake Forest" in html
+    assert html.count('class="gt165-logowrap"') >= 4
+    assert ".gt165-teamname" in step4.STEP4_CSS
+    assert ".gt165-vs" in step4.STEP4_CSS
