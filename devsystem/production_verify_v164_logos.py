@@ -510,9 +510,9 @@ def _assert_step4_matchup(frame) -> dict:
         )
 
     state = str(step.get_attribute("data-step4-state") or "").strip().upper()
-    if state not in {"READY", "CHECK", "LIMITED"}:
+    if state != "READY":
         raise ProductionVerificationV164Failure(
-            f"Step 4 matchup is not production-usable: state={state!r}"
+            f"Step 4 certified matchup must be fully READY: state={state!r}"
         )
 
     text = step.inner_text()
