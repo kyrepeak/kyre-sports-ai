@@ -56,19 +56,17 @@ def test_v164_production_verifier_waits_for_exact_step1_profile_patch():
 
 
 
-def test_v164_deployment_gate_uses_proven_v163_body_for_current_markers():
+def test_v164_deployment_gate_uses_step5_dom_marker():
     source = VERIFIER.read_text(encoding="utf-8")
     wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
         "def _assert_step1_identity", 1
     )[0]
-    assert 'dom_text = str(body or "")' in wait_block
-    assert 'frame.locator("body").text_content()' not in wait_block
-    assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" not in wait_block
-    assert "REQUIRED_STEP1_MARKER in dom_text" not in wait_block
-    assert "REQUIRED_HEARTBEAT in dom_text" in wait_block
-    assert "REQUIRED_PATCH_MARKER in dom_text" in wait_block
-    assert "REQUIRED_STEP5_MARKER in dom_text" in wait_block
-    assert "return frame, dom_text, scans" in wait_block
+    assert 'details[data-testid="gt157-step-5"]' in wait_block
+    assert 'get_attribute("data-step5-marker")' in wait_block
+    assert "last_marker == REQUIRED_STEP5_MARKER" in wait_block
+    assert "REQUIRED_HEARTBEAT in dom_text" not in wait_block
+    assert "REQUIRED_PATCH_MARKER in dom_text" not in wait_block
+    assert "REQUIRED_STEP5_MARKER in dom_text" not in wait_block
 
 
 def test_v164_production_verifier_waits_for_full_streamlit_logo_surface():
@@ -288,34 +286,23 @@ def test_v164_step4_v166_visual_freeze_contract_is_hard_gated():
 
 
 
-def test_v164_waits_only_for_current_deployment_identity_before_surface_assertions():
+def test_v164_waits_for_step5_dom_then_runs_strict_surface_assertions():
     source = VERIFIER.read_text(encoding="utf-8")
     wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
         "def _assert_step1_identity", 1
     )[0]
-
-    assert "REQUIRED_HEARTBEAT in dom_text" in wait_block
-    assert "REQUIRED_PATCH_MARKER in dom_text" in wait_block
-    assert "REQUIRED_STEP5_MARKER in dom_text" in wait_block
-
-    for historical in (
-        "REQUIRED_STEP1_MARKER in dom_text",
-        "REQUIRED_STEP1_PROFILE_MARKER in dom_text",
-        "REQUIRED_STEP2_MARKER in dom_text",
-        "REQUIRED_STEP3_MARKER in dom_text",
-        "REQUIRED_STEP4_MARKER in dom_text",
-        "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text",
-        "REQUIRED_STEP4_VISUAL_MARKER in dom_text",
-        "REQUIRED_STEP4_GRADE_MARKER in dom_text",
-        "REQUIRED_STEP5_DATA_MARKER in dom_text",
-        "REQUIRED_STEP5_VISUAL_MARKER in dom_text",
-    ):
-        assert historical not in wait_block
+    assert 'details[data-testid="gt157-step-5"]' in wait_block
+    assert 'get_attribute("data-step5-marker")' in wait_block
+    assert "last_marker == REQUIRED_STEP5_MARKER" in wait_block
 
     live_block = source.split("def verify_live_v164", 1)[1]
+    assert "if REQUIRED_HEARTBEAT not in body:" in live_block
+    assert "if REQUIRED_PATCH_MARKER not in body:" in live_block
+    assert "if REQUIRED_STEP1_MARKER not in body:" in live_block
+    assert "if REQUIRED_STEP2_MARKER not in body:" in live_block
+    assert "if REQUIRED_STEP3_MARKER not in body:" in live_block
+    assert "if REQUIRED_STEP4_MARKER not in body:" in live_block
     assert "if REQUIRED_STEP5_MARKER not in body:" in live_block
-    assert "if REQUIRED_STEP5_DATA_MARKER not in body:" not in live_block
-    assert "if REQUIRED_STEP5_VISUAL_MARKER not in body:" not in live_block
 
     step5 = source.split("def _assert_step5_pace", 1)[1].split(
         "def verify_live_v164", 1
