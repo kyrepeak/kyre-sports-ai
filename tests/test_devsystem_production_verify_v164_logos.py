@@ -122,9 +122,12 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"' in source
     assert 'REQUIRED_STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"' in source
+    assert 'REQUIRED_STEP4_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"' in source
     assert "REQUIRED_STEP4_MARKER in dom_text" in source
     assert "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text" in source
+    assert "REQUIRED_STEP4_VISUAL_MARKER in dom_text" in source
     assert "required_step4_deployment_marker" in source
+    assert "required_step4_visual_marker" in source
     assert "_assert_step4_matchup" in source
     assert 'details[data-testid="gt157-step-4"]' in source
     assert 'data-testid="gt165-step4-away-off-home-def"' in source
@@ -225,3 +228,23 @@ def test_v164_step4_visual_step2_requires_four_matchup_logos():
     assert '_assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")' not in step4
     assert "def _assert_exact_logo_count(" in source
     assert 'for team_id in (AWAY_TEAM_ID, HOME_TEAM_ID):' in source
+
+
+def test_v164_step4_v166_visual_freeze_contract_is_hard_gated():
+    source = VERIFIER.read_text(encoding="utf-8")
+    step4 = source.split("def _assert_step4_matchup", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+    assert 'get_attribute("data-step4-visual-marker")' in step4
+    assert "Step 4 visual marker mismatch" in step4
+    assert '"coverage_pills": 1' in step4
+    assert '"matchup_ribbons": 2' in step4
+    assert '"team_headers": 4' in step4
+    assert '"vs_badges": 2' in step4
+    assert '"stat_tiles": 12' in step4
+    assert '"edge_cards": 2' in step4
+    assert '"risk_cards": 2' in step4
+    assert '"impact_cards": 2' in step4
+    assert '"integrity_icons": 2' in step4
+    assert "Step 4 V166 visual anatomy mismatch" in step4
+    assert '"v166_step4_visual_verified": True' in step4

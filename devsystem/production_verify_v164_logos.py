@@ -32,6 +32,7 @@ REQUIRED_STEP2_MARKER = "CFB_GAME_TOTAL_STEP2_PERFORMANCE_PROFILE_V2_ACTIVE"
 REQUIRED_STEP3_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"
 REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"
 REQUIRED_STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"
+REQUIRED_STEP4_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -182,6 +183,7 @@ def _wait_for_v164_patch_deployment(
                 and REQUIRED_STEP3_MARKER in dom_text
                 and REQUIRED_STEP4_MARKER in dom_text
                 and REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text
+                and REQUIRED_STEP4_VISUAL_MARKER in dom_text
             ):
                 return frame, dom_text, scans
         except Exception as exc:
@@ -199,6 +201,7 @@ def _wait_for_v164_patch_deployment(
         f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
         f"required_step4_marker={REQUIRED_STEP4_MARKER!r} "
         f"required_step4_deployment_marker={REQUIRED_STEP4_DEPLOYMENT_MARKER!r} "
+        f"required_step4_visual_marker={REQUIRED_STEP4_VISUAL_MARKER!r} "
         f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
@@ -549,6 +552,43 @@ def _assert_step4_matchup(frame) -> dict:
             "Step 4 missing V165 source-integrity or advanced-integrity surface"
         )
 
+    visual_marker = str(
+        step.get_attribute("data-step4-visual-marker") or ""
+    ).strip()
+    if visual_marker != REQUIRED_STEP4_VISUAL_MARKER:
+        raise ProductionVerificationV164Failure(
+            "Step 4 visual marker mismatch: "
+            f"expected={REQUIRED_STEP4_VISUAL_MARKER!r} actual={visual_marker!r}"
+        )
+
+    visual_counts = {
+        "coverage_pills": step.locator('[data-testid="gt165-step4-header-coverage"]').count(),
+        "matchup_ribbons": step.locator(".gt165-battletag").count(),
+        "team_headers": step.locator(".gt165-teamhead").count(),
+        "vs_badges": step.locator(".gt165-vs").count(),
+        "stat_tiles": step.locator('[data-testid="gt165-step4-stat-tile"]').count(),
+        "edge_cards": step.locator('[data-testid="gt165-step4-biggest-edge"]').count(),
+        "risk_cards": step.locator('[data-testid="gt165-step4-biggest-risk"]').count(),
+        "impact_cards": step.locator('[data-testid="gt165-step4-ou-impact"]').count(),
+        "integrity_icons": step.locator(".gt165-note-icon").count(),
+    }
+    expected_visual_counts = {
+        "coverage_pills": 1,
+        "matchup_ribbons": 2,
+        "team_headers": 4,
+        "vs_badges": 2,
+        "stat_tiles": 12,
+        "edge_cards": 2,
+        "risk_cards": 2,
+        "impact_cards": 2,
+        "integrity_icons": 2,
+    }
+    if visual_counts != expected_visual_counts:
+        raise ProductionVerificationV164Failure(
+            "Step 4 V166 visual anatomy mismatch: "
+            f"expected={expected_visual_counts} actual={visual_counts}"
+        )
+
     state = str(step.get_attribute("data-step4-state") or "").strip().upper()
     if state != "READY":
         raise ProductionVerificationV164Failure(
@@ -578,6 +618,11 @@ def _assert_step4_matchup(frame) -> dict:
         "O/U IMPACT",
         "VERIFIED MATCHUP DATA",
         "ADVANCED-METRIC INTEGRITY",
+        "MATCHUP 1",
+        "MATCHUP 2",
+        "NCAA PRIMARY",
+        "MODEL SAFE",
+        "SPORTSBOOK 0.0%",
     )
     live_text_upper = str(text or "").upper()
     missing = [label for label in required_text if label.upper() not in live_text_upper]
@@ -603,7 +648,10 @@ def _assert_step4_matchup(frame) -> dict:
         "directional_cards": 2,
         "source_integrity": source_integrity.count(),
         "advanced_integrity": advanced_integrity.count(),
+        "visual_marker": visual_marker,
+        "visual_counts": visual_counts,
         "v165_step4_verified": True,
+        "v166_step4_visual_verified": True,
     }
 
 def verify_live_v164(
@@ -661,6 +709,10 @@ def verify_live_v164(
             if REQUIRED_STEP4_MARKER not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 4 matchup marker: {REQUIRED_STEP4_MARKER}"
+                )
+            if REQUIRED_STEP4_VISUAL_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 4 V166 visual marker: {REQUIRED_STEP4_VISUAL_MARKER}"
                 )
             if REQUIRED_STEP3_MARKER not in body:
                 raise ProductionVerificationV164Failure(
