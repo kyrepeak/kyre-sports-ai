@@ -88,7 +88,8 @@ def test_v185_target_visual_contract_is_full_width_and_preserves_v184_dom():
     assert html.count('data-testid="gt184-step6-stat-tile"') == 12
     assert html.count('data-ready="true"') == 12
     assert html.count('data-testid="gt185-step6-defense-tile"') == 12
-    assert "STEP 6 — SCORING CREATION" in html
+    assert "STEP 6 —" in html
+    assert "💥 Scoring Creation" in html
     assert "SCORING CREATION" in html
     assert "SCORING PREVENTION" in html
     assert "SCORING ENVIRONMENT" in html
