@@ -1,8 +1,8 @@
-"""DevSystem production verification V4 — CFB Game Total V163 selector proof.
+"""DevSystem production verification V4 — CFB Game Total V165 selector proof.
 
 Additive over frozen production_verify_v3. V4 preserves the complete V3
 Render/API/Streamlit proof, then independently deep-links the deployed CFB
-Game Total route and requires Router V159's V163 heartbeat, the visible
+Game Total route and requires Router V161's V165 heartbeat, the visible
 GAMES ON THIS DAY selector, and an official selected ESPN event_id.
 """
 from __future__ import annotations
@@ -25,8 +25,8 @@ except ModuleNotFoundError:  # direct `python devsystem/production_verify_v4.py`
     import production_verify_v3 as prior
 
 FROZEN_VERIFIER = "devsystem.production_verify_v3"
-EXPECTED_ROUTER = "streamlit_memory_lazy_router_v159"
-GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V163_PRODUCTION_ACTIVE"
+EXPECTED_ROUTER = "streamlit_memory_lazy_router_v161"
+GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"
 GAME_SELECTOR_REQUIRED_TEXT = "GAMES ON THIS DAY"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 DATE_QUERY_KEY = "ks_cfb_game_total_date"
@@ -42,12 +42,12 @@ def _assert_v163_surface(body: str) -> None:
     text = str(body or "")
     if GAME_TOTAL_REQUIRED_HEARTBEAT not in text:
         raise ProductionVerificationFailure(
-            "stale Streamlit Game Total V163 deployment: "
+            "stale Streamlit Game Total V165 deployment: "
             f"required production heartbeat {GAME_TOTAL_REQUIRED_HEARTBEAT!r} was not present"
         )
     if GAME_SELECTOR_REQUIRED_TEXT not in text:
         raise ProductionVerificationFailure(
-            "stale Streamlit Game Total V163 deployment: "
+            "stale Streamlit Game Total V165 deployment: "
             f"required selector text {GAME_SELECTOR_REQUIRED_TEXT!r} was not present"
         )
 
@@ -60,16 +60,17 @@ def _query_event_id(page) -> str:
 def _build_v163_evidence(*, expected_commit: str, event_id: str) -> dict[str, Any]:
     if not str(event_id or "").strip():
         raise ProductionVerificationFailure(
-            "stale Streamlit Game Total V163 deployment: selected ESPN event_id was not persisted"
+            "stale Streamlit Game Total V165 deployment: selected ESPN event_id was not persisted"
         )
     return {
         "expected_commit": str(expected_commit or "unknown"),
         "expected_router": EXPECTED_ROUTER,
-        "observed_router": "V159",
+        "observed_router": "V161",
         "observed_build_marker": GAME_TOTAL_REQUIRED_HEARTBEAT,
         "game_selector_visible": True,
         "selected_espn_event_id": str(event_id),
         "v163_freshness_verified": True,
+        "v165_freshness_verified": True,
     }
 
 
@@ -126,7 +127,7 @@ def _browser_verify_v163_selector(
             _assert_v163_surface(final_body)
             if matched_frame is None:
                 raise ProductionVerificationFailure(
-                    "stale Streamlit Game Total V163 deployment: active V163 app frame not found"
+                    "stale Streamlit Game Total V165 deployment: active V165 app frame not found"
                 )
             forbidden = base._body_has_forbidden_error(final_body)
             if forbidden:
