@@ -42,7 +42,9 @@ _DIMENSION_KEYS = {
 
 
 def _clean(value: Any) -> str:
-    return re.sub(r"\s+", " ", str(value or "")).strip()
+    if value is None:
+        return ""
+    return re.sub(r"\s+", " ", str(value)).strip()
 
 
 def _float(value: Any) -> float | None:
@@ -61,7 +63,7 @@ def _float(value: Any) -> float | None:
 def _numbers(value: Any) -> list[float]:
     return [
         float(item)
-        for item in re.findall(r"-?\d+(?:\.\d+)?", _clean(value).replace(",", ""))
+        for item in re.findall(r"\d+(?:\.\d+)?", _clean(value).replace(",", ""))
     ]
 
 
