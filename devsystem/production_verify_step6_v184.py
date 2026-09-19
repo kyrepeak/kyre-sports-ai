@@ -15,7 +15,9 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 from playwright.sync_api import sync_playwright
 
-from devsystem import production_verify_v164_logos as full
+
+class Step6ProductionVerificationFailure(RuntimeError):
+    pass
 
 
 GREEN_MARKER = "CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN"
@@ -26,6 +28,27 @@ STEP6_ROOT_SELECTOR = (
     f'[data-step6-marker="{STEP6_MARKER}"]'
     f'[data-step6-deployment-marker="{STEP6_DEPLOYMENT_MARKER}"]'
 )
+CFB_SPORT = "College Football"
+GAME_TOTAL_MARKET = "Game Total"
+ROUTE_QUERY_SPORT = "ks_sport"
+ROUTE_QUERY_MARKET = "ks_cfb_market"
+DATE_QUERY_KEY = "ks_cfb_game_total_date"
+EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
+
+
+def _query_value(url: str, key: str) -> str:
+    values = parse_qs(urlparse(url).query).get(key) or []
+    return str(values[-1] if values else "").strip()
+
+
+def _event_from_url(url: str) -> str:
+    return _query_value(url, EVENT_QUERY_KEY)
+
+
+def _load_streamlit_url() -> str:
+    targets_path = Path(__file__).resolve().parents[1] / "devsystem" / "production_targets_v1.json"
+    targets = json.loads(targets_path.read_text(encoding="utf-8"))
+    return str(targets["streamlit"]["url"]).rstrip("/")
 
 
 def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
@@ -34,21 +57,41 @@ def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
     last_error = ""
 
     while time.monotonic() < deadline:
-        try:
-            frame, body, scans = full._wait_for_v164_patch_deployment(page)
-            last_body = body
-            root = frame.locator(STEP6_ROOT_SELECTOR).last
-            if root.count() > 0:
+        scans: list[dict] = []
+        for index, frame in enumerate(page.frames):
+            try:
+                body = frame.locator("body").inner_text(timeout=5000)
+            except Exception as exc:
+                body = ""
+                last_error = f"{type(exc).__name__}: {exc}"[:500]
+            try:
+                root = frame.locator(STEP6_ROOT_SELECTOR).last
+                root_count = root.count()
+            except Exception as exc:
+                root_count = 0
+                last_error = f"{type(exc).__name__}: {exc}"[:500]
+
+            scans.append(
+                {
+                    "index": index,
+                    "url": frame.url,
+                    "step6_root_count": root_count,
+                    "body_start": body[:700],
+                }
+            )
+            if root_count > 0:
                 root.wait_for(state="attached", timeout=5000)
                 return frame, root, body, scans
-            last_error = "V184 Step 6 root not live yet"
-        except Exception as exc:
-            last_error = f"{type(exc).__name__}: {exc}"[:500]
 
+            if body:
+                last_body = body
+
+        if not last_error:
+            last_error = "V184 Step 6 root not live yet"
         page.wait_for_timeout(5000)
         page.reload(wait_until="domcontentloaded", timeout=120000)
 
-    raise full.ProductionVerificationV164Failure(
+    raise Step6ProductionVerificationFailure(
         "V184 Step 6 production surface did not become live: "
         f"last_error={last_error!r} body_start={last_body[:3000]!r}"
     )
@@ -71,37 +114,37 @@ def _assert_step6(root) -> dict:
     body_text = root.inner_text(timeout=10000)
 
     if marker != STEP6_MARKER:
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             f"Step 6 marker mismatch: expected={STEP6_MARKER!r} actual={marker!r}"
         )
     if deployment_marker != STEP6_DEPLOYMENT_MARKER:
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             "Step 6 deployment marker mismatch: "
             f"expected={STEP6_DEPLOYMENT_MARKER!r} actual={deployment_marker!r}"
         )
     if state != "READY":
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             f"Step 6 state is not READY: {state!r}"
         )
     if coverage != "100":
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             f"Step 6 coverage is not 100: {coverage!r}"
         )
     if ready_attr != "12" or tile_count != 12 or ready_tiles != 12:
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             "Step 6 tile completeness failed: "
             f"attr={ready_attr!r} tiles={tile_count} ready_tiles={ready_tiles}"
         )
     if "DATA LIMITED" in body_text:
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             "Step 6 READY surface still contains DATA LIMITED"
         )
     if "SPORTSBOOK INFLUENCE 0.0%" not in body_text:
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             "Step 6 sportsbook-influence protection marker is missing"
         )
     if "PROJECTION MUTATION OFF" not in body_text:
-        raise full.ProductionVerificationV164Failure(
+        raise Step6ProductionVerificationFailure(
             "Step 6 projection-mutation protection marker is missing"
         )
 
@@ -127,8 +170,8 @@ def verify_live_step6(
 
     query = urlencode(
         {
-            full.v163.ROUTE_QUERY_SPORT: full.v163.CFB_SPORT,
-            full.v163.ROUTE_QUERY_MARKET: full.v163.GAME_TOTAL_MARKET,
+            ROUTE_QUERY_SPORT: CFB_SPORT,
+            ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
         }
     )
 
@@ -147,20 +190,15 @@ def verify_live_step6(
 
             frame, root, body, scans = _wait_for_live_step6(page)
 
-            event_id = (
-                full.v163._event_from_url(page.url)
-                or full.v163._event_from_url(frame.url)
-            )
+            event_id = _event_from_url(page.url) or _event_from_url(frame.url)
             if not event_id or not str(event_id).isdigit():
-                raise full.ProductionVerificationV164Failure(
+                raise Step6ProductionVerificationFailure(
                     "V184 current live Game Total event did not persist: "
                     f"page_url={page.url!r} frame_url={frame.url!r}"
                 )
 
             routed_url = frame.url or page.url
-            routed_query = parse_qs(urlparse(routed_url).query)
-            date_values = routed_query.get(full.v163.DATE_QUERY_KEY) or []
-            selected_date = str(date_values[-1] if date_values else "").strip()
+            selected_date = _query_value(routed_url, DATE_QUERY_KEY)
 
             step6 = _assert_step6(root)
 
@@ -186,10 +224,9 @@ def verify_live_step6(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    targets = full.base._load_targets()
     parser.add_argument(
         "--streamlit-url",
-        default=str(targets["streamlit"]["url"]).rstrip("/"),
+        default=_load_streamlit_url(),
     )
     parser.add_argument(
         "--artifact-dir",
