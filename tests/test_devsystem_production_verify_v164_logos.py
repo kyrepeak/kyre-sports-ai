@@ -121,7 +121,10 @@ def test_v164_step3_required_text_check_is_case_normalized():
 def test_v164_production_verifier_requires_step4_matchup_surface():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"' in source
+    assert 'REQUIRED_STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"' in source
     assert "REQUIRED_STEP4_MARKER in dom_text" in source
+    assert "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text" in source
+    assert "required_step4_deployment_marker" in source
     assert "_assert_step4_matchup" in source
     assert 'details[data-testid="gt157-step-4"]' in source
     assert 'data-testid="gt165-step4-away-off-home-def"' in source
