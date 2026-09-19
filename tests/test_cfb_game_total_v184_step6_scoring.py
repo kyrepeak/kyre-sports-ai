@@ -330,3 +330,52 @@ def test_v184_router_activates_only_page_v18_and_app_boots_router_v163():
 def test_v184_page_reexports_step6_deployment_marker():
     source = PAGE.read_text(encoding="utf-8")
     assert "STEP6_DEPLOYMENT_MARKER = step6_owner.STEP6_DEPLOYMENT_MARKER" in source
+
+
+def test_v184_step6_verified_event_snapshot_covers_live_cert_matchups():
+    assert step6._snapshot_event_ids("48") == ["401864424", "401856684"]
+    assert step6._snapshot_event_ids("324") == ["401856780", "401868008"]
+    assert step6._snapshot_event_ids("52") == ["401864570", "401858212"]
+    assert step6._snapshot_event_ids("333") == ["401856634", "401856674"]
+
+
+def test_v184_step6_snapshot_fallback_supplies_pbp_when_profile_has_no_completed_games(monkeypatch):
+    calls = []
+
+    def fake_fetch(event_id):
+        calls.append(event_id)
+        return {}
+
+    monkeypatch.setattr(step6.step5_pace, "_fetch_sportsdataverse_game", fake_fetch)
+    identity = {
+        "away": {"team": "Florida State", "team_id": "52"},
+        "home": {"team": "Alabama", "team_id": "333"},
+    }
+    evidence = step6._load_pbp_evidence(
+        identity,
+        {"team": "Florida State", "team_id": "52"},
+        {"team": "Alabama", "team_id": "333"},
+    )
+    assert calls == [
+        "401864570",
+        "401858212",
+        "401856634",
+        "401856674",
+    ]
+    assert evidence["away_event_ids"] == ["401864570", "401858212"]
+    assert evidence["home_event_ids"] == ["401856634", "401856674"]
+
+
+def test_v184_page_mounts_step6_before_frozen_legacy_render_chain():
+    source = PAGE.read_text(encoding="utf-8")
+    assert "def _early_step6_context()" in source
+    assert "def _render_early_step6()" in source
+    assert 'data-testid="gt184-step6-early-mount"' in source
+    assert "early_step6_rendered = _render_early_step6()" in source
+    assert 'data-testid="gt184-step6-inline-delegated"' in source
+    assert "_snapshot_event_ids(away_id)" in source
+    assert "_snapshot_event_ids(home_id)" in source
+    render_start = source.index("def render_game_total_hub")
+    early_call = source.index("early_step6_rendered = _render_early_step6()", render_start)
+    frozen_call = source.index("return prior_v168.render_game_total_hub", render_start)
+    assert early_call < frozen_call
