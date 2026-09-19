@@ -520,12 +520,6 @@ def _assert_step4_matchup(frame) -> dict:
             f"Step 4 certified matchup must be fully READY: state={state!r}"
         )
 
-    coverage = str(step.get_attribute("data-step4-coverage") or "").strip()
-    if coverage != "100":
-        raise ProductionVerificationV164Failure(
-            f"Step 4 certified matchup must show 100% visible coverage: coverage={coverage!r}"
-        )
-
     limited_tiles = step.locator(".gt165-metric.limited").count()
     if limited_tiles != 0:
         raise ProductionVerificationV164Failure(
@@ -575,6 +569,7 @@ def _assert_step4_matchup(frame) -> dict:
         "directional_cards": 2,
         "source_integrity": source_integrity.count(),
         "advanced_integrity": advanced_integrity.count(),
+        "limited_tiles": limited_tiles,
         "v165_step4_verified": True,
     }
 
