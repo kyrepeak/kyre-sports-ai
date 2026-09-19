@@ -383,3 +383,22 @@ def test_v165_step4_legacy_render_path_enables_multisource_without_game():
     module_source = Path(step4.__file__).read_text(encoding="utf-8")
     assert "load_fallback=fallback is None" in module_source
     assert "load_fallback=bool(game) and fallback is None" not in module_source
+
+
+def test_v166_visual_step1_header_shell_matches_target_contract():
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        engine=_fake_engine(),
+        fallback=_fake_fallback(),
+    )
+    assert 'data-testid="gt165-step4-header-coverage"' in html
+    assert "100%" in html
+    assert "Matchup<br/>Coverage" in html
+    assert "gt165-headstatus" in html
+    assert "READY" in html
+    assert ".gt165-step4:after" in step4.STEP4_CSS
+    assert ".gt165-coverage" in step4.STEP4_CSS
+    assert "width:50px!important;height:50px!important" in step4.STEP4_CSS
