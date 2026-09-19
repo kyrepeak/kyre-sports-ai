@@ -188,6 +188,12 @@ def _assert_step1_identity(frame) -> dict:
             f"Step 1 expected two team identity cards; away={away.count()} home={home.count()}"
         )
 
+    coverage = str(step.get_attribute("data-step4-coverage") or "").strip()
+    if coverage != "100":
+        raise ProductionVerificationV164Failure(
+            f"Step 4 certified matchup must show 100% visible coverage: coverage={coverage!r}"
+        )
+
     text = step.inner_text()
     required_text = (
         "Team Identity",
