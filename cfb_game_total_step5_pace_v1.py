@@ -986,7 +986,11 @@ def _accelerator(
         ),
     )
     detail = (
-        f"{_num(spp)} sec/play • pace index {_num(index, 2)}"
+        (
+            f"{_num(spp)} sec/play • pace index {_num(index, 2)}"
+            if index is not None
+            else f"{_num(spp)} sec/play • SportsDataverse PBP"
+        )
         if spp is not None
         else (
             f"pace index {_num(index, 2)}"
@@ -1021,7 +1025,11 @@ def _brake(
             key=lambda row: float(row[2] or 0.0),
         )
     detail = (
-        f"{_duration_text(drive_time)} avg drive • pace index {_num(index, 2)}"
+        (
+            f"{_duration_text(drive_time)} avg drive • pace index {_num(index, 2)}"
+            if index is not None
+            else f"{_duration_text(drive_time)} avg drive • SportsDataverse PBP"
+        )
         if drive_time is not None
         else (
             f"pace index {_num(index, 2)}"
