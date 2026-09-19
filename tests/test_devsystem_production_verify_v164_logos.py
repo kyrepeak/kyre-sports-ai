@@ -302,7 +302,7 @@ def test_v164_waits_for_step5_dom_then_runs_strict_surface_assertions():
     assert "if REQUIRED_STEP2_MARKER not in body:" in live_block
     assert "if REQUIRED_STEP3_MARKER not in body:" in live_block
     assert "if REQUIRED_STEP4_MARKER not in body:" in live_block
-    assert "if REQUIRED_STEP5_MARKER not in body:" in live_block
+    assert "if REQUIRED_STEP5_MARKER not in body:" not in live_block
 
     step5 = source.split("def _assert_step5_pace", 1)[1].split(
         "def verify_live_v164", 1
