@@ -7,6 +7,10 @@ on:
       - "cfb_game_total_step4_matchup_v2.py"
       - "cfb_game_total_clean_page_v16.py"
       - "streamlit_memory_lazy_router_v161.py"
+      - "devsystem/production_verify_v4.py"
+      - "devsystem/production_verify_v164_logos.py"
+      - "tests/test_devsystem_production_verify_v4.py"
+      - "tests/test_devsystem_production_verify_v164_logos.py"
       - "tests/test_cfb_game_total_v165_step4_matchup.py"
       - ".github/workflows/cfb-game-total-v165-step4.yml"
   workflow_dispatch:
@@ -34,6 +38,8 @@ jobs:
             cfb_game_total_step4_matchup_v2.py \
             cfb_game_total_clean_page_v16.py \
             streamlit_memory_lazy_router_v161.py \
+            devsystem/production_verify_v4.py \
+            devsystem/production_verify_v164_logos.py \
             app.py
       - name: Run Step 4 and frozen-boundary regression tests
         run: |
@@ -41,4 +47,6 @@ jobs:
             tests/test_cfb_game_total_v165_step4_matchup.py \
             tests/test_cfb_game_total_step4_matchup_v1.py \
             tests/test_cfb_game_total_v164_team_logos.py \
+            tests/test_devsystem_production_verify_v4.py \
+            tests/test_devsystem_production_verify_v164_logos.py \
             tests/test_cfb_game_total_v159_compact_dashboard.py
