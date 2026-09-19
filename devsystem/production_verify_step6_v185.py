@@ -25,6 +25,8 @@ class Step6V185ProductionVerificationFailure(RuntimeError):
 GREEN_MARKER = "CFB_GAME_TOTAL_V185_STEP6_PRODUCTION_GREEN"
 STEP6_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP6_V185_VISUAL_PARITY_ACTIVE"
 STEP6_PARITY_MARKER = "CFB_GAME_TOTAL_STEP6_TARGET_MOCK_PARITY_ACTIVE"
+ROUTER_HOTFIX_MARKER = "CFB_GAME_TOTAL_V185_ROUTER_V165_PRODUCTION_HOTFIX_ACTIVE"
+ROUTER_HEARTBEAT_TESTID = "cfb-game-total-v185-step6-cert-heartbeat"
 STEP6_ROOT_SELECTOR = (
     'details.gt184-step6.gt185-step6[data-testid="gt157-step-6"]'
     f'[data-step6-visual-marker="{STEP6_VISUAL_MARKER}"]'
@@ -236,6 +238,19 @@ def verify_live_v185(
                             f"expected={cert_date!r} actual={selected_date!r}"
                         )
 
+                    heartbeat = frame.locator(
+                        f'[data-testid="{ROUTER_HEARTBEAT_TESTID}"]'
+                    ).last
+                    if heartbeat.count() <= 0:
+                        raise Step6V185ProductionVerificationFailure(
+                            "V165 production-hotfix heartbeat element is missing"
+                        )
+                    heartbeat_text = str(heartbeat.text_content() or "")
+                    if ROUTER_HOTFIX_MARKER not in heartbeat_text:
+                        raise Step6V185ProductionVerificationFailure(
+                            "V165 production-hotfix heartbeat marker is missing"
+                        )
+
                     step6 = _assert_v185_visual(root)
                     screenshot = artifacts / "production_step6_v185_green.png"
                     page.screenshot(path=str(screenshot), full_page=True)
@@ -249,6 +264,7 @@ def verify_live_v185(
                         "event_id": str(event_id),
                         "matchup": cert_matchup,
                         "step6": step6,
+                        "router_hotfix_marker": ROUTER_HOTFIX_MARKER,
                         "frame_scan_count": len(scans),
                         "screenshot": str(screenshot),
                         "root_screenshot": str(rootshot),
