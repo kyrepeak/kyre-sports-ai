@@ -27,9 +27,10 @@
     "3": "expanded neon Step 4 UI and additive activation built",
     "4": "production render verified to call the NCAA matchup engine without model mutation",
     "5": "Steps 4–12 full-width vertical stack certified",
-    "6": "dedicated V165 compile and frozen-boundary regression suite passed before protected-main merge"
+    "6": "dedicated V165 compile and frozen-boundary regression suite passed before protected-main merge",
+    "7": "post-merge legacy production verifier aligned to the active V165 Step 4 DOM contract; frozen Steps 1–3, exact-logo checks, model math, APIs, and sportsbook influence remain unchanged"
   },
-  "proof_target": "PR #680 dedicated step4-v165 workflow must be GREEN on the current head, DevSystem final gate must be GREEN, protected main must accept the exact certified head, and production Streamlit must expose the V165 activation before Step 4 is frozen.",
+  "proof_target": "PR #680 remains the certified V165 Step 4 implementation. Follow-up PR #682 must pass targeted CI, then the existing production-logo workflow must verify the active V165 Step 4 marker/selectors and exact team logos on main without changing production/model behavior.",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
