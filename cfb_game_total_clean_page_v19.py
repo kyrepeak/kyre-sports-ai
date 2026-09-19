@@ -8,6 +8,8 @@ with the V185 visual-parity owner during render.
 """
 from __future__ import annotations
 
+from threading import RLock
+
 import cfb_game_total_clean_page_v18 as prior_v184
 import cfb_game_total_step6_visual_v2 as step6_visual
 
@@ -32,14 +34,19 @@ STEP6_CERT_SURFACE_MARKER = prior_v184.STEP6_CERT_SURFACE_MARKER
 _step6_snapshot_row = prior_v184._step6_snapshot_row
 _step6_snapshot_bundle = prior_v184._step6_snapshot_bundle
 
+# V18 exposes its renderer through a module hook. Serialize the additive V185
+# swap so concurrent Streamlit sessions cannot interleave capture/restore.
+_VISUAL_RENDER_LOCK = RLock()
+
 
 def _render_with_v185_visual(callback, *args, **kwargs):
-    original = prior_v184.step6_owner.render_step6_html
-    prior_v184.step6_owner.render_step6_html = step6_visual.render_step6_html
-    try:
-        return callback(*args, **kwargs)
-    finally:
-        prior_v184.step6_owner.render_step6_html = original
+    with _VISUAL_RENDER_LOCK:
+        original = prior_v184.step6_owner.render_step6_html
+        prior_v184.step6_owner.render_step6_html = step6_visual.render_step6_html
+        try:
+            return callback(*args, **kwargs)
+        finally:
+            prior_v184.step6_owner.render_step6_html = original
 
 
 def render_step6_cert_surface() -> None:
