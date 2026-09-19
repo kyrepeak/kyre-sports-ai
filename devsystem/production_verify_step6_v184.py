@@ -15,8 +15,6 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 from playwright.sync_api import sync_playwright
 
-from devsystem import production_verify_v5 as v163_nav
-
 
 class Step6ProductionVerificationFailure(RuntimeError):
     pass
@@ -38,6 +36,10 @@ DATE_QUERY_KEY = "ks_cfb_game_total_date"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 CERT_QUERY_KEY = "ks_cfb_step6_cert"
 CERT_SURFACE_MARKER = "CFB_GAME_TOTAL_V184_STEP6_CERT_SNAPSHOT_V1_ACTIVE"
+CERT_SURFACE_SELECTOR = (
+    '[data-testid="gt184-step6-cert-surface"]'
+    f'[data-step6-cert-marker="{CERT_SURFACE_MARKER}"]'
+)
 CERT_CANDIDATES = (
     {
         "event_id": "401869940",
@@ -69,36 +71,55 @@ def _load_streamlit_url() -> str:
     return str(targets["streamlit"]["url"]).rstrip("/")
 
 
+def _scan_step6_cert_frame(page):
+    scans: list[dict] = []
+    for index, frame in enumerate(page.frames):
+        try:
+            body = frame.locator("body").inner_text(timeout=5000)
+        except Exception:
+            body = ""
+        try:
+            cert_count = frame.locator(CERT_SURFACE_SELECTOR).count()
+        except Exception:
+            cert_count = 0
+        try:
+            root_count = frame.locator(STEP6_ROOT_SELECTOR).count()
+        except Exception:
+            root_count = 0
+        scans.append(
+            {
+                "index": index,
+                "url": frame.url,
+                "cert_surface_count": cert_count,
+                "step6_root_count": root_count,
+                "body_start": body[:700],
+            }
+        )
+        if cert_count > 0 and root_count > 0:
+            return frame, body, scans
+    return None, "", scans
+
+
 def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
     deadline = time.monotonic() + timeout_seconds
     last_body = ""
-    last_error = ""
     last_scans: list[dict] = []
 
     while time.monotonic() < deadline:
-        try:
-            frame, body, scans = v163_nav._find_v163_frame(
-                page,
-                timeout_seconds=min(45.0, max(5.0, deadline - time.monotonic())),
-            )
-            last_body = str(body or "")
-            last_scans = scans
+        frame, body, scans = _scan_step6_cert_frame(page)
+        last_body = str(body or "")
+        last_scans = scans
+        if frame is not None:
             root = frame.locator(STEP6_ROOT_SELECTOR).last
-            root_count = root.count()
-            if root_count > 0:
-                root.wait_for(state="attached", timeout=5000)
-                return frame, root, body, scans
-            last_error = "V184 Step 6 root not live yet"
-        except Exception as exc:
-            last_error = f"{type(exc).__name__}: {exc}"[:1200]
+            root.wait_for(state="attached", timeout=5000)
+            return frame, root, body, scans
 
-        page.wait_for_timeout(5000)
+        page.wait_for_timeout(1000)
         page.reload(wait_until="domcontentloaded", timeout=120000)
 
     raise Step6ProductionVerificationFailure(
-        "V184 Step 6 production surface did not become live: "
-        f"last_error={last_error!r} scans={last_scans!r} "
-        f"body_start={last_body[:3000]!r}"
+        "V184 Step 6 certification surface did not become live: "
+        f"scans={last_scans!r} body_start={last_body[:3000]!r}"
     )
 
 
@@ -205,10 +226,7 @@ def verify_live_step6(
                         timeout_seconds=float(candidate["wait_seconds"]),
                     )
 
-                    cert_surface = frame.locator(
-                        '[data-testid="gt184-step6-cert-surface"]'
-                        f'[data-step6-cert-marker="{CERT_SURFACE_MARKER}"]'
-                    ).last
+                    cert_surface = frame.locator(CERT_SURFACE_SELECTOR).last
                     if cert_surface.count() <= 0:
                         raise Step6ProductionVerificationFailure(
                             "V184 dedicated Step 6 certification surface marker is missing"
