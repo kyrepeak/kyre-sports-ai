@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v184-step6-snapshot-hotfix",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V184 Step 6 production-render hotfix only. Add a checked-in verified SportsDataverse scoring snapshot for the current Coastal Carolina @ Delaware matchup and use exact team-ID + completed-event-ID matching before the existing live SportsDataverse fallback. Preserve Page V18 layout, Router V163, Steps 1-5, projection/probability/distribution math, APIs, qualification/ranking, and sportsbook projection influence 0.0%.",
+  "proof_target": "Exact snapshot match must avoid live PBP network calls and render the existing Step 6 contract READY / 100% / 12-of-12. Any team/event drift must reject the snapshot and retain the existing live fallback. Production must then emit the live V184 Step 6 GREEN marker before permanent freeze.",
+  "internal_steps": {
+    "1": "Use production evidence proving the V184 heartbeat is live but the Step 6 DOM is blocked before emission.",
+    "2": "Build real Step 6 offense/defense metrics from the verified SportsDataverse completed-game blobs already identified by the Step 5 snapshot.",
+    "3": "Use snapshot-first exact-match evidence with live SportsDataverse fallback for uncached games.",
+    "4": "Pass Step 6 tests and repo gates, merge, certify live production, then finalize the prepared permanent freeze."
+  }
+}

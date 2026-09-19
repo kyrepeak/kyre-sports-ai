@@ -10,6 +10,8 @@ projection influence remains 0.0%.
 from __future__ import annotations
 
 from html import escape
+import json
+from pathlib import Path
 from statistics import mean
 from typing import Any, Mapping, Sequence
 
@@ -24,6 +26,9 @@ FROZEN_PREDECESSOR = "cfb_game_total_clean_page_v17"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 MAX_PBP_GAMES = step5_pace.MAX_PBP_GAMES
+STEP6_PBP_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent / "data" / "cfb_step6_scoring_snapshot_v1.json"
+)
 
 _METRICS = (
     ("pass_explosive_rate", "EXPLOSIVE PASS RATE", "20+ YARD PASSES"),
@@ -372,11 +377,81 @@ def _side_metrics(
     return metrics
 
 
+def _load_step6_pbp_snapshot() -> dict[str, Any]:
+    try:
+        payload = json.loads(
+            STEP6_PBP_SNAPSHOT_PATH.read_text(encoding="utf-8")
+        )
+    except Exception:
+        return {}
+    return dict(payload) if isinstance(payload, Mapping) else {}
+
+
+def _snapshot_pbp_evidence(
+    identity: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+) -> dict[str, Any]:
+    payload = _load_step6_pbp_snapshot()
+    teams = payload.get("teams") if isinstance(payload.get("teams"), Mapping) else {}
+    if not teams:
+        return {}
+
+    profiles = {"away": away, "home": home}
+    out: dict[str, Any] = {}
+    loaded_events: set[str] = set()
+
+    for side, profile in profiles.items():
+        team_id = _team_id(identity, profile, side)
+        requested_event_ids = _event_ids(profile)
+        cached = teams.get(team_id) if team_id else None
+        if not isinstance(cached, Mapping) or not requested_event_ids:
+            return {}
+
+        cached_event_ids = {
+            _clean(value)
+            for value in (cached.get("event_ids") or [])
+            if _clean(value)
+        }
+        if not set(requested_event_ids).issubset(cached_event_ids):
+            return {}
+
+        offense = cached.get("offense") if isinstance(cached.get("offense"), Mapping) else {}
+        defense = cached.get("defense") if isinstance(cached.get("defense"), Mapping) else {}
+        if not offense or not defense:
+            return {}
+
+        offense_row = dict(offense)
+        defense_row = dict(defense)
+        for row in (offense_row, defense_row):
+            row["team_id"] = team_id
+            row["requested_event_ids"] = list(requested_event_ids)
+            row["delivery"] = "sportsdataverse_github_raw_snapshot"
+
+        out[f"{side}_offense"] = offense_row
+        out[f"{side}_defense"] = defense_row
+        out[f"{side}_event_ids"] = list(requested_event_ids)
+        loaded_events.update(requested_event_ids)
+
+    out["unique_events_loaded"] = len(loaded_events)
+    out["snapshot_used"] = True
+    return out
+
+
 def _load_pbp_evidence(
     identity: Mapping[str, Any],
     away: Mapping[str, Any],
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
+    snapshot = _snapshot_pbp_evidence(identity, away, home)
+    if (
+        snapshot.get("away_offense")
+        and snapshot.get("away_defense")
+        and snapshot.get("home_offense")
+        and snapshot.get("home_defense")
+    ):
+        return snapshot
+
     profiles = {"away": away, "home": home}
     side_events = {
         side: _event_ids(profile)
@@ -412,6 +487,7 @@ def _load_pbp_evidence(
         out[f"{side}_defense"] = _side_metrics(games, team_id, defense=True)
         out[f"{side}_event_ids"] = list(side_events.get(side, []))
     out["unique_events_loaded"] = len(payloads)
+    out["snapshot_used"] = False
     return out
 
 
@@ -879,6 +955,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP6_DATA_MARKER",
     "STEP6_DEPLOYMENT_MARKER",
+    "STEP6_PBP_SNAPSHOT_PATH",
     "STEP6_PRESENTATION_MARKER",
     "STEP6_VISUAL_MARKER",
     "build_step6_contract",
