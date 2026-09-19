@@ -14,6 +14,11 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert "_event_from_url" in source
     assert "STEP6_ROOT_SELECTOR" in wait_source
     assert "v163_nav._find_v163_frame" in wait_source
+    assert 'ROUTER_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_V184_MULTIPATH_DEPLOYMENT_ACTIVE"' in module_source
+    assert "DEPLOYMENT_WAIT_SECONDS = 480.0" in module_source
+    assert "def _wait_for_router_deployment" in module_source
+    assert "ROUTER_DEPLOYMENT_MARKER in last_body" in module_source
+    assert "_wait_for_router_deployment(page)" in source
     assert "page.reload" in wait_source
     assert "_wait_for_v164_patch_deployment" not in wait_source
     assert "_wait_for_top_level_selection" not in wait_source
@@ -48,3 +53,7 @@ def test_v184_step6_production_markers_are_stable():
         == "CFB_GAME_TOTAL_STEP6_V184_DEPLOYMENT_ACTIVE"
     )
     assert verifier.GREEN_MARKER == "CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN"
+    assert (
+        verifier.ROUTER_DEPLOYMENT_MARKER
+        == "CFB_GAME_TOTAL_V184_MULTIPATH_DEPLOYMENT_ACTIVE"
+    )
