@@ -17,6 +17,7 @@ MAY_MODIFY_PROJECTION = False
 ACTIVE_MARKER = "CFB GAME TOTAL • V165 STEP4 MATCHUP ACTIVE"
 STEP4_PRESENTATION_MARKER = step4_owner.STEP4_PRESENTATION_MARKER
 STEP4_DATA_MARKER = step4_owner.STEP4_DATA_MARKER
+STEP4_DEPLOYMENT_MARKER = step4_owner.STEP4_DEPLOYMENT_MARKER
 
 # Re-export the V164 identity helpers for source-level certification and rollback.
 _resolve_visuals_v164 = prior_v164._resolve_visuals_v164
@@ -29,7 +30,11 @@ _query_selected_day = prior_v164._query_selected_day
 
 def render_game_total_hub(section_header=None, status_info=None, team_logo=None, h=None):
     original_step4_owner = prior_v164.step4_owner
+    original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER
     prior_v164.step4_owner = step4_owner
+    prior_v164.STEP4_PRESENTATION_MARKER = (
+        f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER}"
+    )
     try:
         return prior_v164.render_game_total_hub(
             section_header,
@@ -39,6 +44,7 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
         )
     finally:
         prior_v164.step4_owner = original_step4_owner
+        prior_v164.STEP4_PRESENTATION_MARKER = original_step4_marker
 
 
 def render_cfb_hub(market: str, section_header=None, status_info=None, team_logo=None, h=None) -> None:
@@ -55,6 +61,7 @@ __all__ = [
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP4_DATA_MARKER",
+    "STEP4_DEPLOYMENT_MARKER",
     "STEP4_PRESENTATION_MARKER",
     "_query_selected_day",
     "_reconcile_display_bundle_v164",
