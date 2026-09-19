@@ -56,16 +56,19 @@ def test_v164_production_verifier_waits_for_exact_step1_profile_patch():
 
 
 
-def test_v164_deployment_gate_reads_hidden_markers_from_dom_text():
+def test_v164_deployment_gate_uses_proven_v163_body_for_current_markers():
     source = VERIFIER.read_text(encoding="utf-8")
-    assert 'frame.locator("body").text_content()' in source
     wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
         "def _assert_step1_identity", 1
     )[0]
+    assert 'dom_text = str(body or "")' in wait_block
+    assert 'frame.locator("body").text_content()' not in wait_block
     assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" not in wait_block
     assert "REQUIRED_STEP1_MARKER in dom_text" not in wait_block
+    assert "REQUIRED_HEARTBEAT in dom_text" in wait_block
     assert "REQUIRED_PATCH_MARKER in dom_text" in wait_block
-    assert "return frame, dom_text, scans" in source
+    assert "REQUIRED_STEP5_MARKER in dom_text" in wait_block
+    assert "return frame, dom_text, scans" in wait_block
 
 
 def test_v164_production_verifier_waits_for_full_streamlit_logo_surface():
