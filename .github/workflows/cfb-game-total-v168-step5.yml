@@ -36,4 +36,4 @@ jobs:
           python -m py_compile             cfb_game_total_step5_pace_v1.py             cfb_game_total_clean_page_v17.py             streamlit_memory_lazy_router_v162.py             app.py
       - name: Run Step 5 and frozen-boundary regression tests
         run: |
-          PYTHONPATH="$PWD" python -m pytest -q             tests/test_cfb_game_total_v168_step5_pace.py             tests/test_cfb_game_total_v165_step4_matchup.py             tests/test_cfb_game_total_v159_compact_dashboard.py             tests/test_cfb_game_total_v164_team_logos.py
+          PYTHONPATH="$PWD" python -m pytest -q             tests/test_cfb_game_total_v168_step5_pace.py             tests/test_devsystem_production_verify_v164_logos.py             tests/test_cfb_game_total_v165_step4_matchup.py             tests/test_cfb_game_total_v159_compact_dashboard.py             tests/test_cfb_game_total_v164_team_logos.py
