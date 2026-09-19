@@ -266,3 +266,33 @@ def test_v164_step4_v166_visual_freeze_contract_is_hard_gated():
     assert '"integrity_icons": 2' in step4
     assert "Step 4 V166 visual anatomy mismatch" in step4
     assert '"v166_step4_visual_verified": True' in step4
+
+
+
+def test_v164_step5_v168_pace_surface_is_hard_gated():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert 'REQUIRED_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"' in source
+    assert 'REQUIRED_STEP5_DATA_MARKER = "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"' in source
+    assert 'REQUIRED_STEP5_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP5_V168_VISUAL_TARGET_ACTIVE"' in source
+    assert "def _assert_step5_pace(frame)" in source
+    step5 = source.split("def _assert_step5_pace", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+    assert 'details[data-testid="gt157-step-5"]' in step5
+    assert 'get_attribute("data-step5-marker")' in step5
+    assert 'get_attribute("data-step5-data-marker")' in step5
+    assert 'get_attribute("data-step5-visual-marker")' in step5
+    assert 'data-testid="gt168-step5-stat-tile"' in step5
+    assert "Step 5 expected 12 pace/possession tiles" in step5
+    assert 'get_attribute("data-step5-state")' in step5
+    assert 'get_attribute("data-step5-coverage")' in step5
+    assert '"PACE & EXPECTED POSSESSIONS"' in step5
+    assert '"EXPECTED GAME ENVIRONMENT"' in step5
+    assert '"MATCHUP READ"' in step5
+    assert '"BIGGEST ACCELERATOR"' in step5
+    assert '"BIGGEST BRAKE"' in step5
+    assert '"O/U IMPACT"' in step5
+    assert '"DATA CONFIDENCE"' in step5
+    assert '"pace_coverage": coverage' in step5
+    assert '"v168_step5_verified": True' in step5
+    assert '"step5_pace_expected_possessions": step5' in source
