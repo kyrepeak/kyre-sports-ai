@@ -16,12 +16,16 @@ pace engine is read-only here; sportsbook projection influence remains 0.0%.
 """
 from __future__ import annotations
 
-from statistics import mean
+from statistics import mean, median
 from html import escape
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from io import BytesIO
 import re
 from typing import Any, Mapping, Sequence
+from zoneinfo import ZoneInfo
 
+import pandas as pd
 import requests
 import streamlit as st
 
@@ -41,6 +45,12 @@ SPORTSDATAVERSE_GAME_URL = (
     "cfbfastR-cfb-raw/main/cfb/json/final/{event_id}.json"
 )
 SPORTSDATAVERSE_TIMEOUT_SECONDS = 5.0
+SPORTSDATAVERSE_MATCHUP_FEATURES_URL = (
+    "https://raw.githubusercontent.com/sportsdataverse/"
+    "cfbfastR-cfb-data/main/cfb/cfb_matchup_features/parquet/"
+    "cfb_matchup_features_{season}.parquet"
+)
+SPORTSDATAVERSE_FEATURES_TIMEOUT_SECONDS = 10.0
 ESPN_SUMMARY_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/"
     "college-football/summary"
@@ -212,6 +222,117 @@ def _fetch_sportsdataverse_game(event_id: str) -> dict[str, Any]:
     except Exception:
         return {}
     return dict(payload) if isinstance(payload, Mapping) else {}
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def _fetch_sportsdataverse_matchup_features(season: int) -> list[dict[str, Any]]:
+    """Load pregame/as-of SportsDataverse pace features for one season.
+
+    This is a Step-5 presentation fallback only. It does not feed the frozen
+    projection engine. The upstream dataset is computed strictly from plays
+    before each game, so selecting the target game row avoids future leakage.
+    """
+    url = SPORTSDATAVERSE_MATCHUP_FEATURES_URL.format(season=int(season))
+    try:
+        response = requests.get(
+            url,
+            timeout=SPORTSDATAVERSE_FEATURES_TIMEOUT_SECONDS,
+            headers={
+                "User-Agent": "KyreSportsAI-GameTotal-Step5/1.0",
+                "Accept": "application/octet-stream",
+            },
+        )
+        response.raise_for_status()
+        frame = pd.read_parquet(BytesIO(response.content))
+    except Exception:
+        return []
+    if frame.empty:
+        return []
+    if "season" in frame.columns:
+        try:
+            frame = frame[frame["season"].astype(int) == int(season)]
+        except Exception:
+            pass
+    return [
+        dict(row)
+        for row in frame.to_dict(orient="records")
+        if isinstance(row, Mapping)
+    ]
+
+
+def _feature_number(row: Mapping[str, Any], *keys: str) -> float | None:
+    for key in keys:
+        value = _float(row.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _feature_row(
+    rows: Sequence[Mapping[str, Any]],
+    team_id: str,
+    event_id: str,
+    target_day: str,
+) -> dict[str, Any]:
+    team_id = _clean(team_id)
+    event_id = _clean(event_id)
+    candidates = [
+        dict(row)
+        for row in rows
+        if _clean(row.get("team_id")) == team_id
+    ]
+    if event_id:
+        exact = [
+            row for row in candidates
+            if _clean(row.get("game_id")) == event_id
+        ]
+        if exact:
+            return exact[-1]
+    if not candidates:
+        return {}
+
+    def row_day(row: Mapping[str, Any]) -> str:
+        return _clean(row.get("start_date"))[:10]
+
+    if target_day:
+        eligible = [
+            row for row in candidates
+            if row_day(row) and row_day(row) <= target_day
+        ]
+        if eligible:
+            candidates = eligible
+    candidates.sort(key=lambda row: (row_day(row), _int(row.get("week")) or 0))
+    return candidates[-1] if candidates else {}
+
+
+def _feature_rank(
+    rows: Sequence[Mapping[str, Any]],
+    selected: Mapping[str, Any],
+    key: str,
+    *,
+    lower_is_faster: bool = False,
+) -> tuple[int | None, int]:
+    value = _float(selected.get(key))
+    week = _int(selected.get("week"))
+    if value is None:
+        return None, 0
+    pool: dict[str, float] = {}
+    for row in rows:
+        if week is not None and _int(row.get("week")) != week:
+            continue
+        team_id = _clean(row.get("team_id"))
+        metric = _float(row.get(key))
+        if not team_id or metric is None:
+            continue
+        pool[team_id] = metric
+    values = list(pool.values())
+    if not values:
+        return None, 0
+    if lower_is_faster:
+        rank = 1 + sum(other < value for other in values)
+    else:
+        rank = 1 + sum(other > value for other in values)
+    return int(rank), len(values)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -417,6 +538,11 @@ def _parse_sportsdataverse_evidence(
         if games_with_drives > 0 and total_drives > 0
         else None
     )
+    plays_pg = (
+        float(scrimmage_plays) / float(games_with_drives)
+        if games_with_drives > 0 and scrimmage_plays > 0
+        else None
+    )
     avg_drive = mean(drive_seconds) if drive_seconds else None
     neutral_pace = mean(neutral_deltas) if neutral_deltas else None
     no_huddle = (
@@ -428,6 +554,8 @@ def _parse_sportsdataverse_evidence(
         "games": games_with_drives,
         "drive_count": total_drives,
         "drives_per_game": drives_pg,
+        "plays_per_game": plays_pg,
+        "seconds_per_play": neutral_pace,
         "avg_drive_time_seconds": avg_drive,
         "situation_neutral_seconds_per_play": neutral_pace,
         "no_huddle_rate": no_huddle,
@@ -567,6 +695,197 @@ def _safe_drive_evidence(
     return out
 
 
+def _safe_sdv_pregame_pace(
+    identity: Mapping[str, Any],
+    game: Mapping[str, Any],
+    drive_evidence: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Presentation-only recovery for NCAA pace-table gaps."""
+    season = _season(game)
+    event_id = _clean(
+        game.get("espn_event_id")
+        or game.get("event_id")
+        or game.get("game_id")
+    )
+    target_day = ""
+    for key in ("game_date", "date", "start_date", "kickoff_iso"):
+        text = _clean(game.get(key))
+        if text:
+            target_day = text[:10]
+            break
+
+    rows = _fetch_sportsdataverse_matchup_features(season)
+    side_rows: dict[str, dict[str, Any]] = {}
+    week_values: list[float] = []
+    week_spp_values: list[float] = []
+
+    for side in ("away", "home"):
+        team_id = _team_id(identity, side)
+        selected = _feature_row(rows, team_id, event_id, target_day)
+        side_rows[side] = selected
+
+    selected_weeks = [
+        _int(row.get("week"))
+        for row in side_rows.values()
+        if row
+    ]
+    target_week = next((week for week in selected_weeks if week is not None), None)
+    if target_week is not None:
+        latest_by_team: dict[str, Mapping[str, Any]] = {}
+        for row in rows:
+            if _int(row.get("week")) != target_week:
+                continue
+            tid = _clean(row.get("team_id"))
+            if tid:
+                latest_by_team[tid] = row
+        for row in latest_by_team.values():
+            value = _feature_number(row, "off_plays_per_game")
+            spp = _feature_number(
+                row,
+                "off_sec_per_play_mean",
+                "off_sec_per_play_median",
+            )
+            if value is not None and 35.0 <= value <= 100.0:
+                week_values.append(value)
+            if spp is not None and 10.0 <= spp <= 45.0:
+                week_spp_values.append(spp)
+
+    baseline_plays = median(week_values) if len(week_values) >= 8 else None
+    baseline_spp = median(week_spp_values) if len(week_spp_values) >= 8 else None
+
+    side_contracts: dict[str, dict[str, Any]] = {}
+    for side in ("away", "home"):
+        selected = side_rows.get(side) or {}
+        drive = (
+            drive_evidence.get(side)
+            if isinstance(drive_evidence.get(side), Mapping)
+            else {}
+        )
+        plays_pg = _feature_number(selected, "off_plays_per_game")
+        spp = _feature_number(
+            selected,
+            "off_sec_per_play_mean",
+            "off_sec_per_play_median",
+        )
+        plays_source = "SportsDataverse pregame matchup features"
+        clock_source = "SportsDataverse pregame matchup features"
+
+        if plays_pg is None:
+            plays_pg = _float(drive.get("plays_per_game"))
+            plays_source = "SportsDataverse completed-game PBP"
+        if spp is None:
+            spp = _float(
+                drive.get("seconds_per_play")
+                or drive.get("situation_neutral_seconds_per_play")
+            )
+            clock_source = "SportsDataverse completed-game PBP"
+
+        plays_rank, field_size = _feature_rank(
+            rows,
+            selected,
+            "off_plays_per_game",
+        ) if selected else (None, 0)
+        spp_rank, _ = _feature_rank(
+            rows,
+            selected,
+            "off_sec_per_play_mean",
+            lower_is_faster=True,
+        ) if selected else (None, 0)
+
+        pace_index = (
+            plays_pg / float(baseline_plays)
+            if plays_pg is not None and baseline_plays
+            else None
+        )
+        side_contracts[side] = {
+            "team": _clean(selected.get("team")) or _clean(
+                _team_identity(identity, side).get("team")
+            ),
+            "games": max(1, (_int(selected.get("week")) or 1) - 1),
+            "plays_per_game": plays_pg,
+            "seconds_per_offensive_play": spp,
+            "avg_time_of_possession_seconds": None,
+            "division_baseline_plays_per_game": baseline_plays,
+            "division_baseline_seconds_per_play": baseline_spp,
+            "pace_index": pace_index,
+            "plays_rank": plays_rank,
+            "seconds_per_play_rank": spp_rank,
+            "rank_field_size": field_size,
+            "plays_source": plays_source if plays_pg is not None else "",
+            "clock_source": clock_source if spp is not None else "",
+        }
+
+    away_ppg = _float(side_contracts["away"].get("plays_per_game"))
+    home_ppg = _float(side_contracts["home"].get("plays_per_game"))
+    away_spp = _float(side_contracts["away"].get("seconds_per_offensive_play"))
+    home_spp = _float(side_contracts["home"].get("seconds_per_offensive_play"))
+
+    if away_ppg is None or home_ppg is None:
+        return {
+            "ready": True,
+            "model_ready": False,
+            "presentation_ready": False,
+            "coverage": 0.0,
+            "reason": "SportsDataverse pregame/PBP pace fallback incomplete",
+            "away": side_contracts["away"],
+            "home": side_contracts["home"],
+            "sportsbook_input_used": False,
+        }
+
+    historical_combined = away_ppg + home_ppg
+    baseline_combined = (
+        2.0 * float(baseline_plays)
+        if baseline_plays is not None
+        else historical_combined
+    )
+    pace_ratio = (
+        historical_combined / baseline_combined
+        if baseline_combined > 0
+        else 1.0
+    )
+    pace_signal = max(
+        -1.0,
+        min(
+            1.0,
+            (pace_ratio - 1.0) / float(pace_engine.PACE_FULL_SIGNAL_RATIO),
+        ),
+    )
+    clock_implied = (
+        7200.0 / (away_spp + home_spp)
+        if away_spp is not None
+        and home_spp is not None
+        and away_spp + home_spp > 0
+        else None
+    )
+    coverage = 1.0 if away_spp is not None and home_spp is not None else 0.90
+    return {
+        "ready": True,
+        "model_ready": False,
+        "presentation_ready": True,
+        "presentation_source": "SportsDataverse pregame matchup features + PBP fallback",
+        "coverage": coverage,
+        "sample_factor": 1.0,
+        "historical_combined_plays_per_game": historical_combined,
+        "clock_implied_combined_plays": clock_implied,
+        "division_baseline_combined_plays": baseline_combined,
+        "expected_combined_plays": historical_combined,
+        "pace_ratio": pace_ratio,
+        "pace_signal": pace_signal,
+        "pace_label": (
+            "FAST" if pace_ratio >= 1.055
+            else "SLOW" if pace_ratio <= 0.945
+            else "NEUTRAL"
+        ),
+        "away": side_contracts["away"],
+        "home": side_contracts["home"],
+        "sportsbook_input_used": False,
+        "market_price_used": False,
+        "market_probability_used": False,
+        "edge_or_ev_used": False,
+        "monte_carlo_used": False,
+    }
+
+
 def _safe_pace_engine(
     game: Mapping[str, Any],
     away: Mapping[str, Any],
@@ -693,6 +1012,7 @@ def _team_contract(
 ) -> dict[str, Any]:
     plays_pg = _float(pace_row.get("plays_per_game"))
     spp = _float(pace_row.get("seconds_per_offensive_play"))
+    plays_rank = _int(pace_row.get("plays_rank"))
     neutral = _float(drive_row.get("situation_neutral_seconds_per_play"))
     no_huddle = _float(drive_row.get("no_huddle_rate"))
     drives_pg, drives_basis = _estimated_drives(profile, drive_row)
@@ -706,7 +1026,9 @@ def _team_contract(
         _tile(
             "PLAYS / GAME",
             _num(plays_pg),
-            "NCAA",
+            f"#{plays_rank} FBS" if plays_rank is not None else (
+                "SDV" if "SportsDataverse" in _clean(pace_row.get("plays_source")) else "NCAA"
+            ),
             ready=plays_pg is not None,
             source=_clean(pace_row.get("plays_source")) or "NCAA Total Offense",
             icon="▶",
@@ -950,6 +1272,11 @@ def build_step5_contract(
         if drive_evidence is not None
         else _safe_drive_evidence(identity, away_ppd, home_ppd)
     )
+    if not pace_result.get("model_ready"):
+        recovered = _safe_sdv_pregame_pace(identity, game, drives)
+        if recovered.get("presentation_ready"):
+            recovered["frozen_pace_engine"] = pace_result
+            pace_result = recovered
 
     away_drive = drives.get("away") if isinstance(drives.get("away"), Mapping) else {}
     home_drive = drives.get("home") if isinstance(drives.get("home"), Mapping) else {}
@@ -970,7 +1297,10 @@ def build_step5_contract(
     ready_tiles = away_contract["ready_tiles"] + home_contract["ready_tiles"]
     coverage = ready_tiles / float(total_tiles)
 
-    core_ready = bool(pace_result.get("model_ready"))
+    core_ready = bool(
+        pace_result.get("model_ready")
+        or pace_result.get("presentation_ready")
+    )
     if not core_ready:
         state = "DATA LIMITED"
     elif ready_tiles == total_tiles:
@@ -1055,9 +1385,13 @@ def _team_header(
     identity: Mapping[str, Any],
     profile: Mapping[str, Any],
     side: str,
+    display_game: Mapping[str, Any] | None = None,
 ) -> str:
     name = _team_name(identity, profile, side)
     record = _record(profile)
+    event_record = _clean((display_game or {}).get(f"{side}_record_summary"))
+    if event_record and record in {"—", "0-0"}:
+        record = event_record
     conf = _conference(identity, profile, side)
     label = "AWAY" if side == "away" else "HOME"
     return f"""
@@ -1068,6 +1402,37 @@ def _team_header(
     <b>{escape(name)}</b>
     <small>{escape(record)} • {escape(conf)}</small>
   </div>
+</div>"""
+
+
+def _game_context_html(display_game: Mapping[str, Any] | None) -> str:
+    game = dict(display_game or {})
+    kickoff = _clean(
+        game.get("kickoff_iso")
+        or game.get("date")
+        or game.get("start_date")
+    )
+    day_text = _clean(game.get("game_date"))
+    time_text = ""
+    if kickoff:
+        try:
+            parsed = datetime.fromisoformat(kickoff.replace("Z", "+00:00"))
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone(ZoneInfo("America/New_York"))
+                day_text = parsed.strftime("%a, %b %d").upper()
+                time_text = parsed.strftime("%-I:%M %p ET")
+        except Exception:
+            pass
+    venue = _clean(game.get("venue") or game.get("venue_name"))
+    broadcast = _clean(game.get("broadcast"))
+    if not any((day_text, time_text, venue, broadcast)):
+        return ""
+    return f"""
+<div class="gt168-step5-game-context">
+  <b>{escape(day_text or "GAME DAY")}</b>
+  {f'<strong>{escape(time_text)}</strong>' if time_text else ''}
+  {f'<span>{escape(venue)}</span>' if venue else ''}
+  {f'<small>{escape(broadcast)}</small>' if broadcast else ''}
 </div>"""
 
 
@@ -1166,11 +1531,14 @@ def render_step5_html(
   </div>
 </div>"""
 
+    game_context = _game_context_html(display_game)
+    matchup_class = " with-context" if game_context else ""
     matchup = f"""
-<div class="gt168-step5-matchup">
-  {_team_header(identity, away, "away")}
+<div class="gt168-step5-matchup{matchup_class}">
+  {_team_header(identity, away, "away", display_game)}
   <div class="gt168-step5-vs">VS</div>
-  {_team_header(identity, home, "home")}
+  {_team_header(identity, home, "home", display_game)}
+  {game_context}
 </div>"""
 
     environment = """
@@ -1246,11 +1614,11 @@ STEP5_CSS = r"""
 .gt168-step5-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid rgba(30,174,255,.36);border-radius:13px;background:linear-gradient(90deg,#061b2c,#081525 58%,#0d1027)}
 .gt168-step5-title{display:flex;align-items:center;gap:11px;min-width:0}.gt168-step5-title>span{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(145deg,#1172b8,#0a456d);color:white;font-weight:1000;font-size:19px;box-shadow:0 0 16px rgba(0,216,255,.24)}.gt168-step5-title b{display:block;color:#f8fbff;font-size:15px}.gt168-step5-title small{display:block;color:#9ab4c8;font-size:10px;margin-top:3px}
 .gt168-step5-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.gt168-step5-chips em{font-style:normal;padding:5px 8px;border-radius:999px;border:1px solid rgba(61,241,186,.52);background:rgba(8,81,65,.20);color:#58efbd;font-size:8px;font-weight:950;letter-spacing:.04em}.gt168-step5-chips em:last-child{border-color:rgba(176,103,255,.55);color:#d8b8ff;background:rgba(81,45,116,.18)}
-.gt168-step5-matchup{display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid rgba(58,150,197,.28);border-radius:13px;background:#061724}.gt168-step5-teamhead{display:flex;align-items:center;gap:10px}.gt168-step5-teamhead.home{flex-direction:row-reverse;text-align:right}.gt168-step5-teamhead span{display:block;color:#60d8ff;font-size:8px;font-weight:950;letter-spacing:.12em}.gt168-step5-teamhead.home span{color:#ff9b4f}.gt168-step5-teamhead b{display:block;color:#f4f8fd;font-size:17px;line-height:1.05;margin-top:2px}.gt168-step5-teamhead small{display:block;color:#8ca3b8;font-size:9px;margin-top:3px}.gt168-step5-logo,.gt168-step5-logo-fallback{width:56px;height:56px;flex:0 0 56px;object-fit:contain}.gt168-step5-logo-fallback{display:grid;place-items:center;border-radius:50%;background:#0f2c40;color:#7bd9ff;font-weight:950}.gt168-step5-vs{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(71,173,235,.42);background:#082238;color:#91bedb;font-size:10px;font-weight:950;margin:auto}
+.gt168-step5-matchup{display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid rgba(58,150,197,.28);border-radius:13px;background:#061724}.gt168-step5-matchup.with-context{grid-template-columns:1fr 54px 1fr minmax(135px,.62fr)}.gt168-step5-game-context{align-self:stretch;display:flex;flex-direction:column;justify-content:center;padding:9px 11px;border-left:1px solid rgba(71,173,235,.28);color:#dceafa}.gt168-step5-game-context b{font-size:9px;color:#b9d1e3}.gt168-step5-game-context strong{font-size:12px;margin-top:3px}.gt168-step5-game-context span{font-size:8px;color:#9fb5c6;margin-top:4px}.gt168-step5-game-context small{font-size:7px;color:#74bfe8;margin-top:3px}.gt168-step5-teamhead{display:flex;align-items:center;gap:10px}.gt168-step5-teamhead.home{flex-direction:row-reverse;text-align:right}.gt168-step5-teamhead span{display:block;color:#60d8ff;font-size:8px;font-weight:950;letter-spacing:.12em}.gt168-step5-teamhead.home span{color:#ff9b4f}.gt168-step5-teamhead b{display:block;color:#f4f8fd;font-size:17px;line-height:1.05;margin-top:2px}.gt168-step5-teamhead small{display:block;color:#8ca3b8;font-size:9px;margin-top:3px}.gt168-step5-logo,.gt168-step5-logo-fallback{width:56px;height:56px;flex:0 0 56px;object-fit:contain}.gt168-step5-logo-fallback{display:grid;place-items:center;border-radius:50%;background:#0f2c40;color:#7bd9ff;font-weight:950}.gt168-step5-vs{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(71,173,235,.42);background:#082238;color:#91bedb;font-size:10px;font-weight:950;margin:auto}
 .gt168-step5-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}.gt168-step5-profile{padding:10px;border:1px solid rgba(0,229,255,.42);border-left:4px solid #00e5ff;border-radius:13px;background:linear-gradient(145deg,#052132,#061724)}.gt168-step5-profile.home{border-color:rgba(255,132,63,.46);border-left-color:#ff7c3f;background:linear-gradient(145deg,#201814,#101523)}.gt168-step5-profile-title b{display:block;color:#70eaff;font-size:13px}.gt168-step5-profile.home .gt168-step5-profile-title b{color:#ffad69}.gt168-step5-profile-title span{display:block;color:#8fa5b8;font-size:9px;margin-top:2px}.gt168-step5-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}.gt168-step5-metric{position:relative;min-height:112px;padding:9px;border:1px solid rgba(43,149,205,.35);border-radius:10px;background:#071b29;box-sizing:border-box}.gt168-step5-profile.home .gt168-step5-metric{border-color:rgba(207,115,48,.36);background:#151923}.gt168-step5-metric.limited{border-color:rgba(255,201,75,.35);background:rgba(78,59,12,.16)}.gt168-step5-metric-kicker{display:flex;align-items:center;gap:5px;color:#a9bdd0;font-size:8px;font-weight:900;line-height:1.2}.gt168-step5-metric-kicker i{font-style:normal;color:#53dfff;font-size:13px}.gt168-step5-profile.home .gt168-step5-metric-kicker i{color:#ff9e4d}.gt168-step5-metric strong{display:block;color:white;font-size:23px;line-height:1;margin-top:11px}.gt168-step5-metric em{display:inline-block;margin-top:8px;padding:3px 8px;border-radius:999px;border:1px solid rgba(59,237,180,.58);color:#5ff1bd;font-size:8px;font-style:normal;font-weight:950}.gt168-step5-profile.home .gt168-step5-metric em{border-color:rgba(255,183,70,.60);color:#ffc357}.gt168-step5-metric.limited em{border-color:rgba(255,206,77,.52)!important;color:#ffd358!important}.gt168-step5-metric small{display:block;color:#60798f;font-size:7px;line-height:1.25;margin-top:6px}
 .gt168-step5-environment{margin-top:11px;padding:11px;border:1px solid rgba(55,203,188,.46);border-radius:13px;background:linear-gradient(90deg,#062129,#071626 70%,#0c1227)}.gt168-step5-env-title b{display:block;color:#f1f8fd;font-size:13px}.gt168-step5-env-title span{display:block;color:#8ba4b8;font-size:9px;margin-top:2px}.gt168-step5-summary-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin-top:9px;border:1px solid rgba(70,150,192,.22);border-radius:10px;overflow:hidden}.gt168-step5-summary-metric{padding:9px 7px;text-align:center;border-right:1px solid rgba(70,150,192,.18);background:rgba(5,22,34,.56)}.gt168-step5-summary-metric:last-child{border-right:0}.gt168-step5-summary-metric span{display:block;color:#9eb0c0;font-size:8px}.gt168-step5-summary-metric b{display:block;color:#f7fbff;font-size:20px;margin-top:4px}.gt168-step5-summary-metric small{display:block;color:#6fe7ba;font-size:7px;margin-top:3px}
 .gt168-step5-insights{display:grid;grid-template-columns:1.08fr 1fr 1fr;gap:8px;margin-top:10px}.gt168-step5-read,.gt168-step5-insight{border:1px solid rgba(56,178,229,.42);border-radius:11px;background:#071d2c;padding:11px;box-sizing:border-box}.gt168-step5-read{border-left:4px solid #45efb1}.gt168-step5-read span,.gt168-step5-insight span{display:block;color:#89bddf;font-size:8px;font-weight:950;letter-spacing:.06em}.gt168-step5-read b,.gt168-step5-insight b{display:block;color:#5aefbd;font-size:12px;line-height:1.25;margin-top:7px}.gt168-step5-read small,.gt168-step5-insight small{display:block;color:#b3c4d2;font-size:9px;line-height:1.45;margin-top:7px}.gt168-step5-stack{display:grid;gap:8px}.gt168-step5-insight{display:grid;grid-template-columns:32px minmax(0,1fr);gap:8px;padding:9px}.gt168-step5-insight-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:rgba(35,134,183,.19);font-size:16px}.gt168-step5-insight.brake{border-color:rgba(255,89,101,.50)}.gt168-step5-insight.brake span,.gt168-step5-insight.brake b{color:#ff7e88}.gt168-step5-insight.impact b,.gt168-step5-insight.confidence b{color:#57efb8}.gt168-step5-integrity{margin-top:10px;padding:7px 9px;border:1px solid rgba(89,152,190,.20);border-radius:9px;background:#06131e;color:#7f9bb1;font-size:8px;text-align:center;font-weight:850;letter-spacing:.035em}
-@media(max-width:760px){.gt168-step5-head{align-items:flex-start;flex-direction:column}.gt168-step5-chips{justify-content:flex-start}.gt168-step5-profile-grid{grid-template-columns:1fr}.gt168-step5-insights{grid-template-columns:1fr}.gt168-step5-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.gt168-step5-summary-metric:nth-child(3){border-right:0}.gt168-step5-matchup{grid-template-columns:1fr 40px 1fr}.gt168-step5-teamhead b{font-size:13px}.gt168-step5-logo,.gt168-step5-logo-fallback{width:46px;height:46px;flex-basis:46px}}
+@media(max-width:760px){.gt168-step5-head{align-items:flex-start;flex-direction:column}.gt168-step5-chips{justify-content:flex-start}.gt168-step5-profile-grid{grid-template-columns:1fr}.gt168-step5-insights{grid-template-columns:1fr}.gt168-step5-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.gt168-step5-summary-metric:nth-child(3){border-right:0}.gt168-step5-matchup,.gt168-step5-matchup.with-context{grid-template-columns:1fr 40px 1fr}.gt168-step5-game-context{grid-column:1/-1;border-left:0;border-top:1px solid rgba(71,173,235,.28);padding:8px 2px 0}.gt168-step5-teamhead b{font-size:13px}.gt168-step5-logo,.gt168-step5-logo-fallback{width:46px;height:46px;flex-basis:46px}}
 @media(max-width:420px){.gt168-step5-body{padding:2px 7px 10px}.gt168-step5-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.gt168-step5-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gt168-step5-matchup{padding:8px}.gt168-step5-teamhead{gap:5px}.gt168-step5-teamhead small{display:none}.gt168-step5-metric{min-height:105px}.gt168-step5-title b{font-size:12px}.gt168-step5-title small{font-size:8px}}
 </style>
 """
@@ -1259,6 +1627,7 @@ STEP5_CSS = r"""
 __all__ = [
     "ESPN_SUMMARY_URL",
     "SPORTSDATAVERSE_GAME_URL",
+    "SPORTSDATAVERSE_MATCHUP_FEATURES_URL",
     "FROZEN_PREDECESSOR",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
