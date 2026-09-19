@@ -7,6 +7,10 @@ Step 6 Scoring Creation marker.
 """
 from __future__ import annotations
 
+import importlib
+
+import streamlit as st
+
 import streamlit_memory_lazy_router_v162 as prior
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V163 • CFB GAME TOTAL V184 STEP6 SCORING CREATION"
@@ -23,6 +27,8 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 ROUTE_QUERY_SPORT = prior.ROUTE_QUERY_SPORT
 ROUTE_QUERY_MARKET = prior.ROUTE_QUERY_MARKET
+STEP6_CERT_QUERY_KEY = "ks_cfb_step6_cert"
+STEP6_CERT_ROUTER_MARKER = "CFB_GAME_TOTAL_V184_STEP6_CERT_ROUTER_ACTIVE"
 
 
 def record_bootstrap_import_ms(value: float) -> None:
@@ -47,6 +53,34 @@ def _restore_game_total_route_from_query() -> bool:
 
 def _purge_game_total_page_modules() -> int:
     return prior._purge_game_total_page_modules()
+
+
+
+def _step6_cert_requested() -> bool:
+    try:
+        raw = st.query_params.get(STEP6_CERT_QUERY_KEY)
+    except Exception:
+        return False
+    if isinstance(raw, (list, tuple)):
+        raw = raw[-1] if raw else ""
+    return str(raw or "").strip().casefold() in {"1", "true", "yes", "on"}
+
+
+def _render_step6_cert_surface() -> None:
+    st.set_page_config(
+        page_title="Kyre Sports AI • CFB Game Total Step 6 Certification",
+        page_icon="🏈",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
+    st.markdown(
+        f'<div data-testid="cfb-game-total-v184-step6-cert-heartbeat" '
+        f'style="display:none!important">{PRODUCTION_HEARTBEAT} • '
+        f'{STEP6_CERT_ROUTER_MARKER}</div>',
+        unsafe_allow_html=True,
+    )
+    page = importlib.import_module(ACTIVE_PAGE)
+    return page.render_step6_cert_surface()
 
 
 def _render_exact_game_total_surface() -> None:
@@ -75,6 +109,8 @@ def render_app() -> None:
     if not _game_total_route_active():
         _restore_game_total_route_from_query()
     if _game_total_route_active():
+        if _step6_cert_requested():
+            return _render_step6_cert_surface()
         return _render_exact_game_total_surface()
     return prior.render_app()
 
@@ -90,6 +126,8 @@ __all__ = [
     "PRODUCTION_HEARTBEAT",
     "ROUTE_QUERY_MARKET",
     "ROUTE_QUERY_SPORT",
+    "STEP6_CERT_QUERY_KEY",
+    "STEP6_CERT_ROUTER_MARKER",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_clear_game_total_route_query",
     "_game_total_route_active",
@@ -99,6 +137,8 @@ __all__ = [
     "_render_direct_cfb_game_total",
     "_render_exact_game_total_surface",
     "_restore_game_total_route_from_query",
+    "_render_step6_cert_surface",
+    "_step6_cert_requested",
     "record_bootstrap_import_ms",
     "render_app",
 ]
