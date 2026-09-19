@@ -61,12 +61,28 @@ def test_v164_deployment_gate_uses_step5_dom_marker():
     wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
         "def _assert_step1_identity", 1
     )[0]
-    assert 'details[data-testid="gt157-step-5"]' in wait_block
+    assert "STEP5_ROOT_SELECTOR" in wait_block
     assert 'get_attribute("data-step5-marker")' in wait_block
     assert "last_marker == REQUIRED_STEP5_MARKER" in wait_block
     assert "REQUIRED_HEARTBEAT in dom_text" not in wait_block
     assert "REQUIRED_PATCH_MARKER in dom_text" not in wait_block
     assert "REQUIRED_STEP5_MARKER in dom_text" not in wait_block
+
+
+def test_v176_step5_root_selector_is_marker_specific():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert "STEP5_ROOT_SELECTOR = (" in source
+    assert 'details.gt168-step5[data-testid="gt157-step-5"]' in source
+    assert 'f\'[data-step5-marker="{REQUIRED_STEP5_MARKER}"]\'' in source
+    wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
+        "def _assert_step1_identity", 1
+    )[0]
+    assert "step5_roots = frame.locator(STEP5_ROOT_SELECTOR)" in wait_block
+    assert "if last_root_count >= 1:" in wait_block
+    step5_block = source.split("def _assert_step5_pace", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+    assert "step = frame.locator(STEP5_ROOT_SELECTOR)" in step5_block
 
 
 def test_v164_production_verifier_waits_for_full_streamlit_logo_surface():
@@ -291,7 +307,7 @@ def test_v164_waits_for_step5_dom_then_runs_strict_surface_assertions():
     wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
         "def _assert_step1_identity", 1
     )[0]
-    assert 'details[data-testid="gt157-step-5"]' in wait_block
+    assert "STEP5_ROOT_SELECTOR" in wait_block
     assert 'get_attribute("data-step5-marker")' in wait_block
     assert "last_marker == REQUIRED_STEP5_MARKER" in wait_block
 
@@ -320,7 +336,7 @@ def test_v164_step5_v168_pace_surface_is_hard_gated():
     step5 = source.split("def _assert_step5_pace", 1)[1].split(
         "def verify_live_v164", 1
     )[0]
-    assert 'details[data-testid="gt157-step-5"]' in step5
+    assert "STEP5_ROOT_SELECTOR" in step5
     assert 'get_attribute("data-step5-marker")' in step5
     assert 'get_attribute("data-step5-data-marker")' in step5
     assert 'get_attribute("data-step5-visual-marker")' in step5
