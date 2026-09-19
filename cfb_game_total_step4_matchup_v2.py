@@ -625,8 +625,9 @@ def _tile_html(tile: Mapping[str, Any]) -> str:
     label = escape(_clean(tile.get("label")))
     grade = escape(_clean(tile.get("grade")) or "—")
     detail = escape(_clean(tile.get("detail")) or "Verified data unavailable")
+    grade_basis = escape(_clean(tile.get("grade_basis")) or "verified matchup evidence")
     return (
-        f'<div class="gt165-metric {escape(tone)}" data-testid="gt165-step4-stat-tile" data-tone="{escape(tone)}">'
+        f'<div class="gt165-metric {escape(tone)}" data-testid="gt165-step4-stat-tile" data-tone="{escape(tone)}" data-grade="{grade}" data-grade-basis="{grade_basis}">'
         f'<div class="gt165-metric-key"><label>{label}</label><span class="gt165-tone-dot" aria-hidden="true"></span></div>'
         f'<span class="gt165-grade">{grade}</span>'
         f'<small>{detail}</small></div>'
@@ -728,7 +729,7 @@ def render_step4_html(
             or "Verified matchup enrichment unavailable."
         )
     return f"""
-<details class="gt159-step gt165-step4 {state_css}" data-testid="gt157-step-4" data-step4-state="{escape(state)}" data-step4-coverage="{coverage}" data-step4-fallback-filled="{fallback_filled}" data-step4-visual-marker="{escape(STEP4_VISUAL_MARKER)}" open>
+<details class="gt159-step gt165-step4 {state_css}" data-testid="gt157-step-4" data-step4-state="{escape(state)}" data-step4-coverage="{coverage}" data-step4-fallback-filled="{fallback_filled}" data-step4-visual-marker="{escape(STEP4_VISUAL_MARKER)}" data-step4-grade-marker="{escape(STEP4_GRADE_MARKER)}" open>
   <summary>
     <span class="gt159-num">4</span>
     <span class="gt159-stepcopy"><b>Matchup</b><span>Off vs Def · Pass · Rush · Situational</span></span>
