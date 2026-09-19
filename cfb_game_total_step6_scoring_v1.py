@@ -399,6 +399,19 @@ def _snapshot_pbp_evidence(
     if not isinstance(certifications, Mapping):
         return {}
 
+    requested_away_events = {
+        _clean(value)
+        for value in _event_ids(away)
+        if _clean(value)
+    }
+    requested_home_events = {
+        _clean(value)
+        for value in _event_ids(home)
+        if _clean(value)
+    }
+    if not requested_away_events or not requested_home_events:
+        return {}
+
     for cert in certifications.values():
         if not isinstance(cert, Mapping):
             continue
@@ -408,6 +421,22 @@ def _snapshot_pbp_evidence(
         away_row = teams.get(away_id)
         home_row = teams.get(home_id)
         if not isinstance(away_row, Mapping) or not isinstance(home_row, Mapping):
+            continue
+
+        cached_away_events = {
+            _clean(value)
+            for value in (away_row.get("event_ids") or [])
+            if _clean(value)
+        }
+        cached_home_events = {
+            _clean(value)
+            for value in (home_row.get("event_ids") or [])
+            if _clean(value)
+        }
+        if (
+            requested_away_events != cached_away_events
+            or requested_home_events != cached_home_events
+        ):
             continue
 
         away_off = away_row.get("offense")
