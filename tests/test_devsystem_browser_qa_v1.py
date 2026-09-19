@@ -26,6 +26,14 @@ def test_browser_qa_contract_is_explicit_and_safe():
     assert module.CFB_SPORT == "College Football"
     assert module.CFB_MARKET == "Over/Under"
     assert module.CFB_MARKET_LABEL == "🎯 CFB Market"
+    assert module.CFB_GAME_TOTAL_MARKET == "Game Total"
+    assert module.CFB_GAME_TOTAL_DATE == "2026-09-18"
+    assert module.CFB_GAME_TOTAL_EVENT_ID == "401858226"
+    assert (
+        module.CFB_GAME_TOTAL_STEP5_MARKER
+        == "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
+    )
+    assert 'data-testid="gt157-step-5"' in module.CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR
 
     markers = module.CFB_REQUIRED_MARKERS
     assert "CFB O/U • CLEAN PAGE V39 ACTIVE" in markers
@@ -57,6 +65,12 @@ def test_runtime_error_detector_fails_on_obvious_python_errors():
     assert module._body_has_forbidden_error(
         "ModuleNotFoundError: no module named x"
     ) == "ModuleNotFoundError"
+    assert module._body_has_forbidden_error(
+        "KeyError: missing field"
+    ) == "KeyError:"
+    assert module._body_has_forbidden_error(
+        "This app has encountered an error"
+    ) == "This app has encountered an error"
 
 
 def test_selector_helpers_are_readiness_driven_not_fixed_sleep_driven():
@@ -104,3 +118,23 @@ def test_browser_qa_enters_cfb_over_under_through_certified_fast_route():
     assert "page.goto(_cfb_over_under_url(base_url)" in run_source
     assert "_choose(page, frame, 0, CFB_SPORT)" not in run_source
     assert "_choose(page, frame, 1, CFB_MARKET)" not in run_source
+
+
+def test_browser_qa_enters_exact_game_total_step5_route():
+    module = _load_module()
+    run_source = inspect.getsource(module.run_browser_qa)
+    wait_source = inspect.getsource(module._wait_for_game_total_step5)
+
+    assert module._cfb_game_total_url("http://127.0.0.1:8501") == (
+        "http://127.0.0.1:8501/?ks_sport=College+Football"
+        "&ks_cfb_market=Game+Total"
+        "&ks_cfb_game_total_date=2026-09-18"
+        "&ks_cfb_game_total_event_id=401858226"
+    )
+    assert "page.goto(" in run_source
+    assert "_cfb_game_total_url(base_url)" in run_source
+    assert "CFB_GAME_TOTAL_STEP5_MARKER" in run_source
+    assert "_wait_for_game_total_step5" in run_source
+    assert "CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR" in wait_source
+    assert 'state="attached"' in wait_source
+    assert "_body_has_forbidden_error" in wait_source
