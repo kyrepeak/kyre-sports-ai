@@ -15,6 +15,8 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 from playwright.sync_api import sync_playwright
 
+from devsystem import production_verify_v5 as v163_nav
+
 
 class Step6ProductionVerificationFailure(RuntimeError):
     pass
@@ -34,6 +36,7 @@ ROUTE_QUERY_SPORT = "ks_sport"
 ROUTE_QUERY_MARKET = "ks_cfb_market"
 DATE_QUERY_KEY = "ks_cfb_game_total_date"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
+CERT_DATE = "2026-09-19"
 
 
 def _query_value(url: str, key: str) -> str:
@@ -55,45 +58,32 @@ def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
     deadline = time.monotonic() + timeout_seconds
     last_body = ""
     last_error = ""
+    last_scans: list[dict] = []
 
     while time.monotonic() < deadline:
-        scans: list[dict] = []
-        for index, frame in enumerate(page.frames):
-            try:
-                body = frame.locator("body").inner_text(timeout=5000)
-            except Exception as exc:
-                body = ""
-                last_error = f"{type(exc).__name__}: {exc}"[:500]
-            try:
-                root = frame.locator(STEP6_ROOT_SELECTOR).last
-                root_count = root.count()
-            except Exception as exc:
-                root_count = 0
-                last_error = f"{type(exc).__name__}: {exc}"[:500]
-
-            scans.append(
-                {
-                    "index": index,
-                    "url": frame.url,
-                    "step6_root_count": root_count,
-                    "body_start": body[:700],
-                }
+        try:
+            frame, body, scans = v163_nav._find_v163_frame(
+                page,
+                timeout_seconds=min(45.0, max(5.0, deadline - time.monotonic())),
             )
+            last_body = str(body or "")
+            last_scans = scans
+            root = frame.locator(STEP6_ROOT_SELECTOR).last
+            root_count = root.count()
             if root_count > 0:
                 root.wait_for(state="attached", timeout=5000)
                 return frame, root, body, scans
-
-            if body:
-                last_body = body
-
-        if not last_error:
             last_error = "V184 Step 6 root not live yet"
+        except Exception as exc:
+            last_error = f"{type(exc).__name__}: {exc}"[:1200]
+
         page.wait_for_timeout(5000)
         page.reload(wait_until="domcontentloaded", timeout=120000)
 
     raise Step6ProductionVerificationFailure(
         "V184 Step 6 production surface did not become live: "
-        f"last_error={last_error!r} body_start={last_body[:3000]!r}"
+        f"last_error={last_error!r} scans={last_scans!r} "
+        f"body_start={last_body[:3000]!r}"
     )
 
 
@@ -172,6 +162,7 @@ def verify_live_step6(
         {
             ROUTE_QUERY_SPORT: CFB_SPORT,
             ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
+            DATE_QUERY_KEY: CERT_DATE,
         }
     )
 
@@ -197,8 +188,16 @@ def verify_live_step6(
                     f"page_url={page.url!r} frame_url={frame.url!r}"
                 )
 
-            routed_url = frame.url or page.url
-            selected_date = _query_value(routed_url, DATE_QUERY_KEY)
+            selected_date = (
+                _query_value(page.url, DATE_QUERY_KEY)
+                or _query_value(frame.url, DATE_QUERY_KEY)
+            )
+            if selected_date != CERT_DATE:
+                raise Step6ProductionVerificationFailure(
+                    "V184 certification date did not persist: "
+                    f"expected={CERT_DATE!r} actual={selected_date!r} "
+                    f"page_url={page.url!r} frame_url={frame.url!r}"
+                )
 
             step6 = _assert_step6(root)
 
