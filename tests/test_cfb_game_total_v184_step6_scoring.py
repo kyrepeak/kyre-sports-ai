@@ -243,6 +243,37 @@ def test_v184_step6_owner_avoids_heavy_live_ncaa_engines():
     assert "load_matchup_team_data" not in source
     assert "enrich_step3_inputs" not in source
     assert "_fetch_sportsdataverse_game" in source
+    assert "ThreadPoolExecutor" not in source
+
+
+def test_v184_step6_pbp_fetch_is_bounded_and_sequential(monkeypatch):
+    calls = []
+
+    def fake_fetch(event_id):
+        calls.append(event_id)
+        return {}
+
+    monkeypatch.setattr(step6.step5_pace, "_fetch_sportsdataverse_game", fake_fetch)
+
+    away = {
+        "completed_games": [
+            {"event_id": "401000001"},
+            {"event_id": "401000002"},
+            {"event_id": "401000003"},
+        ]
+    }
+    home = {
+        "completed_games": [
+            {"event_id": "401000004"},
+            {"event_id": "401000005"},
+            {"event_id": "401000006"},
+        ]
+    }
+
+    step6._load_pbp_evidence(_identity(), away, home)
+
+    assert len(calls) <= 2 * step6.MAX_PBP_GAMES
+    assert calls == list(dict.fromkeys(calls))
 
 
 
