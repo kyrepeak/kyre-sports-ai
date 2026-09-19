@@ -155,7 +155,10 @@ class _DirectoryParser(HTMLParser):
         if tag.lower() != "a":
             return
         href = dict(attrs).get("href") or ""
-        if re.search(rf"(?:/|^){self.season}/team/\d+/index\.html$", href):
+        if (
+            re.search(rf"(?:/|^){self.season}/team/\d+/index\.html$", href)
+            or re.search(r"(?:^|/)\d+/index\.html$", href)
+        ):
             self.in_link = True
             self.href = href
             self.parts = []
@@ -168,7 +171,10 @@ class _DirectoryParser(HTMLParser):
         if tag.lower() != "a" or not self.in_link:
             return
         name = _clean(" ".join(self.parts))
-        match = re.search(r"/team/(\d+)/index\.html$", self.href)
+        match = (
+            re.search(r"/team/(\d+)/index\.html$", self.href)
+            or re.search(r"(?:^|/)(\d+)/index\.html$", self.href)
+        )
         if name and match:
             self.rows.append((name, match.group(1)))
         self.in_link = False
@@ -415,8 +421,11 @@ def _load_team_metrics(
     base = f"{ROOT}/{int(season)}/team/{team_id}"
     team_url = f"{base}/index.html"
     sack_url = f"{base}/sack/index.html"
-    team_html, team_attempts = _fetch_text(team_url)
-    sack_html, sack_attempts = _fetch_text(sack_url)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        team_future = pool.submit(_fetch_text, team_url)
+        sack_future = pool.submit(_fetch_text, sack_url)
+        team_html, team_attempts = team_future.result()
+        sack_html, sack_attempts = sack_future.result()
     metrics = _parse_team_metrics(team_html, sack_html) if team_html else {}
     if metrics:
         metrics["team_id"] = str(team_id)
