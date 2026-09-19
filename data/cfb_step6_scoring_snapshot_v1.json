@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-19T21:20:00Z",
+  "source": "SportsDataverse cfbfastR-cfb-raw final game JSON",
+  "purpose": "Nonblocking Step 6 Scoring Creation presentation cache; live SportsDataverse remains fallback for uncached exact team/event samples.",
+  "current_event_id": "401869940",
+  "current_game_date": "2026-09-19",
+  "source_event_blobs": {
+    "401856684": "e087aebe4c8e79090d998809c95dc7d94dbde4bc",
+    "401856780": "bb4d0ed6fa6afdff3f93124fbe3e1c5e3435fc93",
+    "401864424": "af13fc7044fc65a67586fcc1ad53d3a7f4c13b55",
+    "401868008": "d63674cd525c8751da6d34f3daeb83c2acb25441"
+  },
+  "teams": {
+    "48": {
+      "team": "Delaware",
+      "team_id": "48",
+      "event_ids": [
+        "401864424",
+        "401856684"
+      ],
+      "offense": {
+        "games": 2,
+        "pass_explosive_rate": 0.1375,
+        "rush_explosive_rate": 0.17857142857142858,
+        "overall_explosive_rate": 0.15441176470588236,
+        "scoring_ops_pg": 5.5,
+        "scoring_op_conversion": 0.7272727272727273,
+        "red_zone_td_rate": 0.6666666666666666,
+        "pass_attempts": 80,
+        "rush_attempts": 56,
+        "explosive_pass_plays": 11,
+        "explosive_rush_plays": 10,
+        "drive_count": 28,
+        "red_zone_drives": 9,
+        "scoring_opportunity_drives": 11,
+        "scoring_opportunity_scores": 8,
+        "touchdown_drives": 8,
+        "source": "SportsDataverse current-season completed-game PBP",
+        "delivery": "sportsdataverse_github_raw_snapshot",
+        "coverage": 1
+      },
+      "defense": {
+        "games": 2,
+        "pass_explosive_rate": 0.06172839506172839,
+        "rush_explosive_rate": 0.10416666666666667,
+        "overall_explosive_rate": 0.07751937984496124,
+        "scoring_ops_pg": 5.5,
+        "scoring_op_conversion": 0.45454545454545453,
+        "red_zone_td_rate": 0.7142857142857143,
+        "pass_attempts": 81,
+        "rush_attempts": 48,
+        "explosive_pass_plays": 5,
+        "explosive_rush_plays": 5,
+        "drive_count": 25,
+        "red_zone_drives": 7,
+        "scoring_opportunity_drives": 11,
+        "scoring_opportunity_scores": 5,
+        "touchdown_drives": 5,
+        "source": "SportsDataverse current-season completed-game PBP",
+        "delivery": "sportsdataverse_github_raw_snapshot",
+        "big_play_susceptibility": 0.07751937984496124,
+        "red_zone_td_rate_allowed": 0.7142857142857143,
+        "scoring_op_conversion_allowed": 0.45454545454545453,
+        "coverage": 1
+      }
+    },
+    "324": {
+      "team": "Coastal Carolina",
+      "team_id": "324",
+      "event_ids": [
+        "401856780",
+        "401868008"
+      ],
+      "offense": {
+        "games": 2,
+        "pass_explosive_rate": 0.1388888888888889,
+        "rush_explosive_rate": 0.23333333333333334,
+        "overall_explosive_rate": 0.18181818181818182,
+        "scoring_ops_pg": 6.5,
+        "scoring_op_conversion": 0.6923076923076923,
+        "red_zone_td_rate": 0.8333333333333334,
+        "pass_attempts": 72,
+        "rush_attempts": 60,
+        "explosive_pass_plays": 10,
+        "explosive_rush_plays": 14,
+        "drive_count": 27,
+        "red_zone_drives": 6,
+        "scoring_opportunity_drives": 13,
+        "scoring_opportunity_scores": 9,
+        "touchdown_drives": 9,
+        "source": "SportsDataverse current-season completed-game PBP",
+        "delivery": "sportsdataverse_github_raw_snapshot",
+        "coverage": 1
+      },
+      "defense": {
+        "games": 2,
+        "pass_explosive_rate": 0.05,
+        "rush_explosive_rate": 0.09523809523809523,
+        "overall_explosive_rate": 0.08064516129032258,
+        "scoring_ops_pg": 5,
+        "scoring_op_conversion": 0.5,
+        "red_zone_td_rate": 0.5714285714285714,
+        "pass_attempts": 40,
+        "rush_attempts": 84,
+        "explosive_pass_plays": 2,
+        "explosive_rush_plays": 8,
+        "drive_count": 26,
+        "red_zone_drives": 7,
+        "scoring_opportunity_drives": 10,
+        "scoring_opportunity_scores": 5,
+        "touchdown_drives": 5,
+        "source": "SportsDataverse current-season completed-game PBP",
+        "delivery": "sportsdataverse_github_raw_snapshot",
+        "big_play_susceptibility": 0.08064516129032258,
+        "red_zone_td_rate_allowed": 0.5714285714285714,
+        "scoring_op_conversion_allowed": 0.5,
+        "coverage": 1
+      }
+    }
+  }
+}
