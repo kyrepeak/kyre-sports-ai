@@ -189,3 +189,27 @@ def test_official_audit_snapshot_wins_when_secondary_source_disagrees():
         and row["winner"] == "official"
         for row in disagreements
     )
+
+
+def test_complete_official_snapshot_skips_secondary_network(monkeypatch):
+    def fail_directory(_season):
+        raise AssertionError("secondary directory must not be called")
+
+    monkeypatch.setattr(multi, "_load_directory", fail_directory)
+
+    result = multi.build_display_fallback(
+        None,
+        {"team": "Miami (FL)"},
+        {"team": "Wake Forest"},
+    )
+
+    assert result["ready"] is True
+    assert result["season"] == 2026
+    assert result["diagnostics"]["directory"]["skipped"] is True
+    assert "official team athletics audit" in result["source"]
+    assert "cfbstats fallback available" in result["source"]
+    assert all(
+        row["ready"]
+        for side in ("away_offense", "home_offense")
+        for row in result[side]["dimensions"].values()
+    )
