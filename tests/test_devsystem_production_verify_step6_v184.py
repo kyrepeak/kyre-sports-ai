@@ -5,10 +5,10 @@ import inspect
 from devsystem import production_verify_step6_v184 as verifier
 
 
-def test_v184_step6_production_contract_is_strict_and_current_route_driven():
+def test_v184_step6_production_contract_is_strict_and_scheduled_target_driven():
     source = inspect.getsource(verifier.verify_live_step6)
     wait_source = inspect.getsource(verifier._wait_for_live_step6)
-    assert "CERT_EVENT_ID" not in source
+    module_source = inspect.getsource(verifier)
     assert "ROUTE_QUERY_SPORT" in source
     assert "ROUTE_QUERY_MARKET" in source
     assert "_event_from_url" in source
@@ -17,10 +17,13 @@ def test_v184_step6_production_contract_is_strict_and_current_route_driven():
     assert "page.reload" in wait_source
     assert "_wait_for_v164_patch_deployment" not in wait_source
     assert "_wait_for_top_level_selection" not in wait_source
-    assert "CERT_EVENT_ID" not in inspect.getsource(verifier)
-    assert "production_verify_v164_logos" not in inspect.getsource(verifier)
-    assert 'CERT_DATE = "2026-09-19"' in inspect.getsource(verifier)
+    assert "production_verify_v164_logos" not in module_source
+    assert 'CERT_DATE = "2026-09-19"' in module_source
+    assert 'CERT_EVENT_ID = "401856685"' in module_source
+    assert 'CERT_MATCHUP = "Florida State @ Alabama"' in module_source
     assert "DATE_QUERY_KEY: CERT_DATE" in source
+    assert "EVENT_QUERY_KEY: CERT_EVENT_ID" in source
+    assert "event_id != CERT_EVENT_ID" in source
     assert "selected_date != CERT_DATE" in source
 
 
