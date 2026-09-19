@@ -269,6 +269,19 @@ def test_v164_step4_v166_visual_freeze_contract_is_hard_gated():
 
 
 
+def test_v164_waits_for_v168_step5_deployment_before_asserting_surface():
+    source = VERIFIER.read_text(encoding="utf-8")
+    wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
+        "def _assert_step1_identity", 1
+    )[0]
+    assert "REQUIRED_STEP5_MARKER in dom_text" in wait_block
+    assert "REQUIRED_STEP5_DATA_MARKER in dom_text" in wait_block
+    assert "REQUIRED_STEP5_VISUAL_MARKER in dom_text" in wait_block
+    assert "required_step5_marker" in wait_block
+    assert "required_step5_data_marker" in wait_block
+    assert "required_step5_visual_marker" in wait_block
+
+
 def test_v164_step5_v168_pace_surface_is_hard_gated():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'REQUIRED_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"' in source
