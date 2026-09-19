@@ -12,7 +12,7 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     assert "_wait_for_top_level_selection" in source
     assert "_event_from_url(page.url)" in source
     assert "_wait_for_event_query" not in source
-    assert 'REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"' in source
+    assert 'REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V166_STEP4_MULTISOURCE_ACTIVE"' in source
     assert 'REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"' in source
     assert "_wait_for_v164_patch_deployment" in source
     assert "page.reload(" in source
@@ -120,7 +120,7 @@ def test_v164_step3_required_text_check_is_case_normalized():
 
 def test_v164_production_verifier_requires_step4_matchup_surface():
     source = VERIFIER.read_text(encoding="utf-8")
-    assert 'REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"' in source
+    assert 'REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V166_STEP4_MULTISOURCE_ACTIVE"' in source
     assert "REQUIRED_STEP4_MARKER in dom_text" in source
     assert "_assert_step4_matchup" in source
     assert 'details[data-testid="gt157-step-4"]' in source
