@@ -206,6 +206,19 @@ def test_v168_step5_core_pace_failure_is_data_limited(monkeypatch):
     pace = _pace()
     pace["model_ready"] = False
     pace["coverage"] = 0.25
+    monkeypatch.setattr(
+        step5,
+        "_safe_sdv_pregame_pace",
+        lambda identity, game, drives: {
+            "ready": True,
+            "model_ready": False,
+            "presentation_ready": False,
+            "coverage": 0.0,
+            "away": {},
+            "home": {},
+            "sportsbook_input_used": False,
+        },
+    )
     contract = step5.build_step5_contract(
         _identity(),
         _away(),
