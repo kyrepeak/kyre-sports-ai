@@ -49,9 +49,16 @@ STEP4_CSS = r"""
 .gt165-coverage span{font-size:6px;line-height:1.05;color:#86a9c0;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
 .gt165-step4 .gt159-state{padding:7px 11px!important;border-radius:999px!important;font-size:8px!important;font-weight:950!important;letter-spacing:.04em}
 .gt165-body{padding:10px 11px 12px!important}
-.gt165-battles{display:grid;grid-template-columns:1fr;gap:10px}
+.gt165-battles{display:grid;grid-template-columns:1fr;gap:14px}
 
-.gt165-battle{border:1px solid rgba(64,184,238,.27);border-radius:13px;background:linear-gradient(145deg,rgba(5,28,49,.98),rgba(8,21,39,.98));overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.gt165-battle{position:relative;border:1px solid rgba(64,184,238,.34);border-radius:16px;background:linear-gradient(145deg,rgba(5,29,50,.99),rgba(8,21,39,.99));overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 12px 28px rgba(0,0,0,.14)}
+.gt165-battle:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#31dfff,#4f8aff,#805fff);opacity:.82;z-index:2}
+.gt165-battle.matchup-two{border-color:rgba(153,103,255,.30)}
+.gt165-battle.matchup-two:before{background:linear-gradient(90deg,#7d7dff,#a85fff,#da67dc)}
+.gt165-battletag{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px 7px;border-bottom:1px solid rgba(70,152,196,.14);background:linear-gradient(90deg,rgba(7,42,67,.78),rgba(17,25,55,.54))}
+.gt165-battletag span{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:rgba(37,157,219,.12);border:1px solid rgba(66,193,249,.20);color:#8de7ff;font-size:6.5px;font-weight:1000;letter-spacing:.10em}
+.gt165-battle.matchup-two .gt165-battletag span{color:#d3b2ff;border-color:rgba(181,114,255,.22);background:rgba(120,72,194,.12)}
+.gt165-battletag em{font-style:normal;color:#7f9caf;font-size:6px;font-weight:850;letter-spacing:.055em;text-transform:uppercase;white-space:nowrap}
 .gt165-battlehead{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr) minmax(130px,auto);gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid rgba(70,152,196,.16);background:linear-gradient(90deg,rgba(7,35,58,.72),rgba(15,24,51,.56))}
 .gt165-teamhead{display:grid;grid-template-columns:52px minmax(0,1fr);gap:9px;align-items:center;min-width:0}
 .gt165-teamhead.right{grid-template-columns:minmax(0,1fr) 52px;text-align:right}
@@ -108,6 +115,9 @@ STEP4_CSS = r"""
   .gt165-step4 summary{grid-template-columns:48px minmax(0,1fr)!important;padding:10px 12px!important}
   .gt165-headstatus{grid-column:2;justify-content:flex-start;flex-wrap:wrap;margin-top:3px}
   .gt165-coverage{padding:6px 8px}
+  .gt165-battletag{padding:7px 9px 6px;gap:6px}
+  .gt165-battletag span{font-size:6px;padding:3px 7px}
+  .gt165-battletag em{font-size:5.3px;white-space:normal;text-align:right}
   .gt165-battlehead{grid-template-columns:1fr 28px 1fr;align-items:center;gap:7px;padding:9px}
   .gt165-teamhead{grid-template-columns:40px minmax(0,1fr);gap:6px}
   .gt165-teamhead.right{grid-template-columns:minmax(0,1fr) 40px}
@@ -543,7 +553,7 @@ def _tile_html(tile: Mapping[str, Any]) -> str:
     )
 
 
-def _battle_html(battle: Mapping[str, Any], testid: str) -> str:
+def _battle_html(battle: Mapping[str, Any], testid: str, battle_index: int = 1) -> str:
     offense_logo = _clean(battle.get("offense_logo"))
     defense_logo = _clean(battle.get("defense_logo"))
     team = _clean(battle.get("offense_team"))
@@ -560,8 +570,12 @@ def _battle_html(battle: Mapping[str, Any], testid: str) -> str:
     )
     tone = _clean(battle.get("read_tone")) or "mixed"
     tiles = "".join(_tile_html(tile) for tile in battle.get("tiles") or [])
+    battle_class = "matchup-two" if int(battle_index) == 2 else "matchup-one"
+    battle_label = f"MATCHUP {int(battle_index)}"
+    matchup_role = f"{offense_side} OFFENSE VS {defense_side} DEFENSE"
     return f"""
-<div class="gt165-battle" data-testid="{escape(testid)}">
+<div class="gt165-battle {escape(battle_class)}" data-testid="{escape(testid)}" data-matchup-index="{int(battle_index)}">
+  <div class="gt165-battletag"><span>{escape(battle_label)}</span><em>{escape(matchup_role)}</em></div>
   <div class="gt165-battlehead">
     <div class="gt165-teamhead" aria-label="{escape(team)} Offense">
       {offense_logo_html}
@@ -645,8 +659,8 @@ def render_step4_html(
   </summary>
   <div class="gt159-stepbody gt165-body">
     <div class="gt165-battles">
-      {_battle_html(contract['away_offense_vs_home_defense'], 'gt165-step4-away-off-home-def')}
-      {_battle_html(contract['home_offense_vs_away_defense'], 'gt165-step4-home-off-away-def')}
+      {_battle_html(contract['away_offense_vs_home_defense'], 'gt165-step4-away-off-home-def', 1)}
+      {_battle_html(contract['home_offense_vs_away_defense'], 'gt165-step4-home-off-away-def', 2)}
     </div>
     <div class="gt165-integrity">
       <div class="gt165-note" data-testid="gt165-step4-source-integrity"><strong>✓ VERIFIED MATCHUP DATA</strong><span>{escape(engine_note)} Visible matchup coverage: {coverage}%.</span></div>
