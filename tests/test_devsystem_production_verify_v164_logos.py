@@ -269,17 +269,29 @@ def test_v164_step4_v166_visual_freeze_contract_is_hard_gated():
 
 
 
-def test_v164_waits_for_visible_v168_step5_marker_then_checks_attributes_on_surface():
+def test_v164_waits_only_for_current_deployment_identity_before_surface_assertions():
     source = VERIFIER.read_text(encoding="utf-8")
     wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
         "def _assert_step1_identity", 1
     )[0]
+
+    assert "REQUIRED_HEARTBEAT in dom_text" in wait_block
+    assert "REQUIRED_PATCH_MARKER in dom_text" in wait_block
     assert "REQUIRED_STEP5_MARKER in dom_text" in wait_block
-    assert "REQUIRED_STEP5_DATA_MARKER in dom_text" not in wait_block
-    assert "REQUIRED_STEP5_VISUAL_MARKER in dom_text" not in wait_block
-    assert "required_step5_marker" in wait_block
-    assert "required_step5_data_marker" not in wait_block
-    assert "required_step5_visual_marker" not in wait_block
+
+    for historical in (
+        "REQUIRED_STEP1_MARKER in dom_text",
+        "REQUIRED_STEP1_PROFILE_MARKER in dom_text",
+        "REQUIRED_STEP2_MARKER in dom_text",
+        "REQUIRED_STEP3_MARKER in dom_text",
+        "REQUIRED_STEP4_MARKER in dom_text",
+        "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text",
+        "REQUIRED_STEP4_VISUAL_MARKER in dom_text",
+        "REQUIRED_STEP4_GRADE_MARKER in dom_text",
+        "REQUIRED_STEP5_DATA_MARKER in dom_text",
+        "REQUIRED_STEP5_VISUAL_MARKER in dom_text",
+    ):
+        assert historical not in wait_block
 
     live_block = source.split("def verify_live_v164", 1)[1]
     assert "if REQUIRED_STEP5_MARKER not in body:" in live_block
