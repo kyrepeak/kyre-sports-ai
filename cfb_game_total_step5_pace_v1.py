@@ -7,8 +7,9 @@ Verified sources
 - NCAA Total Offense: offensive plays / game.
 - NCAA Time of Possession: possession-clock seconds / offensive play.
 - Punt & Rally verified snapshot: points / drive for drive-count fallback estimates.
-- ESPN completed-game summaries: direct drive counts, average drive time,
+- SportsDataverse GitHub game JSON: direct drive counts, average drive time,
   no-huddle text markers, and a conservative situation-neutral pace sample.
+- ESPN summaries are optional last-resort recovery only, never required.
 
 This module never mutates projection/probability/model outputs. The certified
 pace engine is read-only here; sportsbook projection influence remains 0.0%.
@@ -34,12 +35,17 @@ FROZEN_PREDECESSOR = "cfb_game_total_clean_page_v16"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
+SPORTSDATAVERSE_GAME_URL = (
+    "https://raw.githubusercontent.com/sportsdataverse/"
+    "cfbfastR-cfb-raw/main/cfb/json/final/{event_id}.json"
+)
+SPORTSDATAVERSE_TIMEOUT_SECONDS = 5.0
 ESPN_SUMMARY_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/"
     "college-football/summary"
 )
 ESPN_TIMEOUT_SECONDS = 4.0
-MAX_PBP_GAMES = 3
+MAX_PBP_GAMES = 2
 
 _ALLOWED_STATE = {"READY", "CHECK", "DATA LIMITED"}
 
@@ -179,6 +185,28 @@ def _event_ids(profile: Mapping[str, Any]) -> list[str]:
     return out
 
 
+@st.cache_data(ttl=900, show_spinner=False)
+def _fetch_sportsdataverse_game(event_id: str) -> dict[str, Any]:
+    event_id = _clean(event_id)
+    if not event_id:
+        return {}
+    url = SPORTSDATAVERSE_GAME_URL.format(event_id=event_id)
+    try:
+        response = requests.get(
+            url,
+            timeout=SPORTSDATAVERSE_TIMEOUT_SECONDS,
+            headers={
+                "User-Agent": "KyreSportsAI-GameTotal-Step5/1.0",
+                "Accept": "application/json",
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return {}
+    return dict(payload) if isinstance(payload, Mapping) else {}
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def _fetch_summary(event_id: str) -> dict[str, Any]:
     event_id = _clean(event_id)
@@ -276,6 +304,120 @@ def _neutral_play_deltas(plays: Sequence[Mapping[str, Any]]) -> list[float]:
     return deltas
 
 
+def _sdv_offense_team_id(play: Mapping[str, Any]) -> str:
+    participants = play.get("teamParticipants") or []
+    if isinstance(participants, Sequence) and not isinstance(participants, (str, bytes)):
+        for item in participants:
+            if not isinstance(item, Mapping):
+                continue
+            if _clean(item.get("type")).casefold() != "offense":
+                continue
+            team = item.get("team") if isinstance(item.get("team"), Mapping) else {}
+            value = _clean(item.get("id") or team.get("id"))
+            if value:
+                return value
+    return _clean(play.get("start.team.id"))
+
+
+def _sdv_is_scrimmage(play: Mapping[str, Any]) -> bool:
+    down = _int(play.get("start.down"))
+    if down not in {1, 2, 3, 4}:
+        return False
+    play_type = _clean(play.get("type.text")).casefold()
+    blocked = (
+        "kickoff",
+        "punt",
+        "field goal",
+        "extra point",
+        "timeout",
+        "end period",
+        "end of",
+    )
+    return not any(token in play_type for token in blocked)
+
+
+def _sdv_drive_seconds(play: Mapping[str, Any]) -> float | None:
+    return _clock_seconds(play.get("drive.timeElapsed.displayValue"))
+
+
+def _parse_sportsdataverse_evidence(
+    games: Sequence[Mapping[str, Any]],
+    team_id: str,
+) -> dict[str, Any]:
+    team_id = _clean(team_id)
+    games_with_drives = 0
+    total_drives = 0
+    drive_seconds: list[float] = []
+    neutral_deltas: list[float] = []
+    no_huddle_plays = 0
+    scrimmage_plays = 0
+
+    for payload in games:
+        raw_plays = payload.get("plays") or []
+        plays = [
+            dict(item)
+            for item in raw_plays
+            if isinstance(item, Mapping)
+            and _sdv_offense_team_id(item) == team_id
+            and _sdv_is_scrimmage(item)
+        ]
+        if not plays:
+            continue
+
+        drive_map: dict[str, float | None] = {}
+        for play in plays:
+            drive_id = _clean(play.get("drive.id"))
+            if drive_id and drive_id not in drive_map:
+                drive_map[drive_id] = _sdv_drive_seconds(play)
+
+        if drive_map:
+            games_with_drives += 1
+            total_drives += len(drive_map)
+            for value in drive_map.values():
+                if value is not None and 10.0 <= value <= 900.0:
+                    drive_seconds.append(float(value))
+
+        neutral_deltas.extend(_neutral_play_deltas(plays))
+
+        for play in plays:
+            text = _clean(play.get("text"))
+            if not text:
+                continue
+            scrimmage_plays += 1
+            lower = text.casefold()
+            if "no huddle" in lower or "no-huddle" in lower:
+                no_huddle_plays += 1
+
+    drives_pg = (
+        float(total_drives) / float(games_with_drives)
+        if games_with_drives > 0 and total_drives > 0
+        else None
+    )
+    avg_drive = mean(drive_seconds) if drive_seconds else None
+    neutral_pace = mean(neutral_deltas) if neutral_deltas else None
+    no_huddle = (
+        float(no_huddle_plays) / float(scrimmage_plays)
+        if scrimmage_plays > 0
+        else None
+    )
+    return {
+        "games": games_with_drives,
+        "drive_count": total_drives,
+        "drives_per_game": drives_pg,
+        "avg_drive_time_seconds": avg_drive,
+        "situation_neutral_seconds_per_play": neutral_pace,
+        "no_huddle_rate": no_huddle,
+        "text_plays": scrimmage_plays,
+        "no_huddle_plays": no_huddle_plays,
+        "source": (
+            "SportsDataverse current-season completed-game PBP"
+            if games_with_drives > 0
+            else ""
+        ),
+        "delivery": "sportsdataverse_github_raw",
+    }
+
+
 def _parse_drive_evidence(
     summaries: Sequence[Mapping[str, Any]],
     team_id: str,
@@ -350,14 +492,28 @@ def _safe_drive_evidence(
     out: dict[str, Any] = {}
     for side, profile in (("away", away), ("home", home)):
         event_ids = _event_ids(profile)
-        summaries = [_fetch_summary(event_id) for event_id in event_ids]
-        summaries = [payload for payload in summaries if payload]
-        out[side] = _parse_drive_evidence(
-            summaries,
-            _team_id(identity, side),
-        )
-        out[side]["requested_event_ids"] = event_ids
-        out[side]["summaries_loaded"] = len(summaries)
+        team_id = _team_id(identity, side)
+
+        sdv_games = [_fetch_sportsdataverse_game(event_id) for event_id in event_ids]
+        sdv_games = [payload for payload in sdv_games if payload]
+        row = _parse_sportsdataverse_evidence(sdv_games, team_id)
+
+        # Direct ESPN summary is a last-resort recovery only. Production does
+        # not require it because deployed Streamlit has observed ESPN 403s.
+        fallback_used = False
+        if not row.get("games"):
+            summaries = [_fetch_summary(event_id) for event_id in event_ids]
+            summaries = [payload for payload in summaries if payload]
+            fallback = _parse_drive_evidence(summaries, team_id)
+            if fallback.get("games"):
+                row = fallback
+                row["delivery"] = "espn_summary_last_resort"
+                fallback_used = True
+
+        row["requested_event_ids"] = event_ids
+        row["sportsdataverse_games_loaded"] = len(sdv_games)
+        row["espn_fallback_used"] = fallback_used
+        out[side] = row
     return out
 
 
@@ -1041,6 +1197,7 @@ STEP5_CSS = r"""
 
 __all__ = [
     "ESPN_SUMMARY_URL",
+    "SPORTSDATAVERSE_GAME_URL",
     "FROZEN_PREDECESSOR",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
@@ -1050,6 +1207,7 @@ __all__ = [
     "STEP5_PRESENTATION_MARKER",
     "STEP5_VISUAL_MARKER",
     "_parse_drive_evidence",
+    "_parse_sportsdataverse_evidence",
     "build_step5_contract",
     "render_step5_html",
 ]
