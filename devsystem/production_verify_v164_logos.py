@@ -37,10 +37,12 @@ REQUIRED_STEP4_GRADE_MARKER = "CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"
 REQUIRED_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
 REQUIRED_STEP5_DATA_MARKER = "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"
 REQUIRED_STEP5_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP5_V168_VISUAL_TARGET_ACTIVE"
+REQUIRED_STEP5_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"
 
 STEP5_ROOT_SELECTOR = (
     'details.gt168-step5[data-testid="gt157-step-5"]'
     f'[data-step5-marker="{REQUIRED_STEP5_MARKER}"]'
+    f'[data-step5-deployment-marker="{REQUIRED_STEP5_DEPLOYMENT_MARKER}"]'
 )
 
 
@@ -173,6 +175,7 @@ def _wait_for_v164_patch_deployment(
     last_scans: list[dict] = []
     last_error = ""
     last_marker = ""
+    last_deployment_marker_seen = False
     last_root_count = 0
     while time.monotonic() < deadline:
         try:
@@ -184,6 +187,15 @@ def _wait_for_v164_patch_deployment(
             last_body = str(body or "")
             last_scans = scans
             last_error = ""
+
+            last_deployment_marker_seen = (
+                REQUIRED_STEP5_DEPLOYMENT_MARKER in last_body
+            )
+            if not last_deployment_marker_seen:
+                last_error = "V178 nonblocking heartbeat not live yet"
+                page.wait_for_timeout(5000)
+                page.reload(wait_until="domcontentloaded", timeout=120000)
+                continue
 
             step5_roots = frame.locator(STEP5_ROOT_SELECTOR)
             last_root_count = step5_roots.count()
@@ -208,6 +220,7 @@ def _wait_for_v164_patch_deployment(
         "V164 logo proof timed out waiting for the current Step 5 DOM surface: "
         f"required_step5_marker={REQUIRED_STEP5_MARKER!r} "
         f"actual_step5_marker={last_marker!r} "
+        f"v178_heartbeat_seen={last_deployment_marker_seen!r} "
         f"matching_step5_roots={last_root_count} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
@@ -714,6 +727,9 @@ def _assert_step5_pace(frame) -> dict:
     marker = str(step.get_attribute("data-step5-marker") or "").strip()
     data_marker = str(step.get_attribute("data-step5-data-marker") or "").strip()
     visual_marker = str(step.get_attribute("data-step5-visual-marker") or "").strip()
+    deployment_marker = str(
+        step.get_attribute("data-step5-deployment-marker") or ""
+    ).strip()
     if marker != REQUIRED_STEP5_MARKER:
         raise ProductionVerificationV164Failure(
             f"Step 5 marker mismatch: expected={REQUIRED_STEP5_MARKER!r} actual={marker!r}"
@@ -727,6 +743,12 @@ def _assert_step5_pace(frame) -> dict:
         raise ProductionVerificationV164Failure(
             "Step 5 visual marker mismatch: "
             f"expected={REQUIRED_STEP5_VISUAL_MARKER!r} actual={visual_marker!r}"
+        )
+    if deployment_marker != REQUIRED_STEP5_DEPLOYMENT_MARKER:
+        raise ProductionVerificationV164Failure(
+            "Step 5 V178 deployment marker mismatch: "
+            f"expected={REQUIRED_STEP5_DEPLOYMENT_MARKER!r} "
+            f"actual={deployment_marker!r}"
         )
 
     tiles = step.locator('[data-testid="gt168-step5-stat-tile"]')
@@ -852,6 +874,7 @@ def _assert_step5_pace(frame) -> dict:
         "marker": marker,
         "data_marker": data_marker,
         "visual_marker": visual_marker,
+        "deployment_marker": deployment_marker,
         "profiles": profiles,
         "v168_step5_verified": True,
     }
@@ -904,6 +927,11 @@ def verify_live_v164(
             if REQUIRED_STEP2_MARKER not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 2 performance-profile marker: {REQUIRED_STEP2_MARKER}"
+                )
+            if REQUIRED_STEP5_DEPLOYMENT_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    "missing Step 5 V178 nonblocking deployment heartbeat: "
+                    f"{REQUIRED_STEP5_DEPLOYMENT_MARKER}"
                 )
             if REQUIRED_STEP3_MARKER not in body:
                 raise ProductionVerificationV164Failure(
