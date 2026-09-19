@@ -37,6 +37,8 @@ ROUTE_QUERY_MARKET = "ks_cfb_market"
 DATE_QUERY_KEY = "ks_cfb_game_total_date"
 EVENT_QUERY_KEY = "ks_cfb_game_total_event_id"
 CERT_DATE = "2026-09-19"
+CERT_EVENT_ID = "401856685"
+CERT_MATCHUP = "Florida State @ Alabama"
 
 
 def _query_value(url: str, key: str) -> str:
@@ -163,6 +165,7 @@ def verify_live_step6(
             ROUTE_QUERY_SPORT: CFB_SPORT,
             ROUTE_QUERY_MARKET: GAME_TOTAL_MARKET,
             DATE_QUERY_KEY: CERT_DATE,
+            EVENT_QUERY_KEY: CERT_EVENT_ID,
         }
     )
 
@@ -182,9 +185,10 @@ def verify_live_step6(
             frame, root, body, scans = _wait_for_live_step6(page)
 
             event_id = _event_from_url(page.url) or _event_from_url(frame.url)
-            if not event_id or not str(event_id).isdigit():
+            if event_id != CERT_EVENT_ID:
                 raise Step6ProductionVerificationFailure(
-                    "V184 current live Game Total event did not persist: "
+                    "V184 scheduled certification event did not persist: "
+                    f"expected={CERT_EVENT_ID!r} actual={event_id!r} "
                     f"page_url={page.url!r} frame_url={frame.url!r}"
                 )
 
@@ -208,6 +212,7 @@ def verify_live_step6(
                 "status": "GREEN",
                 "date": selected_date,
                 "event_id": str(event_id),
+                "matchup": CERT_MATCHUP,
                 "step6": step6,
                 "frame_scan_count": len(scans),
                 "screenshot": str(screenshot),
