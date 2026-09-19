@@ -307,7 +307,10 @@ def _neutral_play_deltas(plays: Sequence[Mapping[str, Any]]) -> list[float]:
         period = _play_period(play)
         clock = _play_clock(play)
         margin = _score_margin(play)
-        if period is None or clock is None or period > 3:
+        if period is None or clock is None or period > 4:
+            previous = None
+            continue
+        if period in {2, 4} and clock <= 120.0:
             previous = None
             continue
         if margin is not None and margin > 14.0:
