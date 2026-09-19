@@ -42,9 +42,11 @@ CFB_GAME_TOTAL_MARKET = "Game Total"
 CFB_GAME_TOTAL_DATE = "2026-09-18"
 CFB_GAME_TOTAL_EVENT_ID = "401858226"
 CFB_GAME_TOTAL_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
+CFB_GAME_TOTAL_STEP5_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"
 CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR = (
     'details.gt168-step5[data-testid="gt157-step-5"]'
     f'[data-step5-marker="{CFB_GAME_TOTAL_STEP5_MARKER}"]'
+    f'[data-step5-deployment-marker="{CFB_GAME_TOTAL_STEP5_DEPLOYMENT_MARKER}"]'
 )
 CFB_REQUIRED_MARKERS = (
     "CFB O/U • CLEAN PAGE V39 ACTIVE",
@@ -130,6 +132,7 @@ def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str
         )
 
     marker = root.get_attribute("data-step5-marker") or ""
+    deployment_marker = root.get_attribute("data-step5-deployment-marker") or ""
     state = root.get_attribute("data-step5-state") or ""
     coverage = root.get_attribute("data-step5-coverage") or ""
     tiles = root.locator('[data-testid="gt168-step5-stat-tile"]')
@@ -141,6 +144,11 @@ def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str
     if marker != CFB_GAME_TOTAL_STEP5_MARKER:
         raise BrowserQAFailure(
             f"Game Total Step 5 marker mismatch: {marker!r}"
+        )
+    if deployment_marker != CFB_GAME_TOTAL_STEP5_DEPLOYMENT_MARKER:
+        raise BrowserQAFailure(
+            "Game Total Step 5 deployment marker mismatch: "
+            f"{deployment_marker!r}"
         )
     if state != "READY":
         raise BrowserQAFailure(
@@ -159,6 +167,7 @@ def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str
     return {
         "body": body,
         "marker": marker,
+        "deployment_marker": deployment_marker,
         "state": state,
         "coverage": coverage,
         "tile_count": tile_count,
@@ -427,6 +436,7 @@ def run_browser_qa(
                 "game_total_event_id": CFB_GAME_TOTAL_EVENT_ID,
                 "game_total_date": CFB_GAME_TOTAL_DATE,
                 "game_total_step5_marker": game_total_step5["marker"],
+                "game_total_step5_deployment_marker": game_total_step5["deployment_marker"],
                 "game_total_step5_state": game_total_step5["state"],
                 "game_total_step5_coverage": game_total_step5["coverage"],
                 "game_total_step5_tile_count": game_total_step5["tile_count"],
