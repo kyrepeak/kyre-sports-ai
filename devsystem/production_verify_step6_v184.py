@@ -15,7 +15,6 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 from playwright.sync_api import sync_playwright
 
-from devsystem import production_verify_v5 as v163_nav
 
 
 class Step6ProductionVerificationFailure(RuntimeError):
@@ -69,6 +68,33 @@ def _load_streamlit_url() -> str:
     return str(targets["streamlit"]["url"]).rstrip("/")
 
 
+def _scan_step6_frames(page):
+    scans: list[dict] = []
+    for index, frame in enumerate(page.frames):
+        try:
+            body = frame.locator("body").inner_text(timeout=5000)
+        except Exception:
+            body = ""
+        try:
+            root = frame.locator(STEP6_ROOT_SELECTOR).last
+            root_count = root.count()
+        except Exception:
+            root = None
+            root_count = 0
+        scans.append(
+            {
+                "index": index,
+                "url": frame.url,
+                "body_start": str(body or "")[:800],
+                "step6_root_count": int(root_count),
+                "cert_marker_visible": CERT_SURFACE_MARKER in str(body or ""),
+            }
+        )
+        if root is not None and root_count > 0:
+            return frame, root, str(body or ""), scans
+    return None, None, "", scans
+
+
 def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
     deadline = time.monotonic() + timeout_seconds
     last_body = ""
@@ -77,15 +103,10 @@ def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
 
     while time.monotonic() < deadline:
         try:
-            frame, body, scans = v163_nav._find_v163_frame(
-                page,
-                timeout_seconds=min(45.0, max(5.0, deadline - time.monotonic())),
-            )
+            frame, root, body, scans = _scan_step6_frames(page)
             last_body = str(body or "")
             last_scans = scans
-            root = frame.locator(STEP6_ROOT_SELECTOR).last
-            root_count = root.count()
-            if root_count > 0:
+            if frame is not None and root is not None:
                 root.wait_for(state="attached", timeout=5000)
                 return frame, root, body, scans
             last_error = "V184 Step 6 root not live yet"
