@@ -30,7 +30,7 @@ REQUIRED_STEP1_MARKER = "CFB_GAME_TOTAL_STEP1_TEAM_IDENTITY_ACCORDION_ACTIVE"
 REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"
 REQUIRED_STEP2_MARKER = "CFB_GAME_TOTAL_STEP2_PERFORMANCE_PROFILE_V2_ACTIVE"
 REQUIRED_STEP3_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"
-REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_STEP4_MATCHUP_OFF_DEF_PASS_RUSH_EPA_ACTIVE"
+REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_STEP4_MATCHUP_V2_NEON_STACK_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -479,78 +479,74 @@ def _assert_step3_current_form(frame) -> dict:
 
 
 def _assert_step4_matchup(frame) -> dict:
+    """Verify the active V165 Step 4 surface without weakening frozen logo checks."""
     step = frame.locator('details[data-testid="gt157-step-4"]')
     try:
         step.wait_for(state="attached", timeout=30000)
     except Exception as exc:
         raise ProductionVerificationV164Failure(
-            "Step 4 timed out waiting for Matchup to render"
+            "Step 4 timed out waiting for V165 Matchup to render"
         ) from exc
     if step.count() != 1:
         raise ProductionVerificationV164Failure(
             f"Step 4 expected one connected accordion; found {step.count()}"
         )
-    if step.get_attribute("open") is not None:
+    if step.get_attribute("open") is None:
         raise ProductionVerificationV164Failure(
-            "Step 4 Matchup must render collapsed by default"
+            "Step 4 V165 Matchup must render expanded by default"
         )
 
-    away = frame.locator('[data-testid="gt170-step4-away-off-home-def"]')
-    home = frame.locator('[data-testid="gt170-step4-home-off-away-def"]')
-    matchup_read = frame.locator('[data-testid="gt170-step4-matchup-read"]')
-    epa_integrity = frame.locator('[data-testid="gt170-step4-epa-integrity"]')
+    away = frame.locator('[data-testid="gt165-step4-away-off-home-def"]')
+    home = frame.locator('[data-testid="gt165-step4-home-off-away-def"]')
+    source_integrity = frame.locator('[data-testid="gt165-step4-source-integrity"]')
+    advanced_integrity = frame.locator('[data-testid="gt165-step4-advanced-integrity"]')
     if away.count() != 1 or home.count() != 1:
         raise ProductionVerificationV164Failure(
-            f"Step 4 expected two directional matchup cards; away={away.count()} home={home.count()}"
+            f"Step 4 expected two V165 directional matchup cards; away={away.count()} home={home.count()}"
         )
-    if matchup_read.count() != 1 or epa_integrity.count() != 1:
+    if source_integrity.count() != 1 or advanced_integrity.count() != 1:
         raise ProductionVerificationV164Failure(
-            "Step 4 missing matchup-read or EPA-integrity surface"
+            "Step 4 missing V165 source-integrity or advanced-integrity surface"
         )
 
     state = str(step.get_attribute("data-step4-state") or "").strip().upper()
-    if state not in {"READY", "CHECK"}:
+    if state not in {"READY", "CHECK", "LIMITED"}:
         raise ProductionVerificationV164Failure(
             f"Step 4 matchup is not production-usable: state={state!r}"
         )
 
-    text = step.evaluate(
-        """el => {
-            const wasOpen = el.open;
-            el.open = true;
-            const value = el.innerText || "";
-            el.open = wasOpen;
-            return value;
-        }"""
-    )
+    text = step.inner_text()
     required_text = (
         "Matchup",
         AWAY_TEAM,
         HOME_TEAM,
         "Off vs Def",
-        "Passing",
-        "Rushing",
-        "EPA",
-        "MATCHUP READ",
-        "EPA INTEGRITY",
+        "Pass Eff.",
+        "Rush Eff.",
+        "Sack Matchup",
+        "BIGGEST EDGE",
+        "BIGGEST RISK",
+        "O/U IMPACT",
+        "VERIFIED MATCHUP DATA",
+        "ADVANCED-METRIC INTEGRITY",
     )
     live_text_upper = str(text or "").upper()
     missing = [label for label in required_text if label.upper() not in live_text_upper]
     if missing:
         raise ProductionVerificationV164Failure(
-            f"Step 4 missing required matchup content: {missing}"
+            f"Step 4 missing required V165 matchup content: {missing}"
         )
 
-    logos = _assert_exact_pair(frame, "img.gt170-logo", "Step 4 matchup")
+    logos = _assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")
     return {
         "status": state,
         "text": text,
         "logos": logos,
         "directional_cards": 2,
-        "matchup_read": matchup_read.count(),
-        "epa_integrity": epa_integrity.count(),
+        "source_integrity": source_integrity.count(),
+        "advanced_integrity": advanced_integrity.count(),
+        "v165_step4_verified": True,
     }
-
 
 def verify_live_v164(
     streamlit_url: str,
