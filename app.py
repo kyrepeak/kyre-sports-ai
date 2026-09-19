@@ -213,6 +213,9 @@ FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY
 FROZEN_V136_CFB_GAME_TOTAL_STEP5_V179_DEPLOYMENT_HEARTBEAT = (
     "STREAMLIT_MAIN_V179_CFB_GAME_TOTAL_STEP5_RESTART_2026-09-19"
 )
+CFB_GAME_TOTAL_STEP6_V184_DEPLOYMENT_HEARTBEAT = (
+    "STREAMLIT_MAIN_V184_CFB_GAME_TOTAL_STEP6_SCORING_CREATION_2026-09-19"
+)
 DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 FROZEN_V163_ROUTER = "streamlit_memory_lazy_router_v159"
 FROZEN_V137_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD_2026-09-15"
@@ -233,7 +236,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v162 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
