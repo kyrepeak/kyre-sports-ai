@@ -20,6 +20,8 @@ from statistics import mean
 from html import escape
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+import json
+from pathlib import Path
 import re
 from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
@@ -50,6 +52,9 @@ ESPN_SUMMARY_URL = (
 )
 ESPN_TIMEOUT_SECONDS = 4.0
 MAX_PBP_GAMES = 2
+STEP5_PBP_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent / "data" / "cfb_step5_pbp_snapshot_v1.json"
+)
 
 _ALLOWED_STATE = {"READY", "CHECK", "DATA LIMITED"}
 
@@ -518,11 +523,72 @@ def _parse_drive_evidence(
     }
 
 
+@st.cache_data(ttl=900, show_spinner=False)
+def _load_step5_pbp_snapshot() -> dict[str, Any]:
+    try:
+        payload = json.loads(
+            STEP5_PBP_SNAPSHOT_PATH.read_text(encoding="utf-8")
+        )
+    except Exception:
+        return {}
+    return dict(payload) if isinstance(payload, Mapping) else {}
+
+
+def _snapshot_drive_evidence(
+    identity: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+) -> dict[str, Any]:
+    payload = _load_step5_pbp_snapshot()
+    teams = payload.get("teams") if isinstance(payload.get("teams"), Mapping) else {}
+    if not teams:
+        return {}
+
+    profiles = {"away": away, "home": home}
+    out: dict[str, Any] = {}
+    for side, profile in profiles.items():
+        team_id = _team_id(identity, side, profile)
+        requested_event_ids = _event_ids(profile)
+        cached = teams.get(team_id) if team_id else None
+        if not isinstance(cached, Mapping) or not requested_event_ids:
+            return {}
+
+        cached_event_ids = {
+            _clean(value)
+            for value in (cached.get("event_ids") or [])
+            if _clean(value)
+        }
+        if not set(requested_event_ids).issubset(cached_event_ids):
+            return {}
+
+        metrics = (
+            cached.get("metrics")
+            if isinstance(cached.get("metrics"), Mapping)
+            else {}
+        )
+        row = dict(metrics)
+        if not row:
+            return {}
+
+        row["team_id"] = team_id
+        row["requested_event_ids"] = list(requested_event_ids)
+        row["sportsdataverse_games_loaded"] = _int(row.get("games")) or 0
+        row["espn_fallback_used"] = False
+        row["delivery"] = "sportsdataverse_github_raw_snapshot"
+        out[side] = row
+
+    return out
+
+
 def _safe_drive_evidence(
     identity: Mapping[str, Any],
     away: Mapping[str, Any],
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
+    snapshot = _snapshot_drive_evidence(identity, away, home)
+    if snapshot.get("away") and snapshot.get("home"):
+        return snapshot
+
     profiles = {"away": away, "home": home}
     side_events = {
         side: _event_ids(profile)
@@ -1571,6 +1637,7 @@ STEP5_CSS = r"""
 __all__ = [
     "ESPN_SUMMARY_URL",
     "SPORTSDATAVERSE_GAME_URL",
+    "STEP5_PBP_SNAPSHOT_PATH",
     "FROZEN_PREDECESSOR",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",

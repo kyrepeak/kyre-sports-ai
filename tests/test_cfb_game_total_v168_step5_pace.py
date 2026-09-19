@@ -707,3 +707,46 @@ def test_v183_step5_page_has_zero_heavy_ncaa_prerender_calls():
     assert "step3_data_owner.load_matchup_team_data" not in source
     assert "step3_owner.enrich_step3_inputs" not in source
     assert "step3_owner._runtime_v2_step3_bundle" in source
+
+
+
+def test_v185_current_live_matchup_uses_verified_local_pbp_cache(monkeypatch):
+    identity = {
+        "away": {"team": "Coastal Carolina", "team_id": "324"},
+        "home": {"team": "Delaware", "team_id": "48"},
+    }
+    away = {
+        "team": "Coastal Carolina",
+        "team_id": "324",
+        "completed_games": [
+            {"event_id": "401856780"},
+            {"event_id": "401868008"},
+        ],
+    }
+    home = {
+        "team": "Delaware",
+        "team_id": "48",
+        "completed_games": [
+            {"event_id": "401864424"},
+            {"event_id": "401856684"},
+        ],
+    }
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("V185 cached matchup must not hit live PBP network")
+
+    monkeypatch.setattr(step5, "_fetch_sportsdataverse_game", forbidden)
+    monkeypatch.setattr(step5, "_fetch_summary", forbidden)
+
+    evidence = step5._safe_drive_evidence(identity, away, home)
+
+    assert evidence["away"]["delivery"] == "sportsdataverse_github_raw_snapshot"
+    assert evidence["home"]["delivery"] == "sportsdataverse_github_raw_snapshot"
+    assert evidence["away"]["sportsdataverse_games_loaded"] == 2
+    assert evidence["home"]["sportsdataverse_games_loaded"] == 2
+    assert evidence["away"]["plays_per_game"] == 72.5
+    assert evidence["home"]["plays_per_game"] == 74.0
+    assert evidence["away"]["seconds_per_play"] > 0
+    assert evidence["home"]["seconds_per_play"] > 0
+    assert evidence["away"]["no_huddle_rate"] > 0
+    assert evidence["home"]["no_huddle_rate"] > 0

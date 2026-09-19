@@ -793,9 +793,13 @@ def _assert_step5_pace(frame) -> dict:
     home_delivery = str(
         step.get_attribute("data-step5-home-pbp-delivery") or ""
     ).strip()
+    allowed_pbp_delivery = {
+        "sportsdataverse_github_raw",
+        "sportsdataverse_github_raw_snapshot",
+    }
     if (
-        away_delivery != "sportsdataverse_github_raw"
-        or home_delivery != "sportsdataverse_github_raw"
+        away_delivery not in allowed_pbp_delivery
+        or home_delivery not in allowed_pbp_delivery
     ):
         raise ProductionVerificationV164Failure(
             "Step 5 did not prove SportsDataverse PBP delivery for both teams: "
