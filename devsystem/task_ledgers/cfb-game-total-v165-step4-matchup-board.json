@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v165-step4-matchup-board",
+  "status": "DONE",
+  "scope": "Complete only CFB Game Total Step 4 as the expanded universal offense-vs-defense Matchup board, wire verified NCAA matchup evidence, and present Steps 4–12 in the approved full-width vertical accordion stack without changing frozen model behavior.",
+  "trigger": "User approved the Step 4 Matchup mockup and explicitly requested completion on the actual Streamlit page while Steps 1–3 and certified model behavior remain protected.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step3_frozen_and_untouched": true,
+    "step5_plus_logic_not_rebuilt": true,
+    "step5_plus_layout_only_verticalized": true,
+    "unverified_advanced_metrics_fabricated": false,
+    "verified_ncaa_matchup_engine_reused": true,
+    "projection_math_changed": false,
+    "probability_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "internal_steps": {
+    "1": "live Step 4 owner and frozen boundaries inspected",
+    "2": "verified matchup data map locked",
+    "3": "expanded neon Step 4 UI and additive activation built",
+    "4": "production render verified to call the NCAA matchup engine without model mutation",
+    "5": "Steps 4–12 full-width vertical stack certified",
+    "6": "dedicated V165 compile and frozen-boundary regression suite passed before protected-main merge"
+  },
+  "proof_target": "PR #680 dedicated step4-v165 workflow must be GREEN on the current head, DevSystem final gate must be GREEN, protected main must accept the exact certified head, and production Streamlit must expose the V165 activation before Step 4 is frozen.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
