@@ -371,6 +371,10 @@ def _parse_sportsdataverse_evidence(
     neutral_deltas: list[float] = []
     no_huddle_plays = 0
     scrimmage_plays = 0
+    games_with_plays = 0
+    total_scrimmage_plays = 0
+    timed_drive_seconds = 0.0
+    timed_drive_play_count = 0
 
     for payload in games:
         raw_plays = payload.get("plays") or []
@@ -383,6 +387,9 @@ def _parse_sportsdataverse_evidence(
         ]
         if not plays:
             continue
+
+        games_with_plays += 1
+        total_scrimmage_plays += len(plays)
 
         drive_map: dict[str, float | None] = {}
         plays_by_drive: dict[str, list[dict[str, Any]]] = {}
@@ -397,9 +404,11 @@ def _parse_sportsdataverse_evidence(
         if drive_map:
             games_with_drives += 1
             total_drives += len(drive_map)
-            for value in drive_map.values():
+            for drive_id, value in drive_map.items():
                 if value is not None and 10.0 <= value <= 900.0:
                     drive_seconds.append(float(value))
+                    timed_drive_seconds += float(value)
+                    timed_drive_play_count += len(plays_by_drive.get(drive_id) or [])
             for drive_plays in plays_by_drive.values():
                 neutral_deltas.extend(_neutral_play_deltas(drive_plays))
 
@@ -424,10 +433,22 @@ def _parse_sportsdataverse_evidence(
         if scrimmage_plays > 0
         else None
     )
+    plays_pg = (
+        float(total_scrimmage_plays) / float(games_with_plays)
+        if games_with_plays > 0 and total_scrimmage_plays > 0
+        else None
+    )
+    seconds_per_play = (
+        float(timed_drive_seconds) / float(timed_drive_play_count)
+        if timed_drive_play_count > 0 and timed_drive_seconds > 0
+        else None
+    )
     return {
         "games": games_with_drives,
         "drive_count": total_drives,
         "drives_per_game": drives_pg,
+        "plays_per_game": plays_pg,
+        "seconds_per_play": seconds_per_play,
         "avg_drive_time_seconds": avg_drive,
         "situation_neutral_seconds_per_play": neutral_pace,
         "no_huddle_rate": no_huddle,
@@ -453,6 +474,9 @@ def _parse_drive_evidence(
     neutral_deltas: list[float] = []
     no_huddle_plays = 0
     text_plays = 0
+    total_scrimmage_plays = 0
+    timed_drive_seconds = 0.0
+    timed_drive_play_count = 0
 
     for payload in summaries:
         team_drives = [
@@ -465,10 +489,13 @@ def _parse_drive_evidence(
         games_with_drives += 1
         drive_count += len(team_drives)
         for drive in team_drives:
+            plays = _drive_plays(drive)
+            total_scrimmage_plays += len(plays)
             elapsed = _drive_time_seconds(drive)
             if elapsed is not None and 10.0 <= elapsed <= 900.0:
                 drive_seconds.append(float(elapsed))
-            plays = _drive_plays(drive)
+                timed_drive_seconds += float(elapsed)
+                timed_drive_play_count += len(plays)
             neutral_deltas.extend(_neutral_play_deltas(plays))
             for play in plays:
                 text = _clean(play.get("text") or play.get("description"))
@@ -491,10 +518,22 @@ def _parse_drive_evidence(
         if text_plays > 0
         else None
     )
+    plays_pg = (
+        float(total_scrimmage_plays) / float(games_with_drives)
+        if games_with_drives > 0 and total_scrimmage_plays > 0
+        else None
+    )
+    seconds_per_play = (
+        float(timed_drive_seconds) / float(timed_drive_play_count)
+        if timed_drive_play_count > 0 and timed_drive_seconds > 0
+        else None
+    )
     return {
         "games": games_with_drives,
         "drive_count": drive_count,
         "drives_per_game": drives_pg,
+        "plays_per_game": plays_pg,
+        "seconds_per_play": seconds_per_play,
         "avg_drive_time_seconds": avg_drive,
         "situation_neutral_seconds_per_play": neutral_pace,
         "no_huddle_rate": no_huddle,
@@ -691,8 +730,29 @@ def _team_contract(
     pace_row: Mapping[str, Any],
     drive_row: Mapping[str, Any],
 ) -> dict[str, Any]:
-    plays_pg = _float(pace_row.get("plays_per_game"))
-    spp = _float(pace_row.get("seconds_per_offensive_play"))
+    ncaa_plays_pg = _float(pace_row.get("plays_per_game"))
+    pbp_plays_pg = _float(drive_row.get("plays_per_game"))
+    plays_pg = ncaa_plays_pg if ncaa_plays_pg is not None else pbp_plays_pg
+    ncaa_spp = _float(pace_row.get("seconds_per_offensive_play"))
+    pbp_spp = _float(drive_row.get("seconds_per_play"))
+    spp = ncaa_spp if ncaa_spp is not None else pbp_spp
+    pace_index = _float(pace_row.get("pace_index"))
+    plays_basis = "NCAA" if ncaa_plays_pg is not None else ("PBP" if pbp_plays_pg is not None else "")
+    clock_basis = (
+        _pace_badge(pace_index)
+        if ncaa_spp is not None
+        else ("PBP" if pbp_spp is not None else "")
+    )
+    plays_source = (
+        _clean(pace_row.get("plays_source"))
+        if ncaa_plays_pg is not None
+        else _clean(drive_row.get("source"))
+    )
+    clock_source = (
+        _clean(pace_row.get("clock_source"))
+        if ncaa_spp is not None
+        else _clean(drive_row.get("source"))
+    )
     neutral = _float(drive_row.get("situation_neutral_seconds_per_play"))
     no_huddle = _float(drive_row.get("no_huddle_rate"))
     drives_pg, drives_basis = _estimated_drives(profile, drive_row)
@@ -706,17 +766,17 @@ def _team_contract(
         _tile(
             "PLAYS / GAME",
             _num(plays_pg),
-            "NCAA",
+            plays_basis or "DATA LIMITED",
             ready=plays_pg is not None,
-            source=_clean(pace_row.get("plays_source")) or "NCAA Total Offense",
+            source=plays_source,
             icon="▶",
         ),
         _tile(
             "SECONDS / PLAY",
             _num(spp),
-            _pace_badge(pace_row.get("pace_index")),
+            clock_basis or "DATA LIMITED",
             ready=spp is not None,
-            source=_clean(pace_row.get("clock_source")) or "NCAA Time of Possession",
+            source=clock_source,
             icon="⏱",
         ),
         _tile(
@@ -766,7 +826,9 @@ def _team_contract(
         "ready_tiles": sum(bool(row["ready"]) for row in tiles),
         "plays_per_game": plays_pg,
         "seconds_per_play": spp,
-        "pace_index": _float(pace_row.get("pace_index")),
+        "pace_index": pace_index,
+        "plays_basis": plays_basis,
+        "clock_basis": clock_basis,
         "drives_per_game": drives_pg,
         "drives_basis": drives_basis,
         "avg_drive_time_seconds": drive_time,
@@ -777,10 +839,71 @@ def _team_contract(
     }
 
 
-def _tempo_grade(pace_ratio: Any) -> str:
+def _presentation_pace(
+    pace: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Build a display-only PBP fallback without mutating certified model math."""
+    out = dict(pace or {})
+    if bool(out.get("model_ready")):
+        out["presentation_ready"] = True
+        out["presentation_fallback_used"] = False
+        out["presentation_coverage"] = _float(out.get("coverage")) or 0.0
+        return out
+
+    away_plays = _float(away.get("plays_per_game"))
+    home_plays = _float(home.get("plays_per_game"))
+    away_spp = _float(away.get("seconds_per_play"))
+    home_spp = _float(home.get("seconds_per_play"))
+    away_games = _int(away.get("pbp_games")) or 0
+    home_games = _int(home.get("pbp_games")) or 0
+
+    if away_plays is None or home_plays is None or away_spp is None or home_spp is None:
+        out["presentation_ready"] = False
+        out["presentation_fallback_used"] = False
+        out["presentation_coverage"] = _float(out.get("coverage")) or 0.0
+        return out
+
+    historical = float(away_plays + home_plays)
+    neutral_values = [
+        value
+        for value in (
+            _float(away.get("situation_neutral_seconds_per_play")),
+            _float(home.get("situation_neutral_seconds_per_play")),
+        )
+        if value is not None
+    ]
+    neutral_mean = mean(neutral_values) if neutral_values else None
+    if neutral_mean is None:
+        label = "PBP VERIFIED"
+    elif neutral_mean <= 24.5:
+        label = "FAST"
+    elif neutral_mean >= 29.0:
+        label = "SLOW"
+    else:
+        label = "NEUTRAL"
+
+    sample_factor = min(1.0, max(0.0, float(min(away_games, home_games)) / float(MAX_PBP_GAMES)))
+    out.update({
+        "presentation_ready": True,
+        "presentation_fallback_used": True,
+        "presentation_source": "SportsDataverse current-season completed-game PBP",
+        "presentation_coverage": 0.85 + 0.15 * sample_factor,
+        "sample_factor": sample_factor,
+        "historical_combined_plays_per_game": historical,
+        "expected_combined_plays": historical,
+        "pace_label": label,
+        "pace_ratio": None,
+        "pace_signal": None,
+    })
+    return out
+
+
+def _tempo_grade(pace_ratio: Any, fallback_used: bool = False) -> str:
     value = _float(pace_ratio)
     if value is None:
-        return "—"
+        return "PBP" if fallback_used else "—"
     if value >= 1.10:
         return "A"
     if value >= 1.055:
@@ -851,14 +974,25 @@ def _accelerator(
         (away_name, _float(away.get("pace_index")), _float(away.get("seconds_per_play"))),
         (home_name, _float(home.get("pace_index")), _float(home.get("seconds_per_play"))),
     ]
-    available = [row for row in pairs if row[1] is not None]
+    available = [row for row in pairs if row[1] is not None or row[2] is not None]
     if not available:
         return "Verified pace edge unavailable", ""
-    team, index, spp = max(available, key=lambda row: float(row[1] or 0.0))
+    team, index, spp = max(
+        available,
+        key=lambda row: (
+            float(row[1])
+            if row[1] is not None
+            else (100.0 - float(row[2] or 100.0)) / 100.0
+        ),
+    )
     detail = (
         f"{_num(spp)} sec/play • pace index {_num(index, 2)}"
         if spp is not None
-        else f"pace index {_num(index, 2)}"
+        else (
+            f"pace index {_num(index, 2)}"
+            if index is not None
+            else "SportsDataverse PBP verified"
+        )
     )
     return f"{team} tempo", detail
 
@@ -873,14 +1007,27 @@ def _brake(
         (away_name, _float(away.get("pace_index")), _float(away.get("avg_drive_time_seconds"))),
         (home_name, _float(home.get("pace_index")), _float(home.get("avg_drive_time_seconds"))),
     ]
-    available = [row for row in pairs if row[1] is not None]
+    available = [row for row in pairs if row[1] is not None or row[2] is not None]
     if not available:
         return "Verified pace brake unavailable", ""
-    team, index, drive_time = min(available, key=lambda row: float(row[1] or 99.0))
+    if any(row[1] is not None for row in available):
+        team, index, drive_time = min(
+            available,
+            key=lambda row: float(row[1]) if row[1] is not None else 99.0,
+        )
+    else:
+        team, index, drive_time = max(
+            available,
+            key=lambda row: float(row[2] or 0.0),
+        )
     detail = (
         f"{_duration_text(drive_time)} avg drive • pace index {_num(index, 2)}"
         if drive_time is not None
-        else f"pace index {_num(index, 2)}"
+        else (
+            f"pace index {_num(index, 2)}"
+            if index is not None
+            else "SportsDataverse PBP verified"
+        )
     )
     return f"{team} possession pace", detail
 
@@ -888,6 +1035,16 @@ def _brake(
 def _matchup_read(pace: Mapping[str, Any]) -> tuple[str, str]:
     ratio = _float(pace.get("pace_ratio"))
     if ratio is None:
+        if pace.get("presentation_fallback_used"):
+            expected = _float(pace.get("expected_combined_plays"))
+            label = _clean(pace.get("pace_label")) or "PBP VERIFIED"
+            detail = (
+                f"Current-season completed-game PBP supports about {_num(expected, 0)} combined plays; "
+                "division-baseline comparison remains source-gated."
+                if expected is not None
+                else "Current-season completed-game PBP supplies verified play-volume evidence."
+            )
+            return f"{label} POSSESSION ENVIRONMENT", detail
         return "PACE DATA LIMITED", "Verified combined pace could not be established."
     if ratio >= 1.055:
         return (
@@ -908,6 +1065,11 @@ def _matchup_read(pace: Mapping[str, Any]) -> tuple[str, str]:
 def _ou_impact(pace: Mapping[str, Any]) -> tuple[str, str]:
     signal = _float(pace.get("pace_signal"))
     if signal is None:
+        if pace.get("presentation_fallback_used"):
+            return (
+                "NEUTRAL",
+                "Verified PBP opportunity volume is available; no directional O/U claim is made without the NCAA division baseline.",
+            )
         return "NEUTRAL", "Verified pace impact is unavailable."
     if signal >= 0.20:
         return (
@@ -958,11 +1120,16 @@ def build_step5_contract(
 
     away_contract = _team_contract(away_ppd, away_pace, away_drive)
     home_contract = _team_contract(home_ppd, home_pace, home_drive)
+    presentation_pace = _presentation_pace(
+        pace_result,
+        away_contract,
+        home_contract,
+    )
     away_name = _team_name(identity, away_ppd, "away")
     home_name = _team_name(identity, home_ppd, "home")
 
     away_expected, home_expected, combined_expected = _expected_drives(
-        pace_result,
+        presentation_pace,
         away_contract,
         home_contract,
     )
@@ -970,7 +1137,10 @@ def build_step5_contract(
     ready_tiles = away_contract["ready_tiles"] + home_contract["ready_tiles"]
     coverage = ready_tiles / float(total_tiles)
 
-    core_ready = bool(pace_result.get("model_ready"))
+    core_ready = bool(
+        pace_result.get("model_ready")
+        or presentation_pace.get("presentation_ready")
+    )
     if not core_ready:
         state = "DATA LIMITED"
     elif ready_tiles == total_tiles:
@@ -990,13 +1160,21 @@ def build_step5_contract(
         away_contract,
         home_contract,
     )
-    read_title, read_detail = _matchup_read(pace_result)
-    impact_title, impact_detail = _ou_impact(pace_result)
+    read_title, read_detail = _matchup_read(presentation_pace)
+    impact_title, impact_detail = _ou_impact(presentation_pace)
 
     data_confidence = round(
         100.0
         * (
-            0.60 * min(1.0, max(0.0, _float(pace_result.get("coverage")) or 0.0))
+            0.60 * min(
+                1.0,
+                max(
+                    0.0,
+                    _float(presentation_pace.get("presentation_coverage"))
+                    or _float(pace_result.get("coverage"))
+                    or 0.0,
+                ),
+            )
             + 0.40 * coverage
         )
     )
@@ -1015,14 +1193,21 @@ def build_step5_contract(
         "expected_away_drives": away_expected,
         "expected_home_drives": home_expected,
         "expected_combined_drives": combined_expected,
-        "expected_combined_plays": _float(pace_result.get("expected_combined_plays")),
-        "tempo_grade": _tempo_grade(pace_result.get("pace_ratio")),
+        "expected_combined_plays": _float(presentation_pace.get("expected_combined_plays")),
+        "tempo_grade": _tempo_grade(
+            presentation_pace.get("pace_ratio"),
+            bool(presentation_pace.get("presentation_fallback_used")),
+        ),
         "pace_volatility": _volatility(
-            pace_result,
+            presentation_pace,
             away_contract,
             home_contract,
         ),
-        "pace_label": _clean(pace_result.get("pace_label")) or "UNAVAILABLE",
+        "pace_label": _clean(presentation_pace.get("pace_label")) or "UNAVAILABLE",
+        "presentation_pace": presentation_pace,
+        "presentation_fallback_used": bool(
+            presentation_pace.get("presentation_fallback_used")
+        ),
         "matchup_read": read_title,
         "matchup_read_detail": read_detail,
         "biggest_accelerator": accelerator,
