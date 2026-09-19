@@ -162,11 +162,12 @@ def _wait_for_v164_patch_deployment(
     *,
     timeout_seconds: float = 240.0,
 ):
-    """Reload until the live app proves this exact logo patch is deployed."""
+    """Wait until the current V168 Step 5 DOM surface is attached."""
     deadline = time.monotonic() + timeout_seconds
     last_body = ""
     last_scans: list[dict] = []
     last_error = ""
+    last_marker = ""
     while time.monotonic() < deadline:
         try:
             frame, body, scans = v163._wait_for_top_level_selection(
@@ -174,16 +175,21 @@ def _wait_for_v164_patch_deployment(
                 CERT_EVENT_ID,
                 timeout_seconds=45.0,
             )
-            last_body = body
+            last_body = str(body or "")
             last_scans = scans
             last_error = ""
-            dom_text = str(body or "")
-            if (
-                REQUIRED_HEARTBEAT in dom_text
-                and REQUIRED_PATCH_MARKER in dom_text
-                and REQUIRED_STEP5_MARKER in dom_text
-            ):
-                return frame, dom_text, scans
+
+            step5 = frame.locator('details[data-testid="gt157-step-5"]')
+            if step5.count() == 1:
+                try:
+                    step5.wait_for(state="attached", timeout=5000)
+                except Exception:
+                    pass
+                last_marker = str(
+                    step5.get_attribute("data-step5-marker") or ""
+                ).strip()
+                if last_marker == REQUIRED_STEP5_MARKER:
+                    return frame, last_body, scans
         except Exception as exc:
             last_error = f"{type(exc).__name__}: {exc}"
 
@@ -191,10 +197,9 @@ def _wait_for_v164_patch_deployment(
         page.reload(wait_until="domcontentloaded", timeout=120000)
 
     raise ProductionVerificationV164Failure(
-        "V164 logo proof timed out waiting for the current Streamlit patch: "
-        f"required_heartbeat={REQUIRED_HEARTBEAT!r} "
-        f"required_marker={REQUIRED_PATCH_MARKER!r} "
+        "V164 logo proof timed out waiting for the current Step 5 DOM surface: "
         f"required_step5_marker={REQUIRED_STEP5_MARKER!r} "
+        f"actual_step5_marker={last_marker!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
     )
