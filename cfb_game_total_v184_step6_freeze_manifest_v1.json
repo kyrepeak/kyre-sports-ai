@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "status": "PREPARED_NOT_FROZEN",
-  "baseline_commit": "deea4b8fdfd6cf0a62ee0f6666330e6fdf8a8abe",
+  "status": "FROZEN",
+  "baseline_commit": "e6fc998c99d3cb6ca56b26e9f1fed3d2743ef78e",
   "feature_pr": 736,
-  "production_proof_status": "PENDING",
+  "production_proof_status": "GREEN",
   "production_proof_required": true,
   "freeze_marker": "CFB_GAME_TOTAL_V184_STEP6_PERMANENT_FREEZE_GREEN",
   "contract": {
@@ -31,18 +31,25 @@
     "projection_mutation": false,
     "steps_1_through_5_remain_frozen": true,
     "future_changes_must_be_additive": true,
-    "permanently_frozen": false
+    "permanently_frozen": true
   },
   "exact_blobs": {
-    "cfb_game_total_step6_scoring_v1.py": "f12f6417a0dc58bc773ab225cad3b73473f74341",
-    "cfb_game_total_clean_page_v18.py": "340314970be8a52d1d686ff86017e17d2550076e",
-    "streamlit_memory_lazy_router_v163.py": "588750fc89338893fdd9d90a20037f58c80b8004",
+    "cfb_game_total_step6_scoring_v1.py": "fc63718638e9b0f702c96cef00a0a39e9bd3e9c3",
+    "cfb_game_total_clean_page_v18.py": "dd98bf0f652302b487fa4697537e962ec19cc076",
+    "streamlit_memory_lazy_router_v163.py": "b38aeeed1a8b05c32ece103f6cd02f7505580406",
     "app.py": "731facd874550002f624a68b3246e06cfa59c508",
     "devsystem/cfb_game_total_step6_browser_qa_v184.py": "45866bec72146cbe8ba9d462b36531b6652e1d18",
-    "tests/test_cfb_game_total_v184_step6_scoring.py": "39188054ce4e785121b348ff31525b8b78f8c005",
+    "devsystem/production_verify_step6_v184.py": "21fa155e22b967c9c64301ff884e2af27adfebe5",
+    "data/cfb_step6_scoring_snapshot_v1.json": "8029ed6c0af10ac54b6f5acc41e596b8dd7aafb5",
+    "tests/test_cfb_game_total_v184_step6_scoring.py": "b9b3590636791fc373df24722a60b908f321ff9c",
     "tests/test_cfb_game_total_v184_step6_browser.py": "eeed59afa16a3fa415d70072adfaaca5e6982667",
+    "tests/test_devsystem_production_verify_step6_v184.py": "b0718946ddaaa8d35ae3af0ef1a3bd2c8def1d3a",
     ".github/workflows/cfb-game-total-v184-step6.yml": "6e24ea528e0ce1a41374263050fdf26a1ba059c3",
-    ".github/workflows/cfb-game-total-v184-step6-browser.yml": "bd41a745051deeb13272a09ce1f0bb5c6a10589d"
+    ".github/workflows/cfb-game-total-v184-step6-browser.yml": "bd41a745051deeb13272a09ce1f0bb5c6a10589d",
+    ".github/workflows/cfb-game-total-v184-step6-production.yml": "94f8ae62c8a2cb2843c0a2af10afca3531e0232d"
   },
-  "note": "Freeze package is prepared only. Step 6 must not be declared permanently frozen until the dedicated live production proof succeeds on the exact certified surface."
+  "note": "Permanent freeze finalized only after live production run #26 succeeded on commit e6fc998c99d3cb6ca56b26e9f1fed3d2743ef78e with Step 6 READY, 100% coverage, and 12/12 ready tiles. Frozen surface includes the multi-source scoring snapshot and strict production verifier.",
+  "production_proof_run": 26,
+  "production_proof_workflow_run_id": 35471823826,
+  "production_proof_commit": "e6fc998c99d3cb6ca56b26e9f1fed3d2743ef78e"
 }
