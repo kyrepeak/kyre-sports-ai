@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-19T21:44:00Z",
+  "source": "SportsDataverse cfbfastR-cfb-raw verified completed-game event IDs",
+  "purpose": "Deterministic nonblocking Step 6 early-render PBP identity fallback.",
+  "teams": {
+    "48": {
+      "team": "Delaware",
+      "team_id": "48",
+      "event_ids": [
+        "401864424",
+        "401856684"
+      ]
+    },
+    "52": {
+      "team": "Florida State",
+      "team_id": "52",
+      "event_ids": [
+        "401864570",
+        "401858212"
+      ]
+    },
+    "324": {
+      "team": "Coastal Carolina",
+      "team_id": "324",
+      "event_ids": [
+        "401856780",
+        "401868008"
+      ]
+    },
+    "333": {
+      "team": "Alabama",
+      "team_id": "333",
+      "event_ids": [
+        "401856634",
+        "401856674"
+      ]
+    }
+  },
+  "certification": {
+    "game_date": "2026-09-19",
+    "event_id": "401856685",
+    "matchup": "Florida State @ Alabama"
+  }
+}
