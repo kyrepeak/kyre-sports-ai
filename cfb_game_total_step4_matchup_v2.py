@@ -35,13 +35,19 @@ STEP4_CSS = r"""
 .gt159-stepgrid>.gt159-step{grid-column:1/-1!important;width:100%!important}
 
 /* Featured Step 4 shell */
-.gt165-step4{grid-column:1/-1!important;position:relative;border:1px solid rgba(57,198,255,.58)!important;border-left:4px solid #ffd34f!important;border-radius:17px!important;background:linear-gradient(145deg,#061729 0%,#071a2b 54%,#101431 100%)!important;box-shadow:0 0 0 2px rgba(44,124,255,.10),0 0 30px rgba(0,217,255,.10)!important;overflow:hidden}
-.gt165-step4:before{content:"";position:absolute;inset:-1px;pointer-events:none;border-radius:17px;background:linear-gradient(90deg,rgba(34,219,255,.26),rgba(107,99,255,.17),rgba(190,68,255,.24));mix-blend-mode:screen}
+.gt165-step4{grid-column:1/-1!important;position:relative;border:1px solid rgba(74,203,255,.68)!important;border-left:4px solid #ffd34f!important;border-radius:19px!important;background:linear-gradient(145deg,#061729 0%,#071a2b 54%,#111535 100%)!important;box-shadow:0 0 0 1px rgba(44,124,255,.22),0 0 34px rgba(0,217,255,.13),0 0 38px rgba(156,82,255,.08)!important;overflow:hidden}
+.gt165-step4:before{content:"";position:absolute;inset:-1px;pointer-events:none;border-radius:19px;background:linear-gradient(90deg,rgba(34,219,255,.30),rgba(107,99,255,.19),rgba(190,68,255,.28));mix-blend-mode:screen}
+.gt165-step4:after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#31e0ff 0%,#4b7dff 46%,#b758ff 100%);opacity:.90;pointer-events:none}
 .gt165-step4 summary,.gt165-body{position:relative;z-index:1}
-.gt165-step4 summary{min-height:64px!important;padding:10px 13px!important;grid-template-columns:46px minmax(0,1fr) auto!important;gap:11px!important;background:linear-gradient(90deg,rgba(5,31,55,.97),rgba(17,20,58,.94))!important}
-.gt165-step4 .gt159-num{width:44px!important;height:44px!important;border-radius:12px!important;background:linear-gradient(145deg,#15dcff,#4d79ff 58%,#9a5cff)!important;color:#fff!important;box-shadow:0 0 19px rgba(45,190,255,.34)!important;font-size:17px!important}
-.gt165-step4 .gt159-stepcopy b{font-size:15px!important;color:#fff!important}
-.gt165-step4 .gt159-stepcopy span{font-size:8px!important;color:#9db7ca!important;margin-top:4px!important}
+.gt165-step4 summary{min-height:76px!important;padding:12px 15px!important;grid-template-columns:52px minmax(0,1fr) auto!important;gap:13px!important;background:linear-gradient(90deg,rgba(5,31,55,.985),rgba(15,24,65,.965) 62%,rgba(33,18,78,.94))!important;border-bottom:1px solid rgba(69,184,255,.18)}
+.gt165-step4 .gt159-num{width:50px!important;height:50px!important;border-radius:14px!important;background:linear-gradient(145deg,#19e1ff 0%,#4c7dff 55%,#9d59ff 100%)!important;color:#fff!important;box-shadow:0 0 22px rgba(45,190,255,.42),0 0 18px rgba(145,85,255,.25)!important;font-size:19px!important;font-weight:950!important}
+.gt165-step4 .gt159-stepcopy b{font-size:18px!important;line-height:1.05!important;color:#fff!important;letter-spacing:-.01em}
+.gt165-step4 .gt159-stepcopy span{font-size:9px!important;color:#a9c1d5!important;margin-top:5px!important;letter-spacing:.01em}
+.gt165-headstatus{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+.gt165-coverage{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;border:1px solid rgba(75,179,255,.40);background:rgba(8,47,83,.52);box-shadow:inset 0 0 0 1px rgba(64,127,255,.08)}
+.gt165-coverage strong{font-size:10px;line-height:1;color:#bfe9ff;font-weight:950}
+.gt165-coverage span{font-size:6px;line-height:1.05;color:#86a9c0;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
+.gt165-step4 .gt159-state{padding:7px 11px!important;border-radius:999px!important;font-size:8px!important;font-weight:950!important;letter-spacing:.04em}
 .gt165-body{padding:10px 11px 12px!important}
 .gt165-battles{display:grid;grid-template-columns:1fr;gap:10px}
 
@@ -87,6 +93,9 @@ STEP4_CSS = r"""
 .gt165-state.limited{color:#ff8993!important;border-color:rgba(255,137,147,.31)!important;background:rgba(112,42,50,.16)!important}
 
 @media(max-width:760px){
+  .gt165-step4 summary{grid-template-columns:48px minmax(0,1fr)!important;padding:10px 12px!important}
+  .gt165-headstatus{grid-column:2;justify-content:flex-start;flex-wrap:wrap;margin-top:3px}
+  .gt165-coverage{padding:6px 8px}
   .gt165-battlehead{grid-template-columns:44px minmax(0,1fr);align-items:start}
   .gt165-read{grid-column:2;justify-self:start;text-align:left;max-width:100%;margin-top:2px}
   .gt165-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -577,7 +586,10 @@ def render_step4_html(
   <summary>
     <span class="gt159-num">4</span>
     <span class="gt159-stepcopy"><b>Matchup</b><span>Off vs Def · Pass · Rush · Situational</span></span>
-    <span class="gt159-state gt165-state {state_css}">{escape(state)}</span>
+    <span class="gt165-headstatus">
+      <span class="gt165-coverage" data-testid="gt165-step4-header-coverage"><strong>{coverage}%</strong><span>Matchup<br/>Coverage</span></span>
+      <span class="gt159-state gt165-state {state_css}">{escape(state)}</span>
+    </span>
   </summary>
   <div class="gt159-stepbody gt165-body">
     <div class="gt165-battles">
