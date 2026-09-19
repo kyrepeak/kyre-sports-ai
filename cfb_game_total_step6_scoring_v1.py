@@ -10,6 +10,8 @@ projection influence remains 0.0%.
 from __future__ import annotations
 
 from html import escape
+import json
+from pathlib import Path
 from statistics import mean
 from typing import Any, Mapping, Sequence
 
@@ -24,6 +26,9 @@ FROZEN_PREDECESSOR = "cfb_game_total_clean_page_v17"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 MAX_PBP_GAMES = step5_pace.MAX_PBP_GAMES
+STEP6_SCORING_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent / "data" / "cfb_step6_scoring_snapshot_v1.json"
+)
 
 _METRICS = (
     ("pass_explosive_rate", "EXPLOSIVE PASS RATE", "20+ YARD PASSES"),
@@ -372,11 +377,77 @@ def _side_metrics(
     return metrics
 
 
+def _snapshot_pbp_evidence(
+    identity: Mapping[str, Any],
+    away: Mapping[str, Any],
+    home: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return pinned Step 6 metrics when both teams share a certified snapshot."""
+    try:
+        payload = json.loads(
+            STEP6_SCORING_SNAPSHOT_PATH.read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError, TypeError):
+        return {}
+
+    away_id = _team_id(identity, away, "away")
+    home_id = _team_id(identity, home, "home")
+    if not away_id or not home_id:
+        return {}
+
+    certifications = payload.get("certifications")
+    if not isinstance(certifications, Mapping):
+        return {}
+
+    for cert in certifications.values():
+        if not isinstance(cert, Mapping):
+            continue
+        teams = cert.get("teams")
+        if not isinstance(teams, Mapping):
+            continue
+        away_row = teams.get(away_id)
+        home_row = teams.get(home_id)
+        if not isinstance(away_row, Mapping) or not isinstance(home_row, Mapping):
+            continue
+
+        away_off = away_row.get("offense")
+        away_def = away_row.get("defense")
+        home_off = home_row.get("offense")
+        home_def = home_row.get("defense")
+        if not all(
+            isinstance(row, Mapping)
+            for row in (away_off, away_def, home_off, home_def)
+        ):
+            continue
+
+        return {
+            "away_offense": dict(away_off),
+            "away_defense": dict(away_def),
+            "home_offense": dict(home_off),
+            "home_defense": dict(home_def),
+            "away_event_ids": list(away_row.get("event_ids") or []),
+            "home_event_ids": list(home_row.get("event_ids") or []),
+            "unique_events_loaded": len(
+                set(
+                    list(away_row.get("event_ids") or [])
+                    + list(home_row.get("event_ids") or [])
+                )
+            ),
+            "snapshot_event_id": _clean(cert.get("event_id")),
+            "snapshot_matchup": _clean(cert.get("matchup")),
+            "delivery": "checked_in_step6_snapshot",
+        }
+    return {}
+
+
 def _load_pbp_evidence(
     identity: Mapping[str, Any],
     away: Mapping[str, Any],
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
+    snapshot = _snapshot_pbp_evidence(identity, away, home)
+    if snapshot:
+        return snapshot
     profiles = {"away": away, "home": home}
     side_events = {
         side: _event_ids(profile)
