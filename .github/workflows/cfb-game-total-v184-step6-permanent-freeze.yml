@@ -2,6 +2,8 @@ name: CFB Game Total V184 Step 6 permanent freeze
 
 on:
   workflow_dispatch:
+  push:
+    branches: [freeze/cfb-game-total-v184-step6]
 
 permissions:
   contents: read
@@ -27,7 +29,10 @@ jobs:
           m=json.loads(Path("cfb_game_total_v184_step6_freeze_manifest_v1.json").read_text())
           assert m["version"] == 1
           assert m["feature_pr"] == 736
+          assert m["status"] == "FROZEN"
           assert m["production_proof_required"] is True
+          assert m["production_proof_status"] == "GREEN"
+          assert int(m["production_proof_run"]) > 0
           assert m["contract"]["active_page"] == "cfb_game_total_clean_page_v18"
           assert m["contract"]["active_router"] == "streamlit_memory_lazy_router_v163"
           assert m["contract"]["step6_tile_count"] == 12
@@ -38,6 +43,7 @@ jobs:
           assert m["contract"]["sportsbook_projection_influence"] == 0.0
           assert m["contract"]["projection_mutation"] is False
           assert m["contract"]["steps_1_through_5_remain_frozen"] is True
+          assert m["contract"]["permanently_frozen"] is True
           print("CFB_GAME_TOTAL_V184_STEP6_FREEZE_METADATA=PASS")
           PY
 
