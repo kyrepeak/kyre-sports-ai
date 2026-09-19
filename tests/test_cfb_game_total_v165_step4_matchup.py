@@ -376,3 +376,10 @@ def test_v165_step4_multisource_deployment_marker_is_emitted_through_v16():
     assert "original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER" in source
     assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER}"' in source
     assert "prior_v164.STEP4_PRESENTATION_MARKER = original_step4_marker" in source
+
+
+def test_v165_step4_legacy_render_path_enables_multisource_without_game():
+    source = step4.render_step4_html.__code__
+    module_source = Path(step4.__file__).read_text(encoding="utf-8")
+    assert "load_fallback=fallback is None" in module_source
+    assert "load_fallback=bool(game) and fallback is None" not in module_source
