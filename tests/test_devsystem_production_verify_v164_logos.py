@@ -184,10 +184,11 @@ def test_v164_step4_completeness_checks_are_scoped_to_step4_not_step1():
 
     assert 'get_attribute("data-step4-coverage")' not in step1
     assert 'step.locator(".gt165-metric.limited").count()' not in step1
-    assert 'get_attribute("data-step4-coverage")' in step4
-    assert 'coverage != "100"' in step4
+    assert 'get_attribute("data-step4-coverage")' not in step4
+    assert 'coverage != "100"' not in step4
+    assert 'state != "READY"' in step4
     assert 'step.locator(".gt165-metric.limited").count()' in step4
-    assert '"coverage": coverage' in step4
+    assert 'VISIBLE MATCHUP COVERAGE: 100%' in step4
     assert '"limited_tiles": limited_tiles' in step4
 
 
