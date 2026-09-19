@@ -31,7 +31,8 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert '"401856685"' in module_source
     assert "for index, candidate in enumerate(CERT_CANDIDATES" in source
     assert 'CERT_QUERY_KEY: "1"' in source
-    assert 'data-testid="gt184-step6-cert-surface"' in source
+    assert 'data-testid="gt184-step6-cert-surface"' in module_source
+    assert "CERT_SURFACE_SELECTOR" in source
     assert "event_id != cert_event_id" in source
     assert "selected_date != cert_date" in source
 
