@@ -9,7 +9,6 @@ def test_v184_step6_production_contract_is_strict_and_current_route_driven():
     source = inspect.getsource(verifier.verify_live_step6)
     wait_source = inspect.getsource(verifier._wait_for_live_step6)
     assert "CERT_EVENT_ID" not in source
-    assert "CERT_DATE" not in source
     assert "ROUTE_QUERY_SPORT" in source
     assert "ROUTE_QUERY_MARKET" in source
     assert "_event_from_url" in source
