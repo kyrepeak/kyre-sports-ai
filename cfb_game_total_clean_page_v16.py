@@ -19,6 +19,7 @@ STEP4_PRESENTATION_MARKER = step4_owner.STEP4_PRESENTATION_MARKER
 STEP4_DATA_MARKER = step4_owner.STEP4_DATA_MARKER
 STEP4_DEPLOYMENT_MARKER = step4_owner.STEP4_DEPLOYMENT_MARKER
 STEP4_VISUAL_MARKER = step4_owner.STEP4_VISUAL_MARKER
+STEP4_GRADE_MARKER = step4_owner.STEP4_GRADE_MARKER
 
 # Re-export the V164 identity helpers for source-level certification and rollback.
 _resolve_visuals_v164 = prior_v164._resolve_visuals_v164
@@ -34,7 +35,7 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
     original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER
     prior_v164.step4_owner = step4_owner
     prior_v164.STEP4_PRESENTATION_MARKER = (
-        f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER} • {STEP4_VISUAL_MARKER}"
+        f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER} • {STEP4_VISUAL_MARKER} • {STEP4_GRADE_MARKER}"
     )
     try:
         return prior_v164.render_game_total_hub(
@@ -63,6 +64,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP4_DATA_MARKER",
     "STEP4_DEPLOYMENT_MARKER",
+    "STEP4_GRADE_MARKER",
     "STEP4_PRESENTATION_MARKER",
     "STEP4_VISUAL_MARKER",
     "_query_selected_day",

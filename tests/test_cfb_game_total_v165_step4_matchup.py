@@ -325,10 +325,38 @@ def test_v165_step4_multisource_fallback_fills_only_ncaa_missing_tiles():
         for tile in contract["home_offense_vs_away_defense"]["tiles"]
     }
     assert away["Pass Yds/G"]["edge"] == original_passing_edge
-    assert away["Red Zone"]["grade"] == "DATA"
+    assert away["Red Zone"]["grade"] in {"A", "A-", "B+", "B", "C+", "C", "D"}
+    assert away["Red Zone"]["grade"] != "DATA"
     assert away["Sack Matchup"]["detail"] == "OFF 0.00/g • DEF 2.50/g"
     assert home["Rush Yds/G"]["detail"] == "OFF 194.5 • DEF 57.5"
     assert home["3rd Down"]["detail"] == "OFF 46.2% • DEF 20.7%"
+
+
+def test_v167_ready_multisource_tiles_never_render_data_placeholder():
+    fallback_only = {
+        "ready": True,
+        "model_ready": False,
+        "away_offense": {"dimensions": {}},
+        "home_offense": {"dimensions": {}},
+    }
+    contract = step4.build_step4_contract(
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-18"},
+        engine=fallback_only,
+        fallback=_fake_fallback(),
+    )
+    assert contract["state"] == "READY"
+    tiles = [
+        *contract["away_offense_vs_home_defense"]["tiles"],
+        *contract["home_offense_vs_away_defense"]["tiles"],
+    ]
+    assert len(tiles) == 12
+    assert all(tile["ready"] for tile in tiles)
+    assert all(tile["grade"] in {"A", "A-", "B+", "B", "C+", "C", "D"} for tile in tiles)
+    assert all(tile["grade"] != "DATA" for tile in tiles)
+    assert all(tile.get("grade_basis") == "verified value comparison" for tile in tiles)
 
 
 def test_v165_step4_ready_requires_all_twelve_visible_tiles():
@@ -374,8 +402,9 @@ def test_v165_step4_multisource_deployment_marker_is_emitted_through_v16():
     source = PAGE.read_text()
     assert "STEP4_DEPLOYMENT_MARKER = step4_owner.STEP4_DEPLOYMENT_MARKER" in source
     assert "STEP4_VISUAL_MARKER = step4_owner.STEP4_VISUAL_MARKER" in source
+    assert "STEP4_GRADE_MARKER = step4_owner.STEP4_GRADE_MARKER" in source
     assert "original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER" in source
-    assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER} • {STEP4_VISUAL_MARKER}"' in source
+    assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER} • {STEP4_VISUAL_MARKER} • {STEP4_GRADE_MARKER}"' in source
     assert "prior_v164.STEP4_PRESENTATION_MARKER = original_step4_marker" in source
 
 
@@ -511,6 +540,37 @@ def test_v166_visual_step6_integrity_and_mobile_polish_match_target_contract():
     assert ".gt165-notechips" in step4.STEP4_CSS
     assert "@media(max-width:420px)" in step4.STEP4_CSS
     assert "grid-template-columns:repeat(2,minmax(0,1fr))" in step4.STEP4_CSS
+
+
+def test_v167_real_grade_contract_bans_data_placeholders_when_ready():
+    assert (
+        step4.STEP4_GRADE_MARKER
+        == "CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"
+    )
+    fallback_only = {
+        "ready": True,
+        "model_ready": False,
+        "away_offense": {"dimensions": {}},
+        "home_offense": {"dimensions": {}},
+    }
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-18"},
+        engine=fallback_only,
+        fallback=_fake_fallback(),
+    )
+    assert 'data-step4-state="READY"' in html
+    assert (
+        'data-step4-grade-marker="CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"'
+        in html
+    )
+    assert html.count('data-testid="gt165-step4-stat-tile"') == 12
+    assert html.count('data-grade="') == 12
+    assert 'data-grade="DATA"' not in html
+    assert '<span class="gt165-grade">DATA</span>' not in html
 
 
 def test_v166_visual_step7_final_freeze_contract():
