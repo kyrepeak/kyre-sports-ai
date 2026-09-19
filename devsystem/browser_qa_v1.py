@@ -10,6 +10,7 @@ The browser QA proves that the checked-out branch can:
 - expose the compact Steps 5-10 evidence flow and Steps 11-12 certification shell;
 - open the certified College Football -> Game Total exact-event route;
 - require the real Step 5 Pace & Expected Possessions DOM surface;
+- require the real Step 6 Scoring Creation DOM surface at READY / 100% / 12-of-12;
 - do so without obvious Python/runtime error text.
 
 Dynamic schedule/odds availability is not required here because those are
@@ -47,6 +48,13 @@ CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR = (
     'details.gt168-step5[data-testid="gt157-step-5"]'
     f'[data-step5-marker="{CFB_GAME_TOTAL_STEP5_MARKER}"]'
     f'[data-step5-deployment-marker="{CFB_GAME_TOTAL_STEP5_DEPLOYMENT_MARKER}"]'
+)
+CFB_GAME_TOTAL_STEP6_MARKER = "CFB_GAME_TOTAL_STEP6_SCORING_CREATION_ACTIVE"
+CFB_GAME_TOTAL_STEP6_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP6_V184_DEPLOYMENT_ACTIVE"
+CFB_GAME_TOTAL_STEP6_ROOT_SELECTOR = (
+    'details.gt184-step6[data-testid="gt157-step-6"]'
+    f'[data-step6-marker="{CFB_GAME_TOTAL_STEP6_MARKER}"]'
+    f'[data-step6-deployment-marker="{CFB_GAME_TOTAL_STEP6_DEPLOYMENT_MARKER}"]'
 )
 CFB_REQUIRED_MARKERS = (
     "CFB O/U • CLEAN PAGE V39 ACTIVE",
@@ -162,6 +170,77 @@ def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str
         raise BrowserQAFailure(
             "Game Total Step 5 tile completeness failed: "
             f"tiles={tile_count} ready_tiles={ready_tiles}"
+        )
+
+    return {
+        "body": body,
+        "marker": marker,
+        "deployment_marker": deployment_marker,
+        "state": state,
+        "coverage": coverage,
+        "tile_count": tile_count,
+        "ready_tiles": ready_tiles,
+    }
+
+
+def _wait_for_game_total_step6(frame, timeout_seconds: float = 90.0) -> dict[str, Any]:
+    root = frame.locator(CFB_GAME_TOTAL_STEP6_ROOT_SELECTOR).last
+    try:
+        root.wait_for(
+            state="attached",
+            timeout=int(timeout_seconds * 1000),
+        )
+    except Exception as exc:
+        try:
+            body = frame.locator("body").inner_text(timeout=5000)
+        except Exception:
+            body = ""
+        forbidden = _body_has_forbidden_error(body)
+        detail = f" runtime_error={forbidden!r}" if forbidden else ""
+        raise BrowserQAFailure(
+            "Game Total Step 6 DOM did not attach."
+            f"{detail} Body start={body[:4000]!r}"
+        ) from exc
+
+    body = frame.locator("body").inner_text(timeout=5000)
+    forbidden = _body_has_forbidden_error(body)
+    if forbidden:
+        raise BrowserQAFailure(
+            f"Game Total route contains runtime error marker during Step 6: {forbidden}"
+        )
+
+    marker = root.get_attribute("data-step6-marker") or ""
+    deployment_marker = root.get_attribute("data-step6-deployment-marker") or ""
+    state = root.get_attribute("data-step6-state") or ""
+    coverage = root.get_attribute("data-step6-coverage") or ""
+    ready_attr = root.get_attribute("data-step6-ready-tiles") or ""
+    tiles = root.locator('[data-testid="gt184-step6-stat-tile"]')
+    tile_count = tiles.count()
+    ready_tiles = root.locator(
+        '[data-testid="gt184-step6-stat-tile"][data-ready="true"]'
+    ).count()
+
+    if marker != CFB_GAME_TOTAL_STEP6_MARKER:
+        raise BrowserQAFailure(
+            f"Game Total Step 6 marker mismatch: {marker!r}"
+        )
+    if deployment_marker != CFB_GAME_TOTAL_STEP6_DEPLOYMENT_MARKER:
+        raise BrowserQAFailure(
+            "Game Total Step 6 deployment marker mismatch: "
+            f"{deployment_marker!r}"
+        )
+    if state != "READY":
+        raise BrowserQAFailure(
+            f"Game Total Step 6 state is not READY: {state!r}"
+        )
+    if coverage != "100":
+        raise BrowserQAFailure(
+            f"Game Total Step 6 coverage is not 100: {coverage!r}"
+        )
+    if ready_attr != "12" or tile_count != 12 or ready_tiles != 12:
+        raise BrowserQAFailure(
+            "Game Total Step 6 tile completeness failed: "
+            f"attr={ready_attr!r} tiles={tile_count} ready_tiles={ready_tiles}"
         )
 
     return {
@@ -415,9 +494,13 @@ def run_browser_qa(
                 game_total_frame,
                 90.0,
             )
-            game_total_body = game_total_step5["body"]
+            game_total_step6 = _wait_for_game_total_step6(
+                game_total_frame,
+                90.0,
+            )
+            game_total_body = game_total_step6["body"]
 
-            game_total_screenshot = artifacts / "browser_qa_game_total_step5_green.png"
+            game_total_screenshot = artifacts / "browser_qa_game_total_steps5_6_green.png"
             page.screenshot(path=str(game_total_screenshot), full_page=True)
 
             result = {
@@ -441,6 +524,12 @@ def run_browser_qa(
                 "game_total_step5_coverage": game_total_step5["coverage"],
                 "game_total_step5_tile_count": game_total_step5["tile_count"],
                 "game_total_step5_ready_tiles": game_total_step5["ready_tiles"],
+                "game_total_step6_marker": game_total_step6["marker"],
+                "game_total_step6_deployment_marker": game_total_step6["deployment_marker"],
+                "game_total_step6_state": game_total_step6["state"],
+                "game_total_step6_coverage": game_total_step6["coverage"],
+                "game_total_step6_tile_count": game_total_step6["tile_count"],
+                "game_total_step6_ready_tiles": game_total_step6["ready_tiles"],
                 "game_total_app_frame_url": game_total_frame.url,
                 "game_total_frame_scan_count": len(game_total_scan),
                 "game_total_screenshot": str(game_total_screenshot),
