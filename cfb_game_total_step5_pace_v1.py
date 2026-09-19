@@ -1142,6 +1142,13 @@ def render_step5_html(
     state = _clean(contract.get("state")) or "CHECK"
     state_class = "ready" if state == "READY" else "check"
     coverage_pct = int(round(100.0 * float(contract.get("coverage") or 0.0)))
+    drive_evidence = contract.get("drive_evidence") if isinstance(contract.get("drive_evidence"), Mapping) else {}
+    away_drive = drive_evidence.get("away") if isinstance(drive_evidence.get("away"), Mapping) else {}
+    home_drive = drive_evidence.get("home") if isinstance(drive_evidence.get("home"), Mapping) else {}
+    away_delivery = _clean(away_drive.get("delivery"))
+    home_delivery = _clean(home_drive.get("delivery"))
+    away_pbp_games = _int(away_drive.get("sportsdataverse_games_loaded")) or 0
+    home_pbp_games = _int(home_drive.get("sportsdataverse_games_loaded")) or 0
 
     away_profile = contract["away"]
     home_profile = contract["home"]
@@ -1214,6 +1221,10 @@ def render_step5_html(
 <details class="gt159-step gt168-step5 {state_class}" data-testid="gt157-step-5"
  data-step5-state="{escape(state)}"
  data-step5-coverage="{coverage_pct}"
+ data-step5-away-pbp-delivery="{escape(away_delivery)}"
+ data-step5-home-pbp-delivery="{escape(home_delivery)}"
+ data-step5-away-pbp-games="{away_pbp_games}"
+ data-step5-home-pbp-games="{home_pbp_games}"
  data-step5-marker="{STEP5_PRESENTATION_MARKER}"
  data-step5-data-marker="{STEP5_DATA_MARKER}"
  data-step5-visual-marker="{STEP5_VISUAL_MARKER}" open>
