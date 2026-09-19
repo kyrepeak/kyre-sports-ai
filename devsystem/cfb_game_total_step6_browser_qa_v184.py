@@ -48,6 +48,10 @@ FORBIDDEN_STEP6_VISIBLE = (
     "POINTS / OPPORTUNITY",
     "TD DRIVES",
 )
+RESPONSIVE_VIEWPORTS = (
+    ("tablet", 744, 1133, 2, 3, 2),
+    ("mobile", 390, 844, 2, 2, 1),
+)
 
 
 class GameTotalV184Step6BrowserQAFailure(RuntimeError):
@@ -179,6 +183,110 @@ def _step6_snapshot(frame) -> dict:
     }
 
 
+def _grid_column_count(locator) -> int:
+    template = str(
+        locator.evaluate("(el) => getComputedStyle(el).gridTemplateColumns")
+        or ""
+    ).strip()
+    if not template or template == "none":
+        return 0
+    return len([part for part in template.split() if part])
+
+
+def _responsive_snapshot(
+    page,
+    frame,
+    *,
+    label: str,
+    expected_tile_columns: int,
+    expected_env_columns: int,
+    expected_insight_columns: int,
+) -> dict:
+    step6 = frame.locator(f'details[data-testid="{STEP6_TESTID}"]').first
+    bounds = step6.evaluate(
+        """(el) => {
+            const r = el.getBoundingClientRect();
+            return {
+                left: r.left,
+                right: r.right,
+                width: r.width,
+                viewportWidth: window.innerWidth,
+            };
+        }"""
+    )
+    if float(bounds["left"]) < -2.0:
+        raise GameTotalV184Step6BrowserQAFailure(
+            f"{label} Step 6 extends left of viewport: {bounds!r}"
+        )
+    if float(bounds["right"]) > float(bounds["viewportWidth"]) + 2.0:
+        raise GameTotalV184Step6BrowserQAFailure(
+            f"{label} Step 6 extends right of viewport: {bounds!r}"
+        )
+
+    tile_grid = step6.locator(".gt184-s6-tilegrid").first
+    env_grid = step6.locator(".gt184-s6-env").first
+    insight_grid = step6.locator(".gt184-s6-insights").first
+    tile_columns = _grid_column_count(tile_grid)
+    env_columns = _grid_column_count(env_grid)
+    insight_columns = _grid_column_count(insight_grid)
+
+    expected = (
+        (tile_columns, expected_tile_columns, "tile"),
+        (env_columns, expected_env_columns, "environment"),
+        (insight_columns, expected_insight_columns, "insight"),
+    )
+    for actual, wanted, name in expected:
+        if actual != wanted:
+            raise GameTotalV184Step6BrowserQAFailure(
+                f"{label} {name} grid columns expected {wanted}, got {actual}"
+            )
+
+    snapshot = _step6_snapshot(frame)
+    return {
+        **snapshot,
+        "label": label,
+        "viewport": {
+            "width": page.viewport_size["width"],
+            "height": page.viewport_size["height"],
+        },
+        "bounds": bounds,
+        "tile_columns": tile_columns,
+        "environment_columns": env_columns,
+        "insight_columns": insight_columns,
+    }
+
+
+def _assert_accordion_toggle(page, frame) -> dict:
+    step6 = frame.locator(f'details[data-testid="{STEP6_TESTID}"]').first
+    summary = step6.locator("summary").first
+    if step6.get_attribute("open") is None:
+        raise GameTotalV184Step6BrowserQAFailure(
+            "Step 6 must begin open before accordion toggle proof"
+        )
+
+    summary.click(timeout=10000)
+    page.wait_for_timeout(200)
+    if step6.get_attribute("open") is not None:
+        raise GameTotalV184Step6BrowserQAFailure(
+            "Step 6 did not close after summary click"
+        )
+
+    summary.click(timeout=10000)
+    page.wait_for_timeout(200)
+    if step6.get_attribute("open") is None:
+        raise GameTotalV184Step6BrowserQAFailure(
+            "Step 6 did not reopen after second summary click"
+        )
+
+    reopened = _step6_snapshot(frame)
+    return {
+        "closed_then_reopened": True,
+        "state_after_reopen": reopened["state"],
+        "ready_tiles_after_reopen": reopened["ready_tiles"],
+        "tile_count_after_reopen": reopened["tile_count"],
+    }
+
+
 def run(
     *,
     base_url: str = base.DEFAULT_BASE_URL,
@@ -271,6 +379,38 @@ def run(
 
             screenshot = artifacts / "cfb_game_total_v184_step6_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
+
+            responsive = {}
+            responsive_screenshots = {}
+            active_frame = frame_after_reload
+            for (
+                label,
+                width,
+                height,
+                expected_tile_columns,
+                expected_env_columns,
+                expected_insight_columns,
+            ) in RESPONSIVE_VIEWPORTS:
+                page.set_viewport_size({"width": width, "height": height})
+                page.wait_for_timeout(300)
+                active_frame, responsive_body, _responsive_scan = _find_v184_frame(page)
+                selector_qa._assert_visible_contract(responsive_body)
+                responsive[label] = _responsive_snapshot(
+                    page,
+                    active_frame,
+                    label=label,
+                    expected_tile_columns=expected_tile_columns,
+                    expected_env_columns=expected_env_columns,
+                    expected_insight_columns=expected_insight_columns,
+                )
+                responsive_shot = (
+                    artifacts / f"cfb_game_total_v184_step6_{label}_green.png"
+                )
+                page.screenshot(path=str(responsive_shot), full_page=True)
+                responsive_screenshots[label] = str(responsive_shot)
+
+            accordion = _assert_accordion_toggle(page, active_frame)
+
             result = {
                 "status": "GREEN",
                 "health": health,
@@ -284,6 +424,9 @@ def run(
                 "initial_step6": initial_step6,
                 "clicked_step6": clicked_step6,
                 "reloaded_step6": reloaded_step6,
+                "responsive": responsive,
+                "responsive_screenshots": responsive_screenshots,
+                "accordion": accordion,
                 "initial_frame_scan": initial_scan,
                 "click_frame_scan": click_scan,
                 "reload_frame_scan": reload_scan,
