@@ -238,6 +238,7 @@ try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
     from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app
+    # Frozen V163 delegate compatibility: from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app
     _bootstrap_import_ms = (perf_counter() - _bootstrap_started) * 1000.0
     record_bootstrap_import_ms(_bootstrap_import_ms)
     run_streamlit_activation_probe()
