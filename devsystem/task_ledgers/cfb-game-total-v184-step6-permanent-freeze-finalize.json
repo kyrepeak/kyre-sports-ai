@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v184-step6-permanent-freeze-finalize",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "Finalize the already production-GREEN V184 Step 6 permanent freeze only. Update freeze metadata and exact blob identities to the live-certified build at e6fc998c99d3cb6ca56b26e9f1fed3d2743ef78e. No feature, model, projection, probability, distribution, API, routing, Steps 1-5, qualification, ranking, or sportsbook behavior changes.",
+  "proof_target": "Dedicated freeze workflow must validate FROZEN metadata, exact blobs, frozen boundaries, compile the certified surface, rerun the strict live production verifier, and emit CFB_GAME_TOTAL_V184_STEP6_PERMANENT_FREEZE_GREEN.",
+  "internal_steps": {
+    "1": "Record production run #26 / workflow run 35471823826 as GREEN on commit e6fc998c99d3cb6ca56b26e9f1fed3d2743ef78e.",
+    "2": "Refresh exact blob identities for the final multi-source Step 6 surface.",
+    "3": "Trigger the dedicated permanent-freeze workflow from the exact finalization commit.",
+    "4": "Merge freeze metadata only after the permanent-freeze workflow is GREEN."
+  }
+}
