@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v184-step6-cert-frame-hotfix",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V184 Step 6 production verifier frame-discovery hotfix only. Replace the legacy V163 selector-dependent frame finder with a dedicated scanner that requires the new Step 6 certification-surface DOM marker and Step 6 root. Do not change Page V18, Router V163, Step 6 metrics, snapshot values, Steps 1-5, model/projection/probability/distribution math, APIs, qualification/ranking, or sportsbook influence.",
+  "proof_target": "Branch CI must prove the verifier no longer depends on production_verify_v5 or the legacy GAMES ON THIS DAY selector contract, and instead discovers only the dedicated Step 6 certification surface plus Step 6 root. Post-merge production must then pass READY / 100% / 12-of-12 and emit CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN.",
+  "internal_steps": {
+    "1": "Use production run #20 evidence review to identify the stale frame-finder contract before timeout.",
+    "2": "Replace legacy selector-dependent frame discovery with dedicated cert-surface DOM scanning.",
+    "3": "Lock the new frame-discovery contract in verifier tests.",
+    "4": "Pass PR gates, merge, run one fresh live production proof, then permanently freeze Step 6."
+  }
+}
