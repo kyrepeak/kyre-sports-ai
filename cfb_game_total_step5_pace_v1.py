@@ -382,10 +382,14 @@ def _parse_sportsdataverse_evidence(
             continue
 
         drive_map: dict[str, float | None] = {}
+        plays_by_drive: dict[str, list[dict[str, Any]]] = {}
         for play in plays:
             drive_id = _clean(play.get("drive.id"))
-            if drive_id and drive_id not in drive_map:
+            if not drive_id:
+                continue
+            if drive_id not in drive_map:
                 drive_map[drive_id] = _sdv_drive_seconds(play)
+            plays_by_drive.setdefault(drive_id, []).append(play)
 
         if drive_map:
             games_with_drives += 1
@@ -393,8 +397,8 @@ def _parse_sportsdataverse_evidence(
             for value in drive_map.values():
                 if value is not None and 10.0 <= value <= 900.0:
                     drive_seconds.append(float(value))
-
-        neutral_deltas.extend(_neutral_play_deltas(plays))
+            for drive_plays in plays_by_drive.values():
+                neutral_deltas.extend(_neutral_play_deltas(drive_plays))
 
         for play in plays:
             text = _clean(play.get("text"))
