@@ -425,3 +425,24 @@ def test_v166_visual_step2_team_headers_match_target_contract():
     assert 'aria-label="Wake Forest Defense"' in html
     assert ".gt165-teamname" in step4.STEP4_CSS
     assert ".gt165-vs" in step4.STEP4_CSS
+
+
+def test_v166_visual_step3_stat_tiles_match_target_contract():
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        engine=_fake_engine(),
+        fallback=_fake_fallback(),
+    )
+    assert html.count('data-testid="gt165-step4-stat-tile"') == 12
+    assert "Pass Yds/G" in html
+    assert "Rush Yds/G" in html
+    assert "3rd Down" in html
+    assert "Red Zone" in html
+    assert "Sack Matchup" in html
+    assert "Turnover Pressure" in html
+    assert 'class="gt165-tone-dot"' in html
+    assert ".gt165-metric:before" in step4.STEP4_CSS
+    assert "font-size:13px" in step4.STEP4_CSS
