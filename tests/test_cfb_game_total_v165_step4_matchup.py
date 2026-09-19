@@ -446,3 +446,23 @@ def test_v166_visual_step3_stat_tiles_match_target_contract():
     assert 'class="gt165-tone-dot"' in html
     assert ".gt165-metric:before" in step4.STEP4_CSS
     assert "font-size:13px" in step4.STEP4_CSS
+
+
+def test_v166_visual_step4_insight_callouts_match_target_contract():
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        engine=_fake_engine(),
+        fallback=_fake_fallback(),
+    )
+    assert html.count('data-testid="gt165-step4-biggest-edge"') == 2
+    assert html.count('data-testid="gt165-step4-biggest-risk"') == 2
+    assert html.count('data-testid="gt165-step4-ou-impact"') == 2
+    assert html.count("BIGGEST EDGE") == 2
+    assert html.count("BIGGEST RISK") == 2
+    assert html.count("O/U IMPACT") == 2
+    assert ".gt165-callout-icon" in step4.STEP4_CSS
+    assert ".gt165-callout-copy span" in step4.STEP4_CSS
+    assert "white-space:normal" in step4.STEP4_CSS
