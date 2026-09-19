@@ -364,3 +364,15 @@ def test_v165_step4_render_exposes_100_percent_multisource_proof():
     assert 'data-step4-coverage="100"' in html
     assert "cfbstats.com recovered" in html
     assert "Visible matchup coverage: 100%." in html
+
+
+def test_v165_step4_multisource_deployment_marker_is_emitted_through_v16():
+    assert (
+        step4.STEP4_DEPLOYMENT_MARKER
+        == "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"
+    )
+    source = PAGE.read_text()
+    assert "STEP4_DEPLOYMENT_MARKER = step4_owner.STEP4_DEPLOYMENT_MARKER" in source
+    assert "original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER" in source
+    assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER}"' in source
+    assert "prior_v164.STEP4_PRESENTATION_MARKER = original_step4_marker" in source
