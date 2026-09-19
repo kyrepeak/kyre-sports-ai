@@ -112,6 +112,8 @@ def test_v185_page_is_additive_over_frozen_v184_and_swaps_renderer_only():
     assert "import cfb_game_total_clean_page_v18 as prior_v184" in source
     assert "import cfb_game_total_step6_visual_v2 as step6_visual" in source
     assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v18"' in source
+    assert "_VISUAL_RENDER_LOCK = RLock()" in source
+    assert "with _VISUAL_RENDER_LOCK:" in source
     assert "prior_v184.step6_owner.render_step6_html = step6_visual.render_step6_html" in source
     assert "prior_v184.render_game_total_hub" in source
     assert "prior_v184.render_step6_cert_surface" in source
@@ -126,6 +128,10 @@ def test_v185_router_advances_only_exact_game_total_to_page_v19():
     assert "import streamlit_memory_lazy_router_v163 as prior" in source
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v163"' in source
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v19"' in source
+    assert "original_heartbeat = prior.PRODUCTION_HEARTBEAT" in source
+    assert "prior.PRODUCTION_HEARTBEAT = PRODUCTION_HEARTBEAT" in source
+    assert "prior.PRODUCTION_HEARTBEAT = original_heartbeat" in source
+    assert "CFB_GAME_TOTAL_V185_STEP6_VISUAL_PARITY_ACTIVE" in source
     assert "return prior.render_app()" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
