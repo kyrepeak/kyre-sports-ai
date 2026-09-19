@@ -18,6 +18,7 @@ import re
 from typing import Any, Mapping
 
 import cfb_game_total_step4_matchup_v1 as legacy
+import cfb_game_total_step4_multisource_v1 as multisource
 import cfb_over_under_matchup_engine_v1 as matchup_engine
 
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -396,7 +397,9 @@ def build_step4_contract(
     game: Mapping[str, Any] | None = None,
     *,
     engine: Mapping[str, Any] | None = None,
+    fallback: Mapping[str, Any] | None = None,
     load_engine: bool = False,
+    load_fallback: bool = False,
 ) -> dict[str, Any]:
     identity = identity or {}
     away = away or {}
@@ -406,6 +409,18 @@ def build_step4_contract(
 
     legacy_contract = legacy.build_step4_contract(identity, away, home)
     engine_contract = dict(engine or (_safe_engine(game, away, home) if load_engine else {}))
+    fallback_contract = dict(
+        fallback
+        or (
+            multisource.build_display_fallback(game, away, home)
+            if load_fallback
+            else {}
+        )
+    )
+    engine_contract, fallback_filled = multisource.merge_missing_dimensions(
+        engine_contract,
+        fallback_contract,
+    )
 
     away_battle = _battle_contract(
         offense_identity=ai,
@@ -428,7 +443,7 @@ def build_step4_contract(
     names_ready = _usable(away_battle["offense_team"]) and _usable(home_battle["offense_team"])
     if not names_ready or verified == 0:
         state = "DATA LIMITED"
-    elif verified >= 8:
+    elif verified == 12:
         state = "READY"
     else:
         state = "CHECK"
@@ -467,6 +482,10 @@ def build_step4_contract(
         "engine_ready": bool(engine_contract.get("ready")),
         "engine_model_ready": bool(engine_contract.get("model_ready")),
         "engine_reason": _clean(engine_contract.get("reason")),
+        "fallback_ready": bool(fallback_contract.get("ready")),
+        "fallback_source": _clean(fallback_contract.get("source")),
+        "fallback_filled": int(fallback_filled),
+        "fallback_reason": _clean(fallback_contract.get("reason")),
         "advanced_missing": advanced_missing,
         "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         "may_modify_projection": MAY_MODIFY_PROJECTION,
@@ -519,6 +538,7 @@ def render_step4_html(
     game: Mapping[str, Any] | None = None,
     *,
     engine: Mapping[str, Any] | None = None,
+    fallback: Mapping[str, Any] | None = None,
 ) -> str:
     contract = build_step4_contract(
         identity,
@@ -526,19 +546,32 @@ def render_step4_html(
         home,
         game,
         engine=engine,
+        fallback=fallback,
         load_engine=engine is None,
+        load_fallback=bool(game) and fallback is None,
     )
     state = _clean(contract.get("state"))
     state_css = "ready" if state == "READY" else "limited" if state == "DATA LIMITED" else "check"
     missing = ", ".join(contract.get("advanced_missing") or []) or "None"
     coverage = int(round(float(contract.get("coverage") or 0.0) * 100.0))
-    engine_note = (
-        "NCAA matchup tables connected."
-        if contract.get("engine_ready")
-        else (_clean(contract.get("engine_reason")) or "Verified matchup-table enrichment unavailable; certified fallback evidence remains visible.")
-    )
+    fallback_filled = int(contract.get("fallback_filled") or 0)
+    if fallback_filled:
+        engine_note = (
+            "NCAA matchup tables primary. "
+            f"cfbstats fallback recovered {fallback_filled} NCAA-missing matchup cells."
+        )
+    elif contract.get("engine_ready"):
+        engine_note = "NCAA matchup tables connected; multi-source fallback not needed."
+    elif contract.get("fallback_ready"):
+        engine_note = "cfbstats fallback connected for verified display evidence."
+    else:
+        engine_note = (
+            _clean(contract.get("engine_reason"))
+            or _clean(contract.get("fallback_reason"))
+            or "Verified matchup enrichment unavailable."
+        )
     return f"""
-<details class="gt159-step gt165-step4 {state_css}" data-testid="gt157-step-4" data-step4-state="{escape(state)}" open>
+<details class="gt159-step gt165-step4 {state_css}" data-testid="gt157-step-4" data-step4-state="{escape(state)}" data-step4-coverage="{coverage}" data-step4-fallback-filled="{fallback_filled}" open>
   <summary>
     <span class="gt159-num">4</span>
     <span class="gt159-stepcopy"><b>Matchup</b><span>Off vs Def · Pass · Rush · Situational</span></span>
@@ -551,7 +584,7 @@ def render_step4_html(
     </div>
     <div class="gt165-integrity">
       <div class="gt165-note" data-testid="gt165-step4-source-integrity"><strong>✓ VERIFIED MATCHUP DATA</strong><span>{escape(engine_note)} Visible matchup coverage: {coverage}%.</span></div>
-      <div class="gt165-note purple" data-testid="gt165-step4-advanced-integrity"><strong>◈ ADVANCED-METRIC INTEGRITY</strong><span>Optional advanced fields not fully verified: {escape(missing)}. Core Step 4 uses verified NCAA matchup dimensions only; no advanced value is fabricated. Projection mutation: OFF · sportsbook influence: 0.0%.</span></div>
+      <div class="gt165-note purple" data-testid="gt165-step4-advanced-integrity"><strong>◈ ADVANCED-METRIC INTEGRITY</strong><span>Optional advanced fields not fully verified: {escape(missing)}. Core Step 4 uses NCAA as primary plus source-verified display fallback only when NCAA leaves a tile blank; no advanced value is fabricated. Projection mutation: OFF · sportsbook influence: 0.0%.</span></div>
     </div>
   </div>
 </details>"""
