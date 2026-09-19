@@ -13,11 +13,15 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert "ROUTE_QUERY_MARKET" in source
     assert "_event_from_url" in source
     assert "STEP6_ROOT_SELECTOR" in wait_source
-    assert "v163_nav._find_v163_frame" in wait_source
+    assert "_scan_step6_cert_frame" in wait_source
+    assert "CERT_SURFACE_SELECTOR" in wait_source
+    assert "v163_nav._find_v163_frame" not in wait_source
     assert "page.reload" in wait_source
     assert "_wait_for_v164_patch_deployment" not in wait_source
     assert "_wait_for_top_level_selection" not in wait_source
     assert "production_verify_v164_logos" not in module_source
+    assert "production_verify_v5 as v163_nav" not in module_source
+    assert "def _scan_step6_cert_frame" in module_source
     assert 'CERT_QUERY_KEY = "ks_cfb_step6_cert"' in module_source
     assert "CFB_GAME_TOTAL_V184_STEP6_CERT_SNAPSHOT_V1_ACTIVE" in module_source
     assert '"401869940"' in module_source
