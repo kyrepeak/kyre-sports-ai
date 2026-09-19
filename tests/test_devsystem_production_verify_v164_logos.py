@@ -370,3 +370,20 @@ def test_v164_step5_v168_pace_surface_is_hard_gated():
     assert '"pace_coverage": coverage' in step5
     assert '"v168_step5_verified": True' in step5
     assert '"step5_pace_expected_possessions": step5' in source
+
+
+
+def test_v178_production_verifier_requires_nonblocking_step5_freshness():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert (
+        'REQUIRED_STEP5_DEPLOYMENT_MARKER = '
+        '"CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"'
+    ) in source
+    assert 'data-step5-deployment-marker' in source
+    assert "REQUIRED_STEP5_DEPLOYMENT_MARKER in last_body" in source
+    assert "v178_heartbeat_seen" in source
+    step5_block = source.split("def _assert_step5_pace", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+    assert 'get_attribute("data-step5-deployment-marker")' in step5_block
+    assert "Step 5 V178 deployment marker mismatch" in step5_block
