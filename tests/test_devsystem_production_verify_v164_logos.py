@@ -205,3 +205,12 @@ def test_v164_step4_completeness_checks_live_only_inside_step4_verifier():
     assert ".gt165-metric.limited" in step4_block
     assert "VISIBLE MATCHUP COVERAGE: 100%" in step4_block
     assert "state != \"READY\"" in step4_block
+
+
+def test_v164_verifier_has_no_stale_coverage_return_reference():
+    source = VERIFIER.read_text(encoding="utf-8")
+    assert '"coverage": coverage' not in source
+    step4_start = source.index("def _assert_step4_matchup")
+    verify_start = source.index("def verify_live_v164")
+    step4_block = source[step4_start:verify_start]
+    assert '"limited_tiles": limited_tiles' in step4_block
