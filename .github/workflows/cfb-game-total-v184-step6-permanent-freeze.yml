@@ -83,7 +83,7 @@ jobs:
               ]),
               "page": (page, [
                   "cfb_game_total_clean_page_v17",
-                  "number == 6",
+                  "int(number) == 6",
               ]),
               "router": (router, [
                   "cfb_game_total_clean_page_v18",
