@@ -342,8 +342,6 @@ def _assert_step2_performance_profile(frame) -> dict:
     logos = _assert_exact_pair(frame, "img.gt167-logo", "Step 2 performance profile")
     return {
         "status": state,
-        "coverage": coverage,
-        "limited_tiles": limited_tiles,
         "text": text,
         "logos": logos,
         "insight_cards": insights.locator(".gt167-insight").count(),
@@ -562,14 +560,12 @@ def _assert_step4_matchup(frame) -> dict:
     logos = _assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")
     return {
         "status": state,
-        "coverage": coverage,
         "limited_tiles": limited_tiles,
         "text": text,
         "logos": logos,
         "directional_cards": 2,
         "source_integrity": source_integrity.count(),
         "advanced_integrity": advanced_integrity.count(),
-        "limited_tiles": limited_tiles,
         "v165_step4_verified": True,
     }
 

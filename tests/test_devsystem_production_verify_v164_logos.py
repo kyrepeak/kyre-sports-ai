@@ -205,3 +205,20 @@ def test_v164_step4_completeness_checks_live_only_inside_step4_verifier():
     assert ".gt165-metric.limited" in step4_block
     assert "VISIBLE MATCHUP COVERAGE: 100%" in step4_block
     assert "state != \"READY\"" in step4_block
+
+
+def test_v164_verifier_return_payloads_do_not_reference_undefined_coverage_fields():
+    source = VERIFIER.read_text(encoding="utf-8")
+    step2 = source.split("def _assert_step2_performance_profile", 1)[1].split(
+        "def _assert_step3_current_form", 1
+    )[0]
+    step4 = source.split("def _assert_step4_matchup", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+
+    assert '"coverage": coverage' not in step2
+    assert '"limited_tiles": limited_tiles' not in step2
+    assert '"coverage": coverage' not in step4
+    assert step4.count('"limited_tiles": limited_tiles') == 1
+    assert 'limited_tiles = step.locator(".gt165-metric.limited").count()' in step4
+    assert "VISIBLE MATCHUP COVERAGE: 100%" in step4
