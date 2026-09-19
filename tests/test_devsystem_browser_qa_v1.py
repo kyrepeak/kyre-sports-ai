@@ -133,8 +133,8 @@ def test_browser_qa_enters_exact_game_total_step5_route():
     )
     assert "page.goto(" in run_source
     assert "_cfb_game_total_url(base_url)" in run_source
-    assert "CFB_GAME_TOTAL_STEP5_MARKER" in run_source
     assert "_wait_for_game_total_step5" in run_source
+    assert "CFB_GAME_TOTAL_STEP5_MARKER" in wait_source
     assert "CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR" in wait_source
     assert 'state="attached"' in wait_source
     assert "_body_has_forbidden_error" in wait_source
