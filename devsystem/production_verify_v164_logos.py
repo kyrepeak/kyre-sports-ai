@@ -177,7 +177,7 @@ def _wait_for_v164_patch_deployment(
             last_body = body
             last_scans = scans
             last_error = ""
-            dom_text = str(frame.locator("body").text_content() or body)
+            dom_text = str(body or "")
             if (
                 REQUIRED_HEARTBEAT in dom_text
                 and REQUIRED_PATCH_MARKER in dom_text
