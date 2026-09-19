@@ -8,6 +8,8 @@ The browser QA proves that the checked-out branch can:
 - expose V39's compact matchup foundation and frozen-model presentation strip;
 - preserve 0.0% sportsbook projection influence and mutation-off boundaries;
 - expose the compact Steps 5-10 evidence flow and Steps 11-12 certification shell;
+- open the certified College Football -> Game Total exact-event route;
+- require the real Step 5 Pace & Expected Possessions DOM surface;
 - do so without obvious Python/runtime error text.
 
 Dynamic schedule/odds availability is not required here because those are
@@ -36,6 +38,14 @@ REQUIRED_SPORTS = (
 CFB_SPORT = "College Football"
 CFB_MARKET = "Over/Under"
 CFB_MARKET_LABEL = "🎯 CFB Market"
+CFB_GAME_TOTAL_MARKET = "Game Total"
+CFB_GAME_TOTAL_DATE = "2026-09-18"
+CFB_GAME_TOTAL_EVENT_ID = "401858226"
+CFB_GAME_TOTAL_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
+CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR = (
+    'details.gt168-step5[data-testid="gt157-step-5"]'
+    f'[data-step5-marker="{CFB_GAME_TOTAL_STEP5_MARKER}"]'
+)
 CFB_REQUIRED_MARKERS = (
     "CFB O/U • CLEAN PAGE V39 ACTIVE",
     "COMPACT EVIDENCE RENDERER",
@@ -54,6 +64,8 @@ FORBIDDEN_ERROR_MARKERS = (
     "ImportError:",
     "SyntaxError:",
     "NameError:",
+    "KeyError:",
+    "This app has encountered an error",
 )
 SELECTOR_TIMEOUT_MS = 5000
 CFB_RERUN_TIMEOUT_MS = 30000
@@ -77,6 +89,81 @@ def _cfb_over_under_url(base_url: str) -> str:
         )
     )
     return base_url.rstrip("/") + "/?" + query
+
+
+def _cfb_game_total_url(base_url: str) -> str:
+    query = urlencode(
+        (
+            ("ks_sport", CFB_SPORT),
+            ("ks_cfb_market", CFB_GAME_TOTAL_MARKET),
+            ("ks_cfb_game_total_date", CFB_GAME_TOTAL_DATE),
+            ("ks_cfb_game_total_event_id", CFB_GAME_TOTAL_EVENT_ID),
+        )
+    )
+    return base_url.rstrip("/") + "/?" + query
+
+
+def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str, Any]:
+    root = frame.locator(CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR).last
+    try:
+        root.wait_for(
+            state="attached",
+            timeout=int(timeout_seconds * 1000),
+        )
+    except Exception as exc:
+        try:
+            body = frame.locator("body").inner_text(timeout=5000)
+        except Exception:
+            body = ""
+        forbidden = _body_has_forbidden_error(body)
+        detail = f" runtime_error={forbidden!r}" if forbidden else ""
+        raise BrowserQAFailure(
+            "Game Total Step 5 DOM did not attach."
+            f"{detail} Body start={body[:4000]!r}"
+        ) from exc
+
+    body = frame.locator("body").inner_text(timeout=5000)
+    forbidden = _body_has_forbidden_error(body)
+    if forbidden:
+        raise BrowserQAFailure(
+            f"Game Total route contains runtime error marker: {forbidden}"
+        )
+
+    marker = root.get_attribute("data-step5-marker") or ""
+    state = root.get_attribute("data-step5-state") or ""
+    coverage = root.get_attribute("data-step5-coverage") or ""
+    tiles = root.locator('[data-testid="gt168-step5-stat-tile"]')
+    tile_count = tiles.count()
+    ready_tiles = root.locator(
+        '[data-testid="gt168-step5-stat-tile"][data-ready="true"]'
+    ).count()
+
+    if marker != CFB_GAME_TOTAL_STEP5_MARKER:
+        raise BrowserQAFailure(
+            f"Game Total Step 5 marker mismatch: {marker!r}"
+        )
+    if state != "READY":
+        raise BrowserQAFailure(
+            f"Game Total Step 5 state is not READY: {state!r}"
+        )
+    if coverage != "100":
+        raise BrowserQAFailure(
+            f"Game Total Step 5 coverage is not 100: {coverage!r}"
+        )
+    if tile_count != 12 or ready_tiles != 12:
+        raise BrowserQAFailure(
+            "Game Total Step 5 tile completeness failed: "
+            f"tiles={tile_count} ready_tiles={ready_tiles}"
+        )
+
+    return {
+        "body": body,
+        "marker": marker,
+        "state": state,
+        "coverage": coverage,
+        "tile_count": tile_count,
+        "ready_tiles": ready_tiles,
+    }
 
 
 def _wait_for_health(base_url: str, timeout_seconds: float = 120.0) -> dict[str, Any]:
@@ -298,8 +385,31 @@ def run_browser_qa(
                     f"CFB route contains runtime error marker: {forbidden}"
                 )
 
-            screenshot = artifacts / "browser_qa_green.png"
-            page.screenshot(path=str(screenshot), full_page=True)
+            over_under_screenshot = artifacts / "browser_qa_over_under_green.png"
+            page.screenshot(path=str(over_under_screenshot), full_page=True)
+
+            # Exact production-shaped Game Total regression. This is intentionally
+            # a fresh Streamlit browser session so route/session persistence from
+            # Over/Under cannot hide a Game Total boot/runtime failure.
+            page.close()
+            page = browser.new_page(viewport={"width": 1440, "height": 1600})
+            page.goto(
+                _cfb_game_total_url(base_url),
+                wait_until="domcontentloaded",
+                timeout=120000,
+            )
+            game_total_frame, game_total_scan = _find_app_frame(page)
+            # The version marker is intentionally emitted as a hidden/build
+            # marker and is not guaranteed to be "visible" text. Prove the
+            # actual Step 5 DOM surface directly instead.
+            game_total_step5 = _wait_for_game_total_step5(
+                game_total_frame,
+                90.0,
+            )
+            game_total_body = game_total_step5["body"]
+
+            game_total_screenshot = artifacts / "browser_qa_game_total_step5_green.png"
+            page.screenshot(path=str(game_total_screenshot), full_page=True)
 
             result = {
                 "status": "GREEN",
@@ -312,7 +422,18 @@ def run_browser_qa(
                 "cfb_markers": list(CFB_REQUIRED_MARKERS),
                 "app_frame_url": frame.url,
                 "frame_scan_count": len(initial_scan) + len(route_scan),
-                "screenshot": str(screenshot),
+                "screenshot": str(over_under_screenshot),
+                "game_total_route": f"{CFB_SPORT} -> {CFB_GAME_TOTAL_MARKET}",
+                "game_total_event_id": CFB_GAME_TOTAL_EVENT_ID,
+                "game_total_date": CFB_GAME_TOTAL_DATE,
+                "game_total_step5_marker": game_total_step5["marker"],
+                "game_total_step5_state": game_total_step5["state"],
+                "game_total_step5_coverage": game_total_step5["coverage"],
+                "game_total_step5_tile_count": game_total_step5["tile_count"],
+                "game_total_step5_ready_tiles": game_total_step5["ready_tiles"],
+                "game_total_app_frame_url": game_total_frame.url,
+                "game_total_frame_scan_count": len(game_total_scan),
+                "game_total_screenshot": str(game_total_screenshot),
             }
             print("DEVSYSTEM_BROWSER_QA_GREEN")
             print(json.dumps(result, indent=2, sort_keys=True))
