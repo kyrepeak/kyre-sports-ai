@@ -74,25 +74,12 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
             except Exception:
                 pass
 
+            # Step 5 must render from already-loaded matchup evidence.
+            # Do NOT open cfb_team_data_v1.load_matchup_team_data() here: that
+            # helper crawls NCAA schedule/stats/rankings with long retry budgets
+            # and can block production before Step 5 emits any DOM.
             step5_away = dict(away or {})
             step5_home = dict(home or {})
-            if selected_day:
-                try:
-                    bundle, _diag = (
-                        prior_v165.prior_v164.step3_data_owner.load_matchup_team_data(
-                            step5_game,
-                            selected_day,
-                        )
-                    )
-                    if isinstance(bundle, dict):
-                        away_foundation = bundle.get("away")
-                        home_foundation = bundle.get("home")
-                        if isinstance(away_foundation, dict):
-                            step5_away.update(away_foundation)
-                        if isinstance(home_foundation, dict):
-                            step5_home.update(home_foundation)
-                except Exception:
-                    pass
 
             # Step 5 only needs exact completed-game event IDs for PBP.
             # Do NOT re-run the full Step 3 live enrichment here: in production
