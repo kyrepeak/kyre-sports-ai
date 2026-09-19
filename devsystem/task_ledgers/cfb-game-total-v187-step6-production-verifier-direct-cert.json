@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v187-step6-production-verifier-direct-cert",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V187 verifier-only hotfix for the merged V186 College Football Game Total Step 6 production certification path. The live V186 Streamlit surface is deployed and the V164 import crash is fixed, but the dedicated Step 6 verifier still calls the legacy V163 normal game-selector frame finder before inspecting the direct Step 6 certification route. Replace only that locator behavior so the verifier scans Streamlit frames directly for the certified Step 6 DOM. Preserve all product code, sports data routing, frozen V184 Step 6 data/model owner, visual V185 presentation, READY/100%/12-of-12 assertions, sportsbook influence 0.0%, and projection mutation OFF.",
+  "proof_target": "The dedicated production verifier must locate the live Step 6 certification/root directly without calling production_verify_v5._find_v163_frame, while retaining strict assertions for READY state, 100% coverage, 12 total Step 6 tiles, 12 ready tiles, no DATA LIMITED, sportsbook influence 0.0%, and projection mutation OFF. After merge, the live production workflow must prove Step 6 READY / 100% / 12-of-12.",
+  "internal_steps": {
+    "1": "Use the failed live Step 6 verifier evidence to distinguish a verifier locator failure from a product/data failure.",
+    "2": "Confirm V186 production heartbeat is live and the old V164 import crash is gone.",
+    "3": "Remove dependency on the legacy V163 normal selector frame finder from the Step 6 verifier.",
+    "4": "Add a direct frame scan for the certified Step 6 root and diagnostic cert marker.",
+    "5": "Update verifier self-tests so the old locator cannot be reintroduced.",
+    "6": "Run targeted CI, merge, then require live READY/100%/12-of-12 production proof."
+  }
+}
