@@ -191,18 +191,6 @@ def _assert_step1_identity(frame) -> dict:
             f"Step 1 expected two team identity cards; away={away.count()} home={home.count()}"
         )
 
-    coverage = str(step.get_attribute("data-step4-coverage") or "").strip()
-    if coverage != "100":
-        raise ProductionVerificationV164Failure(
-            f"Step 4 certified matchup must show 100% visible coverage: coverage={coverage!r}"
-        )
-
-    limited_tiles = step.locator(".gt165-metric.limited").count()
-    if limited_tiles != 0:
-        raise ProductionVerificationV164Failure(
-            f"Step 4 READY still contains limited matchup tiles: {limited_tiles}"
-        )
-
     text = step.inner_text()
     required_text = (
         "Team Identity",
@@ -532,6 +520,18 @@ def _assert_step4_matchup(frame) -> dict:
             f"Step 4 certified matchup must be fully READY: state={state!r}"
         )
 
+    coverage = str(step.get_attribute("data-step4-coverage") or "").strip()
+    if coverage != "100":
+        raise ProductionVerificationV164Failure(
+            f"Step 4 certified matchup must show 100% visible coverage: coverage={coverage!r}"
+        )
+
+    limited_tiles = step.locator(".gt165-metric.limited").count()
+    if limited_tiles != 0:
+        raise ProductionVerificationV164Failure(
+            f"Step 4 READY still contains limited matchup tiles: {limited_tiles}"
+        )
+
     text = step.inner_text()
     required_text = (
         "Matchup",
@@ -568,6 +568,8 @@ def _assert_step4_matchup(frame) -> dict:
     logos = _assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")
     return {
         "status": state,
+        "coverage": coverage,
+        "limited_tiles": limited_tiles,
         "text": text,
         "logos": logos,
         "directional_cards": 2,
