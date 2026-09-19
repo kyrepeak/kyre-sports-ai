@@ -38,6 +38,11 @@ REQUIRED_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
 REQUIRED_STEP5_DATA_MARKER = "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"
 REQUIRED_STEP5_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP5_V168_VISUAL_TARGET_ACTIVE"
 
+STEP5_ROOT_SELECTOR = (
+    'details.gt168-step5[data-testid="gt157-step-5"]'
+    f'[data-step5-marker="{REQUIRED_STEP5_MARKER}"]'
+)
+
 
 class ProductionVerificationV164Failure(RuntimeError):
     pass
@@ -168,6 +173,7 @@ def _wait_for_v164_patch_deployment(
     last_scans: list[dict] = []
     last_error = ""
     last_marker = ""
+    last_root_count = 0
     while time.monotonic() < deadline:
         try:
             frame, body, scans = v163._wait_for_top_level_selection(
@@ -179,8 +185,10 @@ def _wait_for_v164_patch_deployment(
             last_scans = scans
             last_error = ""
 
-            step5 = frame.locator('details[data-testid="gt157-step-5"]')
-            if step5.count() == 1:
+            step5_roots = frame.locator(STEP5_ROOT_SELECTOR)
+            last_root_count = step5_roots.count()
+            if last_root_count >= 1:
+                step5 = step5_roots.nth(last_root_count - 1)
                 try:
                     step5.wait_for(state="attached", timeout=5000)
                 except Exception:
@@ -200,6 +208,7 @@ def _wait_for_v164_patch_deployment(
         "V164 logo proof timed out waiting for the current Step 5 DOM surface: "
         f"required_step5_marker={REQUIRED_STEP5_MARKER!r} "
         f"actual_step5_marker={last_marker!r} "
+        f"matching_step5_roots={last_root_count} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
     )
@@ -686,7 +695,7 @@ def _assert_step4_matchup(frame) -> dict:
 
 def _assert_step5_pace(frame) -> dict:
     """Verify the active V168 Step 5 pace/possession surface."""
-    step = frame.locator('details[data-testid="gt157-step-5"]')
+    step = frame.locator(STEP5_ROOT_SELECTOR)
     try:
         step.wait_for(state="attached", timeout=30000)
     except Exception as exc:
