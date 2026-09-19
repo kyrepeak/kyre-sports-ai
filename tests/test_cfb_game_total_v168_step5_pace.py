@@ -693,3 +693,10 @@ def test_v168_visual_markers_are_emitted(monkeypatch):
     assert 'data-step5-data-marker="CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"' in html
     assert 'data-step5-visual-marker="CFB_GAME_TOTAL_STEP5_V168_VISUAL_TARGET_ACTIVE"' in html
     assert 'data-step5-deployment-marker="CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"' in html
+
+
+
+def test_v182_step5_page_does_not_rerun_full_step3_live_enrichment():
+    source = PAGE.read_text(encoding="utf-8")
+    assert "step3_owner.enrich_step3_inputs" not in source
+    assert "step3_owner._runtime_v2_step3_bundle" in source
