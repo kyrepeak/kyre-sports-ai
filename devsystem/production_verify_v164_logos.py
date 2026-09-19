@@ -34,6 +34,9 @@ REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"
 REQUIRED_STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"
 REQUIRED_STEP4_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"
 REQUIRED_STEP4_GRADE_MARKER = "CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"
+REQUIRED_STEP5_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
+REQUIRED_STEP5_DATA_MARKER = "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"
+REQUIRED_STEP5_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP5_V168_VISUAL_TARGET_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -690,6 +693,116 @@ def _assert_step4_matchup(frame) -> dict:
         "v167_step4_real_grades_verified": True,
     }
 
+def _assert_step5_pace(frame) -> dict:
+    """Verify the active V168 Step 5 pace/possession surface."""
+    step = frame.locator('details[data-testid="gt157-step-5"]')
+    try:
+        step.wait_for(state="attached", timeout=30000)
+    except Exception as exc:
+        raise ProductionVerificationV164Failure(
+            "Step 5 timed out waiting for V168 Pace & Expected Possessions"
+        ) from exc
+    if step.count() != 1:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 expected one connected accordion; found {step.count()}"
+        )
+    if step.get_attribute("open") is None:
+        raise ProductionVerificationV164Failure(
+            "Step 5 V168 Pace & Expected Possessions must render expanded by default"
+        )
+
+    marker = str(step.get_attribute("data-step5-marker") or "").strip()
+    data_marker = str(step.get_attribute("data-step5-data-marker") or "").strip()
+    visual_marker = str(step.get_attribute("data-step5-visual-marker") or "").strip()
+    if marker != REQUIRED_STEP5_MARKER:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 marker mismatch: expected={REQUIRED_STEP5_MARKER!r} actual={marker!r}"
+        )
+    if data_marker != REQUIRED_STEP5_DATA_MARKER:
+        raise ProductionVerificationV164Failure(
+            "Step 5 data marker mismatch: "
+            f"expected={REQUIRED_STEP5_DATA_MARKER!r} actual={data_marker!r}"
+        )
+    if visual_marker != REQUIRED_STEP5_VISUAL_MARKER:
+        raise ProductionVerificationV164Failure(
+            "Step 5 visual marker mismatch: "
+            f"expected={REQUIRED_STEP5_VISUAL_MARKER!r} actual={visual_marker!r}"
+        )
+
+    tiles = step.locator('[data-testid="gt168-step5-stat-tile"]')
+    if tiles.count() != 12:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 expected 12 pace/possession tiles; found {tiles.count()}"
+        )
+
+    state = str(step.get_attribute("data-step5-state") or "").strip().upper()
+    if state not in {"READY", "CHECK"}:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 invalid production state: {state!r}"
+        )
+
+    coverage_raw = str(step.get_attribute("data-step5-coverage") or "").strip()
+    try:
+        coverage = int(coverage_raw)
+    except ValueError as exc:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 invalid coverage attribute: {coverage_raw!r}"
+        ) from exc
+    if coverage < 50 or coverage > 100:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 unreasonable production coverage: {coverage}"
+        )
+
+    text = step.inner_text()
+    required_text = (
+        "PACE & EXPECTED POSSESSIONS",
+        "PLAYS / GAME",
+        "SECONDS / PLAY",
+        "SITUATION-NEUTRAL PACE",
+        "DRIVES / GAME",
+        "NO-HUDDLE RATE",
+        "AVG DRIVE TIME",
+        "EXPECTED GAME ENVIRONMENT",
+        "MATCHUP READ",
+        "BIGGEST ACCELERATOR",
+        "BIGGEST BRAKE",
+        "O/U IMPACT",
+        "DATA CONFIDENCE",
+        "MULTI-SOURCE VERIFIED",
+        "SPORTSBOOK INFLUENCE 0.0%",
+        "MODEL SAFE",
+        "PROJECTION MUTATION OFF",
+    )
+    live_upper = str(text or "").upper()
+    missing = [label for label in required_text if label.upper() not in live_upper]
+    if missing:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 missing required V168 content: {missing}"
+        )
+
+    profiles = {
+        "away": step.locator('[data-testid="gt168-step5-away-profile"]').count(),
+        "home": step.locator('[data-testid="gt168-step5-home-profile"]').count(),
+        "environment": step.locator('[data-testid="gt168-step5-environment"]').count(),
+    }
+    expected_profiles = {"away": 1, "home": 1, "environment": 1}
+    if profiles != expected_profiles:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 visual anatomy mismatch: expected={expected_profiles} actual={profiles}"
+        )
+
+    return {
+        "status": state,
+        "coverage": coverage,
+        "tile_count": tiles.count(),
+        "marker": marker,
+        "data_marker": data_marker,
+        "visual_marker": visual_marker,
+        "profiles": profiles,
+        "v168_step5_verified": True,
+    }
+
+
 def verify_live_v164(
     streamlit_url: str,
     *,
@@ -779,6 +892,7 @@ def verify_live_v164(
             step2 = _assert_step2_performance_profile(frame)
             step3 = _assert_step3_current_form(frame)
             step4 = _assert_step4_matchup(frame)
+            step5 = _assert_step5_pace(frame)
 
             screenshot = artifacts / "production_cfb_game_total_v164_logos_green.png"
             page.screenshot(path=str(screenshot), full_page=True)
@@ -796,6 +910,7 @@ def verify_live_v164(
                 "step2_team_performance_profile": step2,
                 "step3_current_form_opponent_quality": step3,
                 "step4_matchup": step4,
+                "step5_pace_expected_possessions": step5,
                 "frame_scan_count": len(scans),
                 "screenshot": str(screenshot),
             }
