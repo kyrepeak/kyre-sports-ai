@@ -568,6 +568,46 @@ def build_display_fallback(
     official_away = _official_metrics(season, away)
     official_home = _official_metrics(season, home)
 
+    official_away_dims = _fallback_dimensions(official_away, official_home)
+    official_home_dims = _fallback_dimensions(official_home, official_away)
+    official_complete = bool(
+        official_away
+        and official_home
+        and all(bool(row.get("ready")) for row in official_away_dims.values())
+        and all(bool(row.get("ready")) for row in official_home_dims.values())
+    )
+    if official_complete:
+        return {
+            "ready": True,
+            "source": (
+                "multi-source: official team athletics audit primary + "
+                "cfbstats fallback available"
+            ),
+            "season": season,
+            "reason": "",
+            "away_team_id": "",
+            "home_team_id": "",
+            "away_metrics": official_away,
+            "home_metrics": official_home,
+            "away_offense": {"dimensions": official_away_dims},
+            "home_offense": {"dimensions": official_home_dims},
+            "diagnostics": {
+                "directory": {
+                    "skipped": True,
+                    "reason": "complete official audit snapshot",
+                },
+                "away": {},
+                "home": {},
+                "away_ref": {},
+                "home_ref": {},
+                "official_away": True,
+                "official_home": True,
+                "source_disagreements": [],
+            },
+            "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
+            "may_modify_projection": MAY_MODIFY_PROJECTION,
+        }
+
     directory, directory_diag = _load_directory(season)
     away_ref = _resolve_team(directory, away)
     home_ref = _resolve_team(directory, home)
