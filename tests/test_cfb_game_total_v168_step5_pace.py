@@ -93,6 +93,8 @@ def _drive():
             "situation_neutral_seconds_per_play": 25.1,
             "no_huddle_rate": 0.38,
             "source": "SportsDataverse current-season completed-game PBP",
+            "delivery": "sportsdataverse_github_raw",
+            "sportsdataverse_games_loaded": 3,
         },
         "home": {
             "games": 3,
@@ -101,6 +103,8 @@ def _drive():
             "situation_neutral_seconds_per_play": 28.7,
             "no_huddle_rate": 0.14,
             "source": "SportsDataverse current-season completed-game PBP",
+            "delivery": "sportsdataverse_github_raw",
+            "sportsdataverse_games_loaded": 3,
         },
     }
 
@@ -399,6 +403,10 @@ def test_v168_step5_render_matches_mockup_structure(monkeypatch):
     assert 'data-testid="gt157-step-5"' in html
     assert 'data-step5-state="READY"' in html
     assert 'data-step5-coverage="100"' in html
+    assert 'data-step5-away-pbp-delivery="sportsdataverse_github_raw"' in html
+    assert 'data-step5-home-pbp-delivery="sportsdataverse_github_raw"' in html
+    assert 'data-step5-away-pbp-games="3"' in html
+    assert 'data-step5-home-pbp-games="3"' in html
     assert html.count('data-testid="gt168-step5-stat-tile"') == 12
     assert "PACE &amp; EXPECTED POSSESSIONS" in html or "PACE & EXPECTED POSSESSIONS" in html
     assert "EXPECTED GAME ENVIRONMENT" in html
@@ -431,6 +439,9 @@ def test_v168_page_advances_only_step5_owner():
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
     assert "STEP4_GRADE_MARKER = prior_v165.STEP4_GRADE_MARKER" in source
+    assert "step3_data_owner.load_matchup_team_data" in source
+    assert "step5_away.update(away_foundation)" in source
+    assert "step5_home.update(home_foundation)" in source
 
 
 def test_v168_router_advances_only_exact_game_total_page_and_preserves_step4_marker():
