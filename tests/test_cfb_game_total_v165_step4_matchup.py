@@ -325,10 +325,38 @@ def test_v165_step4_multisource_fallback_fills_only_ncaa_missing_tiles():
         for tile in contract["home_offense_vs_away_defense"]["tiles"]
     }
     assert away["Pass Yds/G"]["edge"] == original_passing_edge
-    assert away["Red Zone"]["grade"] == "DATA"
+    assert away["Red Zone"]["grade"] in {"A", "A-", "B+", "B", "C+", "C", "D"}
+    assert away["Red Zone"]["grade"] != "DATA"
     assert away["Sack Matchup"]["detail"] == "OFF 0.00/g • DEF 2.50/g"
     assert home["Rush Yds/G"]["detail"] == "OFF 194.5 • DEF 57.5"
     assert home["3rd Down"]["detail"] == "OFF 46.2% • DEF 20.7%"
+
+
+def test_v167_ready_multisource_tiles_never_render_data_placeholder():
+    fallback_only = {
+        "ready": True,
+        "model_ready": False,
+        "away_offense": {"dimensions": {}},
+        "home_offense": {"dimensions": {}},
+    }
+    contract = step4.build_step4_contract(
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-18"},
+        engine=fallback_only,
+        fallback=_fake_fallback(),
+    )
+    assert contract["state"] == "READY"
+    tiles = [
+        *contract["away_offense_vs_home_defense"]["tiles"],
+        *contract["home_offense_vs_away_defense"]["tiles"],
+    ]
+    assert len(tiles) == 12
+    assert all(tile["ready"] for tile in tiles)
+    assert all(tile["grade"] in {"A", "A-", "B+", "B", "C+", "C", "D"} for tile in tiles)
+    assert all(tile["grade"] != "DATA" for tile in tiles)
+    assert all(tile.get("grade_basis") == "verified value comparison" for tile in tiles)
 
 
 def test_v165_step4_ready_requires_all_twelve_visible_tiles():
