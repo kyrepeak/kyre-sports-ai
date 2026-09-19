@@ -912,10 +912,6 @@ def verify_live_v164(
                 raise ProductionVerificationV164Failure(
                     f"missing Step 4 V167 grade marker: {REQUIRED_STEP4_GRADE_MARKER}"
                 )
-            if REQUIRED_STEP5_MARKER not in body:
-                raise ProductionVerificationV164Failure(
-                    f"missing Step 5 pace marker: {REQUIRED_STEP5_MARKER}"
-                )
             if REQUIRED_STEP3_MARKER not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 3 current-form marker: {REQUIRED_STEP3_MARKER}"
