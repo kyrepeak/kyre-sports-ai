@@ -1,8 +1,9 @@
-"""Kyre Sports AI Streamlit entrypoint — CFB Game Total V164 activation.
+"""Kyre Sports AI Streamlit entrypoint — V179 Step 5 deployment refresh.
 
-The production entrypoint now boots additive Router V159. V159 preserves the
-certified Router V158 chain for every existing market while advancing only exact
-College Football -> Game Total through the visible ESPN event selector.
+Production runtime boots Router V162. This entrypoint-only revision forces
+Streamlit Cloud to restart after V178's imported-module-only merge remained
+stale in production. It does not change model, projection, probability, API,
+or frozen backend behavior.
 
 Sportsbook projection influence stays 0.0% and frozen model behavior remains
 unchanged.
@@ -25,7 +26,7 @@ from sports_api.posthog_error_radar_v1 import (
 )
 
 if TYPE_CHECKING:
-    # Frozen V161/V162 source-level certification compatibility only; runtime boots V159 below.
+    # Frozen source-level certification compatibility imports; runtime boots V162 below.
     from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app
@@ -209,7 +210,10 @@ FROZEN_V132_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V132_NFL_SPREAD_KYRE_API_TRAN
 FROZEN_V133_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V133_NFL_SPREAD_MATCHUP_BOARD_2026-09-14"
 FROZEN_V134_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V134_NFL_SPREAD_MODEL_MC_2026-09-14"
 FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"
-FROZEN_V136_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
+FROZEN_V136_CFB_GAME_TOTAL_STEP5_V179_DEPLOYMENT_HEARTBEAT = (
+    "STREAMLIT_MAIN_V179_CFB_GAME_TOTAL_STEP5_RESTART_2026-09-19"
+)
+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 FROZEN_V163_ROUTER = "streamlit_memory_lazy_router_v159"
 FROZEN_V137_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V137_NFL_PASSING_YARDS_COMPACT_DASHBOARD_2026-09-15"
 FROZEN_V138_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V138_NFL_PASSING_YARDS_SMART_SLATE_2026-09-16"
