@@ -84,12 +84,15 @@ STEP4_CSS = r"""
 .gt165-tone-dot{width:6px;height:6px;border-radius:999px;background:currentColor;opacity:.9;box-shadow:0 0 8px currentColor}
 .gt165-metric.fav .gt165-tone-dot{color:#61f2b6}.gt165-metric.tough .gt165-tone-dot{color:#ff8491}.gt165-metric.mixed .gt165-tone-dot{color:#ffdc78}.gt165-metric.neutral .gt165-tone-dot{color:#9ee1ff}.gt165-metric.limited .gt165-tone-dot{color:#bdc9d2}
 
-.gt165-callouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:0 9px 9px}
-.gt165-callout{border-radius:10px;padding:8px 9px;border:1px solid rgba(64,164,210,.21);background:rgba(6,32,51,.74)}
-.gt165-callout strong{display:block;font-size:7px}.gt165-callout span{display:block;font-size:7px;color:#bed0dc;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gt165-callout.edge{border-color:rgba(75,233,172,.32)}.gt165-callout.edge strong{color:#62efb6}
-.gt165-callout.risk{border-color:rgba(255,103,118,.31)}.gt165-callout.risk strong{color:#ff7c88}
-.gt165-callout.impact{border-color:rgba(176,102,255,.34);background:rgba(69,31,100,.22)}.gt165-callout.impact strong{color:#ca9cff}
+.gt165-callouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:1px 11px 11px}
+.gt165-callout{position:relative;display:grid;grid-template-columns:30px minmax(0,1fr);gap:9px;align-items:start;border-radius:13px;padding:10px 11px;border:1px solid rgba(64,164,210,.24);background:linear-gradient(180deg,rgba(8,38,59,.90),rgba(5,28,45,.82));box-shadow:0 8px 18px rgba(0,0,0,.12);overflow:hidden}
+.gt165-callout:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:rgba(92,194,244,.55)}
+.gt165-callout-icon{display:flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:9px;font-size:13px;background:rgba(91,176,226,.10);border:1px solid rgba(91,176,226,.14)}
+.gt165-callout-copy strong{display:block;font-size:8px;font-weight:1000;letter-spacing:.015em}
+.gt165-callout-copy span{display:block;font-size:7px;line-height:1.35;color:#c4d5e0;margin-top:4px;white-space:normal;overflow:visible;text-overflow:clip}
+.gt165-callout.edge{border-color:rgba(75,233,172,.36);background:linear-gradient(180deg,rgba(16,79,61,.31),rgba(6,37,33,.40))}.gt165-callout.edge:before{background:#52e7ad}.gt165-callout.edge .gt165-callout-icon{background:rgba(69,207,151,.12);border-color:rgba(83,230,173,.18)}.gt165-callout.edge strong{color:#65efb8}
+.gt165-callout.risk{border-color:rgba(255,103,118,.35);background:linear-gradient(180deg,rgba(95,34,44,.30),rgba(49,20,29,.38))}.gt165-callout.risk:before{background:#ff7180}.gt165-callout.risk .gt165-callout-icon{background:rgba(220,76,92,.12);border-color:rgba(255,108,123,.17)}.gt165-callout.risk strong{color:#ff8390}
+.gt165-callout.impact{border-color:rgba(176,102,255,.38);background:linear-gradient(180deg,rgba(74,36,111,.36),rgba(44,25,74,.42))}.gt165-callout.impact:before{background:linear-gradient(#b86cff,#7f8dff)}.gt165-callout.impact .gt165-callout-icon{background:rgba(160,92,240,.13);border-color:rgba(188,111,255,.18)}.gt165-callout.impact strong{color:#d1a5ff}
 
 .gt165-integrity{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
 .gt165-note{padding:8px 9px;border-radius:10px;border:1px solid rgba(79,171,217,.20);background:rgba(6,31,49,.76)}
@@ -119,6 +122,9 @@ STEP4_CSS = r"""
   .gt165-grade{font-size:12px;min-width:31px;padding:4px 7px}
   .gt165-metric small{font-size:6px;min-height:16px}
   .gt165-callouts,.gt165-integrity{grid-template-columns:1fr}
+  .gt165-callout{grid-template-columns:28px minmax(0,1fr);padding:9px 10px}
+  .gt165-callout-icon{width:27px;height:27px;font-size:12px}
+  .gt165-callout-copy span{font-size:6.7px}
 }
 @media(max-width:420px){
   .gt165-body{padding:8px!important}
@@ -570,9 +576,18 @@ def _battle_html(battle: Mapping[str, Any], testid: str) -> str:
   </div>
   <div class="gt165-metrics">{tiles}</div>
   <div class="gt165-callouts">
-    <div class="gt165-callout edge"><strong>🏆 BIGGEST EDGE</strong><span>{escape(_clean(battle.get('biggest_edge')))}</span></div>
-    <div class="gt165-callout risk"><strong>⚠ BIGGEST RISK</strong><span>{escape(_clean(battle.get('biggest_risk')))}</span></div>
-    <div class="gt165-callout impact"><strong>▥ O/U IMPACT</strong><span>{escape(_clean(battle.get('impact')))}</span></div>
+    <div class="gt165-callout edge" data-testid="gt165-step4-biggest-edge">
+      <div class="gt165-callout-icon" aria-hidden="true">🏆</div>
+      <div class="gt165-callout-copy"><strong>BIGGEST EDGE</strong><span>{escape(_clean(battle.get('biggest_edge')))}</span></div>
+    </div>
+    <div class="gt165-callout risk" data-testid="gt165-step4-biggest-risk">
+      <div class="gt165-callout-icon" aria-hidden="true">⚠</div>
+      <div class="gt165-callout-copy"><strong>BIGGEST RISK</strong><span>{escape(_clean(battle.get('biggest_risk')))}</span></div>
+    </div>
+    <div class="gt165-callout impact" data-testid="gt165-step4-ou-impact">
+      <div class="gt165-callout-icon" aria-hidden="true">📈</div>
+      <div class="gt165-callout-copy"><strong>O/U IMPACT</strong><span>{escape(_clean(battle.get('impact')))}</span></div>
+    </div>
   </div>
 </div>"""
 
