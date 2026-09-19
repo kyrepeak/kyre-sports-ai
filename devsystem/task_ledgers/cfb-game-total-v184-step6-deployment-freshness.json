@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v184-step6-deployment-freshness",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V184 Step 6 deployment-freshness hardening only. Add an immutable multipath deployment heartbeat to Router V163 and require the production verifier to wait for that exact live marker before evaluating the isolated Step 6 certification surface. Extend only the production workflow timeout. Do not change Step 6 metrics, scoring math, Page V18 normal-route behavior, Steps 1-5, model/projection/probability/distribution math, APIs, qualification/ranking, or sportsbook projection influence.",
+  "proof_target": "Branch CI must prove the immutable deployment marker is present in Router V163 and the production verifier fails closed on stale Streamlit code. After merge, the live production workflow must observe CFB_GAME_TOTAL_V184_MULTIPATH_DEPLOYMENT_ACTIVE before requiring the isolated Step 6 cert surface to be READY / 100% / 12-of-12.",
+  "internal_steps": {
+    "1": "Use production run #20 evidence proving both cert candidates were evaluated against stale live Streamlit code.",
+    "2": "Add immutable multipath deployment heartbeat to Router V163 without changing routing/model behavior.",
+    "3": "Make the live verifier wait up to 480 seconds for the exact deployment heartbeat before Step 6 certification.",
+    "4": "Pass all branch gates, merge, prove live production, then permanently freeze the exact certified surface."
+  }
+}
