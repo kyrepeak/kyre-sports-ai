@@ -171,3 +171,21 @@ def test_v164_step3_failure_prints_live_hydration_diagnostics():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'get_attribute("data-step3-diag")' in source
     assert "diag={diag_attr[:9000]!r}" in source
+
+
+def test_v164_step4_completeness_checks_are_scoped_to_step4_not_step1():
+    source = VERIFIER.read_text(encoding="utf-8")
+    step1 = source.split("def _assert_step1_identity", 1)[1].split(
+        "def _assert_step2_performance_profile", 1
+    )[0]
+    step4 = source.split("def _assert_step4_matchup", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+
+    assert 'get_attribute("data-step4-coverage")' not in step1
+    assert 'step.locator(".gt165-metric.limited").count()' not in step1
+    assert 'get_attribute("data-step4-coverage")' in step4
+    assert 'coverage != "100"' in step4
+    assert 'step.locator(".gt165-metric.limited").count()' in step4
+    assert '"coverage": coverage' in step4
+    assert '"limited_tiles": limited_tiles' in step4
