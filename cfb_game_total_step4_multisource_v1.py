@@ -16,6 +16,8 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from html.parser import HTMLParser
+import json
+from pathlib import Path
 import re
 from typing import Any, Mapping
 from urllib.parse import urljoin
@@ -28,6 +30,11 @@ MODEL_VERSION = "CFB GAME TOTAL STEP4 MULTISOURCE V1 • CFBSTATS DISPLAY FALLBA
 SOURCE = "cfbstats.com"
 ROOT = "https://cfbstats.com"
 TIMEOUT_SECONDS = 7
+OFFICIAL_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent
+    / "data"
+    / "cfb_game_total_step4_official_snapshot_v1.json"
+)
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
@@ -88,6 +95,80 @@ def _season(game: Mapping[str, Any] | None) -> int:
         if match:
             return int(match.group(1))
     return datetime.now(timezone.utc).year
+
+
+def _load_official_snapshot() -> dict[str, Any]:
+    try:
+        payload = json.loads(OFFICIAL_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def _official_metrics(
+    season: int,
+    profile: Mapping[str, Any],
+) -> dict[str, Any]:
+    payload = _load_official_snapshot()
+    if int(payload.get("season") or 0) != int(season):
+        return {}
+    teams = payload.get("teams") or {}
+    if not isinstance(teams, Mapping):
+        return {}
+    for raw in (
+        profile.get("team"),
+        profile.get("name"),
+        profile.get("team_name"),
+        profile.get("team_slug"),
+    ):
+        key = _key(raw)
+        row = teams.get(key) if key else None
+        if not isinstance(row, Mapping):
+            continue
+        metrics = row.get("metrics") or {}
+        if not isinstance(metrics, Mapping):
+            continue
+        return {
+            **dict(metrics),
+            "official_source": _clean(row.get("source")),
+            "official_source_url": _clean(row.get("source_url")),
+            "official_snapshot": True,
+        }
+    return {}
+
+
+def _merge_official_metrics(
+    secondary: Mapping[str, Any] | None,
+    official: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    merged = dict(secondary or {})
+    official = official or {}
+    disagreements: list[dict[str, Any]] = []
+    metadata = {"official_source", "official_source_url", "official_snapshot"}
+    for key, value in official.items():
+        if key in metadata:
+            continue
+        official_value = _float(value)
+        secondary_value = _float(merged.get(key))
+        if (
+            official_value is not None
+            and secondary_value is not None
+            and abs(official_value - secondary_value) > 0.001
+        ):
+            disagreements.append(
+                {
+                    "field": key,
+                    "secondary": secondary_value,
+                    "official": official_value,
+                    "winner": "official",
+                }
+            )
+        if value is not None:
+            merged[key] = value
+    for key in metadata:
+        if key in official:
+            merged[key] = official[key]
+    return merged, disagreements
 
 
 def _fetch_requests(url: str) -> str:
