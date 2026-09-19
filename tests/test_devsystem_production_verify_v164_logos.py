@@ -47,7 +47,11 @@ def test_v164_production_verifier_requires_complete_step1_identity_surface():
 def test_v164_production_verifier_waits_for_exact_step1_profile_patch():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"' in source
-    assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" in source
+    wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
+        "def _assert_step1_identity", 1
+    )[0]
+    assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" not in wait_block
+    assert "if REQUIRED_STEP1_PROFILE_MARKER not in body:" in source
     assert "missing Step 1 exact-profile marker" in source
 
 
@@ -55,9 +59,12 @@ def test_v164_production_verifier_waits_for_exact_step1_profile_patch():
 def test_v164_deployment_gate_reads_hidden_markers_from_dom_text():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'frame.locator("body").text_content()' in source
-    assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" in source
-    assert "REQUIRED_STEP1_MARKER in dom_text" in source
-    assert "REQUIRED_PATCH_MARKER in dom_text" in source
+    wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
+        "def _assert_step1_identity", 1
+    )[0]
+    assert "REQUIRED_STEP1_PROFILE_MARKER in dom_text" not in wait_block
+    assert "REQUIRED_STEP1_MARKER in dom_text" not in wait_block
+    assert "REQUIRED_PATCH_MARKER in dom_text" in wait_block
     assert "return frame, dom_text, scans" in source
 
 
@@ -72,7 +79,10 @@ def test_v164_production_verifier_waits_for_full_streamlit_logo_surface():
 def test_v164_production_verifier_requires_step2_performance_profile_surface():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'REQUIRED_STEP2_MARKER = "CFB_GAME_TOTAL_STEP2_PERFORMANCE_PROFILE_V2_ACTIVE"' in source
-    assert "REQUIRED_STEP2_MARKER in dom_text" in source
+    assert "REQUIRED_STEP2_MARKER in dom_text" not in source.split(
+        "def _wait_for_v164_patch_deployment", 1
+    )[1].split("def _assert_step1_identity", 1)[0]
+    assert "if REQUIRED_STEP2_MARKER not in body:" in source
     assert "_assert_step2_performance_profile" in source
     assert 'details[data-testid="gt157-step-2"]' in source
     assert 'data-testid="gt167-step2-away"' in source
@@ -100,7 +110,10 @@ def test_v164_step2_required_text_check_is_case_normalized():
 def test_v164_production_verifier_requires_step3_current_form_surface():
     source = VERIFIER.read_text(encoding="utf-8")
     assert 'REQUIRED_STEP3_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"' in source
-    assert "REQUIRED_STEP3_MARKER in dom_text" in source
+    assert "REQUIRED_STEP3_MARKER in dom_text" not in source.split(
+        "def _wait_for_v164_patch_deployment", 1
+    )[1].split("def _assert_step1_identity", 1)[0]
+    assert "if REQUIRED_STEP3_MARKER not in body:" in source
     assert "_assert_step3_current_form" in source
     assert 'details[data-testid="gt157-step-3"]' in source
     assert 'data-testid="gt168-step3-away"' in source
@@ -124,13 +137,16 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     assert 'REQUIRED_STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"' in source
     assert 'REQUIRED_STEP4_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"' in source
     assert 'REQUIRED_STEP4_GRADE_MARKER = "CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"' in source
-    assert "REQUIRED_STEP4_MARKER in dom_text" in source
-    assert "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text" in source
-    assert "REQUIRED_STEP4_VISUAL_MARKER in dom_text" in source
-    assert "REQUIRED_STEP4_GRADE_MARKER in dom_text" in source
-    assert "required_step4_deployment_marker" in source
-    assert "required_step4_visual_marker" in source
-    assert "required_step4_grade_marker" in source
+    wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
+        "def _assert_step1_identity", 1
+    )[0]
+    assert "REQUIRED_STEP4_MARKER in dom_text" not in wait_block
+    assert "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text" not in wait_block
+    assert "REQUIRED_STEP4_VISUAL_MARKER in dom_text" not in wait_block
+    assert "REQUIRED_STEP4_GRADE_MARKER in dom_text" not in wait_block
+    assert "if REQUIRED_STEP4_MARKER not in body:" in source
+    assert "if REQUIRED_STEP4_VISUAL_MARKER not in body:" in source
+    assert "if REQUIRED_STEP4_GRADE_MARKER not in body:" in source
     assert "_assert_step4_matchup" in source
     assert 'details[data-testid="gt157-step-4"]' in source
     assert 'data-testid="gt165-step4-away-off-home-def"' in source
