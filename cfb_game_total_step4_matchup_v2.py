@@ -555,10 +555,11 @@ def render_step4_html(
     missing = ", ".join(contract.get("advanced_missing") or []) or "None"
     coverage = int(round(float(contract.get("coverage") or 0.0) * 100.0))
     fallback_filled = int(contract.get("fallback_filled") or 0)
+    fallback_source = _clean(contract.get("fallback_source")) or "multi-source display fallback"
     if fallback_filled:
         engine_note = (
             "NCAA matchup tables primary. "
-            f"cfbstats fallback recovered {fallback_filled} NCAA-missing matchup cells."
+            f"{fallback_source} recovered {fallback_filled} NCAA-missing matchup cells."
         )
     elif contract.get("engine_ready"):
         engine_note = "NCAA matchup tables connected; multi-source fallback not needed."
