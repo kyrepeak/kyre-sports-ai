@@ -147,7 +147,7 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     assert '"VISIBLE MATCHUP COVERAGE: 100%"' in source
     assert '"CFBSTATS"' in source
     assert '"MULTI-SOURCE"' in source
-    assert '"coverage": coverage' in source
+    assert '"coverage": coverage' not in source
     assert '"limited_tiles": limited_tiles' in source
 
 def test_v164_step3_production_proof_locks_live_completeness_contract():
