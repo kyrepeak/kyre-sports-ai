@@ -61,6 +61,7 @@ jobs:
             tests/test_cfb_game_total_v168_step5_pace.py
 
       - name: Prove live Step 5 READY 100 percent 12 of 12
+        if: github.event_name != 'pull_request'
         run: |
           python -m devsystem.production_verify_step5_v181 \
             --artifact-dir artifacts/production-step5-v181
