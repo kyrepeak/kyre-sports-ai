@@ -9,16 +9,19 @@ def test_v184_step6_production_contract_is_strict_and_current_route_driven():
     source = inspect.getsource(verifier.verify_live_step6)
     wait_source = inspect.getsource(verifier._wait_for_live_step6)
     assert "CERT_EVENT_ID" not in source
-    assert "CERT_DATE" not in source
     assert "ROUTE_QUERY_SPORT" in source
     assert "ROUTE_QUERY_MARKET" in source
     assert "_event_from_url" in source
     assert "STEP6_ROOT_SELECTOR" in wait_source
-    assert "for index, frame in enumerate(page.frames)" in wait_source
+    assert "v163_nav._find_v163_frame" in wait_source
     assert "page.reload" in wait_source
     assert "_wait_for_v164_patch_deployment" not in wait_source
+    assert "_wait_for_top_level_selection" not in wait_source
+    assert "CERT_EVENT_ID" not in inspect.getsource(verifier)
     assert "production_verify_v164_logos" not in inspect.getsource(verifier)
-    assert "full.v163" not in inspect.getsource(verifier)
+    assert 'CERT_DATE = "2026-09-19"' in inspect.getsource(verifier)
+    assert "DATE_QUERY_KEY: CERT_DATE" in source
+    assert "selected_date != CERT_DATE" in source
 
 
 def test_v184_step6_assertion_requires_ready_100_and_12_of_12():
