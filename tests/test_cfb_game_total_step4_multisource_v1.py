@@ -169,3 +169,23 @@ def test_merge_missing_dimensions_never_overwrites_certified_ncaa_edge():
     assert merged["home_offense"]["dimensions"]["red_zone"]["ready"] is True
     assert merged["display_fallback_source"] == "cfbstats.com"
     assert filled == 11
+
+
+def test_official_audit_snapshot_wins_when_secondary_source_disagrees():
+    official = multi._official_metrics(2026, {"team": "Wake Forest"})
+    assert official["third_down_defense_pct"] == 44.828
+    assert official["official_snapshot"] is True
+
+    merged, disagreements = multi._merge_official_metrics(
+        {"third_down_defense_pct": 48.15, "rush_yards_pg": 194.5},
+        official,
+    )
+    assert merged["third_down_defense_pct"] == 44.828
+    assert merged["rush_yards_pg"] == 194.5
+    assert any(
+        row["field"] == "third_down_defense_pct"
+        and row["secondary"] == 48.15
+        and row["official"] == 44.828
+        and row["winner"] == "official"
+        for row in disagreements
+    )
