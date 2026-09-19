@@ -57,12 +57,15 @@ def _step6_cert_requested() -> bool:
 
 
 def _with_active_page(callback):
-    original = prior.ACTIVE_PAGE
+    original_page = prior.ACTIVE_PAGE
+    original_heartbeat = prior.PRODUCTION_HEARTBEAT
     prior.ACTIVE_PAGE = ACTIVE_PAGE
+    prior.PRODUCTION_HEARTBEAT = PRODUCTION_HEARTBEAT
     try:
         return callback()
     finally:
-        prior.ACTIVE_PAGE = original
+        prior.ACTIVE_PAGE = original_page
+        prior.PRODUCTION_HEARTBEAT = original_heartbeat
 
 
 def _render_step6_cert_surface() -> None:
