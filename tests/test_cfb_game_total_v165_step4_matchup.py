@@ -487,3 +487,26 @@ def test_v166_visual_step5_battle_framing_matches_target_contract():
     assert 'class="gt165-battle matchup-two"' in html
     assert ".gt165-battletag" in step4.STEP4_CSS
     assert ".gt165-battle.matchup-two:before" in step4.STEP4_CSS
+
+
+def test_v166_visual_step6_integrity_and_mobile_polish_match_target_contract():
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        engine=_fake_engine(),
+        fallback=_fake_fallback(),
+    )
+    assert "VERIFIED MATCHUP DATA" in html
+    assert "ADVANCED-METRIC INTEGRITY" in html
+    assert "NCAA PRIMARY" in html
+    assert "100% VISIBLE" in html
+    assert "MULTI-SOURCE VERIFIED" in html
+    assert "MODEL SAFE" in html
+    assert "PROJECTION OFF" in html
+    assert "SPORTSBOOK 0.0%" in html
+    assert html.count('class="gt165-note-icon"') == 2
+    assert ".gt165-notechips" in step4.STEP4_CSS
+    assert "@media(max-width:420px)" in step4.STEP4_CSS
+    assert "grid-template-columns:repeat(2,minmax(0,1fr))" in step4.STEP4_CSS

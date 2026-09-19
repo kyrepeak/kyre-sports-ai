@@ -101,11 +101,19 @@ STEP4_CSS = r"""
 .gt165-callout.risk{border-color:rgba(255,103,118,.35);background:linear-gradient(180deg,rgba(95,34,44,.30),rgba(49,20,29,.38))}.gt165-callout.risk:before{background:#ff7180}.gt165-callout.risk .gt165-callout-icon{background:rgba(220,76,92,.12);border-color:rgba(255,108,123,.17)}.gt165-callout.risk strong{color:#ff8390}
 .gt165-callout.impact{border-color:rgba(176,102,255,.38);background:linear-gradient(180deg,rgba(74,36,111,.36),rgba(44,25,74,.42))}.gt165-callout.impact:before{background:linear-gradient(#b86cff,#7f8dff)}.gt165-callout.impact .gt165-callout-icon{background:rgba(160,92,240,.13);border-color:rgba(188,111,255,.18)}.gt165-callout.impact strong{color:#d1a5ff}
 
-.gt165-integrity{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
-.gt165-note{padding:8px 9px;border-radius:10px;border:1px solid rgba(79,171,217,.20);background:rgba(6,31,49,.76)}
-.gt165-note strong{display:block;color:#76e3ff;font-size:7px}
-.gt165-note span{display:block;color:#9db1c0;font-size:6.3px;line-height:1.4;margin-top:3px}
-.gt165-note.purple{border-color:rgba(174,101,255,.28);background:rgba(66,28,96,.20)}.gt165-note.purple strong{color:#ca9cff}
+.gt165-integrity{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.gt165-note{position:relative;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:11px 12px;border-radius:13px;border:1px solid rgba(79,171,217,.28);background:linear-gradient(180deg,rgba(7,39,61,.88),rgba(5,28,45,.82));box-shadow:0 8px 18px rgba(0,0,0,.10);overflow:hidden}
+.gt165-note:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#39dfff,#4a8dff)}
+.gt165-note-icon{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;color:#83eaff;background:rgba(50,174,232,.11);border:1px solid rgba(77,197,248,.16);font-size:13px;font-weight:1000}
+.gt165-note-copy strong{display:block;color:#82e7ff;font-size:8px;font-weight:1000;letter-spacing:.02em}
+.gt165-note-copy span{display:block;color:#a9bfcd;font-size:6.6px;line-height:1.45;margin-top:4px}
+.gt165-notechips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.gt165-chip{display:inline-flex;align-items:center;padding:4px 7px;border-radius:999px;border:1px solid rgba(83,187,235,.18);background:rgba(31,120,165,.10);color:#aeeaff;font-size:5.6px;font-weight:950;letter-spacing:.055em;white-space:nowrap}
+.gt165-note.purple{border-color:rgba(174,101,255,.32);background:linear-gradient(180deg,rgba(66,30,100,.31),rgba(38,22,66,.37))}
+.gt165-note.purple:before{background:linear-gradient(90deg,#9565ff,#d06cff)}
+.gt165-note.purple .gt165-note-icon{color:#d2adff;background:rgba(156,91,232,.12);border-color:rgba(186,113,255,.16)}
+.gt165-note.purple .gt165-note-copy strong{color:#d0a7ff}
+.gt165-note.purple .gt165-chip{color:#ddc2ff;border-color:rgba(178,111,245,.18);background:rgba(125,74,190,.11)}
 
 .gt165-state.ready{color:#58edb3!important;border-color:rgba(88,237,179,.35)!important;background:rgba(24,111,77,.16)!important}
 .gt165-state.check{color:#f6cf65!important;border-color:rgba(246,207,101,.35)!important;background:rgba(115,84,17,.16)!important}
@@ -135,13 +143,21 @@ STEP4_CSS = r"""
   .gt165-callout{grid-template-columns:28px minmax(0,1fr);padding:9px 10px}
   .gt165-callout-icon{width:27px;height:27px;font-size:12px}
   .gt165-callout-copy span{font-size:6.7px}
+  .gt165-note{grid-template-columns:30px minmax(0,1fr);padding:10px}
+  .gt165-note-icon{width:28px;height:28px;font-size:12px}
+  .gt165-notechips{gap:4px;margin-top:7px}
 }
 @media(max-width:420px){
   .gt165-body{padding:8px!important}
+  .gt165-step4 summary{padding:9px 10px!important}
   .gt165-battlehead{padding:8px}
-  .gt165-metrics{gap:5px;padding:7px}
-  .gt165-metric{padding:6px 5px}
+  .gt165-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px}
+  .gt165-metric{padding:8px 7px}
   .gt165-callouts{padding:0 7px 7px}
+  .gt165-integrity{gap:7px;margin-top:8px}
+  .gt165-note{grid-template-columns:27px minmax(0,1fr);gap:8px;padding:9px}
+  .gt165-note-icon{width:26px;height:26px;font-size:11px}
+  .gt165-chip{font-size:5.2px;padding:3px 6px}
 }
 </style>
 """
@@ -663,8 +679,30 @@ def render_step4_html(
       {_battle_html(contract['home_offense_vs_away_defense'], 'gt165-step4-home-off-away-def', 2)}
     </div>
     <div class="gt165-integrity">
-      <div class="gt165-note" data-testid="gt165-step4-source-integrity"><strong>✓ VERIFIED MATCHUP DATA</strong><span>{escape(engine_note)} Visible matchup coverage: {coverage}%.</span></div>
-      <div class="gt165-note purple" data-testid="gt165-step4-advanced-integrity"><strong>◈ ADVANCED-METRIC INTEGRITY</strong><span>Optional advanced fields not fully verified: {escape(missing)}. Core Step 4 uses NCAA as primary plus source-verified display fallback only when NCAA leaves a tile blank; no advanced value is fabricated. Projection mutation: OFF · sportsbook influence: 0.0%.</span></div>
+      <div class="gt165-note" data-testid="gt165-step4-source-integrity">
+        <div class="gt165-note-icon" aria-hidden="true">✓</div>
+        <div class="gt165-note-copy">
+          <strong>VERIFIED MATCHUP DATA</strong>
+          <span>{escape(engine_note)} Visible matchup coverage: {coverage}%.</span>
+          <div class="gt165-notechips">
+            <b class="gt165-chip">NCAA PRIMARY</b>
+            <b class="gt165-chip">{coverage}% VISIBLE</b>
+            <b class="gt165-chip">MULTI-SOURCE VERIFIED</b>
+          </div>
+        </div>
+      </div>
+      <div class="gt165-note purple" data-testid="gt165-step4-advanced-integrity">
+        <div class="gt165-note-icon" aria-hidden="true">◈</div>
+        <div class="gt165-note-copy">
+          <strong>ADVANCED-METRIC INTEGRITY</strong>
+          <span>Optional advanced fields not fully verified: {escape(missing)}. Core Step 4 uses NCAA as primary plus source-verified display fallback only when NCAA leaves a tile blank; no advanced value is fabricated. Projection mutation: OFF · sportsbook influence: 0.0%.</span>
+          <div class="gt165-notechips">
+            <b class="gt165-chip">MODEL SAFE</b>
+            <b class="gt165-chip">PROJECTION OFF</b>
+            <b class="gt165-chip">SPORTSBOOK 0.0%</b>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </details>"""
