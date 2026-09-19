@@ -26,6 +26,10 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert '"401869940"' in module_source
     assert '"401856685"' in module_source
     assert "for index, candidate in enumerate(CERT_CANDIDATES" in source
+    assert "_streamlit_cert_paths(" in source
+    assert "\"embedded\"" in inspect.getsource(verifier._streamlit_cert_paths)
+    assert "\"/~/+/?\"" in inspect.getsource(verifier._streamlit_cert_paths)
+    assert "\"access_path\"" in source
     assert 'CERT_QUERY_KEY: "1"' in source
     assert 'data-testid="gt184-step6-cert-surface"' in source
     assert "cert_surface_present = cert_surface.count() > 0" in source
@@ -53,3 +57,17 @@ def test_v184_step6_production_markers_are_stable():
         == "CFB_GAME_TOTAL_STEP6_V184_DEPLOYMENT_ACTIVE"
     )
     assert verifier.GREEN_MARKER == "CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN"
+
+
+def test_v188_streamlit_cert_paths_fail_over_without_weakening_contract():
+    paths = verifier._streamlit_cert_paths(
+        "https://kyre-sports-ai.streamlit.app",
+        "ks_cfb_step6_cert=1&ks_cfb_game_total_event_id=401869940",
+        210.0,
+    )
+    assert len(paths) == 2
+    assert paths[0][0] == "shell"
+    assert paths[1][0] == "embedded"
+    assert "/~/+/?" in paths[1][1]
+    assert paths[0][2] <= 45.0
+    assert paths[1][2] >= 30.0
