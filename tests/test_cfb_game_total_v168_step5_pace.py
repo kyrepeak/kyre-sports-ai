@@ -92,7 +92,7 @@ def _drive():
             "avg_drive_time_seconds": 138.0,
             "situation_neutral_seconds_per_play": 25.1,
             "no_huddle_rate": 0.38,
-            "source": "ESPN completed-game drive/play-by-play",
+            "source": "SportsDataverse current-season completed-game PBP",
         },
         "home": {
             "games": 3,
@@ -100,7 +100,7 @@ def _drive():
             "avg_drive_time_seconds": 181.0,
             "situation_neutral_seconds_per_play": 28.7,
             "no_huddle_rate": 0.14,
-            "source": "ESPN completed-game drive/play-by-play",
+            "source": "SportsDataverse current-season completed-game PBP",
         },
     }
 
@@ -119,6 +119,8 @@ def test_v168_step5_contract_is_presentation_only():
     assert step5.FROZEN_PREDECESSOR == "cfb_game_total_clean_page_v16"
     assert step5.STEP5_PRESENTATION_MARKER == "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
     assert step5.STEP5_DATA_MARKER == "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"
+    assert "sportsdataverse/cfbfastR-cfb-raw" in step5.SPORTSDATAVERSE_GAME_URL
+    assert step5.MAX_PBP_GAMES == 2
 
 
 def test_v168_step5_ready_contract_has_exact_twelve_required_tiles(monkeypatch):
@@ -253,6 +255,134 @@ def test_v168_drive_parser_reads_drives_no_huddle_and_neutral_pace():
     assert result["avg_drive_time_seconds"] == 150.0
     assert result["situation_neutral_seconds_per_play"] == 30.0
     assert round(result["no_huddle_rate"], 3) == round(1 / 3, 3)
+
+
+def test_v168_sportsdataverse_parser_reads_flattened_drive_pace_and_no_huddle():
+    game = {
+        "plays": [
+            {
+                "text": "No Huddle-Shotgun pass complete",
+                "teamParticipants": [{"id": "153", "type": "offense"}],
+                "type.text": "Pass Reception",
+                "start.down": 1,
+                "period.number": 1,
+                "clock.displayValue": "12:00",
+                "homeScore": 0,
+                "awayScore": 0,
+                "drive.id": "d1",
+                "drive.timeElapsed.displayValue": "2:30",
+            },
+            {
+                "text": "Rush for 5 yards",
+                "teamParticipants": [{"id": "153", "type": "offense"}],
+                "type.text": "Rush",
+                "start.down": 2,
+                "period.number": 1,
+                "clock.displayValue": "11:30",
+                "homeScore": 0,
+                "awayScore": 0,
+                "drive.id": "d1",
+                "drive.timeElapsed.displayValue": "2:30",
+            },
+            {
+                "text": "Pass complete",
+                "teamParticipants": [{"id": "153", "type": "offense"}],
+                "type.text": "Pass Reception",
+                "start.down": 1,
+                "period.number": 1,
+                "clock.displayValue": "9:00",
+                "homeScore": 0,
+                "awayScore": 0,
+                "drive.id": "d2",
+                "drive.timeElapsed.displayValue": "1:40",
+            },
+            {
+                "text": "Rush for 2 yards",
+                "teamParticipants": [{"id": "153", "type": "offense"}],
+                "type.text": "Rush",
+                "start.down": 2,
+                "period.number": 1,
+                "clock.displayValue": "8:35",
+                "homeScore": 0,
+                "awayScore": 0,
+                "drive.id": "d2",
+                "drive.timeElapsed.displayValue": "1:40",
+            },
+        ]
+    }
+    result = step5._parse_sportsdataverse_evidence([game], "153")
+    assert result["games"] == 1
+    assert result["drive_count"] == 2
+    assert result["drives_per_game"] == 2.0
+    assert result["avg_drive_time_seconds"] == 125.0
+    assert result["situation_neutral_seconds_per_play"] == 27.5
+    assert result["no_huddle_rate"] == 0.25
+    assert result["delivery"] == "sportsdataverse_github_raw"
+
+
+def test_v168_sportsdataverse_is_primary_and_espn_is_not_required(monkeypatch):
+    identity = _identity()
+    away = _away()
+    home = _home()
+
+    def fake_sdv(event_id):
+        team_id = "153" if event_id in {"1", "2"} else "228"
+        return {
+            "plays": [
+                {
+                    "text": "No Huddle-Shotgun rush",
+                    "teamParticipants": [{"id": team_id, "type": "offense"}],
+                    "type.text": "Rush",
+                    "start.down": 1,
+                    "period.number": 1,
+                    "clock.displayValue": "12:00",
+                    "homeScore": 0,
+                    "awayScore": 0,
+                    "drive.id": f"{event_id}-d1",
+                    "drive.timeElapsed.displayValue": "2:00",
+                },
+                {
+                    "text": "Rush for 4 yards",
+                    "teamParticipants": [{"id": team_id, "type": "offense"}],
+                    "type.text": "Rush",
+                    "start.down": 2,
+                    "period.number": 1,
+                    "clock.displayValue": "11:35",
+                    "homeScore": 0,
+                    "awayScore": 0,
+                    "drive.id": f"{event_id}-d1",
+                    "drive.timeElapsed.displayValue": "2:00",
+                },
+            ]
+        }
+
+    monkeypatch.setattr(step5, "_fetch_sportsdataverse_game", fake_sdv)
+    monkeypatch.setattr(
+        step5,
+        "_fetch_summary",
+        lambda event_id: (_ for _ in ()).throw(
+            AssertionError("ESPN must not be required when SportsDataverse succeeds")
+        ),
+    )
+
+    result = step5._safe_drive_evidence(identity, away, home)
+    assert result["away"]["games"] == 2
+    assert result["home"]["games"] == 2
+    assert result["away"]["espn_fallback_used"] is False
+    assert result["home"]["espn_fallback_used"] is False
+    assert result["away"]["sportsdataverse_games_loaded"] == 2
+    assert result["home"]["sportsdataverse_games_loaded"] == 2
+    assert result["away"]["source"] == "SportsDataverse current-season completed-game PBP"
+    assert result["home"]["source"] == "SportsDataverse current-season completed-game PBP"
+
+
+def test_v168_sportsdataverse_flattened_clock_helpers_are_supported():
+    play = {
+        "period.number": 3,
+        "clock.displayValue": "07:21",
+    }
+    assert step5._play_period(play) == 3
+    assert step5._play_clock(play) == 441.0
 
 
 def test_v168_step5_render_matches_mockup_structure(monkeypatch):
