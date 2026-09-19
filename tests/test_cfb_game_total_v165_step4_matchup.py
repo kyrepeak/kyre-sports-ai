@@ -466,3 +466,24 @@ def test_v166_visual_step4_insight_callouts_match_target_contract():
     assert ".gt165-callout-icon" in step4.STEP4_CSS
     assert ".gt165-callout-copy span" in step4.STEP4_CSS
     assert "white-space:normal" in step4.STEP4_CSS
+
+
+def test_v166_visual_step5_battle_framing_matches_target_contract():
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        engine=_fake_engine(),
+        fallback=_fake_fallback(),
+    )
+    assert 'data-matchup-index="1"' in html
+    assert 'data-matchup-index="2"' in html
+    assert "MATCHUP 1" in html
+    assert "MATCHUP 2" in html
+    assert "AWAY OFFENSE VS HOME DEFENSE" in html
+    assert "HOME OFFENSE VS AWAY DEFENSE" in html
+    assert 'class="gt165-battle matchup-one"' in html
+    assert 'class="gt165-battle matchup-two"' in html
+    assert ".gt165-battletag" in step4.STEP4_CSS
+    assert ".gt165-battle.matchup-two:before" in step4.STEP4_CSS
