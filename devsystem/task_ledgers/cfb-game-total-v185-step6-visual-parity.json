@@ -9,8 +9,8 @@
   },
   "transition_history": [],
   "override_events": [],
-  "scope": "V185 College Football Game Total Step 6 visual-parity rebuild. Presentation-only successor over permanently frozen V184 Step 6. Preserve cfb_game_total_step6_scoring_v1 as the sole normalized Step 6 scoring/data-contract owner; preserve Steps 1-5, model/projection/probability/distribution math, qualification/ranking, APIs, sportsbook projection influence 0.0%, and projection mutation OFF. Rebuild only the live Streamlit Step 6 presentation into the approved full-width neon design with real contract data.",
-  "proof_target": "Step 6 must render full-width inside the Steps 1-12 grid; preserve READY/100%/12-of-12 V184 contract attributes and visible certified tokens; render two scoring-creation panels, two scoring-prevention panels, 12 offense contract tiles plus 12 prevention presentation tiles, the scoring-environment strip, Matchup Read, Biggest Accelerator, Biggest Suppressor, O/U Impact, Data Confidence, responsive tablet/mobile behavior, V185 production heartbeat, and concurrency-safe additive renderer activation. Frozen V184 and Step 5 regressions must remain GREEN before merge.",
+  "scope": "V185 College Football Game Total Step 6 visual-parity rebuild. Presentation-only successor over permanently frozen V184 Step 6. Preserve cfb_game_total_step6_scoring_v1 as the sole normalized Step 6 scoring/data-contract owner; preserve Steps 1-5, model/projection/probability/distribution math, qualification/ranking, APIs, sportsbook projection influence 0.0%, and projection mutation OFF. Rebuild only the live Streamlit Step 6 presentation into the approved full-width neon design with real contract data. V186 certification-only follow-up adds a live production verifier and workflow that require the V185 visual-parity marker on Streamlit production while reusing the frozen V184 READY/100%/12-of-12 assertion. No UI, model, data-source, API, or projection behavior changes.",
+  "proof_target": "Step 6 must render full-width inside the Steps 1-12 grid; preserve READY/100%/12-of-12 V184 contract attributes and visible certified tokens; render two scoring-creation panels, two scoring-prevention panels, 12 offense contract tiles plus 12 prevention presentation tiles, the scoring-environment strip, Matchup Read, Biggest Accelerator, Biggest Suppressor, O/U Impact, Data Confidence, responsive tablet/mobile behavior, V185 production heartbeat, and concurrency-safe additive renderer activation. Frozen V184 and Step 5 regressions must remain GREEN before merge. Final production proof must additionally observe CFB_GAME_TOTAL_STEP6_V185_VISUAL_PARITY_ACTIVE and CFB_GAME_TOTAL_STEP6_TARGET_MOCK_PARITY_ACTIVE on the live Streamlit DOM, then prove target geometry and upload production screenshots before the visual rebuild is frozen.",
   "internal_steps": {
     "1": "Freeze and map the permanently certified V184 Step 6 data/logic boundary.",
     "2": "Build an additive full-width neon Step 6 shell and target-style header.",
@@ -18,6 +18,8 @@
     "4": "Render two scoring-creation-vs-prevention battle pairs from the frozen V184 normalized contract.",
     "5": "Render the six-cell Scoring Environment strip from frozen contract outputs.",
     "6": "Render Matchup Read, Accelerator, Suppressor, O/U Impact, Data Confidence, and responsive rules.",
-    "7": "Run V185-specific compile/unit/browser proof plus frozen V184 Step 6, V168 Step 5, and DevSystem gates; merge only after GREEN and then certify production."
+    "7": "Run V185-specific compile/unit/browser proof plus frozen V184 Step 6, V168 Step 5, and DevSystem gates; merge only after GREEN and then certify production.",
+    "8": "Add a V185-specific live production verifier/workflow that cannot accept a stale V184-only surface; require V185 visual markers plus the frozen READY/100%/12-of-12 Step 6 contract.",
+    "9": "After merge, require the main-branch production workflow to certify the live V185 surface and capture screenshot/evidence artifacts; then freeze the visual rebuild."
   }
 }
