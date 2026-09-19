@@ -736,9 +736,9 @@ def _assert_step5_pace(frame) -> dict:
         )
 
     state = str(step.get_attribute("data-step5-state") or "").strip().upper()
-    if state not in {"READY", "CHECK"}:
+    if state != "READY":
         raise ProductionVerificationV164Failure(
-            f"Step 5 invalid production state: {state!r}"
+            f"Step 5 certified pace board must be fully READY: state={state!r}"
         )
 
     coverage_raw = str(step.get_attribute("data-step5-coverage") or "").strip()
@@ -748,9 +748,21 @@ def _assert_step5_pace(frame) -> dict:
         raise ProductionVerificationV164Failure(
             f"Step 5 invalid coverage attribute: {coverage_raw!r}"
         ) from exc
-    if coverage < 50 or coverage > 100:
+    if coverage != 100:
         raise ProductionVerificationV164Failure(
-            f"Step 5 unreasonable production coverage: {coverage}"
+            f"Step 5 certified pace coverage must be 100: coverage={coverage}"
+        )
+
+    invalid_tiles = []
+    for index in range(tiles.count()):
+        tile = tiles.nth(index)
+        ready = str(tile.get_attribute("data-ready") or "").strip().lower()
+        value = str(tile.locator("strong").inner_text() or "").strip()
+        if ready != "true" or value in {"", "—", "-", "DATA LIMITED"}:
+            invalid_tiles.append({"index": index, "ready": ready, "value": value})
+    if invalid_tiles:
+        raise ProductionVerificationV164Failure(
+            f"Step 5 READY contains incomplete pace tiles: {invalid_tiles}"
         )
 
     text = step.inner_text()
@@ -778,6 +790,10 @@ def _assert_step5_pace(frame) -> dict:
     if missing:
         raise ProductionVerificationV164Failure(
             f"Step 5 missing required V168 content: {missing}"
+        )
+    if "DATA LIMITED" in live_upper:
+        raise ProductionVerificationV164Failure(
+            "Step 5 READY must not expose DATA LIMITED placeholders"
         )
 
     profiles = {
