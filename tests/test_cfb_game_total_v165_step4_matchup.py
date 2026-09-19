@@ -402,8 +402,9 @@ def test_v165_step4_multisource_deployment_marker_is_emitted_through_v16():
     source = PAGE.read_text()
     assert "STEP4_DEPLOYMENT_MARKER = step4_owner.STEP4_DEPLOYMENT_MARKER" in source
     assert "STEP4_VISUAL_MARKER = step4_owner.STEP4_VISUAL_MARKER" in source
+    assert "STEP4_GRADE_MARKER = step4_owner.STEP4_GRADE_MARKER" in source
     assert "original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER" in source
-    assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER} • {STEP4_VISUAL_MARKER}"' in source
+    assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER} • {STEP4_VISUAL_MARKER} • {STEP4_GRADE_MARKER}"' in source
     assert "prior_v164.STEP4_PRESENTATION_MARKER = original_step4_marker" in source
 
 
@@ -539,6 +540,37 @@ def test_v166_visual_step6_integrity_and_mobile_polish_match_target_contract():
     assert ".gt165-notechips" in step4.STEP4_CSS
     assert "@media(max-width:420px)" in step4.STEP4_CSS
     assert "grid-template-columns:repeat(2,minmax(0,1fr))" in step4.STEP4_CSS
+
+
+def test_v167_real_grade_contract_bans_data_placeholders_when_ready():
+    assert (
+        step4.STEP4_GRADE_MARKER
+        == "CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"
+    )
+    fallback_only = {
+        "ready": True,
+        "model_ready": False,
+        "away_offense": {"dimensions": {}},
+        "home_offense": {"dimensions": {}},
+    }
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-18"},
+        engine=fallback_only,
+        fallback=_fake_fallback(),
+    )
+    assert 'data-step4-state="READY"' in html
+    assert (
+        'data-step4-grade-marker="CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"'
+        in html
+    )
+    assert html.count('data-testid="gt165-step4-stat-tile"') == 12
+    assert html.count('data-grade="') == 12
+    assert 'data-grade="DATA"' not in html
+    assert '<span class="gt165-grade">DATA</span>' not in html
 
 
 def test_v166_visual_step7_final_freeze_contract():
