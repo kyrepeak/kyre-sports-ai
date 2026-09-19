@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from playwright.sync_api import sync_playwright
 
@@ -26,12 +26,12 @@ def verify_live_step5(
     artifacts = Path(artifact_dir)
     artifacts.mkdir(parents=True, exist_ok=True)
 
+    # Certify the matchup production is serving now. Do not pin this verifier
+    # to a stale historical date/event after the live selector has advanced.
     query = urlencode(
         {
             full.v163.ROUTE_QUERY_SPORT: full.v163.CFB_SPORT,
             full.v163.ROUTE_QUERY_MARKET: full.v163.GAME_TOTAL_MARKET,
-            full.v163.DATE_QUERY_KEY: full.CERT_DATE,
-            full.v163.EVENT_QUERY_KEY: full.CERT_EVENT_ID,
         }
     )
 
@@ -54,12 +54,19 @@ def verify_live_step5(
                     "V181 did not observe the V178 Step 5 production heartbeat"
                 )
 
-            event_id = full.v163._event_from_url(page.url)
-            if event_id != full.CERT_EVENT_ID:
+            event_id = (
+                full.v163._event_from_url(page.url)
+                or full.v163._event_from_url(frame.url)
+            )
+            if not event_id or not str(event_id).isdigit():
                 raise full.ProductionVerificationV164Failure(
-                    "V181 certified event did not persist: "
-                    f"expected={full.CERT_EVENT_ID!r} actual={event_id!r}"
+                    "V184 current live Game Total event did not persist: "
+                    f"page_url={page.url!r} frame_url={frame.url!r}"
                 )
+            routed_url = frame.url or page.url
+            routed_query = parse_qs(urlparse(routed_url).query)
+            date_values = routed_query.get(full.v163.DATE_QUERY_KEY) or []
+            selected_date = str(date_values[-1] if date_values else "").strip()
 
             step5 = full._assert_step5_pace(frame)
             if (
@@ -77,10 +84,8 @@ def verify_live_step5(
 
             result = {
                 "status": "GREEN",
-                "date": full.CERT_DATE,
+                "date": selected_date,
                 "event_id": event_id,
-                "away_team": full.AWAY_TEAM,
-                "home_team": full.HOME_TEAM,
                 "v178_heartbeat": full.REQUIRED_STEP5_DEPLOYMENT_MARKER,
                 "step5": step5,
                 "frame_scan_count": len(scans),

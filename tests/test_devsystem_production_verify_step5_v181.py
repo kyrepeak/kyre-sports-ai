@@ -26,3 +26,15 @@ def test_v181_does_not_gate_on_frozen_steps_1_through_4():
 
 def test_v181_green_marker_is_stable():
     assert verifier.GREEN_MARKER == "CFB_GAME_TOTAL_V181_STEP5_PRODUCTION_GREEN"
+
+
+
+def test_v184_cert_follows_current_live_event_instead_of_stale_fixed_event():
+    source = inspect.getsource(verifier.verify_live_step5)
+    assert "CERT_EVENT_ID" not in source
+    assert "CERT_DATE" not in source
+    assert "ROUTE_QUERY_SPORT" in source
+    assert "ROUTE_QUERY_MARKET" in source
+    assert "_event_from_url(page.url)" in source
+    assert "_event_from_url(frame.url)" in source
+    assert "current live Game Total event did not persist" in source
