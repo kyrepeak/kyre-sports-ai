@@ -421,5 +421,7 @@ def test_v166_visual_step2_team_headers_match_target_contract():
     assert "Miami (FL)" in html
     assert "Wake Forest" in html
     assert html.count('class="gt165-logowrap"') >= 4
+    assert 'aria-label="Miami (FL) Offense"' in html
+    assert 'aria-label="Wake Forest Defense"' in html
     assert ".gt165-teamname" in step4.STEP4_CSS
     assert ".gt165-vs" in step4.STEP4_CSS
