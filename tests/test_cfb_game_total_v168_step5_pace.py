@@ -89,6 +89,8 @@ def _drive():
         "away": {
             "games": 3,
             "drives_per_game": 12.7,
+            "plays_per_game": 72.4,
+            "seconds_per_play": 23.8,
             "avg_drive_time_seconds": 138.0,
             "situation_neutral_seconds_per_play": 25.1,
             "no_huddle_rate": 0.38,
@@ -99,6 +101,8 @@ def _drive():
         "home": {
             "games": 3,
             "drives_per_game": 10.9,
+            "plays_per_game": 64.8,
+            "seconds_per_play": 28.1,
             "avg_drive_time_seconds": 181.0,
             "situation_neutral_seconds_per_play": 28.7,
             "no_huddle_rate": 0.14,
@@ -201,11 +205,16 @@ def test_v168_step5_missing_pbp_only_fields_fails_closed_to_check(monkeypatch):
     assert away["SITUATION-NEUTRAL PACE"]["badge"] == "DATA LIMITED"
 
 
-def test_v168_step5_core_pace_failure_is_data_limited(monkeypatch):
+def test_v168_step5_core_ncaa_failure_recovers_from_verified_pbp(monkeypatch):
     _bypass_ppd(monkeypatch)
-    pace = _pace()
-    pace["model_ready"] = False
-    pace["coverage"] = 0.25
+    pace = {
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.0,
+        "away": {},
+        "home": {},
+        "sportsbook_input_used": False,
+    }
     contract = step5.build_step5_contract(
         _identity(),
         _away(),
@@ -214,8 +223,56 @@ def test_v168_step5_core_pace_failure_is_data_limited(monkeypatch):
         pace=pace,
         drive_evidence=_drive(),
     )
+    assert contract["state"] == "READY"
+    assert contract["ready"] is True
+    assert contract["ready_tiles"] == 12
+    assert contract["coverage"] == 1.0
+    assert contract["presentation_fallback_used"] is True
+    assert contract["expected_combined_plays"] == 137.2
+    assert contract["expected_away_drives"] == 12.7
+    assert contract["expected_home_drives"] == 10.9
+    assert contract["expected_combined_drives"] == 23.6
+    assert contract["tempo_grade"] == "PBP"
+    assert contract["matchup_read"] != "PACE DATA LIMITED"
+    assert contract["biggest_accelerator"] != "Verified pace edge unavailable"
+    assert contract["biggest_brake"] != "Verified pace brake unavailable"
+    assert contract["data_confidence"] >= 90
+    assert contract["pace_engine"]["model_ready"] is False
+    assert contract["sportsbook_projection_influence"] == 0.0
+    assert contract["may_modify_projection"] is False
+
+    away_tiles = {row["label"]: row for row in contract["away"]["tiles"]}
+    home_tiles = {row["label"]: row for row in contract["home"]["tiles"]}
+    assert away_tiles["PLAYS / GAME"]["badge"] == "PBP"
+    assert away_tiles["SECONDS / PLAY"]["badge"] == "PBP"
+    assert home_tiles["PLAYS / GAME"]["badge"] == "PBP"
+    assert home_tiles["SECONDS / PLAY"]["badge"] == "PBP"
+
+
+def test_v168_step5_truly_sparse_pace_still_fails_closed(monkeypatch):
+    _bypass_ppd(monkeypatch)
+    pace = {
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.0,
+        "away": {},
+        "home": {},
+    }
+    sparse = _drive()
+    for side in ("away", "home"):
+        sparse[side]["plays_per_game"] = None
+        sparse[side]["seconds_per_play"] = None
+    contract = step5.build_step5_contract(
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-19"},
+        pace=pace,
+        drive_evidence=sparse,
+    )
     assert contract["state"] == "DATA LIMITED"
     assert contract["ready"] is False
+    assert contract["presentation_fallback_used"] is False
 
 
 def test_v168_drive_parser_reads_drives_no_huddle_and_neutral_pace():
@@ -256,6 +313,8 @@ def test_v168_drive_parser_reads_drives_no_huddle_and_neutral_pace():
     assert result["games"] == 1
     assert result["drive_count"] == 1
     assert result["drives_per_game"] == 1.0
+    assert result["plays_per_game"] == 3.0
+    assert result["seconds_per_play"] == 50.0
     assert result["avg_drive_time_seconds"] == 150.0
     assert result["situation_neutral_seconds_per_play"] == 30.0
     assert round(result["no_huddle_rate"], 3) == round(1 / 3, 3)
@@ -318,6 +377,8 @@ def test_v168_sportsdataverse_parser_reads_flattened_drive_pace_and_no_huddle():
     assert result["games"] == 1
     assert result["drive_count"] == 2
     assert result["drives_per_game"] == 2.0
+    assert result["plays_per_game"] == 4.0
+    assert result["seconds_per_play"] == 62.5
     assert result["avg_drive_time_seconds"] == 125.0
     assert result["situation_neutral_seconds_per_play"] == 27.5
     assert result["no_huddle_rate"] == 0.25
@@ -376,6 +437,10 @@ def test_v168_sportsdataverse_is_primary_and_espn_is_not_required(monkeypatch):
     assert result["home"]["espn_fallback_used"] is False
     assert result["away"]["sportsdataverse_games_loaded"] == 2
     assert result["home"]["sportsdataverse_games_loaded"] == 2
+    assert result["away"]["plays_per_game"] == 2.0
+    assert result["home"]["plays_per_game"] == 2.0
+    assert result["away"]["seconds_per_play"] == 60.0
+    assert result["home"]["seconds_per_play"] == 60.0
     assert result["away"]["source"] == "SportsDataverse current-season completed-game PBP"
     assert result["home"]["source"] == "SportsDataverse current-season completed-game PBP"
 
