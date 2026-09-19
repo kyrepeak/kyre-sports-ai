@@ -28,6 +28,7 @@ STEP4_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP4_MATCHUP_V2_NEON_STACK_ACTIVE"
 STEP4_DATA_MARKER = "CFB_GAME_TOTAL_STEP4_VERIFIED_NCAA_MATCHUP_ENGINE_ACTIVE"
 STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"
 STEP4_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"
+STEP4_GRADE_MARKER = "CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"
 
 STEP4_CSS = r"""
 <style>
@@ -218,6 +219,39 @@ def _grade(edge: Any) -> tuple[str, str]:
     return "D", "tough"
 
 
+def _presentation_edge(
+    label: str,
+    offense_value: Any,
+    defense_value: Any,
+) -> float | None:
+    """Return a conservative display-only matchup signal.
+
+    This signal is NEVER passed into projection/model math. Ranked NCAA engine
+    edges always win. It exists only so verified multi-source fallback values
+    render an honest letter grade instead of the old DATA placeholder.
+
+    Passing/rushing/third-down/red-zone values are directly comparable
+    offense-vs-defense rates and receive a damped relative-difference signal.
+    Raw sack/turnover rates do not contain enough league context to infer a
+    directional edge safely, so they resolve to neutral (B) rather than a
+    fabricated advantage.
+    """
+    offense = _float(offense_value)
+    defense = _float(defense_value)
+    if offense is None or defense is None:
+        return None
+
+    if label in {"Sack Matchup", "Turnover Pressure"}:
+        return 0.0
+
+    if label not in {"Pass Yds/G", "Rush Yds/G", "3rd Down", "Red Zone"}:
+        return None
+
+    midpoint = max((abs(offense) + abs(defense)) / 2.0, 1.0)
+    signal = 0.40 * ((offense - defense) / midpoint)
+    return max(-1.0, min(1.0, float(signal)))
+
+
 def _legacy_rows(battle: Mapping[str, Any] | None) -> dict[str, Mapping[str, Any]]:
     return {
         _clean(row.get("label")): row
@@ -245,12 +279,24 @@ def _legacy_tile(
         }
     offense = legacy._fmt(row.get("offense_value"), signed=bool(row.get("epa")))
     defense = legacy._fmt(row.get("defense_value"), signed=bool(row.get("epa")))
+    display_edge = _presentation_edge(label, offense, defense)
+    if display_edge is None:
+        return {
+            "label": label,
+            "ready": False,
+            "grade": "—",
+            "tone": "limited",
+            "edge": None,
+            "detail": unavailable_note,
+        }
+    grade, tone = _grade(display_edge)
     return {
         "label": label,
         "ready": True,
-        "grade": "DATA",
-        "tone": "neutral",
-        "edge": None,
+        "grade": grade,
+        "tone": tone,
+        "edge": display_edge,
+        "grade_basis": "verified value comparison",
         "detail": f"OFF {offense} • DEF {defense}",
     }
 
@@ -264,15 +310,32 @@ def _engine_tile(
 ) -> dict[str, Any]:
     dim = dimension or {}
     if bool(dim.get("ready")):
-        grade, tone = _grade(dim.get("edge"))
         offense = _clean(dim.get("offense_value")) or _rank_text(dim.get("offense_rank")) or "—"
         defense = _clean(dim.get("defense_value")) or _rank_text(dim.get("defense_rank")) or "—"
+        edge = _float(dim.get("edge"))
+        grade_basis = "verified NCAA rank edge"
+        if edge is None:
+            edge = _presentation_edge(label, offense, defense)
+            grade_basis = "verified value comparison"
+        if edge is None:
+            return {
+                "label": label,
+                "ready": False,
+                "grade": "—",
+                "tone": "limited",
+                "edge": None,
+                "detail": unavailable_note,
+                "offense_rank": dim.get("offense_rank"),
+                "defense_rank": dim.get("defense_rank"),
+            }
+        grade, tone = _grade(edge)
         return {
             "label": label,
             "ready": True,
             "grade": grade,
             "tone": tone,
-            "edge": _float(dim.get("edge")),
+            "edge": edge,
+            "grade_basis": grade_basis,
             "detail": f"OFF {offense} • DEF {defense}",
             "offense_rank": dim.get("offense_rank"),
             "defense_rank": dim.get("defense_rank"),
@@ -716,6 +779,7 @@ __all__ = [
     "STEP4_CSS",
     "STEP4_DATA_MARKER",
     "STEP4_DEPLOYMENT_MARKER",
+    "STEP4_GRADE_MARKER",
     "STEP4_PRESENTATION_MARKER",
     "STEP4_VISUAL_MARKER",
     "build_step4_contract",
