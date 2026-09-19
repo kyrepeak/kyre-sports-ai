@@ -69,16 +69,20 @@ STEP4_CSS = r"""
 .gt165-read.mixed{border-color:rgba(244,204,90,.38);background:rgba(126,90,18,.16)}
 .gt165-read.mixed strong{color:#f4ce63}.gt165-read.mixed span{color:#d6c18b}
 
-.gt165-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:9px}
-.gt165-metric{min-width:0;padding:7px 6px;border-radius:10px;background:rgba(8,42,62,.76);border:1px solid rgba(70,165,213,.18)}
-.gt165-metric label{display:block;color:#91adbf;font-size:6px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gt165-grade{display:inline-flex;align-items:center;justify-content:center;margin-top:5px;padding:2px 5px;min-width:25px;border-radius:7px;font-size:10px;font-weight:950}
-.gt165-metric small{display:block;color:#6f8ea2;font-size:5.8px;line-height:1.25;margin-top:4px;min-height:15px}
-.gt165-metric.fav{border-color:rgba(74,236,173,.28);background:rgba(12,77,59,.24)}.gt165-metric.fav .gt165-grade{color:#54efae;background:rgba(49,190,131,.16)}
-.gt165-metric.tough{border-color:rgba(255,105,120,.27);background:rgba(89,31,43,.22)}.gt165-metric.tough .gt165-grade{color:#ff7b88;background:rgba(203,65,83,.15)}
-.gt165-metric.mixed{border-color:rgba(244,202,91,.25);background:rgba(89,67,22,.20)}.gt165-metric.mixed .gt165-grade{color:#ffd46f;background:rgba(199,145,39,.15)}
-.gt165-metric.limited{border-color:rgba(136,153,170,.19);background:rgba(29,43,55,.38)}.gt165-metric.limited .gt165-grade{color:#aebcc8;background:rgba(116,137,154,.12)}
-.gt165-metric.neutral .gt165-grade{color:#8fd9ff;background:rgba(55,151,208,.14)}
+.gt165-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;padding:11px}
+.gt165-metric{min-width:0;position:relative;padding:10px 9px 9px;border-radius:13px;background:linear-gradient(180deg,rgba(10,45,67,.92),rgba(6,31,49,.82));border:1px solid rgba(70,165,213,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 18px rgba(0,0,0,.12);overflow:hidden}
+.gt165-metric:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,rgba(75,180,255,.35),rgba(86,215,255,.85));opacity:.9}
+.gt165-metric label{display:block;color:#c5d9e7;font-size:7px;font-weight:950;letter-spacing:.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gt165-grade{display:inline-flex;align-items:center;justify-content:center;margin-top:7px;padding:4px 8px;min-width:34px;border-radius:9px;font-size:13px;line-height:1;font-weight:1000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.035)}
+.gt165-metric small{display:block;color:#89a5b8;font-size:6.3px;line-height:1.35;margin-top:7px;min-height:18px;font-weight:750}
+.gt165-metric.fav{border-color:rgba(74,236,173,.36);background:linear-gradient(180deg,rgba(15,84,64,.42),rgba(7,43,39,.42))}.gt165-metric.fav:before{background:linear-gradient(90deg,#31df9a,#70f0bf)}.gt165-metric.fav .gt165-grade{color:#61f2b6;background:rgba(39,181,123,.20);box-shadow:0 0 13px rgba(61,239,176,.10)}
+.gt165-metric.tough{border-color:rgba(255,105,120,.34);background:linear-gradient(180deg,rgba(101,35,46,.36),rgba(55,22,31,.38))}.gt165-metric.tough:before{background:linear-gradient(90deg,#ff6978,#ff9c75)}.gt165-metric.tough .gt165-grade{color:#ff8491;background:rgba(203,65,83,.18);box-shadow:0 0 13px rgba(255,105,120,.09)}
+.gt165-metric.mixed{border-color:rgba(244,202,91,.32);background:linear-gradient(180deg,rgba(105,78,24,.34),rgba(57,44,17,.40))}.gt165-metric.mixed:before{background:linear-gradient(90deg,#f4c95b,#ffe292)}.gt165-metric.mixed .gt165-grade{color:#ffdc78;background:rgba(199,145,39,.18);box-shadow:0 0 13px rgba(244,202,91,.08)}
+.gt165-metric.limited{border-color:rgba(136,153,170,.22);background:linear-gradient(180deg,rgba(38,52,63,.54),rgba(24,35,44,.50))}.gt165-metric.limited:before{background:linear-gradient(90deg,#7d8f9e,#aebcc8)}.gt165-metric.limited .gt165-grade{color:#bdc9d2;background:rgba(116,137,154,.14)}
+.gt165-metric.neutral{border-color:rgba(91,188,242,.28);background:linear-gradient(180deg,rgba(18,67,95,.42),rgba(8,39,58,.46))}.gt165-metric.neutral:before{background:linear-gradient(90deg,#4ab7f2,#8edcff)}.gt165-metric.neutral .gt165-grade{color:#9ee1ff;background:rgba(55,151,208,.17)}
+.gt165-metric-key{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.gt165-tone-dot{width:6px;height:6px;border-radius:999px;background:currentColor;opacity:.9;box-shadow:0 0 8px currentColor}
+.gt165-metric.fav .gt165-tone-dot{color:#61f2b6}.gt165-metric.tough .gt165-tone-dot{color:#ff8491}.gt165-metric.mixed .gt165-tone-dot{color:#ffdc78}.gt165-metric.neutral .gt165-tone-dot{color:#9ee1ff}.gt165-metric.limited .gt165-tone-dot{color:#bdc9d2}
 
 .gt165-callouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:0 9px 9px}
 .gt165-callout{border-radius:10px;padding:8px 9px;border:1px solid rgba(64,164,210,.21);background:rgba(6,32,51,.74)}
@@ -110,7 +114,10 @@ STEP4_CSS = r"""
   .gt165-teamrole{font-size:5.7px}
   .gt165-vs{width:28px;height:28px;font-size:7px}
   .gt165-read{grid-column:1/-1;justify-self:stretch;text-align:left;max-width:100%;margin-top:2px}
-  .gt165-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .gt165-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:9px}
+  .gt165-metric{padding:9px 8px;border-radius:11px}
+  .gt165-grade{font-size:12px;min-width:31px;padding:4px 7px}
+  .gt165-metric small{font-size:6px;min-height:16px}
   .gt165-callouts,.gt165-integrity{grid-template-columns:1fr}
 }
 @media(max-width:420px){
@@ -523,8 +530,9 @@ def _tile_html(tile: Mapping[str, Any]) -> str:
     grade = escape(_clean(tile.get("grade")) or "—")
     detail = escape(_clean(tile.get("detail")) or "Verified data unavailable")
     return (
-        f'<div class="gt165-metric {escape(tone)}">'
-        f'<label>{label}</label><span class="gt165-grade">{grade}</span>'
+        f'<div class="gt165-metric {escape(tone)}" data-testid="gt165-step4-stat-tile" data-tone="{escape(tone)}">'
+        f'<div class="gt165-metric-key"><label>{label}</label><span class="gt165-tone-dot" aria-hidden="true"></span></div>'
+        f'<span class="gt165-grade">{grade}</span>'
         f'<small>{detail}</small></div>'
     )
 
