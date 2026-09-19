@@ -51,12 +51,55 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 )
             except Exception:
                 exact_identity = identity
+
+            step5_game = dict(display_game or {})
+            selected_day = (
+                prior_v165.prior_v164.logo_identity._game_date(step5_game)
+                or prior_v165.prior_v164._query_selected_day()
+            )
+            event_id = (
+                prior_v165.prior_v164.logo_identity._event_id(step5_game)
+                or prior_v165.prior_v164.prior_v163._query_event_id()
+            )
+            if event_id and not prior_v165.prior_v164.logo_identity._event_id(step5_game):
+                step5_game["espn_event_id"] = event_id
+            if selected_day and not str(step5_game.get("game_date") or "").strip():
+                step5_game["game_date"] = selected_day
+
+            try:
+                step5_game = prior_v165.prior_v164.logo_identity.enrich_exact_team_ids(
+                    step5_game,
+                    prior_v165.prior_v164._selector_payload_for_day(selected_day),
+                )
+            except Exception:
+                pass
+
+            step5_away = dict(away or {})
+            step5_home = dict(home or {})
+            if selected_day:
+                try:
+                    bundle, _diag = (
+                        prior_v165.prior_v164.step3_data_owner.load_matchup_team_data(
+                            step5_game,
+                            selected_day,
+                        )
+                    )
+                    if isinstance(bundle, dict):
+                        away_foundation = bundle.get("away")
+                        home_foundation = bundle.get("home")
+                        if isinstance(away_foundation, dict):
+                            step5_away.update(away_foundation)
+                        if isinstance(home_foundation, dict):
+                            step5_home.update(home_foundation)
+                except Exception:
+                    pass
+
             return step5_owner.render_step5_html(
                 status,
                 exact_identity,
-                away,
-                home,
-                display_game,
+                step5_away,
+                step5_home,
+                step5_game,
             )
         return original_step_evidence(
             number,
