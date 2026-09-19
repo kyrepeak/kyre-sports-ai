@@ -652,9 +652,7 @@ def test_v168_page_advances_only_step5_owner():
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
     assert "STEP4_GRADE_MARKER = prior_v165.STEP4_GRADE_MARKER" in source
-    assert "step3_data_owner.load_matchup_team_data" in source
-    assert "step5_away.update(away_foundation)" in source
-    assert "step5_home.update(home_foundation)" in source
+    assert "step3_data_owner.load_matchup_team_data" not in source
     assert "step3_owner.enrich_step3_inputs" not in source
     assert "step3_owner._runtime_v2_step3_bundle" in source
     assert "step5_away.update(step3_away)" in source
@@ -699,5 +697,13 @@ def test_v168_visual_markers_are_emitted(monkeypatch):
 
 def test_v182_step5_page_does_not_rerun_full_step3_live_enrichment():
     source = PAGE.read_text(encoding="utf-8")
+    assert "step3_owner.enrich_step3_inputs" not in source
+    assert "step3_owner._runtime_v2_step3_bundle" in source
+
+
+
+def test_v183_step5_page_has_zero_heavy_ncaa_prerender_calls():
+    source = PAGE.read_text(encoding="utf-8")
+    assert "step3_data_owner.load_matchup_team_data" not in source
     assert "step3_owner.enrich_step3_inputs" not in source
     assert "step3_owner._runtime_v2_step3_bundle" in source
