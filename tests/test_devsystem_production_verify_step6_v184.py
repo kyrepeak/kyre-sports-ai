@@ -25,6 +25,8 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert "for index, candidate in enumerate(CERT_CANDIDATES" in source
     assert 'CERT_QUERY_KEY: "1"' in source
     assert 'data-testid="gt184-step6-cert-surface"' in source
+    assert "cert_surface_present = cert_surface.count() > 0" in source
+    assert "V184 dedicated Step 6 certification surface marker is missing" not in source
     assert "event_id != cert_event_id" in source
     assert "selected_date != cert_date" in source
 
