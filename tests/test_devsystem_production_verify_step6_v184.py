@@ -8,13 +8,16 @@ from devsystem import production_verify_step6_v184 as verifier
 def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isolated():
     source = inspect.getsource(verifier.verify_live_step6)
     wait_source = inspect.getsource(verifier._wait_for_live_step6)
+    scan_source = inspect.getsource(verifier._scan_step6_cert_frame)
     module_source = inspect.getsource(verifier)
     assert "ROUTE_QUERY_SPORT" in source
     assert "ROUTE_QUERY_MARKET" in source
     assert "_event_from_url" in source
     assert "STEP6_ROOT_SELECTOR" in wait_source
     assert "_scan_step6_cert_frame" in wait_source
-    assert "CERT_SURFACE_SELECTOR" in wait_source
+    assert "CERT_SURFACE_SELECTOR" in scan_source
+    assert "STEP6_ROOT_SELECTOR" in scan_source
+    assert "cert_count > 0 and root_count > 0" in scan_source
     assert "v163_nav._find_v163_frame" not in wait_source
     assert "page.reload" in wait_source
     assert "_wait_for_v164_patch_deployment" not in wait_source
