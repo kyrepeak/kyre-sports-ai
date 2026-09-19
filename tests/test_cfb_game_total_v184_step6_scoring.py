@@ -299,3 +299,118 @@ def test_v184_router_activates_only_page_v18_and_app_boots_router_v163():
 def test_v184_page_reexports_step6_deployment_marker():
     source = PAGE.read_text(encoding="utf-8")
     assert "STEP6_DEPLOYMENT_MARKER = step6_owner.STEP6_DEPLOYMENT_MARKER" in source
+
+
+
+def _snapshot_identity():
+    return {
+        "away": {
+            "team": "Coastal Carolina",
+            "team_id": "324",
+            "conference": "Sun Belt",
+        },
+        "home": {
+            "team": "Delaware",
+            "team_id": "48",
+            "conference": "CUSA",
+        },
+    }
+
+
+def _snapshot_away():
+    return {
+        "team": "Coastal Carolina",
+        "completed_games": [
+            {"event_id": "401856780"},
+            {"event_id": "401868008"},
+        ],
+    }
+
+
+def _snapshot_home():
+    return {
+        "team": "Delaware",
+        "completed_games": [
+            {"event_id": "401864424"},
+            {"event_id": "401856684"},
+        ],
+    }
+
+
+def test_v184_exact_snapshot_match_is_nonblocking_and_ready(monkeypatch):
+    def forbidden_network(_event_id):
+        raise AssertionError("live SportsDataverse fetch must not run on exact snapshot hit")
+
+    monkeypatch.setattr(step6.step5_pace, "_fetch_sportsdataverse_game", forbidden_network)
+
+    evidence = step6._load_pbp_evidence(
+        _snapshot_identity(),
+        _snapshot_away(),
+        _snapshot_home(),
+    )
+    assert evidence["snapshot_used"] is True
+    assert evidence["unique_events_loaded"] == 4
+    assert evidence["away_offense"]["delivery"] == "sportsdataverse_github_raw_snapshot"
+    assert evidence["away_defense"]["delivery"] == "sportsdataverse_github_raw_snapshot"
+    assert evidence["home_offense"]["delivery"] == "sportsdataverse_github_raw_snapshot"
+    assert evidence["home_defense"]["delivery"] == "sportsdataverse_github_raw_snapshot"
+
+    contract = step6.build_step6_contract(
+        _snapshot_identity(),
+        _snapshot_away(),
+        _snapshot_home(),
+        {
+            "espn_event_id": "401869940",
+            "game_date": "2026-09-19",
+        },
+        evidence=evidence,
+    )
+    assert contract["state"] == "READY"
+    assert contract["coverage"] == 100
+    assert contract["ready_tiles"] == 12
+    assert contract["tile_count"] == 12
+    assert contract["sportsbook_input_used"] is False
+    assert contract["projection_mutation"] is False
+
+
+def test_v184_snapshot_rejects_event_drift_and_uses_live_fallback(monkeypatch):
+    calls = []
+
+    def empty_live_fetch(event_id):
+        calls.append(str(event_id))
+        return {}
+
+    monkeypatch.setattr(step6.step5_pace, "_fetch_sportsdataverse_game", empty_live_fetch)
+    away = _snapshot_away()
+    away["completed_games"][-1] = {"event_id": "499999999"}
+
+    evidence = step6._load_pbp_evidence(
+        _snapshot_identity(),
+        away,
+        _snapshot_home(),
+    )
+    assert evidence["snapshot_used"] is False
+    assert "499999999" in calls
+
+    contract = step6.build_step6_contract(
+        _snapshot_identity(),
+        away,
+        _snapshot_home(),
+        {"game_date": "2026-09-19"},
+        evidence=evidence,
+    )
+    assert contract["state"] == "DATA LIMITED"
+    assert contract["ready_tiles"] < 12
+    assert contract["projection_mutation"] is False
+
+
+def test_v184_snapshot_file_locks_verified_current_provenance():
+    snapshot = Path("data/cfb_step6_scoring_snapshot_v1.json").read_text(
+        encoding="utf-8"
+    )
+    assert '"current_event_id": "401869940"' in snapshot
+    assert '"current_game_date": "2026-09-19"' in snapshot
+    assert '"401864424": "af13fc7044fc65a67586fcc1ad53d3a7f4c13b55"' in snapshot
+    assert '"401856684": "e087aebe4c8e79090d998809c95dc7d94dbde4bc"' in snapshot
+    assert '"401856780": "bb4d0ed6fa6afdff3f93124fbe3e1c5e3435fc93"' in snapshot
+    assert '"401868008": "d63674cd525c8751da6d34f3daeb83c2acb25441"' in snapshot
