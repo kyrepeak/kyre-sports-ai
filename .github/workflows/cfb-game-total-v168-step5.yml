@@ -9,6 +9,8 @@ on:
       - "streamlit_memory_lazy_router_v162.py"
       - "devsystem/task_ledgers/cfb-game-total-evidence-step5.json"
       - "tests/test_cfb_game_total_v168_step5_pace.py"
+      - "devsystem/production_verify_v164_logos.py"
+      - "tests/test_devsystem_production_verify_v164_logos.py"
       - ".github/workflows/cfb-game-total-v168-step5.yml"
   workflow_dispatch:
 
