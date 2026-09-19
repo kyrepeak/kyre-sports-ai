@@ -671,10 +671,17 @@ def test_v168_router_advances_only_exact_game_total_page_and_preserves_step4_mar
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
 
 
-def test_app_activates_v162_router():
+def test_app_activates_v163_router_while_preserving_v162_delegate():
     source = APP.read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_v162 import record_bootstrap_import_ms, render_app" in source
-    assert "from streamlit_memory_lazy_router_v161 import record_bootstrap_import_ms, render_app" not in source[source.find("try:"):]
+    router_v163 = (ROOT / "streamlit_memory_lazy_router_v163.py").read_text(encoding="utf-8")
+    runtime = source[source.find("try:"):]
+    assert "from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app" in runtime
+    assert "import streamlit_memory_lazy_router_v162 as prior" in router_v163
+    assert "return prior.render_app()" in router_v163
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v162"' in router_v163
+    assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in router_v163
+    assert "MAY_MODIFY_PROJECTION = False" in router_v163
+    assert "from streamlit_memory_lazy_router_v161 import record_bootstrap_import_ms, render_app" not in runtime
 
 
 def test_v168_visual_markers_are_emitted(monkeypatch):
