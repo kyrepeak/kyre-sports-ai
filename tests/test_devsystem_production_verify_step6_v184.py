@@ -12,7 +12,6 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert "ROUTE_QUERY_SPORT" in source
     assert "ROUTE_QUERY_MARKET" in source
     assert "_event_from_url" in source
-    assert "STEP6_ROOT_SELECTOR" in wait_source
     scan_source = inspect.getsource(verifier._scan_step6_frames)
     assert "_scan_step6_frames" in wait_source
     assert "STEP6_ROOT_SELECTOR" in scan_source
