@@ -16,6 +16,8 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from html.parser import HTMLParser
+import json
+from pathlib import Path
 import re
 from typing import Any, Mapping
 from urllib.parse import urljoin
@@ -28,6 +30,11 @@ MODEL_VERSION = "CFB GAME TOTAL STEP4 MULTISOURCE V1 • CFBSTATS DISPLAY FALLBA
 SOURCE = "cfbstats.com"
 ROOT = "https://cfbstats.com"
 TIMEOUT_SECONDS = 7
+OFFICIAL_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent
+    / "data"
+    / "cfb_game_total_step4_official_snapshot_v1.json"
+)
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
@@ -88,6 +95,80 @@ def _season(game: Mapping[str, Any] | None) -> int:
         if match:
             return int(match.group(1))
     return datetime.now(timezone.utc).year
+
+
+def _load_official_snapshot() -> dict[str, Any]:
+    try:
+        payload = json.loads(OFFICIAL_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def _official_metrics(
+    season: int,
+    profile: Mapping[str, Any],
+) -> dict[str, Any]:
+    payload = _load_official_snapshot()
+    if int(payload.get("season") or 0) != int(season):
+        return {}
+    teams = payload.get("teams") or {}
+    if not isinstance(teams, Mapping):
+        return {}
+    for raw in (
+        profile.get("team"),
+        profile.get("name"),
+        profile.get("team_name"),
+        profile.get("team_slug"),
+    ):
+        key = _key(raw)
+        row = teams.get(key) if key else None
+        if not isinstance(row, Mapping):
+            continue
+        metrics = row.get("metrics") or {}
+        if not isinstance(metrics, Mapping):
+            continue
+        return {
+            **dict(metrics),
+            "official_source": _clean(row.get("source")),
+            "official_source_url": _clean(row.get("source_url")),
+            "official_snapshot": True,
+        }
+    return {}
+
+
+def _merge_official_metrics(
+    secondary: Mapping[str, Any] | None,
+    official: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    merged = dict(secondary or {})
+    official = official or {}
+    disagreements: list[dict[str, Any]] = []
+    metadata = {"official_source", "official_source_url", "official_snapshot"}
+    for key, value in official.items():
+        if key in metadata:
+            continue
+        official_value = _float(value)
+        secondary_value = _float(merged.get(key))
+        if (
+            official_value is not None
+            and secondary_value is not None
+            and abs(official_value - secondary_value) > 0.001
+        ):
+            disagreements.append(
+                {
+                    "field": key,
+                    "secondary": secondary_value,
+                    "official": official_value,
+                    "winner": "official",
+                }
+            )
+        if value is not None:
+            merged[key] = value
+    for key in metadata:
+        if key in official:
+            merged[key] = official[key]
+    return merged, disagreements
 
 
 def _fetch_requests(url: str) -> str:
@@ -484,47 +565,70 @@ def build_display_fallback(
     away = away or {}
     home = home or {}
 
+    official_away = _official_metrics(season, away)
+    official_home = _official_metrics(season, home)
+
     directory, directory_diag = _load_directory(season)
     away_ref = _resolve_team(directory, away)
     home_ref = _resolve_team(directory, home)
-    if not away_ref or not home_ref:
-        return {
-            "ready": False,
-            "source": SOURCE,
-            "season": season,
-            "reason": "cfbstats team identity did not resolve uniquely",
-            "away_offense": {},
-            "home_offense": {},
-            "diagnostics": {
-                "directory": directory_diag,
-                "away_ref": away_ref,
-                "home_ref": home_ref,
-            },
-        }
 
+    away_secondary: dict[str, Any] = {}
+    home_secondary: dict[str, Any] = {}
+    away_diag: dict[str, Any] = {}
+    home_diag: dict[str, Any] = {}
+
+    futures: dict[str, Any] = {}
     with ThreadPoolExecutor(max_workers=2) as pool:
-        away_future = pool.submit(
-            _load_team_metrics,
-            season,
-            str(away_ref["team_id"]),
-        )
-        home_future = pool.submit(
-            _load_team_metrics,
-            season,
-            str(home_ref["team_id"]),
-        )
-        away_result = away_future.result()
-        home_result = home_future.result()
+        if away_ref:
+            futures["away"] = pool.submit(
+                _load_team_metrics,
+                season,
+                str(away_ref["team_id"]),
+            )
+        if home_ref:
+            futures["home"] = pool.submit(
+                _load_team_metrics,
+                season,
+                str(home_ref["team_id"]),
+            )
+        if "away" in futures:
+            away_secondary, away_diag = futures["away"].result()
+        if "home" in futures:
+            home_secondary, home_diag = futures["home"].result()
 
-    away_metrics, away_diag = away_result
-    home_metrics, home_diag = home_result
+    away_metrics, away_disagreements = _merge_official_metrics(
+        away_secondary,
+        official_away,
+    )
+    home_metrics, home_disagreements = _merge_official_metrics(
+        home_secondary,
+        official_home,
+    )
+
     ready = bool(away_metrics and home_metrics)
+    source_parts: list[str] = []
+    if away_secondary or home_secondary:
+        source_parts.append(SOURCE)
+    if official_away or official_home:
+        source_parts.append("official team athletics audit")
+    source = (
+        "multi-source: " + " + ".join(source_parts)
+        if len(source_parts) > 1
+        else (source_parts[0] if source_parts else "unresolved")
+    )
+
+    reason = ""
+    if not ready:
+        reason = (
+            "multi-source team metrics incomplete; neither secondary provider "
+            "nor official audit snapshot supplied both teams"
+        )
 
     return {
         "ready": ready,
-        "source": SOURCE,
+        "source": source,
         "season": season,
-        "reason": "" if ready else "cfbstats team metrics incomplete",
+        "reason": reason,
         "away_team_id": str(away_ref.get("team_id") or ""),
         "home_team_id": str(home_ref.get("team_id") or ""),
         "away_metrics": away_metrics,
@@ -539,11 +643,18 @@ def build_display_fallback(
             "directory": directory_diag,
             "away": away_diag,
             "home": home_diag,
+            "away_ref": away_ref,
+            "home_ref": home_ref,
+            "official_away": bool(official_away),
+            "official_home": bool(official_home),
+            "source_disagreements": [
+                *away_disagreements,
+                *home_disagreements,
+            ],
         },
         "sportsbook_projection_influence": SPORTSBOOK_PROJECTION_INFLUENCE,
         "may_modify_projection": MAY_MODIFY_PROJECTION,
     }
-
 
 def merge_missing_dimensions(
     engine: Mapping[str, Any] | None,

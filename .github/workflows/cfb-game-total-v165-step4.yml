@@ -6,6 +6,7 @@ on:
       - "app.py"
       - "cfb_game_total_step4_matchup_v2.py"
       - "cfb_game_total_step4_multisource_v1.py"
+      - "data/cfb_game_total_step4_official_snapshot_v1.json"
       - "cfb_game_total_clean_page_v16.py"
       - "streamlit_memory_lazy_router_v161.py"
       - "devsystem/production_verify_v4.py"

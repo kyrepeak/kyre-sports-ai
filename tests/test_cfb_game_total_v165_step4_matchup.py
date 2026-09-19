@@ -362,5 +362,5 @@ def test_v165_step4_render_exposes_100_percent_multisource_proof():
     )
     assert 'data-step4-state="READY"' in html
     assert 'data-step4-coverage="100"' in html
-    assert "cfbstats fallback recovered" in html
+    assert "cfbstats.com recovered" in html
     assert "Visible matchup coverage: 100%." in html
