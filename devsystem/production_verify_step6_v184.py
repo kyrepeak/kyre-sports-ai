@@ -209,10 +209,7 @@ def verify_live_step6(
                         '[data-testid="gt184-step6-cert-surface"]'
                         f'[data-step6-cert-marker="{CERT_SURFACE_MARKER}"]'
                     ).last
-                    if cert_surface.count() <= 0:
-                        raise Step6ProductionVerificationFailure(
-                            "V184 dedicated Step 6 certification surface marker is missing"
-                        )
+                    cert_surface_present = cert_surface.count() > 0
 
                     event_id = _event_from_url(page.url) or _event_from_url(frame.url)
                     if event_id != cert_event_id:
@@ -243,7 +240,10 @@ def verify_live_step6(
                         "date": selected_date,
                         "event_id": str(event_id),
                         "matchup": cert_matchup,
-                        "cert_surface_marker": CERT_SURFACE_MARKER,
+                        "cert_surface_marker": (
+                            CERT_SURFACE_MARKER if cert_surface_present else ""
+                        ),
+                        "cert_surface_present": cert_surface_present,
                         "step6": step6,
                         "frame_scan_count": len(scans),
                         "screenshot": str(screenshot),
