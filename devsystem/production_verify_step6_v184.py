@@ -23,6 +23,8 @@ class Step6ProductionVerificationFailure(RuntimeError):
 
 
 GREEN_MARKER = "CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN"
+ROUTER_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_V184_MULTIPATH_DEPLOYMENT_ACTIVE"
+DEPLOYMENT_WAIT_SECONDS = 480.0
 STEP6_MARKER = "CFB_GAME_TOTAL_STEP6_SCORING_CREATION_ACTIVE"
 STEP6_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP6_V184_DEPLOYMENT_ACTIVE"
 STEP6_ROOT_SELECTOR = (
@@ -67,6 +69,40 @@ def _load_streamlit_url() -> str:
     targets_path = Path(__file__).resolve().parents[1] / "devsystem" / "production_targets_v1.json"
     targets = json.loads(targets_path.read_text(encoding="utf-8"))
     return str(targets["streamlit"]["url"]).rstrip("/")
+
+
+def _wait_for_router_deployment(page, timeout_seconds: float = DEPLOYMENT_WAIT_SECONDS):
+    deadline = time.monotonic() + timeout_seconds
+    last_body = ""
+    last_error = ""
+    last_scans: list[dict] = []
+
+    while time.monotonic() < deadline:
+        try:
+            frame, body, scans = v163_nav._find_v163_frame(
+                page,
+                timeout_seconds=min(45.0, max(5.0, deadline - time.monotonic())),
+            )
+            last_body = str(body or "")
+            last_scans = scans
+            if ROUTER_DEPLOYMENT_MARKER in last_body:
+                return frame, body, scans
+            last_error = (
+                "V184 multipath deployment heartbeat not live yet: "
+                + ROUTER_DEPLOYMENT_MARKER
+            )
+        except Exception as exc:
+            last_error = f"{type(exc).__name__}: {exc}"[:1200]
+
+        page.wait_for_timeout(5000)
+        page.reload(wait_until="domcontentloaded", timeout=120000)
+
+    raise Step6ProductionVerificationFailure(
+        "V184 Streamlit deployment is stale: "
+        f"missing={ROUTER_DEPLOYMENT_MARKER!r} "
+        f"last_error={last_error!r} scans={last_scans!r} "
+        f"body_start={last_body[:3000]!r}"
+    )
 
 
 def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
@@ -200,6 +236,8 @@ def verify_live_step6(
                         wait_until="domcontentloaded",
                         timeout=120000,
                     )
+                    if index == 1:
+                        _wait_for_router_deployment(page)
                     frame, root, body, scans = _wait_for_live_step6(
                         page,
                         timeout_seconds=float(candidate["wait_seconds"]),
