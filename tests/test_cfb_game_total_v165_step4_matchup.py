@@ -190,13 +190,19 @@ def test_v165_router_advances_only_exact_game_total_page():
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
 
 
-def test_app_advances_to_v162_and_preserves_frozen_router_chain():
+def test_app_advances_additively_to_v163_and_preserves_frozen_router_chain():
     source = APP.read_text()
-    assert "from streamlit_memory_lazy_router_v162 import record_bootstrap_import_ms, render_app" in source
+    assert "from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app" in source
+
+    router_v163 = (ROOT / "streamlit_memory_lazy_router_v163.py").read_text()
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v162"' in router_v163
+    assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v18"' in router_v163
+    assert "CFB_GAME_TOTAL_V184_STEP6_SCORING_CREATION_ACTIVE" in router_v163
 
     router_v162 = (ROOT / "streamlit_memory_lazy_router_v162.py").read_text()
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v161"' in router_v162
     assert "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE" in router_v162
+    assert "CFB_GAME_TOTAL_V168_STEP5_PACE_POSSESSIONS_ACTIVE" in router_v162
 
     router_v161 = (ROOT / "streamlit_memory_lazy_router_v161.py").read_text()
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v160"' in router_v161
