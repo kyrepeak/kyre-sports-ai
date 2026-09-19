@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-19T19:58:00Z",
+  "generated_at": "2026-09-19T21:46:00Z",
   "source": "SportsDataverse cfbfastR-cfb-raw final game JSON",
   "purpose": "Nonblocking Step 5 presentation cache; live PBP remains fallback for uncached teams/events.",
   "current_event_id": "401869940",
@@ -27,6 +27,26 @@
         "source": "SportsDataverse current-season completed-game PBP"
       }
     },
+    "96": {
+      "team": "Kentucky",
+      "team_id": "96",
+      "event_ids": [
+        "401856659"
+      ],
+      "metrics": {
+        "games": 1,
+        "drive_count": 11,
+        "drives_per_game": 11,
+        "plays_per_game": 65,
+        "seconds_per_play": 33.375,
+        "avg_drive_time_seconds": 162.63636363636363,
+        "situation_neutral_seconds_per_play": 33.375,
+        "no_huddle_rate": 0.09230769230769231,
+        "text_plays": 65,
+        "no_huddle_plays": 6,
+        "source": "SportsDataverse current-season completed-game PBP"
+      }
+    },
     "324": {
       "team": "Coastal Carolina",
       "team_id": "324",
@@ -47,6 +67,29 @@
         "no_huddle_plays": 124,
         "source": "SportsDataverse current-season completed-game PBP"
       }
+    },
+    "333": {
+      "team": "Alabama",
+      "team_id": "333",
+      "event_ids": [
+        "401856634"
+      ],
+      "metrics": {
+        "games": 1,
+        "drive_count": 11,
+        "drives_per_game": 11,
+        "plays_per_game": 86,
+        "seconds_per_play": 27.130434782608695,
+        "avg_drive_time_seconds": 212.0909090909091,
+        "situation_neutral_seconds_per_play": 27.130434782608695,
+        "no_huddle_rate": 0,
+        "text_plays": 86,
+        "no_huddle_plays": 0,
+        "source": "SportsDataverse current-season completed-game PBP"
+      }
     }
-  }
+  },
+  "step6_certification_event_id": "401856674",
+  "step6_certification_game_date": "2026-09-12",
+  "step6_certification_matchup": "Alabama @ Kentucky"
 }
