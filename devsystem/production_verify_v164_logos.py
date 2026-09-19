@@ -793,7 +793,7 @@ def _assert_step5_pace(frame) -> dict:
 
     return {
         "status": state,
-        "coverage": coverage,
+        "pace_coverage": coverage,
         "tile_count": tiles.count(),
         "marker": marker,
         "data_marker": data_marker,
