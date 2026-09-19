@@ -549,7 +549,7 @@ def render_step4_html(
         engine=engine,
         fallback=fallback,
         load_engine=engine is None,
-        load_fallback=bool(game) and fallback is None,
+        load_fallback=fallback is None,
     )
     state = _clean(contract.get("state"))
     state_css = "ready" if state == "READY" else "limited" if state == "DATA LIMITED" else "check"

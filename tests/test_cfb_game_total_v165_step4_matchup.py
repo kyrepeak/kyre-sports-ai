@@ -376,3 +376,32 @@ def test_v165_step4_multisource_deployment_marker_is_emitted_through_v16():
     assert "original_step4_marker = prior_v164.STEP4_PRESENTATION_MARKER" in source
     assert 'f"{STEP4_PRESENTATION_MARKER} • {STEP4_DEPLOYMENT_MARKER}"' in source
     assert "prior_v164.STEP4_PRESENTATION_MARKER = original_step4_marker" in source
+
+
+def test_v165_render_loads_fallback_through_frozen_no_game_handoff(monkeypatch):
+    calls = []
+
+    def fake_engine(game, away, home):
+        sparse = _fake_engine()
+        sparse["away_offense"]["dimensions"]["red_zone"]["ready"] = False
+        sparse["home_offense"]["dimensions"]["rushing"]["ready"] = False
+        return sparse
+
+    def fake_fallback(game, away, home):
+        calls.append({"game": game, "away": dict(away), "home": dict(home)})
+        return _fake_fallback()
+
+    monkeypatch.setattr(step4.matchup_engine, "build_matchup_engine", fake_engine)
+    monkeypatch.setattr(step4.multisource, "build_display_fallback", fake_fallback)
+
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+    )
+
+    assert len(calls) == 1
+    assert calls[0]["game"] is None
+    assert 'data-step4-state="READY"' in html
+    assert "Visible matchup coverage: 100%." in html
