@@ -141,8 +141,8 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     assert '"Red Zone"' in source
     assert '"Turnover Pressure"' in source
     assert 'state != "READY"' in source
-    assert 'get_attribute("data-step4-coverage")' in source
-    assert 'coverage != "100"' in source
+    assert 'get_attribute("data-step4-coverage")' not in source
+    assert 'coverage != "100"' not in source
     assert 'step.locator(".gt165-metric.limited").count()' in source
     assert '"VISIBLE MATCHUP COVERAGE: 100%"' in source
     assert '"CFBSTATS"' in source
@@ -184,8 +184,24 @@ def test_v164_step4_completeness_checks_are_scoped_to_step4_not_step1():
 
     assert 'get_attribute("data-step4-coverage")' not in step1
     assert 'step.locator(".gt165-metric.limited").count()' not in step1
-    assert 'get_attribute("data-step4-coverage")' in step4
-    assert 'coverage != "100"' in step4
+    assert 'get_attribute("data-step4-coverage")' not in step4
+    assert 'coverage != "100"' not in step4
+    assert 'state != "READY"' in step4
     assert 'step.locator(".gt165-metric.limited").count()' in step4
-    assert '"coverage": coverage' in step4
+    assert 'VISIBLE MATCHUP COVERAGE: 100%' in step4
     assert '"limited_tiles": limited_tiles' in step4
+
+
+def test_v164_step4_completeness_checks_live_only_inside_step4_verifier():
+    source = VERIFIER.read_text(encoding="utf-8")
+    step1_start = source.index("def _assert_step1_identity")
+    step2_start = source.index("def _assert_step2_performance_profile")
+    step4_start = source.index("def _assert_step4_matchup")
+    verify_start = source.index("def verify_live_v164")
+    step1_block = source[step1_start:step2_start]
+    step4_block = source[step4_start:verify_start]
+    assert "data-step4-coverage" not in step1_block
+    assert ".gt165-metric.limited" not in step1_block
+    assert ".gt165-metric.limited" in step4_block
+    assert "VISIBLE MATCHUP COVERAGE: 100%" in step4_block
+    assert "state != \"READY\"" in step4_block
