@@ -1,11 +1,128 @@
 {
   "version": 1,
-  "generated_at": "2026-09-19T21:37:00Z",
+  "generated_at": "2026-09-19T21:47:00Z",
   "source": "SportsDataverse cfbfastR-cfb-raw final game JSON via GitHub blob API",
   "purpose": "Network-free V184 Step 6 production certification and snapshot-first evidence fallback. Model/projection inputs remain unchanged.",
   "projection_weight": 0,
   "may_modify_projection": false,
   "certifications": {
+    "401856674": {
+      "event_id": "401856674",
+      "game_date": "2026-09-12",
+      "matchup": "Alabama @ Kentucky",
+      "away_team_id": "333",
+      "home_team_id": "96",
+      "source_blobs": {
+        "401856634": "512ac8671faf198ce016f72de8afdfcee0766722",
+        "401856659": "f65eb4b9466725f3c4a3f917cf5d77b8d2c5849c"
+      },
+      "teams": {
+        "96": {
+          "team": "Kentucky",
+          "team_id": "96",
+          "event_ids": [
+            "401856659"
+          ],
+          "offense": {
+            "games": 1,
+            "pass_explosive_rate": 0.2692307692307692,
+            "rush_explosive_rate": 0.16666666666666666,
+            "overall_explosive_rate": 0.21428571428571427,
+            "scoring_ops_pg": 7,
+            "scoring_op_conversion": 1,
+            "red_zone_td_rate": 0.8,
+            "pass_attempts": 26,
+            "rush_attempts": 30,
+            "explosive_pass_plays": 7,
+            "explosive_rush_plays": 5,
+            "drive_count": 10,
+            "red_zone_drives": 5,
+            "scoring_opportunity_drives": 7,
+            "scoring_opportunity_scores": 7,
+            "touchdown_drives": 6,
+            "source": "SportsDataverse current-season completed-game PBP",
+            "delivery": "checked_in_step6_snapshot",
+            "coverage": 1
+          },
+          "defense": {
+            "games": 1,
+            "pass_explosive_rate": 0.075,
+            "rush_explosive_rate": 0.04,
+            "overall_explosive_rate": 0.06153846153846154,
+            "scoring_ops_pg": 5,
+            "scoring_op_conversion": 0.4,
+            "red_zone_td_rate": 1,
+            "pass_attempts": 40,
+            "rush_attempts": 25,
+            "explosive_pass_plays": 3,
+            "explosive_rush_plays": 1,
+            "drive_count": 9,
+            "red_zone_drives": 2,
+            "scoring_opportunity_drives": 5,
+            "scoring_opportunity_scores": 2,
+            "touchdown_drives": 2,
+            "source": "SportsDataverse current-season completed-game PBP",
+            "delivery": "checked_in_step6_snapshot",
+            "big_play_susceptibility": 0.06153846153846154,
+            "red_zone_td_rate_allowed": 1,
+            "scoring_op_conversion_allowed": 0.4,
+            "coverage": 1
+          }
+        },
+        "333": {
+          "team": "Alabama",
+          "team_id": "333",
+          "event_ids": [
+            "401856634"
+          ],
+          "offense": {
+            "games": 1,
+            "pass_explosive_rate": 0.125,
+            "rush_explosive_rate": 0.14893617021276595,
+            "overall_explosive_rate": 0.13924050632911392,
+            "scoring_ops_pg": 7,
+            "scoring_op_conversion": 1,
+            "red_zone_td_rate": 0.8333333333333334,
+            "pass_attempts": 32,
+            "rush_attempts": 47,
+            "explosive_pass_plays": 4,
+            "explosive_rush_plays": 7,
+            "drive_count": 11,
+            "red_zone_drives": 6,
+            "scoring_opportunity_drives": 7,
+            "scoring_opportunity_scores": 7,
+            "touchdown_drives": 5,
+            "source": "SportsDataverse current-season completed-game PBP",
+            "delivery": "checked_in_step6_snapshot",
+            "coverage": 1
+          },
+          "defense": {
+            "games": 1,
+            "pass_explosive_rate": 0.13636363636363635,
+            "rush_explosive_rate": 0,
+            "overall_explosive_rate": 0.07317073170731707,
+            "scoring_ops_pg": 2,
+            "scoring_op_conversion": 1,
+            "red_zone_td_rate": 0.5,
+            "pass_attempts": 22,
+            "rush_attempts": 19,
+            "explosive_pass_plays": 3,
+            "explosive_rush_plays": 0,
+            "drive_count": 12,
+            "red_zone_drives": 2,
+            "scoring_opportunity_drives": 2,
+            "scoring_opportunity_scores": 2,
+            "touchdown_drives": 2,
+            "source": "SportsDataverse current-season completed-game PBP",
+            "delivery": "checked_in_step6_snapshot",
+            "big_play_susceptibility": 0.07317073170731707,
+            "red_zone_td_rate_allowed": 0.5,
+            "scoring_op_conversion_allowed": 1,
+            "coverage": 1
+          }
+        }
+      }
+    },
     "401856685": {
       "event_id": "401856685",
       "game_date": "2026-09-19",
