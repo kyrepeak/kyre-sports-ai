@@ -29,6 +29,8 @@ if TYPE_CHECKING:
     from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v161 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v162 import record_bootstrap_import_ms, render_app
     from streamlit_memory_lazy_router_v63 import render_app as _frozen_v63_render_app
     from streamlit_memory_lazy_router_v64 import render_app as _frozen_v64_render_app
     from streamlit_memory_lazy_router_v65 import render_app as _frozen_v65_render_app
