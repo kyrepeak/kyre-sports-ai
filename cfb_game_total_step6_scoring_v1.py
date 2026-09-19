@@ -9,7 +9,6 @@ projection influence remains 0.0%.
 """
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from html import escape
 from statistics import mean
 from typing import Any, Mapping, Sequence
@@ -392,14 +391,14 @@ def _load_pbp_evidence(
         )
     )
     payloads: dict[str, dict[str, Any]] = {}
-    if event_ids:
-        with ThreadPoolExecutor(max_workers=min(4, len(event_ids))) as pool:
-            rows = list(pool.map(step5_pace._fetch_sportsdataverse_game, event_ids))
-        payloads = {
-            event: row
-            for event, row in zip(event_ids, rows)
-            if row
-        }
+    # Streamlit cache primitives are not safe to fan out through a worker
+    # pool during render. Keep the presentation path deterministic and
+    # bounded: MAX_PBP_GAMES is 2 per team and each fetch already has a
+    # 5-second transport timeout in the frozen Step 5 source owner.
+    for event in event_ids[: 2 * MAX_PBP_GAMES]:
+        row = step5_pace._fetch_sportsdataverse_game(event)
+        if row:
+            payloads[event] = row
 
     out: dict[str, Any] = {}
     for side, profile in profiles.items():
