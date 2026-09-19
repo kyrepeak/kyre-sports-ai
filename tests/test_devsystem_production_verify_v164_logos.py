@@ -15,8 +15,12 @@ def test_v164_production_verifier_preserves_v163_gate_and_exact_logo_checks():
     assert 'REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"' in source
     assert 'REQUIRED_PATCH_MARKER = "CFB_GAME_TOTAL_V164_BLANK_EVENT_ID_HANDOFF_PATCH_ACTIVE"' in source
     assert "_wait_for_v164_patch_deployment" in source
-    assert "page.reload(" in source
-    assert "time.monotonic()" in source
+    wait_block = source.split("def _wait_for_v164_patch_deployment", 1)[1].split(
+        "def _assert_step1_identity", 1
+    )[0]
+    assert "page.reload(" not in wait_block
+    assert "time.monotonic()" not in wait_block
+    assert "timeout_seconds=timeout_seconds" in wait_block
     assert 'CERT_DATE = "2026-09-18"' in source
     assert 'CERT_EVENT_ID = "401858226"' in source
     assert 'AWAY_TEAM = "Miami"' in source
