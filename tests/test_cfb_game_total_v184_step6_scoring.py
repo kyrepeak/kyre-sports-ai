@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import cfb_game_total_step6_scoring_v1 as step6
@@ -219,6 +220,69 @@ def test_v184_sdv_parser_builds_offense_and_defense_creation_metrics():
     assert defense["big_play_susceptibility"] == defense["overall_explosive_rate"]
     assert defense["red_zone_td_rate_allowed"] == defense["red_zone_td_rate"]
     assert defense["scoring_op_conversion_allowed"] == defense["scoring_op_conversion"]
+
+
+
+def test_v184_checked_in_step6_snapshot_has_two_ready_certification_matchups():
+    payload = json.loads(
+        Path("data/cfb_step6_scoring_snapshot_v1.json").read_text(encoding="utf-8")
+    )
+    assert payload["projection_weight"] == 0.0
+    assert payload["may_modify_projection"] is False
+    rows = payload["certifications"]
+    assert set(rows) == {"401869940", "401856685"}
+
+    for event_id, row in rows.items():
+        away_id = row["away_team_id"]
+        home_id = row["home_team_id"]
+        away_team = row["teams"][away_id]
+        home_team = row["teams"][home_id]
+        identity = {
+            "away": {"team": away_team["team"], "team_id": away_id},
+            "home": {"team": home_team["team"], "team_id": home_id},
+        }
+        evidence = {
+            "away_offense": away_team["offense"],
+            "away_defense": away_team["defense"],
+            "home_offense": home_team["offense"],
+            "home_defense": home_team["defense"],
+            "away_event_ids": away_team["event_ids"],
+            "home_event_ids": home_team["event_ids"],
+            "unique_events_loaded": 4,
+        }
+        contract = step6.build_step6_contract(
+            identity,
+            {"team": away_team["team"]},
+            {"team": home_team["team"]},
+            {"game_date": row["game_date"], "espn_event_id": event_id},
+            evidence=evidence,
+        )
+        assert contract["state"] == "READY"
+        assert contract["coverage"] == 100
+        assert contract["ready_tiles"] == 12
+        assert contract["tile_count"] == 12
+        assert contract["sportsbook_input_used"] is False
+        assert contract["projection_mutation"] is False
+
+
+def test_v184_page_exposes_snapshot_first_production_cert_surface():
+    source = PAGE.read_text(encoding="utf-8")
+    assert "STEP6_SNAPSHOT_PATH" in source
+    assert "CFB_GAME_TOTAL_V184_STEP6_CERT_SNAPSHOT_V1_ACTIVE" in source
+    assert "def _step6_snapshot_bundle" in source
+    assert "def render_step6_cert_surface" in source
+    assert 'data-testid="gt184-step6-cert-surface"' in source
+    assert "evidence=snapshot_evidence" in source
+
+
+def test_v184_router_cert_mode_is_explicit_and_additive():
+    source = ROUTER.read_text(encoding="utf-8")
+    assert 'STEP6_CERT_QUERY_KEY = "ks_cfb_step6_cert"' in source
+    assert "CFB_GAME_TOTAL_V184_STEP6_CERT_ROUTER_ACTIVE" in source
+    assert "def _step6_cert_requested" in source
+    assert "def _render_step6_cert_surface" in source
+    assert "page.render_step6_cert_surface()" in source
+    assert "return _render_exact_game_total_surface()" in source
 
 
 def test_v184_page_advances_only_step6_and_freezes_step5():
