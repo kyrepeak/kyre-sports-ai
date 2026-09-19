@@ -247,3 +247,120 @@ def test_v165_step4_does_not_overstate_sparse_ranked_evidence():
     assert away["biggest_edge"] == "Verified edge data limited"
     assert away["biggest_risk"] == "Verified edge data limited"
     assert away["impact"] == "↔ Scoring impact unclear"
+
+
+def _fallback_dim(off_value, def_value):
+    return {
+        "ready": True,
+        "edge": None,
+        "offense_rank": None,
+        "defense_rank": None,
+        "offense_value": off_value,
+        "defense_value": def_value,
+        "source": "cfbstats.com",
+        "display_fallback": True,
+    }
+
+
+def _fake_fallback():
+    return {
+        "ready": True,
+        "source": "cfbstats.com",
+        "away_offense": {
+            "dimensions": {
+                "passing": _fallback_dim("427.0", "242.5"),
+                "rushing": _fallback_dim("275.5", "137.5"),
+                "third_down": _fallback_dim("64.3%", "48.2%"),
+                "red_zone": _fallback_dim("80.0%", "100.0%"),
+                "sack_pressure": _fallback_dim("0.00/g", "2.50/g"),
+                "turnovers": _fallback_dim("1.00/g", "0.50/g"),
+            }
+        },
+        "home_offense": {
+            "dimensions": {
+                "passing": _fallback_dim("290.5", "145.5"),
+                "rushing": _fallback_dim("194.5", "57.5"),
+                "third_down": _fallback_dim("46.2%", "20.7%"),
+                "red_zone": _fallback_dim("90.0%", "100.0%"),
+                "sack_pressure": _fallback_dim("1.00/g", "1.50/g"),
+                "turnovers": _fallback_dim("0.00/g", "0.00/g"),
+            }
+        },
+    }
+
+
+def test_v165_step4_multisource_fallback_fills_only_ncaa_missing_tiles():
+    sparse = _fake_engine()
+    sparse["away_offense"]["dimensions"]["red_zone"]["ready"] = False
+    sparse["away_offense"]["dimensions"]["sack_pressure"]["ready"] = False
+    sparse["away_offense"]["dimensions"]["turnovers"]["ready"] = False
+    sparse["home_offense"]["dimensions"]["rushing"]["ready"] = False
+    sparse["home_offense"]["dimensions"]["third_down"]["ready"] = False
+    sparse["home_offense"]["dimensions"]["red_zone"]["ready"] = False
+    sparse["home_offense"]["dimensions"]["sack_pressure"]["ready"] = False
+    sparse["home_offense"]["dimensions"]["turnovers"]["ready"] = False
+
+    original_passing_edge = sparse["away_offense"]["dimensions"]["passing"]["edge"]
+    contract = step4.build_step4_contract(
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-18"},
+        engine=sparse,
+        fallback=_fake_fallback(),
+    )
+
+    assert contract["state"] == "READY"
+    assert contract["verified_tiles"] == 12
+    assert contract["coverage"] == 1.0
+    assert contract["fallback_source"] == "cfbstats.com"
+    assert contract["fallback_filled"] == 8
+
+    away = {
+        tile["label"]: tile
+        for tile in contract["away_offense_vs_home_defense"]["tiles"]
+    }
+    home = {
+        tile["label"]: tile
+        for tile in contract["home_offense_vs_away_defense"]["tiles"]
+    }
+    assert away["Pass Yds/G"]["edge"] == original_passing_edge
+    assert away["Red Zone"]["grade"] == "DATA"
+    assert away["Sack Matchup"]["detail"] == "OFF 0.00/g • DEF 2.50/g"
+    assert home["Rush Yds/G"]["detail"] == "OFF 194.5 • DEF 57.5"
+    assert home["3rd Down"]["detail"] == "OFF 46.2% • DEF 20.7%"
+
+
+def test_v165_step4_ready_requires_all_twelve_visible_tiles():
+    sparse = _fake_engine()
+    sparse["home_offense"]["dimensions"]["turnovers"]["ready"] = False
+    contract = step4.build_step4_contract(
+        _identity(),
+        _away(),
+        _home(),
+        engine=sparse,
+    )
+    assert contract["verified_tiles"] == 11
+    assert contract["state"] == "CHECK"
+    assert contract["ready"] is False
+
+
+def test_v165_step4_render_exposes_100_percent_multisource_proof():
+    sparse = _fake_engine()
+    for side in ("away_offense", "home_offense"):
+        for key in ("red_zone", "sack_pressure", "turnovers"):
+            sparse[side]["dimensions"][key]["ready"] = False
+
+    html = step4.render_step4_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-18"},
+        engine=sparse,
+        fallback=_fake_fallback(),
+    )
+    assert 'data-step4-state="READY"' in html
+    assert 'data-step4-coverage="100"' in html
+    assert "cfbstats fallback recovered" in html
+    assert "Visible matchup coverage: 100%." in html
