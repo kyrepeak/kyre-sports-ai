@@ -134,7 +134,9 @@ def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str
     coverage = root.get_attribute("data-step5-coverage") or ""
     tiles = root.locator('[data-testid="gt168-step5-stat-tile"]')
     tile_count = tiles.count()
-    ready_tiles = tiles.locator('[data-ready="true"]').count()
+    ready_tiles = root.locator(
+        '[data-testid="gt168-step5-stat-tile"][data-ready="true"]'
+    ).count()
 
     if marker != CFB_GAME_TOTAL_STEP5_MARKER:
         raise BrowserQAFailure(
