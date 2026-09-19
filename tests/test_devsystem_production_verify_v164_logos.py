@@ -123,11 +123,14 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     assert 'REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"' in source
     assert 'REQUIRED_STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"' in source
     assert 'REQUIRED_STEP4_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"' in source
+    assert 'REQUIRED_STEP4_GRADE_MARKER = "CFB_GAME_TOTAL_STEP4_V167_REAL_GRADES_ACTIVE"' in source
     assert "REQUIRED_STEP4_MARKER in dom_text" in source
     assert "REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text" in source
     assert "REQUIRED_STEP4_VISUAL_MARKER in dom_text" in source
+    assert "REQUIRED_STEP4_GRADE_MARKER in dom_text" in source
     assert "required_step4_deployment_marker" in source
     assert "required_step4_visual_marker" in source
+    assert "required_step4_grade_marker" in source
     assert "_assert_step4_matchup" in source
     assert 'details[data-testid="gt157-step-4"]' in source
     assert 'data-testid="gt165-step4-away-off-home-def"' in source
@@ -228,6 +231,21 @@ def test_v164_step4_visual_step2_requires_four_matchup_logos():
     assert '_assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")' not in step4
     assert "def _assert_exact_logo_count(" in source
     assert 'for team_id in (AWAY_TEAM_ID, HOME_TEAM_ID):' in source
+
+
+def test_v164_step4_v167_real_grade_contract_is_hard_gated():
+    source = VERIFIER.read_text(encoding="utf-8")
+    step4 = source.split("def _assert_step4_matchup", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+    assert 'get_attribute("data-step4-grade-marker")' in step4
+    assert "Step 4 grade marker mismatch" in step4
+    assert 'get_attribute("data-grade")' in step4
+    assert 'allowed_grades = {"A", "A-", "B+", "B", "C+", "C", "D"}' in step4
+    assert "Step 4 READY expected 12 explicit grades" in step4
+    assert "Step 4 READY contains placeholder/invalid grades" in step4
+    assert '"grades": grades' in step4
+    assert '"v167_step4_real_grades_verified": True' in step4
 
 
 def test_v164_step4_v166_visual_freeze_contract_is_hard_gated():
