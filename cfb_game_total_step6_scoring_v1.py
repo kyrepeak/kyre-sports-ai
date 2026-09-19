@@ -10,6 +10,8 @@ projection influence remains 0.0%.
 from __future__ import annotations
 
 from html import escape
+import json
+from pathlib import Path
 from statistics import mean
 from typing import Any, Mapping, Sequence
 
@@ -24,6 +26,9 @@ FROZEN_PREDECESSOR = "cfb_game_total_clean_page_v17"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 MAX_PBP_GAMES = step5_pace.MAX_PBP_GAMES
+STEP6_PBP_EVENT_SNAPSHOT_PATH = (
+    Path(__file__).resolve().parent / "data" / "cfb_step6_pbp_event_snapshot_v1.json"
+)
 
 _METRICS = (
     ("pass_explosive_rate", "EXPLOSIVE PASS RATE", "20+ YARD PASSES"),
@@ -103,8 +108,35 @@ def _conference(
     return step5_pace._conference(identity, profile, side)
 
 
-def _event_ids(profile: Mapping[str, Any]) -> list[str]:
-    return step5_pace._event_ids(profile)
+def _snapshot_event_ids(team_id: str) -> list[str]:
+    team_id = _clean(team_id)
+    if not team_id:
+        return []
+    try:
+        payload = json.loads(
+            STEP6_PBP_EVENT_SNAPSHOT_PATH.read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError, TypeError):
+        return []
+    teams = payload.get("teams") if isinstance(payload, Mapping) else {}
+    row = teams.get(team_id) if isinstance(teams, Mapping) else {}
+    values = row.get("event_ids") if isinstance(row, Mapping) else []
+    out: list[str] = []
+    for value in values or []:
+        event_id = _clean(value)
+        if event_id and event_id not in out:
+            out.append(event_id)
+        if len(out) >= MAX_PBP_GAMES:
+            break
+    return out
+
+
+def _event_ids(
+    profile: Mapping[str, Any],
+    team_id: str = "",
+) -> list[str]:
+    live = step5_pace._event_ids(profile)
+    return live if live else _snapshot_event_ids(team_id)
 
 
 def _offense_id(play: Mapping[str, Any]) -> str:
@@ -378,8 +410,12 @@ def _load_pbp_evidence(
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
     profiles = {"away": away, "home": home}
+    team_ids = {
+        side: _team_id(identity, profile, side)
+        for side, profile in profiles.items()
+    }
     side_events = {
-        side: _event_ids(profile)
+        side: _event_ids(profile, team_ids.get(side, ""))
         for side, profile in profiles.items()
     }
     event_ids = list(
@@ -407,7 +443,7 @@ def _load_pbp_evidence(
             for event in side_events.get(side, [])
             if event in payloads
         ]
-        team_id = _team_id(identity, profile, side)
+        team_id = team_ids.get(side, "")
         out[f"{side}_offense"] = _side_metrics(games, team_id, defense=False)
         out[f"{side}_defense"] = _side_metrics(games, team_id, defense=True)
         out[f"{side}_event_ids"] = list(side_events.get(side, []))

@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v184-step6-early-render-hotfix",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "Final Step 6 production-render architecture hotfix. Mount V184 Step 6 from exact query-selected event identity and a dedicated verified completed-game PBP event snapshot before entering the frozen V17/V16/V15 legacy render chain. Preserve Steps 1-5 logic, Page V18 visual contract, Router V163, model/projection/probability/distribution math, APIs, qualification/ranking, and sportsbook projection influence.",
+  "proof_target": "Branch CI and exact-route Chromium must prove a single Step 6 root renders READY / 100% / 12-of-12 using verified SportsDataverse completed-game PBP while the early mount executes before prior_v168.render_game_total_hub. Post-merge live production must emit CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN before the permanent freeze is activated.",
+  "internal_steps": {
+    "1": "Use production run #17 evidence proving exact event routing succeeds but Step 6 never executes after the legacy Steps 1-5 chain begins.",
+    "2": "Add a dedicated verified PBP-event snapshot for current default and scheduled certification matchups.",
+    "3": "Use the snapshot only as completed-game-ID fallback; preserve existing richer profile evidence when available.",
+    "4": "Mount Step 6 before frozen legacy rendering, suppress duplicate inline Step 6, pass all gates, prove production, and permanently freeze."
+  }
+}
