@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import time
 from urllib.parse import urlencode
 
 from playwright.sync_api import sync_playwright
@@ -51,6 +52,44 @@ FORBIDDEN_STEP6_VISIBLE = (
 
 class GameTotalV184Step6BrowserQAFailure(RuntimeError):
     pass
+
+
+def _find_v184_frame(page, timeout_seconds: float = 120.0):
+    deadline = time.monotonic() + timeout_seconds
+    last_scan: list[dict] = []
+    while time.monotonic() < deadline:
+        scans: list[dict] = []
+        for index, frame in enumerate(page.frames):
+            try:
+                body = frame.locator("body").inner_text(timeout=5000)
+            except Exception:
+                body = ""
+            try:
+                step6_count = frame.locator(
+                    f'details[data-testid="{STEP6_TESTID}"]'
+                ).count()
+            except Exception:
+                step6_count = 0
+            scans.append(
+                {
+                    "index": index,
+                    "url": frame.url,
+                    "step6_count": step6_count,
+                    "body_start": body[:700],
+                }
+            )
+            if (
+                step6_count == 1
+                and "GAMES ON THIS DAY" in body
+                and selector_qa.FULL_RENDER_MARKER in body
+            ):
+                return frame, body, scans
+        last_scan = scans
+        page.wait_for_timeout(750)
+    raise GameTotalV184Step6BrowserQAFailure(
+        "Could not find full V184 Step 6 Game Total surface: "
+        + json.dumps(last_scan, ensure_ascii=False)
+    )
 
 
 def _step6_snapshot(frame) -> dict:
@@ -167,7 +206,7 @@ def run(
                 wait_until="domcontentloaded",
                 timeout=120000,
             )
-            frame, body, initial_scan = selector_qa._find_v163_frame(page)
+            frame, body, initial_scan = _find_v184_frame(page)
             selector_qa._assert_visible_contract(body)
             initial_step6 = _step6_snapshot(frame)
 
@@ -202,7 +241,7 @@ def run(
 
             target.click(timeout=30000)
             clicked_event = selector_qa._wait_for_event_query(page, target_event)
-            frame_after_click, body_after_click, click_scan = selector_qa._find_v163_frame(page)
+            frame_after_click, body_after_click, click_scan = _find_v184_frame(page)
             selector_qa._assert_visible_contract(body_after_click)
             clicked_step6 = _step6_snapshot(frame_after_click)
             if selector_qa._selected_link_event(frame_after_click) != target_event:
@@ -221,7 +260,7 @@ def run(
                 )
 
             page.reload(wait_until="domcontentloaded", timeout=120000)
-            frame_after_reload, body_after_reload, reload_scan = selector_qa._find_v163_frame(page)
+            frame_after_reload, body_after_reload, reload_scan = _find_v184_frame(page)
             selector_qa._assert_visible_contract(body_after_reload)
             reloaded_event = selector_qa._wait_for_event_query(page, target_event)
             reloaded_step6 = _step6_snapshot(frame_after_reload)
