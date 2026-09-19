@@ -114,6 +114,43 @@ def _assert_exact_pair(
     return states
 
 
+def _assert_exact_logo_count(
+    frame,
+    selector: str,
+    expected: int,
+    label: str,
+    *,
+    render_timeout_ms: int = 30000,
+) -> list[dict]:
+    """Wait for the live Streamlit surface, then enforce an exact logo count."""
+    images = frame.locator(selector)
+    try:
+        for index in range(expected):
+            images.nth(index).wait_for(state="attached", timeout=render_timeout_ms)
+    except Exception as exc:
+        raise ProductionVerificationV164Failure(
+            f"{label} timed out waiting for {expected} exact logo images; found {images.count()}"
+        ) from exc
+    if images.count() != expected:
+        raise ProductionVerificationV164Failure(
+            f"{label} expected {expected} exact logo images; found {images.count()}"
+        )
+    states = [_wait_image_state(images.nth(i)) for i in range(images.count())]
+    urls = [str(row["src"]) for row in states]
+    for team_id in (AWAY_TEAM_ID, HOME_TEAM_ID):
+        suffix = f"/{team_id}.png"
+        if not any(url.endswith(suffix) for url in urls):
+            raise ProductionVerificationV164Failure(
+                f"{label} missing ESPN team logo {suffix}: {urls}"
+            )
+    for row in states:
+        if not row["complete"] or row["naturalWidth"] <= 0 or row["naturalHeight"] <= 0:
+            raise ProductionVerificationV164Failure(
+                f"{label} image failed to load: {row}"
+            )
+    return states
+
+
 
 def _wait_for_v164_patch_deployment(
     page,
@@ -557,7 +594,7 @@ def _assert_step4_matchup(frame) -> dict:
             "Step 4 source-integrity card does not prove the multi-source fallback path"
         )
 
-    logos = _assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")
+    logos = _assert_exact_logo_count(frame, "img.gt165-logo", 4, "Step 4 V165 matchup")
     return {
         "status": state,
         "limited_tiles": limited_tiles,

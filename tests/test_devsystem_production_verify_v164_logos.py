@@ -214,3 +214,14 @@ def test_v164_verifier_has_no_stale_coverage_return_reference():
     verify_start = source.index("def verify_live_v164")
     step4_block = source[step4_start:verify_start]
     assert '"limited_tiles": limited_tiles' in step4_block
+
+
+def test_v164_step4_visual_step2_requires_four_matchup_logos():
+    source = VERIFIER.read_text(encoding="utf-8")
+    step4 = source.split("def _assert_step4_matchup", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+    assert '_assert_exact_logo_count(frame, "img.gt165-logo", 4, "Step 4 V165 matchup")' in step4
+    assert '_assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")' not in step4
+    assert "def _assert_exact_logo_count(" in source
+    assert 'for team_id in (AWAY_TEAM_ID, HOME_TEAM_ID):' in source
