@@ -103,7 +103,7 @@ def _cfb_game_total_url(base_url: str) -> str:
     return base_url.rstrip("/") + "/?" + query
 
 
-def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> str:
+def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> dict[str, Any]:
     root = frame.locator(CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR).last
     try:
         root.wait_for(
@@ -128,7 +128,40 @@ def _wait_for_game_total_step5(frame, timeout_seconds: float = 90.0) -> str:
         raise BrowserQAFailure(
             f"Game Total route contains runtime error marker: {forbidden}"
         )
-    return body
+
+    marker = root.get_attribute("data-step5-marker") or ""
+    state = root.get_attribute("data-step5-state") or ""
+    coverage = root.get_attribute("data-step5-coverage") or ""
+    tiles = root.locator('[data-testid="gt168-step5-stat-tile"]')
+    tile_count = tiles.count()
+    ready_tiles = tiles.locator('[data-ready="true"]').count()
+
+    if marker != CFB_GAME_TOTAL_STEP5_MARKER:
+        raise BrowserQAFailure(
+            f"Game Total Step 5 marker mismatch: {marker!r}"
+        )
+    if state != "READY":
+        raise BrowserQAFailure(
+            f"Game Total Step 5 state is not READY: {state!r}"
+        )
+    if coverage != "100":
+        raise BrowserQAFailure(
+            f"Game Total Step 5 coverage is not 100: {coverage!r}"
+        )
+    if tile_count != 12 or ready_tiles != 12:
+        raise BrowserQAFailure(
+            "Game Total Step 5 tile completeness failed: "
+            f"tiles={tile_count} ready_tiles={ready_tiles}"
+        )
+
+    return {
+        "body": body,
+        "marker": marker,
+        "state": state,
+        "coverage": coverage,
+        "tile_count": tile_count,
+        "ready_tiles": ready_tiles,
+    }
 
 
 def _wait_for_health(base_url: str, timeout_seconds: float = 120.0) -> dict[str, Any]:
@@ -367,11 +400,11 @@ def run_browser_qa(
             # The version marker is intentionally emitted as a hidden/build
             # marker and is not guaranteed to be "visible" text. Prove the
             # actual Step 5 DOM surface directly instead.
-            game_total_body = _wait_for_game_total_step5(game_total_frame, 90.0)
-            if CFB_GAME_TOTAL_STEP5_MARKER not in game_total_body:
-                raise BrowserQAFailure(
-                    "Game Total Step 5 marker missing after DOM attachment"
-                )
+            game_total_step5 = _wait_for_game_total_step5(
+                game_total_frame,
+                90.0,
+            )
+            game_total_body = game_total_step5["body"]
 
             game_total_screenshot = artifacts / "browser_qa_game_total_step5_green.png"
             page.screenshot(path=str(game_total_screenshot), full_page=True)
@@ -391,7 +424,11 @@ def run_browser_qa(
                 "game_total_route": f"{CFB_SPORT} -> {CFB_GAME_TOTAL_MARKET}",
                 "game_total_event_id": CFB_GAME_TOTAL_EVENT_ID,
                 "game_total_date": CFB_GAME_TOTAL_DATE,
-                "game_total_step5_marker": CFB_GAME_TOTAL_STEP5_MARKER,
+                "game_total_step5_marker": game_total_step5["marker"],
+                "game_total_step5_state": game_total_step5["state"],
+                "game_total_step5_coverage": game_total_step5["coverage"],
+                "game_total_step5_tile_count": game_total_step5["tile_count"],
+                "game_total_step5_ready_tiles": game_total_step5["ready_tiles"],
                 "game_total_app_frame_url": game_total_frame.url,
                 "game_total_frame_scan_count": len(game_total_scan),
                 "game_total_screenshot": str(game_total_screenshot),
