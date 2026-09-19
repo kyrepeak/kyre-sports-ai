@@ -127,8 +127,25 @@ def test_v168_step5_contract_is_presentation_only():
     assert step5.FROZEN_PREDECESSOR == "cfb_game_total_clean_page_v16"
     assert step5.STEP5_PRESENTATION_MARKER == "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
     assert step5.STEP5_DATA_MARKER == "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"
+    assert step5.STEP5_DEPLOYMENT_MARKER == "CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"
     assert "sportsdataverse/cfbfastR-cfb-raw" in step5.SPORTSDATAVERSE_GAME_URL
     assert step5.MAX_PBP_GAMES == 2
+
+
+def test_v178_step5_presentation_never_calls_live_ncaa_engine(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Step 5 presentation must not call frozen live NCAA scraper")
+
+    monkeypatch.setattr(step5.pace_engine, "build_pace_engine", forbidden)
+    seed = step5._safe_pace_engine(
+        {"game_date": "2026-09-19"},
+        _away(),
+        _home(),
+    )
+    assert seed["model_ready"] is False
+    assert seed["presentation_ready"] is False
+    assert seed["presentation_ncaa_live_fetch_used"] is False
+    assert "deferred" in seed["reason"].lower()
 
 
 def test_v168_step5_ready_contract_has_exact_twelve_required_tiles(monkeypatch):
@@ -650,6 +667,7 @@ def test_v168_router_advances_only_exact_game_total_page_and_preserves_step4_mar
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v17"' in source
     assert "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE" in source
     assert "CFB_GAME_TOTAL_V168_STEP5_PACE_POSSESSIONS_ACTIVE" in source
+    assert "CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE" in source
     assert "return prior.render_app()" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
 
@@ -674,3 +692,4 @@ def test_v168_visual_markers_are_emitted(monkeypatch):
     assert 'data-step5-marker="CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"' in html
     assert 'data-step5-data-marker="CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"' in html
     assert 'data-step5-visual-marker="CFB_GAME_TOTAL_STEP5_V168_VISUAL_TARGET_ACTIVE"' in html
+    assert 'data-step5-deployment-marker="CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"' in html
