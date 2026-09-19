@@ -195,9 +195,9 @@ def test_complete_official_snapshot_skips_secondary_network(monkeypatch):
     def fail_directory(_season):
         raise AssertionError("secondary directory must not be called")
 
-    monkeypatch.setattr(multisource, "_load_directory", fail_directory)
+    monkeypatch.setattr(multi, "_load_directory", fail_directory)
 
-    result = multisource.build_display_fallback(
+    result = multi.build_display_fallback(
         None,
         {"team": "Miami (FL)"},
         {"team": "Wake Forest"},
