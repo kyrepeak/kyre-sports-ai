@@ -330,7 +330,7 @@ def test_v168_sportsdataverse_is_primary_and_espn_is_not_required(monkeypatch):
     home = _home()
 
     def fake_sdv(event_id):
-        team_id = "153" if event_id in {"1", "2"} else "228"
+        team_id = "153" if event_id in {"2", "3"} else "228"
         return {
             "plays": [
                 {
