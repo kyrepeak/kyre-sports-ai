@@ -132,6 +132,11 @@ def test_v164_production_verifier_requires_step4_matchup_surface():
     assert '"step4_matchup": step4' in source
     assert "Step 4 V165 Matchup must render expanded by default" in source
     assert "v165_step4_verified" in source
+    assert '"Pass Yds/G"' in source
+    assert '"Rush Yds/G"' in source
+    assert '"3rd Down"' in source
+    assert '"Red Zone"' in source
+    assert '"Turnover Pressure"' in source
 
 def test_v164_step3_production_proof_locks_live_completeness_contract():
     source = VERIFIER.read_text(encoding="utf-8")

@@ -30,9 +30,10 @@
     "6": "dedicated V165 compile and frozen-boundary regression suite passed before protected-main merge",
     "7": "post-merge legacy production verifier aligned to the active V165 Step 4 DOM contract; frozen Steps 1–3, exact-logo checks, model math, APIs, and sportsbook influence remain unchanged",
     "8": "live production proof corrected to gate on the actually emitted V165 router heartbeat before enforcing the existing gt165 Step 4 DOM and exact-logo assertions",
-    "9": "final live-production timeout root cause isolated: obsolete V164 REQUIRED_HEARTBEAT removed from the verifier gate and replaced with the emitted V165 router heartbeat; all existing logo, Steps 1-3, and gt165 Step 4 DOM assertions remain intact"
+    "9": "final live-production timeout root cause isolated: obsolete V164 REQUIRED_HEARTBEAT removed from the verifier gate and replaced with the emitted V165 router heartbeat; all existing logo, Steps 1-3, and gt165 Step 4 DOM assertions remain intact",
+    "10": "Step 4 data-completeness pass: visible tiles now consume six already-certified NCAA matchup dimensions (passing, rushing, third down, red zone, sack pressure, turnovers); advanced EPA/success/havoc remain integrity-only unless separately verified, sparse evidence cannot produce overconfident matchup language, and dark logos receive a presentation-only contrast backing."
   },
-  "proof_target": "Final verifier fix must pass targeted CI, merge without runtime/model changes, and the CFB Game Total production-logo workflow must turn GREEN on main using CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE as the required router heartbeat while preserving exact logo and Step 1-4 surface assertions.",
+  "proof_target": "Step 4 must prove the six verified NCAA matchup tiles on the live production surface, preserve explicit advanced-metric integrity for EPA/success/havoc, keep conservative language under sparse evidence, and preserve all frozen model/projection/API behavior.",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
