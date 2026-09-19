@@ -31,6 +31,13 @@ def test_v184_browser_qa_locks_exact_step6_dom_and_metric_contract():
         'selector_qa._wait_for_event_query',
         'selector_qa._selected_link_event',
         'page.reload',
+        'RESPONSIVE_VIEWPORTS',
+        '("tablet", 744, 1133, 2, 3, 2)',
+        '("mobile", 390, 844, 2, 2, 1)',
+        'def _responsive_snapshot',
+        'def _assert_accordion_toggle',
+        'page.set_viewport_size',
+        '"closed_then_reopened": True',
         'CFB_GAME_TOTAL_V184_STEP6_BROWSER_GREEN',
     )
     for token in required:
@@ -57,3 +64,15 @@ def test_v184_browser_workflow_runs_real_app_and_uploads_proof():
     )
     for token in required:
         assert token in source, token
+
+
+def test_v184_browser_qa_proves_responsive_grids_and_native_accordion():
+    source = _read(QA)
+    assert 'expected_tile_columns' in source
+    assert 'expected_env_columns' in source
+    assert 'expected_insight_columns' in source
+    assert 'getComputedStyle(el).gridTemplateColumns' in source
+    assert 'viewportWidth' in source
+    assert 'Step 6 did not close after summary click' in source
+    assert 'Step 6 did not reopen after second summary click' in source
+    assert 'responsive_screenshots' in source
