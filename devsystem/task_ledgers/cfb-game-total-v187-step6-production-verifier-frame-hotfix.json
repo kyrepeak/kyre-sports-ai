@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v187-step6-production-verifier-frame-hotfix",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V187 verifier-only production certification correction for the already-live V185/V186 College Football Game Total Step 6 surface. Fresh production evidence proves the V186 heartbeat is live and the old Router V164 AttributeError is fixed, but the dedicated Step 6 verifier still delegates frame discovery to the general V5 Game Total selector verifier, which requires visible GAMES ON THIS DAY text. The dedicated Step 6 certification route intentionally renders Step 6 directly, so that selector precondition rejects the correct production frame before READY/coverage/tile assertions run. Replace only the verifier frame-discovery path with a direct STEP6_ROOT_SELECTOR scan across Streamlit frames.",
+  "proof_target": "The dedicated production verifier must locate details.gt184-step6[data-testid=gt157-step-6] directly without requiring the general Game Total selector, then preserve every strict existing assertion: exact Step 6 marker, deployment marker, READY state, 100 coverage, ready-tiles attribute 12, exactly 12 legacy scoring tiles, all 12 ready, no DATA LIMITED, sportsbook influence 0.0%, and projection mutation OFF. No website, data source, model, Page V18/V19, Router V163/V164, or scoring owner behavior may change.",
+  "internal_steps": {
+    "1": "Use the completed production failure log to prove V184/V185/V186 heartbeats are live and isolate the stale verifier precondition.",
+    "2": "Remove production_verify_v5 general-selector frame discovery from the dedicated Step 6 verifier.",
+    "3": "Scan every Streamlit frame directly for STEP6_ROOT_SELECTOR and return the first attached Step 6 root.",
+    "4": "Keep all existing strict READY/100%/12-of-12 assertions unchanged.",
+    "5": "Add regression proof that the dedicated verifier no longer depends on GAMES ON THIS DAY or v163_nav._find_v163_frame.",
+    "6": "Merge only after CI, then run the live dedicated Step 6 production verifier to final GREEN."
+  }
+}
