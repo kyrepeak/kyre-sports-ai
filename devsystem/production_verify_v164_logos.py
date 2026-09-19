@@ -189,6 +189,9 @@ def _wait_for_v164_patch_deployment(
                 and REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text
                 and REQUIRED_STEP4_VISUAL_MARKER in dom_text
                 and REQUIRED_STEP4_GRADE_MARKER in dom_text
+                and REQUIRED_STEP5_MARKER in dom_text
+                and REQUIRED_STEP5_DATA_MARKER in dom_text
+                and REQUIRED_STEP5_VISUAL_MARKER in dom_text
             ):
                 return frame, dom_text, scans
         except Exception as exc:
@@ -208,6 +211,9 @@ def _wait_for_v164_patch_deployment(
         f"required_step4_deployment_marker={REQUIRED_STEP4_DEPLOYMENT_MARKER!r} "
         f"required_step4_visual_marker={REQUIRED_STEP4_VISUAL_MARKER!r} "
         f"required_step4_grade_marker={REQUIRED_STEP4_GRADE_MARKER!r} "
+        f"required_step5_marker={REQUIRED_STEP5_MARKER!r} "
+        f"required_step5_data_marker={REQUIRED_STEP5_DATA_MARKER!r} "
+        f"required_step5_visual_marker={REQUIRED_STEP5_VISUAL_MARKER!r} "
         f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
@@ -882,6 +888,18 @@ def verify_live_v164(
             if REQUIRED_STEP4_GRADE_MARKER not in body:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 4 V167 grade marker: {REQUIRED_STEP4_GRADE_MARKER}"
+                )
+            if REQUIRED_STEP5_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 5 pace marker: {REQUIRED_STEP5_MARKER}"
+                )
+            if REQUIRED_STEP5_DATA_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 5 data marker: {REQUIRED_STEP5_DATA_MARKER}"
+                )
+            if REQUIRED_STEP5_VISUAL_MARKER not in body:
+                raise ProductionVerificationV164Failure(
+                    f"missing Step 5 visual marker: {REQUIRED_STEP5_VISUAL_MARKER}"
                 )
             if REQUIRED_STEP3_MARKER not in body:
                 raise ProductionVerificationV164Failure(
