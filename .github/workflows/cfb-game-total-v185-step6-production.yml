@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - "devsystem/production_verify_step6_v185.py"
+      - "streamlit_memory_lazy_router_v165.py"
+      - "app.py"
+      - "tests/test_cfb_game_total_v185_step6_router_v165.py"
+      - "tests/test_cfb_game_total_v185_step6_visual_parity.py"
       - "tests/test_devsystem_production_verify_step6_v185.py"
       - "devsystem/task_ledgers/cfb-game-total-v185-step6-visual-parity.json"
       - ".github/workflows/cfb-game-total-v185-step6-production.yml"
@@ -12,6 +16,10 @@ on:
     branches: [main]
     paths:
       - "devsystem/production_verify_step6_v185.py"
+      - "streamlit_memory_lazy_router_v165.py"
+      - "app.py"
+      - "tests/test_cfb_game_total_v185_step6_router_v165.py"
+      - "tests/test_cfb_game_total_v185_step6_visual_parity.py"
       - "tests/test_devsystem_production_verify_step6_v185.py"
       - "devsystem/task_ledgers/cfb-game-total-v185-step6-visual-parity.json"
       - ".github/workflows/cfb-game-total-v185-step6-production.yml"
@@ -42,9 +50,9 @@ jobs:
           python -m pip install --disable-pip-version-check -q pytest playwright
           python -m playwright install --with-deps chromium
 
-      - name: Compile V185 production verifier
+      - name: Compile V185 production-safe surface
         run: |
-          python -m py_compile devsystem/production_verify_step6_v185.py
+          python -m py_compile             devsystem/production_verify_step6_v185.py             streamlit_memory_lazy_router_v165.py             app.py
 
       - name: Self-test V185 production contract
         run: |

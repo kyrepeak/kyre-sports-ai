@@ -7,7 +7,7 @@ import cfb_game_total_step6_visual_v2 as visual
 
 
 PAGE = Path("cfb_game_total_clean_page_v19.py")
-ROUTER = Path("streamlit_memory_lazy_router_v164.py")
+ROUTER = Path("streamlit_memory_lazy_router_v165.py")
 APP = Path("app.py")
 
 
@@ -126,19 +126,23 @@ def test_v185_page_is_additive_over_frozen_v184_and_swaps_renderer_only():
 
 def test_v185_router_advances_only_exact_game_total_to_page_v19():
     source = ROUTER.read_text(encoding="utf-8")
-    assert "import streamlit_memory_lazy_router_v163 as prior" in source
-    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v163"' in source
+    assert "import streamlit_memory_lazy_router_v162 as prior" in source
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v164"' in source
+    assert 'SAFE_RUNTIME_DELEGATE = "streamlit_memory_lazy_router_v162"' in source
     assert 'ACTIVE_PAGE = "cfb_game_total_clean_page_v19"' in source
     assert "original_heartbeat = prior.PRODUCTION_HEARTBEAT" in source
     assert "prior.PRODUCTION_HEARTBEAT = PRODUCTION_HEARTBEAT" in source
     assert "prior.PRODUCTION_HEARTBEAT = original_heartbeat" in source
     assert "CFB_GAME_TOTAL_V185_STEP6_VISUAL_PARITY_ACTIVE" in source
+    assert "CFB_GAME_TOTAL_V185_ROUTER_V165_PRODUCTION_HOTFIX_ACTIVE" in source
     assert "return prior.render_app()" in source
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
     assert "MAY_MODIFY_PROJECTION = False" in source
 
 
-def test_v185_app_boots_router_v164_while_retaining_v184_certification_string():
+def test_v185_app_boots_router_v165_while_retaining_v164_v163_compatibility():
     source = APP.read_text(encoding="utf-8")
+    runtime = source[source.find("try:"):]
+    assert "from streamlit_memory_lazy_router_v165 import record_bootstrap_import_ms, render_app" in runtime
     assert "from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app" in source
     assert "from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app" in source
