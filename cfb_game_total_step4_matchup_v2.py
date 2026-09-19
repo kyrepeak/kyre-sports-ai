@@ -549,12 +549,12 @@ def _battle_html(battle: Mapping[str, Any], testid: str) -> str:
     return f"""
 <div class="gt165-battle" data-testid="{escape(testid)}">
   <div class="gt165-battlehead">
-    <div class="gt165-teamhead">
+    <div class="gt165-teamhead" aria-label="{escape(team)} Offense">
       {offense_logo_html}
       <div><span class="gt165-side">{escape(offense_side)}</span><span class="gt165-teamname">{escape(team)}</span><span class="gt165-teamrole">Offense</span></div>
     </div>
     <div class="gt165-vs">VS</div>
-    <div class="gt165-teamhead right">
+    <div class="gt165-teamhead right" aria-label="{escape(defense)} Defense">
       <div><span class="gt165-side">{escape(defense_side)}</span><span class="gt165-teamname">{escape(defense)}</span><span class="gt165-teamrole">Defense</span></div>
       {defense_logo_html}
     </div>
