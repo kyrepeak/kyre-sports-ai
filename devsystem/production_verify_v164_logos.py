@@ -787,6 +787,8 @@ def _assert_step5_pace(frame) -> dict:
         "O/U IMPACT",
         "DATA CONFIDENCE",
         "MULTI-SOURCE VERIFIED",
+        "SPORTSDATAVERSE PBP",
+        "PUNT & RALLY DRIVE EFFICIENCY",
         "SPORTSBOOK INFLUENCE 0.0%",
         "MODEL SAFE",
         "PROJECTION MUTATION OFF",
