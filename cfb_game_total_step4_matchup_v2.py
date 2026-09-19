@@ -27,6 +27,7 @@ FROZEN_PREDECESSOR = "cfb_game_total_step4_matchup_v1"
 STEP4_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP4_MATCHUP_V2_NEON_STACK_ACTIVE"
 STEP4_DATA_MARKER = "CFB_GAME_TOTAL_STEP4_VERIFIED_NCAA_MATCHUP_ENGINE_ACTIVE"
 STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"
+STEP4_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP4_V166_VISUAL_TARGET_ACTIVE"
 
 STEP4_CSS = r"""
 <style>
@@ -664,7 +665,7 @@ def render_step4_html(
             or "Verified matchup enrichment unavailable."
         )
     return f"""
-<details class="gt159-step gt165-step4 {state_css}" data-testid="gt157-step-4" data-step4-state="{escape(state)}" data-step4-coverage="{coverage}" data-step4-fallback-filled="{fallback_filled}" open>
+<details class="gt159-step gt165-step4 {state_css}" data-testid="gt157-step-4" data-step4-state="{escape(state)}" data-step4-coverage="{coverage}" data-step4-fallback-filled="{fallback_filled}" data-step4-visual-marker="{escape(STEP4_VISUAL_MARKER)}" open>
   <summary>
     <span class="gt159-num">4</span>
     <span class="gt159-stepcopy"><b>Matchup</b><span>Off vs Def · Pass · Rush · Situational</span></span>
@@ -716,6 +717,7 @@ __all__ = [
     "STEP4_DATA_MARKER",
     "STEP4_DEPLOYMENT_MARKER",
     "STEP4_PRESENTATION_MARKER",
+    "STEP4_VISUAL_MARKER",
     "build_step4_contract",
     "render_step4_html",
 ]
