@@ -120,10 +120,10 @@ def test_v165_step4_keeps_unverified_advanced_metrics_blank():
         engine=_fake_engine(),
     )
     away = contract["away_offense_vs_home_defense"]
-    by_label = {tile["label"]: tile for tile in away["tiles"]}
-    assert by_label["Success Rate"]["ready"] is False
-    assert by_label["EPA / Play"]["ready"] is False
-    assert by_label["Havoc"]["ready"] is False
+    labels = {tile["label"] for tile in away["tiles"]}
+    assert "Success Rate" not in labels
+    assert "EPA / Play" not in labels
+    assert "Havoc" not in labels
     assert "Success Rate" in contract["advanced_missing"]
     assert "EPA / Play" in contract["advanced_missing"]
     assert "Havoc" in contract["advanced_missing"]
