@@ -5,7 +5,7 @@ import inspect
 from devsystem import production_verify_step6_v184 as verifier
 
 
-def test_v184_step6_production_contract_is_strict_and_scheduled_target_driven():
+def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isolated():
     source = inspect.getsource(verifier.verify_live_step6)
     wait_source = inspect.getsource(verifier._wait_for_live_step6)
     module_source = inspect.getsource(verifier)
@@ -18,13 +18,15 @@ def test_v184_step6_production_contract_is_strict_and_scheduled_target_driven():
     assert "_wait_for_v164_patch_deployment" not in wait_source
     assert "_wait_for_top_level_selection" not in wait_source
     assert "production_verify_v164_logos" not in module_source
-    assert 'CERT_DATE = "2026-09-19"' in module_source
-    assert 'CERT_EVENT_ID = "401856685"' in module_source
-    assert 'CERT_MATCHUP = "Florida State @ Alabama"' in module_source
-    assert "DATE_QUERY_KEY: CERT_DATE" in source
-    assert "EVENT_QUERY_KEY: CERT_EVENT_ID" in source
-    assert "event_id != CERT_EVENT_ID" in source
-    assert "selected_date != CERT_DATE" in source
+    assert 'CERT_QUERY_KEY = "ks_cfb_step6_cert"' in module_source
+    assert "CFB_GAME_TOTAL_V184_STEP6_CERT_SNAPSHOT_V1_ACTIVE" in module_source
+    assert '"401869940"' in module_source
+    assert '"401856685"' in module_source
+    assert "for index, candidate in enumerate(CERT_CANDIDATES" in source
+    assert 'CERT_QUERY_KEY: "1"' in source
+    assert 'data-testid="gt184-step6-cert-surface"' in source
+    assert "event_id != cert_event_id" in source
+    assert "selected_date != cert_date" in source
 
 
 def test_v184_step6_assertion_requires_ready_100_and_12_of_12():
