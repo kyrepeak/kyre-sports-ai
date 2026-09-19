@@ -142,3 +142,18 @@ def test_v185_app_boots_router_v164_while_retaining_v184_certification_string():
     source = APP.read_text(encoding="utf-8")
     assert "from streamlit_memory_lazy_router_v164 import record_bootstrap_import_ms, render_app" in source
     assert "from streamlit_memory_lazy_router_v163 import record_bootstrap_import_ms, render_app" in source
+
+
+def test_v186_router_owns_step6_cert_surface_for_stale_v163_compat():
+    source = ROUTER.read_text(encoding="utf-8")
+    assert 'STEP6_CERT_QUERY_KEY = "ks_cfb_step6_cert"' in source
+    assert 'STEP6_CERT_ROUTER_MARKER = "CFB_GAME_TOTAL_V184_STEP6_CERT_ROUTER_ACTIVE"' in source
+    assert "import importlib" in source
+    assert "import streamlit as st" in source
+    assert "st.query_params.get(STEP6_CERT_QUERY_KEY)" in source
+    assert "page = importlib.import_module(ACTIVE_PAGE)" in source
+    assert "CFB_GAME_TOTAL_V186_STALE_V163_COMPAT_ACTIVE" in source
+    assert "prior.STEP6_CERT_QUERY_KEY" not in source
+    assert "prior.STEP6_CERT_ROUTER_MARKER" not in source
+    assert "prior._step6_cert_requested" not in source
+    assert "prior._render_step6_cert_surface" not in source

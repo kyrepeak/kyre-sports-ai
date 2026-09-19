@@ -7,12 +7,17 @@ projection influence remain delegated to V163.
 """
 from __future__ import annotations
 
+import importlib
+
+import streamlit as st
+
 import streamlit_memory_lazy_router_v163 as prior
 
-MODEL_VERSION = "KYRE STREAMLIT ROUTER V164 • CFB GAME TOTAL V185 STEP6 VISUAL PARITY"
+MODEL_VERSION = "KYRE STREAMLIT ROUTER V164 • CFB GAME TOTAL V186 STALE V163 PRODUCTION COMPAT"
 PRODUCTION_HEARTBEAT = (
     f"{prior.PRODUCTION_HEARTBEAT} • "
-    "CFB_GAME_TOTAL_V185_STEP6_VISUAL_PARITY_ACTIVE"
+    "CFB_GAME_TOTAL_V185_STEP6_VISUAL_PARITY_ACTIVE • "
+    "CFB_GAME_TOTAL_V186_STALE_V163_COMPAT_ACTIVE"
 )
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v163"
 CFB_SPORT_LABEL = prior.CFB_SPORT_LABEL
@@ -23,8 +28,8 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 ROUTE_QUERY_SPORT = prior.ROUTE_QUERY_SPORT
 ROUTE_QUERY_MARKET = prior.ROUTE_QUERY_MARKET
-STEP6_CERT_QUERY_KEY = prior.STEP6_CERT_QUERY_KEY
-STEP6_CERT_ROUTER_MARKER = prior.STEP6_CERT_ROUTER_MARKER
+STEP6_CERT_QUERY_KEY = "ks_cfb_step6_cert"
+STEP6_CERT_ROUTER_MARKER = "CFB_GAME_TOTAL_V184_STEP6_CERT_ROUTER_ACTIVE"
 STEP6_VISUAL_PARITY_ROUTER_MARKER = "CFB_GAME_TOTAL_V185_STEP6_VISUAL_PARITY_ROUTER_ACTIVE"
 
 
@@ -53,7 +58,13 @@ def _purge_game_total_page_modules() -> int:
 
 
 def _step6_cert_requested() -> bool:
-    return prior._step6_cert_requested()
+    try:
+        raw = st.query_params.get(STEP6_CERT_QUERY_KEY)
+    except Exception:
+        return False
+    if isinstance(raw, (list, tuple)):
+        raw = raw[-1] if raw else ""
+    return str(raw or "").strip().casefold() in {"1", "true", "yes", "on"}
 
 
 def _with_active_page(callback):
@@ -69,7 +80,20 @@ def _with_active_page(callback):
 
 
 def _render_step6_cert_surface() -> None:
-    return _with_active_page(prior._render_step6_cert_surface)
+    st.set_page_config(
+        page_title="Kyre Sports AI • CFB Game Total Step 6 Certification",
+        page_icon="🏈",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
+    st.markdown(
+        f'<div data-testid="cfb-game-total-v184-step6-cert-heartbeat" '
+        f'style="display:none!important">{PRODUCTION_HEARTBEAT} • '
+        f'{STEP6_CERT_ROUTER_MARKER} • {STEP6_VISUAL_PARITY_ROUTER_MARKER}</div>',
+        unsafe_allow_html=True,
+    )
+    page = importlib.import_module(ACTIVE_PAGE)
+    return page.render_step6_cert_surface()
 
 
 def _render_exact_game_total_surface() -> None:
