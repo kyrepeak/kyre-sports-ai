@@ -188,6 +188,18 @@ def _assert_step1_identity(frame) -> dict:
             f"Step 1 expected two team identity cards; away={away.count()} home={home.count()}"
         )
 
+    coverage = str(step.get_attribute("data-step4-coverage") or "").strip()
+    if coverage != "100":
+        raise ProductionVerificationV164Failure(
+            f"Step 4 certified matchup must show 100% visible coverage: coverage={coverage!r}"
+        )
+
+    limited_tiles = step.locator(".gt165-metric.limited").count()
+    if limited_tiles != 0:
+        raise ProductionVerificationV164Failure(
+            f"Step 4 READY still contains limited matchup tiles: {limited_tiles}"
+        )
+
     text = step.inner_text()
     required_text = (
         "Team Identity",
@@ -339,6 +351,8 @@ def _assert_step2_performance_profile(frame) -> dict:
     logos = _assert_exact_pair(frame, "img.gt167-logo", "Step 2 performance profile")
     return {
         "status": state,
+        "coverage": coverage,
+        "limited_tiles": limited_tiles,
         "text": text,
         "logos": logos,
         "insight_cards": insights.locator(".gt167-insight").count(),
@@ -510,9 +524,9 @@ def _assert_step4_matchup(frame) -> dict:
         )
 
     state = str(step.get_attribute("data-step4-state") or "").strip().upper()
-    if state not in {"READY", "CHECK", "LIMITED"}:
+    if state != "READY":
         raise ProductionVerificationV164Failure(
-            f"Step 4 matchup is not production-usable: state={state!r}"
+            f"Step 4 certified matchup must be fully READY: state={state!r}"
         )
 
     text = step.inner_text()
@@ -538,6 +552,14 @@ def _assert_step4_matchup(frame) -> dict:
     if missing:
         raise ProductionVerificationV164Failure(
             f"Step 4 missing required V165 matchup content: {missing}"
+        )
+    if "VISIBLE MATCHUP COVERAGE: 100%" not in live_text_upper:
+        raise ProductionVerificationV164Failure(
+            "Step 4 source-integrity card does not prove 100% visible coverage"
+        )
+    if "CFBSTATS" not in live_text_upper and "MULTI-SOURCE" not in live_text_upper:
+        raise ProductionVerificationV164Failure(
+            "Step 4 source-integrity card does not prove the multi-source fallback path"
         )
 
     logos = _assert_exact_pair(frame, "img.gt165-logo", "Step 4 V165 matchup")
