@@ -194,6 +194,12 @@ def _assert_step1_identity(frame) -> dict:
             f"Step 4 certified matchup must show 100% visible coverage: coverage={coverage!r}"
         )
 
+    limited_tiles = step.locator(".gt165-metric.limited").count()
+    if limited_tiles != 0:
+        raise ProductionVerificationV164Failure(
+            f"Step 4 READY still contains limited matchup tiles: {limited_tiles}"
+        )
+
     text = step.inner_text()
     required_text = (
         "Team Identity",
