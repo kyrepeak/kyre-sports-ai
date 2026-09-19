@@ -94,23 +94,27 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 except Exception:
                     pass
 
-            # Step 5 PBP evidence requires exact completed-game event IDs.
-            # The generic NCAA team-data foundation above intentionally omits
-            # those IDs, so overlay the certified Step 3 runtime enrichment
-            # before the Step 5 owner builds SportsDataverse evidence.
+            # Step 5 only needs exact completed-game event IDs for PBP.
+            # Do NOT re-run the full Step 3 live enrichment here: in production
+            # that path can fan out across NCAA/ESPN schedule, scoreboard,
+            # opponent-quality and SOS lookups before Step 5 emits any DOM.
+            # Reuse only the certified Runtime Snapshot V2 handoff, which
+            # prefers the runtime branch and fails closed to the checked-in
+            # snapshot without opening the expensive Step 3 fallback stack.
             try:
-                step3_away, step3_home, _step3_diag = (
-                    prior_v165.prior_v164.step3_owner.enrich_step3_inputs(
-                        exact_identity,
-                        step5_away,
-                        step5_home,
+                step3_bundle, _step3_diag = (
+                    prior_v165.prior_v164.step3_owner._runtime_v2_step3_bundle(
                         step5_game,
+                        selected_day,
                     )
                 )
-                if isinstance(step3_away, dict):
-                    step5_away.update(step3_away)
-                if isinstance(step3_home, dict):
-                    step5_home.update(step3_home)
+                if isinstance(step3_bundle, dict):
+                    step3_away = step3_bundle.get("away")
+                    step3_home = step3_bundle.get("home")
+                    if isinstance(step3_away, dict):
+                        step5_away.update(step3_away)
+                    if isinstance(step3_home, dict):
+                        step5_home.update(step3_home)
             except Exception:
                 pass
 
