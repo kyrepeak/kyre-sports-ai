@@ -285,7 +285,12 @@ def test_v164_step5_v168_pace_surface_is_hard_gated():
     assert 'data-testid="gt168-step5-stat-tile"' in step5
     assert "Step 5 expected 12 pace/possession tiles" in step5
     assert 'get_attribute("data-step5-state")' in step5
+    assert 'state != "READY"' in step5
     assert 'get_attribute("data-step5-coverage")' in step5
+    assert "coverage != 100" in step5
+    assert 'get_attribute("data-ready")' in step5
+    assert "Step 5 READY contains incomplete pace tiles" in step5
+    assert 'if "DATA LIMITED" in live_upper' in step5
     assert '"PACE & EXPECTED POSSESSIONS"' in step5
     assert '"EXPECTED GAME ENVIRONMENT"' in step5
     assert '"MATCHUP READ"' in step5
