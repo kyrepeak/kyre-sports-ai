@@ -303,6 +303,17 @@ def test_v164_step5_v168_pace_surface_is_hard_gated():
     assert "coverage != 100" in step5
     assert 'get_attribute("data-ready")' in step5
     assert "Step 5 READY contains incomplete pace tiles" in step5
+    assert 'get_attribute("data-step5-away-pbp-delivery")' in step5
+    assert 'get_attribute("data-step5-home-pbp-delivery")' in step5
+    assert '"sportsdataverse_github_raw"' in step5
+    assert 'get_attribute("data-step5-away-pbp-games")' in step5
+    assert 'get_attribute("data-step5-home-pbp-games")' in step5
+    assert "Step 5 did not prove SportsDataverse PBP delivery for both teams" in step5
+    assert "Step 5 requires at least one SportsDataverse completed game per team" in step5
+    assert '"away_pbp_delivery": away_delivery' in step5
+    assert '"home_pbp_delivery": home_delivery' in step5
+    assert '"away_pbp_games": away_pbp_games' in step5
+    assert '"home_pbp_games": home_pbp_games' in step5
     assert 'if "DATA LIMITED" in live_upper' in step5
     assert '"PACE & EXPECTED POSSESSIONS"' in step5
     assert '"EXPECTED GAME ENVIRONMENT"' in step5
