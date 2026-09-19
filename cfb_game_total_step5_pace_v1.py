@@ -34,6 +34,7 @@ MODEL_VERSION = "CFB GAME TOTAL STEP 5 • V168 PACE & EXPECTED POSSESSIONS"
 STEP5_PRESENTATION_MARKER = "CFB_GAME_TOTAL_STEP5_PACE_POSSESSIONS_ACTIVE"
 STEP5_DATA_MARKER = "CFB_GAME_TOTAL_STEP5_NCAA_PBP_MULTISOURCE_ACTIVE"
 STEP5_VISUAL_MARKER = "CFB_GAME_TOTAL_STEP5_V168_VISUAL_TARGET_ACTIVE"
+STEP5_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP5_V178_NONBLOCKING_ACTIVE"
 FROZEN_PREDECESSOR = "cfb_game_total_clean_page_v16"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
@@ -737,24 +738,98 @@ def _safe_sdv_pregame_pace(
         "monte_carlo_used": False,
     }
 
+def _profile_pace_seed(profile: Mapping[str, Any]) -> dict[str, Any]:
+    """Reuse already-enriched pace fields without making new live NCAA calls."""
+    plays_pg = None
+    for key in (
+        "plays_per_game",
+        "offensive_plays_per_game",
+        "off_plays_per_game",
+    ):
+        plays_pg = _float(profile.get(key))
+        if plays_pg is not None:
+            break
+
+    seconds_per_play = None
+    for key in (
+        "seconds_per_offensive_play",
+        "seconds_per_play",
+        "off_seconds_per_play",
+    ):
+        seconds_per_play = _float(profile.get(key))
+        if seconds_per_play is not None:
+            break
+
+    baseline = _float(profile.get("division_baseline_plays_per_game"))
+    pace_index = (
+        float(plays_pg) / float(baseline)
+        if plays_pg is not None and baseline is not None and baseline > 0
+        else None
+    )
+    return {
+        "team": _clean(profile.get("team")),
+        "games": _int(profile.get("games")),
+        "plays_per_game": plays_pg,
+        "seconds_per_offensive_play": seconds_per_play,
+        "avg_time_of_possession_seconds": _float(
+            profile.get("avg_time_of_possession_seconds")
+        ),
+        "division_baseline_plays_per_game": baseline,
+        "division_baseline_seconds_per_play": _float(
+            profile.get("division_baseline_seconds_per_play")
+        ),
+        "pace_index": pace_index,
+        "plays_source": (
+            _clean(profile.get("plays_source"))
+            if plays_pg is not None
+            else ""
+        ),
+        "clock_source": (
+            _clean(profile.get("clock_source"))
+            if seconds_per_play is not None
+            else ""
+        ),
+    }
+
+
 def _safe_pace_engine(
     game: Mapping[str, Any],
     away: Mapping[str, Any],
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
-    try:
-        result = pace_engine.build_pace_engine(game, away, home)
-    except Exception as exc:
-        return {
-            "ready": True,
-            "model_ready": False,
-            "reason": f"{type(exc).__name__}: {exc}"[:280],
-            "away": {},
-            "home": {},
-            "coverage": 0.0,
-            "sportsbook_input_used": False,
-        }
-    return dict(result or {})
+    """Nonblocking Step-5 presentation seed.
+
+    The frozen NCAA pace engine remains available to the certified model path,
+    but the Streamlit presentation no longer waits on its multi-transport live
+    scraper. Step 5 immediately reuses any already-enriched pace fields, then
+    the existing SportsDataverse PBP recovery fills missing presentation data.
+    """
+    away_seed = _profile_pace_seed(away)
+    home_seed = _profile_pace_seed(home)
+    available = sum(
+        value is not None
+        for value in (
+            away_seed.get("plays_per_game"),
+            away_seed.get("seconds_per_offensive_play"),
+            home_seed.get("plays_per_game"),
+            home_seed.get("seconds_per_offensive_play"),
+        )
+    )
+    return {
+        "ready": True,
+        "model_ready": False,
+        "presentation_ready": False,
+        "reason": "Live NCAA presentation scrape deferred; using verified preloaded/PBP evidence",
+        "away": away_seed,
+        "home": home_seed,
+        "coverage": available / 4.0,
+        "sportsbook_input_used": False,
+        "market_price_used": False,
+        "market_probability_used": False,
+        "edge_or_ev_used": False,
+        "monte_carlo_used": False,
+        "presentation_ncaa_live_fetch_used": False,
+    }
 
 
 def _season(display_game: Mapping[str, Any]) -> int:
@@ -1450,7 +1525,7 @@ def render_step5_html(
         + "</div>"
         + environment
         + insights
-        + '<div class="gt168-step5-integrity">NCAA PRIMARY • SPORTSDATAVERSE PBP • PUNT & RALLY DRIVE EFFICIENCY • MODEL SAFE • PROJECTION MUTATION OFF</div>'
+        + '<div class="gt168-step5-integrity">SPORTSDATAVERSE PBP PRIMARY • NCAA MODEL FROZEN • PUNT & RALLY DRIVE EFFICIENCY • MODEL SAFE • PROJECTION MUTATION OFF</div>'
     )
 
     return STEP5_CSS + f"""
@@ -1463,7 +1538,8 @@ def render_step5_html(
  data-step5-home-pbp-games="{home_pbp_games}"
  data-step5-marker="{STEP5_PRESENTATION_MARKER}"
  data-step5-data-marker="{STEP5_DATA_MARKER}"
- data-step5-visual-marker="{STEP5_VISUAL_MARKER}" open>
+ data-step5-visual-marker="{STEP5_VISUAL_MARKER}"
+ data-step5-deployment-marker="{STEP5_DEPLOYMENT_MARKER}" open>
  <summary class="gt168-step5-summary-shell">
    <span class="gt159-num">5</span>
    <span class="gt159-stepcopy"><b>Pace & Expected Possessions</b><span>Plays • tempo • drives • no-huddle • expected opportunities</span></span>
@@ -1501,6 +1577,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STEP5_CSS",
     "STEP5_DATA_MARKER",
+    "STEP5_DEPLOYMENT_MARKER",
     "STEP5_PRESENTATION_MARKER",
     "STEP5_VISUAL_MARKER",
     "_parse_drive_evidence",
