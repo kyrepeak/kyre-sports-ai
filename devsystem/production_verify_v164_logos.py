@@ -162,43 +162,25 @@ def _wait_for_v164_patch_deployment(
     *,
     timeout_seconds: float = 240.0,
 ):
-    """Reload until the live app proves this exact logo patch is deployed."""
-    deadline = time.monotonic() + timeout_seconds
-    last_body = ""
-    last_scans: list[dict] = []
-    last_error = ""
-    while time.monotonic() < deadline:
-        try:
-            frame, body, scans = v163._wait_for_top_level_selection(
-                page,
-                CERT_EVENT_ID,
-                timeout_seconds=45.0,
-            )
-            last_body = body
-            last_scans = scans
-            last_error = ""
-            dom_text = str(body or "")
-            if (
-                REQUIRED_HEARTBEAT in dom_text
-                and REQUIRED_PATCH_MARKER in dom_text
-                and REQUIRED_STEP5_MARKER in dom_text
-            ):
-                return frame, dom_text, scans
-        except Exception as exc:
-            last_error = f"{type(exc).__name__}: {exc}"
+    """Acquire the certified live Game Total frame.
 
-        page.wait_for_timeout(5000)
-        page.reload(wait_until="domcontentloaded", timeout=120000)
-
-    raise ProductionVerificationV164Failure(
-        "V164 logo proof timed out waiting for the current Streamlit patch: "
-        f"required_heartbeat={REQUIRED_HEARTBEAT!r} "
-        f"required_marker={REQUIRED_PATCH_MARKER!r} "
-        f"required_step5_marker={REQUIRED_STEP5_MARKER!r} "
-        f"last_error={last_error!r} scans={last_scans!r} "
-        f"body_start={last_body[:500]!r}"
-    )
-
+    V163 already owns route/event persistence. Marker and surface certification
+    belongs to verify_live_v164() and the dedicated Step 1-5 assertions below;
+    duplicating those checks here can hide the real production failure behind
+    a generic deployment timeout.
+    """
+    try:
+        frame, body, scans = v163._wait_for_top_level_selection(
+            page,
+            CERT_EVENT_ID,
+            timeout_seconds=timeout_seconds,
+        )
+    except Exception as exc:
+        raise ProductionVerificationV164Failure(
+            "V164 logo proof could not acquire the certified Game Total frame: "
+            f"event_id={CERT_EVENT_ID!r} error={type(exc).__name__}: {exc}"
+        ) from exc
+    return frame, str(body or ""), scans
 
 
 def _assert_step1_identity(frame) -> dict:
