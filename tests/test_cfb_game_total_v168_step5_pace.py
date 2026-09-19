@@ -206,6 +206,19 @@ def test_v168_step5_core_pace_failure_is_data_limited(monkeypatch):
     pace = _pace()
     pace["model_ready"] = False
     pace["coverage"] = 0.25
+    monkeypatch.setattr(
+        step5,
+        "_safe_sdv_pregame_pace",
+        lambda identity, game, drives: {
+            "ready": True,
+            "model_ready": False,
+            "presentation_ready": False,
+            "coverage": 0.0,
+            "away": {},
+            "home": {},
+            "sportsbook_input_used": False,
+        },
+    )
     contract = step5.build_step5_contract(
         _identity(),
         _away(),
@@ -319,6 +332,8 @@ def test_v168_sportsdataverse_parser_reads_flattened_drive_pace_and_no_huddle():
     assert result["drive_count"] == 2
     assert result["drives_per_game"] == 2.0
     assert result["avg_drive_time_seconds"] == 125.0
+    assert result["plays_per_game"] == 4.0
+    assert result["seconds_per_play"] == 27.5
     assert result["situation_neutral_seconds_per_play"] == 27.5
     assert result["no_huddle_rate"] == 0.25
     assert result["delivery"] == "sportsdataverse_github_raw"
@@ -387,6 +402,158 @@ def test_v168_sportsdataverse_flattened_clock_helpers_are_supported():
     }
     assert step5._play_period(play) == 3
     assert step5._play_clock(play) == 441.0
+
+
+def test_v175_sdv_pregame_features_recover_core_pace_without_ncaa(monkeypatch):
+    rows = [
+        {
+            "season": 2026,
+            "week": 4,
+            "game_id": 999,
+            "start_date": "2026-09-19T19:30:00Z",
+            "team_id": "153",
+            "team": "North Carolina",
+            "off_plays_per_game": 72.4,
+            "off_sec_per_play_mean": 23.8,
+        },
+        {
+            "season": 2026,
+            "week": 4,
+            "game_id": 999,
+            "start_date": "2026-09-19T19:30:00Z",
+            "team_id": "228",
+            "team": "Clemson",
+            "off_plays_per_game": 64.8,
+            "off_sec_per_play_mean": 28.1,
+        },
+    ]
+    for idx, plays in enumerate((66.0, 67.0, 68.0, 69.0, 70.0, 71.0), start=300):
+        rows.append(
+            {
+                "season": 2026,
+                "week": 4,
+                "game_id": 1000 + idx,
+                "start_date": "2026-09-19T17:00:00Z",
+                "team_id": str(idx),
+                "team": f"Team {idx}",
+                "off_plays_per_game": plays,
+                "off_sec_per_play_mean": 26.0,
+            }
+        )
+
+    monkeypatch.setattr(
+        step5,
+        "_fetch_sportsdataverse_matchup_features",
+        lambda season: rows,
+    )
+    recovered = step5._safe_sdv_pregame_pace(
+        _identity(),
+        {
+            "game_date": "2026-09-19",
+            "espn_event_id": "999",
+        },
+        _drive(),
+    )
+    assert recovered["model_ready"] is False
+    assert recovered["presentation_ready"] is True
+    assert recovered["coverage"] == 1.0
+    assert recovered["away"]["plays_per_game"] == 72.4
+    assert recovered["home"]["plays_per_game"] == 64.8
+    assert recovered["away"]["seconds_per_offensive_play"] == 23.8
+    assert recovered["home"]["seconds_per_offensive_play"] == 28.1
+    assert recovered["away"]["plays_rank"] is not None
+    assert recovered["expected_combined_plays"] == 137.2
+    assert recovered["sportsbook_input_used"] is False
+
+
+def test_v175_step5_recovers_data_limited_ncaa_state_to_ready(monkeypatch):
+    _bypass_ppd(monkeypatch)
+    frozen = {
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.0,
+        "reason": "NCAA Total Offense pace row is unavailable",
+        "away": {},
+        "home": {},
+        "sportsbook_input_used": False,
+    }
+    recovered = _pace()
+    recovered["model_ready"] = False
+    recovered["presentation_ready"] = True
+    recovered["presentation_source"] = (
+        "SportsDataverse pregame matchup features + PBP fallback"
+    )
+    recovered["away"]["plays_source"] = (
+        "SportsDataverse pregame matchup features"
+    )
+    recovered["away"]["clock_source"] = (
+        "SportsDataverse pregame matchup features"
+    )
+    recovered["home"]["plays_source"] = (
+        "SportsDataverse pregame matchup features"
+    )
+    recovered["home"]["clock_source"] = (
+        "SportsDataverse pregame matchup features"
+    )
+
+    monkeypatch.setattr(
+        step5,
+        "_safe_sdv_pregame_pace",
+        lambda identity, game, drives: dict(recovered),
+    )
+    contract = step5.build_step5_contract(
+        _identity(),
+        _away(),
+        _home(),
+        {"game_date": "2026-09-19"},
+        pace=frozen,
+        drive_evidence=_drive(),
+    )
+    assert contract["state"] == "READY"
+    assert contract["ready"] is True
+    assert contract["ready_tiles"] == 12
+    assert contract["coverage"] == 1.0
+    assert contract["expected_combined_plays"] == 143.0
+    assert contract["expected_away_drives"] is not None
+    assert contract["expected_home_drives"] is not None
+    assert contract["tempo_grade"] == "B+"
+    assert contract["matchup_read"] != "PACE DATA LIMITED"
+    assert contract["biggest_accelerator"] != "Verified pace edge unavailable"
+    assert contract["biggest_brake"] != "Verified pace brake unavailable"
+    assert contract["ou_impact"] == "SLIGHT OVER PRESSURE"
+    assert contract["data_confidence"] == 100
+    assert contract["pace_engine"]["model_ready"] is False
+    assert contract["pace_engine"]["presentation_ready"] is True
+    assert contract["pace_engine"]["sportsbook_input_used"] is False
+
+
+def test_v175_step5_renders_game_context_and_event_record_fallback(monkeypatch):
+    _bypass_ppd(monkeypatch)
+    away = _away()
+    home = _home()
+    away["record_text"] = "0-0"
+    home["record_text"] = "0-0"
+    html = step5.render_step5_html(
+        "CHECK",
+        _identity(),
+        away,
+        home,
+        {
+            "game_date": "2026-09-19",
+            "kickoff_iso": "2026-09-19T23:30:00Z",
+            "venue": "Memorial Stadium",
+            "broadcast": "ABC",
+            "away_record_summary": "2-1",
+            "home_record_summary": "3-0",
+        },
+        pace=_pace(),
+        drive_evidence=_drive(),
+    )
+    assert "MEMORIAL STADIUM" in html.upper()
+    assert "7:30 PM ET" in html
+    assert "ABC" in html
+    assert "2-1" in html
+    assert "3-0" in html
 
 
 def test_v168_step5_render_matches_mockup_structure(monkeypatch):
