@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from statistics import mean
 from html import escape
+from concurrent.futures import ThreadPoolExecutor
 import re
 from typing import Any, Mapping, Sequence
 
@@ -132,12 +133,18 @@ def _team_name(
     )
 
 
-def _team_id(identity: Mapping[str, Any], side: str) -> str:
+def _team_id(
+    identity: Mapping[str, Any],
+    side: str,
+    profile: Mapping[str, Any] | None = None,
+) -> str:
     row = _team_identity(identity, side)
-    for key in ("team_id", "espn_team_id", "id"):
-        value = _clean(row.get(key))
-        if value:
-            return value
+    profile = profile or {}
+    for source in (row, profile):
+        for key in ("team_id", "espn_team_id", "id"):
+            value = _clean(source.get(key))
+            if value.isdigit():
+                return value
     return ""
 
 
@@ -252,15 +259,25 @@ def _drive_team_id(drive: Mapping[str, Any]) -> str:
 def _play_period(play: Mapping[str, Any]) -> int | None:
     period = play.get("period")
     if isinstance(period, Mapping):
-        return _int(period.get("number") or period.get("value"))
-    return _int(period)
+        value = _int(period.get("number") or period.get("value"))
+        if value is not None:
+            return value
+    value = _int(period)
+    if value is not None:
+        return value
+    return _int(play.get("period.number"))
 
 
 def _play_clock(play: Mapping[str, Any]) -> float | None:
     clock = play.get("clock")
     if isinstance(clock, Mapping):
-        return _clock_seconds(clock.get("displayValue") or clock.get("value"))
-    return _clock_seconds(clock)
+        value = _clock_seconds(clock.get("displayValue") or clock.get("value"))
+        if value is not None:
+            return value
+    value = _clock_seconds(clock)
+    if value is not None:
+        return value
+    return _clock_seconds(play.get("clock.displayValue"))
 
 
 def _score_margin(play: Mapping[str, Any]) -> float | None:
@@ -489,13 +506,38 @@ def _safe_drive_evidence(
     away: Mapping[str, Any],
     home: Mapping[str, Any],
 ) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for side, profile in (("away", away), ("home", home)):
-        event_ids = _event_ids(profile)
-        team_id = _team_id(identity, side)
+    profiles = {"away": away, "home": home}
+    side_events = {
+        side: _event_ids(profile)
+        for side, profile in profiles.items()
+    }
+    unique_events = list(
+        dict.fromkeys(
+            event_id
+            for ids in side_events.values()
+            for event_id in ids
+        )
+    )
 
-        sdv_games = [_fetch_sportsdataverse_game(event_id) for event_id in event_ids]
-        sdv_games = [payload for payload in sdv_games if payload]
+    sdv_payloads: dict[str, dict[str, Any]] = {}
+    if unique_events:
+        with ThreadPoolExecutor(max_workers=min(4, len(unique_events))) as pool:
+            results = list(pool.map(_fetch_sportsdataverse_game, unique_events))
+        sdv_payloads = {
+            event_id: payload
+            for event_id, payload in zip(unique_events, results)
+            if payload
+        }
+
+    out: dict[str, Any] = {}
+    for side, profile in profiles.items():
+        event_ids = side_events[side]
+        team_id = _team_id(identity, side, profile)
+        sdv_games = [
+            sdv_payloads[event_id]
+            for event_id in event_ids
+            if event_id in sdv_payloads
+        ]
         row = _parse_sportsdataverse_evidence(sdv_games, team_id)
 
         # Direct ESPN summary is a last-resort recovery only. Production does
@@ -510,6 +552,7 @@ def _safe_drive_evidence(
                 row["delivery"] = "espn_summary_last_resort"
                 fallback_used = True
 
+        row["team_id"] = team_id
         row["requested_event_ids"] = event_ids
         row["sportsdataverse_games_loaded"] = len(sdv_games)
         row["espn_fallback_used"] = fallback_used
@@ -1157,7 +1200,7 @@ def render_step5_html(
         + "</div>"
         + environment
         + insights
-        + '<div class="gt168-step5-integrity">NCAA PRIMARY • PUNT & RALLY DRIVE EFFICIENCY • COMPLETED-GAME PBP SUPPLEMENT • MODEL SAFE • PROJECTION MUTATION OFF</div>'
+        + '<div class="gt168-step5-integrity">NCAA PRIMARY • SPORTSDATAVERSE PBP • PUNT & RALLY DRIVE EFFICIENCY • MODEL SAFE • PROJECTION MUTATION OFF</div>'
     )
 
     return STEP5_CSS + f"""
