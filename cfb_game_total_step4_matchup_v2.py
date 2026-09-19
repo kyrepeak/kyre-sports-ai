@@ -45,7 +45,7 @@ STEP4_CSS = r"""
 
 .gt165-battle{border:1px solid rgba(64,184,238,.27);border-radius:13px;background:linear-gradient(145deg,rgba(5,28,49,.98),rgba(8,21,39,.98));overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
 .gt165-battlehead{display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:9px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(70,152,196,.16)}
-.gt165-logo{width:46px;height:38px;object-fit:contain}
+.gt165-logowrap{width:50px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,255,255,.90);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}\n.gt165-logo{width:44px;height:36px;object-fit:contain}
 .gt165-battlecopy b{display:block;color:#f1f8ff;font-size:11px;font-weight:950}
 .gt165-battlecopy span{display:block;color:#86a0b4;font-size:7px;margin-top:3px}
 .gt165-read{max-width:160px;padding:7px 9px;border-radius:10px;border:1px solid rgba(86,234,180,.38);background:rgba(19,109,76,.16);text-align:right}
@@ -282,8 +282,8 @@ def _safe_engine(
 
 
 def _read_from_edges(edges: list[float]) -> tuple[str, str, str]:
-    if not edges:
-        return "Verified matchup data limited", "mixed", "Not enough ranked matchup rows"
+    if len(edges) < 3:
+        return "Verified matchup data limited", "mixed", "Need at least 3 verified ranked matchup rows"
     avg = sum(edges) / len(edges)
     if avg >= 0.20:
         return "Favorable offensive matchup", "fav", "Multiple matchup edges favor the offense"
@@ -297,18 +297,18 @@ def _read_from_edges(edges: list[float]) -> tuple[str, str, str]:
 
 
 def _biggest(edges: list[tuple[str, float]], *, want_max: bool) -> str:
-    if not edges:
-        return "No verified ranked edge"
+    if len(edges) < 3:
+        return "Verified edge data limited"
     label, value = (max(edges, key=lambda item: item[1]) if want_max else min(edges, key=lambda item: item[1]))
     if want_max and value <= 0.02:
         return "No clear offensive advantage"
     if not want_max and value >= -0.02:
-        return "No clear defensive pressure"
+        return "No verified defensive disadvantage"
     return label
 
 
 def _impact(edges: list[float]) -> str:
-    if not edges:
+    if len(edges) < 3:
         return "↔ Scoring impact unclear"
     avg = sum(edges) / len(edges)
     if avg >= 0.15:
@@ -331,34 +331,37 @@ def _battle_contract(
     rows = _legacy_rows(legacy_battle)
 
     tiles = [
-        _engine_tile("Pass Eff.", dims.get("passing"), rows.get("Passing")),
-        _engine_tile("Rush Eff.", dims.get("rushing"), rows.get("Rushing")),
-        _direct_tile(
-            "Success Rate",
-            offense_evidence,
-            defense_evidence,
-            ("success_rate", "offensive_success_rate"),
-            ("success_rate_allowed", "defensive_success_rate_allowed"),
-            unavailable_note="Verified success rate unavailable",
+        _engine_tile(
+            "Pass Yds/G",
+            dims.get("passing"),
+            rows.get("Passing"),
+            unavailable_note="Verified passing matchup unavailable",
         ),
         _engine_tile(
-            "EPA / Play",
-            {},
-            rows.get("EPA / Play"),
-            unavailable_note="Verified EPA/play unavailable",
+            "Rush Yds/G",
+            dims.get("rushing"),
+            rows.get("Rushing"),
+            unavailable_note="Verified rushing matchup unavailable",
+        ),
+        _engine_tile(
+            "3rd Down",
+            dims.get("third_down"),
+            unavailable_note="Verified 3rd-down matchup unavailable",
+        ),
+        _engine_tile(
+            "Red Zone",
+            dims.get("red_zone"),
+            unavailable_note="Verified red-zone matchup unavailable",
         ),
         _engine_tile(
             "Sack Matchup",
             dims.get("sack_pressure"),
             unavailable_note="Verified sack matchup unavailable",
         ),
-        _direct_tile(
-            "Havoc",
-            offense_evidence,
-            defense_evidence,
-            ("havoc_allowed_rate", "offensive_havoc_allowed_rate"),
-            ("havoc_rate", "defensive_havoc_rate"),
-            unavailable_note="Exact verified Havoc Rate unavailable",
+        _engine_tile(
+            "Turnover Pressure",
+            dims.get("turnovers"),
+            unavailable_note="Verified turnover matchup unavailable",
         ),
     ]
 
@@ -431,12 +434,27 @@ def build_step4_contract(
         state = "CHECK"
 
     advanced_missing = []
-    for label in ("Success Rate", "EPA / Play", "Havoc"):
-        if not any(
-            tile.get("label") == label and tile.get("ready")
-            for battle in (away_battle, home_battle)
-            for tile in battle["tiles"]
-        ):
+    advanced_specs = (
+        (
+            "Success Rate",
+            ("success_rate", "offensive_success_rate"),
+            ("success_rate_allowed", "defensive_success_rate_allowed"),
+        ),
+        (
+            "EPA / Play",
+            ("epa_per_play", "offensive_epa_per_play", "epa_play"),
+            ("epa_allowed_per_play", "defensive_epa_per_play", "epa_per_play_allowed"),
+        ),
+        (
+            "Havoc",
+            ("havoc_allowed_rate", "offensive_havoc_allowed_rate"),
+            ("havoc_rate", "defensive_havoc_rate"),
+        ),
+    )
+    for label, offense_keys, defense_keys in advanced_specs:
+        away_pair = _direct_pair(away, home, offense_keys, defense_keys)
+        home_pair = _direct_pair(home, away, offense_keys, defense_keys)
+        if any(value is None for value in (*away_pair, *home_pair)):
             advanced_missing.append(label)
 
     return {
@@ -472,8 +490,8 @@ def _battle_html(battle: Mapping[str, Any], testid: str) -> str:
     team = _clean(battle.get("offense_team"))
     defense = _clean(battle.get("defense_team"))
     logo_html = (
-        f'<img class="gt165-logo" src="{escape(logo)}" alt="{escape(team)} logo"/>'
-        if logo else '<span style="font-size:23px">🏈</span>'
+        f'<span class="gt165-logowrap"><img class="gt165-logo" src="{escape(logo)}" alt="{escape(team)} logo"/></span>'
+        if logo else '<span class="gt165-logowrap" style="font-size:23px">🏈</span>'
     )
     tone = _clean(battle.get("read_tone")) or "mixed"
     tiles = "".join(_tile_html(tile) for tile in battle.get("tiles") or [])
@@ -523,7 +541,7 @@ def render_step4_html(
 <details class="gt159-step gt165-step4 {state_css}" data-testid="gt157-step-4" data-step4-state="{escape(state)}" open>
   <summary>
     <span class="gt159-num">4</span>
-    <span class="gt159-stepcopy"><b>Matchup</b><span>Off vs Def · Pass · Rush · EPA</span></span>
+    <span class="gt159-stepcopy"><b>Matchup</b><span>Off vs Def · Pass · Rush · Situational</span></span>
     <span class="gt159-state gt165-state {state_css}">{escape(state)}</span>
   </summary>
   <div class="gt159-stepbody gt165-body">
@@ -533,7 +551,7 @@ def render_step4_html(
     </div>
     <div class="gt165-integrity">
       <div class="gt165-note" data-testid="gt165-step4-source-integrity"><strong>✓ VERIFIED MATCHUP DATA</strong><span>{escape(engine_note)} Visible matchup coverage: {coverage}%.</span></div>
-      <div class="gt165-note purple" data-testid="gt165-step4-advanced-integrity"><strong>◈ ADVANCED-METRIC INTEGRITY</strong><span>Missing verified fields: {escape(missing)}. They stay blank instead of being fabricated. Projection mutation: OFF · sportsbook influence: 0.0%.</span></div>
+      <div class="gt165-note purple" data-testid="gt165-step4-advanced-integrity"><strong>◈ ADVANCED-METRIC INTEGRITY</strong><span>Optional advanced fields not fully verified: {escape(missing)}. Core Step 4 uses verified NCAA matchup dimensions only; no advanced value is fabricated. Projection mutation: OFF · sportsbook influence: 0.0%.</span></div>
     </div>
   </div>
 </details>"""
