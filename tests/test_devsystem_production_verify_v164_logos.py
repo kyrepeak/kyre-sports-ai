@@ -387,3 +387,13 @@ def test_v178_production_verifier_requires_nonblocking_step5_freshness():
     )[0]
     assert 'get_attribute("data-step5-deployment-marker")' in step5_block
     assert "Step 5 V178 deployment marker mismatch" in step5_block
+
+
+
+def test_v185_step5_production_allows_verified_sportsdataverse_snapshot_delivery():
+    source = VERIFIER.read_text(encoding="utf-8")
+    step5_block = source.split("def _assert_step5_pace", 1)[1].split(
+        "def verify_live_v164", 1
+    )[0]
+    assert '"sportsdataverse_github_raw"' in step5_block
+    assert '"sportsdataverse_github_raw_snapshot"' in step5_block
