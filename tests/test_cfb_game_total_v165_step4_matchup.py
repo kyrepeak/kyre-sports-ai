@@ -190,10 +190,16 @@ def test_v165_router_advances_only_exact_game_total_page():
     assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in source
 
 
-def test_app_activates_v161_and_keeps_v160_source_compatibility():
+def test_app_advances_to_v162_and_preserves_frozen_router_chain():
     source = APP.read_text()
-    assert "from streamlit_memory_lazy_router_v161 import record_bootstrap_import_ms, render_app" in source
-    assert "from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app" in source
+    assert "from streamlit_memory_lazy_router_v162 import record_bootstrap_import_ms, render_app" in source
+
+    router_v162 = (ROOT / "streamlit_memory_lazy_router_v162.py").read_text()
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v161"' in router_v162
+    assert "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE" in router_v162
+
+    router_v161 = (ROOT / "streamlit_memory_lazy_router_v161.py").read_text()
+    assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v160"' in router_v161
 
 
 def test_v165_production_render_calls_verified_matchup_engine_without_model_mutation(monkeypatch):
