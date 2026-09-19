@@ -89,6 +89,8 @@ def _drive():
         "away": {
             "games": 3,
             "drives_per_game": 12.7,
+            "plays_per_game": 72.4,
+            "seconds_per_play": 23.8,
             "avg_drive_time_seconds": 138.0,
             "situation_neutral_seconds_per_play": 25.1,
             "no_huddle_rate": 0.38,
@@ -99,6 +101,8 @@ def _drive():
         "home": {
             "games": 3,
             "drives_per_game": 10.9,
+            "plays_per_game": 64.8,
+            "seconds_per_play": 28.1,
             "avg_drive_time_seconds": 181.0,
             "situation_neutral_seconds_per_play": 28.7,
             "no_huddle_rate": 0.14,
@@ -209,7 +213,7 @@ def test_v168_step5_core_pace_failure_is_data_limited(monkeypatch):
     monkeypatch.setattr(
         step5,
         "_safe_sdv_pregame_pace",
-        lambda identity, game, drives: {
+        lambda identity, game, drives, frozen=None: {
             "ready": True,
             "model_ready": False,
             "presentation_ready": False,
@@ -404,67 +408,55 @@ def test_v168_sportsdataverse_flattened_clock_helpers_are_supported():
     assert step5._play_clock(play) == 441.0
 
 
-def test_v175_sdv_pregame_features_recover_core_pace_without_ncaa(monkeypatch):
-    rows = [
-        {
-            "season": 2026,
-            "week": 4,
-            "game_id": 999,
-            "start_date": "2026-09-19T19:30:00Z",
-            "team_id": "153",
-            "team": "North Carolina",
-            "off_plays_per_game": 72.4,
-            "off_sec_per_play_mean": 23.8,
-        },
-        {
-            "season": 2026,
-            "week": 4,
-            "game_id": 999,
-            "start_date": "2026-09-19T19:30:00Z",
-            "team_id": "228",
-            "team": "Clemson",
-            "off_plays_per_game": 64.8,
-            "off_sec_per_play_mean": 28.1,
-        },
-    ]
-    for idx, plays in enumerate((66.0, 67.0, 68.0, 69.0, 70.0, 71.0), start=300):
-        rows.append(
-            {
-                "season": 2026,
-                "week": 4,
-                "game_id": 1000 + idx,
-                "start_date": "2026-09-19T17:00:00Z",
-                "team_id": str(idx),
-                "team": f"Team {idx}",
-                "off_plays_per_game": plays,
-                "off_sec_per_play_mean": 26.0,
-            }
-        )
-
-    monkeypatch.setattr(
-        step5,
-        "_fetch_sportsdataverse_matchup_features",
-        lambda season: rows,
-    )
+def test_v176_sdv_pbp_recovers_core_pace_without_ncaa():
+    frozen = {
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.0,
+        "away": {},
+        "home": {},
+        "sportsbook_input_used": False,
+    }
     recovered = step5._safe_sdv_pregame_pace(
         _identity(),
-        {
-            "game_date": "2026-09-19",
-            "espn_event_id": "999",
-        },
+        {"game_date": "2026-09-19", "espn_event_id": "999"},
         _drive(),
+        frozen,
     )
     assert recovered["model_ready"] is False
     assert recovered["presentation_ready"] is True
     assert recovered["coverage"] == 1.0
+    assert recovered["presentation_source"] == "SportsDataverse completed-game PBP"
     assert recovered["away"]["plays_per_game"] == 72.4
     assert recovered["home"]["plays_per_game"] == 64.8
     assert recovered["away"]["seconds_per_offensive_play"] == 23.8
     assert recovered["home"]["seconds_per_offensive_play"] == 28.1
-    assert recovered["away"]["plays_rank"] is not None
+    assert recovered["away"]["plays_source"] == "SportsDataverse completed-game PBP"
+    assert recovered["home"]["clock_source"] == "SportsDataverse completed-game PBP"
     assert recovered["expected_combined_plays"] == 137.2
     assert recovered["sportsbook_input_used"] is False
 
+
+def test_v176_sdv_pbp_recovery_preserves_frozen_ncaa_baseline_when_available():
+    frozen = {
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.75,
+        "away": {"division_baseline_plays_per_game": 67.0},
+        "home": {"division_baseline_plays_per_game": 69.0},
+        "sportsbook_input_used": False,
+    }
+    recovered = step5._safe_sdv_pregame_pace(
+        _identity(),
+        {"game_date": "2026-09-19"},
+        _drive(),
+        frozen,
+    )
+    assert recovered["division_baseline_combined_plays"] == 136.0
+    assert recovered["away"]["pace_index"] == 72.4 / 68.0
+    assert recovered["home"]["pace_index"] == 64.8 / 68.0
+    assert recovered["model_ready"] is False
+    assert recovered["sportsbook_input_used"] is False
 
 def test_v175_step5_recovers_data_limited_ncaa_state_to_ready(monkeypatch):
     _bypass_ppd(monkeypatch)
@@ -481,10 +473,10 @@ def test_v175_step5_recovers_data_limited_ncaa_state_to_ready(monkeypatch):
     recovered["model_ready"] = False
     recovered["presentation_ready"] = True
     recovered["presentation_source"] = (
-        "SportsDataverse pregame matchup features + PBP fallback"
+        "SportsDataverse completed-game PBP"
     )
     recovered["away"]["plays_source"] = (
-        "SportsDataverse pregame matchup features"
+        "SportsDataverse completed-game PBP"
     )
     recovered["away"]["clock_source"] = (
         "SportsDataverse pregame matchup features"
@@ -499,7 +491,7 @@ def test_v175_step5_recovers_data_limited_ncaa_state_to_ready(monkeypatch):
     monkeypatch.setattr(
         step5,
         "_safe_sdv_pregame_pace",
-        lambda identity, game, drives: dict(recovered),
+        lambda identity, game, drives, frozen=None: dict(recovered),
     )
     contract = step5.build_step5_contract(
         _identity(),
@@ -525,6 +517,43 @@ def test_v175_step5_recovers_data_limited_ncaa_state_to_ready(monkeypatch):
     assert contract["pace_engine"]["model_ready"] is False
     assert contract["pace_engine"]["presentation_ready"] is True
     assert contract["pace_engine"]["sportsbook_input_used"] is False
+
+
+def test_v176_real_pbp_recovery_renders_ready_dom_without_parquet(monkeypatch):
+    _bypass_ppd(monkeypatch)
+    frozen = {
+        "ready": True,
+        "model_ready": False,
+        "coverage": 0.0,
+        "reason": "NCAA Total Offense pace row is unavailable",
+        "away": {},
+        "home": {},
+        "sportsbook_input_used": False,
+    }
+    html = step5.render_step5_html(
+        "CHECK",
+        _identity(),
+        _away(),
+        _home(),
+        {
+            "game_date": "2026-09-18",
+            "espn_event_id": "401858226",
+            "away_record_summary": "2-1",
+            "home_record_summary": "3-0",
+        },
+        pace=frozen,
+        drive_evidence=_drive(),
+    )
+    assert 'data-testid="gt157-step-5"' in html
+    assert 'data-step5-state="READY"' in html
+    assert 'data-step5-coverage="100"' in html
+    assert html.count('data-testid="gt168-step5-stat-tile"') == 12
+    assert "72.4" in html
+    assert "64.8" in html
+    assert "23.8" in html
+    assert "28.1" in html
+    assert "DATA LIMITED" not in html
+    assert "SportsDataverse completed-game PBP" in html
 
 
 def test_v175_step5_renders_game_context_and_event_record_fallback(monkeypatch):
