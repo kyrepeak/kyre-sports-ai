@@ -94,6 +94,26 @@ def render_game_total_hub(section_header=None, status_info=None, team_logo=None,
                 except Exception:
                     pass
 
+            # Step 5 PBP evidence requires exact completed-game event IDs.
+            # The generic NCAA team-data foundation above intentionally omits
+            # those IDs, so overlay the certified Step 3 runtime enrichment
+            # before the Step 5 owner builds SportsDataverse evidence.
+            try:
+                step3_away, step3_home, _step3_diag = (
+                    prior_v165.prior_v164.step3_owner.enrich_step3_inputs(
+                        exact_identity,
+                        step5_away,
+                        step5_home,
+                        step5_game,
+                    )
+                )
+                if isinstance(step3_away, dict):
+                    step5_away.update(step3_away)
+                if isinstance(step3_home, dict):
+                    step5_home.update(step3_home)
+            except Exception:
+                pass
+
             return step5_owner.render_step5_html(
                 status,
                 exact_identity,

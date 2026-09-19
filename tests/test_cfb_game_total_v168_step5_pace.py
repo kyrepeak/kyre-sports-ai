@@ -442,6 +442,10 @@ def test_v168_page_advances_only_step5_owner():
     assert "step3_data_owner.load_matchup_team_data" in source
     assert "step5_away.update(away_foundation)" in source
     assert "step5_home.update(home_foundation)" in source
+    assert "step3_owner.enrich_step3_inputs" in source
+    assert "step5_away.update(step3_away)" in source
+    assert "step5_home.update(step3_home)" in source
+    assert "exact completed-game event IDs" in source
 
 
 def test_v168_router_advances_only_exact_game_total_page_and_preserves_step4_marker():
