@@ -16,16 +16,14 @@ pace engine is read-only here; sportsbook projection influence remains 0.0%.
 """
 from __future__ import annotations
 
-from statistics import mean, median
+from statistics import mean
 from html import escape
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from io import BytesIO
 import re
 from typing import Any, Mapping, Sequence
 from zoneinfo import ZoneInfo
 
-import pandas as pd
 import requests
 import streamlit as st
 
@@ -45,12 +43,6 @@ SPORTSDATAVERSE_GAME_URL = (
     "cfbfastR-cfb-raw/main/cfb/json/final/{event_id}.json"
 )
 SPORTSDATAVERSE_TIMEOUT_SECONDS = 5.0
-SPORTSDATAVERSE_MATCHUP_FEATURES_URL = (
-    "https://raw.githubusercontent.com/sportsdataverse/"
-    "cfbfastR-cfb-data/main/cfb/cfb_matchup_features/parquet/"
-    "cfb_matchup_features_{season}.parquet"
-)
-SPORTSDATAVERSE_FEATURES_TIMEOUT_SECONDS = 10.0
 ESPN_SUMMARY_URL = (
     "https://site.api.espn.com/apis/site/v2/sports/football/"
     "college-football/summary"
@@ -222,117 +214,6 @@ def _fetch_sportsdataverse_game(event_id: str) -> dict[str, Any]:
     except Exception:
         return {}
     return dict(payload) if isinstance(payload, Mapping) else {}
-
-
-@st.cache_data(ttl=900, show_spinner=False)
-def _fetch_sportsdataverse_matchup_features(season: int) -> list[dict[str, Any]]:
-    """Load pregame/as-of SportsDataverse pace features for one season.
-
-    This is a Step-5 presentation fallback only. It does not feed the frozen
-    projection engine. The upstream dataset is computed strictly from plays
-    before each game, so selecting the target game row avoids future leakage.
-    """
-    url = SPORTSDATAVERSE_MATCHUP_FEATURES_URL.format(season=int(season))
-    try:
-        response = requests.get(
-            url,
-            timeout=SPORTSDATAVERSE_FEATURES_TIMEOUT_SECONDS,
-            headers={
-                "User-Agent": "KyreSportsAI-GameTotal-Step5/1.0",
-                "Accept": "application/octet-stream",
-            },
-        )
-        response.raise_for_status()
-        frame = pd.read_parquet(BytesIO(response.content))
-    except Exception:
-        return []
-    if frame.empty:
-        return []
-    if "season" in frame.columns:
-        try:
-            frame = frame[frame["season"].astype(int) == int(season)]
-        except Exception:
-            pass
-    return [
-        dict(row)
-        for row in frame.to_dict(orient="records")
-        if isinstance(row, Mapping)
-    ]
-
-
-def _feature_number(row: Mapping[str, Any], *keys: str) -> float | None:
-    for key in keys:
-        value = _float(row.get(key))
-        if value is not None:
-            return value
-    return None
-
-
-def _feature_row(
-    rows: Sequence[Mapping[str, Any]],
-    team_id: str,
-    event_id: str,
-    target_day: str,
-) -> dict[str, Any]:
-    team_id = _clean(team_id)
-    event_id = _clean(event_id)
-    candidates = [
-        dict(row)
-        for row in rows
-        if _clean(row.get("team_id")) == team_id
-    ]
-    if event_id:
-        exact = [
-            row for row in candidates
-            if _clean(row.get("game_id")) == event_id
-        ]
-        if exact:
-            return exact[-1]
-    if not candidates:
-        return {}
-
-    def row_day(row: Mapping[str, Any]) -> str:
-        return _clean(row.get("start_date"))[:10]
-
-    if target_day:
-        eligible = [
-            row for row in candidates
-            if row_day(row) and row_day(row) <= target_day
-        ]
-        if eligible:
-            candidates = eligible
-    candidates.sort(key=lambda row: (row_day(row), _int(row.get("week")) or 0))
-    return candidates[-1] if candidates else {}
-
-
-def _feature_rank(
-    rows: Sequence[Mapping[str, Any]],
-    selected: Mapping[str, Any],
-    key: str,
-    *,
-    lower_is_faster: bool = False,
-) -> tuple[int | None, int]:
-    value = _float(selected.get(key))
-    week = _int(selected.get("week"))
-    if value is None:
-        return None, 0
-    pool: dict[str, float] = {}
-    for row in rows:
-        if week is not None and _int(row.get("week")) != week:
-            continue
-        team_id = _clean(row.get("team_id"))
-        metric = _float(row.get(key))
-        if not team_id or metric is None:
-            continue
-        pool[team_id] = metric
-    values = list(pool.values())
-    if not values:
-        return None, 0
-    if lower_is_faster:
-        rank = 1 + sum(other < value for other in values)
-    else:
-        rank = 1 + sum(other > value for other in values)
-    return int(rank), len(values)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -699,126 +580,48 @@ def _safe_sdv_pregame_pace(
     identity: Mapping[str, Any],
     game: Mapping[str, Any],
     drive_evidence: Mapping[str, Any],
+    frozen_pace: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Presentation-only recovery for NCAA pace-table gaps."""
-    season = _season(game)
-    event_id = _clean(
-        game.get("espn_event_id")
-        or game.get("event_id")
-        or game.get("game_id")
+    """Presentation-only recovery from already-certified completed-game PBP.
+
+    This path never becomes model-ready and never mutates projection math. It
+    exists only so Step 5 can render verified play volume/tempo when the NCAA
+    HTML pace tables are temporarily unavailable.
+    """
+    frozen = dict(frozen_pace or {})
+    frozen_away = (
+        frozen.get("away")
+        if isinstance(frozen.get("away"), Mapping)
+        else {}
     )
-    target_day = ""
-    for key in ("game_date", "date", "start_date", "kickoff_iso"):
-        text = _clean(game.get(key))
-        if text:
-            target_day = text[:10]
-            break
+    frozen_home = (
+        frozen.get("home")
+        if isinstance(frozen.get("home"), Mapping)
+        else {}
+    )
 
-    rows = _fetch_sportsdataverse_matchup_features(season)
-    side_rows: dict[str, dict[str, Any]] = {}
-    week_values: list[float] = []
-    week_spp_values: list[float] = []
-
+    raw: dict[str, dict[str, Any]] = {}
     for side in ("away", "home"):
-        team_id = _team_id(identity, side)
-        selected = _feature_row(rows, team_id, event_id, target_day)
-        side_rows[side] = selected
-
-    selected_weeks = [
-        _int(row.get("week"))
-        for row in side_rows.values()
-        if row
-    ]
-    target_week = next((week for week in selected_weeks if week is not None), None)
-    if target_week is not None:
-        latest_by_team: dict[str, Mapping[str, Any]] = {}
-        for row in rows:
-            if _int(row.get("week")) != target_week:
-                continue
-            tid = _clean(row.get("team_id"))
-            if tid:
-                latest_by_team[tid] = row
-        for row in latest_by_team.values():
-            value = _feature_number(row, "off_plays_per_game")
-            spp = _feature_number(
-                row,
-                "off_sec_per_play_mean",
-                "off_sec_per_play_median",
-            )
-            if value is not None and 35.0 <= value <= 100.0:
-                week_values.append(value)
-            if spp is not None and 10.0 <= spp <= 45.0:
-                week_spp_values.append(spp)
-
-    baseline_plays = median(week_values) if len(week_values) >= 8 else None
-    baseline_spp = median(week_spp_values) if len(week_spp_values) >= 8 else None
-
-    side_contracts: dict[str, dict[str, Any]] = {}
-    for side in ("away", "home"):
-        selected = side_rows.get(side) or {}
         drive = (
             drive_evidence.get(side)
             if isinstance(drive_evidence.get(side), Mapping)
             else {}
         )
-        plays_pg = _feature_number(selected, "off_plays_per_game")
-        spp = _feature_number(
-            selected,
-            "off_sec_per_play_mean",
-            "off_sec_per_play_median",
+        plays_pg = _float(drive.get("plays_per_game"))
+        spp = _float(
+            drive.get("seconds_per_play")
+            or drive.get("situation_neutral_seconds_per_play")
         )
-        plays_source = "SportsDataverse pregame matchup features"
-        clock_source = "SportsDataverse pregame matchup features"
-
-        if plays_pg is None:
-            plays_pg = _float(drive.get("plays_per_game"))
-            plays_source = "SportsDataverse completed-game PBP"
-        if spp is None:
-            spp = _float(
-                drive.get("seconds_per_play")
-                or drive.get("situation_neutral_seconds_per_play")
-            )
-            clock_source = "SportsDataverse completed-game PBP"
-
-        plays_rank, field_size = _feature_rank(
-            rows,
-            selected,
-            "off_plays_per_game",
-        ) if selected else (None, 0)
-        spp_rank, _ = _feature_rank(
-            rows,
-            selected,
-            "off_sec_per_play_mean",
-            lower_is_faster=True,
-        ) if selected else (None, 0)
-
-        pace_index = (
-            plays_pg / float(baseline_plays)
-            if plays_pg is not None and baseline_plays
-            else None
-        )
-        side_contracts[side] = {
-            "team": _clean(selected.get("team")) or _clean(
-                _team_identity(identity, side).get("team")
-            ),
-            "games": max(1, (_int(selected.get("week")) or 1) - 1),
+        raw[side] = {
+            "drive": dict(drive),
             "plays_per_game": plays_pg,
-            "seconds_per_offensive_play": spp,
-            "avg_time_of_possession_seconds": None,
-            "division_baseline_plays_per_game": baseline_plays,
-            "division_baseline_seconds_per_play": baseline_spp,
-            "pace_index": pace_index,
-            "plays_rank": plays_rank,
-            "seconds_per_play_rank": spp_rank,
-            "rank_field_size": field_size,
-            "plays_source": plays_source if plays_pg is not None else "",
-            "clock_source": clock_source if spp is not None else "",
+            "seconds_per_play": spp,
         }
 
-    away_ppg = _float(side_contracts["away"].get("plays_per_game"))
-    home_ppg = _float(side_contracts["home"].get("plays_per_game"))
-    away_spp = _float(side_contracts["away"].get("seconds_per_offensive_play"))
-    home_spp = _float(side_contracts["home"].get("seconds_per_offensive_play"))
+    away_ppg = raw["away"]["plays_per_game"]
+    home_ppg = raw["home"]["plays_per_game"]
+    away_spp = raw["away"]["seconds_per_play"]
+    home_spp = raw["home"]["seconds_per_play"]
 
     if away_ppg is None or home_ppg is None:
         return {
@@ -826,18 +629,61 @@ def _safe_sdv_pregame_pace(
             "model_ready": False,
             "presentation_ready": False,
             "coverage": 0.0,
-            "reason": "SportsDataverse pregame/PBP pace fallback incomplete",
-            "away": side_contracts["away"],
-            "home": side_contracts["home"],
+            "reason": "SportsDataverse completed-game PBP pace fallback incomplete",
+            "away": {},
+            "home": {},
             "sportsbook_input_used": False,
         }
 
-    historical_combined = away_ppg + home_ppg
-    baseline_combined = (
-        2.0 * float(baseline_plays)
-        if baseline_plays is not None
-        else historical_combined
+    baseline_candidates = [
+        _float(frozen_away.get("division_baseline_plays_per_game")),
+        _float(frozen_home.get("division_baseline_plays_per_game")),
+    ]
+    baseline_values = [
+        value for value in baseline_candidates
+        if value is not None and value > 0
+    ]
+    # If NCAA loaded a division baseline but missed one/both team rows, preserve
+    # that authoritative baseline. Otherwise use the two-team midpoint only as
+    # a neutral presentation reference; it cannot influence model math.
+    baseline_plays = (
+        mean(baseline_values)
+        if baseline_values
+        else (float(away_ppg) + float(home_ppg)) / 2.0
     )
+
+    side_contracts: dict[str, dict[str, Any]] = {}
+    frozen_by_side = {"away": frozen_away, "home": frozen_home}
+    for side in ("away", "home"):
+        plays_pg = float(raw[side]["plays_per_game"])
+        spp = _float(raw[side]["seconds_per_play"])
+        drive = raw[side]["drive"]
+        frozen_row = frozen_by_side[side]
+        games = _int(drive.get("games")) or 0
+        side_contracts[side] = {
+            "team": _clean(_team_identity(identity, side).get("team")),
+            "games": games,
+            "plays_per_game": plays_pg,
+            "seconds_per_offensive_play": spp,
+            "avg_time_of_possession_seconds": None,
+            "division_baseline_plays_per_game": baseline_plays,
+            "division_baseline_seconds_per_play": _float(
+                frozen_row.get("division_baseline_seconds_per_play")
+            ),
+            "pace_index": (
+                plays_pg / float(baseline_plays)
+                if baseline_plays > 0
+                else None
+            ),
+            "plays_rank": None,
+            "seconds_per_play_rank": None,
+            "rank_field_size": 0,
+            "plays_source": "SportsDataverse completed-game PBP",
+            "clock_source": "SportsDataverse completed-game PBP",
+        }
+
+    historical_combined = float(away_ppg) + float(home_ppg)
+    baseline_combined = 2.0 * float(baseline_plays)
     pace_ratio = (
         historical_combined / baseline_combined
         if baseline_combined > 0
@@ -851,20 +697,26 @@ def _safe_sdv_pregame_pace(
         ),
     )
     clock_implied = (
-        7200.0 / (away_spp + home_spp)
+        7200.0 / (float(away_spp) + float(home_spp))
         if away_spp is not None
         and home_spp is not None
-        and away_spp + home_spp > 0
+        and float(away_spp) + float(home_spp) > 0
         else None
     )
+    min_games = min(
+        _int(raw["away"]["drive"].get("games")) or 0,
+        _int(raw["home"]["drive"].get("games")) or 0,
+    )
+    sample_factor = max(0.0, min(1.0, float(min_games) / float(MAX_PBP_GAMES)))
     coverage = 1.0 if away_spp is not None and home_spp is not None else 0.90
+
     return {
         "ready": True,
         "model_ready": False,
         "presentation_ready": True,
-        "presentation_source": "SportsDataverse pregame matchup features + PBP fallback",
+        "presentation_source": "SportsDataverse completed-game PBP",
         "coverage": coverage,
-        "sample_factor": 1.0,
+        "sample_factor": sample_factor,
         "historical_combined_plays_per_game": historical_combined,
         "clock_implied_combined_plays": clock_implied,
         "division_baseline_combined_plays": baseline_combined,
@@ -884,7 +736,6 @@ def _safe_sdv_pregame_pace(
         "edge_or_ev_used": False,
         "monte_carlo_used": False,
     }
-
 
 def _safe_pace_engine(
     game: Mapping[str, Any],
@@ -1273,7 +1124,24 @@ def build_step5_contract(
         else _safe_drive_evidence(identity, away_ppd, home_ppd)
     )
     if not pace_result.get("model_ready"):
-        recovered = _safe_sdv_pregame_pace(identity, game, drives)
+        try:
+            recovered = _safe_sdv_pregame_pace(
+                identity,
+                game,
+                drives,
+                pace_result,
+            )
+        except Exception as exc:
+            recovered = {
+                "ready": True,
+                "model_ready": False,
+                "presentation_ready": False,
+                "coverage": 0.0,
+                "away": {},
+                "home": {},
+                "sportsbook_input_used": False,
+                "reason": f"SportsDataverse PBP recovery failed: {type(exc).__name__}",
+            }
         if recovered.get("presentation_ready"):
             recovered["frozen_pace_engine"] = pace_result
             pace_result = recovered
@@ -1627,7 +1495,6 @@ STEP5_CSS = r"""
 __all__ = [
     "ESPN_SUMMARY_URL",
     "SPORTSDATAVERSE_GAME_URL",
-    "SPORTSDATAVERSE_MATCHUP_FEATURES_URL",
     "FROZEN_PREDECESSOR",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
