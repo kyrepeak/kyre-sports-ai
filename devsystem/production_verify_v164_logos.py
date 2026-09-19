@@ -31,6 +31,7 @@ REQUIRED_STEP1_PROFILE_MARKER = "CFB_GAME_TOTAL_STEP1_FAST_EXACT_PROFILE_ACTIVE"
 REQUIRED_STEP2_MARKER = "CFB_GAME_TOTAL_STEP2_PERFORMANCE_PROFILE_V2_ACTIVE"
 REQUIRED_STEP3_MARKER = "CFB_GAME_TOTAL_STEP3_CURRENT_FORM_OPPONENT_QUALITY_ACTIVE"
 REQUIRED_STEP4_MARKER = "CFB_GAME_TOTAL_V165_STEP4_MATCHUP_ACTIVE"
+REQUIRED_STEP4_DEPLOYMENT_MARKER = "CFB_GAME_TOTAL_STEP4_MULTISOURCE_FULL_COVERAGE_ACTIVE"
 
 
 class ProductionVerificationV164Failure(RuntimeError):
@@ -143,6 +144,7 @@ def _wait_for_v164_patch_deployment(
                 and REQUIRED_STEP2_MARKER in dom_text
                 and REQUIRED_STEP3_MARKER in dom_text
                 and REQUIRED_STEP4_MARKER in dom_text
+                and REQUIRED_STEP4_DEPLOYMENT_MARKER in dom_text
             ):
                 return frame, dom_text, scans
         except Exception as exc:
@@ -159,6 +161,7 @@ def _wait_for_v164_patch_deployment(
         f"required_step2_marker={REQUIRED_STEP2_MARKER!r} "
         f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
         f"required_step4_marker={REQUIRED_STEP4_MARKER!r} "
+        f"required_step4_deployment_marker={REQUIRED_STEP4_DEPLOYMENT_MARKER!r} "
         f"required_step3_marker={REQUIRED_STEP3_MARKER!r} "
         f"last_error={last_error!r} scans={last_scans!r} "
         f"body_start={last_body[:500]!r}"
