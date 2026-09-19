@@ -39,6 +39,16 @@ def test_browser_qa_contract_is_explicit_and_safe():
     )
     assert 'data-testid="gt157-step-5"' in module.CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR
     assert 'data-step5-deployment-marker' in module.CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR
+    assert (
+        module.CFB_GAME_TOTAL_STEP6_MARKER
+        == "CFB_GAME_TOTAL_STEP6_SCORING_CREATION_ACTIVE"
+    )
+    assert (
+        module.CFB_GAME_TOTAL_STEP6_DEPLOYMENT_MARKER
+        == "CFB_GAME_TOTAL_STEP6_V184_DEPLOYMENT_ACTIVE"
+    )
+    assert 'data-testid="gt157-step-6"' in module.CFB_GAME_TOTAL_STEP6_ROOT_SELECTOR
+    assert 'data-step6-deployment-marker' in module.CFB_GAME_TOTAL_STEP6_ROOT_SELECTOR
 
     markers = module.CFB_REQUIRED_MARKERS
     assert "CFB O/U • CLEAN PAGE V39 ACTIVE" in markers
@@ -143,4 +153,22 @@ def test_browser_qa_enters_exact_game_total_step5_route():
     assert "CFB_GAME_TOTAL_STEP5_DEPLOYMENT_MARKER" in wait_source
     assert "CFB_GAME_TOTAL_STEP5_ROOT_SELECTOR" in wait_source
     assert 'state="attached"' in wait_source
+    assert "_body_has_forbidden_error" in wait_source
+
+
+
+def test_browser_qa_certifies_exact_game_total_step6_scoring_creation():
+    module = _load_module()
+    run_source = inspect.getsource(module.run_browser_qa)
+    wait_source = inspect.getsource(module._wait_for_game_total_step6)
+
+    assert "_wait_for_game_total_step6" in run_source
+    assert "CFB_GAME_TOTAL_STEP6_MARKER" in wait_source
+    assert "CFB_GAME_TOTAL_STEP6_DEPLOYMENT_MARKER" in wait_source
+    assert "CFB_GAME_TOTAL_STEP6_ROOT_SELECTOR" in wait_source
+    assert 'state="attached"' in wait_source
+    assert 'state != "READY"' in wait_source
+    assert 'coverage != "100"' in wait_source
+    assert "tile_count != 12" in wait_source
+    assert "ready_tiles != 12" in wait_source
     assert "_body_has_forbidden_error" in wait_source
