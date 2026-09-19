@@ -14,6 +14,8 @@ def test_v185_production_verifier_requires_fresh_visual_markers_and_frozen_contr
     assert "frozen.CERT_CANDIDATES" in module_source
     assert "frozen.CERT_QUERY_KEY" in module_source
     assert "frozen._load_streamlit_url()" in module_source
+    assert "CFB_GAME_TOTAL_V185_ROUTER_V165_PRODUCTION_HOTFIX_ACTIVE" in module_source
+    assert "cfb-game-total-v185-step6-cert-heartbeat" in module_source
 
 
 def test_v185_visual_assertion_locks_target_geometry_and_full_width():
@@ -41,3 +43,17 @@ def test_v185_wait_gate_cannot_accept_stale_v184_surface():
     assert "V185 Step 6 visual-parity root not live yet" in source
     assert verifier.STEP6_VISUAL_MARKER == "CFB_GAME_TOTAL_STEP6_V185_VISUAL_PARITY_ACTIVE"
     assert verifier.STEP6_PARITY_MARKER == "CFB_GAME_TOTAL_STEP6_TARGET_MOCK_PARITY_ACTIVE"
+
+
+def test_v185_live_verifier_requires_v165_router_heartbeat_before_green():
+    source = inspect.getsource(verifier.verify_live_v185)
+    assert "ROUTER_HEARTBEAT_TESTID" in source
+    assert "ROUTER_HOTFIX_MARKER" in source
+    assert "heartbeat.count() <= 0" in source
+    assert "ROUTER_HOTFIX_MARKER not in heartbeat_text" in source
+    assert '"router_hotfix_marker": ROUTER_HOTFIX_MARKER' in source
+    assert (
+        verifier.ROUTER_HOTFIX_MARKER
+        == "CFB_GAME_TOTAL_V185_ROUTER_V165_PRODUCTION_HOTFIX_ACTIVE"
+    )
+    assert verifier.ROUTER_HEARTBEAT_TESTID == "cfb-game-total-v185-step6-cert-heartbeat"
