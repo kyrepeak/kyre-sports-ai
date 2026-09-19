@@ -52,11 +52,16 @@ STEP4_CSS = r"""
 .gt165-battles{display:grid;grid-template-columns:1fr;gap:10px}
 
 .gt165-battle{border:1px solid rgba(64,184,238,.27);border-radius:13px;background:linear-gradient(145deg,rgba(5,28,49,.98),rgba(8,21,39,.98));overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
-.gt165-battlehead{display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:9px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(70,152,196,.16)}
-.gt165-logowrap{width:50px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,255,255,.90);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}\n.gt165-logo{width:44px;height:36px;object-fit:contain}
-.gt165-battlecopy b{display:block;color:#f1f8ff;font-size:11px;font-weight:950}
-.gt165-battlecopy span{display:block;color:#86a0b4;font-size:7px;margin-top:3px}
-.gt165-read{max-width:160px;padding:7px 9px;border-radius:10px;border:1px solid rgba(86,234,180,.38);background:rgba(19,109,76,.16);text-align:right}
+.gt165-battlehead{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr) minmax(130px,auto);gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid rgba(70,152,196,.16);background:linear-gradient(90deg,rgba(7,35,58,.72),rgba(15,24,51,.56))}
+.gt165-teamhead{display:grid;grid-template-columns:52px minmax(0,1fr);gap:9px;align-items:center;min-width:0}
+.gt165-teamhead.right{grid-template-columns:minmax(0,1fr) 52px;text-align:right}
+.gt165-logowrap{width:50px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:rgba(255,255,255,.94);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),0 0 14px rgba(80,163,255,.11)}
+.gt165-logo{width:44px;height:38px;object-fit:contain}
+.gt165-side{display:block;color:#68dfff;font-size:6px;font-weight:950;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+.gt165-teamname{display:block;color:#f4f9ff;font-size:11px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gt165-teamrole{display:block;color:#819caf;font-size:6.5px;margin-top:2px}
+.gt165-vs{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;color:#8fe7ff;font-size:8px;font-weight:950;border:1px solid rgba(82,188,255,.34);background:rgba(14,57,92,.48);box-shadow:0 0 12px rgba(48,172,255,.12)}
+.gt165-read{max-width:170px;padding:8px 10px;border-radius:11px;border:1px solid rgba(86,234,180,.38);background:rgba(19,109,76,.16);text-align:right}
 .gt165-read strong{display:block;color:#61efb4;font-size:8px}
 .gt165-read span{display:block;color:#9fc7b7;font-size:6px;margin-top:2px}
 .gt165-read.tough{border-color:rgba(255,102,116,.42);background:rgba(128,37,49,.18)}
@@ -96,8 +101,15 @@ STEP4_CSS = r"""
   .gt165-step4 summary{grid-template-columns:48px minmax(0,1fr)!important;padding:10px 12px!important}
   .gt165-headstatus{grid-column:2;justify-content:flex-start;flex-wrap:wrap;margin-top:3px}
   .gt165-coverage{padding:6px 8px}
-  .gt165-battlehead{grid-template-columns:44px minmax(0,1fr);align-items:start}
-  .gt165-read{grid-column:2;justify-self:start;text-align:left;max-width:100%;margin-top:2px}
+  .gt165-battlehead{grid-template-columns:1fr 28px 1fr;align-items:center;gap:7px;padding:9px}
+  .gt165-teamhead{grid-template-columns:40px minmax(0,1fr);gap:6px}
+  .gt165-teamhead.right{grid-template-columns:minmax(0,1fr) 40px}
+  .gt165-logowrap{width:40px;height:38px;border-radius:9px}
+  .gt165-logo{width:35px;height:31px}
+  .gt165-teamname{font-size:9px}
+  .gt165-teamrole{font-size:5.7px}
+  .gt165-vs{width:28px;height:28px;font-size:7px}
+  .gt165-read{grid-column:1/-1;justify-self:stretch;text-align:left;max-width:100%;margin-top:2px}
   .gt165-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
   .gt165-callouts,.gt165-integrity{grid-template-columns:1fr}
 }
@@ -388,7 +400,10 @@ def _battle_contract(
     return {
         "offense_team": _clean(offense_identity.get("team") or offense_evidence.get("team")) or "Offense",
         "defense_team": _clean(defense_identity.get("team") or defense_evidence.get("team")) or "Defense",
-        "logo": _clean(offense_identity.get("logo") or offense_evidence.get("logo")),
+        "offense_logo": _clean(offense_identity.get("logo") or offense_evidence.get("logo")),
+        "defense_logo": _clean(defense_identity.get("logo") or defense_evidence.get("logo")),
+        "offense_side": _clean(offense_identity.get("side")) or "OFFENSE",
+        "defense_side": _clean(defense_identity.get("side")) or "DEFENSE",
         "tiles": tiles,
         "verified_tiles": verified_tiles,
         "read_title": read_title,
@@ -433,16 +448,16 @@ def build_step4_contract(
     )
 
     away_battle = _battle_contract(
-        offense_identity=ai,
-        defense_identity=hi,
+        offense_identity={**dict(ai), "side": "AWAY"},
+        defense_identity={**dict(hi), "side": "HOME"},
         offense_evidence=away,
         defense_evidence=home,
         engine_side=engine_contract.get("away_offense") or {},
         legacy_battle=legacy_contract.get("away_offense_vs_home_defense") or {},
     )
     home_battle = _battle_contract(
-        offense_identity=hi,
-        defense_identity=ai,
+        offense_identity={**dict(hi), "side": "HOME"},
+        defense_identity={**dict(ai), "side": "AWAY"},
         offense_evidence=home,
         defense_evidence=away,
         engine_side=engine_contract.get("home_offense") or {},
@@ -515,20 +530,34 @@ def _tile_html(tile: Mapping[str, Any]) -> str:
 
 
 def _battle_html(battle: Mapping[str, Any], testid: str) -> str:
-    logo = _clean(battle.get("logo"))
+    offense_logo = _clean(battle.get("offense_logo"))
+    defense_logo = _clean(battle.get("defense_logo"))
     team = _clean(battle.get("offense_team"))
     defense = _clean(battle.get("defense_team"))
-    logo_html = (
-        f'<span class="gt165-logowrap"><img class="gt165-logo" src="{escape(logo)}" alt="{escape(team)} logo"/></span>'
-        if logo else '<span class="gt165-logowrap" style="font-size:23px">🏈</span>'
+    offense_side = _clean(battle.get("offense_side")) or "OFFENSE"
+    defense_side = _clean(battle.get("defense_side")) or "DEFENSE"
+    offense_logo_html = (
+        f'<span class="gt165-logowrap"><img class="gt165-logo" src="{escape(offense_logo)}" alt="{escape(team)} logo"/></span>'
+        if offense_logo else '<span class="gt165-logowrap" style="font-size:23px">🏈</span>'
+    )
+    defense_logo_html = (
+        f'<span class="gt165-logowrap"><img class="gt165-logo" src="{escape(defense_logo)}" alt="{escape(defense)} logo"/></span>'
+        if defense_logo else '<span class="gt165-logowrap" style="font-size:23px">🏈</span>'
     )
     tone = _clean(battle.get("read_tone")) or "mixed"
     tiles = "".join(_tile_html(tile) for tile in battle.get("tiles") or [])
     return f"""
 <div class="gt165-battle" data-testid="{escape(testid)}">
   <div class="gt165-battlehead">
-    <div>{logo_html}</div>
-    <div class="gt165-battlecopy"><b>{escape(team)} Offense</b><span>vs {escape(defense)} Defense</span></div>
+    <div class="gt165-teamhead" aria-label="{escape(team)} Offense">
+      {offense_logo_html}
+      <div><span class="gt165-side">{escape(offense_side)}</span><span class="gt165-teamname">{escape(team)}</span><span class="gt165-teamrole">Offense</span></div>
+    </div>
+    <div class="gt165-vs">VS</div>
+    <div class="gt165-teamhead right" aria-label="{escape(defense)} Defense">
+      <div><span class="gt165-side">{escape(defense_side)}</span><span class="gt165-teamname">{escape(defense)}</span><span class="gt165-teamrole">Defense</span></div>
+      {defense_logo_html}
+    </div>
     <div class="gt165-read {escape(tone)}"><strong>{escape(_clean(battle.get('read_title')))}</strong><span>{escape(_clean(battle.get('read_note')))}</span></div>
   </div>
   <div class="gt165-metrics">{tiles}</div>
