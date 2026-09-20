@@ -60,6 +60,7 @@ CFB_REQUIRED_MARKERS = (
     "Step 10 • Historical Matchup",
     "Steps 11–12 • current form + certification",
 )
+CFB_NO_GAMES_MARKER = "No verified College Football games were returned for this date."
 FORBIDDEN_ERROR_MARKERS = (
     "Traceback (most recent call last)",
     "ModuleNotFoundError",
@@ -376,10 +377,17 @@ def run_browser_qa(
                 timeout=CFB_RERUN_TIMEOUT_MS,
             )
 
-            body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[-1], 60.0)
+            body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[0], 60.0)
+            no_games = CFB_NO_GAMES_MARKER in body
+
+            if not no_games:
+                body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[-1], 60.0)
+                required_markers = CFB_REQUIRED_MARKERS
+            else:
+                required_markers = CFB_REQUIRED_MARKERS[:4]
 
             missing_markers = [
-                marker for marker in CFB_REQUIRED_MARKERS
+                marker for marker in required_markers
                 if marker not in body
             ]
             if missing_markers:
