@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-page-cleanup-step1-data",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "Declared page cleanup Step 1 of 6 only. Repair Game Total Analysis required data and truthful readiness presentation. The legacy FBS profile path returns empty/CHECK Purdue-UCLA profiles while Certified Runtime Snapshot V2 has exact-event pre-kickoff completed-game evidence. Add normalized fallback input routing and additive live-page activation without modifying frozen Step-11/Step-12 math or frozen Step 6 certification.",
+  "proof_target": "Purdue @ UCLA must use exact-event Certified Runtime Snapshot V2 only when the existing model profile is incomplete, must produce projected total and confidence through unchanged frozen math, and the hero must show ready_count/12 plus a truthful projection-missing state. Sportsbook projection influence remains 0.0%. Router V165 must keep Step 6 certification delegated to V164/Page V19.",
+  "internal_steps": {
+    "1": "Identify required hero fields and first RED layer.",
+    "2": "Prove legacy FBS profile is empty/CHECK while Runtime V2 exact-event evidence is ready.",
+    "3": "Normalize completed-game evidence into the existing model input contract.",
+    "4": "Run unchanged frozen projection and final synthesis through additive Slate V2.",
+    "5": "Activate additive Page V20 for the normal route only and correct the hero readiness contract.",
+    "6": "Run one Step-1 regression plus one Purdue/UCLA live-capable proof; merge on GREEN and advance immediately to Step 2."
+  }
+}
