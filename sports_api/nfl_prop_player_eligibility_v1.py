@@ -220,6 +220,43 @@ def event_team_ids(summary: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(out))
 
 
+def league_unavailable_by_team(payload: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """Normalize ESPN league-wide injuries by exact team ID."""
+    by_team: dict[str, list[dict[str, Any]]] = {}
+    for block in (payload or {}).get("injuries", []) or []:
+        if not isinstance(block, dict):
+            continue
+        team = block.get("team") or {}
+        team_id = _text(team.get("id"))
+        if not team_id.isdigit():
+            continue
+        rows = by_team.setdefault(team_id, [])
+        nested = block.get("injuries") or block.get("items") or []
+        for item in nested:
+            if not isinstance(item, dict):
+                continue
+            athlete = item.get("athlete") or item.get("player") or {}
+            athlete_id = _text(athlete.get("id"))
+            name = _text(
+                athlete.get("displayName")
+                or athlete.get("fullName")
+                or item.get("name")
+            )
+            status = _status_text(
+                item.get("status") or item.get("type") or item.get("designation")
+            )
+            if not is_unavailable_status(status):
+                continue
+            if not athlete_id.isdigit() and not name:
+                continue
+            rows.append({
+                "official_athlete_id": athlete_id,
+                "player_name": name,
+                "status": status,
+            })
+    return by_team
+
+
 def event_unavailable_by_team(summary: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     by_team: dict[str, list[dict[str, Any]]] = {}
     for block in (summary or {}).get("injuries", []) or []:
@@ -292,6 +329,7 @@ def build_current_prop_pool(
     roster_payload: dict[str, Any],
     depth_payload: dict[str, Any],
     event_summary: dict[str, Any],
+    league_injury_payload: dict[str, Any] | None = None,
     allowed_positions: set[str] | frozenset[str] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     team_id = _text(team_id)
@@ -303,16 +341,26 @@ def build_current_prop_pool(
 
     roster = parse_current_roster(roster_payload, allowed_positions)
     depth = parse_depth_chart(depth_payload, allowed_positions)
+    event_rows = list((availability.get("unavailable") or {}).get(team_id, []) or [])
+    league_rows = list(league_unavailable_by_team(league_injury_payload or {}).get(team_id, []) or [])
+    unavailable_rows = event_rows + league_rows
     unavailable_ids = {
         _text(row.get("official_athlete_id"))
-        for row in (availability.get("unavailable") or {}).get(team_id, [])
+        for row in unavailable_rows
         if _text(row.get("official_athlete_id")).isdigit()
+    }
+    unavailable_names = {
+        _text(row.get("player_name")).lower()
+        for row in unavailable_rows
+        if _text(row.get("player_name"))
     }
 
     pool: dict[str, dict[str, Any]] = {}
     for athlete_id, row in roster.items():
         depth_row = depth.get(athlete_id)
-        if not depth_row or athlete_id in unavailable_ids:
+        if not depth_row:
+            continue
+        if athlete_id in unavailable_ids or _text(row.get("player_name")).lower() in unavailable_names:
             continue
         pool[athlete_id] = {
             **row,
@@ -327,6 +375,9 @@ def build_current_prop_pool(
         "current_roster_players": len(roster),
         "current_depth_players": len(depth),
         "unavailable_players": len(unavailable_ids),
+        "unavailable_names": len(unavailable_names),
+        "event_unavailable_rows": len(event_rows),
+        "league_unavailable_rows": len(league_rows),
         "prop_eligible_players": len(pool),
     }
     return pool, diag
@@ -343,6 +394,7 @@ __all__ = [
     "event_team_ids",
     "event_unavailable_by_team",
     "is_roster_row_eligible",
+    "league_unavailable_by_team",
     "is_unavailable_status",
     "parse_current_roster",
     "parse_depth_chart",
