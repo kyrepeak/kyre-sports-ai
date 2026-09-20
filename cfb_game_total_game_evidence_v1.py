@@ -75,6 +75,44 @@ def _competition_venue(event: Mapping[str, Any]) -> dict[str, Any]:
 def _environment_payload(
     game: Mapping[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    # Fast path: the selected schedule/deep-reconciliation row already carries
+    # an exact verified ESPN event ID. Do not rediscover it through scoreboard
+    # matching when direct exact-event summary access is available.
+    exact_event_id = _clean(
+        game.get("espn_event_id")
+        or game.get("event_id")
+    )
+    if exact_event_id:
+        summary, summary_attempts = environment_owner._fetch_summary(
+            exact_event_id
+        )
+        identity_ok = environment_owner._summary_identity_matches(
+            summary,
+            exact_event_id,
+        )
+        if identity_ok:
+            weather = environment_owner._weather(summary)
+            venue = environment_owner._venue(summary)
+            return {
+                "event_id": exact_event_id,
+                "kickoff": _kickoff(game),
+                "status": _clean(
+                    game.get("status")
+                    or game.get("game_status")
+                    or game.get("status_detail")
+                ),
+                "weather": dict(weather or {}),
+                "venue": dict(venue or {}),
+            }, {
+                "source": "certified_environment_engine_exact_event_summary",
+                "event_found": True,
+                "event_id": exact_event_id,
+                "exact_event_id_used": True,
+                "summary_identity_verified": True,
+                "summary_attempts": summary_attempts,
+            }
+
+    # Fallback only when no usable exact event ID/summary is available.
     day = _clean(game.get("game_date") or game.get("date"))[:10]
     scoreboard, scoreboard_attempts = environment_owner._fetch_scoreboard(day)
     event = environment_owner._resolve_event(scoreboard, game)
@@ -82,6 +120,7 @@ def _environment_payload(
         return {}, {
             "source": "certified_environment_engine",
             "event_found": False,
+            "exact_event_id_used": bool(exact_event_id),
             "scoreboard_attempts": scoreboard_attempts,
         }
 
@@ -119,11 +158,11 @@ def _environment_payload(
         "source": "certified_environment_engine",
         "event_found": True,
         "event_id": event_id,
+        "exact_event_id_used": False,
         "summary_identity_verified": bool(identity_ok),
         "scoreboard_attempts": scoreboard_attempts,
         "summary_attempts": summary_attempts,
     }
-
 
 def _weather_text(weather: Mapping[str, Any], venue: Mapping[str, Any]) -> str:
     if venue.get("indoor") is True:
