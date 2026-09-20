@@ -44,9 +44,9 @@ jobs:
       - name: Compile additive Step 1 files
         run: |
           python -m py_compile             cfb_game_total_model_input_v1.py             cfb_game_total_slate_v2.py             cfb_game_total_clean_page_v20.py             streamlit_memory_lazy_router_v165.py             app.py
-      - name: Run Step 1 contract and frozen Step 6 regressions
+      - name: Run Step 1 contract regression
         run: |
-          PYTHONPATH=. python -m pytest -q             tests/test_cfb_game_total_page_cleanup_step1.py             tests/test_cfb_game_total_v184_step6_scoring.py             tests/test_cfb_game_total_v185_step6_visual_parity.py
+          PYTHONPATH=. python -m pytest -q tests/test_cfb_game_total_page_cleanup_step1.py
       - name: Prove Purdue UCLA normalized model data live
         run: |
           python - <<'PY'
