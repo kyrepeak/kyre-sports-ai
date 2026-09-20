@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "task_id": "nfl-passing-why-visual-parity-corrective-v1",
+  "status": "DONE",
+  "scope": "Render-only corrective: stop V36 from replacing the certified V35/V16 composition so the existing compact Why This Projection panel remains in its original location and the duplicate giant dashboard is removed.",
+  "trigger": "User supplied production screenshots proving the Step 1-5 visual build was in the wrong location and did not match the compact V16 reference panel.",
+  "guardrails": {
+    "projection_math_changed": false,
+    "market_logic_changed": false,
+    "qb_identity_logic_changed": false,
+    "router_behavior_changed": false,
+    "data_sources_changed": false,
+    "stake_sizing_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

@@ -368,41 +368,13 @@ def _compact_dashboard_html(captured: dict[str, list[str]], matchup: dict[str, s
 
 
 def render_nfl_passing_yards_hub() -> None:
-    """Render frozen V35 while swapping only V34 presentation factories."""
-    original_css = composition._PLAYER_CARD_CSS
-    original_banner = composition._visual_build_banner_v34
-    original_combined = composition._combined_player_cards_html
-    identity_module = composition.identity_visual_ui.step7_ui.identity
-    original_identity_resolver = identity_module.resolve_matchup_identity
-    matchup: dict[str, str] = {}
+    """Render frozen V35 unchanged.
 
-    def capture_verified_matchup(game: Any, *args: Any, **kwargs: Any):
-        if isinstance(game, dict):
-            matchup.clear()
-            matchup.update(
-                {
-                    "away_team": _safe(game.get("away_team")),
-                    "home_team": _safe(game.get("home_team")),
-                    "tip_et": _safe(game.get("tip_et")),
-                    "venue": _safe(game.get("venue")),
-                }
-            )
-        return original_identity_resolver(game, *args, **kwargs)
-
-    def compact_with_matchup(captured: dict[str, list[str]]) -> str:
-        return _compact_dashboard_html(captured, matchup)
-
-    composition._PLAYER_CARD_CSS = _COMPACT_DASHBOARD_CSS
-    composition._visual_build_banner_v34 = _dashboard_banner_v36
-    composition._combined_player_cards_html = compact_with_matchup
-    identity_module.resolve_matchup_identity = capture_verified_matchup
-    try:
-        return prior.render_nfl_passing_yards_hub()
-    finally:
-        identity_module.resolve_matchup_identity = original_identity_resolver
-        composition._PLAYER_CARD_CSS = original_css
-        composition._visual_build_banner_v34 = original_banner
-        composition._combined_player_cards_html = original_combined
+    Visual parity corrective: V36 no longer replaces V34/V35 combined-player
+    composition. This preserves the existing V16 compact "Why This Projection"
+    panel in its certified location and removes the duplicate V36 dashboard.
+    """
+    return prior.render_nfl_passing_yards_hub()
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
