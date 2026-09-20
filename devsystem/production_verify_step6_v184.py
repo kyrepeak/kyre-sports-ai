@@ -142,15 +142,9 @@ def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
         except Exception as exc:
             last_error = f"{type(exc).__name__}: {exc}"[:1200]
 
-        page.wait_for_timeout(3000)
-        remaining_ms = max(5000, int((deadline - time.monotonic()) * 1000))
-        try:
-            page.reload(
-                wait_until="domcontentloaded",
-                timeout=min(30000, remaining_ms),
-            )
-        except Exception as exc:
-            last_error = f"reload {type(exc).__name__}: {exc}"[:1200]
+        # Match the proven production verifier: let Streamlit bootstrap once,
+        # then poll its frames steadily without resetting the page.
+        page.wait_for_timeout(1000)
 
     raise Step6ProductionVerificationFailure(
         "V184 Step 6 production surface did not become live: "
