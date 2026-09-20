@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "nfl-game-day-inactives-v1",
+  "status": "DONE",
+  "scope": "Fail closed on NFL prop identity until exact-event game-day availability is confirmed; audit all 14 Sunday games / 28 teams.",
+  "trigger": "Player prop identity must not treat pregame/questionable availability as confirmed participation.",
+  "guardrails": {
+    "steps_1_3_changed": false,
+    "projection_math_changed": false,
+    "market_logic_changed": false,
+    "router_changed": false,
+    "other_sports_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
