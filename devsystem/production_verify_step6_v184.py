@@ -67,6 +67,16 @@ def _load_streamlit_url() -> str:
     return str(targets["streamlit"]["url"]).rstrip("/")
 
 
+def _streamlit_cert_paths(streamlit_url: str, query: str, total_wait: float):
+    base = streamlit_url.rstrip("/")
+    shell_wait = min(45.0, max(15.0, float(total_wait) * 0.25))
+    embedded_wait = max(30.0, float(total_wait) - shell_wait)
+    return (
+        ("shell", base + "/?" + query, shell_wait),
+        ("embedded", base + "/~/+/?" + query, embedded_wait),
+    )
+
+
 def _scan_step6_frame(page):
     scans: list[dict] = []
     for index, frame in enumerate(page.frames):
@@ -213,71 +223,82 @@ def verify_live_step6(
                         CERT_QUERY_KEY: "1",
                     }
                 )
-                try:
-                    page.goto(
-                        streamlit_url.rstrip("/") + "/?" + query,
-                        wait_until="domcontentloaded",
-                        timeout=120000,
-                    )
-                    frame, root, body, scans = _wait_for_live_step6(
-                        page,
-                        timeout_seconds=float(candidate["wait_seconds"]),
-                    )
-
-                    cert_surface = frame.locator(
-                        '[data-testid="gt184-step6-cert-surface"]'
-                        f'[data-step6-cert-marker="{CERT_SURFACE_MARKER}"]'
-                    ).last
-                    cert_surface_present = cert_surface.count() > 0
-
-                    event_id = _event_from_url(page.url) or _event_from_url(frame.url)
-                    if event_id != cert_event_id:
-                        raise Step6ProductionVerificationFailure(
-                            "V184 certification event did not persist: "
-                            f"expected={cert_event_id!r} actual={event_id!r} "
-                            f"page_url={page.url!r} frame_url={frame.url!r}"
+                path_failures: list[str] = []
+                for access_path, target_url, path_wait in _streamlit_cert_paths(
+                    streamlit_url,
+                    query,
+                    float(candidate["wait_seconds"]),
+                ):
+                    try:
+                        page.goto(
+                            target_url,
+                            wait_until="domcontentloaded",
+                            timeout=120000,
+                        )
+                        frame, root, body, scans = _wait_for_live_step6(
+                            page,
+                            timeout_seconds=path_wait,
                         )
 
-                    selected_date = (
-                        _query_value(page.url, DATE_QUERY_KEY)
-                        or _query_value(frame.url, DATE_QUERY_KEY)
-                    )
-                    if selected_date != cert_date:
-                        raise Step6ProductionVerificationFailure(
-                            "V184 certification date did not persist: "
-                            f"expected={cert_date!r} actual={selected_date!r} "
-                            f"page_url={page.url!r} frame_url={frame.url!r}"
+                        cert_surface = frame.locator(
+                            '[data-testid="gt184-step6-cert-surface"]'
+                            f'[data-step6-cert-marker="{CERT_SURFACE_MARKER}"]'
+                        ).last
+                        cert_surface_present = cert_surface.count() > 0
+
+                        event_id = _event_from_url(page.url) or _event_from_url(frame.url)
+                        if event_id != cert_event_id:
+                            raise Step6ProductionVerificationFailure(
+                                "V184 certification event did not persist: "
+                                f"expected={cert_event_id!r} actual={event_id!r} "
+                                f"page_url={page.url!r} frame_url={frame.url!r}"
+                            )
+
+                        selected_date = (
+                            _query_value(page.url, DATE_QUERY_KEY)
+                            or _query_value(frame.url, DATE_QUERY_KEY)
                         )
+                        if selected_date != cert_date:
+                            raise Step6ProductionVerificationFailure(
+                                "V184 certification date did not persist: "
+                                f"expected={cert_date!r} actual={selected_date!r} "
+                                f"page_url={page.url!r} frame_url={frame.url!r}"
+                            )
 
-                    step6 = _assert_step6(root)
-                    screenshot = artifacts / "production_step6_v184_green.png"
-                    page.screenshot(path=str(screenshot), full_page=True)
+                        step6 = _assert_step6(root)
+                        screenshot = artifacts / "production_step6_v184_green.png"
+                        page.screenshot(path=str(screenshot), full_page=True)
 
-                    result = {
-                        "status": "GREEN",
-                        "candidate_index": index,
-                        "date": selected_date,
-                        "event_id": str(event_id),
-                        "matchup": cert_matchup,
-                        "cert_surface_marker": (
-                            CERT_SURFACE_MARKER if cert_surface_present else ""
-                        ),
-                        "cert_surface_present": cert_surface_present,
-                        "step6": step6,
-                        "frame_scan_count": len(scans),
-                        "screenshot": str(screenshot),
-                    }
-                    (artifacts / "production_step6_v184_evidence.json").write_text(
-                        json.dumps(result, indent=2, sort_keys=True),
-                        encoding="utf-8",
-                    )
-                    return result
-                except Exception as exc:
-                    failures.append(
-                        f"{cert_event_id} {cert_matchup}: "
-                        f"{type(exc).__name__}: {exc}"[:2200]
-                    )
-                    continue
+                        result = {
+                            "status": "GREEN",
+                            "candidate_index": index,
+                            "access_path": access_path,
+                            "date": selected_date,
+                            "event_id": str(event_id),
+                            "matchup": cert_matchup,
+                            "cert_surface_marker": (
+                                CERT_SURFACE_MARKER if cert_surface_present else ""
+                            ),
+                            "cert_surface_present": cert_surface_present,
+                            "step6": step6,
+                            "frame_scan_count": len(scans),
+                            "screenshot": str(screenshot),
+                        }
+                        (artifacts / "production_step6_v184_evidence.json").write_text(
+                            json.dumps(result, indent=2, sort_keys=True),
+                            encoding="utf-8",
+                        )
+                        return result
+                    except Exception as exc:
+                        path_failures.append(
+                            f"{access_path}: {type(exc).__name__}: {exc}"[:1800]
+                        )
+                        continue
+
+                failures.append(
+                    f"{cert_event_id} {cert_matchup}: " + " || ".join(path_failures)
+                )
+                continue
         finally:
             browser.close()
 
