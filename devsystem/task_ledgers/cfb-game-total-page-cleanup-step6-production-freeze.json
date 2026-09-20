@@ -18,5 +18,19 @@
     "4": "When production disproves CI data availability, cache only the exact already-verified Runtime V2 and environment evidence locally; do not change model/UI logic.",
     "5": "Rerun the same passive stable-session production proof against the deterministic fallback.",
     "6": "Merge verifier-only freeze proof on PASS; mark 6/6 TASK_COMPLETE and stop."
+  },
+  "team_evidence_verifier_dom_contract_fix": {
+    "reason": "Production proved both Team Evidence cards and all eight required stat tiles READY, but the verifier failed on literal label text. The final verifier now validates stable data-team/data-stat DOM contracts instead of presentation wording.",
+    "acceptance": [
+      "Purdue READY card count = 1",
+      "UCLA READY card count = 1",
+      "ppg READY tile count = 2",
+      "allowed READY tile count = 2",
+      "point-diff READY tile count = 2",
+      "recent-form READY tile count = 2",
+      "no Pending Team Evidence state"
+    ],
+    "product_code_changed": false,
+    "verifier_only": true
   }
 }
