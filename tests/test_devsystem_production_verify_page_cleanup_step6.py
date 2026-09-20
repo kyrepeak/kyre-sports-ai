@@ -45,7 +45,8 @@ def test_step6_verifier_requires_all_cleanup_surfaces():
     assert "Allowed / Game" not in teams
     assert "Rose Bowl" in game
     assert '"unavailable" in lowered' in game
-    assert "Scheduled" in game
+    assert "kickoff_context" in game
+    assert "\"Scheduled\" not in full_body" not in game
 
 
 def test_step6_verifier_does_not_modify_projection_or_product():
