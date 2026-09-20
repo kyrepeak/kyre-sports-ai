@@ -98,3 +98,46 @@ def test_router_v186_keeps_v185_frozen_and_routes_only_passing_yards_to_v41() ->
 def test_app_boots_router_v186() -> None:
     source = (ROOT / "app.py").read_text(encoding="utf-8")
     assert "from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app" in source
+
+
+
+def test_v41_uses_date_versioned_widget_key_to_block_stale_browser_state() -> None:
+    resolved = date(2026, 9, 20)
+    seen = {}
+
+    def original(label, *args, **kwargs):
+        seen["label"] = label
+        seen["key"] = kwargs.get("key")
+        seen["value"] = kwargs.get("value")
+        return kwargs.get("value")
+
+    proxy = hub._date_input_proxy(resolved, original)
+    returned = proxy(
+        "NFL Passing Yards slate date",
+        value=date(2026, 9, 19),
+        key=hub.V8_DATE_INPUT_KEY,
+        label_visibility="collapsed",
+    )
+
+    assert returned == resolved
+    assert seen["value"] == resolved
+    assert seen["key"] == "nfl_passing_yards_v41_date_input_2026-09-20"
+    assert seen["key"] != hub.V8_DATE_INPUT_KEY
+
+
+def test_v41_proxy_does_not_touch_unrelated_date_widgets() -> None:
+    resolved = date(2026, 9, 20)
+    seen = {}
+
+    def original(label, *args, **kwargs):
+        seen["key"] = kwargs.get("key")
+        seen["value"] = kwargs.get("value")
+        return kwargs.get("value")
+
+    proxy = hub._date_input_proxy(resolved, original)
+    original_day = date(2026, 9, 19)
+    returned = proxy("Another date", value=original_day, key="other_date")
+
+    assert returned == original_day
+    assert seen["key"] == "other_date"
+    assert seen["value"] == original_day
