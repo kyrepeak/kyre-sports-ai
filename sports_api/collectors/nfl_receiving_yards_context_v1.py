@@ -141,7 +141,11 @@ def _event_identity(summary: dict[str, Any], requested_event_id: str) -> tuple[i
     return year, teams
 
 
-def _roster(team_id: str, event_summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def _roster(
+    team_id: str,
+    event_summary: dict[str, Any],
+    league_injury_payload: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
     roster_payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/roster")
     depth_payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/depthcharts")
     if not prop_eligibility.parse_depth_chart(depth_payload, ELIGIBLE_RECEIVER_POSITIONS):
@@ -156,6 +160,7 @@ def _roster(team_id: str, event_summary: dict[str, Any]) -> dict[str, dict[str, 
         roster_payload=roster_payload,
         depth_payload=depth_payload,
         event_summary=event_summary,
+        league_injury_payload=league_injury_payload,
         allowed_positions=ELIGIBLE_RECEIVER_POSITIONS,
     )
     if not found:
@@ -408,6 +413,7 @@ def _parallel_team_inputs(
     team_ids: list[str],
     season: int,
     event_summary: dict[str, Any],
+    league_injury_payload: dict[str, Any],
 ) -> tuple[dict[str, dict[str, dict[str, str]]], dict[str, tuple[int, list[str]]]]:
     """Fetch independent current-roster + schedule-baseline inputs concurrently."""
     rosters: dict[str, dict[str, dict[str, str]]] = {}
@@ -415,7 +421,7 @@ def _parallel_team_inputs(
     workers = max(1, min(MAX_PARALLEL_ESPN_REQUESTS, len(team_ids) * 2))
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="nfl-recv-input") as pool:
         roster_futures = {
-            team_id: pool.submit(_roster, team_id, event_summary)
+            team_id: pool.submit(_roster, team_id, event_summary, league_injury_payload)
             for team_id in team_ids
         }
         baseline_futures = {
@@ -463,7 +469,13 @@ def collect_nfl_receiving_yards_context(event_id: str) -> dict[str, Any]:
     season, teams = _event_identity(event, event_id)
     team_ids = [row["official_team_id"] for row in teams]
 
-    rosters, baselines = _parallel_team_inputs(team_ids, season, event)
+    league_injury_payload = _get_json(f"{ESPN_SITE_BASE}/injuries")
+    rosters, baselines = _parallel_team_inputs(
+        team_ids,
+        season,
+        event,
+        league_injury_payload,
+    )
 
     all_game_ids: list[str] = []
     for team_id in team_ids:
