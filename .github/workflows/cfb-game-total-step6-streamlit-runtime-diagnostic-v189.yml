@@ -1,0 +1,219 @@
+name: CFB Game Total Step 6 Streamlit runtime diagnostic V189
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cfb-game-total-step6-streamlit-runtime-diagnostic-v189.yml"
+      - "devsystem/task_ledgers/cfb-game-total-v189-step6-streamlit-runtime-diagnostic.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-game-total-step6-streamlit-runtime-diagnostic-v189-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose-streamlit-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser probe dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Probe Streamlit HTTP endpoints
+        shell: bash
+        run: |
+          set -u
+          mkdir -p artifacts/streamlit-runtime-v189/http
+          BASE="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("devsystem/production_targets_v1.json").read_text())
+          print(d["streamlit"]["url"].rstrip("/"))
+          PY
+          )"
+          printf '%s\n' "$BASE" > artifacts/streamlit-runtime-v189/base_url.txt
+          i=0
+          for PATH_PART in "/_stcore/health" "/_stcore/host-config" "/" "/~/+/"; do
+            i=$((i+1))
+            echo "=== $PATH_PART ==="
+            curl -sS -L --max-time 45 \
+              -A "Mozilla/5.0 V189-Kyre-Production-Diagnostic" \
+              -D "artifacts/streamlit-runtime-v189/http/$i-headers.txt" \
+              -o "artifacts/streamlit-runtime-v189/http/$i-body.txt" \
+              -w "HTTP_CODE=%{http_code}\nFINAL_URL=%{url_effective}\nTIME_TOTAL=%{time_total}\n" \
+              "$BASE$PATH_PART" \
+              | tee "artifacts/streamlit-runtime-v189/http/$i-meta.txt" || true
+            echo "--- headers ---"
+            head -n 40 "artifacts/streamlit-runtime-v189/http/$i-headers.txt" || true
+            echo "--- body ---"
+            head -c 1200 "artifacts/streamlit-runtime-v189/http/$i-body.txt" || true
+            echo
+          done
+
+      - name: Probe Streamlit browser runtime
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          out = Path("artifacts/streamlit-runtime-v189")
+          out.mkdir(parents=True, exist_ok=True)
+          base = (out / "base_url.txt").read_text().strip()
+          query = urlencode({
+              "ks_sport": "College Football",
+              "ks_cfb_market": "Game Total",
+              "ks_cfb_game_total_date": "2026-09-19",
+              "ks_cfb_game_total_event_id": "401869940",
+              "ks_cfb_step6_cert": "1",
+          })
+
+          results = {"base": base, "paths": []}
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              context = browser.new_context(
+                  viewport={"width": 1067, "height": 1600},
+                  user_agent="Mozilla/5.0 V189-Kyre-Production-Diagnostic",
+              )
+
+              for label, url in (
+                  ("shell", base + "/?" + query),
+                  ("embedded", base + "/~/+/?" + query),
+              ):
+                  page = context.new_page()
+                  console_events = []
+                  page_errors = []
+                  failed_requests = []
+                  responses = []
+
+                  page.on("console", lambda msg, a=console_events: a.append({
+                      "type": msg.type,
+                      "text": msg.text[:2000],
+                  }))
+                  page.on("pageerror", lambda exc, a=page_errors: a.append(str(exc)[:4000]))
+                  page.on("requestfailed", lambda req, a=failed_requests: a.append({
+                      "url": req.url[:2000],
+                      "failure": str(req.failure)[:2000],
+                      "resource_type": req.resource_type,
+                  }))
+                  page.on("response", lambda resp, a=responses, base=base: (
+                      a.append({
+                          "url": resp.url[:2000],
+                          "status": resp.status,
+                          "resource_type": resp.request.resource_type,
+                      }) if resp.url.startswith(base) else None
+                  ))
+
+                  nav_status = None
+                  nav_error = ""
+                  try:
+                      resp = page.goto(url, wait_until="domcontentloaded", timeout=90000)
+                      nav_status = resp.status if resp else None
+                  except Exception as exc:
+                      nav_error = f"{type(exc).__name__}: {exc}"[:4000]
+
+                  page.wait_for_timeout(25000)
+
+                  frames = []
+                  for idx, frame in enumerate(page.frames):
+                      try:
+                          body_text = frame.locator("body").inner_text(timeout=5000)
+                      except Exception:
+                          body_text = ""
+                      try:
+                          body_html = frame.locator("body").inner_html(timeout=5000)
+                      except Exception:
+                          body_html = ""
+                      try:
+                          root_count = frame.locator('details.gt184-step6[data-testid="gt157-step-6"]').count()
+                      except Exception:
+                          root_count = -1
+                      frames.append({
+                          "index": idx,
+                          "url": frame.url,
+                          "body_text": body_text[:6000],
+                          "body_html": body_html[:12000],
+                          "step6_root_count": root_count,
+                      })
+
+                  try:
+                      iframes = page.locator("iframe")
+                      iframe_srcs = [iframes.nth(i).get_attribute("src") for i in range(iframes.count())]
+                  except Exception:
+                      iframe_srcs = []
+
+                  try:
+                      ready_state = page.evaluate("document.readyState")
+                  except Exception:
+                      ready_state = None
+
+                  try:
+                      title = page.title()
+                  except Exception:
+                      title = ""
+
+                  health = {}
+                  for path in ("/_stcore/health", "/_stcore/host-config"):
+                      try:
+                          rr = context.request.get(base + path, timeout=30000)
+                          health[path] = {"status": rr.status, "body": rr.text()[:6000]}
+                      except Exception as exc:
+                          health[path] = {"error": f"{type(exc).__name__}: {exc}"[:4000]}
+
+                  screenshot = out / f"{label}.png"
+                  try:
+                      page.screenshot(path=str(screenshot), full_page=True)
+                  except Exception:
+                      pass
+
+                  results["paths"].append({
+                      "label": label,
+                      "requested_url": url,
+                      "final_url": page.url,
+                      "navigation_status": nav_status,
+                      "navigation_error": nav_error,
+                      "title": title,
+                      "document_ready_state": ready_state,
+                      "iframe_srcs": iframe_srcs,
+                      "frames": frames,
+                      "console_events": console_events[-200:],
+                      "page_errors": page_errors[-100:],
+                      "failed_requests": failed_requests[-200:],
+                      "responses": responses[-400:],
+                      "health": health,
+                  })
+                  page.close()
+
+              browser.close()
+
+          (out / "runtime_probe.json").write_text(
+              json.dumps(results, indent=2, sort_keys=True),
+              encoding="utf-8",
+          )
+          print(json.dumps(results, indent=2)[:40000])
+          PY
+
+      - name: Upload V189 runtime diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-game-total-step6-streamlit-runtime-v189-${{ github.run_id }}
+          path: artifacts/streamlit-runtime-v189
+          if-no-files-found: error
+          retention-days: 14
