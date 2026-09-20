@@ -314,7 +314,7 @@ def _resolve_visuals_v164(game: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
 
 def _render_v164_identity() -> None:
     st.markdown(
-        '<div data-testid="cfb-game-total-v164-active" '
+        '<div hidden aria-hidden="true" data-testid="cfb-game-total-v164-active" '
         'style="display:none!important">'
         f'{ACTIVE_MARKER} • {DEPLOYMENT_PROOF_MARKER} • {STEP1_PRESENTATION_MARKER} • {STEP1_PROFILE_MARKER} • {STEP2_PRESENTATION_MARKER} • {STEP3_PRESENTATION_MARKER} • {STEP4_PRESENTATION_MARKER} • exact ESPN team logos • V163 frozen parent • '
         'sportsbook projection influence 0.0%</div>',
