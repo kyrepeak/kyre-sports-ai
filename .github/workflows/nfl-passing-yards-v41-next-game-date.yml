@@ -3,6 +3,7 @@ name: NFL Passing Yards V41 Next Game Date
 on:
   pull_request:
     paths:
+      - "nfl_passing_yards_next_slate_v1.py"
       - "nfl_passing_yards_hub_v41.py"
       - "streamlit_memory_lazy_router_v186.py"
       - "app.py"
@@ -13,14 +14,14 @@ permissions:
   contents: read
 
 jobs:
-  certify:
+  targeted-proof:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install pytest
-        run: python -m pip install --disable-pip-version-check -q pytest
-      - name: Run V41 next-game-date contract
+      - name: Install targeted test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests
+      - name: Run V41 next-game-date proof
         run: python -m pytest -q tests/test_nfl_passing_yards_v41_next_game_date.py
