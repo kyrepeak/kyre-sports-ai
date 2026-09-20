@@ -15,6 +15,7 @@ RECEIVING_POSITIONS = frozenset({"WR", "TE", "RB", "FB"})
 def main() -> int:
     scoreboard = rush._get_json(f"{rush.ESPN_SITE_BASE}/scoreboard", {"dates": DATE})
     events = scoreboard.get("events") or []
+    league_injury_payload = rush._get_json(f"{rush.ESPN_SITE_BASE}/injuries")
     if len(events) != 14:
         raise AssertionError(f"expected 14 games, got {len(events)}")
 
@@ -66,6 +67,7 @@ def main() -> int:
                 roster_payload=roster,
                 depth_payload=depth,
                 event_summary=summary,
+                league_injury_payload=league_injury_payload,
                 allowed_positions=RUSH_POSITIONS,
             )
             recv_pool, recv_diag = elig.build_current_prop_pool(
@@ -73,6 +75,7 @@ def main() -> int:
                 roster_payload=roster,
                 depth_payload=depth,
                 event_summary=summary,
+                league_injury_payload=league_injury_payload,
                 allowed_positions=RECEIVING_POSITIONS,
             )
 
