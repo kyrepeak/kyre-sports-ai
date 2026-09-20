@@ -151,8 +151,76 @@ _COMPACT_DASHBOARD_CSS = r'''
 .kpass36-qbidentity .kpass29-metric{border-color:rgba(71,85,105,.62)!important;background:rgba(7,15,28,.86)!important}
 .kpass36-qbidentity .kpass29-foot{border-top-color:rgba(71,85,105,.42)!important;color:#8090a7!important}
 .kpass36-hero .kpy-envteams{grid-template-columns:1fr!important}.kpass36-hero .kpy9-q{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-@media(max-width:900px){.kpass36-grid{grid-template-columns:1fr}.kpass36-matchup{align-items:flex-start;flex-direction:column}.kpass36-matchupchips{justify-content:flex-start}.kpass36-prelude{align-items:flex-start;flex-direction:column}.kpass36-preludechips{justify-content:flex-start}.kpass36-hero{border-radius:17px}}
-@media(max-width:640px){.kpass36-whyintro{grid-template-columns:auto 1fr;gap:12px;padding:15px 14px;border-radius:21px}.kpass36-whybrain{width:56px;height:56px;font-size:28px}.kpass36-whypill{grid-column:1/-1;width:100%;min-height:42px}.kpass36-whysub{font-size:.67rem}.kpass36-resultcells{grid-template-columns:1fr}.kpass36-resultrow{margin-left:9px;margin-right:9px;padding:9px}.kpass36-resultbar{align-items:flex-start;flex-direction:column;gap:3px}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}.kpass36-qbidentity{padding:11px 10px;border-radius:16px}.kpass36-qbidentitybar{margin-bottom:8px}.kpass36-qbidentity .kpass29-top{gap:9px!important}.kpass36-qbidentity .kpass29-head{width:56px!important;height:56px!important;flex-basis:56px!important}.kpass36-qbidentity .kpass29-logo{width:48px!important;height:48px!important;flex-basis:48px!important;padding:6px!important}.kpass36-qbidentity .kpass29-name{font-size:.92rem!important}.kpass36-qbidentity .kpass29-meta{font-size:.53rem!important}.kpass36-qbconfidence{min-height:24px;padding:0 8px;font-size:.40rem}.kpass36-drivers{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.kpass36-driver{min-height:66px;padding:8px 7px}.kpass36-drivername{font-size:.50rem}.kpass36-driverdesc{font-size:.38rem}}
+/* Step 5 — final responsive polish. Visual-only; Steps 1-4 stay frozen. */
+.kpass36-dashboard,.kpass36-dashboard *{box-sizing:border-box}
+.kpass36-dashboard img{max-width:100%}
+.kpass36-matchup>div,.kpass36-whycopy,.kpass36-herotop,.kpass36-qbidentity,.kpass36-resultcell,.kpass36-driver,.kpass36-evidence{min-width:0}
+.kpass36-matchup h3,.kpass36-matchup p,.kpass36-whysub,.kpass36-resultbar span,.kpass36-driverdesc,.kpass36-evidence summary span{overflow-wrap:anywhere}
+@media(max-width:1180px){
+  .kpass36-grid{gap:10px}
+  .kpass36-whyintro{gap:14px;padding:16px 17px}
+  .kpass36-whypill{padding:0 16px}
+  .kpass36-resultrow{margin-left:10px;margin-right:10px}
+  .kpass36-why{margin-left:10px;margin-right:10px}
+  .kpass36-evidence{padding-left:10px;padding-right:10px}
+}
+@media(max-width:900px){
+  .kpass36-grid{grid-template-columns:1fr;gap:12px}
+  .kpass36-matchup{align-items:flex-start;flex-direction:column}
+  .kpass36-matchupchips{justify-content:flex-start}
+  .kpass36-prelude{align-items:flex-start;flex-direction:column}
+  .kpass36-preludechips{justify-content:flex-start}
+  .kpass36-hero{border-radius:17px}
+  .kpass36-whyintro{grid-template-columns:auto minmax(0,1fr)}
+  .kpass36-whypill{grid-column:1/-1;justify-self:stretch;width:100%}
+  .kpass36-resultcells{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .kpass36-dashboard{margin-left:0;margin-right:0}
+  .kpass36-whyintro{grid-template-columns:auto minmax(0,1fr);gap:12px;padding:15px 14px;border-radius:21px}
+  .kpass36-whybrain{width:56px;height:56px;font-size:28px}
+  .kpass36-whypill{grid-column:1/-1;width:100%;min-height:42px}
+  .kpass36-whysub{font-size:.67rem}
+  .kpass36-resultcells{grid-template-columns:1fr}
+  .kpass36-resultrow{margin-left:9px;margin-right:9px;padding:9px}
+  .kpass36-resultbar{align-items:flex-start;flex-direction:column;gap:3px}
+  .kpass36-herotop,.kpass36-evidence{padding-left:9px;padding-right:9px}
+  .kpass36-why{margin-left:9px;margin-right:9px}
+  .kpass36-chip,.kpass36-reason,.kpass36-resulttag{white-space:normal}
+  .kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}
+  .kpass36-qbidentity{padding:11px 10px;border-radius:16px}
+  .kpass36-qbidentitybar{margin-bottom:8px}
+  .kpass36-qbidentity .kpass29-top{gap:9px!important}
+  .kpass36-qbidentity .kpass29-head{width:56px!important;height:56px!important;flex-basis:56px!important}
+  .kpass36-qbidentity .kpass29-logo{width:48px!important;height:48px!important;flex-basis:48px!important;padding:6px!important}
+  .kpass36-qbidentity .kpass29-name{font-size:.92rem!important}
+  .kpass36-qbidentity .kpass29-meta{font-size:.53rem!important}
+  .kpass36-qbconfidence{min-height:24px;padding:0 8px;font-size:.40rem}
+  .kpass36-drivers{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .kpass36-driver{min-height:66px;padding:8px 7px}
+  .kpass36-drivername{font-size:.50rem}
+  .kpass36-driverdesc{font-size:.38rem}
+  .kpass36-evidence summary{align-items:flex-start}
+}
+@media(max-width:420px){
+  .kpass36-matchup{padding:12px}
+  .kpass36-matchupchips,.kpass36-herochips{width:100%;justify-content:flex-start}
+  .kpass36-whyintro{grid-template-columns:1fr;text-align:center}
+  .kpass36-whybrain{margin:0 auto}
+  .kpass36-whyheadline{font-size:1.08rem}
+  .kpass36-whysub{margin-left:auto;margin-right:auto}
+  .kpass36-qbidentitybar{align-items:flex-start;flex-direction:column;gap:5px}
+  .kpass36-qbidentity .kpass29-top{align-items:flex-start!important;flex-wrap:wrap!important}
+  .kpass36-qbidentity .kpass29-ident{order:2;flex:1 1 calc(100% - 70px)!important}
+  .kpass36-qbidentity .kpass29-logo{margin-left:auto}
+  .kpass36-qbidentity .kpass29-name,.kpass36-qbidentity .kpass29-meta{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  .kpass36-resulthead{align-items:flex-start;flex-direction:column;gap:5px}
+  .kpass36-resulttag{max-width:100%}
+  .kpass36-drivers{grid-template-columns:1fr}
+  .kpass36-driver{min-height:58px}
+  .kpass36-whytitle{align-items:flex-start;flex-direction:column;gap:3px}
+  .kpass36-evidence summary{flex-wrap:wrap}
+}
 </style>
 '''
 
@@ -280,7 +348,7 @@ def _compact_player(captured: dict[str, list[str]], index: int) -> str:
 def _compact_dashboard_html(captured: dict[str, list[str]], matchup: dict[str, str] | None = None) -> str:
     matchup = matchup or {}
     return (
-        '<section class="kpass36-dashboard">'
+        '<section class="kpass36-dashboard" data-five-step-visual-complete="true">'
         + _matchup_header(matchup)
         + (
             '<section class="kpass36-whyintro" data-why-projection-header="true">'
