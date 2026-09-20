@@ -58,7 +58,7 @@ def _purge_game_total_page_modules() -> int:
 def _render_production_heartbeat() -> None:
     st.markdown(
         f'<div data-testid="cfb-game-total-v164-heartbeat" '
-        f'style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;font-size:1px">'
+        f'style="display:none!important">'
         f'{PRODUCTION_HEARTBEAT} • {STEP1_PROFILE_HEARTBEAT} • {LEGACY_V163_HEARTBEAT} • {LEGACY_V162_HEARTBEAT} • {LEGACY_V161_HEARTBEAT}</div>',
         unsafe_allow_html=True,
     )
