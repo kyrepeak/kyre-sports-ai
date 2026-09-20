@@ -104,8 +104,7 @@ def _sport_panel(code: str) -> str:
     return f"""
 <div class="gt232-sport {css_class}" data-dropdown-sport="{code}">
   <a class="gt229-card {css_class}" data-sport="{code}" href="{_sport_href(code)}"
-     target="_self"{selected_attrs}>
-    {active}
+     target="_self"{selected_attrs}>{active}
     <div class="gt229-icon">{icon}</div>
     <div class="gt229-bottom">
       <div class="gt229-copy"><strong>{code}</strong><small>{escape(subtitle)}</small></div>
