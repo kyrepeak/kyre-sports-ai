@@ -19,11 +19,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install browser proof stack
+
+      - name: Install local browser proof stack
         run: |
           python -m pip install --disable-pip-version-check -q requests playwright
           python -m playwright install --with-deps chromium
-      - name: Prove compact Why This Projection on public production
+
+      - name: Prove only the approved Why This Projection visual contract
         env:
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
         run: |
@@ -34,18 +36,22 @@ jobs:
           from playwright.sync_api import sync_playwright
           import nfl_passing_yards_public_prod_cert_v1 as base
 
-          production_url = "https://kyre-sports-ai.streamlit.app"
-          artifacts = Path("artifacts/nfl-passing-why-production-visual")
-          artifacts.mkdir(parents=True, exist_ok=True)
+          PRODUCT_SHA = "794f19326e78dd94b2f0663cb007aee9d673ec6a"
+          URL = "https://kyre-sports-ai.streamlit.app"
+          out = Path("artifacts/nfl-passing-why-production-visual")
+          out.mkdir(parents=True, exist_ok=True)
 
-          health = base._wait_for_public_streamlit(production_url, timeout_seconds=180)
+          health = base._wait_for_public_streamlit(URL, timeout_seconds=180)
 
           with sync_playwright() as p:
-              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
               page = browser.new_page(viewport={"width": 1170, "height": 2532})
               try:
-                  page.goto(production_url + "/", wait_until="domcontentloaded", timeout=120000)
-                  frame, scan = base._find_app_frame(page, timeout_seconds=120)
+                  page.goto(URL + "/", wait_until="domcontentloaded", timeout=120000)
+                  frame, _ = base._find_app_frame(page, timeout_seconds=120)
                   base._assert_no_runtime_error(base._body(frame), "initial public app")
 
                   sport = frame.get_by_role("combobox").nth(0)
@@ -54,92 +60,87 @@ jobs:
                   market.wait_for(state="visible", timeout=60000)
                   base._choose(page, market, "Passing Yards")
 
-                  # Wait for the compact panel to be fully hydrated, not merely mounted.
-                  required = [
-                      "Why This Projection",
-                      "RESULT → REASONS",
-                      "Volume",
-                      "Efficiency",
-                      "Pressure Adj",
-                      "Personnel",
-                      "Weather",
-                      "Recent SD",
-                      "Projection:",
-                  ]
+                  panel = frame.locator('section[data-reference-why-projection="true"]')
                   deadline = time.monotonic() + 180
-                  why = frame.locator("section.kpy16-why")
-                  body = ""
-                  cards = 0
-                  missing = list(required)
+                  observed = {}
                   while time.monotonic() < deadline:
-                      if why.count() > 0:
-                          try:
-                              why.first.wait_for(state="visible", timeout=5000)
-                              body = why.first.inner_text(timeout=5000)
-                          except Exception:
-                              body = ""
-                          cards = frame.locator("section.kpy16-whycard").count()
-                          missing = [label for label in required if label not in body]
-                          if cards >= 2 and not missing:
-                              break
+                      panel_count = panel.count()
+                      cards = panel.locator("section.kpy16-whycard").count() if panel_count else 0
+                      drivers = panel.locator(".kpy16-reason").count() if panel_count else 0
+                      duplicate = frame.locator("section.kpass36-dashboard").count()
+                      if panel_count == 1 and cards == 2 and drivers == 12 and duplicate == 0:
+                          observed = {
+                              "panel": panel_count,
+                              "cards": cards,
+                              "drivers": drivers,
+                              "duplicate": duplicate,
+                          }
+                          break
                       page.wait_for_timeout(750)
 
-                  giant_dashboards = frame.locator("section.kpass36-dashboard").count()
-                  full_body = base._body(frame)
-                  giant_text = "Quarterback Hero" in full_body
+                  if not observed:
+                      observed = {
+                          "panel": panel.count(),
+                          "cards": panel.locator("section.kpy16-whycard").count() if panel.count() else 0,
+                          "drivers": panel.locator(".kpy16-reason").count() if panel.count() else 0,
+                          "duplicate": frame.locator("section.kpass36-dashboard").count(),
+                      }
+                      raise AssertionError("local visual structure failed: " + json.dumps(observed, sort_keys=True))
 
-                  if why.count() < 1 or cards < 2 or missing:
-                      (artifacts / "failure_body.txt").write_text(full_body, encoding="utf-8")
-                      page.screenshot(path=str(artifacts / "passing_yards_full_page_production_failure.png"), full_page=True)
-                      raise AssertionError(
-                          "compact panel did not fully hydrate: "
-                          + json.dumps(
-                              {
-                                  "why_panels": why.count(),
-                                  "cards": cards,
-                                  "missing": missing,
-                                  "giant_v36_dashboards": giant_dashboards,
-                                  "quarterback_hero_visible": giant_text,
-                              },
-                              sort_keys=True,
-                          )
-                      )
+                  root = panel.first
+                  title = root.locator(".kpy16-whytitle").inner_text(timeout=10000).strip()
+                  cards = root.locator("section.kpy16-whycard")
+                  per_card = [cards.nth(i).locator(".kpy16-reason").count() for i in range(2)]
 
-                  if cards < 2:
-                      raise AssertionError(f"expected at least 2 compact QB cards; saw {cards}")
-                  if giant_dashboards != 0:
-                      raise AssertionError(f"duplicate V36 dashboard still rendered: {giant_dashboards}")
-                  if giant_text:
-                      raise AssertionError("duplicate giant Quarterback Hero text still visible")
+                  card_grid = root.locator(".kpy16-whygrid").evaluate(
+                      "(el) => getComputedStyle(el).gridTemplateColumns"
+                  )
+                  driver_grid = cards.first.locator(".kpy16-reasons").evaluate(
+                      "(el) => getComputedStyle(el).gridTemplateColumns"
+                  )
 
-                  screenshot = artifacts / "passing_yards_compact_why_production_green.png"
-                  why.first.screenshot(path=str(screenshot))
-                  page.screenshot(path=str(artifacts / "passing_yards_full_page_production_green.png"), full_page=True)
+                  if title != "Why This Projection":
+                      raise AssertionError(f"wrong local title: {title!r}")
+                  if per_card != [6, 6]:
+                      raise AssertionError(f"driver count per card mismatch: {per_card}")
+                  if len(card_grid.split()) != 1:
+                      raise AssertionError(f"QB cards are not stacked one-per-row: {card_grid!r}")
+                  if len(driver_grid.split()) != 3:
+                      raise AssertionError(f"driver grid is not three columns: {driver_grid!r}")
+
+                  screenshot = out / "why_this_projection_reference_production_green.png"
+                  root.screenshot(path=str(screenshot))
 
                   result = {
                       "status": "GREEN",
-                      "production_url": production_url,
+                      "product_sha": PRODUCT_SHA,
+                      "production_url": URL,
                       "health_http": health["health_http"],
                       "root_http": health["root_http"],
-                      "compact_why_panels": why.count(),
-                      "compact_qb_cards": cards,
-                      "giant_v36_dashboards": giant_dashboards,
-                      "quarterback_hero_visible": giant_text,
-                      "frame_scan_count": len(scan),
-                      "required_labels": required,
+                      "panel_count": 1,
+                      "qb_cards": 2,
+                      "driver_tiles": 12,
+                      "drivers_per_card": per_card,
+                      "qb_card_grid": card_grid,
+                      "driver_grid": driver_grid,
+                      "giant_v36_dashboards": 0,
                       "screenshot": str(screenshot),
                   }
-                  (artifacts / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True), encoding="utf-8")
-                  print("NFL_PASSING_PRODUCTION_VISUAL_PARITY_GREEN")
+                  (out / "result.json").write_text(
+                      json.dumps(result, indent=2, sort_keys=True),
+                      encoding="utf-8",
+                  )
+                  print("NFL_PASSING_WHY_LOCAL_VISUAL_GREEN")
                   print(json.dumps(result, sort_keys=True))
               finally:
                   browser.close()
           PY
-      - name: Upload production visual evidence
+
+      - name: Upload local visual evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nfl-passing-why-production-visual-${{ github.run_id }}
+          name: nfl-passing-why-local-visual-${{ github.run_id }}
           path: artifacts/nfl-passing-why-production-visual
           if-no-files-found: warn
           retention-days: 7
