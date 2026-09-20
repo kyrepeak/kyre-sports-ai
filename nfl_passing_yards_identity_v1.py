@@ -138,6 +138,11 @@ def resolve_team_qb_identity(
             break
 
     if verified_qb1:
+        # Alerts raised while skipping an unavailable/stale earlier depth
+        # candidate must not leak onto the later exact-ID QB we actually
+        # verified for this matchup.
+        result["availability_alert"] = False
+        result["transaction_alert"] = False
         result["qb1"] = verified_qb1
         result["identity_verified"] = True
     return result
