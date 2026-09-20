@@ -157,6 +157,14 @@ def resolve_matchup_identity(game: dict, season_year: int) -> dict:
 
     injury_map, injury_diag = load_current_injury_map()
     event_injury_map, event_injury_diag = game_day.load_event_injury_map(game_id)
+    availability = game_day.event_availability_snapshot(
+        game_id,
+        _safe(game.get("away_abbr")),
+        _safe(game.get("home_abbr")),
+        _safe(game.get("state")),
+        event_map=event_injury_map,
+        event_diag=event_injury_diag,
+    )
     injury_map = game_day.merge_injury_maps(injury_map, event_injury_map)
     injury_ok = bool(injury_diag.get("ok") or event_injury_diag.get("ok"))
     away = resolve_team_qb_identity(
@@ -173,10 +181,24 @@ def resolve_matchup_identity(game: dict, season_year: int) -> dict:
         injury_map,
         injury_ok,
     )
-    ready = bool(away.get("identity_verified") and home.get("identity_verified"))
+    identity_ready = bool(away.get("identity_verified") and home.get("identity_verified"))
+    prop_ready = bool(identity_ready and availability.get("prop_gate_open"))
+    if not identity_ready:
+        reason = "one or both verified depth QB1 identities are unresolved"
+    elif availability.get("state") == "PENDING":
+        reason = "final game-day inactive confirmation is still pending"
+    elif availability.get("state") == "UNVERIFIED":
+        reason = "exact-event game-day availability could not be verified"
+    else:
+        reason = ""
+
     return {
-        "ready": ready,
-        "reason": "" if ready else "one or both verified depth QB1 identities are unresolved",
+        "ready": prop_ready,
+        "identity_ready": identity_ready,
+        "prop_availability_ready": bool(availability.get("prop_gate_open")),
+        "availability_state": availability.get("state"),
+        "availability": availability,
+        "reason": reason,
         "game_id": game_id,
         "injury_feed_ok": injury_ok,
         "event_injury_http": event_injury_diag.get("http"),
