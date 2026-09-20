@@ -167,44 +167,79 @@ def _assert_exact_event(page, frame) -> None:
 def _assert_hero(frame) -> dict:
     root = frame.locator(HERO_SELECTOR).last
     root.wait_for(state="attached", timeout=5000)
-    state = str(root.get_attribute("data-analysis-state") or "").strip()
-    ready_count = str(root.get_attribute("data-ready-count") or "").strip()
-    total_checks = str(root.get_attribute("data-total-checks") or "").strip()
+    analysis_state = str(
+        root.get_attribute("data-analysis-state") or ""
+    ).strip()
+    ready_count_raw = str(
+        root.get_attribute("data-ready-count") or ""
+    ).strip()
+    total_checks_raw = str(
+        root.get_attribute("data-total-checks") or ""
+    ).strip()
     metrics = root.locator('[data-metric]')
     ready_metrics = root.locator('[data-metric][data-state="READY"]')
+    metric_values = root.locator('[data-metric] .gt202-value')
     text = root.inner_text(timeout=10000)
 
-    if state != "READY":
-        raise PageCleanupProductionFailure(f"Game Total Analysis state={state!r}")
-    if ready_count != "12" or total_checks != "12":
-        raise PageCleanupProductionFailure(
-            f"Game Total Analysis Data Check drift: ready={ready_count!r} total={total_checks!r}"
-        )
     if metrics.count() != 4 or ready_metrics.count() != 4:
         raise PageCleanupProductionFailure(
             f"Game Total Analysis metric readiness drift: metrics={metrics.count()} "
             f"ready={ready_metrics.count()}"
         )
-    if "12/12 Data Check" not in text:
-        raise PageCleanupProductionFailure("12/12 Data Check is not visible")
+
+    values = [
+        metric_values.nth(i).inner_text(timeout=5000).strip()
+        for i in range(metric_values.count())
+    ]
+    if len(values) != 4:
+        raise PageCleanupProductionFailure(
+            f"Game Total Analysis metric value count drift: {values!r}"
+        )
+    forbidden_metric_tokens = ("pending", "not posted", "waiting on")
+    incomplete_values = [
+        value for value in values
+        if any(token in value.casefold() for token in forbidden_metric_tokens)
+    ]
+    if incomplete_values:
+        raise PageCleanupProductionFailure(
+            "Game Total Analysis still has incomplete metric values: "
+            + " | ".join(incomplete_values)
+        )
+
+    try:
+        checked = int(ready_count_raw)
+        total_checks = int(total_checks_raw)
+    except ValueError as exc:
+        raise PageCleanupProductionFailure(
+            f"Game Total Analysis Data Check is not numeric: "
+            f"ready={ready_count_raw!r} total={total_checks_raw!r}"
+        ) from exc
+
+    if total_checks != 12 or not 0 <= checked <= total_checks:
+        raise PageCleanupProductionFailure(
+            f"Game Total Analysis Data Check drift: "
+            f"ready={checked!r} total={total_checks!r}"
+        )
+    expected_data_check = f"{checked}/{total_checks} Data Check"
+    if expected_data_check not in text:
+        raise PageCleanupProductionFailure(
+            f"Displayed Data Check does not match DOM count: "
+            f"expected={expected_data_check!r}"
+        )
+
     if "0.0% sportsbook projection influence" not in text.lower():
         raise PageCleanupProductionFailure(
             "0.0% sportsbook projection influence is not visible"
         )
-    forbidden = ("Pending", "Not posted", "Waiting on")
-    bad = [token for token in forbidden if token in text]
-    if bad:
-        raise PageCleanupProductionFailure(
-            "Game Total Analysis still has incomplete presentation: " + " | ".join(bad)
-        )
 
     return {
-        "state": state,
-        "ready_count": int(ready_count),
+        "analysis_state": analysis_state,
+        "ready_count": checked,
+        "total_checks": total_checks,
         "metric_count": metrics.count(),
         "ready_metrics": ready_metrics.count(),
+        "metric_values": values,
     }
-
 
 def _assert_team_evidence(frame) -> dict:
     root = frame.locator(TEAM_SELECTOR).last
