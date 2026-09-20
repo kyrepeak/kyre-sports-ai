@@ -236,14 +236,20 @@ def event_team_abbr_to_id(summary: dict[str, Any]) -> dict[str, str]:
     return out
 
 
-def league_unavailable_by_team(payload: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    """Normalize ESPN league-wide injuries by exact team ID."""
+def league_unavailable_by_team(
+    payload: dict[str, Any],
+    abbr_to_id: dict[str, str] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """Normalize ESPN league-wide injuries to exact event team IDs."""
     by_team: dict[str, list[dict[str, Any]]] = {}
+    abbr_to_id = {str(k).upper(): str(v) for k, v in (abbr_to_id or {}).items()}
     for block in (payload or {}).get("injuries", []) or []:
         if not isinstance(block, dict):
             continue
         team = block.get("team") or {}
         team_id = _text(team.get("id"))
+        if not team_id.isdigit():
+            team_id = abbr_to_id.get(_text(team.get("abbreviation")).upper(), "")
         if not team_id.isdigit():
             continue
         rows = by_team.setdefault(team_id, [])
@@ -370,7 +376,12 @@ def build_current_prop_pool(
     roster = parse_current_roster(roster_payload, allowed_positions)
     depth = parse_depth_chart(depth_payload, allowed_positions)
     event_rows = list((availability.get("unavailable") or {}).get(team_id, []) or [])
-    league_rows = list(league_unavailable_by_team(league_injury_payload or {}).get(team_id, []) or [])
+    league_rows = list(
+        league_unavailable_by_team(
+            league_injury_payload or {},
+            event_team_abbr_to_id(event_summary),
+        ).get(team_id, []) or []
+    )
     unavailable_rows = event_rows + league_rows
     unavailable_ids = {
         _text(row.get("official_athlete_id"))
