@@ -50,7 +50,7 @@ def test_exact_compact_reference_panel_contract_remains_available():
     assert "Daniel Jones" in html
     assert "Patrick Mahomes" in html
     for label in ("Volume", "Efficiency", "Pressure Adj", "Personnel", "Weather", "Recent SD"):
-        assert html.count(label) == 2
+        assert html.count(f"<span>{label}</span>") == 2
     assert "Projection: 161.2 yds" in html
     assert "Projection: 199.8 yds" in html
     assert "LEAN UNDER • line 218.5 • O 21.4% / U 78.6%" in html
