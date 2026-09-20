@@ -1,0 +1,33 @@
+name: NFL Passing Yards Step 3 Replacement QB Logic
+
+on:
+  push:
+    branches:
+      - "monster/nfl-passing-step3-production-cert-v2"
+    paths:
+      - "nfl_passing_yards_identity_v1.py"
+      - "tests/test_nfl_passing_yards_step3_replacement_qb_alert_v1.py"
+      - ".github/workflows/nfl-passing-yards-step3-replacement-qb-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install targeted test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Prove replacement QB clears inherited alerts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_step3_replacement_qb_alert_v1.py
+          echo "NFL_PASSING_STEP3_REPLACEMENT_QB_LOGIC_GREEN"
