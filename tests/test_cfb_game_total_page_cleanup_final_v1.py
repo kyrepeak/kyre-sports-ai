@@ -29,12 +29,10 @@ def test_cleanup_step3_combines_wall_suppression_and_navigation_escape(monkeypat
         visible_heartbeat,
     )
 
-    assert (
-        step1_router._hide_legacy_visible_heartbeat(
-            visible_heartbeat_owner._render_production_heartbeat
-        )
-        is None
-    )
+    def callback() -> None:
+        visible_heartbeat_owner._render_production_heartbeat()
+
+    assert step1_router._hide_legacy_visible_heartbeat(callback) is None
     assert visible_calls == []
 
     _set_state(monkeypatch, sport="NFL", market=router.GAME_TOTAL_MARKET)
