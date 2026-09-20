@@ -144,6 +144,13 @@ def _event_identity(summary: dict[str, Any], requested_event_id: str) -> tuple[i
 def _roster(team_id: str, event_summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
     roster_payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/roster")
     depth_payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/depthcharts")
+    if not prop_eligibility.parse_depth_chart(depth_payload, frozenset({"QB", "RB", "FB", "WR", "TE"})):
+        header = event_summary.get("header") or {}
+        season = header.get("season") or {}
+        year = int(season.get("year") or datetime.now(timezone.utc).year)
+        depth_payload = _get_json(
+            f"https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/{year}/teams/{team_id}/depthcharts"
+        )
     found, diag = prop_eligibility.build_current_prop_pool(
         team_id=team_id,
         roster_payload=roster_payload,
