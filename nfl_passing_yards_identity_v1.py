@@ -78,6 +78,9 @@ def resolve_team_qb_identity(
         "injury_feed_ok": bool(injury_feed_ok),
         "injuries": list((injury_map or {}).get(abbr, [])),
         "availability_alert": False,
+        "transaction_alert": False,
+        "current_roster_verified": False,
+        "current_roster_http": None,
     }
     if not team_id:
         return result
@@ -105,14 +108,28 @@ def resolve_team_qb_identity(
             result["depth_http"] = result["depth_http"] or roster_diag.get("http")
 
     qbs = _attach_qb_injuries(qbs, result["injuries"])
+    eligible_ids, eligible_names, roster_diag = game_day.current_prop_eligible_keys(abbr)
+    result["current_roster_http"] = roster_diag.get("http")
+    result["current_roster_verified"] = bool(roster_diag.get("ok") and (eligible_ids or eligible_names))
     result["qbs"] = qbs
 
     verified_qb1 = None
     if result["depth_state"] == "VERIFIED":
         ordered = sorted(qbs, key=lambda x: (_rank(x.get("rank")), _safe(x.get("name"))))
         for candidate in ordered:
-            if not _safe(candidate.get("athlete_id")) or not _safe(candidate.get("name")):
+            athlete_id = _safe(candidate.get("athlete_id"))
+            name = _safe(candidate.get("name"))
+            if not athlete_id or not name:
                 continue
+
+            # Current roster membership is authoritative over stale depth charts.
+            if not result["current_roster_verified"]:
+                result["transaction_alert"] = True
+                continue
+            if athlete_id not in eligible_ids and name.lower() not in eligible_names:
+                result["transaction_alert"] = True
+                continue
+
             status = _safe(candidate.get("injury_status"))
             if game_day.is_unavailable_status(status):
                 result["availability_alert"] = True
