@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-sport-nav-step1-shell",
+  "status": "DONE",
+  "scope": "Presentation-only Step 1 sport navigation shell above GAME DAY using Page V29 and additive Router V176. Navigation actions are intentionally deferred to Step 2.",
+  "trigger": "User approved the generated Jump to a Sport Page mockup for the blank area above GAME DAY.",
+  "guardrails": {
+    "prior_six_step_redesign_frozen": true,
+    "production_debug_wall_fix_frozen": true,
+    "sport_navigation_escape_fix_frozen": true,
+    "page_v28_edited_in_place": false,
+    "router_v175_edited_in_place": false,
+    "navigation_actions_added": false,
+    "game_day_changed": false,
+    "matchup_surface_changed": false,
+    "game_total_analysis_changed": false,
+    "data_contract_changed": false,
+    "projection_math_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
