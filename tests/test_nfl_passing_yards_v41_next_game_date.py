@@ -88,7 +88,10 @@ def test_router_v186_keeps_v185_frozen_and_routes_only_passing_yards_to_v41() ->
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v185"' in source
     assert 'ACTIVE_PASSING_YARDS_HUB = "nfl_passing_yards_hub_v41"' in source
     assert 'PASSING_YARDS_MARKET = "Passing Yards"' in source
-    assert "return original_render_nfl(normalized)" in source
+    assert "prior._consume_any_nfl_category_without_rerun()" in source
+    assert "return _render_direct_passing()" in source
+    assert "return root.render_app()" in source
+    assert "return prior.render_app()" in source
     assert ".rerun(" not in source
 
 
