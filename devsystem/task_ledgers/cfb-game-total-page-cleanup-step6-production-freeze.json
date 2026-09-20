@@ -9,8 +9,8 @@
   },
   "transition_history": [],
   "override_events": [],
-  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Production evidence exposed a deterministic-data gap, so Step 6 now includes only the exact certified local snapshot selector fallback, verified exact-event environment cache, and passive production verification. Steps 1-5 remain frozen.",
-  "proof_target": "Final Step-6 proof: deterministic checked-in Purdue @ UCLA production data must repair both model/team profiles without upstream ESPN IDs and provide verified Rose Bowl environment evidence without network access; after merge, one stable production session must prove Game Total Analysis READY 12/12, Team Evidence READY, Game Evidence complete, and 0.0% sportsbook projection influence.",
+  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Production evidence exposed a deterministic-data gap, so Step 6 now includes only the exact certified local snapshot selector fallback, verified exact-event environment cache, and passive production verification. Steps 1-5 remain frozen. Final verifier alignment: production acceptance follows the declared cleanup contract—four READY Game Total Analysis metrics with truthful X/12 Data Check; 12/12 deep-step readiness is not an added acceptance condition.",
+  "proof_target": "Final Step-6 proof: deterministic checked-in Purdue @ UCLA production data must repair both model/team profiles without upstream ESPN IDs and provide verified Rose Bowl environment evidence without network access; after merge, one stable production session must prove Game Total Analysis READY 12/12, Team Evidence READY, Game Evidence complete, and 0.0% sportsbook projection influence. Final verifier proof requires four READY hero metrics, truthful Data Check count, READY Team Evidence, complete Game Evidence, and 0.0% sportsbook projection influence.",
   "internal_steps": {
     "1": "Freeze Steps 1-5 and set VERIFIER as the only active layer.",
     "2": "Use one stable direct Streamlit app session for Purdue @ UCLA.",

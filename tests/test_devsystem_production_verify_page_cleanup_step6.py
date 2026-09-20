@@ -29,9 +29,13 @@ def test_step6_verifier_requires_all_cleanup_surfaces():
     hero = inspect.getsource(verifier._assert_hero)
     teams = inspect.getsource(verifier._assert_team_evidence)
     game = inspect.getsource(verifier._assert_game_evidence)
-    assert "12/12 Data Check" in hero
     assert "ready_metrics.count() != 4" in hero
+    assert "forbidden_metric_tokens" in hero
+    assert "expected_data_check" in hero
+    assert "total_checks != 12" in hero
+    assert "0 <= checked <= total_checks" in hero
     assert "0.0% sportsbook projection influence" in hero
+    assert "12/12 Data Check" not in hero
     assert "ready_cards.count() != 2" in teams
     assert "ready_stats.count() != 8" in teams
     assert "Rose Bowl" in game
