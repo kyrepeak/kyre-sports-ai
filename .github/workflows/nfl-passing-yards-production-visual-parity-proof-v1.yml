@@ -54,21 +54,7 @@ jobs:
                   market.wait_for(state="visible", timeout=60000)
                   base._choose(page, market, "Passing Yards")
 
-                  # Give the public route time to hydrate its default verified slate/matchup.
-                  deadline = time.monotonic() + 180
-                  why = frame.locator("section.kpy16-why")
-                  while time.monotonic() < deadline and why.count() == 0:
-                      # If a matchup selector exists but no card has rendered yet, keep the
-                      # current default selection and allow the Streamlit rerun to settle.
-                      page.wait_for_timeout(750)
-
-                  if why.count() < 1:
-                      body = base._body(frame)
-                      raise AssertionError("compact kpy16 Why This Projection panel not found; body_start=" + body[:5000])
-
-                  why.first.wait_for(state="visible", timeout=30000)
-                  body = why.first.inner_text(timeout=10000)
-
+                  # Wait for the compact panel to be fully hydrated, not merely mounted.
                   required = [
                       "Why This Projection",
                       "RESULT → REASONS",
@@ -80,14 +66,44 @@ jobs:
                       "Recent SD",
                       "Projection:",
                   ]
-                  missing = [label for label in required if label not in body]
-                  if missing:
-                      raise AssertionError("compact panel missing required labels: " + repr(missing))
+                  deadline = time.monotonic() + 180
+                  why = frame.locator("section.kpy16-why")
+                  body = ""
+                  cards = 0
+                  missing = list(required)
+                  while time.monotonic() < deadline:
+                      if why.count() > 0:
+                          try:
+                              why.first.wait_for(state="visible", timeout=5000)
+                              body = why.first.inner_text(timeout=5000)
+                          except Exception:
+                              body = ""
+                          cards = frame.locator("section.kpy16-whycard").count()
+                          missing = [label for label in required if label not in body]
+                          if cards >= 2 and not missing:
+                              break
+                      page.wait_for_timeout(750)
 
-                  cards = frame.locator("section.kpy16-whycard").count()
                   giant_dashboards = frame.locator("section.kpass36-dashboard").count()
                   full_body = base._body(frame)
                   giant_text = "Quarterback Hero" in full_body
+
+                  if why.count() < 1 or cards < 2 or missing:
+                      (artifacts / "failure_body.txt").write_text(full_body, encoding="utf-8")
+                      page.screenshot(path=str(artifacts / "passing_yards_full_page_production_failure.png"), full_page=True)
+                      raise AssertionError(
+                          "compact panel did not fully hydrate: "
+                          + json.dumps(
+                              {
+                                  "why_panels": why.count(),
+                                  "cards": cards,
+                                  "missing": missing,
+                                  "giant_v36_dashboards": giant_dashboards,
+                                  "quarterback_hero_visible": giant_text,
+                              },
+                              sort_keys=True,
+                          )
+                      )
 
                   if cards < 2:
                       raise AssertionError(f"expected at least 2 compact QB cards; saw {cards}")
