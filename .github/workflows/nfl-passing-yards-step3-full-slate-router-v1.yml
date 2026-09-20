@@ -36,3 +36,28 @@ jobs:
         run: |
           python -m pytest -q tests/test_nfl_passing_yards_step3_full_slate_router_v1.py
           echo "NFL_PASSING_STEP3_FULL_SLATE_ROUTER_GREEN"
+      - name: Probe live Week 2 fallback completeness
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import json
+          import nfl_passing_yards_full_slate_router_v1 as router
+
+          day = "2026-09-20"
+          meta = router._default_schedule_meta(day)
+          weekly, diag = router._default_weekly_loader(day, meta)
+          result = {
+              "day": day,
+              "meta": meta,
+              "weekly_diag": diag,
+              "weekly_games": int(len(weekly)),
+              "event_ids": weekly.get("game_id", []).astype(str).tolist() if not weekly.empty else [],
+          }
+          print("NFL_PASSING_STEP3_LIVE_ROUTER_PROBE " + json.dumps(result, sort_keys=True))
+          assert meta.get("ready") is True
+          assert int(meta.get("expected_games") or 0) == 14
+          assert diag.get("request_ok") is True
+          assert len(weekly) == 14
+          print("NFL_PASSING_STEP3_LIVE_WEEK_FALLBACK_GREEN")
+          PY
