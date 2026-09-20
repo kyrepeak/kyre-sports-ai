@@ -322,12 +322,19 @@ def _certify_all_public_matchups(page, frame, *, expected_games: int = 14) -> li
             raise PublicProductionCertFailure(
                 f"Step 3 unresolved QB identity leaked for public matchup {core!r}"
             )
-        qb_verified = body.count("QB1 ID VERIFIED")
-        if qb_verified < 2:
+        exact_qb = body.count("EXACT-ID QB1")
+        athlete_ids = body.count("ESPN ATHLETE ID")
+        if exact_qb < 2 or athlete_ids < 2:
             raise PublicProductionCertFailure(
-                f"Step 3 expected two verified QB1 identities for {core!r}; saw {qb_verified}"
+                f"Step 3 expected two exact-ID displayed QB identities for {core!r}; "
+                f"saw exact_qb={exact_qb} athlete_ids={athlete_ids}"
             )
-        verified.append({"matchup": core, "qb1_verified": qb_verified})
+        verified.append({
+            "matchup": core,
+            "exact_id_qb": exact_qb,
+            "espn_athlete_ids": athlete_ids,
+            "qb1_verified_badges": body.count("QB1 ID VERIFIED"),
+        })
 
     print(
         "NFL_PASSING_STEP3_ALL_14_PRODUCTION_GREEN "
