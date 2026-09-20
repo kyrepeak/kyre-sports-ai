@@ -237,7 +237,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app
+    # Frozen V185 delegate compatibility: from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app
     # Frozen V184 delegate compatibility: from streamlit_memory_lazy_router_v184 import record_bootstrap_import_ms, render_app
     # Frozen V183 delegate compatibility: from streamlit_memory_lazy_router_v183 import record_bootstrap_import_ms, render_app
     # V182 runtime KeyError repair: bypassed by safe V183 entry prime
