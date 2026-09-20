@@ -1,0 +1,64 @@
+name: NFL Step 8 Final 14 Game Certification V1
+
+on:
+  push:
+    branches:
+      - "monster/nfl-step8-full-14-game-cert-v1"
+      - "main"
+    paths:
+      - "devsystem/nfl_step8_full_14_game_cert_v1.py"
+      - "devsystem/nfl_step8_production_cert_v1.py"
+      - "devsystem/task_ledgers/nfl-step8-full-14-game-cert-v1.json"
+      - ".github/workflows/nfl-step8-final-14-game-cert-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-step8-final-14-game-cert-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  targeted-14-game-proof:
+    if: github.ref == 'refs/heads/monster/nfl-step8-full-14-game-cert-v1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Step 8 proof
+        run: |
+          python -m py_compile             devsystem/nfl_step8_full_14_game_cert_v1.py             devsystem/nfl_step8_production_cert_v1.py
+      - name: Run locked 14-game / 28-team live proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_step8_full_14_game_cert_v1.py
+
+  production-certification-once:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install one-time production browser dependency
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Run final 14-game proof + public Step 7 deployment certification
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/nfl_step8_production_cert_v1.py             --artifact-dir artifacts/nfl-step8-production-certification
+      - name: Upload final Step 8 production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-step8-production-certification-${{ github.run_id }}
+          path: artifacts/nfl-step8-production-certification
+          if-no-files-found: warn
+          retention-days: 14
