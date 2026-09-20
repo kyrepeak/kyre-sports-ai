@@ -303,7 +303,8 @@ jobs:
             tests/test_cfb_over_under_upgrade_step12_slate.py \
             tests/test_cfb_over_under_readable_step12_v1.py \
             tests/test_cfb_over_under_router_v69.py \
-            tests/test_cfb_step3_team_data_foundation.py
+            tests/test_cfb_step3_team_data_foundation.py \
+            tests/test_cfb_game_total_visual_step6.py
 
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
