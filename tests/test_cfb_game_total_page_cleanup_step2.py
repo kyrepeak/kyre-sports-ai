@@ -31,7 +31,7 @@ def test_step2_ready_hero_renders_four_explicit_ready_cards():
     assert ">55.5<" in html
     assert ">52.5<" in html
     assert "Over +3.0" in html
-    assert "72%" in html
+    assert "72.0%" in html
     assert "Grade: A" in html
     assert "12/12 Data Check" in html
     assert "All 12 required checks ready" in html
