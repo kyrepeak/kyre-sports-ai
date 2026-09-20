@@ -93,3 +93,108 @@ def test_step6_environment_adapter_prefers_checked_in_exact_event_cache(monkeypa
     assert payload["weather"]["precipitation_pct"] == 0.0
     assert payload["kickoff"] == "2026-09-19T23:00:00-04:00"
     assert payload["status"] == "Scheduled"
+
+
+def _purdue_ucla_game():
+    return {
+        "game_id": "6604119",
+        "identity_key": "ncaa:6604119",
+        "game_date": "2026-09-19",
+        "kickoff_iso": "2026-09-19T23:00:00-04:00",
+        "away_team": "Purdue",
+        "home_team": "UCLA",
+        "espn_event_id": "401858458",
+        "away_team_id": "2509",
+        "home_team_id": "26",
+        "identity_verified": True,
+        "date_matches_query": True,
+        "status": "Scheduled",
+    }
+
+
+def test_step6_model_input_v2_is_exact_local_and_model_ready():
+    import cfb_game_total_model_input_v2 as model_input
+
+    profiles, diag = model_input.local_exact_profiles(
+        _purdue_ucla_game(), "2026-09-19"
+    )
+    assert diag["ready"] is True
+    assert diag["event_id"] == "401858458"
+    assert diag["source"] == "checked-in-certified-runtime-v2"
+    assert profiles["away"]["ppg"] == 40.0
+    assert profiles["away"]["points_allowed_pg"] == 28.5
+    assert profiles["home"]["ppg"] == 36.5
+    assert profiles["home"]["points_allowed_pg"] == 17.0
+    assert profiles["away"]["data_quality"]["grade"] != "CHECK"
+    assert profiles["home"]["data_quality"]["grade"] != "CHECK"
+
+
+def test_step6_slate_v3_bypasses_external_team_data_for_exact_local_event(monkeypatch):
+    import cfb_game_total_slate_v3 as slate
+
+    def fail_external(*_args, **_kwargs):
+        raise AssertionError("external team-data path must be bypassed")
+
+    slate.clear_scan_cache()
+    monkeypatch.setattr(slate.team_data, "load_matchup_team_data", fail_external)
+    result = slate.analyze_game(_purdue_ucla_game(), "2026-09-19")
+    assert result["raw"]["ready"] is True, result["raw"].get("reasons")
+    assert float(result["raw"]["projected_combined_total"]) > 0
+    assert result["final"]["ready"] is True, result["final"].get("reasons")
+    assert float(result["final"]["projected_combined_total"]) > 0
+    assert result["final"]["forecast_strength"] is not None
+    assert result["team_diag"]["external_team_data_bypassed"] is True
+    assert slate.raw_model is slate.frozen.raw_model
+    assert slate.final_model is slate.frozen.final_model
+
+
+def test_step6_game_evidence_v2_uses_local_cache_without_network(monkeypatch):
+    import cfb_game_total_game_evidence_v1 as prior_evidence
+    import cfb_game_total_game_evidence_v2 as evidence
+
+    def fail_network(*_args, **_kwargs):
+        raise AssertionError("network must not run for cached exact event")
+
+    monkeypatch.setattr(prior_evidence.environment_owner, "_fetch_summary", fail_network)
+    monkeypatch.setattr(prior_evidence.environment_owner, "_fetch_scoreboard", fail_network)
+    display, diag = evidence.enrich_game_evidence(
+        {"venue": "Venue unavailable", "status": "Scheduled", "kickoff_iso": "2026-09-19T23:00:00-04:00"},
+        _purdue_ucla_game(),
+    )
+    assert diag["cache_used"] is True
+    assert diag["data_green"] is True
+    assert display["venue"] == "Rose Bowl"
+    assert display["temperature"] == 73.0
+    assert display["weather"] == "0% precipitation"
+    assert display["wind"] == "5 mph gusts"
+
+
+def test_step6_page_v25_injects_only_fresh_helpers_and_restores():
+    import cfb_game_total_clean_page_v25 as page
+    import cfb_game_total_game_evidence_v2 as evidence_v2
+    import cfb_game_total_slate_v3 as slate_v3
+
+    original_slate = page.slate_hook_owner.slate_v2
+    original_evidence = page.prior.game_evidence
+    seen = {}
+
+    def callback():
+        seen["slate"] = page.slate_hook_owner.slate_v2
+        seen["evidence"] = page.prior.game_evidence
+        return "ok"
+
+    assert page._render_with_runtime_fresh_helpers(callback) == "ok"
+    assert seen["slate"] is slate_v3
+    assert seen["evidence"] is evidence_v2
+    assert page.slate_hook_owner.slate_v2 is original_slate
+    assert page.prior.game_evidence is original_evidence
+
+
+def test_step6_router_v170_and_app_boot_fresh_page():
+    from pathlib import Path
+    import streamlit_memory_lazy_router_v170 as router
+
+    assert router.ACTIVE_PAGE == "cfb_game_total_clean_page_v25"
+    source = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
+    assert "from streamlit_memory_lazy_router_v170 import record_bootstrap_import_ms, render_app" in source
+    assert "from streamlit_memory_lazy_router_v169 import record_bootstrap_import_ms, render_app" in source
