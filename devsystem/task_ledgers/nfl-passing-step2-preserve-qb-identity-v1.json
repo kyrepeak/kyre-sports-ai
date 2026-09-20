@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "nfl-passing-step2-preserve-qb-identity-v1",
+  "status": "DONE",
+  "scope": "Keep exact-event/current-roster verified Passing Yards quarterback identity visible when prop availability is pending or closed, while leaving prop-market availability and downstream market gates fail-closed.",
+  "trigger": "Passing Yards displayed Unresolved QB1 because the Step 7 render guard erased already verified quarterback identity whenever the separate prop availability gate was not open.",
+  "guardrails": {
+    "passing_yards_game_navigation_changed": false,
+    "projection_math_changed": false,
+    "market_logic_changed": false,
+    "prop_availability_gate_opened": false,
+    "router_behavior_changed": false,
+    "rankings_changed": false,
+    "grades_changed": false,
+    "stake_sizing_changed": false,
+    "other_sports_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

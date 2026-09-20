@@ -307,7 +307,11 @@ def guard_passing_identity(
 ) -> dict[str, Any]:
     """Strip QB identity unless the render-time exact-ID proof is still GREEN."""
     event_id = _text((game or {}).get("game_id"))
-    if not isinstance(resolved, Mapping) or resolved.get("ready") is not True:
+    # Passing Yards identity and prop-market availability are separate
+    # contracts. A verified QB may remain visible even when the pregame prop
+    # gate is pending/closed; market output stays controlled by the frozen
+    # availability gates downstream.
+    if not isinstance(resolved, Mapping) or resolved.get("identity_ready") is not True:
         return _fail_passing_identity(
             resolved,
             _text((resolved or {}).get("reason") if isinstance(resolved, Mapping) else ""),
@@ -317,10 +321,10 @@ def guard_passing_identity(
 
     snapshot = (snapshot_loader or _load_event_snapshot)(event_id)
     state = _text(snapshot.get("state"), "UNVERIFIED").upper()
-    if snapshot.get("ready") is not True or snapshot.get("prop_gate_open") is not True:
+    if snapshot.get("ready") is not True:
         return _fail_passing_identity(
             resolved,
-            _text(snapshot.get("reason"), "exact game-day identity is not verified"),
+            _text(snapshot.get("reason"), "exact event identity is not verified"),
             state=state,
         )
 
