@@ -5,11 +5,14 @@ missing display fields and never feeds model/projection math.
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any, Mapping
 
 import cfb_over_under_environment_engine_v1 as environment_owner
 
 MODEL_VERSION = "CFB GAME TOTAL GAME EVIDENCE V1 • PAGE CLEANUP STEP 5"
+ENVIRONMENT_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
@@ -72,9 +75,71 @@ def _competition_venue(event: Mapping[str, Any]) -> dict[str, Any]:
     return dict(venue) if isinstance(venue, Mapping) else {}
 
 
+def _cached_environment_payload(
+    game: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]] | None:
+    """Return only an exact, identity-matched checked-in environment row."""
+    event_id = _clean(game.get("espn_event_id") or game.get("event_id"))
+    if not event_id:
+        return None
+    try:
+        payload = json.loads(ENVIRONMENT_CACHE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if int(payload.get("version") or 0) != 1:
+        return None
+    events = payload.get("events")
+    if not isinstance(events, Mapping):
+        return None
+    row = events.get(event_id)
+    if not isinstance(row, Mapping):
+        return None
+
+    row_day = _clean(row.get("game_date"))[:10]
+    game_day = _clean(game.get("game_date") or game.get("date"))[:10]
+    if game_day and row_day and game_day != row_day:
+        return None
+
+    for key in ("away_team", "home_team"):
+        expected = _clean(game.get(key)).casefold()
+        actual = _clean(row.get(key)).casefold()
+        if expected and actual and expected != actual:
+            return None
+
+    venue = row.get("venue") if isinstance(row.get("venue"), Mapping) else {}
+    weather = row.get("weather") if isinstance(row.get("weather"), Mapping) else {}
+    if not (
+        venue.get("ready") is True
+        and weather.get("ready") is True
+        and weather.get("temperature_f") is not None
+        and weather.get("gust_mph") is not None
+    ):
+        return None
+
+    return {
+        "event_id": event_id,
+        "kickoff": _clean(row.get("kickoff")),
+        "status": _clean(row.get("status")),
+        "weather": dict(weather),
+        "venue": dict(venue),
+    }, {
+        "source": "checked-in-verified-environment-cache-v1",
+        "event_found": True,
+        "event_id": event_id,
+        "exact_event_id_used": True,
+        "cache_used": True,
+        "summary_identity_verified": True,
+        "cache_generated_at": payload.get("generated_at"),
+    }
+
+
 def _environment_payload(
     game: Mapping[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    cached = _cached_environment_payload(game)
+    if cached is not None:
+        return cached
+
     # Fast path: the selected schedule/deep-reconciliation row already carries
     # an exact verified ESPN event ID. Do not rediscover it through scoreboard
     # matching when direct exact-event summary access is available.
@@ -290,6 +355,7 @@ def enrich_game_evidence(
 
 
 __all__ = [
+    "ENVIRONMENT_CACHE_PATH",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
