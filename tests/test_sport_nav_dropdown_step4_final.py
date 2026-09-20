@@ -25,7 +25,7 @@ def _expected() -> dict[str, list[str]]:
 def test_step4_final_dropdown_chain_is_active_and_frozen() -> None:
     app_text = (ROOT / "app.py").read_text(encoding="utf-8")
 
-    assert "from streamlit_memory_lazy_router_v180 import record_bootstrap_import_ms, render_app" in app_text
+    assert "from streamlit_memory_lazy_router_v181 import record_bootstrap_import_ms, render_app" in app_text
     assert router.ACTIVE_PAGE == "cfb_game_total_clean_page_v33"
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v179"
     assert functional.FROZEN_PRESENTATION == "cfb_game_total_clean_page_v32"
