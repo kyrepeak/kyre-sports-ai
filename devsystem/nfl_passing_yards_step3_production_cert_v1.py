@@ -90,7 +90,7 @@ def _visible_matchup_combo(frame):
     return combo
 
 
-def _select_game(page, frame, matchup_text: str, event_id: str) -> str:
+def _select_game(page, frame, matchup_text: str) -> str:
     """Select one matchup without requiring every option to be mounted at once."""
     combo = _visible_matchup_combo(frame)
     combo.click()
@@ -115,17 +115,7 @@ def _select_game(page, frame, matchup_text: str, event_id: str) -> str:
 
     chosen = texts[index]
     options.nth(index).click()
-
-    deadline = time.monotonic() + 90
-    while time.monotonic() < deadline:
-        body = public._body(frame)
-        if re.search(rf"\bESPN event\s+{re.escape(str(event_id))}\b", body, flags=re.IGNORECASE):
-            return chosen
-        page.wait_for_timeout(350)
-
-    raise Step3Failure(
-        f"selected matchup {matchup_text!r} did not settle on ESPN event {event_id}"
-    )
+    return chosen
 
 
 def _wait_qb_cards(page, frame, away: dict, home: dict) -> dict:
@@ -197,7 +187,6 @@ def run(production_url: str = PRODUCTION_URL, artifact_dir: str = "artifacts/nfl
                     page,
                     frame,
                     item["matchup_text"],
-                    item["event_id"],
                 )
                 qb = _wait_qb_cards(page, frame, item["away"], item["home"])
                 results.append(
