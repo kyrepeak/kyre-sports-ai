@@ -390,6 +390,8 @@ def test_v164_hidden_identity_marker_renders_without_runtime_name_error(monkeypa
     page_v164._render_v164_identity()
     assert len(rendered) == 1
     body = rendered[0]
+    assert 'hidden aria-hidden="true"' in body
+    assert 'style="display:none!important"' in body
     assert page_v164.DEPLOYMENT_PROOF_MARKER in body
     assert page_v164.STEP1_PRESENTATION_MARKER in body
     assert page_v164.STEP1_PROFILE_MARKER in body

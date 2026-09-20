@@ -912,23 +912,31 @@ def verify_live_v164(
                 timeout=120000,
             )
             frame, body, scans = _wait_for_v164_patch_deployment(page)
-            if REQUIRED_HEARTBEAT not in body:
+            identity = frame.locator('[data-testid="cfb-game-total-v164-active"]').last
+            identity.wait_for(state="attached", timeout=15000)
+            if identity.is_visible():
+                raise ProductionVerificationV164Failure(
+                    "V164 certification identity marker must remain hidden in production"
+                )
+            identity_text = str(identity.text_content(timeout=5000) or "")
+            verification_text = body + "\n" + identity_text
+            if REQUIRED_HEARTBEAT not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing V164 production heartbeat: {REQUIRED_HEARTBEAT}"
                 )
-            if REQUIRED_PATCH_MARKER not in body:
+            if REQUIRED_PATCH_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing current V164 logo patch marker: {REQUIRED_PATCH_MARKER}"
                 )
-            if REQUIRED_STEP1_MARKER not in body:
+            if REQUIRED_STEP1_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 1 production marker: {REQUIRED_STEP1_MARKER}"
                 )
-            if REQUIRED_STEP1_PROFILE_MARKER not in body:
+            if REQUIRED_STEP1_PROFILE_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 1 exact-profile marker: {REQUIRED_STEP1_PROFILE_MARKER}"
                 )
-            if REQUIRED_STEP2_MARKER not in body:
+            if REQUIRED_STEP2_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 2 performance-profile marker: {REQUIRED_STEP2_MARKER}"
                 )
@@ -937,19 +945,19 @@ def verify_live_v164(
                     "missing Step 5 V178 nonblocking deployment heartbeat: "
                     f"{REQUIRED_STEP5_DEPLOYMENT_MARKER}"
                 )
-            if REQUIRED_STEP3_MARKER not in body:
+            if REQUIRED_STEP3_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 3 current-form marker: {REQUIRED_STEP3_MARKER}"
                 )
-            if REQUIRED_STEP4_MARKER not in body:
+            if REQUIRED_STEP4_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 4 matchup marker: {REQUIRED_STEP4_MARKER}"
                 )
-            if REQUIRED_STEP4_VISUAL_MARKER not in body:
+            if REQUIRED_STEP4_VISUAL_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 4 V166 visual marker: {REQUIRED_STEP4_VISUAL_MARKER}"
                 )
-            if REQUIRED_STEP4_GRADE_MARKER not in body:
+            if REQUIRED_STEP4_GRADE_MARKER not in verification_text:
                 raise ProductionVerificationV164Failure(
                     f"missing Step 4 V167 grade marker: {REQUIRED_STEP4_GRADE_MARKER}"
                 )
