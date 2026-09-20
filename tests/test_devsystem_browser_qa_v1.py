@@ -93,7 +93,7 @@ def test_selector_helpers_are_readiness_driven_not_fixed_sleep_driven():
     assert "CFB_MARKET_LABEL" in run_source
     assert "CFB_RERUN_TIMEOUT_MS" in run_source
     assert "CFB_REQUIRED_MARKERS[-1]" in run_source
-    assert "CFB_REQUIRED_MARKERS[0]" in run_source
+    assert "_wait_for_either_text" in run_source
     assert "CFB_NO_GAMES_MARKER" in run_source
     assert 'state="visible"' in run_source
     assert module.SELECTOR_TIMEOUT_MS == 5000
