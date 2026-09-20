@@ -9,6 +9,9 @@ def test_reserve_practice_squad_and_suspended_rows_are_prop_ineligible() -> None
         "roster_status": "Injured Reserve", "active": False, "group_label": "Tight End"
     })
     assert not game_day.is_prop_eligible_roster_row({
+        "roster_status": "Day-To-Day", "active": None, "group_label": "injuredReserveOrOut"
+    })
+    assert not game_day.is_prop_eligible_roster_row({
         "roster_status": "", "active": None, "group_label": "Practice Squad"
     })
     assert not game_day.is_prop_eligible_roster_row({
