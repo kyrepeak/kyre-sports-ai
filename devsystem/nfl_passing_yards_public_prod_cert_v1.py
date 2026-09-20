@@ -339,7 +339,7 @@ def _certify_all_public_matchups(page, frame, *, expected_games: int = 14) -> li
 def _select_exact_matchup(page, frame, event: dict[str, Any]) -> str:
     matchup = _matchup_combobox(frame)
     matchup.click()
-    options = page.get_by_role("option")
+    options = frame.get_by_role("option")
     options.first.wait_for(state="visible", timeout=10000)
     texts = [x.strip() for x in options.all_inner_texts() if x.strip()]
     away = event["away"]
