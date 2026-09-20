@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-20T01:22:25Z",
+  "source": "Step 5 exact-event production-data proof",
+  "sportsbook_projection_influence": 0,
+  "events": {
+    "401858458": {
+      "event_id": "401858458",
+      "game_date": "2026-09-19",
+      "away_team": "Purdue",
+      "home_team": "UCLA",
+      "kickoff": "2026-09-19T23:00:00-04:00",
+      "status": "Scheduled",
+      "venue": {
+        "ready": true,
+        "name": "Rose Bowl",
+        "city": "Pasadena",
+        "state": "CA",
+        "indoor": false
+      },
+      "weather": {
+        "ready": true,
+        "temperature_f": 73,
+        "gust_mph": 5,
+        "precipitation_pct": 0,
+        "source": "certified Step-5 exact-event proof"
+      }
+    }
+  }
+}
