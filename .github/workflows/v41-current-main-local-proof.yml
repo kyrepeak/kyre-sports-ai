@@ -1,0 +1,83 @@
+name: V41 Current Main Local Proof
+
+on:
+  push:
+    branches:
+      - monster/v41-current-main-local-proof
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install app and browser dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Start current-main Streamlit
+        run: |
+          nohup python -m streamlit run app.py             --server.headless true             --server.address 127.0.0.1             --server.port 8501 > /tmp/v41-local.log 2>&1 &
+          echo $! > /tmp/v41-local.pid
+      - name: Prove current-main NFL Passing Yards route
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, re, time
+          from playwright.sync_api import sync_playwright
+
+          URL="http://127.0.0.1:8501/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True)
+              page=browser.new_page(viewport={"width":1440,"height":1300})
+              for attempt in range(60):
+                  try:
+                      page.goto(URL,wait_until="domcontentloaded",timeout=30000)
+                      break
+                  except Exception:
+                      time.sleep(1)
+
+              body=""
+              for _ in range(90):
+                  page.wait_for_timeout(1000)
+                  for frame in page.frames:
+                      try:
+                          text=frame.locator("body").inner_text(timeout=2000)
+                      except Exception:
+                          continue
+                      if "nfl passing yards" in text.lower() and "et slate" in text.lower():
+                          body=text
+                          break
+                  if body:
+                      break
+
+              print(body[:8000])
+              if not body:
+                  raise AssertionError("LOCAL_CURRENT_MAIN_PASSING_YARDS_NOT_RENDERED")
+
+              date_match=re.search(r"(20\d{2}-\d{2}-\d{2})\s*ET\s+SLATE",body,re.I)
+              games_match=re.search(r"(\d+)\s*GAMES",body,re.I)
+              if not date_match or not games_match:
+                  raise AssertionError("LOCAL_CURRENT_MAIN_DATE_OR_GAMES_MISSING")
+
+              slate=date_match.group(1)
+              games=int(games_match.group(1))
+              print(json.dumps({"slate_date":slate,"games":games},indent=2))
+              if slate=="2026-09-19" or games<=0:
+                  raise AssertionError(f"LOCAL_CURRENT_MAIN_STILL_STALE slate={slate} games={games}")
+
+              print("V41_CURRENT_MAIN_LOCAL_GREEN")
+              browser.close()
+          PY
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 300 /tmp/v41-local.log || true
