@@ -54,7 +54,7 @@ def _expected_slate():
         expected.append(
             {
                 "event_id": str(game.get("game_id") or ""),
-                "label_prefix": f"{game.get('away_team')} @ {game.get('home_team')} • ",
+                "matchup_text": f"{game.get('away_team')} @ {game.get('home_team')}",
                 "away": {
                     "name": str(aqb.get("name") or "").strip(),
                     "athlete_id": str(aqb.get("athlete_id") or "").strip(),
@@ -84,25 +84,48 @@ def _visible_option_texts(page, frame):
 
 
 def _visible_matchup_combo(frame):
-    combos = frame.get_by_role(
-        "combobox",
-        name=re.compile(r"^Choose matchup • \d+ verified game(?:s)?$"),
-    )
-    combos.first.wait_for(state="visible", timeout=120000)
-    return combos.first
+    label = f"Choose matchup • {EXPECTED_GAMES} verified games"
+    combo = frame.get_by_role("combobox", name=label, exact=True)
+    combo.wait_for(state="visible", timeout=120000)
+    return combo
 
 
-def _select_game(page, frame, label_prefix: str) -> str:
+def _select_game(page, frame, matchup_text: str, event_id: str) -> str:
+    """Select one matchup without requiring every option to be mounted at once."""
     combo = _visible_matchup_combo(frame)
     combo.click()
+    try:
+        combo.fill(matchup_text)
+    except Exception:
+        page.keyboard.press("Control+A")
+        page.keyboard.type(matchup_text)
+
     options, texts = _visible_option_texts(page, frame)
-    index = next((i for i, text in enumerate(texts) if text.startswith(label_prefix)), -1)
+
+    def norm(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", str(value).casefold()).strip()
+
+    target = norm(matchup_text)
+    index = next((i for i, text in enumerate(texts) if target in norm(text)), -1)
     if index < 0:
         page.keyboard.press("Escape")
-        raise Step3Failure(f"matchup missing from production selector: {label_prefix!r}; saw={texts}")
+        raise Step3Failure(
+            f"matchup search did not expose {matchup_text!r}; visible={texts}"
+        )
+
     chosen = texts[index]
     options.nth(index).click()
-    return chosen
+
+    deadline = time.monotonic() + 90
+    while time.monotonic() < deadline:
+        body = public._body(frame)
+        if re.search(rf"\bESPN event\s+{re.escape(str(event_id))}\b", body, flags=re.IGNORECASE):
+            return chosen
+        page.wait_for_timeout(350)
+
+    raise Step3Failure(
+        f"selected matchup {matchup_text!r} did not settle on ESPN event {event_id}"
+    )
 
 
 def _wait_qb_cards(page, frame, away: dict, home: dict) -> dict:
@@ -161,18 +184,21 @@ def run(production_url: str = PRODUCTION_URL, artifact_dir: str = "artifacts/nfl
             market.wait_for(state="visible", timeout=60000)
             public._choose(page, market, "Passing Yards")
 
-            combo = _visible_matchup_combo(frame)
-            combo.click()
-            options, texts = _visible_option_texts(page, frame)
-            page.keyboard.press("Escape")
-            if len(texts) != EXPECTED_GAMES:
-                raise Step3Failure(f"production selector expected {EXPECTED_GAMES} games; saw {len(texts)}: {texts}")
-            for item in expected:
-                if not any(text.startswith(item["label_prefix"]) for text in texts):
-                    raise Step3Failure(f"production selector missing event {item['event_id']}: {item['label_prefix']}")
+            _visible_matchup_combo(frame)
+            body = public._body(frame)
+            expected_caption = f"{EXPECTED_GAMES} verified NFL games available for {DAY}."
+            if expected_caption not in body:
+                raise Step3Failure(
+                    f"production full-slate caption missing: {expected_caption!r}"
+                )
 
             for index, item in enumerate(expected, start=1):
-                chosen = _select_game(page, frame, item["label_prefix"])
+                chosen = _select_game(
+                    page,
+                    frame,
+                    item["matchup_text"],
+                    item["event_id"],
+                )
                 qb = _wait_qb_cards(page, frame, item["away"], item["home"])
                 results.append(
                     {
