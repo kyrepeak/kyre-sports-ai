@@ -65,7 +65,7 @@ def test_v184_replaces_two_run_handoff_but_preserves_v183() -> None:
 
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v183"
     assert "return prior.render_app()" in source
-    assert "st.rerun()" not in source
+    assert "rerun" not in router.render_app.__code__.co_names
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert router.MAY_MODIFY_PROJECTION is False
 
