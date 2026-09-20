@@ -29,7 +29,7 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert "_streamlit_cert_paths(" in source
     path_source = inspect.getsource(verifier._streamlit_cert_paths)
     assert "\"official_embed\"" in path_source
-    assert "\"embed=true\"" in path_source
+    assert "\"&embed=true\"" in path_source
     assert "\"embedded_internal\"" in path_source
     assert "\"/~/+/?\"" in path_source
     assert "_wake_streamlit_if_needed(page)" in source
