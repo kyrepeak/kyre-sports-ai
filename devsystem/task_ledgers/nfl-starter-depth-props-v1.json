@@ -1,7 +1,7 @@
 {
   "version": 2,
   "task_id": "nfl-starter-depth-props-v1",
-  "status": "TARGETED_GREEN",
+  "status": "DONE",
   "scope": "Require current roster + current depth chart + confirmed game-day availability for NFL prop-player pools used by Rushing Yards and Receiving/Receptions.",
   "trigger": "Step 5 audit found Rushing/Receiving collectors trusted current roster IDs but did not enforce roster status, depth-chart membership, or exact-event inactive availability.",
   "guardrails": {
@@ -19,6 +19,5 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": [],
-  "certification_state": "PENDING_FULL_CERTIFICATION"
+  "override_events": []
 }
