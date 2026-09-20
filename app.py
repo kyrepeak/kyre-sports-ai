@@ -11,7 +11,9 @@ unchanged.
 from __future__ import annotations
 
 from time import perf_counter
-from typing import TYPE_CHECKING\n\nV186_PRODUCTION_RUNTIME_REFRESH = "STREAMLIT_V186_NEXT_GAME_DATE_RUNTIME_REFRESH_2026_09_20"
+from typing import TYPE_CHECKING
+
+V186_PRODUCTION_RUNTIME_REFRESH = "STREAMLIT_V186_NEXT_GAME_DATE_RUNTIME_REFRESH_2026_09_20"
 
 from sports_api.monster_performance_profiler_v1 import (
     PerformanceTrace,
