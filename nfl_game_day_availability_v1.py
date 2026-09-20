@@ -146,6 +146,148 @@ def merge_injury_maps(league_map: dict | None, event_map: dict | None) -> dict:
     return merged
 
 
+def _team_unavailable_rows(event_map: dict | None, team_abbr: str) -> list[dict]:
+    rows = list((event_map or {}).get(_safe(team_abbr).upper(), []) or [])
+    return [row for row in rows if is_unavailable_status(row.get("status"))]
+
+
+def _team_explicit_inactive_rows(event_map: dict | None, team_abbr: str) -> list[dict]:
+    rows = list((event_map or {}).get(_safe(team_abbr).upper(), []) or [])
+    return [
+        row for row in rows
+        if "INACTIVE" in _safe(row.get("status")).upper()
+    ]
+
+
+def event_availability_snapshot(
+    game_id: str,
+    away_abbr: str,
+    home_abbr: str,
+    game_state: str = "",
+    *,
+    event_map: dict | None = None,
+    event_diag: dict | None = None,
+) -> dict:
+    """Return fail-closed game-day availability state for one exact event.
+
+    CONFIRMED:
+      - both teams have explicit INACTIVE rows before kickoff, or
+      - once the game is live/final, both teams have exact-event unavailable rows.
+    PENDING:
+      - provider is healthy, but final game-day inactive confirmation is not complete.
+    UNVERIFIED:
+      - exact-event provider failed or team identity is incomplete.
+
+    Only CONFIRMED may open the prop-identity gate.
+    """
+    game_id = _safe(game_id)
+    away = _safe(away_abbr).upper()
+    home = _safe(home_abbr).upper()
+    state = _safe(game_state).lower()
+
+    if event_map is None or event_diag is None:
+        event_map, event_diag = load_event_injury_map(game_id)
+    event_diag = event_diag if isinstance(event_diag, dict) else {}
+
+    result = {
+        "game_id": game_id,
+        "away_abbr": away,
+        "home_abbr": home,
+        "game_state": state,
+        "state": "UNVERIFIED",
+        "prop_gate_open": False,
+        "provider_ok": bool(event_diag.get("ok")),
+        "http": event_diag.get("http"),
+        "away_rows": len((event_map or {}).get(away, []) or []),
+        "home_rows": len((event_map or {}).get(home, []) or []),
+        "away_unavailable": _team_unavailable_rows(event_map, away),
+        "home_unavailable": _team_unavailable_rows(event_map, home),
+        "away_explicit_inactive": _team_explicit_inactive_rows(event_map, away),
+        "home_explicit_inactive": _team_explicit_inactive_rows(event_map, home),
+    }
+
+    if not game_id.isdigit() or not away or not home or not result["provider_ok"]:
+        return result
+
+    explicit_both = bool(
+        result["away_explicit_inactive"] and result["home_explicit_inactive"]
+    )
+    live_or_final_both = bool(
+        state in {"in", "post"}
+        and result["away_unavailable"]
+        and result["home_unavailable"]
+    )
+
+    if explicit_both or live_or_final_both:
+        result["state"] = "CONFIRMED"
+        result["prop_gate_open"] = True
+    else:
+        result["state"] = "PENDING"
+    return result
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def load_game_day_scoreboard(game_date: str):
+    raw = "".join(ch for ch in _safe(game_date) if ch.isdigit())
+    if len(raw) != 8:
+        return [], {"ok": False, "http": None, "reason": "invalid YYYY-MM-DD date"}
+
+    payload, diag = nfl_data._json_get(
+        f"{nfl_data.ESPN_BASE}/scoreboard?dates={raw}"
+    )
+    games: list[dict] = []
+    if diag.get("ok"):
+        for event in (payload or {}).get("events", []) or []:
+            competition = ((event.get("competitions") or [{}])[0] or {})
+            status = ((competition.get("status") or event.get("status") or {}).get("type") or {})
+            row = {
+                "game_id": _safe(event.get("id")),
+                "state": _safe(status.get("state")).lower(),
+                "away_abbr": "",
+                "home_abbr": "",
+            }
+            for competitor in competition.get("competitors", []) or []:
+                team = competitor.get("team") or {}
+                abbr = _safe(team.get("abbreviation")).upper()
+                side = _safe(competitor.get("homeAway")).lower()
+                if side == "away":
+                    row["away_abbr"] = abbr
+                elif side == "home":
+                    row["home_abbr"] = abbr
+            if row["game_id"] and row["away_abbr"] and row["home_abbr"]:
+                games.append(row)
+    return games, diag
+
+
+def audit_game_day_availability(game_date: str) -> dict:
+    games, scoreboard_diag = load_game_day_scoreboard(game_date)
+    rows: list[dict] = []
+    teams: set[str] = set()
+    for game in games:
+        snapshot = event_availability_snapshot(
+            game["game_id"],
+            game["away_abbr"],
+            game["home_abbr"],
+            game.get("state", ""),
+        )
+        rows.append(snapshot)
+        teams.update((game["away_abbr"], game["home_abbr"]))
+
+    unverified = [row for row in rows if row.get("state") == "UNVERIFIED"]
+    confirmed = [row for row in rows if row.get("state") == "CONFIRMED"]
+    pending = [row for row in rows if row.get("state") == "PENDING"]
+    return {
+        "ready": bool(scoreboard_diag.get("ok") and games and not unverified),
+        "scoreboard_http": scoreboard_diag.get("http"),
+        "games_total": len(rows),
+        "teams_total": len(teams),
+        "confirmed_games": len(confirmed),
+        "pending_games": len(pending),
+        "unverified_games": len(unverified),
+        "games": rows,
+    }
+
+
 @st.cache_data(ttl=60, show_spinner=False)
 def load_event_injury_map(game_id: str):
     game_id = _safe(game_id)
@@ -248,9 +390,12 @@ __all__ = [
     "current_prop_eligible_players",
     "is_prop_eligible_roster_row",
     "audit_all_32_rosters",
+    "audit_game_day_availability",
+    "event_availability_snapshot",
     "is_unavailable_status",
     "load_current_team_roster",
     "load_event_injury_map",
+    "load_game_day_scoreboard",
     "merge_injury_maps",
     "parse_current_roster",
 ]
