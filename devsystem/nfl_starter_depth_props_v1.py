@@ -96,10 +96,15 @@ def main() -> int:
                 atlanta = {
                     "availability": availability["state"],
                     "rush_names": sorted(names),
+                    "rush_ids_by_name": names,
                     "unavailable_ids": sorted(unavailable),
+                    "unavailable_rows": (availability.get("unavailable") or {}).get(team_id, []),
                 }
                 if "Michael Penix Jr." in names:
-                    raise AssertionError("Michael Penix Jr. leaked into Atlanta prop pool")
+                    raise AssertionError(
+                        "Michael Penix Jr. leaked into Atlanta prop pool: "
+                        + json.dumps(atlanta, sort_keys=True)
+                    )
                 if availability["state"] == "CONFIRMED" and "Cooper Rush" not in names:
                     raise AssertionError(f"Cooper Rush missing from confirmed Atlanta depth pool: {atlanta}")
 
