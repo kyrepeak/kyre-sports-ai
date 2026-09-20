@@ -264,19 +264,26 @@ def _certify_all_public_matchups(page, frame, *, expected_games: int = 14) -> li
     matchup = _matchup_combobox(frame)
     matchup.click()
     texts: list[str] = []
-    for _ in range(60):
+    seen: set[str] = set()
+    # Streamlit virtualizes long selectbox menus, so only a subset of options
+    # may be mounted at once. Walk the focused list to force every row into the
+    # DOM, collecting a stable union without changing the selected matchup.
+    for _ in range(expected_games + 8):
         for scope in (frame, page):
             try:
                 options = scope.get_by_role("option")
                 if options.count() > 0:
-                    texts = [x.strip() for x in options.all_inner_texts() if x.strip()]
-                    if texts:
-                        break
+                    for value in options.all_inner_texts():
+                        value = value.strip()
+                        if value and value not in seen:
+                            seen.add(value)
+                            texts.append(value)
             except Exception:
                 pass
-        if texts:
+        if len(texts) >= expected_games:
             break
-        page.wait_for_timeout(250)
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(120)
     page.keyboard.press("Escape")
 
     if not texts:
