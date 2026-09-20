@@ -323,16 +323,20 @@ def event_availability_state(summary: dict[str, Any]) -> dict[str, Any]:
             "unavailable": unavailable,
         }
 
+    if state in {"in", "post"}:
+        return {
+            "state": "CLOSED",
+            "prop_gate_open": False,
+            "game_state": state,
+            "team_ids": team_ids,
+            "unavailable": unavailable,
+        }
+
     explicit_both = all(
         any("INACTIVE" in _text(row.get("status")).upper() for row in unavailable.get(team_id, []))
         for team_id in team_ids
     )
-    live_or_final_both = (
-        state in {"in", "post"}
-        and all(bool(unavailable.get(team_id)) for team_id in team_ids)
-    )
-
-    availability = "CONFIRMED" if (explicit_both or live_or_final_both) else "PENDING"
+    availability = "CONFIRMED" if explicit_both else "PENDING"
     return {
         "state": availability,
         "prop_gate_open": availability == "CONFIRMED",
@@ -356,7 +360,12 @@ def build_current_prop_pool(
     if team_id not in availability.get("team_ids", []):
         return {}, {**availability, "reason": "team missing from exact event"}
     if not availability.get("prop_gate_open"):
-        return {}, {**availability, "reason": "final game-day availability not confirmed"}
+        reason = (
+            "pregame prop pool closed after kickoff"
+            if availability.get("state") == "CLOSED"
+            else "final game-day availability not confirmed"
+        )
+        return {}, {**availability, "reason": reason}
 
     roster = parse_current_roster(roster_payload, allowed_positions)
     depth = parse_depth_chart(depth_payload, allowed_positions)
