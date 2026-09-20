@@ -17611,5 +17611,11 @@
         "ESPN Core current coaches and polls"
       ]
     }
-  ]
+  ],
+  "production_exact_event_patch": {
+    "event_id": "401858458",
+    "source_branch": "cfb-runtime-snapshot-auto-refresh-v2",
+    "source_blob_sha": "58cded79ffe769762031020e58f2936a21379c68",
+    "certified_at": "2026-09-20T01:08:07Z"
+  }
 }
