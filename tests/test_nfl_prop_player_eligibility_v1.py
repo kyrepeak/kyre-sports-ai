@@ -133,13 +133,11 @@ def test_player_not_on_current_depth_chart_cannot_enter_pool():
     assert "13" not in pool
 
 
-def test_live_game_can_confirm_with_out_rows_for_both_teams():
-    summary = _summary(state="in", both_inactive=False)
-    summary["injuries"][0]["injuries"][0]["status"] = "Out"
-    summary["injuries"][1]["injuries"][0]["status"] = "Out"
+def test_live_game_closes_pregame_prop_pool():
+    summary = _summary(state="in", both_inactive=True)
     state = elig.event_availability_state(summary)
-    assert state["state"] == "CONFIRMED"
-    assert state["prop_gate_open"] is True
+    assert state["state"] == "CLOSED"
+    assert state["prop_gate_open"] is False
 
 
 def test_core_depth_shape_extracts_exact_athlete_id_from_ref():
@@ -200,13 +198,13 @@ def test_league_injury_feed_excludes_player_dropped_from_live_event_summary():
     event = {
         "header": {
             "competitions": [{
-                "status": {"type": {"state": "in"}},
+                "status": {"type": {"state": "pre"}},
                 "competitors": [{"team": {"id": "1"}}, {"team": {"id": "2"}}],
             }]
         },
         "injuries": [
-            {"team": {"id": "1"}, "injuries": [{"athlete": {"id": "999"}, "status": "Out"}]},
-            {"team": {"id": "2"}, "injuries": [{"athlete": {"id": "998"}, "status": "Out"}]},
+            {"team": {"id": "1"}, "injuries": [{"athlete": {"id": "999"}, "status": "Inactive"}]},
+            {"team": {"id": "2"}, "injuries": [{"athlete": {"id": "998"}, "status": "Inactive"}]},
         ],
     }
     league = {
