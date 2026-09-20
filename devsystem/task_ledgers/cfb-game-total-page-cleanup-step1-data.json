@@ -9,14 +9,14 @@
   },
   "transition_history": [],
   "override_events": [],
-  "scope": "Declared page cleanup Step 1 of 6: Game Total Analysis data contract. Fix the first RED layer proven for Purdue @ UCLA: legacy FBS team-profile normalization returns 0 completed games/no scoring baseline/CHECK even though fresh exact-event Certified Runtime Snapshot V2 evidence is READY. Add a field-level fallback adapter and additive Slate V2/Page V20/Router V165. Preserve frozen Step-11/Step-12 math, frozen Step 6 certification, sportsbook influence 0.0%, and all non-target routes.",
-  "proof_target": "For Purdue @ UCLA 2026-09-19, live-source proof must produce model-ready normalized profiles, non-null projected combined total and confidence/final synthesis using the exact frozen Step-11/Step-12 function owners. Unit tests must prove fallback-only behavior and V19 Step 6 certification isolation. No hero presentation-label changes in Step 1; those belong to declared Step 2.",
+  "scope": "Declared page cleanup Step 1 of 6 only. Repair Game Total Analysis required data and truthful readiness presentation. The legacy FBS profile path returns empty/CHECK Purdue-UCLA profiles while Certified Runtime Snapshot V2 has exact-event pre-kickoff completed-game evidence. Add normalized fallback input routing and additive live-page activation without modifying frozen Step-11/Step-12 math or frozen Step 6 certification.",
+  "proof_target": "Purdue @ UCLA must use exact-event Certified Runtime Snapshot V2 only when the existing model profile is incomplete, must produce projected total and confidence through unchanged frozen math, and the hero must show ready_count/12 plus a truthful projection-missing state. Sportsbook projection influence remains 0.0%. Router V165 must keep Step 6 certification delegated to V164/Page V19.",
   "internal_steps": {
-    "1": "Trace exact live owners and prove market path is already healthy.",
-    "2": "Diagnose Purdue/UCLA legacy model input and exact raw-model reasons.",
-    "3": "Prove Certified Runtime Snapshot V2 is fresh, exact-event, and required-complete.",
-    "4": "Normalize verified completed games into the existing model profile contract without changing model math.",
-    "5": "Activate additive Slate V2 through Page V20/Router V165 while keeping Step 6 cert on V19.",
-    "6": "Run unit, live Purdue/UCLA, frozen Step 6, browser/DevSystem proof and mark Step 1 GREEN."
+    "1": "Identify required hero fields and first RED layer.",
+    "2": "Prove legacy FBS profile is empty/CHECK while Runtime V2 exact-event evidence is ready.",
+    "3": "Normalize completed-game evidence into the existing model input contract.",
+    "4": "Run unchanged frozen projection and final synthesis through additive Slate V2.",
+    "5": "Activate additive Page V20 for the normal route only and correct the hero readiness contract.",
+    "6": "Run one Step-1 regression plus one Purdue/UCLA live-capable proof; merge on GREEN and advance immediately to Step 2."
   }
 }
