@@ -29,6 +29,26 @@ UNAVAILABLE_TOKENS = (
     "RESERVE",
 )
 
+ROSTER_INELIGIBLE_TOKENS = (
+    "INJURED RESERVE",
+    "RESERVE/IR",
+    "RESERVE PUP",
+    "RESERVE/PUP",
+    "PUP",
+    "NFI",
+    "SUSPENDED",
+    "PRACTICE SQUAD",
+    "PRACTICE-SQUAD",
+    "EXEMPT",
+    "COMMISSIONER",
+)
+
+ROSTER_ACTIVE_OVERRIDE_TOKENS = (
+    "ACTIVE",
+    "ELEVATED",
+    "PROMOTED",
+)
+
 
 def _safe(value: Any, default: str = "") -> str:
     text = str(value or "").strip()
@@ -40,6 +60,50 @@ def is_unavailable_status(status: Any) -> bool:
     if not value:
         return False
     return any(token in value for token in UNAVAILABLE_TOKENS)
+
+
+def _status_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return _safe(
+            value.get("displayName")
+            or value.get("description")
+            or value.get("name")
+            or value.get("abbreviation")
+        )
+    return _safe(value)
+
+
+def is_prop_eligible_roster_row(row: dict) -> bool:
+    """Fail closed on reserve/practice-squad/suspended roster states."""
+    active_flag = row.get("active")
+    combined = " ".join(
+        part for part in (
+            _safe(row.get("roster_status")),
+            _safe(row.get("group_label")),
+        )
+        if part
+    ).upper()
+
+    if any(token in combined for token in ROSTER_ACTIVE_OVERRIDE_TOKENS):
+        return active_flag is not False
+    if active_flag is False:
+        return False
+    if any(token in combined for token in ROSTER_INELIGIBLE_TOKENS):
+        return False
+    return True
+
+
+def current_prop_eligible_players(team_abbr: str) -> tuple[list[dict], dict]:
+    rows, diag = load_current_team_roster(team_abbr)
+    eligible = [row for row in rows if row.get("prop_eligible")]
+    return eligible, diag
+
+
+def current_prop_eligible_keys(team_abbr: str) -> tuple[set[str], set[str], dict]:
+    rows, diag = current_prop_eligible_players(team_abbr)
+    ids = {_safe(row.get("athlete_id")) for row in rows if _safe(row.get("athlete_id"))}
+    names = {_safe(row.get("name")).lower() for row in rows if _safe(row.get("name"))}
+    return ids, names, diag
 
 
 def _player_key(row: dict) -> str:
@@ -89,6 +153,12 @@ def parse_current_roster(payload: dict, team_abbr: str) -> list[dict]:
         group_position = group.get("position")
         if isinstance(group_position, dict):
             group_position = group_position.get("abbreviation") or group_position.get("name")
+        group_label = _safe(
+            group.get("displayName")
+            or group.get("name")
+            or group.get("label")
+            or group_position
+        )
         for item in group.get("items", []) or []:
             if not isinstance(item, dict):
                 continue
@@ -102,7 +172,11 @@ def parse_current_roster(payload: dict, team_abbr: str) -> list[dict]:
                 "name": _safe(item.get("displayName") or item.get("fullName"), "Unknown player"),
                 "position": position.upper(),
                 "team": _safe(team_abbr).upper(),
+                "roster_status": _status_text(item.get("status")),
+                "active": item.get("active"),
+                "group_label": group_label,
             }
+            row["prop_eligible"] = is_prop_eligible_roster_row(row)
             key = _player_key(row)
             if not key or key in seen:
                 continue
@@ -126,14 +200,17 @@ def audit_all_32_rosters() -> dict:
     results = {}
     for abbr in sorted(nfl_data.TEAM_IDS):
         rows, diag = load_current_team_roster(abbr)
+        eligible = [row for row in rows if row.get("prop_eligible")]
         skill = {
-            pos: sum(1 for row in rows if row.get("position") == pos)
+            pos: sum(1 for row in eligible if row.get("position") == pos)
             for pos in ("QB", "RB", "WR", "TE")
         }
         results[abbr] = {
             "ok": bool(diag.get("ok") and rows),
             "http": diag.get("http"),
             "players": len(rows),
+            "prop_eligible_players": len(eligible),
+            "transaction_excluded_players": len(rows) - len(eligible),
             "skill_counts": skill,
         }
     green = [
@@ -151,6 +228,11 @@ def audit_all_32_rosters() -> dict:
 __all__ = [
     "MODEL_VERSION",
     "UNAVAILABLE_TOKENS",
+    "ROSTER_INELIGIBLE_TOKENS",
+    "ROSTER_ACTIVE_OVERRIDE_TOKENS",
+    "current_prop_eligible_keys",
+    "current_prop_eligible_players",
+    "is_prop_eligible_roster_row",
     "audit_all_32_rosters",
     "is_unavailable_status",
     "load_current_team_roster",
