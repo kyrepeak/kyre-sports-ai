@@ -73,6 +73,11 @@ def test_step1_verified_depth_qb1_is_resolved(monkeypatch) -> None:
         }]
     }
     monkeypatch.setattr(identity.depth_base, "_depth_payload", lambda team_id: (payload, {"ok": True, "http": 200}))
+    monkeypatch.setattr(
+        identity.game_day,
+        "current_prop_eligible_keys",
+        lambda _abbr: ({"100", "101"}, {"verified qb one", "verified qb two"}, {"ok": True, "http": 200}),
+    )
     ctx = identity.resolve_team_qb_identity("IND", "Indianapolis Colts", 2026, {"IND": []}, True)
     assert ctx["depth_state"] == "VERIFIED"
     assert ctx["identity_verified"] is True
