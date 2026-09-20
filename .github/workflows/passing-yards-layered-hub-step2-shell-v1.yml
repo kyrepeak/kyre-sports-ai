@@ -23,4 +23,4 @@ jobs:
         with:
           python-version: "3.12"
       - name: Prove Step 2 shell only
-        run: python tests/test_passing_yards_layered_hub_shell_step2_v1.py
+        run: PYTHONPATH=. python tests/test_passing_yards_layered_hub_shell_step2_v1.py
