@@ -63,15 +63,21 @@ def _profiles(away: dict, home: dict) -> tuple[dict, dict]:
     for label, row in zip(("Baker Mayfield", "Joe Burrow"), rows):
         if not row.get("ready"):
             raise AssertionError(f"{label} Step 2 profile unavailable: {cert._summary_profile(row)}")
-        if int(row.get("season_year") or 0) != cert.BASELINE_YEAR:
+        source_year = int(row.get("season_year") or 0)
+        allowed_years = {int(cert.TARGET_YEAR), int(cert.BASELINE_YEAR)}
+        if source_year not in allowed_years:
             raise AssertionError(
-                f"{label} expected verified {cert.BASELINE_YEAR} opening-week baseline, "
-                f"got source_year={row.get('season_year')}"
+                f"{label} expected verified current-season {cert.TARGET_YEAR} "
+                f"or fallback {cert.BASELINE_YEAR} baseline, got source_year={source_year}"
             )
         season = row.get("season") or {}
         for field in ("games", "attempts_per_game", "yards_per_attempt"):
             if not _finite(season.get(field)):
                 raise AssertionError(f"{label} Step 2 {field} unavailable: {cert._summary_profile(row)}")
+        if source_year == int(cert.TARGET_YEAR) and float(season.get("games") or 0) <= 0:
+            raise AssertionError(
+                f"{label} current-season baseline has no verified games: {cert._summary_profile(row)}"
+            )
     return rows
 
 
