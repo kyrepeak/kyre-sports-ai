@@ -23,6 +23,7 @@ def main() -> int:
     teams = 0
     confirmed = 0
     pending = 0
+    closed = 0
     confirmed_rush_players = 0
     confirmed_receivers = 0
     atlanta = {}
@@ -37,6 +38,8 @@ def main() -> int:
             confirmed += 1
         elif availability["state"] == "PENDING":
             pending += 1
+        elif availability["state"] == "CLOSED":
+            closed += 1
         else:
             raise AssertionError(f"unverified availability for event {event_id}: {availability}")
 
@@ -88,7 +91,9 @@ def main() -> int:
                 confirmed_receivers += len(recv_pool)
             else:
                 if rush_pool or recv_pool:
-                    raise AssertionError(f"pending team {abbr} leaked prop players")
+                    raise AssertionError(
+                        f"{availability['state'].lower()} team {abbr} leaked prop players"
+                    )
 
             if abbr == "ATL":
                 unavailable = {
@@ -110,17 +115,22 @@ def main() -> int:
                     )
                 if availability["state"] == "CONFIRMED" and "Cooper Rush" not in names:
                     raise AssertionError(f"Cooper Rush missing from confirmed Atlanta depth pool: {atlanta}")
+                if availability["state"] == "CLOSED" and names:
+                    raise AssertionError(f"Atlanta live/final prop pool should be closed: {atlanta}")
 
     if games != 14 or teams != 28:
         raise AssertionError(f"coverage mismatch games={games} teams={teams}")
-    if confirmed + pending != 14:
-        raise AssertionError(f"availability coverage mismatch confirmed={confirmed} pending={pending}")
+    if confirmed + pending + closed != 14:
+        raise AssertionError(
+            f"availability coverage mismatch confirmed={confirmed} pending={pending} closed={closed}"
+        )
 
     print(json.dumps({
         "games": games,
         "teams": teams,
         "confirmed_games": confirmed,
         "pending_games": pending,
+        "closed_games": closed,
         "confirmed_rushing_prop_players": confirmed_rush_players,
         "confirmed_receiving_receptions_players": confirmed_receivers,
         "atlanta": atlanta,
