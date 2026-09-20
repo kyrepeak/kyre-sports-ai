@@ -48,4 +48,4 @@ def test_v183_only_primes_exact_nfl_passing_yards_jump() -> None:
 
 def test_app_boots_v183() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_v184 import record_bootstrap_import_ms, render_app" in app
+    assert "from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app" in app

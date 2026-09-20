@@ -44,5 +44,5 @@ def test_v182_preserves_v181_and_projection_guardrails() -> None:
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v181"
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert router.MAY_MODIFY_PROJECTION is False
-    assert "from streamlit_memory_lazy_router_v184 import record_bootstrap_import_ms, render_app" in app
+    assert "from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app" in app
     assert "Frozen V183 delegate compatibility" in app

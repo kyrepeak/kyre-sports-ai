@@ -321,7 +321,8 @@ jobs:
             tests/test_cfb_sport_nav_raw_html_safari_fix.py \
             tests/test_nfl_passing_yards_entry_slate_reset_v182.py \
             tests/test_nfl_passing_yards_keyerror_safe_entry_v183.py \
-            tests/test_nfl_passing_yards_stuck_slate_v184.py
+            tests/test_nfl_passing_yards_stuck_slate_v184.py \
+            tests/test_nfl_all_markets_no_rerun_v185.py
 
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
