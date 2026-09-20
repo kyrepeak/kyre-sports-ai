@@ -310,7 +310,8 @@ jobs:
             tests/test_cfb_game_total_page_cleanup_final_v1.py \
             tests/test_cfb_game_total_debug_wall_hidden_v1.py \
             tests/test_cfb_game_total_sport_nav_step1.py \
-            tests/test_cfb_game_total_sport_nav_step2.py
+            tests/test_cfb_game_total_sport_nav_step2.py \
+            tests/test_cfb_game_total_sport_nav_step3.py
 
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
