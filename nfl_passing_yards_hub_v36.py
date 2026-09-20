@@ -100,7 +100,20 @@ _COMPACT_DASHBOARD_CSS = r'''
     inset 0 0 0 1px rgba(147,197,253,.12),
     0 0 18px rgba(14,165,233,.24);
 }
-.kpass36-why{margin:8px 12px 10px;padding:10px;border:1px solid #293446;border-radius:14px;background:#0b1119}.kpass36-whytitle{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.kpass36-whytitle b{color:#f8fafc;font-size:.62rem}.kpass36-whytitle span{color:#64748b;font-size:.42rem}.kpass36-reasons{display:flex;gap:6px;flex-wrap:wrap}.kpass36-reason{font-size:.42rem;padding:4px 7px}
+.kpass36-why{margin:8px 12px 10px;padding:11px;border:1px solid #293446;border-radius:16px;background:linear-gradient(145deg,rgba(8,16,29,.98),rgba(7,13,24,.98));box-shadow:inset 0 0 0 1px rgba(96,165,250,.035)}.kpass36-whytitle{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.kpass36-whytitle b{color:#f8fafc;font-size:.62rem}.kpass36-whytitle span{color:#64748b;font-size:.42rem}
+.kpass36-drivers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.kpass36-driver{position:relative;overflow:hidden;min-width:0;min-height:72px;padding:9px 8px 8px;border:1px solid #334155;border-radius:12px;background:linear-gradient(145deg,rgba(15,23,42,.92),rgba(8,15,27,.98));box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.kpass36-driver:after{content:"";position:absolute;right:-22px;bottom:-28px;width:64px;height:64px;border-radius:50%;border:1px solid rgba(148,163,184,.055);box-shadow:0 0 0 12px rgba(148,163,184,.018)}
+.kpass36-driverhead{position:relative;z-index:1;display:flex;align-items:center;gap:6px;min-width:0}
+.kpass36-drivericon{width:24px;height:24px;flex:0 0 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(15,23,42,.92);font-size:.72rem;line-height:1}
+.kpass36-drivername{min-width:0;color:#f8fafc;font-size:.53rem;font-weight:950;letter-spacing:.025em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpass36-driverdesc{position:relative;z-index:1;margin-top:6px;color:#718096;font-size:.40rem;font-weight:800;letter-spacing:.025em;line-height:1.25;text-transform:uppercase}
+.kpass36-driver-blue{border-color:rgba(96,165,250,.36)}.kpass36-driver-blue .kpass36-drivericon{border:1px solid rgba(96,165,250,.36);color:#bfdbfe;background:rgba(30,64,175,.16)}
+.kpass36-driver-green{border-color:rgba(74,222,128,.34)}.kpass36-driver-green .kpass36-drivericon{border:1px solid rgba(74,222,128,.34);color:#86efac;background:rgba(22,101,52,.15)}
+.kpass36-driver-red{border-color:rgba(251,113,133,.34)}.kpass36-driver-red .kpass36-drivericon{border:1px solid rgba(251,113,133,.34);color:#fda4af;background:rgba(159,18,57,.14)}
+.kpass36-driver-amber{border-color:rgba(251,191,36,.34)}.kpass36-driver-amber .kpass36-drivericon{border:1px solid rgba(251,191,36,.34);color:#fde68a;background:rgba(146,64,14,.14)}
+.kpass36-driver-purple{border-color:rgba(167,139,250,.36)}.kpass36-driver-purple .kpass36-drivericon{border:1px solid rgba(167,139,250,.36);color:#ddd6fe;background:rgba(91,33,182,.15)}
+.kpass36-driver-cyan{border-color:rgba(56,189,248,.36)}.kpass36-driver-cyan .kpass36-drivericon{border:1px solid rgba(56,189,248,.36);color:#bae6fd;background:rgba(3,105,161,.14)}
 .kpass36-evidence{padding:0 12px 12px}.kpass36-evidence>details{margin-top:7px;border:1px solid #273244;border-radius:12px;background:#0a1018;overflow:hidden}.kpass36-evidence>details[open]{border-color:#3a465c}.kpass36-evidence summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;color:#cbd5e1;font-size:.5rem;font-weight:900;letter-spacing:.025em}.kpass36-evidence summary::-webkit-details-marker{display:none}.kpass36-evidence summary:after{content:'＋';color:#64748b;font-size:.72rem}.kpass36-evidence details[open] summary:after{content:'−';color:#c4b5fd}.kpass36-evidencebody{padding:0 8px 9px;border-top:1px solid #202938}.kpass36-evidencehint{color:#64748b;font-size:.4rem;font-weight:800}
 .kpass36-missing{border:1px dashed #475569;border-radius:10px;background:#0b1118;padding:9px;color:#94a3b8;font-size:.46rem;line-height:1.45}
 /* Neutralize V34's blanket green framing while preserving semantic colors inside certified cards. */
@@ -128,7 +141,7 @@ _COMPACT_DASHBOARD_CSS = r'''
 .kpass36-qbidentity .kpass29-foot{border-top-color:rgba(71,85,105,.42)!important;color:#8090a7!important}
 .kpass36-hero .kpy-envteams{grid-template-columns:1fr!important}.kpass36-hero .kpy9-q{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 @media(max-width:900px){.kpass36-grid{grid-template-columns:1fr}.kpass36-matchup{align-items:flex-start;flex-direction:column}.kpass36-matchupchips{justify-content:flex-start}.kpass36-prelude{align-items:flex-start;flex-direction:column}.kpass36-preludechips{justify-content:flex-start}.kpass36-hero{border-radius:17px}}
-@media(max-width:640px){.kpass36-whyintro{grid-template-columns:auto 1fr;gap:12px;padding:15px 14px;border-radius:21px}.kpass36-whybrain{width:56px;height:56px;font-size:28px}.kpass36-whypill{grid-column:1/-1;width:100%;min-height:42px}.kpass36-whysub{font-size:.67rem}.kpass36-metrics{grid-template-columns:1fr}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}.kpass36-qbidentity{padding:11px 10px;border-radius:16px}.kpass36-qbidentitybar{margin-bottom:8px}.kpass36-qbidentity .kpass29-top{gap:9px!important}.kpass36-qbidentity .kpass29-head{width:56px!important;height:56px!important;flex-basis:56px!important}.kpass36-qbidentity .kpass29-logo{width:48px!important;height:48px!important;flex-basis:48px!important;padding:6px!important}.kpass36-qbidentity .kpass29-name{font-size:.92rem!important}.kpass36-qbidentity .kpass29-meta{font-size:.53rem!important}.kpass36-qbconfidence{min-height:24px;padding:0 8px;font-size:.40rem}}
+@media(max-width:640px){.kpass36-whyintro{grid-template-columns:auto 1fr;gap:12px;padding:15px 14px;border-radius:21px}.kpass36-whybrain{width:56px;height:56px;font-size:28px}.kpass36-whypill{grid-column:1/-1;width:100%;min-height:42px}.kpass36-whysub{font-size:.67rem}.kpass36-metrics{grid-template-columns:1fr}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}.kpass36-qbidentity{padding:11px 10px;border-radius:16px}.kpass36-qbidentitybar{margin-bottom:8px}.kpass36-qbidentity .kpass29-top{gap:9px!important}.kpass36-qbidentity .kpass29-head{width:56px!important;height:56px!important;flex-basis:56px!important}.kpass36-qbidentity .kpass29-logo{width:48px!important;height:48px!important;flex-basis:48px!important;padding:6px!important}.kpass36-qbidentity .kpass29-name{font-size:.92rem!important}.kpass36-qbidentity .kpass29-meta{font-size:.53rem!important}.kpass36-qbconfidence{min-height:24px;padding:0 8px;font-size:.40rem}.kpass36-drivers{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.kpass36-driver{min-height:66px;padding:8px 7px}.kpass36-drivername{font-size:.50rem}.kpass36-driverdesc{font-size:.38rem}}
 </style>
 '''
 
@@ -225,14 +238,15 @@ def _compact_player(captured: dict[str, list[str]], index: int) -> str:
             market,
             '</section>',
             '</div>',
-            '<section class="kpass36-why">',
-            '<div class="kpass36-whytitle"><b>Why This Projection</b><span>scan first • open evidence when needed</span></div>',
-            '<div class="kpass36-reasons">',
-            '<span class="kpass36-reason kpass36-tone-blue">Volume</span>',
-            '<span class="kpass36-reason kpass36-tone-green">Efficiency</span>',
-            '<span class="kpass36-reason kpass36-tone-amber">Pressure</span>',
-            '<span class="kpass36-reason kpass36-tone-gray">Personnel</span>',
-            '<span class="kpass36-reason kpass36-tone-blue">Weather</span>',
+            '<section class="kpass36-why" data-driver-grid="true">',
+            '<div class="kpass36-whytitle"><b>Why This Projection</b><span>6 certified drivers • open evidence when needed</span></div>',
+            '<div class="kpass36-drivers">',
+            '<div class="kpass36-driver kpass36-driver-blue" data-projection-driver="true" data-driver-key="volume" data-driver-source="profile"><div class="kpass36-driverhead"><span class="kpass36-drivericon">↗</span><span class="kpass36-drivername">Volume</span></div><div class="kpass36-driverdesc">Attempts + pace</div></div>',
+            '<div class="kpass36-driver kpass36-driver-green" data-projection-driver="true" data-driver-key="efficiency" data-driver-source="profile"><div class="kpass36-driverhead"><span class="kpass36-drivericon">◎</span><span class="kpass36-drivername">Efficiency</span></div><div class="kpass36-driverdesc">Yards + accuracy</div></div>',
+            '<div class="kpass36-driver kpass36-driver-red" data-projection-driver="true" data-driver-key="matchup" data-driver-source="defense"><div class="kpass36-driverhead"><span class="kpass36-drivericon">VS</span><span class="kpass36-drivername">Matchup</span></div><div class="kpass36-driverdesc">Opponent pass D</div></div>',
+            '<div class="kpass36-driver kpass36-driver-amber" data-projection-driver="true" data-driver-key="pressure" data-driver-source="pressure"><div class="kpass36-driverhead"><span class="kpass36-drivericon">⚡</span><span class="kpass36-drivername">Pressure</span></div><div class="kpass36-driverdesc">Protection + rush</div></div>',
+            '<div class="kpass36-driver kpass36-driver-purple" data-projection-driver="true" data-driver-key="personnel" data-driver-source="personnel"><div class="kpass36-driverhead"><span class="kpass36-drivericon">◆</span><span class="kpass36-drivername">Personnel</span></div><div class="kpass36-driverdesc">Weapons + health</div></div>',
+            '<div class="kpass36-driver kpass36-driver-cyan" data-projection-driver="true" data-driver-key="environment" data-driver-source="environment"><div class="kpass36-driverhead"><span class="kpass36-drivericon">☁</span><span class="kpass36-drivername">Environment</span></div><div class="kpass36-driverdesc">Weather + venue</div></div>',
             '</div></section>',
             '<section class="kpass36-evidence">',
             '<div class="kpass36-herolabel"><strong>Deep Evidence</strong><span class="kpass36-chip kpass36-tone-gray">COLLAPSED BY DEFAULT</span></div>',

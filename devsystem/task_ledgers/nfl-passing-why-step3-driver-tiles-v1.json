@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "nfl-passing-why-step3-driver-tiles-v1",
+  "status": "DONE",
+  "scope": "Visual-only Step 3 upgrade of the Passing Yards Why This Projection area: replace the compact reason-chip strip with six premium driver tiles per quarterback for Volume, Efficiency, Matchup, Pressure, Personnel, and Environment.",
+  "trigger": "Steps 1 and 2 are GREEN/frozen; user requested continuing until Step 3 is GREEN.",
+  "guardrails": {
+    "projection_math_changed": false,
+    "market_logic_changed": false,
+    "qb_identity_logic_changed": false,
+    "prop_availability_gate_changed": false,
+    "router_behavior_changed": false,
+    "rankings_changed": false,
+    "grades_changed": false,
+    "stake_sizing_changed": false,
+    "other_sports_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
