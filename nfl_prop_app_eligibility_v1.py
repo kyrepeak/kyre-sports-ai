@@ -31,8 +31,9 @@ SnapshotLoader = Callable[[str], dict[str, Any]]
 RosterLoader = Callable[[str], tuple[set[str], dict[str, Any]]]
 
 
-def _text(value: Any) -> str:
-    return str(value if value is not None else "").strip()
+def _text(value: Any, default: str = "") -> str:
+    text = str(value if value is not None else "").strip()
+    return text or default
 
 
 def _load_event_snapshot(event_id: str) -> dict[str, Any]:
