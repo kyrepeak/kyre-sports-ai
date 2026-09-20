@@ -9,14 +9,14 @@
   },
   "transition_history": [],
   "override_events": [],
-  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Production contradicted CI-only data availability, so Step 6 adds only deterministic checked-in copies of already-verified exact-event team/environment evidence, then reruns the same passive stable-session production verifier. No model math, projection logic, page presentation, or provider semantics change.",
-  "proof_target": "One stable production Streamlit session must prove Purdue @ UCLA uses the refreshed certified Runtime Snapshot V2 and exact-event environment cache, yielding Game Total Analysis 12/12 with four READY metrics, two READY Team Evidence cards with eight READY tiles, complete venue/weather/wind/kickoff facts, Scheduled context, and 0.0% sportsbook projection influence.",
+  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Production proved that versioned page modules were fresh while non-page Slate/Game-Evidence helpers could remain cached outside the page purge boundary. Step 6 therefore adds versioned runtime-fresh helper modules and a V25/V170 handoff only; frozen projection math and Steps 1-5 presentation remain unchanged.",
+  "proof_target": "PR proof must show exact checked-in Purdue/UCLA profiles produce raw/final READY through unchanged frozen model math with external team data disabled, and exact environment cache produces complete Game Evidence with network disabled. After merge, one passive production proof must show 12/12 Game Total Analysis, two READY Team Evidence cards/eight tiles, complete Game Evidence, and 0.0% sportsbook projection influence.",
   "internal_steps": {
     "1": "Freeze Steps 1-5 and set VERIFIER as the only active layer.",
     "2": "Use one stable direct Streamlit app session for Purdue @ UCLA.",
     "3": "Prove unique Step-2 and Step-4 DOM markers as deployment freshness.",
     "4": "When production disproves CI data availability, cache only the exact already-verified Runtime V2 and environment evidence locally; do not change model/UI logic.",
-    "5": "Rerun the same passive stable-session production proof against the deterministic fallback.",
-    "6": "Merge verifier-only freeze proof on PASS; mark 6/6 TASK_COMPLETE and stop."
+    "5": "Use V25/Router V170 to inject versioned Slate V3 and Game Evidence V2 so stale non-page helper caches cannot survive the deployment boundary.",
+    "6": "Merge after deterministic PR proof, then run the passive production verifier only on push/main; PASS marks 6/6 TASK_COMPLETE."
   }
 }
