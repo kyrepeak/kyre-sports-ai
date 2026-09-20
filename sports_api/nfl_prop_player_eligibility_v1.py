@@ -178,7 +178,7 @@ def parse_depth_chart(
                     athlete.get("$ref") or athlete.get("ref")
                 ) if isinstance(athlete, dict) else _text(athlete)
                 if not athlete_id and ref:
-                    match = re.search(r"/athletes/(\\d+)", ref)
+                    match = re.search(r"/athletes/(\d+)", ref)
                     athlete_id = match.group(1) if match else ""
                 if not athlete_id.isdigit():
                     continue
