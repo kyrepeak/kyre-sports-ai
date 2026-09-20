@@ -322,15 +322,21 @@ def _assert_game_evidence(frame, full_body: str) -> dict:
         raise PageCleanupProductionFailure(
             f"Game Evidence contains a blank fact: {fact_texts!r}"
         )
-    if "Scheduled" not in full_body:
+    kickoff_fact = fact_texts[-1] if fact_texts else ""
+    kickoff_context = (
+        (" AM ET" in kickoff_fact or " PM ET" in kickoff_fact)
+        and any(token in kickoff_fact.upper() for token in ("SAT", "SUN", "MON", "TUE", "WED", "THU", "FRI"))
+    )
+    if not kickoff_context:
         raise PageCleanupProductionFailure(
-            "Scheduled game context is not visible on the selected production matchup"
+            f"Scheduled kickoff/date context is not visible: fact={kickoff_fact!r}"
         )
 
     return {
         "fact_count": facts.count(),
         "facts": fact_texts,
         "scheduled_context_visible": True,
+        "kickoff_context": kickoff_fact,
     }
 
 
