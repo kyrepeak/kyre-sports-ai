@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-page-cleanup-step5-game-evidence",
+  "status": "ACTIVE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "Declared page cleanup Step 5 of 6 only: Game Evidence. First fix the DATA layer by enriching missing venue/weather/temperature/wind/kickoff/status fields at the display boundary using the already-certified exact-event environment engine. Steps 1-4, model math, and Team Evidence stay frozen.",
+  "proof_target": "Purdue @ UCLA must have verified nonblank venue, kickoff, temperature, weather context, wind, and status in display_game with 0.0% sportsbook projection influence. Existing good display fields must never be replaced. After DATA passes, presentation may advance inside this same Step.",
+  "internal_steps": {
+    "1": "Lock scope to Game Evidence and freeze Steps 1-4.",
+    "2": "Classify stale snapshot/missing weather fallback as DATA failure.",
+    "3": "Overlay only missing Game Evidence fields from certified exact-event environment evidence.",
+    "4": "Run one targeted DATA proof on Purdue @ UCLA.",
+    "5": "After DATA GREEN, move ACTIVE layer to RENDER only if presentation still needs correction.",
+    "6": "Complete targeted Step-5 proof, merge, freeze."
+  }
+}
