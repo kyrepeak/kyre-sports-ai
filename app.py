@@ -239,6 +239,8 @@ try:
     _bootstrap_started = perf_counter()
     from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app
     # Frozen V185 delegate compatibility: from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app
+    # Frozen V146 source-cert compatibility: from streamlit_memory_lazy_router_v146 import record_bootstrap_import_ms, render_app
+    # Frozen V139 source-cert compatibility: from streamlit_memory_lazy_router_v139 import record_bootstrap_import_ms, render_app
     # Frozen V184 delegate compatibility: from streamlit_memory_lazy_router_v184 import record_bootstrap_import_ms, render_app
     # Frozen V183 delegate compatibility: from streamlit_memory_lazy_router_v183 import record_bootstrap_import_ms, render_app
     # V182 runtime KeyError repair: bypassed by safe V183 entry prime
