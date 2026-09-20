@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from sports_api.collectors import nfl_fanduel_passing_yards as base
+from sports_api import nfl_prop_market_eligibility_v1 as market_elig
 
 MODEL_VERSION = "NFL PASSING YARDS RENDER ESPN TRANSPORT V2"
 ESPN_SITE_BASES = (
@@ -72,6 +73,9 @@ def _market_unavailable_payload(official: dict[str, Any], provider_event: dict[s
             "attempted_tabs": attempted_tabs,
             "espn_transport_sources": sorted(set(espn_sources)),
             "espn_transport_version": MODEL_VERSION,
+            "market_eligibility_version": market_elig.MODEL_VERSION,
+            "availability_state": eligibility.get("availability_state"),
+            "eligible_player_count": market_elig.eligible_player_count(eligibility),
         },
         "identity": {
             "official_authority": "ESPN",
@@ -142,11 +146,23 @@ def collect_fanduel_nfl_passing_yards_hosted(
     players, by_selection = base._provider_player_maps(fdx_players)
 
     rosters_by_team: dict[str, list[dict[str, str]]] = {}
+    roster_payloads_by_team: dict[str, dict[str, Any]] = {}
     for side in ("away", "home"):
         team_id = official[side]["team_id"]
         roster_payload, roster_source = fetch_espn_team_roster_hosted(team_id, timeout=timeout)
         espn_sources.append(roster_source)
+        roster_payloads_by_team[team_id] = roster_payload
         rosters_by_team[team_id] = base.parse_espn_qb_roster(roster_payload, team_id)
+
+    eligibility = market_elig.build_event_market_eligibility(
+        summary=summary,
+        official=official,
+        roster_payloads_by_team=roster_payloads_by_team,
+        allowed_positions=frozenset({"QB"}),
+        espn_get=_espn_get,
+        timeout=timeout,
+    )
+    espn_sources.extend(eligibility.get("espn_sources", []))
 
     accepted: list[dict[str, Any]] = []
     rejected: list[dict[str, str]] = []
@@ -163,7 +179,13 @@ def collect_fanduel_nfl_passing_yards_hosted(
                 captured_at_utc=now,
             )
             if row:
-                accepted.append(row)
+                if market_elig.market_row_eligible(row, eligibility):
+                    accepted.append(row)
+                else:
+                    rejected.append({
+                        "provider_market_id": market_id,
+                        "reason": "Step 6 market player eligibility gate rejected athlete",
+                    })
         except Exception as exc:
             rejected.append({
                 "provider_market_id": market_id,
