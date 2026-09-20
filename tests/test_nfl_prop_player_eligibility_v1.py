@@ -140,3 +140,23 @@ def test_live_game_can_confirm_with_out_rows_for_both_teams():
     state = elig.event_availability_state(summary)
     assert state["state"] == "CONFIRMED"
     assert state["prop_gate_open"] is True
+
+
+def test_core_depth_shape_extracts_exact_athlete_id_from_ref():
+    payload = {
+        "items": [{
+            "positions": {
+                "qb": {
+                    "position": {"abbreviation": "QB"},
+                    "athletes": [{
+                        "rank": 2,
+                        "athlete": {
+                            "$ref": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/athletes/12345?lang=en"
+                        },
+                    }],
+                }
+            }
+        }]
+    }
+    rows = elig.parse_depth_chart(payload, {"QB"})
+    assert rows["12345"]["depth_rank"] == 2
