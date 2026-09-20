@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "nfl-passing-yards-stuck-slate-v184",
+  "status": "DONE",
+  "scope": "NFL Passing Yards no-rerun dropdown handoff plus one-shot migration for already-stuck stale prior-day sessions.",
+  "trigger": "Live iPad screenshot after V183 showed Passing Yards still rendered 0 games on ET slate 2026-09-19.",
+  "guardrails": {
+    "live_contradictory_evidence": true,
+    "router_v183_frozen": true,
+    "passing_yards_v40_frozen": true,
+    "smart_slate_v37_frozen": true,
+    "sport_navigation_frozen": true,
+    "other_nfl_markets_changed": false,
+    "cfb_changed": false,
+    "model_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
