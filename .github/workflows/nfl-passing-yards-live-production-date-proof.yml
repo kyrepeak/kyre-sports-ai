@@ -55,7 +55,7 @@ jobs:
                   frames = list(page.frames)
                   candidates = [(frame, body_text(frame)) for frame in frames]
                   for frame, text in candidates:
-                      if "NFL Passing Yards" in text and "ET Slate" in text:
+                      if "nfl passing yards" in text.lower() and "et slate" in text.lower():
                           chosen = frame
                           body = text
                           break
