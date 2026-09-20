@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-sport-nav-step3-responsive",
+  "status": "DONE",
+  "scope": "CSS-only Step 3 responsive polish for the frozen functional sport navigation using Page V31 and additive Router V178.",
+  "trigger": "Approved Step 3 requires the NFL/CFB/MLB/WNBA navigation section to remain clean and tappable across desktop, tablet, and small mobile widths.",
+  "guardrails": {
+    "sport_nav_step1_shell_frozen": true,
+    "sport_nav_step2_functional_frozen": true,
+    "prior_six_step_redesign_frozen": true,
+    "production_debug_wall_fix_frozen": true,
+    "page_v30_edited_in_place": false,
+    "router_v177_edited_in_place": false,
+    "sport_navigation_logic_changed": false,
+    "game_day_changed": false,
+    "matchup_surface_changed": false,
+    "data_contract_changed": false,
+    "projection_math_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
