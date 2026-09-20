@@ -5,20 +5,24 @@ on:
     branches: [main]
     paths:
       - "devsystem/production_verify_page_cleanup_step6.py"
+      - "cfb_game_total_step3_form_v1.py"
       - "cfb_game_total_game_evidence_v1.py"
       - "data/cfb_runtime_snapshot_v2.json"
       - "data/cfb_game_total_environment_cache_v1.json"
       - "tests/test_devsystem_production_verify_page_cleanup_step6.py"
+      - "tests/test_cfb_game_total_page_cleanup_step6_data.py"
       - "devsystem/task_ledgers/cfb-game-total-page-cleanup-step6-production-freeze.json"
       - ".github/workflows/cfb-game-total-page-cleanup-step6-production-freeze.yml"
   push:
     branches: [main]
     paths:
       - "devsystem/production_verify_page_cleanup_step6.py"
+      - "cfb_game_total_step3_form_v1.py"
       - "cfb_game_total_game_evidence_v1.py"
       - "data/cfb_runtime_snapshot_v2.json"
       - "data/cfb_game_total_environment_cache_v1.json"
       - "tests/test_devsystem_production_verify_page_cleanup_step6.py"
+      - "tests/test_cfb_game_total_page_cleanup_step6_data.py"
       - "devsystem/task_ledgers/cfb-game-total-page-cleanup-step6-production-freeze.json"
       - ".github/workflows/cfb-game-total-page-cleanup-step6-production-freeze.yml"
 
@@ -40,17 +44,21 @@ jobs:
           python -m pip install --disable-pip-version-check -q -r requirements.txt
           python -m pip install --disable-pip-version-check -q pytest playwright
           python -m playwright install --with-deps chromium
-      - name: Compile Step 6 verifier
+      - name: Compile Step 6 files
         run: |
-          python -m py_compile devsystem/production_verify_page_cleanup_step6.py cfb_game_total_game_evidence_v1.py
+          python -m py_compile             devsystem/production_verify_page_cleanup_step6.py             cfb_game_total_step3_form_v1.py             cfb_game_total_game_evidence_v1.py
       - name: Run targeted verifier contract
         run: |
           PYTHONPATH=. python -m pytest -q tests/test_devsystem_production_verify_page_cleanup_step6.py
+      - name: Run targeted Step 6 production-data proof
+        run: |
+          PYTHONPATH=. python -m pytest -q tests/test_cfb_game_total_page_cleanup_step6_data.py
       - name: Prove live production cleanup and freeze
+        if: github.event_name == 'push'
         run: |
           PYTHONPATH=. python devsystem/production_verify_page_cleanup_step6.py
       - name: Upload production proof
-        if: always()
+        if: always() && github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: cfb-game-total-page-cleanup-step6-${{ github.run_id }}

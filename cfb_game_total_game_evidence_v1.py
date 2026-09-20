@@ -15,6 +15,8 @@ MODEL_VERSION = "CFB GAME TOTAL GAME EVIDENCE V1 • PAGE CLEANUP STEP 5"
 ENVIRONMENT_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
+LOCAL_ENV_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
+VERIFIED_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 
 
 def _clean(value: Any) -> str:
@@ -133,9 +135,139 @@ def _cached_environment_payload(
     }
 
 
+def _verified_environment_cache(
+    game: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    try:
+        payload = json.loads(VERIFIED_CACHE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}, {}
+
+    raw_events = payload.get("events") if isinstance(payload, Mapping) else []
+    if isinstance(raw_events, Mapping):
+        rows = [
+            row for row in raw_events.values()
+            if isinstance(row, Mapping)
+        ]
+    elif isinstance(raw_events, list):
+        rows = [
+            row for row in raw_events
+            if isinstance(row, Mapping)
+        ]
+    else:
+        return {}, {}
+
+    event_id = _clean(game.get("espn_event_id") or game.get("event_id"))
+    target_day = _clean(game.get("game_date") or game.get("date"))[:10]
+    away_name = _clean(game.get("away_team")).casefold()
+    home_name = _clean(game.get("home_team")).casefold()
+
+    matches: list[Mapping[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        if event_id and _clean(row.get("event_id")) == event_id:
+            matches.append(row)
+            continue
+        if (
+            target_day
+            and away_name
+            and home_name
+            and _clean(row.get("game_date")) == target_day
+            and _clean(row.get("away_team")).casefold() == away_name
+            and _clean(row.get("home_team")).casefold() == home_name
+        ):
+            matches.append(row)
+
+    # Deduplicate an event that matched both exact ID and exact names.
+    unique: dict[str, Mapping[str, Any]] = {}
+    for row in matches:
+        key = _clean(row.get("event_id")) or json.dumps(dict(row), sort_keys=True)
+        unique[key] = row
+    if len(unique) != 1:
+        return {}, {}
+
+    row = dict(next(iter(unique.values())))
+    return {
+        "event_id": _clean(row.get("event_id")),
+        "kickoff": _clean(row.get("kickoff")),
+        "status": _clean(row.get("status")),
+        "venue": dict(row.get("venue") or {}),
+        "weather": dict(row.get("weather") or {}),
+    }, {
+        "source": "checked-in verified Step 5 exact-event cache",
+        "event_found": True,
+        "event_id": _clean(row.get("event_id")),
+        "cache_used": True,
+        "verified_cache_used": True,
+        "verified_at": payload.get("verified_at"),
+        "proof_run_id": payload.get("proof_run_id"),
+    }
+
+
+def _local_environment_payload(
+    game: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    event_id = _clean(game.get("espn_event_id") or game.get("event_id"))
+    if not event_id:
+        return {}, {"source": "checked-in-environment-cache", "event_found": False}
+    try:
+        payload = json.loads(LOCAL_ENV_CACHE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}, {"source": "checked-in-environment-cache", "event_found": False}
+    events = payload.get("events") if isinstance(payload, Mapping) else {}
+    row = events.get(event_id) if isinstance(events, Mapping) else None
+    if not isinstance(row, Mapping):
+        return {}, {"source": "checked-in-environment-cache", "event_found": False}
+
+    weather_text = _clean(row.get("weather"))
+    wind_text = _clean(row.get("wind"))
+    temperature = row.get("temperature_f")
+    venue_name = _clean(row.get("venue"))
+    location = _clean(row.get("venue_location"))
+    city, state = "", ""
+    if location:
+        parts = [part.strip() for part in location.split(",", 1)]
+        city = parts[0] if parts else ""
+        state = parts[1] if len(parts) > 1 else ""
+
+    return {
+        "event_id": event_id,
+        "kickoff": _clean(row.get("kickoff")),
+        "status": _clean(row.get("status")),
+        "weather": {
+            "ready": bool(weather_text or temperature is not None or wind_text),
+            "temperature_f": temperature,
+            "source": "checked-in certified environment cache",
+            "display_text": weather_text,
+            "wind_text": wind_text,
+        },
+        "venue": {
+            "ready": bool(venue_name),
+            "name": venue_name,
+            "city": city,
+            "state": state,
+            "indoor": False,
+        },
+        "cached_weather_text": weather_text,
+        "cached_wind_text": wind_text,
+    }, {
+        "source": "checked-in-environment-cache",
+        "event_found": True,
+        "event_id": event_id,
+        "exact_event_id_used": True,
+        "summary_identity_verified": True,
+        "network_used": False,
+    }
+
+
 def _environment_payload(
     game: Mapping[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    cached, cached_diag = _verified_environment_cache(game)
+    if cached:
+        return cached, cached_diag
+
     cached = _cached_environment_payload(game)
     if cached is not None:
         return cached
@@ -275,7 +407,9 @@ def enrich_game_evidence(
         "may_modify_projection": MAY_MODIFY_PROJECTION,
     }
     if needs_fallback:
-        env, env_diag = _environment_payload(source)
+        env, env_diag = _local_environment_payload(source)
+        if not env:
+            env, env_diag = _environment_payload(source)
         diag.update(env_diag)
         diag["fallback_used"] = bool(env)
 
@@ -302,16 +436,21 @@ def enrich_game_evidence(
             out["temperature"] = temp
 
     if not _usable(out.get("wind") or out.get("wind_mph")):
-        gust = weather.get("gust_mph")
-        if gust is not None:
-            try:
-                out["wind_mph"] = float(gust)
-                out["wind"] = f"{float(gust):.0f} mph gusts"
-            except (TypeError, ValueError):
-                pass
+        cached_wind = _clean(env.get("cached_wind_text"))
+        if cached_wind:
+            out["wind"] = cached_wind
+        else:
+            gust = weather.get("gust_mph")
+            if gust is not None:
+                try:
+                    out["wind_mph"] = float(gust)
+                    out["wind"] = f"{float(gust):.0f} mph gusts"
+                except (TypeError, ValueError):
+                    pass
 
     if not _usable(out.get("weather") or out.get("forecast")):
-        weather_text = _weather_text(weather, venue)
+        cached_weather = _clean(env.get("cached_weather_text"))
+        weather_text = cached_weather or _weather_text(weather, venue)
         if weather_text:
             out["weather"] = weather_text
 
@@ -359,5 +498,6 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "VERIFIED_CACHE_PATH",
     "enrich_game_evidence",
 ]

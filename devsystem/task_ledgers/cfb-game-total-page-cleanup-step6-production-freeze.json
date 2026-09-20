@@ -9,8 +9,8 @@
   },
   "transition_history": [],
   "override_events": [],
-  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Production contradicted CI-only data availability, so Step 6 adds only deterministic checked-in copies of already-verified exact-event team/environment evidence, then reruns the same passive stable-session production verifier. No model math, projection logic, page presentation, or provider semantics change.",
-  "proof_target": "One stable production Streamlit session must prove Purdue @ UCLA uses the refreshed certified Runtime Snapshot V2 and exact-event environment cache, yielding Game Total Analysis 12/12 with four READY metrics, two READY Team Evidence cards with eight READY tiles, complete venue/weather/wind/kickoff facts, Scheduled context, and 0.0% sportsbook projection influence.",
+  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Production evidence exposed a deterministic-data gap, so Step 6 now includes only the exact certified local snapshot selector fallback, verified exact-event environment cache, and passive production verification. Steps 1-5 remain frozen.",
+  "proof_target": "Final Step-6 proof: deterministic checked-in Purdue @ UCLA production data must repair both model/team profiles without upstream ESPN IDs and provide verified Rose Bowl environment evidence without network access; after merge, one stable production session must prove Game Total Analysis READY 12/12, Team Evidence READY, Game Evidence complete, and 0.0% sportsbook projection influence.",
   "internal_steps": {
     "1": "Freeze Steps 1-5 and set VERIFIER as the only active layer.",
     "2": "Use one stable direct Streamlit app session for Purdue @ UCLA.",

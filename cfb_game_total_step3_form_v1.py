@@ -732,21 +732,41 @@ def _runtime_v2_selected_row(
         game.get("home_espn_team_id")
         or game.get("home_team_id")
     )
-    if not away_id.isdigit() or not home_id.isdigit():
-        return {}
+    if away_id.isdigit() and home_id.isdigit():
+        matches: list[Mapping[str, Any]] = []
+        for row in rows:
+            if _clean(row.get("game_date")) != _clean(target_day)[:10]:
+                continue
+            away = row.get("away") if isinstance(row.get("away"), Mapping) else {}
+            home = row.get("home") if isinstance(row.get("home"), Mapping) else {}
+            if (
+                _clean(away.get("team_id")) == away_id
+                and _clean(home.get("team_id")) == home_id
+            ):
+                matches.append(row)
+        if len(matches) == 1:
+            return dict(matches[0])
+        if len(matches) > 1:
+            return {}
 
-    matches: list[Mapping[str, Any]] = []
-    for row in rows:
-        if _clean(row.get("game_date")) != _clean(target_day)[:10]:
-            continue
-        away = row.get("away") if isinstance(row.get("away"), Mapping) else {}
-        home = row.get("home") if isinstance(row.get("home"), Mapping) else {}
+    # Production-safe exact fallback: the frozen NCAA schedule can legitimately
+    # reach this adapter before ESPN IDs are attached. The certified snapshot
+    # already carries exact date + away + home identity, so accept only one
+    # unambiguous literal school-name match. Never fuzzy-match.
+    away_name = _clean(game.get("away_team")).casefold()
+    home_name = _clean(game.get("home_team")).casefold()
+    target = _clean(target_day)[:10]
+    if not away_name or not home_name or not target:
+        return {}
+    exact_names = [
+        row for row in rows
         if (
-            _clean(away.get("team_id")) == away_id
-            and _clean(home.get("team_id")) == home_id
-        ):
-            matches.append(row)
-    return dict(matches[0]) if len(matches) == 1 else {}
+            _clean(row.get("game_date")) == target
+            and _clean(row.get("away_team")).casefold() == away_name
+            and _clean(row.get("home_team")).casefold() == home_name
+        )
+    ]
+    return dict(exact_names[0]) if len(exact_names) == 1 else {}
 
 
 def _runtime_v2_side_evidence(
