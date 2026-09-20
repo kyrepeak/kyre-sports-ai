@@ -249,11 +249,104 @@ def _set_slate_date(page, frame, day: str) -> None:
     page.keyboard.press("Enter")
 
 
-def _select_exact_matchup(page, frame, event: dict[str, Any]) -> str:
-    matchup = frame.get_by_role("combobox", name="Verified matchup", exact=True)
+def _matchup_combobox(frame):
+    """Accept the current explicit game navigator and the legacy selector label."""
+    matchup = frame.get_by_role(
+        "combobox",
+        name=re.compile(r"^(?:Choose matchup|Verified matchup)"),
+    ).first
     matchup.wait_for(state="visible", timeout=120000)
+    return matchup
+
+
+def _certify_all_public_matchups(page, frame, *, expected_games: int = 14) -> list[dict[str, Any]]:
+    """Step 3: select every public game and require two exact-ID QB1 cards."""
+    matchup = _matchup_combobox(frame)
     matchup.click()
-    options = page.get_by_role("option")
+    texts: list[str] = []
+    seen: set[str] = set()
+    # Streamlit virtualizes long selectbox menus, so only a subset of options
+    # may be mounted at once. Walk the focused list to force every row into the
+    # DOM, collecting a stable union without changing the selected matchup.
+    for _ in range(expected_games + 8):
+        for scope in (frame, page):
+            try:
+                options = scope.get_by_role("option")
+                if options.count() > 0:
+                    for value in options.all_inner_texts():
+                        value = value.strip()
+                        if value and value not in seen:
+                            seen.add(value)
+                            texts.append(value)
+            except Exception:
+                pass
+        if len(texts) >= expected_games:
+            break
+        page.keyboard.press("ArrowDown")
+        page.wait_for_timeout(120)
+    page.keyboard.press("Escape")
+
+    if not texts:
+        raise PublicProductionCertFailure(
+            "Step 3 could not read public Passing Yards matchup options from the open selector"
+        )
+
+    if len(texts) != expected_games:
+        raise PublicProductionCertFailure(
+            f"Step 3 expected {expected_games} public Passing Yards games; saw {len(texts)}: {texts}"
+        )
+
+    verified: list[dict[str, Any]] = []
+    for text in texts:
+        core = text.split(" • ", 1)[0].strip()
+        matchup = _matchup_combobox(frame)
+        _choose(page, matchup, text)
+
+        header = frame.locator('section[data-verified-matchup="true"] h3').first
+        rendered = ""
+        for _ in range(160):
+            try:
+                rendered = header.inner_text(timeout=1000).strip()
+            except Exception:
+                rendered = ""
+            if rendered == core:
+                break
+            page.wait_for_timeout(250)
+        if rendered != core:
+            raise PublicProductionCertFailure(
+                f"Step 3 matchup did not render after selection: selected={text!r} rendered={rendered!r}"
+            )
+
+        body = _body(frame)
+        if "Unresolved QB1" in body:
+            raise PublicProductionCertFailure(
+                f"Step 3 unresolved QB identity leaked for public matchup {core!r}"
+            )
+        exact_qb = body.count("EXACT-ID QB1")
+        athlete_ids = body.count("ESPN ATHLETE ID")
+        if exact_qb < 2 or athlete_ids < 2:
+            raise PublicProductionCertFailure(
+                f"Step 3 expected two exact-ID displayed QB identities for {core!r}; "
+                f"saw exact_qb={exact_qb} athlete_ids={athlete_ids}"
+            )
+        verified.append({
+            "matchup": core,
+            "exact_id_qb": exact_qb,
+            "espn_athlete_ids": athlete_ids,
+            "qb1_verified_badges": body.count("QB1 ID VERIFIED"),
+        })
+
+    print(
+        "NFL_PASSING_STEP3_ALL_14_PRODUCTION_GREEN "
+        + json.dumps({"games": len(verified), "matchups": verified}, sort_keys=True)
+    )
+    return verified
+
+
+def _select_exact_matchup(page, frame, event: dict[str, Any]) -> str:
+    matchup = _matchup_combobox(frame)
+    matchup.click()
+    options = frame.get_by_role("option")
     options.first.wait_for(state="visible", timeout=10000)
     texts = [x.strip() for x in options.all_inner_texts() if x.strip()]
     away = event["away"]
@@ -351,7 +444,8 @@ def run_public_cert(
 
             _wait_text(frame, "KYRE SPORTS API BRIDGE — STEP 10 AUTO MARKET", 120000)
             _set_slate_date(page, frame, event["day"])
-            _wait_text(frame, "Verified matchup", 120000)
+            _wait_text(frame, "Choose matchup", 120000)
+            step3_matchups = _certify_all_public_matchups(page, frame, expected_games=14)
             chosen_matchup = _select_exact_matchup(page, frame, event)
 
             _wait_text(frame, "Step 10 — Market Edge + Final Grade", 180000)
@@ -377,6 +471,8 @@ def run_public_cert(
                 "official_event_id": event["event_id"],
                 "slate_day_et": event["day"],
                 "matchup": chosen_matchup,
+                "step3_all_matchups_verified": step3_matchups,
+                "step3_all_matchups_count": len(step3_matchups),
                 "api_prop_count": len(api_payload.get("props") or []),
                 "observed_step10_rows": observed,
                 "projection_weight": 0.0,
