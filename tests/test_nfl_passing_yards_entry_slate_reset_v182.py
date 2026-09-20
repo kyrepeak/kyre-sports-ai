@@ -44,4 +44,5 @@ def test_v182_preserves_v181_and_projection_guardrails() -> None:
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v181"
     assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert router.MAY_MODIFY_PROJECTION is False
-    assert "from streamlit_memory_lazy_router_v182 import record_bootstrap_import_ms, render_app" in app
+    assert "from streamlit_memory_lazy_router_v183 import record_bootstrap_import_ms, render_app" in app
+    assert "V182 runtime KeyError repair: bypassed by safe V183 entry prime" in app
