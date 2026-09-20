@@ -79,7 +79,7 @@ jobs:
           assert float(raw["projected_combined_total"]) > 0
           assert final.get("ready") is True, final.get("reasons")
           assert float(final["projected_combined_total"]) > 0
-          assert str(final.get("confidence") or raw.get("confidence") or "").strip()
+          assert final.get("forecast_strength") is not None
           assert norm.get("fallback_used") is True
           assert norm.get("event_id") == "401858458"
           assert slate_v2.raw_model is slate_v2.frozen.raw_model
@@ -103,7 +103,7 @@ jobs:
                   "allowed": home.get("points_allowed_pg"),
               },
               "projected_total": raw.get("projected_combined_total"),
-              "confidence": final.get("confidence") or raw.get("confidence"),
+              "forecast_strength": final.get("forecast_strength"),
               "final_grade": final.get("grade"),
               "fallback_source": norm.get("source"),
           }, indent=2))
