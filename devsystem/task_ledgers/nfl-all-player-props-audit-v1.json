@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "nfl-all-player-props-audit-v1",
+  "status": "DONE",
+  "scope": "Audit every currently display-eligible NFL player prop on the locked 2026-09-20 14-game slate against exact ESPN event, team, athlete, current-roster, depth-chart, and game-day availability identity.",
+  "trigger": "Step 6 of the NFL roster/player-prop accuracy audit requires proof that no wrong-team, stale, unavailable, or wrong-game player can survive into the displayed Passing Yards, Rushing Yards, Receiving Yards, or shared Receptions player pool.",
+  "guardrails": {
+    "steps_1_5_changed": false,
+    "projection_math_changed": false,
+    "market_logic_changed": false,
+    "router_changed": false,
+    "rankings_changed": false,
+    "grades_changed": false,
+    "stake_sizing_changed": false,
+    "other_sports_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
