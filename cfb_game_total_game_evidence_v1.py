@@ -15,6 +15,7 @@ MODEL_VERSION = "CFB GAME TOTAL GAME EVIDENCE V1 • PAGE CLEANUP STEP 5"
 ENVIRONMENT_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
+PRODUCTION_EVIDENCE_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_production_evidence_v1.json"
 LOCAL_ENV_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 VERIFIED_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 
@@ -494,6 +495,7 @@ def enrich_game_evidence(
 
 
 __all__ = [
+    "PRODUCTION_EVIDENCE_CACHE_PATH",
     "ENVIRONMENT_CACHE_PATH",
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
