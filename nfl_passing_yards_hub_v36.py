@@ -106,9 +106,29 @@ _COMPACT_DASHBOARD_CSS = r'''
 /* Neutralize V34's blanket green framing while preserving semantic colors inside certified cards. */
 .kpass36-hero .kpass29-card,.kpass36-hero .kpass30-profile,.kpass36-hero section.kpy-defense,.kpass36-hero section.kpy-pressure,.kpass36-hero section.kpy-personnel,.kpass36-hero section.kpy-env,.kpass36-hero section.kpy-proj,.kpass36-hero section.kpy8-card,.kpass36-hero section.kpy9-card,.kpass36-hero section.kpy10-card{margin:0!important;width:auto!important;box-sizing:border-box!important;border-radius:12px!important;border-color:#334155!important;box-shadow:none!important}
 .kpass36-projection section.kpy-proj{border-color:rgba(167,139,250,.55)!important}.kpass36-market section.kpy10-card{border-color:rgba(96,165,250,.52)!important}.kpass36-evidence section.kpy-pressure{border-color:rgba(251,191,36,.42)!important}.kpass36-evidence section.kpy-env{border-color:rgba(96,165,250,.38)!important}.kpass36-evidence .kpass30-profile{border-color:rgba(96,165,250,.38)!important}.kpass36-evidence section.kpy-personnel{border-color:#475569!important}
+
+/* Step 2 — premium QB identity cards. Presentation only; certified identity payload remains unchanged. */
+.kpass36-qbidentity{position:relative;overflow:hidden;margin-top:9px;padding:13px 14px;border:1px solid rgba(56,189,248,.42);border-radius:19px;background:radial-gradient(circle at 88% 14%,rgba(14,165,233,.11),transparent 30%),linear-gradient(145deg,rgba(8,22,43,.98),rgba(6,15,31,.98));box-shadow:inset 0 0 0 1px rgba(96,165,250,.07),0 10px 28px rgba(0,0,0,.22)}
+.kpass36-qbidentity:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.035),transparent 28%,transparent 75%,rgba(59,130,246,.045))}
+.kpass36-qbidentitybar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.kpass36-qbslot{color:#93c5fd;font-size:.48rem;font-weight:950;letter-spacing:.10em;text-transform:uppercase}
+.kpass36-qbconfidence{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 10px;border:1px solid rgba(74,222,128,.55);border-radius:999px;background:rgba(22,101,52,.16);color:#86efac;font-size:.44rem;font-weight:950;letter-spacing:.065em}
+.kpass36-hero .kpass36-qbidentity .kpass29-card{position:relative;z-index:1;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+.kpass36-qbidentity .kpass29-card:after{display:none!important}
+.kpass36-qbidentity .kpass29-top{align-items:center!important;gap:14px!important}
+.kpass36-qbidentity .kpass29-head{width:70px!important;height:70px!important;flex:0 0 70px!important;border:1px solid rgba(96,165,250,.42)!important;background:#07111f!important;box-shadow:0 0 0 4px rgba(59,130,246,.06),0 0 22px rgba(37,99,235,.14)!important}
+.kpass36-qbidentity .kpass29-name{color:#fff!important;font-size:1.08rem!important;font-weight:950!important;letter-spacing:-.015em!important}
+.kpass36-qbidentity .kpass29-meta{color:#9fb0c8!important;font-size:.60rem!important;line-height:1.5!important;margin-top:3px!important}
+.kpass36-qbidentity .kpass29-logo{width:60px!important;height:60px!important;flex:0 0 60px!important;padding:7px!important;border:1px solid rgba(96,165,250,.40)!important;border-radius:15px!important;background:rgba(7,17,31,.92)!important;box-shadow:inset 0 0 18px rgba(59,130,246,.08),0 0 18px rgba(14,165,233,.10)!important}
+.kpass36-qbidentity .kpass29-badges{gap:6px!important;margin-top:7px!important}
+.kpass36-qbidentity .kpass29-badge{padding:4px 8px!important;border-radius:999px!important;font-size:.45rem!important;letter-spacing:.055em!important}
+.kpass36-qbidentity .kpass29-badge:last-child{border-color:rgba(74,222,128,.48)!important;background:rgba(22,101,52,.14)!important;color:#86efac!important}
+.kpass36-qbidentity .kpass29-main{gap:7px!important;margin-top:11px!important}
+.kpass36-qbidentity .kpass29-metric{border-color:rgba(71,85,105,.62)!important;background:rgba(7,15,28,.86)!important}
+.kpass36-qbidentity .kpass29-foot{border-top-color:rgba(71,85,105,.42)!important;color:#8090a7!important}
 .kpass36-hero .kpy-envteams{grid-template-columns:1fr!important}.kpass36-hero .kpy9-q{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 @media(max-width:900px){.kpass36-grid{grid-template-columns:1fr}.kpass36-matchup{align-items:flex-start;flex-direction:column}.kpass36-matchupchips{justify-content:flex-start}.kpass36-prelude{align-items:flex-start;flex-direction:column}.kpass36-preludechips{justify-content:flex-start}.kpass36-hero{border-radius:17px}}
-@media(max-width:640px){.kpass36-whyintro{grid-template-columns:auto 1fr;gap:12px;padding:15px 14px;border-radius:21px}.kpass36-whybrain{width:56px;height:56px;font-size:28px}.kpass36-whypill{grid-column:1/-1;width:100%;min-height:42px}.kpass36-whysub{font-size:.67rem}.kpass36-metrics{grid-template-columns:1fr}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}}
+@media(max-width:640px){.kpass36-whyintro{grid-template-columns:auto 1fr;gap:12px;padding:15px 14px;border-radius:21px}.kpass36-whybrain{width:56px;height:56px;font-size:28px}.kpass36-whypill{grid-column:1/-1;width:100%;min-height:42px}.kpass36-whysub{font-size:.67rem}.kpass36-metrics{grid-template-columns:1fr}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}.kpass36-qbidentity{padding:11px 10px;border-radius:16px}.kpass36-qbidentitybar{margin-bottom:8px}.kpass36-qbidentity .kpass29-top{gap:9px!important}.kpass36-qbidentity .kpass29-head{width:56px!important;height:56px!important;flex-basis:56px!important}.kpass36-qbidentity .kpass29-logo{width:48px!important;height:48px!important;flex-basis:48px!important;padding:6px!important}.kpass36-qbidentity .kpass29-name{font-size:.92rem!important}.kpass36-qbidentity .kpass29-meta{font-size:.53rem!important}.kpass36-qbconfidence{min-height:24px;padding:0 8px;font-size:.40rem}}
 </style>
 '''
 
@@ -192,7 +212,10 @@ def _compact_player(captured: dict[str, list[str]], index: int) -> str:
             '<span class="kpass36-chip kpass36-tone-purple">MODEL</span>',
             '<span class="kpass36-chip kpass36-tone-blue">MARKET</span>',
             '</div></div>',
+            '<section class="kpass36-qbidentity" data-qb-identity-card="true" data-qb-slot="' + str(index + 1) + '">',
+            '<div class="kpass36-qbidentitybar"><span class="kpass36-qbslot">QB ' + str(index + 1) + '</span><span class="kpass36-qbconfidence">CONFIDENCE</span></div>',
             identity,
+            '</section>',
             '</div>',
             '<div class="kpass36-metrics">',
             '<section class="kpass36-metric kpass36-projection"><div class="kpass36-metrichead"><b>Monster Projection</b><span class="kpass36-chip kpass36-tone-purple">MODEL</span></div>',
