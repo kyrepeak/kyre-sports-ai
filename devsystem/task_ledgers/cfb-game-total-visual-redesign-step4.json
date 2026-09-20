@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-visual-redesign-step4",
+  "status": "DONE",
+  "scope": "Presentation-only Step 4 redesign of CFB Team Evidence using Page V27 and additive Router V172.",
+  "trigger": "Approved visual redesign Step 4 requires premium side-by-side Team Evidence cards with existing PPG, allowed PPG, point differential, recent form, identity, source, and readiness data while preserving all certified calculations and prior visual Steps.",
+  "guardrails": {
+    "step1_visual_contract_frozen": true,
+    "step2_matchup_hero_frozen": true,
+    "step3_game_total_analysis_frozen": true,
+    "prior_page_v26_edited_in_place": false,
+    "prior_router_v171_edited_in_place": false,
+    "data_contract_changed": false,
+    "normalization_changed": false,
+    "projection_math_changed": false,
+    "confidence_math_changed": false,
+    "market_ownership_changed": false,
+    "team_stat_math_changed": false,
+    "steps_1_12_logic_changed": false,
+    "synthetic_ratings_edges_or_trends_allowed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
