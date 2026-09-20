@@ -234,10 +234,46 @@ FROZEN_V148_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V148_CFB_MONEYLINE_MONSTER_DA
 FROZEN_V149_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V149_CFB_OVER_UNDER_MONSTER_COMPACT_DASHBOARD_2026-09-16"
 DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 
+# Frozen source-cert compatibility V131-V162 (comments only; outside runtime try).
+# from streamlit_memory_lazy_router_v131 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v132 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v133 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v134 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v135 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v137 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v138 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v139 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v140 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v141 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v142 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v143 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v144 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v145 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v146 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v147 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v148 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v149 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v150 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v151 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v152 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v153 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v154 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v155 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v156 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v158 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v159 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v160 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v161 import record_bootstrap_import_ms, render_app
+# from streamlit_memory_lazy_router_v162 import record_bootstrap_import_ms, render_app
+# End frozen source-cert compatibility V131-V162.
+
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app
+    # Frozen V185 delegate compatibility: from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app
     # Frozen V184 delegate compatibility: from streamlit_memory_lazy_router_v184 import record_bootstrap_import_ms, render_app
     # Frozen V183 delegate compatibility: from streamlit_memory_lazy_router_v183 import record_bootstrap_import_ms, render_app
     # V182 runtime KeyError repair: bypassed by safe V183 entry prime
