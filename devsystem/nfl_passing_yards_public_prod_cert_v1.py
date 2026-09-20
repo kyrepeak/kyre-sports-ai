@@ -263,10 +263,26 @@ def _certify_all_public_matchups(page, frame, *, expected_games: int = 14) -> li
     """Step 3: select every public game and require two exact-ID QB1 cards."""
     matchup = _matchup_combobox(frame)
     matchup.click()
-    options = page.get_by_role("option")
-    options.first.wait_for(state="visible", timeout=10000)
-    texts = [x.strip() for x in options.all_inner_texts() if x.strip()]
+    texts: list[str] = []
+    for _ in range(60):
+        for scope in (frame, page):
+            try:
+                options = scope.get_by_role("option")
+                if options.count() > 0:
+                    texts = [x.strip() for x in options.all_inner_texts() if x.strip()]
+                    if texts:
+                        break
+            except Exception:
+                pass
+        if texts:
+            break
+        page.wait_for_timeout(250)
     page.keyboard.press("Escape")
+
+    if not texts:
+        raise PublicProductionCertFailure(
+            "Step 3 could not read public Passing Yards matchup options from the open selector"
+        )
 
     if len(texts) != expected_games:
         raise PublicProductionCertFailure(
