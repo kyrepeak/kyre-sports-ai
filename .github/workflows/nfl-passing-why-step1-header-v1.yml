@@ -1,0 +1,33 @@
+name: NFL Passing Yards Why Step 1 Header
+
+on:
+  push:
+    branches:
+      - "monster/nfl-passing-why-step1-header-v1"
+    paths:
+      - "nfl_passing_yards_hub_v36.py"
+      - "tests/test_nfl_passing_yards_why_step1_header_v1.py"
+      - ".github/workflows/nfl-passing-why-step1-header-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install targeted test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Prove Step 1 premium Why This Projection header
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_why_step1_header_v1.py
+          echo "NFL_PASSING_WHY_STEP1_HEADER_GREEN"
