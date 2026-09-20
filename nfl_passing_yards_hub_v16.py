@@ -20,6 +20,7 @@ import nfl_passing_yards_hub_v8 as step7_ui
 import nfl_passing_yards_hub_v9 as step8_ui
 import nfl_passing_yards_hub_v10 as step9_ui
 import nfl_passing_yards_hub_v11 as step10_ui
+from sports_universal_shell_v1 import render_universal_shell
 
 MODEL_VERSION = "NFL PASSING YARDS V16 • CLEANUP STEP 4 • MATCHUP SPOTLIGHT"
 
@@ -258,6 +259,7 @@ def _why_html(
 
 
 def render_nfl_passing_yards_hub() -> None:
+    render_universal_shell(sport="NFL", market="Passing Yards")
     st.markdown(_CLEANUP_STEP4_CSS, unsafe_allow_html=True)
     st.markdown(_HEADER, unsafe_allow_html=True)
     matchup_slot = st.empty()
