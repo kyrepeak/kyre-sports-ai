@@ -197,6 +197,7 @@ def _verified_environment_cache(
         "source": "checked-in verified Step 5 exact-event cache",
         "event_found": True,
         "event_id": _clean(row.get("event_id")),
+        "cache_used": True,
         "verified_cache_used": True,
         "verified_at": payload.get("verified_at"),
         "proof_run_id": payload.get("proof_run_id"),
