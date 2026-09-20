@@ -121,8 +121,10 @@ def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
         except Exception as exc:
             last_error = f"{type(exc).__name__}: {exc}"[:1200]
 
-        page.wait_for_timeout(5000)
-        page.reload(wait_until="domcontentloaded", timeout=120000)
+        # Streamlit Cloud can need 10-25 seconds to finish its auth/session
+        # redirect and mount the app iframe. Do not reload here: reloading resets
+        # the exact mount we are waiting for. Poll the existing page instead.
+        page.wait_for_timeout(2000)
 
     raise Step6ProductionVerificationFailure(
         "V184 Step 6 production surface did not become live: "
