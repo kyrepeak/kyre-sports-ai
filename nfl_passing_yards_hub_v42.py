@@ -15,6 +15,7 @@ import nfl_hub_v25 as nfl
 import nfl_passing_yards_hub_v40 as phoenix_display
 import nfl_passing_yards_hub_v41 as prior
 import nfl_passing_yards_identity_v1 as identity
+import nfl_passing_yards_full_slate_router_v1 as full_slate
 from nfl_prop_app_eligibility_v1 import guard_passing_identity
 
 MODEL_VERSION = "NFL PASSING YARDS V42 • STEP 7 APP IDENTITY FAIL-CLOSED"
@@ -23,6 +24,14 @@ SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 
 VISIBLE_MATCHUP_KEY = "nfl_passing_yards_v42_visible_matchup"
 _ORIGINAL_RESOLVE = identity.resolve_matchup_identity
+_ORIGINAL_LOAD_NFL_SLATE = nfl.load_nfl_slate
+
+
+def _load_full_slate(day_str: str):
+    return full_slate.load_full_slate(
+        day_str,
+        primary_loader=_ORIGINAL_LOAD_NFL_SLATE,
+    )
 
 
 def _safe(value: Any, default: str = "") -> str:
@@ -95,7 +104,12 @@ def _render_visible_matchup_navigation(original_selectbox) -> str | None:
 def render_nfl_passing_yards_hub() -> None:
     original_resolve = identity.resolve_matchup_identity
     original_selectbox = st.selectbox
+    original_slate_loader = nfl.load_nfl_slate
 
+    # Scope the fallback to Passing Yards only. V8/V12/V41 all reference the
+    # same nfl_hub_v25 module object, so this one temporary route gives the
+    # visible selector and frozen downstream lookup the exact same full slate.
+    nfl.load_nfl_slate = _load_full_slate
     chosen = _render_visible_matchup_navigation(original_selectbox)
 
     def selectbox_proxy(label: str, options: Any, *args: Any, **kwargs: Any):
@@ -112,6 +126,7 @@ def render_nfl_passing_yards_hub() -> None:
     finally:
         st.selectbox = original_selectbox
         identity.resolve_matchup_identity = original_resolve
+        nfl.load_nfl_slate = original_slate_loader
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
@@ -125,6 +140,7 @@ __all__ = [
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "VISIBLE_MATCHUP_KEY",
+    "_load_full_slate",
     "_render_visible_matchup_navigation",
     "_resolve_matchup_identity_step7",
     "_verified_matchup_labels",
