@@ -1,0 +1,129 @@
+name: NFL Passing Yards Production Visual Parity Proof
+
+on:
+  push:
+    branches:
+      - "monster/nfl-passing-why-production-visual-proof-v1"
+    paths:
+      - ".github/workflows/nfl-passing-yards-production-visual-parity-proof-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  production-visual-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser proof stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove compact Why This Projection on public production
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+          import nfl_passing_yards_public_prod_cert_v1 as base
+
+          production_url = "https://kyre-sports-ai.streamlit.app"
+          artifacts = Path("artifacts/nfl-passing-why-production-visual")
+          artifacts.mkdir(parents=True, exist_ok=True)
+
+          health = base._wait_for_public_streamlit(production_url, timeout_seconds=180)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width": 1170, "height": 2532})
+              try:
+                  page.goto(production_url + "/", wait_until="domcontentloaded", timeout=120000)
+                  frame, scan = base._find_app_frame(page, timeout_seconds=120)
+                  base._assert_no_runtime_error(base._body(frame), "initial public app")
+
+                  sport = frame.get_by_role("combobox").nth(0)
+                  base._choose(page, sport, "NFL")
+                  market = frame.get_by_role("combobox", name="🎯 NFL Market", exact=True)
+                  market.wait_for(state="visible", timeout=60000)
+                  base._choose(page, market, "Passing Yards")
+
+                  # Give the public route time to hydrate its default verified slate/matchup.
+                  deadline = time.monotonic() + 180
+                  why = frame.locator("section.kpy16-why")
+                  while time.monotonic() < deadline and why.count() == 0:
+                      # If a matchup selector exists but no card has rendered yet, keep the
+                      # current default selection and allow the Streamlit rerun to settle.
+                      page.wait_for_timeout(750)
+
+                  if why.count() < 1:
+                      body = base._body(frame)
+                      raise AssertionError("compact kpy16 Why This Projection panel not found; body_start=" + body[:5000])
+
+                  why.first.wait_for(state="visible", timeout=30000)
+                  body = why.first.inner_text(timeout=10000)
+
+                  required = [
+                      "Why This Projection",
+                      "RESULT → REASONS",
+                      "Volume",
+                      "Efficiency",
+                      "Pressure Adj",
+                      "Personnel",
+                      "Weather",
+                      "Recent SD",
+                      "Projection:",
+                  ]
+                  missing = [label for label in required if label not in body]
+                  if missing:
+                      raise AssertionError("compact panel missing required labels: " + repr(missing))
+
+                  cards = frame.locator("section.kpy16-whycard").count()
+                  giant_dashboards = frame.locator("section.kpass36-dashboard").count()
+                  full_body = base._body(frame)
+                  giant_text = "Quarterback Hero" in full_body
+
+                  if cards < 2:
+                      raise AssertionError(f"expected at least 2 compact QB cards; saw {cards}")
+                  if giant_dashboards != 0:
+                      raise AssertionError(f"duplicate V36 dashboard still rendered: {giant_dashboards}")
+                  if giant_text:
+                      raise AssertionError("duplicate giant Quarterback Hero text still visible")
+
+                  screenshot = artifacts / "passing_yards_compact_why_production_green.png"
+                  why.first.screenshot(path=str(screenshot))
+                  page.screenshot(path=str(artifacts / "passing_yards_full_page_production_green.png"), full_page=True)
+
+                  result = {
+                      "status": "GREEN",
+                      "production_url": production_url,
+                      "health_http": health["health_http"],
+                      "root_http": health["root_http"],
+                      "compact_why_panels": why.count(),
+                      "compact_qb_cards": cards,
+                      "giant_v36_dashboards": giant_dashboards,
+                      "quarterback_hero_visible": giant_text,
+                      "frame_scan_count": len(scan),
+                      "required_labels": required,
+                      "screenshot": str(screenshot),
+                  }
+                  (artifacts / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True), encoding="utf-8")
+                  print("NFL_PASSING_PRODUCTION_VISUAL_PARITY_GREEN")
+                  print(json.dumps(result, sort_keys=True))
+              finally:
+                  browser.close()
+          PY
+      - name: Upload production visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-why-production-visual-${{ github.run_id }}
+          path: artifacts/nfl-passing-why-production-visual
+          if-no-files-found: warn
+          retention-days: 7
