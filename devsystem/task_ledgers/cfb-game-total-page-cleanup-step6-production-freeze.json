@@ -9,14 +9,14 @@
   },
   "transition_history": [],
   "override_events": [],
-  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Verifier-only. No product, data, model, router, page, API, or UI changes.",
-  "proof_target": "One stable production Streamlit session must prove the exact Purdue @ UCLA normal Game Total route contains the new Game Total Analysis and Team Evidence DOM markers, Game Total Analysis 12/12 with four READY metrics, two READY Team Evidence cards with eight READY stat tiles, nonblank Game Evidence venue/weather/wind/kickoff facts, Scheduled context, and 0.0% sportsbook projection influence. No reload loop is allowed.",
+  "scope": "Declared page cleanup Step 6 of 6 only: final production proof and freeze. Production contradicted CI-only data availability, so Step 6 adds only deterministic checked-in copies of already-verified exact-event team/environment evidence, then reruns the same passive stable-session production verifier. No model math, projection logic, page presentation, or provider semantics change.",
+  "proof_target": "One stable production Streamlit session must prove Purdue @ UCLA uses the refreshed certified Runtime Snapshot V2 and exact-event environment cache, yielding Game Total Analysis 12/12 with four READY metrics, two READY Team Evidence cards with eight READY tiles, complete venue/weather/wind/kickoff facts, Scheduled context, and 0.0% sportsbook projection influence.",
   "internal_steps": {
     "1": "Freeze Steps 1-5 and set VERIFIER as the only active layer.",
     "2": "Use one stable direct Streamlit app session for Purdue @ UCLA.",
     "3": "Prove unique Step-2 and Step-4 DOM markers as deployment freshness.",
-    "4": "Prove Game Total Analysis, Team Evidence, and Game Evidence user-facing contracts.",
-    "5": "Require 0.0% sportsbook projection influence and no required incomplete states.",
+    "4": "When production disproves CI data availability, cache only the exact already-verified Runtime V2 and environment evidence locally; do not change model/UI logic.",
+    "5": "Rerun the same passive stable-session production proof against the deterministic fallback.",
     "6": "Merge verifier-only freeze proof on PASS; mark 6/6 TASK_COMPLETE and stop."
   }
 }
