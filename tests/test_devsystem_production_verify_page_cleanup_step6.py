@@ -45,3 +45,51 @@ def test_step6_verifier_does_not_modify_projection_or_product():
     assert '"projection_mutation": False' in source
     assert "streamlit_memory_lazy_router" not in source
     assert "cfb_game_total_clean_page" not in source
+
+
+def test_step6_checked_in_runtime_snapshot_contains_exact_purdue_ucla_event():
+    import json
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "data" / "cfb_runtime_snapshot_v2.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows = [
+        row for row in payload.get("games", [])
+        if str(row.get("event_id") or "") == "401858458"
+    ]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["away_team"] == "Purdue"
+    assert row["home_team"] == "UCLA"
+    assert row["venue"] == "Rose Bowl"
+    assert len(row["away"]["completed_games"]) == 2
+    assert len(row["home"]["completed_games"]) == 2
+    assert row["away"]["ppg"] == 40
+    assert row["away"]["points_allowed_pg"] == 28.5
+    assert row["home"]["ppg"] == 36.5
+    assert row["home"]["points_allowed_pg"] == 17
+
+
+def test_step6_environment_adapter_prefers_checked_in_exact_event_cache(monkeypatch):
+    import cfb_game_total_game_evidence_v1 as evidence
+
+    def fail_network(*_args, **_kwargs):
+        raise AssertionError("network fallback must not run when verified cache exists")
+
+    monkeypatch.setattr(evidence.environment_owner, "_fetch_summary", fail_network)
+    monkeypatch.setattr(evidence.environment_owner, "_fetch_scoreboard", fail_network)
+
+    payload, diag = evidence._environment_payload({
+        "espn_event_id": "401858458",
+        "game_date": "2026-09-19",
+        "away_team": "Purdue",
+        "home_team": "UCLA",
+    })
+    assert diag["cache_used"] is True
+    assert payload["venue"]["name"] == "Rose Bowl"
+    assert payload["venue"]["city"] == "Pasadena"
+    assert payload["weather"]["temperature_f"] == 73.0
+    assert payload["weather"]["gust_mph"] == 5.0
+    assert payload["weather"]["precipitation_pct"] == 0.0
+    assert payload["kickoff"] == "2026-09-19T23:00:00-04:00"
+    assert payload["status"] == "Scheduled"
