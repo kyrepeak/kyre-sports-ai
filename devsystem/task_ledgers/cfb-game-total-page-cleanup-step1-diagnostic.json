@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-page-cleanup-step1-diagnostic",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "Diagnostic-only checkpoint inside declared page cleanup Step 1 of 6. Trace Purdue @ UCLA on 2026-09-19 through the exact live Game Total schedule/model path and compare its required team/model fields against the newer Step 3 multi-source enrichment path. No product/model/UI code changes.",
+  "proof_target": "Print exact game identity/status; frozen away/home record games, PPG, points allowed and quality grades; raw model ready/reasons; final ready/grade/strength; visual ready statuses; and Step 3 enriched required fields. Use the evidence to patch only the first RED data/normalization layer.",
+  "internal_steps": {
+    "1": "Load the same Sep 19 slate as the live page.",
+    "2": "Resolve Purdue @ UCLA by official game identity.",
+    "3": "Run the same frozen Game Total analyze_game path.",
+    "4": "Print only required field and gate diagnostics.",
+    "5": "Run newer Step 3 multi-source enrichment for the same exact game.",
+    "6": "Use comparison to choose the narrowest shared data adapter fix."
+  }
+}
