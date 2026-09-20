@@ -72,4 +72,4 @@ def test_v184_replaces_two_run_handoff_but_preserves_v183() -> None:
 
 def test_app_boots_v184() -> None:
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert "from streamlit_memory_lazy_router_v184 import record_bootstrap_import_ms, render_app" in app
+    assert "from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app" in app
