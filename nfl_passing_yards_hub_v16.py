@@ -141,11 +141,18 @@ def _matchup_html(identity_result: dict, baselines: list[dict]) -> str:
     )
 
 
-def _why_card(baseline: dict, context: dict, dist: dict, market: dict) -> str:
+def _why_card(baseline: dict, context: dict, dist: dict, market: dict, team_ctx: dict | None = None) -> str:
     name = _safe(dist.get("qb_name") or context.get("qb_name") or baseline.get("qb_name"), "Unresolved QB1")
     confidence = _safe(dist.get("confidence") or context.get("confidence"), "CHECK").upper()
     conf_css = _confidence_class(confidence)
     projection_yards = dist.get("location_yards") if _finite(dist.get("location_yards")) else context.get("context_projection_yards")
+    team_ctx = team_ctx or {}
+    team_name = _safe(team_ctx.get("team"), team_ctx.get("abbr") or "NFL TEAM")
+    logo = _logo_url(team_ctx.get("abbr"))
+    logo_html = (
+        f'<div class="kpy16-whylogo"><img src="{escape(logo, quote=True)}" alt="{escape(team_name, quote=True)} logo" loading="lazy"></div>'
+        if logo else '<div class="kpy16-whylogo"></div>'
+    )
     if market.get("grade_ready"):
         lean = _safe(market.get("lean"), "PASS")
         grade = _safe(market.get("grade"), "PASS").upper()
@@ -158,8 +165,9 @@ def _why_card(baseline: dict, context: dict, dist: dict, market: dict) -> str:
     return (
         '<section class="kpy16-whycard">'
         '<div class="kpy16-whytop">'
-        f'<div class="kpy16-whyname">{escape(name)}</div>'
-        f'<div class="kpy16-conf {conf_css}">{escape(confidence)}</div></div>'
+        f'{logo_html}<div class="kpy16-playercopy"><div class="kpy16-whyname">{escape(name)}</div>'
+        f'<div class="kpy16-teammeta">QB • {escape(team_name.upper())}</div></div>'
+        f'<div class="kpy16-conf {conf_css}">{escape(confidence)} CONFIDENCE</div></div>'
         '<div class="kpy16-reasons">'
         f'<div class="kpy16-reason"><b>{_fmt(baseline.get("expected_attempts"),1)}</b><span>Volume</span></div>'
         f'<div class="kpy16-reason"><b>{_fmt(baseline.get("expected_ypa"),2)}</b><span>Efficiency</span></div>'
@@ -175,17 +183,20 @@ def _why_card(baseline: dict, context: dict, dist: dict, market: dict) -> str:
     )
 
 
-def _why_html(baselines: list[dict], contexts: list[dict], distributions: list[dict], markets: list[dict]) -> str:
+def _why_html(baselines: list[dict], contexts: list[dict], distributions: list[dict], markets: list[dict], identity_result: dict | None = None) -> str:
     count = max(len(baselines), len(contexts), len(distributions), len(markets))
     if count <= 0:
         return ""
+    identity_result = identity_result or {}
+    sides = [identity_result.get("away") or {}, identity_result.get("home") or {}]
     cards = []
     for idx in range(count):
         baseline = baselines[idx] if idx < len(baselines) else {}
         context = contexts[idx] if idx < len(contexts) else {}
         dist = distributions[idx] if idx < len(distributions) else {}
         market = markets[idx] if idx < len(markets) else {}
-        cards.append(_why_card(baseline, context, dist, market))
+        team_ctx = sides[idx] if idx < len(sides) else {}
+        cards.append(_why_card(baseline, context, dist, market, team_ctx))
     return (
         '<section class="kpy16-why">'
         '<div class="kpy16-whyhead">'
@@ -254,7 +265,7 @@ def render_nfl_passing_yards_hub() -> None:
         step10_ui._market_card = original_market_card
 
     matchup = _matchup_html(identity_result, baselines)
-    reasons = _why_html(baselines, contexts, distributions, markets)
+    reasons = _why_html(baselines, contexts, distributions, markets, identity_result)
     if matchup:
         matchup_slot.markdown(matchup, unsafe_allow_html=True)
     if reasons:
