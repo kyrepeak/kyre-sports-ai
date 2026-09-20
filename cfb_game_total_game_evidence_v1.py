@@ -15,6 +15,7 @@ MODEL_VERSION = "CFB GAME TOTAL GAME EVIDENCE V1 • PAGE CLEANUP STEP 5"
 ENVIRONMENT_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
+VERIFIED_CACHE_PATH = Path(__file__).resolve().parent / "data" / "cfb_game_total_environment_cache_v1.json"
 
 
 def _clean(value: Any) -> str:
@@ -133,9 +134,72 @@ def _cached_environment_payload(
     }
 
 
+def _verified_environment_cache(
+    game: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    try:
+        payload = json.loads(VERIFIED_CACHE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}, {}
+
+    rows = payload.get("events") if isinstance(payload, Mapping) else []
+    if not isinstance(rows, list):
+        return {}, {}
+
+    event_id = _clean(game.get("espn_event_id") or game.get("event_id"))
+    target_day = _clean(game.get("game_date") or game.get("date"))[:10]
+    away_name = _clean(game.get("away_team")).casefold()
+    home_name = _clean(game.get("home_team")).casefold()
+
+    matches: list[Mapping[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        if event_id and _clean(row.get("event_id")) == event_id:
+            matches.append(row)
+            continue
+        if (
+            target_day
+            and away_name
+            and home_name
+            and _clean(row.get("game_date")) == target_day
+            and _clean(row.get("away_team")).casefold() == away_name
+            and _clean(row.get("home_team")).casefold() == home_name
+        ):
+            matches.append(row)
+
+    # Deduplicate an event that matched both exact ID and exact names.
+    unique: dict[str, Mapping[str, Any]] = {}
+    for row in matches:
+        key = _clean(row.get("event_id")) or json.dumps(dict(row), sort_keys=True)
+        unique[key] = row
+    if len(unique) != 1:
+        return {}, {}
+
+    row = dict(next(iter(unique.values())))
+    return {
+        "event_id": _clean(row.get("event_id")),
+        "kickoff": _clean(row.get("kickoff")),
+        "status": _clean(row.get("status")),
+        "venue": dict(row.get("venue") or {}),
+        "weather": dict(row.get("weather") or {}),
+    }, {
+        "source": "checked-in verified Step 5 exact-event cache",
+        "event_found": True,
+        "event_id": _clean(row.get("event_id")),
+        "verified_cache_used": True,
+        "verified_at": payload.get("verified_at"),
+        "proof_run_id": payload.get("proof_run_id"),
+    }
+
+
 def _environment_payload(
     game: Mapping[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    cached, cached_diag = _verified_environment_cache(game)
+    if cached:
+        return cached, cached_diag
+
     cached = _cached_environment_payload(game)
     if cached is not None:
         return cached
@@ -359,5 +423,6 @@ __all__ = [
     "MAY_MODIFY_PROJECTION",
     "MODEL_VERSION",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
+    "VERIFIED_CACHE_PATH",
     "enrich_game_evidence",
 ]
