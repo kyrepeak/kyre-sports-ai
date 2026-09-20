@@ -20,6 +20,7 @@ import streamlit as st
 
 import nfl_moneyline_hub_v2 as depth_base
 import nfl_moneyline_hub_v21 as depth_repair
+import nfl_game_day_availability_v1 as game_day
 
 MODEL_VERSION = "NFL PASSING YARDS STEP 1 • VERIFIED MATCHUP + QB IDENTITY V1"
 
@@ -109,16 +110,19 @@ def resolve_team_qb_identity(
     verified_qb1 = None
     if result["depth_state"] == "VERIFIED":
         ordered = sorted(qbs, key=lambda x: (_rank(x.get("rank")), _safe(x.get("name"))))
-        if ordered and _rank(ordered[0].get("rank")) == 1:
-            candidate = ordered[0]
-            if _safe(candidate.get("athlete_id")) and _safe(candidate.get("name")):
-                verified_qb1 = candidate
+        for candidate in ordered:
+            if not _safe(candidate.get("athlete_id")) or not _safe(candidate.get("name")):
+                continue
+            status = _safe(candidate.get("injury_status"))
+            if game_day.is_unavailable_status(status):
+                result["availability_alert"] = True
+                continue
+            verified_qb1 = candidate
+            break
 
     if verified_qb1:
         result["qb1"] = verified_qb1
         result["identity_verified"] = True
-        status = _safe(verified_qb1.get("injury_status")).upper()
-        result["availability_alert"] = any(token in status for token in ("OUT", "DOUBTFUL", "INJURED RESERVE", "IR"))
     return result
 
 
@@ -135,7 +139,9 @@ def resolve_matchup_identity(game: dict, season_year: int) -> dict:
         }
 
     injury_map, injury_diag = load_current_injury_map()
-    injury_ok = bool(injury_diag.get("ok"))
+    event_injury_map, event_injury_diag = game_day.load_event_injury_map(game_id)
+    injury_map = game_day.merge_injury_maps(injury_map, event_injury_map)
+    injury_ok = bool(injury_diag.get("ok") or event_injury_diag.get("ok"))
     away = resolve_team_qb_identity(
         _safe(game.get("away_abbr")),
         _safe(game.get("away_team"), "Away"),
@@ -156,6 +162,7 @@ def resolve_matchup_identity(game: dict, season_year: int) -> dict:
         "reason": "" if ready else "one or both verified depth QB1 identities are unresolved",
         "game_id": game_id,
         "injury_feed_ok": injury_ok,
+        "event_injury_http": event_injury_diag.get("http"),
         "injury_http": injury_diag.get("http"),
         "away": away,
         "home": home,
