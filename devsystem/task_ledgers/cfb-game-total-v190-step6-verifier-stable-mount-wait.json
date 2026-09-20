@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v190-step6-verifier-stable-mount-wait",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V190 verifier-only hotfix for College Football Game Total Step 6 production certification. V189 runtime diagnostics proved the live Streamlit app is healthy, connected, and renders the certified Step 6 DOM with READY and 100% coverage. The remaining verifier bug is that _wait_for_live_step6 reloads the page every 5 seconds, resetting Streamlit Cloud's 10-25 second auth/session/iframe mount before completion. Remove the reload loop and poll the same live page instead. Preserve all product/data/model/router/render code and all strict certification assertions.",
+  "proof_target": "The production verifier must navigate once, poll the existing Streamlit page/frames without page.reload(), locate the live Step 6 root, and retain strict requirements for READY state, 100% coverage, exactly 12 Step 6 stat tiles, exactly 12 ready tiles, no DATA LIMITED, sportsbook influence 0.0%, projection mutation OFF, and event/date persistence. After merge, one live production verifier pass completes Step 7 and the task stops.",
+  "internal_steps": {
+    "1": "Freeze all upstream GREEN layers.",
+    "2": "Use V189 evidence to identify verifier-induced reload resets as the only RED layer.",
+    "3": "Remove repeated page.reload from the mount wait loop.",
+    "4": "Poll the same page every 2 seconds while Streamlit completes auth/session/frame mount.",
+    "5": "Lock the no-reload behavior in regression tests.",
+    "6": "Run verifier/DevSystem gates, merge, then require one live READY/100%/12-of-12 pass and stop."
+  }
+}
