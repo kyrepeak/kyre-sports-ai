@@ -170,17 +170,21 @@ def test_slate_v2_uses_exact_frozen_math_owners():
     assert slate_v2.model_input.MAY_MODIFY_PROJECTION is False
 
 
-def test_page_v20_temporarily_swaps_only_compact_slate_owner():
-    original = page_v20.compact_owner.frozen_page.slate
+def test_page_v20_temporarily_swaps_slate_and_truthful_hero():
+    original_slate = page_v20.compact_owner.frozen_page.slate
+    original_hero = page_v20.compact_owner._game_total_hero_html
     seen = {}
 
     def callback():
-        seen["during"] = page_v20.compact_owner.frozen_page.slate
+        seen["slate"] = page_v20.compact_owner.frozen_page.slate
+        seen["hero"] = page_v20.compact_owner._game_total_hero_html
         return "ok"
 
     assert page_v20._render_with_v20_slate(callback) == "ok"
-    assert seen["during"] is slate_v2
-    assert page_v20.compact_owner.frozen_page.slate is original
+    assert seen["slate"] is slate_v2
+    assert seen["hero"] is page_v20._game_total_hero_html_v20
+    assert page_v20.compact_owner.frozen_page.slate is original_slate
+    assert page_v20.compact_owner._game_total_hero_html is original_hero
 
 
 def test_step6_certification_stays_on_v19():
@@ -215,3 +219,18 @@ def test_app_bootstrap_uses_v165_and_keeps_frozen_compatibility_strings():
         "from streamlit_memory_lazy_router_v163 import "
         "record_bootstrap_import_ms, render_app"
     ) in source
+
+
+def test_page_v20_hero_reports_ready_not_missing_count():
+    html = page_v20._game_total_hero_html_v20(
+        raw={},
+        final={},
+        display_game={"market_total": 52.5},
+        statuses={},
+        ready_count=3,
+    )
+    assert "3/12 Data Check" in html
+    assert "9 required checks pending" in html
+    assert "Projection unavailable" in html
+    assert "Market verified • model projection pending" in html
+    assert "Market total unavailable" not in html
