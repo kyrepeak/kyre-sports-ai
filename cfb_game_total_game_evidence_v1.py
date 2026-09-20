@@ -142,8 +142,18 @@ def _verified_environment_cache(
     except Exception:
         return {}, {}
 
-    rows = payload.get("events") if isinstance(payload, Mapping) else []
-    if not isinstance(rows, list):
+    raw_events = payload.get("events") if isinstance(payload, Mapping) else []
+    if isinstance(raw_events, Mapping):
+        rows = [
+            row for row in raw_events.values()
+            if isinstance(row, Mapping)
+        ]
+    elif isinstance(raw_events, list):
+        rows = [
+            row for row in raw_events
+            if isinstance(row, Mapping)
+        ]
+    else:
         return {}, {}
 
     event_id = _clean(game.get("espn_event_id") or game.get("event_id"))
