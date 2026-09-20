@@ -26,4 +26,6 @@ jobs:
       - name: Run game-day availability unit proof
         run: python -m pytest -q tests/test_nfl_game_day_roster_availability_v1.py
       - name: Run live 32-team roster + Atlanta QB proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: python devsystem/nfl_current_rosters_game_day_v1.py
