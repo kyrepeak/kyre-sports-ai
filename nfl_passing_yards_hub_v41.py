@@ -33,6 +33,7 @@ V8_DATE_KEY = "nfl_passing_yards_v8_date"
 V8_DATE_INPUT_KEY = "nfl_passing_yards_v8_date_input"
 V8_MATCHUP_KEY = "nfl_passing_yards_v8_matchup"
 ROLLING_RESOLVED_KEY = "nfl_passing_yards_v41_resolved_date"
+ROLLING_WIDGET_KEY_PREFIX = "nfl_passing_yards_v41_date_input"
 
 ET = ZoneInfo("America/New_York")
 
@@ -144,11 +145,32 @@ def _selected_date() -> date:
     import streamlit as st
 
     today_et = datetime.now(ET).date()
-    value = st.session_state.get(
-        V8_DATE_INPUT_KEY,
-        st.session_state.get(V8_DATE_KEY, today_et),
-    )
+    # V8_DATE_INPUT_KEY belongs to the legacy Streamlit widget and may be
+    # replayed by an already-open browser session. V41 owns the canonical
+    # selected slate through V8_DATE_KEY instead.
+    value = st.session_state.get(V8_DATE_KEY, today_et)
     return _coerce_date(value, today_et)
+
+
+def _rolling_widget_key(day: date) -> str:
+    resolved = _coerce_date(day, datetime.now(ET).date())
+    return f"{ROLLING_WIDGET_KEY_PREFIX}_{resolved.isoformat()}"
+
+
+def _date_input_proxy(resolved_day: date, original_date_input):
+    """Give only the Passing Yards slate widget a fresh, date-versioned key."""
+    widget_key = _rolling_widget_key(resolved_day)
+
+    def wrapped(label, *args, **kwargs):
+        if (
+            str(label) == "NFL Passing Yards slate date"
+            and kwargs.get("key") == V8_DATE_INPUT_KEY
+        ):
+            kwargs["key"] = widget_key
+            kwargs["value"] = resolved_day
+        return original_date_input(label, *args, **kwargs)
+
+    return wrapped
 
 
 def _prime_next_game_date(
@@ -169,20 +191,33 @@ def _prime_next_game_date(
     if result.get("state") == "FOUND":
         resolved = _coerce_date(result.get("resolved_date"), selected)
         st.session_state[ROLLING_RESOLVED_KEY] = resolved.isoformat()
+        st.session_state[V8_DATE_KEY] = resolved
+
+        # Retire the legacy widget key before V40/V8 render. An already-open
+        # browser can replay that old widget value (the observed 2026-09-19
+        # production failure) even after the server resolved a newer slate.
+        st.session_state.pop(V8_DATE_INPUT_KEY, None)
+
         if resolved != selected:
-            st.session_state[V8_DATE_KEY] = resolved
-            st.session_state[V8_DATE_INPUT_KEY] = resolved
             st.session_state.pop(V8_MATCHUP_KEY, None)
 
     return result
 
 
 def render_nfl_passing_yards_hub() -> None:
-    _prime_next_game_date()
+    result = _prime_next_game_date()
 
+    import streamlit as st
     import nfl_passing_yards_hub_v40 as prior
 
-    return prior.render_nfl_passing_yards_hub()
+    selected = _selected_date()
+    resolved = _coerce_date(result.get("resolved_date"), selected)
+    original_date_input = st.date_input
+    st.date_input = _date_input_proxy(resolved, original_date_input)
+    try:
+        return prior.render_nfl_passing_yards_hub()
+    finally:
+        st.date_input = original_date_input
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
@@ -199,12 +234,15 @@ __all__ = [
     "MODEL_VERSION",
     "PRIMARY_SCHEDULE_SOURCE",
     "ROLLING_RESOLVED_KEY",
+    "ROLLING_WIDGET_KEY_PREFIX",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "V8_DATE_INPUT_KEY",
     "V8_DATE_KEY",
     "V8_MATCHUP_KEY",
+    "_date_input_proxy",
     "_prime_next_game_date",
+    "_rolling_widget_key",
     "resolve_next_play_date",
     "render_nfl_hub",
     "render_nfl_passing_yards_hub",
