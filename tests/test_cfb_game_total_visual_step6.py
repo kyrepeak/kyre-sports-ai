@@ -69,5 +69,5 @@ def test_step6_missing_data_remains_explicit_and_non_synthetic() -> None:
 
 def test_step6_app_boots_certified_game_total_router_successor() -> None:
     app_text = Path("app.py").read_text(encoding="utf-8")
-    expected = "from streamlit_memory_lazy_router_v174 import record_bootstrap_import_ms, render_app"
+    expected = "from streamlit_memory_lazy_router_v175 import record_bootstrap_import_ms, render_app"
     assert expected in app_text
