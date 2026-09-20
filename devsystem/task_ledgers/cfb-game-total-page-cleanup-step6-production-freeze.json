@@ -32,5 +32,16 @@
     ],
     "product_code_changed": false,
     "verifier_only": true
+  },
+  "scheduled_context_verifier_fix": {
+    "reason": "Production renders scheduled context as kickoff time plus date instead of the literal word Scheduled.",
+    "acceptance": [
+      "four nonblank Game Evidence facts",
+      "kickoff fact contains AM ET or PM ET",
+      "kickoff fact contains weekday/date context",
+      "no unavailable Game Evidence field"
+    ],
+    "product_code_changed": false,
+    "verifier_only": true
   }
 }
