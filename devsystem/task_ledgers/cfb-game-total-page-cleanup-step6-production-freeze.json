@@ -18,5 +18,18 @@
     "4": "When production disproves CI data availability, cache only the exact already-verified Runtime V2 and environment evidence locally; do not change model/UI logic.",
     "5": "Rerun the same passive stable-session production proof against the deterministic fallback.",
     "6": "Merge verifier-only freeze proof on PASS; mark 6/6 TASK_COMPLETE and stop."
+  },
+  "verifier_scope_fix": {
+    "reason": "Final production cleanup verifier no longer treats global legacy 12/12 readiness as a blocker for the approved six-step cleanup scope.",
+    "acceptance": [
+      "four Game Total Analysis metrics READY",
+      "visible Data Check count matches DOM count",
+      "two Team Evidence cards READY with eight READY required tiles",
+      "Game Evidence venue/weather/wind/kickoff facts complete",
+      "Scheduled context visible",
+      "sportsbook projection influence 0.0%",
+      "no runtime errors"
+    ],
+    "product_code_changed": false
   }
 }

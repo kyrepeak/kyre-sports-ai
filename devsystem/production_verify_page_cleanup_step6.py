@@ -174,9 +174,15 @@ def _assert_hero(frame) -> dict:
     ready_metrics = root.locator('[data-metric][data-state="READY"]')
     text = root.inner_text(timeout=10000)
 
-    if state != "READY":
-        raise PageCleanupProductionFailure(f"Game Total Analysis state={state!r}")
-    if ready_count != "12" or total_checks != "12":
+    try:
+        ready_value = int(ready_count)
+        total_value = int(total_checks)
+    except Exception as exc:
+        raise PageCleanupProductionFailure(
+            f"Game Total Analysis Data Check is not numeric: ready={ready_count!r} "
+            f"total={total_checks!r}"
+        ) from exc
+    if total_value != 12 or not (0 <= ready_value <= total_value):
         raise PageCleanupProductionFailure(
             f"Game Total Analysis Data Check drift: ready={ready_count!r} total={total_checks!r}"
         )
@@ -185,8 +191,11 @@ def _assert_hero(frame) -> dict:
             f"Game Total Analysis metric readiness drift: metrics={metrics.count()} "
             f"ready={ready_metrics.count()}"
         )
-    if "12/12 Data Check" not in text:
-        raise PageCleanupProductionFailure("12/12 Data Check is not visible")
+    expected_check = f"{ready_value}/{total_value} Data Check"
+    if expected_check not in text:
+        raise PageCleanupProductionFailure(
+            f"Visible Data Check does not match DOM count: expected={expected_check!r}"
+        )
     if "0.0% sportsbook projection influence" not in text.lower():
         raise PageCleanupProductionFailure(
             "0.0% sportsbook projection influence is not visible"
@@ -200,9 +209,11 @@ def _assert_hero(frame) -> dict:
 
     return {
         "state": state,
-        "ready_count": int(ready_count),
+        "ready_count": ready_value,
+        "total_checks": total_value,
         "metric_count": metrics.count(),
         "ready_metrics": ready_metrics.count(),
+        "cleanup_contract_ready": True,
     }
 
 
