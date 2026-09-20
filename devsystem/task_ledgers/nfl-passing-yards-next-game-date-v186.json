@@ -15,9 +15,20 @@
     "sportsbook_projection_influence": 0
   },
   "data_contract": {
-    "required": ["selected_date", "resolved_date", "game_date_has_verified_schedule_evidence"],
+    "required": [
+      "selected_date",
+      "resolved_date",
+      "game_date_has_verified_schedule_evidence"
+    ],
     "primary": "ESPN NFL scoreboard",
     "fallback": "nflverse games.csv",
     "max_forward_days": 7
-  }
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
