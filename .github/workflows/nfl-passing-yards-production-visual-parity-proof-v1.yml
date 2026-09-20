@@ -65,6 +65,29 @@ jobs:
                   market.wait_for(state="visible", timeout=60000)
                   base._choose(page, market, "Passing Yards")
 
+                  # Navigate to one concrete Passing Yards matchup before testing
+                  # the matchup-scoped Why This Projection component.
+                  matchup = base._matchup_combobox(frame)
+                  matchup.click()
+                  chosen = ""
+                  for scope in (frame, page):
+                      try:
+                          options = scope.get_by_role("option")
+                          texts = [text.strip() for text in options.all_inner_texts() if text.strip()]
+                          texts = [text for text in texts if "choose matchup" not in text.casefold()]
+                          if texts:
+                              chosen = texts[0]
+                              break
+                      except Exception:
+                          pass
+                  try:
+                      page.keyboard.press("Escape")
+                  except Exception:
+                      pass
+                  if not chosen:
+                      raise AssertionError("local visual verifier could not resolve a concrete Passing Yards matchup")
+                  base._choose(page, matchup, chosen)
+
                   panel = frame.locator('section[data-reference-why-projection="true"]')
                   deadline = time.monotonic() + 180
                   observed = {}
