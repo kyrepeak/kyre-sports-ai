@@ -16,6 +16,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from sports_api import nfl_prop_player_eligibility_v1 as prop_eligibility
+
 ESPN_SITE_BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl"
 ESPN_SITE_ALTERNATE_BASE = "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl"
 ESPN_HEADERS = {
@@ -139,36 +141,20 @@ def _event_identity(summary: dict[str, Any], requested_event_id: str) -> tuple[i
     return year, teams
 
 
-def _roster(team_id: str) -> dict[str, dict[str, str]]:
-    payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/roster")
-    found: dict[str, dict[str, str]] = {}
-
-    def walk(value: Any) -> None:
-        if isinstance(value, list):
-            for item in value:
-                walk(item)
-            return
-        if not isinstance(value, dict):
-            return
-        athlete_id = _text(value.get("id"))
-        position = value.get("position") or {}
-        pos = _text(position.get("abbreviation") if isinstance(position, dict) else "").upper()
-        name = _text(value.get("displayName") or value.get("fullName"))
-        if athlete_id.isdigit() and name and pos in ELIGIBLE_RECEIVER_POSITIONS:
-            found[athlete_id] = {
-                "official_athlete_id": athlete_id,
-                "player_name": name,
-                "position": pos,
-            }
-        for child in value.values():
-            if isinstance(child, (dict, list)):
-                walk(child)
-
-    walk(payload.get("athletes") or [])
+def _roster(team_id: str, event_summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    roster_payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/roster")
+    depth_payload = _get_json(f"{ESPN_SITE_BASE}/teams/{team_id}/depthcharts")
+    found, diag = prop_eligibility.build_current_prop_pool(
+        team_id=team_id,
+        roster_payload=roster_payload,
+        depth_payload=depth_payload,
+        event_summary=event_summary,
+        allowed_positions=ELIGIBLE_RECEIVER_POSITIONS,
+    )
     if not found:
-        raise NFLReceivingYardsContextError(f"current ESPN receiving roster unavailable for team {team_id}")
+        reason = _text(diag.get("reason")) or "current depth/game-day prop pool unavailable"
+        raise NFLReceivingYardsContextError(f"{reason} for team {team_id}")
     return found
-
 
 def _completed_game_ids(team_id: str, season: int) -> list[str]:
     """Return recent completed regular-season ESPN event IDs for one exact season."""
@@ -414,13 +400,17 @@ def _pass_defense_from_games(
 def _parallel_team_inputs(
     team_ids: list[str],
     season: int,
+    event_summary: dict[str, Any],
 ) -> tuple[dict[str, dict[str, dict[str, str]]], dict[str, tuple[int, list[str]]]]:
     """Fetch independent current-roster + schedule-baseline inputs concurrently."""
     rosters: dict[str, dict[str, dict[str, str]]] = {}
     baselines: dict[str, tuple[int, list[str]]] = {}
     workers = max(1, min(MAX_PARALLEL_ESPN_REQUESTS, len(team_ids) * 2))
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="nfl-recv-input") as pool:
-        roster_futures = {team_id: pool.submit(_roster, team_id) for team_id in team_ids}
+        roster_futures = {
+            team_id: pool.submit(_roster, team_id, event_summary)
+            for team_id in team_ids
+        }
         baseline_futures = {
             team_id: pool.submit(_baseline_game_ids, team_id, season)
             for team_id in team_ids
@@ -466,7 +456,7 @@ def collect_nfl_receiving_yards_context(event_id: str) -> dict[str, Any]:
     season, teams = _event_identity(event, event_id)
     team_ids = [row["official_team_id"] for row in teams]
 
-    rosters, baselines = _parallel_team_inputs(team_ids, season)
+    rosters, baselines = _parallel_team_inputs(team_ids, season, event)
 
     all_game_ids: list[str] = []
     for team_id in team_ids:
