@@ -313,7 +313,8 @@ jobs:
             tests/test_cfb_game_total_sport_nav_step2.py \
             tests/test_cfb_game_total_sport_nav_step3.py \
             tests/test_cfb_game_total_sport_nav_step4_final.py \
-            tests/test_sport_nav_dropdown_category_contract_v1.py
+            tests/test_sport_nav_dropdown_category_contract_v1.py \
+            tests/test_sport_nav_dropdown_step2_ui.py
 
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
