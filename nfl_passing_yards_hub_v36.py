@@ -51,6 +51,55 @@ _COMPACT_DASHBOARD_CSS = r'''
 .kpass36-chip,.kpass36-reason{display:inline-flex;align-items:center;gap:5px;border:1px solid #334155;border-radius:999px;background:#111827;padding:4px 7px;color:#cbd5e1;font-size:.43rem;font-weight:900;letter-spacing:.035em;white-space:nowrap}
 .kpass36-tone-green{border-color:rgba(74,222,128,.48)!important;background:rgba(22,101,52,.18)!important;color:#86efac!important}.kpass36-tone-red{border-color:rgba(251,113,133,.48)!important;background:rgba(159,18,57,.16)!important;color:#fda4af!important}.kpass36-tone-amber{border-color:rgba(251,191,36,.48)!important;background:rgba(146,64,14,.16)!important;color:#fde68a!important}.kpass36-tone-blue{border-color:rgba(96,165,250,.48)!important;background:rgba(30,64,175,.16)!important;color:#bfdbfe!important}.kpass36-tone-purple{border-color:rgba(167,139,250,.52)!important;background:rgba(91,33,182,.18)!important;color:#ddd6fe!important}.kpass36-tone-gray{border-color:#475569!important;background:#111827!important;color:#cbd5e1!important}
 .kpass36-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px 12px 4px}.kpass36-metric{min-width:0;border:1px solid #2a3447;border-radius:14px;background:#0b111b;padding:8px}.kpass36-metrichead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 1px 6px}.kpass36-metrichead b{font-size:.52rem;letter-spacing:.05em;text-transform:uppercase}.kpass36-projection{border-color:rgba(167,139,250,.36)}.kpass36-projection .kpass36-metrichead b{color:#c4b5fd}.kpass36-market{border-color:rgba(96,165,250,.34)}.kpass36-market .kpass36-metrichead b{color:#93c5fd}
+.kpass36-whyintro{
+  position:relative;overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;gap:18px;margin:8px 0 18px;padding:18px 20px;
+  border:1px solid rgba(59,130,246,.72);border-radius:26px;
+  background:
+    radial-gradient(circle at 82% 0%,rgba(14,165,233,.16),transparent 34%),
+    radial-gradient(circle at 12% 100%,rgba(79,70,229,.14),transparent 32%),
+    linear-gradient(135deg,rgba(8,24,53,.98) 0%,rgba(5,17,39,.98) 58%,rgba(7,28,55,.98) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(96,165,250,.12),
+    inset 0 1px 0 rgba(255,255,255,.05),
+    0 0 34px rgba(37,99,235,.18),
+    0 18px 44px rgba(0,0,0,.28);
+}
+.kpass36-whyintro:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(110deg,rgba(255,255,255,.045),transparent 26%,transparent 72%,rgba(56,189,248,.05));
+}
+.kpass36-whybrain{
+  position:relative;z-index:1;width:68px;height:68px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1;
+  border:1px solid rgba(129,92,246,.86);
+  background:
+    radial-gradient(circle at 35% 25%,rgba(192,132,252,.30),transparent 34%),
+    linear-gradient(145deg,rgba(67,56,202,.72),rgba(20,25,64,.96));
+  box-shadow:
+    inset 0 0 24px rgba(168,85,247,.20),
+    0 0 0 5px rgba(99,102,241,.07),
+    0 0 28px rgba(99,102,241,.28);
+  text-shadow:0 0 16px rgba(244,114,182,.55);
+}
+.kpass36-whycopy{position:relative;z-index:1;min-width:0}
+.kpass36-whyheadline{
+  color:#fff;font-size:clamp(1.18rem,2.1vw,1.72rem);font-weight:950;
+  letter-spacing:-.025em;line-height:1.02;margin:0;
+}
+.kpass36-whysub{
+  color:#b8c4d8;font-size:.76rem;line-height:1.45;margin-top:6px;max-width:620px;
+}
+.kpass36-whypill{
+  position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;
+  min-height:46px;padding:0 22px;border-radius:999px;white-space:nowrap;
+  border:1px solid rgba(56,189,248,.95);
+  background:linear-gradient(135deg,rgba(30,64,175,.72),rgba(2,132,199,.45));
+  color:#f8fbff;font-size:.68rem;font-weight:950;letter-spacing:.06em;
+  box-shadow:
+    inset 0 0 0 1px rgba(147,197,253,.12),
+    0 0 18px rgba(14,165,233,.24);
+}
 .kpass36-why{margin:8px 12px 10px;padding:10px;border:1px solid #293446;border-radius:14px;background:#0b1119}.kpass36-whytitle{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.kpass36-whytitle b{color:#f8fafc;font-size:.62rem}.kpass36-whytitle span{color:#64748b;font-size:.42rem}.kpass36-reasons{display:flex;gap:6px;flex-wrap:wrap}.kpass36-reason{font-size:.42rem;padding:4px 7px}
 .kpass36-evidence{padding:0 12px 12px}.kpass36-evidence>details{margin-top:7px;border:1px solid #273244;border-radius:12px;background:#0a1018;overflow:hidden}.kpass36-evidence>details[open]{border-color:#3a465c}.kpass36-evidence summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;color:#cbd5e1;font-size:.5rem;font-weight:900;letter-spacing:.025em}.kpass36-evidence summary::-webkit-details-marker{display:none}.kpass36-evidence summary:after{content:'＋';color:#64748b;font-size:.72rem}.kpass36-evidence details[open] summary:after{content:'−';color:#c4b5fd}.kpass36-evidencebody{padding:0 8px 9px;border-top:1px solid #202938}.kpass36-evidencehint{color:#64748b;font-size:.4rem;font-weight:800}
 .kpass36-missing{border:1px dashed #475569;border-radius:10px;background:#0b1118;padding:9px;color:#94a3b8;font-size:.46rem;line-height:1.45}
@@ -59,7 +108,7 @@ _COMPACT_DASHBOARD_CSS = r'''
 .kpass36-projection section.kpy-proj{border-color:rgba(167,139,250,.55)!important}.kpass36-market section.kpy10-card{border-color:rgba(96,165,250,.52)!important}.kpass36-evidence section.kpy-pressure{border-color:rgba(251,191,36,.42)!important}.kpass36-evidence section.kpy-env{border-color:rgba(96,165,250,.38)!important}.kpass36-evidence .kpass30-profile{border-color:rgba(96,165,250,.38)!important}.kpass36-evidence section.kpy-personnel{border-color:#475569!important}
 .kpass36-hero .kpy-envteams{grid-template-columns:1fr!important}.kpass36-hero .kpy9-q{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 @media(max-width:900px){.kpass36-grid{grid-template-columns:1fr}.kpass36-matchup{align-items:flex-start;flex-direction:column}.kpass36-matchupchips{justify-content:flex-start}.kpass36-prelude{align-items:flex-start;flex-direction:column}.kpass36-preludechips{justify-content:flex-start}.kpass36-hero{border-radius:17px}}
-@media(max-width:640px){.kpass36-metrics{grid-template-columns:1fr}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}}
+@media(max-width:640px){.kpass36-whyintro{grid-template-columns:auto 1fr;gap:12px;padding:15px 14px;border-radius:21px}.kpass36-whybrain{width:56px;height:56px;font-size:28px}.kpass36-whypill{grid-column:1/-1;width:100%;min-height:42px}.kpass36-whysub{font-size:.67rem}.kpass36-metrics{grid-template-columns:1fr}.kpass36-herotop,.kpass36-metrics,.kpass36-evidence{padding-left:9px;padding-right:9px}.kpass36-why{margin-left:9px;margin-right:9px}.kpass36-chip,.kpass36-reason{white-space:normal}.kpass36-hero .kpy9-q{grid-template-columns:1fr 1fr!important}}
 </style>
 '''
 
@@ -182,6 +231,16 @@ def _compact_dashboard_html(captured: dict[str, list[str]], matchup: dict[str, s
     return (
         '<section class="kpass36-dashboard">'
         + _matchup_header(matchup)
+        + (
+            '<section class="kpass36-whyintro" data-why-projection-header="true">'
+            '<div class="kpass36-whybrain" aria-hidden="true">🧠</div>'
+            '<div class="kpass36-whycopy">'
+            '<div class="kpass36-whyheadline">Why This Projection</div>'
+            '<div class="kpass36-whysub">Fast read of the exact certified drivers already calculated below — no extra model pass.</div>'
+            '</div>'
+            '<div class="kpass36-whypill">RESULT → REASONS</div>'
+            '</section>'
+        )
         + '<div class="kpass36-grid">'
         + _compact_player(captured, 0)
         + _compact_player(captured, 1)
