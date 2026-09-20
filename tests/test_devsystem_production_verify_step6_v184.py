@@ -27,8 +27,12 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert '"401856685"' in module_source
     assert "for index, candidate in enumerate(CERT_CANDIDATES" in source
     assert "_streamlit_cert_paths(" in source
-    assert "\"embedded\"" in inspect.getsource(verifier._streamlit_cert_paths)
-    assert "\"/~/+/?\"" in inspect.getsource(verifier._streamlit_cert_paths)
+    path_source = inspect.getsource(verifier._streamlit_cert_paths)
+    assert "\"official_embed\"" in path_source
+    assert "\"&embed=true\"" in path_source
+    assert "\"embedded_internal\"" in path_source
+    assert "\"/~/+/?\"" in path_source
+    assert "_wake_streamlit_if_needed(page)" in source
     assert "\"access_path\"" in source
     assert 'CERT_QUERY_KEY: "1"' in source
     assert 'data-testid="gt184-step6-cert-surface"' in source
@@ -59,15 +63,27 @@ def test_v184_step6_production_markers_are_stable():
     assert verifier.GREEN_MARKER == "CFB_GAME_TOTAL_V184_STEP6_PRODUCTION_GREEN"
 
 
-def test_v188_streamlit_cert_paths_fail_over_without_weakening_contract():
+def test_v189_streamlit_cert_paths_fail_over_without_weakening_contract():
     paths = verifier._streamlit_cert_paths(
         "https://kyre-sports-ai.streamlit.app",
         "ks_cfb_step6_cert=1&ks_cfb_game_total_event_id=401869940",
         210.0,
     )
-    assert len(paths) == 2
+    assert len(paths) == 3
     assert paths[0][0] == "shell"
-    assert paths[1][0] == "embedded"
-    assert "/~/+/?" in paths[1][1]
-    assert paths[0][2] <= 45.0
-    assert paths[1][2] >= 30.0
+    assert paths[1][0] == "official_embed"
+    assert "embed=true" in paths[1][1]
+    assert paths[2][0] == "embedded_internal"
+    assert "/~/+/?" in paths[2][1]
+    assert paths[0][2] <= 30.0
+    assert paths[1][2] >= 35.0
+    assert paths[2][2] >= 20.0
+
+
+def test_v189_streamlit_wake_and_reload_paths_are_bounded():
+    wake_source = inspect.getsource(verifier._wake_streamlit_if_needed)
+    wait_source = inspect.getsource(verifier._wait_for_live_step6)
+    assert "Yes, get this app back up!" in wake_source
+    assert "Get this app back up" in wake_source
+    assert "_wake_streamlit_if_needed(page)" in wait_source
+    assert "timeout=min(30000, remaining_ms)" in wait_source

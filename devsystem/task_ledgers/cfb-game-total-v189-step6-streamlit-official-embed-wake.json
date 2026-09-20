@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v189-step6-streamlit-official-embed-wake",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V189 verifier-only Streamlit Community Cloud resilience patch for College Football Game Total Step 6 production certification. V188 proved the normal shell and internal /~/+/ path can both return blank when Community Cloud does not mount the app surface. Add the officially supported public-app embed=true route as the primary fallback, retain the internal route as a last resort, click the documented sleeping-app wake action when present, and bound reload time so a dead shell cannot monopolize the certification window. Preserve all product code, Step 6 normalized data/model logic, V185 visual presentation, V186/V187/V188 behavior, strict READY/100%/12-of-12 assertions, sportsbook influence 0.0%, and projection mutation OFF.",
+  "proof_target": "The verifier must try normal shell, official embed=true, then internal embedded route; wake a sleeping Community Cloud app when the documented get-this-app-back-up control is present; keep reload waits bounded; and in every access path enforce the same live Step 6 READY state, 100% coverage, 12 total tiles, 12 ready tiles, no DATA LIMITED, sportsbook influence 0.0%, projection mutation OFF, and event/date persistence. Branch CI must be GREEN before merge and push-to-main production verification must pass live.",
+  "internal_steps": {
+    "1": "Use Render health plus V188 failure evidence to rule out API/data/model causes.",
+    "2": "Adopt Streamlit Community Cloud's documented embed=true access mode as a supported fallback.",
+    "3": "Add sleeping-app wake handling using the documented get-this-app-back-up control.",
+    "4": "Retain internal embedded route only as final fallback and cap reload waits.",
+    "5": "Lock path ordering, wake behavior, bounded waits, and strict Step 6 assertions in regression tests.",
+    "6": "Run targeted CI, merge only if GREEN, then require live production READY/100%/12-of-12 proof."
+  }
+}

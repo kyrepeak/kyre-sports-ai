@@ -69,12 +69,30 @@ def _load_streamlit_url() -> str:
 
 def _streamlit_cert_paths(streamlit_url: str, query: str, total_wait: float):
     base = streamlit_url.rstrip("/")
-    shell_wait = min(45.0, max(15.0, float(total_wait) * 0.25))
-    embedded_wait = max(30.0, float(total_wait) - shell_wait)
+    total_wait = float(total_wait)
+    shell_wait = min(30.0, max(10.0, total_wait * 0.10))
+    official_embed_wait = max(35.0, total_wait * 0.60)
+    internal_wait = max(20.0, total_wait - shell_wait - official_embed_wait)
     return (
         ("shell", base + "/?" + query, shell_wait),
-        ("embedded", base + "/~/+/?" + query, embedded_wait),
+        ("official_embed", base + "/?" + query + "&embed=true", official_embed_wait),
+        ("embedded_internal", base + "/~/+/?" + query, internal_wait),
     )
+
+
+def _wake_streamlit_if_needed(page) -> bool:
+    labels = ("Yes, get this app back up!", "Get this app back up")
+    for frame in page.frames:
+        for label in labels:
+            try:
+                target = frame.get_by_text(label, exact=False)
+                if target.count() > 0:
+                    target.first.click(timeout=5000)
+                    page.wait_for_timeout(5000)
+                    return True
+            except Exception:
+                continue
+    return False
 
 
 def _scan_step6_frame(page):
@@ -117,12 +135,22 @@ def _wait_for_live_step6(page, timeout_seconds: float = 300.0):
             last_scans = scans
             if frame is not None and root is not None:
                 return frame, root, body, scans
+            if _wake_streamlit_if_needed(page):
+                last_error = "Streamlit sleeping app wake action clicked"
+                continue
             last_error = "V184 Step 6 root not live yet"
         except Exception as exc:
             last_error = f"{type(exc).__name__}: {exc}"[:1200]
 
-        page.wait_for_timeout(5000)
-        page.reload(wait_until="domcontentloaded", timeout=120000)
+        page.wait_for_timeout(3000)
+        remaining_ms = max(5000, int((deadline - time.monotonic()) * 1000))
+        try:
+            page.reload(
+                wait_until="domcontentloaded",
+                timeout=min(30000, remaining_ms),
+            )
+        except Exception as exc:
+            last_error = f"reload {type(exc).__name__}: {exc}"[:1200]
 
     raise Step6ProductionVerificationFailure(
         "V184 Step 6 production surface did not become live: "
@@ -233,8 +261,9 @@ def verify_live_step6(
                         page.goto(
                             target_url,
                             wait_until="domcontentloaded",
-                            timeout=120000,
+                            timeout=60000,
                         )
+                        _wake_streamlit_if_needed(page)
                         frame, root, body, scans = _wait_for_live_step6(
                             page,
                             timeout_seconds=path_wait,
