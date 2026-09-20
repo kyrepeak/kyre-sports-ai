@@ -317,7 +317,8 @@ jobs:
             tests/test_sport_nav_dropdown_step2_ui.py \
             tests/test_sport_nav_dropdown_step3_functional.py \
             tests/test_sport_nav_dropdown_step4_final.py \
-            tests/test_cfb_game_total_live_tap_router_v181.py
+            tests/test_cfb_game_total_live_tap_router_v181.py \
+            tests/test_cfb_sport_nav_raw_html_safari_fix.py
 
   mlb-critical:
     needs: [classify, workflow-hygiene, permanent-contract, regression-shield]
