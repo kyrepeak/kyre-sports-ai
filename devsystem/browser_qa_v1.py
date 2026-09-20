@@ -288,6 +288,33 @@ def _wait_for_text(frame, text: str, timeout_seconds: float = 45.0) -> str:
     return frame.locator("body").inner_text(timeout=5000)
 
 
+def _wait_for_either_text(
+    frame,
+    primary_text: str,
+    alternate_text: str,
+    timeout_seconds: float = 45.0,
+) -> str:
+    primary = frame.get_by_text(primary_text, exact=False).first
+    alternate = frame.get_by_text(alternate_text, exact=False).first
+    marker = primary.or_(alternate).first
+    try:
+        marker.wait_for(
+            state="visible",
+            timeout=int(timeout_seconds * 1000),
+        )
+    except Exception as exc:
+        try:
+            body = frame.locator("body").inner_text(timeout=5000)
+        except Exception:
+            body = ""
+        raise BrowserQAFailure(
+            "Timed out waiting for either "
+            f"{primary_text!r} or {alternate_text!r}. "
+            f"Body start={body[:3000]!r}"
+        ) from exc
+    return frame.locator("body").inner_text(timeout=5000)
+
+
 def _read_sport_options(page, frame) -> list[str]:
     combo = frame.get_by_role("combobox").nth(0)
     combo.click()
@@ -377,11 +404,16 @@ def run_browser_qa(
                 timeout=CFB_RERUN_TIMEOUT_MS,
             )
 
-            body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[0], 60.0)
+            terminal_marker = CFB_REQUIRED_MARKERS[-1]
+            body = _wait_for_either_text(
+                frame,
+                terminal_marker,
+                CFB_NO_GAMES_MARKER,
+                60.0,
+            )
             no_games = CFB_NO_GAMES_MARKER in body
 
             if not no_games:
-                body = _wait_for_text(frame, CFB_REQUIRED_MARKERS[-1], 60.0)
                 required_markers = CFB_REQUIRED_MARKERS
             else:
                 required_markers = CFB_REQUIRED_MARKERS[:4]
