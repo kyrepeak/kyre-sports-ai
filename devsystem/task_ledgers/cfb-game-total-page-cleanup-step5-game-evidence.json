@@ -1,7 +1,7 @@
 {
   "version": 2,
   "task_id": "cfb-game-total-page-cleanup-step5-game-evidence",
-  "status": "ACTIVE",
+  "status": "DONE",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
