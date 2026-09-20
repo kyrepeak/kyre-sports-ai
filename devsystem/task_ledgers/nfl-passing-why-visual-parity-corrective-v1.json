@@ -12,5 +12,12 @@
     "data_sources_changed": false,
     "stake_sizing_changed": false,
     "sportsbook_projection_influence": 0
-  }
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
