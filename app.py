@@ -237,7 +237,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v169 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v170 import record_bootstrap_import_ms, render_app
+    # Frozen V169 delegate compatibility: from streamlit_memory_lazy_router_v169 import record_bootstrap_import_ms, render_app
     # Frozen V168 delegate compatibility: from streamlit_memory_lazy_router_v168 import record_bootstrap_import_ms, render_app
     # Frozen V167 delegate compatibility: from streamlit_memory_lazy_router_v167 import record_bootstrap_import_ms, render_app
     # Frozen V166 delegate compatibility: from streamlit_memory_lazy_router_v166 import record_bootstrap_import_ms, render_app
