@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "devsystem/nfl_all_player_props_audit_v1.py"
+      - "devsystem/task_ledgers/nfl-all-player-props-audit-v1.json"
       - ".github/workflows/nfl-all-player-props-audit-v1.yml"
   workflow_dispatch:
 
