@@ -538,7 +538,7 @@ def run_public_cert(
 
             _wait_text(frame, "KYRE SPORTS API BRIDGE — STEP 10 AUTO MARKET", 120000)
             _set_slate_date(page, frame, event["day"])
-            _wait_text(frame, "Choose matchup", 120000)
+            _matchup_combobox(frame)
             step3_matchups = _certify_all_public_matchups(page, frame, expected_games=14)
             chosen_matchup = _select_exact_matchup(page, frame, event)
 
