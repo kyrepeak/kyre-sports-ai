@@ -416,7 +416,10 @@ def run_browser_qa(
             if not no_games:
                 required_markers = CFB_REQUIRED_MARKERS
             else:
-                required_markers = CFB_REQUIRED_MARKERS[:4]
+                required_markers = (
+                    CFB_REQUIRED_MARKERS[0],
+                    *CFB_REQUIRED_MARKERS[1:4],
+                )
 
             missing_markers = [
                 marker for marker in required_markers
