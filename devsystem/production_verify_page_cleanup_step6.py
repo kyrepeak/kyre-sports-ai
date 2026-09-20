@@ -260,11 +260,30 @@ def _assert_team_evidence(frame) -> dict:
             f"Team Evidence stat readiness drift: stats={stats.count()} "
             f"ready={ready_stats.count()}"
         )
-    for token in ("Purdue", "UCLA", "PPG", "Allowed / Game", "Point Diff / Game", "Recent Form"):
-        if token not in text:
+    required_teams = ("Purdue", "UCLA")
+    team_counts = {}
+    for team in required_teams:
+        count = root.locator(
+            f'.gt204-card[data-team="{team}"][data-state="READY"]'
+        ).count()
+        team_counts[team] = count
+        if count != 1:
             raise PageCleanupProductionFailure(
-                f"Team Evidence required token missing: {token!r}"
+                f"Team Evidence READY card drift for {team}: count={count}"
             )
+
+    required_stats = ("ppg", "allowed", "point-diff", "recent-form")
+    stat_counts = {}
+    for key in required_stats:
+        count = root.locator(
+            f'.gt204-stat[data-stat="{key}"][data-state="READY"]'
+        ).count()
+        stat_counts[key] = count
+        if count != 2:
+            raise PageCleanupProductionFailure(
+                f"Team Evidence READY stat drift for {key}: count={count}"
+            )
+
     if "Pending" in text:
         raise PageCleanupProductionFailure("Team Evidence still contains Pending")
 
@@ -273,6 +292,8 @@ def _assert_team_evidence(frame) -> dict:
         "ready_cards": ready_cards.count(),
         "stat_count": stats.count(),
         "ready_stats": ready_stats.count(),
+        "team_counts": team_counts,
+        "required_stat_counts": stat_counts,
     }
 
 

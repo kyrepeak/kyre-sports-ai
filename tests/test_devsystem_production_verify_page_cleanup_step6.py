@@ -38,6 +38,11 @@ def test_step6_verifier_requires_all_cleanup_surfaces():
     assert "12/12 Data Check" not in hero
     assert "ready_cards.count() != 2" in teams
     assert "ready_stats.count() != 8" in teams
+    assert 'required_teams = ("Purdue", "UCLA")' in teams
+    assert 'required_stats = ("ppg", "allowed", "point-diff", "recent-form")' in teams
+    assert 'data-team="{team}"' in teams
+    assert 'data-stat="{key}"' in teams
+    assert "Allowed / Game" not in teams
     assert "Rose Bowl" in game
     assert '"unavailable" in lowered' in game
     assert "Scheduled" in game
