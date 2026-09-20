@@ -1,0 +1,116 @@
+name: NFL Passing Yards Live Production Date Proof
+
+on:
+  push:
+    branches:
+      - monster/v186-live-production-date-proof
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-production-date-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove live NFL Passing Yards auto date
+        shell: bash
+        run: |
+          python - <<'PY'
+          from datetime import datetime
+          import json
+          import re
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://kyre-sports-ai.streamlit.app/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          OUT = Path("artifacts/nfl-passing-yards-live-date")
+          OUT.mkdir(parents=True, exist_ok=True)
+
+          def body_text(frame):
+              try:
+                  return frame.locator("body").inner_text(timeout=3000)
+              except Exception:
+                  return ""
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page(viewport={"width": 1440, "height": 1300})
+              page.goto(URL, wait_until="domcontentloaded", timeout=90000)
+
+              chosen = None
+              body = ""
+              for _ in range(120):
+                  page.wait_for_timeout(1000)
+                  frames = list(page.frames)
+                  candidates = [(frame, body_text(frame)) for frame in frames]
+                  for frame, text in candidates:
+                      if "NFL Passing Yards" in text and "ET Slate" in text:
+                          chosen = frame
+                          body = text
+                          break
+                  if chosen:
+                      break
+
+              page.screenshot(path=str(OUT / "live.png"), full_page=True)
+              (OUT / "body.txt").write_text(body, encoding="utf-8")
+
+              if not chosen:
+                  frame_dump = [
+                      {"url": f.url, "body_start": body_text(f)[:1200]}
+                      for f in page.frames
+                  ]
+                  (OUT / "frames.json").write_text(json.dumps(frame_dump, indent=2), encoding="utf-8")
+                  raise AssertionError("NFL Passing Yards production surface did not render")
+
+              date_match = re.search(r"(20\d{2}-\d{2}-\d{2})\s*ET\s+SLATE", body, re.I)
+              games_match = re.search(r"(\d+)\s*GAMES", body, re.I)
+
+              if not date_match:
+                  raise AssertionError(f"ET Slate date not found in live body: {body[:3000]}")
+              if not games_match:
+                  raise AssertionError(f"Games count not found in live body: {body[:3000]}")
+
+              slate_date = date_match.group(1)
+              games = int(games_match.group(1))
+              today_et = datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+
+              proof = {
+                  "url": URL,
+                  "today_et": today_et,
+                  "slate_date": slate_date,
+                  "games": games,
+                  "stale_date_absent": slate_date != "2026-09-19",
+                  "nonempty_slate": games > 0,
+              }
+              (OUT / "proof.json").write_text(json.dumps(proof, indent=2), encoding="utf-8")
+              print(json.dumps(proof, indent=2))
+
+              if slate_date == "2026-09-19":
+                  raise AssertionError("Live production is still stuck on stale 2026-09-19")
+              if games <= 0:
+                  raise AssertionError(f"Live production selected {slate_date} but still has 0 games")
+              if slate_date < today_et:
+                  raise AssertionError(f"Live production selected past date {slate_date}; ET today is {today_et}")
+
+              print("NFL_PASSING_YARDS_LIVE_PRODUCTION_DATE_GREEN")
+              browser.close()
+          PY
+      - name: Upload live proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-passing-yards-live-production-date-proof
+          path: artifacts/nfl-passing-yards-live-date
+          if-no-files-found: warn
+          retention-days: 3
