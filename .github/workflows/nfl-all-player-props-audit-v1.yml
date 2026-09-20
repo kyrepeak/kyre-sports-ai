@@ -1,0 +1,26 @@
+name: NFL All Player Props Audit V1
+
+on:
+  pull_request:
+    paths:
+      - "devsystem/nfl_all_player_props_audit_v1.py"
+      - ".github/workflows/nfl-all-player-props-audit-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-proof:
+    name: nfl-all-player-props-audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Audit every current NFL player prop identity
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_all_player_props_audit_v1.py
