@@ -54,6 +54,12 @@ def main() -> int:
             teams += 1
             roster = rush._get_json(f"{rush.ESPN_SITE_BASE}/teams/{team_id}/roster")
             depth = rush._get_json(f"{rush.ESPN_SITE_BASE}/teams/{team_id}/depthcharts")
+            if not elig.parse_depth_chart(depth, RUSH_POSITIONS):
+                season = (summary.get("header") or {}).get("season") or {}
+                year = int(season.get("year") or 2026)
+                depth = rush._get_json(
+                    f"https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/{year}/teams/{team_id}/depthcharts"
+                )
 
             rush_pool, rush_diag = elig.build_current_prop_pool(
                 team_id=team_id,
