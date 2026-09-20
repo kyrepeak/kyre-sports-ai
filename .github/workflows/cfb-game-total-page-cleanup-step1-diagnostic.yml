@@ -1,0 +1,146 @@
+name: CFB Game Total page cleanup Step 1 diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cfb-game-total-page-cleanup-step1-diagnostic.yml"
+      - "devsystem/task_ledgers/cfb-game-total-page-cleanup-step1-diagnostic.json"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-purdue-ucla:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+      - name: Trace Purdue UCLA through live Game Total paths
+        run: |
+          mkdir -p artifacts/page-cleanup-step1
+          python - <<'PY' | tee artifacts/page-cleanup-step1/purdue_ucla_diag.json
+          import json
+          import cfb_game_total_clean_page_v9 as page
+          import cfb_game_total_step3_form_v1 as step3
+
+          day = "2026-09-19"
+          games, schedule_diag = page.frozen_page.frozen_v2.frozen_v1.schedule.load_with_diagnostics(day)
+          matches = [
+              dict(g) for g in games
+              if str(g.get("away_team") or "").strip().casefold() == "purdue"
+              and str(g.get("home_team") or "").strip().casefold() == "ucla"
+          ]
+          if len(matches) != 1:
+              raise RuntimeError(f"Expected one Purdue @ UCLA row, found {len(matches)}")
+          game = matches[0]
+          result = page.frozen_page.slate.analyze_game(game, day)
+          away = dict(result.get("away") or {})
+          home = dict(result.get("home") or {})
+          raw = dict(result.get("raw") or {})
+          final = dict(result.get("final") or {})
+
+          display_game, display_away, display_home, display_diag = page.runtime_display.reconcile_display_bundle(
+              game, day, away, home
+          )
+          visuals = page.logo_v3.resolve_visuals(display_game)
+          identity = page.step_owner.prior.prior.prior._identity_state(
+              display_game, display_away, display_home, visuals
+          )
+          away_evidence = page.step_owner.prior._team_evidence_state(display_away, display_game, "away")
+          home_evidence = page.step_owner.prior._team_evidence_state(display_home, display_game, "home")
+          statuses = page.step_owner._existing_step_status(
+              identity, away_evidence, home_evidence, display_game
+          )
+
+          enriched_away, enriched_home, step3_diag = step3.enrich_step3_inputs(
+              identity, away_evidence, home_evidence, display_game
+          )
+          step3_contract = step3.build_step3_contract(identity, enriched_away, enriched_home)
+
+          def team_core(row):
+              q = dict(row.get("data_quality") or {})
+              return {
+                  "team": row.get("team"),
+                  "record": row.get("record"),
+                  "record_text": row.get("record_text"),
+                  "games": int((row.get("record") or {}).get("games") or 0),
+                  "ppg": row.get("ppg"),
+                  "points_allowed_pg": row.get("points_allowed_pg"),
+                  "point_diff_pg": row.get("point_diff_pg"),
+                  "recent_form": row.get("recent_form"),
+                  "official_stat_keys": sorted((row.get("official_stats") or {}).keys()),
+                  "quality_grade": q.get("grade"),
+                  "quality_score": q.get("score"),
+                  "quality_components": q.get("components"),
+                  "data_source": row.get("data_source"),
+              }
+
+          def form_core(row):
+              return {
+                  "team": row.get("team"),
+                  "sample_games": row.get("sample_games"),
+                  "recent_ppg": row.get("recent_ppg"),
+                  "recent_allowed_pg": row.get("recent_allowed_pg"),
+                  "recent_diff_pg": row.get("recent_diff_pg"),
+                  "completed_games": len(row.get("completed_games") or []),
+              }
+
+          payload = {
+              "game": {
+                  "event_id": game.get("event_id") or game.get("espn_event_id") or game.get("game_id"),
+                  "identity_verified": game.get("identity_verified"),
+                  "date_matches_query": game.get("date_matches_query"),
+                  "status": game.get("status"),
+                  "game_date": game.get("game_date") or game.get("date"),
+                  "away_team_id": game.get("away_team_id"),
+                  "home_team_id": game.get("home_team_id"),
+              },
+              "schedule_diag": schedule_diag,
+              "frozen_team_diag": result.get("team_diag"),
+              "frozen_away": team_core(away),
+              "frozen_home": team_core(home),
+              "raw": {
+                  "ready": raw.get("ready"),
+                  "reasons": raw.get("reasons"),
+                  "projected_combined_total": raw.get("projected_combined_total"),
+                  "coverage": raw.get("feature_coverage"),
+                  "reliability": raw.get("reliability"),
+              },
+              "final": {
+                  "ready": final.get("ready"),
+                  "reasons": final.get("reasons"),
+                  "grade": final.get("grade"),
+                  "forecast_strength": final.get("forecast_strength"),
+                  "projected_combined_total": final.get("projected_combined_total"),
+              },
+              "visual_statuses": statuses,
+              "visual_ready_count_1_10": sum(1 for v in statuses.values() if v == "READY"),
+              "display_diag": display_diag,
+              "step3_enriched_away": form_core(enriched_away),
+              "step3_enriched_home": form_core(enriched_home),
+              "step3_contract": {
+                  "state": step3_contract.get("state"),
+                  "ready": step3_contract.get("ready"),
+                  "away_missing_required": (step3_contract.get("away") or {}).get("missing_required"),
+                  "home_missing_required": (step3_contract.get("home") or {}).get("missing_required"),
+              },
+              "step3_diag": step3_diag,
+          }
+          print(json.dumps(payload, indent=2, default=str))
+          PY
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cfb-page-cleanup-step1-diag-${{ github.run_id }}
+          path: artifacts/page-cleanup-step1
+          if-no-files-found: warn
+          retention-days: 7
