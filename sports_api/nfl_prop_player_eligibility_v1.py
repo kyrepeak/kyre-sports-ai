@@ -13,6 +13,7 @@ This module contains no projection, probability, market, ranking, or wager logic
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Iterable
 
 MODEL_VERSION = "nfl_prop_player_eligibility_v1"
@@ -143,9 +144,13 @@ def parse_depth_chart(
     payload: dict[str, Any],
     allowed_positions: set[str] | frozenset[str] | None = None,
 ) -> dict[str, dict[str, Any]]:
+    """Parse both ESPN Site (depthCharts) and ESPN Core (items) depth shapes."""
     allowed = {str(x).upper() for x in allowed_positions} if allowed_positions else None
     found: dict[str, dict[str, Any]] = {}
-    for chart in (payload or {}).get("depthCharts", []) or []:
+    charts = (payload or {}).get("depthCharts")
+    if not isinstance(charts, list):
+        charts = (payload or {}).get("items") or []
+    for chart in charts or []:
         if not isinstance(chart, dict):
             continue
         positions = chart.get("positions") or {}
@@ -161,18 +166,26 @@ def parse_depth_chart(
             ).upper()
             if not pos or (allowed is not None and pos not in allowed):
                 continue
-            for entry in block.get("athletes", []) or []:
+            for idx, entry in enumerate(block.get("athletes", []) or [], start=1):
                 if not isinstance(entry, dict):
                     continue
                 athlete = entry.get("athlete") or {}
-                athlete_id = _text(athlete.get("id"))
-                name = _text(athlete.get("displayName") or athlete.get("fullName"))
-                if not athlete_id.isdigit() or not name:
+                athlete_id = _text(athlete.get("id")) if isinstance(athlete, dict) else ""
+                name = _text(
+                    athlete.get("displayName") or athlete.get("fullName")
+                ) if isinstance(athlete, dict) else ""
+                ref = _text(
+                    athlete.get("$ref") or athlete.get("ref")
+                ) if isinstance(athlete, dict) else _text(athlete)
+                if not athlete_id and ref:
+                    match = re.search(r"/athletes/(\\d+)", ref)
+                    athlete_id = match.group(1) if match else ""
+                if not athlete_id.isdigit():
                     continue
                 try:
-                    rank = int(entry.get("rank") or 99)
+                    rank = int(entry.get("rank") or idx)
                 except (TypeError, ValueError):
-                    rank = 99
+                    rank = idx
                 prior = found.get(athlete_id)
                 if prior is None or rank < int(prior.get("depth_rank") or 99):
                     found[athlete_id] = {
