@@ -17,7 +17,8 @@ def test_v184_step6_production_contract_is_strict_multi_target_and_snapshot_isol
     assert "GAME_SELECTOR_REQUIRED_TEXT" not in wait_source
     assert "_scan_step6_frame(page)" in wait_source
     assert "v163_nav._find_v163_frame" not in wait_source
-    assert "page.reload" in wait_source
+    assert "page.reload" not in wait_source
+    assert "page.wait_for_timeout(2000)" in wait_source
     assert "_wait_for_v164_patch_deployment" not in wait_source
     assert "_wait_for_top_level_selection" not in wait_source
     assert "production_verify_v164_logos" not in module_source
@@ -71,3 +72,10 @@ def test_v188_streamlit_cert_paths_fail_over_without_weakening_contract():
     assert "/~/+/?" in paths[1][1]
     assert paths[0][2] <= 45.0
     assert paths[1][2] >= 30.0
+
+
+def test_v190_wait_for_live_step6_does_not_reset_streamlit_mount():
+    wait_source = inspect.getsource(verifier._wait_for_live_step6)
+    assert "page.reload" not in wait_source
+    assert "_scan_step6_frame(page)" in wait_source
+    assert "page.wait_for_timeout(2000)" in wait_source
