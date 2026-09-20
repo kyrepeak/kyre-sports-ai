@@ -160,3 +160,72 @@ def test_core_depth_shape_extracts_exact_athlete_id_from_ref():
     }
     rows = elig.parse_depth_chart(payload, {"QB"})
     assert rows["12345"]["depth_rank"] == 2
+
+
+def test_league_injury_feed_excludes_player_dropped_from_live_event_summary():
+    roster = {
+        "athletes": [{
+            "position": "Quarterback",
+            "items": [
+                {
+                    "id": "4360423",
+                    "displayName": "Michael Penix Jr.",
+                    "position": {"abbreviation": "QB"},
+                    "status": {"name": "Active"},
+                    "active": True,
+                },
+                {
+                    "id": "2972515",
+                    "displayName": "Cooper Rush",
+                    "position": {"abbreviation": "QB"},
+                    "status": {"name": "Active"},
+                    "active": True,
+                },
+            ],
+        }]
+    }
+    depth = {
+        "depthCharts": [{
+            "positions": {
+                "qb": {
+                    "position": {"abbreviation": "QB"},
+                    "athletes": [
+                        {"rank": 1, "athlete": {"id": "4360423", "displayName": "Michael Penix Jr."}},
+                        {"rank": 2, "athlete": {"id": "2972515", "displayName": "Cooper Rush"}},
+                    ],
+                }
+            }
+        }]
+    }
+    event = {
+        "header": {
+            "competitions": [{
+                "status": {"type": {"state": "in"}},
+                "competitors": [{"team": {"id": "1"}}, {"team": {"id": "2"}}],
+            }]
+        },
+        "injuries": [
+            {"team": {"id": "1"}, "injuries": [{"athlete": {"id": "999"}, "status": "Out"}]},
+            {"team": {"id": "2"}, "injuries": [{"athlete": {"id": "998"}, "status": "Out"}]},
+        ],
+    }
+    league = {
+        "injuries": [{
+            "team": {"id": "1"},
+            "injuries": [{
+                "athlete": {"id": "4360423", "displayName": "Michael Penix Jr."},
+                "status": "Out",
+            }],
+        }]
+    }
+    pool, diag = elig.build_current_prop_pool(
+        team_id="1",
+        roster_payload=roster,
+        depth_payload=depth,
+        event_summary=event,
+        league_injury_payload=league,
+        allowed_positions={"QB"},
+    )
+    assert "4360423" not in pool
+    assert pool["2972515"]["player_name"] == "Cooper Rush"
+    assert diag["league_unavailable_rows"] == 1
