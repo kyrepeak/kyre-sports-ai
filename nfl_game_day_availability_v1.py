@@ -73,6 +73,10 @@ def _status_text(value: Any) -> str:
     return _safe(value)
 
 
+def _status_key(value: Any) -> str:
+    return "".join(ch for ch in _safe(value).upper() if ch.isalnum())
+
+
 def is_prop_eligible_roster_row(row: dict) -> bool:
     """Fail closed on reserve/practice-squad/suspended roster states."""
     active_flag = row.get("active")
@@ -83,12 +87,22 @@ def is_prop_eligible_roster_row(row: dict) -> bool:
         )
         if part
     ).upper()
+    combined_key = _status_key(combined)
 
-    if any(token in combined for token in ROSTER_ACTIVE_OVERRIDE_TOKENS):
+    active_match = any(
+        token in combined or _status_key(token) in combined_key
+        for token in ROSTER_ACTIVE_OVERRIDE_TOKENS
+    )
+    if active_match:
         return active_flag is not False
     if active_flag is False:
         return False
-    if any(token in combined for token in ROSTER_INELIGIBLE_TOKENS):
+
+    ineligible_match = any(
+        token in combined or _status_key(token) in combined_key
+        for token in ROSTER_INELIGIBLE_TOKENS
+    )
+    if ineligible_match:
         return False
     return True
 
