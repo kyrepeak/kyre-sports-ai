@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_step4_final_sport_nav_chain_is_active_and_frozen() -> None:
     app_text = (ROOT / "app.py").read_text(encoding="utf-8")
 
-    assert "from streamlit_memory_lazy_router_v182 import record_bootstrap_import_ms, render_app" in app_text
+    assert "from streamlit_memory_lazy_router_v183 import record_bootstrap_import_ms, render_app" in app_text
     assert router.ACTIVE_PAGE == "cfb_game_total_clean_page_v31"
     assert router.FROZEN_ROUTER == "streamlit_memory_lazy_router_v177"
     assert responsive_page.FROZEN_PRESENTATION == "cfb_game_total_clean_page_v30"
