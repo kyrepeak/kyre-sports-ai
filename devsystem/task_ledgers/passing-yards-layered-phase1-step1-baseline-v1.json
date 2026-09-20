@@ -1,0 +1,20 @@
+{
+  "task_id": "passing-yards-layered-phase1-step1-baseline-v1",
+  "phase": 1,
+  "step": 1,
+  "baseline_product_sha": "794f19326e78dd94b2f0663cb007aee9d673ec6a",
+  "streamlit_entrypoint": "app.py",
+  "active_router": "streamlit_memory_lazy_router_v187",
+  "passing_yards_presentation_owner": "nfl_passing_yards_hub_v16.py",
+  "frozen_behavior": [
+    "projection math",
+    "market logic",
+    "sportsbook influence rules",
+    "data routing",
+    "player identity resolution",
+    "stake sizing protections",
+    "live source behavior"
+  ],
+  "rebuild_scope": "presentation and navigation architecture only",
+  "step1_acceptance": "Baseline is pinned and runtime behavior remains unchanged."
+}
