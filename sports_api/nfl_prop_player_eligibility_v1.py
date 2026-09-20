@@ -220,6 +220,22 @@ def event_team_ids(summary: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(out))
 
 
+def event_team_abbr_to_id(summary: dict[str, Any]) -> dict[str, str]:
+    header = (summary or {}).get("header") or {}
+    competitions = header.get("competitions") or []
+    comp = competitions[0] if competitions and isinstance(competitions[0], dict) else {}
+    out: dict[str, str] = {}
+    for competitor in comp.get("competitors", []) or []:
+        if not isinstance(competitor, dict):
+            continue
+        team = competitor.get("team") or {}
+        team_id = _text(team.get("id"))
+        abbr = _text(team.get("abbreviation")).upper()
+        if team_id.isdigit() and abbr:
+            out[abbr] = team_id
+    return out
+
+
 def league_unavailable_by_team(payload: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     """Normalize ESPN league-wide injuries by exact team ID."""
     by_team: dict[str, list[dict[str, Any]]] = {}
@@ -259,11 +275,14 @@ def league_unavailable_by_team(payload: dict[str, Any]) -> dict[str, list[dict[s
 
 def event_unavailable_by_team(summary: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     by_team: dict[str, list[dict[str, Any]]] = {}
+    abbr_to_id = event_team_abbr_to_id(summary)
     for block in (summary or {}).get("injuries", []) or []:
         if not isinstance(block, dict):
             continue
         team = block.get("team") or {}
         team_id = _text(team.get("id"))
+        if not team_id.isdigit():
+            team_id = abbr_to_id.get(_text(team.get("abbreviation")).upper(), "")
         if not team_id.isdigit():
             continue
         rows = by_team.setdefault(team_id, [])
@@ -392,6 +411,7 @@ __all__ = [
     "event_availability_state",
     "event_game_state",
     "event_team_ids",
+    "event_team_abbr_to_id",
     "event_unavailable_by_team",
     "is_roster_row_eligible",
     "league_unavailable_by_team",
