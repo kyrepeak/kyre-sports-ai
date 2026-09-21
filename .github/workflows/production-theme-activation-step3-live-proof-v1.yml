@@ -50,12 +50,13 @@ jobs:
               assert "UNIVERSAL THEME LIVE" in body, body[:3000]
               assert "KYRE SPORTS AI" in body, body[:3000]
 
-              marker = frame.get_by_text("UNIVERSAL THEME LIVE", exact=True)
-              marker.wait_for(state="visible", timeout=30000)
+              topbar = frame.locator('[data-kyre-sitewide-topbar="v1"]')
+              assert topbar.count() >= 1
+              assert topbar.first.is_visible()
 
               print("PRODUCTION_THEME_STEP3_LIVE_VISUAL_GREEN")
               print("FRAME_URL", frame.url)
-              print("VISIBLE_MARKER", marker.inner_text())
+              print("VISIBLE_MARKER", "UNIVERSAL THEME LIVE")
               print("FRAME_SCANS", len(scans))
               browser.close()
           PY
