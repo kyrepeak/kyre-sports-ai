@@ -128,6 +128,24 @@ jobs:
 
                   frame, initial_scan = _find_app_frame(page)
 
+                  # One deployment-parity probe: capture the source/Fork target
+                  # exposed by the actual public Streamlit frame.
+                  try:
+                      frame_links = frame.locator("a").evaluate_all(
+                          """els => els.map(e => ({
+                              text: (e.innerText || e.textContent || '').trim(),
+                              href: e.href || ''
+                          })).filter(x => x.text || x.href)"""
+                      )
+                  except Exception:
+                      frame_links = []
+                  try:
+                      fork_buttons = frame.get_by_text("Fork", exact=True).count()
+                  except Exception:
+                      fork_buttons = 0
+                  print("STREAMLIT_APP_FRAME_LINKS=" + json.dumps(frame_links))
+                  print("STREAMLIT_APP_FORK_COUNT=" + str(fork_buttons))
+
                   # Deterministic route selection: never certify whatever route
                   # happened to render first on the shared host.
                   _choose(page, frame, 0, "NFL")
