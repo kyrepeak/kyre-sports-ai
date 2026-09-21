@@ -294,7 +294,7 @@ def _analysis_html(
         <div class="kml16-note">Sportsbook prices remain comparison-only • sportsbook influence on model P(win): 0.0% • stake sizing OFF • V15 Step 2 and all frozen analytical ownership remain unchanged.</div>
       </section>
     </div>
-    """).strip()
+    """).strip().replace("\n", "")
 
 
 def _analysis_matchup_html(
