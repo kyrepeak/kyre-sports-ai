@@ -259,7 +259,9 @@ jobs:
                           full_page=True,
                       )
 
-                      missing_step2 = body_markers_missing
+                      # Validate the actual public Step 2 card DOM, not the
+                      # transient broader frame/body snapshot.
+                      missing_step2 = card_markers_missing
                       if missing_step2:
                           raise BrowserQAFailure(
                               "MONEYLINE_STEP2_MARKER: missing "
