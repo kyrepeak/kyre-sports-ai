@@ -519,3 +519,10 @@ def test_router_v188_advances_only_passing_yards_to_v43(monkeypatch) -> None:
     assert v188.FROZEN_ROUTER == "streamlit_memory_lazy_router_v187"
     assert v188.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert v188.MAY_MODIFY_PROJECTION is False
+
+
+def test_app_boots_router_v188_for_layered_passing_yards() -> None:
+    app = _read("app.py")
+    assert "from streamlit_memory_lazy_router_v188 import record_bootstrap_import_ms, render_app" in app
+    assert "STREAMLIT_V188_PASSING_YARDS_LAYERED_PRODUCTION_2026_09_20" in app
+    assert "# Frozen V187 delegate compatibility" in app
