@@ -13,7 +13,8 @@
     "data_logic_changed": false,
     "projection_logic_changed": false,
     "probability_logic_changed": false,
-    "market_logic_changed": false
+    "market_logic_changed": false,
+    "proof_transport_reset": "single_metadata_only_retrigger"
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
