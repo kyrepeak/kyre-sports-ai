@@ -1,0 +1,50 @@
+name: NFL Moneyline Visual Step 1
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v14.py'
+      - 'streamlit_memory_lazy_router_v197.py'
+      - '.github/workflows/nfl-moneyline-visual-step1-v1.yml'
+  workflow_dispatch:
+
+jobs:
+  visual-step1-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile Step 1 layer
+        run: |
+          python -m py_compile nfl_moneyline_hub_v14.py streamlit_memory_lazy_router_v197.py app.py
+      - name: Verify Step 1 frozen contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v14 = Path("nfl_moneyline_hub_v14.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v197.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_moneyline_hub_v13"' in v14
+          assert 'VISUAL_UPGRADE_STEP = 1' in v14
+          assert 'PRESENTATION_ONLY = True' in v14
+          assert 'MAY_MODIFY_PROJECTION = False' in v14
+          assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v14
+          assert 'STAKE_SIZING_ENABLED = False' in v14
+          assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v14
+          assert 'MONEYLINE_HUB = "nfl_moneyline_hub_v14"' in router
+          assert 'from streamlit_memory_lazy_router_v197 import record_bootstrap_import_ms, render_app' in app
+
+          banned = (
+              "_build_final(",
+              "_fit_calibration_model(",
+              "_build_game_output(",
+              "fetch_nfl_moneyline_markets(",
+              "random.",
+              "np.random",
+          )
+          for token in banned:
+              assert token not in v14, f"Step 1 unexpectedly owns analytical token: {token}"
+
+          print("NFL Moneyline visual Step 1 GREEN")
+          PY
