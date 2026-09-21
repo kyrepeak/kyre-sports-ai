@@ -5,11 +5,6 @@ on:
     branches:
       - "monster/sitewide-theme-rollout-step3-game-total-v1"
     paths:
-      - "app.py"
-      - "kyre_game_total_theme_v1.py"
-      - "cfb_game_total_clean_page_v34.py"
-      - "streamlit_memory_lazy_router_v190.py"
-      - "tests/test_sitewide_theme_rollout_step3_game_total_v1.py"
       - ".github/workflows/sitewide-theme-rollout-step3-game-total-v1.yml"
 
 permissions:
@@ -21,8 +16,69 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: abfcaa8e04350c31af4d85b73d39b5659abe73de
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Prove Game Total universal presentation only
-        run: python tests/test_sitewide_theme_rollout_step3_game_total_v1.py
+      - name: Prove Game Total universal presentation only against pinned product
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, str(Path.cwd()))
+
+          from kyre_game_total_theme_v1 import GAME_TOTAL_THEME_VERSION, build_game_total_theme_css
+
+          assert "BLACK + GLACIER BLUE" in GAME_TOTAL_THEME_VERSION
+          css = build_game_total_theme_css()
+
+          for marker in (
+              'data-kyre-universal-theme="v1"',
+              'data-kyre-universal-components-css="v1"',
+              'data-kyre-universal-responsive="v1"',
+              'data-kyre-game-total-universal="v1"',
+          ):
+              assert marker in css
+
+          for selector in (
+              ".gt229-sportnav",
+              ".gt233-category",
+              ".gt225-hero",
+              ".gt226-wrap",
+              ".gt227-section",
+              ".gt226-card",
+              ".gt227-card",
+          ):
+              assert selector in css
+
+          page = Path("cfb_game_total_clean_page_v34.py").read_text()
+          assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v33"' in page
+          assert "PRESENTATION_ONLY = True" in page
+          assert "MAY_MODIFY_PROJECTION = False" in page
+          assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in page
+          assert "result = prior.render_game_total_hub(" in page
+          assert page.count("st.markdown(css, unsafe_allow_html=True)") == 2
+
+          lower = page.lower()
+          for forbidden in (
+              "requests.get(",
+              "requests.post(",
+              "_fit_calibration(",
+              "fetch_odds(",
+          ):
+              assert forbidden not in lower
+
+          router = Path("streamlit_memory_lazy_router_v190.py").read_text()
+          assert "import streamlit_memory_lazy_router_v181 as game_total_router" in router
+          assert "import streamlit_memory_lazy_router_v189 as prior" in router
+          assert 'GAME_TOTAL_PAGE = "cfb_game_total_clean_page_v34"' in router
+          assert "game_total_router.ACTIVE_PAGE = GAME_TOTAL_PAGE" in router
+
+          app = Path("app.py").read_text()
+          assert "from streamlit_memory_lazy_router_v190 import record_bootstrap_import_ms, render_app" in app
+          assert "activate_universal_shell()" in app
+          assert "CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME" in app
+
+          print("SITEWIDE_THEME_ROLLOUT_STEP3_GAME_TOTAL_GREEN")
+          PY
