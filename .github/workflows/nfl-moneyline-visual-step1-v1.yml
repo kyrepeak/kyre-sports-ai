@@ -96,6 +96,35 @@ jobs:
               page = browser.new_page(viewport={"width": 1024, "height": 1366})
               try:
                   page.goto(base, wait_until="domcontentloaded", timeout=120000)
+
+                  # Deployment-source probe: inspect only public app chrome/Fork
+                  # metadata before entering the app frame.
+                  try:
+                      links = page.locator("a").evaluate_all(
+                          """els => els.map(e => ({
+                              text: (e.innerText || e.textContent || '').trim(),
+                              href: e.href || ''
+                          })).filter(x => x.text || x.href)"""
+                      )
+                  except Exception:
+                      links = []
+                  print("STREAMLIT_PUBLIC_TOP_LEVEL_LINKS=" + json.dumps(links))
+
+                  try:
+                      host_config = page.request.get(
+                          base.rstrip("/") + "/_stcore/host-config",
+                          timeout=15000,
+                      )
+                      print(
+                          "STREAMLIT_PUBLIC_HOST_CONFIG="
+                          + host_config.text()[:12000]
+                      )
+                  except Exception as exc:
+                      print(
+                          "STREAMLIT_PUBLIC_HOST_CONFIG_ERROR="
+                          + type(exc).__name__
+                      )
+
                   frame, initial_scan = _find_app_frame(page)
 
                   # Deterministic route selection: never certify whatever route
