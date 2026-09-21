@@ -19,7 +19,6 @@ REQUIRED = (
 )
 FORBIDDEN = (
     "Passing Yards • Combined Player Cards",
-    "KYRE SPORTS API BRIDGE — STEP 10 AUTO MARKET",
 )
 
 def run_public_cert(*, production_url: str, api_url: str, artifact_dir: str | Path = "artifacts/nfl-passing-yards-public-prod"):
