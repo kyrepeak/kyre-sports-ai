@@ -13,6 +13,8 @@ from typing import Any
 
 import streamlit as st
 import nfl_passing_yards_hub_v34 as composition
+import nfl_passing_yards_hub_v35 as pre_compact
+import nfl_passing_yards_hub_v36 as compact
 import nfl_passing_yards_hub_v42 as prior
 
 MODEL_VERSION = "NFL PASSING YARDS V43 • LAYERED PRODUCTION HUB"
@@ -143,6 +145,7 @@ def render_nfl_passing_yards_hub() -> None:
     original_cards = composition._combined_player_cards_html
     original_banner = composition._visual_build_banner_v34
     original_markdown = st.markdown
+    original_compact_render = compact.render_nfl_passing_yards_hub
 
     def capture_only_markdown(body: Any, *args: Any, **kwargs: Any):
         # V34/V42 must still execute so their certified data, selectors, and model
@@ -154,11 +157,13 @@ def render_nfl_passing_yards_hub() -> None:
 
     composition._combined_player_cards_html = _layered_player_cards_html
     composition._visual_build_banner_v34 = _no_legacy_banner
+    compact.render_nfl_passing_yards_hub = pre_compact.render_nfl_passing_yards_hub
     st.markdown = capture_only_markdown
     try:
         return prior.render_nfl_passing_yards_hub()
     finally:
         st.markdown = original_markdown
+        compact.render_nfl_passing_yards_hub = original_compact_render
         composition._combined_player_cards_html = original_cards
         composition._visual_build_banner_v34 = original_banner
 
