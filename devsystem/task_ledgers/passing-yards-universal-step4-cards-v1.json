@@ -118,5 +118,29 @@
     "router_code_changed": false,
     "analytics_changed": false,
     "verifier_acceptance_weakened": false
+  },
+  "latest_public_boot_timing_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35666177538,
+    "failure_job": 106552337061,
+    "owner": "VERIFIER / STREAMLIT BOOT TIMING",
+    "direct_evidence": {
+      "route_query_preserved": true,
+      "terminal_url": "https://kyre-sports-ai.streamlit.app/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards",
+      "v205_runtime": 0,
+      "app_body_empty": true,
+      "status_iframe_present": true,
+      "prior_local_render_seconds": "approximately 14-18",
+      "prior_retry_interval_seconds": 1.5
+    },
+    "root_cause": "The verifier preserved the correct cold-route query but restarted the Streamlit page every 1.5 seconds, which is shorter than the observed app hydration time and prevented the V205 runtime witness from ever appearing.",
+    "repair": "Preserve the exact cold route, poll the current page each second, and only re-navigate after a 20-second uninterrupted boot window while keeping the existing 180-second total readiness deadline and all downstream Step 4 acceptance checks unchanged.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "cards_changed": false,
+    "tokens_changed": false,
+    "shell_changed": false,
+    "analytics_changed": false,
+    "verifier_acceptance_weakened": false
   }
 }
