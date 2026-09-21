@@ -53,5 +53,25 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_runtime_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35654677827,
+    "failure_job": 106515211881,
+    "owner": "ROUTER / RUNTIME REVISION COMPATIBILITY",
+    "terminal_evidence": {
+      "visual_step4_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "public_runtime_error": "AttributeError",
+      "v205_runtime_reached": false,
+      "failure_phase": "before Step 4 DOM evaluation"
+    },
+    "root_cause": "V205 depended on V204 private helper _cold_passing_yards_query_requested(), which was introduced by the Step 3 repair and can be absent on a stale cached V204 module revision. That produces AttributeError before V205 emits its runtime witness.",
+    "repair": "V205 now performs the same read-only cold-query detection locally through frozen V185 and no longer depends on the V204 private helper. app.py Step 4 runtime marker is refreshed to force the repaired router chain to reload.",
+    "v204_changed": false,
+    "v54_changed": false,
+    "verifier_weakened": false,
+    "analytics_changed": false,
+    "moneyline_changed": false
+  }
 }
