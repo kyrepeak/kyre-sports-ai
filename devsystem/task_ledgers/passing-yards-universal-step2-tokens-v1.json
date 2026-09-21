@@ -92,5 +92,31 @@
     "v51_changed": false,
     "analytics_changed": false,
     "moneyline_changed": false
+  },
+  "latest_revision_readiness_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35649700464,
+    "failure_job": 106498766026,
+    "owner": "DEPLOYMENT / REVISION READINESS",
+    "terminal_evidence": {
+      "visual_step2_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "merged_sha": "6856995432e97808e4b64eb5fcff3d44c1ee1954",
+      "public_proof_browser_started_seconds_after_merge": 27,
+      "passing_yards_text": true,
+      "step1_owner_style": 0,
+      "semantic_tokens_style": 0,
+      "step2_token_style": 0,
+      "step2_owner_marker": 0,
+      "owner_container": 0,
+      "top_container": 0
+    },
+    "reclassification": "The V203 ordering patch passed targeted proof, but the immediate post-merge public session exposed none of the new V203/V52/V51 ownership surface. Public proof must distinguish an older still-serving revision from a current Step 2 product failure.",
+    "repair": "V203 exposes a hidden runtime witness on the active NFL Passing Yards route. The public proof waits for that exact witness before applying the unchanged Step 2 ownership and computed-style acceptance checks.",
+    "acceptance_weakened": false,
+    "v51_changed": false,
+    "v52_changed": false,
+    "analytics_changed": false,
+    "moneyline_changed": false
   }
 }
