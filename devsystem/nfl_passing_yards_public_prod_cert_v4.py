@@ -19,6 +19,9 @@ REQUIRED = (
 )
 FORBIDDEN = (
     "Passing Yards • Combined Player Cards",
+    "Matchup Spotlight",
+    "Why This Projection",
+    "10 / 10 COMPLETE",
 )
 
 def run_public_cert(*, production_url: str, api_url: str, artifact_dir: str | Path = "artifacts/nfl-passing-yards-public-prod"):
