@@ -146,9 +146,16 @@ def render_nfl_passing_yards_hub() -> None:
     original_cards = composition._combined_player_cards_html
     original_banner = composition._visual_build_banner_v34
     original_markdown = st.markdown
+    original_caption = st.caption
     original_matchup_html = legacy_visual._matchup_html
     original_why_html = legacy_visual._why_html
     original_compact_render = compact.render_nfl_passing_yards_hub
+
+    def filtered_caption(body: Any, *args: Any, **kwargs: Any):
+        text = str(body if body is not None else "")
+        if "10/10 COMPLETE" in text or "10 / 10 COMPLETE" in text:
+            return None
+        return original_caption(body, *args, **kwargs)
 
     def capture_only_markdown(body: Any, *args: Any, **kwargs: Any):
         # V34/V42 must still execute so their certified data, selectors, and model
@@ -164,10 +171,12 @@ def render_nfl_passing_yards_hub() -> None:
     composition._visual_build_banner_v34 = _no_legacy_banner
     compact.render_nfl_passing_yards_hub = pre_compact.render_nfl_passing_yards_hub
     st.markdown = capture_only_markdown
+    st.caption = filtered_caption
     try:
         return prior.render_nfl_passing_yards_hub()
     finally:
         st.markdown = original_markdown
+        st.caption = original_caption
         legacy_visual._matchup_html = original_matchup_html
         legacy_visual._why_html = original_why_html
         compact.render_nfl_passing_yards_hub = original_compact_render
