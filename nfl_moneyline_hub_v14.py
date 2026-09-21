@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 import nfl_moneyline_hub_v9 as presentation
+import nfl_moneyline_hub_v11 as execution
 import nfl_moneyline_hub_v13 as prior
 
 MODEL_VERSION = "NFL MONEYLINE V14 • VISUAL STEP 1 • COMPACT TOP CONTROL"
@@ -119,7 +120,8 @@ def _markdown_proxy(original: Callable[..., Any]) -> Callable[..., Any]:
     def wrapped(body: Any, *args: Any, **kwargs: Any):
         text = str(body or "")
         if "kml9-hero" in text and "NFL Moneyline" in text and "kml9-title" in text:
-            body = _COMPACT_HERO
+            # V14 owns the visible hero directly. Suppress only V9's legacy hero.
+            return None
         return original(body, *args, **kwargs)
     return wrapped
 
@@ -135,21 +137,22 @@ def render_nfl_hub(market: str = "Moneyline"):
     if str(market or "Moneyline") != "Moneyline":
         raise RuntimeError("Moneyline V14 direct handler is Moneyline only.")
 
-    original_theme_builder = prior.build_moneyline_theme_css
     original_markdown = presentation.st.markdown
     original_date_input = presentation.st.date_input
 
-    # V13 owns the universal Moneyline theme. Append Step 1 only AFTER V13
-    # composes that frozen theme so the compact rules are the final CSS layer.
-    prior.build_moneyline_theme_css = lambda base: _step1_css(original_theme_builder(base))
     presentation.st.markdown = _markdown_proxy(original_markdown)
     presentation.st.date_input = _date_input_proxy(original_date_input)
     try:
+        # Emit the Step 1 surface directly so it cannot be swallowed by the
+        # inherited hidden-presentation execution path. Preserve V11's frozen
+        # legacy-container hiding before any nested frozen widgets are created.
+        original_markdown(execution._HIDDEN_LEGACY_CSS, unsafe_allow_html=True)
+        original_markdown(_STEP1_CSS, unsafe_allow_html=True)
+        original_markdown(_COMPACT_HERO, unsafe_allow_html=True)
         return prior.render_nfl_hub(market)
     finally:
         presentation.st.date_input = original_date_input
         presentation.st.markdown = original_markdown
-        prior.build_moneyline_theme_css = original_theme_builder
 
 __all__ = [
     "DISPLAY_ONLY",
