@@ -7,6 +7,14 @@ on:
       - 'nfl_moneyline_hub_v14.py'
       - 'streamlit_memory_lazy_router_v197.py'
       - '.github/workflows/nfl-moneyline-visual-step1-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v14.py'
+      - 'streamlit_memory_lazy_router_v197.py'
+      - '.github/workflows/nfl-moneyline-visual-step1-v1.yml'
   workflow_dispatch:
 
 jobs:
@@ -50,6 +58,7 @@ jobs:
           PY
 
   public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
