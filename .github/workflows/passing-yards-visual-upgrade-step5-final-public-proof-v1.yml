@@ -1,0 +1,185 @@
+name: Passing Yards Visual Upgrade Step 5 Final Public Proof
+
+on:
+  push:
+    branches:
+      - "monster/passing-yards-visual-upgrade-step5-final-public-proof-v1"
+    paths:
+      - ".github/workflows/passing-yards-visual-upgrade-step5-final-public-proof-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  final-public-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d27ef69d32049fa49e8e83a050229d3c91a15142
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install direct public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove Step 5 live responsive Passing Yards redesign
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/devsystem
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+          import time
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          import nfl_passing_yards_public_prod_cert_v1 as prod
+
+          URL = "https://kyre-sports-ai.streamlit.app"
+          artifacts = Path("artifacts/passing-yards-step5-final-public")
+          artifacts.mkdir(parents=True, exist_ok=True)
+
+          health = requests.get(URL + "/_stcore/health", timeout=30)
+          assert health.status_code == 200, f"health HTTP {health.status_code}"
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width": 1440, "height": 1300})
+              deadline = time.monotonic() + 420
+              last_error = ""
+
+              while time.monotonic() < deadline:
+                  try:
+                      page.goto(URL, wait_until="domcontentloaded", timeout=120000)
+                      frame, scans = prod._find_app_frame(page, timeout_seconds=120.0)
+                      body = prod._body(frame)
+                      prod._assert_no_runtime_error(body, "Step 5 public app")
+
+                      sport = frame.get_by_role("combobox").nth(0)
+                      prod._choose(page, sport, "NFL")
+                      market = frame.get_by_role("combobox", name="🎯 NFL Market", exact=True)
+                      market.wait_for(state="visible", timeout=60000)
+                      prod._choose(page, market, "Passing Yards")
+
+                      top = frame.locator(".st-key-kyre_passing_yards_top_v46")
+                      top.wait_for(state="visible", timeout=120000)
+
+                      evidence = frame.locator('[data-passing-yards-evidence="v48"]')
+                      evidence.wait_for(state="visible", timeout=180000)
+
+                      responsive_style = frame.locator('style[data-passing-yards-responsive-polish="v50"]')
+                      market_style = frame.locator('style[data-passing-yards-market-polish="v49"]')
+                      assert responsive_style.count() >= 1
+                      assert market_style.count() >= 1
+
+                      players = evidence.locator('[data-passing-player]')
+                      assert players.count() == 2, f"expected exactly two QB cards, got {players.count()}"
+
+                      for step in ("7", "8", "9"):
+                          count = evidence.locator(f'[data-step="{step}"]').count()
+                          assert count == 2, f"expected Step {step} twice, got {count}"
+
+                      for label in (
+                          "Sportsbook / source",
+                          "Passing yards line",
+                          "Over American odds",
+                          "Under American odds",
+                          "Price timestamp / note",
+                      ):
+                          count = frame.get_by_role("textbox", name=label, exact=True).count()
+                          assert count >= 1, f"missing Step 10 field: {label}"
+
+                      body = prod._body(frame)
+                      folded = body.casefold()
+                      assert (
+                          "sportsbook projection influence 0.0%" in folded
+                          or "sportsbook projection influence: 0.0%" in folded
+                      ), "missing frozen 0.0% sportsbook projection guardrail"
+
+                      responsive = {}
+                      for width, height, name in (
+                          (1440, 1200, "desktop"),
+                          (1024, 1366, "tablet"),
+                          (390, 844, "mobile"),
+                      ):
+                          page.set_viewport_size({"width": width, "height": height})
+                          page.wait_for_timeout(900)
+
+                          grid = frame.locator(".ks-py48-grid").first
+                          grid.wait_for(state="visible", timeout=30000)
+                          columns = grid.evaluate("(el) => getComputedStyle(el).gridTemplateColumns")
+
+                          top_row = frame.locator(
+                              '.st-key-kyre_passing_yards_top_v46 [data-testid="stHorizontalBlock"]'
+                          ).first
+                          top_direction = top_row.evaluate("(el) => getComputedStyle(el).flexDirection")
+
+                          market_row = frame.locator(
+                              '[data-testid="stHorizontalBlock"]:has(input[aria-label="Sportsbook / source"])'
+                          ).first
+                          market_direction = market_row.evaluate("(el) => getComputedStyle(el).flexDirection")
+
+                          if name == "desktop":
+                              assert len(columns.split()) >= 2, f"desktop QB grid not two-column: {columns}"
+                          else:
+                              assert len(columns.split()) == 1, f"{name} QB grid not stacked: {columns}"
+                              assert top_direction == "column", f"{name} top controls not stacked: {top_direction}"
+                          if name == "mobile":
+                              assert market_direction == "column", f"mobile market controls not stacked: {market_direction}"
+
+                          screenshot = artifacts / f"{name}.png"
+                          page.screenshot(path=str(screenshot), full_page=True)
+                          responsive[name] = {
+                              "grid_columns": columns,
+                              "top_direction": top_direction,
+                              "market_direction": market_direction,
+                              "screenshot": str(screenshot),
+                          }
+
+                      result = {
+                          "status": "GREEN",
+                          "production_url": URL,
+                          "product_sha": "bb0052029e44bea2bde9d6df8cb3c413ff36859a",
+                          "merge_sha": "d27ef69d32049fa49e8e83a050229d3c91a15142",
+                          "top_control_deck": True,
+                          "qb_cards": 2,
+                          "steps_7_8_9": True,
+                          "step10_market_panel": True,
+                          "sportsbook_projection_influence": 0.0,
+                          "responsive": responsive,
+                          "frame_scan_count": len(scans),
+                      }
+                      (artifacts / "result.json").write_text(
+                          json.dumps(result, indent=2, sort_keys=True),
+                          encoding="utf-8",
+                      )
+                      print("PASSING_YARDS_STEP5_FINAL_PUBLIC_GREEN")
+                      print(json.dumps(result, indent=2, sort_keys=True))
+                      browser.close()
+                      raise SystemExit(0)
+                  except SystemExit:
+                      raise
+                  except Exception as exc:
+                      last_error = f"{type(exc).__name__}: {exc}"
+                      print("WAITING_FOR_STEP5_DEPLOYMENT", last_error[:1000])
+                      page.wait_for_timeout(15000)
+
+              try:
+                  page.screenshot(path=str(artifacts / "failure.png"), full_page=True)
+              except Exception:
+                  pass
+              browser.close()
+              raise RuntimeError("Step 5 public proof timed out waiting for approved redesign: " + last_error)
+          PY
+      - name: Upload final Step 5 public evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-step5-final-public-${{ github.run_id }}
+          path: artifacts/passing-yards-step5-final-public
+          if-no-files-found: warn
+          retention-days: 14
