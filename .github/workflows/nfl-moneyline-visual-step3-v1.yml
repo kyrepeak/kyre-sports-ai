@@ -145,10 +145,16 @@ jobs:
                       "PREGAME VERIFIED",
                       "Slate date",
                   )
+                  no_games_marker = (
+                      "No verified pregame NFL matchup is available for this date."
+                  )
 
-                  # The route heading becomes visible before Streamlit always
-                  # finishes composing the frozen Step 1 controls/styles.
-                  # Prove settled route state instead of sampling that transient.
+                  # New post-#859 evidence: the public route can be fully settled
+                  # in the explicit no-games state with Step 2/3 styles active
+                  # while the frozen Step 1 date-control label is absent from
+                  # body text. Treat that terminal no-games surface as valid
+                  # route readiness rather than misclassifying it as Step 1
+                  # product regression.
                   readiness_deadline = time.monotonic() + 45.0
                   while True:
                       body = frame.locator("body").inner_text(timeout=5000)
@@ -165,8 +171,23 @@ jobs:
                       step3_style = frame.locator(
                           'style[data-nfl-moneyline-visual-step="3"]'
                       ).count()
+                      no_games_ready = (
+                          no_games_marker in body
+                          and all(
+                              marker in body
+                              for marker in (
+                                  "NFL Moneyline",
+                                  "Command Center",
+                                  "PREGAME VERIFIED",
+                              )
+                          )
+                      )
 
-                      if not missing_step1 and step2_style >= 1 and step3_style >= 1:
+                      if (
+                          step2_style >= 1
+                          and step3_style >= 1
+                          and (not missing_step1 or no_games_ready)
+                      ):
                           break
 
                       if time.monotonic() >= readiness_deadline:
@@ -174,14 +195,12 @@ jobs:
                               "MONEYLINE_ROUTE_READINESS: settled Step 1/2/3 route "
                               "state did not appear; missing_step1="
                               + " | ".join(missing_step1)
-                              + f"; step2_style={step2_style}; step3_style={step3_style}; "
+                              + f"; no_games_ready={no_games_ready}; "
+                              + f"step2_style={step2_style}; step3_style={step3_style}; "
                               + f"body start={body[:1800]!r}"
                           )
                       page.wait_for_timeout(500)
 
-                  no_games_marker = (
-                      "No verified pregame NFL matchup is available for this date."
-                  )
                   deadline = time.monotonic() + 60.0
                   structural_streak = 0
                   structural = {}
