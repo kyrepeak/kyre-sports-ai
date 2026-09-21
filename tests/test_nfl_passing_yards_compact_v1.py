@@ -493,7 +493,7 @@ def test_v43_layered_production_renderer_contract() -> None:
     assert v43.STAKE_SIZING_ENABLED is False
 
 
-def test_router_v188_advances_only_passing_yards_to_v43(monkeypatch) -> None:
+def test_router_v188_advances_only_passing_yards_to_v45(monkeypatch) -> None:
     import streamlit_memory_lazy_router_v188 as v188
 
     seen = {}
@@ -506,7 +506,7 @@ def test_router_v188_advances_only_passing_yards_to_v43(monkeypatch) -> None:
     monkeypatch.setattr(v188.prior, "_render_direct_prop", fake_direct)
     original = v188.prior.PROP_HUBS["Passing Yards"]
     assert v188.render_app() == "PASSING_DIRECT"
-    assert seen["passing_hub"] == "nfl_passing_yards_hub_v43"
+    assert seen["passing_hub"] == "nfl_passing_yards_hub_v45"
     assert v188.prior.PROP_HUBS["Passing Yards"] == original
 
     monkeypatch.setattr(v188, "_active_market", lambda: "Rushing Yards")
