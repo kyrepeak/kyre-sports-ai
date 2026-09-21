@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "task_id": "nfl-moneyline-step1-production-refresh-v1",
+  "task_id": "nfl-moneyline-step1-production-verifier-router-v1",
   "status": "DONE",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
