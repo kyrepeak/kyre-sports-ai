@@ -1,0 +1,28 @@
+name: Universal Theme Step 4 Passing Yards
+
+on:
+  push:
+    branches:
+      - "monster/universal-theme-step4-passing-yards-v1"
+    paths:
+      - "nfl_passing_yards_hub_v44.py"
+      - "streamlit_memory_lazy_router_v188.py"
+      - "tests/test_universal_theme_passing_yards_step4_v1.py"
+      - ".github/workflows/universal-theme-step4-passing-yards-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-passing-yards-theme:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install targeted UI dependencies
+        run: pip install -q streamlit
+      - name: Prove Passing Yards universal theme conversion only
+        run: python tests/test_universal_theme_passing_yards_step4_v1.py
