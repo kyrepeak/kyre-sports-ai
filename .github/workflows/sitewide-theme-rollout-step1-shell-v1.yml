@@ -5,9 +5,6 @@ on:
     branches:
       - "monster/sitewide-theme-rollout-step1-shell-v1"
     paths:
-      - "app.py"
-      - "kyre_universal_shell_runtime_v1.py"
-      - "tests/test_sitewide_theme_rollout_step1_shell_v1.py"
       - ".github/workflows/sitewide-theme-rollout-step1-shell-v1.yml"
 
 permissions:
@@ -19,10 +16,73 @@ jobs:
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: 7b0c448644ba7944649f6ea442d2f574375cf913
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install targeted UI dependency
         run: pip install -q streamlit
-      - name: Prove site-wide shell activation only
-        run: python tests/test_sitewide_theme_rollout_step1_shell_v1.py
+      - name: Prove site-wide shell activation only against pinned product
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, str(Path.cwd()))
+
+          import kyre_universal_shell_runtime_v1 as runtime
+
+          assert "BLACK + GLACIER BLUE" in runtime.SITEWIDE_SHELL_VERSION
+          css = runtime.build_sitewide_shell_css()
+          for marker in (
+              'data-kyre-universal-theme="v1"',
+              'data-kyre-universal-components-css="v1"',
+              'data-kyre-universal-responsive="v1"',
+              'data-kyre-sitewide-shell="v1"',
+          ):
+              assert marker in css
+
+          assert '[data-testid="stSidebar"]' in css
+          assert '[data-testid="stHeader"]' in css
+          assert ".main .block-container" in css
+
+          seen = {"main": [], "sidebar": []}
+          class _Sidebar:
+              def markdown(self, body, **kwargs):
+                  seen["sidebar"].append((body, kwargs))
+          class _FakeSt:
+              sidebar = _Sidebar()
+              def markdown(self, body, **kwargs):
+                  seen["main"].append((body, kwargs))
+
+          original_st = runtime.st
+          runtime.st = _FakeSt()
+          try:
+              runtime.activate_universal_shell()
+          finally:
+              runtime.st = original_st
+
+          assert len(seen["main"]) == 2
+          assert len(seen["sidebar"]) == 1
+          assert 'data-kyre-sitewide-topbar="v1"' in seen["main"][1][0]
+          assert 'data-kyre-sitewide-sidebar="v1"' in seen["sidebar"][0][0]
+
+          app = Path("app.py").read_text()
+          assert "from kyre_universal_shell_runtime_v1 import activate_universal_shell" in app
+          assert app.index("activate_universal_shell()") < app.index("    render_app()")
+          assert "from streamlit_memory_lazy_router_v188 import record_bootstrap_import_ms, render_app" in app
+
+          source = Path("kyre_universal_shell_runtime_v1.py").read_text().lower()
+          for forbidden in (
+              "prop_hubs",
+              "requests.get(",
+              "requests.post(",
+              "render_nfl",
+              "render_cfb",
+              "render_wnba",
+              "render_mlb",
+          ):
+              assert forbidden not in source
+
+          print("SITEWIDE_THEME_ROLLOUT_STEP1_SHELL_GREEN")
+          PY
