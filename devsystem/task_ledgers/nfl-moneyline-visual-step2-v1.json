@@ -47,5 +47,23 @@
       "diagnostic.json",
       "nfl_moneyline_step2_public_diagnostic.png"
     ]
+  },
+  "latest_verifier_owner_fix": {
+    "owner": "VERIFIER / FRAME / TIMING",
+    "evidence_run": 35627287246,
+    "evidence": {
+      "card_inner_html_all_required_markers": true,
+      "card_inner_text_all_required_markers": true,
+      "body_snapshot_missing": [
+        "MODEL P(WIN)",
+        "FAIR ML",
+        "BEST ML",
+        "FINAL MONEYLINE STATE"
+      ]
+    },
+    "smallest_patch": "Validate required Step 2 markers against first article.kml15-card inner_text instead of transient frame body text.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "timeout_changed": false
   }
 }
