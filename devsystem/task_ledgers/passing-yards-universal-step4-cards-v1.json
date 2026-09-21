@@ -73,5 +73,26 @@
     "verifier_weakened": false,
     "analytics_changed": false,
     "moneyline_changed": false
+  },
+  "active_runtime_diagnostic": {
+    "checkpoint": "exact unredacted AttributeError source",
+    "owner": "RUNTIME",
+    "prior_failures": [
+      {
+        "run": 35654677827,
+        "job": 106515211881,
+        "error": "AttributeError before V205 runtime witness"
+      },
+      {
+        "run": 35655843564,
+        "job": 106519208724,
+        "error": "Same AttributeError before V205 runtime witness after V205 compatibility repair"
+      }
+    ],
+    "two_failed_patch_reclassification": true,
+    "action": "Launch the current branch locally with the repository's certified Streamlit/browser stack, open the exact cold NFL Passing Yards query, and print the unredacted Streamlit traceback before any further runtime patch.",
+    "product_code_changed": false,
+    "verifier_weakened": false,
+    "acceptance_changed": false
   }
 }
