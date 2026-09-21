@@ -2,7 +2,7 @@
   "version": 2,
   "task_id": "passing-yards-production-layered-renderer-v1",
   "status": "DONE",
-  "scope": "Production-repair Step 1: activate the approved layered Passing Yards presentation over the existing certified live payload without changing model, projection, probability, market, identity, or sportsbook-influence logic.",
+  "scope": "Production-repair Steps 1-2: add the approved layered Passing Yards renderer and route only Passing Yards to it while preserving all other NFL and non-NFL production behavior.",
   "trigger": "Live Streamlit screenshot showed the old V42/V41 combined-card presentation after the standalone layered prototype had been completed and frozen.",
   "guardrails": {
     "passing_yards_model_changed": false,
@@ -11,7 +11,8 @@
     "market_logic_changed": false,
     "identity_logic_changed": false,
     "sportsbook_projection_influence": 0,
-    "other_nfl_markets_changed": false
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",

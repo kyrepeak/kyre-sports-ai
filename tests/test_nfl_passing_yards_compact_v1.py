@@ -491,3 +491,31 @@ def test_v43_layered_production_renderer_contract() -> None:
     assert "Combined Player Cards" not in html
     assert v43.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
     assert v43.STAKE_SIZING_ENABLED is False
+
+
+def test_router_v188_advances_only_passing_yards_to_v43(monkeypatch) -> None:
+    import streamlit_memory_lazy_router_v188 as v188
+
+    seen = {}
+
+    def fake_direct():
+        seen["passing_hub"] = v188.prior.PROP_HUBS["Passing Yards"]
+        return "PASSING_DIRECT"
+
+    monkeypatch.setattr(v188, "_active_market", lambda: "Passing Yards")
+    monkeypatch.setattr(v188.prior, "_render_direct_prop", fake_direct)
+    original = v188.prior.PROP_HUBS["Passing Yards"]
+    assert v188.render_app() == "PASSING_DIRECT"
+    assert seen["passing_hub"] == "nfl_passing_yards_hub_v43"
+    assert v188.prior.PROP_HUBS["Passing Yards"] == original
+
+    monkeypatch.setattr(v188, "_active_market", lambda: "Rushing Yards")
+    monkeypatch.setattr(v188.prior, "render_app", lambda: "PRIOR")
+    assert v188.render_app() == "PRIOR"
+
+    monkeypatch.setattr(v188, "_active_market", lambda: "Receptions")
+    assert v188.render_app() == "PRIOR"
+
+    assert v188.FROZEN_ROUTER == "streamlit_memory_lazy_router_v187"
+    assert v188.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+    assert v188.MAY_MODIFY_PROJECTION is False
