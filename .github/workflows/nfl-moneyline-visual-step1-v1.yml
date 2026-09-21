@@ -140,11 +140,28 @@ jobs:
                   except Exception:
                       frame_links = []
                   try:
+                      fork = frame.get_by_text("Fork", exact=True).first
                       fork_buttons = frame.get_by_text("Fork", exact=True).count()
+                      fork_html = (
+                          fork.evaluate("(e) => e.outerHTML")
+                          if fork_buttons
+                          else ""
+                      )
+                      fork_parent_html = (
+                          fork.evaluate(
+                              "(e) => (e.closest('a') || e.parentElement || e).outerHTML"
+                          )
+                          if fork_buttons
+                          else ""
+                      )
                   except Exception:
                       fork_buttons = 0
+                      fork_html = ""
+                      fork_parent_html = ""
                   print("STREAMLIT_APP_FRAME_LINKS=" + json.dumps(frame_links))
                   print("STREAMLIT_APP_FORK_COUNT=" + str(fork_buttons))
+                  print("STREAMLIT_APP_FORK_HTML=" + fork_html[:5000])
+                  print("STREAMLIT_APP_FORK_PARENT_HTML=" + fork_parent_html[:5000])
 
                   # Deterministic route selection: never certify whatever route
                   # happened to render first on the shared host.
