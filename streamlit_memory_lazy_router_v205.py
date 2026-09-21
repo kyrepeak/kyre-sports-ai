@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 import streamlit_memory_lazy_router_v204 as prior
+import streamlit_memory_lazy_router_v185 as handoff
 
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V205 • PASSING YARDS UNIVERSAL CARDS STEP 4"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v204"
@@ -25,8 +26,16 @@ def record_bootstrap_import_ms(value: float) -> None:
 def _active_route() -> tuple[str, str]:
     return prior._active_route()
 
+def _cold_passing_yards_query_requested() -> bool:
+    sport = handoff._query_value(handoff.SPORT_JUMP_QUERY_KEY)
+    market = handoff._query_value(handoff.MARKET_JUMP_QUERY_KEY)
+    return (
+        str(sport or "").strip().upper() == "NFL"
+        and str(market or "").strip() == PASSING_MARKET
+    )
+
 def render_app() -> None:
-    cold_query = prior._cold_passing_yards_query_requested()
+    cold_query = _cold_passing_yards_query_requested()
     sport, market = _active_route()
     if not (cold_query or (sport == "NFL" and market == PASSING_MARKET)):
         return prior.render_app()
@@ -54,6 +63,7 @@ __all__ = [
     "RUNTIME_MARKER",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_active_route",
+    "_cold_passing_yards_query_requested",
     "record_bootstrap_import_ms",
     "render_app",
 ]
