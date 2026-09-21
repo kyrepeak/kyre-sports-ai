@@ -96,6 +96,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import time
           from pathlib import Path
           from playwright.sync_api import sync_playwright
           from devsystem.browser_qa_v1 import (
@@ -175,8 +176,24 @@ jobs:
                   no_games_marker = (
                       "No verified pregame NFL matchup is available for this date."
                   )
-                  no_games = no_games_marker in body
-                  card_count = frame.locator("article.kml15-card").count()
+
+                  # Route/header/style can become visible before the V15 matchup
+                  # surface finishes replacing the frozen engine's transient body.
+                  # Wait for the Step 2 render to settle instead of sampling once.
+                  deadline = time.monotonic() + 60.0
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      no_games = no_games_marker in body
+                      card_count = frame.locator("article.kml15-card").count()
+                      if card_count > 0 or no_games:
+                          break
+                      if time.monotonic() >= deadline:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_STEP2_RENDER_TIMEOUT: V15 style active, "
+                              "but neither matchup cards nor the no-games state "
+                              f"settled within 60s; body start={body[:2500]!r}"
+                          )
+                      page.wait_for_timeout(500)
 
                   step2_required = (
                       "MONEYLINE MATCHUP COMMAND CENTER",

@@ -27,9 +27,11 @@
   "override_events": [],
   "latest_verifier_repair": {
     "checkpoint": "post-merge public-production-proof",
-    "failure_evidence": "MONEYLINE_STEP2_MARKER: no kml15 matchup command card visible",
-    "repair": "Verifier now proves V15 activation first and accepts the explicit no-verified-pregame-games state without weakening true activation/render failures.",
+    "failure_evidence": "V15 Step 2 style/header became visible before the final kml15 matchup card; the verifier sampled the transient frozen-engine body and failed before the card settled.",
+    "repair": "Verifier now waits up to 60 seconds for either a V15 matchup card or the explicit no-verified-pregame-games state before evaluating Step 2 render markers.",
+    "proof_only_change": true,
     "product_code_changed": false,
-    "router_code_changed": false
+    "router_code_changed": false,
+    "step1_code_changed": false
   }
 }
