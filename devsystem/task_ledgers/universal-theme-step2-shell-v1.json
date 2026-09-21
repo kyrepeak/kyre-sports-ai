@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "task_id": "universal-theme-step2-shell-v1",
+  "status": "DONE",
+  "scope": "NEW_BUILD Step 2 only: reusable black + glacier-blue universal website shell consuming the frozen Step 1 design tokens. Includes sidebar, topbar, content slot, active navigation, and responsive rules. No production integration.",
+  "trigger": "User approved Step 2 universal shell after Step 1 theme foundation became GREEN and frozen.",
+  "guardrails": {
+    "step1_theme_changed": false,
+    "production_pages_changed": false,
+    "passing_yards_frozen_work_changed": false,
+    "routing_changed": false,
+    "data_logic_changed": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
