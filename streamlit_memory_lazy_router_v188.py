@@ -1,6 +1,6 @@
 """KYRE Streamlit Router V188 — Passing Yards layered production route.
 
-Additive over frozen V187. Only Passing Yards advances from V42 to V44.
+Additive over frozen V187. Only Passing Yards advances from V42 to V45.
 Every other NFL market and every non-NFL route delegates to V187 unchanged.
 """
 from __future__ import annotations
@@ -10,7 +10,7 @@ import streamlit_memory_lazy_router_v187 as prior
 MODEL_VERSION = "KYRE STREAMLIT ROUTER V188 • PASSING YARDS LAYERED PRODUCTION"
 FROZEN_ROUTER = "streamlit_memory_lazy_router_v187"
 PASSING_MARKET = "Passing Yards"
-PASSING_HUB = "nfl_passing_yards_hub_v44"
+PASSING_HUB = "nfl_passing_yards_hub_v45"
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
 MAY_MODIFY_PROJECTION = False
 
