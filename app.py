@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 V186_PRODUCTION_RUNTIME_REFRESH = "STREAMLIT_V186_NEXT_GAME_DATE_RUNTIME_REFRESH_2026_09_20"
 NFL_STEP7_APP_IDENTITY_RUNTIME = "STREAMLIT_V187_NFL_STEP7_APP_IDENTITY_FAIL_CLOSED_2026_09_20"
+PASSING_YARDS_LAYERED_PRODUCTION_RUNTIME = "STREAMLIT_V188_PASSING_YARDS_LAYERED_PRODUCTION_2026_09_20"
 
 from sports_api.monster_performance_profiler_v1 import (
     PerformanceTrace,
@@ -275,7 +276,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v187 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v188 import record_bootstrap_import_ms, render_app
+    # Frozen V187 delegate compatibility: from streamlit_memory_lazy_router_v187 import record_bootstrap_import_ms, render_app
     # Frozen V186 delegate compatibility: from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app
     # Frozen V185 delegate compatibility: from streamlit_memory_lazy_router_v185 import record_bootstrap_import_ms, render_app
     # Frozen V184 delegate compatibility: from streamlit_memory_lazy_router_v184 import record_bootstrap_import_ms, render_app

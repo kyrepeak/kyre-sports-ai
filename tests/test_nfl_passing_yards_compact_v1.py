@@ -461,3 +461,68 @@ def test_router_v85_advances_only_passing_yards_step5() -> None:
     assert "No fuzzy player matching" in engine
     assert '"projection_adjustment": 0.0' in engine
     assert "explicit target" in engine.lower()
+
+
+def test_v43_layered_production_renderer_contract() -> None:
+    import nfl_passing_yards_hub_v43 as v43
+
+    captured = {
+        "identity": ['<article>QB A LIVE</article>', '<article>QB B LIVE</article>'],
+        "projection": ['<section>PROJ A</section>', '<section>PROJ B</section>'],
+        "market": ['<section>MARKET A</section>', '<section>MARKET B</section>'],
+        "profile": ['<section>PROFILE A</section>', '<section>PROFILE B</section>'],
+        "defense": ['<section>DEF A</section>', '<section>DEF B</section>'],
+        "pressure": ['<section>PRESS A</section>', '<section>PRESS B</section>'],
+        "personnel": ['<section>PERSON A</section>', '<section>PERSON B</section>'],
+        "environment": ['<section>ENV LIVE</section>'],
+        "context": ['<section>CTX A</section>', '<section>CTX B</section>'],
+        "distribution": ['<section>DIST A</section>', '<section>DIST B</section>'],
+    }
+    html = v43._layered_player_cards_html(captured)
+
+    assert 'data-live-passing-layered="true"' in html
+    assert html.count('data-live-qb-card=') == 2
+    assert "Passing Yards" in html
+    assert "QB A LIVE" in html and "QB B LIVE" in html
+    assert "PROJ A" in html and "MARKET B" in html
+    assert "Overview" in html and "Why" in html and "Matchup" in html
+    assert "Trends" in html and "Market" in html and "Deep Data" in html
+    assert "Open Full Breakdown" in html
+    assert "Combined Player Cards" not in html
+    assert v43.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+    assert v43.STAKE_SIZING_ENABLED is False
+
+
+def test_router_v188_advances_only_passing_yards_to_v43(monkeypatch) -> None:
+    import streamlit_memory_lazy_router_v188 as v188
+
+    seen = {}
+
+    def fake_direct():
+        seen["passing_hub"] = v188.prior.PROP_HUBS["Passing Yards"]
+        return "PASSING_DIRECT"
+
+    monkeypatch.setattr(v188, "_active_market", lambda: "Passing Yards")
+    monkeypatch.setattr(v188.prior, "_render_direct_prop", fake_direct)
+    original = v188.prior.PROP_HUBS["Passing Yards"]
+    assert v188.render_app() == "PASSING_DIRECT"
+    assert seen["passing_hub"] == "nfl_passing_yards_hub_v43"
+    assert v188.prior.PROP_HUBS["Passing Yards"] == original
+
+    monkeypatch.setattr(v188, "_active_market", lambda: "Rushing Yards")
+    monkeypatch.setattr(v188.prior, "render_app", lambda: "PRIOR")
+    assert v188.render_app() == "PRIOR"
+
+    monkeypatch.setattr(v188, "_active_market", lambda: "Receptions")
+    assert v188.render_app() == "PRIOR"
+
+    assert v188.FROZEN_ROUTER == "streamlit_memory_lazy_router_v187"
+    assert v188.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+    assert v188.MAY_MODIFY_PROJECTION is False
+
+
+def test_app_boots_router_v188_for_layered_passing_yards() -> None:
+    app = _read("app.py")
+    assert "from streamlit_memory_lazy_router_v188 import record_bootstrap_import_ms, render_app" in app
+    assert "STREAMLIT_V188_PASSING_YARDS_LAYERED_PRODUCTION_2026_09_20" in app
+    assert "# Frozen V187 delegate compatibility" in app
