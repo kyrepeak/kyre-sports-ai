@@ -1,6 +1,10 @@
 name: NFL Moneyline Visual Step 1
 
 on:
+  push:
+    branches: [proof/nfl-moneyline-step1-public-v1]
+    paths:
+      - '.github/workflows/nfl-moneyline-visual-step1-v1.yml'
   pull_request:
     paths:
       - 'app.py'
