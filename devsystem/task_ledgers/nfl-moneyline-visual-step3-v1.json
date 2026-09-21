@@ -113,5 +113,28 @@
     "router_code_changed": false,
     "step1_code_changed": false,
     "step2_code_changed": false
+  },
+  "latest_no_games_readiness_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35634709046,
+    "failure_job": 106449167936,
+    "owner": "VERIFIER / ROUTE READINESS",
+    "failure": "MONEYLINE_ROUTE_READINESS",
+    "direct_evidence": {
+      "missing_step1": [
+        "Slate date"
+      ],
+      "step2_style": 1,
+      "step3_style": 1,
+      "no_games_surface_visible": true,
+      "step3_structure_evaluated": false
+    },
+    "root_cause": "The verifier treated absence of the frozen Step 1 date-control label in body text as route unreadiness even when the public Moneyline route had settled into its explicit no-verified-pregame-games terminal surface with both Step 2 and Step 3 styles active.",
+    "repair": "Accept the explicit no-games surface plus core Step 1 route markers and active Step 2/3 styles as settled route readiness. Keep the existing full Step 1 marker requirement for matchup-card states.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "step1_code_changed": false,
+    "step2_code_changed": false,
+    "v16_product_reopened": false
   }
 }
