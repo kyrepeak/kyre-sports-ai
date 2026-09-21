@@ -96,5 +96,27 @@
     "analytics_changed": false,
     "verifier_acceptance_weakened": false,
     "temporary_diagnostic_job_removed_before_merge": true
+  },
+  "latest_route_query_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35660782624,
+    "failure_job": 106535235317,
+    "owner": "VERIFIER / ROUTE QUERY PRESERVATION",
+    "direct_evidence": {
+      "intended_route": "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards",
+      "terminal_scan_top_url": "https://kyre-sports-ai.streamlit.app/",
+      "terminal_frames": [
+        "root page",
+        "status embed"
+      ],
+      "v205_runtime": 0,
+      "meaning": "The readiness loop had lost the cold-route query before terminal scan, so the Passing Yards route could not be entered."
+    },
+    "root_cause": "page.reload() retried the canonicalized root URL after Streamlit navigation stripped the query string, so later readiness attempts no longer requested NFL Passing Yards.",
+    "repair": "Every readiness retry navigates to the immutable route_url containing ks_jump_sport=NFL and ks_jump_market=Passing Yards. Strict V205/V54 acceptance remains unchanged after readiness.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "analytics_changed": false,
+    "verifier_acceptance_weakened": false
   }
 }
