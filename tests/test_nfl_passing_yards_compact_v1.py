@@ -523,7 +523,7 @@ def test_router_v188_advances_only_passing_yards_to_v45(monkeypatch) -> None:
 
 def test_app_boots_router_v188_for_layered_passing_yards() -> None:
     app = _read("app.py")
-    assert "from streamlit_memory_lazy_router_v191 import record_bootstrap_import_ms, render_app" in app
+    assert "from streamlit_memory_lazy_router_v196 import record_bootstrap_import_ms, render_app" in app
     assert "STREAMLIT_V188_PASSING_YARDS_LAYERED_PRODUCTION_2026_09_20" in app
     assert "# Frozen V187 delegate compatibility" in app
 
@@ -578,7 +578,7 @@ def test_v43_bypasses_v36_legacy_compact_presentation(monkeypatch) -> None:
 def test_app_has_step4_passing_yards_visible_replacement_restart_marker() -> None:
     app = _read("app.py")
     assert "STREAMLIT_V188_PASSING_YARDS_STEP4_VISIBLE_REPLACEMENT_2026_09_20" in app
-    assert "from streamlit_memory_lazy_router_v191 import record_bootstrap_import_ms, render_app" in app
+    assert "from streamlit_memory_lazy_router_v196 import record_bootstrap_import_ms, render_app" in app
 
 
 def test_v43_suppresses_v16_legacy_matchup_and_why_wrappers(monkeypatch) -> None:
