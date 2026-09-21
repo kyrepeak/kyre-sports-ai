@@ -1,0 +1,33 @@
+name: Universal Theme Step 6 Final Certification
+
+on:
+  push:
+    branches:
+      - "monster/universal-theme-step6-final-cert-v1"
+    paths:
+      - "kyre_universal_theme_v1.py"
+      - "kyre_universal_shell_v1.py"
+      - "kyre_universal_components_v1.py"
+      - "kyre_universal_responsive_v1.py"
+      - "nfl_passing_yards_hub_v44.py"
+      - "nfl_passing_yards_hub_v45.py"
+      - "streamlit_memory_lazy_router_v188.py"
+      - "tests/test_universal_theme_step6_final_cert_v1.py"
+      - ".github/workflows/universal-theme-step6-final-cert-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  universal-theme-final-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install targeted UI dependency
+        run: pip install -q streamlit
+      - name: Certify full universal theme chain
+        run: python tests/test_universal_theme_step6_final_cert_v1.py
