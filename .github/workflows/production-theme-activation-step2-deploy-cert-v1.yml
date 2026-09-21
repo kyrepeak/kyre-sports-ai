@@ -61,3 +61,5 @@ jobs:
               print("VISIBLE_MARKER", marker.inner_text())
               browser.close()
           PY
+
+# post-redeploy proof
