@@ -1,12 +1,6 @@
 name: NFL Moneyline V12 Performance Fast Route V1
 
 on:
-  push:
-    branches: [fix/nfl-moneyline-v12-session-safe-presentation]
-    paths:
-      - ".github/workflows/nfl-moneyline-v12-performance-fast-route-v1.yml"
-      - "nfl_moneyline_hub_v12.py"
-      - "tests/test_nfl_moneyline_v12_performance_fast_route_v1.py"
   pull_request:
     branches: [main]
     paths:
