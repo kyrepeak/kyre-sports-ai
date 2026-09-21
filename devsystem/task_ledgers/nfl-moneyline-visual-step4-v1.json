@@ -67,5 +67,26 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_route_classifier_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35636806257,
+    "failure_job": 106456123469,
+    "owner": "VERIFIER / ROUTE READINESS CLASSIFICATION",
+    "failure": "raw Playwright timeout waiting for NFL Moneyline heading before Step 4 readiness evaluation",
+    "direct_evidence": {
+      "dedicated_visual_step4_proof": "SUCCESS",
+      "step4_structure_evaluated": false,
+      "route_readiness_classifier_reached": false,
+      "product_disproved": false
+    },
+    "root_cause": "The verifier used a hard route-heading wait before the richer Step 4 readiness loop, so a transient route transition could terminate as an unclassified Playwright timeout before Step 4 or route readiness was evaluated.",
+    "repair": "Remove the pre-classifier hard route-heading wait and let the existing Step 4 readiness loop own the full settled-route observation window.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "step1_code_changed": false,
+    "step2_code_changed": false,
+    "step3_code_changed": false,
+    "v17_product_reopened": false
+  }
 }
