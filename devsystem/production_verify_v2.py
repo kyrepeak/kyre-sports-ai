@@ -78,6 +78,17 @@ def _browser_verify_v39(
                 except Exception:
                     initial_sport_value = ""
 
+            # Fail fast on route identity before waiting for route-specific
+            # lower-card content on the shared Streamlit host.
+            route_identity = CFB_REQUIRED_MARKERS[0]
+            if route_identity not in initial_body:
+                raise frozen.ProductionVerificationFailure(
+                    "ROUTE_TARGET_MISMATCH: expected "
+                    f"{certified_browser.CFB_SPORT} -> {certified_browser.CFB_MARKET}; "
+                    f"required identity={route_identity!r}; "
+                    f"actual body start={initial_body[:1000]!r}"
+                )
+
             cfb_market_combo = frame.get_by_role(
                 "combobox",
                 name=certified_browser.CFB_MARKET_LABEL,
@@ -85,15 +96,27 @@ def _browser_verify_v39(
             )
             cfb_market_combo.wait_for(state="visible", timeout=45000)
 
-            # The V39 ACTIVE caption can appear before lower evidence cards.
-            # Waiting for the final marker proves the full dashboard is ready.
-            final_body = certified_browser._wait_for_text(
+            # Dynamic slate availability is not route drift. Mirror the
+            # certified browser-QA contract: a valid no-games state proves the
+            # route without requiring lower game-card markers that cannot exist.
+            terminal_marker = CFB_REQUIRED_MARKERS[-1]
+            final_body = certified_browser._wait_for_either_text(
                 frame,
-                CFB_REQUIRED_MARKERS[-1],
-                90.0,
+                terminal_marker,
+                certified_browser.CFB_NO_GAMES_MARKER,
+                60.0,
+            )
+            no_games = certified_browser.CFB_NO_GAMES_MARKER in final_body
+            required_markers = (
+                CFB_REQUIRED_MARKERS
+                if not no_games
+                else (
+                    CFB_REQUIRED_MARKERS[0],
+                    *CFB_REQUIRED_MARKERS[1:4],
+                )
             )
             missing_markers = [
-                marker for marker in CFB_REQUIRED_MARKERS
+                marker for marker in required_markers
                 if marker not in final_body
             ]
             if missing_markers:

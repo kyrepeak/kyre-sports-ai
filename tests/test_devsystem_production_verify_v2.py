@@ -44,8 +44,11 @@ def test_v2_production_browser_uses_exact_fast_route_and_waits_for_full_v39():
     assert "certified_browser._cfb_over_under_url(streamlit_url)" in source
     assert "certified_browser._find_app_frame" in source
     assert "certified_browser.CFB_MARKET_LABEL" in source
-    assert "certified_browser._wait_for_text(" in source
+    assert "ROUTE_TARGET_MISMATCH" in source
+    assert "certified_browser._wait_for_either_text(" in source
+    assert "certified_browser.CFB_NO_GAMES_MARKER" in source
     assert "CFB_REQUIRED_MARKERS[-1]" in source
+    assert "required_markers" in source
 
 
 def test_v2_preserves_frozen_v1_run_and_restores_browser_hook(monkeypatch, tmp_path):
