@@ -579,3 +579,26 @@ def test_app_has_step4_passing_yards_visible_replacement_restart_marker() -> Non
     app = _read("app.py")
     assert "STREAMLIT_V188_PASSING_YARDS_STEP4_VISIBLE_REPLACEMENT_2026_09_20" in app
     assert "from streamlit_memory_lazy_router_v188 import record_bootstrap_import_ms, render_app" in app
+
+
+def test_v43_suppresses_v16_legacy_matchup_and_why_wrappers(monkeypatch) -> None:
+    import nfl_passing_yards_hub_v43 as v43
+
+    original_matchup = v43.legacy_visual._matchup_html
+    original_why = v43.legacy_visual._why_html
+    seen = {}
+
+    monkeypatch.setattr(v43.st, "markdown", lambda *a, **k: None)
+
+    def fake_prior_render():
+        seen["matchup"] = v43.legacy_visual._matchup_html({}, [])
+        seen["why"] = v43.legacy_visual._why_html([], [], [], [], {})
+        return "DONE"
+
+    monkeypatch.setattr(v43.prior, "render_nfl_passing_yards_hub", fake_prior_render)
+
+    assert v43.render_nfl_passing_yards_hub() == "DONE"
+    assert seen["matchup"] == ""
+    assert seen["why"] == ""
+    assert v43.legacy_visual._matchup_html is original_matchup
+    assert v43.legacy_visual._why_html is original_why
