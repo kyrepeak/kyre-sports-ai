@@ -103,18 +103,50 @@ jobs:
                   nfl_market.wait_for(state="visible", timeout=60000)
                   _choose(page, frame, 1, "Moneyline")
 
-                  # Fail fast on route identity before Step 1-specific waits.
-                  route_marker = frame.get_by_text(
-                      "NFL Moneyline", exact=False
-                  ).first
-                  try:
-                      route_marker.wait_for(state="visible", timeout=60000)
-                  except Exception as exc:
+                  # Streamlit Community Cloud may replace/rerun the app frame
+                  # after a selectbox change. Reacquire it and prove route
+                  # identity from the actual selected controls, not hero copy.
+                  import time
+                  deadline = time.time() + 60
+                  last_identity = {}
+                  while time.time() < deadline:
+                      frame, _ = _find_app_frame(page)
+                      combos = frame.get_by_role("combobox")
+                      sport_value = ""
+                      market_value = ""
+                      try:
+                          sport_value = combos.nth(0).input_value(timeout=3000)
+                      except Exception:
+                          try:
+                              sport_value = combos.nth(0).inner_text(timeout=3000)
+                          except Exception:
+                              sport_value = ""
+                      try:
+                          market_box = frame.get_by_role(
+                              "combobox", name="🎯 NFL Market", exact=True
+                          )
+                          market_value = market_box.input_value(timeout=3000)
+                      except Exception:
+                          try:
+                              market_value = market_box.inner_text(timeout=3000)
+                          except Exception:
+                              market_value = ""
+                      last_identity = {
+                          "sport": str(sport_value).strip(),
+                          "market": str(market_value).strip(),
+                      }
+                      if (
+                          last_identity["sport"] == "NFL"
+                          and last_identity["market"] == "Moneyline"
+                      ):
+                          break
+                      page.wait_for_timeout(500)
+                  else:
                       body = frame.locator("body").inner_text(timeout=5000)
                       raise BrowserQAFailure(
                           "ROUTE_TARGET_MISMATCH: expected NFL -> Moneyline; "
-                          f"actual body start={body[:1800]!r}"
-                      ) from exc
+                          f"actual={last_identity!r}; body start={body[:1800]!r}"
+                      )
 
                   body = frame.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(body)
