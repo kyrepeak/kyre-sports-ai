@@ -88,6 +88,11 @@ jobs:
           assert 'from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app' in app
           assert 'from streamlit_memory_lazy_router_v204 import record_bootstrap_import_ms, render_app' in app
           assert 'PASSING_YARDS_UNIVERSAL_STEP4_RUNTIME' in app
+          assert 'PASSING_YARDS_STEP4_PUBLIC_DEPLOY_REFRESH' in app
+          workflow = Path(".github/workflows/passing-yards-universal-step4-cards-v1.yml").read_text()
+          assert re.search(r"(?m)^  runtime-trace-diagnostic:\\s*$", workflow) is None
+          public_body = workflow.split("  public-production-proof:",1)[1]
+          assert public_body.index("revision_ready = False") < public_body.index("frame, scan = _find_app_frame(page)")
 
           banned = (
               "_build_projection(",
@@ -104,6 +109,7 @@ jobs:
 
           print("PASSING_YARDS_UNIVERSAL_STEP4_STATIC_GREEN")
           PY
+
 
   public-production-proof:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -146,23 +152,51 @@ jobs:
               try:
                   route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
-                  frame, scan = _find_app_frame(page)
 
+                  # Deployment revision readiness must happen before the strict
+                  # frame grader. A stale Streamlit revision can legitimately
+                  # render an old error screen while the new main revision is
+                  # still rolling out; that stale screen cannot disprove V54.
                   revision_deadline = time.monotonic() + 180.0
+                  revision_scan = []
                   while True:
-                      body = frame.locator("body").inner_text(timeout=5000)
-                      forbidden = _body_has_forbidden_error(body)
-                      if forbidden:
-                          raise BrowserQAFailure(f"PASSING_YARDS_RUNTIME: forbidden marker {forbidden}")
-                      if frame.locator('[data-passing-yards-v205-runtime="step4"]').count() >= 1:
+                      revision_scan = []
+                      revision_ready = False
+                      for index, candidate in enumerate(page.frames):
+                          try:
+                              marker_count = candidate.locator(
+                                  '[data-passing-yards-v205-runtime="step4"]'
+                              ).count()
+                              body_start = candidate.locator("body").inner_text(timeout=3000)[:1200]
+                          except Exception:
+                              marker_count = 0
+                              body_start = ""
+                          revision_scan.append({
+                              "index": index,
+                              "url": candidate.url,
+                              "v205_runtime": marker_count,
+                              "body_start": body_start,
+                          })
+                          if marker_count >= 1:
+                              revision_ready = True
+                              break
+
+                      if revision_ready:
                           break
+
                       if time.monotonic() >= revision_deadline:
                           raise BrowserQAFailure(
                               "PASSING_YARDS_STEP4_REVISION_READINESS: "
                               "public Streamlit never exposed the V205 runtime witness; "
-                              + f"body start={body[:2200]!r}"
+                              + json.dumps(revision_scan, sort_keys=True)
                           )
-                      page.wait_for_timeout(1000)
+
+                      page.wait_for_timeout(1500)
+                      page.reload(wait_until="domcontentloaded", timeout=120000)
+
+                  # Once the exact V205 revision is serving, restore the strict
+                  # existing frame selection and all existing acceptance checks.
+                  frame, scan = _find_app_frame(page)
 
                   deadline = time.monotonic() + 60.0
                   evidence = {}

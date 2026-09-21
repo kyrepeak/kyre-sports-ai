@@ -73,5 +73,28 @@
     "verifier_weakened": false,
     "analytics_changed": false,
     "moneyline_changed": false
+  },
+  "latest_public_revision_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "owner": "DEPLOYMENT / REVISION READINESS",
+    "direct_evidence": {
+      "local_diagnostic_run": 35658401661,
+      "local_diagnostic_job": 106527554888,
+      "local_current_branch_rendered_passing_yards": true,
+      "local_attribute_error": false,
+      "local_runtime_note": "Exact cold NFL Passing Yards query rendered full content under branch-local Streamlit; unredacted log contained no AttributeError.",
+      "public_failure_runs": [
+        35654677827,
+        35655843564
+      ],
+      "public_failure_phase": "_find_app_frame aborted on stale public AttributeError before V205 revision marker could be evaluated"
+    },
+    "reclassification": "Current Step 4 code is locally runtime-valid. The public proof was grading a stale/broken Streamlit revision before its own revision-readiness phase could execute.",
+    "repair": "Force a Step 4 app.py public revision refresh and move V205 revision readiness before strict _find_app_frame grading. Reload until the exact V205 witness is serving, then apply every existing Step 4 ownership/card/computed-style acceptance check unchanged.",
+    "product_card_code_changed": false,
+    "router_code_changed": false,
+    "analytics_changed": false,
+    "verifier_acceptance_weakened": false,
+    "temporary_diagnostic_job_removed_before_merge": true
   }
 }
