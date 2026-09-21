@@ -135,11 +135,13 @@ def render_nfl_hub(market: str = "Moneyline"):
     if str(market or "Moneyline") != "Moneyline":
         raise RuntimeError("Moneyline V14 direct handler is Moneyline only.")
 
-    original_css = presentation._CSS
+    original_theme_builder = prior.build_moneyline_theme_css
     original_markdown = presentation.st.markdown
     original_date_input = presentation.st.date_input
 
-    presentation._CSS = _step1_css(original_css)
+    # V13 owns the universal Moneyline theme. Append Step 1 only AFTER V13
+    # composes that frozen theme so the compact rules are the final CSS layer.
+    prior.build_moneyline_theme_css = lambda base: _step1_css(original_theme_builder(base))
     presentation.st.markdown = _markdown_proxy(original_markdown)
     presentation.st.date_input = _date_input_proxy(original_date_input)
     try:
@@ -147,7 +149,7 @@ def render_nfl_hub(market: str = "Moneyline"):
     finally:
         presentation.st.date_input = original_date_input
         presentation.st.markdown = original_markdown
-        presentation._CSS = original_css
+        prior.build_moneyline_theme_css = original_theme_builder
 
 __all__ = [
     "DISPLAY_ONLY",
