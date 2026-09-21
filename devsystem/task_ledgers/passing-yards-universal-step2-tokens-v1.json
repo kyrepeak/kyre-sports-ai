@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-universal-step2-tokens-v1",
+  "status": "DONE",
+  "scope": "Universal Theme -> NFL Passing Yards Step 2 only: centralize semantic design tokens and make the frozen Step 1 ownership surface consume those tokens for controls, cards, evidence panels, and market controls.",
+  "baseline": {
+    "main_sha": "354aae0062df44b1cce8dddc412faca2e493b29c",
+    "step1_green_frozen": true,
+    "frozen_step1_product": "nfl_passing_yards_hub_v51",
+    "frozen_step1_router": "streamlit_memory_lazy_router_v202",
+    "moneyline_green_frozen": true
+  },
+  "acceptance": {
+    "semantic_token_source_present": true,
+    "primitive_theme_v1_preserved": true,
+    "token_only_passing_yards_override": true,
+    "top_controls_token_driven": true,
+    "command_evidence_cards_token_driven": true,
+    "market_controls_token_driven": true,
+    "frozen_v51_execution_preserved": true,
+    "passing_yards_only_route_override": true,
+    "targeted_step2_proof_required": true,
+    "protected_merge_gate_required": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "step1_code_changed": false,
+    "passing_yards_data_logic_changed": false,
+    "identity_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "sportsbook_transport_changed": false,
+    "widget_keys_changed": false,
+    "stake_sizing_changed": false,
+    "moneyline_changed": false,
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "freeze_rule": "After targeted Step 2 proof, required merge gate, merge, and one successful post-merge public production proof of semantic-token consumption, Step 2 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
