@@ -65,5 +65,32 @@
     "router_changed": false,
     "step1_changed": false,
     "moneyline_changed": false
+  },
+  "latest_router_ordering_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35647386042,
+    "failure_job": 106491060322,
+    "owner": "ROUTER / COLD QUERY-ENTRY ORDERING",
+    "terminal_evidence": {
+      "visual_step2_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "passing_yards_text": true,
+      "step1_owner_style": 0,
+      "semantic_tokens_style": 0,
+      "step2_token_style": 0,
+      "step2_owner_marker": 0,
+      "owner_container": 0,
+      "top_container": 0,
+      "old_keyerror_present": false
+    },
+    "root_cause": "V203 classified the active route before the frozen V185 same-run query handoff populated NFL / Passing Yards session state on a cold query entry, so newer V52/V51 ownership layers delegated before V187 eventually rendered the older Passing Yards route.",
+    "repair": "V203 now detects only the explicit ks_jump_sport=NFL + ks_jump_market=Passing Yards cold query and invokes frozen V185 _consume_any_nfl_category_without_rerun() before _active_route() classification.",
+    "scope_guard": "The early handoff is gated to explicit NFL + Passing Yards query entry only; all other routes preserve existing delegation.",
+    "v203_changed": true,
+    "v202_changed": false,
+    "v52_changed": false,
+    "v51_changed": false,
+    "analytics_changed": false,
+    "moneyline_changed": false
   }
 }
