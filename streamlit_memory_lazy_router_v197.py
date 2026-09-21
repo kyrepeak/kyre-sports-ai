@@ -1,7 +1,8 @@
 """KYRE Streamlit Router V197 — NFL Moneyline visual upgrade Step 1.
 
 Additive over frozen V196. Only active NFL Moneyline advances from V13 to
-presentation-only V14. Every unrelated route remains delegated to V196.
+presentation-only V14. Cold-route activation follows V189's certified Moneyline
+predicate; every unrelated route remains delegated to V196.
 """
 from __future__ import annotations
 
