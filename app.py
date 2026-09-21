@@ -28,7 +28,7 @@ NFL_MONEYLINE_VISUAL_STEP4_RUNTIME = "NFL_MONEYLINE_V17_MARKET_ODDS_PANEL_2026_0
 NFL_MONEYLINE_VISUAL_STEP5_RUNTIME = "NFL_MONEYLINE_V18_RESPONSIVE_FINAL_2026_09_21"
 PASSING_YARDS_UNIVERSAL_STEP1_RUNTIME = "NFL_PASSING_YARDS_V51_UNIVERSAL_OWNER_2026_09_21"
 PASSING_YARDS_UNIVERSAL_STEP2_RUNTIME = "NFL_PASSING_YARDS_V52_SEMANTIC_TOKENS_2026_09_21"
-PASSING_YARDS_UNIVERSAL_STEP3_RUNTIME = "NFL_PASSING_YARDS_V53_UNIVERSAL_SHELL_2026_09_21"
+PASSING_YARDS_UNIVERSAL_STEP3_RUNTIME = "NFL_PASSING_YARDS_V53_UNIVERSAL_SHELL_2026_09_21"\nPASSING_YARDS_UNIVERSAL_STEP4_RUNTIME = "NFL_PASSING_YARDS_V54_UNIVERSAL_CARDS_2026_09_21"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
 
@@ -291,7 +291,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v204 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app\n    # Frozen Passing Yards Step 3 V204 certification compatibility: from streamlit_memory_lazy_router_v204 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 2 V203 certification compatibility: from streamlit_memory_lazy_router_v203 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 1 V202 certification compatibility: from streamlit_memory_lazy_router_v202 import record_bootstrap_import_ms, render_app
     # Frozen Moneyline V201 certification compatibility: from streamlit_memory_lazy_router_v201 import record_bootstrap_import_ms, render_app
