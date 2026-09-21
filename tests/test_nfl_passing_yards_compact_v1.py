@@ -602,3 +602,23 @@ def test_v43_suppresses_v16_legacy_matchup_and_why_wrappers(monkeypatch) -> None
     assert seen["why"] == ""
     assert v43.legacy_visual._matchup_html is original_matchup
     assert v43.legacy_visual._why_html is original_why
+
+
+def test_v43_suppresses_only_legacy_completion_caption(monkeypatch) -> None:
+    import nfl_passing_yards_hub_v43 as v43
+
+    rendered = []
+    patched_caption = lambda body, *a, **k: rendered.append(str(body))
+    monkeypatch.setattr(v43.st, "caption", patched_caption)
+    monkeypatch.setattr(v43.st, "markdown", lambda *a, **k: None)
+
+    def fake_prior_render():
+        v43.st.caption("10/10 COMPLETE • legacy")
+        v43.st.caption("keep me")
+        return "DONE"
+
+    monkeypatch.setattr(v43.prior, "render_nfl_passing_yards_hub", fake_prior_render)
+
+    assert v43.render_nfl_passing_yards_hub() == "DONE"
+    assert rendered == ["keep me"]
+    assert v43.st.caption is patched_caption
