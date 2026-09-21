@@ -573,3 +573,9 @@ def test_v43_bypasses_v36_legacy_compact_presentation(monkeypatch) -> None:
     assert v43.render_nfl_passing_yards_hub() == "DONE"
     assert seen["v36_is_bypassed"] is True
     assert v43.compact.render_nfl_passing_yards_hub is original_v36
+
+
+def test_app_has_step4_passing_yards_visible_replacement_restart_marker() -> None:
+    app = _read("app.py")
+    assert "STREAMLIT_V188_PASSING_YARDS_STEP4_VISIBLE_REPLACEMENT_2026_09_20" in app
+    assert "from streamlit_memory_lazy_router_v188 import record_bootstrap_import_ms, render_app" in app
