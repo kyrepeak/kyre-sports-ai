@@ -72,5 +72,28 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_public_render_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35632629393,
+    "failure_job": 106442260164,
+    "owner": "PRODUCT / RENDER COMPOSITION",
+    "evidence": {
+      "analysis_count": 1,
+      "quick_count": 0,
+      "factors_count": 0,
+      "snapshots_count": 1,
+      "evidence_count": 0,
+      "frozen_step2_team_count": 2,
+      "forbidden_pre_code_count": 6
+    },
+    "root_cause": "Multiline Step 3 analysis HTML contained Markdown-significant blank lines/indentation, so Streamlit terminated the raw HTML block and rendered later Step 3 markup as preformatted text.",
+    "repair": "Collapse the complete Step 3 analysis fragment to one contiguous HTML line after dedent/strip so Streamlit parses the entire fragment as real HTML.",
+    "product_scope": [
+      "nfl_moneyline_hub_v16.py"
+    ],
+    "step1_changed": false,
+    "step2_changed": false,
+    "analytical_logic_changed": false
+  }
 }
