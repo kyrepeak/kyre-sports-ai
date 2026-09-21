@@ -551,3 +551,25 @@ def test_v43_full_visible_replacement_suppresses_legacy_markdown(monkeypatch) ->
     assert "Matchup Spotlight" not in joined
     assert "<section>NFL Passing Yards</section>" not in joined
     assert "Why This Projection" not in joined
+
+
+def test_v43_bypasses_v36_legacy_compact_presentation(monkeypatch) -> None:
+    import nfl_passing_yards_hub_v43 as v43
+
+    original_v36 = v43.compact.render_nfl_passing_yards_hub
+    seen = {}
+
+    monkeypatch.setattr(v43.st, "markdown", lambda *a, **k: None)
+
+    def fake_prior_render():
+        seen["v36_is_bypassed"] = (
+            v43.compact.render_nfl_passing_yards_hub
+            is v43.pre_compact.render_nfl_passing_yards_hub
+        )
+        return "DONE"
+
+    monkeypatch.setattr(v43.prior, "render_nfl_passing_yards_hub", fake_prior_render)
+
+    assert v43.render_nfl_passing_yards_hub() == "DONE"
+    assert seen["v36_is_bypassed"] is True
+    assert v43.compact.render_nfl_passing_yards_hub is original_v36
