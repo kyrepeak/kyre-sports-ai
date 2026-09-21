@@ -23,8 +23,9 @@ def _active_route() -> tuple[str, str]:
     return prior._active_route()
 
 def render_app() -> None:
-    sport, market = _active_route()
-    if sport != "NFL" or market != MONEYLINE_MARKET:
+    # Follow the already-certified V189 Moneyline activation predicate so a
+    # cold public deep link reaches V14 before session-state route touches exist.
+    if moneyline_owner._active_market() != MONEYLINE_MARKET:
         return prior.render_app()
 
     original = moneyline_owner.MONEYLINE_HUB
