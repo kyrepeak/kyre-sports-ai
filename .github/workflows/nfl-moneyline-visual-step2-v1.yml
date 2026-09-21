@@ -1,0 +1,67 @@
+name: NFL Moneyline Visual Step 2
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v15.py'
+      - 'streamlit_memory_lazy_router_v198.py'
+      - 'devsystem/task_ledgers/nfl-moneyline-visual-step2-v1.json'
+      - '.github/workflows/nfl-moneyline-visual-step2-v1.yml'
+  workflow_dispatch:
+
+jobs:
+  visual-step2-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile Step 2 layer
+        run: |
+          python -m py_compile nfl_moneyline_hub_v15.py streamlit_memory_lazy_router_v198.py app.py
+      - name: Verify Step 2 frozen contract and route
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          v15 = Path("nfl_moneyline_hub_v15.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v198.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_moneyline_hub_v14"' in v15
+          assert 'VISUAL_UPGRADE_STEP = 2' in v15
+          assert 'PRESENTATION_ONLY = True' in v15
+          assert 'MAY_MODIFY_PROJECTION = False' in v15
+          assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v15
+          assert 'STAKE_SIZING_ENABLED = False' in v15
+          assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v15
+
+          # Step 2 must extend the frozen Step 1 CSS layer, not replace it.
+          assert 'original_step1_css = prior._step1_css' in v15
+          assert 'prior._step1_css = lambda base: _step2_css(original_step1_css(base))' in v15
+          assert 'presentation._matchup_html = _command_center_matchup_html' in v15
+
+          # Router V198 must override V197's selector directly; otherwise V197
+          # would overwrite V15 back to V14 during its nested render.
+          assert 'import streamlit_memory_lazy_router_v197 as prior' in router
+          assert 'MONEYLINE_HUB = "nfl_moneyline_hub_v15"' in router
+          assert 'original = prior.MONEYLINE_HUB' in router
+          assert 'prior.MONEYLINE_HUB = MONEYLINE_HUB' in router
+          assert 'moneyline_owner' not in router
+
+          assert 'from streamlit_memory_lazy_router_v198 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v197 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v196 import record_bootstrap_import_ms, render_app' in app
+
+          banned = (
+              "_build_final(",
+              "_fit_calibration_model(",
+              "_build_game_output(",
+              "fetch_nfl_moneyline_markets(",
+              "random.",
+              "np.random",
+          )
+          for token in banned:
+              assert token not in v15, f"Step 2 unexpectedly owns analytical token: {token}"
+
+          print("NFL Moneyline visual Step 2 GREEN")
+          PY

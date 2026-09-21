@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "nfl-moneyline-visual-step2-v1",
+  "status": "DONE",
+  "scope": "NFL Moneyline visual upgrade Step 2 only: premium side-by-side matchup command center using the already-computed frozen Moneyline payload, built on frozen Step 1.",
+  "trigger": "User requested Step 1 and Step 2 continue through GREEN + frozen before moving to Step 3.",
+  "guardrails": {
+    "step1_frozen": true,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "monte_carlo_logic_changed": false,
+    "market_logic_changed": false,
+    "grading_logic_changed": false,
+    "identity_logic_changed": false,
+    "stake_sizing_changed": false,
+    "other_markets_changed": false,
+    "other_sports_changed": false,
+    "monte_carlo_simulations": 5000000,
+    "sportsbook_projection_influence": 0.0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
