@@ -105,6 +105,86 @@ jobs:
           print("PASSING_YARDS_UNIVERSAL_STEP4_STATIC_GREEN")
           PY
 
+
+  runtime-trace-diagnostic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install local Streamlit trace dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/passing-yards-step4-runtime-trace
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8501 \
+            > artifacts/passing-yards-step4-runtime-trace/streamlit.log 2>&1 &
+          echo $! > /tmp/passing_yards_step4_streamlit_pid
+
+      - name: Drive exact cold Passing Yards query without masking runtime traceback
+        shell: bash
+        run: |
+          set +e
+          python - <<'PY'
+          import time
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health
+
+          base = "http://127.0.0.1:8501"
+          try:
+              _wait_for_health(base)
+              with sync_playwright() as p:
+                  browser = p.chromium.launch(
+                      headless=True,
+                      args=["--disable-dev-shm-usage", "--no-sandbox"],
+                  )
+                  page = browser.new_page(viewport={"width": 1280, "height": 1000})
+                  try:
+                      page.goto(
+                          base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards",
+                          wait_until="domcontentloaded",
+                          timeout=120000,
+                      )
+                      page.wait_for_timeout(12000)
+                      print("STEP4_LOCAL_BODY_START")
+                      print(page.locator("body").inner_text(timeout=5000)[:5000])
+                      print("STEP4_LOCAL_BODY_END")
+                  except Exception as exc:
+                      print("STEP4_LOCAL_BROWSER_EXCEPTION", repr(exc))
+                  finally:
+                      browser.close()
+          except Exception as exc:
+              print("STEP4_LOCAL_HEALTH_OR_BROWSER_EXCEPTION", repr(exc))
+          time.sleep(2)
+          PY
+          echo "===== STEP4 UNREDACTED STREAMLIT LOG ====="
+          tail -n 700 artifacts/passing-yards-step4-runtime-trace/streamlit.log || true
+          echo "===== END STEP4 UNREDACTED STREAMLIT LOG ====="
+          exit 0
+
+      - name: Upload Step 4 local runtime trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-step4-runtime-trace-${{ github.run_id }}
+          path: artifacts/passing-yards-step4-runtime-trace
+          if-no-files-found: warn
+          retention-days: 7
+
   public-production-proof:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
