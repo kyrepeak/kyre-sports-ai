@@ -6,6 +6,7 @@ through V202 unchanged.
 """
 from __future__ import annotations
 
+import streamlit as st
 import streamlit_memory_lazy_router_v202 as prior
 import streamlit_memory_lazy_router_v185 as handoff
 
@@ -16,6 +17,7 @@ PASSING_HUB = "nfl_passing_yards_hub_v52"
 PRESENTATION_ONLY = True
 MAY_MODIFY_PROJECTION = False
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
+RUNTIME_MARKER = "PASSING_YARDS_V203_STEP2_COLD_ENTRY_READY"
 
 def _consume_passing_yards_query_entry() -> bool:
     """Prime only an explicit cold NFL -> Passing Yards query before classification."""
@@ -40,6 +42,12 @@ def render_app() -> None:
     if sport != "NFL" or market != PASSING_MARKET:
         return prior.render_app()
 
+    st.markdown(
+        '<span data-passing-yards-v203-runtime="step2" '
+        'style="display:none" aria-hidden="true"></span>',
+        unsafe_allow_html=True,
+    )
+
     original = prior.PASSING_HUB
     prior.PASSING_HUB = PASSING_HUB
     try:
@@ -54,6 +62,7 @@ __all__ = [
     "PASSING_HUB",
     "PASSING_MARKET",
     "PRESENTATION_ONLY",
+    "RUNTIME_MARKER",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "_active_route",
     "_consume_passing_yards_query_entry",
