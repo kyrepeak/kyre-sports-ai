@@ -88,6 +88,11 @@ jobs:
           assert 'from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app' in app
           assert 'from streamlit_memory_lazy_router_v204 import record_bootstrap_import_ms, render_app' in app
           assert 'PASSING_YARDS_UNIVERSAL_STEP4_RUNTIME' in app
+          assert 'PASSING_YARDS_STEP4_PUBLIC_DEPLOY_REFRESH' in app
+          workflow = Path(".github/workflows/passing-yards-universal-step4-cards-v1.yml").read_text()
+          assert "runtime-trace-diagnostic:" not in workflow
+          public_body = workflow.split("  public-production-proof:",1)[1]
+          assert public_body.index("revision_ready = False") < public_body.index("frame, scan = _find_app_frame(page)")
 
           banned = (
               "_build_projection(",
@@ -105,85 +110,6 @@ jobs:
           print("PASSING_YARDS_UNIVERSAL_STEP4_STATIC_GREEN")
           PY
 
-
-  runtime-trace-diagnostic:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install local Streamlit trace dependencies
-        run: |
-          python -m pip install --disable-pip-version-check -q -r requirements.txt
-          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
-          python -m playwright install --with-deps chromium
-
-      - name: Start branch-local Streamlit
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/passing-yards-step4-runtime-trace
-          nohup python -m streamlit run app.py \
-            --server.headless true \
-            --server.address 127.0.0.1 \
-            --server.port 8501 \
-            > artifacts/passing-yards-step4-runtime-trace/streamlit.log 2>&1 &
-          echo $! > /tmp/passing_yards_step4_streamlit_pid
-
-      - name: Drive exact cold Passing Yards query without masking runtime traceback
-        shell: bash
-        run: |
-          set +e
-          python - <<'PY'
-          import time
-          from playwright.sync_api import sync_playwright
-          from devsystem.browser_qa_v1 import _wait_for_health
-
-          base = "http://127.0.0.1:8501"
-          try:
-              _wait_for_health(base)
-              with sync_playwright() as p:
-                  browser = p.chromium.launch(
-                      headless=True,
-                      args=["--disable-dev-shm-usage", "--no-sandbox"],
-                  )
-                  page = browser.new_page(viewport={"width": 1280, "height": 1000})
-                  try:
-                      page.goto(
-                          base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards",
-                          wait_until="domcontentloaded",
-                          timeout=120000,
-                      )
-                      page.wait_for_timeout(12000)
-                      print("STEP4_LOCAL_BODY_START")
-                      print(page.locator("body").inner_text(timeout=5000)[:5000])
-                      print("STEP4_LOCAL_BODY_END")
-                  except Exception as exc:
-                      print("STEP4_LOCAL_BROWSER_EXCEPTION", repr(exc))
-                  finally:
-                      browser.close()
-          except Exception as exc:
-              print("STEP4_LOCAL_HEALTH_OR_BROWSER_EXCEPTION", repr(exc))
-          time.sleep(2)
-          PY
-          echo "===== STEP4 UNREDACTED STREAMLIT LOG ====="
-          tail -n 700 artifacts/passing-yards-step4-runtime-trace/streamlit.log || true
-          echo "===== END STEP4 UNREDACTED STREAMLIT LOG ====="
-          exit 0
-
-      - name: Upload Step 4 local runtime trace
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: passing-yards-step4-runtime-trace-${{ github.run_id }}
-          path: artifacts/passing-yards-step4-runtime-trace
-          if-no-files-found: warn
-          retention-days: 7
 
   public-production-proof:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -226,23 +152,51 @@ jobs:
               try:
                   route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
-                  frame, scan = _find_app_frame(page)
 
+                  # Deployment revision readiness must happen before the strict
+                  # frame grader. A stale Streamlit revision can legitimately
+                  # render an old error screen while the new main revision is
+                  # still rolling out; that stale screen cannot disprove V54.
                   revision_deadline = time.monotonic() + 180.0
+                  revision_scan = []
                   while True:
-                      body = frame.locator("body").inner_text(timeout=5000)
-                      forbidden = _body_has_forbidden_error(body)
-                      if forbidden:
-                          raise BrowserQAFailure(f"PASSING_YARDS_RUNTIME: forbidden marker {forbidden}")
-                      if frame.locator('[data-passing-yards-v205-runtime="step4"]').count() >= 1:
+                      revision_scan = []
+                      revision_ready = False
+                      for index, candidate in enumerate(page.frames):
+                          try:
+                              marker_count = candidate.locator(
+                                  '[data-passing-yards-v205-runtime="step4"]'
+                              ).count()
+                              body_start = candidate.locator("body").inner_text(timeout=3000)[:1200]
+                          except Exception:
+                              marker_count = 0
+                              body_start = ""
+                          revision_scan.append({
+                              "index": index,
+                              "url": candidate.url,
+                              "v205_runtime": marker_count,
+                              "body_start": body_start,
+                          })
+                          if marker_count >= 1:
+                              revision_ready = True
+                              break
+
+                      if revision_ready:
                           break
+
                       if time.monotonic() >= revision_deadline:
                           raise BrowserQAFailure(
                               "PASSING_YARDS_STEP4_REVISION_READINESS: "
                               "public Streamlit never exposed the V205 runtime witness; "
-                              + f"body start={body[:2200]!r}"
+                              + json.dumps(revision_scan, sort_keys=True)
                           )
-                      page.wait_for_timeout(1000)
+
+                      page.wait_for_timeout(1500)
+                      page.reload(wait_until="domcontentloaded", timeout=120000)
+
+                  # Once the exact V205 revision is serving, restore the strict
+                  # existing frame selection and all existing acceptance checks.
+                  frame, scan = _find_app_frame(page)
 
                   deadline = time.monotonic() + 60.0
                   evidence = {}
