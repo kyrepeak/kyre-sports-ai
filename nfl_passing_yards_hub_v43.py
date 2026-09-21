@@ -12,6 +12,7 @@ import re
 from typing import Any
 
 import streamlit as st
+import nfl_passing_yards_hub_v16 as legacy_visual
 import nfl_passing_yards_hub_v34 as composition
 import nfl_passing_yards_hub_v35 as pre_compact
 import nfl_passing_yards_hub_v36 as compact
@@ -145,6 +146,8 @@ def render_nfl_passing_yards_hub() -> None:
     original_cards = composition._combined_player_cards_html
     original_banner = composition._visual_build_banner_v34
     original_markdown = st.markdown
+    original_matchup_html = legacy_visual._matchup_html
+    original_why_html = legacy_visual._why_html
     original_compact_render = compact.render_nfl_passing_yards_hub
 
     def capture_only_markdown(body: Any, *args: Any, **kwargs: Any):
@@ -155,6 +158,8 @@ def render_nfl_passing_yards_hub() -> None:
             original_markdown(style, unsafe_allow_html=True)
         return None
 
+    legacy_visual._matchup_html = lambda *args, **kwargs: ""
+    legacy_visual._why_html = lambda *args, **kwargs: ""
     composition._combined_player_cards_html = _layered_player_cards_html
     composition._visual_build_banner_v34 = _no_legacy_banner
     compact.render_nfl_passing_yards_hub = pre_compact.render_nfl_passing_yards_hub
@@ -163,6 +168,8 @@ def render_nfl_passing_yards_hub() -> None:
         return prior.render_nfl_passing_yards_hub()
     finally:
         st.markdown = original_markdown
+        legacy_visual._matchup_html = original_matchup_html
+        legacy_visual._why_html = original_why_html
         compact.render_nfl_passing_yards_hub = original_compact_render
         composition._combined_player_cards_html = original_cards
         composition._visual_build_banner_v34 = original_banner
