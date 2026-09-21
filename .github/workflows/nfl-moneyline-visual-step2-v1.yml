@@ -213,7 +213,53 @@ jobs:
                               "kml15 matchup card and no no-games marker; "
                               f"body start={body[:1800]!r}"
                           )
-                      missing_step2 = [m for m in step2_required if m not in body]
+
+                      # Evidence escape: persist the ACTUAL first V15 card DOM
+                      # before any missing-marker assertion can terminate proof.
+                      card = frame.locator("article.kml15-card").first
+                      card_text = card.inner_text(timeout=5000)
+                      card_html = card.inner_html(timeout=5000)
+
+                      (artifacts / "card_inner_text.txt").write_text(
+                          card_text, encoding="utf-8"
+                      )
+                      (artifacts / "card_inner_html.html").write_text(
+                          card_html, encoding="utf-8"
+                      )
+
+                      card_markers_present = [
+                          m for m in step2_required if m in card_text
+                      ]
+                      card_markers_missing = [
+                          m for m in step2_required if m not in card_text
+                      ]
+                      body_markers_missing = [
+                          m for m in step2_required if m not in body
+                      ]
+
+                      diagnostic = {
+                          "product_sha": "4a23558b0993315d5908ddca0663828ac42170fc",
+                          "public_url": page.url,
+                          "card_count": card_count,
+                          "style_count": style_count,
+                          "card_text": card_text,
+                          "required_step2_markers": list(step2_required),
+                          "card_markers_present": card_markers_present,
+                          "card_markers_missing": card_markers_missing,
+                          "body_markers_missing": body_markers_missing,
+                      }
+                      (artifacts / "diagnostic.json").write_text(
+                          json.dumps(diagnostic, indent=2), encoding="utf-8"
+                      )
+                      page.screenshot(
+                          path=str(
+                              artifacts
+                              / "nfl_moneyline_step2_public_diagnostic.png"
+                          ),
+                          full_page=True,
+                      )
+
+                      missing_step2 = body_markers_missing
                       if missing_step2:
                           raise BrowserQAFailure(
                               "MONEYLINE_STEP2_MARKER: missing "
