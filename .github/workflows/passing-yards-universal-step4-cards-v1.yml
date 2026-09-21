@@ -73,11 +73,16 @@ jobs:
               assert marker in css, marker
 
           assert 'import streamlit_memory_lazy_router_v204 as prior' in router
+          assert 'import streamlit_memory_lazy_router_v185 as handoff' in router
           assert 'PASSING_HUB = "nfl_passing_yards_hub_v54"' in router
           assert 'data-passing-yards-v205-runtime="step4"' in router
-          assert 'prior._cold_passing_yards_query_requested()' in router
+          assert 'def _cold_passing_yards_query_requested() -> bool:' in router
+          assert 'handoff._query_value(handoff.SPORT_JUMP_QUERY_KEY)' in router
+          assert 'handoff._query_value(handoff.MARKET_JUMP_QUERY_KEY)' in router
+          assert 'prior._cold_passing_yards_query_requested()' not in router
           assert 'prior.PASSING_HUB = PASSING_HUB' in router
           render_body = router.split("def render_app() -> None:",1)[1]
+          assert 'cold_query = _cold_passing_yards_query_requested()' in render_body
           assert "_consume_passing_yards_query_entry()" not in render_body
 
           assert 'from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app' in app
