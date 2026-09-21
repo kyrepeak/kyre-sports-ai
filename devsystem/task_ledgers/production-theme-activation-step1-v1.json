@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "production-theme-activation-step1-v1",
+  "status": "DONE",
+  "scope": "Production Activation Step 1 promotion only. Promotes the exact frozen certified site-wide theme product dc3505b445559b9397978e2eea951e6e48c35794 to main. This ledger is repository-contract metadata only and does not change product behavior.",
+  "trigger": "User approved Production Activation Step 1 after the site-wide theme rollout reached 5/5 GREEN and frozen.",
+  "guardrails": {
+    "product_sha": "dc3505b445559b9397978e2eea951e6e48c35794",
+    "product_code_changed_during_promotion": false,
+    "app_logic_changed": false,
+    "router_logic_changed": false,
+    "model_logic_changed": false,
+    "data_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "proof_transport_reset": "single_metadata_only_retrigger"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
