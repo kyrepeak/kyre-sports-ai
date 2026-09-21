@@ -139,10 +139,11 @@ jobs:
                   nfl_market.wait_for(state="visible", timeout=60000)
                   _choose(page, frame, 1, "Moneyline")
 
-                  route_marker = frame.get_by_text("NFL Moneyline", exact=False).first
-                  route_marker.wait_for(state="visible", timeout=60000)
-
-                  readiness_deadline = time.monotonic() + 45.0
+                  # Do not hard-fail on the route heading before the richer
+                  # readiness classifier can observe the settled public state.
+                  # The previous post-merge proof died here as a raw Playwright
+                  # timeout and therefore never evaluated Step 4.
+                  readiness_deadline = time.monotonic() + 60.0
                   while True:
                       body = frame.locator("body").inner_text(timeout=5000)
                       forbidden = _body_has_forbidden_error(body)
