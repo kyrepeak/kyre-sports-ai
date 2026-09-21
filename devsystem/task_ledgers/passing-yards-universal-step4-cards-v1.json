@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-universal-step4-cards-v1",
+  "status": "DONE",
+  "scope": "Universal Theme -> NFL Passing Yards Step 4 only: unify the existing main matchup/QB/player card surfaces under the frozen universal semantic token system without changing any analytical payloads or routing outside Passing Yards.",
+  "baseline": {
+    "main_sha": "3d586fa4bd59b07a8f22e452792c08cad638876a",
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "step3_green_frozen": true,
+    "frozen_step3_product": "nfl_passing_yards_hub_v53",
+    "frozen_step3_router": "streamlit_memory_lazy_router_v204",
+    "moneyline_green_frozen": true
+  },
+  "acceptance": {
+    "unified_player_card_system_present": true,
+    "v47_and_v48_card_surfaces_styled": true,
+    "player_header_hierarchy_unified": true,
+    "identity_blocks_unified": true,
+    "projection_market_tiles_unified": true,
+    "evidence_support_cards_unified": true,
+    "existing_card_content_preserved": true,
+    "frozen_step3_shell_preserved": true,
+    "frozen_step2_tokens_preserved": true,
+    "frozen_step1_owner_preserved": true,
+    "passing_yards_only_router_override": true,
+    "cold_query_detection_read_only": true,
+    "targeted_step4_proof_required": true,
+    "protected_merge_gate_required": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "step1_code_changed": false,
+    "step2_code_changed": false,
+    "step3_code_changed": false,
+    "passing_yards_data_logic_changed": false,
+    "identity_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "sportsbook_transport_changed": false,
+    "widget_keys_changed": false,
+    "stake_sizing_changed": false,
+    "moneyline_changed": false,
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "freeze_rule": "After targeted Step 4 proof, required merge gate, merge, and one successful post-merge public production proof of the V54 card system on the certified Passing Yards cold route, Step 4 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
