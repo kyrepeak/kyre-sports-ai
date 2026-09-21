@@ -33,5 +33,19 @@
     "product_code_changed": false,
     "router_code_changed": false,
     "step1_code_changed": false
+  },
+  "latest_verifier_instrumentation": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_class": "VERIFIER / PROOF EVIDENCE",
+    "product_sha": "4a23558b0993315d5908ddca0663828ac42170fc",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "timeout_changed": false,
+    "evidence_capture": [
+      "card_inner_text.txt",
+      "card_inner_html.html",
+      "diagnostic.json",
+      "nfl_moneyline_step2_public_diagnostic.png"
+    ]
   }
 }
