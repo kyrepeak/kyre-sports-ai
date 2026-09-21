@@ -1,0 +1,177 @@
+name: Sitewide Theme Rollout Step 5 Final Certification
+
+on:
+  push:
+    branches:
+      - "monster/sitewide-theme-rollout-step5-final-cert-v1"
+    paths:
+      - ".github/workflows/sitewide-theme-rollout-step5-final-cert-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-full-site-theme-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dc3505b445559b9397978e2eea951e6e48c35794
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Certify pinned full-site universal theme rollout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, str(Path.cwd()))
+
+          from kyre_universal_theme_v1 import build_universal_theme_css
+          from kyre_universal_components_v1 import build_components_css
+          from kyre_universal_responsive_v1 import build_responsive_css
+          from kyre_moneyline_theme_v1 import build_moneyline_theme_css
+          from kyre_game_total_theme_v1 import build_game_total_theme_css
+          from kyre_remaining_pages_theme_v1 import (
+              EXCLUDED_FROZEN_ROUTES,
+              REMAINING_PAGES_CONTAINER_KEY,
+              build_remaining_pages_theme_css,
+              should_theme_route,
+          )
+
+          # Universal design system is present.
+          theme = build_universal_theme_css()
+          components = build_components_css()
+          responsive = build_responsive_css()
+
+          assert 'data-kyre-universal-theme="v1"' in theme
+          assert 'data-kyre-universal-components-css="v1"' in components
+          assert 'data-kyre-universal-responsive="v1"' in responsive
+
+          for token in (
+              "--kyre-bg-0",
+              "--kyre-glacier",
+              "--kyre-glacier-soft",
+              "--kyre-text-primary",
+              "--kyre-text-secondary",
+          ):
+              assert token in theme
+
+          for bp in (
+              "@media(min-width:1200px)",
+              "@media(max-width:900px)",
+              "@media(max-width:620px)",
+              "@media(max-width:430px)",
+          ):
+              assert bp in responsive
+
+          # Step 1 — shell is mounted before the router renders.
+          app = Path("app.py").read_text()
+          shell_runtime = Path("kyre_universal_shell_runtime_v1.py").read_text()
+
+          assert "from kyre_universal_shell_runtime_v1 import activate_universal_shell" in app
+          assert "activate_universal_shell()" in app
+          assert app.index("activate_universal_shell()") < app.index("    render_app()")
+          assert "from streamlit_memory_lazy_router_v191 import record_bootstrap_import_ms, render_app" in app
+          assert "SITEWIDE_UNIVERSAL_SHELL_RUNTIME" in app
+          assert 'data-kyre-sitewide-shell="v1"' in shell_runtime
+          assert 'data-kyre-sitewide-topbar="v1"' in shell_runtime
+          assert 'data-kyre-sitewide-sidebar="v1"' in shell_runtime
+
+          # Step 2 — NFL Moneyline visual wrapper preserves frozen analytics.
+          moneyline_css = build_moneyline_theme_css("<style>.frozen-v9-proof{display:block}</style>")
+          for marker in (
+              'data-kyre-universal-theme="v1"',
+              'data-kyre-moneyline-universal="v1"',
+              ".kml9-matchup-card",
+              ".kml9-team-panel",
+              ".kml9-stat.hero",
+          ):
+              assert marker in moneyline_css
+
+          moneyline = Path("nfl_moneyline_hub_v13.py").read_text()
+          assert 'FROZEN_PRIOR = "nfl_moneyline_hub_v12"' in moneyline
+          assert 'FROZEN_PRESENTATION = "nfl_moneyline_hub_v9"' in moneyline
+          assert "PRESENTATION_ONLY = True" in moneyline
+          assert "SPORTSBOOK_MODEL_INFLUENCE = 0.0" in moneyline
+          assert "MONTE_CARLO_SIMULATIONS = 5_000_000" in moneyline
+
+          # Step 3 — CFB Game Total visual wrapper preserves frozen page chain.
+          game_total_css = build_game_total_theme_css()
+          for marker in (
+              'data-kyre-game-total-universal="v1"',
+              ".gt229-sportnav",
+              ".gt225-hero",
+              ".gt226-wrap",
+              ".gt227-section",
+          ):
+              assert marker in game_total_css
+
+          game_total = Path("cfb_game_total_clean_page_v34.py").read_text()
+          assert 'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v33"' in game_total
+          assert "PRESENTATION_ONLY = True" in game_total
+          assert "MAY_MODIFY_PROJECTION = False" in game_total
+          assert "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0" in game_total
+
+          # Step 4 — all other active routes get the scoped compatibility skin.
+          remaining_css = build_remaining_pages_theme_css()
+          assert 'data-kyre-remaining-pages-theme="v1"' in remaining_css
+          assert REMAINING_PAGES_CONTAINER_KEY == "kyre_universal_remaining_pages"
+
+          expected_exclusions = {
+              ("NFL", "Passing Yards"),
+              ("NFL", "Moneyline"),
+              ("CFB", "Game Total"),
+          }
+          assert EXCLUDED_FROZEN_ROUTES == expected_exclusions
+          for route in expected_exclusions:
+              assert should_theme_route(*route) is False
+
+          for route in (
+              ("NFL", "Slate"),
+              ("NFL", "Spread"),
+              ("NFL", "Game Total"),
+              ("NFL", "Rushing Yards"),
+              ("NFL", "Receiving Yards"),
+              ("NFL", "Daily Picks"),
+              ("CFB", "Moneyline"),
+              ("CFB", "Over/Under"),
+              ("MLB", "Slate"),
+              ("MLB", "Moneyline"),
+              ("MLB", "Game Total"),
+              ("MLB", "Run Line"),
+              ("WNBA", "Points"),
+              ("WNBA", "Rebounds"),
+              ("WNBA", "Assists"),
+              ("WNBA", "Moneyline"),
+              ("WNBA", "Game Total"),
+          ):
+              assert should_theme_route(*route) is True, route
+
+          router191 = Path("streamlit_memory_lazy_router_v191.py").read_text()
+          assert "import streamlit_memory_lazy_router_v190 as prior" in router191
+          assert "st.container(key=REMAINING_PAGES_CONTAINER_KEY)" in router191
+          assert "PRESENTATION_ONLY = True" in router191
+          assert "MAY_MODIFY_PROJECTION = False" in router191
+          assert "return prior.render_app()" in router191
+
+          # Frozen presentation owners remain present.
+          for frozen_path in (
+              "nfl_passing_yards_hub_v45.py",
+              "nfl_moneyline_hub_v12.py",
+              "cfb_game_total_clean_page_v33.py",
+          ):
+              assert Path(frozen_path).is_file(), frozen_path
+
+          # Rollout runtime markers all coexist in the final app entrypoint.
+          for marker in (
+              "SITEWIDE_UNIVERSAL_SHELL_RUNTIME",
+              "MONEYLINE_UNIVERSAL_THEME_RUNTIME",
+              "CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME",
+              "REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME",
+          ):
+              assert marker in app
+
+          print("SITEWIDE_THEME_ROLLOUT_STEP5_FINAL_CERT_GREEN")
+          PY
