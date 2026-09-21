@@ -608,8 +608,8 @@ def test_v43_suppresses_only_legacy_completion_caption(monkeypatch) -> None:
     import nfl_passing_yards_hub_v43 as v43
 
     rendered = []
-    original_caption = v43.st.caption
-    monkeypatch.setattr(v43.st, "caption", lambda body, *a, **k: rendered.append(str(body)))
+    patched_caption = lambda body, *a, **k: rendered.append(str(body))
+    monkeypatch.setattr(v43.st, "caption", patched_caption)
     monkeypatch.setattr(v43.st, "markdown", lambda *a, **k: None)
 
     def fake_prior_render():
@@ -621,4 +621,4 @@ def test_v43_suppresses_only_legacy_completion_caption(monkeypatch) -> None:
 
     assert v43.render_nfl_passing_yards_hub() == "DONE"
     assert rendered == ["keep me"]
-    assert v43.st.caption is original_caption
+    assert v43.st.caption is patched_caption
