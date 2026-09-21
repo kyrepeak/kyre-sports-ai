@@ -142,5 +142,29 @@
     "shell_changed": false,
     "analytics_changed": false,
     "verifier_acceptance_weakened": false
+  },
+  "latest_deployment_readiness_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35667648760,
+    "failure_job": 106556849833,
+    "owner": "DEPLOYMENT / REVISION READINESS",
+    "direct_evidence": {
+      "visual_step4_proof": "SUCCESS",
+      "public_passing_yards_rendered": true,
+      "stable_route_query": "NFL / Passing Yards",
+      "public_frame_url": "https://kyre-sports-ai.streamlit.app/~/+/",
+      "v205_runtime": 0,
+      "current_main_sha": "1a0bf9d3349a1c7528e02cc4d3a53728accaad55",
+      "observation": "Public app rendered a valid Passing Yards revision but not the V205 Step 4 revision within the prior 180-second readiness window."
+    },
+    "root_cause": "Streamlit Cloud deployment propagation can exceed the prior 180-second revision-readiness window. The verifier reached a valid older Passing Yards deployment and timed out before the exact V205 witness became available.",
+    "repair": "Keep the exact cold route and 20-second retry cadence, extend only the revision-readiness deadline from 180 seconds to 480 seconds, and extend the public job timeout from 12 to 15 minutes. All downstream Step 4 acceptance checks remain unchanged.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "cards_changed": false,
+    "tokens_changed": false,
+    "shell_changed": false,
+    "analytics_changed": false,
+    "verifier_acceptance_weakened": false
   }
 }

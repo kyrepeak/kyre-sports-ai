@@ -95,6 +95,7 @@ jobs:
           assert public_body.index("revision_ready = False") < public_body.index("frame, scan = _find_app_frame(page)")
           assert 'page.reload(' not in public_body
           assert 'next_route_retry = time.monotonic() + 20.0' in public_body
+          assert 'revision_deadline = time.monotonic() + 480.0' in public_body
           assert 'page.wait_for_timeout(1000)' in public_body
           assert public_body.count('page.goto(route_url, wait_until="domcontentloaded", timeout=120000)') >= 2
 
@@ -118,7 +119,7 @@ jobs:
   public-production-proof:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -161,7 +162,7 @@ jobs:
                   # frame grader. A stale Streamlit revision can legitimately
                   # render an old error screen while the new main revision is
                   # still rolling out; that stale screen cannot disprove V54.
-                  revision_deadline = time.monotonic() + 180.0
+                  revision_deadline = time.monotonic() + 480.0
                   next_route_retry = time.monotonic() + 20.0
                   revision_scan = []
                   while True:
