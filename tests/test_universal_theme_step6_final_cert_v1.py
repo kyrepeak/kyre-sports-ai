@@ -102,9 +102,9 @@ assert "prior.render_nfl_passing_yards_hub()" in v45_source
 
 # Final router points to V45 and does not regress to V43/V44 as active owner.
 router = Path("streamlit_memory_lazy_router_v188.py").read_text()
-assert "import nfl_passing_yards_hub_v45 as passing_yards" in router
-assert "nfl_passing_yards_hub_v44 as passing_yards" not in router
-assert "nfl_passing_yards_hub_v43 as passing_yards" not in router
+assert 'PASSING_HUB = "nfl_passing_yards_hub_v45"' in router
+assert 'PASSING_HUB = "nfl_passing_yards_hub_v44"' not in router
+assert 'PASSING_HUB = "nfl_passing_yards_hub_v43"' not in router
 
 # The final chain must contain all rollout artifacts.
 for path in (
