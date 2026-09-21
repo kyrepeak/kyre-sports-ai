@@ -139,25 +139,16 @@ def _columns_sink(stats: dict[str, Any], spec: Any = 1, *args: Any, **kwargs: An
 
 @contextmanager
 def _sink_hidden_presentation(stats: dict[str, Any]) -> Iterator[None]:
-    """Sink only presentation calls while preserving widgets/state/cache logic."""
-    originals: dict[str, Any] = {}
-    names = (*_SIMPLE_OUTPUTS, *_CONTEXT_OUTPUTS, "columns")
-    try:
-        for name in names:
-            if not hasattr(st, name):
-                continue
-            originals[name] = getattr(st, name)
-            if name == "columns":
-                setattr(st, name, lambda spec=1, *a, **k: _columns_sink(stats, spec, *a, **k))
-            elif name in _CONTEXT_OUTPUTS:
-                setattr(st, name, _context_sink(stats, name))
-            else:
-                setattr(st, name, _simple_sink(stats, name))
-        yield
-    finally:
-        for name, original in originals.items():
-            setattr(st, name, original)
+    """Keep hidden legacy rendering session-safe.
 
+    V11 already places the frozen legacy engine inside a CSS-hidden keyed
+    container before any legacy child is created. Do not mutate top-level
+    Streamlit methods here: multiple reruns/sessions share one process, so
+    global method replacement can suppress presentation in another Moneyline
+    render. The hidden V11 container remains the presentation-hiding layer.
+    """
+    stats["presentation_suppression_mode"] = "v11-css-hidden-container"
+    yield
 
 def _timed_request_memo(
     original: Callable[..., Any],
