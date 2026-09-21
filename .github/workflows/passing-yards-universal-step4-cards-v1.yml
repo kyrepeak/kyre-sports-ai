@@ -94,6 +94,8 @@ jobs:
           public_body = workflow.split("\n  public-production-proof:\n",1)[1]
           assert public_body.index("revision_ready = False") < public_body.index("frame, scan = _find_app_frame(page)")
           assert 'page.reload(' not in public_body
+          assert 'next_route_retry = time.monotonic() + 20.0' in public_body
+          assert 'page.wait_for_timeout(1000)' in public_body
           assert public_body.count('page.goto(route_url, wait_until="domcontentloaded", timeout=120000)') >= 2
 
           banned = (
@@ -160,6 +162,7 @@ jobs:
                   # render an old error screen while the new main revision is
                   # still rolling out; that stale screen cannot disprove V54.
                   revision_deadline = time.monotonic() + 180.0
+                  next_route_retry = time.monotonic() + 20.0
                   revision_scan = []
                   while True:
                       revision_scan = []
@@ -193,8 +196,16 @@ jobs:
                               + json.dumps(revision_scan, sort_keys=True)
                           )
 
-                      page.wait_for_timeout(1500)
-                      page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                      page.wait_for_timeout(1000)
+
+                      # Give Streamlit enough uninterrupted time to hydrate.
+                      # Prior local Step 4 proof needed materially longer than
+                      # 1.5 seconds; rapid renavigation starves the app before
+                      # the V205 witness can appear.
+                      now = time.monotonic()
+                      if now >= next_route_retry:
+                          page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                          next_route_retry = time.monotonic() + 20.0
 
                   # Once the exact V205 revision is serving, restore the strict
                   # existing frame selection and all existing acceptance checks.
