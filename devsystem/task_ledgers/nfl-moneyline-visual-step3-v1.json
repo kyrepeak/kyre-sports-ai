@@ -37,10 +37,40 @@
     "sportsbook_projection_influence": 0
   },
   "presentation_contract": {
-    "quick_facts": ["GAME TIME", "VENUE", "LOCATION", "BROADCAST", "PHASE"],
-    "key_matchup_factors": ["Strength index", "Offense PF/G", "Defense PA/G", "Recent L6 diff", "QB / availability"],
-    "team_snapshot": ["WIN %", "PF / G", "PA / G", "RECENT L6 DIFF"],
-    "evidence": ["AWAY PROFILE", "HOME PROFILE", "QB / INJURY", "MONTE CARLO", "MARKET QUALITY"]
+    "quick_facts": [
+      "GAME TIME",
+      "VENUE",
+      "LOCATION",
+      "BROADCAST",
+      "PHASE"
+    ],
+    "key_matchup_factors": [
+      "Strength index",
+      "Offense PF/G",
+      "Defense PA/G",
+      "Recent L6 diff",
+      "QB / availability"
+    ],
+    "team_snapshot": [
+      "WIN %",
+      "PF / G",
+      "PA / G",
+      "RECENT L6 DIFF"
+    ],
+    "evidence": [
+      "AWAY PROFILE",
+      "HOME PROFILE",
+      "QB / INJURY",
+      "MONTE CARLO",
+      "MARKET QUALITY"
+    ]
   },
-  "freeze_rule": "After targeted branch proof, required merge, and one successful post-merge public-production proof, Step 3 is GREEN + FROZEN and must not be reopened without new contradictory evidence."
+  "freeze_rule": "After targeted branch proof, required merge, and one successful post-merge public-production proof, Step 3 is GREEN + FROZEN and must not be reopened without new contradictory evidence.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
