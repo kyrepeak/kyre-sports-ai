@@ -118,3 +118,5 @@ for path in (
     assert Path(path).is_file(), path
 
 print("UNIVERSAL_THEME_STEP6_FINAL_CERT_GREEN")
+
+# Final-promotion ledger normalization complete.
