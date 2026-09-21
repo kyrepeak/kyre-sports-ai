@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-universal-step3-shell-v1",
+  "status": "DONE",
+  "scope": "Universal Theme -> NFL Passing Yards Step 3 only: add a visible universal page shell over frozen V52, including hero/header, bounded page frame, top-level spacing, section rhythm, and shell surface treatment.",
+  "baseline": {
+    "main_sha": "c143301735332b336e499373429e5a4d62a00535",
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "frozen_step2_product": "nfl_passing_yards_hub_v52",
+    "frozen_step2_router": "streamlit_memory_lazy_router_v203",
+    "moneyline_green_frozen": true
+  },
+  "acceptance": {
+    "explicit_step3_shell_present": true,
+    "shell_container_key": "kyre_passing_yards_shell_v1",
+    "page_hero_present": true,
+    "bounded_page_width": true,
+    "universal_shell_surface": true,
+    "top_level_spacing_and_section_rhythm": true,
+    "frozen_step2_token_owner_preserved": true,
+    "frozen_step1_owner_preserved": true,
+    "passing_yards_only_router_override": true,
+    "certified_cold_query_handoff_preserved": true,
+    "targeted_step3_proof_required": true,
+    "protected_merge_gate_required": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "step1_code_changed": false,
+    "step2_product_code_changed": false,
+    "passing_yards_data_logic_changed": false,
+    "identity_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "sportsbook_transport_changed": false,
+    "widget_keys_changed": false,
+    "stake_sizing_changed": false,
+    "moneyline_changed": false,
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "freeze_rule": "After targeted Step 3 proof, required merge gate, merge, and one successful post-merge public production proof of the V53 shell on the certified cold Passing Yards route, Step 3 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
