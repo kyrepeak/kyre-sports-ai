@@ -32,20 +32,20 @@ def run_public_cert(*, production_url: str, api_url: str, artifact_dir: str | Pa
         page = browser.new_page(viewport={"width": 1440, "height": 1100})
         try:
             page.goto(production_url, wait_until="domcontentloaded", timeout=120000)
-            frame = base._find_app_frame(page)
+            frame, _ = base._find_app_frame(page)
 
             sport = frame.get_by_role("combobox", name="🏟️ Sport", exact=True)
             sport.wait_for(state="visible", timeout=60000)
             base._choose(page, sport, "NFL")
 
             page.wait_for_timeout(1200)
-            frame = base._find_app_frame(page)
+            frame, _ = base._find_app_frame(page)
             market = frame.get_by_role("combobox", name="🎯 NFL Market", exact=True)
             market.wait_for(state="visible", timeout=60000)
             base._choose(page, market, "Passing Yards")
 
             page.wait_for_timeout(1500)
-            frame = base._find_app_frame(page)
+            frame, _ = base._find_app_frame(page)
             base._wait_text(frame, "LIVE DATA • MODEL FROZEN", 180000)
             body = base._body(frame)
             base._assert_no_runtime_error(body, "layered NFL Passing Yards public route")
