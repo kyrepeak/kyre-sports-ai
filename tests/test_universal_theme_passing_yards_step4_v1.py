@@ -41,11 +41,15 @@ for value in ("QB ONE", "QB TWO", "PROJ ONE", "MARKET TWO", "ENVIRONMENT"):
 source = Path("nfl_passing_yards_hub_v44.py").read_text()
 for forbidden in (
     "requests.get(",
-    "projection = ",
-    "probability = ",
+    "requests.post(",
+    "httpx.get(",
+    "httpx.post(",
     "sportsbook_projection_influence = 1",
 ):
     assert forbidden not in source.lower()
+
+assert "prior._layered_player_cards_html" in source
+assert "prior.render_nfl_passing_yards_hub()" in source
 
 router = Path("streamlit_memory_lazy_router_v188.py").read_text()
 assert "nfl_passing_yards_hub_v44" in router
