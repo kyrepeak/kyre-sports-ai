@@ -159,20 +159,24 @@ jobs:
                           + " | ".join(missing_step1)
                       )
 
-                  card_count = frame.locator("article.kml15-card").count()
-                  if card_count < 1:
-                      raise BrowserQAFailure(
-                          "MONEYLINE_STEP2_MARKER: no kml15 matchup command card visible"
-                      )
-
+                  # V15 activation is proven by its Step 2 style marker even
+                  # when the selected slate truthfully has no verified pregame
+                  # matchups. Card presence is required only when games exist.
                   style_count = frame.locator(
                       'style[data-nfl-moneyline-visual-step="2"]'
                   ).count()
                   if style_count < 1:
                       raise BrowserQAFailure(
-                          "MONEYLINE_STEP2_MARKER: "
-                          'data-nfl-moneyline-visual-step="2" absent'
+                          "MONEYLINE_STEP2_ACTIVATION: "
+                          'data-nfl-moneyline-visual-step="2" absent; '
+                          f"body start={body[:1800]!r}"
                       )
+
+                  no_games_marker = (
+                      "No verified pregame NFL matchup is available for this date."
+                  )
+                  no_games = no_games_marker in body
+                  card_count = frame.locator("article.kml15-card").count()
 
                   step2_required = (
                       "MONEYLINE MATCHUP COMMAND CENTER",
@@ -181,19 +185,35 @@ jobs:
                       "BEST ML",
                       "FINAL MONEYLINE STATE",
                   )
-                  missing_step2 = [m for m in step2_required if m not in body]
-                  if missing_step2:
-                      raise BrowserQAFailure(
-                          "MONEYLINE_STEP2_MARKER: missing "
-                          + " | ".join(missing_step2)
-                      )
+
+                  if no_games:
+                      render_state = "NO_VERIFIED_PREGAME_GAMES"
+                  else:
+                      render_state = "MATCHUP_CARDS"
+                      if card_count < 1:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_STEP2_RENDER: V15 active but no "
+                              "kml15 matchup card and no no-games marker; "
+                              f"body start={body[:1800]!r}"
+                          )
+                      missing_step2 = [m for m in step2_required if m not in body]
+                      if missing_step2:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_STEP2_MARKER: missing "
+                              + " | ".join(missing_step2)
+                          )
 
                   result = {
                       "status": "GREEN",
                       "route": "NFL -> Moneyline",
                       "public_url": page.url,
                       "step1_regression_markers": list(step1_required),
-                      "step2_markers": list(step2_required),
+                      "step2_markers": (
+                          list(step2_required)
+                          if not no_games
+                          else ["STEP2_STYLE_ACTIVE", no_games_marker]
+                      ),
+                      "step2_render_state": render_state,
                       "step2_card_count": card_count,
                       "step2_style_count": style_count,
                       "nfl_market_control": "present",
