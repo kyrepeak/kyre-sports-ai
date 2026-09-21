@@ -71,29 +71,30 @@ def test_sink_columns_returns_requested_count():
     assert stats["suppressed"]["columns"] == 1
 
 
-def test_sink_hidden_presentation_restores_functions(monkeypatch):
+def test_sink_hidden_presentation_never_mutates_global_streamlit_methods():
     original_markdown = v12.st.markdown
     original_columns = v12.st.columns
     stats = {}
     with v12._sink_hidden_presentation(stats):
-        assert v12.st.markdown is not original_markdown
-        assert v12.st.columns is not original_columns
-        assert v12.st.markdown("hidden") is None
-        assert len(v12.st.columns(2)) == 2
+        assert v12.st.markdown is original_markdown
+        assert v12.st.columns is original_columns
     assert v12.st.markdown is original_markdown
     assert v12.st.columns is original_columns
-    assert stats["suppressed"]["markdown"] == 1
-    assert stats["suppressed"]["columns"] == 1
+    assert stats["presentation_suppression_mode"] == "v11-css-hidden-container"
 
 
-def test_sink_hidden_presentation_restores_after_exception():
+def test_sink_hidden_presentation_stays_session_safe_after_exception():
     original_markdown = v12.st.markdown
+    original_columns = v12.st.columns
     stats = {}
     with pytest.raises(RuntimeError, match="boom"):
         with v12._sink_hidden_presentation(stats):
+            assert v12.st.markdown is original_markdown
+            assert v12.st.columns is original_columns
             raise RuntimeError("boom")
     assert v12.st.markdown is original_markdown
-
+    assert v12.st.columns is original_columns
+    assert stats["presentation_suppression_mode"] == "v11-css-hidden-container"
 
 def _hot_state_fixture():
     game = {
