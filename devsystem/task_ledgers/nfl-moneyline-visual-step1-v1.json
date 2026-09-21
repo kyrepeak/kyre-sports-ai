@@ -1,0 +1,26 @@
+{
+  "task_id": "nfl-moneyline-visual-step1-v1",
+  "title": "NFL Moneyline visual upgrade Step 1",
+  "mode": "NEW_BUILD",
+  "active_step": "STEP 1 — TOP SECTION + CONTROL CLEANUP",
+  "checkpoint": "targeted-proof",
+  "status": "DONE",
+  "frozen": [
+    "Passing Yards",
+    "NFL Moneyline model/math",
+    "5M Monte Carlo",
+    "market firewall",
+    "grading",
+    "identity behavior"
+  ],
+  "changed_scope": [
+    "nfl_moneyline_hub_v14.py",
+    "streamlit_memory_lazy_router_v197.py",
+    "app.py",
+    ".github/workflows/nfl-moneyline-visual-step1-v1.yml"
+  ],
+  "evidence": {
+    "targeted_verifier": "NFL Moneyline Visual Step 1",
+    "result": "GREEN"
+  }
+}
