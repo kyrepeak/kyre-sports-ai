@@ -95,5 +95,23 @@
     "step1_changed": false,
     "step2_changed": false,
     "analytical_logic_changed": false
+  },
+  "latest_verifier_stability_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "evidence_runs": [
+      35633262465
+    ],
+    "failed_attempts": [
+      1,
+      2
+    ],
+    "owner": "VERIFIER / ROUTE READINESS TIMING",
+    "repeated_failure": "MONEYLINE_STEP1_REGRESSION: missing Slate date",
+    "evidence": "NFL Moneyline route marker was visible before the frozen Step 1 Slate date control completed its Streamlit rerender; both attempts failed before Step 3 structural evaluation.",
+    "repair": "Wait up to 45 seconds for the complete settled Step 1 marker set plus frozen Step 2 and Step 3 style markers before evaluating Step 3 DOM.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "step1_code_changed": false,
+    "step2_code_changed": false
   }
 }
