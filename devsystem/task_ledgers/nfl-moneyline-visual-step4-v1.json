@@ -67,5 +67,27 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_route_readiness_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35636806257,
+    "failure_job": 106456123469,
+    "owner": "VERIFIER / ROUTE READINESS",
+    "failure": "Playwright exact-text wait timed out on NFL Moneyline before the Step 4 readiness loop executed.",
+    "direct_evidence": {
+      "visual_step4_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "step4_structure_evaluated": false,
+      "timeout_target": "get_by_text(\"NFL Moneyline\").first",
+      "timeout_ms": 60000
+    },
+    "root_cause": "A redundant preliminary exact-text route-marker wait could terminate the proof before the existing settled-route readiness loop had a chance to classify the public state.",
+    "repair": "Remove only the preliminary exact-text wait and let the existing bounded readiness loop prove NFL Moneyline core markers, Step 2/3/4 style activation, and either a matchup card or the explicit no-games state.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "step1_code_changed": false,
+    "step2_code_changed": false,
+    "step3_code_changed": false,
+    "v17_product_reopened": false
+  }
 }
