@@ -32,6 +32,10 @@ jobs:
           assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v14
           assert 'STAKE_SIZING_ENABLED = False' in v14
           assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v14
+          assert 'key="nfl_moneyline_visual_step_1"' in v14
+          assert '### 💰 NFL Moneyline Command Center' in v14
+          assert 'PREGAME VERIFIED' in v14
+          assert '_render_step1_native_header()' in v14
           assert 'MONEYLINE_HUB = "nfl_moneyline_hub_v14"' in router
           assert 'from streamlit_memory_lazy_router_v197 import record_bootstrap_import_ms, render_app' in app
 
