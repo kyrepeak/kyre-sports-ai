@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "task_id": "nfl-moneyline-visual-step3-v1",
+  "status": "DONE",
+  "scope": "NFL Moneyline visual upgrade Step 3 only: analysis/evidence sections built beneath frozen Step 2 from already-computed Moneyline state.",
+  "baseline": {
+    "main_sha": "8cdbfc6e5cb50cb2639fbd15fd339dd0d240bfc0",
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "frozen_product": "nfl_moneyline_hub_v15",
+    "frozen_router": "streamlit_memory_lazy_router_v198"
+  },
+  "acceptance": {
+    "analysis_section_present": true,
+    "quick_facts_present": true,
+    "key_matchup_factors_present": true,
+    "team_snapshots_exact": 2,
+    "evidence_guardrails_present": true,
+    "step2_command_center_preserved": true,
+    "step1_markers_preserved": true,
+    "real_html_required": true,
+    "forbidden_pre_code_exact": 0
+  },
+  "guardrails": {
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "monte_carlo_logic_changed": false,
+    "market_logic_changed": false,
+    "edge_ev_logic_changed": false,
+    "grading_logic_changed": false,
+    "identity_logic_changed": false,
+    "availability_logic_changed": false,
+    "stake_sizing_changed": false,
+    "other_markets_changed": false,
+    "other_sports_changed": false,
+    "monte_carlo_simulations": 5000000,
+    "sportsbook_projection_influence": 0
+  },
+  "presentation_contract": {
+    "quick_facts": ["GAME TIME", "VENUE", "LOCATION", "BROADCAST", "PHASE"],
+    "key_matchup_factors": ["Strength index", "Offense PF/G", "Defense PA/G", "Recent L6 diff", "QB / availability"],
+    "team_snapshot": ["WIN %", "PF / G", "PA / G", "RECENT L6 DIFF"],
+    "evidence": ["AWAY PROFILE", "HOME PROFILE", "QB / INJURY", "MONTE CARLO", "MARKET QUALITY"]
+  },
+  "freeze_rule": "After targeted branch proof, required merge, and one successful post-merge public-production proof, Step 3 is GREEN + FROZEN and must not be reopened without new contradictory evidence."
+}
