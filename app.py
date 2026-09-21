@@ -19,6 +19,7 @@ PASSING_YARDS_LAYERED_PRODUCTION_RUNTIME = "STREAMLIT_V188_PASSING_YARDS_LAYERED
 PASSING_YARDS_STEP4_VISIBLE_REPLACEMENT_RUNTIME = "STREAMLIT_V188_PASSING_YARDS_STEP4_VISIBLE_REPLACEMENT_2026_09_20"
 SITEWIDE_UNIVERSAL_SHELL_RUNTIME = "SITEWIDE_UNIVERSAL_SHELL_V1_2026_09_20"
 MONEYLINE_UNIVERSAL_THEME_RUNTIME = "NFL_MONEYLINE_V13_UNIVERSAL_THEME_2026_09_20"
+CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 
 from sports_api.monster_performance_profiler_v1 import (
     PerformanceTrace,
@@ -279,7 +280,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v189 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v190 import record_bootstrap_import_ms, render_app
     from kyre_universal_shell_runtime_v1 import activate_universal_shell
     # Frozen V187 delegate compatibility: from streamlit_memory_lazy_router_v187 import record_bootstrap_import_ms, render_app
     # Frozen V186 delegate compatibility: from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app
