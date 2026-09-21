@@ -16,7 +16,7 @@
     "other_markets_changed": false,
     "other_sports_changed": false,
     "monte_carlo_simulations": 5000000,
-    "sportsbook_projection_influence": 0.0
+    "sportsbook_projection_influence": 0
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -24,5 +24,12 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_verifier_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_evidence": "MONEYLINE_STEP2_MARKER: no kml15 matchup command card visible",
+    "repair": "Verifier now proves V15 activation first and accepts the explicit no-verified-pregame-games state without weakening true activation/render failures.",
+    "product_code_changed": false,
+    "router_code_changed": false
+  }
 }
