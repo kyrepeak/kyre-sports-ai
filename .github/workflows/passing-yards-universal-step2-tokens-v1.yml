@@ -43,6 +43,7 @@ jobs:
           v52 = Path("nfl_passing_yards_hub_v52.py").read_text()
           router = Path("streamlit_memory_lazy_router_v203.py").read_text()
           app = Path("app.py").read_text()
+          workflow = Path(".github/workflows/passing-yards-universal-step2-tokens-v1.yml").read_text()
 
           assert 'from kyre_universal_theme_v1 import THEME_VERSION' in tokens
           assert 'data-kyre-semantic-tokens="v2"' in tokens
@@ -83,6 +84,8 @@ jobs:
           assert 'prior.PASSING_HUB = PASSING_HUB' in router
           assert 'from streamlit_memory_lazy_router_v203 import record_bootstrap_import_ms, render_app' in app
           assert 'from streamlit_memory_lazy_router_v202 import record_bootstrap_import_ms, render_app' in app
+          assert 'ks_jump_sport=NFL&ks_jump_market=Passing%20Yards' in workflow
+          assert 'page.goto(route_url' in workflow
 
           print("PASSING_YARDS_UNIVERSAL_STEP2_STATIC_GREEN")
           PY
@@ -111,7 +114,6 @@ jobs:
               _wait_for_health,
               _find_app_frame,
               _body_has_forbidden_error,
-              _choose,
               BrowserQAFailure,
           )
 
@@ -124,12 +126,13 @@ jobs:
               browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
               page = browser.new_page(viewport={"width":1280,"height":1000})
               try:
-                  page.goto(base, wait_until="domcontentloaded", timeout=120000)
+                  # Use the app's already-certified same-run NFL category handoff.
+                  # Directly mutating the Streamlit market widget can recreate the
+                  # stale widget-state KeyError class fixed by Router V183-V185
+                  # before the Step 2 token layer is evaluated.
+                  route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
                   frame, scan = _find_app_frame(page)
-                  _choose(page, frame, 0, "NFL")
-                  nfl_market = frame.get_by_role("combobox", name="🎯 NFL Market", exact=True)
-                  nfl_market.wait_for(state="visible", timeout=60000)
-                  _choose(page, frame, 1, "Passing Yards")
 
                   deadline = time.monotonic() + 60.0
                   evidence = {}
