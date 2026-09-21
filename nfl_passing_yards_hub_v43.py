@@ -128,7 +128,7 @@ def _no_legacy_banner() -> str:
     return ""
 
 
-_STYLE_BLOCK_RE = re.compile(r"<style\\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
+_STYLE_BLOCK_RE = re.compile(r"<style\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
 
 
 def _style_blocks_only(body: Any) -> tuple[str, ...]:
