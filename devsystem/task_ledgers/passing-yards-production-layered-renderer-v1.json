@@ -2,7 +2,7 @@
   "version": 2,
   "task_id": "passing-yards-production-layered-renderer-v1",
   "status": "DONE",
-  "scope": "Production-repair Steps 1-2: add the approved layered Passing Yards renderer and route only Passing Yards to it while preserving all other NFL and non-NFL production behavior.",
+  "scope": "Production-repair Steps 1-3: add the approved layered Passing Yards renderer, route only Passing Yards to it, and boot production through Router V188 while preserving all other NFL and non-NFL behavior.",
   "trigger": "Live Streamlit screenshot showed the old V42/V41 combined-card presentation after the standalone layered prototype had been completed and frozen.",
   "guardrails": {
     "passing_yards_model_changed": false,
@@ -12,7 +12,8 @@
     "identity_logic_changed": false,
     "sportsbook_projection_influence": 0,
     "other_nfl_markets_changed": false,
-    "non_nfl_routes_changed": false
+    "non_nfl_routes_changed": false,
+    "app_entrypoint_only_advance": true
   },
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
