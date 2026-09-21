@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "task_id": "nfl-moneyline-visual-upgrade-steps1-2-v1",
+  "status": "DONE",
+  "scope": "NFL Moneyline visual upgrade Steps 1-2 only: compact top section/slate control and premium core matchup command center. The change is presentation-only over the frozen Moneyline analytical chain.",
+  "trigger": "User requested Step 1 and Step 2 continue through GREEN + frozen before moving to Step 3.",
+  "guardrails": {
+    "visual_step_1_top_control_changed": true,
+    "visual_step_2_matchup_command_center_changed": true,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "monte_carlo_logic_changed": false,
+    "market_logic_changed": false,
+    "grading_logic_changed": false,
+    "identity_logic_changed": false,
+    "stake_sizing_changed": false,
+    "other_markets_changed": false,
+    "other_sports_changed": false,
+    "monte_carlo_simulations": 5000000,
+    "sportsbook_projection_influence": 0.0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
