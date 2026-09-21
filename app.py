@@ -284,6 +284,7 @@ try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
     from streamlit_memory_lazy_router_v198 import record_bootstrap_import_ms, render_app
+    # Frozen Passing Yards V196 certification compatibility: from streamlit_memory_lazy_router_v196 import record_bootstrap_import_ms, render_app
     from kyre_universal_shell_runtime_v1 import activate_universal_shell
     # Frozen V187 delegate compatibility: from streamlit_memory_lazy_router_v187 import record_bootstrap_import_ms, render_app
     # Frozen V186 delegate compatibility: from streamlit_memory_lazy_router_v186 import record_bootstrap_import_ms, render_app
