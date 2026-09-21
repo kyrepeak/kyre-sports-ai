@@ -152,11 +152,52 @@ jobs:
                           f"actual={last_identity!r}; body start={body[:1800]!r}"
                       )
 
+                  # Route identity is now proven. Wait only for a Moneyline
+                  # presentation terminal: V14 Step 1 or frozen legacy V9.
+                  new_marker = frame.get_by_text(
+                      "PREGAME VERIFIED", exact=False
+                  ).first
+                  legacy_marker = frame.get_by_text(
+                      "PREGAME ONLY", exact=False
+                  ).first
+                  terminal = new_marker.or_(legacy_marker).first
+                  try:
+                      terminal.wait_for(state="visible", timeout=90000)
+                  except Exception as exc:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      style_count = frame.locator(
+                          'style[data-nfl-moneyline-visual-step="1"]'
+                      ).count()
+                      page.screenshot(
+                          path=str(artifacts / "nfl_moneyline_step1_public_failure.png"),
+                          full_page=True,
+                      )
+                      (artifacts / "failure.json").write_text(
+                          json.dumps({
+                              "failure": "MONEYLINE_RENDER",
+                              "route": last_identity,
+                              "body": body,
+                              "step1_style_count": style_count,
+                          }, indent=2),
+                          encoding="utf-8",
+                      )
+                      raise BrowserQAFailure(
+                          "MONEYLINE_RENDER: NFL -> Moneyline selected but no "
+                          "new or legacy Moneyline presentation became visible; "
+                          f"style_count={style_count}; body start={body[:1800]!r}"
+                      ) from exc
+
                   body = frame.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(body)
                   if forbidden:
                       raise BrowserQAFailure(
                           f"MONEYLINE_RUNTIME: forbidden marker {forbidden}"
+                      )
+
+                  if "PREGAME ONLY" in body and "PREGAME VERIFIED" not in body:
+                      raise BrowserQAFailure(
+                          "MONEYLINE_STEP1_MARKER: legacy PREGAME ONLY presentation "
+                          "is live; V14 Step 1 presentation is not active"
                       )
 
                   required = (
