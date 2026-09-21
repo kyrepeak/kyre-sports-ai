@@ -21,7 +21,7 @@ SITEWIDE_UNIVERSAL_SHELL_RUNTIME = "SITEWIDE_UNIVERSAL_SHELL_V1_2026_09_20"
 MONEYLINE_UNIVERSAL_THEME_RUNTIME = "NFL_MONEYLINE_V13_UNIVERSAL_THEME_2026_09_20"
 NFL_MONEYLINE_VISUAL_STEP1_RUNTIME = "NFL_MONEYLINE_V14_TOP_CONTROL_2026_09_20"
 NFL_MONEYLINE_STEP1_SESSION_SAFE_RUNTIME = "NFL_MONEYLINE_STEP1_SESSION_SAFE_RUNTIME_2026_09_21"
-NFL_MONEYLINE_STEP1_PUBLIC_DEPLOY_REFRESH = "NFL_MONEYLINE_STEP1_PUBLIC_DEPLOY_REFRESH_2026_09_21"
+NFL_MONEYLINE_STEP1_PUBLIC_DEPLOY_REFRESH = "NFL_MONEYLINE_STEP1_PUBLIC_DEPLOY_REFRESH_2026_09_21"\nNFL_MONEYLINE_VISUAL_STEP2_RUNTIME = "NFL_MONEYLINE_V15_COMMAND_CENTER_2026_09_21"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
 
@@ -284,7 +284,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v197 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v198 import record_bootstrap_import_ms, render_app\n    # Frozen Moneyline Step 1 V197 certification compatibility: from streamlit_memory_lazy_router_v197 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards V196 certification compatibility: from streamlit_memory_lazy_router_v196 import record_bootstrap_import_ms, render_app
     from kyre_universal_shell_runtime_v1 import activate_universal_shell
     # Frozen V187 delegate compatibility: from streamlit_memory_lazy_router_v187 import record_bootstrap_import_ms, render_app
