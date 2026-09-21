@@ -139,36 +139,45 @@ jobs:
                   route_marker = frame.get_by_text("NFL Moneyline", exact=False).first
                   route_marker.wait_for(state="visible", timeout=60000)
 
-                  body = frame.locator("body").inner_text(timeout=5000)
-                  forbidden = _body_has_forbidden_error(body)
-                  if forbidden:
-                      raise BrowserQAFailure(
-                          f"MONEYLINE_RUNTIME: forbidden marker {forbidden}"
-                      )
-
                   step1_required = (
                       "NFL Moneyline",
                       "Command Center",
                       "PREGAME VERIFIED",
                       "Slate date",
                   )
-                  missing_step1 = [m for m in step1_required if m not in body]
-                  if missing_step1:
-                      raise BrowserQAFailure(
-                          "MONEYLINE_STEP1_REGRESSION: missing "
-                          + " | ".join(missing_step1)
-                      )
 
-                  step2_style = frame.locator(
-                      'style[data-nfl-moneyline-visual-step="2"]'
-                  ).count()
-                  step3_style = frame.locator(
-                      'style[data-nfl-moneyline-visual-step="3"]'
-                  ).count()
-                  if step2_style < 1:
-                      raise BrowserQAFailure("MONEYLINE_STEP2_REGRESSION: Step 2 style absent")
-                  if step3_style < 1:
-                      raise BrowserQAFailure("MONEYLINE_STEP3_ACTIVATION: Step 3 style absent")
+                  # The route heading becomes visible before Streamlit always
+                  # finishes composing the frozen Step 1 controls/styles.
+                  # Prove settled route state instead of sampling that transient.
+                  readiness_deadline = time.monotonic() + 45.0
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(
+                              f"MONEYLINE_RUNTIME: forbidden marker {forbidden}"
+                          )
+
+                      missing_step1 = [m for m in step1_required if m not in body]
+                      step2_style = frame.locator(
+                          'style[data-nfl-moneyline-visual-step="2"]'
+                      ).count()
+                      step3_style = frame.locator(
+                          'style[data-nfl-moneyline-visual-step="3"]'
+                      ).count()
+
+                      if not missing_step1 and step2_style >= 1 and step3_style >= 1:
+                          break
+
+                      if time.monotonic() >= readiness_deadline:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_ROUTE_READINESS: settled Step 1/2/3 route "
+                              "state did not appear; missing_step1="
+                              + " | ".join(missing_step1)
+                              + f"; step2_style={step2_style}; step3_style={step3_style}; "
+                              + f"body start={body[:1800]!r}"
+                          )
+                      page.wait_for_timeout(500)
 
                   no_games_marker = (
                       "No verified pregame NFL matchup is available for this date."
