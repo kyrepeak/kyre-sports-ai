@@ -1,0 +1,55 @@
+name: Production Theme Activation Step 2 Deploy Cert
+
+on:
+  push:
+    branches:
+      - "monster/production-theme-activation-step2-deploy-cert-v1"
+    paths:
+      - ".github/workflows/production-theme-activation-step2-deploy-cert-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-production-deploy-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 41edb2bd53578bd594e454907c966efd63647905
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install targeted public browser stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Prove merged universal theme is deployed publicly
+        run: |
+          python - <<'PY'
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          production_url = "https://kyre-sports-ai.streamlit.app"
+
+          health = requests.get(production_url + "/_stcore/health", timeout=30)
+          print("HEALTH_HTTP", health.status_code, health.text[:200])
+          assert health.status_code == 200
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page(viewport={"width": 1440, "height": 1100})
+              page.goto(production_url, wait_until="domcontentloaded", timeout=120000)
+
+              marker = page.get_by_text("UNIVERSAL THEME LIVE", exact=True)
+              marker.wait_for(state="visible", timeout=120000)
+
+              body = page.locator("body").inner_text(timeout=30000)
+              assert "UNIVERSAL THEME LIVE" in body
+              assert "KYRE SPORTS AI" in body
+
+              print("PRODUCTION_THEME_ACTIVATION_STEP2_GREEN")
+              print("VISIBLE_MARKER", marker.inner_text())
+              browser.close()
+          PY
