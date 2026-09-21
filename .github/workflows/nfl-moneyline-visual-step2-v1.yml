@@ -76,6 +76,93 @@ jobs:
           PY
 
 
+
+  public-step2-diagnostic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install diagnostic browser dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Inspect public NFL Moneyline Step 2 state
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health, _find_app_frame, _choose
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          artifacts = Path("artifacts/nfl-moneyline-step2-diagnostic")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1024, "height": 1366})
+              try:
+                  page.goto(base, wait_until="domcontentloaded", timeout=120000)
+                  frame, initial_scan = _find_app_frame(page)
+                  _choose(page, frame, 0, "NFL")
+                  market = frame.get_by_role("combobox", name="🎯 NFL Market", exact=True)
+                  market.wait_for(state="visible", timeout=60000)
+                  _choose(page, frame, 1, "Moneyline")
+                  frame.get_by_text("NFL Moneyline", exact=False).first.wait_for(
+                      state="visible", timeout=60000
+                  )
+                  page.wait_for_timeout(5000)
+
+                  body = frame.locator("body").inner_text(timeout=5000)
+                  style1 = frame.locator(
+                      'style[data-nfl-moneyline-visual-step="1"]'
+                  ).count()
+                  style2 = frame.locator(
+                      'style[data-nfl-moneyline-visual-step="2"]'
+                  ).count()
+                  cards = frame.locator("article.kml15-card").count()
+                  empty_text = "No verified pregame NFL matchup is available for this date." in body
+                  result = {
+                      "public_url": page.url,
+                      "step1_style_count": style1,
+                      "step2_style_count": style2,
+                      "step2_card_count": cards,
+                      "empty_pregame_state": empty_text,
+                      "has_step1_header": "NFL Moneyline" in body and "PREGAME VERIFIED" in body,
+                      "has_step2_command_marker": "MONEYLINE MATCHUP COMMAND CENTER" in body,
+                      "body_excerpt": body[:5000],
+                      "initial_frame_scan_count": len(initial_scan),
+                  }
+                  (artifacts / "result.json").write_text(
+                      json.dumps(result, indent=2), encoding="utf-8"
+                  )
+                  (artifacts / "body.txt").write_text(body, encoding="utf-8")
+                  page.screenshot(
+                      path=str(artifacts / "public.png"),
+                      full_page=True,
+                  )
+                  print("NFL_MONEYLINE_STEP2_PUBLIC_DIAGNOSTIC")
+                  print(json.dumps(result, indent=2))
+              finally:
+                  browser.close()
+          PY
+      - name: Upload Step 2 diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-moneyline-step2-public-diagnostic-${{ github.run_id }}
+          path: artifacts/nfl-moneyline-step2-diagnostic
+          if-no-files-found: warn
+          retention-days: 7
+
   public-production-proof:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
