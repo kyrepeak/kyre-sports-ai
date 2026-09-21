@@ -45,5 +45,25 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_public_verifier_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35646645428,
+    "failure_job": 106488621892,
+    "owner": "VERIFIER / ENTRY PATH",
+    "failure": "Public proof observed a visible KeyError before Step 2 token-owner readiness assertions executed.",
+    "direct_evidence": {
+      "visual_step2_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "step2_token_layer_evaluated": false,
+      "failure_marker": "KeyError:"
+    },
+    "root_cause": "The verifier changed the NFL market widget directly instead of using the existing certified same-run NFL category handoff. That can recreate the stale Streamlit widget-state KeyError class already documented and repaired by Routers V183-V185 before Step 2 is evaluated.",
+    "repair": "Enter public Passing Yards using ?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards and let the frozen V185 same-run handoff prime Passing Yards widget/session state before route rendering.",
+    "product_code_changed": false,
+    "v52_changed": false,
+    "router_changed": false,
+    "step1_changed": false,
+    "moneyline_changed": false
+  }
 }
