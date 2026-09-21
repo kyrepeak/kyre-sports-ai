@@ -115,11 +115,23 @@ _COMPACT_HERO = (
 def _step1_css(base: str) -> str:
     return str(base or "") + _STEP1_CSS
 
+def _render_step1_native_header() -> None:
+    """Render Step 1 through native Streamlit primitives with stable DOM identity."""
+    with presentation.st.container(key="nfl_moneyline_visual_step_1"):
+        presentation.st.markdown("### 💰 NFL Moneyline Command Center")
+        presentation.st.caption(
+            "PREGAME VERIFIED • MODEL / MARKET FIREWALL • "
+            "5M MONTE CARLO • STAKE SIZING OFF"
+        )
+
+
 def _markdown_proxy(original: Callable[..., Any]) -> Callable[..., Any]:
     def wrapped(body: Any, *args: Any, **kwargs: Any):
         text = str(body or "")
         if "kml9-hero" in text and "NFL Moneyline" in text and "kml9-title" in text:
-            body = _COMPACT_HERO
+            # Native Step 1 header above owns the visible hero. Suppress only
+            # the frozen V9 raw-HTML hero so the page does not duplicate it.
+            return None
         return original(body, *args, **kwargs)
     return wrapped
 
@@ -145,6 +157,7 @@ def render_nfl_hub(market: str = "Moneyline"):
     presentation.st.markdown = _markdown_proxy(original_markdown)
     presentation.st.date_input = _date_input_proxy(original_date_input)
     try:
+        _render_step1_native_header()
         return prior.render_nfl_hub(market)
     finally:
         presentation.st.date_input = original_date_input
@@ -165,6 +178,7 @@ __all__ = [
     "VISUAL_UPGRADE_STEP",
     "_date_input_proxy",
     "_markdown_proxy",
+    "_render_step1_native_header",
     "_step1_css",
     "render_nfl_hub",
 ]
