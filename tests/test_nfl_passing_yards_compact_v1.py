@@ -526,3 +526,28 @@ def test_app_boots_router_v188_for_layered_passing_yards() -> None:
     assert "from streamlit_memory_lazy_router_v188 import record_bootstrap_import_ms, render_app" in app
     assert "STREAMLIT_V188_PASSING_YARDS_LAYERED_PRODUCTION_2026_09_20" in app
     assert "# Frozen V187 delegate compatibility" in app
+
+
+def test_v43_full_visible_replacement_suppresses_legacy_markdown(monkeypatch) -> None:
+    import nfl_passing_yards_hub_v43 as v43
+
+    rendered = []
+    monkeypatch.setattr(v43.st, "markdown", lambda body, *a, **k: rendered.append(str(body)))
+    monkeypatch.setattr(v43.composition, "_combined_player_cards_html", lambda captured: "OLD")
+    monkeypatch.setattr(v43.composition, "_visual_build_banner_v34", lambda: "OLD BANNER")
+
+    def fake_prior_render():
+        v43.st.markdown('<style>.legacy{display:block}</style><section>Matchup Spotlight</section>', unsafe_allow_html=True)
+        v43.st.markdown('<section>NFL Passing Yards</section>', unsafe_allow_html=True)
+        v43.st.markdown('<section>Why This Projection</section>', unsafe_allow_html=True)
+        assert v43.composition._combined_player_cards_html({}).find('data-live-passing-layered="true"') >= 0
+        return "DONE"
+
+    monkeypatch.setattr(v43.prior, "render_nfl_passing_yards_hub", fake_prior_render)
+
+    assert v43.render_nfl_passing_yards_hub() == "DONE"
+    joined = "\n".join(rendered)
+    assert ".legacy{display:block}" in joined
+    assert "Matchup Spotlight" not in joined
+    assert "<section>NFL Passing Yards</section>" not in joined
+    assert "Why This Projection" not in joined

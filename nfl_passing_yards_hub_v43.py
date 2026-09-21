@@ -8,6 +8,7 @@ calculation is changed.
 from __future__ import annotations
 
 from html import escape
+import re
 from typing import Any
 
 import streamlit as st
@@ -126,14 +127,38 @@ def _layered_player_cards_html(captured: dict[str, list[str]]) -> str:
 def _no_legacy_banner() -> str:
     return ""
 
+
+_STYLE_BLOCK_RE = re.compile(r"<style\\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
+
+
+def _style_blocks_only(body: Any) -> tuple[str, ...]:
+    """Preserve CSS from the frozen renderer while suppressing its visible markup."""
+    if not isinstance(body, str):
+        return ()
+    return tuple(_STYLE_BLOCK_RE.findall(body))
+
+
 def render_nfl_passing_yards_hub() -> None:
+    """Capture the frozen live data pipeline but replace its visible page composition."""
     original_cards = composition._combined_player_cards_html
     original_banner = composition._visual_build_banner_v34
+    original_markdown = st.markdown
+
+    def capture_only_markdown(body: Any, *args: Any, **kwargs: Any):
+        # V34/V42 must still execute so their certified data, selectors, and model
+        # pipeline remain intact. Only their legacy visible markdown is suppressed.
+        # Any CSS embedded in those calls is preserved for the captured card HTML.
+        for style in _style_blocks_only(body):
+            original_markdown(style, unsafe_allow_html=True)
+        return None
+
     composition._combined_player_cards_html = _layered_player_cards_html
     composition._visual_build_banner_v34 = _no_legacy_banner
+    st.markdown = capture_only_markdown
     try:
         return prior.render_nfl_passing_yards_hub()
     finally:
+        st.markdown = original_markdown
         composition._combined_player_cards_html = original_cards
         composition._visual_build_banner_v34 = original_banner
 
