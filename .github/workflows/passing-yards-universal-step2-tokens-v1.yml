@@ -82,6 +82,8 @@ jobs:
           assert 'import streamlit_memory_lazy_router_v202 as prior' in router
           assert 'PASSING_HUB = "nfl_passing_yards_hub_v52"' in router
           assert 'prior.PASSING_HUB = PASSING_HUB' in router
+          assert 'data-passing-yards-v203-runtime="step2"' in router
+          assert 'RUNTIME_MARKER = "PASSING_YARDS_V203_STEP2_COLD_ENTRY_READY"' in router
           assert 'from streamlit_memory_lazy_router_v203 import record_bootstrap_import_ms, render_app' in app
           assert 'from streamlit_memory_lazy_router_v202 import record_bootstrap_import_ms, render_app' in app
           assert 'ks_jump_sport=NFL&ks_jump_market=Passing%20Yards' in workflow
@@ -134,6 +136,27 @@ jobs:
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
                   frame, scan = _find_app_frame(page)
 
+                  # Revision-readiness phase: do not grade Step 2 against an
+                  # older still-serving Streamlit revision. Wait for the exact
+                  # V203 runtime witness first; acceptance checks below remain
+                  # unchanged and only run after V203 is actually serving.
+                  revision_deadline = time.monotonic() + 180.0
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f"PASSING_YARDS_RUNTIME: forbidden marker {forbidden}")
+                      if frame.locator('[data-passing-yards-v203-runtime="step2"]').count() >= 1:
+                          break
+                      if time.monotonic() >= revision_deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_STEP2_REVISION_READINESS: "
+                              "public Streamlit never exposed the V203 runtime witness "
+                              "before Step 2 ownership evaluation; "
+                              + f"body start={body[:2200]!r}"
+                          )
+                      page.wait_for_timeout(1000)
+
                   deadline = time.monotonic() + 60.0
                   evidence = {}
                   while True:
@@ -149,10 +172,12 @@ jobs:
                           "step2_owner_marker": frame.locator('[data-passing-yards-token-owner="v52"]').count(),
                           "owner_container": frame.locator('.st-key-kyre_passing_yards_universal_owner_v1').count(),
                           "top_container": frame.locator('.st-key-kyre_passing_yards_top_v46').count(),
+                          "v203_runtime_marker": frame.locator('[data-passing-yards-v203-runtime="step2"]').count(),
                           "passing_yards_text": "Passing Yards" in body,
                       }
                       if (
-                          evidence["step1_owner_style"] >= 1
+                          evidence["v203_runtime_marker"] >= 1
+                          and evidence["step1_owner_style"] >= 1
                           and evidence["semantic_tokens_style"] >= 1
                           and evidence["step2_token_style"] == 1
                           and evidence["step2_owner_marker"] == 1
