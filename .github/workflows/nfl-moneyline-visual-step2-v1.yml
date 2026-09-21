@@ -177,24 +177,6 @@ jobs:
                       "No verified pregame NFL matchup is available for this date."
                   )
 
-                  # Route/header/style can become visible before the V15 matchup
-                  # surface finishes replacing the frozen engine's transient body.
-                  # Wait for the Step 2 render to settle instead of sampling once.
-                  deadline = time.monotonic() + 60.0
-                  while True:
-                      body = frame.locator("body").inner_text(timeout=5000)
-                      no_games = no_games_marker in body
-                      card_count = frame.locator("article.kml15-card").count()
-                      if card_count > 0 or no_games:
-                          break
-                      if time.monotonic() >= deadline:
-                          raise BrowserQAFailure(
-                              "MONEYLINE_STEP2_RENDER_TIMEOUT: V15 style active, "
-                              "but neither matchup cards nor the no-games state "
-                              f"settled within 60s; body start={body[:2500]!r}"
-                          )
-                      page.wait_for_timeout(500)
-
                   step2_required = (
                       "MONEYLINE MATCHUP COMMAND CENTER",
                       "MODEL P(WIN)",
@@ -203,19 +185,114 @@ jobs:
                       "FINAL MONEYLINE STATE",
                   )
 
+                  # READY is structural, not just outer-card presence.
+                  # Require two consecutive valid DOM observations.
+                  deadline = time.monotonic() + 60.0
+                  structural_streak = 0
+                  structural = {}
+                  card_text = ""
+                  card_html = ""
+                  no_games = False
+                  card_count = 0
+
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      no_games = no_games_marker in body
+                      card_count = frame.locator("article.kml15-card").count()
+
+                      if no_games:
+                          render_state = "NO_VERIFIED_PREGAME_GAMES"
+                          break
+
+                      if card_count > 0:
+                          render_state = "MATCHUP_CARDS"
+                          card = frame.locator("article.kml15-card").first
+                          card_text = card.inner_text(timeout=5000)
+                          card_html = card.inner_html(timeout=5000)
+
+                          team_count = card.locator(
+                              ".kml15-grid > section.kml15-team"
+                          ).count()
+                          primary_count = card.locator(
+                              ".kml15-team .kml15-primary"
+                          ).count()
+                          hero_count = card.locator(
+                              ".kml15-tile.hero"
+                          ).count()
+                          verdict_count = card.locator(
+                              ".kml15-verdict"
+                          ).count()
+                          forbidden_count = card.locator(
+                              'pre, code, [data-testid="stMarkdownPre"]'
+                          ).count()
+
+                          model_visible = (
+                              card.locator(".kml15-tile.hero")
+                              .filter(has_text="MODEL P(WIN)")
+                              .count() >= 1
+                          )
+                          fair_visible = (
+                              card.locator(".kml15-primary .kml15-tile")
+                              .filter(has_text="FAIR ML")
+                              .count() >= 1
+                          )
+                          best_visible = (
+                              card.locator(".kml15-primary .kml15-tile")
+                              .filter(has_text="BEST ML")
+                              .count() >= 1
+                          )
+                          final_visible = (
+                              card.locator(".kml15-verdict")
+                              .filter(has_text="FINAL MONEYLINE STATE")
+                              .count() >= 1
+                          )
+
+                          structural = {
+                              "team_count": team_count,
+                              "primary_count": primary_count,
+                              "hero_count": hero_count,
+                              "verdict_count": verdict_count,
+                              "forbidden_pre_code_count": forbidden_count,
+                              "model_pwin_visible": model_visible,
+                              "fair_ml_visible": fair_visible,
+                              "best_ml_visible": best_visible,
+                              "final_state_visible": final_visible,
+                          }
+
+                          structural_valid = (
+                              team_count == 2
+                              and primary_count >= 2
+                              and hero_count >= 2
+                              and verdict_count >= 1
+                              and forbidden_count == 0
+                              and model_visible
+                              and fair_visible
+                              and best_visible
+                              and final_visible
+                          )
+                          structural_streak = (
+                              structural_streak + 1
+                              if structural_valid
+                              else 0
+                          )
+                          if structural_streak >= 2:
+                              break
+                      else:
+                          structural_streak = 0
+
+                      if time.monotonic() >= deadline:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_STEP2_STRUCTURE: real Step 2 DOM did "
+                              "not remain valid for two consecutive observations; "
+                              f"card_count={card_count}; structural={structural}; "
+                              f"body start={body[:2500]!r}"
+                          )
+                      page.wait_for_timeout(500)
+
                   if no_games:
                       render_state = "NO_VERIFIED_PREGAME_GAMES"
                   else:
                       render_state = "MATCHUP_CARDS"
-                      if card_count < 1:
-                          raise BrowserQAFailure(
-                              "MONEYLINE_STEP2_RENDER: V15 active but no "
-                              "kml15 matchup card and no no-games marker; "
-                              f"body start={body[:1800]!r}"
-                          )
-
-                      # Evidence escape: persist the ACTUAL first V15 card DOM
-                      # before any missing-marker assertion can terminate proof.
                       card = frame.locator("article.kml15-card").first
                       card_text = card.inner_text(timeout=5000)
                       card_html = card.inner_html(timeout=5000)
@@ -227,26 +304,17 @@ jobs:
                           card_html, encoding="utf-8"
                       )
 
-                      card_markers_present = [
-                          m for m in step2_required if m in card_text
-                      ]
-                      card_markers_missing = [
-                          m for m in step2_required if m not in card_text
-                      ]
-                      body_markers_missing = [
-                          m for m in step2_required if m not in body
-                      ]
-
+                      structural["consecutive_valid_observations"] = (
+                          structural_streak
+                      )
                       diagnostic = {
-                          "product_sha": "4a23558b0993315d5908ddca0663828ac42170fc",
+                          "product_sha": "7d31fd690e2b14f1b4d5567b853bdde9a851bc30",
                           "public_url": page.url,
                           "card_count": card_count,
                           "style_count": style_count,
                           "card_text": card_text,
                           "required_step2_markers": list(step2_required),
-                          "card_markers_present": card_markers_present,
-                          "card_markers_missing": card_markers_missing,
-                          "body_markers_missing": body_markers_missing,
+                          "structural": structural,
                       }
                       (artifacts / "diagnostic.json").write_text(
                           json.dumps(diagnostic, indent=2), encoding="utf-8"
@@ -259,13 +327,10 @@ jobs:
                           full_page=True,
                       )
 
-                      # Validate the actual public Step 2 card DOM, not the
-                      # transient broader frame/body snapshot.
-                      missing_step2 = card_markers_missing
-                      if missing_step2:
+                      if structural_streak < 2:
                           raise BrowserQAFailure(
-                              "MONEYLINE_STEP2_MARKER: missing "
-                              + " | ".join(missing_step2)
+                              "MONEYLINE_STEP2_STRUCTURE: Step 2 DOM did not "
+                              "hold for two consecutive valid observations"
                           )
 
                   result = {

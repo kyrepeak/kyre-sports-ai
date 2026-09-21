@@ -65,5 +65,29 @@
     "product_code_changed": false,
     "router_code_changed": false,
     "timeout_changed": false
+  },
+  "latest_product_render_repair": {
+    "owner": "PRODUCT / RENDER COMPOSITION",
+    "base_main_sha": "35750497540e6b132e1c9d0816b2720fe11ce22c",
+    "product_patch_sha": "7d31fd690e2b14f1b4d5567b853bdde9a851bc30",
+    "patch": "Dedent and strip V15 multiline team-panel and command-center HTML before frozen Streamlit Markdown rendering.",
+    "product_scope": [
+      "nfl_moneyline_hub_v15.py"
+    ],
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "monte_carlo_logic_changed": false,
+    "sportsbook_logic_changed": false,
+    "grading_logic_changed": false,
+    "router_changed": false,
+    "structural_acceptance": {
+      "card_min": 1,
+      "teams_exact": 2,
+      "primary_present": true,
+      "hero_present": true,
+      "verdict_present": true,
+      "forbidden_pre_code_exact": 0,
+      "consecutive_valid_observations": 2
+    }
   }
 }

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from html import escape
 import math
+from textwrap import dedent
 from typing import Any
 
 import nfl_moneyline_hub_v9 as presentation
@@ -199,7 +200,7 @@ def _team_panel(*, game: dict, side: str, edge: dict, grade: dict, ctx: dict, gp
     interval = f"{presentation._pct(p05)}–{presentation._pct(p95)}"
     status = presentation._status_class(grade_name)
 
-    return f"""
+    return dedent(f"""
     <section class="kml15-team kml15-{escape(side)}">
       <div class="kml15-team-accent"></div>
       <div class="kml15-team-head">
@@ -229,7 +230,7 @@ def _team_panel(*, game: dict, side: str, edge: dict, grade: dict, ctx: dict, gp
         <span>FLOOR EV <b>{presentation._ev(edge.get("conservative_ev"))}</b></span>
       </div>
     </section>
-    """
+    """).strip()
 
 
 def _command_center_matchup_html(
@@ -270,7 +271,7 @@ def _command_center_matchup_html(
         "GATED": reason_text or "Required production inputs are unresolved; downstream math stays diagnostic.",
     }.get(state, reason_text or "Frozen V8 final state.")
 
-    return f"""
+    return dedent(f"""
     <article class="kml15-card" data-game-id="{escape(presentation._gid(game))}">
       <header class="kml15-top">
         <div>
@@ -294,7 +295,7 @@ def _command_center_matchup_html(
         <small>{"5M" if sims >= 5_000_000 else (f"{sims:,}" if sims else "—")} simulations • market is comparison-only • sportsbook influence on model P(win): 0.0%</small>
       </div>
     </article>
-    """
+    """).strip()
 
 
 def _step2_css(base: str) -> str:
