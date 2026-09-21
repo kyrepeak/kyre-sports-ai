@@ -1,0 +1,74 @@
+name: NFL Moneyline Visual Steps 1-2
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v14.py'
+      - 'nfl_moneyline_hub_v15.py'
+      - 'streamlit_memory_lazy_router_v197.py'
+      - 'streamlit_memory_lazy_router_v198.py'
+      - '.github/workflows/nfl-moneyline-visual-steps1-2-v1.yml'
+  workflow_dispatch:
+
+jobs:
+  visual-steps-1-2-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile additive Moneyline layers
+        run: |
+          python -m py_compile \
+            nfl_moneyline_hub_v14.py \
+            nfl_moneyline_hub_v15.py \
+            streamlit_memory_lazy_router_v197.py \
+            streamlit_memory_lazy_router_v198.py \
+            app.py
+      - name: Verify frozen analytical contract and route
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          v14 = Path("nfl_moneyline_hub_v14.py").read_text()
+          v15 = Path("nfl_moneyline_hub_v15.py").read_text()
+          r197 = Path("streamlit_memory_lazy_router_v197.py").read_text()
+          r198 = Path("streamlit_memory_lazy_router_v198.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_moneyline_hub_v13"' in v14
+          assert 'VISUAL_UPGRADE_STEP = 1' in v14
+          assert 'PRESENTATION_ONLY = True' in v14
+          assert 'MAY_MODIFY_PROJECTION = False' in v14
+          assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v14
+          assert 'STAKE_SIZING_ENABLED = False' in v14
+          assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v14
+
+          assert 'FROZEN_PRIOR = "nfl_moneyline_hub_v14"' in v15
+          assert 'VISUAL_UPGRADE_STEP = 2' in v15
+          assert 'PRESENTATION_ONLY = True' in v15
+          assert 'MAY_MODIFY_PROJECTION = False' in v15
+          assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v15
+          assert 'STAKE_SIZING_ENABLED = False' in v15
+          assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v15
+
+          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v196"' in r197
+          assert 'MONEYLINE_HUB = "nfl_moneyline_hub_v14"' in r197
+          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v197"' in r198
+          assert 'MONEYLINE_HUB = "nfl_moneyline_hub_v15"' in r198
+          assert 'from streamlit_memory_lazy_router_v198 import record_bootstrap_import_ms, render_app' in app
+
+          # Guard against accidental analytical ownership in new presentation files.
+          banned = (
+              "_build_final(",
+              "_fit_calibration_model(",
+              "_build_game_output(",
+              "fetch_nfl_moneyline_markets(",
+              "random.",
+              "np.random",
+          )
+          for name, text in (("V14", v14), ("V15", v15)):
+              for token in banned:
+                  assert token not in text, f"{name} unexpectedly owns analytical token: {token}"
+
+          print("NFL Moneyline visual Steps 1-2 contract GREEN")
+          PY
