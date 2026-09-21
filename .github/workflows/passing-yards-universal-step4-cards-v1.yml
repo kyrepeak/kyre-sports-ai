@@ -90,7 +90,7 @@ jobs:
           assert 'PASSING_YARDS_UNIVERSAL_STEP4_RUNTIME' in app
           assert 'PASSING_YARDS_STEP4_PUBLIC_DEPLOY_REFRESH' in app
           workflow = Path(".github/workflows/passing-yards-universal-step4-cards-v1.yml").read_text()
-          assert "runtime-trace-diagnostic:" not in workflow
+          assert re.search(r"(?m)^  runtime-trace-diagnostic:\\s*$", workflow) is None
           public_body = workflow.split("  public-production-proof:",1)[1]
           assert public_body.index("revision_ready = False") < public_body.index("frame, scan = _find_app_frame(page)")
 
