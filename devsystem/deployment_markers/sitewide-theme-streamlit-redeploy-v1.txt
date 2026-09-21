@@ -1,0 +1,9 @@
+SITEWIDE_THEME_STREAMLIT_REDEPLOY_TRIGGER_V1
+
+Purpose: force Streamlit Cloud to consume the already-merged certified site-wide universal theme from PR #837.
+Pinned product SHA: dc3505b445559b9397978e2eea951e6e48c35794.
+Production merge SHA: 41edb2bd53578bd594e454907c966efd63647905.
+Direct production evidence: public Streamlit health returned HTTP 200, but the universal shell marker "UNIVERSAL THEME LIVE" was not present in the rendered Streamlit frame after the merge.
+
+This marker changes no runtime behavior, routing, page logic, projection math, probability logic, market logic, API/model behavior, sportsbook influence, or presentation code.
+It exists only to trigger Streamlit Cloud to refresh the already-merged production revision.
