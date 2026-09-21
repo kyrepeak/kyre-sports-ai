@@ -1,0 +1,270 @@
+name: Passing Yards Universal Step 3 Shell
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v53.py'
+      - 'streamlit_memory_lazy_router_v204.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step3-shell-v1.json'
+      - '.github/workflows/passing-yards-universal-step3-shell-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v53.py'
+      - 'streamlit_memory_lazy_router_v204.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step3-shell-v1.json'
+      - '.github/workflows/passing-yards-universal-step3-shell-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-step3-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Step 3 shell chain
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v53.py streamlit_memory_lazy_router_v204.py app.py
+
+      - name: Verify Step 3 page shell contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          v53 = Path("nfl_passing_yards_hub_v53.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v204.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v52"' in v53
+          assert 'VISUAL_UPGRADE_STEP = 3' in v53
+          assert 'SHELL_CONTAINER_KEY = "kyre_passing_yards_shell_v1"' in v53
+          assert 'PRESENTATION_ONLY = True' in v53
+          assert 'MAY_MODIFY_PROJECTION = False' in v53
+          assert 'MAY_MODIFY_MARKET_MATH = False' in v53
+          assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in v53
+          assert 'data-passing-yards-page-shell="v53"' in v53
+          assert 'data-passing-yards-shell-owner="v53"' in v53
+          assert 'data-passing-yards-shell-hero="v53"' in v53
+          assert 'with st.container(key=SHELL_CONTAINER_KEY)' in v53
+          assert 'build_semantic_tokens_css() + _SHELL_CSS' in v53
+
+          css = v53.split('_SHELL_CSS = r"""',1)[1].split('"""',1)[0]
+          assert not re.search(r'#[0-9a-fA-F]{3,8}', css), "V53 contains page-local hex colors"
+          assert 'rgba(' not in css, "V53 contains page-local rgba colors"
+          for marker in (
+              "--kyre-sem-surface-panel",
+              "--kyre-sem-border-soft",
+              "--kyre-sem-border-strong",
+              "--kyre-sem-text-primary",
+              "--kyre-sem-text-secondary",
+              "--kyre-sem-shadow-card",
+              "--kyre-space-5",
+              "--kyre-radius-2xl",
+          ):
+              assert marker in css, marker
+
+          assert 'import streamlit_memory_lazy_router_v203 as prior' in router
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v53"' in router
+          assert 'data-passing-yards-v204-runtime="step3"' in router
+          assert 'prior.PASSING_HUB = PASSING_HUB' in router
+
+          render_body = router.split("def render_app() -> None:",1)[1]
+          assert render_body.index("prior._consume_passing_yards_query_entry()") < render_body.index("sport, market = _active_route()")
+
+          assert 'from streamlit_memory_lazy_router_v204 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v203 import record_bootstrap_import_ms, render_app' in app
+          assert 'PASSING_YARDS_UNIVERSAL_STEP3_RUNTIME' in app
+
+          banned = (
+              "_build_projection(",
+              "_build_final(",
+              "fetch_nfl_passing",
+              "requests.get(",
+              "random.",
+              "np.random",
+          )
+          for token in banned:
+              assert token not in v53, f"Step 3 unexpectedly owns analytical token: {token}"
+
+          print("PASSING_YARDS_UNIVERSAL_STEP3_STATIC_GREEN")
+          PY
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install targeted browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Passing Yards Step 3 shell
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _body_has_forbidden_error,
+              BrowserQAFailure,
+          )
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          artifacts = Path("artifacts/passing-yards-universal-step3-public")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":1280,"height":1000})
+              try:
+                  route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                  frame, scan = _find_app_frame(page)
+
+                  # Deployment readiness: grade Step 3 only after the exact V204
+                  # revision is actually serving in public production.
+                  revision_deadline = time.monotonic() + 180.0
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f"PASSING_YARDS_RUNTIME: forbidden marker {forbidden}")
+                      if frame.locator('[data-passing-yards-v204-runtime="step3"]').count() >= 1:
+                          break
+                      if time.monotonic() >= revision_deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_STEP3_REVISION_READINESS: "
+                              "public Streamlit never exposed the V204 runtime witness; "
+                              + f"body start={body[:2200]!r}"
+                          )
+                      page.wait_for_timeout(1000)
+
+                  deadline = time.monotonic() + 60.0
+                  evidence = {}
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f"PASSING_YARDS_RUNTIME: forbidden marker {forbidden}")
+
+                      evidence = {
+                          "v204_runtime": frame.locator('[data-passing-yards-v204-runtime="step3"]').count(),
+                          "v203_runtime": frame.locator('[data-passing-yards-v203-runtime="step2"]').count(),
+                          "step3_shell_style": frame.locator('style[data-passing-yards-page-shell="v53"]').count(),
+                          "step3_shell_owner": frame.locator('[data-passing-yards-shell-owner="v53"]').count(),
+                          "shell_container": frame.locator('.st-key-kyre_passing_yards_shell_v1').count(),
+                          "shell_hero": frame.locator('[data-passing-yards-shell-hero="v53"]').count(),
+                          "step2_token_style": frame.locator('style[data-passing-yards-design-tokens="v52"]').count(),
+                          "step2_token_owner": frame.locator('[data-passing-yards-token-owner="v52"]').count(),
+                          "step1_owner_style": frame.locator('style[data-passing-yards-universal-owner="v51"]').count(),
+                          "semantic_tokens_style": frame.locator('style[data-kyre-semantic-tokens="v2"]').count(),
+                          "top_container_inside_shell": frame.locator('.st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46').count(),
+                          "passing_yards_text": "Passing Yards" in body,
+                      }
+
+                      if (
+                          evidence["v204_runtime"] >= 1
+                          and evidence["v203_runtime"] >= 1
+                          and evidence["step3_shell_style"] == 1
+                          and evidence["step3_shell_owner"] == 1
+                          and evidence["shell_container"] == 1
+                          and evidence["shell_hero"] == 1
+                          and evidence["step2_token_style"] >= 1
+                          and evidence["step2_token_owner"] == 1
+                          and evidence["step1_owner_style"] >= 1
+                          and evidence["semantic_tokens_style"] >= 1
+                          and evidence["top_container_inside_shell"] >= 1
+                          and evidence["passing_yards_text"]
+                      ):
+                          break
+
+                      if time.monotonic() >= deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_STEP3_SHELL_READINESS: "
+                              + json.dumps(evidence, sort_keys=True)
+                              + f"; body start={body[:2200]!r}"
+                          )
+                      page.wait_for_timeout(500)
+
+                  shell_style = frame.locator(".st-key-kyre_passing_yards_shell_v1").first.evaluate(
+                      """el => {
+                          const s=getComputedStyle(el);
+                          return {
+                              backgroundImage:s.backgroundImage,
+                              borderRadius:s.borderRadius,
+                              maxWidth:s.maxWidth,
+                              paddingLeft:s.paddingLeft,
+                              paddingRight:s.paddingRight,
+                              boxShadow:s.boxShadow
+                          };
+                      }"""
+                  )
+                  hero_style = frame.locator('[data-passing-yards-shell-hero="v53"]').first.evaluate(
+                      """el => {
+                          const s=getComputedStyle(el);
+                          return {
+                              backgroundImage:s.backgroundImage,
+                              display:s.display,
+                              borderRadius:s.borderRadius
+                          };
+                      }"""
+                  )
+                  hero_title = frame.locator('[data-passing-yards-shell-hero="v53"] .ks-py53-title').first.inner_text().strip()
+
+                  if "gradient" not in shell_style["backgroundImage"].lower():
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP3_SHELL_BACKGROUND: {shell_style}")
+                  if shell_style["maxWidth"] != "1400px":
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP3_SHELL_WIDTH: {shell_style}")
+                  if shell_style["borderRadius"] in {"0px", "0"}:
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP3_SHELL_RADIUS: {shell_style}")
+                  if "gradient" not in hero_style["backgroundImage"].lower() or hero_style["display"] != "flex":
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP3_HERO_STYLE: {hero_style}")
+                  if hero_title != "Passing Yards":
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP3_HERO_TITLE: {hero_title!r}")
+
+                  result = {
+                      "status":"GREEN",
+                      "route":"NFL -> Passing Yards",
+                      "owner":"nfl_passing_yards_hub_v53",
+                      "frozen_step2":"nfl_passing_yards_hub_v52",
+                      "evidence":evidence,
+                      "shell_computed_style":shell_style,
+                      "hero_computed_style":hero_style,
+                      "hero_title":hero_title,
+                      "frame_scan_count":len(scan),
+                  }
+                  (artifacts/"result.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
+                  page.screenshot(path=str(artifacts/"passing_yards_step3_shell_green.png"),full_page=True)
+                  print("PASSING_YARDS_UNIVERSAL_STEP3_PUBLIC_GREEN")
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload Passing Yards Step 3 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-universal-step3-${{ github.run_id }}
+          path: artifacts/passing-yards-universal-step3-public
+          if-no-files-found: warn
+          retention-days: 7
