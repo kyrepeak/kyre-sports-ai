@@ -59,12 +59,19 @@ jobs:
           app.py
           devsystem/task_ledgers/passing-yards-qb-drilldown-step1-v1.json
           EOF
+          cat > /tmp/expected-runtime-classifier.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step1-v1.yml
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step1-v1.json
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-deploy-refresh.txt /tmp/expected-deploy-refresh.txt
+          sort -o /tmp/expected-runtime-classifier.txt /tmp/expected-runtime-classifier.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP1_BUILD_SCOPE_GREEN"
           elif diff -q /tmp/expected-deploy-refresh.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP1_DEPLOY_REFRESH_SCOPE_GREEN"
+          elif diff -q /tmp/expected-runtime-classifier.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP1_RUNTIME_CLASSIFIER_SCOPE_GREEN"
           else
             echo "Unexpected Step 1 diff:"
             cat /tmp/actual.txt
@@ -159,8 +166,9 @@ jobs:
                           break
                       if time.monotonic() >= deadline:
                           raise BrowserQAFailure("PASSING_YARDS_QB_STEP1_DEPLOYMENT_READINESS: V58 selection screen not live")
+                      # Do not reload while Streamlit is hydrating. Repeated navigation
+                      # starves the public app before the V58 DOM can stabilize.
                       page.wait_for_timeout(1500)
-                      page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
 
                   body = frame.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(body)
@@ -268,3 +276,76 @@ jobs:
           path: artifacts/passing-yards-qb-drilldown-step1
           if-no-files-found: warn
           retention-days: 7
+
+
+  public-runtime-classifier:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install classifier dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Classify public runtime identity
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              try:
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                  page.wait_for_timeout(30000)
+
+                  best = None
+                  for candidate in page.frames:
+                      try:
+                          body = candidate.locator("body").inner_text(timeout=3000)
+                          evidence = {
+                              "url": candidate.url,
+                              "v209_runtime": candidate.locator('[data-passing-yards-v209-runtime="qb-selection-step1"]').count(),
+                              "v208_runtime": candidate.locator('[data-passing-yards-v208-runtime="step7"]').count(),
+                              "v58_selection_style": candidate.locator('style[data-passing-yards-qb-selection="v58"]').count(),
+                              "v58_selection_screen": candidate.locator('[data-passing-yards-selection-screen="v58"]').count(),
+                              "v58_selection_cards": candidate.locator('[data-qb-selection-card]').count(),
+                              "v57_responsive_style": candidate.locator('style[data-passing-yards-responsive-system="v57"]').count(),
+                              "old_v48_players": candidate.locator(".ks-py48-player").count(),
+                              "old_evidence_text": "Steps 7–9 Evidence Board" in body,
+                              "passing_yards_text": "Passing Yards" in body or "PASSING YARDS" in body,
+                              "body_excerpt": body[:1800],
+                          }
+                          score = sum(int(bool(v)) for k,v in evidence.items() if k not in {"url","body_excerpt"} and isinstance(v,(int,bool)))
+                          if best is None or score > best[0]:
+                              best = (score,evidence)
+                      except Exception:
+                          pass
+
+                  evidence = best[1] if best else {"error":"no readable frame"}
+                  if evidence.get("v209_runtime"):
+                      classification = "V209_LIVE"
+                  elif evidence.get("v208_runtime") or evidence.get("v57_responsive_style") or evidence.get("old_v48_players"):
+                      classification = "STALE_PRE_V209_RUNTIME"
+                  else:
+                      classification = "UNRESOLVED_RUNTIME_IDENTITY"
+
+                  print("PASSING_YARDS_QB_STEP1_RUNTIME_CLASSIFICATION=" + classification)
+                  print(json.dumps(evidence, indent=2, sort_keys=True))
+              finally:
+                  browser.close()
+          PY
