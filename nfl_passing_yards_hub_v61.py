@@ -125,6 +125,14 @@ _CARD_CSS = r"""
    gap, which pushed the first QB card to y=2508px. Remove those containers from
    layout entirely and hide the duplicate frozen V8 matchup widget; V46 owns the
    single visible matchup control. */
+/* Branch proof after the duplicate V8 widget was removed still measured
+   the picker at y=2424 with only the V46 control deck visibly before it.
+   The remaining blank space is the frozen V53 direct vertical-stack gap
+   repeated across suppressed zero-height siblings. Collapse only that layout
+   gap; V46 controls and V58/V59 keep their own explicit spacing. */
+.st-key-kyre_passing_yards_shell_v1 > [data-testid="stVerticalBlock"]{
+  gap:0!important;
+}
 .st-key-kyre_passing_yards_shell_v1
   [data-testid="stElementContainer"]:has(> div:empty){
   display:none!important;
