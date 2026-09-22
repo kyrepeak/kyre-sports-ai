@@ -33,7 +33,7 @@
     "probability_logic_changed": false,
     "market_math_changed": false,
     "data_provider_logic_changed": false,
-    "sportsbook_projection_influence": 0.0,
+    "sportsbook_projection_influence": 0,
     "stake_sizing_changed": false,
     "existing_widget_keys_changed": false,
     "other_nfl_markets_changed": false,
@@ -46,5 +46,17 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_deployment_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35681937273,
+    "failure_job": 106600545893,
+    "failed_layer": "DEPLOYMENT",
+    "direct_evidence": "The MAIN public proof waited the full deployment-readiness window and never observed the V58 selection screen. The same SHA had already passed targeted Step 1 proof and the full DevSystem gate, and MAIN source boots V209 -> V58.",
+    "root_cause": "Public Streamlit runtime did not activate the newly merged V209/V58 revision during the proof window.",
+    "patch": "Entrypoint-only production refresh marker plus exact workflow/ledger repair scope. V58 product, V209 router, frozen V51-V57 sources, model/data/math, and widget behavior remain unchanged.",
+    "product_changed": false,
+    "router_changed": false,
+    "frozen_v51_v57_changed": false
+  }
 }
