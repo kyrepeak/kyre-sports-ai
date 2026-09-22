@@ -58,5 +58,12 @@
     "product_changed": false,
     "router_changed": false,
     "frozen_v51_v57_changed": false
+  },
+  "runtime_classifier": {
+    "reason": "Second MAIN public proof after deployment refresh still failed with V58 selection screen not live.",
+    "purpose": "Distinguish stale pre-V209 public deployment from live V209 where V58 render ownership fails.",
+    "changes_product": false,
+    "changes_router": false,
+    "changes_model_or_data": false
   }
 }
