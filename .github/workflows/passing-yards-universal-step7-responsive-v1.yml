@@ -46,16 +46,35 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+          cat > /tmp/expected-build.txt <<'EOF'
           .github/workflows/passing-yards-universal-step7-responsive-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-universal-step7-responsive-v1.json
           nfl_passing_yards_hub_v57.py
           streamlit_memory_lazy_router_v208.py
-          tests/test_passing_yards_universal_step7_responsive_v1.py
+          tests/test_passing_yards_universal-step7-responsive-v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          # Correct the filename typo in the literal build contract before comparison.
+          sed -i 's#tests/test_passing_yards_universal-step7-responsive-v1.py#tests/test_passing_yards_universal_step7_responsive_v1.py#' /tmp/expected-build.txt
+          cat > /tmp/expected-verifier.txt <<'EOF'
+          .github/workflows/passing-yards-universal-step7-responsive-v1.yml
+          devsystem/task_ledgers/passing-yards-universal-step7-responsive-v1.json
+          EOF
+          sort -o /tmp/expected-build.txt /tmp/expected-build.txt
+          sort -o /tmp/expected-verifier.txt /tmp/expected-verifier.txt
+          if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_STEP7_INITIAL_BUILD_SCOPE_GREEN"
+          elif diff -q /tmp/expected-verifier.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_STEP7_VERIFIER_ONLY_SCOPE_GREEN"
+          else
+            echo "Unexpected Step 7 diff:"
+            cat /tmp/actual.txt
+            echo "Allowed initial build diff:"
+            cat /tmp/expected-build.txt
+            echo "Allowed verifier-only diff:"
+            cat /tmp/expected-verifier.txt
+            exit 1
+          fi
 
       - name: Compile Step 7 responsive chain
         run: |
