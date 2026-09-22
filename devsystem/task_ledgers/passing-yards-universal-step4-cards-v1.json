@@ -192,5 +192,32 @@
     "shell_changed": false,
     "analytics_changed": false,
     "verifier_acceptance_weakened": false
+  },
+  "latest_visible_style_runtime_witness_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35670849699,
+    "failure_job": 106566717188,
+    "owner": "VERIFIER / HIDDEN CARD-OWNER WITNESS",
+    "direct_evidence": {
+      "visual_step4_proof": "SUCCESS",
+      "public_passing_yards_rendered": true,
+      "public_v54_style_count": 1,
+      "public_v54_hidden_owner_count": 0,
+      "public_v205_hidden_runtime_count": 0,
+      "public_frame_url": "https://kyre-sports-ai.streamlit.app/~/+/",
+      "source_app_boots_v205": true,
+      "source_v205_owns_v54": true,
+      "observation": "The unique V54 style tag is present in the live public DOM, while the display:none V54 owner span is not preserved by public Streamlit DOM."
+    },
+    "root_cause": "The repaired verifier still required the V54 card-owner span as part of the runtime witness. That span is emitted with display:none and is not durable in the public Streamlit DOM, even though the unique V54 style tag is present and checked-out source proves app.py boots V205 and V205 owns V54.",
+    "repair": "Use the unique V54 style tag as the durable revision witness, keep the hidden V54 owner count as diagnostic evidence only, and preserve the downstream card/header counts, frozen V204/V53/V52/V51 checks, Passing Yards text, and computed gradient/radius/shadow/header checks.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "app_code_changed": false,
+    "cards_changed": false,
+    "tokens_changed": false,
+    "shell_changed": false,
+    "analytics_changed": false,
+    "verifier_acceptance_weakened": false
   }
 }
