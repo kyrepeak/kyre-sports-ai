@@ -403,6 +403,8 @@ jobs:
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_BRANCH_RUNTIME: {forbidden}")
 
+                  header = picker.locator('section[data-passing-yards-step3-header="v60"]').first
+                  mobile_metrics = header.evaluate("el => ({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth})")
                   result = {
                       "header": picker.locator('section[data-passing-yards-step3-header="v60"]').count(),
                       "css": picker.locator('style[data-passing-yards-step3-header-css="v60"]').count(),
@@ -413,8 +415,10 @@ jobs:
                       "status": picker.locator(".ks-py60-status").count(),
                       "picker": picker.locator('[data-passing-yards-selection-screen="v58"]').count(),
                       "cards": picker.locator('[data-qb-selection-card]').count(),
+                      "mobile_client_width": mobile_metrics["clientWidth"],
+                      "mobile_scroll_width": mobile_metrics["scrollWidth"],
                   }
-                  assert result == {
+                  expected_core = {
                       "header":1,
                       "css":1,
                       "title":"Passing Yards",
@@ -424,7 +428,9 @@ jobs:
                       "status":1,
                       "picker":1,
                       "cards":2,
-                  }, result
+                  }
+                  assert {k: result[k] for k in expected_core} == expected_core, result
+                  assert result["mobile_scroll_width"] <= result["mobile_client_width"] + 4, result
 
                   qb1_name = picker.locator('a[data-qb-select="1"] .kpass29-name').first.inner_text(timeout=5000).strip()
                   detail_page = click_anchor(page, picker, picker.locator('a[data-qb-select="1"]').first)
