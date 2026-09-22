@@ -150,6 +150,19 @@ _CARD_CSS = r"""
   height:0!important;
 }
 
+/* Exact remaining visible blocker from branch-local DOM proof:
+   the legacy KPY15 Game Center is the immediate visible surface above V58.
+   Collapse its Streamlit element container; do not touch V46 controls. */
+.st-key-kyre_passing_yards_shell_v1
+  [data-testid="stElementContainer"]:has(.kpy15-center){
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+
 .st-key-kyre_passing_yards_shell_v1 [data-testid="stDataFrame"],
 .st-key-kyre_passing_yards_shell_v1 [data-testid="stTable"],
 .st-key-kyre_passing_yards_shell_v1 [data-testid="stMetric"],
