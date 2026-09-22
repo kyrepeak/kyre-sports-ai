@@ -66,5 +66,17 @@
     "market_math_changed": false,
     "widget_keys_changed": false,
     "frozen_steps_1_6_changed": false
+  },
+  "latest_workflow_repair": {
+    "checkpoint": "PR targeted Step 7 proof after verifier-only repair",
+    "failure_run": 35677211846,
+    "failure_job": 106586133679,
+    "failed_layer": "WORKFLOW",
+    "root_cause": "The Step 7 scope gate only accepted the original six-file product build diff, so the legitimate two-file verifier-only repair was rejected before any Step 7 contract tests ran.",
+    "patch": "Permit exactly either the original six-file Step 7 build diff or the workflow+task-ledger verifier-only diff. No broader paths are accepted.",
+    "product_changed": false,
+    "router_changed": false,
+    "analytics_changed": false,
+    "frozen_steps_1_6_changed": false
   }
 }
