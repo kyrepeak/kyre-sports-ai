@@ -140,3 +140,8 @@ def test_v60_runtime_emits_css_then_visible_html_before_prior(monkeypatch):
     assert calls[0][2] is True
     assert 'data-passing-yards-step3-header="v60"' in calls[1][1]
     assert 'class="ks-py60-header"' in calls[1][1]
+
+
+def test_step3_header_glow_does_not_extend_mobile_scroll_width():
+    assert 'width:320px;height:320px;right:0;top:-170px;' in V60
+    assert 'right:-110px;top:-170px;' not in V60
