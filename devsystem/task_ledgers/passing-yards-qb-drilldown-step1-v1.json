@@ -77,5 +77,14 @@
     "product_changed": false,
     "router_changed": false,
     "model_data_math_changed": false
+  },
+  "click_context_diagnostic": {
+    "source_failure_run": 35686205703,
+    "source_failure_job": 106613414844,
+    "observed_failure": "PASSING_YARDS_QB_STEP1_SELECT_ACTION: selected QB shell did not render",
+    "purpose": "Determine whether the real anchor click carries ks_qb_slot into the top-level Streamlit query context or remains trapped in the internal app frame.",
+    "product_changed": false,
+    "router_changed": false,
+    "verifier_only": true
   }
 }
