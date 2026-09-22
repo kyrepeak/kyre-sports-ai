@@ -1,0 +1,293 @@
+name: Passing Yards QB Drill-Down Step 2
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v59.py'
+      - 'streamlit_memory_lazy_router_v210.py'
+      - 'tests/test_passing_yards_qb_drilldown_step2_v1.py'
+      - 'devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json'
+      - '.github/workflows/passing-yards-qb-drilldown-step2-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v59.py'
+      - 'streamlit_memory_lazy_router_v210.py'
+      - 'tests/test_passing_yards_qb_drilldown_step2_v1.py'
+      - 'devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json'
+      - '.github/workflows/passing-yards-qb-drilldown-step2-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-step2-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce QB drill-down Step 2 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step1-v1.yml
+          .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json
+          nfl_passing_yards_hub_v59.py
+          streamlit_memory_lazy_router_v210.py
+          tests/test_passing_yards_qb_drilldown_step2_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_SCOPE_GREEN"
+
+      - name: Compile Step 2 chain
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v59.py streamlit_memory_lazy_router_v210.py app.py tests/test_passing_yards_qb_drilldown_step2_v1.py
+
+      - name: Run Step 2 contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_passing_yards_qb_drilldown_step2_v1.py
+
+      - name: Verify frozen Step 1 boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v59 = Path("nfl_passing_yards_hub_v59.py").read_text()
+          v58 = Path("nfl_passing_yards_hub_v58.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v210.py").read_text()
+          app = Path("app.py").read_text()
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v58"' in v59
+          assert 'return prior._selection_screen(captured)' in v59
+          assert 'data-passing-yards-qb-detail="v59"' in v59
+          assert 'data-passing-yards-selected-qb=' in v59
+          assert 'data-qb-analysis-section="projection"' in v59
+          assert 'data-qb-analysis-support="matchup"' in v59
+          assert 'evidence._player(' not in v59
+          assert 'class="ks-py48-player"' not in v59
+          assert 'class="ks-py48-step"' not in v59
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v57"' in v58
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v59"' in router
+          assert 'from streamlit_memory_lazy_router_v210 import record_bootstrap_import_ms, render_app' in app
+          print("PASSING_YARDS_QB_DRILLDOWN_STEP2_STATIC_GREEN")
+          PY
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public dedicated QB analysis for both quarterbacks
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health, _body_has_forbidden_error, BrowserQAFailure
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          artifacts = Path("artifacts/passing-yards-qb-drilldown-step2")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          _wait_for_health(base)
+
+          def find_picker(page, timeout=120, require_v210=False):
+              deadline = time.monotonic() + timeout
+              next_reload = time.monotonic() + 45.0
+              while time.monotonic() < deadline:
+                  for candidate in page.frames:
+                      try:
+                          picker_ready = (
+                              candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                              and candidate.locator('[data-qb-selection-card]').count() == 2
+                          )
+                          runtime_ready = (
+                              not require_v210
+                              or candidate.locator('[data-passing-yards-v210-runtime="qb-detail-step2"]').count() >= 1
+                          )
+                          if picker_ready and runtime_ready:
+                              return candidate
+                      except Exception:
+                          pass
+                  if require_v210 and time.monotonic() >= next_reload:
+                      page.reload(wait_until="domcontentloaded", timeout=120000)
+                      next_reload = time.monotonic() + 45.0
+                  page.wait_for_timeout(500)
+              raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_PICKER_NOT_READY")
+
+          def find_detail(page, slot, timeout=120):
+              selector = f'[data-passing-yards-qb-detail="v59"][data-qb-slot="{slot}"]'
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for candidate in page.frames:
+                      try:
+                          if candidate.locator(selector).count() == 1:
+                              return candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP2_DETAIL_NOT_READY: slot={slot}")
+
+          def click_anchor(page, frame, locator):
+              target = locator.get_attribute("target")
+              if target == "_blank":
+                  with page.expect_popup(timeout=15000) as popup_info:
+                      locator.click()
+                  new_page = popup_info.value
+                  new_page.wait_for_load_state("domcontentloaded", timeout=120000)
+                  return new_page, target
+              locator.click()
+              return page, target
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              try:
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                  picker = find_picker(page, timeout=600, require_v210=True)
+
+                  landing_body = picker.locator("body").inner_text(timeout=5000)
+                  forbidden = _body_has_forbidden_error(landing_body)
+                  if forbidden:
+                      raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP2_RUNTIME: {forbidden}")
+
+                  names = [
+                      picker.locator(f'a[data-qb-select="{slot}"] .kpass29-name').first.inner_text(timeout=5000).strip()
+                      for slot in (1, 2)
+                  ]
+                  landing = {
+                      "selection_cards": picker.locator('[data-qb-selection-card]').count(),
+                      "select_links": picker.locator('a[data-qb-select]').count(),
+                      "full_analysis_players": picker.locator(".ks-py48-player").count(),
+                      "names": names,
+                  }
+                  if landing["selection_cards"] != 2 or landing["select_links"] != 2 or landing["full_analysis_players"] != 0:
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_LANDING_CONTRACT: " + json.dumps(landing, sort_keys=True))
+
+                  shell = picker.locator(".st-key-kyre_passing_yards_shell_v1").first
+                  shell_metrics = shell.evaluate("el => ({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth})")
+                  if shell_metrics["scrollWidth"] > shell_metrics["clientWidth"] + 4:
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_MOBILE_OVERFLOW: " + json.dumps(shell_metrics))
+
+                  current_page = page
+                  current_picker = picker
+                  detail_results = []
+
+                  for slot in (1, 2):
+                      link = current_picker.locator(f'a[data-qb-select="{slot}"]').first
+                      href = link.get_attribute("href") or ""
+                      if f"ks_qb_slot={slot}" not in href:
+                          raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP2_CONTEXT_LINK: slot={slot} href={href}")
+
+                      detail_page, target = click_anchor(current_page, current_picker, link)
+                      detail = find_detail(detail_page, slot)
+                      body = detail.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP2_DETAIL_RUNTIME: slot={slot} {forbidden}")
+
+                      expected_index = slot - 1
+                      other_index = 1 - expected_index
+                      result = {
+                          "slot": slot,
+                          "name": names[expected_index],
+                          "navigation_target": target,
+                          "detail_marker": detail.locator(f'[data-selected-qb-analysis="{slot}"]').count(),
+                          "step1_selected_marker": detail.locator(f'[data-passing-yards-selected-qb="{slot}"]').count(),
+                          "player_cards": detail.locator(".ks-py59-player").count(),
+                          "expected_player": detail.locator(f'.ks-py59-player[data-qb-analysis-index="{expected_index}"]').count(),
+                          "other_player": detail.locator(f'.ks-py59-player[data-qb-analysis-index="{other_index}"]').count(),
+                          "market": detail.locator('[data-qb-analysis-section="market"]').count(),
+                          "projection": detail.locator('[data-qb-analysis-section="projection"]').count(),
+                          "context": detail.locator('[data-qb-analysis-section="context"]').count(),
+                          "distribution": detail.locator('[data-qb-analysis-section="distribution"]').count(),
+                          "support": detail.locator("[data-qb-analysis-support]").count(),
+                          "legacy_full_player_cards": detail.locator(".ks-py48-player").count(),
+                          "legacy_step_blocks": detail.locator(".ks-py48-step").count(),
+                          "identity_visible": bool(names[expected_index] and names[expected_index] in body),
+                          "back": detail.locator('a[data-qb-back="true"]').count(),
+                      }
+                      if not (
+                          result["detail_marker"] == 1
+                          and result["step1_selected_marker"] == 1
+                          and result["player_cards"] == 1
+                          and result["expected_player"] == 1
+                          and result["other_player"] == 0
+                          and result["market"] == 1
+                          and result["projection"] == 1
+                          and result["context"] == 1
+                          and result["distribution"] == 1
+                          and result["support"] == 2
+                          and result["legacy_full_player_cards"] == 0
+                          and result["legacy_step_blocks"] == 0
+                          and result["identity_visible"]
+                          and result["back"] == 1
+                      ):
+                          raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_DETAIL_CONTRACT: " + json.dumps(result, sort_keys=True))
+                      detail_results.append(result)
+
+                      back = detail.locator('a[data-qb-back="true"]').first
+                      return_page, _ = click_anchor(detail_page, detail, back)
+                      current_picker = find_picker(return_page)
+                      current_page = return_page
+
+                  final_body = current_picker.locator("body").inner_text(timeout=5000)
+                  if _body_has_forbidden_error(final_body):
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_FINAL_RUNTIME_ERROR")
+
+                  result = {
+                      "status": "GREEN",
+                      "route": "NFL -> Passing Yards",
+                      "owner": "nfl_passing_yards_hub_v59",
+                      "router": "streamlit_memory_lazy_router_v210",
+                      "landing": landing,
+                      "details": detail_results,
+                      "mobile_shell": shell_metrics,
+                  }
+                  (artifacts / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+                  current_page.screenshot(path=str(artifacts / "step2_final_mobile.png"), full_page=True)
+                  print("PASSING_YARDS_QB_DRILLDOWN_STEP2_PUBLIC_GREEN")
+                  print(json.dumps(result, indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload QB drill-down Step 2 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-qb-drilldown-step2-${{ github.run_id }}
+          path: artifacts/passing-yards-qb-drilldown-step2
+          if-no-files-found: warn
+          retention-days: 7
