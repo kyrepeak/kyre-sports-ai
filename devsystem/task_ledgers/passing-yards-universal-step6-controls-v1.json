@@ -49,7 +49,7 @@
     "moneyline_changed": false,
     "other_nfl_markets_changed": false,
     "non_nfl_routes_changed": false,
-    "sportsbook_projection_influence": 0.0
+    "sportsbook_projection_influence": 0
   },
   "freeze_rule": "After targeted Step 6 proof, required merge gate, merge, and one successful post-merge public production proof of the V56 controls/navigation system on the certified Passing Yards route, Step 6 is GREEN + FROZEN.",
   "action_log": {
@@ -58,5 +58,34 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "latest_public_control_verifier_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35675715862,
+    "failure_job": 106581703959,
+    "owner": "VERIFIER / STREAMLIT CONTROL DOM SHAPE",
+    "direct_evidence": {
+      "visual_step6_proof": "SUCCESS",
+      "public_v56_revision_ready": true,
+      "public_step6_control_style": 1,
+      "top_control_deck_present": true,
+      "slate_date_control_present": true,
+      "matchup_control_present": true,
+      "support_details_present": true,
+      "failure": "Playwright timed out locating the framework-internal stDateInput descendant [data-baseweb='input'] after the durable Step 6 readiness checks had already passed."
+    },
+    "root_cause": "The production verifier depended on Streamlit/BaseWeb internal descendant markup for computed-style sampling. The visible date and matchup controls were present, but the internal data-baseweb=input shape is not a durable public DOM contract.",
+    "repair": "Keep the durable V56 style witness and visible control counts unchanged. Replace framework-internal descendant selectors with the stable Streamlit control wrappers and verify their rendered dimensions plus a real interactive descendant. Preserve the top-deck computed gradient/radius/shadow proof and disclosure-surface styling proof.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "app_code_changed": false,
+    "frozen_steps_1_5_changed": false,
+    "widget_keys_changed": false,
+    "navigation_behavior_changed": false,
+    "analytics_changed": false,
+    "projection_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "hidden_markers_remain_diagnostic": true
+  }
 }
