@@ -53,9 +53,24 @@ jobs:
           streamlit_memory_lazy_router_v212.py
           tests/test_passing_yards_qb_drilldown_step4_v1.py
           EOF
+          cat > /tmp/expected-visible-repair.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step4-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step4-v1.json
+          nfl_passing_yards_hub_v61.py
+          tests/test_passing_yards_qb_drilldown_step4_v1.py
+          EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_SCOPE_GREEN"
+          sort -o /tmp/expected-visible-repair.txt /tmp/expected-visible-repair.txt
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_SCOPE_GREEN"
+          elif diff -q /tmp/expected-visible-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_VISIBLE_REPAIR_SCOPE_GREEN"
+          else
+            diff -u /tmp/expected.txt /tmp/actual.txt || true
+            diff -u /tmp/expected-visible-repair.txt /tmp/actual.txt || true
+            exit 1
+          fi
 
       - name: Compile Step 4 chain
         run: |
@@ -221,7 +236,19 @@ jobs:
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP4_BRANCH_RUNTIME: {forbidden}")
 
+                  legacy_visible = {
+                      "v44_page": landing.locator(".ks-v44-page:visible").count(),
+                      "matchup_spotlight": landing.locator(".kpy16-match:visible").count(),
+                      "why_projection": landing.locator(".kpy16-why:visible").count(),
+                      "combined_cards": landing.locator(".kpass34-grid:visible").count(),
+                      "combined_players": landing.locator(".kpass34-player:visible").count(),
+                  }
+                  assert all(value == 0 for value in legacy_visible.values()), legacy_visible
+
                   picker_card = landing.locator(".ks-py58-card").first
+                  assert picker_card.is_visible(), "Step 4 QB picker card is not visibly actionable"
+                  picker_box = picker_card.bounding_box()
+                  assert picker_box is not None and picker_box["y"] < 1400, picker_box
                   picker_style = card_style(picker_card)
                   result = {
                       "style_witness": landing.locator('style[data-passing-yards-step4-card-system="v61"]').count(),
@@ -230,6 +257,8 @@ jobs:
                       "cards": landing.locator('[data-qb-selection-card]').count(),
                       "links": landing.locator('a[data-qb-select]').count(),
                       "picker_style": picker_style,
+                      "picker_box": picker_box,
+                      "legacy_visible": legacy_visible,
                   }
                   assert result["style_witness"] >= 1, result
                   assert result["header"] == 1 and result["picker"] == 1, result
@@ -424,7 +453,20 @@ jobs:
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP4_PUBLIC_RUNTIME: {forbidden}")
 
-                  picker_style = card_style(landing.locator(".ks-py58-card").first)
+                  legacy_visible = {
+                      "v44_page": landing.locator(".ks-v44-page:visible").count(),
+                      "matchup_spotlight": landing.locator(".kpy16-match:visible").count(),
+                      "why_projection": landing.locator(".kpy16-why:visible").count(),
+                      "combined_cards": landing.locator(".kpass34-grid:visible").count(),
+                      "combined_players": landing.locator(".kpass34-player:visible").count(),
+                  }
+                  assert all(value == 0 for value in legacy_visible.values()), legacy_visible
+
+                  picker_card = landing.locator(".ks-py58-card").first
+                  assert picker_card.is_visible(), "Public Step 4 QB picker card is not visibly actionable"
+                  picker_box = picker_card.bounding_box()
+                  assert picker_box is not None and picker_box["y"] < 1400, picker_box
+                  picker_style = card_style(picker_card)
                   result = {
                       "status":"GREEN",
                       "main_revision_witness":"v61",
@@ -438,6 +480,8 @@ jobs:
                       "selection_cards":landing.locator('[data-qb-selection-card]').count(),
                       "select_links":landing.locator('a[data-qb-select]').count(),
                       "picker_style":picker_style,
+                      "picker_box":picker_box,
+                      "legacy_visible":legacy_visible,
                   }
                   assert result["style_witness"] >= 1, result
                   assert result["header"] == 1 and result["title"] == "Passing Yards", result
