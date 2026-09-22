@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-qb-drilldown-step1-v1",
+  "status": "DONE",
+  "scope": "NFL Passing Yards QB Drill-Down Step 1 only: replace the all-analysis landing board with a compact two-quarterback selection screen and a selected-QB shell. Preserve frozen V51-V57 styling/data/model behavior and all unrelated routes.",
+  "baseline": {
+    "main_sha": "b09fe2bb0e4d6f1e0631f04c007d38f55b5fcf2c",
+    "prior_rollout_steps_1_8_green_frozen": true,
+    "frozen_product": "nfl_passing_yards_hub_v57",
+    "frozen_router": "streamlit_memory_lazy_router_v208"
+  },
+  "acceptance": {
+    "correct_passing_yards_route_renders": true,
+    "landing_screen_has_two_qb_selection_cards": true,
+    "landing_screen_has_view_analysis_actions": true,
+    "landing_screen_does_not_render_full_qb_analysis_board": true,
+    "landing_screen_does_not_render_steps_7_9_evidence_board": true,
+    "whole_qb_card_is_tappable": true,
+    "qb_selection_preserves_date_and_matchup_context": true,
+    "selected_qb_shell_renders_one_qb_identity": true,
+    "back_to_quarterbacks_action_works": true,
+    "mobile_single_column_selection": true,
+    "mobile_actions_min_48px": true,
+    "frozen_v51_v57_chain_preserved": true,
+    "model_math_data_unchanged": true,
+    "targeted_step1_proof_required": true,
+    "required_devsystem_gate": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "v51_v57_files_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_math_changed": false,
+    "data_provider_logic_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "stake_sizing_changed": false,
+    "existing_widget_keys_changed": false,
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false
+  },
+  "freeze_rule": "After targeted Step 1 proof, required DevSystem gate, merge, and one successful MAIN public proof of the selection -> selected QB shell -> back flow, QB Drill-Down Step 1 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
