@@ -247,7 +247,45 @@ jobs:
                   picker_card = landing.locator(".ks-py58-card").first
                   assert picker_card.is_visible(), "Step 4 QB picker card is not visibly actionable"
                   picker_box = picker_card.bounding_box()
-                  assert picker_box is not None and picker_box["y"] < 1400, picker_box
+                  picker_context = landing.evaluate(
+                      """() => {
+                        const picker = document.querySelector('.ks-py58-card');
+                        if (!picker) return {error:'picker-missing'};
+                        const container = picker.closest('[data-testid="stElementContainer"]') || picker;
+                        const parent = container.parentElement;
+                        if (!parent) return {error:'picker-parent-missing'};
+                        const siblings = Array.from(parent.children);
+                        const index = siblings.indexOf(container);
+                        const visibleBefore = siblings.slice(0, Math.max(index, 0)).map((el, i) => {
+                          const r = el.getBoundingClientRect();
+                          const s = getComputedStyle(el);
+                          return {
+                            siblingIndex:i,
+                            testid:el.getAttribute('data-testid') || '',
+                            className:String(el.className || '').slice(0,180),
+                            text:(el.innerText || '').replace(/\\s+/g,' ').trim().slice(0,240),
+                            y:r.y,
+                            bottom:r.bottom,
+                            height:r.height,
+                            display:s.display,
+                            visibility:s.visibility
+                          };
+                        }).filter(x => x.height > 1 && x.display !== 'none' && x.visibility !== 'hidden');
+                        return {
+                          pickerY: picker.getBoundingClientRect().y,
+                          containerTestid: container.getAttribute('data-testid') || '',
+                          visibleBeforeCount: visibleBefore.length,
+                          immediateVisibleBefore: visibleBefore.length ? visibleBefore[visibleBefore.length - 1] : null,
+                          lastFiveVisibleBefore: visibleBefore.slice(-5)
+                        };
+                      }"""
+                  )
+                  print("PASSING_YARDS_QB_STEP4_PICKER_CONTEXT")
+                  print(json.dumps(picker_context, indent=2))
+                  assert picker_box is not None and picker_box["y"] < 1400, {
+                      "picker_box": picker_box,
+                      "picker_context": picker_context,
+                  }
                   picker_style = card_style(picker_card)
                   result = {
                       "style_witness": landing.locator('style[data-passing-yards-step4-card-system="v61"]').count(),
