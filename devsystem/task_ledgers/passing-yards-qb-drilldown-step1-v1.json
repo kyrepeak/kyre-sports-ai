@@ -65,5 +65,17 @@
     "changes_product": false,
     "changes_router": false,
     "changes_model_or_data": false
+  },
+  "verifier_repair": {
+    "failed_run": 35683446524,
+    "failed_attempt": 2,
+    "failed_job": 106609002685,
+    "failed_layer": "VERIFIER",
+    "direct_evidence": "Independent public runtime classifier observed V209 live, V58 selection screen=1, V58 cards=2, old V48 players=0. Final verifier still timed out at readiness.",
+    "root_cause": "The final readiness loop called page.goto every 1.5 seconds, repeatedly resetting Streamlit hydration before the V58 DOM could stabilize.",
+    "patch": "Navigate once and poll the existing DOM without reloading. Product V58, router V209, frozen V51-V57, model/data/math, and widget behavior remain untouched.",
+    "product_changed": false,
+    "router_changed": false,
+    "model_data_math_changed": false
   }
 }
