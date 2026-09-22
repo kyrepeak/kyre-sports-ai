@@ -69,6 +69,13 @@
     "root_cause": "V61 only added CSS and delegated to V60. V58/V59 own the picker/detail at V34's final placeholder, but earlier frozen legacy st.markdown/status surfaces still render above it. The Step 4 verifier searched the whole DOM and programmatically clicked the deep V58 anchor, so it passed without proving the legacy surfaces were removed from the user-facing composition.",
     "minimal_patch": "In V61 only, preserve CSS and the frozen data/capture pipeline while suppressing legacy visible st.markdown output and legacy STEP status banners. Keep the V46 control deck, V60 st.html header, and V58/V59 final placeholder picker/detail behavior unchanged.",
     "frozen_steps_1_3_files_changed": false,
-    "final_public_proof_pending": true
+    "final_public_proof_pending": true,
+    "checkpoint2": {
+      "status": "PATCH_PENDING_BRANCH_LOCAL_PROOF",
+      "prior_run": 35769345429,
+      "prior_failure": "Picker is visible and legacy HTML surfaces are gone, but first QB card remains at y=2508px on a 390x844 viewport.",
+      "root_cause": "Legacy native Streamlit evidence widgets (dataframes/tables/metrics/expanders and Step 10 market controls) still render ahead of V34's final drill-down placeholder and consume vertical space even after legacy HTML/status suppression.",
+      "minimal_patch": "V61 CSS only: collapse legacy native evidence widgets inside the frozen Passing Yards shell while preserving the V46 slate controls and V58/V59 HTML drill-down."
+    }
   }
 }
