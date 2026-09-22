@@ -120,6 +120,12 @@ def test_v61_emits_card_css_before_frozen_v60(monkeypatch):
     streamlit_stub.info = lambda body, *args, **kwargs: calls.append(("info", str(body), False))
     streamlit_stub.caption = lambda body, *args, **kwargs: calls.append(("caption", str(body), False))
 
+    defense_v1_stub = types.ModuleType("nfl_passing_yards_defense_v1")
+    original_rows = lambda *args, **kwargs: ["v1"]
+    defense_v1_stub._completed_event_rows = original_rows
+    defense_v3_stub = types.ModuleType("nfl_passing_yards_defense_v3")
+    defense_v3_stub._completed_event_rows_utc = lambda *args, **kwargs: ["utc"]
+
     prior_stub = types.ModuleType("nfl_passing_yards_hub_v60")
     def prior_render():
         calls.append(("prior", "", False))
@@ -131,6 +137,9 @@ def test_v61_emits_card_css_before_frozen_v60(monkeypatch):
     monkeypatch.setitem(sys.modules, "streamlit", streamlit_stub)
     monkeypatch.setitem(sys.modules, "nfl_passing_yards_hub_v60", prior_stub)
     monkeypatch.setitem(sys.modules, "kyre_universal_semantic_tokens_v2", tokens_stub)
+
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_defense_v1", defense_v1_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_defense_v3", defense_v3_stub)
 
     spec = importlib.util.spec_from_file_location(
         "nfl_passing_yards_hub_v61_runtime_probe",
@@ -173,6 +182,12 @@ def test_v61_suppresses_legacy_visible_wrappers_but_preserves_styles(monkeypatch
     streamlit_stub.caption = caption
     streamlit_stub.html = html
 
+    defense_v1_stub = types.ModuleType("nfl_passing_yards_defense_v1")
+    original_rows = lambda *args, **kwargs: ["v1"]
+    defense_v1_stub._completed_event_rows = original_rows
+    defense_v3_stub = types.ModuleType("nfl_passing_yards_defense_v3")
+    defense_v3_stub._completed_event_rows_utc = lambda *args, **kwargs: ["utc"]
+
     prior_stub = types.ModuleType("nfl_passing_yards_hub_v60")
     def prior_render():
         streamlit_stub.markdown(
@@ -200,6 +215,9 @@ def test_v61_suppresses_legacy_visible_wrappers_but_preserves_styles(monkeypatch
     monkeypatch.setitem(sys.modules, "streamlit", streamlit_stub)
     monkeypatch.setitem(sys.modules, "nfl_passing_yards_hub_v60", prior_stub)
     monkeypatch.setitem(sys.modules, "kyre_universal_semantic_tokens_v2", tokens_stub)
+
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_defense_v1", defense_v1_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_defense_v3", defense_v3_stub)
 
     spec = importlib.util.spec_from_file_location(
         "nfl_passing_yards_hub_v61_visible_composition_probe",
@@ -264,3 +282,49 @@ def test_step4_removes_result_first_game_center_and_owner_phantom_gaps():
     assert '.st-key-kyre_passing_yards_universal_owner_v1{' in V61
     assert 'gap:0!important;' in V61
     assert '[data-testid="stElementContainer"]:has(.kpy15-center)' in V61
+
+
+def test_v61_installs_certified_utc_parser_only_during_render(monkeypatch):
+    streamlit_stub = types.ModuleType("streamlit")
+    streamlit_stub.markdown = lambda *args, **kwargs: None
+    streamlit_stub.success = lambda *args, **kwargs: None
+    streamlit_stub.warning = lambda *args, **kwargs: None
+    streamlit_stub.info = lambda *args, **kwargs: None
+    streamlit_stub.caption = lambda *args, **kwargs: None
+
+    defense_v1_stub = types.ModuleType("nfl_passing_yards_defense_v1")
+    original_rows = lambda *args, **kwargs: ["v1"]
+    defense_v1_stub._completed_event_rows = original_rows
+    defense_v3_stub = types.ModuleType("nfl_passing_yards_defense_v3")
+    utc_rows = lambda *args, **kwargs: ["utc"]
+    defense_v3_stub._completed_event_rows_utc = utc_rows
+
+    prior_stub = types.ModuleType("nfl_passing_yards_hub_v60")
+    observed = {}
+    def prior_render():
+        observed["during"] = defense_v1_stub._completed_event_rows
+    prior_stub.render_nfl_passing_yards_hub = prior_render
+
+    tokens_stub = types.ModuleType("kyre_universal_semantic_tokens_v2")
+    tokens_stub.build_semantic_tokens_css = lambda: '<style data-kyre-semantic-tokens="v2"></style>'
+
+    monkeypatch.setitem(sys.modules, "streamlit", streamlit_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_hub_v60", prior_stub)
+    monkeypatch.setitem(sys.modules, "kyre_universal_semantic_tokens_v2", tokens_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_defense_v1", defense_v1_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_defense_v3", defense_v3_stub)
+
+    spec = importlib.util.spec_from_file_location(
+        "nfl_passing_yards_hub_v61_utc_runtime_probe",
+        ROOT / "nfl_passing_yards_hub_v61.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    module.render_nfl_passing_yards_hub()
+
+    assert observed["during"] is utc_rows
+    assert defense_v1_stub._completed_event_rows is original_rows
+    assert "nfl_passing_yards_defense_v1.py" not in V61
+    assert "nfl_passing_yards_defense_v3.py" not in V61
