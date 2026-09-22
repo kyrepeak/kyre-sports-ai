@@ -75,7 +75,11 @@
       "prior_run": 35769345429,
       "prior_failure": "Picker is visible and legacy HTML surfaces are gone, but first QB card remains at y=2508px on a 390x844 viewport.",
       "root_cause": "Legacy native Streamlit evidence widgets (dataframes/tables/metrics/expanders and Step 10 market controls) still render ahead of V34's final drill-down placeholder and consume vertical space even after legacy HTML/status suppression.",
-      "minimal_patch": "V61 CSS only: collapse legacy native evidence widgets inside the frozen Passing Yards shell while preserving the V46 slate controls and V58/V59 HTML drill-down."
+      "minimal_patch": "V61 CSS only: collapse legacy native evidence widgets inside the frozen Passing Yards shell while preserving the V46 slate controls and V58/V59 HTML drill-down.",
+      "queue_optimization": {
+        "app_refresh_deferred": true,
+        "reason": "Checkpoint 2 is branch-local proof only. MAIN already boots V212 from PR #905; reverting the temporary app.py refresh keeps this repair PR scoped and avoids unrelated app.py workflow fan-out. Deployment refresh will only be added later if the final public proof proves it is required."
+      }
     }
   }
 }
