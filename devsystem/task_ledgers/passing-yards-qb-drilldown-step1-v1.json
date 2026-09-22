@@ -77,5 +77,30 @@
     "product_changed": false,
     "router_changed": false,
     "model_data_math_changed": false
+  },
+  "click_context_diagnostic": {
+    "source_failure_run": 35686205703,
+    "source_failure_job": 106613414844,
+    "observed_failure": "PASSING_YARDS_QB_STEP1_SELECT_ACTION: selected QB shell did not render",
+    "purpose": "Determine whether the real anchor click carries ks_qb_slot into the top-level Streamlit query context or remains trapped in the internal app frame.",
+    "product_changed": false,
+    "router_changed": false,
+    "verifier_only": true
+  },
+  "click_context_root_cause": {
+    "classification": "CASE_B_INTERACTION_VERIFIER",
+    "qb_card_href_contains_slot": true,
+    "clicked_element": "a[data-qb-select=\"1\"]",
+    "target": "_blank",
+    "top_url_before": "https://kyre-sports-ai.streamlit.app/",
+    "top_url_after": "https://kyre-sports-ai.streamlit.app/",
+    "frame_url_before": "https://kyre-sports-ai.streamlit.app/~/+/",
+    "frame_url_after": "https://kyre-sports-ai.streamlit.app/~/+/",
+    "first_broken_arrow": "CLICK -> browser navigation context",
+    "root_cause": "Streamlit renders the QB anchor with target=_blank. The verifier clicked it but continued observing the original page/frame instead of the popup containing the QB query.",
+    "patch": "Verifier now follows the actual popup, proves selected-QB shell and identity there, then follows the Back popup and proves the two-card picker is restored.",
+    "product_changed": false,
+    "router_changed": false,
+    "frozen_product_changed": false
   }
 }

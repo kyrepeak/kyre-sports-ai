@@ -202,11 +202,25 @@ jobs:
                   if "ks_qb_slot=1" not in href0 or "ks_py_matchup=" not in href0 or "ks_py_date=" not in href0:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP1_CONTEXT_LINK: {href0}")
 
-                  frame.locator('a[data-qb-select="1"]').click()
+                  first_link = frame.locator('a[data-qb-select="1"]').first
+                  first_qb_name = first_link.locator(".kpass29-name").inner_text(timeout=5000).strip()
+                  link_target = first_link.get_attribute("target")
+
+                  # Streamlit's rendered markdown anchor opens in a new tab. Follow
+                  # the actual user navigation instead of watching the original frame.
+                  if link_target == "_blank":
+                      with page.expect_popup(timeout=15000) as popup_info:
+                          first_link.click()
+                      interaction_page = popup_info.value
+                      interaction_page.wait_for_load_state("domcontentloaded", timeout=120000)
+                  else:
+                      first_link.click()
+                      interaction_page = page
+
                   selected_deadline = time.monotonic() + 90.0
                   while True:
                       selected = None
-                      for candidate in page.frames:
+                      for candidate in interaction_page.frames:
                           try:
                               if candidate.locator('[data-passing-yards-selected-qb="1"]').count() == 1:
                                   selected = candidate
@@ -218,7 +232,7 @@ jobs:
                           break
                       if time.monotonic() >= selected_deadline:
                           raise BrowserQAFailure("PASSING_YARDS_QB_STEP1_SELECT_ACTION: selected QB shell did not render")
-                      page.wait_for_timeout(500)
+                      interaction_page.wait_for_timeout(500)
 
                   selected_body = frame.locator("body").inner_text(timeout=5000)
                   selected_evidence = {
@@ -227,17 +241,32 @@ jobs:
                       "legacy_full_player_cards": frame.locator(".ks-py48-player").count(),
                       "legacy_step_blocks": frame.locator(".ks-py48-step").count(),
                       "selected_quarterback_text": "SELECTED QUARTERBACK" in selected_body,
+                      "selected_qb_name": first_qb_name,
+                      "selected_qb_identity_visible": bool(first_qb_name and first_qb_name in selected_body),
+                      "navigation_target": link_target,
                   }
                   if selected_evidence["selected_shell"] != 1 or selected_evidence["back_action"] != 1:
                       raise BrowserQAFailure("PASSING_YARDS_QB_STEP1_SELECTED_SHELL: " + json.dumps(selected_evidence,sort_keys=True))
+                  if not selected_evidence["selected_qb_identity_visible"]:
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP1_SELECTED_IDENTITY: " + json.dumps(selected_evidence,sort_keys=True))
                   if selected_evidence["legacy_full_player_cards"] or selected_evidence["legacy_step_blocks"]:
                       raise BrowserQAFailure("PASSING_YARDS_QB_STEP1_SELECTED_OLD_ANALYSIS_LEAK: " + json.dumps(selected_evidence,sort_keys=True))
 
-                  frame.locator('a[data-qb-back="true"]').click()
+                  back_link = frame.locator('a[data-qb-back="true"]').first
+                  back_target = back_link.get_attribute("target")
+                  if back_target == "_blank":
+                      with interaction_page.expect_popup(timeout=15000) as back_popup_info:
+                          back_link.click()
+                      return_page = back_popup_info.value
+                      return_page.wait_for_load_state("domcontentloaded", timeout=120000)
+                  else:
+                      back_link.click()
+                      return_page = interaction_page
+
                   back_deadline = time.monotonic() + 90.0
                   while True:
                       restored = None
-                      for candidate in page.frames:
+                      for candidate in return_page.frames:
                           try:
                               if candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1 and candidate.locator('[data-qb-selection-card]').count() == 2:
                                   restored = candidate
@@ -249,7 +278,7 @@ jobs:
                           break
                       if time.monotonic() >= back_deadline:
                           raise BrowserQAFailure("PASSING_YARDS_QB_STEP1_BACK_ACTION: selection screen did not restore")
-                      page.wait_for_timeout(500)
+                      return_page.wait_for_timeout(500)
 
                   result = {
                       "status":"GREEN",
@@ -346,6 +375,114 @@ jobs:
 
                   print("PASSING_YARDS_QB_STEP1_RUNTIME_CLASSIFICATION=" + classification)
                   print(json.dumps(evidence, indent=2, sort_keys=True))
+              finally:
+                  browser.close()
+          PY
+
+
+
+  public-interaction-proof:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install interaction proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public QB popup interaction path
+        run: |
+          python - <<'PY'
+          import time
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              try:
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+
+                  frame = None
+                  deadline = time.monotonic() + 90.0
+                  while time.monotonic() < deadline:
+                      for candidate in page.frames:
+                          try:
+                              if (
+                                  candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                                  and candidate.locator('[data-qb-selection-card]').count() == 2
+                              ):
+                                  frame = candidate
+                                  break
+                          except Exception:
+                              pass
+                      if frame is not None:
+                          break
+                      page.wait_for_timeout(500)
+                  assert frame is not None, "QB picker did not stabilize"
+
+                  link = frame.locator('a[data-qb-select="1"]').first
+                  href = link.get_attribute("href") or ""
+                  assert "ks_qb_slot=1" in href, href
+                  assert link.get_attribute("target") == "_blank"
+
+                  with page.expect_popup(timeout=15000) as popup_info:
+                      link.click()
+                  selected_page = popup_info.value
+                  selected_page.wait_for_load_state("domcontentloaded", timeout=120000)
+
+                  selected_frame = None
+                  selected_deadline = time.monotonic() + 90.0
+                  while time.monotonic() < selected_deadline:
+                      for candidate in selected_page.frames:
+                          try:
+                              if candidate.locator('[data-passing-yards-selected-qb="1"]').count() == 1:
+                                  selected_frame = candidate
+                                  break
+                          except Exception:
+                              pass
+                      if selected_frame is not None:
+                          break
+                      selected_page.wait_for_timeout(500)
+                  assert selected_frame is not None, "selected QB shell did not render in popup"
+
+                  back = selected_frame.locator('a[data-qb-back="true"]').first
+                  assert back.count() == 1
+                  with selected_page.expect_popup(timeout=15000) as back_popup_info:
+                      back.click()
+                  return_page = back_popup_info.value
+                  return_page.wait_for_load_state("domcontentloaded", timeout=120000)
+
+                  restored = False
+                  back_deadline = time.monotonic() + 90.0
+                  while time.monotonic() < back_deadline:
+                      for candidate in return_page.frames:
+                          try:
+                              if (
+                                  candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                                  and candidate.locator('[data-qb-selection-card]').count() == 2
+                              ):
+                                  restored = True
+                                  break
+                          except Exception:
+                              pass
+                      if restored:
+                          break
+                      return_page.wait_for_timeout(500)
+
+                  assert restored, "Back to Quarterbacks did not restore picker"
+                  print("PASSING_YARDS_QB_STEP1_POPUP_INTERACTION_GREEN")
               finally:
                   browser.close()
           PY
