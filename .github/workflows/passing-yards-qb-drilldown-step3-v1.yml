@@ -61,6 +61,7 @@ jobs:
           EOF
           cat > /tmp/expected-render-repair.txt <<'EOF'
           .github/workflows/passing-yards-qb-drilldown-step3-v1.yml
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step3-v1.json
           nfl_passing_yards_hub_v60.py
           tests/test_passing_yards_qb_drilldown_step3_v1.py
           EOF
