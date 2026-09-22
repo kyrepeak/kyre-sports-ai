@@ -304,8 +304,22 @@ jobs:
                           .filter(x => x.layoutCost > 0.5)
                           .sort((a,b) => b.layoutCost-a.layoutCost)
                           .slice(0,12);
+                        const rect = (el) => {
+                          if (!el) return null;
+                          const r = el.getBoundingClientRect();
+                          return {x:r.x,y:r.y,bottom:r.bottom,width:r.width,height:r.height};
+                        };
+                        const screen = picker.closest('[data-passing-yards-selection-screen="v58"]');
+                        const pickerHead = screen ? screen.querySelector('.ks-py58-head') : null;
+                        const pickerGrid = screen ? screen.querySelector('.ks-py58-grid') : null;
+                        const pickerSub = screen ? screen.querySelector('.ks-py58-sub') : null;
                         return {
                           pickerY: picker.getBoundingClientRect().y,
+                          selectionScreenBox:rect(screen),
+                          pickerHeadBox:rect(pickerHead),
+                          pickerGridBox:rect(pickerGrid),
+                          pickerSubBox:rect(pickerSub),
+                          pickerHeadText:pickerHead ? (pickerHead.innerText || '').replace(/\\s+/g,' ').trim().slice(0,260) : '',
                           containerIndex:index,
                           containerTestid: container.getAttribute('data-testid') || '',
                           containerMarginTop:parseFloat(containerStyle.marginTop)||0,
