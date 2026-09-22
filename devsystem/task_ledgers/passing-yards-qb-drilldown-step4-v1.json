@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-qb-drilldown-step4-v1",
+  "status": "DONE",
+  "scope": "NFL Passing Yards QB Drill-Down Step 4 only: apply a universal premium card language to the frozen V58 quarterback picker and V59 dedicated-QB analysis surfaces while preserving frozen V60/V211 Step 3 header/routing and all model, data, math, analytics, sportsbook, widget, and navigation behavior.",
+  "baseline": {
+    "main_sha": "80f98b2cb86b79ed0e1392641fbbb7a7afc7a11f",
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "step3_green_frozen": true,
+    "frozen_step1_product": "nfl_passing_yards_hub_v58",
+    "frozen_step1_router": "streamlit_memory_lazy_router_v209",
+    "frozen_step2_product": "nfl_passing_yards_hub_v59",
+    "frozen_step2_router": "streamlit_memory_lazy_router_v210",
+    "frozen_step3_product": "nfl_passing_yards_hub_v60",
+    "frozen_step3_router": "streamlit_memory_lazy_router_v211",
+    "step3_final_run": 35766048114
+  },
+  "acceptance": {
+    "durable_v61_card_system_witness": true,
+    "two_qb_picker_preserved": true,
+    "picker_cards_use_premium_semantic_surface": true,
+    "dedicated_qb_detail_preserved": true,
+    "selected_qb_card_uses_same_premium_semantic_surface": true,
+    "market_projection_evidence_support_sections_preserved": true,
+    "v60_header_remains_present_landing_and_detail": true,
+    "qb1_navigation_works": true,
+    "back_navigation_restores_picker": true,
+    "responsive_single_column_stack": true,
+    "mobile_no_horizontal_overflow": true,
+    "model_math_data_unchanged": true,
+    "targeted_step4_proof_required": true,
+    "required_devsystem_gate": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "v58_changed": false,
+    "v59_changed": false,
+    "v60_changed": false,
+    "v209_changed": false,
+    "v210_changed": false,
+    "v211_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_math_changed": false,
+    "data_provider_logic_changed": false,
+    "analytics_changed": false,
+    "sportsbook_projection_influence": 0,
+    "existing_widget_keys_changed": false,
+    "navigation_changed": false,
+    "other_routes_changed": false,
+    "step5_plus_built": false
+  },
+  "freeze_rule": "After targeted Step 4 proof, required DevSystem gate, merge, and one successful MAIN public proof covering premium picker/detail surfaces plus frozen Step 1-3 behavior, Step 4 is GREEN + FROZEN.",
+  "monster_status": "STEP4_BUILD_PENDING_TARGETED_PROOF",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
