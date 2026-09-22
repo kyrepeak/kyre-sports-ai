@@ -21,6 +21,12 @@ def test_step3_header_has_durable_visible_markers():
     assert 'data-passing-yards-step3-controls="true"' in V60
 
 
+def test_step3_header_css_and_visible_body_render_separately():
+    assert 'header_body = header_html[len(_HEADER_CSS):]' in V60
+    assert 'st.markdown(_HEADER_CSS, unsafe_allow_html=True)' in V60
+    assert 'st.markdown(header_body, unsafe_allow_html=True)' in V60
+
+
 def test_step3_header_matches_approved_structure():
     for token in [
         'Passing Yards',

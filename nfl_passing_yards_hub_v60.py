@@ -148,7 +148,10 @@ def _header_html() -> str:
     )
 
 def render_nfl_passing_yards_hub() -> None:
-    st.markdown(_header_html(), unsafe_allow_html=True)
+    header_html = _header_html()
+    header_body = header_html[len(_HEADER_CSS):] if header_html.startswith(_HEADER_CSS) else header_html
+    st.markdown(_HEADER_CSS, unsafe_allow_html=True)
+    st.markdown(header_body, unsafe_allow_html=True)
     return prior.render_nfl_passing_yards_hub()
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:

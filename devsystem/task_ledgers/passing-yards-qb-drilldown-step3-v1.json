@@ -51,12 +51,25 @@
     "concept": "Passing Yards Header",
     "production_port": "V60/V211"
   },
-  "monster_status": "PENDING_BUILD_PROOF_MERGE_PUBLIC_PROOF",
+  "monster_status": "RENDER_REPAIR_TARGETED_PROOF_GREEN_AWAITING_MERGE_PUBLIC_PROOF",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair_checkpoint": {
+    "failure_run": 35754490305,
+    "classification_run": 35759521867,
+    "diagnosis": "V58 picker and two QB cards rendered publicly; V60 stylesheet existed; visible V60 header section was absent from every public frame.",
+    "failed_layer": "V60_HEADER_RENDER",
+    "patch_pr": 900,
+    "patch_head_sha": "e728340c9a3acfa387f681d941c6b09696097508",
+    "minimal_patch": "Render V60 CSS and visible header body in separate Streamlit markdown calls.",
+    "targeted_step3_run": 35760418304,
+    "targeted_step3_proof_green": true,
+    "frozen_step1_step2_untouched": true,
+    "final_public_proof_pending": true
+  }
 }
