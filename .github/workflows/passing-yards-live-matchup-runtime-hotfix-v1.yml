@@ -160,111 +160,79 @@ jobs:
                   raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_TYPEERROR")
               return body
 
-          def anchor_v46_owner(frame):
-              captions=frame.get_by_text("🏈 PASSING YARDS CONTROL DECK",exact=True)
-              if captions.count()!=1:
-                  return None,None
-              caption=captions.first
-              meta=caption.evaluate("""el => {
-                let p=el;
-                for(let i=0;i<14 && p;i++,p=p.parentElement){
-                  const text=(p.innerText||'').replace(/\\s+/g,' ').trim();
-                  if(text.includes('Slate date') && text.includes('Matchup')){
-                    p.setAttribute('data-monster-v46-owner','true');
-                    const rows=Array.from(p.querySelectorAll('input,[role],[data-testid],label')).slice(0,120).map(x=>({
-                      tag:x.tagName,
-                      role:x.getAttribute('role')||'',
-                      testid:x.getAttribute('data-testid')||'',
-                      aria:x.getAttribute('aria-label')||'',
-                      type:x.getAttribute('type')||'',
-                      value:x.value||'',
-                      text:(x.innerText||'').replace(/\\s+/g,' ').trim().slice(0,180)
-                    }));
-                    return {found:true,text:text.slice(0,800),rows};
-                  }
-                }
-                return {found:false,rows:[]};
-              }""")
-              if not meta.get("found"):
-                  return None,meta
-              return frame.locator('[data-monster-v46-owner="true"]').first,meta
+          def inspect_v46_controls(frame):
+              date_root=None
+              date_inventory=[]
+              for i in range(frame.locator('[data-testid="stDateInput"]').count()):
+                  root=frame.locator('[data-testid="stDateInput"]').nth(i)
+                  text=(root.inner_text() or "").replace("\n"," ").strip()
+                  date_inventory.append({"index":i,"text":text[:300]})
+                  if "Slate date" in text and date_root is None:
+                      date_root=root
 
-          def inspect_owner_controls(owner):
-              inputs=owner.locator("input")
+              matchup_root=None
+              matchup_inventory=[]
+              for i in range(frame.locator('[data-testid="stSelectbox"]').count()):
+                  root=frame.locator('[data-testid="stSelectbox"]').nth(i)
+                  text=(root.inner_text() or "").replace("\n"," ").strip()
+                  matchup_inventory.append({"index":i,"text":text[:500]})
+                  if "Matchup •" in text and matchup_root is None:
+                      matchup_root=root
+
+              print("PASSING_YARDS_LIVE_MATCHUP_V46_DOM_INVENTORY")
+              print(json.dumps({
+                  "date_inputs":date_inventory,
+                  "selectboxes":matchup_inventory
+              },indent=2))
+
+              if date_root is None or matchup_root is None:
+                  return None,None,None,None
+
               date_parts={}
-              input_rows=[]
-              for i in range(inputs.count()):
-                  loc=inputs.nth(i)
-                  aria=(loc.get_attribute("aria-label") or "").strip()
-                  row={
-                      "aria":aria,
-                      "type":loc.get_attribute("type") or "",
-                      "value":loc.input_value() if (loc.get_attribute("type") or "")!="hidden" else "",
-                  }
-                  input_rows.append(row)
-                  low=aria.lower()
-                  if "slate date" in low:
-                      for part in ("month","day","year"):
-                          if part in low and part not in date_parts:
-                              date_parts[part]=loc
+              for part in ("month","day","year"):
+                  loc=date_root.get_by_role("spinbutton",name=f"{part}, Slate date")
+                  if loc.count():
+                      date_parts[part]=loc.first
 
-              matchup=None
-              matchup_meta={}
-              candidates=owner.locator('[role="combobox"],select')
-              for i in range(candidates.count()):
-                  loc=candidates.nth(i)
-                  meta=loc.evaluate("""el => {
-                    let p=el;
-                    for(let i=0;i<8 && p;i++,p=p.parentElement){
-                      const txt=(p.innerText||'').replace(/\\s+/g,' ').trim();
-                      if(txt.includes('Matchup')){
-                        let t=p;
-                        while(t && !t.getAttribute('data-testid')) t=t.parentElement;
-                        return {
-                          match:true,
-                          ownerText:txt.slice(0,500),
-                          testid:t ? (t.getAttribute('data-testid')||'') : '',
-                          role:el.getAttribute('role')||'',
-                          tag:el.tagName
-                        };
-                      }
-                    }
-                    return {match:false};
-                  }""")
-                  if meta.get("match"):
-                      matchup=loc
-                      matchup_meta=meta
-                      break
-              return date_parts,matchup,matchup_meta,input_rows
+              combo=matchup_root.get_by_role("combobox")
+              if combo.count()!=1:
+                  return date_root,date_parts,None,{
+                      "testid":matchup_root.get_attribute("data-testid") or "",
+                      "label":(matchup_root.inner_text() or "").replace("\n"," ").strip()[:500],
+                      "type":"stSelectbox",
+                  }
+
+              meta={
+                  "testid":matchup_root.get_attribute("data-testid") or "",
+                  "label":(matchup_root.inner_text() or "").replace("\n"," ").strip()[:500],
+                  "type":"selectbox/combobox",
+              }
+              return date_root,date_parts,combo.first,meta
 
           def find_controls(page,timeout=180):
               deadline=time.monotonic()+timeout
-              last_inventory=None
+              last_inventory={"date_inputs":[],"selectboxes":[]}
               while time.monotonic()<deadline:
                   fail_if_runtime_error(page,"controls")
                   for frame in page.frames:
                       try:
                           if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1:
                               continue
-                          owner,meta=anchor_v46_owner(frame)
-                          if meta: last_inventory=meta
-                          if owner is None: continue
-                          date_parts,matchup,matchup_meta,input_rows=inspect_owner_controls(owner)
-                          if "day" in date_parts and matchup is not None:
-                              print("PASSING_YARDS_LIVE_MATCHUP_V46_DOM_INVENTORY")
-                              print(json.dumps({
-                                  "owner_text":meta.get("text",""),
-                                  "rows":meta.get("rows",[]),
-                                  "inputs":input_rows,
-                                  "matchup_meta":matchup_meta
-                              },indent=2))
-                              return frame,owner,date_parts,matchup,matchup_meta
+                          date_root,date_parts,matchup,matchup_meta=inspect_v46_controls(frame)
+                          last_inventory={
+                              "date_found":date_root is not None,
+                              "date_parts":sorted(date_parts.keys()) if date_parts else [],
+                              "matchup_found":matchup is not None,
+                              "matchup_meta":matchup_meta or {},
+                          }
+                          if date_root is not None and "day" in date_parts and matchup is not None:
+                              return frame,date_root,date_parts,matchup,matchup_meta
                       except Exception:
                           pass
                   page.wait_for_timeout(300)
               print("PASSING_YARDS_LIVE_MATCHUP_V46_DOM_INVENTORY_LAST")
-              print(json.dumps(last_inventory or {},indent=2))
-              evidence["FIRST_BROKEN_ARROW"]="V60 header -> V46 control DOM"
+              print(json.dumps(last_inventory,indent=2))
+              evidence["FIRST_BROKEN_ARROW"]="V60 header -> labeled V46 Streamlit controls"
               evidence["FAILED_LAYER"]="VERIFIER_CONTROL_DISCOVERY"
               raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_CONTROLS_NOT_READY")
 
@@ -318,7 +286,7 @@ jobs:
               page=browser.new_page(viewport={"width":390,"height":844})
               try:
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
-                  frame,owner,date_parts,matchup,matchup_meta=find_controls(page)
+                  frame,date_root,date_parts,matchup,matchup_meta=find_controls(page)
                   evidence["DATE_CONTROL_FOUND"]=True
                   evidence["MATCHUP_CONTROL_FOUND"]=True
                   evidence["MATCHUP_CONTROL_TESTID"]=matchup_meta.get("testid","")
@@ -331,7 +299,7 @@ jobs:
                   date_parts["day"].press("Tab")
                   page.wait_for_timeout(1500)
 
-                  frame,owner,date_parts,matchup,matchup_meta=find_controls(page,timeout=120)
+                  frame,date_root,date_parts,matchup,matchup_meta=find_controls(page,timeout=120)
                   values={k:v.input_value() for k,v in date_parts.items()}
                   evidence["DATE_SET_TO_2026_09_24"]=(
                       values.get("day") in {"24","024"}
@@ -367,7 +335,7 @@ jobs:
                   frame.get_by_role("option").filter(has_text=target_matchup).first.click()
                   page.wait_for_timeout(1200)
 
-                  frame,owner,date_parts,matchup,matchup_meta=find_controls(page,timeout=120)
+                  frame,date_root,date_parts,matchup,matchup_meta=find_controls(page,timeout=120)
                   selected=(matchup.inner_text() or "").strip()
                   evidence["MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS"]=target_matchup in selected
                   print("PASSING_YARDS_LIVE_MATCHUP_SELECTED_VALUE")
@@ -461,44 +429,32 @@ jobs:
                   except Exception: pass
               return "\n".join(out)
 
-          def anchor_owner(frame):
-              caps=frame.get_by_text("🏈 PASSING YARDS CONTROL DECK",exact=True)
-              if caps.count()!=1: return None
-              ok=caps.first.evaluate("""el => {
-                let p=el;
-                for(let i=0;i<14 && p;i++,p=p.parentElement){
-                  const text=(p.innerText||'').replace(/\\s+/g,' ').trim();
-                  if(text.includes('Slate date') && text.includes('Matchup')){
-                    p.setAttribute('data-monster-v46-owner','true');
-                    return true;
-                  }
-                }
-                return false;
-              }""")
-              return frame.locator('[data-monster-v46-owner="true"]').first if ok else None
+          def controls(frame):
+              date_root=None
+              for i in range(frame.locator('[data-testid="stDateInput"]').count()):
+                  root=frame.locator('[data-testid="stDateInput"]').nth(i)
+                  if "Slate date" in ((root.inner_text() or "").replace("\n"," ").strip()):
+                      date_root=root
+                      break
 
-          def controls(owner):
+              matchup_root=None
+              for i in range(frame.locator('[data-testid="stSelectbox"]').count()):
+                  root=frame.locator('[data-testid="stSelectbox"]').nth(i)
+                  if "Matchup •" in ((root.inner_text() or "").replace("\n"," ").strip()):
+                      matchup_root=root
+                      break
+
+              if date_root is None or matchup_root is None:
+                  return {},None
+
               date={}
-              inputs=owner.locator("input")
-              for i in range(inputs.count()):
-                  loc=inputs.nth(i)
-                  aria=(loc.get_attribute("aria-label") or "").lower()
-                  if "slate date" in aria:
-                      for part in ("month","day","year"):
-                          if part in aria and part not in date: date[part]=loc
-              combo=None
-              combos=owner.locator('[role="combobox"],select')
-              for i in range(combos.count()):
-                  loc=combos.nth(i)
-                  if loc.evaluate("""el => {
-                    let p=el;
-                    for(let i=0;i<8 && p;i++,p=p.parentElement){
-                      if(((p.innerText||'')).includes('Matchup')) return true;
-                    }
-                    return false;
-                  }"""):
-                      combo=loc; break
-              return date,combo
+              for part in ("month","day","year"):
+                  loc=date_root.get_by_role("spinbutton",name=f"{part}, Slate date")
+                  if loc.count():
+                      date[part]=loc.first
+
+              combo=matchup_root.get_by_role("combobox")
+              return date,(combo.first if combo.count()==1 else None)
 
           def find_controls(page,timeout=180):
               deadline=time.monotonic()+timeout
@@ -509,9 +465,7 @@ jobs:
                   for frame in page.frames:
                       try:
                           if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1: continue
-                          owner=anchor_owner(frame)
-                          if owner is None: continue
-                          date,combo=controls(owner)
+                          date,combo=controls(frame)
                           if "day" in date and combo is not None: return frame,date,combo
                       except Exception: pass
                   page.wait_for_timeout(500)
