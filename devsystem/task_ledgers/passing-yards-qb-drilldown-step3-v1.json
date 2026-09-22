@@ -51,7 +51,7 @@
     "concept": "Passing Yards Header",
     "production_port": "V60/V211"
   },
-  "monster_status": "RENDER_REPAIR_TARGETED_PROOF_GREEN_AWAITING_MERGE_PUBLIC_PROOF",
+  "monster_status": "FINAL_RENDER_PATH_PATCH_AWAITING_TARGETED_PROOF",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
@@ -71,5 +71,27 @@
     "targeted_step3_proof_green": true,
     "frozen_step1_step2_untouched": true,
     "final_public_proof_pending": true
+  },
+  "final_root_cause": {
+    "diagnostic_pr": 901,
+    "authoritative_main": "b047a20b3cb17b396e29e20e9a96616ec262868a",
+    "v211_routes_to_v60": true,
+    "v60_css_call_emitted_before_v59": true,
+    "v60_body_call_emitted_before_v59": true,
+    "v43_active_during_v60_body_call": false,
+    "header_html_length": 4558,
+    "header_css_length": 3424,
+    "header_body_length": 1134,
+    "header_body_has_v60_section": true,
+    "css_markdown_call_seen": true,
+    "body_markdown_call_seen": true,
+    "body_markdown_has_v60_section": true,
+    "public_css_first_seen_seconds": 4.929,
+    "public_picker_first_seen_seconds": 18.963,
+    "public_header_ever_seen": false,
+    "public_final_header_count": 0,
+    "failed_layer": "STREAMLIT_HTML_RENDER_PATH",
+    "first_broken_arrow": "Correct V60 body markdown emission -> visible hydrated DOM",
+    "minimal_fix": "Prepend the V60 header to V59's QB drill-down builder output so the header uses the same proven final placeholder.markdown composition path as the frozen V58/V59 UI."
   }
 }
