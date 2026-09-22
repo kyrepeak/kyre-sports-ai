@@ -47,6 +47,7 @@ jobs:
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step1-v1.yml
           .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json
@@ -77,8 +78,13 @@ jobs:
           app = Path("app.py").read_text()
           assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v58"' in v59
           assert 'return prior._selection_screen(captured)' in v59
-          assert 'evidence._player(captured, index)' in v59
           assert 'data-passing-yards-qb-detail="v59"' in v59
+          assert 'data-passing-yards-selected-qb=' in v59
+          assert 'data-qb-analysis-section="projection"' in v59
+          assert 'data-qb-analysis-support="matchup"' in v59
+          assert 'evidence._player(' not in v59
+          assert 'class="ks-py48-player"' not in v59
+          assert 'class="ks-py48-step"' not in v59
           assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v57"' in v58
           assert 'PASSING_HUB = "nfl_passing_yards_hub_v59"' in router
           assert 'from streamlit_memory_lazy_router_v210 import record_bootstrap_import_ms, render_app' in app
@@ -116,18 +122,27 @@ jobs:
           artifacts.mkdir(parents=True, exist_ok=True)
           _wait_for_health(base)
 
-          def find_picker(page, timeout=120):
+          def find_picker(page, timeout=120, require_v210=False):
               deadline = time.monotonic() + timeout
+              next_reload = time.monotonic() + 45.0
               while time.monotonic() < deadline:
                   for candidate in page.frames:
                       try:
-                          if (
+                          picker_ready = (
                               candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
                               and candidate.locator('[data-qb-selection-card]').count() == 2
-                          ):
+                          )
+                          runtime_ready = (
+                              not require_v210
+                              or candidate.locator('[data-passing-yards-v210-runtime="qb-detail-step2"]').count() >= 1
+                          )
+                          if picker_ready and runtime_ready:
                               return candidate
                       except Exception:
                           pass
+                  if require_v210 and time.monotonic() >= next_reload:
+                      page.reload(wait_until="domcontentloaded", timeout=120000)
+                      next_reload = time.monotonic() + 45.0
                   page.wait_for_timeout(500)
               raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_PICKER_NOT_READY")
 
@@ -160,7 +175,7 @@ jobs:
               page = browser.new_page(viewport={"width":390,"height":844})
               try:
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
-                  picker = find_picker(page)
+                  picker = find_picker(page, timeout=600, require_v210=True)
 
                   landing_body = picker.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(landing_body)
@@ -209,27 +224,33 @@ jobs:
                           "name": names[expected_index],
                           "navigation_target": target,
                           "detail_marker": detail.locator(f'[data-selected-qb-analysis="{slot}"]').count(),
-                          "player_cards": detail.locator(".ks-py48-player").count(),
-                          "expected_player": detail.locator(f'.ks-py48-player[data-passing-player="{expected_index}"]').count(),
-                          "other_player": detail.locator(f'.ks-py48-player[data-passing-player="{other_index}"]').count(),
-                          "market": detail.locator(".ks-py48-market").count(),
-                          "step7": detail.locator('.ks-py48-step[data-step="7"]').count(),
-                          "step8": detail.locator('.ks-py48-step[data-step="8"]').count(),
-                          "step9": detail.locator('.ks-py48-step[data-step="9"]').count(),
-                          "support": detail.locator(".ks-py48-support details").count(),
+                          "step1_selected_marker": detail.locator(f'[data-passing-yards-selected-qb="{slot}"]').count(),
+                          "player_cards": detail.locator(".ks-py59-player").count(),
+                          "expected_player": detail.locator(f'.ks-py59-player[data-qb-analysis-index="{expected_index}"]').count(),
+                          "other_player": detail.locator(f'.ks-py59-player[data-qb-analysis-index="{other_index}"]').count(),
+                          "market": detail.locator('[data-qb-analysis-section="market"]').count(),
+                          "projection": detail.locator('[data-qb-analysis-section="projection"]').count(),
+                          "context": detail.locator('[data-qb-analysis-section="context"]').count(),
+                          "distribution": detail.locator('[data-qb-analysis-section="distribution"]').count(),
+                          "support": detail.locator("[data-qb-analysis-support]").count(),
+                          "legacy_full_player_cards": detail.locator(".ks-py48-player").count(),
+                          "legacy_step_blocks": detail.locator(".ks-py48-step").count(),
                           "identity_visible": bool(names[expected_index] and names[expected_index] in body),
                           "back": detail.locator('a[data-qb-back="true"]').count(),
                       }
                       if not (
                           result["detail_marker"] == 1
+                          and result["step1_selected_marker"] == 1
                           and result["player_cards"] == 1
                           and result["expected_player"] == 1
                           and result["other_player"] == 0
                           and result["market"] == 1
-                          and result["step7"] == 1
-                          and result["step8"] == 1
-                          and result["step9"] == 1
-                          and result["support"] >= 2
+                          and result["projection"] == 1
+                          and result["context"] == 1
+                          and result["distribution"] == 1
+                          and result["support"] == 2
+                          and result["legacy_full_player_cards"] == 0
+                          and result["legacy_step_blocks"] == 0
                           and result["identity_visible"]
                           and result["back"] == 1
                       ):
