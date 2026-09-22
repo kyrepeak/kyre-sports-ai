@@ -4,27 +4,22 @@ on:
   pull_request:
     paths:
       - ".github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml"
-      - "app.py"
       - "devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json"
-      - "nfl_passing_yards_hub_v62.py"
-      - "streamlit_memory_lazy_router_v213.py"
+      - "nfl_passing_yards_defense_v1.py"
       - "tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py"
   push:
     branches: [main]
     paths:
       - ".github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml"
-      - "app.py"
       - "devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json"
-      - "nfl_passing_yards_hub_v62.py"
-      - "streamlit_memory_lazy_router_v213.py"
+      - "nfl_passing_yards_defense_v1.py"
       - "tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py"
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  runtime-contract:
+  timezone-contract:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -36,7 +31,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce additive hotfix scope
+      - name: Enforce exact hotfix scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -47,66 +42,42 @@ jobs:
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
           .github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml
-          app.py
           devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json
-          nfl_passing_yards_hub_v62.py
-          streamlit_memory_lazy_router_v213.py
+          nfl_passing_yards_defense_v1.py
           tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_LIVE_MATCHUP_HOTFIX_SCOPE_GREEN"
+          echo "PASSING_YARDS_LIVE_MATCHUP_SCOPE_GREEN"
 
       - name: Install contract dependencies
         run: python -m pip install --disable-pip-version-check -q pytest pandas requests streamlit
 
-      - name: Compile additive runtime hotfix
-        run: |
-          python -m py_compile \
-            nfl_passing_yards_hub_v62.py \
-            streamlit_memory_lazy_router_v213.py \
-            app.py \
-            tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
+      - name: Compile hotfix
+        run: python -m py_compile nfl_passing_yards_defense_v1.py tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
 
-      - name: Run timezone/runtime regression contract
+      - name: Run UTC regression contract
         run: python -m pytest -q tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
 
-      - name: Verify frozen Step 4 and defense source boundary
+      - name: Verify frozen drill-down boundary
         if: github.event_name == 'pull_request'
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          for path in \
-            nfl_passing_yards_defense_v1.py \
-            nfl_passing_yards_hub_v58.py \
-            nfl_passing_yards_hub_v59.py \
-            nfl_passing_yards_hub_v60.py \
-            nfl_passing_yards_hub_v61.py \
-            streamlit_memory_lazy_router_v209.py \
-            streamlit_memory_lazy_router_v210.py \
-            streamlit_memory_lazy_router_v211.py \
-            streamlit_memory_lazy_router_v212.py
-          do
-            if git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- "$path" | grep -q .; then
-              echo "FROZEN_FILE_CHANGED: $path"
-              exit 1
-            fi
-          done
+          git diff --exit-code "$BASE_SHA" --             nfl_passing_yards_hub_v58.py             nfl_passing_yards_hub_v59.py             nfl_passing_yards_hub_v60.py             nfl_passing_yards_hub_v61.py             streamlit_memory_lazy_router_v209.py             streamlit_memory_lazy_router_v210.py             streamlit_memory_lazy_router_v211.py             streamlit_memory_lazy_router_v212.py             app.py
           echo "PASSING_YARDS_LIVE_MATCHUP_FROZEN_BOUNDARY_GREEN"
 
   branch-live-matchup-proof:
     if: github.event_name == 'pull_request'
-    needs: runtime-contract
+    needs: timezone-contract
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
-        id: hotfix-python
+        id: py
         with:
           python-version: "3.12"
 
@@ -117,11 +88,10 @@ jobs:
           path: |
             .venv-py-live-hotfix
             ~/.cache/ms-playwright
-          key: passing-yards-live-hotfix-${{ runner.os }}-py${{ steps.hotfix-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt') }}
+          key: passing-yards-live-hotfix-${{ runner.os }}-py${{ steps.py.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt') }}
 
       - name: Build browser stack
         if: steps.browser-cache.outputs.cache-hit != 'true'
-        shell: bash
         run: |
           python -m venv .venv-py-live-hotfix
           .venv-py-live-hotfix/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
@@ -132,17 +102,14 @@ jobs:
         run: echo "$GITHUB_WORKSPACE/.venv-py-live-hotfix/bin" >> "$GITHUB_PATH"
 
       - name: Start branch-local Streamlit
-        shell: bash
         run: |
-          set -euo pipefail
           mkdir -p artifacts/passing-yards-live-hotfix
           nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-live-hotfix/streamlit.log 2>&1 &
           echo $! > /tmp/passing_yards_live_hotfix_pid
 
-      - name: Prove exact verified matchup through V213
+      - name: Prove exact 2026-09-24 matchup path
         run: |
           python - <<'PY'
-          import json
           import time
           from playwright.sync_api import sync_playwright
           from devsystem.browser_qa_v1 import _wait_for_health
@@ -160,26 +127,25 @@ jobs:
                               return frame
                       except Exception:
                           pass
-                  page.wait_for_timeout(500)
+                  page.wait_for_timeout(300)
               raise RuntimeError(f"selector not found: {selector}")
 
-          def body_texts(page):
-              out = []
+          def all_body(page):
+              parts = []
               for frame in page.frames:
                   try:
-                      out.append(frame.locator("body").inner_text(timeout=3000))
+                      parts.append(frame.locator("body").inner_text(timeout=2500))
                   except Exception:
                       pass
-              return "\n".join(out)
+              return "\n".join(parts)
 
-          def click_anchor(page, frame, locator):
-              target = locator.get_attribute("target")
-              if target == "_blank":
+          def click_anchor(page, locator):
+              if locator.get_attribute("target") == "_blank":
                   with page.expect_popup(timeout=15000) as popup_info:
                       locator.click()
-                  new_page = popup_info.value
-                  new_page.wait_for_load_state("domcontentloaded", timeout=120000)
-                  return new_page
+                  next_page = popup_info.value
+                  next_page.wait_for_load_state("domcontentloaded", timeout=120000)
+                  return next_page
               locator.click()
               return page
 
@@ -188,47 +154,62 @@ jobs:
               page = browser.new_page(viewport={"width":390,"height":844})
               try:
                   page.goto(route, wait_until="domcontentloaded", timeout=120000)
-                  frame = find_frame(page, '[data-passing-yards-v213-runtime="live-matchup-utc-hotfix"]')
+                  frame = find_frame(page, '[data-testid="stDateInput"]')
                   widget = frame.locator('[data-testid="stDateInput"]').first
-                  widget.get_by_role("spinbutton", name="day, Slate date").fill("24")
-                  widget.get_by_role("spinbutton", name="day, Slate date").press("Tab")
-                  page.wait_for_timeout(8000)
+                  day = widget.get_by_role("spinbutton", name="day, Slate date")
+                  day.fill("24")
+                  day.press("Tab")
 
-                  combined = body_texts(page)
-                  assert "TypeError" not in combined, combined[:20000]
-                  assert "Matchup • 1 verified games" in combined, combined[:20000]
-                  assert "Michael Penix Jr." in combined and "Jordan Love" in combined, combined[:20000]
+                  deadline = time.monotonic() + 180
+                  landing = None
+                  while time.monotonic() < deadline:
+                      body = all_body(page)
+                      if "TypeError" in body or "Traceback" in body:
+                          raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_TYPEERROR")
+                      for probe in page.frames:
+                          try:
+                              probe_body = probe.locator("body").inner_text(timeout=1500)
+                              if (
+                                  "Atlanta Falcons @ Green Bay Packers" in probe_body
+                                  and probe.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
+                                  and probe.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                                  and probe.locator('[data-qb-selection-card]').count() == 2
+                              ):
+                                  landing = probe
+                                  break
+                          except Exception:
+                              pass
+                      if landing is not None:
+                          break
+                      page.wait_for_timeout(500)
+                  if landing is None:
+                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_PICKER_NOT_READY")
 
-                  picker = find_frame(page, 'a[data-qb-select="1"]')
-                  detail_page = click_anchor(page, picker, picker.locator('a[data-qb-select="1"]').first)
-                  detail = find_frame(detail_page, '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]')
+                  assert landing.locator('a[data-qb-select]').count() == 2
+                  assert "Michael Penix Jr." in landing.locator("body").inner_text()
+                  assert "Jordan Love" in landing.locator("body").inner_text()
+
+                  detail_page = click_anchor(page, landing.locator('a[data-qb-select="1"]').first)
+                  detail = find_frame(detail_page, '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]', timeout=120)
                   detail_body = detail.locator("body").inner_text(timeout=5000)
-                  assert "TypeError" not in detail_body
+                  assert "TypeError" not in detail_body and "Traceback" not in detail_body
+                  assert detail.locator(".ks-py59-player").count() == 1
                   assert detail.locator('a[data-qb-back="true"]').count() == 1
 
-                  result = {
-                      "status":"GREEN",
-                      "date":"2026-09-24",
-                      "matchup":"Atlanta Falcons @ Green Bay Packers",
-                      "runtime_marker":1,
-                      "penix":True,
-                      "love":True,
-                      "qb1_detail":1,
-                      "type_error":False,
-                  }
+                  returned_page = click_anchor(detail_page, detail.locator('a[data-qb-back="true"]').first)
+                  returned = find_frame(returned_page, '[data-passing-yards-selection-screen="v58"]', timeout=120)
+                  assert returned.locator('[data-qb-selection-card]').count() == 2
                   print("PASSING_YARDS_LIVE_MATCHUP_BRANCH_GREEN")
-                  print(json.dumps(result, indent=2))
               finally:
                   browser.close()
           PY
 
       - name: Print Streamlit log on failure
         if: failure()
-        run: tail -n 700 artifacts/passing-yards-live-hotfix/streamlit.log || true
+        run: tail -n 500 artifacts/passing-yards-live-hotfix/streamlit.log || true
 
       - name: Stop branch-local Streamlit
         if: always()
-        shell: bash
         run: |
           if [ -f /tmp/passing_yards_live_hotfix_pid ]; then
             kill "$(cat /tmp/passing_yards_live_hotfix_pid)" 2>/dev/null || true
@@ -236,12 +217,11 @@ jobs:
 
   public-live-matchup-proof:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: runtime-contract
+    needs: timezone-contract
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -251,93 +231,57 @@ jobs:
           python -m pip install --disable-pip-version-check -q requests playwright
           python -m playwright install --with-deps chromium
 
-      - name: Prove deployed public verified matchup
+      - name: Allow Streamlit deployment to publish
+        run: sleep 90
+
+      - name: Prove public 2026-09-24 matchup once
         run: |
           python - <<'PY'
-          import json
           import time
           from playwright.sync_api import sync_playwright
 
           base = "https://kyre-sports-ai.streamlit.app"
           route = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
 
-          def frame_with(page, selector):
-              for frame in page.frames:
-                  try:
-                      if frame.locator(selector).count():
-                          return frame
-                  except Exception:
-                      pass
-              return None
-
-          def body_texts(page):
-              out = []
-              for frame in page.frames:
-                  try:
-                      out.append(frame.locator("body").inner_text(timeout=3000))
-                  except Exception:
-                      pass
-              return "\n".join(out)
-
-          def probe(page):
-              page.goto(route, wait_until="domcontentloaded", timeout=120000)
-              deadline = time.monotonic() + 120
-              marker_frame = None
+          def find_frame(page, selector, timeout=180):
+              deadline = time.monotonic() + timeout
               while time.monotonic() < deadline:
-                  marker_frame = frame_with(page, '[data-passing-yards-v213-runtime="live-matchup-utc-hotfix"]')
-                  if marker_frame is not None:
-                      break
-                  page.wait_for_timeout(1000)
-              if marker_frame is None:
-                  return {"deployed_v213":False}
+                  for frame in page.frames:
+                      try:
+                          if frame.locator(selector).count():
+                              return frame
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError(f"selector not found: {selector}")
 
-              widget = marker_frame.locator('[data-testid="stDateInput"]').first
-              if widget.count() == 0:
-                  date_frame = frame_with(page, '[data-testid="stDateInput"]')
-                  if date_frame is None:
-                      return {"deployed_v213":True,"date_widget":False}
-                  widget = date_frame.locator('[data-testid="stDateInput"]').first
-
-              day = widget.get_by_role("spinbutton", name="day, Slate date")
-              day.fill("24")
-              day.press("Tab")
-              page.wait_for_timeout(9000)
-              combined = body_texts(page)
-              return {
-                  "deployed_v213":True,
-                  "date_widget":True,
-                  "has_matchup":"Matchup • 1 verified games" in combined,
-                  "has_type_error":"TypeError" in combined,
-                  "has_penix":"Michael Penix Jr." in combined,
-                  "has_love":"Jordan Love" in combined,
-                  "body":combined[:25000],
-              }
+          def all_body(page):
+              parts=[]
+              for frame in page.frames:
+                  try:
+                      parts.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception:
+                      pass
+              return "\n".join(parts)
 
           with sync_playwright() as p:
               browser = p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
-              page = browser.new_page(viewport={"width":390,"height":844})
+              page = browser.new_page(viewport={"width":1024,"height":1366})
               try:
-                  deadline = time.monotonic() + 720
-                  attempt = 0
-                  last = {}
-                  while time.monotonic() < deadline:
-                      attempt += 1
-                      last = probe(page)
-                      print("PASSING_YARDS_LIVE_MATCHUP_PUBLIC_ATTEMPT", attempt)
-                      print(json.dumps({k:v for k,v in last.items() if k != "body"}, indent=2))
-                      if (
-                          last.get("deployed_v213")
-                          and last.get("has_matchup")
-                          and not last.get("has_type_error")
-                          and last.get("has_penix")
-                          and last.get("has_love")
-                      ):
-                          print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_GREEN")
-                          break
-                      page.wait_for_timeout(15000)
-                  else:
-                      print(last.get("body",""))
-                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_NOT_GREEN")
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
+                  frame=find_frame(page,'[data-testid="stDateInput"]')
+                  widget=frame.locator('[data-testid="stDateInput"]').first
+                  day=widget.get_by_role("spinbutton",name="day, Slate date")
+                  day.fill("24")
+                  day.press("Tab")
+                  page.wait_for_timeout(10000)
+
+                  combined=all_body(page)
+                  assert "TypeError" not in combined and "Traceback" not in combined
+                  assert "Atlanta Falcons @ Green Bay Packers" in combined
+                  assert "Michael Penix Jr." in combined
+                  assert "Jordan Love" in combined
+                  print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_GREEN")
               finally:
                   browser.close()
           PY
