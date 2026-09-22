@@ -147,12 +147,18 @@ def _header_html() -> str:
         + '</div></section>'
     )
 
+def _with_step3_header(builder):
+    def wrapped(captured):
+        return _header_html() + builder(captured)
+    return wrapped
+
 def render_nfl_passing_yards_hub() -> None:
-    header_html = _header_html()
-    header_body = header_html[len(_HEADER_CSS):] if header_html.startswith(_HEADER_CSS) else header_html
-    st.markdown(_HEADER_CSS, unsafe_allow_html=True)
-    st.markdown(header_body, unsafe_allow_html=True)
-    return prior.render_nfl_passing_yards_hub()
+    original_builder = prior._qb_drilldown_step2_html
+    prior._qb_drilldown_step2_html = _with_step3_header(original_builder)
+    try:
+        return prior.render_nfl_passing_yards_hub()
+    finally:
+        prior._qb_drilldown_step2_html = original_builder
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
     if str(market or "Passing Yards") != "Passing Yards":
@@ -174,6 +180,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "_header_html",
+    "_with_step3_header",
     "render_nfl_hub",
     "render_nfl_passing_yards_hub",
 ]
