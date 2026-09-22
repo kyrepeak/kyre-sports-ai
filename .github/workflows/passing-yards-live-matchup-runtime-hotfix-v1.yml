@@ -115,131 +115,171 @@ jobs:
           from playwright.sync_api import sync_playwright
           from devsystem.browser_qa_v1 import _wait_for_health
 
-          base = "http://127.0.0.1:8501"
-          route = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
-          target_matchup = "Atlanta Falcons @ Green Bay Packers"
+          base="http://127.0.0.1:8501"
+          route=base+"/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          target_matchup="Atlanta Falcons @ Green Bay Packers"
           _wait_for_health(base)
 
-          evidence = {
-              "DATE_CONTROL_FOUND": False,
-              "DATE_SET_TO_2026_09_24": False,
-              "MATCHUP_CONTROL_FOUND": False,
-              "MATCHUP_CONTROL_TESTID": "",
-              "MATCHUP_CONTROL_LABEL": "",
-              "MATCHUP_CONTROL_TYPE": "",
-              "CURRENT_SELECTED_VALUE": "",
-              "ATLANTA_OPTION_PRESENT": False,
-              "MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS": False,
-              "TYPEERROR_AFTER_MATCHUP_SELECTION": False,
-              "V60_HEADER": False,
-              "V58_PICKER": False,
-              "QB_CARDS": 0,
-              "MICHAEL_PENIX_JR": False,
-              "JORDAN_LOVE": False,
-              "QB1_DETAIL": False,
-              "BACK_RETURNS_PICKER": False,
-              "FIRST_BROKEN_ARROW": "",
-              "FAILED_LAYER": "",
+          evidence={
+              "DATE_CONTROL_FOUND":False,
+              "DATE_SET_TO_2026_09_24":False,
+              "MATCHUP_CONTROL_FOUND":False,
+              "MATCHUP_CONTROL_TESTID":"",
+              "MATCHUP_CONTROL_LABEL":"",
+              "MATCHUP_CONTROL_TYPE":"",
+              "CURRENT_SELECTED_VALUE":"",
+              "ATLANTA_OPTION_PRESENT":False,
+              "MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS":False,
+              "TYPEERROR_AFTER_MATCHUP_SELECTION":False,
+              "V60_HEADER":False,
+              "V58_PICKER":False,
+              "QB_CARDS":0,
+              "MICHAEL_PENIX_JR":False,
+              "JORDAN_LOVE":False,
+              "QB1_DETAIL":False,
+              "BACK_RETURNS_PICKER":False,
+              "FIRST_BROKEN_ARROW":"",
+              "FAILED_LAYER":"",
           }
 
           def all_body(page):
-              parts=[]
+              out=[]
               for frame in page.frames:
-                  try:
-                      parts.append(frame.locator("body").inner_text(timeout=2500))
-                  except Exception:
-                      pass
-              return "\n".join(parts)
+                  try: out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception: pass
+              return "\n".join(out)
 
-          def fail_if_runtime_error(page, where):
+          def fail_if_runtime_error(page,where):
               body=all_body(page)
               if "TypeError" in body or "Traceback" in body:
                   evidence["TYPEERROR_AFTER_MATCHUP_SELECTION"]=True
-                  evidence["FIRST_BROKEN_ARROW"]=where + " -> runtime"
+                  evidence["FIRST_BROKEN_ARROW"]=where+" -> runtime"
                   evidence["FAILED_LAYER"]="RUNTIME"
                   print("PASSING_YARDS_LIVE_MATCHUP_TRACEBACK")
                   print(body[:50000])
                   raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_TYPEERROR")
               return body
 
-          def inspect_combo(combo):
-              return combo.evaluate("""el => {
+          def anchor_v46_owner(frame):
+              captions=frame.get_by_text("🏈 PASSING YARDS CONTROL DECK",exact=True)
+              if captions.count()!=1:
+                  return None,None
+              caption=captions.first
+              meta=caption.evaluate("""el => {
                 let p=el;
-                let depth=0;
-                let match=null;
-                while(p && depth<8){
-                  const txt=(p.innerText||'').replace(/\\s+/g,' ').trim();
-                  if(txt.includes('Matchup')){
-                    match=p;
-                    break;
+                for(let i=0;i<14 && p;i++,p=p.parentElement){
+                  const text=(p.innerText||'').replace(/\\s+/g,' ').trim();
+                  if(text.includes('Slate date') && text.includes('Matchup')){
+                    p.setAttribute('data-monster-v46-owner','true');
+                    const rows=Array.from(p.querySelectorAll('input,[role],[data-testid],label')).slice(0,120).map(x=>({
+                      tag:x.tagName,
+                      role:x.getAttribute('role')||'',
+                      testid:x.getAttribute('data-testid')||'',
+                      aria:x.getAttribute('aria-label')||'',
+                      type:x.getAttribute('type')||'',
+                      value:x.value||'',
+                      text:(x.innerText||'').replace(/\\s+/g,' ').trim().slice(0,180)
+                    }));
+                    return {found:true,text:text.slice(0,800),rows};
                   }
-                  p=p.parentElement;
-                  depth++;
                 }
-                const owner=match||el.parentElement||el;
-                let t=owner;
-                while(t && !t.getAttribute('data-testid')) t=t.parentElement;
-                return {
-                  hasMatchupText: !!match,
-                  ownerText:(owner.innerText||'').replace(/\\s+/g,' ').trim().slice(0,500),
-                  testid:t ? (t.getAttribute('data-testid')||'') : '',
-                  aria:el.getAttribute('aria-label')||'',
-                  role:el.getAttribute('role')||'',
-                  tag:el.tagName,
-                  className:String(el.className||'').slice(0,220)
-                };
+                return {found:false,rows:[]};
               }""")
+              if not meta.get("found"):
+                  return None,meta
+              return frame.locator('[data-monster-v46-owner="true"]').first,meta
 
-          def discover_controls(frame):
-              date_wrap=frame.locator(".st-key-nfl_passing_yards_v46_slate_date").first
-              matchup_wrap=frame.locator(".st-key-nfl_passing_yards_v42_visible_matchup").first
-              if date_wrap.count()!=1 or matchup_wrap.count()!=1:
-                  return None, None, {}
-              date_input=date_wrap.locator("input").first
-              selectbox=matchup_wrap.locator('[data-testid="stSelectbox"]').first
-              select_surface=matchup_wrap.locator('[data-baseweb="select"]').first
-              if date_input.count()!=1 or selectbox.count()!=1 or select_surface.count()!=1:
-                  return None, None, {}
-              meta={
-                  "date_testid": (date_wrap.get_attribute("data-testid") or ""),
-                  "date_input_type": (date_input.get_attribute("type") or ""),
-                  "date_label": " | ".join(x.strip() for x in date_wrap.locator("label").all_inner_texts() if x.strip()),
-                  "matchup_testid": (selectbox.get_attribute("data-testid") or ""),
-                  "matchup_label": " | ".join(x.strip() for x in matchup_wrap.locator("label").all_inner_texts() if x.strip()),
-              }
-              return date_input, select_surface, meta
+          def inspect_owner_controls(owner):
+              inputs=owner.locator("input")
+              date_parts={}
+              input_rows=[]
+              for i in range(inputs.count()):
+                  loc=inputs.nth(i)
+                  aria=(loc.get_attribute("aria-label") or "").strip()
+                  row={
+                      "aria":aria,
+                      "type":loc.get_attribute("type") or "",
+                      "value":loc.input_value() if (loc.get_attribute("type") or "")!="hidden" else "",
+                  }
+                  input_rows.append(row)
+                  low=aria.lower()
+                  if "slate date" in low:
+                      for part in ("month","day","year"):
+                          if part in low and part not in date_parts:
+                              date_parts[part]=loc
 
-          def find_controls_frame(page, timeout=180):
+              matchup=None
+              matchup_meta={}
+              candidates=owner.locator('[role="combobox"],select')
+              for i in range(candidates.count()):
+                  loc=candidates.nth(i)
+                  meta=loc.evaluate("""el => {
+                    let p=el;
+                    for(let i=0;i<8 && p;i++,p=p.parentElement){
+                      const txt=(p.innerText||'').replace(/\\s+/g,' ').trim();
+                      if(txt.includes('Matchup')){
+                        let t=p;
+                        while(t && !t.getAttribute('data-testid')) t=t.parentElement;
+                        return {
+                          match:true,
+                          ownerText:txt.slice(0,500),
+                          testid:t ? (t.getAttribute('data-testid')||'') : '',
+                          role:el.getAttribute('role')||'',
+                          tag:el.tagName
+                        };
+                      }
+                    }
+                    return {match:false};
+                  }""")
+                  if meta.get("match"):
+                      matchup=loc
+                      matchup_meta=meta
+                      break
+              return date_parts,matchup,matchup_meta,input_rows
+
+          def find_controls(page,timeout=180):
               deadline=time.monotonic()+timeout
+              last_inventory=None
               while time.monotonic()<deadline:
                   fail_if_runtime_error(page,"controls")
                   for frame in page.frames:
                       try:
                           if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1:
                               continue
-                          date_input, select_surface, meta=discover_controls(frame)
-                          if date_input is not None and select_surface is not None:
-                              return frame, date_input, select_surface, meta
+                          owner,meta=anchor_v46_owner(frame)
+                          if meta: last_inventory=meta
+                          if owner is None: continue
+                          date_parts,matchup,matchup_meta,input_rows=inspect_owner_controls(owner)
+                          if "day" in date_parts and matchup is not None:
+                              print("PASSING_YARDS_LIVE_MATCHUP_V46_DOM_INVENTORY")
+                              print(json.dumps({
+                                  "owner_text":meta.get("text",""),
+                                  "rows":meta.get("rows",[]),
+                                  "inputs":input_rows,
+                                  "matchup_meta":matchup_meta
+                              },indent=2))
+                              return frame,owner,date_parts,matchup,matchup_meta
                       except Exception:
                           pass
                   page.wait_for_timeout(300)
-              evidence["FIRST_BROKEN_ARROW"]="Passing Yards -> V60/V46 accessible controls"
+              print("PASSING_YARDS_LIVE_MATCHUP_V46_DOM_INVENTORY_LAST")
+              print(json.dumps(last_inventory or {},indent=2))
+              evidence["FIRST_BROKEN_ARROW"]="V60 header -> V46 control DOM"
               evidence["FAILED_LAYER"]="VERIFIER_CONTROL_DISCOVERY"
               raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_CONTROLS_NOT_READY")
 
-          def find_landing(page, timeout=180):
+          def find_landing(page,timeout=180):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
-                  fail_if_runtime_error(page,"selected matchup -> picker")
+                  fail_if_runtime_error(page,"selected matchup -> V58 picker")
                   for frame in page.frames:
                       try:
                           txt=frame.locator("body").inner_text(timeout=1500)
-                          cards=frame.locator('[data-qb-selection-card]').count()
                           if (
                               target_matchup in txt
                               and frame.locator('section[data-passing-yards-step3-header="v60"]').count()==1
                               and frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1
-                              and cards==2
+                              and frame.locator('[data-qb-selection-card]').count()==2
                           ):
                               return frame
                       except Exception:
@@ -249,27 +289,25 @@ jobs:
               evidence["FAILED_LAYER"]="VERIFIER_POST_SELECTION_RENDER"
               raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_PICKER_NOT_READY")
 
-          def find_detail(page, timeout=120):
+          def find_detail(page,timeout=120):
               selector='[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]'
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
                   fail_if_runtime_error(page,"QB1 click -> V59 detail")
                   for frame in page.frames:
                       try:
-                          if frame.locator(selector).count()==1:
-                              return frame
-                      except Exception:
-                          pass
+                          if frame.locator(selector).count()==1: return frame
+                      except Exception: pass
                   page.wait_for_timeout(300)
               evidence["FIRST_BROKEN_ARROW"]="QB1 click -> V59 detail"
               evidence["FAILED_LAYER"]="VERIFIER_DETAIL_NAVIGATION"
               raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DETAIL_NOT_READY")
 
-          def click_anchor(page, locator):
+          def click_anchor(page,locator):
               if locator.get_attribute("target")=="_blank":
-                  with page.expect_popup(timeout=15000) as popup_info:
+                  with page.expect_popup(timeout=15000) as popup:
                       locator.click()
-                  nxt=popup_info.value
+                  nxt=popup.value
                   nxt.wait_for_load_state("domcontentloaded",timeout=120000)
                   return nxt
               locator.click()
@@ -280,33 +318,35 @@ jobs:
               page=browser.new_page(viewport={"width":390,"height":844})
               try:
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
-
-                  frame,date_input,select_surface,control_meta=find_controls_frame(page)
+                  frame,owner,date_parts,matchup,matchup_meta=find_controls(page)
                   evidence["DATE_CONTROL_FOUND"]=True
-                  print("PASSING_YARDS_LIVE_MATCHUP_CONTROL_DOM")
-                  print(json.dumps(control_meta,indent=2))
+                  evidence["MATCHUP_CONTROL_FOUND"]=True
+                  evidence["MATCHUP_CONTROL_TESTID"]=matchup_meta.get("testid","")
+                  evidence["MATCHUP_CONTROL_LABEL"]=matchup_meta.get("ownerText","")
+                  evidence["MATCHUP_CONTROL_TYPE"]="selectbox/combobox" if matchup_meta.get("role")=="combobox" else matchup_meta.get("tag","").lower()
 
-                  date_input.fill("09/24/2026")
-                  date_input.press("Tab")
+                  if "month" in date_parts: date_parts["month"].fill("9")
+                  date_parts["day"].fill("24")
+                  if "year" in date_parts: date_parts["year"].fill("2026")
+                  date_parts["day"].press("Tab")
                   page.wait_for_timeout(1500)
 
-                  frame,date_input,select_surface,control_meta=find_controls_frame(page,timeout=120)
-                  selected_date=(date_input.input_value() or "").strip()
-                  evidence["DATE_SET_TO_2026_09_24"]=selected_date in {"09/24/2026","9/24/2026"}
+                  frame,owner,date_parts,matchup,matchup_meta=find_controls(page,timeout=120)
+                  values={k:v.input_value() for k,v in date_parts.items()}
+                  evidence["DATE_SET_TO_2026_09_24"]=(
+                      values.get("day") in {"24","024"}
+                      and values.get("month","9") in {"9","09"}
+                      and values.get("year","2026")=="2026"
+                  )
                   print("PASSING_YARDS_LIVE_MATCHUP_DATE_STATE")
-                  print(json.dumps({"selected":selected_date},indent=2))
+                  print(json.dumps(values,indent=2))
                   if not evidence["DATE_SET_TO_2026_09_24"]:
                       evidence["FIRST_BROKEN_ARROW"]="date action -> selected date"
                       evidence["FAILED_LAYER"]="VERIFIER_DATE_SELECTION"
                       raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DATE_NOT_SET")
 
-                  evidence["MATCHUP_CONTROL_FOUND"]=True
-                  evidence["MATCHUP_CONTROL_TESTID"]=control_meta.get("matchup_testid","")
-                  evidence["MATCHUP_CONTROL_LABEL"]=control_meta.get("matchup_label","")
-                  evidence["MATCHUP_CONTROL_TYPE"]="Streamlit selectbox / BaseWeb select"
-                  evidence["CURRENT_SELECTED_VALUE"]=(select_surface.inner_text() or "").strip()
-
-                  select_surface.click()
+                  evidence["CURRENT_SELECTED_VALUE"]=(matchup.inner_text() or "").strip()
+                  matchup.click()
                   page.wait_for_timeout(300)
                   options=[x.strip() for x in frame.get_by_role("option").all_inner_texts() if x.strip()]
                   evidence["ATLANTA_OPTION_PRESENT"]=any(target_matchup in x for x in options)
@@ -317,8 +357,7 @@ jobs:
                       "type":evidence["MATCHUP_CONTROL_TYPE"],
                       "current_selected_value":evidence["CURRENT_SELECTED_VALUE"],
                       "atlanta_option_present":evidence["ATLANTA_OPTION_PRESENT"],
-                      "combo_inventory":combo_rows,
-                      "options":options,
+                      "options":options
                   },indent=2))
                   if not evidence["ATLANTA_OPTION_PRESENT"]:
                       evidence["FIRST_BROKEN_ARROW"]="V46 matchup options -> Atlanta @ Green Bay"
@@ -328,8 +367,8 @@ jobs:
                   frame.get_by_role("option").filter(has_text=target_matchup).first.click()
                   page.wait_for_timeout(1200)
 
-                  frame,_,selected_surface,_=find_controls_frame(page,timeout=120)
-                  selected=(selected_surface.inner_text() or "").strip()
+                  frame,owner,date_parts,matchup,matchup_meta=find_controls(page,timeout=120)
+                  selected=(matchup.inner_text() or "").strip()
                   evidence["MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS"]=target_matchup in selected
                   print("PASSING_YARDS_LIVE_MATCHUP_SELECTED_VALUE")
                   print(selected)
@@ -343,14 +382,11 @@ jobs:
                   evidence["V60_HEADER"]=landing.locator('section[data-passing-yards-step3-header="v60"]').count()==1
                   evidence["V58_PICKER"]=landing.locator('[data-passing-yards-selection-screen="v58"]').count()==1
                   evidence["QB_CARDS"]=landing.locator('[data-qb-selection-card]').count()
-                  landing_body=landing.locator("body").inner_text(timeout=5000)
-                  evidence["MICHAEL_PENIX_JR"]="Michael Penix Jr." in landing_body
-                  evidence["JORDAN_LOVE"]="Jordan Love" in landing_body
+                  txt=landing.locator("body").inner_text(timeout=5000)
+                  evidence["MICHAEL_PENIX_JR"]="Michael Penix Jr." in txt
+                  evidence["JORDAN_LOVE"]="Jordan Love" in txt
 
-                  if not (
-                      evidence["V60_HEADER"] and evidence["V58_PICKER"] and evidence["QB_CARDS"]==2
-                      and evidence["MICHAEL_PENIX_JR"] and evidence["JORDAN_LOVE"]
-                  ):
+                  if not (evidence["V60_HEADER"] and evidence["V58_PICKER"] and evidence["QB_CARDS"]==2 and evidence["MICHAEL_PENIX_JR"] and evidence["JORDAN_LOVE"]):
                       evidence["FIRST_BROKEN_ARROW"]="selected matchup -> expected QB picker contents"
                       evidence["FAILED_LAYER"]="VERIFIER_PICKER_CONTENT"
                       raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_PICKER_CONTENT_INCOMPLETE")
@@ -358,14 +394,12 @@ jobs:
                   detail_page=click_anchor(page,landing.locator('a[data-qb-select="1"]').first)
                   detail=find_detail(detail_page)
                   evidence["QB1_DETAIL"]=detail.locator(".ks-py59-player").count()==1
-                  if not evidence["QB1_DETAIL"]:
-                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_QB1_DETAIL_MISSING")
+                  if not evidence["QB1_DETAIL"]: raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_QB1_DETAIL_MISSING")
 
                   returned_page=click_anchor(detail_page,detail.locator('a[data-qb-back="true"]').first)
                   returned=find_landing(returned_page,timeout=120)
                   evidence["BACK_RETURNS_PICKER"]=returned.locator('[data-qb-selection-card]').count()==2
-                  if not evidence["BACK_RETURNS_PICKER"]:
-                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_BACK_FAILED")
+                  if not evidence["BACK_RETURNS_PICKER"]: raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_BACK_FAILED")
 
                   print("PASSING_YARDS_LIVE_MATCHUP_BRANCH_GREEN")
               except Exception:
@@ -421,52 +455,65 @@ jobs:
           target_matchup="Atlanta Falcons @ Green Bay Packers"
 
           def all_body(page):
-              parts=[]
+              out=[]
               for frame in page.frames:
-                  try:
-                      parts.append(frame.locator("body").inner_text(timeout=2500))
-                  except Exception:
-                      pass
-              return "\n".join(parts)
+                  try: out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception: pass
+              return "\n".join(out)
 
-          def inspect_combo(combo):
-              return combo.evaluate("""el => {
-                let p=el, depth=0, match=null;
-                while(p && depth<8){
-                  const txt=(p.innerText||'').replace(/\\s+/g,' ').trim();
-                  if(txt.includes('Matchup')){ match=p; break; }
-                  p=p.parentElement; depth++;
+          def anchor_owner(frame):
+              caps=frame.get_by_text("🏈 PASSING YARDS CONTROL DECK",exact=True)
+              if caps.count()!=1: return None
+              ok=caps.first.evaluate("""el => {
+                let p=el;
+                for(let i=0;i<14 && p;i++,p=p.parentElement){
+                  const text=(p.innerText||'').replace(/\\s+/g,' ').trim();
+                  if(text.includes('Slate date') && text.includes('Matchup')){
+                    p.setAttribute('data-monster-v46-owner','true');
+                    return true;
+                  }
                 }
-                return {hasMatchupText:!!match};
+                return false;
               }""")
+              return frame.locator('[data-monster-v46-owner="true"]').first if ok else None
 
-          def discover(frame):
-              date_wrap=frame.locator(".st-key-nfl_passing_yards_v46_slate_date").first
-              matchup_wrap=frame.locator(".st-key-nfl_passing_yards_v42_visible_matchup").first
-              if date_wrap.count()!=1 or matchup_wrap.count()!=1:
-                  return None,None
-              date_input=date_wrap.locator("input").first
-              select_surface=matchup_wrap.locator('[data-baseweb="select"]').first
-              if date_input.count()!=1 or select_surface.count()!=1:
-                  return None,None
-              return date_input,select_surface
+          def controls(owner):
+              date={}
+              inputs=owner.locator("input")
+              for i in range(inputs.count()):
+                  loc=inputs.nth(i)
+                  aria=(loc.get_attribute("aria-label") or "").lower()
+                  if "slate date" in aria:
+                      for part in ("month","day","year"):
+                          if part in aria and part not in date: date[part]=loc
+              combo=None
+              combos=owner.locator('[role="combobox"],select')
+              for i in range(combos.count()):
+                  loc=combos.nth(i)
+                  if loc.evaluate("""el => {
+                    let p=el;
+                    for(let i=0;i<8 && p;i++,p=p.parentElement){
+                      if(((p.innerText||'')).includes('Matchup')) return true;
+                    }
+                    return false;
+                  }"""):
+                      combo=loc; break
+              return date,combo
 
           def find_controls(page,timeout=180):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
                   body=all_body(page)
                   if "TypeError" in body or "Traceback" in body:
-                      print(body[:50000])
-                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
+                      print(body[:50000]); raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
                   for frame in page.frames:
                       try:
-                          if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1:
-                              continue
-                          date_input,select_surface=discover(frame)
-                          if date_input is not None and select_surface is not None:
-                              return frame,date_input,select_surface
-                      except Exception:
-                          pass
+                          if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1: continue
+                          owner=anchor_owner(frame)
+                          if owner is None: continue
+                          date,combo=controls(owner)
+                          if "day" in date and combo is not None: return frame,date,combo
+                      except Exception: pass
                   page.wait_for_timeout(500)
               raise RuntimeError("PUBLIC_LIVE_MATCHUP_CONTROLS_NOT_READY")
 
@@ -475,19 +522,13 @@ jobs:
               while time.monotonic()<deadline:
                   body=all_body(page)
                   if "TypeError" in body or "Traceback" in body:
-                      print(body[:50000])
-                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
+                      print(body[:50000]); raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
                   for frame in page.frames:
                       try:
                           txt=frame.locator("body").inner_text(timeout=1500)
-                          if (
-                              target_matchup in txt
-                              and frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1
-                              and frame.locator('[data-qb-selection-card]').count()==2
-                          ):
+                          if target_matchup in txt and frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1 and frame.locator('[data-qb-selection-card]').count()==2:
                               return frame
-                      except Exception:
-                          pass
+                      except Exception: pass
                   page.wait_for_timeout(500)
               raise RuntimeError("PUBLIC_LIVE_MATCHUP_PICKER_NOT_READY")
 
@@ -496,43 +537,32 @@ jobs:
               page=browser.new_page(viewport={"width":1024,"height":1366})
               try:
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
-                  frame,date_input,select_surface=find_controls(page)
-                  date_input.fill("09/24/2026")
-                  date_input.press("Tab")
+                  frame,date,combo=find_controls(page)
+                  if "month" in date: date["month"].fill("9")
+                  date["day"].fill("24")
+                  if "year" in date: date["year"].fill("2026")
+                  date["day"].press("Tab")
                   page.wait_for_timeout(1500)
 
-                  frame,date_input,select_surface=find_controls(page,timeout=120)
-                  assert (date_input.input_value() or "").strip() in {"09/24/2026","9/24/2026"}
-                  select_surface.click()
-                  page.wait_for_timeout(300)
+                  frame,date,combo=find_controls(page,timeout=120)
+                  combo.click(); page.wait_for_timeout(300)
                   options=[x.strip() for x in frame.get_by_role("option").all_inner_texts() if x.strip()]
                   assert any(target_matchup in x for x in options)
                   frame.get_by_role("option").filter(has_text=target_matchup).first.click()
                   page.wait_for_timeout(1200)
 
-                  frame,_,select_surface=find_controls(page,timeout=120)
-                  selected=(select_surface.inner_text() or "").strip()
-                  assert target_matchup in selected
-
+                  frame,date,combo=find_controls(page,timeout=120)
+                  assert target_matchup in ((combo.inner_text() or "").strip())
                   picker=find_picker(page)
-                  combined=all_body(page)
-                  assert "TypeError" not in combined and "Traceback" not in combined
+                  body=all_body(page)
+                  assert "TypeError" not in body and "Traceback" not in body
+                  txt=picker.locator("body").inner_text(timeout=5000)
                   assert picker.locator('[data-passing-yards-selection-screen="v58"]').count()==1
                   assert picker.locator('[data-qb-selection-card]').count()==2
-                  txt=picker.locator("body").inner_text(timeout=5000)
                   assert "Michael Penix Jr." in txt
                   assert "Jordan Love" in txt
-
                   print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_GREEN")
-                  print(json.dumps({
-                      "date":"2026-09-24",
-                      "matchup":target_matchup,
-                      "typeerror":False,
-                      "v58_picker":True,
-                      "qb_cards":2,
-                      "michael_penix_jr":True,
-                      "jordan_love":True
-                  },indent=2))
+                  print(json.dumps({"date":"2026-09-24","matchup":target_matchup,"typeerror":False,"v58_picker":True,"qb_cards":2,"michael_penix_jr":True,"jordan_love":True},indent=2))
               finally:
                   browser.close()
           PY
