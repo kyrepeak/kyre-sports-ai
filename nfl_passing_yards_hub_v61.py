@@ -120,6 +120,28 @@ _CARD_CSS = r"""
 /* Step 4 visible-composition repair:
    keep the compact V46 slate controls, but collapse legacy native evidence
    widgets that are still emitted before V34's final QB drill-down placeholder. */
+/* Suppressed legacy calls still leave zero-height Streamlit element containers.
+   In a vertical flex stack those zero-height siblings still consume the parent's
+   gap, which pushed the first QB card to y=2508px. Remove those containers from
+   layout entirely and hide the duplicate frozen V8 matchup widget; V46 owns the
+   single visible matchup control. */
+.st-key-kyre_passing_yards_shell_v1
+  [data-testid="stElementContainer"]:has(> div:empty){
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+}
+.st-key-kyre_passing_yards_shell_v1
+  .st-key-nfl_passing_yards_v8_matchup{
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+}
+
 .st-key-kyre_passing_yards_shell_v1 [data-testid="stDataFrame"],
 .st-key-kyre_passing_yards_shell_v1 [data-testid="stTable"],
 .st-key-kyre_passing_yards_shell_v1 [data-testid="stMetric"],
