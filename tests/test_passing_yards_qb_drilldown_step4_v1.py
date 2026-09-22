@@ -258,3 +258,9 @@ def test_step4_preserves_only_current_pre_placeholder_style_owners():
     assert 'data-passing-yards-step3-header-css="v60"' in V61
     assert 'data-passing-yards-top-polish="v46"' in V61
     assert 'if _preserve_style_block(style):' in V61
+
+
+def test_step4_removes_result_first_game_center_and_owner_phantom_gaps():
+    assert '.st-key-kyre_passing_yards_universal_owner_v1{' in V61
+    assert 'gap:0!important;' in V61
+    assert '[data-testid="stElementContainer"]:has(.kpy15-center)' in V61
