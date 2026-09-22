@@ -235,3 +235,9 @@ def test_step4_collapses_legacy_native_evidence_before_drilldown():
         assert selector in V61
     assert "display:none!important;" in V61
     assert "height:0!important;" in V61
+
+
+def test_step4_removes_zero_height_gap_owners_and_duplicate_matchup():
+    assert '[data-testid="stElementContainer"]:has(> div:empty)' in V61
+    assert '.st-key-nfl_passing_yards_v8_matchup' in V61
+    assert 'display:none!important;' in V61
