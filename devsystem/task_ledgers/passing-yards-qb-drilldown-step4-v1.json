@@ -52,12 +52,23 @@
     "step5_plus_built": false
   },
   "freeze_rule": "After targeted Step 4 proof, required DevSystem gate, merge, and one successful MAIN public proof covering premium picker/detail surfaces plus frozen Step 1-3 behavior, Step 4 is GREEN + FROZEN.",
-  "monster_status": "STEP4_BUILD_PENDING_TARGETED_PROOF",
+  "monster_status": "USER_VISIBLE_CONTRADICTION_REPAIR_PENDING_TARGETED_PROOF",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "user_visible_contradiction": {
+    "reported_at": "2026-09-22T18:38:52Z",
+    "source_main": "3e33ee041ac3501b05cad3d20b2660f84ab2c208",
+    "evidence": "User production screenshots show V60 header followed by legacy Universal Theme / Control Deck / Matchup Spotlight / Step 1-10 content, while the intended two-QB drill-down surface is not the primary visible interface and the visible legacy cards are not actionable.",
+    "first_broken_arrow": "V61 style witness + deep V58/V59 DOM presence -> actual primary visible/tappable Step 4 composition",
+    "failed_layer": "VISIBLE_COMPOSITION_VERIFIER_GAP",
+    "root_cause": "V61 only added CSS and delegated to V60. V58/V59 own the picker/detail at V34's final placeholder, but earlier frozen legacy st.markdown/status surfaces still render above it. The Step 4 verifier searched the whole DOM and programmatically clicked the deep V58 anchor, so it passed without proving the legacy surfaces were removed from the user-facing composition.",
+    "minimal_patch": "In V61 only, preserve CSS and the frozen data/capture pipeline while suppressing legacy visible st.markdown output and legacy STEP status banners. Keep the V46 control deck, V60 st.html header, and V58/V59 final placeholder picker/detail behavior unchanged.",
+    "frozen_steps_1_3_files_changed": false,
+    "final_public_proof_pending": true
+  }
 }
