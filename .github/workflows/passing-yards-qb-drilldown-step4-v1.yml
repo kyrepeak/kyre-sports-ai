@@ -278,12 +278,47 @@ jobs:
                             }))
                           };
                         }).filter(x => x.height > 1 && x.display !== 'none' && x.visibility !== 'hidden');
+                        const allBefore = siblings.slice(0, Math.max(index, 0)).map((el, i) => {
+                          const r = el.getBoundingClientRect();
+                          const s = getComputedStyle(el);
+                          return {
+                            siblingIndex:i,
+                            testid:el.getAttribute('data-testid') || '',
+                            className:String(el.className || '').slice(0,180),
+                            text:(el.innerText || '').replace(/\\s+/g,' ').trim().slice(0,160),
+                            y:r.y,
+                            bottom:r.bottom,
+                            height:r.height,
+                            display:s.display,
+                            visibility:s.visibility,
+                            marginTop:parseFloat(s.marginTop)||0,
+                            marginBottom:parseFloat(s.marginBottom)||0,
+                            paddingTop:parseFloat(s.paddingTop)||0,
+                            paddingBottom:parseFloat(s.paddingBottom)||0
+                          };
+                        });
+                        const parentStyle = getComputedStyle(parent);
+                        const containerStyle = getComputedStyle(container);
+                        const contributors = allBefore
+                          .map(x => ({...x, layoutCost:x.height+x.marginTop+x.marginBottom+x.paddingTop+x.paddingBottom}))
+                          .filter(x => x.layoutCost > 0.5)
+                          .sort((a,b) => b.layoutCost-a.layoutCost)
+                          .slice(0,12);
                         return {
                           pickerY: picker.getBoundingClientRect().y,
+                          containerIndex:index,
                           containerTestid: container.getAttribute('data-testid') || '',
+                          containerMarginTop:parseFloat(containerStyle.marginTop)||0,
+                          containerPaddingTop:parseFloat(containerStyle.paddingTop)||0,
+                          parentRowGap:parentStyle.rowGap,
+                          parentColumnGap:parentStyle.columnGap,
+                          parentPaddingTop:parentStyle.paddingTop,
+                          parentPaddingBottom:parentStyle.paddingBottom,
                           visibleBeforeCount: visibleBefore.length,
                           immediateVisibleBefore: visibleBefore.length ? visibleBefore[visibleBefore.length - 1] : null,
-                          lastFiveVisibleBefore: visibleBefore.slice(-5)
+                          lastFiveVisibleBefore: visibleBefore.slice(-5),
+                          largestLayoutContributorsBeforePicker:contributors,
+                          lastTwelveRawBeforePicker:allBefore.slice(-12)
                         };
                       }"""
                   )
