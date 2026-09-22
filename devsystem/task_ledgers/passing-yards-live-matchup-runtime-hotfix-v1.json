@@ -19,23 +19,36 @@
   ],
   "mission": "Reproduce the real verified-matchup path, identify the exact TypeError, apply the smallest additive presentation/runtime repair, then prove branch and public production GREEN.",
   "root_cause": {
-    "evidence_run": 35774190002,
-    "deepest_traceback": "nfl_passing_yards_defense_v1.py:_completed_event_rows line 216",
-    "classification": "TZ_AWARE_VS_NAIVE_TIMESTAMP_COMPARISON",
-    "explanation": "ESPN schedule event timestamps are offset-aware while the selected 2026-09-24 cutoff is a plain date. V1 compares normalized timestamps directly and raises TypeError. The repository already contains nfl_passing_yards_defense_v3._completed_event_rows_utc plus a regression test for this exact source shape, but the frozen V7/V8 render path still holds the V1 module reference.",
-    "patch": "V61 runtime-only adapter temporarily routes V1 _completed_event_rows through the already-certified V3 UTC parser for the render call, then restores V1. No V58/V59/V60/V209/V210/V211/V212 or model/projection/probability/market math changes."
+    "failed_layer": "DATA_TIMEZONE_NORMALIZATION",
+    "stack": "nfl_passing_yards_hub_v8.py -> nfl_passing_yards_defense_v1.build_pass_defense_profile -> _recent_form -> _completed_event_rows",
+    "exact_line": "event_date.normalize() >= cutoff.normalize()",
+    "cause": "ESPN event date parses as a timezone-aware pandas Timestamp while the date-only slate cutoff parses as timezone-naive. Pandas raises TypeError when comparing them.",
+    "why_prior_proof_missed_it": "Previous Step 4 public proof used the default/current slate path and did not force the verified 2026-09-24 matchup. A clean branch-local exact-date run also did not deterministically receive the same upstream timestamp shape, so only the public exact-date reproduction exposed the production failure."
   },
-  "acceptance": {
-    "branch_exact_date": "2026-09-24",
+  "acceptance": [
+    "timezone regression tests pass",
+    "frozen Step 4 product boundary unchanged",
+    "required CI gates pass",
+    "merge PR #907",
+    "public production 2026-09-24 Atlanta @ Green Bay path has no TypeError",
+    "Michael Penix Jr. and Jordan Love picker cards both render"
+  ],
+  "authoritative_reproduction": {
+    "workflow_run": 35774190002,
+    "public_job": 106903096693,
+    "date": "2026-09-24",
     "matchup": "Atlanta Falcons @ Green Bay Packers",
-    "no_typeerror": true,
-    "v60_header": true,
-    "v46_controls": true,
-    "v58_picker": true,
-    "qb_cards": 2,
-    "qb1_click": true,
-    "v59_detail": true,
-    "back_restores_picker": true,
-    "final_public_main_exact_date_proof": true
+    "has_matchup": true,
+    "has_type_error": true,
+    "has_picker": false
+  },
+  "patch": {
+    "file": "nfl_passing_yards_defense_v1.py",
+    "change": "Parse both cutoff_date and ESPN event date with utc=True before normalize/compare.",
+    "model_math_changed": false,
+    "projection_changed": false,
+    "probability_changed": false,
+    "sportsbook_logic_changed": false,
+    "frozen_step4_product_files_changed": false
   }
 }
