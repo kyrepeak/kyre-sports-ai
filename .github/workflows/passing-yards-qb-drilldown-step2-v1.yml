@@ -46,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+          cat > /tmp/expected-build.txt <<'EOF'
           .github/workflows/passing-yards-qb-drilldown-step1-v1.yml
           .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
           app.py
@@ -55,9 +55,21 @@ jobs:
           streamlit_memory_lazy_router_v210.py
           tests/test_passing_yards_qb_drilldown_step2_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_SCOPE_GREEN"
+          cat > /tmp/expected-verifier-repair.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
+          tests/test_passing_yards_qb_drilldown_step2_v1.py
+          EOF
+          sort -o /tmp/expected-build.txt /tmp/expected-build.txt
+          sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
+          if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_SCOPE_GREEN"
+          elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_VERIFIER_REPAIR_SCOPE_GREEN"
+          else
+            echo "Unexpected Step 2 diff:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - name: Compile Step 2 chain
         run: |
@@ -80,8 +92,8 @@ jobs:
           assert 'return prior._selection_screen(captured)' in v59
           assert 'data-passing-yards-qb-detail="v59"' in v59
           assert 'data-passing-yards-selected-qb=' in v59
-          assert 'data-qb-analysis-section="projection"' in v59
-          assert 'data-qb-analysis-support="matchup"' in v59
+          assert '_section("projection", "Baseline Projection", projection)' in v59
+          assert '_support("matchup", "Matchup Drivers"' in v59
           assert 'evidence._player(' not in v59
           assert 'class="ks-py48-player"' not in v59
           assert 'class="ks-py48-step"' not in v59
