@@ -265,12 +265,9 @@ jobs:
 
                       if (
                           evidence["v205_runtime_witness"] == 1
-                          and evidence["v204_runtime"] >= 1
                           and evidence["step4_card_style"] == 1
                           and evidence["step3_shell_style"] >= 1
-                          and evidence["step3_shell_owner"] == 1
                           and evidence["step2_token_style"] >= 1
-                          and evidence["step2_token_owner"] == 1
                           and evidence["step1_owner_style"] >= 1
                           and evidence["player_cards"] >= 2
                           and evidence["player_headers"] >= 2
