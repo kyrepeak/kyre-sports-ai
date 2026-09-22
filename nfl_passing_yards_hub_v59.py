@@ -20,6 +20,8 @@ MODEL_VERSION = "NFL PASSING YARDS V59 • QB DRILL-DOWN STEP 2"
 FROZEN_PRIOR = "nfl_passing_yards_hub_v58"
 DRILLDOWN_STEP = 2
 DETAIL_SYSTEM_VERSION = "v59"
+DETAIL_CLEANUP_VERSION = "step1-2-v1"
+DETAIL_CLEANUP_STEPS = 2
 PRESENTATION_ONLY = True
 DISPLAY_ONLY = True
 MAY_MODIFY_PROJECTION = False
@@ -35,44 +37,137 @@ _QB_SLOT_PARAM = "ks_qb_slot"
 _DETAIL_CSS = r"""
 <style data-passing-yards-qb-detail="v59">
 .ks-py59,.ks-py59 *{box-sizing:border-box}
-.ks-py59{margin:.55rem 0 1.2rem;color:var(--kyre-sem-text-primary)}
+.ks-py59{
+  width:100%;max-width:1120px;margin:.35rem auto 1rem;
+  color:var(--kyre-sem-text-primary)
+}
 .ks-py59-toolbar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin-bottom:var(--kyre-space-4)
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex-wrap:wrap;margin-bottom:10px
 }
 .ks-py59-back{
-  display:inline-flex;align-items:center;min-height:48px;padding:10px 14px;
-  border:1px solid var(--kyre-sem-border-medium);
-  border-radius:var(--kyre-sem-radius-section);
+  display:inline-flex;align-items:center;justify-content:center;min-height:42px;
+  padding:8px 12px;border:1px solid var(--kyre-sem-border-medium);
+  border-radius:999px;background:rgba(255,255,255,.018);
   color:var(--kyre-sem-text-accent-soft)!important;text-decoration:none!important;
-  font-size:.72rem;font-weight:900
+  font-size:.76rem;font-weight:900;line-height:1
 }
 .ks-py59-head{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
-  margin-bottom:var(--kyre-space-4);padding:var(--kyre-space-4) var(--kyre-space-5);
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;
+  margin-bottom:12px;padding:18px 20px;
   border:1px solid var(--kyre-sem-border-medium);
   border-radius:var(--kyre-sem-radius-card);
-  background:linear-gradient(145deg,var(--kyre-sem-surface-panel-alt),var(--kyre-sem-surface-panel));
+  background:
+    radial-gradient(circle at top right,var(--kyre-sem-accent-wash-soft),transparent 34%),
+    linear-gradient(145deg,var(--kyre-sem-surface-panel-alt),var(--kyre-sem-surface-panel));
   box-shadow:var(--kyre-sem-shadow-card),var(--kyre-sem-shadow-glow)
 }
+.ks-py59-headcopy{min-width:0;max-width:720px}
 .ks-py59-kicker{
-  color:var(--kyre-sem-text-accent-soft);font-size:.64rem;font-weight:950;
+  color:var(--kyre-sem-text-accent-soft);font-size:.66rem;font-weight:950;
   letter-spacing:.12em;text-transform:uppercase
 }
 .ks-py59-title{
-  margin:.18rem 0 0;font-size:clamp(1.28rem,2.3vw,1.78rem);
-  font-weight:950;line-height:1.08
+  margin:.28rem 0 0;font-size:clamp(1.8rem,4vw,2.75rem);
+  font-weight:950;line-height:1.02;letter-spacing:-.025em
 }
 .ks-py59-sub{
-  margin:.34rem 0 0;color:var(--kyre-sem-text-muted);font-size:.72rem;line-height:1.45
+  max-width:660px;margin:.55rem 0 0;color:var(--kyre-sem-text-muted);
+  font-size:.86rem;line-height:1.55
 }
 .ks-py59-player{
-  min-width:0;padding:var(--kyre-space-4);border:1px solid var(--kyre-sem-border-medium);
+  min-width:0;padding:14px;border:1px solid var(--kyre-sem-border-medium);
   border-radius:var(--kyre-sem-radius-card);
   background:linear-gradient(155deg,var(--kyre-sem-surface-panel-alt),var(--kyre-sem-surface-panel));
   box-shadow:var(--kyre-sem-shadow-card)
 }
-.ks-py59-identity{margin-bottom:var(--kyre-space-4)}
+
+/* Step 2 — compact selected-QB identity card. */
+.ks-py59-identity{
+  margin-bottom:12px;padding:14px;border:1px solid var(--kyre-sem-border-soft);
+  border-radius:var(--kyre-sem-radius-section);
+  background:linear-gradient(145deg,rgba(255,255,255,.022),rgba(255,255,255,.008))
+}
+.ks-py59-identity-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--kyre-sem-border-soft)
+}
+.ks-py59-identity-head span:first-child{
+  color:var(--kyre-sem-text-accent-soft);font-size:.64rem;font-weight:950;
+  letter-spacing:.08em;text-transform:uppercase
+}
+.ks-py59-identity-head span:last-child{
+  color:var(--kyre-sem-text-muted);font-size:.62rem;font-weight:800
+}
+.ks-py59-identity .kpass29-card{
+  position:relative!important;overflow:visible!important;margin:0!important;padding:0!important;
+  border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important
+}
+.ks-py59-identity .kpass29-card:after{display:none!important}
+.ks-py59-identity .kpass29-top{
+  position:relative!important;display:grid!important;
+  grid-template-columns:88px minmax(0,1fr) 48px!important;
+  align-items:center!important;gap:12px!important;min-width:0!important
+}
+.ks-py59-identity .kpass29-head{
+  width:88px!important;height:88px!important;min-width:88px!important;max-width:88px!important;
+  flex:0 0 88px!important;border:1px solid var(--kyre-sem-border-medium)!important;
+  border-radius:18px!important;background:var(--kyre-sem-surface-panel)!important;
+  overflow:hidden!important;display:flex!important;align-items:flex-end!important;justify-content:center!important
+}
+.ks-py59-identity .kpass29-head img{
+  width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+  object-fit:cover!important;object-position:center top!important;display:block!important
+}
+.ks-py59-identity .kpass29-ident{min-width:0!important}
+.ks-py59-identity .kpass29-name{
+  color:var(--kyre-sem-text-primary)!important;font-size:1.22rem!important;font-weight:950!important;
+  line-height:1.08!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important
+}
+.ks-py59-identity .kpass29-meta{
+  margin-top:5px!important;color:var(--kyre-sem-text-muted)!important;
+  font-size:.76rem!important;line-height:1.4!important;
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important
+}
+.ks-py59-identity .kpass29-badges{
+  display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-top:8px!important
+}
+.ks-py59-identity .kpass29-badge{
+  padding:4px 7px!important;border-radius:999px!important;
+  font-size:.56rem!important;line-height:1!important
+}
+.ks-py59-identity .kpass29-logo{
+  width:48px!important;height:48px!important;min-width:48px!important;max-width:48px!important;
+  padding:5px!important;border:1px solid var(--kyre-sem-border-soft)!important;
+  border-radius:12px!important;background:var(--kyre-sem-surface-panel)!important;
+  object-fit:contain!important
+}
+.ks-py59-identity .kpass29-main{
+  position:relative!important;display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;
+  margin-top:12px!important
+}
+.ks-py59-identity .kpass29-metric{
+  min-width:0!important;padding:10px!important;border:1px solid var(--kyre-sem-border-soft)!important;
+  border-radius:12px!important;background:rgba(255,255,255,.018)!important
+}
+.ks-py59-identity .kpass29-metric b{
+  display:block!important;color:var(--kyre-sem-text-primary)!important;
+  font-size:.88rem!important;line-height:1.15!important;
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important
+}
+.ks-py59-identity .kpass29-metric span{
+  display:block!important;margin-top:4px!important;color:var(--kyre-sem-text-muted)!important;
+  font-size:.56rem!important;font-weight:900!important;line-height:1.25!important;
+  text-transform:uppercase!important;white-space:normal!important;overflow:visible!important
+}
+.ks-py59-identity .kpass29-foot{
+  position:relative!important;margin-top:10px!important;padding-top:9px!important;
+  border-top:1px solid var(--kyre-sem-border-soft)!important;
+  color:var(--kyre-sem-text-muted)!important;font-size:.68rem!important;line-height:1.5!important
+}
+.ks-py59-identity .kpass29-foot strong{color:var(--kyre-sem-text-accent-soft)!important}
+
 .ks-py59-section{
   min-width:0;margin-top:var(--kyre-space-3);padding:var(--kyre-space-3);
   border:1px solid var(--kyre-sem-border-soft);border-radius:var(--kyre-sem-radius-section);
@@ -103,9 +198,36 @@ _DETAIL_CSS = r"""
   .ks-py59-evidence,.ks-py59-support{grid-template-columns:1fr}
 }
 @media(max-width:680px){
-  .ks-py59-toolbar,.ks-py59-head{align-items:flex-start;flex-direction:column}
-  .ks-py59-head,.ks-py59-player{padding:var(--kyre-space-4)}
-  .ks-py59-back{width:100%;justify-content:center}
+  .ks-py59{margin-top:.15rem}
+  .ks-py59-toolbar{margin-bottom:8px}
+  .ks-py59-back{min-height:40px;padding:8px 11px;font-size:.72rem}
+  .ks-py59-head{
+    grid-template-columns:1fr;align-items:start;gap:10px;
+    padding:15px;margin-bottom:10px
+  }
+  .ks-py59-title{font-size:2rem}
+  .ks-py59-sub{font-size:.80rem;line-height:1.5}
+  .ks-py59-player{padding:10px}
+  .ks-py59-identity{padding:11px;margin-bottom:10px}
+  .ks-py59-identity-head{margin-bottom:10px}
+  .ks-py59-identity .kpass29-top{
+    grid-template-columns:70px minmax(0,1fr) 38px!important;gap:10px!important
+  }
+  .ks-py59-identity .kpass29-head{
+    width:70px!important;height:70px!important;min-width:70px!important;max-width:70px!important;
+    flex-basis:70px!important;border-radius:15px!important
+  }
+  .ks-py59-identity .kpass29-logo{
+    width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;
+    border-radius:10px!important;padding:4px!important
+  }
+  .ks-py59-identity .kpass29-name{font-size:1.05rem!important}
+  .ks-py59-identity .kpass29-meta{font-size:.69rem!important}
+  .ks-py59-identity .kpass29-main{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .ks-py59-identity .kpass29-main>.kpass29-metric:nth-child(3){grid-column:1/-1!important}
+  .ks-py59-identity .kpass29-metric{padding:9px!important}
+  .ks-py59-identity .kpass29-metric b{font-size:.82rem!important}
+  .ks-py59-identity .kpass29-foot{font-size:.64rem!important}
 }
 </style>
 """
@@ -154,12 +276,13 @@ def _selected_analysis(captured: dict[str, list[str]], slot: int) -> str:
         + prior._SELECTION_CSS
         + _DETAIL_CSS
         + f'<section class="ks-py59" data-passing-yards-qb-detail="v59" '
-          f'data-passing-yards-selected-qb="{slot}" data-qb-analysis-slot="{slot}">'
+          f'data-passing-yards-selected-qb="{slot}" data-qb-analysis-slot="{slot}" '
+          f'data-qb-detail-cleanup-version="{DETAIL_CLEANUP_VERSION}">'
         + '<div class="ks-py59-toolbar">'
         + f'<a class="ks-py59-back" data-qb-back="true" href="{back}">← Back to Quarterbacks</a>'
         + build_badge("DEDICATED QB VIEW", tone="success")
         + "</div>"
-        + '<header class="ks-py59-head"><div>'
+        + '<header class="ks-py59-head" data-qb-detail-cleanup-step1="green"><div class="ks-py59-headcopy">'
         + '<div class="ks-py59-kicker">SELECTED QUARTERBACK • PASSING YARDS</div>'
         + '<h2 class="ks-py59-title">Quarterback Analysis</h2>'
         + '<p class="ks-py59-sub">One player. One workspace. Certified analysis isolated to the selected quarterback.</p>'
@@ -167,7 +290,8 @@ def _selected_analysis(captured: dict[str, list[str]], slot: int) -> str:
         + build_badge("MODEL FROZEN", tone="success")
         + "</header>"
         + f'<article class="ks-py59-player" data-selected-qb-analysis="{slot}" data-qb-analysis-index="{index}">'
-        + '<div class="ks-py59-identity">'
+        + '<div class="ks-py59-identity" data-qb-detail-cleanup-step2="green">'
+        + '<div class="ks-py59-identity-head"><span>Player Identity</span><span>Verified ESPN profile</span></div>'
         + (identity or "<div>Quarterback identity unavailable.</div>")
         + "</div>"
         + _section("market", "Current Market + Edge", market)
@@ -202,6 +326,8 @@ def render_nfl_hub(market: str = "Passing Yards") -> None:
     return render_nfl_passing_yards_hub()
 
 __all__ = [
+    "DETAIL_CLEANUP_STEPS",
+    "DETAIL_CLEANUP_VERSION",
     "DETAIL_SYSTEM_VERSION",
     "DISPLAY_ONLY",
     "DRILLDOWN_STEP",
