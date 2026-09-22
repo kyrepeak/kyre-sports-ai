@@ -65,12 +65,20 @@ jobs:
           nfl_passing_yards_hub_v60.py
           tests/test_passing_yards_qb_drilldown_step3_v1.py
           EOF
+          cat > /tmp/expected-diagnostic.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step3-v1.yml
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step3-v1.json
+          tests/test_passing_yards_qb_drilldown_step3_v1.py
+          EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
           sort -o /tmp/expected-render-repair.txt /tmp/expected-render-repair.txt
+          sort -o /tmp/expected-diagnostic.txt /tmp/expected-diagnostic.txt
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP3_SCOPE_GREEN"
           elif diff -q /tmp/expected-render-repair.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP3_RENDER_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/expected-diagnostic.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP3_DIAGNOSTIC_SCOPE_GREEN"
           else
             echo "Unexpected Step 3 diff:"
             cat /tmp/actual.txt
@@ -85,6 +93,71 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q pytest
           python -m pytest -q tests/test_passing_yards_qb_drilldown_step3_v1.py
+
+      - name: Report V60 emission order
+        run: |
+          python - <<'PY'
+          import importlib.util
+          import json
+          import sys
+          import types
+          from pathlib import Path
+
+          calls = []
+          st = types.ModuleType("streamlit")
+          st.query_params = {}
+          def markdown(body, *args, **kwargs):
+              calls.append({
+                  "kind": "markdown",
+                  "body": str(body),
+                  "unsafe_allow_html": bool(kwargs.get("unsafe_allow_html")),
+              })
+          st.markdown = markdown
+
+          prior = types.ModuleType("nfl_passing_yards_hub_v59")
+          def prior_render():
+              calls.append({"kind": "prior"})
+          prior.render_nfl_passing_yards_hub = prior_render
+
+          sys.modules["streamlit"] = st
+          sys.modules["nfl_passing_yards_hub_v59"] = prior
+          spec = importlib.util.spec_from_file_location(
+              "nfl_passing_yards_hub_v60_emission_probe",
+              Path("nfl_passing_yards_hub_v60.py"),
+          )
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          header_html = module._header_html()
+          header_body = header_html[len(module._HEADER_CSS):] if header_html.startswith(module._HEADER_CSS) else header_html
+          module.render_nfl_passing_yards_hub()
+
+          result = {
+              "header_html_starts_with_header_css": header_html.startswith(module._HEADER_CSS),
+              "header_html_length": len(header_html),
+              "header_css_length": len(module._HEADER_CSS),
+              "header_body_length": len(header_body),
+              "header_body_start": header_body[:120],
+              "header_body_has_v60_section": 'data-passing-yards-step3-header="v60"' in header_body,
+              "header_body_has_v60_class": 'class="ks-py60-header"' in header_body,
+              "css_markdown_call_seen": len(calls) >= 1 and 'data-passing-yards-step3-header-css="v60"' in calls[0].get("body",""),
+              "body_markdown_call_seen": len(calls) >= 2 and calls[1].get("kind") == "markdown",
+              "body_markdown_has_v60_section": len(calls) >= 2 and 'data-passing-yards-step3-header="v60"' in calls[1].get("body",""),
+              "call_order": [call.get("kind") for call in calls],
+          }
+          print("PASSING_YARDS_QB_STEP3_V60_EMISSION_PROOF")
+          print(json.dumps(result, indent=2, sort_keys=True))
+          assert all([
+              result["header_html_starts_with_header_css"],
+              result["header_body_length"] > 0,
+              result["header_body_has_v60_section"],
+              result["header_body_has_v60_class"],
+              result["css_markdown_call_seen"],
+              result["body_markdown_call_seen"],
+              result["body_markdown_has_v60_section"],
+              result["call_order"] == ["markdown", "markdown", "prior"],
+          ])
+          PY
 
       - name: Verify frozen Step 1 and Step 2 boundary
         run: |
@@ -287,5 +360,142 @@ jobs:
         with:
           name: passing-yards-qb-drilldown-step3-${{ github.run_id }}
           path: artifacts/passing-yards-qb-drilldown-step3
+          if-no-files-found: warn
+          retention-days: 7
+
+
+  public-dom-lifetime-diagnostic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install DOM lifetime proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Observe V60 and V58 independently through hydration
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          artifacts = Path("artifacts/passing-yards-qb-step3-dom-lifetime")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          _wait_for_health(base)
+
+          def counts(page):
+              total = {"css":0, "header":0, "picker":0, "cards":0}
+              frames = []
+              for frame in page.frames:
+                  snap = {"url": frame.url}
+                  try:
+                      snap.update({
+                          "css": frame.locator('style[data-passing-yards-step3-header-css="v60"]').count(),
+                          "header": frame.locator('section[data-passing-yards-step3-header="v60"]').count(),
+                          "picker": frame.locator('[data-passing-yards-selection-screen="v58"]').count(),
+                          "cards": frame.locator('[data-qb-selection-card]').count(),
+                      })
+                  except Exception as exc:
+                      snap["error"] = type(exc).__name__
+                      snap.update({"css":0,"header":0,"picker":0,"cards":0})
+                  for key in total:
+                      total[key] += int(snap.get(key,0) or 0)
+                  frames.append(snap)
+              return {"total": total, "frames": frames}
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage","--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              started = time.monotonic()
+              first_seen = {"css":None,"header":None,"picker":None}
+              ever_header = False
+              timeline = []
+
+              def record(label):
+                  nonlocal ever_header
+                  snap = counts(page)
+                  elapsed = round(time.monotonic() - started, 3)
+                  row = {"label":label, "elapsed_seconds":elapsed, **snap}
+                  timeline.append(row)
+                  for key in ("css","header","picker"):
+                      if first_seen[key] is None and snap["total"][key] > 0:
+                          first_seen[key] = elapsed
+                  if snap["total"]["header"] > 0:
+                      ever_header = True
+                  print("STEP3_DOM_LIFETIME " + json.dumps(row, sort_keys=True))
+                  return snap
+
+              try:
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                  record("T0")
+
+                  while time.monotonic() - started < 1.0:
+                      page.wait_for_timeout(200)
+                      record("probe_pre_T1")
+                  t1 = record("T1_1s")
+
+                  while time.monotonic() - started < 3.0:
+                      page.wait_for_timeout(250)
+                      record("probe_pre_T2")
+                  t2 = record("T2_3s")
+
+                  stable_hits = 0
+                  deadline = time.monotonic() + 120
+                  while time.monotonic() < deadline and stable_hits < 3:
+                      page.wait_for_timeout(500)
+                      snap = record("hydrate_probe")
+                      if snap["total"]["picker"] == 1 and snap["total"]["cards"] == 2:
+                          stable_hits += 1
+                      else:
+                          stable_hits = 0
+
+                  t3 = record("T3_stable_hydration")
+                  final = {
+                      "css_first_appears_at_seconds": first_seen["css"],
+                      "header_first_appears_at_seconds": first_seen["header"],
+                      "picker_first_appears_at_seconds": first_seen["picker"],
+                      "header_ever_appears": ever_header,
+                      "header_appears_then_disappears": bool(
+                          ever_header and t3["total"]["header"] == 0
+                      ),
+                      "final_header_count": t3["total"]["header"],
+                      "final_css_count": t3["total"]["css"],
+                      "final_picker_count": t3["total"]["picker"],
+                      "final_qb_card_count": t3["total"]["cards"],
+                      "stable_picker_observed": stable_hits >= 3,
+                      "t1": t1["total"],
+                      "t2": t2["total"],
+                      "t3": t3["total"],
+                  }
+                  print("PASSING_YARDS_QB_STEP3_DOM_LIFETIME_RESULT")
+                  print(json.dumps(final, indent=2, sort_keys=True))
+                  (artifacts/"result.json").write_text(
+                      json.dumps({"result":final,"timeline":timeline}, indent=2),
+                      encoding="utf-8",
+                  )
+                  page.screenshot(path=str(artifacts/"final.png"), full_page=True)
+                  assert final["stable_picker_observed"], "V58 picker did not reach stable hydrated state"
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload Step 3 DOM lifetime proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-qb-step3-dom-lifetime-${{ github.run_id }}
+          path: artifacts/passing-yards-qb-step3-dom-lifetime
           if-no-files-found: warn
           retention-days: 7
