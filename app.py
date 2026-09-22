@@ -39,7 +39,7 @@ PASSING_YARDS_QB_DRILLDOWN_STEP1_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_V58_
 PASSING_YARDS_QB_DRILLDOWN_STEP2_RUNTIME = "NFL_PASSING_YARDS_V59_QB_DETAIL_2026_09_21"
 PASSING_YARDS_QB_DRILLDOWN_STEP2_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_V59_PUBLIC_REFRESH_2026_09_22_R1"
 PASSING_YARDS_QB_DRILLDOWN_STEP3_HEADER_RUNTIME = "NFL_PASSING_YARDS_V60_HEADER_2026_09_22"
-PASSING_YARDS_QB_DRILLDOWN_STEP4_CARDS_RUNTIME = "NFL_PASSING_YARDS_V61_CARDS_2026_09_22"\nPASSING_YARDS_LIVE_MATCHUP_UTC_HOTFIX_RUNTIME = "NFL_PASSING_YARDS_V62_UTC_2026_09_22"
+PASSING_YARDS_QB_DRILLDOWN_STEP4_CARDS_RUNTIME = "NFL_PASSING_YARDS_V61_CARDS_2026_09_22"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
 
@@ -302,7 +302,7 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v213 import record_bootstrap_import_ms, render_app\n    # Frozen Step 4 router compatibility: from streamlit_memory_lazy_router_v212 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v212 import record_bootstrap_import_ms, render_app
     # Frozen QB Drill-Down Step 3 V211 compatibility: from streamlit_memory_lazy_router_v211 import record_bootstrap_import_ms, render_app
     # Frozen QB Drill-Down Step 2 V210 compatibility: from streamlit_memory_lazy_router_v210 import record_bootstrap_import_ms, render_app
     # Frozen QB Drill-Down Step 1 V209 compatibility: from streamlit_memory_lazy_router_v209 import record_bootstrap_import_ms, render_app
