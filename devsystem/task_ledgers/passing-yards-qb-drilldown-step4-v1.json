@@ -71,7 +71,7 @@
     "frozen_steps_1_3_files_changed": false,
     "final_public_proof_pending": true,
     "checkpoint2": {
-      "status": "PATCH_PENDING_BRANCH_LOCAL_PROOF",
+      "status": "LAYOUT_GAP_PATCH_PENDING_BRANCH_LOCAL_PROOF",
       "prior_run": 35769345429,
       "prior_failure": "Picker is visible and legacy HTML surfaces are gone, but first QB card remains at y=2508px on a 390x844 viewport.",
       "root_cause": "Legacy native Streamlit evidence widgets (dataframes/tables/metrics/expanders and Step 10 market controls) still render ahead of V34's final drill-down placeholder and consume vertical space even after legacy HTML/status suppression.",
@@ -79,6 +79,23 @@
       "queue_optimization": {
         "app_refresh_deferred": true,
         "reason": "Checkpoint 2 is branch-local proof only. MAIN already boots V212 from PR #905; reverting the temporary app.py refresh keeps this repair PR scoped and avoids unrelated app.py workflow fan-out. Deployment refresh will only be added later if the final public proof proves it is required."
+      },
+      "layout_root_cause": {
+        "diagnostic_run": 35770481953,
+        "picker_y_px": 2508,
+        "visible_preceding_siblings": 2,
+        "visible_control_deck": {
+          "y": 1377.921875,
+          "height": 246.96875
+        },
+        "duplicate_verified_matchup": {
+          "key": "nfl_passing_yards_v8_matchup",
+          "y": 2120.890625,
+          "height": 68
+        },
+        "proven_cause": "Suppressed legacy Streamlit calls leave many zero-height stElementContainer siblings. Their parent still applies vertical flex gap between siblings, creating hundreds of pixels of blank space. A duplicate frozen V8 'Verified matchup' element also remains visible before the drill-down placeholder.",
+        "failed_layer": "STREAMLIT_LAYOUT_GAP_AND_DUPLICATE_LEGACY_WIDGET",
+        "minimal_patch": "V61 CSS only: display:none the already-empty legacy element containers so they stop participating in flex gap, and display:none the duplicate V8 matchup element while preserving the V46 control deck."
       }
     }
   }
