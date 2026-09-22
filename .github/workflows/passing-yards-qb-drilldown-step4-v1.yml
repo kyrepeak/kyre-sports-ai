@@ -338,10 +338,23 @@ jobs:
                   )
                   print("PASSING_YARDS_QB_STEP4_PICKER_CONTEXT")
                   print(json.dumps(picker_context, indent=2))
-                  assert picker_box is not None and picker_box["y"] < 1400, {
+
+                  selection_screen = landing.locator('[data-passing-yards-selection-screen="v58"]').first
+                  selection_screen_box = selection_screen.bounding_box()
+                  assert selection_screen_box is not None, "Step 4 QB selection screen has no layout box"
+                  assert selection_screen_box["y"] < 1400, {
+                      "selection_screen_box": selection_screen_box,
                       "picker_box": picker_box,
                       "picker_context": picker_context,
                   }
+                  assert picker_box is not None and picker_box["y"] - selection_screen_box["y"] < 420, {
+                      "selection_screen_box": selection_screen_box,
+                      "picker_box": picker_box,
+                      "picker_context": picker_context,
+                  }
+                  assert picker_context["visibleBeforeCount"] == 1, picker_context
+                  assert "PASSING YARDS CONTROL DECK" in (picker_context["immediateVisibleBefore"] or {}).get("text", ""), picker_context
+
                   picker_style = card_style(picker_card)
                   result = {
                       "style_witness": landing.locator('style[data-passing-yards-step4-card-system="v61"]').count(),
