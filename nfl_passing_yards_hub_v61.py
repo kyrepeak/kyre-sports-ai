@@ -184,6 +184,15 @@ def _style_blocks_only(body: Any) -> tuple[str, ...]:
         return ()
     return tuple(_STYLE_BLOCK_RE.findall(body))
 
+def _preserve_style_block(style: str) -> bool:
+    # The current visible Step 4 composition only needs the frozen V60 header
+    # CSS and V46 compact control-deck CSS before V34 emits V58/V59. The
+    # picker/detail payload itself carries its own universal/theme CSS.
+    return (
+        'data-passing-yards-step3-header-css="v60"' in style
+        or 'data-passing-yards-top-polish="v46"' in style
+    )
+
 def _is_legacy_status(body: Any) -> bool:
     return str(body if body is not None else "").strip().startswith(_LEGACY_STATUS_PREFIXES)
 
@@ -208,7 +217,8 @@ def render_nfl_passing_yards_hub() -> None:
 
     def styles_only_markdown(body: Any, *args: Any, **kwargs: Any):
         for style in _style_blocks_only(body):
-            original_markdown(style, unsafe_allow_html=True)
+            if _preserve_style_block(style):
+                original_markdown(style, unsafe_allow_html=True)
         return None
 
     def filtered_success(body: Any, *args: Any, **kwargs: Any):
@@ -266,6 +276,7 @@ __all__ = [
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "_is_legacy_status",
+    "_preserve_style_block",
     "_style_blocks_only",
     "build_passing_yards_step4_card_css",
     "render_nfl_hub",
