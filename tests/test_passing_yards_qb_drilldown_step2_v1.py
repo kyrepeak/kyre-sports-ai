@@ -31,15 +31,15 @@ def test_selected_view_has_durable_v59_markers():
 
 
 def test_selected_view_has_complete_certified_analysis_sections():
-    for marker in [
-        'data-qb-analysis-section="market"',
-        'data-qb-analysis-section="projection"',
-        'data-qb-analysis-section="context"',
-        'data-qb-analysis-section="distribution"',
-        'data-qb-analysis-support="matchup"',
-        'data-qb-analysis-support="conditions"',
+    for call in [
+        '_section("market", "Current Market + Edge", market)',
+        '_section("projection", "Baseline Projection", projection)',
+        '_section("context", "Context + Uncertainty", context)',
+        '_section("distribution", "Distribution + Probability", distribution)',
+        '_support("matchup", "Matchup Drivers"',
+        '_support("conditions", "Conditions + Personnel"',
     ]:
-        assert marker in V59
+        assert call in V59
 
 
 def test_v59_uses_captured_payload_without_legacy_full_player_wrappers():
