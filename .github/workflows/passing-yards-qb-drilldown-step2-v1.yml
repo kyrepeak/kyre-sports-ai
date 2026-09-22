@@ -65,15 +65,22 @@ jobs:
           app.py
           devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json
           EOF
+          cat > /tmp/expected-final-verifier.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
           sort -o /tmp/expected-deploy-refresh.txt /tmp/expected-deploy-refresh.txt
+          sort -o /tmp/expected-final-verifier.txt /tmp/expected-final-verifier.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_SCOPE_GREEN"
           elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_VERIFIER_REPAIR_SCOPE_GREEN"
           elif diff -q /tmp/expected-deploy-refresh.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_DEPLOY_REFRESH_SCOPE_GREEN"
+          elif diff -q /tmp/expected-final-verifier.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_FINAL_VERIFIER_SCOPE_GREEN"
           else
             echo "Unexpected Step 2 diff:"
             cat /tmp/actual.txt
@@ -143,32 +150,35 @@ jobs:
           artifacts.mkdir(parents=True, exist_ok=True)
           _wait_for_health(base)
 
-          def find_picker(page, timeout=120, require_v210=False):
+          def find_picker(page, timeout=120):
               deadline = time.monotonic() + timeout
-              next_reload = time.monotonic() + 45.0
               while time.monotonic() < deadline:
                   for candidate in page.frames:
                       try:
-                          picker_ready = (
+                          if (
                               candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
                               and candidate.locator('[data-qb-selection-card]').count() == 2
-                          )
-                          runtime_ready = (
-                              not require_v210
-                              or candidate.locator('[data-passing-yards-v210-runtime="qb-detail-step2"]').count() >= 1
-                          )
-                          if picker_ready and runtime_ready:
+                          ):
                               return candidate
                       except Exception:
                           pass
-                  if require_v210 and time.monotonic() >= next_reload:
-                      page.reload(wait_until="domcontentloaded", timeout=120000)
-                      next_reload = time.monotonic() + 45.0
                   page.wait_for_timeout(500)
               raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_PICKER_NOT_READY")
 
+          def find_v210_runtime(page, timeout=120):
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for candidate in page.frames:
+                      try:
+                          if candidate.locator('[data-passing-yards-v210-runtime="qb-detail-step2"]').count() >= 1:
+                              return candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_V210_RUNTIME_NOT_READY")
+
           def find_detail(page, slot, timeout=120):
-              selector = f'[data-passing-yards-qb-detail="v59"][data-qb-slot="{slot}"]'
+              selector = f'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="{slot}"]'
               deadline = time.monotonic() + timeout
               while time.monotonic() < deadline:
                   for candidate in page.frames:
@@ -196,7 +206,8 @@ jobs:
               page = browser.new_page(viewport={"width":390,"height":844})
               try:
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
-                  picker = find_picker(page, timeout=600, require_v210=True)
+                  picker = find_picker(page, timeout=600)
+                  find_v210_runtime(page, timeout=120)
 
                   landing_body = picker.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(landing_body)
@@ -232,6 +243,7 @@ jobs:
                           raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP2_CONTEXT_LINK: slot={slot} href={href}")
 
                       detail_page, target = click_anchor(current_page, current_picker, link)
+                      find_v210_runtime(detail_page, timeout=120)
                       detail = find_detail(detail_page, slot)
                       body = detail.locator("body").inner_text(timeout=5000)
                       forbidden = _body_has_forbidden_error(body)
@@ -281,6 +293,7 @@ jobs:
                       back = detail.locator('a[data-qb-back="true"]').first
                       return_page, _ = click_anchor(detail_page, detail, back)
                       current_picker = find_picker(return_page)
+                      find_v210_runtime(return_page, timeout=120)
                       current_page = return_page
 
                   final_body = current_picker.locator("body").inner_text(timeout=5000)
