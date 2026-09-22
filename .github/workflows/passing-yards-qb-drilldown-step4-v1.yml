@@ -268,7 +268,14 @@ jobs:
                             bottom:r.bottom,
                             height:r.height,
                             display:s.display,
-                            visibility:s.visibility
+                            visibility:s.visibility,
+                            outerHTML:(el.outerHTML || '').slice(0,1800),
+                            descendants:Array.from(el.querySelectorAll('*')).slice(0,24).map(d => ({
+                              tag:d.tagName,
+                              testid:d.getAttribute('data-testid') || '',
+                              className:String(d.className || '').slice(0,160),
+                              text:(d.innerText || '').replace(/\\s+/g,' ').trim().slice(0,120)
+                            }))
                           };
                         }).filter(x => x.height > 1 && x.display !== 'none' && x.visibility !== 'hidden');
                         return {
