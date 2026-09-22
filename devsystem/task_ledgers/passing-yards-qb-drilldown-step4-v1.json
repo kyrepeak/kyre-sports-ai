@@ -71,7 +71,7 @@
     "frozen_steps_1_3_files_changed": false,
     "final_public_proof_pending": true,
     "checkpoint2": {
-      "status": "GAME_CENTER_AND_OWNER_GAP_PATCH_PENDING_BRANCH_LOCAL_PROOF",
+      "status": "CORRECTED_VISIBLE_ACTIONABLE_PROOF_PENDING",
       "prior_run": 35769345429,
       "prior_failure": "Picker is visible and legacy HTML surfaces are gone, but first QB card remains at y=2508px on a 390x844 viewport.",
       "root_cause": "Legacy native Streamlit evidence widgets (dataframes/tables/metrics/expanders and Step 10 market controls) still render ahead of V34's final drill-down placeholder and consume vertical space even after legacy HTML/status suppression.",
@@ -111,6 +111,19 @@
         "proven_cause": "The final remaining large visible blocker ahead of the QB picker is frozen V15's .kpy15-center Result First Game Center. Hidden/zero-height legacy deltas under the universal owner also continue to contribute flex-gap spacing.",
         "failed_layer": "LEGACY_VISIBLE_COMPOSITION_AND_OWNER_GAP",
         "minimal_patch": "V61 CSS only: remove the stElementContainer containing .kpy15-center and set the universal owner top-level gap to zero; current control deck and V58/V59 drill-down retain their own explicit margins."
+      },
+      "verifier_correction": {
+        "source_run": 35771604382,
+        "evidence": {
+          "picker_y_px": 1601.1875,
+          "only_visible_preceding_surface": "PASSING YARDS CONTROL DECK",
+          "parent_row_gap": "0px",
+          "parent_column_gap": "0px",
+          "game_center_display": "none",
+          "duplicate_matchup_display": "none"
+        },
+        "conclusion": "The deep-DOM defect is repaired. The first QB card is below y=1400 only because it follows the frozen V58 selection-screen header inside the intended drill-down UI. Card absolute y is no longer a valid proxy for buried legacy content.",
+        "corrected_acceptance": "Require the V58 selection screen itself to begin before y=1400; require the first QB card to be within 420px of the selection-screen top; require exactly one visible preceding sibling and that sibling to be the intended V46 PASSING YARDS CONTROL DECK; then perform real QB1 click/detail/back proof."
       }
     }
   }
