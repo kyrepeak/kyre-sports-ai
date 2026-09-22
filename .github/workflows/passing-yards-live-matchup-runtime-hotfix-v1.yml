@@ -285,16 +285,17 @@ jobs:
                   page.wait_for_timeout(1500)
 
                   frame,date_root,date_parts=find_date_control(page,timeout=120)
-                  values={k:v.input_value() for k,v in date_parts.items()}
+                  rendered_date=(date_root.inner_text() or "").replace("\n"," ").strip()
                   evidence["DATE_SET_TO_2026_09_24"]=(
-                      values.get("day") in {"24","024"}
-                      and values.get("month","9") in {"9","09"}
-                      and values.get("year","2026")=="2026"
+                      "2026 / 09 / 24" in rendered_date
+                      or "2026/09/24" in rendered_date
+                      or "09 / 24 / 2026" in rendered_date
+                      or "09/24/2026" in rendered_date
                   )
                   print("PASSING_YARDS_LIVE_MATCHUP_DATE_STATE")
-                  print(json.dumps(values,indent=2))
+                  print(json.dumps({"rendered":rendered_date},indent=2))
                   if not evidence["DATE_SET_TO_2026_09_24"]:
-                      evidence["FIRST_BROKEN_ARROW"]="date action -> selected date"
+                      evidence["FIRST_BROKEN_ARROW"]="date action -> rendered selected date"
                       evidence["FAILED_LAYER"]="VERIFIER_DATE_SELECTION"
                       raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DATE_NOT_SET")
 
@@ -486,10 +487,14 @@ jobs:
                   page.wait_for_timeout(1500)
 
                   frame,date=find_date_control(page,timeout=120)
-                  values={k:v.input_value() for k,v in date.items()}
-                  assert values.get("day") in {"24","024"}
-                  assert values.get("month","9") in {"9","09"}
-                  assert values.get("year","2026")=="2026"
+                  date_root=frame.locator('[data-testid="stDateInput"]').filter(has_text="Slate date").first
+                  rendered_date=(date_root.inner_text() or "").replace("\n"," ").strip()
+                  assert (
+                      "2026 / 09 / 24" in rendered_date
+                      or "2026/09/24" in rendered_date
+                      or "09 / 24 / 2026" in rendered_date
+                      or "09/24/2026" in rendered_date
+                  )
 
                   frame,combo=find_matchup_control(page,timeout=120)
                   combo.click(); page.wait_for_timeout(300)
