@@ -420,11 +420,10 @@ jobs:
               page = browser.new_page(viewport={"width":390,"height":844})
               started = time.monotonic()
               first_seen = {"css":None,"header":None,"picker":None}
-              ever_header = False
+              state = {"ever_header": False}
               timeline = []
 
               def record(label):
-                  nonlocal ever_header
                   snap = counts(page)
                   elapsed = round(time.monotonic() - started, 3)
                   row = {"label":label, "elapsed_seconds":elapsed, **snap}
@@ -433,7 +432,7 @@ jobs:
                       if first_seen[key] is None and snap["total"][key] > 0:
                           first_seen[key] = elapsed
                   if snap["total"]["header"] > 0:
-                      ever_header = True
+                      state["ever_header"] = True
                   print("STEP3_DOM_LIFETIME " + json.dumps(row, sort_keys=True))
                   return snap
 
@@ -466,9 +465,9 @@ jobs:
                       "css_first_appears_at_seconds": first_seen["css"],
                       "header_first_appears_at_seconds": first_seen["header"],
                       "picker_first_appears_at_seconds": first_seen["picker"],
-                      "header_ever_appears": ever_header,
+                      "header_ever_appears": state["ever_header"],
                       "header_appears_then_disappears": bool(
-                          ever_header and t3["total"]["header"] == 0
+                          state["ever_header"] and t3["total"]["header"] == 0
                       ),
                       "final_header_count": t3["total"]["header"],
                       "final_css_count": t3["total"]["css"],
