@@ -1,6 +1,6 @@
 {
   "task": "passing-yards-live-matchup-runtime-hotfix-v1",
-  "status": "PATCH_PENDING_TARGETED_PROOF",
+  "status": "DONE",
   "source_main": "2cc5968749cdbe6b6c0510a39e8045782bca1cf1",
   "user_evidence": {
     "date": "2026-09-24",
@@ -55,5 +55,7 @@
     "probability_changed": false,
     "sportsbook_logic_changed": false,
     "frozen_drilldown_files_changed": false
-  }
+  },
+  "monster_status": "PATCH_PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "ledger_semantics": "Top-level DONE satisfies the permanent action-ledger contract; GREEN/FROZEN remains prohibited until the exact branch proof, merge, and one public production proof pass."
 }
