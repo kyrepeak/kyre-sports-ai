@@ -283,7 +283,10 @@ def render_nfl_passing_yards_hub() -> None:
     st.markdown(_PLAYER_CARD_CSS, unsafe_allow_html=True)
 
     captured: dict[str, list[str]] = {}
-    placeholder = None
+    # Deterministic composition anchor: the final V34/V43→V58/V59 builder must
+    # always have a live Streamlit destination, independent of legacy Step-1
+    # markdown interception order.
+    placeholder = st.empty()
 
     original_markdown = st.markdown
     original_success = st.success
