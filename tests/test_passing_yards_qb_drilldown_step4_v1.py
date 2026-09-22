@@ -222,3 +222,16 @@ def test_v61_visible_composition_guard_is_step4_only():
     assert "finally:" in V61
     assert "st.markdown = original_markdown" in V61
     assert "st.warning = original_warning" in V61
+
+
+def test_step4_collapses_legacy_native_evidence_before_drilldown():
+    for selector in [
+        '[data-testid="stDataFrame"]',
+        '[data-testid="stTable"]',
+        '[data-testid="stMetric"]',
+        '[data-testid="stExpander"]',
+        'input[aria-label="Sportsbook / source"]',
+    ]:
+        assert selector in V61
+    assert "display:none!important;" in V61
+    assert "height:0!important;" in V61
