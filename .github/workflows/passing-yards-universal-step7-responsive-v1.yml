@@ -1,0 +1,327 @@
+name: Passing Yards Universal Step 7 Responsive
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v57.py'
+      - 'streamlit_memory_lazy_router_v208.py'
+      - 'tests/test_passing_yards_universal_step7_responsive_v1.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step7-responsive-v1.json'
+      - '.github/workflows/passing-yards-universal-step7-responsive-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v57.py'
+      - 'streamlit_memory_lazy_router_v208.py'
+      - 'tests/test_passing_yards_universal_step7_responsive_v1.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step7-responsive-v1.json'
+      - '.github/workflows/passing-yards-universal-step7-responsive-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-step7-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce Step 7 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-universal-step7-responsive-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-universal-step7-responsive-v1.json
+          nfl_passing_yards_hub_v57.py
+          streamlit_memory_lazy_router_v208.py
+          tests/test_passing_yards_universal_step7_responsive_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile Step 7 responsive chain
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v57.py streamlit_memory_lazy_router_v208.py app.py tests/test_passing_yards_universal_step7_responsive_v1.py
+
+      - name: Run Step 7 responsive contracts
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_passing_yards_universal_step7_responsive_v1.py
+
+      - name: Verify frozen source chain
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v57 = Path("nfl_passing_yards_hub_v57.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v208.py").read_text()
+          app = Path("app.py").read_text()
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v56"' in v57
+          assert 'data-passing-yards-responsive-system="v57"' in v57
+          assert 'import streamlit_memory_lazy_router_v207 as prior' in router
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v57"' in router
+          assert 'from streamlit_memory_lazy_router_v208 import record_bootstrap_import_ms, render_app' in app
+          print("PASSING_YARDS_UNIVERSAL_STEP7_STATIC_GREEN")
+          PY
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install targeted browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Passing Yards Step 7 responsiveness
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _body_has_forbidden_error,
+              BrowserQAFailure,
+          )
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          router_source = Path("streamlit_memory_lazy_router_v208.py").read_text()
+          app_source = Path("app.py").read_text()
+          if 'PASSING_HUB = "nfl_passing_yards_hub_v57"' not in router_source:
+              raise BrowserQAFailure("PASSING_YARDS_STEP7_SOURCE_OWNER: V208 no longer owns V57")
+          if 'from streamlit_memory_lazy_router_v208 import record_bootstrap_import_ms, render_app' not in app_source:
+              raise BrowserQAFailure("PASSING_YARDS_STEP7_SOURCE_OWNER: app no longer boots V208")
+
+          artifacts = Path("artifacts/passing-yards-universal-step7-public")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":1280,"height":1100})
+              try:
+                  route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+
+                  revision_deadline = time.monotonic() + 480.0
+                  next_route_retry = time.monotonic() + 20.0
+                  revision_scan = []
+                  while True:
+                      revision_scan = []
+                      revision_ready = False
+                      for index, candidate in enumerate(page.frames):
+                          try:
+                              style_count = candidate.locator('style[data-passing-yards-responsive-system="v57"]').count()
+                              owner_count = candidate.locator('[data-passing-yards-responsive-owner="v57"]').count()
+                              runtime_count = candidate.locator('[data-passing-yards-v208-runtime="step7"]').count()
+                              body_start = candidate.locator("body").inner_text(timeout=3000)[:1200]
+                          except Exception:
+                              style_count = 0
+                              owner_count = 0
+                              runtime_count = 0
+                              body_start = ""
+                          revision_scan.append({
+                              "index":index,
+                              "url":candidate.url,
+                              "step7_responsive_style":style_count,
+                              "v57_hidden_owner_diagnostic":owner_count,
+                              "v208_hidden_runtime_diagnostic":runtime_count,
+                              "body_start":body_start,
+                          })
+                          if style_count == 1:
+                              revision_ready = True
+                              break
+
+                      if revision_ready:
+                          break
+                      if time.monotonic() >= revision_deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_STEP7_REVISION_READINESS: "
+                              "public Streamlit never exposed the durable V57 responsive style witness; "
+                              + json.dumps(revision_scan, sort_keys=True)
+                          )
+                      page.wait_for_timeout(1000)
+                      now = time.monotonic()
+                      if now >= next_route_retry:
+                          page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                          next_route_retry = time.monotonic() + 20.0
+
+                  frame, scan = _find_app_frame(page)
+                  deadline = time.monotonic() + 90.0
+                  evidence = {}
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f"PASSING_YARDS_STEP7_RUNTIME: forbidden marker {forbidden}")
+                      evidence = {
+                          "step7_responsive_style": frame.locator('style[data-passing-yards-responsive-system="v57"]').count(),
+                          "v57_hidden_owner_diagnostic": frame.locator('[data-passing-yards-responsive-owner="v57"]').count(),
+                          "v208_hidden_runtime_diagnostic": frame.locator('[data-passing-yards-v208-runtime="step7"]').count(),
+                          "step6_control_style": frame.locator('style[data-passing-yards-control-system="v56"]').count(),
+                          "step5_analysis_style": frame.locator('style[data-passing-yards-analysis-system="v55"]').count(),
+                          "step4_card_style": frame.locator('style[data-passing-yards-card-system="v54"]').count(),
+                          "step3_shell_style": frame.locator('style[data-passing-yards-page-shell="v53"]').count(),
+                          "step2_token_style": frame.locator('style[data-passing-yards-design-tokens="v52"]').count(),
+                          "step1_owner_style": frame.locator('style[data-passing-yards-universal-owner="v51"]').count(),
+                          "player_cards": frame.locator(".ks-py48-player").count(),
+                          "step_sections": frame.locator(".ks-py48-step").count(),
+                          "top_control_deck": frame.locator(".st-key-kyre_passing_yards_top_v46").count(),
+                          "passing_yards_text": "Passing Yards" in body,
+                      }
+                      if (
+                          evidence["step7_responsive_style"] == 1
+                          and evidence["step6_control_style"] >= 1
+                          and evidence["step5_analysis_style"] >= 1
+                          and evidence["step4_card_style"] >= 1
+                          and evidence["step3_shell_style"] >= 1
+                          and evidence["step2_token_style"] >= 1
+                          and evidence["step1_owner_style"] >= 1
+                          and evidence["player_cards"] >= 2
+                          and evidence["step_sections"] >= 6
+                          and evidence["top_control_deck"] >= 1
+                          and evidence["passing_yards_text"]
+                      ):
+                          break
+                      if time.monotonic() >= deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_STEP7_READINESS: "
+                              + json.dumps(evidence, sort_keys=True)
+                              + f"; body start={body[:2200]!r}"
+                          )
+                      page.wait_for_timeout(500)
+
+                  results = {}
+                  for label, width, height in (
+                      ("desktop", 1280, 1100),
+                      ("tablet", 820, 1180),
+                      ("mobile", 390, 844),
+                  ):
+                      page.set_viewport_size({"width":width,"height":height})
+                      page.wait_for_timeout(800)
+                      frame, _ = _find_app_frame(page)
+
+                      shell = frame.locator(".st-key-kyre_passing_yards_shell_v1").first
+                      shell_metrics = shell.evaluate(
+                          """el => {
+                              const r=el.getBoundingClientRect();
+                              const s=getComputedStyle(el);
+                              return {
+                                  left:r.left,right:r.right,width:r.width,
+                                  clientWidth:el.clientWidth,scrollWidth:el.scrollWidth,
+                                  overflowX:s.overflowX
+                              };
+                          }"""
+                      )
+                      doc_width = frame.locator("html").evaluate("el => el.clientWidth")
+                      cards = frame.locator(".ks-py48-player")
+                      card0 = cards.nth(0).evaluate("el => { const r=el.getBoundingClientRect(); return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width}; }")
+                      card1 = cards.nth(1).evaluate("el => { const r=el.getBoundingClientRect(); return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width}; }")
+                      control_flex = frame.locator(
+                          ".st-key-kyre_passing_yards_top_v46 [data-testid='stHorizontalBlock']"
+                      ).first.evaluate("el => getComputedStyle(el).flexDirection")
+                      evidence_columns = frame.locator(".ks-py48-evidence").first.evaluate(
+                          "el => getComputedStyle(el).gridTemplateColumns"
+                      )
+                      support_columns = frame.locator(".ks-py48-support").first.evaluate(
+                          "el => getComputedStyle(el).gridTemplateColumns"
+                      )
+
+                      if shell_metrics["left"] < -2 or shell_metrics["right"] > doc_width + 2:
+                          raise BrowserQAFailure(f"PASSING_YARDS_STEP7_{label}_SHELL_BOUNDS: {shell_metrics}; doc={doc_width}")
+                      if shell_metrics["scrollWidth"] > shell_metrics["clientWidth"] + 4:
+                          raise BrowserQAFailure(f"PASSING_YARDS_STEP7_{label}_HORIZONTAL_OVERFLOW: {shell_metrics}")
+                      for name, card in (("CARD0",card0),("CARD1",card1)):
+                          if card["left"] < shell_metrics["left"] - 2 or card["right"] > shell_metrics["right"] + 2:
+                              raise BrowserQAFailure(f"PASSING_YARDS_STEP7_{label}_{name}_BOUNDS: {card}; shell={shell_metrics}")
+
+                      if label == "desktop":
+                          if abs(card0["top"] - card1["top"]) > 12:
+                              raise BrowserQAFailure(f"PASSING_YARDS_STEP7_DESKTOP_TWO_COLUMN: {card0} {card1}")
+                      else:
+                          if card1["top"] <= card0["top"] + 20:
+                              raise BrowserQAFailure(f"PASSING_YARDS_STEP7_{label}_STACKED_PLAYERS: {card0} {card1}")
+                          if control_flex != "column":
+                              raise BrowserQAFailure(f"PASSING_YARDS_STEP7_{label}_CONTROL_STACK: {control_flex}")
+                          if len(evidence_columns.split()) != 1:
+                              raise BrowserQAFailure(f"PASSING_YARDS_STEP7_{label}_EVIDENCE_STACK: {evidence_columns}")
+                          if len(support_columns.split()) != 1:
+                              raise BrowserQAFailure(f"PASSING_YARDS_STEP7_{label}_SUPPORT_STACK: {support_columns}")
+
+                      touch = {}
+                      if label == "mobile":
+                          date_surface = frame.locator(
+                              ".st-key-kyre_passing_yards_top_v46 [data-testid='stDateInput'] [data-baseweb='input']"
+                          ).first.evaluate("el => { const r=el.getBoundingClientRect(); return {width:r.width,height:r.height}; }")
+                          select_surface = frame.locator(
+                              ".st-key-kyre_passing_yards_top_v46 [data-testid='stSelectbox'] [data-baseweb='select']>div"
+                          ).first.evaluate("el => { const r=el.getBoundingClientRect(); return {width:r.width,height:r.height}; }")
+                          if date_surface["height"] < 47 or select_surface["height"] < 47:
+                              raise BrowserQAFailure(
+                                  f"PASSING_YARDS_STEP7_MOBILE_TOUCH_TARGETS: date={date_surface} select={select_surface}"
+                              )
+                          touch = {"date":date_surface,"matchup":select_surface}
+
+                      results[label] = {
+                          "viewport":{"width":width,"height":height},
+                          "shell":shell_metrics,
+                          "player_0":card0,
+                          "player_1":card1,
+                          "control_flex":control_flex,
+                          "evidence_columns":evidence_columns,
+                          "support_columns":support_columns,
+                          "touch":touch,
+                      }
+                      page.screenshot(path=str(artifacts/f"passing_yards_step7_{label}.png"),full_page=True)
+
+                  result = {
+                      "status":"GREEN",
+                      "route":"NFL -> Passing Yards",
+                      "owner":"nfl_passing_yards_hub_v57",
+                      "frozen_step6":"nfl_passing_yards_hub_v56",
+                      "evidence":evidence,
+                      "responsive_results":results,
+                      "frame_scan_count":len(scan),
+                  }
+                  (artifacts/"result.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
+                  print("PASSING_YARDS_UNIVERSAL_STEP7_PUBLIC_GREEN")
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload Passing Yards Step 7 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-universal-step7-${{ github.run_id }}
+          path: artifacts/passing-yards-universal-step7-public
+          if-no-files-found: warn
+          retention-days: 7

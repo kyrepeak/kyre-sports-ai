@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-universal-step7-responsive-v1",
+  "status": "DONE",
+  "scope": "Universal Theme -> NFL Passing Yards Step 7 only: add presentation-only desktop/tablet/mobile responsiveness over frozen V56 controls without changing data, analytics, projection, probability, market math, widget keys, routing behavior, sportsbook influence, stake sizing, other sports, or other markets.",
+  "baseline": {
+    "main_sha": "ad59ea4f682fb47ba1d74103fad57c7854dec7d9",
+    "steps_1_6_green_frozen": true,
+    "frozen_step6_product": "nfl_passing_yards_hub_v56",
+    "frozen_step6_router": "streamlit_memory_lazy_router_v207"
+  },
+  "acceptance": {
+    "correct_passing_yards_route_renders": true,
+    "v57_responsive_style_present": true,
+    "desktop_two_column_player_layout_preserved": true,
+    "tablet_player_layout_stacks": true,
+    "tablet_controls_stack_full_width": true,
+    "mobile_cards_and_analysis_stack": true,
+    "mobile_touch_surfaces_min_48px": true,
+    "passing_yards_shell_has_no_horizontal_overflow": true,
+    "frozen_step6_controls_preserved": true,
+    "frozen_step5_analysis_preserved": true,
+    "frozen_step4_cards_preserved": true,
+    "frozen_step3_shell_preserved": true,
+    "frozen_step2_tokens_preserved": true,
+    "frozen_step1_owner_preserved": true,
+    "targeted_step7_proof_required": true,
+    "protected_merge_gate_required": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "steps_1_6_code_changed": false,
+    "passing_yards_data_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "widget_keys_changed": false,
+    "routing_behavior_changed": false,
+    "sportsbook_transport_changed": false,
+    "stake_sizing_changed": false,
+    "moneyline_changed": false,
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_rule": "After targeted Step 7 proof, required merge gate, merge, and one successful post-merge public production proof across desktop/tablet/mobile viewports, Step 7 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
