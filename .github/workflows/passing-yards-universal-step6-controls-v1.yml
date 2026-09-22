@@ -16,7 +16,7 @@ on:
       - 'app.py'
       - 'nfl_passing_yards_hub_v56.py'
       - 'streamlit_memory_lazy_router_v207.py'
-      - 'tests/test_passing_yards_universal_step6-controls-v1.py'
+      - 'tests/test_passing_yards_universal_step6_controls_v1.py'
       - 'devsystem/task_ledgers/passing-yards-universal-step6-controls-v1.json'
       - '.github/workflows/passing-yards-universal-step6-controls-v1.yml'
   workflow_dispatch:
