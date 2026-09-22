@@ -51,7 +51,7 @@
     "concept": "Passing Yards Header",
     "production_port": "V60/V211"
   },
-  "monster_status": "STREAMLIT_HTML_RENDER_PATCH_PENDING_TARGETED_PROOF",
+  "monster_status": "MOBILE_OVERFLOW_PATCH_PENDING_TARGETED_PROOF",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
@@ -112,5 +112,21 @@
     "first_broken_arrow": "V60 body emitted -> Streamlit hydrated DOM",
     "failed_layer": "STREAMLIT_HTML_RENDER",
     "minimal_fix": "Render the already-proven V60 visible body with st.html(header_body) while keeping the existing CSS witness markdown and frozen V59/V58 chain unchanged."
+  },
+  "mobile_overflow_checkpoint": {
+    "source_main": "4093d81834d69966396688269313fb4e993821f7",
+    "public_run": 35765576364,
+    "prior_visible_header_fix_green": true,
+    "exact_failure": "PASSING_YARDS_QB_STEP3_MOBILE_OVERFLOW",
+    "measured": {
+      "client_width": 356,
+      "scroll_width": 466,
+      "overflow_pixels": 110
+    },
+    "root_cause": "V60 decorative absolute pseudo-element extends exactly 110px beyond the header via right:-110px, matching the measured 110px scroll-width excess.",
+    "failed_layer": "V60_MOBILE_LAYOUT",
+    "minimal_fix": "Keep the decorative glow inside the header horizontal bounds by changing .ks-py60-header:after from right:-110px to right:0.",
+    "frozen_step1_step2_untouched": true,
+    "final_public_proof_pending": true
   }
 }
