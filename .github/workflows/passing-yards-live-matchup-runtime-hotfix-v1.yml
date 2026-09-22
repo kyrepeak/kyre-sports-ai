@@ -621,6 +621,30 @@ jobs:
                   page.wait_for_timeout(500)
               raise RuntimeError("PUBLIC_LIVE_MATCHUP_PICKER_NOT_READY")
 
+          def find_detail(page,timeout=120):
+              selector='[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]'
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=all_body(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000]); raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
+                  for frame in page.frames:
+                      try:
+                          if frame.locator(selector).count()==1: return frame
+                      except Exception: pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("PUBLIC_LIVE_MATCHUP_DETAIL_NOT_READY")
+
+          def click_anchor(page,locator):
+              if locator.get_attribute("target")=="_blank":
+                  with page.expect_popup(timeout=15000) as popup:
+                      locator.click()
+                  nxt=popup.value
+                  nxt.wait_for_load_state("domcontentloaded",timeout=120000)
+                  return nxt
+              locator.click()
+              return page
+
           with sync_playwright() as p:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
               page=browser.new_page(viewport={"width":1024,"height":1366})
@@ -700,8 +724,31 @@ jobs:
                   assert picker.locator('[data-qb-selection-card]').count()==2
                   assert "Michael Penix Jr." in txt
                   assert "Jordan Love" in txt
+
+                  detail_page=click_anchor(page,picker.locator('a[data-qb-select="1"]').first)
+                  detail=find_detail(detail_page)
+                  assert detail.locator(".ks-py59-player").count()==1
+                  assert detail.locator('a[data-qb-back="true"]').count()==1
+                  print("PASSING_YARDS_PUBLIC_QB1_DETAIL_GREEN")
+
+                  returned_page=click_anchor(detail_page,detail.locator('a[data-qb-back="true"]').first)
+                  returned=find_picker(returned_page,timeout=120)
+                  assert returned.locator('[data-passing-yards-selection-screen="v58"]').count()==1
+                  assert returned.locator('[data-qb-selection-card]').count()==2
+                  print("PASSING_YARDS_PUBLIC_BACK_GREEN")
+
                   print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_GREEN")
-                  print(json.dumps({"date":"2026-09-24","matchup":target_matchup,"typeerror":False,"v58_picker":True,"qb_cards":2,"michael_penix_jr":True,"jordan_love":True},indent=2))
+                  print(json.dumps({
+                      "date":"2026-09-24",
+                      "matchup":target_matchup,
+                      "typeerror":False,
+                      "v58_picker":True,
+                      "qb_cards":2,
+                      "michael_penix_jr":True,
+                      "jordan_love":True,
+                      "qb1_detail":True,
+                      "back_returns_picker":True,
+                  },indent=2))
               finally:
                   browser.close()
           PY
