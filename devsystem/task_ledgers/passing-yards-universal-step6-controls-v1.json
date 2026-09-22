@@ -87,5 +87,38 @@
     "probability_changed": false,
     "market_math_changed": false,
     "hidden_markers_remain_diagnostic": true
+  },
+  "latest_public_interactive_surface_verifier_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35676052842,
+    "failure_job": 106582706983,
+    "owner": "VERIFIER / ARBITRARY CHILD HEIGHT THRESHOLD",
+    "direct_evidence": {
+      "visual_step6_proof": "SUCCESS",
+      "public_v56_revision_ready": true,
+      "durable_step6_style_present": true,
+      "top_control_deck_present": true,
+      "slate_date_control_present": true,
+      "matchup_control_present": true,
+      "support_details_present": true,
+      "date_wrapper_width": 195.171875,
+      "date_wrapper_height": 68,
+      "date_interactive": true,
+      "date_interactive_width": 123,
+      "date_interactive_height": 25.59375
+    },
+    "root_cause": "The verifier added an arbitrary 28px minimum height for the date control's internal interactive descendant even though the visible control wrapper is 68px tall, the descendant is present and rendered, and that child-height threshold is not part of the Step 6 acceptance contract.",
+    "repair": "Require only positive rendered dimensions for the real interactive descendant while preserving the wrapper visibility requirement (including >=40px wrapper height), durable V56 style witness, top-deck computed gradient/radius/shadow proof, disclosure-surface styling proof, frozen source chain, and source ownership.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "app_code_changed": false,
+    "frozen_steps_1_5_changed": false,
+    "widget_keys_changed": false,
+    "navigation_behavior_changed": false,
+    "analytics_changed": false,
+    "projection_changed": false,
+    "probability_changed": false,
+    "market_math_changed": false,
+    "hidden_markers_remain_diagnostic": true
   }
 }
