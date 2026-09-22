@@ -38,7 +38,7 @@ _HEADER_CSS = r"""
   box-shadow:0 22px 70px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.035)
 }
 .ks-py60-header:after{
-  content:"";position:absolute;width:320px;height:320px;right:-110px;top:-170px;
+  content:"";position:absolute;width:320px;height:320px;right:0;top:-170px;
   border-radius:50%;background:radial-gradient(circle,rgba(47,165,255,.22),transparent 67%);
   pointer-events:none
 }
