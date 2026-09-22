@@ -60,12 +60,21 @@ jobs:
           .github/workflows/passing-yards-universal-step7-responsive-v1.yml
           devsystem/task_ledgers/passing-yards-universal-step7-responsive-v1.json
           EOF
+          cat > /tmp/expected-product-repair.txt <<'EOF'
+          .github/workflows/passing-yards-universal-step7-responsive-v1.yml
+          devsystem/task_ledgers/passing-yards-universal-step7-responsive-v1.json
+          nfl_passing_yards_hub_v57.py
+          tests/test_passing_yards_universal_step7_responsive_v1.py
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-verifier.txt /tmp/expected-verifier.txt
+          sort -o /tmp/expected-product-repair.txt /tmp/expected-product-repair.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_STEP7_INITIAL_BUILD_SCOPE_GREEN"
           elif diff -q /tmp/expected-verifier.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_STEP7_VERIFIER_ONLY_SCOPE_GREEN"
+          elif diff -q /tmp/expected-product-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_STEP7_PRODUCT_REPAIR_SCOPE_GREEN"
           else
             echo "Unexpected Step 7 diff:"
             cat /tmp/actual.txt

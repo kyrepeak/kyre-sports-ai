@@ -150,12 +150,19 @@ _RESPONSIVE_CSS = r"""
   .st-key-kyre_passing_yards_shell_v1 .kpy10-metrics{
     grid-template-columns:1fr!important;
   }
+  .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"] input,
+  .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"] [role="textbox"],
+  .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"] button,
+  .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"] [role="combobox"],
+  .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"] input,
+  .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"] button,
   .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-baseweb="input"],
   .st-key-kyre_passing_yards_shell_v1 .st-key-kyre_passing_yards_top_v46 [data-baseweb="select"]>div,
   .st-key-kyre_passing_yards_shell_v1 [data-testid="stHorizontalBlock"]:has(input[aria-label="Sportsbook / source"]) [data-baseweb="input"],
   .st-key-kyre_passing_yards_shell_v1 [data-testid="stButton"] button,
   .st-key-kyre_passing_yards_shell_v1 [data-testid="stExpander"] summary{
     min-height:48px!important;
+    box-sizing:border-box!important;
   }
 }
 @media(max-width:430px){

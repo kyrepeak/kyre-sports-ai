@@ -37,6 +37,10 @@ def test_step7_css_has_required_responsive_breakpoints_and_no_local_colors() -> 
         'input[aria-label="Sportsbook / source"]',
         "grid-template-columns:1fr!important",
         "min-height:48px!important",
+        '[data-testid="stDateInput"] input',
+        '[data-testid="stDateInput"] [role="textbox"]',
+        '[data-testid="stSelectbox"] [role="combobox"]',
+        "box-sizing:border-box!important",
         "max-width:100%!important",
     ):
         assert token in css, token
