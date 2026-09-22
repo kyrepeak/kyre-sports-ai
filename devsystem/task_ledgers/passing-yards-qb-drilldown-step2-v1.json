@@ -57,5 +57,18 @@
     "frozen_step1_scope_failure": "Step 1 verifier rejected the legitimate Step 2 vertical-slice diff",
     "step1_contract_preservation": "V59 now composes the same captured certified payload under V59-owned presentation classes while retaining data-passing-yards-selected-qb, Back, identity, and SELECTED QUARTERBACK markers. V58/V209 remain untouched.",
     "product_model_data_math_changed": false
+  },
+  "verifier_closeout": {
+    "source_main_run": 35695528504,
+    "visual_job": 106641440979,
+    "public_job": 106641441255,
+    "static_failure": "Static contract searched V59 source for literal rendered data-qb-analysis-section attributes even though V59 generates those attributes dynamically through _section(kind, ...).",
+    "public_failure": "Initial MAIN public proof did not observe the V210 runtime marker before timeout; one same-SHA retry was started to distinguish deployment lag from a real runtime defect.",
+    "repair_scope": "Verifier-only: Step 2 workflow, Step 2 tests, and this Step 2 ledger.",
+    "product_changed": false,
+    "router_changed": false,
+    "app_changed": false,
+    "model_data_math_changed": false,
+    "frozen_step1_product_changed": false
   }
 }
