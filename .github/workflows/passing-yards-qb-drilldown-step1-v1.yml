@@ -72,10 +72,21 @@ jobs:
           streamlit_memory_lazy_router_v210.py
           tests/test_passing_yards_qb_drilldown_step2_v1.py
           EOF
+          cat > /tmp/expected-step3.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step1-v1.yml
+          .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
+          .github/workflows/passing-yards-qb-drilldown-step3-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step3-v1.json
+          nfl_passing_yards_hub_v60.py
+          streamlit_memory_lazy_router_v211.py
+          tests/test_passing_yards_qb_drilldown_step3_v1.py
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-deploy-refresh.txt /tmp/expected-deploy-refresh.txt
           sort -o /tmp/expected-runtime-classifier.txt /tmp/expected-runtime-classifier.txt
           sort -o /tmp/expected-step2.txt /tmp/expected-step2.txt
+          sort -o /tmp/expected-step3.txt /tmp/expected-step3.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP1_BUILD_SCOPE_GREEN"
           elif diff -q /tmp/expected-deploy-refresh.txt /tmp/actual.txt >/dev/null; then
@@ -84,6 +95,8 @@ jobs:
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP1_RUNTIME_CLASSIFIER_SCOPE_GREEN"
           elif diff -q /tmp/expected-step2.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP1_DOWNSTREAM_STEP2_SCOPE_GREEN"
+          elif diff -q /tmp/expected-step3.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP1_DOWNSTREAM_STEP3_SCOPE_GREEN"
           else
             echo "Unexpected Step 1 diff:"
             cat /tmp/actual.txt
