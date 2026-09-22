@@ -320,11 +320,10 @@ def render_nfl_passing_yards_hub() -> None:
         return _combined_player_cards_html(captured)
 
     def refresh_composed_placeholder() -> None:
-        if placeholder is None:
-            return
-        if len(captured.get("identity") or []) < 2:
-            return
-        placeholder.markdown(active_composition_html(), unsafe_allow_html=True)
+        # V58/V59 composition is emitted exactly once after the frozen capture
+        # pipeline completes. Intermediate placeholder writes duplicate the
+        # picker/cards in Streamlit's DOM on the live matchup path.
+        return None
 
     def capture_pair(key: str, html: str) -> str:
         rows = captured.setdefault(key, [])
