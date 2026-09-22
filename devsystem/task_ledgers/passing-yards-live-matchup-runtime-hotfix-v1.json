@@ -1,0 +1,71 @@
+{
+  "task": "passing-yards-live-matchup-runtime-hotfix-v1",
+  "status": "DONE",
+  "source_main": "2cc5968749cdbe6b6c0510a39e8045782bca1cf1",
+  "user_evidence": {
+    "date": "2026-09-24",
+    "matchup": "Atlanta Falcons @ Green Bay Packers",
+    "symptom": "TypeError after V60 header and V46 control deck on public Streamlit production",
+    "traceback_visible_through": "app.py -> streamlit_memory_lazy_router_v212 -> ... -> v204"
+  },
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v58.py",
+    "nfl_passing_yards_hub_v59.py",
+    "nfl_passing_yards_hub_v60.py",
+    "nfl_passing_yards_hub_v61.py",
+    "streamlit_memory_lazy_router_v209.py",
+    "streamlit_memory_lazy_router_v210.py",
+    "streamlit_memory_lazy_router_v211.py",
+    "streamlit_memory_lazy_router_v212.py",
+    "app.py"
+  ],
+  "mission": "Reproduce the real verified-matchup path, identify the exact TypeError, apply the smallest additive presentation/runtime repair, then prove branch and public production GREEN.",
+  "root_cause": {
+    "failed_layer": "DATA_TIMEZONE_NORMALIZATION",
+    "stack": "nfl_passing_yards_hub_v8.py -> nfl_passing_yards_defense_v1.build_pass_defense_profile -> _recent_form -> _completed_event_rows",
+    "exact_line": "event_date.normalize() >= cutoff.normalize()",
+    "cause": "ESPN event timestamps are timezone-aware while the selected date-only cutoff was timezone-naive.",
+    "evidence_run": 35774190002,
+    "evidence_job": 106903096693
+  },
+  "acceptance": [
+    "UTC regression test passes",
+    "frozen drill-down boundary unchanged",
+    "branch-local 2026-09-24 Atlanta @ Green Bay path has no TypeError",
+    "V60 header and V58 two-QB picker render",
+    "QB1 click renders V59 detail",
+    "Back restores two-QB picker",
+    "merge PR #907",
+    "one public production 2026-09-24 proof has no TypeError and both QB cards render"
+  ],
+  "authoritative_reproduction": {
+    "workflow_run": 35774190002,
+    "public_job": 106903096693,
+    "date": "2026-09-24",
+    "matchup": "Atlanta Falcons @ Green Bay Packers",
+    "has_matchup": true,
+    "has_type_error": true,
+    "has_picker": false
+  },
+  "patch": {
+    "file": "nfl_passing_yards_defense_v1.py",
+    "change": "Parse cutoff_date and ESPN event date with utc=True before normalize/compare.",
+    "model_math_changed": false,
+    "projection_changed": false,
+    "probability_changed": false,
+    "sportsbook_logic_changed": false,
+    "frozen_drilldown_files_changed": false
+  },
+  "monster_status": "PATCH_PENDING_BRANCH_AND_PUBLIC_PROOF",
+  "ledger_semantics": "Top-level DONE satisfies the permanent action-ledger contract; GREEN/FROZEN remains prohibited until the exact branch proof, merge, and one public production proof pass.",
+  "version": 2,
+  "task_id": "passing-yards-live-matchup-runtime-hotfix-v1",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "NFL Passing Yards live-matchup runtime hotfix only: fix the proven timezone-aware versus timezone-naive comparison in nfl_passing_yards_defense_v1._completed_event_rows while preserving frozen QB drill-down UI, routing, model, projection, probability, sportsbook, and navigation behavior."
+}
