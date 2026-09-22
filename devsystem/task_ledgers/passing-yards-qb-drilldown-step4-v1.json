@@ -71,7 +71,7 @@
     "frozen_steps_1_3_files_changed": false,
     "final_public_proof_pending": true,
     "checkpoint2": {
-      "status": "LAYOUT_GAP_PATCH_PENDING_BRANCH_LOCAL_PROOF",
+      "status": "GAME_CENTER_AND_OWNER_GAP_PATCH_PENDING_BRANCH_LOCAL_PROOF",
       "prior_run": 35769345429,
       "prior_failure": "Picker is visible and legacy HTML surfaces are gone, but first QB card remains at y=2508px on a 390x844 viewport.",
       "root_cause": "Legacy native Streamlit evidence widgets (dataframes/tables/metrics/expanders and Step 10 market controls) still render ahead of V34's final drill-down placeholder and consume vertical space even after legacy HTML/status suppression.",
@@ -96,6 +96,21 @@
         "proven_cause": "Suppressed legacy Streamlit calls leave many zero-height stElementContainer siblings. Their parent still applies vertical flex gap between siblings, creating hundreds of pixels of blank space. A duplicate frozen V8 'Verified matchup' element also remains visible before the drill-down placeholder.",
         "failed_layer": "STREAMLIT_LAYOUT_GAP_AND_DUPLICATE_LEGACY_WIDGET",
         "minimal_patch": "V61 CSS only: display:none the already-empty legacy element containers so they stop participating in flex gap, and display:none the duplicate V8 matchup element while preserving the V46 control deck."
+      },
+      "game_center_root_cause": {
+        "diagnostic_run": 35771230865,
+        "picker_y_px": 2247.4375,
+        "control_deck_y_px": 1086.6875,
+        "control_deck_bottom_px": 1314.078125,
+        "legacy_game_center": {
+          "selector": ".kpy15-center",
+          "y_px": 1330.078125,
+          "bottom_px": 1928.328125,
+          "height_px": 598.25
+        },
+        "proven_cause": "The final remaining large visible blocker ahead of the QB picker is frozen V15's .kpy15-center Result First Game Center. Hidden/zero-height legacy deltas under the universal owner also continue to contribute flex-gap spacing.",
+        "failed_layer": "LEGACY_VISIBLE_COMPOSITION_AND_OWNER_GAP",
+        "minimal_patch": "V61 CSS only: remove the stElementContainer containing .kpy15-center and set the universal owner top-level gap to zero; current control deck and V58/V59 drill-down retain their own explicit margins."
       }
     }
   }
