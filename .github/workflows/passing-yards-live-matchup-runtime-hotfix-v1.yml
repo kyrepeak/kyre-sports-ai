@@ -66,6 +66,158 @@ jobs:
           git diff --exit-code ${{ github.event.pull_request.base.sha || github.event.before }} --             nfl_passing_yards_hub_v58.py             nfl_passing_yards_hub_v59.py             nfl_passing_yards_hub_v60.py             nfl_passing_yards_hub_v61.py             streamlit_memory_lazy_router_v209.py             streamlit_memory_lazy_router_v210.py             streamlit_memory_lazy_router_v211.py             streamlit_memory_lazy_router_v212.py || exit 1
           echo "PASSING_YARDS_LIVE_MATCHUP_FROZEN_PRODUCT_BOUNDARY_GREEN"
 
+  branch-live-matchup-proof:
+    if: github.event_name == 'pull_request'
+    needs: timezone-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: hotfix-python
+        with:
+          python-version: "3.12"
+
+      - name: Restore browser stack
+        id: hotfix-browser-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-py-live-hotfix
+            ~/.cache/ms-playwright
+          key: passing-yards-live-hotfix-${{ runner.os }}-py${{ steps.hotfix-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt') }}
+
+      - name: Build browser stack
+        if: steps.hotfix-browser-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-py-live-hotfix
+          .venv-py-live-hotfix/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-py-live-hotfix/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-py-live-hotfix/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        run: echo "$GITHUB_WORKSPACE/.venv-py-live-hotfix/bin" >> "$GITHUB_PATH"
+
+      - name: Start branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/passing-yards-live-hotfix
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-live-hotfix/streamlit.log 2>&1 &
+          echo $! > /tmp/passing_yards_live_hotfix_pid
+
+      - name: Prove exact 2026-09-24 live matchup path
+        run: |
+          python - <<'PY'
+          import time
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health
+
+          base = "http://127.0.0.1:8501"
+          route = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          _wait_for_health(base)
+
+          def find_frame(page, selector, timeout=180):
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for frame in page.frames:
+                      try:
+                          if frame.locator(selector).count():
+                              return frame
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError(f"selector not found: {selector}")
+
+          def click_link(page, frame, locator):
+              target = locator.get_attribute("target")
+              if target == "_blank":
+                  with page.expect_popup(timeout=15000) as popup_info:
+                      locator.click()
+                  next_page = popup_info.value
+                  next_page.wait_for_load_state("domcontentloaded", timeout=120000)
+                  return next_page
+              locator.click()
+              return page
+
+          def body_texts(page):
+              out = []
+              for frame in page.frames:
+                  try:
+                      out.append(frame.locator("body").inner_text(timeout=3000))
+                  except Exception:
+                      pass
+              return "\n".join(out)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage","--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              try:
+                  page.goto(route, wait_until="domcontentloaded", timeout=120000)
+                  frame = find_frame(page, '[data-testid="stDateInput"]')
+                  widget = frame.locator('[data-testid="stDateInput"]').first
+                  day = widget.get_by_role("spinbutton", name="day, Slate date")
+                  day.fill("24")
+                  day.press("Tab")
+
+                  deadline = time.monotonic() + 180
+                  landing = None
+                  last_body = ""
+                  while time.monotonic() < deadline:
+                      combined = body_texts(page)
+                      last_body = combined
+                      if "TypeError" in combined or "Traceback" in combined:
+                          raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_BRANCH_TYPEERROR")
+                      for probe in page.frames:
+                          try:
+                              if (
+                                  "Atlanta Falcons @ Green Bay Packers" in probe.locator("body").inner_text(timeout=1500)
+                                  and probe.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
+                                  and probe.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                                  and probe.locator('[data-qb-selection-card]').count() == 2
+                              ):
+                                  landing = probe
+                                  break
+                          except Exception:
+                              pass
+                      if landing is not None:
+                          break
+                      page.wait_for_timeout(500)
+                  if landing is None:
+                      print(last_body[:40000])
+                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_BRANCH_NOT_READY")
+
+                  assert landing.locator('a[data-qb-select]').count() == 2
+                  first = landing.locator('a[data-qb-select="1"]').first
+                  detail_page = click_link(page, landing, first)
+                  detail = find_frame(detail_page, '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]', timeout=120)
+                  detail_body = detail.locator("body").inner_text(timeout=5000)
+                  assert "TypeError" not in detail_body and "Traceback" not in detail_body
+                  assert detail.locator(".ks-py59-player").count() == 1
+                  assert detail.locator('a[data-qb-back="true"]').count() == 1
+
+                  returned_page = click_link(detail_page, detail, detail.locator('a[data-qb-back="true"]').first)
+                  returned = find_frame(returned_page, '[data-passing-yards-selection-screen="v58"]', timeout=120)
+                  assert returned.locator('[data-qb-selection-card]').count() == 2
+                  print("PASSING_YARDS_LIVE_MATCHUP_BRANCH_GREEN")
+              finally:
+                  browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 500 artifacts/passing-yards-live-hotfix/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/passing_yards_live_hotfix_pid ]; then
+            kill "$(cat /tmp/passing_yards_live_hotfix_pid)" 2>/dev/null || true
+          fi
+
   public-live-matchup-proof:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: timezone-contract
