@@ -106,7 +106,7 @@ def test_v211_stays_frozen_under_v212():
 def test_app_boots_v212_and_preserves_v211_compatibility():
     assert "from streamlit_memory_lazy_router_v212 import record_bootstrap_import_ms, render_app" in APP
     assert "Frozen QB Drill-Down Step 3 V211 compatibility" in APP
-    assert 'PASSING_YARDS_QB_DRILLDOWN_STEP4_CARDS_RUNTIME = "NFL_PASSING_YARDS_V61_CARDS_2026_09_22_R1_VISIBLE_COMPOSITION"' in APP
+    assert 'PASSING_YARDS_QB_DRILLDOWN_STEP4_CARDS_RUNTIME = "NFL_PASSING_YARDS_V61_CARDS_2026_09_22"' in APP
 
 
 def test_v61_emits_card_css_before_frozen_v60(monkeypatch):
