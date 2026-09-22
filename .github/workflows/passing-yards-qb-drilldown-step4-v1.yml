@@ -55,7 +55,6 @@ jobs:
           EOF
           cat > /tmp/expected-visible-repair.txt <<'EOF'
           .github/workflows/passing-yards-qb-drilldown-step4-v1.yml
-          app.py
           devsystem/task_ledgers/passing-yards-qb-drilldown-step4-v1.json
           nfl_passing_yards_hub_v61.py
           tests/test_passing_yards_qb_drilldown_step4_v1.py
