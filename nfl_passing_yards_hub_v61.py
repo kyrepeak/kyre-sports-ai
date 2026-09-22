@@ -150,6 +150,22 @@ _CARD_CSS = r"""
   height:0!important;
 }
 
+/* The frozen V15 result-first Game Center is another pre-drill-down surface.
+   Remove its Streamlit element container, and remove owner-level flex gaps so
+   hidden/zero-height legacy deltas cannot create blank mobile scroll distance. */
+.st-key-kyre_passing_yards_universal_owner_v1{
+  gap:0!important;
+}
+.st-key-kyre_passing_yards_universal_owner_v1
+  [data-testid="stElementContainer"]:has(.kpy15-center){
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+
 /* Exact remaining visible blocker from branch-local DOM proof:
    the legacy KPY15 Game Center is the immediate visible surface above V58.
    Collapse its Streamlit element container; do not touch V46 controls. */
