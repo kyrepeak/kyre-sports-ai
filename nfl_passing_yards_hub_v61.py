@@ -9,6 +9,9 @@ unchanged.
 """
 from __future__ import annotations
 
+import re
+from typing import Any
+
 import streamlit as st
 
 import nfl_passing_yards_hub_v60 as prior
@@ -135,12 +138,75 @@ _CARD_CSS = r"""
 </style>
 """
 
+_STYLE_BLOCK_RE = re.compile(r"<style\\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
+_LEGACY_STATUS_PREFIXES = ("✅ STEP ", "⚠️ STEP ", "ℹ️ STEP ", "🏆 NFL PASSING YARDS BUILD")
+
+def _style_blocks_only(body: Any) -> tuple[str, ...]:
+    if not isinstance(body, str):
+        return ()
+    return tuple(_STYLE_BLOCK_RE.findall(body))
+
+def _is_legacy_status(body: Any) -> bool:
+    return str(body if body is not None else "").strip().startswith(_LEGACY_STATUS_PREFIXES)
+
 def build_passing_yards_step4_card_css() -> str:
     return build_semantic_tokens_css() + _CARD_CSS
 
 def render_nfl_passing_yards_hub() -> None:
+    """Keep the frozen data pipeline, but expose only the current drill-down UI.
+
+    V58/V59 already own the picker/detail HTML through V34's final placeholder.
+    Legacy wrappers above that placeholder still execute for certified data
+    capture, but their visible st.markdown/status output is suppressed here.
+    CSS is preserved so the frozen capture/render chain remains styled.
+    """
     st.markdown(build_passing_yards_step4_card_css(), unsafe_allow_html=True)
-    return prior.render_nfl_passing_yards_hub()
+
+    original_markdown = st.markdown
+    original_success = st.success
+    original_warning = st.warning
+    original_info = st.info
+    original_caption = st.caption
+
+    def styles_only_markdown(body: Any, *args: Any, **kwargs: Any):
+        for style in _style_blocks_only(body):
+            original_markdown(style, unsafe_allow_html=True)
+        return None
+
+    def filtered_success(body: Any, *args: Any, **kwargs: Any):
+        if _is_legacy_status(body):
+            return None
+        return original_success(body, *args, **kwargs)
+
+    def filtered_warning(body: Any, *args: Any, **kwargs: Any):
+        if _is_legacy_status(body):
+            return None
+        return original_warning(body, *args, **kwargs)
+
+    def filtered_info(body: Any, *args: Any, **kwargs: Any):
+        if _is_legacy_status(body):
+            return None
+        return original_info(body, *args, **kwargs)
+
+    def filtered_caption(body: Any, *args: Any, **kwargs: Any):
+        text = str(body if body is not None else "")
+        if "10/10 COMPLETE" in text or "10 / 10 COMPLETE" in text:
+            return None
+        return original_caption(body, *args, **kwargs)
+
+    st.markdown = styles_only_markdown
+    st.success = filtered_success
+    st.warning = filtered_warning
+    st.info = filtered_info
+    st.caption = filtered_caption
+    try:
+        return prior.render_nfl_passing_yards_hub()
+    finally:
+        st.markdown = original_markdown
+        st.success = original_success
+        st.warning = original_warning
+        st.info = original_info
+        st.caption = original_caption
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
     if str(market or "Passing Yards") != "Passing Yards":
@@ -161,6 +227,8 @@ __all__ = [
     "PRESENTATION_ONLY",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
+    "_is_legacy_status",
+    "_style_blocks_only",
     "build_passing_yards_step4_card_css",
     "render_nfl_hub",
     "render_nfl_passing_yards_hub",
