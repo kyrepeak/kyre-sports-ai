@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-qb-drilldown-step2-v1",
+  "status": "IN_PROGRESS",
+  "scope": "NFL Passing Yards QB Drill-Down Step 2 only: preserve frozen V58 Step 1 picker and replace the selected-QB placeholder shell with exactly one dedicated quarterback analysis view using the already-certified captured analytical payload.",
+  "baseline": {
+    "main_sha": "63e67bad25d467813180fe212e5185cd375c0df0",
+    "step1_green_frozen": true,
+    "frozen_product": "nfl_passing_yards_hub_v58",
+    "frozen_router": "streamlit_memory_lazy_router_v209",
+    "step1_final_run": 35691900618
+  },
+  "acceptance": {
+    "step1_picker_unchanged": true,
+    "selected_qb_view_renders_one_qb_only": true,
+    "selected_view_has_identity": true,
+    "selected_view_has_current_market_edge": true,
+    "selected_view_has_step7_projection": true,
+    "selected_view_has_step8_context_uncertainty": true,
+    "selected_view_has_step9_distribution_probability": true,
+    "selected_view_has_matchup_drivers": true,
+    "selected_view_has_conditions_personnel": true,
+    "selected_view_has_back_to_quarterbacks": true,
+    "first_qb_can_open_dedicated_analysis": true,
+    "second_qb_can_open_dedicated_analysis": true,
+    "no_other_qb_analysis_in_selected_view": true,
+    "mobile_no_horizontal_overflow": true,
+    "model_math_data_unchanged": true,
+    "targeted_step2_proof_required": true,
+    "required_devsystem_gate": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "v58_changed": false,
+    "v209_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_math_changed": false,
+    "data_provider_logic_changed": false,
+    "sportsbook_projection_influence": 0,
+    "existing_widget_keys_changed": false,
+    "other_routes_changed": false
+  },
+  "freeze_rule": "After targeted Step 2 proof, required DevSystem gate, merge, and one successful MAIN public proof covering both QB selections and Back restoration, Step 2 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
