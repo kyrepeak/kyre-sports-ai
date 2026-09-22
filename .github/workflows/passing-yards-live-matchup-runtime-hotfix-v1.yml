@@ -191,23 +191,23 @@ jobs:
               }""")
 
           def discover_controls(frame):
-              date_parts={}
-              for part in ("month","day","year"):
-                  loc=frame.get_by_role("spinbutton", name=f"{part}, Slate date")
-                  if loc.count():
-                      date_parts[part]=loc.first
-
-              match_combo=None
-              combo_rows=[]
-              combos=frame.get_by_role("combobox")
-              for i in range(combos.count()):
-                  combo=combos.nth(i)
-                  meta=inspect_combo(combo)
-                  combo_rows.append(meta)
-                  if meta.get("hasMatchupText") and match_combo is None:
-                      match_combo=combo
-
-              return date_parts, match_combo, combo_rows
+              date_wrap=frame.locator(".st-key-nfl_passing_yards_v46_slate_date").first
+              matchup_wrap=frame.locator(".st-key-nfl_passing_yards_v42_visible_matchup").first
+              if date_wrap.count()!=1 or matchup_wrap.count()!=1:
+                  return None, None, {}
+              date_input=date_wrap.locator("input").first
+              selectbox=matchup_wrap.locator('[data-testid="stSelectbox"]').first
+              select_surface=matchup_wrap.locator('[data-baseweb="select"]').first
+              if date_input.count()!=1 or selectbox.count()!=1 or select_surface.count()!=1:
+                  return None, None, {}
+              meta={
+                  "date_testid": (date_wrap.get_attribute("data-testid") or ""),
+                  "date_input_type": (date_input.get_attribute("type") or ""),
+                  "date_label": " | ".join(x.strip() for x in date_wrap.locator("label").all_inner_texts() if x.strip()),
+                  "matchup_testid": (selectbox.get_attribute("data-testid") or ""),
+                  "matchup_label": " | ".join(x.strip() for x in matchup_wrap.locator("label").all_inner_texts() if x.strip()),
+              }
+              return date_input, select_surface, meta
 
           def find_controls_frame(page, timeout=180):
               deadline=time.monotonic()+timeout
@@ -217,9 +217,9 @@ jobs:
                       try:
                           if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1:
                               continue
-                          date_parts, combo, rows=discover_controls(frame)
-                          if "day" in date_parts and combo is not None:
-                              return frame, date_parts, combo, rows
+                          date_input, select_surface, meta=discover_controls(frame)
+                          if date_input is not None and select_surface is not None:
+                              return frame, date_input, select_surface, meta
                       except Exception:
                           pass
                   page.wait_for_timeout(300)
@@ -281,42 +281,32 @@ jobs:
               try:
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
 
-                  frame,date_parts,match_combo,combo_rows=find_controls_frame(page)
+                  frame,date_input,select_surface,control_meta=find_controls_frame(page)
                   evidence["DATE_CONTROL_FOUND"]=True
+                  print("PASSING_YARDS_LIVE_MATCHUP_CONTROL_DOM")
+                  print(json.dumps(control_meta,indent=2))
 
-                  if "month" in date_parts:
-                      date_parts["month"].fill("9")
-                  date_parts["day"].fill("24")
-                  if "year" in date_parts:
-                      date_parts["year"].fill("2026")
-                  date_parts["day"].press("Tab")
+                  date_input.fill("09/24/2026")
+                  date_input.press("Tab")
                   page.wait_for_timeout(1500)
 
-                  frame,date_parts,match_combo,combo_rows=find_controls_frame(page,timeout=120)
-                  values={k:v.input_value() for k,v in date_parts.items()}
-                  evidence["DATE_SET_TO_2026_09_24"]=(
-                      values.get("day") in {"24","024"}
-                      and values.get("month","9") in {"9","09"}
-                      and values.get("year","2026")=="2026"
-                  )
+                  frame,date_input,select_surface,control_meta=find_controls_frame(page,timeout=120)
+                  selected_date=(date_input.input_value() or "").strip()
+                  evidence["DATE_SET_TO_2026_09_24"]=selected_date in {"09/24/2026","9/24/2026"}
                   print("PASSING_YARDS_LIVE_MATCHUP_DATE_STATE")
-                  print(json.dumps(values,indent=2))
+                  print(json.dumps({"selected":selected_date},indent=2))
                   if not evidence["DATE_SET_TO_2026_09_24"]:
                       evidence["FIRST_BROKEN_ARROW"]="date action -> selected date"
                       evidence["FAILED_LAYER"]="VERIFIER_DATE_SELECTION"
                       raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DATE_NOT_SET")
 
-                  meta=inspect_combo(match_combo)
                   evidence["MATCHUP_CONTROL_FOUND"]=True
-                  evidence["MATCHUP_CONTROL_TESTID"]=meta.get("testid","")
-                  evidence["MATCHUP_CONTROL_LABEL"]=meta.get("ownerText","")
-                  evidence["MATCHUP_CONTROL_TYPE"]="selectbox/combobox"
-                  try:
-                      evidence["CURRENT_SELECTED_VALUE"]=(match_combo.inner_text() or "").strip()
-                  except Exception:
-                      evidence["CURRENT_SELECTED_VALUE"]=""
+                  evidence["MATCHUP_CONTROL_TESTID"]=control_meta.get("matchup_testid","")
+                  evidence["MATCHUP_CONTROL_LABEL"]=control_meta.get("matchup_label","")
+                  evidence["MATCHUP_CONTROL_TYPE"]="Streamlit selectbox / BaseWeb select"
+                  evidence["CURRENT_SELECTED_VALUE"]=(select_surface.inner_text() or "").strip()
 
-                  match_combo.click()
+                  select_surface.click()
                   page.wait_for_timeout(300)
                   options=[x.strip() for x in frame.get_by_role("option").all_inner_texts() if x.strip()]
                   evidence["ATLANTA_OPTION_PRESENT"]=any(target_matchup in x for x in options)
@@ -338,8 +328,8 @@ jobs:
                   frame.get_by_role("option").filter(has_text=target_matchup).first.click()
                   page.wait_for_timeout(1200)
 
-                  frame,_,selected_combo,_=find_controls_frame(page,timeout=120)
-                  selected=(selected_combo.inner_text() or "").strip()
+                  frame,_,selected_surface,_=find_controls_frame(page,timeout=120)
+                  selected=(selected_surface.inner_text() or "").strip()
                   evidence["MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS"]=target_matchup in selected
                   print("PASSING_YARDS_LIVE_MATCHUP_SELECTED_VALUE")
                   print(selected)
@@ -451,18 +441,15 @@ jobs:
               }""")
 
           def discover(frame):
-              date_parts={}
-              for part in ("month","day","year"):
-                  loc=frame.get_by_role("spinbutton",name=f"{part}, Slate date")
-                  if loc.count(): date_parts[part]=loc.first
-              combo=None
-              combos=frame.get_by_role("combobox")
-              for i in range(combos.count()):
-                  candidate=combos.nth(i)
-                  if inspect_combo(candidate).get("hasMatchupText"):
-                      combo=candidate
-                      break
-              return date_parts,combo
+              date_wrap=frame.locator(".st-key-nfl_passing_yards_v46_slate_date").first
+              matchup_wrap=frame.locator(".st-key-nfl_passing_yards_v42_visible_matchup").first
+              if date_wrap.count()!=1 or matchup_wrap.count()!=1:
+                  return None,None
+              date_input=date_wrap.locator("input").first
+              select_surface=matchup_wrap.locator('[data-baseweb="select"]').first
+              if date_input.count()!=1 or select_surface.count()!=1:
+                  return None,None
+              return date_input,select_surface
 
           def find_controls(page,timeout=180):
               deadline=time.monotonic()+timeout
@@ -475,9 +462,9 @@ jobs:
                       try:
                           if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1:
                               continue
-                          date_parts,combo=discover(frame)
-                          if "day" in date_parts and combo is not None:
-                              return frame,date_parts,combo
+                          date_input,select_surface=discover(frame)
+                          if date_input is not None and select_surface is not None:
+                              return frame,date_input,select_surface
                       except Exception:
                           pass
                   page.wait_for_timeout(500)
@@ -509,23 +496,22 @@ jobs:
               page=browser.new_page(viewport={"width":1024,"height":1366})
               try:
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
-                  frame,date_parts,combo=find_controls(page)
-                  if "month" in date_parts: date_parts["month"].fill("9")
-                  date_parts["day"].fill("24")
-                  if "year" in date_parts: date_parts["year"].fill("2026")
-                  date_parts["day"].press("Tab")
+                  frame,date_input,select_surface=find_controls(page)
+                  date_input.fill("09/24/2026")
+                  date_input.press("Tab")
                   page.wait_for_timeout(1500)
 
-                  frame,_,combo=find_controls(page,timeout=120)
-                  combo.click()
+                  frame,date_input,select_surface=find_controls(page,timeout=120)
+                  assert (date_input.input_value() or "").strip() in {"09/24/2026","9/24/2026"}
+                  select_surface.click()
                   page.wait_for_timeout(300)
                   options=[x.strip() for x in frame.get_by_role("option").all_inner_texts() if x.strip()]
                   assert any(target_matchup in x for x in options)
                   frame.get_by_role("option").filter(has_text=target_matchup).first.click()
                   page.wait_for_timeout(1200)
 
-                  frame,_,combo=find_controls(page,timeout=120)
-                  selected=(combo.inner_text() or "").strip()
+                  frame,_,select_surface=find_controls(page,timeout=120)
+                  selected=(select_surface.inner_text() or "").strip()
                   assert target_matchup in selected
 
                   picker=find_picker(page)
