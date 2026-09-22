@@ -198,6 +198,27 @@ _CARD_CSS = r"""
   .ks-py59-support{grid-template-columns:1fr!important}
 }
 @media(max-width:680px){
+  /* Final user-visible Step 4 blocker: browser proof measured the V58 picker
+     header at 278px tall, pushing the first QB card to y=1601. Keep the picker
+     title + action state, but collapse only its verbose mobile intro copy. */
+  .ks-py58-head{
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    min-height:64px!important;
+    margin-bottom:6px!important;
+    padding:8px 10px!important;
+  }
+  .ks-py58-head .ks-py58-kicker,
+  .ks-py58-head .ks-py58-sub{
+    display:none!important;
+  }
+  .ks-py58-head .ks-py58-title{
+    margin:0!important;
+    font-size:1.05rem!important;
+    line-height:1.1!important;
+  }
   .ks-py58-card,
   .ks-py59-player{
     border-radius:var(--kyre-sem-radius-section)!important;
