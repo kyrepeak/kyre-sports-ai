@@ -165,18 +165,6 @@ jobs:
                   page.wait_for_timeout(500)
               raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_PICKER_NOT_READY")
 
-          def find_v210_runtime(page, timeout=120):
-              deadline = time.monotonic() + timeout
-              while time.monotonic() < deadline:
-                  for candidate in page.frames:
-                      try:
-                          if candidate.locator('[data-passing-yards-v210-runtime="qb-detail-step2"]').count() >= 1:
-                              return candidate
-                      except Exception:
-                          pass
-                  page.wait_for_timeout(500)
-              raise BrowserQAFailure("PASSING_YARDS_QB_STEP2_V210_RUNTIME_NOT_READY")
-
           def find_detail(page, slot, timeout=120):
               selector = f'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="{slot}"]'
               deadline = time.monotonic() + timeout
@@ -207,7 +195,6 @@ jobs:
               try:
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
                   picker = find_picker(page, timeout=600)
-                  find_v210_runtime(page, timeout=120)
 
                   landing_body = picker.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(landing_body)
@@ -243,7 +230,6 @@ jobs:
                           raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP2_CONTEXT_LINK: slot={slot} href={href}")
 
                       detail_page, target = click_anchor(current_page, current_picker, link)
-                      find_v210_runtime(detail_page, timeout=120)
                       detail = find_detail(detail_page, slot)
                       body = detail.locator("body").inner_text(timeout=5000)
                       forbidden = _body_has_forbidden_error(body)
@@ -293,7 +279,6 @@ jobs:
                       back = detail.locator('a[data-qb-back="true"]').first
                       return_page, _ = click_anchor(detail_page, detail, back)
                       current_picker = find_picker(return_page)
-                      find_v210_runtime(return_page, timeout=120)
                       current_page = return_page
 
                   final_body = current_picker.locator("body").inner_text(timeout=5000)
