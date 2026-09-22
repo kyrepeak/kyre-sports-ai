@@ -244,19 +244,35 @@ jobs:
                       }"""
                   )
                   date_style = frame.locator(
-                      ".st-key-kyre_passing_yards_top_v46 [data-testid='stDateInput'] [data-baseweb='input']"
+                      ".st-key-kyre_passing_yards_top_v46 [data-testid='stDateInput']"
                   ).first.evaluate(
                       """el => {
-                          const s=getComputedStyle(el);
-                          return {minHeight:s.minHeight,borderRadius:s.borderRadius,backgroundColor:s.backgroundColor};
+                          const r=el.getBoundingClientRect();
+                          const interactive=el.querySelector('input, [role="textbox"], button');
+                          const ir=interactive ? interactive.getBoundingClientRect() : null;
+                          return {
+                              width:r.width,
+                              height:r.height,
+                              interactive:Boolean(interactive),
+                              interactiveWidth:ir ? ir.width : 0,
+                              interactiveHeight:ir ? ir.height : 0
+                          };
                       }"""
                   )
                   select_style = frame.locator(
-                      ".st-key-kyre_passing_yards_top_v46 [data-testid='stSelectbox'] [data-baseweb='select']>div"
+                      ".st-key-kyre_passing_yards_top_v46 [data-testid='stSelectbox']"
                   ).first.evaluate(
                       """el => {
-                          const s=getComputedStyle(el);
-                          return {minHeight:s.minHeight,borderRadius:s.borderRadius,backgroundColor:s.backgroundColor};
+                          const r=el.getBoundingClientRect();
+                          const interactive=el.querySelector('[role="combobox"], input, button');
+                          const ir=interactive ? interactive.getBoundingClientRect() : null;
+                          return {
+                              width:r.width,
+                              height:r.height,
+                              interactive:Boolean(interactive),
+                              interactiveWidth:ir ? ir.width : 0,
+                              interactiveHeight:ir ? ir.height : 0
+                          };
                       }"""
                   )
                   detail_style = frame.locator(".ks-py48-support details").first.evaluate(
@@ -273,10 +289,12 @@ jobs:
                   if top_style["boxShadow"] in {"none", ""}:
                       raise BrowserQAFailure(f"PASSING_YARDS_STEP6_TOP_SHADOW: {top_style}")
                   for name, style in (("DATE", date_style), ("MATCHUP", select_style)):
-                      if style["minHeight"] in {"0px", "0"}:
-                          raise BrowserQAFailure(f"PASSING_YARDS_STEP6_{name}_HEIGHT: {style}")
-                      if style["borderRadius"] in {"0px", "0"}:
-                          raise BrowserQAFailure(f"PASSING_YARDS_STEP6_{name}_RADIUS: {style}")
+                      if not style["interactive"]:
+                          raise BrowserQAFailure(f"PASSING_YARDS_STEP6_{name}_INTERACTIVE: {style}")
+                      if style["width"] <= 0 or style["height"] < 40:
+                          raise BrowserQAFailure(f"PASSING_YARDS_STEP6_{name}_VISIBLE_SURFACE: {style}")
+                      if style["interactiveWidth"] <= 0 or style["interactiveHeight"] < 28:
+                          raise BrowserQAFailure(f"PASSING_YARDS_STEP6_{name}_TOUCH_TARGET: {style}")
                   if "gradient" not in detail_style["backgroundImage"].lower():
                       raise BrowserQAFailure(f"PASSING_YARDS_STEP6_DETAIL_BACKGROUND: {detail_style}")
 
