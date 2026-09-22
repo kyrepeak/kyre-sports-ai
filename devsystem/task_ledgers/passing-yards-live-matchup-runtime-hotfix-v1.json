@@ -1,6 +1,6 @@
 {
   "task": "passing-yards-live-matchup-runtime-hotfix-v1",
-  "status": "DIAGNOSING",
+  "status": "PATCH_PENDING_TARGETED_PROOF",
   "source_main": "2cc5968749cdbe6b6c0510a39e8045782bca1cf1",
   "user_evidence": {
     "date": "2026-09-24",
@@ -17,5 +17,25 @@
     "streamlit_memory_lazy_router_v211.py",
     "streamlit_memory_lazy_router_v212.py"
   ],
-  "mission": "Reproduce the real verified-matchup path, identify the exact TypeError, apply the smallest additive presentation/runtime repair, then prove branch and public production GREEN."
+  "mission": "Reproduce the real verified-matchup path, identify the exact TypeError, apply the smallest additive presentation/runtime repair, then prove branch and public production GREEN.",
+  "root_cause": {
+    "evidence_run": 35774190002,
+    "deepest_traceback": "nfl_passing_yards_defense_v1.py:_completed_event_rows line 216",
+    "classification": "TZ_AWARE_VS_NAIVE_TIMESTAMP_COMPARISON",
+    "explanation": "ESPN schedule event timestamps are offset-aware while the selected 2026-09-24 cutoff is a plain date. V1 compares normalized timestamps directly and raises TypeError. The repository already contains nfl_passing_yards_defense_v3._completed_event_rows_utc plus a regression test for this exact source shape, but the frozen V7/V8 render path still holds the V1 module reference.",
+    "patch": "V61 runtime-only adapter temporarily routes V1 _completed_event_rows through the already-certified V3 UTC parser for the render call, then restores V1. No V58/V59/V60/V209/V210/V211/V212 or model/projection/probability/market math changes."
+  },
+  "acceptance": {
+    "branch_exact_date": "2026-09-24",
+    "matchup": "Atlanta Falcons @ Green Bay Packers",
+    "no_typeerror": true,
+    "v60_header": true,
+    "v46_controls": true,
+    "v58_picker": true,
+    "qb_cards": 2,
+    "qb1_click": true,
+    "v59_detail": true,
+    "back_restores_picker": true,
+    "final_public_main_exact_date_proof": true
+  }
 }
