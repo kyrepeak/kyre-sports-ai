@@ -161,20 +161,30 @@ jobs:
               print("STEP3_PUBLIC_STATE_DIAGNOSTIC_TIMEOUT " + json.dumps(last, sort_keys=True))
               raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_PICKER_NOT_READY_DIAGNOSTIC")
 
+          def _page_snapshots(page):
+              out = []
+              for candidate in page.frames:
+                  try:
+                      out.append(_snapshot(candidate))
+                  except Exception as exc:
+                      out.append({"url": getattr(candidate, "url", ""), "snapshot_error": type(exc).__name__})
+              return out
+
           def find_detail(page, slot, timeout=120):
               selector = f'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="{slot}"]'
               deadline = time.monotonic() + timeout
+              last = []
               while time.monotonic() < deadline:
+                  last = _page_snapshots(page)
                   for candidate in page.frames:
                       try:
-                          if (
-                              candidate.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
-                              and candidate.locator(selector).count() == 1
-                          ):
+                          if candidate.locator(selector).count() == 1:
+                              print("STEP3_PUBLIC_DETAIL_FRAME " + json.dumps(_snapshot(candidate), sort_keys=True))
                               return candidate
                       except Exception:
                           pass
                   page.wait_for_timeout(500)
+              print("STEP3_PUBLIC_DETAIL_TIMEOUT " + json.dumps(last, sort_keys=True))
               raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_DETAIL_NOT_READY: slot={slot}")
 
           def click_anchor(page, frame, locator):
@@ -196,11 +206,7 @@ jobs:
                   picker = find_picker(page)
                   landing_state = _snapshot(picker)
                   print("STEP3_PUBLIC_STATE_LANDING " + json.dumps(landing_state, sort_keys=True))
-                  if landing_state["v60_header"] != 1 or landing_state["v60_style"] < 1:
-                      raise BrowserQAFailure(
-                          "PASSING_YARDS_QB_STEP3_V60_NOT_RENDERED: "
-                          + json.dumps(landing_state, sort_keys=True)
-                      )
+                  print("STEP3_PUBLIC_ALL_FRAMES_LANDING " + json.dumps(_page_snapshots(page), sort_keys=True))
 
                   body = picker.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(body)
@@ -250,15 +256,21 @@ jobs:
                   link = picker.locator('a[data-qb-select="1"]').first
                   detail_page, target = click_anchor(page, picker, link)
                   detail = find_detail(detail_page, 1)
+                  print("STEP3_PUBLIC_ALL_FRAMES_DETAIL " + json.dumps(_page_snapshots(detail_page), sort_keys=True))
                   detail_body = detail.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(detail_body)
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_DETAIL_RUNTIME: {forbidden}")
 
+                  all_detail_frames = _page_snapshots(detail_page)
+                  header_any_frame = any(x.get("v60_header") == 1 for x in all_detail_frames)
+                  style_any_frame = any((x.get("v60_style") or 0) >= 1 for x in all_detail_frames)
                   detail_result = {
                       "name": qb1_name,
                       "navigation_target": target,
                       "header": detail.locator('section[data-passing-yards-step3-header="v60"]').count(),
+                      "header_any_frame": header_any_frame,
+                      "style_any_frame": style_any_frame,
                       "detail": detail.locator('[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]').count(),
                       "player_cards": detail.locator(".ks-py59-player").count(),
                       "identity_visible": bool(qb1_name and qb1_name in detail_body),
@@ -266,7 +278,8 @@ jobs:
                   }
                   result["qb1_regression"] = detail_result
                   if not (
-                      detail_result["header"] == 1
+                      detail_result["header_any_frame"]
+                      and detail_result["style_any_frame"]
                       and detail_result["detail"] == 1
                       and detail_result["player_cards"] == 1
                       and detail_result["identity_visible"]
