@@ -349,3 +349,115 @@ jobs:
               finally:
                   browser.close()
           PY
+
+
+  public-click-context-diagnostic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install click diagnostic dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Diagnose public QB click context
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              try:
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+
+                  frame = None
+                  deadline = time.monotonic() + 90.0
+                  while time.monotonic() < deadline:
+                      for candidate in page.frames:
+                          try:
+                              if (
+                                  candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                                  and candidate.locator('[data-qb-selection-card]').count() == 2
+                              ):
+                                  frame = candidate
+                                  break
+                          except Exception:
+                              pass
+                      if frame is not None:
+                          break
+                      page.wait_for_timeout(500)
+
+                  if frame is None:
+                      raise RuntimeError("CLICK_CONTEXT_DIAGNOSTIC: V58 picker did not stabilize")
+
+                  link = frame.locator('a[data-qb-select="1"]').first
+                  before = {
+                      "page_url": page.url,
+                      "frame_url": frame.url,
+                      "raw_href": link.get_attribute("href"),
+                      "resolved_href": link.evaluate("el => el.href"),
+                      "target": link.get_attribute("target"),
+                      "base_uri": link.evaluate("el => el.baseURI"),
+                  }
+                  print("CLICK_CONTEXT_BEFORE=" + json.dumps(before, sort_keys=True))
+
+                  navigations = []
+                  page.on("framenavigated", lambda f: navigations.append(f.url))
+                  link.click()
+                  page.wait_for_timeout(30000)
+
+                  selected = 0
+                  selected_frame_url = None
+                  frames_after = []
+                  for candidate in page.frames:
+                      info = {"url": candidate.url}
+                      try:
+                          count = candidate.locator('[data-passing-yards-selected-qb="1"]').count()
+                          info["selected_shell"] = count
+                          if count:
+                              selected = count
+                              selected_frame_url = candidate.url
+                      except Exception as exc:
+                          info["error"] = type(exc).__name__
+                      frames_after.append(info)
+
+                  after = {
+                      "page_url": page.url,
+                      "frames": frames_after,
+                      "navigations": navigations,
+                      "selected_shell": selected,
+                      "selected_frame_url": selected_frame_url,
+                  }
+
+                  urls = [page.url] + [x.get("url","") for x in frames_after] + navigations
+                  if selected:
+                      classification = "REAL_CLICK_WORKS"
+                  elif any("ks_qb_slot=1" in u and "/~/+/" in u for u in urls):
+                      classification = "RELATIVE_LINK_NAVIGATES_INTERNAL_FRAME"
+                  elif "ks_qb_slot=1" in page.url:
+                      classification = "TOP_LEVEL_QUERY_SET_BUT_SELECTED_SHELL_MISSING"
+                  elif any("ks_qb_slot=1" in u for u in urls):
+                      classification = "QUERY_PRESENT_OUTSIDE_SELECTED_RENDER"
+                  else:
+                      classification = "CLICK_DID_NOT_CARRY_QB_QUERY"
+
+                  print("PASSING_YARDS_QB_STEP1_CLICK_CLASSIFICATION=" + classification)
+                  print("CLICK_CONTEXT_AFTER=" + json.dumps(after, indent=2, sort_keys=True))
+              finally:
+                  browser.close()
+          PY
