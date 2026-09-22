@@ -200,13 +200,17 @@ def parse_season_pass_defense(payload: dict) -> dict:
 
 
 def _completed_event_rows(payload: dict, cutoff_date: str, max_games: int = 5) -> list[dict]:
-    cutoff = pd.to_datetime(cutoff_date, errors="coerce")
+    # ESPN schedule timestamps are ISO-8601 UTC while the selected slate cutoff
+    # is a date-only string. Force both through the same UTC clock before
+    # comparing normalized days so pandas never compares tz-aware vs tz-naive
+    # Timestamps. This preserves the intended pre-game cutoff semantics.
+    cutoff = pd.to_datetime(cutoff_date, errors="coerce", utc=True)
     rows = []
     for event in (payload or {}).get("events") or []:
         if not isinstance(event, dict):
             continue
         event_id = _safe(event.get("id"))
-        event_date = pd.to_datetime(event.get("date"), errors="coerce")
+        event_date = pd.to_datetime(event.get("date"), errors="coerce", utc=True)
         competitions = event.get("competitions") or []
         comp = competitions[0] if competitions and isinstance(competitions[0], dict) else {}
         status = ((comp.get("status") or {}).get("type") or {}) if isinstance(comp, dict) else {}
