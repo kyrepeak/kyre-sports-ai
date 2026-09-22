@@ -33,6 +33,7 @@ PASSING_YARDS_UNIVERSAL_STEP4_RUNTIME = "NFL_PASSING_YARDS_V54_RUNTIME_COMPAT_RE
 PASSING_YARDS_STEP4_PUBLIC_DEPLOY_REFRESH = "NFL_PASSING_YARDS_V54_PUBLIC_REVISION_READY_2026_09_21"
 PASSING_YARDS_UNIVERSAL_STEP5_RUNTIME = "NFL_PASSING_YARDS_V55_ANALYSIS_SECTIONS_2026_09_21"
 PASSING_YARDS_UNIVERSAL_STEP6_RUNTIME = "NFL_PASSING_YARDS_V56_CONTROLS_NAVIGATION_2026_09_21"
+PASSING_YARDS_UNIVERSAL_STEP7_RUNTIME = "NFL_PASSING_YARDS_V57_RESPONSIVE_TABLET_MOBILE_2026_09_21"
 CFB_GAME_TOTAL_UNIVERSAL_THEME_RUNTIME = "CFB_GAME_TOTAL_V34_UNIVERSAL_THEME_2026_09_20"
 REMAINING_PAGES_UNIVERSAL_THEME_RUNTIME = "SITEWIDE_REMAINING_PAGES_V1_2026_09_20"
 
@@ -295,7 +296,8 @@ DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"
 try:
     _app_started = perf_counter()
     _bootstrap_started = perf_counter()
-    from streamlit_memory_lazy_router_v207 import record_bootstrap_import_ms, render_app
+    from streamlit_memory_lazy_router_v208 import record_bootstrap_import_ms, render_app
+    # Frozen Passing Yards Step 6 V207 certification compatibility: from streamlit_memory_lazy_router_v207 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 5 V206 certification compatibility: from streamlit_memory_lazy_router_v206 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 4 V205 certification compatibility: from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app
     # Frozen Passing Yards Step 3 V204 certification compatibility: from streamlit_memory_lazy_router_v204 import record_bootstrap_import_ms, render_app
