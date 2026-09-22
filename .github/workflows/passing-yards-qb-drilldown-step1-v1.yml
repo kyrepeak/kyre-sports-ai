@@ -166,8 +166,9 @@ jobs:
                           break
                       if time.monotonic() >= deadline:
                           raise BrowserQAFailure("PASSING_YARDS_QB_STEP1_DEPLOYMENT_READINESS: V58 selection screen not live")
+                      # Do not reload while Streamlit is hydrating. Repeated navigation
+                      # starves the public app before the V58 DOM can stabilize.
                       page.wait_for_timeout(1500)
-                      page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
 
                   body = frame.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(body)
