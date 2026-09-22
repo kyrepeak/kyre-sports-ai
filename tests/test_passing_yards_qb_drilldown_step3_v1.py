@@ -21,10 +21,11 @@ def test_step3_header_has_durable_visible_markers():
     assert 'data-passing-yards-step3-controls="true"' in V60
 
 
-def test_step3_header_css_and_visible_body_render_separately():
-    assert 'header_body = header_html[len(_HEADER_CSS):]' in V60
-    assert 'st.markdown(_HEADER_CSS, unsafe_allow_html=True)' in V60
-    assert 'st.markdown(header_body, unsafe_allow_html=True)' in V60
+def test_step3_header_uses_frozen_final_html_path():
+    assert 'original_builder = prior._qb_drilldown_step2_html' in V60
+    assert 'prior._qb_drilldown_step2_html = _with_step3_header(original_builder)' in V60
+    assert 'return _header_html() + builder(captured)' in V60
+    assert 'prior._qb_drilldown_step2_html = original_builder' in V60
 
 
 def test_step3_header_matches_approved_structure():
@@ -95,3 +96,43 @@ def test_app_boots_v211_and_preserves_v210_compatibility():
     assert "from streamlit_memory_lazy_router_v211 import record_bootstrap_import_ms, render_app" in APP
     assert "Frozen QB Drill-Down Step 2 V210 compatibility" in APP
     assert 'PASSING_YARDS_QB_DRILLDOWN_STEP3_HEADER_RUNTIME = "NFL_PASSING_YARDS_V60_HEADER_2026_09_22"' in APP
+
+
+def test_v60_header_is_prepended_to_proven_qb_render_path(monkeypatch):
+    import importlib.util
+    import sys
+    import types
+
+    prior_stub = types.ModuleType("nfl_passing_yards_hub_v59")
+
+    def base_builder(captured):
+        return '<section data-passing-yards-selection-screen="v58"><article data-qb-selection-card="1"></article><article data-qb-selection-card="2"></article></section>'
+
+    prior_stub._qb_drilldown_step2_html = base_builder
+
+    def prior_render():
+        return prior_stub._qb_drilldown_step2_html({})
+
+    prior_stub.render_nfl_passing_yards_hub = prior_render
+
+    streamlit_stub = types.ModuleType("streamlit")
+    streamlit_stub.query_params = {}
+
+    monkeypatch.setitem(sys.modules, "streamlit", streamlit_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_hub_v59", prior_stub)
+
+    spec = importlib.util.spec_from_file_location(
+        "nfl_passing_yards_hub_v60_final_path_probe",
+        ROOT / "nfl_passing_yards_hub_v60.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    rendered = module.render_nfl_passing_yards_hub()
+
+    assert 'data-passing-yards-step3-header-css="v60"' in rendered
+    assert 'data-passing-yards-step3-header="v60"' in rendered
+    assert 'data-passing-yards-selection-screen="v58"' in rendered
+    assert rendered.index('data-passing-yards-step3-header="v60"') < rendered.index('data-passing-yards-selection-screen="v58"')
+    assert prior_stub._qb_drilldown_step2_html is base_builder
