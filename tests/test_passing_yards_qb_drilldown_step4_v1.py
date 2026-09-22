@@ -115,6 +115,10 @@ def test_v61_emits_card_css_before_frozen_v60(monkeypatch):
     def markdown(body, *args, **kwargs):
         calls.append(("markdown", str(body), bool(kwargs.get("unsafe_allow_html"))))
     streamlit_stub.markdown = markdown
+    streamlit_stub.success = lambda body, *args, **kwargs: calls.append(("success", str(body), False))
+    streamlit_stub.warning = lambda body, *args, **kwargs: calls.append(("warning", str(body), False))
+    streamlit_stub.info = lambda body, *args, **kwargs: calls.append(("info", str(body), False))
+    streamlit_stub.caption = lambda body, *args, **kwargs: calls.append(("caption", str(body), False))
 
     prior_stub = types.ModuleType("nfl_passing_yards_hub_v60")
     def prior_render():
