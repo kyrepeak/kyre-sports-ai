@@ -51,7 +51,7 @@
     "concept": "Passing Yards Header",
     "production_port": "V60/V211"
   },
-  "monster_status": "RENDER_REPAIR_TARGETED_PROOF_GREEN_AWAITING_MERGE_PUBLIC_PROOF",
+  "monster_status": "ROOT_CAUSE_RESET_EMISSION_AND_DOM_LIFETIME_PROOF",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
@@ -71,5 +71,11 @@
     "targeted_step3_proof_green": true,
     "frozen_step1_step2_untouched": true,
     "final_public_proof_pending": true
+  },
+  "root_cause_reset": {
+    "authoritative_main": "b047a20b3cb17b396e29e20e9a96616ec262868a",
+    "prior_v43_theory_retracted": true,
+    "no_product_patch_in_this_checkpoint": true,
+    "objective": "Prove V60 markdown emission and observe V60 header lifetime independently from the V58 picker before choosing a patch."
   }
 }
