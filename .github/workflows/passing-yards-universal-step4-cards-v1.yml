@@ -97,6 +97,9 @@ jobs:
           assert 'next_route_retry = time.monotonic() + 20.0' in public_body
           assert 'revision_deadline = time.monotonic() + 480.0' in public_body
           assert 'page.wait_for_timeout(1000)' in public_body
+          assert 'v205_runtime_witness' in public_body
+          assert 'step4_card_style' in public_body
+          assert 'step4_card_owner' in public_body
           assert public_body.count('page.goto(route_url, wait_until="domcontentloaded", timeout=120000)') >= 2
 
           banned = (
@@ -147,6 +150,13 @@ jobs:
           )
 
           base = "https://kyre-sports-ai.streamlit.app"
+          router_source = Path("streamlit_memory_lazy_router_v205.py").read_text()
+          app_source = Path("app.py").read_text()
+          if 'PASSING_HUB = "nfl_passing_yards_hub_v54"' not in router_source:
+              raise BrowserQAFailure("PASSING_YARDS_STEP4_SOURCE_OWNER: V205 no longer owns V54")
+          if 'from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app' not in app_source:
+              raise BrowserQAFailure("PASSING_YARDS_STEP4_SOURCE_OWNER: app no longer boots V205")
+
           artifacts = Path("artifacts/passing-yards-universal-step4-public")
           artifacts.mkdir(parents=True, exist_ok=True)
           _wait_for_health(base)
@@ -173,17 +183,27 @@ jobs:
                               marker_count = candidate.locator(
                                   '[data-passing-yards-v205-runtime="step4"]'
                               ).count()
+                              step4_card_style = candidate.locator(
+                                  'style[data-passing-yards-card-system="v54"]'
+                              ).count()
+                              step4_card_owner = candidate.locator(
+                                  '[data-passing-yards-card-owner="v54"]'
+                              ).count()
                               body_start = candidate.locator("body").inner_text(timeout=3000)[:1200]
                           except Exception:
                               marker_count = 0
+                              step4_card_style = 0
+                              step4_card_owner = 0
                               body_start = ""
                           revision_scan.append({
                               "index": index,
                               "url": candidate.url,
-                              "v205_runtime": marker_count,
+                              "v205_hidden_runtime": marker_count,
+                              "step4_card_style": step4_card_style,
+                              "step4_card_owner": step4_card_owner,
                               "body_start": body_start,
                           })
-                          if marker_count >= 1:
+                          if step4_card_style == 1 and step4_card_owner == 1:
                               revision_ready = True
                               break
 
@@ -193,7 +213,7 @@ jobs:
                       if time.monotonic() >= revision_deadline:
                           raise BrowserQAFailure(
                               "PASSING_YARDS_STEP4_REVISION_READINESS: "
-                              "public Streamlit never exposed the V205 runtime witness; "
+                              "public Streamlit never exposed the V54 structural runtime witness owned by V205; "
                               + json.dumps(revision_scan, sort_keys=True)
                           )
 
@@ -222,11 +242,17 @@ jobs:
 
                       cards = frame.locator(".ks-py47-player, .ks-py48-player")
                       headers = frame.locator(".ks-py47-playerhead, .ks-py48-playerhead")
+                      step4_card_style = frame.locator('style[data-passing-yards-card-system="v54"]').count()
+                      step4_card_owner = frame.locator('[data-passing-yards-card-owner="v54"]').count()
+                      v205_hidden_runtime = frame.locator('[data-passing-yards-v205-runtime="step4"]').count()
+                      v205_runtime_witness = int(step4_card_style == 1 and step4_card_owner == 1)
+
                       evidence = {
-                          "v205_runtime": frame.locator('[data-passing-yards-v205-runtime="step4"]').count(),
+                          "v205_runtime_witness": v205_runtime_witness,
+                          "v205_hidden_runtime_diagnostic": v205_hidden_runtime,
                           "v204_runtime": frame.locator('[data-passing-yards-v204-runtime="step3"]').count(),
-                          "step4_card_style": frame.locator('style[data-passing-yards-card-system="v54"]').count(),
-                          "step4_card_owner": frame.locator('[data-passing-yards-card-owner="v54"]').count(),
+                          "step4_card_style": step4_card_style,
+                          "step4_card_owner": step4_card_owner,
                           "step3_shell_style": frame.locator('style[data-passing-yards-page-shell="v53"]').count(),
                           "step3_shell_owner": frame.locator('[data-passing-yards-shell-owner="v53"]').count(),
                           "step2_token_style": frame.locator('style[data-passing-yards-design-tokens="v52"]').count(),
@@ -238,7 +264,7 @@ jobs:
                       }
 
                       if (
-                          evidence["v205_runtime"] >= 1
+                          evidence["v205_runtime_witness"] == 1
                           and evidence["v204_runtime"] >= 1
                           and evidence["step4_card_style"] == 1
                           and evidence["step4_card_owner"] == 1
