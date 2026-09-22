@@ -95,3 +95,58 @@ def test_app_boots_v211_and_preserves_v210_compatibility():
     assert "from streamlit_memory_lazy_router_v211 import record_bootstrap_import_ms, render_app" in APP
     assert "Frozen QB Drill-Down Step 2 V210 compatibility" in APP
     assert 'PASSING_YARDS_QB_DRILLDOWN_STEP3_HEADER_RUNTIME = "NFL_PASSING_YARDS_V60_HEADER_2026_09_22"' in APP
+
+
+def test_v60_runtime_emits_css_then_visible_header_before_prior(monkeypatch):
+    import importlib.util
+    import sys
+    import types
+
+    calls = []
+
+    streamlit_stub = types.ModuleType("streamlit")
+    streamlit_stub.query_params = {}
+
+    def markdown(body, *args, **kwargs):
+        calls.append(("markdown", str(body), bool(kwargs.get("unsafe_allow_html"))))
+
+    streamlit_stub.markdown = markdown
+
+    prior_stub = types.ModuleType("nfl_passing_yards_hub_v59")
+
+    def prior_render():
+        calls.append(("prior", "", False))
+
+    prior_stub.render_nfl_passing_yards_hub = prior_render
+
+    monkeypatch.setitem(sys.modules, "streamlit", streamlit_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_hub_v59", prior_stub)
+
+    spec = importlib.util.spec_from_file_location(
+        "nfl_passing_yards_hub_v60_emission_probe",
+        ROOT / "nfl_passing_yards_hub_v60.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    header_html = module._header_html()
+    assert header_html.startswith(module._HEADER_CSS)
+    header_body = header_html[len(module._HEADER_CSS):]
+
+    assert len(header_html) > len(module._HEADER_CSS)
+    assert len(header_body) > 0
+    assert 'data-passing-yards-step3-header="v60"' in header_body
+    assert 'class="ks-py60-header"' in header_body
+
+    module.render_nfl_passing_yards_hub()
+
+    assert len(calls) == 3
+    assert calls[0][0] == "markdown"
+    assert 'data-passing-yards-step3-header-css="v60"' in calls[0][1]
+    assert calls[0][2] is True
+    assert calls[1][0] == "markdown"
+    assert 'data-passing-yards-step3-header="v60"' in calls[1][1]
+    assert 'class="ks-py60-header"' in calls[1][1]
+    assert calls[1][2] is True
+    assert calls[2][0] == "prior"
