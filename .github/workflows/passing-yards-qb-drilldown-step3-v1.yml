@@ -1,4 +1,5 @@
 name: Passing Yards QB Drill-Down Step 3
+# Step 3 final render-path repair: V60 header rides the frozen QB composition output.
 
 on:
   pull_request:
