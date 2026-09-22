@@ -12,29 +12,31 @@
     "nfl_passing_yards_hub_v58.py",
     "nfl_passing_yards_hub_v59.py",
     "nfl_passing_yards_hub_v60.py",
+    "nfl_passing_yards_hub_v61.py",
     "streamlit_memory_lazy_router_v209.py",
     "streamlit_memory_lazy_router_v210.py",
     "streamlit_memory_lazy_router_v211.py",
-    "streamlit_memory_lazy_router_v212.py"
+    "streamlit_memory_lazy_router_v212.py",
+    "app.py"
   ],
   "mission": "Reproduce the real verified-matchup path, identify the exact TypeError, apply the smallest additive presentation/runtime repair, then prove branch and public production GREEN.",
   "root_cause": {
     "failed_layer": "DATA_TIMEZONE_NORMALIZATION",
     "stack": "nfl_passing_yards_hub_v8.py -> nfl_passing_yards_defense_v1.build_pass_defense_profile -> _recent_form -> _completed_event_rows",
     "exact_line": "event_date.normalize() >= cutoff.normalize()",
-    "cause": "ESPN event date parses as a timezone-aware pandas Timestamp while the date-only slate cutoff parses as timezone-naive. Pandas raises TypeError when comparing them.",
-    "why_prior_proof_missed_it": "Previous Step 4 public proof used the default/current slate path and did not force the verified 2026-09-24 matchup. A clean branch-local exact-date run also did not deterministically receive the same upstream timestamp shape, so only the public exact-date reproduction exposed the production failure.",
-    "exact_fix_owner": "V62 additive runtime adapter over frozen V61"
+    "cause": "ESPN event timestamps are timezone-aware while the selected date-only cutoff was timezone-naive.",
+    "evidence_run": 35774190002,
+    "evidence_job": 106903096693
   },
   "acceptance": [
-    "UTC parser regression contracts pass",
-    "V58/V59/V60/V61 and V209/V210/V211/V212 remain unchanged",
-    "branch-local real Streamlit 2026-09-24 Atlanta @ Green Bay path has no TypeError",
-    "V60 header + V46 controls + V58 two-QB picker render",
-    "QB1 click renders V59 detail and Back restores picker",
-    "required DevSystem gate passes",
+    "UTC regression test passes",
+    "frozen drill-down boundary unchanged",
+    "branch-local 2026-09-24 Atlanta @ Green Bay path has no TypeError",
+    "V60 header and V58 two-QB picker render",
+    "QB1 click renders V59 detail",
+    "Back restores two-QB picker",
     "merge PR #907",
-    "public production 2026-09-24 Atlanta @ Green Bay path has no TypeError and both QB cards render"
+    "one public production 2026-09-24 proof has no TypeError and both QB cards render"
   ],
   "authoritative_reproduction": {
     "workflow_run": 35774190002,
@@ -46,16 +48,12 @@
     "has_picker": false
   },
   "patch": {
-    "files": [
-      "nfl_passing_yards_hub_v62.py",
-      "streamlit_memory_lazy_router_v213.py",
-      "app.py"
-    ],
-    "change": "Additive V62 runtime wrapper temporarily installs the already-certified V3 UTC event parser while frozen V61 renders; V213 advances only active NFL Passing Yards to V62; app boots V213 with V212 compatibility preserved.",
+    "file": "nfl_passing_yards_defense_v1.py",
+    "change": "Parse cutoff_date and ESPN event date with utc=True before normalize/compare.",
     "model_math_changed": false,
     "projection_changed": false,
     "probability_changed": false,
     "sportsbook_logic_changed": false,
-    "frozen_step4_product_files_changed": false
+    "frozen_drilldown_files_changed": false
   }
 }
