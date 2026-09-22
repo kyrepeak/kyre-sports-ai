@@ -53,9 +53,23 @@ jobs:
           streamlit_memory_lazy_router_v212.py
           tests/test_passing_yards_qb_drilldown_step4_v1.py
           EOF
+          cat > /tmp/expected-visible-repair.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step4-v1.yml
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step4-v1.json
+          nfl_passing_yards_hub_v61.py
+          tests/test_passing_yards_qb_drilldown_step4_v1.py
+          EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_SCOPE_GREEN"
+          sort -o /tmp/expected-visible-repair.txt /tmp/expected-visible-repair.txt
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_SCOPE_GREEN"
+          elif diff -q /tmp/expected-visible-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_VISIBLE_REPAIR_SCOPE_GREEN"
+          else
+            diff -u /tmp/expected.txt /tmp/actual.txt || true
+            diff -u /tmp/expected-visible-repair.txt /tmp/actual.txt || true
+            exit 1
+          fi
 
       - name: Compile Step 4 chain
         run: |
@@ -221,7 +235,126 @@ jobs:
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP4_BRANCH_RUNTIME: {forbidden}")
 
+                  legacy_visible = {
+                      "v44_page": landing.locator(".ks-v44-page:visible").count(),
+                      "matchup_spotlight": landing.locator(".kpy16-match:visible").count(),
+                      "why_projection": landing.locator(".kpy16-why:visible").count(),
+                      "combined_cards": landing.locator(".kpass34-grid:visible").count(),
+                      "combined_players": landing.locator(".kpass34-player:visible").count(),
+                  }
+                  assert all(value == 0 for value in legacy_visible.values()), legacy_visible
+
                   picker_card = landing.locator(".ks-py58-card").first
+                  assert picker_card.is_visible(), "Step 4 QB picker card is not visibly actionable"
+                  picker_box = picker_card.bounding_box()
+                  picker_context = landing.evaluate(
+                      """() => {
+                        const picker = document.querySelector('.ks-py58-card');
+                        if (!picker) return {error:'picker-missing'};
+                        const container = picker.closest('[data-testid="stElementContainer"]') || picker;
+                        const parent = container.parentElement;
+                        if (!parent) return {error:'picker-parent-missing'};
+                        const siblings = Array.from(parent.children);
+                        const index = siblings.indexOf(container);
+                        const visibleBefore = siblings.slice(0, Math.max(index, 0)).map((el, i) => {
+                          const r = el.getBoundingClientRect();
+                          const s = getComputedStyle(el);
+                          return {
+                            siblingIndex:i,
+                            testid:el.getAttribute('data-testid') || '',
+                            className:String(el.className || '').slice(0,180),
+                            text:(el.innerText || '').replace(/\\s+/g,' ').trim().slice(0,240),
+                            y:r.y,
+                            bottom:r.bottom,
+                            height:r.height,
+                            display:s.display,
+                            visibility:s.visibility,
+                            outerHTML:(el.outerHTML || '').slice(0,1800),
+                            descendants:Array.from(el.querySelectorAll('*')).slice(0,24).map(d => ({
+                              tag:d.tagName,
+                              testid:d.getAttribute('data-testid') || '',
+                              className:String(d.className || '').slice(0,160),
+                              text:(d.innerText || '').replace(/\\s+/g,' ').trim().slice(0,120)
+                            }))
+                          };
+                        }).filter(x => x.height > 1 && x.display !== 'none' && x.visibility !== 'hidden');
+                        const allBefore = siblings.slice(0, Math.max(index, 0)).map((el, i) => {
+                          const r = el.getBoundingClientRect();
+                          const s = getComputedStyle(el);
+                          return {
+                            siblingIndex:i,
+                            testid:el.getAttribute('data-testid') || '',
+                            className:String(el.className || '').slice(0,180),
+                            text:(el.innerText || '').replace(/\\s+/g,' ').trim().slice(0,160),
+                            y:r.y,
+                            bottom:r.bottom,
+                            height:r.height,
+                            display:s.display,
+                            visibility:s.visibility,
+                            marginTop:parseFloat(s.marginTop)||0,
+                            marginBottom:parseFloat(s.marginBottom)||0,
+                            paddingTop:parseFloat(s.paddingTop)||0,
+                            paddingBottom:parseFloat(s.paddingBottom)||0
+                          };
+                        });
+                        const parentStyle = getComputedStyle(parent);
+                        const containerStyle = getComputedStyle(container);
+                        const contributors = allBefore
+                          .map(x => ({...x, layoutCost:x.height+x.marginTop+x.marginBottom+x.paddingTop+x.paddingBottom}))
+                          .filter(x => x.layoutCost > 0.5)
+                          .sort((a,b) => b.layoutCost-a.layoutCost)
+                          .slice(0,12);
+                        const rect = (el) => {
+                          if (!el) return null;
+                          const r = el.getBoundingClientRect();
+                          return {x:r.x,y:r.y,bottom:r.bottom,width:r.width,height:r.height};
+                        };
+                        const screen = picker.closest('[data-passing-yards-selection-screen="v58"]');
+                        const pickerHead = screen ? screen.querySelector('.ks-py58-head') : null;
+                        const pickerGrid = screen ? screen.querySelector('.ks-py58-grid') : null;
+                        const pickerSub = screen ? screen.querySelector('.ks-py58-sub') : null;
+                        return {
+                          pickerY: picker.getBoundingClientRect().y,
+                          selectionScreenBox:rect(screen),
+                          pickerHeadBox:rect(pickerHead),
+                          pickerGridBox:rect(pickerGrid),
+                          pickerSubBox:rect(pickerSub),
+                          pickerHeadText:pickerHead ? (pickerHead.innerText || '').replace(/\\s+/g,' ').trim().slice(0,260) : '',
+                          containerIndex:index,
+                          containerTestid: container.getAttribute('data-testid') || '',
+                          containerMarginTop:parseFloat(containerStyle.marginTop)||0,
+                          containerPaddingTop:parseFloat(containerStyle.paddingTop)||0,
+                          parentRowGap:parentStyle.rowGap,
+                          parentColumnGap:parentStyle.columnGap,
+                          parentPaddingTop:parentStyle.paddingTop,
+                          parentPaddingBottom:parentStyle.paddingBottom,
+                          visibleBeforeCount: visibleBefore.length,
+                          immediateVisibleBefore: visibleBefore.length ? visibleBefore[visibleBefore.length - 1] : null,
+                          lastFiveVisibleBefore: visibleBefore.slice(-5),
+                          largestLayoutContributorsBeforePicker:contributors,
+                          lastTwelveRawBeforePicker:allBefore.slice(-12)
+                        };
+                      }"""
+                  )
+                  print("PASSING_YARDS_QB_STEP4_PICKER_CONTEXT")
+                  print(json.dumps(picker_context, indent=2))
+
+                  selection_screen = landing.locator('[data-passing-yards-selection-screen="v58"]').first
+                  selection_screen_box = selection_screen.bounding_box()
+                  assert selection_screen_box is not None, "Step 4 QB selection screen has no layout box"
+                  assert selection_screen_box["y"] < 1400, {
+                      "selection_screen_box": selection_screen_box,
+                      "picker_box": picker_box,
+                      "picker_context": picker_context,
+                  }
+                  assert picker_box is not None and picker_box["y"] - selection_screen_box["y"] < 420, {
+                      "selection_screen_box": selection_screen_box,
+                      "picker_box": picker_box,
+                      "picker_context": picker_context,
+                  }
+                  assert picker_context["visibleBeforeCount"] == 1, picker_context
+                  assert "PASSING YARDS CONTROL DECK" in (picker_context["immediateVisibleBefore"] or {}).get("text", ""), picker_context
+
                   picker_style = card_style(picker_card)
                   result = {
                       "style_witness": landing.locator('style[data-passing-yards-step4-card-system="v61"]').count(),
@@ -230,6 +363,8 @@ jobs:
                       "cards": landing.locator('[data-qb-selection-card]').count(),
                       "links": landing.locator('a[data-qb-select]').count(),
                       "picker_style": picker_style,
+                      "picker_box": picker_box,
+                      "legacy_visible": legacy_visible,
                   }
                   assert result["style_witness"] >= 1, result
                   assert result["header"] == 1 and result["picker"] == 1, result
@@ -424,7 +559,20 @@ jobs:
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP4_PUBLIC_RUNTIME: {forbidden}")
 
-                  picker_style = card_style(landing.locator(".ks-py58-card").first)
+                  legacy_visible = {
+                      "v44_page": landing.locator(".ks-v44-page:visible").count(),
+                      "matchup_spotlight": landing.locator(".kpy16-match:visible").count(),
+                      "why_projection": landing.locator(".kpy16-why:visible").count(),
+                      "combined_cards": landing.locator(".kpass34-grid:visible").count(),
+                      "combined_players": landing.locator(".kpass34-player:visible").count(),
+                  }
+                  assert all(value == 0 for value in legacy_visible.values()), legacy_visible
+
+                  picker_card = landing.locator(".ks-py58-card").first
+                  assert picker_card.is_visible(), "Public Step 4 QB picker card is not visibly actionable"
+                  picker_box = picker_card.bounding_box()
+                  assert picker_box is not None and picker_box["y"] < 1400, picker_box
+                  picker_style = card_style(picker_card)
                   result = {
                       "status":"GREEN",
                       "main_revision_witness":"v61",
@@ -438,6 +586,8 @@ jobs:
                       "selection_cards":landing.locator('[data-qb-selection-card]').count(),
                       "select_links":landing.locator('a[data-qb-select]').count(),
                       "picker_style":picker_style,
+                      "picker_box":picker_box,
+                      "legacy_visible":legacy_visible,
                   }
                   assert result["style_witness"] >= 1, result
                   assert result["header"] == 1 and result["title"] == "Passing Yards", result

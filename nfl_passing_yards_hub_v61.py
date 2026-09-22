@@ -9,6 +9,9 @@ unchanged.
 """
 from __future__ import annotations
 
+import re
+from typing import Any
+
 import streamlit as st
 
 import nfl_passing_yards_hub_v60 as prior
@@ -114,12 +117,108 @@ _CARD_CSS = r"""
 .ks-py59-support summary{
   color:var(--kyre-sem-text-accent-soft)!important;
 }
+/* Step 4 visible-composition repair:
+   keep the compact V46 slate controls, but collapse legacy native evidence
+   widgets that are still emitted before V34's final QB drill-down placeholder. */
+/* Suppressed legacy calls still leave zero-height Streamlit element containers.
+   In a vertical flex stack those zero-height siblings still consume the parent's
+   gap, which pushed the first QB card to y=2508px. Remove those containers from
+   layout entirely and hide the duplicate frozen V8 matchup widget; V46 owns the
+   single visible matchup control. */
+/* Branch proof after the duplicate V8 widget was removed still measured
+   the picker at y=2424 with only the V46 control deck visibly before it.
+   The remaining blank space is the frozen V53 direct vertical-stack gap
+   repeated across suppressed zero-height siblings. Collapse only that layout
+   gap; V46 controls and V58/V59 keep their own explicit spacing. */
+.st-key-kyre_passing_yards_shell_v1 > [data-testid="stVerticalBlock"]{
+  gap:0!important;
+}
+.st-key-kyre_passing_yards_shell_v1
+  [data-testid="stElementContainer"]:has(> div:empty){
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+}
+.st-key-kyre_passing_yards_shell_v1
+  .st-key-nfl_passing_yards_v8_matchup{
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+}
+
+/* The frozen V15 result-first Game Center is another pre-drill-down surface.
+   Remove its Streamlit element container, and remove owner-level flex gaps so
+   hidden/zero-height legacy deltas cannot create blank mobile scroll distance. */
+.st-key-kyre_passing_yards_universal_owner_v1{
+  gap:0!important;
+}
+.st-key-kyre_passing_yards_universal_owner_v1
+  [data-testid="stElementContainer"]:has(.kpy15-center){
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+
+/* Exact remaining visible blocker from branch-local DOM proof:
+   the legacy KPY15 Game Center is the immediate visible surface above V58.
+   Collapse its Streamlit element container; do not touch V46 controls. */
+.st-key-kyre_passing_yards_shell_v1
+  [data-testid="stElementContainer"]:has(.kpy15-center){
+  display:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stDataFrame"],
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stTable"],
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stMetric"],
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stExpander"],
+.st-key-kyre_passing_yards_shell_v1
+  [data-testid="stHorizontalBlock"]:has(input[aria-label="Sportsbook / source"]){
+  display:none!important;
+  margin:0!important;
+  min-height:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+
 @media(max-width:900px){
   .ks-py58-grid,
   .ks-py59-evidence,
   .ks-py59-support{grid-template-columns:1fr!important}
 }
 @media(max-width:680px){
+  /* Final user-visible Step 4 blocker: browser proof measured the V58 picker
+     header at 278px tall, pushing the first QB card to y=1601. Keep the picker
+     title + action state, but collapse only its verbose mobile intro copy. */
+  .ks-py58-head{
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    min-height:64px!important;
+    margin-bottom:6px!important;
+    padding:8px 10px!important;
+  }
+  .ks-py58-head .ks-py58-kicker,
+  .ks-py58-head .ks-py58-sub{
+    display:none!important;
+  }
+  .ks-py58-head .ks-py58-title{
+    margin:0!important;
+    font-size:1.05rem!important;
+    line-height:1.1!important;
+  }
   .ks-py58-card,
   .ks-py59-player{
     border-radius:var(--kyre-sem-radius-section)!important;
@@ -135,12 +234,85 @@ _CARD_CSS = r"""
 </style>
 """
 
+_STYLE_BLOCK_RE = re.compile(r"<style\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
+_LEGACY_STATUS_PREFIXES = ("✅ STEP ", "⚠️ STEP ", "ℹ️ STEP ", "🏆 NFL PASSING YARDS BUILD")
+
+def _style_blocks_only(body: Any) -> tuple[str, ...]:
+    if not isinstance(body, str):
+        return ()
+    return tuple(_STYLE_BLOCK_RE.findall(body))
+
+def _preserve_style_block(style: str) -> bool:
+    # The current visible Step 4 composition only needs the frozen V60 header
+    # CSS and V46 compact control-deck CSS before V34 emits V58/V59. The
+    # picker/detail payload itself carries its own universal/theme CSS.
+    return (
+        'data-passing-yards-step3-header-css="v60"' in style
+        or 'data-passing-yards-top-polish="v46"' in style
+    )
+
+def _is_legacy_status(body: Any) -> bool:
+    return str(body if body is not None else "").strip().startswith(_LEGACY_STATUS_PREFIXES)
+
 def build_passing_yards_step4_card_css() -> str:
     return build_semantic_tokens_css() + _CARD_CSS
 
 def render_nfl_passing_yards_hub() -> None:
+    """Keep the frozen data pipeline, but expose only the current drill-down UI.
+
+    V58/V59 already own the picker/detail HTML through V34's final placeholder.
+    Legacy wrappers above that placeholder still execute for certified data
+    capture, but their visible st.markdown/status output is suppressed here.
+    CSS is preserved so the frozen capture/render chain remains styled.
+    """
     st.markdown(build_passing_yards_step4_card_css(), unsafe_allow_html=True)
-    return prior.render_nfl_passing_yards_hub()
+
+    original_markdown = st.markdown
+    original_success = st.success
+    original_warning = st.warning
+    original_info = st.info
+    original_caption = st.caption
+
+    def styles_only_markdown(body: Any, *args: Any, **kwargs: Any):
+        for style in _style_blocks_only(body):
+            if _preserve_style_block(style):
+                original_markdown(style, unsafe_allow_html=True)
+        return None
+
+    def filtered_success(body: Any, *args: Any, **kwargs: Any):
+        if _is_legacy_status(body):
+            return None
+        return original_success(body, *args, **kwargs)
+
+    def filtered_warning(body: Any, *args: Any, **kwargs: Any):
+        if _is_legacy_status(body):
+            return None
+        return original_warning(body, *args, **kwargs)
+
+    def filtered_info(body: Any, *args: Any, **kwargs: Any):
+        if _is_legacy_status(body):
+            return None
+        return original_info(body, *args, **kwargs)
+
+    def filtered_caption(body: Any, *args: Any, **kwargs: Any):
+        text = str(body if body is not None else "")
+        if "10/10 COMPLETE" in text or "10 / 10 COMPLETE" in text:
+            return None
+        return original_caption(body, *args, **kwargs)
+
+    st.markdown = styles_only_markdown
+    st.success = filtered_success
+    st.warning = filtered_warning
+    st.info = filtered_info
+    st.caption = filtered_caption
+    try:
+        return prior.render_nfl_passing_yards_hub()
+    finally:
+        st.markdown = original_markdown
+        st.success = original_success
+        st.warning = original_warning
+        st.info = original_info
+        st.caption = original_caption
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
     if str(market or "Passing Yards") != "Passing Yards":
@@ -161,6 +333,9 @@ __all__ = [
     "PRESENTATION_ONLY",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
+    "_is_legacy_status",
+    "_preserve_style_block",
+    "_style_blocks_only",
     "build_passing_yards_step4_card_css",
     "render_nfl_hub",
     "render_nfl_passing_yards_hub",
