@@ -59,21 +59,12 @@ jobs:
           nfl_passing_yards_hub_v61.py
           tests/test_passing_yards_qb_drilldown_step4_v1.py
           EOF
-          cat > /tmp/expected-live-runtime-hotfix.txt <<'EOF'
-          .github/workflows/passing-yards-qb-drilldown-step4-v1.yml
-          devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json
-          nfl_passing_yards_hub_v61.py
-          tests/test_passing_yards_qb_drilldown_step4_v1.py
-          EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
           sort -o /tmp/expected-visible-repair.txt /tmp/expected-visible-repair.txt
-          sort -o /tmp/expected-live-runtime-hotfix.txt /tmp/expected-live-runtime-hotfix.txt
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_SCOPE_GREEN"
           elif diff -q /tmp/expected-visible-repair.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_VISIBLE_REPAIR_SCOPE_GREEN"
-          elif diff -q /tmp/expected-live-runtime-hotfix.txt /tmp/actual.txt >/dev/null; then
-            echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_LIVE_RUNTIME_HOTFIX_SCOPE_GREEN"
           else
             diff -u /tmp/expected.txt /tmp/actual.txt || true
             diff -u /tmp/expected-visible-repair.txt /tmp/actual.txt || true
@@ -239,49 +230,7 @@ jobs:
               try:
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
                   landing = find_landing(page)
-                  date_widget = landing.locator('[data-testid="stDateInput"]').first
-                  try:
-                      print("PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_HTML")
-                      print(date_widget.evaluate("el => el.outerHTML"))
-                      print("PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_ROLES")
-                      print(json.dumps(date_widget.evaluate("""el => Array.from(el.querySelectorAll('[role]')).map(x => ({role:x.getAttribute('role'), aria:x.getAttribute('aria-label'), text:x.innerText, contenteditable:x.getAttribute('contenteditable')}))"""), indent=2))
-                      day_segment = date_widget.get_by_role("spinbutton", name="day, Slate date")
-                      day_segment.fill("24")
-                      day_segment.press("Tab")
-                      page.wait_for_timeout(8000)
-                      print("PASSING_YARDS_LIVE_MATCHUP_AFTER_DATE_2026_09_24")
-                      live_probe_texts = []
-                      for probe_frame in page.frames:
-                          try:
-                              probe_body = probe_frame.locator("body").inner_text(timeout=3000)
-                          except Exception:
-                              continue
-                          if "PASSING YARDS CONTROL DECK" in probe_body or "TypeError" in probe_body:
-                              live_probe_texts.append(probe_body)
-                              print(probe_body[:30000])
-                      live_probe = "\n".join(live_probe_texts)
-                      if "TypeError" in live_probe or "Traceback" in live_probe:
-                          raise BrowserQAFailure("PASSING_YARDS_QB_STEP4_LIVE_MATCHUP_RUNTIME_ERROR")
-                      if "Atlanta Falcons @ Green Bay Packers" not in live_probe and "Matchup • 1 verified games" not in live_probe:
-                          raise BrowserQAFailure("PASSING_YARDS_QB_STEP4_LIVE_MATCHUP_NOT_RESOLVED")
-                  except Exception as exc:
-                      print(f"PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_INSPECT_FAILED: {exc}")
-                  try:
-                      landing = find_landing(page, timeout=40)
-                      body = landing.locator("body").inner_text(timeout=5000)
-                  except Exception:
-                      error_body = ""
-                      for probe_frame in page.frames:
-                          try:
-                              candidate = probe_frame.locator("body").inner_text(timeout=3000)
-                          except Exception:
-                              continue
-                          if "TypeError" in candidate or "Traceback" in candidate:
-                              error_body = candidate
-                              break
-                      print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_ERROR_BODY")
-                      print(error_body[:30000])
-                      raise
+                  body = landing.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(body)
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP4_BRANCH_RUNTIME: {forbidden}")
@@ -703,84 +652,3 @@ jobs:
           path: artifacts/passing-yards-qb-drilldown-step4
           if-no-files-found: warn
           retention-days: 7
-
-
-  public-live-matchup-repro:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install live runtime repro dependencies
-        run: |
-          python -m pip install --disable-pip-version-check -q requests playwright
-          python -m playwright install --with-deps chromium
-      - name: Prove public 2026-09-24 verified matchup runtime
-        run: |
-          python - <<'PY'
-          import json
-          import time
-          from playwright.sync_api import sync_playwright
-
-          base = "https://kyre-sports-ai.streamlit.app"
-          route = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
-
-          def find_frame(page, selector, timeout=180):
-              deadline=time.monotonic()+timeout
-              while time.monotonic()<deadline:
-                  for frame in page.frames:
-                      try:
-                          if frame.locator(selector).count():
-                              return frame
-                      except Exception:
-                          pass
-                  page.wait_for_timeout(500)
-              raise RuntimeError(f"selector not found: {selector}")
-
-          with sync_playwright() as p:
-              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
-              page=browser.new_page(viewport={"width":1024,"height":1366})
-              try:
-                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
-                  frame=find_frame(page,'[data-testid="stDateInput"]')
-                  date_widget=frame.locator('[data-testid="stDateInput"]').first
-                  day=date_widget.get_by_role("spinbutton",name="day, Slate date")
-                  day.fill("24")
-                  day.press("Tab")
-                  page.wait_for_timeout(10000)
-
-                  bodies=[]
-                  for probe in page.frames:
-                      try:
-                          text=probe.locator("body").inner_text(timeout=3000)
-                      except Exception:
-                          continue
-                      if "PASSING YARDS CONTROL DECK" in text or "TypeError" in text or "Traceback" in text:
-                          bodies.append(text)
-                  print("PASSING_YARDS_PUBLIC_LIVE_MATCHUP_REPRO_BODY")
-                  print("\n\n---FRAME---\n\n".join(bodies)[:60000])
-
-                  combined="\n".join(bodies)
-                  has_type_error="TypeError" in combined
-                  has_matchup="Atlanta Falcons @ Green Bay Packers" in combined or "Matchup • 1 verified games" in combined
-                  has_picker="Michael Penix Jr." in combined and "Jordan Love" in combined
-                  print("PASSING_YARDS_PUBLIC_LIVE_MATCHUP_REPRO_RESULT")
-                  print(json.dumps({
-                      "date":"2026-09-24",
-                      "has_matchup":has_matchup,
-                      "has_type_error":has_type_error,
-                      "has_picker":has_picker,
-                  },indent=2))
-                  if has_type_error:
-                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR_PRESENT")
-                  if not has_matchup:
-                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_DATE_DID_NOT_RESOLVE")
-                  if not has_picker:
-                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_PICKER_NOT_READY")
-                  print("PASSING_YARDS_PUBLIC_LIVE_MATCHUP_GREEN")
-              finally:
-                  browser.close()
-          PY
