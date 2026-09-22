@@ -274,13 +274,6 @@ def render_nfl_passing_yards_hub() -> None:
     original_caption = st.caption
 
     def styles_only_markdown(body: Any, *args: Any, **kwargs: Any):
-        text = str(body if body is not None else "")
-        if (
-            'data-passing-yards-selection-screen="v58"' in text
-            or 'data-passing-yards-selected-qb="' in text
-            or 'data-passing-yards-qb-detail="v59"' in text
-        ):
-            return original_markdown(body, *args, **kwargs)
         for style in _style_blocks_only(body):
             if _preserve_style_block(style):
                 original_markdown(style, unsafe_allow_html=True)

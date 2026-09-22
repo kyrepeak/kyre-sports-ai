@@ -305,10 +305,18 @@ def render_nfl_passing_yards_hub() -> None:
     original_distribution_st = distribution_ui.st
     original_market_st = market_ui.st
 
+    def refresh_composed_placeholder() -> None:
+        if placeholder is None:
+            return
+        if len(captured.get("identity") or []) < 2:
+            return
+        placeholder.markdown(_combined_player_cards_html(captured), unsafe_allow_html=True)
+
     def capture_pair(key: str, html: str) -> str:
         rows = captured.setdefault(key, [])
         if len(rows) < 2:
             rows.append(html)
+        refresh_composed_placeholder()
         return html
 
     def capture_identity_card(ctx: dict[str, Any], preseason: bool, matchup: dict[str, str] | None = None) -> str:
@@ -327,6 +335,7 @@ def render_nfl_passing_yards_hub() -> None:
                 profile_rows.append(final_html)
         elif label == "Step 3 source":
             capture_pair("defense", final_html)
+        refresh_composed_placeholder()
         return final_html
 
     def capture_pressure_card(qb_ctx: dict, offense_ctx: dict, defense_ctx: dict, pressure_row: dict) -> str:
@@ -338,6 +347,7 @@ def render_nfl_passing_yards_hub() -> None:
     def capture_environment_card(environment_row: dict) -> str:
         html = original_environment_factory(environment_row)
         captured["environment"] = [html]
+        refresh_composed_placeholder()
         return html
 
     def capture_projection_card(projection_row: dict) -> str:
@@ -370,11 +380,13 @@ def render_nfl_passing_yards_hub() -> None:
         for marker, key in _GRID_MARKERS.items():
             if marker in text:
                 _capture_grid(captured, key, text)
+                refresh_composed_placeholder()
                 return None
 
         if '<section class="kpy-env"' in text:
             if not captured.get("environment"):
                 captured["environment"] = [text]
+            refresh_composed_placeholder()
             return None
 
         if any(marker in text for marker in ('<div class="kpy8-active"', '<div class="kpy9-active"', '<div class="kpy10-active"')):

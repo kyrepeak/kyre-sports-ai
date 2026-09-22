@@ -6,6 +6,7 @@ on:
       - ".github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml"
       - "devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json"
       - "nfl_passing_yards_defense_v1.py"
+      - "nfl_passing_yards_hub_v34.py"
       - "tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py"
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - ".github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml"
       - "devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json"
       - "nfl_passing_yards_defense_v1.py"
+      - "nfl_passing_yards_hub_v34.py"
       - "tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py"
 
 permissions:
@@ -44,7 +46,7 @@ jobs:
           .github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml
           devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json
           nfl_passing_yards_defense_v1.py
-          nfl_passing_yards_hub_v61.py
+          nfl_passing_yards_hub_v34.py
           tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
@@ -55,7 +57,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check -q pytest pandas requests streamlit
 
       - name: Compile hotfix
-        run: python -m py_compile nfl_passing_yards_defense_v1.py tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
+        run: python -m py_compile nfl_passing_yards_defense_v1.py nfl_passing_yards_hub_v34.py tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
 
       - name: Run UTC regression contract
         run: python -m pytest -q tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
@@ -67,7 +69,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          git diff --exit-code "$BASE_SHA" --             nfl_passing_yards_hub_v58.py             nfl_passing_yards_hub_v59.py             nfl_passing_yards_hub_v60.py             streamlit_memory_lazy_router_v209.py             streamlit_memory_lazy_router_v210.py             streamlit_memory_lazy_router_v211.py             streamlit_memory_lazy_router_v212.py             app.py
+          git diff --exit-code "$BASE_SHA" --             nfl_passing_yards_hub_v58.py             nfl_passing_yards_hub_v59.py             nfl_passing_yards_hub_v60.py             nfl_passing_yards_hub_v61.py             streamlit_memory_lazy_router_v209.py             streamlit_memory_lazy_router_v210.py             streamlit_memory_lazy_router_v211.py             streamlit_memory_lazy_router_v212.py             app.py
           echo "PASSING_YARDS_LIVE_MATCHUP_FROZEN_BOUNDARY_GREEN"
 
   branch-live-matchup-proof:
