@@ -143,7 +143,7 @@ jobs:
           }
 
           def all_body(page):
-              parts = []
+              parts=[]
               for frame in page.frames:
                   try:
                       parts.append(frame.locator("body").inner_text(timeout=2500))
@@ -152,216 +152,240 @@ jobs:
               return "\n".join(parts)
 
           def fail_if_runtime_error(page, where):
-              body = all_body(page)
+              body=all_body(page)
               if "TypeError" in body or "Traceback" in body:
-                  evidence["TYPEERROR_AFTER_MATCHUP_SELECTION"] = True
-                  evidence["FIRST_BROKEN_ARROW"] = where + " -> runtime"
-                  evidence["FAILED_LAYER"] = "RUNTIME"
+                  evidence["TYPEERROR_AFTER_MATCHUP_SELECTION"]=True
+                  evidence["FIRST_BROKEN_ARROW"]=where + " -> runtime"
+                  evidence["FAILED_LAYER"]="RUNTIME"
                   print("PASSING_YARDS_LIVE_MATCHUP_TRACEBACK")
                   print(body[:50000])
                   raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_TYPEERROR")
               return body
 
+          def inspect_combo(combo):
+              return combo.evaluate("""el => {
+                let p=el;
+                let depth=0;
+                let match=null;
+                while(p && depth<8){
+                  const txt=(p.innerText||'').replace(/\\s+/g,' ').trim();
+                  if(txt.includes('Matchup')){
+                    match=p;
+                    break;
+                  }
+                  p=p.parentElement;
+                  depth++;
+                }
+                const owner=match||el.parentElement||el;
+                let t=owner;
+                while(t && !t.getAttribute('data-testid')) t=t.parentElement;
+                return {
+                  hasMatchupText: !!match,
+                  ownerText:(owner.innerText||'').replace(/\\s+/g,' ').trim().slice(0,500),
+                  testid:t ? (t.getAttribute('data-testid')||'') : '',
+                  aria:el.getAttribute('aria-label')||'',
+                  role:el.getAttribute('role')||'',
+                  tag:el.tagName,
+                  className:String(el.className||'').slice(0,220)
+                };
+              }""")
+
+          def discover_controls(frame):
+              date_parts={}
+              for part in ("month","day","year"):
+                  loc=frame.get_by_role("spinbutton", name=f"{part}, Slate date")
+                  if loc.count():
+                      date_parts[part]=loc.first
+
+              match_combo=None
+              combo_rows=[]
+              combos=frame.get_by_role("combobox")
+              for i in range(combos.count()):
+                  combo=combos.nth(i)
+                  meta=inspect_combo(combo)
+                  combo_rows.append(meta)
+                  if meta.get("hasMatchupText") and match_combo is None:
+                      match_combo=combo
+
+              return date_parts, match_combo, combo_rows
+
           def find_controls_frame(page, timeout=180):
-              deadline = time.monotonic() + timeout
-              while time.monotonic() < deadline:
-                  fail_if_runtime_error(page, "controls")
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  fail_if_runtime_error(page,"controls")
                   for frame in page.frames:
                       try:
-                          if (
-                              frame.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
-                              and frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"]').count() == 1
-                              and frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"]').count() == 1
-                          ):
-                              return frame
+                          if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1:
+                              continue
+                          date_parts, combo, rows=discover_controls(frame)
+                          if "day" in date_parts and combo is not None:
+                              return frame, date_parts, combo, rows
                       except Exception:
                           pass
                   page.wait_for_timeout(300)
-              evidence["FIRST_BROKEN_ARROW"] = "Passing Yards -> V60/V46 controls"
-              evidence["FAILED_LAYER"] = "VERIFIER_CONTROL_DISCOVERY"
+              evidence["FIRST_BROKEN_ARROW"]="Passing Yards -> V60/V46 accessible controls"
+              evidence["FAILED_LAYER"]="VERIFIER_CONTROL_DISCOVERY"
               raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_CONTROLS_NOT_READY")
 
           def find_landing(page, timeout=180):
-              deadline = time.monotonic() + timeout
-              while time.monotonic() < deadline:
-                  body = fail_if_runtime_error(page, "selected matchup -> picker")
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  fail_if_runtime_error(page,"selected matchup -> picker")
                   for frame in page.frames:
                       try:
-                          frame_body = frame.locator("body").inner_text(timeout=1500)
-                          cards = frame.locator('[data-qb-selection-card]').count()
+                          txt=frame.locator("body").inner_text(timeout=1500)
+                          cards=frame.locator('[data-qb-selection-card]').count()
                           if (
-                              target_matchup in frame_body
-                              and frame.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
-                              and frame.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
-                              and cards == 2
+                              target_matchup in txt
+                              and frame.locator('section[data-passing-yards-step3-header="v60"]').count()==1
+                              and frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1
+                              and cards==2
                           ):
                               return frame
                       except Exception:
                           pass
                   page.wait_for_timeout(300)
-              evidence["FIRST_BROKEN_ARROW"] = "explicit matchup selection -> V58 picker"
-              evidence["FAILED_LAYER"] = "VERIFIER_POST_SELECTION_RENDER"
+              evidence["FIRST_BROKEN_ARROW"]="explicit matchup selection -> V58 picker"
+              evidence["FAILED_LAYER"]="VERIFIER_POST_SELECTION_RENDER"
               raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_PICKER_NOT_READY")
 
           def find_detail(page, timeout=120):
               selector='[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]'
-              deadline = time.monotonic() + timeout
-              while time.monotonic() < deadline:
-                  fail_if_runtime_error(page, "QB1 click -> V59 detail")
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  fail_if_runtime_error(page,"QB1 click -> V59 detail")
                   for frame in page.frames:
                       try:
-                          if frame.locator(selector).count() == 1:
+                          if frame.locator(selector).count()==1:
                               return frame
                       except Exception:
                           pass
                   page.wait_for_timeout(300)
-              evidence["FIRST_BROKEN_ARROW"] = "QB1 click -> V59 detail"
-              evidence["FAILED_LAYER"] = "VERIFIER_DETAIL_NAVIGATION"
+              evidence["FIRST_BROKEN_ARROW"]="QB1 click -> V59 detail"
+              evidence["FAILED_LAYER"]="VERIFIER_DETAIL_NAVIGATION"
               raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DETAIL_NOT_READY")
 
           def click_anchor(page, locator):
-              if locator.get_attribute("target") == "_blank":
+              if locator.get_attribute("target")=="_blank":
                   with page.expect_popup(timeout=15000) as popup_info:
                       locator.click()
-                  next_page = popup_info.value
-                  next_page.wait_for_load_state("domcontentloaded", timeout=120000)
-                  return next_page
+                  nxt=popup_info.value
+                  nxt.wait_for_load_state("domcontentloaded",timeout=120000)
+                  return nxt
               locator.click()
               return page
 
-          def set_exact_date(frame):
-              widget = frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"]').first
-              evidence["DATE_CONTROL_FOUND"] = widget.count() == 1
-              if not evidence["DATE_CONTROL_FOUND"]:
-                  raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DATE_CONTROL_NOT_FOUND")
-              month = widget.get_by_role("spinbutton", name="month, Slate date")
-              day = widget.get_by_role("spinbutton", name="day, Slate date")
-              year = widget.get_by_role("spinbutton", name="year, Slate date")
-              if month.count():
-                  month.fill("9")
-              day.fill("24")
-              if year.count():
-                  year.fill("2026")
-              day.press("Tab")
-              page.wait_for_timeout(1500)
-              frame2 = find_controls_frame(page, timeout=120)
-              widget2 = frame2.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"]').first
-              values = {}
-              for part in ("month", "day", "year"):
-                  loc = widget2.get_by_role("spinbutton", name=f"{part}, Slate date")
-                  if loc.count():
-                      values[part] = loc.input_value()
-              evidence["DATE_SET_TO_2026_09_24"] = (
-                  values.get("day") in {"24", "024"}
-                  and values.get("month", "9") in {"9", "09"}
-                  and values.get("year", "2026") == "2026"
-              )
-              print("PASSING_YARDS_LIVE_MATCHUP_DATE_STATE")
-              print(json.dumps(values, indent=2))
-              if not evidence["DATE_SET_TO_2026_09_24"]:
-                  evidence["FIRST_BROKEN_ARROW"] = "date action -> selected date"
-                  evidence["FAILED_LAYER"] = "VERIFIER_DATE_SELECTION"
-                  raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DATE_NOT_SET")
-              return frame2
-
-          def inspect_and_select_matchup(frame):
-              selectbox = frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"]').first
-              evidence["MATCHUP_CONTROL_FOUND"] = selectbox.count() == 1
-              if not evidence["MATCHUP_CONTROL_FOUND"]:
-                  raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_CONTROL_NOT_FOUND")
-              evidence["MATCHUP_CONTROL_TESTID"] = selectbox.get_attribute("data-testid") or ""
-              labels = selectbox.locator("label").all_inner_texts()
-              evidence["MATCHUP_CONTROL_LABEL"] = " | ".join(x.strip() for x in labels if x.strip())
-              comboboxes = selectbox.get_by_role("combobox")
-              if comboboxes.count() != 1:
-                  evidence["MATCHUP_CONTROL_TYPE"] = "unknown"
-                  evidence["FIRST_BROKEN_ARROW"] = "V46 matchup control -> accessible widget"
-                  evidence["FAILED_LAYER"] = "VERIFIER_MATCHUP_CONTROL_DISCOVERY"
-                  raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_CONTROL_TYPE_UNKNOWN")
-              evidence["MATCHUP_CONTROL_TYPE"] = "selectbox/combobox"
-              combo = comboboxes.first
-              evidence["CURRENT_SELECTED_VALUE"] = (combo.inner_text() or "").strip()
-              combo.click()
-              page.wait_for_timeout(300)
-              options = [x.strip() for x in frame.get_by_role("option").all_inner_texts() if x.strip()]
-              evidence["ATLANTA_OPTION_PRESENT"] = any(target_matchup in x for x in options)
-              print("PASSING_YARDS_LIVE_MATCHUP_MATCHUP_CONTROL_DOM")
-              print(json.dumps({
-                  "testid": evidence["MATCHUP_CONTROL_TESTID"],
-                  "label": evidence["MATCHUP_CONTROL_LABEL"],
-                  "type": evidence["MATCHUP_CONTROL_TYPE"],
-                  "current_selected_value": evidence["CURRENT_SELECTED_VALUE"],
-                  "options": options,
-                  "atlanta_option_present": evidence["ATLANTA_OPTION_PRESENT"],
-              }, indent=2))
-              if not evidence["ATLANTA_OPTION_PRESENT"]:
-                  evidence["FIRST_BROKEN_ARROW"] = "V46 matchup options -> Atlanta @ Green Bay"
-                  evidence["FAILED_LAYER"] = "VERIFIER_MATCHUP_OPTION_DISCOVERY"
-                  raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_OPTION_NOT_FOUND")
-              option = frame.get_by_role("option").filter(has_text=target_matchup).first
-              option.click()
-              page.wait_for_timeout(1200)
-              frame2 = find_controls_frame(page, timeout=120)
-              combo2 = frame2.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"]').first.get_by_role("combobox").first
-              selected = (combo2.inner_text() or "").strip()
-              evidence["MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS"] = target_matchup in selected
-              print("PASSING_YARDS_LIVE_MATCHUP_SELECTED_VALUE")
-              print(selected)
-              if not evidence["MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS"]:
-                  evidence["FIRST_BROKEN_ARROW"] = "matchup click -> selected matchup"
-                  evidence["FAILED_LAYER"] = "VERIFIER_MATCHUP_SELECTION"
-                  raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_NOT_SELECTED")
-
           with sync_playwright() as p:
-              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage","--no-sandbox"])
-              page = browser.new_page(viewport={"width":390,"height":844})
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
               try:
-                  page.goto(route, wait_until="domcontentloaded", timeout=120000)
-                  frame = find_controls_frame(page)
-                  frame = set_exact_date(frame)
-                  inspect_and_select_matchup(frame)
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
 
-                  fail_if_runtime_error(page, "matchup selection -> runtime")
-                  landing = find_landing(page)
-                  evidence["V60_HEADER"] = landing.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
-                  evidence["V58_PICKER"] = landing.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
-                  evidence["QB_CARDS"] = landing.locator('[data-qb-selection-card]').count()
-                  landing_body = landing.locator("body").inner_text(timeout=5000)
-                  evidence["MICHAEL_PENIX_JR"] = "Michael Penix Jr." in landing_body
-                  evidence["JORDAN_LOVE"] = "Jordan Love" in landing_body
+                  frame,date_parts,match_combo,combo_rows=find_controls_frame(page)
+                  evidence["DATE_CONTROL_FOUND"]=True
+
+                  if "month" in date_parts:
+                      date_parts["month"].fill("9")
+                  date_parts["day"].fill("24")
+                  if "year" in date_parts:
+                      date_parts["year"].fill("2026")
+                  date_parts["day"].press("Tab")
+                  page.wait_for_timeout(1500)
+
+                  frame,date_parts,match_combo,combo_rows=find_controls_frame(page,timeout=120)
+                  values={k:v.input_value() for k,v in date_parts.items()}
+                  evidence["DATE_SET_TO_2026_09_24"]=(
+                      values.get("day") in {"24","024"}
+                      and values.get("month","9") in {"9","09"}
+                      and values.get("year","2026")=="2026"
+                  )
+                  print("PASSING_YARDS_LIVE_MATCHUP_DATE_STATE")
+                  print(json.dumps(values,indent=2))
+                  if not evidence["DATE_SET_TO_2026_09_24"]:
+                      evidence["FIRST_BROKEN_ARROW"]="date action -> selected date"
+                      evidence["FAILED_LAYER"]="VERIFIER_DATE_SELECTION"
+                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_DATE_NOT_SET")
+
+                  meta=inspect_combo(match_combo)
+                  evidence["MATCHUP_CONTROL_FOUND"]=True
+                  evidence["MATCHUP_CONTROL_TESTID"]=meta.get("testid","")
+                  evidence["MATCHUP_CONTROL_LABEL"]=meta.get("ownerText","")
+                  evidence["MATCHUP_CONTROL_TYPE"]="selectbox/combobox"
+                  try:
+                      evidence["CURRENT_SELECTED_VALUE"]=(match_combo.inner_text() or "").strip()
+                  except Exception:
+                      evidence["CURRENT_SELECTED_VALUE"]=""
+
+                  match_combo.click()
+                  page.wait_for_timeout(300)
+                  options=[x.strip() for x in frame.get_by_role("option").all_inner_texts() if x.strip()]
+                  evidence["ATLANTA_OPTION_PRESENT"]=any(target_matchup in x for x in options)
+                  print("PASSING_YARDS_LIVE_MATCHUP_MATCHUP_CONTROL_DOM")
+                  print(json.dumps({
+                      "testid":evidence["MATCHUP_CONTROL_TESTID"],
+                      "label":evidence["MATCHUP_CONTROL_LABEL"],
+                      "type":evidence["MATCHUP_CONTROL_TYPE"],
+                      "current_selected_value":evidence["CURRENT_SELECTED_VALUE"],
+                      "atlanta_option_present":evidence["ATLANTA_OPTION_PRESENT"],
+                      "combo_inventory":combo_rows,
+                      "options":options,
+                  },indent=2))
+                  if not evidence["ATLANTA_OPTION_PRESENT"]:
+                      evidence["FIRST_BROKEN_ARROW"]="V46 matchup options -> Atlanta @ Green Bay"
+                      evidence["FAILED_LAYER"]="VERIFIER_MATCHUP_OPTION_DISCOVERY"
+                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_OPTION_NOT_FOUND")
+
+                  frame.get_by_role("option").filter(has_text=target_matchup).first.click()
+                  page.wait_for_timeout(1200)
+
+                  frame,_,selected_combo,_=find_controls_frame(page,timeout=120)
+                  selected=(selected_combo.inner_text() or "").strip()
+                  evidence["MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS"]=target_matchup in selected
+                  print("PASSING_YARDS_LIVE_MATCHUP_SELECTED_VALUE")
+                  print(selected)
+                  if not evidence["MATCHUP_SELECTED_ATLANTA_FALCONS_AT_GREEN_BAY_PACKERS"]:
+                      evidence["FIRST_BROKEN_ARROW"]="matchup click -> selected matchup"
+                      evidence["FAILED_LAYER"]="VERIFIER_MATCHUP_SELECTION"
+                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_NOT_SELECTED")
+
+                  fail_if_runtime_error(page,"matchup selection -> runtime")
+                  landing=find_landing(page)
+                  evidence["V60_HEADER"]=landing.locator('section[data-passing-yards-step3-header="v60"]').count()==1
+                  evidence["V58_PICKER"]=landing.locator('[data-passing-yards-selection-screen="v58"]').count()==1
+                  evidence["QB_CARDS"]=landing.locator('[data-qb-selection-card]').count()
+                  landing_body=landing.locator("body").inner_text(timeout=5000)
+                  evidence["MICHAEL_PENIX_JR"]="Michael Penix Jr." in landing_body
+                  evidence["JORDAN_LOVE"]="Jordan Love" in landing_body
 
                   if not (
-                      evidence["V60_HEADER"]
-                      and evidence["V58_PICKER"]
-                      and evidence["QB_CARDS"] == 2
-                      and evidence["MICHAEL_PENIX_JR"]
-                      and evidence["JORDAN_LOVE"]
+                      evidence["V60_HEADER"] and evidence["V58_PICKER"] and evidence["QB_CARDS"]==2
+                      and evidence["MICHAEL_PENIX_JR"] and evidence["JORDAN_LOVE"]
                   ):
-                      evidence["FIRST_BROKEN_ARROW"] = "selected matchup -> expected QB picker contents"
-                      evidence["FAILED_LAYER"] = "VERIFIER_PICKER_CONTENT"
+                      evidence["FIRST_BROKEN_ARROW"]="selected matchup -> expected QB picker contents"
+                      evidence["FAILED_LAYER"]="VERIFIER_PICKER_CONTENT"
                       raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_PICKER_CONTENT_INCOMPLETE")
 
-                  detail_page = click_anchor(page, landing.locator('a[data-qb-select="1"]').first)
-                  detail = find_detail(detail_page)
-                  evidence["QB1_DETAIL"] = detail.locator(".ks-py59-player").count() == 1
+                  detail_page=click_anchor(page,landing.locator('a[data-qb-select="1"]').first)
+                  detail=find_detail(detail_page)
+                  evidence["QB1_DETAIL"]=detail.locator(".ks-py59-player").count()==1
                   if not evidence["QB1_DETAIL"]:
                       raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_QB1_DETAIL_MISSING")
 
-                  returned_page = click_anchor(detail_page, detail.locator('a[data-qb-back="true"]').first)
-                  returned = find_landing(returned_page, timeout=120)
-                  evidence["BACK_RETURNS_PICKER"] = returned.locator('[data-qb-selection-card]').count() == 2
+                  returned_page=click_anchor(detail_page,detail.locator('a[data-qb-back="true"]').first)
+                  returned=find_landing(returned_page,timeout=120)
+                  evidence["BACK_RETURNS_PICKER"]=returned.locator('[data-qb-selection-card]').count()==2
                   if not evidence["BACK_RETURNS_PICKER"]:
                       raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_BACK_FAILED")
 
                   print("PASSING_YARDS_LIVE_MATCHUP_BRANCH_GREEN")
               except Exception:
                   if not evidence["FIRST_BROKEN_ARROW"]:
-                      evidence["FIRST_BROKEN_ARROW"] = "unclassified verifier transition"
-                      evidence["FAILED_LAYER"] = "VERIFIER"
+                      evidence["FIRST_BROKEN_ARROW"]="unclassified verifier transition"
+                      evidence["FAILED_LAYER"]="VERIFIER"
                   raise
               finally:
                   print("PASSING_YARDS_LIVE_MATCHUP_BRANCH_EVIDENCE")
-                  print(json.dumps(evidence, indent=2))
+                  print(json.dumps(evidence,indent=2))
                   browser.close()
           PY
 
@@ -402,9 +426,9 @@ jobs:
           import time
           from playwright.sync_api import sync_playwright
 
-          base = "https://kyre-sports-ai.streamlit.app"
-          route = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
-          target_matchup = "Atlanta Falcons @ Green Bay Packers"
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          target_matchup="Atlanta Falcons @ Green Bay Packers"
 
           def all_body(page):
               parts=[]
@@ -415,7 +439,32 @@ jobs:
                       pass
               return "\n".join(parts)
 
-          def find_controls_frame(page, timeout=180):
+          def inspect_combo(combo):
+              return combo.evaluate("""el => {
+                let p=el, depth=0, match=null;
+                while(p && depth<8){
+                  const txt=(p.innerText||'').replace(/\\s+/g,' ').trim();
+                  if(txt.includes('Matchup')){ match=p; break; }
+                  p=p.parentElement; depth++;
+                }
+                return {hasMatchupText:!!match};
+              }""")
+
+          def discover(frame):
+              date_parts={}
+              for part in ("month","day","year"):
+                  loc=frame.get_by_role("spinbutton",name=f"{part}, Slate date")
+                  if loc.count(): date_parts[part]=loc.first
+              combo=None
+              combos=frame.get_by_role("combobox")
+              for i in range(combos.count()):
+                  candidate=combos.nth(i)
+                  if inspect_combo(candidate).get("hasMatchupText"):
+                      combo=candidate
+                      break
+              return date_parts,combo
+
+          def find_controls(page,timeout=180):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
                   body=all_body(page)
@@ -424,18 +473,17 @@ jobs:
                       raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
                   for frame in page.frames:
                       try:
-                          if (
-                              frame.locator('section[data-passing-yards-step3-header="v60"]').count()==1
-                              and frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"]').count()==1
-                              and frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"]').count()==1
-                          ):
-                              return frame
+                          if frame.locator('section[data-passing-yards-step3-header="v60"]').count()!=1:
+                              continue
+                          date_parts,combo=discover(frame)
+                          if "day" in date_parts and combo is not None:
+                              return frame,date_parts,combo
                       except Exception:
                           pass
                   page.wait_for_timeout(500)
               raise RuntimeError("PUBLIC_LIVE_MATCHUP_CONTROLS_NOT_READY")
 
-          def find_picker(page, timeout=180):
+          def find_picker(page,timeout=180):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
                   body=all_body(page)
@@ -444,9 +492,9 @@ jobs:
                       raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
                   for frame in page.frames:
                       try:
-                          text=frame.locator("body").inner_text(timeout=1500)
+                          txt=frame.locator("body").inner_text(timeout=1500)
                           if (
-                              target_matchup in text
+                              target_matchup in txt
                               and frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1
                               and frame.locator('[data-qb-selection-card]').count()==2
                           ):
@@ -461,21 +509,14 @@ jobs:
               page=browser.new_page(viewport={"width":1024,"height":1366})
               try:
                   page.goto(route,wait_until="domcontentloaded",timeout=120000)
-                  frame=find_controls_frame(page)
-
-                  widget=frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stDateInput"]').first
-                  month=widget.get_by_role("spinbutton",name="month, Slate date")
-                  day=widget.get_by_role("spinbutton",name="day, Slate date")
-                  year=widget.get_by_role("spinbutton",name="year, Slate date")
-                  if month.count(): month.fill("9")
-                  day.fill("24")
-                  if year.count(): year.fill("2026")
-                  day.press("Tab")
+                  frame,date_parts,combo=find_controls(page)
+                  if "month" in date_parts: date_parts["month"].fill("9")
+                  date_parts["day"].fill("24")
+                  if "year" in date_parts: date_parts["year"].fill("2026")
+                  date_parts["day"].press("Tab")
                   page.wait_for_timeout(1500)
 
-                  frame=find_controls_frame(page)
-                  selectbox=frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"]').first
-                  combo=selectbox.get_by_role("combobox").first
+                  frame,_,combo=find_controls(page,timeout=120)
                   combo.click()
                   page.wait_for_timeout(300)
                   options=[x.strip() for x in frame.get_by_role("option").all_inner_texts() if x.strip()]
@@ -483,8 +524,8 @@ jobs:
                   frame.get_by_role("option").filter(has_text=target_matchup).first.click()
                   page.wait_for_timeout(1200)
 
-                  frame=find_controls_frame(page)
-                  selected=(frame.locator('.st-key-kyre_passing_yards_top_v46 [data-testid="stSelectbox"]').first.get_by_role("combobox").first.inner_text() or "").strip()
+                  frame,_,combo=find_controls(page,timeout=120)
+                  selected=(combo.inner_text() or "").strip()
                   assert target_matchup in selected
 
                   picker=find_picker(page)
@@ -492,9 +533,10 @@ jobs:
                   assert "TypeError" not in combined and "Traceback" not in combined
                   assert picker.locator('[data-passing-yards-selection-screen="v58"]').count()==1
                   assert picker.locator('[data-qb-selection-card]').count()==2
-                  picker_text=picker.locator("body").inner_text(timeout=5000)
-                  assert "Michael Penix Jr." in picker_text
-                  assert "Jordan Love" in picker_text
+                  txt=picker.locator("body").inner_text(timeout=5000)
+                  assert "Michael Penix Jr." in txt
+                  assert "Jordan Love" in txt
+
                   print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_GREEN")
                   print(json.dumps({
                       "date":"2026-09-24",
