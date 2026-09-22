@@ -59,12 +59,21 @@ jobs:
           nfl_passing_yards_hub_v61.py
           tests/test_passing_yards_qb_drilldown_step4_v1.py
           EOF
+          cat > /tmp/expected-live-runtime-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step4-v1.yml
+          devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json
+          nfl_passing_yards_hub_v61.py
+          tests/test_passing_yards_qb_drilldown_step4_v1.py
+          EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
           sort -o /tmp/expected-visible-repair.txt /tmp/expected-visible-repair.txt
+          sort -o /tmp/expected-live-runtime-hotfix.txt /tmp/expected-live-runtime-hotfix.txt
           if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_SCOPE_GREEN"
           elif diff -q /tmp/expected-visible-repair.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_VISIBLE_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/expected-live-runtime-hotfix.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP4_LIVE_RUNTIME_HOTFIX_SCOPE_GREEN"
           else
             diff -u /tmp/expected.txt /tmp/actual.txt || true
             diff -u /tmp/expected-visible-repair.txt /tmp/actual.txt || true
@@ -241,13 +250,20 @@ jobs:
                       day_segment.press("Tab")
                       page.wait_for_timeout(8000)
                       print("PASSING_YARDS_LIVE_MATCHUP_AFTER_DATE_2026_09_24")
+                      live_probe_texts = []
                       for probe_frame in page.frames:
                           try:
                               probe_body = probe_frame.locator("body").inner_text(timeout=3000)
                           except Exception:
                               continue
                           if "PASSING YARDS CONTROL DECK" in probe_body or "TypeError" in probe_body:
+                              live_probe_texts.append(probe_body)
                               print(probe_body[:30000])
+                      live_probe = "\n".join(live_probe_texts)
+                      if "TypeError" in live_probe or "Traceback" in live_probe:
+                          raise BrowserQAFailure("PASSING_YARDS_QB_STEP4_LIVE_MATCHUP_RUNTIME_ERROR")
+                      if "Atlanta Falcons @ Green Bay Packers" not in live_probe and "Matchup • 1 verified games" not in live_probe:
+                          raise BrowserQAFailure("PASSING_YARDS_QB_STEP4_LIVE_MATCHUP_NOT_RESOLVED")
                   except Exception as exc:
                       print(f"PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_INSPECT_FAILED: {exc}")
                   try:
@@ -690,7 +706,7 @@ jobs:
 
 
   public-live-matchup-repro:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -702,7 +718,7 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q requests playwright
           python -m playwright install --with-deps chromium
-      - name: Reproduce public 2026-09-24 verified matchup runtime
+      - name: Prove public 2026-09-24 verified matchup runtime
         run: |
           python - <<'PY'
           import json
@@ -759,9 +775,12 @@ jobs:
                       "has_picker":has_picker,
                   },indent=2))
                   if has_type_error:
-                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR_REPRODUCED")
+                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR_PRESENT")
                   if not has_matchup:
                       raise RuntimeError("PUBLIC_LIVE_MATCHUP_DATE_DID_NOT_RESOLVE")
+                  if not has_picker:
+                      raise RuntimeError("PUBLIC_LIVE_MATCHUP_PICKER_NOT_READY")
+                  print("PASSING_YARDS_PUBLIC_LIVE_MATCHUP_GREEN")
               finally:
                   browser.close()
           PY
