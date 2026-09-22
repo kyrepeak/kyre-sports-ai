@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-universal-step5-analysis-v1",
+  "status": "DONE",
+  "scope": "Universal Theme -> NFL Passing Yards Step 5 only: unify the existing certified projection, context, distribution/probability, and market analytical readouts under the universal semantic token system without changing analytical values, widgets, data, routing outside Passing Yards, or frozen Steps 1-4.",
+  "baseline": {
+    "main_sha": "a1230ddb3ef75086fc0b03e4721c9ce978e75093",
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "step3_green_frozen": true,
+    "step4_green_frozen": true,
+    "frozen_step4_product": "nfl_passing_yards_hub_v54",
+    "frozen_step4_router": "streamlit_memory_lazy_router_v205"
+  },
+  "acceptance": {
+    "correct_passing_yards_route_renders": true,
+    "v55_analysis_style_present": true,
+    "baseline_projection_sections_present": true,
+    "context_uncertainty_sections_present": true,
+    "distribution_probability_sections_present": true,
+    "market_evaluation_sections_present": true,
+    "computed_analysis_styling_valid": true,
+    "frozen_step4_card_system_preserved": true,
+    "frozen_step3_shell_preserved": true,
+    "frozen_step2_tokens_preserved": true,
+    "frozen_step1_owner_preserved": true,
+    "passing_yards_only_router_override": true,
+    "targeted_step5_proof_required": true,
+    "protected_merge_gate_required": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "step1_code_changed": false,
+    "step2_code_changed": false,
+    "step3_code_changed": false,
+    "step4_code_changed": false,
+    "passing_yards_data_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "sportsbook_transport_changed": false,
+    "widget_keys_changed": false,
+    "stake_sizing_changed": false,
+    "moneyline_changed": false,
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "freeze_rule": "After targeted Step 5 proof, required merge gate, merge, and one successful post-merge public production proof of the V55 analysis system on the certified Passing Yards route, Step 5 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
