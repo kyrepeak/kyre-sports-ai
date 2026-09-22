@@ -51,7 +51,7 @@
     "concept": "Passing Yards Header",
     "production_port": "V60/V211"
   },
-  "monster_status": "RENDER_REPAIR_TARGETED_PROOF_GREEN_AWAITING_MERGE_PUBLIC_PROOF",
+  "monster_status": "STREAMLIT_HTML_RENDER_PATCH_PENDING_TARGETED_PROOF",
   "action_log": {
     "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "events": [],
@@ -71,5 +71,46 @@
     "targeted_step3_proof_green": true,
     "frozen_step1_step2_untouched": true,
     "final_public_proof_pending": true
+  },
+  "root_cause_reset": {
+    "authoritative_main": "b047a20b3cb17b396e29e20e9a96616ec262868a",
+    "diagnostic_pr": 901,
+    "diagnostic_run": 35764646236,
+    "source_path": {
+      "v211_routes_to_v60": true,
+      "v60_css_before_v59": true,
+      "v60_body_before_v59": true,
+      "v43_active_during_v60_body_call": false
+    },
+    "emission_proof": {
+      "header_html_starts_with_header_css": true,
+      "header_html_length": 4558,
+      "header_css_length": 3424,
+      "header_body_length": 1134,
+      "header_body_has_v60_section": true,
+      "header_body_has_v60_class": true,
+      "css_markdown_call_seen": true,
+      "body_markdown_call_seen": true,
+      "body_markdown_has_v60_section": true,
+      "call_order": [
+        "markdown",
+        "markdown",
+        "prior"
+      ]
+    },
+    "dom_lifetime": {
+      "css_first_appears_at_seconds": 4.929,
+      "header_first_appears_at_seconds": null,
+      "picker_first_appears_at_seconds": 18.963,
+      "header_ever_appears": false,
+      "header_appears_then_disappears": false,
+      "final_header_count": 0,
+      "final_css_count": 1,
+      "final_picker_count": 1,
+      "final_qb_card_count": 2
+    },
+    "first_broken_arrow": "V60 body emitted -> Streamlit hydrated DOM",
+    "failed_layer": "STREAMLIT_HTML_RENDER",
+    "minimal_fix": "Render the already-proven V60 visible body with st.html(header_body) while keeping the existing CSS witness markdown and frozen V59/V58 chain unchanged."
   }
 }
