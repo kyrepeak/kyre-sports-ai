@@ -1,0 +1,159 @@
+name: Passing Yards Live Matchup Runtime Hotfix
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json"
+      - "nfl_passing_yards_defense_v1.py"
+      - "tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json"
+      - "nfl_passing_yards_defense_v1.py"
+      - "tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  timezone-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce hotfix scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-live-matchup-runtime-hotfix-v1.yml
+          devsystem/task_ledgers/passing-yards-live-matchup-runtime-hotfix-v1.json
+          nfl_passing_yards_defense_v1.py
+          tests/test_passing-yards-live-matchup-timezone-hotfix-v1.py
+          EOF
+          # Accept the actual underscore test filename below.
+          sed -i 's#tests/test_passing-yards-live-matchup-timezone-hotfix-v1.py#tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py#' /tmp/expected.txt
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Install contract dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest pandas requests streamlit
+
+      - name: Compile hotfix
+        run: python -m py_compile nfl_passing_yards_defense_v1.py tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
+
+      - name: Run timezone regression contract
+        run: python -m pytest -q tests/test_passing_yards_live_matchup_timezone_hotfix_v1.py
+
+      - name: Verify frozen Step 4 product boundary
+        run: |
+          git diff --exit-code ${{ github.event.pull_request.base.sha || github.event.before }} --             nfl_passing_yards_hub_v58.py             nfl_passing_yards_hub_v59.py             nfl_passing_yards_hub_v60.py             nfl_passing_yards_hub_v61.py             streamlit_memory_lazy_router_v209.py             streamlit_memory_lazy_router_v210.py             streamlit_memory_lazy_router_v211.py             streamlit_memory_lazy_router_v212.py || exit 1
+          echo "PASSING_YARDS_LIVE_MATCHUP_FROZEN_PRODUCT_BOUNDARY_GREEN"
+
+  public-live-matchup-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: timezone-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public 2026-09-24 verified matchup no longer crashes
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from playwright.sync_api import sync_playwright
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          route = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+
+          def find_frame(page, selector, timeout=180):
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for frame in page.frames:
+                      try:
+                          if frame.locator(selector).count():
+                              return frame
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError(f"selector not found: {selector}")
+
+          def probe_once(page):
+              page.goto(route, wait_until="domcontentloaded", timeout=120000)
+              frame = find_frame(page, '[data-testid="stDateInput"]', timeout=180)
+              widget = frame.locator('[data-testid="stDateInput"]').first
+              day = widget.get_by_role("spinbutton", name="day, Slate date")
+              day.fill("24")
+              day.press("Tab")
+              page.wait_for_timeout(9000)
+
+              bodies = []
+              for probe in page.frames:
+                  try:
+                      body = probe.locator("body").inner_text(timeout=3000)
+                  except Exception:
+                      continue
+                  if "PASSING YARDS CONTROL DECK" in body or "TypeError" in body:
+                      bodies.append(body)
+              combined = "\n".join(bodies)
+              return {
+                  "has_matchup": "Matchup • 1 verified games" in combined,
+                  "has_type_error": "TypeError" in combined,
+                  "has_penix": "Michael Penix Jr." in combined,
+                  "has_love": "Jordan Love" in combined,
+                  "body": combined[:30000],
+              }
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":1024,"height":1366})
+              try:
+                  deadline = time.monotonic() + 720
+                  attempt = 0
+                  last = {}
+                  while time.monotonic() < deadline:
+                      attempt += 1
+                      last = probe_once(page)
+                      print("PASSING_YARDS_LIVE_MATCHUP_PUBLIC_ATTEMPT", attempt)
+                      print(json.dumps({k:v for k,v in last.items() if k != "body"}, indent=2))
+                      if (
+                          last.get("has_matchup")
+                          and not last.get("has_type_error")
+                          and last.get("has_penix")
+                          and last.get("has_love")
+                      ):
+                          print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_GREEN")
+                          break
+                      page.wait_for_timeout(15000)
+                  else:
+                      print(last.get("body", ""))
+                      raise RuntimeError("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_PUBLIC_NOT_GREEN")
+              finally:
+                  browser.close()
+          PY
