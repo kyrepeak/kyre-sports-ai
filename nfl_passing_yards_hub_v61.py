@@ -117,6 +117,22 @@ _CARD_CSS = r"""
 .ks-py59-support summary{
   color:var(--kyre-sem-text-accent-soft)!important;
 }
+/* Step 4 visible-composition repair:
+   keep the compact V46 slate controls, but collapse legacy native evidence
+   widgets that are still emitted before V34's final QB drill-down placeholder. */
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stDataFrame"],
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stTable"],
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stMetric"],
+.st-key-kyre_passing_yards_shell_v1 [data-testid="stExpander"],
+.st-key-kyre_passing_yards_shell_v1
+  [data-testid="stHorizontalBlock"]:has(input[aria-label="Sportsbook / source"]){
+  display:none!important;
+  margin:0!important;
+  min-height:0!important;
+  height:0!important;
+  overflow:hidden!important;
+}
+
 @media(max-width:900px){
   .ks-py58-grid,
   .ks-py59-evidence,
