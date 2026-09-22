@@ -66,5 +66,6 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "scope": "NFL Passing Yards live-matchup runtime hotfix only: fix the proven timezone-aware versus timezone-naive comparison in nfl_passing_yards_defense_v1._completed_event_rows while preserving frozen QB drill-down UI, routing, model, projection, probability, sportsbook, and navigation behavior."
 }
