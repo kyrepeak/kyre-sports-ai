@@ -166,5 +166,31 @@
     "shell_changed": false,
     "analytics_changed": false,
     "verifier_acceptance_weakened": false
+  },
+  "latest_structural_runtime_witness_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35669216313,
+    "failure_job": 106561679147,
+    "owner": "VERIFIER / RUNTIME WITNESS SHAPE",
+    "direct_evidence": {
+      "visual_step4_proof": "SUCCESS",
+      "prior_step3_public_v204_runtime": 1,
+      "current_public_v205_hidden_runtime": 0,
+      "public_passing_yards_rendered": true,
+      "readiness_window_seconds": 480,
+      "app_boots_v205_directly": true,
+      "app_runtime_fallback": false,
+      "repo_browser_qa_precedent": "Hidden/build markers are not guaranteed visible; prove actual owned DOM surface directly."
+    },
+    "root_cause": "The Step 4 public verifier treated the hidden V205 span as the sole revision witness even though the repository's browser-QA contract explicitly recognizes hidden/build markers as non-durable in public Streamlit DOM. The strict proof should use the live V54 structural surface that V205 owns.",
+    "repair": "Keep the hidden V205 span count as diagnostic evidence, but define the V205 runtime witness from the live V54 card-system style plus V54 card owner, while separately proving from checked-out main source that app.py boots V205 and V205 owns nfl_passing_yards_hub_v54. Preserve V204/V53/V52/V51, card counts, Passing Yards text, gradient, radius, shadow, and header checks unchanged.",
+    "product_code_changed": false,
+    "router_code_changed": false,
+    "app_code_changed": false,
+    "cards_changed": false,
+    "tokens_changed": false,
+    "shell_changed": false,
+    "analytics_changed": false,
+    "verifier_acceptance_weakened": false
   }
 }
