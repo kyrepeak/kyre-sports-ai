@@ -9,6 +9,7 @@ unchanged.
 """
 from __future__ import annotations
 
+import importlib
 import re
 from typing import Any
 
@@ -257,6 +258,21 @@ def _is_legacy_status(body: Any) -> bool:
 def build_passing_yards_step4_card_css() -> str:
     return build_semantic_tokens_css() + _CARD_CSS
 
+def _install_utc_safe_defense_event_rows():
+    """Route the frozen V1 caller through the already-certified V3 UTC parser.
+
+    The live 2026-09-24 matchup exposed a tz-aware ESPN event timestamp versus
+    a plain cutoff date inside V1. V3 already owns the certified UTC-safe parser;
+    this current layer installs it only for the render call and restores V1
+    immediately afterward. No projection, probability, grade, or market math
+    changes.
+    """
+    base = importlib.import_module("nfl_passing_yards_defense_v1")
+    hardened = importlib.import_module("nfl_passing_yards_defense_v3")
+    original = base._completed_event_rows
+    base._completed_event_rows = hardened._completed_event_rows_utc
+    return base, original
+
 def render_nfl_passing_yards_hub() -> None:
     """Keep the frozen data pipeline, but expose only the current drill-down UI.
 
@@ -272,6 +288,7 @@ def render_nfl_passing_yards_hub() -> None:
     original_warning = st.warning
     original_info = st.info
     original_caption = st.caption
+    defense_base, original_completed_event_rows = _install_utc_safe_defense_event_rows()
 
     def styles_only_markdown(body: Any, *args: Any, **kwargs: Any):
         for style in _style_blocks_only(body):
@@ -313,6 +330,7 @@ def render_nfl_passing_yards_hub() -> None:
         st.warning = original_warning
         st.info = original_info
         st.caption = original_caption
+        defense_base._completed_event_rows = original_completed_event_rows
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
     if str(market or "Passing Yards") != "Passing Yards":
@@ -333,6 +351,7 @@ __all__ = [
     "PRESENTATION_ONLY",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
+    "_install_utc_safe_defense_event_rows",
     "_is_legacy_status",
     "_preserve_style_block",
     "_style_blocks_only",
