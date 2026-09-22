@@ -308,12 +308,23 @@ def render_nfl_passing_yards_hub() -> None:
     original_distribution_st = distribution_ui.st
     original_market_st = market_ui.st
 
+    def active_composition_html() -> str:
+        # Modern drill-down ownership is V58/V59. Resolve that active builder
+        # directly when its module is loaded so the final V34 placeholder does
+        # not depend on the legacy multi-hop monkey-patch chain.
+        import sys
+        drilldown = sys.modules.get("nfl_passing_yards_hub_v58")
+        builder = getattr(drilldown, "_qb_drilldown_html", None) if drilldown is not None else None
+        if callable(builder):
+            return builder(captured)
+        return _combined_player_cards_html(captured)
+
     def refresh_composed_placeholder() -> None:
         if placeholder is None:
             return
         if len(captured.get("identity") or []) < 2:
             return
-        placeholder.markdown(_combined_player_cards_html(captured), unsafe_allow_html=True)
+        placeholder.markdown(active_composition_html(), unsafe_allow_html=True)
 
     def capture_pair(key: str, html: str) -> str:
         rows = captured.setdefault(key, [])
@@ -460,7 +471,7 @@ def render_nfl_passing_yards_hub() -> None:
         prior._visual_build_banner_v33 = original_banner
 
     if placeholder is not None:
-        placeholder.markdown(_combined_player_cards_html(captured), unsafe_allow_html=True)
+        placeholder.markdown(active_composition_html(), unsafe_allow_html=True)
 
 
 def render_nfl_hub(market: str = "Passing Yards") -> None:
