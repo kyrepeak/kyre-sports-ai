@@ -230,6 +230,14 @@ jobs:
               try:
                   page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
                   landing = find_landing(page)
+                  date_widget = landing.locator('[data-testid="stDateInput"]').first
+                  try:
+                      print("PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_HTML")
+                      print(date_widget.evaluate("el => el.outerHTML"))
+                      print("PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_ROLES")
+                      print(json.dumps(date_widget.evaluate("""el => Array.from(el.querySelectorAll('[role]')).map(x => ({role:x.getAttribute('role'), aria:x.getAttribute('aria-label'), text:x.innerText, contenteditable:x.getAttribute('contenteditable')}))"""), indent=2))
+                  except Exception as exc:
+                      print(f"PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_INSPECT_FAILED: {exc}")
                   body = landing.locator("body").inner_text(timeout=5000)
                   forbidden = _body_has_forbidden_error(body)
                   if forbidden:
