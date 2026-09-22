@@ -1,1 +1,0 @@
-"""External sports data collectors."""
