@@ -49,7 +49,7 @@
   },
   "transition_history": [],
   "override_events": [],
-  "monster_status": "PENDING_DEPLOY_REFRESH_MERGE_FINAL_PUBLIC_PROOF",
+  "monster_status": "PENDING_FINAL_VERIFIER_MERGE_PUBLIC_PROOF",
   "premerge_repairs": {
     "devsystem_failure_job": 106634350941,
     "devsystem_failure": "ActionLedgerFailure: future task ledger must finish in DONE state",
@@ -85,5 +85,24 @@
     "router_changed": false,
     "verifier_changed": false,
     "frozen_step1_changed": false
+  },
+  "final_verifier_classification": {
+    "source_main_sha": "46b790e9f0940adb006c86c5bb0560e923f6489a",
+    "source_run": 35740842677,
+    "source_job": 106789872789,
+    "same_sha_step1_public_run": 35740842192,
+    "same_sha_step1_public_status": "SUCCESS",
+    "failure": "PASSING_YARDS_QB_STEP2_PICKER_NOT_READY",
+    "failed_layer": "VERIFIER",
+    "first_broken_precondition": "The Step 2 verifier coupled V58 picker discovery and V210 runtime ownership into the same candidate frame and periodically reloaded while waiting. The same MAIN SHA passed the frozen Step 1 public proof.",
+    "second_proven_verifier_defect": "find_detail expected data-qb-slot, but V59 renders data-qb-analysis-slot.",
+    "patch": "Verifier-only. Discover V58 picker and V210 runtime marker independently across page frames, remove periodic reloads, use the real V59 data-qb-analysis-slot selector, and re-prove V210 after each navigation.",
+    "product_changed": false,
+    "v58_changed": false,
+    "v209_changed": false,
+    "v59_changed": false,
+    "v210_changed": false,
+    "app_changed": false,
+    "model_data_math_changed": false
   }
 }
