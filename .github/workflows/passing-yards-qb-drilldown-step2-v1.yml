@@ -60,12 +60,20 @@ jobs:
           devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json
           tests/test_passing_yards_qb_drilldown_step2_v1.py
           EOF
+          cat > /tmp/expected-deploy-refresh.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step2-v1.json
+          EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-verifier-repair.txt /tmp/expected-verifier-repair.txt
+          sort -o /tmp/expected-deploy-refresh.txt /tmp/expected-deploy-refresh.txt
           if diff -q /tmp/expected-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_SCOPE_GREEN"
           elif diff -q /tmp/expected-verifier-repair.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_VERIFIER_REPAIR_SCOPE_GREEN"
+          elif diff -q /tmp/expected-deploy-refresh.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP2_DEPLOY_REFRESH_SCOPE_GREEN"
           else
             echo "Unexpected Step 2 diff:"
             cat /tmp/actual.txt
