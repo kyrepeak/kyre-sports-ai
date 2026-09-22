@@ -1,0 +1,564 @@
+name: MLB Step7F final API integration freeze certification
+
+on:
+  push:
+    branches:
+      - mlb-step7f-final-api-integration-freeze
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step7f-final-api-integration-freeze-cert
+  cancel-in-progress: false
+
+env:
+  STEP7F_BASE_SHA: 918a0ea3abf6c79d15ff6eac1654e7e5a1e773cc
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_HEALTH_URL: https://kyre-sports-ai.streamlit.app/_stcore/health
+
+jobs:
+  certify-final-freeze-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert Step7F is non-behavioral and MLB-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP7F_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step7_final_freeze_v1.py|tests/test_mlb_step7_final_freeze_v1.py|\.github/workflows/mlb-step7f-final-api-integration-freeze-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP7F_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP7F_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP7F_NON_BEHAVIORAL_SCOPE_OK'
+
+      - name: Prove complete Step7 production runtime is byte-identical to Step7E main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP7F_BASE_SHA"...HEAD -- \
+            app.py \
+            mlb_daily_game_picks_v217.py \
+            mlb_daily_game_picks_v217_guard.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_spread_hub_v156.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_moneyline_hub_v163.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
+            mlb_totals_hub_v174.py \
+            mlb_totals_hub_v173.py \
+            totals_hub_v172.py \
+            totals_hub_v171.py \
+            totals_hub_v17.py \
+            sports_api/mlb_step7d_total_api_integration_v1.py \
+            sports_api/mlb_step6_final_freeze_v1.py
+          echo 'MLB_STEP7F_COMPLETE_STEP7_RUNTIME_FROZEN'
+
+      - name: Assert final Step7 freeze manifest contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step7_final_freeze_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              FINAL_FREEZE_STATUS,
+              STEP7_CERTIFICATION_MARKERS,
+              STEP7_MERGED_PULL_REQUESTS,
+              STEP7_STAGE_CHAIN,
+              STEP7F_BASE_MAIN_SHA,
+              final_freeze_manifest,
+              validate_final_step7_certification,
+          )
+
+          m = final_freeze_manifest()
+          assert STEP7F_BASE_MAIN_SHA == '918a0ea3abf6c79d15ff6eac1654e7e5a1e773cc'
+          assert m['step7f_base_main_sha'] == STEP7F_BASE_MAIN_SHA
+          assert m['final_freeze_status'] == FINAL_FREEZE_STATUS == 'STEP7_FROZEN_API_INTEGRATION_COMPLETE'
+          assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER == 'MLB_STEP7F_FINAL_API_INTEGRATION_FREEZE_GREEN'
+          assert m['stage_chain'] == list(STEP7_STAGE_CHAIN)
+          assert m['certification_markers'] == list(STEP7_CERTIFICATION_MARKERS)
+          assert m['merged_pull_requests'] == list(STEP7_MERGED_PULL_REQUESTS) == [24, 25, 26, 27, 28]
+          assert len(m['stage_chain']) == 5
+          assert len(m['certification_markers']) == 5
+          assert m['read_only_freeze'] is True
+          assert m['automatic_runtime_mutation'] is False
+          assert m['runtime_files_changed_by_step7f'] is False
+          assert m['exact_official_game_id_required'] is True
+          assert m['fuzzy_matching_allowed'] is False
+          assert m['stale_market_context_allowed'] is False
+          assert m['missing_market_price_fabrication_allowed'] is False
+          assert m['step6_frozen_state_required'] is True
+          for key in (
+              'model_math_impact','simulation_impact','probability_impact',
+              'history_adjustment_impact','ranking_impact','selection_impact',
+              'fair_odds_impact','sportsbook_price_model_input',
+              'production_exposure_impact','wagering_impact','durable_persistence',
+              'wnba_impact',
+          ):
+              assert m[key] is False
+          validated = validate_final_step7_certification(
+              STEP7_CERTIFICATION_MARKERS,
+              runtime_base_sha=STEP7F_BASE_MAIN_SHA,
+          )
+          assert validated['freeze_eligible'] is True
+          assert validated['freeze_status'] == FINAL_FREEZE_STATUS
+          assert validated['failures'] == []
+          print('MLB_STEP7F_FINAL_FREEZE_MANIFEST_OK')
+          PY
+
+      - name: Prove active presentation wrappers consume freshness-enforced states
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          requirements = {
+              'mlb_spread_hub_v157.py': (
+                  'state = enforce_spread_api_freshness(build_spread_api_state(response.json()))',
+                  'state.get("integration_status") == API_CONNECTED and state.get("feed_fresh") is True',
+                  'spread_api_context_for_result(result, state)',
+              ),
+              'mlb_moneyline_hub_v164.py': (
+                  'state = enforce_moneyline_api_freshness(build_moneyline_api_state(response.json()))',
+                  'if state.get("integration_status") != API_CONNECTED:',
+                  'moneyline_api_context_for_result(result, state)',
+              ),
+              'mlb_totals_hub_v174.py': (
+                  'state = enforce_total_api_freshness(build_total_api_state(response.json()))',
+                  'state.get("integration_status") == API_CONNECTED and state.get("feed_fresh") is True',
+                  'total_api_context_for_result(result, state)',
+              ),
+          }
+          for path, tokens in requirements.items():
+              text = Path(path).read_text()
+              missing = [token for token in tokens if token not in text]
+              if missing:
+                  raise SystemExit(
+                      f'STEP7F_FRESHNESS_PRESENTATION_SEAM_MISSING_{path}:' + ','.join(missing)
+                  )
+
+          # V16.4 intentionally gates on the post-enforcement integration status.
+          # Prove the frozen enforcer itself marks stale/failing states unavailable.
+          moneyline_contract = Path('sports_api/mlb_step7c_moneyline_api_integration_v1.py').read_text()
+          for token in (
+              'failures.append("api_snapshot_stale")',
+              'state["integration_status"] = FALLBACK',
+              'state["api_integration_active"] = False',
+              'state["feed_fresh"] = fresh and not failures',
+          ):
+              if token not in moneyline_contract:
+                  raise SystemExit('STEP7F_MONEYLINE_FRESHNESS_ENFORCER_CONTRACT_MISSING:' + token)
+          print('MLB_STEP7F_ACTIVE_PRESENTATION_FRESHNESS_GATES_OK')
+          PY
+
+      - name: Compile Step7F Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py
+
+      - name: Run complete frozen MLB regression through Step7F
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py
+
+  certify-final-live-step7-boundaries:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install live certification dependencies
+        run: python -m pip install --disable-pip-version-check -q requests
+
+      - name: Certify Daily Picks Spread Moneyline and Total against one live API snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timedelta, timezone
+          import json
+          import os
+          import requests
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_step6d_production_expansion_v1 import (
+              CERTIFIED_STEP6C_PERMISSION,
+              resolve_step6d_production_expansion,
+          )
+          from sports_api.mlb_step6g_controlled_graduation_v1 import (
+              CERTIFIED_STEP6F_DECISION,
+              resolve_step6g_controlled_graduation,
+          )
+          from sports_api.mlb_step6_final_freeze_v1 import (
+              FINAL_FREEZE_STATUS as STEP6_FINAL_FREEZE_STATUS,
+              validate_final_step6_runtime,
+          )
+          from sports_api.mlb_step7a_daily_game_picks_api_integration_v1 import (
+              API_CONNECTED as STEP7A_CONNECTED,
+              FALLBACK as STEP7A_FALLBACK,
+              evaluate_daily_game_picks_api_integration,
+          )
+          from sports_api.mlb_step7b_spread_api_integration_v1 import (
+              API_CONNECTED as STEP7B_CONNECTED,
+              FALLBACK as STEP7B_FALLBACK,
+              build_spread_api_state,
+              enforce_spread_api_freshness,
+              spread_api_context_for_result,
+          )
+          from sports_api.mlb_step7c_moneyline_api_integration_v1 import (
+              API_CONNECTED as STEP7C_CONNECTED,
+              FALLBACK as STEP7C_FALLBACK,
+              build_moneyline_api_state,
+              enforce_moneyline_api_freshness,
+              moneyline_api_context_for_result,
+          )
+          from sports_api.mlb_step7d_total_api_integration_v1 import (
+              API_CONNECTED as STEP7D_CONNECTED,
+              FALLBACK as STEP7D_FALLBACK,
+              build_total_api_state,
+              enforce_total_api_freshness,
+              total_api_context_for_result,
+          )
+          from sports_api.mlb_step7_final_freeze_v1 import (
+              FINAL_FREEZE_STATUS,
+              STEP7_CERTIFICATION_MARKERS,
+              STEP7F_BASE_MAIN_SHA,
+              validate_final_step7_certification,
+          )
+
+          response = requests.get(
+              os.environ['PRODUCTION_ODDS_URL'],
+              timeout=45,
+              headers={
+                  'Accept':'application/json',
+                  'User-Agent':'KyreSportsStep7FFinalCert/1.0',
+                  'Cache-Control':'no-cache',
+              },
+          )
+          response.raise_for_status()
+          payload = response.json()
+          if (
+              payload.get('data_type') != 'mlb_live_odds_api_response_v1'
+              or payload.get('schema_version') != 1
+              or payload.get('source') != 'FanDuel'
+          ):
+              raise RuntimeError('STEP7F_BAD_LIVE_API_CONTRACT')
+          games = payload.get('games')
+          if not isinstance(games, list) or not games:
+              raise RuntimeError('STEP7F_EMPTY_OR_INVALID_LIVE_SLATE')
+          game_ids = [int(game['official_game_id']) for game in games]
+          if len(game_ids) != len(set(game_ids)):
+              raise RuntimeError('STEP7F_DUPLICATE_OFFICIAL_GAME_IDS')
+
+          collected_text = str(payload.get('collected_at_utc') or '')
+          if not collected_text:
+              raise RuntimeError('STEP7F_MISSING_COLLECTION_TIME')
+          collected = datetime.fromisoformat(collected_text.replace('Z', '+00:00')).astimezone(timezone.utc)
+          feed_age = max(0.0, (datetime.now(timezone.utc) - collected).total_seconds())
+          if feed_age > 60.0:
+              raise RuntimeError(f'STEP7F_LIVE_FEED_STALE_{feed_age:.3f}s')
+
+          rollout = resolve_step6d_production_expansion({}, permission=CERTIFIED_STEP6C_PERMISSION)
+          graduation = resolve_step6g_controlled_graduation(
+              rollout,
+              permission=CERTIFIED_STEP6F_DECISION,
+          )
+          step6_freeze = validate_final_step6_runtime(rollout, graduation)
+          if (
+              step6_freeze.get('freeze_eligible') is not True
+              or step6_freeze.get('freeze_status') != STEP6_FINAL_FREEZE_STATUS
+          ):
+              raise RuntimeError('STEP7F_STEP6_FINAL_FREEZE_DRIFT:' + json.dumps(step6_freeze, sort_keys=True))
+          if (
+              rollout.get('effective_percent') != 25.0
+              or graduation.get('graduation_status') != 'GRADUATED_PRODUCTION_ACTIVE'
+          ):
+              raise RuntimeError('STEP7F_STEP6_PRODUCTION_STATE_DRIFT')
+
+          live = attach_live_market_context(
+              [{'game_pk': gid} for gid in reversed(game_ids)],
+              games,
+          )
+          live['available'] = True
+          live['api_data_type'] = payload.get('data_type')
+          live['collected_at_utc'] = payload.get('collected_at_utc')
+          step6_state = {
+              'data_type':'mlb_step6g_controlled_graduation_presentation_v1',
+              **rollout,
+              **graduation,
+              'production_exposure_changed':False,
+              'same_step5_10_cohort':True,
+              'same_step5_9_gate':True,
+              'exact_session_rollback':True,
+              'global_kill_switch_available':True,
+              'player_props_passthrough':True,
+              'model_math_impact':False,
+              'pick_strength_impact':False,
+              'ranking_math_impact':False,
+              'risk_logic_impact':False,
+              'wnba_impact':False,
+          }
+          step7a = evaluate_daily_game_picks_api_integration(live, step6_state)
+          if live.get('attached_count') != len(games) or live.get('fallback_matching_used') is not False:
+              raise RuntimeError('STEP7F_STEP7A_EXACT_ID_ATTACH_COVERAGE_FAILED')
+          if step7a.get('integration_status') != STEP7A_CONNECTED or step7a.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7F_STEP7A_NOT_GREEN:' + json.dumps(step7a, sort_keys=True))
+
+          bad_live = dict(live)
+          bad_live['fallback_matching_used'] = True
+          step7a_bad = evaluate_daily_game_picks_api_integration(bad_live, step6_state)
+          if step7a_bad.get('integration_status') != STEP7A_FALLBACK:
+              raise RuntimeError('STEP7F_STEP7A_FUZZY_FAIL_OPEN_FAILED')
+
+          spread = enforce_spread_api_freshness(build_spread_api_state(payload))
+          moneyline = enforce_moneyline_api_freshness(build_moneyline_api_state(payload))
+          total = enforce_total_api_freshness(build_total_api_state(payload))
+          if spread.get('integration_status') != STEP7B_CONNECTED or spread.get('feed_fresh') is not True:
+              raise RuntimeError('STEP7F_STEP7B_NOT_GREEN:' + json.dumps(spread, sort_keys=True))
+          if moneyline.get('integration_status') != STEP7C_CONNECTED or moneyline.get('feed_fresh') is not True:
+              raise RuntimeError('STEP7F_STEP7C_NOT_GREEN:' + json.dumps(moneyline, sort_keys=True))
+          if total.get('integration_status') != STEP7D_CONNECTED or total.get('feed_fresh') is not True:
+              raise RuntimeError('STEP7F_STEP7D_NOT_GREEN:' + json.dumps(total, sort_keys=True))
+          if spread.get('usable_run_line_game_count') != len(games) or spread.get('unusable_game_ids'):
+              raise RuntimeError('STEP7F_STEP7B_LIVE_COVERAGE_INCOMPLETE')
+          if moneyline.get('usable_moneyline_game_count') != len(games) or moneyline.get('unusable_game_ids'):
+              raise RuntimeError('STEP7F_STEP7C_LIVE_COVERAGE_INCOMPLETE')
+          if total.get('usable_game_total_game_count') != len(games) or total.get('unusable_game_ids'):
+              raise RuntimeError('STEP7F_STEP7D_LIVE_COVERAGE_INCOMPLETE')
+
+          spread_checks = 0
+          moneyline_checks = 0
+          total_checks = 0
+          for game in games:
+              gid = int(game['official_game_id'])
+              run_line = game['markets']['run_line']
+              for side, team_id, model_line, expected_odds in (
+                  ('away', 101, float(run_line['away_line']), int(run_line['away_odds'])),
+                  ('home', 202, float(run_line['home_line']), int(run_line['home_odds'])),
+              ):
+                  result = {
+                      'game_pk':gid,
+                      'team_id':team_id,
+                      'away_team_id':101,
+                      'home_team_id':202,
+                      'line':model_line,
+                      'cover':0.60,
+                  }
+                  before = deepcopy(result)
+                  context = spread_api_context_for_result(result, spread)
+                  if context is None or context.get('selected_side') != side or context.get('line_match') is not True:
+                      raise RuntimeError(f'STEP7F_STEP7B_EXACT_CONTEXT_FAILED_{gid}_{side}')
+                  if float(context['live_fanduel_line']) != model_line or int(context['live_fanduel_odds']) != expected_odds:
+                      raise RuntimeError(f'STEP7F_STEP7B_VALUE_MISMATCH_{gid}_{side}')
+                  if context.get('fallback_matching_used') is not False or context.get('display_only') is not True:
+                      raise RuntimeError(f'STEP7F_STEP7B_DISPLAY_CONTRACT_FAILED_{gid}_{side}')
+                  if result != before:
+                      raise RuntimeError('STEP7F_STEP7B_RESULT_MUTATED')
+                  spread_checks += 1
+
+              ml = game['markets']['moneyline']
+              for side, team_id, expected_odds in (
+                  ('away', 101, int(ml['away_odds'])),
+                  ('home', 202, int(ml['home_odds'])),
+              ):
+                  result = {
+                      'game_pk':gid,
+                      'team_id':team_id,
+                      'away_team_id':101,
+                      'home_team_id':202,
+                      'win_prob':0.60,
+                  }
+                  before = deepcopy(result)
+                  context = moneyline_api_context_for_result(result, moneyline)
+                  if context is None or context.get('selected_side') != side:
+                      raise RuntimeError(f'STEP7F_STEP7C_EXACT_CONTEXT_FAILED_{gid}_{side}')
+                  if int(context['live_fanduel_odds']) != expected_odds:
+                      raise RuntimeError(f'STEP7F_STEP7C_VALUE_MISMATCH_{gid}_{side}')
+                  if (
+                      context.get('fallback_matching_used') is not False
+                      or context.get('display_only') is not True
+                      or context.get('sportsbook_price_model_input') is not False
+                  ):
+                      raise RuntimeError(f'STEP7F_STEP7C_DISPLAY_CONTRACT_FAILED_{gid}_{side}')
+                  if result != before:
+                      raise RuntimeError('STEP7F_STEP7C_RESULT_MUTATED')
+                  moneyline_checks += 1
+
+              total_market = game['markets']['total']
+              result = {'game_pk':gid, 'projected_total':8.1, 'lean':'OVER'}
+              before = deepcopy(result)
+              context = total_api_context_for_result(result, total)
+              if context is None:
+                  raise RuntimeError(f'STEP7F_STEP7D_EXACT_CONTEXT_FAILED_{gid}')
+              if float(context['live_fanduel_total_line']) != float(total_market['line']):
+                  raise RuntimeError(f'STEP7F_STEP7D_LINE_MISMATCH_{gid}')
+              if (
+                  int(context['live_fanduel_over_odds']) != int(total_market['over_odds'])
+                  or int(context['live_fanduel_under_odds']) != int(total_market['under_odds'])
+              ):
+                  raise RuntimeError(f'STEP7F_STEP7D_PRICE_MISMATCH_{gid}')
+              if (
+                  context.get('fallback_matching_used') is not False
+                  or context.get('display_only') is not True
+                  or context.get('sportsbook_price_model_input') is not False
+              ):
+                  raise RuntimeError(f'STEP7F_STEP7D_DISPLAY_CONTRACT_FAILED_{gid}')
+              if result != before:
+                  raise RuntimeError('STEP7F_STEP7D_RESULT_MUTATED')
+              total_checks += 1
+
+          wrong_gid = max(game_ids) + 999999
+          if spread_api_context_for_result(
+              {'game_pk':wrong_gid,'team_id':101,'away_team_id':101,'home_team_id':202,'line':1.5},
+              spread,
+          ) is not None:
+              raise RuntimeError('STEP7F_STEP7B_WRONG_ID_ATTACHED')
+          if moneyline_api_context_for_result(
+              {'game_pk':wrong_gid,'team_id':101,'away_team_id':101,'home_team_id':202},
+              moneyline,
+          ) is not None:
+              raise RuntimeError('STEP7F_STEP7C_WRONG_ID_ATTACHED')
+          if total_api_context_for_result({'game_pk':wrong_gid}, total) is not None:
+              raise RuntimeError('STEP7F_STEP7D_WRONG_ID_ATTACHED')
+
+          duplicate_payload = deepcopy(payload)
+          duplicate_payload['games'].append(deepcopy(duplicate_payload['games'][0]))
+          spread_duplicate = enforce_spread_api_freshness(build_spread_api_state(duplicate_payload))
+          moneyline_duplicate = enforce_moneyline_api_freshness(build_moneyline_api_state(duplicate_payload))
+          total_duplicate = enforce_total_api_freshness(build_total_api_state(duplicate_payload))
+          if spread_duplicate.get('integration_status') != STEP7B_FALLBACK:
+              raise RuntimeError('STEP7F_STEP7B_DUPLICATE_FAIL_CLOSED_FAILED')
+          if moneyline_duplicate.get('integration_status') != STEP7C_FALLBACK:
+              raise RuntimeError('STEP7F_STEP7C_DUPLICATE_FAIL_CLOSED_FAILED')
+          if total_duplicate.get('integration_status') != STEP7D_FALLBACK:
+              raise RuntimeError('STEP7F_STEP7D_DUPLICATE_FAIL_CLOSED_FAILED')
+
+          stale_payload = deepcopy(payload)
+          stale_payload['collected_at_utc'] = (
+              datetime.now(timezone.utc) - timedelta(seconds=120)
+          ).isoformat()
+          spread_stale = enforce_spread_api_freshness(build_spread_api_state(stale_payload))
+          moneyline_stale = enforce_moneyline_api_freshness(build_moneyline_api_state(stale_payload))
+          total_stale = enforce_total_api_freshness(build_total_api_state(stale_payload))
+          if spread_stale.get('integration_status') != STEP7B_FALLBACK or spread_stale.get('feed_fresh') is not False:
+              raise RuntimeError('STEP7F_STEP7B_STALE_FAIL_CLOSED_FAILED')
+          if moneyline_stale.get('integration_status') != STEP7C_FALLBACK or moneyline_stale.get('feed_fresh') is not False:
+              raise RuntimeError('STEP7F_STEP7C_STALE_FAIL_CLOSED_FAILED')
+          if total_stale.get('integration_status') != STEP7D_FALLBACK or total_stale.get('feed_fresh') is not False:
+              raise RuntimeError('STEP7F_STEP7D_STALE_FAIL_CLOSED_FAILED')
+
+          final = validate_final_step7_certification(
+              STEP7_CERTIFICATION_MARKERS,
+              runtime_base_sha=STEP7F_BASE_MAIN_SHA,
+          )
+          if final.get('freeze_eligible') is not True or final.get('freeze_status') != FINAL_FREEZE_STATUS:
+              raise RuntimeError('STEP7F_FINAL_FREEZE_VALIDATION_FAILED:' + json.dumps(final, sort_keys=True))
+
+          print(json.dumps({
+              'marker':'MLB_STEP7F_FINAL_LIVE_BOUNDARIES_GREEN',
+              'live_games':len(games),
+              'daily_picks_exact_attached':live.get('attached_count'),
+              'spread_exact_side_checks':spread_checks,
+              'moneyline_exact_side_checks':moneyline_checks,
+              'total_exact_game_checks':total_checks,
+              'feed_age_seconds':feed_age,
+              'step7a_status':step7a.get('integration_status'),
+              'step7b_status':spread.get('integration_status'),
+              'step7c_status':moneyline.get('integration_status'),
+              'step7d_status':total.get('integration_status'),
+              'fallback_matching_used':False,
+              'duplicates_fail_closed':True,
+              'stale_snapshots_fail_closed':True,
+              'step6_freeze_status':step6_freeze.get('freeze_status'),
+              'step6_production_percent':rollout.get('effective_percent'),
+              'final_freeze_status':final.get('freeze_status'),
+          }, sort_keys=True))
+          PY
+
+  certify-streamlit-transport:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify Streamlit remains reachable with zero Step7F runtime changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o /tmp/streamlit-health.txt -w '%{http_code}' --max-time 45 "$STREAMLIT_HEALTH_URL")"
+          case "$code" in
+            2*|3*) ;;
+            *)
+              echo "STEP7F_STREAMLIT_UNREACHABLE_HTTP_${code}"
+              cat /tmp/streamlit-health.txt || true
+              exit 1
+              ;;
+          esac
+          echo "MLB_STEP7F_STREAMLIT_REACHABLE_HTTP_${code}"
+          echo 'MLB_STEP7F_RUNTIME_IS_BYTE_IDENTICAL_TO_STEP7E_MAIN'
+
+  certification-marker:
+    needs:
+      - certify-final-freeze-contract
+      - certify-final-live-step7-boundaries
+      - certify-streamlit-transport
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Emit final Step7 marker
+        run: echo 'MLB_STEP7F_FINAL_API_INTEGRATION_FREEZE_GREEN'

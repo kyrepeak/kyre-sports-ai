@@ -1,0 +1,212 @@
+name: NFL Spread V136 Focused Certification
+
+on:
+  push:
+    branches:
+      - nfl-spread-v136-fresh-router-activation
+    paths:
+      - 'app.py'
+      - 'streamlit_memory_lazy_router_v136.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
+      - 'tests/test_nfl_spread_router_v136.py'
+      - 'tests/test_nfl_spread_v136_html_leak_regression.py'
+      - '.github/workflows/nfl-spread-step8-regression-shield.yml'
+      - '.github/workflows/nfl-spread-step8-regression.yml'
+      - '.github/workflows/nfl-spread-step9-streamlit-proof.yml'
+      - '.github/workflows/nfl-spread-v136-standalone.yml'
+      - '.github/workflows/nfl-spread-v136-step10-regression.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'streamlit_memory_lazy_router_v136.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
+      - 'tests/test_nfl_spread_router_v136.py'
+      - 'tests/test_nfl_spread_v136_html_leak_regression.py'
+      - '.github/workflows/nfl-spread-step8-regression-shield.yml'
+      - '.github/workflows/nfl-spread-step8-regression.yml'
+      - '.github/workflows/nfl-spread-step9-streamlit-proof.yml'
+      - '.github/workflows/nfl-spread-v136-standalone.yml'
+      - '.github/workflows/nfl-spread-v136-step10-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-spread-v136-focused-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install isolated V136 test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests pandas numpy streamlit pytest
+
+      - name: Resolve current protected-main merge base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          base="$(git merge-base origin/main HEAD)"
+          test -n "$base"
+          echo "V136_BASE=$base" >> "$GITHUB_ENV"
+          echo "V136 current-main merge base: $base"
+
+      - name: Enforce exact cumulative V136 surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only "$V136_BASE"...HEAD | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-spread-step8-regression-shield.yml
+          .github/workflows/nfl-spread-step8-regression.yml
+          .github/workflows/nfl-spread-step9-streamlit-proof.yml
+          .github/workflows/nfl-spread-v136-standalone.yml
+          .github/workflows/nfl-spread-v136-step10-regression.yml
+          app.py
+          streamlit_memory_lazy_router_v136.py
+          tests/test_nfl_spread_router_v136.py
+          tests/test_nfl_spread_v136_activation.py
+          tests/test_nfl_spread_v136_html_leak_regression.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual V136 focused diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo 'NFL_SPREAD_V136_FOCUSED_EXACT_SURFACE_GREEN'
+
+      - name: Enforce exact app.py V136 activation-only diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import subprocess
+
+          base = os.environ['V136_BASE']
+          diff = subprocess.check_output(
+              ['git', 'diff', '--unified=0', base, 'HEAD', '--', 'app.py'],
+              text=True,
+          )
+          changes = sorted(
+              line for line in diff.splitlines()
+              if line.startswith(('+', '-')) and not line.startswith(('+++', '---'))
+          )
+          expected = sorted([
+              '-DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"',
+              '+FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"',
+              '+DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"',
+              '-    from streamlit_memory_lazy_router_v135 import record_bootstrap_import_ms, render_app',
+              '+    from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app',
+          ])
+          if changes != expected:
+              print('Unexpected app.py V136 activation changes:')
+              print('\n'.join(changes))
+              raise SystemExit(1)
+          print('NFL_SPREAD_V136_APP_ACTIVATION_ONLY_GREEN')
+          PY
+
+      - name: Prove frozen V135 analytics and routing surfaces are untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --quiet "$V136_BASE"...HEAD -- \
+            nfl_spread_hub_v4.py \
+            nfl_spread_hub_v3.py \
+            nfl_spread_model_v1.py \
+            nfl_spread_mc_v1.py \
+            nfl_spread_market_api_v1.py \
+            streamlit_memory_lazy_router_v132.py \
+            streamlit_memory_lazy_router_v133.py \
+            streamlit_memory_lazy_router_v134.py \
+            streamlit_memory_lazy_router_v135.py \
+            tests/test_nfl_spread_router_v135.py \
+            tests/test_nfl_spread_v134_activation.py
+          echo 'NFL_SPREAD_V136_FROZEN_SURFACES_UNCHANGED_GREEN'
+
+      - name: Compile focused V136 surface
+        run: |
+          python -m py_compile app.py
+          python -m py_compile streamlit_memory_lazy_router_v136.py
+          python -m py_compile tests/test_nfl_spread_v136_activation.py
+          python -m py_compile tests/test_nfl_spread_router_v136.py
+          python -m py_compile tests/test_nfl_spread_v136_html_leak_regression.py
+
+      - name: Run focused NFL Spread router and visual contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest -q \
+            tests/test_nfl_spread_v136_activation.py \
+            tests/test_nfl_spread_v4_visual_parity.py \
+            tests/test_nfl_spread_router_v135.py \
+            tests/test_nfl_spread_router_v136.py \
+            tests/test_nfl_spread_v136_html_leak_regression.py
+
+      - name: Prove V136 activation and frozen analytics firewall
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import nfl_spread_hub_v4 as v4
+          import nfl_spread_mc_v1 as mc
+          import streamlit_memory_lazy_router_v136 as router
+
+          app = Path('app.py').read_text(encoding='utf-8')
+          router_source = Path('streamlit_memory_lazy_router_v136.py').read_text(encoding='utf-8')
+          assert 'FROZEN_V135_DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V135_NFL_SPREAD_VISUAL_PARITY_2026-09-14"' in app
+          assert 'DEPLOYMENT_HEARTBEAT = "STREAMLIT_MAIN_V136_NFL_SPREAD_FRESH_ROUTER_2026-09-14"' in app
+          active = 'from streamlit_memory_lazy_router_v136 import record_bootstrap_import_ms, render_app'
+          assert app.count(active) == 1
+
+          assert router.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v135'
+          assert router.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v4'
+          assert router.SPREAD_MARKET == 'Spread'
+          assert router.STANDALONE_SPREAD_ROUTE is True
+          assert router.ACTIVE_SPREAD_V135_DEPENDENCY is False
+          assert 'import streamlit_memory_lazy_router_v135' not in router_source
+          assert router.HTML_RENDER_GUARD == 'flatten_generated_html'
+          assert router.HTML_RENDER_GUARD_SCOPE == 'route_purge_reimport_safe'
+          assert router.PROJECTION_MODEL_ENABLED is True
+          assert router.MONTE_CARLO_ENABLED is True
+          assert router.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert router.STAKE_SIZING_ENABLED is False
+          assert router.WAGER_ACTIONS_ENABLED is False
+
+          assert v4.FROZEN_ANALYTICS == 'nfl_spread_hub_v3'
+          assert v4.FROZEN_MODEL == 'nfl_spread_model_v1'
+          assert v4.FROZEN_MONTE_CARLO == 'nfl_spread_mc_v1'
+          assert v4.CERTIFIED_SIMULATIONS == 5_000_000
+          assert v4.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert mc.CERTIFIED_SIMULATIONS == 5_000_000
+          assert mc.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          print('NFL_SPREAD_V136_FOCUSED_FIREWALL_GREEN')
+          PY
+
+  final-step9-gate:
+    if: always()
+    needs: [focused-contract]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require V136 focused certification green
+        env:
+          RESULT: ${{ needs.focused-contract.result }}
+        run: |
+          test "$RESULT" = "success"
+          echo 'NFL_SPREAD_V136_STEP9_FINAL_GATE_GREEN'

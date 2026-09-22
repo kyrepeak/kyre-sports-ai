@@ -1,0 +1,81 @@
+name: NFL Rushing Yards Page Step 6 Support Concerns V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_rushing_yards_hub_v9.py"
+      - "streamlit_memory_lazy_router_v105.py"
+      - "app.py"
+      - "tests/test_nfl_rushing_yards_page_step6_support_concerns_v1.py"
+      - ".github/workflows/nfl-rushing-yards-page-step6-support-concerns-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-page-step6-support-concerns:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests
+
+      - name: Compile final Step 6 surface
+        run: |
+          python -m py_compile nfl_rushing_yards_hub_v9.py
+          python -m py_compile streamlit_memory_lazy_router_v105.py
+          python -m py_compile app.py
+          python -m py_compile tests/test_nfl_rushing_yards_page_step6_support_concerns_v1.py
+
+      - name: Re-run certified Rushing contracts
+        run: |
+          python -m pytest -q tests/test_nfl_rushing_yards_context_api_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_projection_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_step3_surface_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_market_api_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_step4_surface_v1.py
+
+      - name: Re-run Page Steps 1 through 5
+        run: |
+          python -m pytest -q tests/test_nfl_rushing_yards_page_step1_compact_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_page_step2_summary_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_page_step3_workload_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_page_step4_opponent_run_defense_v1.py
+          python -m pytest -q tests/test_nfl_rushing_yards_page_step5_projection_recipe_v1.py
+
+      - name: Run final Page Step 6 contracts
+        run: python -m pytest -q tests/test_nfl_rushing_yards_page_step6_support_concerns_v1.py
+
+      - name: Verify final frozen owner isolation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v9 = Path("nfl_rushing_yards_hub_v9.py").read_text()
+          v8 = Path("nfl_rushing_yards_hub_v8.py").read_text()
+          r104 = Path("streamlit_memory_lazy_router_v104.py").read_text()
+          r105 = Path("streamlit_memory_lazy_router_v105.py").read_text()
+          projection = Path("nfl_rushing_yards_projection_v1.py").read_text()
+          market = Path("nfl_rushing_yards_market_api_v1.py").read_text()
+          assert 'FROZEN_PRIOR = "nfl_rushing_yards_hub_v8"' in v9
+          assert 'FROZEN_PRIOR = "nfl_rushing_yards_hub_v7"' in v8
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v8"' in r104
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v9"' in r105
+          assert 'PAGE_BUILD_STEP = 6' in v9
+          assert 'PAGE_BUILD_TOTAL = 6' in v9
+          assert '"sportsbook_influence": 0.0' in projection
+          assert '"projection_weight": 0.0' in market
+          assert '"probability_enabled": False' in market
+          assert '"grading_enabled": False' in market
+          assert '"wager_actions": False' in market
+          print("NFL_RUSHING_YARDS_PAGE_BUILD_6_OF_6_GREEN")
+          PY

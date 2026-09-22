@@ -1,0 +1,39 @@
+{
+  "version": 3,
+  "scope": "cfb_game_total_v162_router_v158_production_freeze",
+  "policy": "Permanently freeze the production-certified College Football Game Total V162 presentation/cache-boundary repair at Router V158 after production verification run #214. V161/Router V157 remains the frozen parent. Future Game Total changes must be additive through new versioned pages, routers, runtime adapters, and certification contracts; this V162/V158 production baseline must not be edited in place.",
+  "baseline_commit": "0d6bad657654be3a355ba4e1bba973355b356e90",
+  "repair_pr": 578,
+  "devsystem_pr_run": 991,
+  "production_verification_run": 214,
+  "browser_certification_run": 31,
+  "exact_blobs": {
+    "app.py": "3b70582f1545aa88b02fedb232548944475d0467",
+    "cfb_game_total_clean_page_v12.py": "942bfc70d9dcca4494880d9ccdebb6c80a4f954f",
+    "cfb_game_total_clean_page_v13.py": "c89c09100ce5e99280984d603e751deff53f77b5",
+    "streamlit_memory_lazy_router_v158.py": "4fc1b4aca70b6306cbf4baf0fda516f92803eb3e",
+    "tests/test_cfb_game_total_v162_cache_boundary.py": "9e3f5b12c56d74f32daa9a0529efa58366aa4ccb",
+    "devsystem/cfb_game_total_browser_qa_v3.py": "62bc61aea23abe99b0d07b96a83f5f79842290ce",
+    "devsystem/production_verify_v3.py": "c19a093f1b408a05cf3318108ba0d981ac41f083"
+  },
+  "contract": {
+    "frozen_parent": "CFB Game Total V161 / Router V157",
+    "active_page": "cfb_game_total_clean_page_v13",
+    "active_router": "streamlit_memory_lazy_router_v158",
+    "production_heartbeat": "CFB_GAME_TOTAL_V162_PRODUCTION_ACTIVE",
+    "legacy_v161_heartbeat": "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE",
+    "fresh_page_cache_boundary": true,
+    "same_route_stale_module_regression_fixed": true,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "browser_visual_certified": true,
+    "production_streamlit_freshness_certified": true,
+    "render_api_certified": true,
+    "future_changes_must_be_additive": true,
+    "permanently_frozen": true
+  }
+}

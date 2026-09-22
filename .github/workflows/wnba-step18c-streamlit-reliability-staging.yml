@@ -1,0 +1,122 @@
+name: WNBA Step 18C Streamlit reliability staging
+
+on:
+  push:
+    branches:
+      - wnba-step18c-streamlit-reliability-20260829
+
+permissions:
+  contents: write
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Step 18C root bridge
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('app.py')
+          text=p.read_text()
+          anchor='''def _load_frozen_pre_live_app() -> str:\n'''
+          addition='''def _install_step18c_wnba_consumer_bridge() -> dict:\n    """Install the reliability bridge; fail closed if its module cannot import."""\n    try:\n        sys.modules.pop("wnba_step18c_consumer_bridge_v1", None)\n        importlib.invalidate_caches()\n        from wnba_step18c_consumer_bridge_v1 import install_step18c_consumer_bridge\n\n        return install_step18c_consumer_bridge()\n    except Exception as exc:\n        import types\n        safe = types.ModuleType("wnba_daily_picks_hub_step18c_boot_fail_closed")\n        safe.MODEL_VERSION = "WNBA DAILY PICKS STEP 18C BOOT FAIL-CLOSED"\n\n        def render_wnba_daily_picks_hub(section_header=None, status_info=None, team_logo=None, h=None):\n            st.error("WNBA Daily Picks could not load the certified consumer presentation. No legacy computation or cached picks are being shown.")\n            st.caption(f"Consumer presentation state: {type(exc).__name__}")\n            return {"state": "error", "available": False, "reason": "consumer_presentation_unavailable", "error_type": type(exc).__name__, "cards": []}\n\n        safe.render_wnba_daily_picks_hub = render_wnba_daily_picks_hub\n        sys.modules["wnba_daily_picks_hub_v34"] = safe\n        sys.modules["wnba_daily_picks_hub_v4"] = safe\n        return {"installed": True, "fail_closed": True, "error_type": type(exc).__name__, "legacy_daily_picks_compute_fallback": False}\n\n\n'''
+          if text.count(anchor)!=1:
+              raise SystemExit('STEP18C_APP_FUNCTION_ANCHOR_DRIFT')
+          text=text.replace(anchor,addition+anchor,1)
+          old='_STEP18B_WNBA_CONSUMER_BRIDGE = _install_step18b_wnba_consumer_bridge()\nsource = _load_frozen_pre_live_app()\n'
+          new='_STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()\nsource = _load_frozen_pre_live_app()\n'
+          if text.count(old)!=1:
+              raise SystemExit('STEP18C_APP_CALL_ANCHOR_DRIFT')
+          p.write_text(text.replace(old,new,1))
+          PY
+
+      - name: Install frontend dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install pytest
+
+      - name: Run Step 18B behavioral and Step 18C regressions
+        run: |
+          python -m py_compile app.py wnba_api_client_v1.py wnba_streamlit_consumer_v1.py wnba_daily_picks_hub_v35.py wnba_step18b_consumer_bridge_v1.py wnba_streamlit_consumer_v2.py wnba_daily_picks_hub_v36.py wnba_step18c_consumer_bridge_v1.py
+          # Step18C intentionally supersedes exactly one Step18B root-routing assertion.
+          # All other Step18B behavior stays under regression coverage, and Step18C
+          # has its own stricter root-routing/fail-closed assertions.
+          PYTHONPATH=. pytest -q tests/test_wnba_step18b_streamlit_consumer.py tests/test_wnba_step18c_streamlit_reliability.py -k 'not test_root_app_keeps_frozen_replay_and_installs_step18b_before_source_exec'
+
+      - name: Prove frontend-only reliability diff
+        run: |
+          set -euo pipefail
+          BASE='f3436c70621ed4033ba365c1ef0c6053a8cc5a3a'
+          git merge-base --is-ancestor "$BASE" HEAD
+          test -z "$(git diff --name-only "$BASE" -- sports_api)"
+          python - <<'PY'
+          import subprocess
+          base='f3436c70621ed4033ba365c1ef0c6053a8cc5a3a'
+          names=set(subprocess.check_output(['git','diff','--name-only',base,'--','app.py','wnba_streamlit_consumer_v2.py','wnba_daily_picks_hub_v36.py','wnba_step18c_consumer_bridge_v1.py','tests/test_wnba_step18c_streamlit_reliability.py']).decode().splitlines())
+          expected={'app.py','wnba_streamlit_consumer_v2.py','wnba_daily_picks_hub_v36.py','wnba_step18c_consumer_bridge_v1.py','tests/test_wnba_step18c_streamlit_reliability.py'}
+          if names != expected: raise SystemExit(f'STEP18C_DIFF_DRIFT:{sorted(names)}')
+          print('STEP18C_FRONTEND_ONLY_DIFF_OK')
+          PY
+
+      - name: Boot hardened Streamlit app
+        run: |
+          set -euo pipefail
+          streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 >/tmp/step18c.log 2>&1 &
+          PID=$!
+          trap 'kill $PID >/dev/null 2>&1 || true' EXIT
+          ok=0
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 5 http://127.0.0.1:8501/_stcore/health >/tmp/health.txt; then ok=1; break; fi
+            if ! kill -0 "$PID" 2>/dev/null; then cat /tmp/step18c.log; exit 1; fi
+            sleep 2
+          done
+          test "$ok" -eq 1
+          grep -qi 'ok' /tmp/health.txt
+          echo STEP18C_STREAMLIT_BOOT_OK
+
+      - name: Prove live fresh snapshot transition
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import time
+          from wnba_api_client_v1 import KyreWNBAAPIClient
+          from wnba_streamlit_consumer_v2 import normalize_consumer_payload
+
+          client=KyreWNBAAPIClient(timeout_seconds=20,attempts=3)
+          first=None
+          for _ in range(8):
+              view=normalize_consumer_payload(client.consumer_latest())
+              snap=view.get('snapshot') or {}
+              if view.get('state') in {'ready','unavailable'} and snap.get('effective_stale') is False and snap.get('snapshot_content_sha256'):
+                  first=(snap.get('snapshot_content_sha256'),snap.get('captured_at_utc'),view.get('state'),view.get('reason'))
+                  break
+              time.sleep(15)
+          if first is None: raise SystemExit('STEP18C_NO_FRESH_INITIAL_SNAPSHOT')
+          second=None
+          for _ in range(10):
+              time.sleep(15)
+              view=normalize_consumer_payload(client.consumer_latest())
+              snap=view.get('snapshot') or {}
+              if snap.get('effective_stale') is False and snap.get('snapshot_content_sha256') and (snap.get('snapshot_content_sha256')!=first[0] or snap.get('captured_at_utc')!=first[1]):
+                  second=(snap.get('snapshot_content_sha256'),snap.get('captured_at_utc'),view.get('state'),view.get('reason'))
+                  break
+          if second is None: raise SystemExit(f'STEP18C_SNAPSHOT_DID_NOT_ADVANCE:{first}')
+          if view.get('state') != 'ready' and view.get('cards') != []: raise SystemExit('STEP18C_NONREADY_CARD_LEAK')
+          print('STEP18C_LIVE_SNAPSHOT_TRANSITION_OK',first[2:],second[2:])
+          PY
+
+      - name: Commit only tested app wiring
+        run: |
+          if git diff --quiet -- app.py; then exit 0; fi
+          git config user.name 'kyre-step18c-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add app.py
+          git commit -m 'Wire Step 18C fail-closed Streamlit reliability bridge'
+          git push origin HEAD:wnba-step18c-streamlit-reliability-20260829

@@ -1,0 +1,110 @@
+name: WNBA Step 6O activation rollback package
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6o_activation_rollback_package.py'
+      - 'sports_api/api/wnba_step6o_activation_rollback_package.py'
+      - 'sports_api/tests/test_wnba_step6o_activation_rollback_package.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6o.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6o_activation_rollback_package.py'
+      - 'sports_api/api/wnba_step6o_activation_rollback_package.py'
+      - 'sports_api/tests/test_wnba_step6o_activation_rollback_package.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6o.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6o-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6o-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact Step 6O revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6O package
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6o_activation_rollback_package.py \
+            sports_api/api/wnba_step6o_activation_rollback_package.py \
+            sports_api/main.py
+
+      - name: Run Step 6O deterministic package tests
+        run: python -m unittest sports_api.tests.test_wnba_step6o_activation_rollback_package
+
+      - name: Run frozen Step 6N observability regression
+        run: python -m unittest sports_api.tests.test_wnba_step6n_production_observability
+
+      - name: Run corrected Step 6M and Step 6K regressions
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_step6m_scheduler_orchestration \
+            sports_api.tests.test_wnba_step6k_activation_preflight
+
+      - name: Prove Step 6O package is read-only and has no executor
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/wnba_step6o_activation_rollback_package.py').read_text(encoding='utf-8').lower()
+          api = Path('sports_api/api/wnba_step6o_activation_rollback_package.py').read_text(encoding='utf-8').lower()
+
+          forbidden = (
+              'httpx.', 'requests.', 'subprocess.', 'urllib.request',
+              'write_kyre_market_feed(', 'sync_reconciled_draftkings_to_kyre_feed(',
+              'refresh_step6l_owned_market_feed(', 'run_step6m_background_cycle(',
+              'run_step6m_manual_cycle(', 'trigger_deploy(', 'create_service(',
+              'put_env_var(', 'run_monte_carlo(', 'place_wager(',
+          )
+          for token in forbidden:
+              assert token not in core, token
+              assert token not in api, token
+          assert '@router.post' not in api
+          assert '@router.put' not in api
+          assert '@router.delete' not in api
+          assert '@router.get' in api
+          print('Step 6O exposes only a deterministic GET-only package; no mutation executor exists.')
+          PY
+
+      - name: Prove rollback ordering is fail-closed
+        shell: bash
+        run: |
+          python - <<'PY'
+          import sports_api.wnba_step6o_activation_rollback_package as s
+          steps = s._rollback_steps(True)
+          actions = [row['action'] for row in steps]
+          assert actions[:3] == [
+              'disable_production_runtime',
+              'disable_step6l_production_refresh_authority',
+              'force_global_step6j_canary_direct_reconciled_switches_off',
+          ]
+          assert actions.index('redeploy_previous_immutable_image_with_runtime_disabled') > 2
+          print('Step 6O rollback disables runtime/refresh/write switches before image recovery.')
+          PY
+
+      - name: Prove CI performs no live activation
+        shell: bash
+        run: |
+          python - <<'PY'
+          print('CI does not provision Render, contact DraftKings, write the feed, start the scheduler, run Monte Carlo, or place wagers.')
+          PY

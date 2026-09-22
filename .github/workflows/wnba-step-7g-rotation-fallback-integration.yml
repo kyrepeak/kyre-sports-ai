@@ -1,0 +1,88 @@
+name: WNBA Step 7G rotation fallback integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - wnba-step7g-official-data-preflight-20260827
+    paths:
+      - sports_api/wnba_rotation_context.py
+      - sports_api/wnba_rotation_reconstruction.py
+      - sports_api/tools/wnba_step7g_rotation_reconstruction_probe.py
+      - sports_api/tools/wnba_step7g_rotation_multigame_cert.py
+      - tests/test_wnba_rotation_context.py
+      - tests/test_wnba_rotation_fallback.py
+      - .github/workflows/wnba-step-7g-rotation-fallback-integration.yml
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout isolated Step 7G branch
+        uses: actions/checkout@v4
+
+      - name: Verify production remains OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install minimal dependency
+        run: python -m pip install 'httpx==0.28.1'
+
+      - name: Compile integrated runtime
+        run: |
+          python -m py_compile sports_api/wnba_rotation_context.py
+          python -m py_compile sports_api/wnba_rotation_reconstruction.py
+          python -m py_compile sports_api/tools/wnba_step7g_rotation_multigame_cert.py
+
+      - name: Run frozen Step 4R regression tests
+        run: PYTHONPATH=. python tests/test_wnba_rotation_context.py -v
+
+      - name: Run Step 7G fallback-boundary tests
+        run: PYTHONPATH=. python tests/test_wnba_rotation_fallback.py -v
+
+      - name: Rerun multi-game live rotation certification
+        run: python -m sports_api.tools.wnba_step7g_rotation_multigame_cert
+
+      - name: Upload live certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-rotation-fallback-integration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-rotation-multigame-cert.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert production remained OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

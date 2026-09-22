@@ -1,0 +1,16 @@
+name: WNBA Step 6B legacy Render provision (retired)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  legacy-retired:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Step 6B retired
+        run: |
+          echo "Step 6B is retired because it required the expired SportsGameOdds dependency."
+          echo "Use the Step 6C Kyre-owned market deployment path instead."

@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v188-step6-production-direct-embed-fallback",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V188 verifier-only resiliency patch for the College Football Game Total Step 6 production certification. The live Render API is healthy and the Step 6 product/data/model code is already certified, but Streamlit Cloud's outer shell intermittently fails to mount the embedded app iframe during automated production verification. Add a second certification access path that opens Streamlit's embedded app route directly when the shell path does not expose the app frame quickly enough. Preserve all product code, data routing, V184 Step 6 normalized contract, V185 visual presentation, V186/V187 compatibility behavior, READY/100%/12-of-12 requirements, sportsbook influence 0.0%, and projection mutation OFF.",
+  "proof_target": "The production verifier must first attempt the normal Streamlit shell path, then fall back to the direct embedded /~/+/ route if needed, and in either case must locate the same live Step 6 DOM and enforce READY state, 100% coverage, 12 total Step 6 stat tiles, 12 ready tiles, no DATA LIMITED, sportsbook influence 0.0%, projection mutation OFF, and event/date persistence. Branch CI must remain GREEN before merge, then push-to-main production verification must pass live.",
+  "internal_steps": {
+    "1": "Use GitHub production evidence plus Render service/log health to isolate Streamlit iframe mounting as the remaining bottleneck.",
+    "2": "Cap time spent on the normal outer-shell route.",
+    "3": "Add a direct embedded Streamlit /~/+/ certification path as fallback.",
+    "4": "Keep all existing strict Step 6 assertions unchanged.",
+    "5": "Add regression coverage proving both access paths and bounded shell wait.",
+    "6": "Run targeted CI, merge only if GREEN, then require live production READY/100%/12-of-12 proof."
+  }
+}

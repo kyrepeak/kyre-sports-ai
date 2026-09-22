@@ -1,0 +1,92 @@
+name: WNBA Step 5Q multi-worker safety tests
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - "sports_api/database/wnba_scheduler_cycle_lock.py"
+      - "sports_api/api/wnba_pregame_board_scheduler_distributed.py"
+      - "sports_api/tests/test_wnba_scheduler_cycle_lock.py"
+      - "sports_api/main.py"
+      - ".github/workflows/wnba-step-5q.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "sports_api/database/wnba_scheduler_cycle_lock.py"
+      - "sports_api/api/wnba_pregame_board_scheduler_distributed.py"
+      - "sports_api/tests/test_wnba_scheduler_cycle_lock.py"
+      - "sports_api/main.py"
+      - ".github/workflows/wnba-step-5q.yml"
+
+jobs:
+  step5q:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sports_api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 5Q modules
+        run: |
+          python -m py_compile sports_api/database/wnba_scheduler_cycle_lock.py
+          python -m py_compile sports_api/api/wnba_pregame_board_scheduler_distributed.py
+          python -m py_compile sports_api/main.py
+
+      - name: Run Step 5I regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_historical_backtest_calibration.py
+
+      - name: Run Step 5J regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_pregame_prediction_store.py
+
+      - name: Run Step 5K regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_player_prop_top_five_board.py
+
+      - name: Run Step 5L regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_daily_slate_top_five.py
+
+      - name: Run Step 5M regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_prop_line_feed_adapter.py
+
+      - name: Run Step 5N regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_prop_feed_collector.py
+
+      - name: Run Step 5O regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_prop_feed_failover.py
+
+      - name: Run Step 5P regression harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_pregame_board_scheduler.py
+
+      - name: Run Step 5Q deterministic harness
+        env:
+          PYTHONPATH: .
+        run: python sports_api/tests/test_wnba_scheduler_cycle_lock.py

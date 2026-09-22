@@ -1,0 +1,210 @@
+name: WNBA Step 6F DraftKings prop market discovery
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_draftkings_prop_market_discovery.py'
+      - 'sports_api/tools/wnba_draftkings_prop_market_probe.py'
+      - 'sports_api/tests/test_wnba_draftkings_prop_market_discovery.py'
+      - '.github/workflows/wnba-step-6f.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_draftkings_prop_market_discovery.py'
+      - 'sports_api/tools/wnba_draftkings_prop_market_probe.py'
+      - 'sports_api/tests/test_wnba_draftkings_prop_market_discovery.py'
+      - '.github/workflows/wnba-step-6f.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  step6f-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6F modules
+        run: |
+          python -m py_compile \
+            sports_api/wnba_draftkings_prop_market_discovery.py \
+            sports_api/tools/wnba_draftkings_prop_market_probe.py
+
+      - name: Run Step 6F deterministic tests
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_prop_market_discovery
+
+      - name: Run Step 6E discovery regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_endpoint_discovery sports_api.tests.test_wnba_draftkings_endpoint_discovery_routes
+
+      - name: Run Step 6D direct collector regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_direct sports_api.tests.test_wnba_step6d_direct_integration
+
+      - name: Run Step 6C owned-feed regression
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed sports_api.tests.test_wnba_kyre_market_feed_routes
+
+      - name: Run frozen Step 5O regression
+        run: python -m unittest sports_api.tests.test_wnba_prop_feed_failover
+
+      - name: Run frozen Step 5P regression
+        run: python -m unittest sports_api.tests.test_wnba_pregame_board_scheduler
+
+      - name: Run frozen Step 5R regression
+        run: python -m unittest sports_api.tests.test_wnba_production_runtime_readiness
+
+      - name: Prove Step 6F stays read-only and activation-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files = [
+              Path('sports_api/wnba_draftkings_prop_market_discovery.py'),
+              Path('sports_api/tools/wnba_draftkings_prop_market_probe.py'),
+          ]
+          joined = '\n'.join(p.read_text(encoding='utf-8') for p in files).lower()
+          assert 'sportsgameodds_api_key' not in joined
+          assert 'WNBA_PRODUCTION_RUNTIME_ENABLED=true'.lower() not in joined
+          assert 'WNBA_KYRE_DIRECT_SYNC_ENABLED=true'.lower() not in joined
+          assert '.post(' not in joined
+          print('Step 6F is DraftKings GET-only, account-free, vendor-free, scheduler-off, and Monte-Carlo-free.')
+          PY
+
+  live-read-only-prop-probe:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: step6f-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Probe bounded public WNBA player-prop candidates
+        env:
+          WNBA_DRAFTKINGS_PROP_DISCOVERY_TIMEOUT_SECONDS: '10'
+        run: |
+          mkdir -p .wnba-step6f-discovery
+          python -m sports_api.tools.wnba_draftkings_prop_market_probe \
+            --output .wnba-step6f-discovery/live-prop-probe.json
+
+      - name: Print sanitized Step 6F result
+        run: |
+          python - <<'PY'
+          import json
+          report = json.load(open('.wnba-step6f-discovery/live-prop-probe.json', encoding='utf-8'))
+          print('all_required_stats_verified=', report.get('all_required_stats_verified'))
+          print('verified_stat_count=', report.get('verified_stat_count'))
+          for stat, row in (report.get('selected_by_stat') or {}).items():
+              print('selected', stat, row.get('family'), row.get('category_id'), row.get('subcategory_id'), row.get('http_status'), row.get('two_sided_player_line_count'), row.get('normalized_expected_stat_offer_count'))
+          for row in report.get('attempts', []):
+              print('attempt', row.get('candidate_id'), row.get('http_status'), row.get('response_error'), row.get('wnba_identity_verified'), row.get('normalized_expected_stat_offer_count'), row.get('two_sided_player_line_count'))
+          print('probe_fingerprint_sha256=', report.get('probe_fingerprint_sha256'))
+          PY
+
+      - name: Upload sanitized live prop discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6f-live-prop-discovery-${{ github.run_id }}
+          path: .wnba-step6f-discovery/live-prop-probe.json
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-tested-step6f-image:
+    if: github.event_name == 'push'
+    needs: step6f-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Resolve immutable Step 6F release identity
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          SHORT_SHA="${REVISION:0:12}"
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          RELEASE_ID="wnba-step6f-$SHORT_SHA"
+          echo "WNBA_STEP6F_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6F_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6F_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish exact Step 6F image
+        shell: bash
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$WNBA_STEP6F_REVISION" \
+            --build-arg WNBA_RELEASE_ID="$WNBA_STEP6F_RELEASE_ID" \
+            --metadata-file /tmp/wnba-step6f-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$WNBA_STEP6F_REPOSITORY:$WNBA_STEP6F_RELEASE_ID" \
+            -t "$WNBA_STEP6F_REPOSITORY:$WNBA_STEP6F_REVISION" \
+            --push .
+
+      - name: Freeze Step 6F digest and write sanitized handoff
+        shell: bash
+        run: |
+          mkdir -p .wnba-step6f-release
+          python - <<'PY'
+          import json, os, pathlib, re
+          meta = json.load(open('/tmp/wnba-step6f-build-metadata.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid image digest: {digest!r}')
+          image = f"{os.environ['WNBA_STEP6F_REPOSITORY']}@{digest}"
+          report = {
+              'schema_version': 'wnba_step_6f_release_handoff_v1',
+              'release_id': os.environ['WNBA_STEP6F_RELEASE_ID'],
+              'revision': os.environ['WNBA_STEP6F_REVISION'],
+              'immutable_image_ref': image,
+              'required_stats': ['points', 'rebounds', 'assists', 'pra'],
+              'live_endpoint_activation_automatic': False,
+              'sportsbook_http_method': 'GET',
+              'sportsbook_account_required': False,
+              'sportsgameodds_required': False,
+              'production_runtime_enabled': False,
+              'render_provisioning_attempted': False,
+              'monte_carlo_run': False,
+          }
+          pathlib.Path('.wnba-step6f-release/release-handoff.json').write_text(json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          pathlib.Path('.wnba-step6f-release/PUBLISHED_IMAGE_REF.txt').write_text(image + '\n', encoding='utf-8')
+          print(image)
+          PY
+
+      - name: Upload Step 6F release handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6f-release-${{ github.run_id }}
+          path: .wnba-step6f-release/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,115 @@
+name: WNBA Step19F identity certification
+
+on:
+  push:
+    branches:
+      - wnba-step19f-draftkings-event-identity-20260829
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step19f-identity-certification
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_STEP6J_CANARY_ENABLED: 'false'
+      WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install pytest >/dev/null
+      - name: Run Step19F and frozen runtime regressions
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py \
+            tests/test_wnba_step19d_history_transport_resilience.py \
+            tests/test_wnba_step12b_live_runtime_assembly.py \
+            tests/test_wnba_step12c_live_board_runtime.py
+      - name: Run read-only live Step12B chain
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from sports_api import wnba_step19f_draftkings_identity as s19f
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+
+          s19f.install_step19f_draftkings_identity()
+          req=s12b.build_step12b_request(
+              season=2026,
+              slate_date='2026-08-29',
+              evaluated_at=datetime.now(timezone.utc),
+              previous_state=None,
+              controller_policy={'provider_attempts': 1},
+          )
+          out=s12b.run_step12b_live_runtime_job(req, env=os.environ)
+          discovery=out.get('provider_discovery') or {}
+          dk=discovery.get('draftkings') or {}
+          fd=discovery.get('fanduel') or {}
+          overlap=out.get('market_overlap') or {}
+          runtime=out.get('runtime_summary') or {}
+          print('STEP19F_LIVE_STATUS',out.get('status'),out.get('health'))
+          print('STEP19F_PROVIDER_DISCOVERY',json.dumps(discovery,sort_keys=True))
+          print('STEP19F_MARKET_OVERLAP',json.dumps(overlap,sort_keys=True))
+          print('STEP19F_RUNTIME_SUMMARY',json.dumps(runtime,sort_keys=True))
+
+          checks = {
+              'status_healthy': out.get('status') == 'healthy',
+              'health_healthy': out.get('health') == 'healthy',
+              'draftkings_records': int(dk.get('record_count') or 0) > 0,
+              'draftkings_errors_empty': not (dk.get('errors') or []),
+              'fanduel_records': int(fd.get('record_count') or 0) > 0,
+              'fanduel_errors_empty': not (fd.get('errors') or []),
+              'step11_cycle_executed': runtime.get('step11_cycle_executed') is True,
+              'step8_distributions': int(runtime.get('step8_distribution_count') or 0) > 0,
+              'qualified_props': int(runtime.get('qualified_prop_count') or 0) > 0,
+              'top_card': int(runtime.get('top_card_count') or 0) > 0,
+              'multibook_overlap': int(overlap.get('exact_line_multibook_group_count') or 0) > 0,
+              'different_lines_not_blended': overlap.get('different_lines_blended') is False,
+          }
+          print('STEP19F_LIVE_CHECKS',json.dumps(checks,sort_keys=True))
+          failed=[name for name,ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Step19F live certification failed: '+','.join(failed))
+          print('STEP19F_READ_ONLY_LIVE_CERTIFIED')
+          PY

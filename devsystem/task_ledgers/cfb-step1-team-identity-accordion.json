@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-team-identity-accordion",
+  "status": "DONE",
+  "scope": "Presentation-only Step 1 Team Identity redesign and universal field contract. Steps 2-12, projection math, probability/distribution math, qualification, ranking, APIs, and sportsbook influence remain unchanged.",
+  "guardrails": {
+    "step1_only": true,
+    "steps_2_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0,
+    "missing_identity_fields_fail_closed": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

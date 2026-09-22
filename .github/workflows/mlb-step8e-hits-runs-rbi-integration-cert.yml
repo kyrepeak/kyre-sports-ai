@@ -1,0 +1,378 @@
+name: MLB Step8E hits+runs+RBI integration certification
+
+on:
+  push:
+    branches:
+      - mlb-step8e-hits-runs-rbi-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step8e-hits-runs-rbi-integration-cert
+  cancel-in-progress: false
+
+env:
+  STEP8E_BASE_SHA: fe5240d19afdd2f8b0de12b7cdbbf769abb80417
+
+jobs:
+  certify-hits-runs-rbi-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step8E three-file additive MLB-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP8E_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py|tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py|\.github/workflows/mlb-step8e-hits-runs-rbi-integration-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP8E_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP8E_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP8E_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP8E_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove preexisting MLB models integrations and presentation are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP8E_BASE_SHA"...HEAD -- \
+            app.py \
+            engine.py \
+            history.py \
+            hit_hub_v131.py \
+            hit_hub_v132.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            sports_api/mlb_step8d_player_hits_integration_v1.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
+            sports_api/mlb_step7d_total_api_integration_v1.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_totals_hub_v174.py
+          echo 'MLB_STEP8E_PREEXISTING_RUNTIME_BYTE_IDENTICAL'
+
+      - name: Assert pure exact-ID post-model integration boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import inspect
+          from pathlib import Path
+          from sports_api import mlb_step8e_hits_runs_rbi_integration_v1 as module
+
+          assert module.DATA_TYPE == 'mlb_step8e_hits_runs_rbi_integration_v1'
+          assert module.ATTACHMENT_KEY == 'step8e_hits_runs_rbi_context'
+          source = Path('sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py').read_text()
+          for token in ('requests', 'httpx', 'urllib', 'numpy', 'np.', 'random', 'Monte Carlo', 'difflib', 'SequenceMatcher', 'Levenshtein', 'rapidfuzz', 'fuzzywuzzy'):
+              assert token not in source, token
+          identity_source = inspect.getsource(module._result_identity)
+          assert 'game_pk' in identity_source
+          assert 'player_id' in identity_source
+          assert 'player_name' not in identity_source
+          assert 'team' not in identity_source
+          build_source = inspect.getsource(module.build_hits_runs_rbi_integration)
+          assert 'player_prop_context_for_identity' in build_source
+          assert 'official_game_id=game_id' in build_source
+          assert 'official_player_id=player_id' in build_source
+          assert 'market_type=market_type' in build_source
+          for forbidden_read in (
+              '.get("model_payload")', ".get('model_payload')",
+              '.get("projection_sentinel")', ".get('projection_sentinel')",
+              '.get("probability_sentinel")', ".get('probability_sentinel')",
+              '.get("confidence")', ".get('confidence')",
+              '.get("hits")', ".get('hits')",
+              '.get("runs")', ".get('runs')",
+              '.get("rbi")', ".get('rbi')",
+              '.get("combined")', ".get('combined')",
+          ):
+              assert forbidden_read not in build_source, forbidden_read
+
+          fallback = module.build_hits_runs_rbi_integration([], {})
+          protected_false = (
+              'model_math_impact',
+              'projection_impact',
+              'simulation_impact',
+              'probability_impact',
+              'line_grading_impact',
+              'history_adjustment_impact',
+              'ranking_impact',
+              'selection_impact',
+              'fair_odds_impact',
+              'sportsbook_price_model_input',
+              'production_exposure_impact',
+              'streamlit_presentation_impact',
+              'wagering_impact',
+              'durable_persistence',
+              'wnba_impact',
+          )
+          for key in protected_false:
+              assert fallback.get(key) is False, (key, fallback.get(key))
+          assert fallback['player_name_matching_used'] is False
+          assert fallback['fuzzy_matching_allowed'] is False
+          assert fallback['preexisting_hits_runs_rbi_model_preserved'] is True
+          print('MLB_STEP8E_PURE_EXACT_ID_POST_MODEL_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step8E Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py
+
+      - name: Run Step8E targeted tests
+        run: python -m pytest -q tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py
+
+      - name: Run complete certified MLB regression through Step8E
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py
+
+      - name: Certify live Step8B to Step8A to Step8E exact-ID or fail-closed path
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+
+          from sports_api.collectors.mlb_fanduel_player_props import (
+              HITS_RUNS_RBI,
+              collect_live_mlb_player_props,
+          )
+          from sports_api.mlb_step8a_player_prop_api_contract_v1 import (
+              API_CONNECTED,
+              build_player_prop_api_state,
+              enforce_player_prop_api_freshness,
+          )
+          from sports_api.mlb_step8e_hits_runs_rbi_integration_v1 import (
+              ATTACHMENT_KEY,
+              FALLBACK,
+              INTEGRATED,
+              build_hits_runs_rbi_integration,
+              enrich_hits_runs_rbi_results,
+          )
+
+          snapshot = collect_live_mlb_player_props(
+              now_utc=datetime.now(timezone.utc),
+              max_events=4,
+          )
+          combo_props = [p for p in snapshot.get('props', []) if p.get('market_type') == HITS_RUNS_RBI]
+          assert snapshot['provider'] == 'FanDuel'
+          assert snapshot['player_name_matching_used'] is False
+          assert snapshot['fuzzy_matching_used'] is False
+          assert snapshot['matched_game_count'] > 0
+
+          if not combo_props:
+              unavailable = snapshot.get('contract_unavailable_market_counts') or {}
+              assert int(unavailable.get(HITS_RUNS_RBI, 0)) > 0, unavailable
+              all_props = list(snapshot.get('props') or [])
+              if all_props:
+                  payload = {
+                      'data_type':'mlb_player_prop_api_response_v1',
+                      'schema_version':1,
+                      'source':'FanDuel',
+                      'collected_at_utc':snapshot['collected_at_utc'],
+                      'props':all_props,
+                  }
+                  raw = build_player_prop_api_state(payload)
+                  assert raw['integration_status'] == API_CONNECTED, raw['failures']
+                  fresh = enforce_player_prop_api_freshness(
+                      raw,
+                      as_of_utc=datetime.now(timezone.utc),
+                      max_age_seconds=60,
+                  )
+                  assert fresh['integration_status'] == API_CONNECTED, fresh['failures']
+                  sentinel_prop = all_props[0]
+                  results = [{
+                      'game_pk':sentinel_prop['official_game_id'],
+                      'player_id':sentinel_prop['official_player_id'],
+                      'player_name':'LIVE FAIL-CLOSED SENTINEL',
+                      'projection_sentinel':2.91,
+                      'probability_sentinel':0.641,
+                      'rank_sentinel':17,
+                      'model_payload':{'hits':1.21,'runs':0.84,'rbi':0.86,'combined':2.91,'sentinel':17},
+                  }]
+                  integration = build_hits_runs_rbi_integration(results, fresh)
+                  assert integration['integration_status'] == FALLBACK
+                  assert integration['api_integration_active'] is False
+                  assert integration['attached_count'] == 0
+                  assert integration['unmatched_count'] == 1
+                  assert integration['player_name_matching_used'] is False
+                  assert integration['sportsbook_price_model_input'] is False
+                  assert integration['model_math_impact'] is False
+                  assert integration['simulation_impact'] is False
+                  assert integration['probability_impact'] is False
+                  assert integration['ranking_impact'] is False
+                  assert enrich_hits_runs_rbi_results(results, integration) == results
+              print(json.dumps({
+                  'marker':'MLB_STEP8E_LIVE_HITS_RUNS_RBI_CONTRACT_UNAVAILABLE_FAIL_CLOSED_GREEN',
+                  'candidate_events':snapshot['candidate_pregame_event_count'],
+                  'matched_games':snapshot['matched_game_count'],
+                  'two_way_hits_runs_rbi_prop_count':0,
+                  'contract_unavailable_hits_runs_rbi_markets':int(unavailable.get(HITS_RUNS_RBI, 0)),
+                  'fabricated_context_count':0,
+                  'player_name_matching_used':False,
+                  'sportsbook_price_model_input':False,
+                  'projection_changed':False,
+                  'simulation_changed':False,
+                  'probability_changed':False,
+                  'ranking_changed':False,
+              }, sort_keys=True))
+              raise SystemExit(0)
+
+          payload = {
+              'data_type':'mlb_player_prop_api_response_v1',
+              'schema_version':1,
+              'source':'FanDuel',
+              'collected_at_utc':snapshot['collected_at_utc'],
+              'props':combo_props,
+          }
+          raw = build_player_prop_api_state(payload)
+          assert raw['integration_status'] == API_CONNECTED, raw['failures']
+          fresh = enforce_player_prop_api_freshness(
+              raw,
+              as_of_utc=datetime.now(timezone.utc),
+              max_age_seconds=60,
+          )
+          assert fresh['integration_status'] == API_CONNECTED, fresh['failures']
+          assert fresh['feed_fresh'] is True
+
+          results = []
+          for i, prop in enumerate(combo_props):
+              results.append({
+                  'game_pk':prop['official_game_id'],
+                  'player_id':prop['official_player_id'],
+                  'player_name':f'INTENTIONALLY DIFFERENT DISPLAY {i}',
+                  'team':'MODEL TEAM',
+                  'projection_sentinel':2.91 + i / 100000.0,
+                  'probability_sentinel':0.641 + i / 100000.0,
+                  'confidence':'SENTINEL',
+                  'rank_sentinel':i,
+                  'model_payload':{
+                      'hits':1.21,
+                      'runs':0.84,
+                      'rbi':0.86,
+                      'combined':2.91,
+                      'sentinel':i,
+                  },
+              })
+
+          integration = build_hits_runs_rbi_integration(results, fresh)
+          assert integration['integration_status'] == INTEGRATED, integration['failures']
+          assert integration['attached_count'] == len(combo_props)
+          assert integration['unmatched_count'] == 0
+          assert integration['player_name_matching_used'] is False
+          assert integration['sportsbook_price_model_input'] is False
+          assert integration['model_math_impact'] is False
+          assert integration['simulation_impact'] is False
+          assert integration['probability_impact'] is False
+          assert integration['line_grading_impact'] is False
+          assert integration['ranking_impact'] is False
+
+          enriched = enrich_hits_runs_rbi_results(results, integration)
+          assert len(enriched) == len(results)
+          for i, (before, after) in enumerate(zip(results, enriched)):
+              context = after[ATTACHMENT_KEY]
+              stripped = dict(after)
+              stripped.pop(ATTACHMENT_KEY)
+              assert stripped == before
+              assert after['projection_sentinel'] == before['projection_sentinel']
+              assert after['probability_sentinel'] == before['probability_sentinel']
+              assert after['confidence'] == before['confidence']
+              assert after['rank_sentinel'] == before['rank_sentinel']
+              assert after['model_payload'] == before['model_payload']
+              assert context['official_game_id'] == before['game_pk']
+              assert context['official_player_id'] == before['player_id']
+              assert context['market_type'] == HITS_RUNS_RBI
+              assert context['line'] == combo_props[i]['line']
+              assert context['over_odds'] == combo_props[i]['over_odds']
+              assert context['under_odds'] == combo_props[i]['under_odds']
+              assert context['player_name'] == combo_props[i]['player_name']
+              assert context['display_only'] is True
+              assert context['model_math_impact'] is False
+              assert context['projection_impact'] is False
+              assert context['simulation_impact'] is False
+              assert context['probability_impact'] is False
+              assert context['ranking_impact'] is False
+              assert context['sportsbook_price_model_input'] is False
+
+          print(json.dumps({
+              'marker':'MLB_STEP8E_LIVE_HITS_RUNS_RBI_EXACT_ID_GREEN',
+              'candidate_events':snapshot['candidate_pregame_event_count'],
+              'matched_games':snapshot['matched_game_count'],
+              'two_way_hits_runs_rbi_prop_count':len(combo_props),
+              'attached_count':integration['attached_count'],
+              'player_name_matching_used':False,
+              'sportsbook_price_model_input':False,
+              'projection_changed':False,
+              'simulation_changed':False,
+              'probability_changed':False,
+              'ranking_changed':False,
+          }, sort_keys=True))
+          PY
+
+      - name: Final Step8E certification marker
+        run: echo 'MLB_STEP8E_HITS_RUNS_RBI_INTEGRATION_GREEN'

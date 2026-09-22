@@ -1,0 +1,489 @@
+name: Passing Yards QB Drill-Down Step 3
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/passing-yards-qb-drilldown-step1-v1.yml"
+      - ".github/workflows/passing-yards-qb-drilldown-step2-v1.yml"
+      - ".github/workflows/passing-yards-qb-drilldown-step3-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-qb-drilldown-step3-v1.json"
+      - "nfl_passing_yards_hub_v60.py"
+      - "streamlit_memory_lazy_router_v211.py"
+      - "tests/test_passing_yards_qb_drilldown_step3_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-qb-drilldown-step1-v1.yml"
+      - ".github/workflows/passing-yards-qb-drilldown-step2-v1.yml"
+      - ".github/workflows/passing-yards-qb-drilldown-step3-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-qb-drilldown-step3-v1.json"
+      - "nfl_passing_yards_hub_v60.py"
+      - "streamlit_memory_lazy_router_v211.py"
+      - "tests/test_passing_yards_qb_drilldown_step3_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-step3-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce QB drill-down Step 3 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step1-v1.yml
+          .github/workflows/passing-yards-qb-drilldown-step2-v1.yml
+          .github/workflows/passing-yards-qb-drilldown-step3-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step3-v1.json
+          nfl_passing_yards_hub_v60.py
+          streamlit_memory_lazy_router_v211.py
+          tests/test_passing_yards_qb_drilldown_step3_v1.py
+          EOF
+          cat > /tmp/expected-render-repair.txt <<'EOF'
+          .github/workflows/passing-yards-qb-drilldown-step3-v1.yml
+          devsystem/task_ledgers/passing-yards-qb-drilldown-step3-v1.json
+          nfl_passing_yards_hub_v60.py
+          tests/test_passing_yards_qb_drilldown_step3_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          sort -o /tmp/expected-render-repair.txt /tmp/expected-render-repair.txt
+          if diff -q /tmp/expected.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP3_SCOPE_GREEN"
+          elif diff -q /tmp/expected-render-repair.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_QB_DRILLDOWN_STEP3_RENDER_REPAIR_SCOPE_GREEN"
+          else
+            echo "Unexpected Step 3 diff:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
+
+      - name: Compile Step 3 chain
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v60.py streamlit_memory_lazy_router_v211.py app.py tests/test_passing_yards_qb_drilldown_step3_v1.py
+
+      - name: Run Step 3 contracts and V60 render regression
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_passing_yards_qb_drilldown_step3_v1.py
+
+      - name: Verify frozen Step 1 and Step 2 boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          v60 = Path("nfl_passing_yards_hub_v60.py").read_text()
+          v59 = Path("nfl_passing_yards_hub_v59.py").read_text()
+          v58 = Path("nfl_passing_yards_hub_v58.py").read_text()
+          r211 = Path("streamlit_memory_lazy_router_v211.py").read_text()
+          r210 = Path("streamlit_memory_lazy_router_v210.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v59"' in v60
+          assert 'data-passing-yards-step3-header-css="v60"' in v60
+          assert 'data-passing-yards-step3-header="v60"' in v60
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v58"' in v59
+          assert 'data-passing-yards-qb-detail="v59"' in v59
+          assert 'data-passing-yards-selection-screen="v58"' in v58
+          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v210"' in r211
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v60"' in r211
+          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v209"' in r210
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v59"' in r210
+          assert 'from streamlit_memory_lazy_router_v211 import record_bootstrap_import_ms, render_app' in app
+          assert 'Frozen QB Drill-Down Step 2 V210 compatibility' in app
+          print("PASSING_YARDS_QB_DRILLDOWN_STEP3_STATIC_GREEN")
+          PY
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Passing Yards Step 3 header
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health, _body_has_forbidden_error, BrowserQAFailure
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          artifacts = Path("artifacts/passing-yards-qb-drilldown-step3")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          _wait_for_health(base)
+
+          def find_picker(page, timeout=600):
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for candidate in page.frames:
+                      try:
+                          if (
+                              candidate.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
+                              and candidate.locator('style[data-passing-yards-step3-header-css="v60"]').count() >= 1
+                              and candidate.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                              and candidate.locator('[data-qb-selection-card]').count() == 2
+                          ):
+                              return candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_HEADER_PICKER_NOT_READY")
+
+          def find_detail(page, slot, timeout=120):
+              selector = f'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="{slot}"]'
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for candidate in page.frames:
+                      try:
+                          if (
+                              candidate.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
+                              and candidate.locator(selector).count() == 1
+                          ):
+                              return candidate
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_DETAIL_NOT_READY: slot={slot}")
+
+          def click_anchor(page, frame, locator):
+              target = locator.get_attribute("target")
+              if target == "_blank":
+                  with page.expect_popup(timeout=15000) as popup_info:
+                      locator.click()
+                  new_page = popup_info.value
+                  new_page.wait_for_load_state("domcontentloaded", timeout=120000)
+                  return new_page, target
+              locator.click()
+              return page, target
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              try:
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                  picker = find_picker(page)
+
+                  body = picker.locator("body").inner_text(timeout=5000)
+                  forbidden = _body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_RUNTIME: {forbidden}")
+
+                  header = picker.locator('section[data-passing-yards-step3-header="v60"]').first
+                  result = {
+                      "status": "GREEN",
+                      "route": "NFL -> Passing Yards",
+                      "owner": "nfl_passing_yards_hub_v60",
+                      "router": "streamlit_memory_lazy_router_v211",
+                      "header": {
+                          "count": picker.locator('section[data-passing-yards-step3-header="v60"]').count(),
+                          "title": picker.locator(".ks-py60-title").first.inner_text(timeout=5000).strip(),
+                          "subtitle": picker.locator(".ks-py60-subtitle").count(),
+                          "slate": picker.locator('[data-passing-yards-step3-slate="true"]').count(),
+                          "controls": picker.locator('[data-passing-yards-step3-controls="true"]').count(),
+                          "filters": picker.locator("[data-step3-filter]").count(),
+                          "status": picker.locator(".ks-py60-status").count(),
+                      },
+                      "picker": {
+                          "selection_cards": picker.locator('[data-qb-selection-card]').count(),
+                          "select_links": picker.locator('a[data-qb-select]').count(),
+                      },
+                  }
+
+                  if result["header"] != {
+                      "count": 1,
+                      "title": "Passing Yards",
+                      "subtitle": 1,
+                      "slate": 1,
+                      "controls": 1,
+                      "filters": 4,
+                      "status": 1,
+                  }:
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_HEADER_CONTRACT: " + json.dumps(result["header"], sort_keys=True))
+                  if result["picker"]["selection_cards"] != 2 or result["picker"]["select_links"] != 2:
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_FROZEN_PICKER_REGRESSION: " + json.dumps(result["picker"], sort_keys=True))
+
+                  metrics = header.evaluate("el => ({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth})")
+                  result["mobile_header"] = metrics
+                  if metrics["scrollWidth"] > metrics["clientWidth"] + 4:
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_MOBILE_OVERFLOW: " + json.dumps(metrics))
+
+                  qb1_name = picker.locator('a[data-qb-select="1"] .kpass29-name').first.inner_text(timeout=5000).strip()
+                  link = picker.locator('a[data-qb-select="1"]').first
+                  detail_page, target = click_anchor(page, picker, link)
+                  detail = find_detail(detail_page, 1)
+                  detail_body = detail.locator("body").inner_text(timeout=5000)
+                  forbidden = _body_has_forbidden_error(detail_body)
+                  if forbidden:
+                      raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_DETAIL_RUNTIME: {forbidden}")
+
+                  detail_result = {
+                      "name": qb1_name,
+                      "navigation_target": target,
+                      "header": detail.locator('section[data-passing-yards-step3-header="v60"]').count(),
+                      "detail": detail.locator('[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]').count(),
+                      "player_cards": detail.locator(".ks-py59-player").count(),
+                      "identity_visible": bool(qb1_name and qb1_name in detail_body),
+                      "back": detail.locator('a[data-qb-back="true"]').count(),
+                  }
+                  result["qb1_regression"] = detail_result
+                  if not (
+                      detail_result["header"] == 1
+                      and detail_result["detail"] == 1
+                      and detail_result["player_cards"] == 1
+                      and detail_result["identity_visible"]
+                      and detail_result["back"] == 1
+                  ):
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_FROZEN_DETAIL_REGRESSION: " + json.dumps(detail_result, sort_keys=True))
+
+                  back = detail.locator('a[data-qb-back="true"]').first
+                  return_page, _ = click_anchor(detail_page, detail, back)
+                  returned = find_picker(return_page, timeout=120)
+                  result["back_restored_picker"] = returned.locator('[data-qb-selection-card]').count() == 2
+                  if not result["back_restored_picker"]:
+                      raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_BACK_REGRESSION")
+
+                  (artifacts / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+                  return_page.screenshot(path=str(artifacts / "step3_header_mobile.png"), full_page=True)
+                  print("PASSING_YARDS_QB_DRILLDOWN_STEP3_PUBLIC_GREEN")
+                  print(json.dumps(result, indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload QB drill-down Step 3 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-qb-drilldown-step3-${{ github.run_id }}
+          path: artifacts/passing-yards-qb-drilldown-step3
+          if-no-files-found: warn
+          retention-days: 7
+
+
+  branch-local-v60-render-proof:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: step3-python
+        with:
+          python-version: "3.12"
+
+      - name: Restore Step 3 browser stack
+        id: step3-browser-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv-step3-browser
+            ~/.cache/ms-playwright
+          key: passing-yards-step3-browser-${{ runner.os }}-py${{ steps.step3-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt') }}
+
+      - name: Build Step 3 browser stack
+        if: steps.step3-browser-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-step3-browser
+          .venv-step3-browser/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-step3-browser/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-step3-browser/bin/python -m playwright install chromium
+
+      - name: Activate Step 3 browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-step3-browser/bin" >> "$GITHUB_PATH"
+
+      - name: Start branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/passing-yards-qb-step3-branch
+          nohup python -m streamlit run app.py             --server.headless true             --server.address 127.0.0.1             --server.port 8501             > artifacts/passing-yards-qb-step3-branch/streamlit.log 2>&1 &
+          echo $! > /tmp/passing_yards_step3_streamlit_pid
+
+      - name: Prove V60 visible header through real Streamlit
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import _wait_for_health, _body_has_forbidden_error, BrowserQAFailure
+
+          base = "http://127.0.0.1:8501"
+          route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+          artifacts = Path("artifacts/passing-yards-qb-step3-branch")
+          _wait_for_health(base)
+
+          def find_picker(page, timeout=180):
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for frame in page.frames:
+                      try:
+                          if (
+                              frame.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
+                              and frame.locator('style[data-passing-yards-step3-header-css="v60"]').count() >= 1
+                              and frame.locator('[data-passing-yards-selection-screen="v58"]').count() == 1
+                              and frame.locator('[data-qb-selection-card]').count() == 2
+                          ):
+                              return frame
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise BrowserQAFailure("PASSING_YARDS_QB_STEP3_BRANCH_PICKER_NOT_READY")
+
+          def find_detail(page, slot, timeout=120):
+              selector = f'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="{slot}"]'
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for frame in page.frames:
+                      try:
+                          if (
+                              frame.locator('section[data-passing-yards-step3-header="v60"]').count() == 1
+                              and frame.locator(selector).count() == 1
+                          ):
+                              return frame
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(250)
+              raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_BRANCH_DETAIL_NOT_READY: slot={slot}")
+
+          def click_anchor(page, frame, locator):
+              target = locator.get_attribute("target")
+              if target == "_blank":
+                  with page.expect_popup(timeout=15000) as popup_info:
+                      locator.click()
+                  new_page = popup_info.value
+                  new_page.wait_for_load_state("domcontentloaded", timeout=120000)
+                  return new_page
+              locator.click()
+              return page
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage","--no-sandbox"])
+              page = browser.new_page(viewport={"width":390,"height":844})
+              try:
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                  picker = find_picker(page)
+
+                  body = picker.locator("body").inner_text(timeout=5000)
+                  forbidden = _body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_BRANCH_RUNTIME: {forbidden}")
+
+                  header = picker.locator('section[data-passing-yards-step3-header="v60"]').first
+                  mobile_metrics = header.evaluate("el => ({clientWidth:el.clientWidth,scrollWidth:el.scrollWidth})")
+                  result = {
+                      "header": picker.locator('section[data-passing-yards-step3-header="v60"]').count(),
+                      "css": picker.locator('style[data-passing-yards-step3-header-css="v60"]').count(),
+                      "title": picker.locator(".ks-py60-title").first.inner_text(timeout=5000).strip(),
+                      "slate": picker.locator('[data-passing-yards-step3-slate="true"]').count(),
+                      "controls": picker.locator('[data-passing-yards-step3-controls="true"]').count(),
+                      "filters": picker.locator("[data-step3-filter]").count(),
+                      "status": picker.locator(".ks-py60-status").count(),
+                      "picker": picker.locator('[data-passing-yards-selection-screen="v58"]').count(),
+                      "cards": picker.locator('[data-qb-selection-card]').count(),
+                      "mobile_client_width": mobile_metrics["clientWidth"],
+                      "mobile_scroll_width": mobile_metrics["scrollWidth"],
+                  }
+                  expected_core = {
+                      "header":1,
+                      "css":1,
+                      "title":"Passing Yards",
+                      "slate":1,
+                      "controls":1,
+                      "filters":4,
+                      "status":1,
+                      "picker":1,
+                      "cards":2,
+                  }
+                  assert {k: result[k] for k in expected_core} == expected_core, result
+                  assert result["mobile_scroll_width"] <= result["mobile_client_width"] + 4, result
+
+                  qb1_name = picker.locator('a[data-qb-select="1"] .kpass29-name').first.inner_text(timeout=5000).strip()
+                  detail_page = click_anchor(page, picker, picker.locator('a[data-qb-select="1"]').first)
+                  detail = find_detail(detail_page, 1)
+                  detail_body = detail.locator("body").inner_text(timeout=5000)
+                  forbidden = _body_has_forbidden_error(detail_body)
+                  if forbidden:
+                      raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP3_BRANCH_DETAIL_RUNTIME: {forbidden}")
+                  detail_result = {
+                      "header": detail.locator('section[data-passing-yards-step3-header="v60"]').count(),
+                      "detail": detail.locator('[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="1"]').count(),
+                      "player": detail.locator(".ks-py59-player").count(),
+                      "back": detail.locator('a[data-qb-back="true"]').count(),
+                      "identity": bool(qb1_name and qb1_name in detail_body),
+                  }
+                  assert detail_result == {
+                      "header":1,
+                      "detail":1,
+                      "player":1,
+                      "back":1,
+                      "identity":True,
+                  }, detail_result
+
+                  returned_page = click_anchor(detail_page, detail, detail.locator('a[data-qb-back="true"]').first)
+                  returned = find_picker(returned_page, timeout=120)
+                  assert returned.locator('[data-qb-selection-card]').count() == 2
+
+                  proof = {"status":"GREEN","landing":result,"detail":detail_result}
+                  (artifacts/"result.json").write_text(json.dumps(proof,indent=2),encoding="utf-8")
+                  returned_page.screenshot(path=str(artifacts/"step3-branch-proof.png"),full_page=True)
+                  print("PASSING_YARDS_QB_STEP3_BRANCH_LOCAL_GREEN")
+                  print(json.dumps(proof,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Print Streamlit log on targeted proof failure
+        if: failure()
+        run: tail -n 500 artifacts/passing-yards-qb-step3-branch/streamlit.log || true
+
+      - name: Upload Step 3 branch proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-qb-step3-branch-${{ github.run_id }}
+          path: artifacts/passing-yards-qb-step3-branch
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/passing_yards_step3_streamlit_pid ]; then
+            kill "$(cat /tmp/passing_yards_step3_streamlit_pid)" 2>/dev/null || true
+          fi

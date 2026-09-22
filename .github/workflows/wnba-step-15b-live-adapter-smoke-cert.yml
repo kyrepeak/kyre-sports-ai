@@ -1,0 +1,232 @@
+name: WNBA Step 15B live adapter transaction smoke certification
+
+on:
+  push:
+    branches:
+      - wnba-step15b-live-adapter-smoke-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Step 15B branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - name: Assert production and global persistence remain OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+
+      - name: Compile Step 15B live transaction smoke surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step15b_live_adapter_transaction_smoke.py
+          python -m py_compile tests/test_wnba_step15b_live_adapter_transaction_smoke.py
+          python -m py_compile sports_api/tools/wnba_step15b_live_adapter_transaction_smoke_cert.py
+          python -m json.tool sports_api/certification/wnba_step15b_live_adapter_transaction_smoke_evidence.json >/dev/null
+
+      - name: Run Step 15B live adapter transaction smoke guards
+        run: PYTHONPATH=. python tests/test_wnba_step15b_live_adapter_transaction_smoke.py
+
+      - name: Run frozen Step 15A guards
+        run: PYTHONPATH=. python tests/test_wnba_step15a_live_postgres_preflight.py
+
+      - name: Run frozen Step 14D through Step 14A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step14_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step14c_durable_restart_lease.py
+          PYTHONPATH=. python tests/test_wnba_step14b_database_checkpoint_adapter.py
+          PYTHONPATH=. python tests/test_wnba_step14a_persistence_contract.py
+
+      - name: Run frozen Step 13D through Step 13A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step13_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step13c_reliability_recovery.py
+          PYTHONPATH=. python tests/test_wnba_step13b_runtime_supervisor.py
+          PYTHONPATH=. python tests/test_wnba_step13a_bounded_scheduler.py
+
+      - name: Run frozen Step 12D through Step 12A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step12_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step12c_live_board_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step12b_live_runtime_assembly.py
+          PYTHONPATH=. python tests/test_wnba_step12_shadow_runner.py
+
+      - name: Run frozen Step 11E through Step 11A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step11_controlled_automation.py
+          PYTHONPATH=. python tests/test_wnba_step11_multibook_shadow_board.py
+          PYTHONPATH=. python tests/test_wnba_step11_fanduel_provider.py
+          PYTHONPATH=. python tests/test_wnba_step11_network_refresh_orchestrator.py
+          PYTHONPATH=. python tests/test_wnba_step11_draftkings_provider.py
+
+      - name: Run frozen Step 10 guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 15A head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP15A_FROZEN_SHA='9cc30b96c4583f6b18306910ca4a7fb70d93c325'
+          git merge-base --is-ancestor "$STEP15A_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP15A_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only Step 15B files changed after frozen Step 15A
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP15A_FROZEN_SHA='9cc30b96c4583f6b18306910ca4a7fb70d93c325'
+          git diff --name-only "$STEP15A_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step15b_live_adapter_transaction_smoke.py|\
+              sports_api/certification/wnba_step15b_live_adapter_transaction_smoke_evidence.json|\
+              tests/test_wnba_step15b_live_adapter_transaction_smoke.py|\
+              sports_api/tools/wnba_step15b_live_adapter_transaction_smoke_cert.py|\
+              .github/workflows/wnba-step-15b-live-adapter-smoke-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step15A file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify Step 15B frozen SQL lineage and activation boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WNBA_STEP15B_LIVE_ADAPTER_SMOKE_ENABLED=true
+          export WNBA_STEP15A_LIVE_POSTGRES_PREFLIGHT_ENABLED=true
+          export WNBA_STEP14D_FINAL_PERSISTENCE_FREEZE_ENABLED=true
+          export WNBA_STEP14C_DURABLE_RESTART_LEASE_ENABLED=true
+          export WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED=true
+          export WNBA_STEP14B_DATABASE_READ_ENABLED=true
+          export WNBA_STEP14B_DATABASE_WRITE_ENABLED=true
+          export WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED=true
+          export WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED=true
+          export WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED=true
+          export WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED=true
+          export WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED=true
+          export WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED=true
+          export WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED=true
+          export WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED=true
+          export WNBA_STEP12A_SHADOW_RUNNER_ENABLED=true
+          export WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED=true
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step15b_live_adapter_transaction_smoke as s15b
+          manifest = s15b.build_step15b_live_smoke_manifest(
+              env=dict(__import__('os').environ),
+              generated_at_utc='2026-08-28T19:30:00+00:00',
+          )
+          assert s15b.STEP15A_CERTIFIED_SHA == '9cc30b96c4583f6b18306910ca4a7fb70d93c325'
+          assert len(s15b.validate_frozen_sql_fingerprints()) == 7
+          assert manifest['checkpoint_contract']['stale_writer_rejected'] is True
+          assert manifest['checkpoint_contract']['failed_stale_transaction_rolled_back'] is True
+          assert manifest['lease_contract']['duplicate_active_owner_blocked'] is True
+          assert manifest['lease_contract']['takeover_generation'] == 2
+          assert manifest['cleanup_contract']['live_step14_tables_returned_to_empty_state'] is True
+          assert manifest['sql_contract']['direct_psycopg_live_connection_certified'] is False
+          assert manifest['activation_contract']['live_scheduler_started'] is False
+          assert manifest['activation_contract']['production_runtime_enabled'] is False
+          assert manifest['activation_contract']['global_persistence_runtime_enabled'] is False
+          assert all(value is False for value in manifest['safety_contract'].values())
+          assert manifest['phase_boundary']['step15b_complete'] is True
+          print('STEP15B_LIVE_ADAPTER_SMOKE_LINEAGE_AND_SAFETY_OK')
+          PY
+
+      - name: Certify Step 15B live adapter transaction smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python -m sports_api.tools.wnba_step15b_live_adapter_transaction_smoke_cert
+
+      - name: Upload Step 15B certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step15b-live-adapter-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step15b-live-adapter-transaction-smoke-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production and global persistence remain OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'

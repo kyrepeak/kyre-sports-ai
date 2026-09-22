@@ -1,0 +1,79 @@
+name: WNBA Step 7G injury identity-less row probe
+
+on:
+  push:
+    branches:
+      - wnba-step7g-step4j-team-history-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-injury-identityless-row-probe.yml'
+      - 'sports_api/tools/wnba_step7g_injury_identityless_row_probe.py'
+      - 'sports_api/wnba_step7g_first_party_injury_report.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'false'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout isolated Step 7G branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert every runtime switch OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile sanitized probe
+        run: python -m py_compile sports_api/tools/wnba_step7g_injury_identityless_row_probe.py sports_api/wnba_step7g_first_party_injury_report.py
+
+      - name: Probe official WNBA injury PDF identity-less rows
+        run: python -m sports_api.tools.wnba_step7g_injury_identityless_row_probe
+
+      - name: Upload sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-injury-identityless-row-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-injury-identityless-row-probe.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert every runtime switch OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'false'

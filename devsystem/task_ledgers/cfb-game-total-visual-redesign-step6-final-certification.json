@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-visual-redesign-step6-final-certification",
+  "status": "DONE",
+  "scope": "Verification-only Step 6 final certification for the frozen CFB Game Total visual redesign chain through Page V28 / Router V173.",
+  "trigger": "Approved visual redesign Step 6 requires responsive QA, browser QA, final route verification, and production certification without reopening already-green Steps 1-5.",
+  "guardrails": {
+    "step1_visual_contract_frozen": true,
+    "step2_matchup_hero_frozen": true,
+    "step3_game_total_analysis_frozen": true,
+    "step4_team_evidence_frozen": true,
+    "step5_system_polish_frozen": true,
+    "product_code_changed": false,
+    "page_v28_edited_in_place": false,
+    "router_v173_edited_in_place": false,
+    "data_contract_changed": false,
+    "normalization_changed": false,
+    "projection_math_changed": false,
+    "confidence_math_changed": false,
+    "team_stat_math_changed": false,
+    "market_ownership_changed": false,
+    "steps_1_12_logic_changed": false,
+    "synthetic_values_allowed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

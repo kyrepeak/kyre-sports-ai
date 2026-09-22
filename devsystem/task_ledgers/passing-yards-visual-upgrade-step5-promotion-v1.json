@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-visual-upgrade-step5-promotion-v1",
+  "status": "DONE",
+  "scope": "Promote the cumulative Passing Yards visual upgrade Steps 1-5 to production. Product code is pinned at bb0052029e44bea2bde9d6df8cb3c413ff36859a; this ledger is promotion metadata only.",
+  "trigger": "User approved Step 5 through GREEN + frozen, including final live proof.",
+  "guardrails": {
+    "product_sha": "bb0052029e44bea2bde9d6df8cb3c413ff36859a",
+    "product_code_changed_during_promotion": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "data_logic_changed": false,
+    "sportsbook_projection_influence": 0.0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

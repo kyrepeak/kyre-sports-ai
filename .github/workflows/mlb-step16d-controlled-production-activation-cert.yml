@@ -1,0 +1,191 @@
+name: MLB Step16D controlled production activation
+
+on:
+  push:
+    branches:
+      - mlb-step16d-controlled-production-activation
+    paths:
+      - sports_api/mlb_step16d_controlled_production_activation_v1.py
+      - sports_api/tools/mlb_step16d_controlled_production_activation.py
+      - tests/test_mlb_step16d_controlled_production_activation_v1.py
+      - .github/workflows/mlb-step16d-controlled-production-activation-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP16D_BASE_SHA: 35c7fa29cddb9dc76ee8535d8c92cb0762233dae
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_PRODUCTION_SCHEDULER_ENABLED: "false"
+  MLB_ACTIONABLE_OUTPUT_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+  MLB_SUPABASE_REST_WRITE_ENABLED: "false"
+  MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_ENABLED: "true"
+  MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED: "true"
+  MLB_STEP14C_DURABLE_RESTART_LEASE_ENABLED: "true"
+  MLB_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: "true"
+  MLB_STEP14B_DATABASE_READ_ENABLED: "true"
+  MLB_STEP14B_DATABASE_WRITE_ENABLED: "true"
+  MLB_STEP16C_LIVE_POSTGRESQL_CANARY_ENABLED: "false"
+  MLB_DEPLOYMENT_MODE: container
+  MLB_STEP16D_CANARY_SLATE_DATE: "2026-01-15"
+
+jobs:
+  certify-and-activate-bounded-canary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      KYRE_DATABASE_URL: ${{ secrets.KYRE_DATABASE_URL }}
+      MLB_RELEASE_BUILD_REVISION: ${{ github.sha }}
+      MLB_STEP16D_EXPECTED_REVISION: ${{ github.sha }}
+      MLB_STEP16D_OWNER_PREFIX: step16d-gha-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assert exact Step16C parent and four-file Step16D scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$STEP16D_BASE_SHA" HEAD
+          git diff --check "$STEP16D_BASE_SHA"...HEAD
+          changed="$(git diff --name-only "$STEP16D_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          test "$count" -eq 4
+          allowed='^(sports_api/mlb_step16d_controlled_production_activation_v1.py|sports_api/tools/mlb_step16d_controlled_production_activation.py|tests/test_mlb_step16d_controlled_production_activation_v1.py|\.github/workflows/mlb-step16d-controlled-production-activation-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          test -z "$bad"
+          test -z "$(git diff --name-status "$STEP16D_BASE_SHA"...HEAD | awk '$1 == "D" {print}')"
+
+      - name: Assert frozen MLB runtime packaging and model surfaces unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP16D_BASE_SHA"...HEAD -- \
+            sports_api/production.env.example \
+            sports_api/Dockerfile \
+            sports_api/main.py \
+            sports_api/mlb_step16c_live_postgresql_canary_v1.py \
+            sports_api/mlb_step16b_production_lifecycle_v1.py \
+            sports_api/mlb_step16b_packaging_lifecycle_contract_v1.py \
+            sports_api/mlb_step16a_production_activation_contract_v1.py \
+            sports_api/mlb_step15_final_live_persistence_release_freeze_v1.py \
+            sports_api/mlb_step14c_durable_restart_lease_v1.py \
+            sports_api/mlb_step14b_database_checkpoint_adapter_v1.py \
+            sports_api/mlb_step14a_persistence_contract_v1.py \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            sports_api/mlb_step13b_runtime_supervisor_v1.py \
+            sports_api/mlb_step13c_reliability_recovery_v1.py \
+            sports_api/mlb_step12_final_runtime_freeze_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/api/mlb.py app.py
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          test "$MLB_SUPABASE_REST_WRITE_ENABLED" = false
+          test "$MLB_STEP16C_LIVE_POSTGRESQL_CANARY_ENABLED" = false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API, test, and PostgreSQL dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Compile Step16D
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step16d_controlled_production_activation_v1.py \
+            sports_api/tools/mlb_step16d_controlled_production_activation.py \
+            tests/test_mlb_step16d_controlled_production_activation_v1.py
+
+      - name: Run Step16D targeted tests without database access
+        env:
+          KYRE_DATABASE_URL: ""
+          MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_ENABLED: "false"
+          MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED: "false"
+          MLB_STEP14C_DURABLE_RESTART_LEASE_ENABLED: "false"
+          MLB_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: "false"
+          MLB_STEP14B_DATABASE_READ_ENABLED: "false"
+          MLB_STEP14B_DATABASE_WRITE_ENABLED: "false"
+        run: python -m pytest -q tests/test_mlb_step16d_controlled_production_activation_v1.py
+
+      - name: Re-run Step16C and Step16B targeted guards unchanged
+        env:
+          KYRE_DATABASE_URL: ""
+          MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_ENABLED: "false"
+          MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED: "false"
+          MLB_STEP14C_DURABLE_RESTART_LEASE_ENABLED: "false"
+          MLB_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: "false"
+          MLB_STEP14B_DATABASE_READ_ENABLED: "false"
+          MLB_STEP14B_DATABASE_WRITE_ENABLED: "false"
+        run: |
+          python -m pytest -q tests/test_mlb_step16c_live_postgresql_canary_v1.py
+          python -m pytest -q tests/test_mlb_step16b_production_packaging_lifecycle_v1.py
+
+      - name: Run current MLB regression excluding frozen Step16A snapshot guards
+        env:
+          KYRE_DATABASE_URL: ""
+          MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_ENABLED: "false"
+          MLB_STEP16B_DURABLE_LIFECYCLE_ENABLED: "false"
+          MLB_STEP14C_DURABLE_RESTART_LEASE_ENABLED: "false"
+          MLB_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED: "false"
+          MLB_STEP14B_DATABASE_READ_ENABLED: "false"
+          MLB_STEP14B_DATABASE_WRITE_ENABLED: "false"
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=()
+          for path in tests/test_mlb_*.py; do
+            if [ "$path" != "tests/test_mlb_step16a_production_activation_contract_v1.py" ]; then
+              files+=("$path")
+            fi
+          done
+          test "${#files[@]}" -gt 0
+          python -m pytest -q "${files[@]}"
+
+      - name: Require secret-manager PostgreSQL URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${KYRE_DATABASE_URL:-}"
+          case "$KYRE_DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *) echo "KYRE_DATABASE_URL is not PostgreSQL"; exit 1 ;;
+          esac
+          test "$MLB_RELEASE_BUILD_REVISION" = "${GITHUB_SHA}"
+          test "$MLB_STEP16D_EXPECTED_REVISION" = "${GITHUB_SHA}"
+
+      - name: Execute bounded two-cycle Step16D activation proof
+        run: PYTHONPATH=. python -m sports_api.tools.mlb_step16d_controlled_production_activation
+
+      - name: Upload Step16D activation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step16d-controlled-production-activation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: mlb-step16d-controlled-production-activation.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert continuous production remains OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          test "$MLB_SUPABASE_REST_WRITE_ENABLED" = false
+
+      - name: Final marker
+        run: echo MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_GREEN

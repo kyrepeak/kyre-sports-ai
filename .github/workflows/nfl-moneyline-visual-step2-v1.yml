@@ -1,0 +1,372 @@
+name: NFL Moneyline Visual Step 2
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v15.py'
+      - 'streamlit_memory_lazy_router_v198.py'
+      - 'devsystem/task_ledgers/nfl-moneyline-visual-step2-v1.json'
+      - '.github/workflows/nfl-moneyline-visual-step2-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v15.py'
+      - 'streamlit_memory_lazy_router_v198.py'
+      - 'devsystem/task_ledgers/nfl-moneyline-visual-step2-v1.json'
+      - '.github/workflows/nfl-moneyline-visual-step2-v1.yml'
+  workflow_dispatch:
+
+jobs:
+  visual-step2-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile Step 2 layer
+        run: |
+          python -m py_compile nfl_moneyline_hub_v15.py streamlit_memory_lazy_router_v198.py app.py
+      - name: Verify Step 2 frozen contract and route
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          v15 = Path("nfl_moneyline_hub_v15.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v198.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_moneyline_hub_v14"' in v15
+          assert 'VISUAL_UPGRADE_STEP = 2' in v15
+          assert 'PRESENTATION_ONLY = True' in v15
+          assert 'MAY_MODIFY_PROJECTION = False' in v15
+          assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v15
+          assert 'STAKE_SIZING_ENABLED = False' in v15
+          assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v15
+
+          # Step 2 must extend the frozen Step 1 CSS layer, not replace it.
+          assert 'original_step1_css = prior._step1_css' in v15
+          assert 'prior._step1_css = lambda base: _step2_css(original_step1_css(base))' in v15
+          assert 'presentation._matchup_html = _command_center_matchup_html' in v15
+
+          # Router V198 must override V197's selector directly; otherwise V197
+          # would overwrite V15 back to V14 during its nested render.
+          assert 'import streamlit_memory_lazy_router_v197 as prior' in router
+          assert 'MONEYLINE_HUB = "nfl_moneyline_hub_v15"' in router
+          assert 'original = prior.MONEYLINE_HUB' in router
+          assert 'prior.MONEYLINE_HUB = MONEYLINE_HUB' in router
+          assert 'moneyline_owner' not in router
+
+          assert 'from streamlit_memory_lazy_router_v198 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v197 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v196 import record_bootstrap_import_ms, render_app' in app
+
+          banned = (
+              "_build_final(",
+              "_fit_calibration_model(",
+              "_build_game_output(",
+              "fetch_nfl_moneyline_markets(",
+              "random.",
+              "np.random",
+          )
+          for token in banned:
+              assert token not in v15, f"Step 2 unexpectedly owns analytical token: {token}"
+
+          print("NFL Moneyline visual Step 2 GREEN")
+          PY
+
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install targeted browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public NFL Moneyline Step 2
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          artifacts = Path("artifacts/nfl-moneyline-step2-public")
+          artifacts.mkdir(parents=True, exist_ok=True)
+
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1024, "height": 1366})
+              try:
+                  page.goto(base, wait_until="domcontentloaded", timeout=120000)
+                  frame, initial_scan = _find_app_frame(page)
+
+                  _choose(page, frame, 0, "NFL")
+                  nfl_market = frame.get_by_role(
+                      "combobox", name="🎯 NFL Market", exact=True
+                  )
+                  nfl_market.wait_for(state="visible", timeout=60000)
+                  _choose(page, frame, 1, "Moneyline")
+
+                  route_marker = frame.get_by_text("NFL Moneyline", exact=False).first
+                  try:
+                      route_marker.wait_for(state="visible", timeout=60000)
+                  except Exception as exc:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      raise BrowserQAFailure(
+                          "ROUTE_TARGET_MISMATCH: expected NFL -> Moneyline; "
+                          f"actual body start={body[:1800]!r}"
+                      ) from exc
+
+                  body = frame.locator("body").inner_text(timeout=5000)
+                  forbidden = _body_has_forbidden_error(body)
+                  if forbidden:
+                      raise BrowserQAFailure(
+                          f"MONEYLINE_RUNTIME: forbidden marker {forbidden}"
+                      )
+
+                  step1_required = (
+                      "NFL Moneyline",
+                      "Command Center",
+                      "PREGAME VERIFIED",
+                      "Slate date",
+                  )
+                  missing_step1 = [m for m in step1_required if m not in body]
+                  if missing_step1:
+                      raise BrowserQAFailure(
+                          "MONEYLINE_STEP1_REGRESSION: missing "
+                          + " | ".join(missing_step1)
+                      )
+
+                  # V15 activation is proven by its Step 2 style marker even
+                  # when the selected slate truthfully has no verified pregame
+                  # matchups. Card presence is required only when games exist.
+                  style_count = frame.locator(
+                      'style[data-nfl-moneyline-visual-step="2"]'
+                  ).count()
+                  if style_count < 1:
+                      raise BrowserQAFailure(
+                          "MONEYLINE_STEP2_ACTIVATION: "
+                          'data-nfl-moneyline-visual-step="2" absent; '
+                          f"body start={body[:1800]!r}"
+                      )
+
+                  no_games_marker = (
+                      "No verified pregame NFL matchup is available for this date."
+                  )
+
+                  step2_required = (
+                      "MONEYLINE MATCHUP COMMAND CENTER",
+                      "MODEL P(WIN)",
+                      "FAIR ML",
+                      "BEST ML",
+                      "FINAL MONEYLINE STATE",
+                  )
+
+                  # READY is structural, not just outer-card presence.
+                  # Require two consecutive valid DOM observations.
+                  deadline = time.monotonic() + 60.0
+                  structural_streak = 0
+                  structural = {}
+                  card_text = ""
+                  card_html = ""
+                  no_games = False
+                  card_count = 0
+
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      no_games = no_games_marker in body
+                      card_count = frame.locator("article.kml15-card").count()
+
+                      if no_games:
+                          render_state = "NO_VERIFIED_PREGAME_GAMES"
+                          break
+
+                      if card_count > 0:
+                          render_state = "MATCHUP_CARDS"
+                          card = frame.locator("article.kml15-card").first
+                          card_text = card.inner_text(timeout=5000)
+                          card_html = card.inner_html(timeout=5000)
+
+                          team_count = card.locator(
+                              ".kml15-grid > section.kml15-team"
+                          ).count()
+                          primary_count = card.locator(
+                              ".kml15-team .kml15-primary"
+                          ).count()
+                          hero_count = card.locator(
+                              ".kml15-tile.hero"
+                          ).count()
+                          verdict_count = card.locator(
+                              ".kml15-verdict"
+                          ).count()
+                          forbidden_count = card.locator(
+                              'pre, code, [data-testid="stMarkdownPre"]'
+                          ).count()
+
+                          model_visible = (
+                              card.locator(".kml15-tile.hero")
+                              .filter(has_text="MODEL P(WIN)")
+                              .count() >= 1
+                          )
+                          fair_visible = (
+                              card.locator(".kml15-primary .kml15-tile")
+                              .filter(has_text="FAIR ML")
+                              .count() >= 1
+                          )
+                          best_visible = (
+                              card.locator(".kml15-primary .kml15-tile")
+                              .filter(has_text="BEST ML")
+                              .count() >= 1
+                          )
+                          final_visible = (
+                              card.locator(".kml15-verdict")
+                              .filter(has_text="FINAL MONEYLINE STATE")
+                              .count() >= 1
+                          )
+
+                          structural = {
+                              "team_count": team_count,
+                              "primary_count": primary_count,
+                              "hero_count": hero_count,
+                              "verdict_count": verdict_count,
+                              "forbidden_pre_code_count": forbidden_count,
+                              "model_pwin_visible": model_visible,
+                              "fair_ml_visible": fair_visible,
+                              "best_ml_visible": best_visible,
+                              "final_state_visible": final_visible,
+                          }
+
+                          structural_valid = (
+                              team_count == 2
+                              and primary_count >= 2
+                              and hero_count >= 2
+                              and verdict_count >= 1
+                              and forbidden_count == 0
+                              and model_visible
+                              and fair_visible
+                              and best_visible
+                              and final_visible
+                          )
+                          structural_streak = (
+                              structural_streak + 1
+                              if structural_valid
+                              else 0
+                          )
+                          if structural_streak >= 2:
+                              break
+                      else:
+                          structural_streak = 0
+
+                      if time.monotonic() >= deadline:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_STEP2_STRUCTURE: real Step 2 DOM did "
+                              "not remain valid for two consecutive observations; "
+                              f"card_count={card_count}; structural={structural}; "
+                              f"body start={body[:2500]!r}"
+                          )
+                      page.wait_for_timeout(500)
+
+                  if no_games:
+                      render_state = "NO_VERIFIED_PREGAME_GAMES"
+                  else:
+                      render_state = "MATCHUP_CARDS"
+                      card = frame.locator("article.kml15-card").first
+                      card_text = card.inner_text(timeout=5000)
+                      card_html = card.inner_html(timeout=5000)
+
+                      (artifacts / "card_inner_text.txt").write_text(
+                          card_text, encoding="utf-8"
+                      )
+                      (artifacts / "card_inner_html.html").write_text(
+                          card_html, encoding="utf-8"
+                      )
+
+                      structural["consecutive_valid_observations"] = (
+                          structural_streak
+                      )
+                      diagnostic = {
+                          "product_sha": "7d31fd690e2b14f1b4d5567b853bdde9a851bc30",
+                          "public_url": page.url,
+                          "card_count": card_count,
+                          "style_count": style_count,
+                          "card_text": card_text,
+                          "required_step2_markers": list(step2_required),
+                          "structural": structural,
+                      }
+                      (artifacts / "diagnostic.json").write_text(
+                          json.dumps(diagnostic, indent=2), encoding="utf-8"
+                      )
+                      page.screenshot(
+                          path=str(
+                              artifacts
+                              / "nfl_moneyline_step2_public_diagnostic.png"
+                          ),
+                          full_page=True,
+                      )
+
+                      if structural_streak < 2:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_STEP2_STRUCTURE: Step 2 DOM did not "
+                              "hold for two consecutive valid observations"
+                          )
+
+                  result = {
+                      "status": "GREEN",
+                      "route": "NFL -> Moneyline",
+                      "public_url": page.url,
+                      "step1_regression_markers": list(step1_required),
+                      "step2_markers": (
+                          list(step2_required)
+                          if not no_games
+                          else ["STEP2_STYLE_ACTIVE", no_games_marker]
+                      ),
+                      "step2_render_state": render_state,
+                      "step2_card_count": card_count,
+                      "step2_style_count": style_count,
+                      "nfl_market_control": "present",
+                      "initial_frame_scan_count": len(initial_scan),
+                  }
+                  (artifacts / "result.json").write_text(
+                      json.dumps(result, indent=2), encoding="utf-8"
+                  )
+                  page.screenshot(
+                      path=str(artifacts / "nfl_moneyline_step2_public_green.png"),
+                      full_page=True,
+                  )
+                  print("NFL_MONEYLINE_STEP2_PUBLIC_PRODUCTION_GREEN")
+                  print(json.dumps(result, indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload isolated Moneyline Step 2 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-moneyline-step2-isolated-public-${{ github.run_id }}
+          path: artifacts/nfl-moneyline-step2-public
+          if-no-files-found: warn
+          retention-days: 7

@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "task_id": "nfl-passing-why-step4-result-row-v1",
+  "status": "DONE",
+  "scope": "Visual-only Step 4 upgrade of the Passing Yards Why This Projection area: convert the existing model projection and market/edge blocks into one premium projection-result row per quarterback while preserving the certified payloads unchanged.",
+  "trigger": "Steps 1-3 are GREEN/frozen; user requested continuing until Step 4 is GREEN.",
+  "guardrails": {
+    "projection_math_changed": false,
+    "market_logic_changed": false,
+    "qb_identity_logic_changed": false,
+    "prop_availability_gate_changed": false,
+    "router_behavior_changed": false,
+    "rankings_changed": false,
+    "grades_changed": false,
+    "stake_sizing_changed": false,
+    "other_sports_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

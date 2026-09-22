@@ -1,0 +1,250 @@
+name: Passing Yards Universal Step 1 Ownership
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v51.py'
+      - 'streamlit_memory_lazy_router_v202.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step1-owner-v1.json'
+      - '.github/workflows/passing-yards-universal-step1-owner-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v51.py'
+      - 'streamlit_memory_lazy_router_v202.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step1-owner-v1.json'
+      - '.github/workflows/passing-yards-universal-step1-owner-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-step1-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Passing Yards universal owner
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v51.py streamlit_memory_lazy_router_v202.py app.py
+
+      - name: Verify universal ownership contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          v51 = Path("nfl_passing_yards_hub_v51.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v202.py").read_text()
+          app = Path("app.py").read_text()
+          remaining = Path("kyre_remaining_pages_theme_v1.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v50"' in v51
+          assert 'VISUAL_UPGRADE_STEP = 1' in v51
+          assert 'OWNER_CONTAINER_KEY = "kyre_passing_yards_universal_owner_v1"' in v51
+          assert 'PRESENTATION_ONLY = True' in v51
+          assert 'MAY_MODIFY_PROJECTION = False' in v51
+          assert 'MAY_MODIFY_MARKET_MATH = False' in v51
+          assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in v51
+          assert 'data-passing-yards-universal-owner="v51"' in v51
+          assert 'data-passing-yards-theme-owner="v51"' in v51
+          assert 'build_universal_theme_css()' in v51
+          assert 'build_components_css()' in v51
+          assert 'build_responsive_css()' in v51
+          assert 'with st.container(key=OWNER_CONTAINER_KEY)' in v51
+
+          assert '("NFL", "Passing Yards")' in remaining
+          assert 'import streamlit_memory_lazy_router_v201 as prior' in router
+          assert 'import streamlit_memory_lazy_router_v196 as passing_owner' in router
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v51"' in router
+          assert 'passing_owner.PASSING_HUB = PASSING_HUB' in router
+          assert 'return prior.render_app()' in router
+
+          assert 'from streamlit_memory_lazy_router_v202 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v201 import record_bootstrap_import_ms, render_app' in app
+          assert 'PASSING_YARDS_UNIVERSAL_STEP1_RUNTIME' in app
+
+          banned = (
+              "_build_projection(",
+              "_build_final(",
+              "fetch_nfl_passing",
+              "requests.get(",
+              "random.",
+              "np.random",
+          )
+          for token in banned:
+              assert token not in v51, f"Step 1 unexpectedly owns analytical token: {token}"
+
+          print("PASSING_YARDS_UNIVERSAL_STEP1_STATIC_GREEN")
+          PY
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install targeted browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Passing Yards universal owner
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          artifacts = Path("artifacts/passing-yards-universal-step1-public")
+          artifacts.mkdir(parents=True, exist_ok=True)
+
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1280, "height": 1000})
+              try:
+                  page.goto(base, wait_until="domcontentloaded", timeout=120000)
+                  frame, initial_scan = _find_app_frame(page)
+
+                  _choose(page, frame, 0, "NFL")
+                  nfl_market = frame.get_by_role(
+                      "combobox", name="🎯 NFL Market", exact=True
+                  )
+                  nfl_market.wait_for(state="visible", timeout=60000)
+                  _choose(page, frame, 1, "Passing Yards")
+
+                  deadline = time.monotonic() + 60.0
+                  evidence = {}
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(
+                              f"PASSING_YARDS_RUNTIME: forbidden marker {forbidden}"
+                          )
+
+                      owner_style = frame.locator(
+                          'style[data-passing-yards-universal-owner="v51"]'
+                      ).count()
+                      owner_container = frame.locator(
+                          ".st-key-kyre_passing_yards_universal_owner_v1"
+                      ).count()
+                      owner_marker = frame.locator(
+                          '[data-passing-yards-theme-owner="v51"]'
+                      ).count()
+                      v50_style = frame.locator(
+                          'style[data-passing-yards-responsive-polish="v50"]'
+                      ).count()
+                      v49_style = frame.locator(
+                          'style[data-passing-yards-market-polish="v49"]'
+                      ).count()
+                      top_style = frame.locator(
+                          'style[data-passing-yards-top-polish="v46"]'
+                      ).count()
+                      top_container = frame.locator(
+                          ".st-key-kyre_passing_yards_top_v46"
+                      ).count()
+
+                      evidence = {
+                          "owner_style": owner_style,
+                          "owner_container": owner_container,
+                          "owner_marker": owner_marker,
+                          "v50_style": v50_style,
+                          "v49_style": v49_style,
+                          "top_style": top_style,
+                          "top_container": top_container,
+                          "passing_yards_text": "Passing Yards" in body,
+                      }
+
+                      settled = (
+                          owner_style == 1
+                          and owner_container == 1
+                          and owner_marker == 1
+                          and v50_style >= 1
+                          and v49_style >= 1
+                          and top_style >= 1
+                          and top_container >= 1
+                          and evidence["passing_yards_text"]
+                      )
+                      if settled:
+                          break
+
+                      if time.monotonic() >= deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_UNIVERSAL_OWNER_READINESS: "
+                              + json.dumps(evidence, sort_keys=True)
+                              + f"; body start={body[:2200]!r}"
+                          )
+                      page.wait_for_timeout(500)
+
+                  computed = frame.locator(
+                      ".st-key-kyre_passing_yards_top_v46"
+                  ).first.evaluate(
+                      """el => {
+                          const s = getComputedStyle(el);
+                          return {
+                              backgroundImage: s.backgroundImage,
+                              borderRadius: s.borderRadius,
+                              borderTopColor: s.borderTopColor,
+                              boxShadow: s.boxShadow
+                          };
+                      }"""
+                  )
+                  if "gradient" not in computed["backgroundImage"].lower():
+                      raise BrowserQAFailure(
+                          f"PASSING_YARDS_UNIVERSAL_OWNER_STYLE: {computed}"
+                      )
+
+                  result = {
+                      "status": "GREEN",
+                      "route": "NFL -> Passing Yards",
+                      "owner": "nfl_passing_yards_hub_v51",
+                      "frozen_product": "nfl_passing_yards_hub_v50",
+                      "evidence": evidence,
+                      "top_control_computed_style": computed,
+                      "initial_frame_scan_count": len(initial_scan),
+                  }
+                  (artifacts / "result.json").write_text(
+                      json.dumps(result, indent=2), encoding="utf-8"
+                  )
+                  page.screenshot(
+                      path=str(artifacts / "passing_yards_universal_step1_green.png"),
+                      full_page=True,
+                  )
+                  print("PASSING_YARDS_UNIVERSAL_STEP1_PUBLIC_GREEN")
+                  print(json.dumps(result, indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload Passing Yards Step 1 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-universal-step1-${{ github.run_id }}
+          path: artifacts/passing-yards-universal-step1-public
+          if-no-files-found: warn
+          retention-days: 7

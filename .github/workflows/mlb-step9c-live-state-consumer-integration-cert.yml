@@ -1,0 +1,290 @@
+name: MLB Step9C live state consumer integration certification
+
+on:
+  push:
+    branches:
+      - mlb-step9c-live-state-consumer-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step9c-live-state-consumer-integration-cert
+  cancel-in-progress: false
+
+env:
+  STEP9C_BASE_SHA: 7dda4a2e50abc1438685ae0822b153dbaae0caa6
+
+jobs:
+  certify-live-state-consumer:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step9C exact four-file MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP9C_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(app.py|mlb_step9c_live_state_consumer_v1.py|tests/test_mlb_step9c_live_state_consumer_v1.py|\.github/workflows/mlb-step9c-live-state-consumer-integration-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP9C_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 4 ]; then
+            echo "STEP9C_EXPECTED_EXACTLY_FOUR_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP9C_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP9C_BASE_SHA"...HEAD
+          echo 'MLB_STEP9C_FOUR_FILE_SCOPE_OK'
+
+      - name: Prove app hook is additive only
+        shell: bash
+        run: |
+          set -euo pipefail
+          read adds dels path <<<"$(git diff --numstat "$STEP9C_BASE_SHA"...HEAD -- app.py)"
+          echo "app.py additions=$adds deletions=$dels path=$path"
+          if [ "$adds" -ne 10 ] || [ "$dels" -ne 0 ]; then
+            echo 'STEP9C_APP_NOT_EXPECTED_ADDITIVE_10_0_PATCH'
+            exit 1
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text()
+          assert 'from mlb_step9c_live_state_consumer_v1 import install_step9c_live_state_consumer' in text
+          assert '_STEP9C_MLB_LIVE_STATE_CONSUMER = install_step9c_live_state_consumer()' in text
+          assert 'legacy_direct_mlb_live_feed_preserved' in text
+          print('MLB_STEP9C_APP_ADDITIVE_FAIL_OPEN_HOOK_OK')
+          PY
+
+      - name: Prove V19 and all preexisting MLB model contracts remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP9C_BASE_SHA"...HEAD -- \
+            live_game_hub_v182.py \
+            live_game_hub_v19.py \
+            live_game_hub_v191.py \
+            live_game_hub_v192.py \
+            live_game_hub_v1921.py \
+            mlb_live_hub_v193.py \
+            live_odds_feed.py \
+            spread_engine.py \
+            engine.py \
+            history.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            sports_api/mlb_step8d_player_hits_integration_v1.py \
+            sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py
+          echo 'MLB_STEP9C_PREEXISTING_V19_AND_MODEL_BYTES_FROZEN'
+
+      - name: Assert exact-ID API-first transport-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('mlb_step9c_live_state_consumer_v1.py').read_text()
+          assert 'official_game_id' in text
+          assert 'game_pk' in text
+          assert 'live_game_state_for_official_game_id' in text
+          assert 'DEFAULT_API_BASE_URL = "https://kyre-sports-api.onrender.com"' in text
+          assert '/api/v1/mlb/live-game-state?' in text
+          assert 'method="GET"' in text
+          assert 'fetch_live_slate' not in text
+          assert 'spread_engine' not in text
+          assert 'build_game_model' not in text
+          assert 'simulate_live' not in text
+          assert 'sportsbook_price_model_input' in text
+          assert 'team_name_matching_used' in text
+          assert 'player_name_matching_used' in text
+          assert 'fuzzy_matching_used' in text
+          assert 'synthetic_game_id_used' in text
+          for forbidden in ('method="POST"', 'method="PUT"', 'method="PATCH"', 'method="DELETE"', 'difflib', 'fuzzywuzzy'):
+              assert forbidden not in text
+          print('MLB_STEP9C_EXACT_ID_TRANSPORT_ONLY_BOUNDARY_OK')
+          PY
+
+      - name: Prove protected impact flags remain false
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import mlb_step9c_live_state_consumer_v1 as step9c
+          status = step9c.consumer_status()
+          for flag in step9c.PROTECTED_FALSE_FLAGS:
+              assert status[flag] is False, (flag, status[flag])
+          assert status['model_math_impact'] is False
+          assert status['simulation_math_impact'] is False
+          assert status['probability_math_impact'] is False
+          assert status['run_expectancy_math_impact'] is False
+          assert status['sportsbook_price_model_input'] is False
+          print('MLB_STEP9C_PROTECTED_IMPACT_FLAGS_FALSE')
+          PY
+
+      - name: Compile Step9C Python and app shell
+        run: |
+          python -m py_compile \
+            app.py \
+            mlb_step9c_live_state_consumer_v1.py \
+            tests/test_mlb_step9c_live_state_consumer_v1.py
+
+      - name: Run Step9C targeted tests
+        run: python -m pytest -q tests/test_mlb_step9c_live_state_consumer_v1.py
+
+      - name: Run complete certified MLB regression through Step9C
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py \
+            tests/test_mlb_step9b_live_game_state_collector_api.py \
+            tests/test_mlb_step9c_live_state_consumer_v1.py
+
+      - name: Certify hosted production API through frozen Step9A and Step9C mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime
+          import json
+          from urllib.request import Request, urlopen
+          from zoneinfo import ZoneInfo
+
+          import live_game_hub_v19 as v19
+          import mlb_step9c_live_state_consumer_v1 as step9c
+
+          day = datetime.now(ZoneInfo('America/Phoenix')).date().isoformat()
+          base = step9c.DEFAULT_API_BASE_URL.rstrip('/')
+
+          # Wake the free production service with a generous preflight timeout.
+          preflight_url = f"{base}/api/v1/mlb/live-game-state?date={day}&max_games=30"
+          request = Request(preflight_url, headers={'Accept':'application/json','User-Agent':'KyreStep9CCert/1.0'}, method='GET')
+          with urlopen(request, timeout=45) as response:
+              assert int(getattr(response, 'status', 0) or 0) == 200
+              payload = json.loads(response.read().decode('utf-8'))
+          assert payload['data_type'] == 'mlb_live_game_state_api_response_v1'
+          assert payload['schema_version'] == 1
+          assert payload['source'] == 'MLB Stats API'
+          assert payload['team_name_matching_used'] is False
+          assert payload['player_name_matching_used'] is False
+          assert payload['fuzzy_matching_used'] is False
+          assert payload['synthetic_game_id_used'] is False
+          games = payload.get('games') or []
+          if not games:
+              raise RuntimeError('STEP9C_HOSTED_LIVE_STATE_SLATE_EMPTY')
+
+          selected_id = int(games[0]['official_game_id'])
+          context = step9c._certified_context(selected_id, game_date=day)
+          assert context is not None
+          assert context['official_game_id'] == selected_id
+          assert context['match_method'] == step9c.MATCH_METHOD
+          assert context['feed_fresh'] is True
+
+          # Pull only the legacy metadata Step9A intentionally does not own.
+          schedule_url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={day}&hydrate=team"
+          request = Request(schedule_url, headers={'Accept':'application/json','User-Agent':'KyreStep9CCert/1.0'}, method='GET')
+          with urlopen(request, timeout=20) as response:
+              schedule = json.loads(response.read().decode('utf-8'))
+          meta = None
+          for block in schedule.get('dates') or []:
+              for game in block.get('games') or []:
+                  if int(game.get('gamePk') or 0) != selected_id:
+                      continue
+                  teams = game.get('teams') or {}
+                  away = teams.get('away') or {}
+                  home = teams.get('home') or {}
+                  meta = {
+                      'game_pk': selected_id,
+                      'game_date': day,
+                      'away_team_id': (away.get('team') or {}).get('id'),
+                      'home_team_id': (home.get('team') or {}).get('id'),
+                      'away_team': (away.get('team') or {}).get('name'),
+                      'home_team': (home.get('team') or {}).get('name'),
+                  }
+                  break
+              if meta is not None:
+                  break
+          assert meta is not None
+          assert meta['away_team_id'] is not None and meta['home_team_id'] is not None
+
+          mapped = step9c._state_from_context(context, meta, v19_module=v19)
+          assert mapped['away_team_id'] == int(meta['away_team_id'])
+          assert mapped['home_team_id'] == int(meta['home_team_id'])
+          assert mapped['away_runs'] == int(context['away_runs'])
+          assert mapped['home_runs'] == int(context['home_runs'])
+          assert mapped['state'] == context['state']
+          assert isinstance(mapped['inning_num'], int)
+          assert mapped['inning_num'] >= 1
+          print('STEP9C_HOSTED_SELECTED', {
+              'official_game_id': selected_id,
+              'state': mapped['state'],
+              'status': mapped['status'],
+              'score': f"{mapped['away_runs']}-{mapped['home_runs']}",
+              'away_team_id': mapped['away_team_id'],
+              'home_team_id': mapped['home_team_id'],
+          })
+          print('MLB_STEP9C_HOSTED_API_TO_V19_MAPPING_OK')
+          PY
+
+      - name: Final Step9C certification marker
+        run: echo 'MLB_STEP9C_LIVE_STATE_CONSUMER_GREEN'

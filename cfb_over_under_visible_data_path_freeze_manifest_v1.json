@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "scope": "cfb_over_under_visible_data_path_hotfix",
+  "baseline_commit": "609b20e2b18c6240d085b9246932a6b41cc95966",
+  "parent_freezes": [
+    "cfb_over_under_upgrade_freeze_manifest_v12.json",
+    "cfb_over_under_post12_data_recovery_freeze_manifest_v1.json",
+    "cfb_over_under_deep_data_reconciliation_freeze_manifest_v1.json"
+  ],
+  "exact_blobs": {
+    "cfb_schedule_v4.py": "36b27f4618eef720ca6f1ba1515c3cc4bea316e3",
+    "cfb_over_under_matchup_ui_v15_visible_data_path.py": "a483b2fdca1f6fec12ad0724073bb74ab031b75e",
+    "streamlit_memory_lazy_router_v55.py": "641a1561180dc6fff30453fc1cb6c647a8d66e37"
+  },
+  "contract": {
+    "active_router": "streamlit_memory_lazy_router_v55",
+    "schedule_provider": "cfb_schedule_v4",
+    "visible_ui": "cfb_over_under_matchup_ui_v15_visible_data_path",
+    "visible_game_profile_triplet_reconciled": true,
+    "parenthetical_alias_match": true,
+    "venue_enriched": true,
+    "broadcast_enriched": true,
+    "current_event_records_enriched": true,
+    "current_event_rank_enriched": true,
+    "event_and_team_ids_enriched": true,
+    "live_espn_matches": 1,
+    "live_venue_missing": 0,
+    "live_broadcast_missing": 0,
+    "live_event_id": "401858213",
+    "live_away_record": "1-1",
+    "live_home_record": "1-0",
+    "live_home_rank": 7,
+    "live_venue": "Hard Rock Stadium",
+    "live_broadcast": "ACC Network",
+    "live_visible_html_reconciled": true,
+    "live_step12_certified": true,
+    "regression_tests_passed": 241,
+    "model_formula_changed": false,
+    "sportsbook_input_added": false,
+    "market_probability_added": false,
+    "edge_or_ev_added": false,
+    "monte_carlo_added": false,
+    "permanently_frozen": true
+  }
+}

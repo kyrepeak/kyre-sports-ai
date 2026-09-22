@@ -1,0 +1,50 @@
+name: NFL Passing Yards Step 5 monster V2 cert
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'nfl_passing_yards_personnel_v2.py'
+      - 'nfl_passing_yards_personnel_v3.py'
+      - 'nfl_passing_yards_hub_v28.py'
+      - 'nfl_hub_v35.py'
+      - 'devsystem/nfl_passing_yards_step5_live_probe_v1.py'
+      - 'tests/test_nfl_passing_yards_step5_personnel_v2.py'
+      - '.github/workflows/nfl-passing-yards-step5-monster-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  step5-monster-cert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install app dependencies and pytest
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt pytest
+      - name: Compile Step 5 V3 route
+        run: |
+          python -m py_compile nfl_passing_yards_personnel_v2.py
+          python -m py_compile nfl_passing_yards_personnel_v3.py
+          python -m py_compile nfl_passing_yards_hub_v28.py
+          python -m py_compile nfl_hub_v35.py
+          python -m py_compile devsystem/nfl_passing_yards_step5_live_probe_v1.py
+      - name: Run deterministic Step 5 V2/V3 regressions
+        run: python -m pytest -q tests/test_nfl_passing_yards_step5_personnel_v2.py
+      - name: Probe exact live ESPN weapon usage and depth
+        run: python devsystem/nfl_passing_yards_step5_live_probe_v1.py
+      - name: Permanent protection assertions
+        run: |
+          grep -q 'projection_adjustment.*0.0' nfl_passing_yards_personnel_v3.py
+          grep -q 'sportsbook_influence.*0.0' nfl_passing_yards_personnel_v3.py
+          grep -q 'PASSING YARDS V28' nfl_hub_v35.py
+          grep -q 'FROZEN_PRIOR = "nfl_passing_yards_hub_v27"' nfl_passing_yards_hub_v28.py
+          grep -q 'FROZEN_PRIOR = "nfl_passing_yards_personnel_v2"' nfl_passing_yards_personnel_v3.py
+          grep -q 'exact ESPN team IDs' nfl_passing_yards_personnel_v3.py

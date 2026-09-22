@@ -1,0 +1,28 @@
+name: NFL Passing Yards V39 Presentation Grades
+
+on:
+  pull_request:
+    paths:
+      - 'nfl_passing_yards_presentation_grade_v1.py'
+      - 'nfl_passing_yards_hub_v39.py'
+      - 'streamlit_memory_lazy_router_v140.py'
+      - 'app.py'
+      - 'tests/test_nfl_passing_yards_v39_presentation_grades.py'
+      - '.github/workflows/nfl-passing-yards-v39-presentation-grades.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: python -m pip install --disable-pip-version-check -q pytest
+      - name: Run V39 presentation-grade contract
+        run: python -m pytest -q tests/test_nfl_passing_yards_v39_presentation_grades.py

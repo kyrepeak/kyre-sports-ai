@@ -1,0 +1,52 @@
+{
+  "activation_id": "step6v-33048741562-1",
+  "canary": {
+    "already_completed": false,
+    "attestation_sha256": "bdea979cfeb6bcc8c6ab9802e99c4b77e0df54d4d9c79e903c11bd7f132bc13b",
+    "offer_side_count": 230,
+    "post_write_sha256": "7d6363bc12e6ee2351938eb83eb636d89ec25e559fc199b6a904cdeec816b00e",
+    "pre_write_sha256": null,
+    "reconciliation_fingerprint_sha256": "1c8a59b03a74448f98bc20982e5b500eb92b386fcfac8456bdefd5c7e27b0849",
+    "rollback_available": true,
+    "snapshot_sha256": "2e3e53d75a1fe5d47a7633794c5a9bb14e70056791241255f6befc1f5b174da5",
+    "verified_persistent_feed_sha256": "7b1cc5ca1bf2989e834c99f12e547846f4530fdc495a81823dc3bcff78c42071"
+  },
+  "data_type": "wnba_step6v_live_supabase_canary_result",
+  "date": "2026-08-27",
+  "evidence": {
+    "backup_content_sha256": null,
+    "evidence_sha256": "2464594f9ee8d154aa2af294c27b388fb558cae654559ed7374356ae91e06663",
+    "evidence_verified": true,
+    "feed_size_bytes": 92290,
+    "marker_content_sha256": "64cf7739cdb095546b7954c35f14d7a4244672c3a8ef999f6cc25a93168f46d2",
+    "rollback_mode": "delete_new_feed",
+    "rollback_verified": true
+  },
+  "final_switch_state": {
+    "WNBA_KYRE_DIRECT_SYNC_ENABLED": false,
+    "WNBA_KYRE_RECONCILED_SYNC_ENABLED": false,
+    "WNBA_PRODUCTION_RUNTIME_ENABLED": false,
+    "WNBA_STEP6J_CANARY_ENABLED": false
+  },
+  "generated_at_utc": "2026-08-27T07:12:55.896185+00:00",
+  "model_version": "wnba_step_6v_github_supabase_canary_operator_v1",
+  "safety": {
+    "base_environment_mutated": false,
+    "monte_carlo_run": false,
+    "paid_odds_vendor_used": false,
+    "production_runtime_enabled": false,
+    "render_provisioned": false,
+    "scheduler_authorized": false,
+    "scheduler_started": false,
+    "secret_value_returned": false,
+    "supabase_schema_provisioned": false,
+    "temporary_write_switches_persisted": false,
+    "wager_action_performed": false
+  },
+  "schema_version": "wnba_step_6v_github_supabase_canary_operator_v1",
+  "season": 2026,
+  "source": "Kyre Sports API WNBA Step 6V GitHub Supabase canary operator",
+  "status": "completed",
+  "step6j_complete_candidate": true,
+  "storage_backend": "supabase"
+}

@@ -1,0 +1,168 @@
+name: WNBA Step 9A threshold pricing certification
+
+on:
+  push:
+    branches:
+      - wnba-step9-market-bridge-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step9a-threshold-pricing-cert
+  cancel-in-progress: true
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+  WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Step 9 market bridge branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert production OFF and isolated certification gates ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'true'
+          test "$WNBA_STEP8_PROJECTION_HANDOFF_ENABLED" = 'true'
+          test "$WNBA_STEP8_CORE_PROJECTION_ENABLED" = 'true'
+          test "$WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED" = 'true'
+          test "$WNBA_STEP8_MONTE_CARLO_ENABLED" = 'true'
+          test "$WNBA_STEP9_THRESHOLD_PRICING_ENABLED" = 'true'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 9A and frozen Step 8 contracts
+        shell: bash
+        run: |
+          python -m py_compile sports_api/wnba_step9_threshold_pricing.py
+          python -m py_compile sports_api/tools/wnba_step9a_threshold_pricing_cert.py
+          python -m py_compile tests/test_wnba_step9_threshold_pricing.py
+          python -m py_compile sports_api/wnba_step8_release_freeze.py
+          python -m py_compile sports_api/wnba_step8_joint_monte_carlo.py
+
+      - name: Run Step 9A fail-closed contract guards
+        shell: bash
+        run: PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+
+      - name: Run inherited frozen Step 8 regression guards
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove complete frozen Step 8 surface unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8_FROZEN_SHA='8faf468b770f7a31244914df75390fc788f859a1'
+          git fetch origin wnba-step8-projection-contract-20260828 --depth=1
+          ACTUAL_FROZEN_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$ACTUAL_FROZEN_SHA" = "$STEP8_FROZEN_SHA"
+          git diff --exit-code "$STEP8_FROZEN_SHA" -- \
+            sports_api/main.py \
+            sports_api/api/wnba_step8_projection.py \
+            sports_api/wnba_step8_release_freeze.py \
+            sports_api/wnba_step8_projection_handoff.py \
+            sports_api/wnba_step8_official_box_baseline.py \
+            sports_api/wnba_step8_core_projection.py \
+            sports_api/wnba_step8_context_adjustment.py \
+            sports_api/wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_projection_handoff.py \
+            tests/test_wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_core_projection.py \
+            tests/test_wnba_step8_context_adjustment.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_fastapi_integration.py \
+            sports_api/tools/wnba_step8a_projection_handoff_cert.py \
+            sports_api/tools/wnba_step8b_official_box_baseline_cert.py \
+            sports_api/tools/wnba_step8b_core_projection_cert.py \
+            sports_api/tools/wnba_step8c_context_adjustment_cert.py \
+            sports_api/tools/wnba_step8d_distribution_surface_probe.py \
+            sports_api/tools/wnba_step8d_joint_monte_carlo_cert.py \
+            sports_api/tools/wnba_step8e_final_release_freeze_cert.py \
+            .github/workflows/wnba-step-8a-projection-handoff-cert.yml \
+            .github/workflows/wnba-step-8b-official-box-baseline-cert.yml \
+            .github/workflows/wnba-step-8b-core-projection-cert.yml \
+            .github/workflows/wnba-step-8c-context-adjustment-cert.yml \
+            .github/workflows/wnba-step-8d-distribution-surface-probe.yml \
+            .github/workflows/wnba-step-8d-joint-monte-carlo-cert.yml \
+            .github/workflows/wnba-step-8e-final-release-freeze-cert.yml
+
+      - name: Prove only Step 9A files changed after frozen Step 8
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8_FROZEN_SHA='8faf468b770f7a31244914df75390fc788f859a1'
+          git diff --name-only "$STEP8_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step9_threshold_pricing.py|\
+              tests/test_wnba_step9_threshold_pricing.py|\
+              sports_api/tools/wnba_step9a_threshold_pricing_cert.py|\
+              .github/workflows/wnba-step-9a-threshold-pricing-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step8 file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Certify Step 9A frozen pricing boundary
+        shell: bash
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step9a_threshold_pricing_cert
+
+      - name: Upload Step 9A certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step9a-threshold-pricing-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step9a-threshold-pricing-cert.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Re-assert production OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

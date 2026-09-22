@@ -1,0 +1,368 @@
+name: MLB Step6G controlled production graduation certification
+
+on:
+  push:
+    branches:
+      - mlb-step6g-controlled-production-graduation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step6g-graduation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  STEP6G_BASE_SHA: 14ac9d0ed9cb646743b754470b214c5423a30664
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+  LIVE_CYCLES: '4'
+  LIVE_INTERVAL_SECONDS: '12'
+
+jobs:
+  certify-step6g-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert bounded MLB-only Step6G change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP6G_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step6g_controlled_graduation_v1.py|mlb_daily_game_picks_step6g_controlled_graduation_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_step6g_controlled_graduation_v1.py|\.github/workflows/mlb-step6g-controlled-production-graduation-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP6G_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP6G_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP6G_CHANGE_SCOPE_OK'
+
+      - name: Prove Step6F and prior production runtime are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP6G_BASE_SHA"...HEAD -- \
+            sports_api/mlb_step6f_production_graduation_gate_v1.py \
+            sports_api/mlb_step6e_25pct_stability_monitor_v1.py \
+            sports_api/mlb_step6d_production_expansion_v1.py \
+            mlb_daily_game_picks_step6d_production_expansion_v1.py \
+            sports_api/mlb_step6c_evidence_gate_v1.py \
+            sports_api/mlb_step6b_canary_monitor_v1.py \
+            sports_api/mlb_step6a_production_canary_v1.py \
+            sports_api/mlb_price_gate_canary_v1.py \
+            sports_api/mlb_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_price_gate_canary_v1.py \
+            mlb_daily_game_picks_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_v217.py \
+            app.py
+          echo 'MLB_STEP6G_PRIOR_PRODUCTION_RUNTIME_FROZEN'
+
+      - name: Prove protected confirmed-lineup guard logic is AST-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast, subprocess
+          path = 'mlb_daily_game_picks_v217_guard.py'
+          base = subprocess.check_output(['git','show',f'{__import__("os").environ["STEP6G_BASE_SHA"]}:{path}'], text=True)
+          head = open(path, encoding='utf-8').read()
+          names = {
+              '_safe_int', '_norm', '_lineup_members_bulk', '_official_snapshots_v217',
+              '_player_lineup_guard', '_risk_context_v217_guard',
+          }
+          def bodies(text):
+              tree = ast.parse(text)
+              out = {}
+              for node in tree.body:
+                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in names:
+                      out[node.name] = ast.dump(node, include_attributes=False)
+              return out
+          if bodies(base) != bodies(head):
+              raise SystemExit('STEP6G_PROTECTED_GUARD_FUNCTION_DRIFT')
+          if 'install_step6g_controlled_graduation_layer(games_df)' not in head:
+              raise SystemExit('STEP6G_GUARD_NOT_ROUTED_TO_GRADUATION_LAYER')
+          print('MLB_STEP6G_PROTECTED_GUARD_FUNCTIONS_FROZEN')
+          PY
+
+      - name: Assert Step6G status-only contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          core = Path('sports_api/mlb_step6g_controlled_graduation_v1.py').read_text(encoding='utf-8')
+          ui = Path('mlb_daily_game_picks_step6g_controlled_graduation_v1.py').read_text(encoding='utf-8')
+          required_core = (
+              'GRADUATED_PRODUCTION_PERCENT = 25.0',
+              'MAX_GRADUATED_PRODUCTION_PERCENT = 25.0',
+              'GRADUATED_PRODUCTION_ACTIVE',
+              'CANARY_HOLD_AT_25_PERCENT',
+              'GRADUATED_PRODUCTION_ROLLBACK',
+              'production_exposure_changed',
+              'exposure_increase_authorized',
+              'exact_rollback_preserved',
+          )
+          missing = [x for x in required_core if x not in core]
+          if missing:
+              raise SystemExit('STEP6G_CORE_TOKEN_MISSING: ' + ' | '.join(missing))
+          required_ui = (
+              'install_step6d_production_expansion_layer(games_df)',
+              'step510._decision_card_step5_10',
+              'step510._why_sections_step5_10',
+              'GRADUATED PRODUCTION',
+              'mlb_step6d_rollback=1',
+          )
+          missing = [x for x in required_ui if x not in ui]
+          if missing:
+              raise SystemExit('STEP6G_UI_TOKEN_MISSING: ' + ' | '.join(missing))
+          forbidden = ('requests.post(', 'requests.put(', 'requests.patch(', 'requests.delete(', 'sqlite3', 'psycopg', 'sqlalchemy')
+          bad = [x for x in forbidden if x in core or x in ui]
+          if bad:
+              raise SystemExit('STEP6G_UNEXPECTED_WRITE_SURFACE: ' + ' | '.join(bad))
+          print('MLB_STEP6G_STATUS_ONLY_CONTRACT_OK')
+          PY
+
+      - name: Compile Step6G Python
+        run: python -m py_compile sports_api/mlb_step6g_controlled_graduation_v1.py mlb_daily_game_picks_step6g_controlled_graduation_v1.py mlb_daily_game_picks_v217_guard.py tests/test_mlb_step6g_controlled_graduation_v1.py
+
+      - name: Run full frozen regression plus Step6G tests
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py
+
+  certify-live-graduated-production:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install live certification dependencies
+        run: python -m pip install --disable-pip-version-check -q requests
+
+      - name: Certify graduated 25 percent live behavior and rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json, math, os, time
+          import requests
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_market_probability_v1 import derive_market_probability_contexts
+          from sports_api.mlb_model_market_edge_v1 import model_market_edge
+          from sports_api.mlb_price_discipline_v1 import price_discipline_context
+          from sports_api.mlb_market_movement_v1 import build_market_observation, compare_market_observations
+          from sports_api.mlb_price_health_v1 import price_health_context
+          from sports_api.mlb_actionability_shadow_v1 import actionability_shadow_context
+          from sports_api.mlb_controlled_price_gate_v1 import controlled_price_gate
+          from sports_api.mlb_price_gate_canary_v1 import select_canary_game_ids
+          from sports_api.mlb_step6d_production_expansion_v1 import (
+              CERTIFIED_STEP6C_PERMISSION,
+              KILL_SWITCH_ENV_KEY,
+              resolve_step6d_production_expansion,
+          )
+          from sports_api.mlb_step6g_controlled_graduation_v1 import (
+              CERTIFIED_STEP6F_DECISION,
+              resolve_step6g_controlled_graduation,
+          )
+
+          cycles = int(os.environ.get('LIVE_CYCLES', '4'))
+          interval = int(os.environ.get('LIVE_INTERVAL_SECONDS', '12'))
+          odds_url = os.environ['PRODUCTION_ODDS_URL']
+          streamlit_url = os.environ['STREAMLIT_URL'].rstrip('/')
+          session = requests.Session()
+          session.headers.update({'User-Agent': 'KyreSportsStep6GCert/1.0', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache'})
+
+          snapshots = []
+          selected_history = []
+          aggregate = {'total':0, 'enrolled':0, 'allow':0, 'block':0, 'non':0, 'rollback':0, 'line_bearing':0}
+          max_feed_age = 0.0
+
+          for cycle_index in range(cycles):
+              response = session.get(odds_url, timeout=45, headers={'Accept':'application/json'})
+              response.raise_for_status()
+              payload = response.json()
+              if payload.get('source') != 'FanDuel' or payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+                  raise RuntimeError('STEP6G_BAD_PRODUCTION_FEED_CONTRACT')
+              games = payload.get('games') or []
+              collected_at = payload.get('collected_at_utc')
+              game_ids = [int(g['official_game_id']) for g in games]
+              if not game_ids:
+                  raise RuntimeError('STEP6G_EMPTY_LIVE_SLATE')
+
+              attached = attach_live_market_context([{'game_pk': gid} for gid in reversed(game_ids)], games)
+              probabilities = derive_market_probability_contexts(attached)
+              if attached.get('attached_count') != len(game_ids) or probabilities.get('derived_context_count') != len(game_ids):
+                  raise RuntimeError('STEP6G_EXACT_ID_CONTEXT_COVERAGE_FAILED')
+              if probabilities.get('fallback_matching_used'):
+                  raise RuntimeError('STEP6G_FALLBACK_MATCHING_USED')
+
+              rollout = resolve_step6d_production_expansion({}, permission=CERTIFIED_STEP6C_PERMISSION)
+              graduation = resolve_step6g_controlled_graduation(rollout, permission=CERTIFIED_STEP6F_DECISION)
+              if rollout.get('enabled') is not True or rollout.get('effective_percent') != 25.0:
+                  raise RuntimeError('STEP6G_STEP6D_NOT_AT_25')
+              if graduation.get('graduation_status') != 'GRADUATED_PRODUCTION_ACTIVE' or graduation.get('graduated_production_active') is not True:
+                  raise RuntimeError('STEP6G_NOT_GRADUATED')
+              if graduation.get('production_exposure_changed') is not False or graduation.get('exposure_change_percent') != 0.0:
+                  raise RuntimeError('STEP6G_EXPOSURE_CHANGED')
+
+              cohort = select_canary_game_ids(game_ids, enabled=True, requested_percent=25.0)
+              expected_count = int(math.floor(len(set(game_ids)) * 0.25))
+              if cohort['selected_game_count'] != expected_count or cohort['realized_percent'] > 25.0 + 1e-12:
+                  raise RuntimeError('STEP6G_COHORT_BOUNDARY_FAILED')
+              selected = set(cohort['selected_game_ids'])
+              selected_history.append(tuple(cohort['selected_game_ids']))
+
+              total = enrolled = allow = block = non = rollback = line_bearing = 0
+              for game in games:
+                  gid = int(game['official_game_id'])
+                  context = (probabilities.get('contexts_by_game_id') or {}).get(gid)
+                  if not context:
+                      raise RuntimeError(f'STEP6G_MISSING_CONTEXT_{gid}')
+                  away = str(game.get('away_team') or f'AWAY_{gid}')
+                  home = str(game.get('home_team') or f'HOME_{gid}')
+                  scenarios = [
+                      ('Moneyline', 'Away', context['moneyline']['away']),
+                      ('Moneyline', 'Home', context['moneyline']['home']),
+                      ('Run Line', 'Away', context['run_line']['away']),
+                      ('Run Line', 'Home', context['run_line']['home']),
+                      ('Total', 'Over ' + str(context['total'].get('line')), context['total']['over']),
+                      ('Total', 'Under ' + str(context['total'].get('line')), context['total']['under']),
+                  ]
+                  for market, side_text, side_block in scenarios:
+                      no_vig = float(side_block['no_vig_probability'])
+                      candidate = {'game_pk': gid, 'market': market, 'probability': min(0.90, max(0.10, no_vig + 0.02)), 'side': side_text, 'name': None, 'team': None}
+                      edge = model_market_edge(candidate, context, away_team=away, home_team=home)
+                      price = price_discipline_context(edge)
+                      observation = build_market_observation(price, collected_at_utc=collected_at)
+                      movement = compare_market_observations(observation, as_of_utc=observation['collected_at_utc'])
+                      health = price_health_context(movement)
+                      shadow = actionability_shadow_context(health)
+                      rollback_gate = controlled_price_gate(shadow, activation_requested=False)
+                      if rollback_gate.get('gate_status') == 'CONTROL_DISABLED' and rollback_gate.get('final_card_price_eligible') is True:
+                          rollback += 1
+                      gate = controlled_price_gate(shadow, activation_requested=gid in selected)
+                      if gid in selected:
+                          enrolled += 1
+                          if gate.get('gate_status') == 'GATE_ALLOW' and gate.get('final_card_price_eligible') is True:
+                              allow += 1
+                          elif gate.get('gate_status') == 'GATE_BLOCK' and gate.get('final_card_price_eligible') is False:
+                              block += 1
+                      elif gate.get('gate_status') == 'CONTROL_DISABLED' and gate.get('final_card_price_eligible') is True:
+                          non += 1
+                      total += 1
+                      if market in {'Run Line','Total'}:
+                          line_bearing += 1
+
+              if total != len(game_ids) * 6 or enrolled != len(selected) * 6 or allow + block != enrolled:
+                  raise RuntimeError('STEP6G_GATE_PARTITION_FAILED')
+              if non + enrolled != total or rollback != total or line_bearing != len(game_ids) * 4:
+                  raise RuntimeError('STEP6G_PASSTHROUGH_OR_ROLLBACK_FAILED')
+
+              collected = datetime.fromisoformat(str(collected_at).replace('Z','+00:00')).astimezone(timezone.utc)
+              age = max(0.0, (datetime.now(timezone.utc) - collected).total_seconds())
+              max_feed_age = max(max_feed_age, age)
+              if age > 60.0:
+                  raise RuntimeError('STEP6G_FEED_STALE')
+              snapshots.append(str(collected_at))
+              for key, value in {'total':total,'enrolled':enrolled,'allow':allow,'block':block,'non':non,'rollback':rollback,'line_bearing':line_bearing}.items():
+                  aggregate[key] += value
+              print('STEP6G_LIVE_CYCLE=' + json.dumps({'cycle':cycle_index,'games':len(game_ids),'selected_game_ids':cohort['selected_game_ids'],'realized_percent':cohort['realized_percent'],'allow':allow,'block':block,'rollback':rollback,'feed_age_seconds':age}, sort_keys=True))
+              if cycle_index + 1 < cycles:
+                  time.sleep(interval)
+
+          if len(set(selected_history)) != 1:
+              raise RuntimeError('STEP6G_SAME_SLATE_COHORT_CHANGED')
+          if len(set(snapshots)) < min(3, cycles):
+              raise RuntimeError('STEP6G_INSUFFICIENT_FRESH_SNAPSHOTS')
+
+          degraded = dict(CERTIFIED_STEP6F_DECISION)
+          degraded['decision'] = 'HOLD_AT_25_PERCENT'
+          held = resolve_step6g_controlled_graduation(resolve_step6d_production_expansion({}, permission=CERTIFIED_STEP6C_PERMISSION), permission=degraded)
+          if held['graduated_production_active'] is not False or held['step6d_effective_percent'] != 25.0:
+              raise RuntimeError('STEP6G_FAIL_CLOSED_GRADUATION_HOLD_FAILED')
+
+          killed_rollout = resolve_step6d_production_expansion({KILL_SWITCH_ENV_KEY:'1'}, permission=CERTIFIED_STEP6C_PERMISSION)
+          killed = resolve_step6g_controlled_graduation(killed_rollout)
+          if killed['graduation_status'] != 'GRADUATED_PRODUCTION_ROLLBACK' or killed['step6d_effective_percent'] != 0.0:
+              raise RuntimeError('STEP6G_GLOBAL_KILL_ROLLBACK_FAILED')
+          session_rollout = resolve_step6d_production_expansion({}, rollback_requested=True, permission=CERTIFIED_STEP6C_PERMISSION)
+          session_graduation = resolve_step6g_controlled_graduation(session_rollout)
+          if session_graduation['graduation_status'] != 'GRADUATED_PRODUCTION_ROLLBACK' or session_graduation['step6d_effective_percent'] != 0.0:
+              raise RuntimeError('STEP6G_SESSION_ROLLBACK_FAILED')
+
+          root = session.get(streamlit_url + '/', timeout=45, allow_redirects=True)
+          rollback_page = session.get(streamlit_url + '/?mlb_step6d_rollback=1', timeout=45, allow_redirects=True)
+          app_status = session.get(streamlit_url + '/api/v2/app/status', timeout=45, headers={'Accept':'application/json'})
+          root.raise_for_status(); rollback_page.raise_for_status(); app_status.raise_for_status()
+          status_payload = app_status.json()
+
+          evidence = {
+              'certification_result':'GREEN',
+              'cycle_count':cycles,
+              'distinct_snapshot_count':len(set(snapshots)),
+              'game_count':aggregate['total'] // (cycles * 6),
+              'selected_game_ids':list(selected_history[0]),
+              'realized_percent':25.0,
+              'aggregate':aggregate,
+              'max_feed_age_seconds':max_feed_age,
+              'graduation_status':'GRADUATED_PRODUCTION_ACTIVE',
+              'production_exposure_changed':False,
+              'degraded_permission_status':held['graduation_status'],
+              'global_kill_status':killed['graduation_status'],
+              'session_rollback_status':session_graduation['graduation_status'],
+              'streamlit_root_http_status':root.status_code,
+              'streamlit_rollback_http_status':rollback_page.status_code,
+              'streamlit_app_status_http_status':app_status.status_code,
+              'streamlit_version':status_payload.get('streamlitVersion'),
+              'rendered_streamlit_ui_verified':False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP6G_CONTROLLED_PRODUCTION_GRADUATION_GREEN')
+          PY

@@ -1,0 +1,25 @@
+name: Universal Theme Step 1 Foundation
+
+on:
+  push:
+    branches:
+      - "monster/universal-theme-step1-foundation-v1"
+    paths:
+      - "kyre_universal_theme_v1.py"
+      - "tests/test_universal_theme_foundation_v1.py"
+      - ".github/workflows/universal-theme-step1-foundation-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-theme-foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prove universal theme foundation only
+        run: python tests/test_universal_theme_foundation_v1.py

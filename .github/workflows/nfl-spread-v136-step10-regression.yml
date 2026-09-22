@@ -1,0 +1,165 @@
+name: NFL Spread V136 Step 10 Critical Regression
+
+on:
+  push:
+    branches:
+      - nfl-spread-v136-fresh-router-activation
+    paths:
+      - 'app.py'
+      - 'streamlit_memory_lazy_router_v136.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
+      - 'tests/test_nfl_spread_router_v136.py'
+      - 'tests/test_nfl_spread_v136_html_leak_regression.py'
+      - '.github/workflows/nfl-spread-v136-step10-regression.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'streamlit_memory_lazy_router_v136.py'
+      - 'tests/test_nfl_spread_v136_activation.py'
+      - 'tests/test_nfl_spread_router_v136.py'
+      - 'tests/test_nfl_spread_v136_html_leak_regression.py'
+      - '.github/workflows/nfl-spread-v136-step10-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-spread-v136-step10-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nfl-critical:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install NFL critical stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Run current DevSystem NFL critical path
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_foundation_v1.py \
+            tests/test_nfl_passing_yards_compact_v1.py
+
+  regression-shield:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated regression stack
+        run: |
+          python -m pip install --disable-pip-version-check -q requests pandas numpy streamlit pytest
+      - name: Run permanent DevSystem invariant shield
+        run: |
+          python devsystem/regression_shield_v1.py
+          python -m pytest -q tests/test_devsystem_regression_shield_v1.py
+      - name: Compile frozen Spread plus V136 regression surface
+        run: |
+          python -m py_compile app.py
+          python -m py_compile nfl_spread_hub_v1.py
+          python -m py_compile nfl_spread_hub_v2.py
+          python -m py_compile nfl_spread_hub_v3.py
+          python -m py_compile nfl_spread_hub_v4.py
+          python -m py_compile nfl_spread_model_v1.py
+          python -m py_compile nfl_spread_mc_v1.py
+          python -m py_compile streamlit_memory_lazy_router_v132.py
+          python -m py_compile streamlit_memory_lazy_router_v133.py
+          python -m py_compile streamlit_memory_lazy_router_v134.py
+          python -m py_compile streamlit_memory_lazy_router_v135.py
+          python -m py_compile streamlit_memory_lazy_router_v136.py
+          python -m py_compile tests/test_nfl_spread_v136_activation.py
+          python -m py_compile tests/test_nfl_spread_router_v136.py
+          python -m py_compile tests/test_nfl_spread_v136_html_leak_regression.py
+      - name: Run frozen Spread model MC plus current V136 regression suite
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_spread_fun_ui_v2.py \
+            tests/test_nfl_spread_model_v1.py \
+            tests/test_nfl_spread_mc_v1.py \
+            tests/test_nfl_spread_v3_model_mc.py \
+            tests/test_nfl_spread_v4_visual_parity.py \
+            tests/test_nfl_spread_router_v135.py \
+            tests/test_nfl_spread_v136_activation.py \
+            tests/test_nfl_spread_router_v136.py \
+            tests/test_nfl_spread_v136_html_leak_regression.py
+      - name: Prove frozen analytics routing owners are untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='bfd73b0bf0fc0c9816c1cd6aa46281d33336dedd'
+          git diff --quiet "$BASE"...HEAD -- \
+            nfl_spread_hub_v1.py \
+            nfl_spread_hub_v2.py \
+            nfl_spread_hub_v3.py \
+            nfl_spread_hub_v4.py \
+            nfl_spread_market_api_v1.py \
+            nfl_spread_model_v1.py \
+            nfl_spread_mc_v1.py \
+            streamlit_memory_lazy_router_v132.py \
+            streamlit_memory_lazy_router_v133.py \
+            streamlit_memory_lazy_router_v134.py \
+            streamlit_memory_lazy_router_v135.py \
+            tests/test_nfl_spread_v134_activation.py \
+            tests/test_nfl_spread_router_v135.py
+          echo 'NFL_SPREAD_V136_STEP10_FROZEN_OWNERS_GREEN'
+      - name: Prove V136 firewall and 5M analytics invariants
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python - <<'PY'
+          import nfl_spread_hub_v3 as v3
+          import nfl_spread_hub_v4 as v4
+          import nfl_spread_mc_v1 as mc
+          import nfl_spread_model_v1 as model
+          import streamlit_memory_lazy_router_v135 as v135
+          import streamlit_memory_lazy_router_v136 as v136
+
+          assert model.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert mc.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v3.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v4.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v135.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v136.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert mc.CERTIFIED_SIMULATIONS == 5_000_000
+          assert v3.CERTIFIED_SIMULATIONS == 5_000_000
+          assert v4.CERTIFIED_SIMULATIONS == 5_000_000
+          assert v136.ACTIVE_SPREAD_HUB == 'nfl_spread_hub_v4'
+          assert v136.FROZEN_ROUTER == 'streamlit_memory_lazy_router_v135'
+          assert v136.STANDALONE_SPREAD_ROUTE is True
+          assert v136.HTML_RENDER_GUARD == 'flatten_generated_html'
+          assert v136.HTML_RENDER_GUARD_SCOPE == 'route_purge_reimport_safe'
+          assert v136.STAKE_SIZING_ENABLED is False
+          assert v136.WAGER_ACTIONS_ENABLED is False
+          print('NFL_SPREAD_V136_STEP10_FIREWALL_GREEN')
+          PY
+
+  final-step10-gate:
+    if: always()
+    needs: [nfl-critical, regression-shield]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require NFL Critical and regression shield green
+        env:
+          NFL_CRITICAL_RESULT: ${{ needs.nfl-critical.result }}
+          REGRESSION_SHIELD_RESULT: ${{ needs.regression-shield.result }}
+        run: |
+          test "$NFL_CRITICAL_RESULT" = "success"
+          test "$REGRESSION_SHIELD_RESULT" = "success"
+          echo 'NFL_SPREAD_V136_STEP10_FINAL_GATE_GREEN'

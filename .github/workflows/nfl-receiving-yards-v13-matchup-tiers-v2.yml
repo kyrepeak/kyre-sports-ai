@@ -1,0 +1,26 @@
+name: NFL Receiving Yards V13 Matchup Tiers 2.0
+
+on:
+  pull_request:
+    paths:
+      - "nfl_receiving_yards_matchup_tiers_v2.py"
+      - "nfl_receiving_yards_hub_v13.py"
+      - "streamlit_memory_lazy_router_v144.py"
+      - "app.py"
+      - "tests/test_nfl_receiving_yards_matchup_tiers_v13.py"
+      - ".github/workflows/nfl-receiving-yards-v13-matchup-tiers-v2.yml"
+  workflow_dispatch:
+
+jobs:
+  receiving-v13-matchup-tiers-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Run Receiving Yards V13 Matchup Tiers 2.0 contract
+        run: python -m pytest -q tests/test_nfl_receiving_yards_matchup_tiers_v13.py

@@ -1,0 +1,234 @@
+name: WNBA Step 14B database checkpoint adapter certification
+
+on:
+  push:
+    branches:
+      - wnba-step14b-database-checkpoint-adapter-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Step 14B branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - name: Assert production and runtime persistence remain OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+
+      - name: Compile Step 14B database adapter surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step14b_database_checkpoint_adapter.py
+          python -m py_compile tests/test_wnba_step14b_database_checkpoint_adapter.py
+          python -m py_compile sports_api/tools/wnba_step14b_database_checkpoint_adapter_cert.py
+
+      - name: Verify PostgreSQL driver is importable
+        run: python -c "import psycopg; print(psycopg.__version__)"
+
+      - name: Run Step 14B database adapter guards
+        run: PYTHONPATH=. python tests/test_wnba_step14b_database_checkpoint_adapter.py
+
+      - name: Run frozen Step 14A persistence contract guards
+        run: PYTHONPATH=. python tests/test_wnba_step14a_persistence_contract.py
+
+      - name: Run frozen Step 13D through Step 13A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step13_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step13c_reliability_recovery.py
+          PYTHONPATH=. python tests/test_wnba_step13b_runtime_supervisor.py
+          PYTHONPATH=. python tests/test_wnba_step13a_bounded_scheduler.py
+
+      - name: Run frozen Step 12D through Step 12A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step12_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step12c_live_board_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step12b_live_runtime_assembly.py
+          PYTHONPATH=. python tests/test_wnba_step12_shadow_runner.py
+
+      - name: Run frozen Step 11E through Step 11A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step11_controlled_automation.py
+          PYTHONPATH=. python tests/test_wnba_step11_multibook_shadow_board.py
+          PYTHONPATH=. python tests/test_wnba_step11_fanduel_provider.py
+          PYTHONPATH=. python tests/test_wnba_step11_network_refresh_orchestrator.py
+          PYTHONPATH=. python tests/test_wnba_step11_draftkings_provider.py
+
+      - name: Run frozen Step 10 guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 14A head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP14A_FROZEN_SHA='aa1d770cd9840dac7e31139ab177fa4aa3ac9020'
+          git merge-base --is-ancestor "$STEP14A_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP14A_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only Step 14B files changed after frozen Step 14A
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP14A_FROZEN_SHA='aa1d770cd9840dac7e31139ab177fa4aa3ac9020'
+          git diff --name-only "$STEP14A_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step14b_database_checkpoint_adapter.py|\
+              sports_api/requirements-persistence.txt|\
+              tests/test_wnba_step14b_database_checkpoint_adapter.py|\
+              sports_api/tools/wnba_step14b_database_checkpoint_adapter_cert.py|\
+              .github/workflows/wnba-step-14b-database-checkpoint-adapter-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step14A file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify frozen Step 14A lineage and Step 14B safety boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED=true
+          export WNBA_STEP14B_DATABASE_READ_ENABLED=true
+          export WNBA_STEP14B_DATABASE_WRITE_ENABLED=true
+          export WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED=true
+          export WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED=true
+          export WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED=true
+          export WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED=true
+          export WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED=true
+          export WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED=true
+          export WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED=true
+          export WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED=true
+          export WNBA_STEP12A_SHADOW_RUNNER_ENABLED=true
+          export WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED=true
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step14a_persistence_contract as s14a
+          from sports_api import wnba_step14b_database_checkpoint_adapter as s14b
+          assert s14b.STEP14A_FROZEN_SHA == 'aa1d770cd9840dac7e31139ab177fa4aa3ac9020'
+          assert s14b.STEP14A_MANIFEST_CONTENT_SHA256 == '2768d83f2bccb8cf1e47318c0910d4758fdeb68916683e67db92ffb282bea2e1'
+          assert s14b.STEP14A_SQL_SCHEMA_SHA256 == '308042f8196607a477158d348ba6e03e090267910cba749491534131b490a2eb'
+          assert s14a.DATABASE_READ_ALLOWED is False
+          assert s14a.DATABASE_WRITE_ALLOWED is False
+          assert s14b.POSTGRESQL_DATABASE_READ_ALLOWED is True
+          assert s14b.POSTGRESQL_DATABASE_WRITE_ALLOWED is True
+          assert s14b.ATOMIC_HEAD_COMPARE_AND_SWAP_ALLOWED is True
+          assert s14b.APPEND_ONLY_HISTORY_REQUIRED is True
+          assert s14b.PERSISTENCE_RUNTIME_ENABLED is False
+          assert s14b.DURABLE_RESTART_RECOVERY_ALLOWED is False
+          assert s14b.DURABLE_DISTRIBUTED_LEASE_ALLOWED is False
+          assert s14b.CROSS_PROCESS_DUPLICATE_RUN_GUARD_ALLOWED is False
+          assert s14b.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert s14b.PUBLIC_FASTAPI_ACTIVATION_ALLOWED is False
+          assert s14b.WAGERING_ALLOWED is False
+          print('STEP14B_FROZEN_STEP14A_LINEAGE_AND_SAFETY_OK')
+          PY
+
+      - name: Certify Step 14B database checkpoint adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WNBA_STEP14B_DATABASE_CHECKPOINT_ADAPTER_ENABLED=true
+          export WNBA_STEP14B_DATABASE_READ_ENABLED=true
+          export WNBA_STEP14B_DATABASE_WRITE_ENABLED=true
+          export WNBA_STEP14A_PERSISTENCE_CONTRACT_ENABLED=true
+          export WNBA_STEP13D_FINAL_SCHEDULER_FREEZE_ENABLED=true
+          export WNBA_STEP13C_RELIABILITY_RECOVERY_ENABLED=true
+          export WNBA_STEP13B_RUNTIME_SUPERVISOR_ENABLED=true
+          export WNBA_STEP13A_BOUNDED_SCHEDULER_ENABLED=true
+          export WNBA_STEP12D_FINAL_RUNTIME_FREEZE_ENABLED=true
+          export WNBA_STEP12C_LIVE_BOARD_RUNTIME_ENABLED=true
+          export WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED=true
+          export WNBA_STEP12A_SHADOW_RUNNER_ENABLED=true
+          export WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED=true
+          PYTHONPATH=. python -m sports_api.tools.wnba_step14b_database_checkpoint_adapter_cert
+
+      - name: Upload Step 14B certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step14b-database-checkpoint-adapter-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step14b-database-checkpoint-adapter-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production and runtime persistence remain OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'

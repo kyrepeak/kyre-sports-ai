@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "scope": "cfb_over_under_live_odds_step4",
+  "policy": "Permanently freeze the completed College Football Over/Under Step 4 live-odds connection. Future work must be additive in new versioned modules/routers. Frozen Schedule V5 and frozen Steps 3-12 projection math remain untouched. Sportsbook data may remain threshold/context only and must not enter frozen projection math without a separately versioned certification.",
+  "baseline_commit": "c4e453f02dea31171dd131d3d0c63a1b144cdab7",
+  "parent_freezes": [
+    "cfb_over_under_pre_odds_freeze_manifest_v1.json"
+  ],
+  "exact_blobs": {
+    "cfb_over_under_pre_odds_freeze_manifest_v1.json": "230206fe5162bf02f8ecfdd4d99c47b32c6d02c2",
+    "cfb_schedule_v6_runtime_snapshot.py": "42a23cb390d6840fa924805aa9bb1cf3a5a7793a",
+    "cfb_over_under_market_adapter_v1.py": "526b4c4005ba82f24e25cd0e5b022ab6f48fb943",
+    "cfb_over_under_clean_page_v18.py": "5d1c71461643891251401ba0c0c12ef0842d91e5",
+    "streamlit_memory_lazy_router_v58.py": "5ac0b6f7cbfd565728770da46f2d1f37874dc5f7",
+    "tests/test_cfb_schedule_v6_runtime_snapshot.py": "f9148d23b36c7d4de765c8addad68920322feb08",
+    "tests/test_cfb_over_under_market_adapter_v1.py": "86c4646339b4c93fa480b4e19c666795acde74a5",
+    "tests/test_cfb_over_under_clean_page_v18.py": "b585653e6f9b732071653fcd065048851fd6e3a6",
+    "tests/test_cfb_over_under_router_v58.py": "0e3397186911b290b974ec0f343e60de859b8297"
+  },
+  "dynamic_runtime_files": {
+    "data/cfb_runtime_snapshot_v2.json": {
+      "frozen": false,
+      "reason": "Current schedule/team data must continue refreshing. Schedule V6 validates identity and fails closed to the checked-in fallback."
+    }
+  },
+  "operational_files": {
+    ".github/workflows/cfb-runtime-snapshot-refresh-v2.yml": {
+      "exact_frozen": false,
+      "rule": "May receive DevSystem-reviewed operational fixes, but must never write protected main directly and must preserve official-ID validation."
+    },
+    ".github/workflows/cfb-step4-streamlit-live-odds.yml": {
+      "exact_frozen": false,
+      "rule": "Certification workflow may receive DevSystem-reviewed operational maintenance but may not weaken the frozen Step 4 market/identity firewall."
+    }
+  },
+  "contract": {
+    "active_router": "streamlit_memory_lazy_router_v58",
+    "active_page": "cfb_over_under_clean_page_v18",
+    "active_schedule": "cfb_schedule_v6_runtime_snapshot",
+    "active_market_adapter": "cfb_over_under_market_adapter_v1",
+    "frozen_schedule_v5_unchanged": true,
+    "frozen_steps_3_12_projection_math_reused": true,
+    "official_market_matching": "official ESPN event_id only",
+    "fuzzy_matching": false,
+    "synthetic_official_ids": false,
+    "sportsbook_projection_weight": 0,
+    "market_context_only": true,
+    "market_may_modify_projection": false,
+    "certified_runtime_branch": "cfb-runtime-snapshot-auto-refresh-v2",
+    "runtime_branch_requires_numeric_event_ids": true,
+    "runtime_branch_requires_unique_event_ids": true,
+    "runtime_branch_requires_complete_espn_team_identity": true,
+    "checked_in_snapshot_fallback_active": true,
+    "current_live_reference": {
+      "game_date": "2026-09-10",
+      "espn_event_id": "401858213",
+      "matchup": "Florida A&M @ Miami",
+      "sportsbook": "FanDuel",
+      "observed_total": 62.5,
+      "observed_total_frozen": false,
+      "note": "The sportsbook line is a time-varying certification witness, not a frozen model input."
+    },
+    "permanently_frozen": true
+  }
+}

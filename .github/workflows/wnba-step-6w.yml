@@ -1,0 +1,146 @@
+name: WNBA Step 6W final upgraded-architecture certification
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/certification/wnba_step6v_live_canary_evidence.json'
+      - 'sports_api/wnba_step6w_final_certification.py'
+      - 'sports_api/api/wnba_step6w_final_certification.py'
+      - 'sports_api/tests/test_wnba_step6w_final_certification.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6w.yml'
+  pull_request:
+    paths:
+      - 'sports_api/certification/wnba_step6v_live_canary_evidence.json'
+      - 'sports_api/wnba_step6w_final_certification.py'
+      - 'sports_api/api/wnba_step6w_final_certification.py'
+      - 'sports_api/tests/test_wnba_step6w_final_certification.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6w.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6w-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  final-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact Step 6W revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact Step 6W revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "Certifying exact Step 6W revision: $EXPECTED_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6W certification
+        run: |
+          python -m py_compile sports_api/wnba_step6w_final_certification.py
+          python -m py_compile sports_api/api/wnba_step6w_final_certification.py
+
+      - name: Run Step 6W final certification tests
+        run: python -m unittest sports_api.tests.test_wnba_step6w_final_certification
+
+      - name: Run frozen Step 6V operator regression
+        run: python -m unittest sports_api.tests.test_wnba_step6v_supabase_canary
+
+      - name: Run frozen Step 6U activation bridge regression
+        run: python -m unittest sports_api.tests.test_wnba_step6u_activation_bridge
+
+      - name: Run frozen Step 6T durable evidence regression
+        run: python -m unittest sports_api.tests.test_wnba_step6t_canary_evidence
+
+      - name: Run frozen Step 6S storage-aware canary regression
+        run: python -m unittest sports_api.tests.test_wnba_step6s_canary_storage
+
+      - name: Run frozen Step 6R Supabase backend regression
+        run: python -m unittest sports_api.tests.test_wnba_step6r_supabase_storage
+
+      - name: Run frozen Step 6Q durable-storage regression
+        run: python -m unittest sports_api.tests.test_wnba_step6q_durable_storage
+
+      - name: Run original Step 6J filesystem regression
+        run: python -m unittest sports_api.tests.test_wnba_step6j_canary_activation
+
+      - name: Run Phase 6 master certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove Step 6V and frozen runtime core were not rewritten
+        shell: bash
+        run: |
+          git diff --exit-code 8f045a7e89d0fb97f0fa7bb2c8855f91c4435a9f -- \
+            .github/workflows/wnba-step-6v.yml \
+            sports_api/tools/wnba_step6v_supabase_canary.py \
+            sports_api/wnba_step6u_activation_bridge.py \
+            sports_api/wnba_step6t_canary_evidence.py \
+            sports_api/wnba_step6s_canary_storage.py \
+            sports_api/wnba_step6r_supabase_storage.py \
+            sports_api/wnba_step6q_durable_storage.py \
+            sports_api/wnba_step6j_canary_activation.py
+
+      - name: Prove Step 6W receives no live secrets
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('.github/workflows/wnba-step-6w.yml').read_text(encoding='utf-8')
+          secret_expression = '$' + '{{ ' + 'sec' + 'rets.'
+          server_key_name = 'WNBA_KYRE_SUPABASE_' + 'SECRET_KEY'
+          assert secret_expression not in text
+          assert server_key_name not in text
+          print('Step 6W is secret-free.')
+          PY
+
+      - name: Build final frozen certification artifact
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from sports_api.wnba_step6w_final_certification import build_step6w_final_certification
+
+          report = build_step6w_final_certification()
+          assert report['final_architecture_certified'] is True, report['blocking_reasons']
+          assert report['state'] == 'wnba_upgraded_architecture_frozen'
+          assert report['step6j_live_canary_complete'] is True
+          assert report['production_live'] is False
+          assert report['scheduler_authorized'] is False
+          assert report['scheduler_started'] is False
+          assert report['semantics']['network_used'] is False
+          Path('step6w-final-certification.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print('Step 6W final upgraded architecture certificate is frozen.')
+          print('Final manifest SHA-256:', report['final_freeze']['final_manifest_sha256'])
+          PY
+
+      - name: Upload Step 6W final certification
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6w-final-certification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step6w-final-certification.json
+          if-no-files-found: error
+          retention-days: 90

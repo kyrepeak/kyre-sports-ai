@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "mode": "strict_auto_continue",
+  "retry_budgets": {
+    "deterministic-regression": 0,
+    "transient-capable": 1,
+    "unknown_evidence_actions": 1
+  },
+  "proof_rules": {
+    "reject_duplicate_without_changed_inputs": true,
+    "closed_checkpoint_requires_contradictory_evidence": true,
+    "max_active_blockers": 1,
+    "defer_unrelated_findings": true,
+    "terminal_task_is_authoritative": true
+  },
+  "hard_boundaries": [
+    "material_scope_or_architecture_change",
+    "destructive_action",
+    "credential_or_secret_change",
+    "cost_impacting_infrastructure_change",
+    "material_product_behavior_choice",
+    "external_blocker_unresolvable_with_available_tools"
+  ],
+  "decisions": [
+    "ALLOW_ADVANCE",
+    "ALLOW_NEW_HYPOTHESIS",
+    "ALLOW_CONTROLLED_RETRY",
+    "REJECT_DUPLICATE_PROOF",
+    "REJECT_CLOSED_CHECKPOINT_REOPEN",
+    "DEFER_SIDE_QUEST",
+    "STOP_EXTERNAL_BLOCKER",
+    "TASK_COMPLETE"
+  ]
+}

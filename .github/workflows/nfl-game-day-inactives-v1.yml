@@ -1,0 +1,33 @@
+name: NFL Game Day Inactives V1
+
+on:
+  pull_request:
+    paths:
+      - "nfl_game_day_availability_v1.py"
+      - "nfl_passing_yards_identity_v1.py"
+      - "tests/test_nfl_game_day_inactives_v1.py"
+      - "devsystem/nfl_game_day_inactives_v1.py"
+      - ".github/workflows/nfl-game-day-inactives-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests
+      - name: Run Step 4 unit proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_nfl_game_day_inactives_v1.py
+      - name: Run live 14-game / 28-team availability proof
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python devsystem/nfl_game_day_inactives_v1.py

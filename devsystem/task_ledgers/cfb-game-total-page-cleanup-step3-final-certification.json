@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-page-cleanup-step3-final-certification",
+  "status": "DONE",
+  "scope": "Verification-only cleanup Step 3 certifying the combined CFB Game Total debug-wall suppression and sport-navigation escape while preserving the frozen Page V28 redesign.",
+  "trigger": "Final declared cleanup step requires combined QA/certification after Steps 1 and 2 are merged and frozen.",
+  "guardrails": {
+    "cleanup_step1_debug_wall_frozen": true,
+    "cleanup_step2_navigation_escape_frozen": true,
+    "prior_six_step_redesign_frozen": true,
+    "product_code_changed": false,
+    "page_v28_edited_in_place": false,
+    "router_v174_edited_in_place": false,
+    "router_v175_edited_in_place": false,
+    "data_contract_changed": false,
+    "normalization_changed": false,
+    "projection_math_changed": false,
+    "confidence_math_changed": false,
+    "team_stat_math_changed": false,
+    "market_ownership_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

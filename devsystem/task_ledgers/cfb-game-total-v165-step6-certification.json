@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v165-step6-certification",
+  "status": "DONE",
+  "scope": "Complete only Step 6 certification for CFB Game Total V165 by advancing stale production verifier contracts to the current V165 Router V161 and Step 4 DOM, preserving all frozen runtime/model behavior, and adding repeatable focused CI coverage for those verifier contracts.",
+  "trigger": "The merged V165 production deployment was fresh and browser-visible, but legacy production verification workflows still enforced obsolete V163/V164 heartbeat and Step 4 DOM contracts; the V5 frame miss was separately proven transient by a successful controlled rerun.",
+  "guardrails": {
+    "steps1_through_5_frozen_and_untouched": true,
+    "projection_math_changed": false,
+    "probability_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "production_runtime_files_changed": false,
+    "verifier_contracts_only": true,
+    "transient_v5_shared_browser_logic_changed": false,
+    "gate_weakened": false
+  },
+  "internal_steps": {
+    "1": "recovered PR #680 merge state and current production run evidence",
+    "2": "isolated three red workflows and proved V5 frame failure transient by successful rerun attempt 2",
+    "3": "advanced DevSystem V4 heartbeat/router proof to V165 Router V161",
+    "4": "advanced V164 logo verifier Step 4 proof to the V165 open neon gt165 contract while preserving logo and Steps 1-3 checks",
+    "5": "added verifier contract tests to focused V165 CI coverage",
+    "6": "run focused CI, satisfy permanent action-ledger gate, merge exact certified head, and verify production"
+  },
+  "proof_target": "PR #681 focused V165 workflow and DevSystem final gate must be GREEN on the certified head; protected main must merge that exact head; push-to-main production verifiers must then prove the current V165 deployment without changing frozen runtime/model behavior.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

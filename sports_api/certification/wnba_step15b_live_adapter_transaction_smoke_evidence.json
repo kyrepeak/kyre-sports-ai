@@ -1,0 +1,79 @@
+{
+  "checkpoint_smoke": {
+    "baseline_all_step14_tables_empty": true,
+    "current_version_during_stale_attempt": 2,
+    "history_rows_after_advance": 2,
+    "history_rows_after_stale_attempt": 2,
+    "idempotent_repeat_history_rows": 1,
+    "load_round_trip_exact": true,
+    "stale_cas_rejected": true,
+    "stale_expected_version": 1,
+    "stale_history_row_survived": false,
+    "stale_transaction_rolled_back": true,
+    "version_1_checkpoint_id": "aff40b6b-8e3d-5982-9746-4bf10ab776c9",
+    "version_1_controller_state_sha256": "f2a252f1aac542756e16ab3724aecbd8bb6d2f1d5ca3a73ec88f476d90fe5c3d",
+    "version_1_created": true,
+    "version_1_envelope_content_sha256": "b753300a7e862e79961570d94122e63ddb8c3702a796de3cbc9679f33c623b04",
+    "version_2_advanced": true,
+    "version_2_checkpoint_id": "8e4c6a7f-b4e2-5859-b5de-78430c47e6fb",
+    "version_2_controller_state_sha256": "aab7f72f97895cfb1d5ee73e989925a7ee40d3f31237e797594d7daf3d672d0d",
+    "version_2_envelope_content_sha256": "dba9c1fa1a08a60fd59cdd9c8d51cdf05e3a00cc7622a9a76fecdd55cb2d515d"
+  },
+  "cleanup": {
+    "checkpoint_heads_rows_after_cleanup": 0,
+    "checkpoint_history_rows_after_cleanup": 0,
+    "lease_rows_after_cleanup": 0,
+    "live_step14_tables_returned_to_empty_state": true
+  },
+  "data_type": "wnba_step15b_live_adapter_transaction_smoke_evidence",
+  "evidence_content_sha256": "d99bc29535f4bfc09a6d38858beb9b8faf8646fdf37b01aa3a86a9b18c4ff75c",
+  "execution_boundary": {
+    "background_worker_started": false,
+    "frozen_adapter_sql_semantics_executed_live": true,
+    "github_actions_live_database_credentials_used": false,
+    "global_persistence_runtime_started": false,
+    "live_database_used": true,
+    "public_persistence_api_exposed": false,
+    "python_psycopg_adapter_connected_directly": false,
+    "reason_direct_adapter_not_connected": "Connected Supabase tooling exposes controlled SQL execution but does not expose the database password required by KYRE_DATABASE_URL.",
+    "production_scheduler_started": false,
+    "wagering_enabled": false
+  },
+  "frozen_lineage": {
+    "step14_release_content_sha256": "70082ab06a58ddee4dce567626ff83bc64e67bf89f04e5f402d820a414b25e59",
+    "step14b_adapter_blob_sha": "4b03996c63362795a440c8388642e17bdb6c6e3b",
+    "step14c_runtime_blob_sha": "080d792ef06b6802f4bb99ec9acc7ddef8c78695",
+    "step14d_frozen_sha": "d5a7378d94fb1aa51a6bc5fbf5e5c0384f34a9d6",
+    "step15a_certified_sha": "9cc30b96c4583f6b18306910ca4a7fb70d93c325",
+    "step15a_preflight_content_sha256": "33a2c431a202b791180d6cca0aa8ad12f46ca6d561749c5753918f90b145223e"
+  },
+  "lease_smoke": {
+    "current_owner_release_succeeded": true,
+    "duplicate_active_acquire_rows": 0,
+    "initial_acquire_generation": 1,
+    "owner_a": "step15b-owner-a",
+    "owner_a_renew_succeeded": true,
+    "owner_a_token": "11111111-1111-4111-8111-111111111111",
+    "owner_b": "step15b-owner-b",
+    "owner_b_token": "22222222-2222-4222-8222-222222222222",
+    "stale_owner_release_rows": 0,
+    "takeover_generation": 2,
+    "test_only_expiry_forced": true,
+    "wrong_owner_renew_rows": 0
+  },
+  "observed_at_utc": "2026-08-28T19:28:00+00:00",
+  "schema_version": "wnba_step_15b_live_adapter_transaction_smoke_evidence_v1",
+  "smoke_scope": {
+    "checkpoint_key": "wnba:runtime:2026:regular-season:2026-01-15",
+    "lease_key": "wnba:runtime:2026:regular-season:2026-01-15:scheduler-lease",
+    "slate_date": "2026-01-15"
+  },
+  "supabase_project": {
+    "name": "kyre-sports-ai-wnba",
+    "postgres_engine": "17",
+    "postgres_version": "17.6.1.165",
+    "ref": "jqajcdckalsfizbvngiu",
+    "region": "us-west-1",
+    "status": "ACTIVE_HEALTHY"
+  }
+}

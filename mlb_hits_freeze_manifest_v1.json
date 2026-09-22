@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "policy": "Every completed MLB 1+ Hit runtime step is immutable. New work must be additive in a new wrapper and preserve all frozen model, ranking and presentation contracts.",
+  "baseline_commit": "afb2c8024e44a18f42e86d55579bb10344c2c8e1",
+  "baseline_paths": [
+    "engine.py",
+    "history.py",
+    "hit_hub_v131.py",
+    "mlb_hit_hub_v133.py",
+    "mlb_hit_hub_v1314.py",
+    "mlb_hit_hub_v1315.py"
+  ],
+  "exact_blobs": {
+    "mlb_hit_hub_v1316.py": "1732cbb470aa741ef605371d620a974eddc3b11f",
+    "streamlit_memory_lazy_router_v3.py": "83921facc7a0dc719138746cbafc1093b61fd57b"
+  }
+}

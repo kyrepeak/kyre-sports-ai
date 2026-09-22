@@ -1,0 +1,160 @@
+name: CFB Game Total V161 Router V157 permanent freeze
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [freeze/cfb-game-total-v157-v161-production-213]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Freeze scope guard
+        run: |
+          git fetch origin main --depth=1
+          python - <<'PY'
+          import subprocess
+          changed=set(subprocess.check_output(
+              ["git","diff","--name-only","origin/main...HEAD"], text=True
+          ).splitlines())
+          expected={
+              ".github/workflows/cfb-game-total-v161-permanent-freeze-v2.yml",
+              "cfb_game_total_v161_freeze_manifest_v2.json",
+              "devsystem/task_ledgers/cfb-game-total-v161-permanent-freeze-v2.json",
+          }
+          if changed != expected:
+              raise SystemExit("V161/V157 freeze branch changed active code: " + str(sorted(changed)))
+          print("CFB_GAME_TOTAL_V161_V157_FREEZE_SCOPE=PASS")
+          PY
+
+      - name: Verify permanent-freeze metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v161_freeze_manifest_v2.json").read_text())
+          assert m["version"] == 2
+          assert m["baseline_commit"] == "8f80b33e2725ed174741eaedd6de8e680edc0591"
+          assert m["certified_router_cache_bust_pr"] == 574
+          assert m["production_verification_run"] == 213
+          assert m["v161_browser_run"] == 24
+          c=m["contract"]
+          assert c["active_page"] == "cfb_game_total_clean_page_v12"
+          assert c["active_router"] == "streamlit_memory_lazy_router_v157"
+          assert c["runtime_display"] == "cfb_game_total_runtime_display_v2"
+          assert c["production_heartbeat"] == "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"
+          assert c["projection_math_changed"] is False
+          assert c["distribution_math_changed"] is False
+          assert c["step12_qualification_changed"] is False
+          assert c["top5_ranking_changed"] is False
+          assert c["api_model_behavior_changed"] is False
+          assert c["sportsbook_projection_influence"] == 0.0
+          assert c["router_cache_bust_production_certified"] is True
+          assert c["future_changes_must_be_additive"] is True
+          assert c["permanently_frozen"] is True
+          print("CFB_GAME_TOTAL_V161_V157_FREEZE_METADATA=PASS")
+          PY
+
+      - name: Verify every frozen blob exactly
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v161_freeze_manifest_v2.json").read_text())
+          failures=[]
+          for path, expected in m["exact_blobs"].items():
+              actual=subprocess.check_output(["git","rev-parse",f"HEAD:{path}"], text=True).strip()
+              if actual != expected:
+                  failures.append(f"{path}: expected {expected}, got {actual}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("CFB_GAME_TOTAL_V161_V157_EXACT_BLOBS=PASS", len(m["exact_blobs"]))
+          PY
+
+      - name: Enforce frozen boundaries and route firewall
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          page11=Path("cfb_game_total_clean_page_v11.py").read_text(encoding="utf-8")
+          page12=Path("cfb_game_total_clean_page_v12.py").read_text(encoding="utf-8")
+          runtime=Path("cfb_game_total_runtime_display_v2.py").read_text(encoding="utf-8")
+          router=Path("streamlit_memory_lazy_router_v157.py").read_text(encoding="utf-8")
+          browser=Path("devsystem/cfb_game_total_browser_qa_v3.py").read_text(encoding="utf-8")
+          production=Path("devsystem/production_verify_v3.py").read_text(encoding="utf-8")
+          app=Path("app.py").read_text(encoding="utf-8")
+
+          required={
+              "page11": (page11, [
+                  'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+                  'MAY_MODIFY_PROJECTION = False',
+                  'ACTIVE_MARKER = "CFB GAME TOTAL • CLEAN PAGE V161 ACTIVE"',
+                  'DATE_QUERY_KEY = "ks_cfb_game_total_date"',
+                  'ODDS_MATCH_METHOD = "official ESPN event_id only"',
+                  'ODDS_PROVIDER = "FanDuel"',
+              ]),
+              "page12": (page12, [
+                  'FROZEN_PRESENTATION = "cfb_game_total_clean_page_v11"',
+                  'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+                  'MAY_MODIFY_PROJECTION = False',
+                  '"espn_event_id"',
+              ]),
+              "runtime": (runtime, [
+                  'FROZEN_RUNTIME_DISPLAY = "cfb_game_total_runtime_display_v1"',
+                  'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+                  'MAY_MODIFY_PROJECTION = False',
+              ]),
+              "router": (router, [
+                  'FROZEN_ROUTER = "streamlit_memory_lazy_router_v156"',
+                  'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"',
+                  'ACTIVE_PAGE = "cfb_game_total_clean_page_v12"',
+                  'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+                  'MAY_MODIFY_PROJECTION = False',
+              ]),
+              "browser": (browser, [
+                  'PRODUCTION_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"',
+                  'DATE_QUERY_KEY = "ks_cfb_game_total_date"',
+              ]),
+              "production": (production, [
+                  'EXPECTED_ROUTER = "streamlit_memory_lazy_router_v157"',
+                  'GAME_TOTAL_REQUIRED_HEARTBEAT = "CFB_GAME_TOTAL_V161_PRODUCTION_ACTIVE"',
+                  'GAME_TOTAL_MARKET = "Game Total"',
+              ]),
+              "app": (app, [
+                  'CFB Game Total V161 activation',
+                  'from streamlit_memory_lazy_router_v157 import record_bootstrap_import_ms, render_app',
+                  'Sportsbook projection influence stays 0.0%',
+              ]),
+          }
+          for label, (source, tokens) in required.items():
+              for token in tokens:
+                  if token not in source:
+                      raise SystemExit(f"missing frozen {label} marker: {token}")
+          print("CFB_GAME_TOTAL_V161_V157_ROUTE_FIREWALL=PASS")
+          PY
+
+      - name: Compile frozen V161 V157 surface
+        run: |
+          python -m py_compile \
+            app.py \
+            cfb_game_total_clean_page_v11.py \
+            cfb_game_total_clean_page_v12.py \
+            cfb_game_total_runtime_display_v2.py \
+            streamlit_memory_lazy_router_v157.py \
+            devsystem/cfb_game_total_browser_qa_v3.py \
+            devsystem/production_verify_v3.py
+
+      - name: Certification marker
+        run: echo "CFB_GAME_TOTAL_V161_V157_PERMANENT_FREEZE_GREEN"

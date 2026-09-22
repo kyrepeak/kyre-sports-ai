@@ -1,0 +1,122 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-universal-step2-tokens-v1",
+  "status": "DONE",
+  "scope": "Universal Theme -> NFL Passing Yards Step 2 only: centralize semantic design tokens and make the frozen Step 1 ownership surface consume those tokens for controls, cards, evidence panels, and market controls.",
+  "baseline": {
+    "main_sha": "354aae0062df44b1cce8dddc412faca2e493b29c",
+    "step1_green_frozen": true,
+    "frozen_step1_product": "nfl_passing_yards_hub_v51",
+    "frozen_step1_router": "streamlit_memory_lazy_router_v202",
+    "moneyline_green_frozen": true
+  },
+  "acceptance": {
+    "semantic_token_source_present": true,
+    "primitive_theme_v1_preserved": true,
+    "token_only_passing_yards_override": true,
+    "top_controls_token_driven": true,
+    "command_evidence_cards_token_driven": true,
+    "market_controls_token_driven": true,
+    "frozen_v51_execution_preserved": true,
+    "passing_yards_only_route_override": true,
+    "targeted_step2_proof_required": true,
+    "protected_merge_gate_required": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "step1_code_changed": false,
+    "passing_yards_data_logic_changed": false,
+    "identity_logic_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "sportsbook_transport_changed": false,
+    "widget_keys_changed": false,
+    "stake_sizing_changed": false,
+    "moneyline_changed": false,
+    "other_nfl_markets_changed": false,
+    "non_nfl_routes_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "freeze_rule": "After targeted Step 2 proof, required merge gate, merge, and one successful post-merge public production proof of semantic-token consumption, Step 2 is GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "latest_public_verifier_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35646645428,
+    "failure_job": 106488621892,
+    "owner": "VERIFIER / ENTRY PATH",
+    "failure": "Public proof observed a visible KeyError before Step 2 token-owner readiness assertions executed.",
+    "direct_evidence": {
+      "visual_step2_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "step2_token_layer_evaluated": false,
+      "failure_marker": "KeyError:"
+    },
+    "root_cause": "The verifier changed the NFL market widget directly instead of using the existing certified same-run NFL category handoff. That can recreate the stale Streamlit widget-state KeyError class already documented and repaired by Routers V183-V185 before Step 2 is evaluated.",
+    "repair": "Enter public Passing Yards using ?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards and let the frozen V185 same-run handoff prime Passing Yards widget/session state before route rendering.",
+    "product_code_changed": false,
+    "v52_changed": false,
+    "router_changed": false,
+    "step1_changed": false,
+    "moneyline_changed": false
+  },
+  "latest_router_ordering_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35647386042,
+    "failure_job": 106491060322,
+    "owner": "ROUTER / COLD QUERY-ENTRY ORDERING",
+    "terminal_evidence": {
+      "visual_step2_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "passing_yards_text": true,
+      "step1_owner_style": 0,
+      "semantic_tokens_style": 0,
+      "step2_token_style": 0,
+      "step2_owner_marker": 0,
+      "owner_container": 0,
+      "top_container": 0,
+      "old_keyerror_present": false
+    },
+    "root_cause": "V203 classified the active route before the frozen V185 same-run query handoff populated NFL / Passing Yards session state on a cold query entry, so newer V52/V51 ownership layers delegated before V187 eventually rendered the older Passing Yards route.",
+    "repair": "V203 now detects only the explicit ks_jump_sport=NFL + ks_jump_market=Passing Yards cold query and invokes frozen V185 _consume_any_nfl_category_without_rerun() before _active_route() classification.",
+    "scope_guard": "The early handoff is gated to explicit NFL + Passing Yards query entry only; all other routes preserve existing delegation.",
+    "v203_changed": true,
+    "v202_changed": false,
+    "v52_changed": false,
+    "v51_changed": false,
+    "analytics_changed": false,
+    "moneyline_changed": false
+  },
+  "latest_revision_readiness_repair": {
+    "checkpoint": "post-merge public-production-proof",
+    "failure_run": 35649700464,
+    "failure_job": 106498766026,
+    "owner": "DEPLOYMENT / REVISION READINESS",
+    "terminal_evidence": {
+      "visual_step2_proof": "SUCCESS",
+      "public_production_proof": "FAILURE",
+      "merged_sha": "6856995432e97808e4b64eb5fcff3d44c1ee1954",
+      "public_proof_browser_started_seconds_after_merge": 27,
+      "passing_yards_text": true,
+      "step1_owner_style": 0,
+      "semantic_tokens_style": 0,
+      "step2_token_style": 0,
+      "step2_owner_marker": 0,
+      "owner_container": 0,
+      "top_container": 0
+    },
+    "reclassification": "The V203 ordering patch passed targeted proof, but the immediate post-merge public session exposed none of the new V203/V52/V51 ownership surface. Public proof must distinguish an older still-serving revision from a current Step 2 product failure.",
+    "repair": "V203 exposes a hidden runtime witness on the active NFL Passing Yards route. The public proof waits for that exact witness before applying the unchanged Step 2 ownership and computed-style acceptance checks.",
+    "acceptance_weakened": false,
+    "v51_changed": false,
+    "v52_changed": false,
+    "analytics_changed": false,
+    "moneyline_changed": false
+  }
+}

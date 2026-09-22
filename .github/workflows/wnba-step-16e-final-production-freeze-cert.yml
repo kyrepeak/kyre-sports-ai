@@ -1,0 +1,229 @@
+name: WNBA Step 16E final production freeze certification
+
+on:
+  push:
+    branches:
+      - wnba-step16e-final-production-freeze-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_PERSISTENCE_ENABLED: "false"
+  WNBA_SUPABASE_WRITE_ENABLED: "false"
+  WNBA_WAGERING_ENABLED: "false"
+  WNBA_STEP12_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+  WNBA_STEP16E_FINAL_PRODUCTION_FREEZE_ENABLED: "false"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Step 16E branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 500
+
+      - name: Assert final freeze is non-live and production remains OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_STEP16E_FINAL_PRODUCTION_FREEZE_ENABLED" = 'false'
+          test -z "${KYRE_DATABASE_URL:-}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API plus persistence dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt
+          python -m pip install -r sports_api/requirements-persistence.txt
+
+      - name: Compile Step 16E final freeze surface
+        run: |
+          python -m py_compile sports_api/wnba_step16_release_freeze.py
+          python -m py_compile tests/test_wnba_step16_release_freeze.py
+          python -m py_compile sports_api/tools/wnba_step16_release_freeze_cert.py
+          python -m json.tool sports_api/certification/wnba_step16e_final_production_freeze_evidence.json >/dev/null
+
+      - name: Run Step 16E final production freeze guards
+        run: PYTHONPATH=. python tests/test_wnba_step16_release_freeze.py
+
+      - name: Run frozen Step 16D through Step 16B guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step16d_controlled_production_activation.py
+          PYTHONPATH=. python tests/test_wnba_step16c_live_postgres_canary.py
+          PYTHONPATH=. python tests/test_wnba_step16b_production_packaging_lifecycle.py
+
+      - name: Run frozen Step 16A guards at exact parent SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP16A_FROZEN_SHA='4ea88aa9a54f5110a03e9e4374219ed15ab30def'
+          rm -rf /tmp/wnba-step16a-parent
+          git worktree add --detach /tmp/wnba-step16a-parent "$STEP16A_FROZEN_SHA"
+          (cd /tmp/wnba-step16a-parent && PYTHONPATH=. python tests/test_wnba_step16a_production_activation_contract.py)
+          git worktree remove /tmp/wnba-step16a-parent --force
+
+      - name: Run frozen Step 15C through Step 15A guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step15_live_persistence_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step15b_live_adapter_transaction_smoke.py
+          PYTHONPATH=. python tests/test_wnba_step15a_live_postgres_preflight.py
+
+      - name: Run frozen Step 14D through Step 14A guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step14_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step14c_durable_restart_lease.py
+          PYTHONPATH=. python tests/test_wnba_step14b_database_checkpoint_adapter.py
+          PYTHONPATH=. python tests/test_wnba_step14a_persistence_contract.py
+
+      - name: Run frozen Step 13D through Step 13A guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step13_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step13c_reliability_recovery.py
+          PYTHONPATH=. python tests/test_wnba_step13b_runtime_supervisor.py
+          PYTHONPATH=. python tests/test_wnba_step13a_bounded_scheduler.py
+
+      - name: Run frozen Step 12D through Step 12A guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step12_release_freeze.py
+          PYTHONPATH=. python tests/test_wnba_step12c_live_board_runtime.py
+          PYTHONPATH=. python tests/test_wnba_step12b_live_runtime_assembly.py
+          PYTHONPATH=. python tests/test_wnba_step12_shadow_runner.py
+
+      - name: Run frozen Step 11E through Step 11A guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step11_controlled_automation.py
+          PYTHONPATH=. python tests/test_wnba_step11_multibook_shadow_board.py
+          PYTHONPATH=. python tests/test_wnba_step11_fanduel_provider.py
+          PYTHONPATH=. python tests/test_wnba_step11_network_refresh_orchestrator.py
+          PYTHONPATH=. python tests/test_wnba_step11_draftkings_provider.py
+
+      - name: Run frozen Step 10 guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove certified Step 16D head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP16D_FROZEN_SHA='b13307e6a89a456edfd0fc4f4ddbb5244ae91a60'
+          git merge-base --is-ancestor "$STEP16D_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP16D_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only approved Step 16E files changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP16D_FROZEN_SHA='b13307e6a89a456edfd0fc4f4ddbb5244ae91a60'
+          git diff --name-only "$STEP16D_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/certification/wnba_step16e_final_production_freeze_evidence.json|\
+              sports_api/wnba_step16_release_freeze.py|\
+              tests/test_wnba_step16_release_freeze.py|\
+              sports_api/tools/wnba_step16_release_freeze_cert.py|\
+              .github/workflows/wnba-step-16e-final-production-freeze-cert.yml)
+                ;;
+              *) echo "Unexpected post-Step16D file drift: $path" >&2; exit 1 ;;
+            esac
+          done
+          test "$(git diff --name-only "$STEP16D_FROZEN_SHA" HEAD | wc -l | tr -d ' ')" = '5'
+
+      - name: Prove frozen Step 16D production surface is unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object sports_api/wnba_step16d_controlled_production_activation.py)" = '5fd2ba8f22b90450e0b7c47d2973ef83dbecfdfa'
+          test "$(git hash-object sports_api/Dockerfile)" = '324defd214f334c372f3b0b2dcafd958c962a6aa'
+          test "$(git hash-object sports_api/requirements-persistence.txt)" = '46331822d0a55f5a4983d289c73a45ea9745ca89'
+
+      - name: Verify final evidence and release boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step16_release_freeze as s16
+          env = {
+              'WNBA_STEP16E_FINAL_PRODUCTION_FREEZE_ENABLED': 'true',
+              'WNBA_PRODUCTION_RUNTIME_ENABLED': 'false',
+              'WNBA_BOARD_SCHEDULER_ENABLED': 'false',
+              'WNBA_PERSISTENCE_ENABLED': 'false',
+              'WNBA_SUPABASE_WRITE_ENABLED': 'false',
+              'WNBA_WAGERING_ENABLED': 'false',
+              'WNBA_STEP12_SCHEDULER_ENABLED': 'false',
+          }
+          evidence = s16.validate_step16e_final_evidence(s16.load_step16e_final_evidence())
+          manifest = s16.validate_step16_release_manifest(s16.build_step16_release_manifest(env=env, generated_at_utc='2026-08-28T21:00:00+00:00'))
+          assert evidence['final_live_state']['checkpoint_rows'] == 0
+          assert evidence['final_live_state']['checkpoint_head_rows'] == 0
+          assert evidence['final_live_state']['lease_rows'] == 0
+          assert manifest['certification']['direct_psycopg_live_connection'] is True
+          assert manifest['certification']['two_cycle_durable_restart_recovery'] is True
+          assert manifest['scope_boundary']['continuous_production_runtime_started'] is False
+          assert manifest['scope_boundary']['render_hosted_service_activation_certified'] is False
+          assert all(v is False for v in manifest['safety_contract'].values())
+          print('STEP16E_FINAL_RELEASE_BOUNDARY_OK', manifest['release_content_sha256'])
+          PY
+
+      - name: Generate Step 16E final certification
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python -m sports_api.tools.wnba_step16_release_freeze_cert
+
+      - name: Upload Step 16E final certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step16e-final-production-freeze-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step16-final-production-freeze-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert final release made no live activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test -z "${KYRE_DATABASE_URL:-}"

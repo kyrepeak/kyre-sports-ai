@@ -1,0 +1,157 @@
+# Exact final-tree recertification for MLB Step 18C.
+name: MLB Step18C incident response certification
+
+on:
+  push:
+    branches:
+      - mlb-step18c-incident-response
+    paths:
+      - .github/workflows/mlb-step18c-incident-response-cert.yml
+      - sports_api/tools/mlb_step18c_incident_response.py
+      - tests/test_mlb_step18c_incident_response.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step18c-incident-response-cert
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q -r sports_api/requirements.txt
+          python -m pip install -q pytest
+
+      - name: Prove Step 18C starts from merged Step 18B baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor ae66134026297516aac4e6936b8ac9d8e2302481 HEAD
+          git cat-file -e ece3cd2d15d091728fdbe30be774dd9c15e4fe8e^{commit}
+          echo MLB_STEP18C_LINEAGE_BASELINE_OK
+
+      - name: Run deterministic incident-response drills
+        run: PYTHONPATH=. pytest -q tests/test_mlb_step18c_incident_response.py
+
+      - name: Prove healthy production yields no-action plan using GET only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .step18c-response
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+
+          import httpx
+
+          from sports_api.tools.mlb_step18b_production_observability import (
+              CERTIFIED_LOOP_SECONDS,
+              build_production_observability,
+          )
+          from sports_api.tools.mlb_step18c_incident_response import (
+              FINAL_MARKER,
+              build_incident_response_plan,
+          )
+
+          SERVICE_URL = 'https://kyre-sports-api.onrender.com'
+
+          def get_json_retry(path, *, timeout_seconds=240.0):
+              deadline = time.monotonic() + timeout_seconds
+              last = 'not attempted'
+              with httpx.Client(
+                  timeout=30.0,
+                  follow_redirects=True,
+                  headers={'user-agent': 'kyre-mlb-step18c-response-cert/1'},
+              ) as client:
+                  while True:
+                      try:
+                          response = client.get(SERVICE_URL + path)
+                          if response.status_code == 200:
+                              body = response.json()
+                              if isinstance(body, dict):
+                                  return body
+                              last = 'non-object JSON'
+                          else:
+                              last = f'HTTP {response.status_code}'
+                      except Exception as exc:
+                          last = f'{type(exc).__name__}: {exc}'
+                      if time.monotonic() >= deadline:
+                          raise AssertionError(f'read-only hosted observation failed for {path}: {last}')
+                      time.sleep(5)
+
+          health = get_json_retry('/health')
+          wnba = get_json_retry('/api/v1/wnba/runtime/deployment')
+          mlb = get_json_retry('/api/v1/mlb/runtime/step17b')
+          report = build_production_observability(
+              status=mlb,
+              health=health,
+              wnba=wnba,
+              configured_loop_seconds=CERTIFIED_LOOP_SECONDS,
+          )
+          plan = build_incident_response_plan(report)
+
+          assert report['healthy'] is True, report['incidents']
+          assert plan['response_state'] == 'healthy'
+          assert plan['disposition'] == 'no_action'
+          assert plan['page_operator'] is False
+          assert plan['rollback_recommended'] is False
+          assert plan['automatic_rollback_performed'] is False
+          assert plan['semantics']['render_mutation_performed'] is False
+          assert plan['semantics']['database_write_performed'] is False
+          assert plan['semantics']['provider_network_called'] is False
+          assert plan['semantics']['sportsbook_network_called'] is False
+
+          evidence = {'observability': report, 'response_plan': plan}
+          path = Path('.step18c-response/mlb-step18c-incident-response-evidence.json')
+          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print(FINAL_MARKER)
+          PY
+
+      - name: Validate sanitized response evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.step18c-response/mlb-step18c-incident-response-evidence.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          text = path.read_text(encoding='utf-8').casefold()
+          assert data['observability']['healthy'] is True
+          assert data['response_plan']['disposition'] == 'no_action'
+          assert data['response_plan']['automatic_rollback_performed'] is False
+          assert 'postgresql://' not in text
+          assert 'authorization' not in text
+          assert 'render_api_key' not in text
+          print('MLB_STEP18C_EVIDENCE_SANITIZED')
+          PY
+
+      - name: Upload certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step18c-incident-response-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step18c-response/mlb-step18c-incident-response-evidence.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Final GREEN marker
+        run: echo MLB_STEP18C_INCIDENT_RESPONSE_GREEN

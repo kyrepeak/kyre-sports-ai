@@ -1,0 +1,204 @@
+name: WNBA Step 10E full live pipeline certification
+
+on:
+  push:
+    branches:
+      - wnba-step10e-live-pipeline-20260828
+    paths:
+      - sports_api/wnba_step10_release_freeze.py
+      - sports_api/wnba_step10_live_pipeline.py
+      - sports_api/api/wnba_step10_live_market_board.py
+      - sports_api/main.py
+      - tests/test_wnba_step10_live_market_board.py
+      - sports_api/tools/wnba_step10e_live_pipeline_cert.py
+      - .github/workflows/wnba-step-10e-live-pipeline-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+  WNBA_BOARD_SCHEDULER_ENABLED: "false"
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+  WNBA_STEP6J_CANARY_ENABLED: "false"
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+  WNBA_STEP10_FASTAPI_ENABLED: "true"
+  WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: "true"
+  WNBA_STEP10B_MARKET_ADAPTER_ENABLED: "true"
+  WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: "true"
+  WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: "true"
+  WNBA_STEP9_FASTAPI_ENABLED: "true"
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Step 10E branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+
+      - name: Assert production and real scheduler OFF; isolated pipeline gates ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP10_FASTAPI_ENABLED" = 'true'
+          test "$WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED" = 'true'
+          test "$WNBA_STEP10B_MARKET_ADAPTER_ENABLED" = 'true'
+          test "$WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED" = 'true'
+          test "$WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED" = 'true'
+          test "$WNBA_STEP9_FASTAPI_ENABLED" = 'true'
+          test "$WNBA_STEP9_THRESHOLD_PRICING_ENABLED" = 'true'
+          test "$WNBA_STEP9B_MARKET_COMPARISON_ENABLED" = 'true'
+          test "$WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED" = 'true'
+          test "$WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED" = 'true'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 10E integration surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step10_release_freeze.py
+          python -m py_compile sports_api/wnba_step10_live_pipeline.py
+          python -m py_compile sports_api/api/wnba_step10_live_market_board.py
+          python -m py_compile sports_api/main.py
+          python -m py_compile tests/test_wnba_step10_live_market_board.py
+          python -m py_compile sports_api/tools/wnba_step10e_live_pipeline_cert.py
+
+      - name: Run Step 10E full live pipeline guards
+        run: PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+
+      - name: Run frozen Step 10D through Step 10A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 10D head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP10D_FROZEN_SHA='6d289d0a3d3bd74c9c18db7e54457728a57c1f3d'
+          git merge-base --is-ancestor "$STEP10D_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP10D_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only Step 10E files changed after frozen Step 10D
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP10D_FROZEN_SHA='6d289d0a3d3bd74c9c18db7e54457728a57c1f3d'
+          git diff --name-only "$STEP10D_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step10_release_freeze.py|\
+              sports_api/wnba_step10_live_pipeline.py|\
+              sports_api/api/wnba_step10_live_market_board.py|\
+              sports_api/main.py|\
+              tests/test_wnba_step10_live_market_board.py|\
+              sports_api/tools/wnba_step10e_live_pipeline_cert.py|\
+              .github/workflows/wnba-step-10e-live-pipeline-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step10D file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Prove main.py change is only the Step 10E router seam
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP10D_FROZEN_SHA='6d289d0a3d3bd74c9c18db7e54457728a57c1f3d'
+          git diff --unified=0 "$STEP10D_FROZEN_SHA" HEAD -- sports_api/main.py > /tmp/main.diff
+          ! grep -E '^-[^-]' /tmp/main.diff
+          grep -E '^\+[^+]' /tmp/main.diff > /tmp/main.added
+          test "$(wc -l < /tmp/main.added | tr -d ' ')" = '2'
+          grep -Fx '+from sports_api.api.wnba_step10_live_market_board import router as wnba_step10_live_market_board_router' /tmp/main.added
+          grep -Fx '+app.include_router(wnba_step10_live_market_board_router)' /tmp/main.added
+
+      - name: Verify final Step 10 release constants and frozen lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step10_release_freeze as release
+          from sports_api import wnba_step10_refresh_controller as s10d
+          from sports_api import wnba_step9_release_freeze as s9
+          assert release.RELEASE_ID == 'wnba_step10_live_market_board_2026_regular_season_frozen_v1'
+          assert release.INTEGRATION_VERSION == 'wnba_step10e_fastapi_live_market_board_v1'
+          assert release.ENDPOINT_PATH == '/api/v1/wnba/props/live-market-board'
+          assert release.STEP8_FROZEN_SHA == '8faf468b770f7a31244914df75390fc788f859a1'
+          assert release.STEP9_FROZEN_SHA == 'bd228921ea993c8c74b6454ae56cee94711b0e94'
+          assert release.STEP10A_FROZEN_SHA == '4a8f822684c1d56d1ef062f0db25d5f671409def'
+          assert release.STEP10B_FROZEN_SHA == '1088358452ca2bc9e45a2bb3544b44331606d88c'
+          assert release.STEP10C_FROZEN_SHA == 'a5264f40d2fe9f17e5cefa3c20e0d2ad31b73f3e'
+          assert release.STEP10D_FROZEN_SHA == '6d289d0a3d3bd74c9c18db7e54457728a57c1f3d'
+          assert s10d.STEP10C_FROZEN_HEAD_SHA == release.STEP10C_FROZEN_SHA
+          assert s9.RELEASE_ID == 'wnba_step9_market_board_2026_regular_season_frozen_v1'
+          assert release.step10_fastapi_enabled({}) is False
+          assert release.DEFAULT_ENABLED is False
+          assert release.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert all(value is False for value in release.SAFETY_CONTRACT.values())
+          print('STEP10_FINAL_RELEASE_CONTRACT_STATIC_GUARDS_OK')
+          PY
+
+      - name: Certify final frozen Step 10 full live pipeline
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step10e_live_pipeline_cert
+
+      - name: Upload Step 10 final certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step10e-live-pipeline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step10e-live-pipeline-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production and real scheduler OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

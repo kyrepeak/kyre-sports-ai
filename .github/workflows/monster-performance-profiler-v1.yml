@@ -1,0 +1,62 @@
+name: Monster Performance Profiler V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "sports_api/observability_v1.py"
+      - "sports_api/monster_performance_profiler_v1.py"
+      - "tests/test_monster_performance_profiler_v1.py"
+      - ".github/workflows/monster-performance-profiler-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "app.py"
+      - "sports_api/observability_v1.py"
+      - "sports_api/monster_performance_profiler_v1.py"
+      - "tests/test_monster_performance_profiler_v1.py"
+      - ".github/workflows/monster-performance-profiler-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-performance-profiler-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  monster-performance-profiler:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install Monster Performance Profiler test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Monster Performance Profiler entry points
+        run: |
+          python -m py_compile \
+            app.py \
+            sports_api/monster_performance_profiler_v1.py \
+            sports_api/observability_v1.py
+
+      - name: Run Monster Performance Profiler contracts
+        run: |
+          python -m pytest -q \
+            tests/test_monster_performance_profiler_v1.py \
+            tests/test_sports_api_observability_v1.py \
+            tests/test_cfb_over_under_cold_start_router_v77.py

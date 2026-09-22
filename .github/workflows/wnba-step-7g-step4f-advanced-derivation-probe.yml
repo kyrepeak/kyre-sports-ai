@@ -1,0 +1,110 @@
+name: WNBA Step 7G Step 4F advanced derivation probe
+
+on:
+  push:
+    branches:
+      - wnba-step7g-step4j-team-history-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-step4f-advanced-derivation-probe.yml'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_fast.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py'
+      - 'sports_api/tools/wnba_step7g_step4f_advanced_derivation_probe.py'
+      - 'tests/test_wnba_step7g_first_party_advanced_stats.py'
+      - 'tests/test_wnba_step7g_first_party_advanced_contract_units.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'false'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated Step 7G branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert every production switch OFF and integration OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 4F adapters and live probe
+        shell: bash
+        run: |
+          python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats.py
+          python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats_fast.py
+          python -m py_compile sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py
+          python -m py_compile sports_api/tools/wnba_step7g_step4f_advanced_derivation_probe.py
+          python -m py_compile tests/test_wnba_step7g_first_party_advanced_stats.py
+          python -m py_compile tests/test_wnba_step7g_first_party_advanced_contract_units.py
+
+      - name: Run fail-closed advanced derivation and contract-unit tests
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_stats.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_contract_units.py
+
+      - name: Prove frozen Step 4F and readiness chain unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_BASE_SHA='368dbde84ea0aa6f570703688ae899285ecd7cfc'
+          git fetch origin wnba-step7g-official-data-preflight-20260827 --depth=1
+          ACTUAL_BASE_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$ACTUAL_BASE_SHA" = "$EXPECTED_BASE_SHA"
+          git diff --exit-code "$EXPECTED_BASE_SHA" -- \
+            sports_api/wnba_advanced_stats.py \
+            sports_api/wnba_projection_input_snapshot.py \
+            sports_api/wnba_model_input_readiness.py
+
+      - name: Probe live WNBA.com box-derived advanced context in frozen units
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step7g_step4f_advanced_derivation_probe
+
+      - name: Upload sanitized Step 4F derivation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-step4f-advanced-derivation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-step4f-advanced-derivation-probe.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert every production switch OFF and integration OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'false'

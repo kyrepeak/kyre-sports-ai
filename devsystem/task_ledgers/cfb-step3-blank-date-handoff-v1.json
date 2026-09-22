@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-blank-date-handoff-v1",
+  "status": "DONE",
+  "scope": "Repair only Step 3's selected-date handoff so a blank game_date placeholder is replaced before recent-game hydration.",
+  "trigger": "Production run #46 still showed one completed game per team. Source inspection proved Step 3 used setdefault('game_date', selected_day), which does not replace an existing blank game_date, so target_day stayed empty and daily-scoreboard recovery never ran.",
+  "guardrails": {
+    "step3_only": true,
+    "other_steps_untouched": true,
+    "selected_date_required_before_hydration": true,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "proof_target": "The Step 3 handoff must explicitly replace blank game_date with selected_day before enrich_step3_inputs runs.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

@@ -1,0 +1,179 @@
+name: MLB Step11D provider consensus failover shadow policy certification
+
+on:
+  push:
+    branches:
+      - mlb-step11d-consensus-failover-shadow-policy
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-provider-consensus-failover-shadow-policy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      STEP11D_BASE_SHA: f088fe171e8202ae6f000d90ce88bdb7b7d5e9a5
+      API_BASE_URL: https://kyre-sports-api.onrender.com
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step11D is exactly three-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP11D_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step11d_provider_consensus_failover_shadow_policy_v1.py|tests/test_mlb_step11d_provider_consensus_failover_shadow_policy_v1.py|\.github/workflows/mlb-step11d-provider-consensus-failover-shadow-policy-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo "STEP11D_UNEXPECTED_CHANGED_PATHS: $bad"; exit 1; fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then echo "STEP11D_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"; exit 1; fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then echo 'STEP11D_WNBA_SCOPE_VIOLATION'; exit 1; fi
+          git diff --check "$STEP11D_BASE_SHA"...HEAD
+          echo 'MLB_STEP11D_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove frozen runtime and Steps 10 through 11C remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP11D_BASE_SHA"...HEAD -- \
+            app.py engine.py history.py spread_engine.py \
+            live_game_hub_v182.py live_game_hub_v19.py live_game_hub_v191.py \
+            live_game_hub_v192.py live_game_hub_v1921.py mlb_live_hub_v193.py live_odds_feed.py \
+            mlb_step9c_live_state_consumer_v1.py mlb_step9e_live_market_consumer_v1.py \
+            sports_api/main.py sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_official_game_id_join_v1.py sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py sports_api/database/mlb_live_snapshot_recovery.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11a_provider_contract_v1.py \
+            sports_api/mlb_step11c_multi_provider_shadow_board_v1.py \
+            sports_api/mlb_step8_final_freeze_v1.py mlb_step8f_player_prop_presentation_v1.py
+          echo 'MLB_STEP11D_FROZEN_RUNTIME_STEP10_STEP11A_STEP11B_STEP11C_BYTE_IDENTICAL'
+
+      - name: Assert Step11D policy boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step9_final_freeze_v1 import PROTECTED_INVARIANTS
+          from sports_api.mlb_step11c_multi_provider_shadow_board_v1 import BOARD_STATUS, FINAL_CERTIFICATION_MARKER as STEP11C_MARKER
+          from sports_api.mlb_step11d_provider_consensus_failover_shadow_policy_v1 import FINAL_CERTIFICATION_MARKER, POLICY_STATUS, STEP11D_BASE_MAIN_SHA, policy_manifest
+          m = policy_manifest()
+          assert STEP11D_BASE_MAIN_SHA == 'f088fe171e8202ae6f000d90ce88bdb7b7d5e9a5'
+          assert m['policy_status'] == POLICY_STATUS
+          assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER
+          assert m['step11c_board_status_required'] == BOARD_STATUS
+          assert m['step11c_final_certification_marker_required'] == STEP11C_MARKER
+          for key in ['freshness_required_for_shadow_route','source_complete_required_for_shadow_route','same_official_game_id_required','same_market_phase_required','same_line_required_for_spread_total_consensus','two_provider_consensus_required','shadow_consensus_evaluation_enabled','shadow_failover_routing_enabled']:
+              assert m[key] is True, key
+          for key in ['best_price_selection_enabled','provider_weighting_enabled','production_provider_consensus_enabled','production_provider_failover_enabled','network_io_added_by_step11d','production_api_wiring_added_by_step11d','production_runtime_wiring_added_by_step11d','persistence_schema_changed_by_step11d','production_database_writes_enabled','price_fabrication_allowed','fallback_price_fabrication_allowed']:
+              assert m[key] is False, key
+          for key, value in PROTECTED_INVARIANTS.items():
+              assert value is False and m[key] is False, key
+          print('MLB_STEP11D_PROVIDER_CONSENSUS_FAILOVER_SHADOW_POLICY_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step11D Python
+        run: python -m py_compile sports_api/mlb_step11d_provider_consensus_failover_shadow_policy_v1.py tests/test_mlb_step11d_provider_consensus_failover_shadow_policy_v1.py
+
+      - name: Run Step11D targeted tests
+        run: python -m pytest -q tests/test_mlb_step11d_provider_consensus_failover_shadow_policy_v1.py
+
+      - name: Run complete MLB regression including Step11D
+        run: python -m pytest -q tests/test_mlb_*.py
+
+      - name: Certify production FanDuel plus DraftKings shadow consensus and failover boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timedelta, timezone
+          import hashlib, json, os, requests
+          from sports_api.mlb_step10_final_persistence_freeze_v1 import FINAL_CERTIFICATION_MARKER as STEP10_MARKER, FINAL_FREEZE_STATUS as STEP10_STATUS
+          from sports_api.mlb_step11a_provider_contract_v1 import build_market_provider_game_snapshot
+          from sports_api.mlb_step11c_multi_provider_shadow_board_v1 import build_multi_provider_shadow_board
+          from sports_api.mlb_step11d_provider_consensus_failover_shadow_policy_v1 import FINAL_CERTIFICATION_MARKER, build_provider_consensus_failover_shadow_policy, validate_provider_consensus_failover_shadow_policy
+
+          base = os.environ['API_BASE_URL'].rstrip('/')
+          headers = {'Accept':'application/json','User-Agent':'KyreSportsMLBStep11DConsensusFailoverCertification/1.0','Cache-Control':'no-cache'}
+          def z(value): return value.astimezone(timezone.utc).isoformat().replace('+00:00','Z')
+          def canonical_z(value): return z(datetime.fromisoformat(str(value).replace('Z','+00:00')))
+          def make_snapshot(provider, gamepk, observed, collected, markets, source_hash):
+              cloned = deepcopy(markets)
+              prefix = 'fd' if provider == 'fanduel' else 'dk'
+              for name, market in cloned.items():
+                  market['market_id'] = f'{prefix}-step11d-{name}-{gamepk}'
+                  for field in ('away_selection_id','home_selection_id','over_selection_id','under_selection_id'):
+                      if field in market: market[field] = f'{prefix}-{field}-{gamepk}'
+              return build_market_provider_game_snapshot(
+                  provider_key=provider, provider_name='FanDuel' if provider == 'fanduel' else 'DraftKings',
+                  provider_event_id=f'{provider}-step11d-{gamepk}', official_game_id=gamepk,
+                  observed_at_utc=observed, source_collected_at_utc=collected, market_phase='PREGAME',
+                  transport='production_fanduel' if provider == 'fanduel' else 'certification_fixture_no_network',
+                  source_payload_sha256=source_hash, markets=cloned, source_complete=True,
+                  exact_official_game_id_verified=True, fuzzy_matching_used=False, synthetic_game_id_used=False,
+                  price_fabrication_used=False, step10_final_freeze_status=STEP10_STATUS,
+                  step10_final_certification_marker=STEP10_MARKER)
+
+          games = requests.get(base + '/api/v1/mlb/games/today', timeout=120, headers=headers); games.raise_for_status(); games_payload = games.json()
+          odds = requests.get(base + '/api/v1/mlb/odds', params={'max_events':30,'fully_priced_only':'true'}, timeout=120, headers=headers); odds.raise_for_status(); odds_payload = odds.json()
+          assert odds_payload.get('source') == 'FanDuel'
+          production_games = [g for g in (odds_payload.get('games') or []) if isinstance(g,dict) and g.get('fully_priced') is True]
+          if production_games:
+              game = production_games[0]; gamepk = int(game['official_game_id']); markets = game['markets']; collected = canonical_z(odds_payload['collected_at_utc'])
+              now = datetime.now(timezone.utc); collected_dt = datetime.fromisoformat(collected.replace('Z','+00:00'))
+              if now < collected_dt: now = collected_dt
+              observed = z(now); fd_hash = hashlib.sha256(json.dumps(odds_payload,sort_keys=True,separators=(',',':')).encode()).hexdigest(); fanduel_source = 'production'
+          else:
+              gamepk = 999001; now = datetime.now(timezone.utc); observed = z(now); collected = observed; fanduel_source = 'fixture_no_production_fully_priced_game'
+              markets = {
+                  'moneyline': {'market_id':'fixture-ml','market_time_utc':None,'away_odds':110,'home_odds':-130,'away_selection_id':'a1','home_selection_id':'h1'},
+                  'run_line': {'market_id':'fixture-rl','market_time_utc':None,'away_line':1.5,'away_odds':-105,'home_line':-1.5,'home_odds':-115,'away_selection_id':'a2','home_selection_id':'h2'},
+                  'total': {'market_id':'fixture-t','market_time_utc':None,'line':8.5,'over_odds':-110,'under_odds':-110,'over_selection_id':'o','under_selection_id':'u'}}
+              fd_hash = hashlib.sha256(b'fd-step11d-fixture').hexdigest()
+          fanduel = make_snapshot('fanduel',gamepk,observed,collected,markets,fd_hash)
+          draftkings = make_snapshot('draftkings',gamepk,observed,observed,markets,hashlib.sha256(b'dk-step11d-no-network-fixture').hexdigest())
+          board = build_multi_provider_shadow_board([fanduel,draftkings],assembled_at_utc=observed)
+          policy = build_provider_consensus_failover_shadow_policy(board,evaluated_at_utc=observed,max_age_seconds=180)
+          validation = validate_provider_consensus_failover_shadow_policy(policy); assert validation['policy_valid'] is True, validation
+          assert policy['consensus_ready_market_count'] == 3 and policy['shadow_failover_candidate_count'] == 0
+          stale_time = z(datetime.fromisoformat(observed.replace('Z','+00:00')) - timedelta(seconds=181))
+          stale_fd = make_snapshot('fanduel',gamepk,stale_time,stale_time,markets,hashlib.sha256(b'fd-step11d-stale-fixture').hexdigest())
+          fail_board = build_multi_provider_shadow_board([stale_fd,draftkings],assembled_at_utc=observed)
+          fail_policy = build_provider_consensus_failover_shadow_policy(fail_board,evaluated_at_utc=observed,max_age_seconds=180)
+          assert fail_policy['shadow_failover_candidate_count'] == 3
+          assert all(m['shadow_route_provider'] == 'draftkings' for m in fail_policy['groups'][0]['markets'])
+          assert fail_policy['production_provider_failover_used'] is False
+          evidence = {'production_schedule_game_count':games_payload.get('game_count',0),'production_fanduel_fully_priced_game_count':odds_payload.get('game_count',0),'fanduel_shadow_source':fanduel_source,'two_provider_consensus_ready_market_count':policy['consensus_ready_market_count'],'shadow_failover_candidate_market_count':fail_policy['shadow_failover_candidate_count'],'live_draftkings_network_calls':0,'fake_prices_built':0,'best_price_selection_enabled':False,'production_provider_consensus_enabled':False,'production_provider_failover_enabled':False,'production_runtime_changes':0,'production_database_writes':0}
+          print(json.dumps(evidence,sort_keys=True))
+          print('MLB_STEP11D_TWO_PROVIDER_NO_VIG_CONSENSUS_GREEN')
+          print('MLB_STEP11D_STALE_PRIMARY_SHADOW_FAILOVER_GREEN')
+          print('MLB_STEP11D_ZERO_PRICE_FABRICATION_GREEN')
+          print('MLB_STEP11D_ZERO_BEST_PRICE_SELECTION_GREEN')
+          print('MLB_STEP11D_ZERO_PRODUCTION_CONSENSUS_GREEN')
+          print('MLB_STEP11D_ZERO_PRODUCTION_FAILOVER_GREEN')
+          print('MLB_STEP11D_ZERO_PRODUCTION_RUNTIME_WIRING_GREEN')
+          print('MLB_STEP11D_ZERO_PRODUCTION_DATABASE_WRITES_GREEN')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY

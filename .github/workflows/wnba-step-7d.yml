@@ -1,0 +1,157 @@
+name: WNBA Step 7D Render Supabase wiring
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sports_api/tools/wnba_step7d_render_supabase_wiring.py'
+      - 'sports_api/tests/test_wnba_step7d_render_supabase_wiring.py'
+      - '.github/workflows/wnba-step-7d.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7d-render-supabase
+  cancel-in-progress: false
+
+jobs:
+  wire-render-supabase:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+      WNBA_KYRE_SUPABASE_URL: ${{ secrets.WNBA_KYRE_SUPABASE_URL }}
+      WNBA_KYRE_SUPABASE_SECRET_KEY: ${{ secrets.WNBA_KYRE_SUPABASE_SECRET_KEY }}
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_STEP6J_CANARY_ENABLED: 'false'
+    steps:
+      - name: Checkout Step 7D operator revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Confirm server credentials without exposing them
+        shell: bash
+        run: |
+          test -n "$RENDER_API_KEY"
+          test "${#RENDER_API_KEY}" -ge 20
+          test -n "$WNBA_KYRE_SUPABASE_URL"
+          test -n "$WNBA_KYRE_SUPABASE_SECRET_KEY"
+          test "${#WNBA_KYRE_SUPABASE_SECRET_KEY}" -ge 20
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          echo 'Step 7D credentials are present; secret values not printed.'
+
+      - name: Compile Step 7D operator
+        run: |
+          python -m py_compile sports_api/tools/wnba_step7d_render_supabase_wiring.py
+          python -m py_compile sports_api/tests/test_wnba_step7d_render_supabase_wiring.py
+
+      - name: Run Step 7D fail-closed tests
+        run: python -m unittest sports_api.tests.test_wnba_step7d_render_supabase_wiring
+
+      - name: Prove Render source branch is still frozen at Step 7B
+        shell: bash
+        run: |
+          git fetch origin refs/heads/wnba-production-7c-20260827:refs/remotes/origin/wnba-production-7c-20260827 --force
+          ACTUAL="$(git rev-parse refs/remotes/origin/wnba-production-7c-20260827)"
+          EXPECTED='12b9a0bb21e72f16282f562d848673222d48c7f2'
+          test "$ACTUAL" = "$EXPECTED"
+          echo "Frozen Render source verified: $EXPECTED"
+
+      - name: Wire Render to Supabase and verify live readiness
+        shell: bash
+        run: |
+          mkdir -p .step7d
+          python -m sports_api.tools.wnba_step7d_render_supabase_wiring > .step7d/render-supabase-wiring.json
+
+      - name: Verify sanitized Step 7D evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          path = Path('.step7d/render-supabase-wiring.json')
+          raw = path.read_text(encoding='utf-8')
+          assert os.environ['RENDER_API_KEY'] not in raw
+          assert os.environ['WNBA_KYRE_SUPABASE_SECRET_KEY'] not in raw
+
+          evidence = json.loads(raw)
+          assert evidence['wiring_complete'] is True
+          assert evidence['state'] == 'wnba_render_supabase_wired_preactivation'
+          assert evidence['render']['service_url'] == 'https://kyre-sports-api.onrender.com'
+          assert evidence['render']['deploy_status'] == 'live'
+          assert evidence['render']['deployed_revision'] == '12b9a0bb21e72f16282f562d848673222d48c7f2'
+          assert evidence['render']['plan'] == 'free'
+          assert evidence['render']['auto_deploy'] == 'no'
+
+          supabase = evidence['supabase']
+          assert supabase['project_host'] == 'jqajcdckalsfizbvngiu.supabase.co'
+          assert supabase['storage_backend'] == 'supabase'
+          assert supabase['render_configuration_ready'] is True
+          assert supabase['secret_configured_in_render'] is True
+          assert supabase['secret_value_returned'] is False
+
+          proof = supabase['read_proof']
+          assert proof['storage_read_performed'] is True
+          assert proof['storage_write_performed'] is False
+          assert proof['feed_size_bytes'] == 92290
+          assert proof['feed_sha256'] == '7d6363bc12e6ee2351938eb83eb636d89ec25e559fc199b6a904cdeec816b00e'
+          assert proof['marker_size_bytes'] == 1126
+          assert proof['marker_sha256'] == '64cf7739cdb095546b7954c35f14d7a4244672c3a8ef999f6cc25a93168f46d2'
+
+          live = evidence['live_api']
+          assert live['health_status'] == 'ok'
+          assert live['step6r_configuration_ready'] is True
+          assert live['step6t_configuration_ready'] is True
+          assert live['step6t_verification_requires_network'] is True
+          assert live['step6t_verification_is_read_only'] is True
+
+          safety = evidence['safety']
+          assert safety['production_runtime_enabled'] is False
+          assert safety['scheduler_authorized'] is False
+          assert safety['scheduler_started'] is False
+          assert safety['direct_sync_enabled'] is False
+          assert safety['reconciled_sync_enabled'] is False
+          assert safety['step6j_canary_enabled'] is False
+          assert safety['supabase_write_performed'] is False
+          assert safety['sportsbook_called'] is False
+          assert safety['monte_carlo_run'] is False
+          assert safety['wager_action_performed'] is False
+          assert safety['render_api_key_returned'] is False
+          assert safety['supabase_secret_returned'] is False
+
+          evidence['ci_freeze'] = {
+              'workflow_revision': os.environ['GITHUB_SHA'],
+              'workflow_run_id': int(os.environ['GITHUB_RUN_ID']),
+              'workflow_run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+              'deployed_step7b_revision': '12b9a0bb21e72f16282f562d848673222d48c7f2',
+          }
+          path.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print('Step 7D Render-Supabase evidence verified without exposing secrets.')
+          PY
+
+      - name: Upload Step 7D wiring evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7d-render-supabase-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step7d/render-supabase-wiring.json
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,195 @@
+name: WNBA Step 6P Phase 6 master certification
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+  pull_request:
+    paths:
+      - 'sports_api/**'
+      - '.github/workflows/wnba-step-6*.yml'
+      - '.github/workflows/wnba-step-6p.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6p-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phase6-master-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout exact Phase 6 certification revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6P master certification
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6p_phase6_certification.py \
+            sports_api/api/wnba_step6p_phase6_certification.py \
+            sports_api/main.py
+
+      - name: Run Step 6P deterministic certification tests
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove legacy Step 6A and 6B stay retired
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          a = Path('.github/workflows/wnba-step-6a-render-preflight.yml').read_text(encoding='utf-8').lower()
+          b = Path('.github/workflows/wnba-step-6b-approved-provision.yml').read_text(encoding='utf-8').lower()
+          assert 'retired' in a and 'sportsgameodds' in a and 'use wnba step 6c' in a
+          assert 'retired' in b and 'sportsgameodds' in b and 'step 6c' in b
+          print('Steps 6A/6B remain explicitly retired; Step 6C is the successor.')
+          PY
+
+      - name: Run Phase 6C through 6I deterministic chain
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_kyre_market_feed \
+            sports_api.tests.test_wnba_kyre_market_feed_routes \
+            sports_api.tests.test_wnba_render_provisioning_step6c \
+            sports_api.tests.test_wnba_draftkings_direct \
+            sports_api.tests.test_wnba_step6d_direct_integration \
+            sports_api.tests.test_wnba_draftkings_endpoint_discovery \
+            sports_api.tests.test_wnba_draftkings_endpoint_discovery_routes \
+            sports_api.tests.test_wnba_draftkings_prop_market_discovery \
+            sports_api.tests.test_wnba_draftkings_shadow_ingestion \
+            sports_api.tests.test_wnba_draftkings_shadow_ingestion_routes \
+            sports_api.tests.test_wnba_official_reconciliation \
+            sports_api.tests.test_wnba_official_reconciliation_routes \
+            sports_api.tests.test_wnba_official_team_page_reconciliation_live \
+            sports_api.tests.test_wnba_reconciled_direct_sync
+
+      - name: Run Phase 6J through 6O deterministic chain
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_step6j_canary_activation \
+            sports_api.tests.test_wnba_step6j_render_canary_contract \
+            sports_api.tests.test_wnba_step6k_activation_preflight \
+            sports_api.tests.test_wnba_step6l_production_feed_refresh \
+            sports_api.tests.test_wnba_step6m_scheduler_orchestration \
+            sports_api.tests.test_wnba_step6n_production_observability \
+            sports_api.tests.test_wnba_step6o_activation_rollback_package
+
+      - name: Run frozen scheduler and provider safety regressions
+        run: |
+          python -m unittest \
+            sports_api.tests.test_wnba_prop_feed_failover \
+            sports_api.tests.test_wnba_pregame_board_scheduler \
+            sports_api.tests.test_wnba_scheduler_cycle_lock \
+            sports_api.tests.test_wnba_production_runtime_readiness
+
+      - name: Prove Step 6P has no live executor
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          core = Path('sports_api/wnba_step6p_phase6_certification.py').read_text(encoding='utf-8').lower()
+          api = Path('sports_api/api/wnba_step6p_phase6_certification.py').read_text(encoding='utf-8').lower()
+          forbidden = (
+              'httpx.', 'requests.', 'subprocess.', 'urllib.request',
+              'write_kyre_market_feed(', 'sync_reconciled_draftkings_to_kyre_feed(',
+              'refresh_step6l_owned_market_feed(', 'run_step6m_background_cycle(',
+              'run_step6m_manual_cycle(', 'trigger_deploy(', 'create_service(',
+              'put_env_var(', 'run_monte_carlo(', 'place_wager(',
+          )
+          for token in forbidden:
+              assert token not in core, token
+              assert token not in api, token
+          assert '@router.get' in api
+          assert '@router.post' not in api
+          assert '@router.put' not in api
+          assert '@router.delete' not in api
+          print('Step 6P is GET-only, network-free, mutation-free, and activation-free.')
+          PY
+
+      - name: Prove active Phase 6 market path is paid-vendor-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          active = [
+              'sports_api/collectors/wnba_kyre_market_feed.py',
+              'sports_api/collectors/wnba_draftkings_direct.py',
+              'sports_api/wnba_step6d_direct_integration.py',
+              'sports_api/wnba_draftkings_endpoint_discovery.py',
+              'sports_api/wnba_draftkings_prop_market_discovery.py',
+              'sports_api/wnba_draftkings_shadow_ingestion.py',
+              'sports_api/wnba_official_reconciliation.py',
+              'sports_api/wnba_reconciled_direct_sync.py',
+              'sports_api/wnba_step6j_canary_activation.py',
+              'sports_api/wnba_step6k_activation_preflight.py',
+              'sports_api/wnba_step6l_production_feed_refresh.py',
+              'sports_api/wnba_step6m_scheduler_orchestration.py',
+              'sports_api/wnba_step6n_production_observability.py',
+              'sports_api/wnba_step6o_activation_rollback_package.py',
+              'sports_api/wnba_step6p_phase6_certification.py',
+          ]
+          joined = '\n'.join(Path(path).read_text(encoding='utf-8').lower() for path in active)
+          assert 'api.sportsgameodds.com' not in joined
+          assert 'collect_sportsgameodds_feed(' not in joined
+          print('Active Phase 6 runtime path contains no SportsGameOdds network or collector path.')
+          PY
+
+      - name: Build sanitized Phase 6 master-freeze evidence
+        shell: bash
+        run: |
+          mkdir -p .wnba-step6p-certification
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          import sports_api.wnba_step6p_phase6_certification as s
+
+          payload = {
+              'schema_version': s.SCHEMA_VERSION,
+              'phase': '6A-6P',
+              'certification_revision': os.environ['GITHUB_SHA'],
+              'baseline_step6o_revision': s.BASELINE_STEP6O_REVISION,
+              'frozen_anchors': {
+                  'step6i': s.FROZEN_STEP6I_REVISION,
+                  'corrected_step6m': s.CORRECTED_STEP6M_REVISION,
+                  'step6n': s.FROZEN_STEP6N_REVISION,
+                  'step6o': s.BASELINE_STEP6O_REVISION,
+              },
+              'step_inventory': [row['step'] for row in s.PHASE6_STEPS],
+              'legacy_steps_retired': ['6A', '6B'],
+              'active_market_path': 'kyre-owned',
+              'production_live': False,
+              'live_activation_deferred': True,
+              'render_provisioning_attempted_by_step6p': False,
+              'draftkings_called_by_step6p': False,
+              'feed_write_performed_by_step6p': False,
+              'scheduler_started_by_step6p': False,
+              'monte_carlo_run_by_step6p': False,
+              'wager_action_performed_by_step6p': False,
+              'phase6_deterministic_regressions_passed': True,
+          }
+          canonical = json.dumps(payload, sort_keys=True, separators=(',', ':')).encode('utf-8')
+          payload['master_freeze_evidence_sha256'] = hashlib.sha256(canonical).hexdigest()
+          Path('.wnba-step6p-certification/phase6-master-freeze.json').write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(payload, indent=2, sort_keys=True))
+          PY
+
+      - name: Upload Phase 6 master-freeze evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6p-phase6-master-freeze-${{ github.run_id }}
+          path: .wnba-step6p-certification/phase6-master-freeze.json
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,163 @@
+name: WNBA Step 6D direct DraftKings to Kyre market feed
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+  pull_request:
+    paths:
+      - 'sports_api/**'
+      - '.github/workflows/wnba-step-6d.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  step6d-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6D modules
+        run: |
+          python -m py_compile \
+            sports_api/collectors/wnba_draftkings_direct.py \
+            sports_api/wnba_step6d_direct_integration.py \
+            sports_api/api/wnba_draftkings_direct.py \
+            sports_api/tools/wnba_draftkings_direct_sync.py \
+            sports_api/main.py
+
+      - name: Run Step 6D direct collector tests
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_direct
+
+      - name: Run Step 6D integration and route tests
+        run: python -m unittest sports_api.tests.test_wnba_step6d_direct_integration
+
+      - name: Run Step 6C owned-feed regression
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed sports_api.tests.test_wnba_kyre_market_feed_routes
+
+      - name: Run frozen Step 5O regression
+        run: python -m unittest sports_api.tests.test_wnba_prop_feed_failover
+
+      - name: Run frozen Step 5P regression
+        run: python -m unittest sports_api.tests.test_wnba_pregame_board_scheduler
+
+      - name: Run frozen Step 5R regression
+        run: python -m unittest sports_api.tests.test_wnba_production_runtime_readiness
+
+      - name: Prove Step 6D does not use a paid odds vendor or sportsbook account
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          active = [
+              Path('sports_api/collectors/wnba_draftkings_direct.py'),
+              Path('sports_api/wnba_step6d_direct_integration.py'),
+              Path('sports_api/api/wnba_draftkings_direct.py'),
+              Path('sports_api/tools/wnba_draftkings_direct_sync.py'),
+          ]
+          joined = '\n'.join(path.read_text(encoding='utf-8') for path in active).lower()
+          assert 'api.sportsgameodds.com' not in joined
+          assert 'sportsgameodds_api_key' not in joined
+          assert 'password' not in Path('sports_api/tools/wnba_draftkings_direct_sync.py').read_text(encoding='utf-8').lower()
+          assert 'post(' not in Path('sports_api/collectors/wnba_draftkings_direct.py').read_text(encoding='utf-8').lower()
+          print('Step 6D direct path is paid-odds-vendor-free, account-session-free, and sportsbook-GET-only.')
+          PY
+
+  publish-tested-step6d-image:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: step6d-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Resolve Step 6D immutable release identity
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          SHORT_SHA="${REVISION:0:12}"
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          RELEASE_ID="wnba-step6d-$SHORT_SHA"
+          echo "WNBA_STEP6D_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6D_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP6D_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        shell: bash
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish exact Step 6D image
+        shell: bash
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$WNBA_STEP6D_REVISION" \
+            --build-arg WNBA_RELEASE_ID="$WNBA_STEP6D_RELEASE_ID" \
+            --metadata-file /tmp/wnba-step6d-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$WNBA_STEP6D_REPOSITORY:$WNBA_STEP6D_RELEASE_ID" \
+            -t "$WNBA_STEP6D_REPOSITORY:$WNBA_STEP6D_REVISION" \
+            --push .
+
+      - name: Freeze Step 6D digest and write sanitized handoff
+        shell: bash
+        run: |
+          mkdir -p .wnba-step6d-release
+          python - <<'PY'
+          import json, os, pathlib, re
+          meta = json.load(open('/tmp/wnba-step6d-build-metadata.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid image digest: {digest!r}')
+          image = f"{os.environ['WNBA_STEP6D_REPOSITORY']}@{digest}"
+          report = {
+              'schema_version': 'wnba_step_6d_release_handoff_v1',
+              'release_id': os.environ['WNBA_STEP6D_RELEASE_ID'],
+              'revision': os.environ['WNBA_STEP6D_REVISION'],
+              'immutable_image_ref': image,
+              'market_provider_mode': 'kyre',
+              'direct_sportsbook_adapter': 'draftkings',
+              'direct_sync_default_enabled': False,
+              'exact_endpoint_configuration_required': True,
+              'sportsgameodds_required': False,
+              'sportsbook_account_required': False,
+              'sportsbook_http_method': 'GET',
+              'production_runtime_enabled': False,
+              'render_provisioning_attempted': False,
+              'sportsbook_called_in_ci': False,
+              'monte_carlo_run': False,
+          }
+          pathlib.Path('.wnba-step6d-release/release-handoff.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          pathlib.Path('.wnba-step6d-release/PUBLISHED_IMAGE_REF.txt').write_text(image + '\n', encoding='utf-8')
+          print(image)
+          PY
+
+      - name: Upload Step 6D sanitized release handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6d-release-${{ github.run_id }}
+          path: .wnba-step6d-release/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

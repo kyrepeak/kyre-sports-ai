@@ -1,0 +1,80 @@
+name: WNBA Step 6J read-only Render inventory
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - '.github/step6j_render_inventory_request.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6j-render-inventory
+  cancel-in-progress: false
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: wnba-render-staging
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout exact diagnostic revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+      - name: Verify inventory probe is mutation-free
+        shell: bash
+        run: |
+          python -m py_compile sports_api/tools/wnba_step6j_render_inventory.py
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('sports_api/tools/wnba_step6j_render_inventory.py').read_text(encoding='utf-8').lower()
+          forbidden = ('put_env_var(', 'trigger_deploy(', 'create_service(', 'create_registry_credential(', 'delete', 'patch', 'post')
+          for token in forbidden:
+              assert token not in text, token
+          print('Inventory probe verified GET-only and mutation-free.')
+          PY
+      - name: Confirm Render read credential without exposing it
+        shell: bash
+        run: |
+          test -n "$RENDER_API_KEY"
+          echo 'Render read credential is present.'
+      - name: Read sanitized Render inventory
+        shell: bash
+        run: |
+          mkdir -p .wnba-step6j-inventory
+          python -m sports_api.tools.wnba_step6j_render_inventory \
+            --output .wnba-step6j-inventory/render-inventory.json
+      - name: Verify diagnostic safety contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('.wnba-step6j-inventory/render-inventory.json').read_text(encoding='utf-8'))
+          safety = report['safety']
+          assert safety['render_requests'] == 'GET only'
+          assert safety['render_mutation_performed'] is False
+          assert safety['feed_write_performed'] is False
+          assert safety['secret_values_returned'] is False
+          assert safety['scheduler_started'] is False
+          assert safety['monte_carlo_run'] is False
+          assert safety['wager_action_performed'] is False
+          print('Read-only Step 6J inventory safety verified.')
+          PY
+      - name: Upload sanitized inventory evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6j-render-inventory-${{ github.run_id }}
+          path: .wnba-step6j-inventory/render-inventory.json
+          if-no-files-found: error
+          retention-days: 7

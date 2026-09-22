@@ -1,0 +1,68 @@
+{
+  "access_boundary": {
+    "anon_schema_create": false,
+    "anon_schema_usage": false,
+    "authenticated_schema_create": false,
+    "authenticated_schema_usage": false,
+    "kyre_runtime_security_advisor_finding_count": 0,
+    "postgres_schema_create": true,
+    "postgres_schema_usage": true,
+    "service_role_schema_create": false,
+    "service_role_schema_usage": false
+  },
+  "activation_boundary": {
+    "automatic_restart_activated": false,
+    "background_daemon_started": false,
+    "background_thread_started": false,
+    "global_persistence_runtime_activated": false,
+    "production_runtime_activated": false,
+    "public_persistence_api_exposed": false,
+    "supabase_rest_write_path_enabled": false,
+    "wagering_enabled": false
+  },
+  "data_type": "wnba_step15c_final_live_persistence_freeze_evidence",
+  "evidence_content_sha256": "5b022af580295f9ad863e875493ba6f6620f71bf48cd0ce04f032f68a3d47ce4",
+  "frozen_lineage": {
+    "step14_release_content_sha256": "70082ab06a58ddee4dce567626ff83bc64e67bf89f04e5f402d820a414b25e59",
+    "step14d_frozen_sha": "d5a7378d94fb1aa51a6bc5fbf5e5c0384f34a9d6",
+    "step15a_certified_sha": "9cc30b96c4583f6b18306910ca4a7fb70d93c325",
+    "step15a_preflight_content_sha256": "33a2c431a202b791180d6cca0aa8ad12f46ca6d561749c5753918f90b145223e",
+    "step15b_certified_sha": "df509a78a30bc5f05980407cca07bc4a712bae4b",
+    "step15b_live_evidence_content_sha256": "d99bc29535f4bfc09a6d38858beb9b8faf8646fdf37b01aa3a86a9b18c4ff75c",
+    "step15b_smoke_content_sha256": "5b000b68c1b1f5acb569dfa788b94aea538b7895eb71c3e0e91ed34b0defcdbf"
+  },
+  "live_final_state": {
+    "migration_name": "wnba_step15a_install_frozen_step14_persistence_schema",
+    "migration_present": true,
+    "migration_version": "20260828191445",
+    "row_counts": {
+      "wnba_runtime_checkpoint_heads": 0,
+      "wnba_runtime_checkpoints": 0,
+      "wnba_runtime_leases": 0
+    },
+    "smoke_cleanup_reverified": true,
+    "tables_present": {
+      "wnba_runtime_checkpoint_heads": true,
+      "wnba_runtime_checkpoints": true,
+      "wnba_runtime_leases": true
+    }
+  },
+  "observed_at_utc": "2026-08-28T19:34:43.523000+00:00",
+  "schema_version": "wnba_step_15c_final_live_persistence_freeze_evidence_v1",
+  "scope_notes": {
+    "direct_psycopg_live_connection_certified": false,
+    "edge_function_has_kyre_runtime_access_certified": false,
+    "edge_function_is_part_of_persistence_release": false,
+    "live_sql_semantics_certified_by_step15b": true,
+    "unrelated_connector_probe_edge_function_present": true,
+    "unrelated_connector_probe_edge_function_slug": "noop-do-not-deploy"
+  },
+  "supabase_project": {
+    "name": "kyre-sports-ai-wnba",
+    "postgres_engine": "17",
+    "postgres_version": "17.6.1.165",
+    "ref": "jqajcdckalsfizbvngiu",
+    "region": "us-west-1",
+    "status": "ACTIVE_HEALTHY"
+  }
+}

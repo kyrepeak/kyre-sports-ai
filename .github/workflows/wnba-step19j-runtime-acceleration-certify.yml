@@ -1,0 +1,207 @@
+name: WNBA Step19J runtime acceleration certification
+
+on:
+  push:
+    branches: [wnba-step19j-step8-runtime-20260830]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step19j-runtime-acceleration-certify
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Compile changed runtime modules
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step7g_first_party_team_history_cup_safe.py \
+            sports_api/wnba_step19j_runtime_acceleration.py \
+            sports_api/api/wnba_step17b_runtime.py
+
+      - name: Frozen FanDuel regression in isolated process
+        run: python -m pytest -q tests/test_wnba_step11_fanduel_provider.py
+
+      - name: Frozen Step8 and Step12B regression in isolated process
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step8_projection_handoff.py \
+            tests/test_wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_context_adjustment.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step12b_live_runtime_assembly.py
+
+      - name: Step7G cache and transport regression in isolated process
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step7g_cup_exclusion.py \
+            tests/test_wnba_step7g_team_history.py \
+            tests/test_wnba_step7g_first_party_integration.py \
+            tests/test_wnba_step19d_history_transport_resilience.py
+
+      - name: Step19J unit regression in isolated process
+        run: python -m pytest -q tests/test_wnba_step19j_runtime_acceleration.py
+
+      - name: Step19 compatibility regression in isolated process
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19i_official_slate_transport.py \
+            tests/test_wnba_step19h_fanduel_hosted_transport.py \
+            tests/test_wnba_step19g_hosted_provider_trace.py \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py
+
+      - name: Hosted import proves complete wrapper chain and safety gates
+        run: |
+          python - <<'PY'
+          from sports_api import wnba_projection_input_snapshot as snap
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19g_hosted_provider_trace as s19g
+          from sports_api import wnba_step19j_runtime_acceleration as s19j
+          import sports_api.api.wnba_step17b_runtime
+          status=s19j.installation_status()
+          assert s12b.run_step12b_live_runtime_job is s19j.run_step12b_with_cycle_local_context
+          assert s19j._UPSTREAM_RUN_STEP12B is s19g.run_step12b_with_hosted_trace
+          assert snap.get_game_rest_travel_context is s19j.get_game_rest_travel_context_step19j
+          assert status['guardrails']['cache_scope']=='single_step12b_call_only'
+          assert status['guardrails']['monte_carlo_simulation_count_modified'] is False
+          assert status['guardrails']['readiness_relaxed'] is False
+          assert status['guardrails']['wagering_enabled'] is False
+          print('STEP19J_HOSTED_CHAIN_CERTIFIED',s19j.MODEL_VERSION)
+          PY
+
+      - name: Live cache-preservation and game-context speed proof
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step7g_first_party_schedule as schedule
+          from sports_api import wnba_step7g_first_party_integration as integration
+          from sports_api import wnba_step7g_first_party_team_history_cup_safe as cup
+          from sports_api import wnba_step19i_official_slate_transport as s19i
+          from sports_api import wnba_step19j_runtime_acceleration as s19j
+
+          s19i.install_step19i_official_slate_transport()
+          integration.install_step7g_first_party_integration(os.environ)
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          daily=schedule.verify_step7g_daily_slate_dataset(slate,2026)
+          games=daily.get('games') or []
+          if not games:
+              raise SystemExit('official current slate has no games for cache certification')
+          game=games[0]
+          game_id=str(game.get('game_id') or '')
+          team_key=((game.get('away') or {}).get('team_key') or (game.get('home') or {}).get('team_key'))
+          if not game_id or not team_key:
+              raise SystemExit('official slate game identity missing')
+
+          t=time.perf_counter(); first=cup.get_first_party_team_game_log_dataset(team_key,2026); t1=time.perf_counter()-t
+          # This exact idempotent reinstall used to clear the valid history cache.
+          cup.install_exact_cup_exclusion()
+          t=time.perf_counter(); second=cup.get_first_party_team_game_log_dataset(team_key,2026); t2=time.perf_counter()-t
+          if second.get('cache_hit') is not True:
+              raise SystemExit('idempotent Cup-safe install still invalidates team-history cache')
+
+          token=s19j._ACTIVE_GAME_CACHE.set({})
+          try:
+              t=time.perf_counter(); rest1=s19j.get_game_rest_travel_context_step19j(game_id,2026); r1=time.perf_counter()-t
+              t=time.perf_counter(); rest2=s19j.get_game_rest_travel_context_step19j(game_id,2026); r2=time.perf_counter()-t
+          finally:
+              s19j._ACTIVE_GAME_CACHE.reset(token)
+          if rest1 != rest2:
+              raise SystemExit('cycle-local game context changed returned content')
+          if s19j._TOTAL_REST_MISSES < 1 or s19j._TOTAL_REST_HITS < 1:
+              raise SystemExit('cycle-local game context cache did not record miss/hit')
+          summary={'slate':slate,'game_id':game_id,'team_key':team_key,'history_first_seconds':round(t1,3),'history_second_seconds':round(t2,3),'history_second_cache_hit':second.get('cache_hit'),'rest_first_seconds':round(r1,3),'rest_second_seconds':round(r2,3),'rest_hit_count':s19j._TOTAL_REST_HITS,'rest_miss_count':s19j._TOTAL_REST_MISSES}
+          print('STEP19J_LIVE_CACHE_PROOF',json.dumps(summary,sort_keys=True))
+          print('STEP19J_LIVE_CACHE_CERTIFIED')
+          PY
+
+      - name: Read-only live Step12B candidate proof when exact overlap is available
+        run: |
+          python - <<'PY'
+          import json, os, time
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19i_official_slate_transport as s19i
+          from sports_api import wnba_step19j_runtime_acceleration as s19j
+
+          s19i.install_step19i_official_slate_transport()
+          s19j.install_step19j_runtime_acceleration()
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          req=s12b.build_step12b_request(season=2026,slate_date=slate,evaluated_at=datetime.now(timezone.utc),previous_state=None,controller_policy={'provider_attempts':1})
+          start=time.perf_counter()
+          try:
+              out=s12b.run_step12b_live_runtime_job(req,env=os.environ)
+          except s12b.WNBAStep12LiveRuntimeNotReadyError as exc:
+              text=str(exc)
+              # A moving market can temporarily have no exact same-line overlap;
+              # that is market-not-ready, not a performance/provider regression.
+              if 'no exact same-line' not in text and 'could not build any certified converged' not in text:
+                  raise
+              print('STEP19J_LIVE_STEP12B_MARKET_NOT_READY',json.dumps({'slate':slate,'seconds':round(time.perf_counter()-start,3),'reason':text[:240]},sort_keys=True))
+              raise SystemExit(0)
+          elapsed=time.perf_counter()-start
+          assembly=out.get('projection_assembly') or {}
+          targets=assembly.get('targets') or []
+          if out.get('status')!='healthy' or out.get('health')!='healthy':
+              raise SystemExit('Step19J live Step12B result not healthy')
+          if not targets:
+              raise SystemExit('Step19J live Step12B built no distributions')
+          if any(int(row.get('simulations') or 0)!=s12b.CERTIFIED_SIMULATIONS for row in targets):
+              raise SystemExit('Step19J altered certified 5M simulation count')
+          if elapsed > 600:
+              raise SystemExit(f'Step19J GitHub live cycle exceeded 600 seconds: {elapsed:.1f}')
+          status=s19j.installation_status()
+          print('STEP19J_LIVE_STEP12B_CERTIFIED',json.dumps({'slate':slate,'seconds':round(elapsed,3),'built_distributions':len(targets),'simulations_each':s12b.CERTIFIED_SIMULATIONS,'cache_status':status.get('last_cycle')},sort_keys=True))
+          PY

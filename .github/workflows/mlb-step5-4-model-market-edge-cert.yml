@@ -1,0 +1,337 @@
+name: MLB Step5.4 model-market edge certification
+
+on:
+  push:
+    branches:
+      - mlb-step5-4-model-market-edge
+    paths:
+      - "sports_api/mlb_model_market_edge_v1.py"
+      - "mlb_daily_game_picks_model_market_edge_v1.py"
+      - "mlb_daily_game_picks_v217_guard.py"
+      - "tests/test_mlb_model_market_edge_v1.py"
+      - ".github/workflows/mlb-step5-4-model-market-edge-cert.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP5_4_BASE_SHA: f991596b93d62b95aac239121a525eb105ff705f
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+
+jobs:
+  certify-model-market-edge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert additive MLB-only change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP5_4_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP5_4_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          allowed='^(sports_api/mlb_model_market_edge_v1.py|mlb_daily_game_picks_model_market_edge_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_model_market_edge_v1.py|\.github/workflows/mlb-step5-4-model-market-edge-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP5_4_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          echo 'MLB_STEP5_4_CHANGE_SCOPE_OK'
+
+      - name: Prove V2.1.7 risk and lineup functions are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast
+          import os
+          import subprocess
+          from pathlib import Path
+
+          base = subprocess.check_output(
+              ['git', 'show', f'{os.environ["STEP5_4_BASE_SHA"]}:mlb_daily_game_picks_v217_guard.py'],
+              text=True,
+          )
+          head = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          protected = {
+              '_safe_int',
+              '_norm',
+              '_lineup_members_bulk',
+              '_official_snapshots_v217',
+              '_player_lineup_guard',
+              '_risk_context_v217_guard',
+          }
+
+          def dumps(source):
+              tree = ast.parse(source)
+              out = {}
+              for node in tree.body:
+                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in protected:
+                      out[node.name] = ast.dump(node, include_attributes=False)
+              return out
+
+          base_dump = dumps(base)
+          head_dump = dumps(head)
+          if base_dump != head_dump or set(head_dump) != protected:
+              raise SystemExit('STEP5_4_PROTECTED_V217_FUNCTION_DRIFT')
+          print('MLB_STEP5_4_V217_RISK_FUNCTIONS_FROZEN')
+          PY
+
+      - name: Assert comparison-only contract and Step5.3 dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/mlb_model_market_edge_v1.py').read_text(encoding='utf-8')
+          presentation = Path('mlb_daily_game_picks_model_market_edge_v1.py').read_text(encoding='utf-8')
+          guard = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          combined = core + '\n' + presentation + '\n' + guard
+
+          forbidden_matchers = ('difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz')
+          bad_matchers = [token for token in forbidden_matchers if token in combined]
+          if bad_matchers:
+              raise SystemExit('STEP5_4_HEURISTIC_MATCHER_PRESENT: ' + ','.join(bad_matchers))
+
+          forbidden_writes = (
+              'c["probability"] =', "c['probability'] =",
+              'c["score"] =', "c['score'] =",
+              'c["projection"] =', "c['projection'] =",
+              'candidate["probability"] =', "candidate['probability'] =",
+              'candidate["score"] =', "candidate['score'] =",
+              'candidate["projection"] =', "candidate['projection'] =",
+          )
+          bad_writes = [token for token in forbidden_writes if token in presentation or token in guard]
+          if bad_writes:
+              raise SystemExit('STEP5_4_PRODUCTION_FIELD_WRITE_PRESENT: ' + ','.join(bad_writes))
+
+          required = (
+              'import mlb_daily_game_picks_market_probability_v1 as step53',
+              'step53.install_market_probability_layer(games_df, payload=payload)',
+              'model_market_edge(',
+              'comparison_only',
+              'expected_value_per_unit',
+              'model_fair_american_odds',
+              'install_model_market_edge_layer(games_df)',
+              'Pick Strength',
+          )
+          missing = [token for token in required if token not in combined]
+          if missing:
+              raise SystemExit('STEP5_4_CONTRACT_TOKEN_MISSING: ' + ' | '.join(missing))
+
+          if 'from mlb_daily_game_picks_model_market_edge_v1 import install_model_market_edge_layer' not in guard:
+              raise SystemExit('STEP5_4_ACTIVE_GUARD_IMPORT_MISSING')
+
+          print('MLB_STEP5_4_COMPARISON_ONLY_CONTRACT_OK')
+          PY
+
+      - name: Prove frozen app ancestry still routes Daily Picks to active V2.1.7 guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          ancestor = subprocess.check_output(
+              ['git', 'show', '6fb976a9e20c96eb68b71ad0d3511e3be1734292:app.py'],
+              text=True,
+          )
+          required = (
+              'old = "from mlb_daily_game_picks_v198 import render_daily_game_picks"',
+              'new = "from mlb_daily_game_picks_v217_guard import render_daily_game_picks"',
+          )
+          missing = [token for token in required if token not in ancestor]
+          if missing:
+              raise SystemExit('STEP5_4_ACTIVE_ROUTE_ANCESTRY_DRIFT: ' + ' | '.join(missing))
+          print('MLB_STEP5_4_ACTIVE_ROUTE_CONFIRMED')
+          PY
+
+      - name: Compile Step5.4 Python files
+        run: |
+          python -m py_compile \
+            sports_api/mlb_model_market_edge_v1.py \
+            mlb_daily_game_picks_model_market_edge_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            tests/test_mlb_model_market_edge_v1.py
+
+      - name: Run deterministic edge and EV regression suite
+        run: python -m pytest -q tests/test_mlb_model_market_edge_v1.py
+
+      - name: Certify live FanDuel model-vs-market derivation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import math
+          import os
+          import urllib.request
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_market_probability_v1 import derive_market_probability_contexts
+          from sports_api.mlb_model_market_edge_v1 import (
+              MLBModelMarketEdgeError,
+              model_market_edge,
+          )
+
+          req = urllib.request.Request(
+              os.environ['PRODUCTION_ODDS_URL'],
+              headers={
+                  'Accept': 'application/json',
+                  'User-Agent': 'KyreSportsStep5-4Cert/1.0',
+              },
+              method='GET',
+          )
+          with urllib.request.urlopen(req, timeout=35) as response:
+              status = int(response.status)
+              payload = json.loads(response.read(2_000_000).decode('utf-8'))
+
+          if status != 200:
+              raise SystemExit(f'STEP5_4_PRODUCTION_HTTP_{status}')
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('STEP5_4_BAD_PRODUCTION_DATA_TYPE')
+          if payload.get('schema_version') != 1:
+              raise SystemExit('STEP5_4_BAD_PRODUCTION_SCHEMA')
+          if payload.get('source') != 'FanDuel':
+              raise SystemExit('STEP5_4_BAD_PRODUCTION_SOURCE')
+          games = payload.get('games') or []
+          if not games:
+              raise SystemExit('STEP5_4_NO_CURRENT_PRODUCTION_MARKET_GAMES')
+
+          model_rows = [{'game_pk': game.get('official_game_id')} for game in reversed(games)]
+          step52 = attach_live_market_context(model_rows, games)
+          step53 = derive_market_probability_contexts(step52)
+          if step52.get('attached_count') != len(games):
+              raise SystemExit('STEP5_4_STEP52_ATTACH_COUNT_MISMATCH')
+          if step53.get('derived_context_count') != len(games):
+              raise SystemExit('STEP5_4_STEP53_DERIVED_COUNT_MISMATCH')
+          if step53.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP5_4_STEP53_FALLBACK_WAS_USED')
+
+          derived_count = 0
+          positive_edges = 0
+          negative_edges = 0
+
+          def offered_profit(odds):
+              odds = float(odds)
+              return odds / 100.0 if odds > 0 else 100.0 / (-odds)
+
+          def fair_odds(p):
+              return -(100.0 * p / (1.0 - p)) if p >= 0.5 else 100.0 * (1.0 - p) / p
+
+          for game in games:
+              game_id = int(game['official_game_id'])
+              context = (step53.get('contexts_by_game_id') or {}).get(game_id)
+              if not context:
+                  raise SystemExit(f'STEP5_4_MISSING_STEP53_CONTEXT_{game_id}')
+
+              away = str(game.get('away_team') or f'AWAY_{game_id}')
+              home = str(game.get('home_team') or f'HOME_{game_id}')
+              scenarios = [
+                  ('Moneyline', 'away', 'Away', context['moneyline']['away']),
+                  ('Moneyline', 'home', 'Home', context['moneyline']['home']),
+                  ('Run Line', 'away', 'Away', context['run_line']['away']),
+                  ('Run Line', 'home', 'Home', context['run_line']['home']),
+                  ('Total', 'over', 'Over ' + str(context['total'].get('line')), context['total']['over']),
+                  ('Total', 'under', 'Under ' + str(context['total'].get('line')), context['total']['under']),
+              ]
+
+              for index, (market, selected_side, side_text, side_block) in enumerate(scenarios):
+                  market_p = float(side_block['no_vig_probability'])
+                  delta = 0.03 if index % 2 == 0 else -0.03
+                  model_p = min(0.95, max(0.05, market_p + delta))
+                  candidate = {
+                      'game_pk': game_id,
+                      'market': market,
+                      'probability': model_p,
+                      'side': side_text,
+                      'name': None,
+                      'team': None,
+                  }
+                  edge = model_market_edge(candidate, context, away_team=away, home_team=home)
+
+                  if edge.get('selected_side') != selected_side:
+                      raise SystemExit(f'STEP5_4_SIDE_RESOLUTION_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(edge['model_probability']), model_p, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_4_MODEL_PROBABILITY_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(edge['market_no_vig_probability']), market_p, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_4_MARKET_PROBABILITY_DRIFT_{game_id}_{market}_{selected_side}')
+                  expected_edge = model_p - market_p
+                  if not math.isclose(float(edge['edge_probability']), expected_edge, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_4_EDGE_MATH_DRIFT_{game_id}_{market}_{selected_side}')
+                  odds = float(side_block['odds'])
+                  expected_ev = model_p * offered_profit(odds) - (1.0 - model_p)
+                  if not math.isclose(float(edge['expected_value_per_unit']), expected_ev, rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_4_EV_MATH_DRIFT_{game_id}_{market}_{selected_side}')
+                  if not math.isclose(float(edge['model_fair_american_odds']), fair_odds(model_p), rel_tol=0.0, abs_tol=1e-12):
+                      raise SystemExit(f'STEP5_4_FAIR_ODDS_DRIFT_{game_id}_{market}_{selected_side}')
+                  if float(edge['market_odds']) != odds:
+                      raise SystemExit(f'STEP5_4_MARKET_ODDS_DRIFT_{game_id}_{market}_{selected_side}')
+                  if edge.get('comparison_only') is not True:
+                      raise SystemExit(f'STEP5_4_COMPARISON_ONLY_FLAG_DRIFT_{game_id}_{market}_{selected_side}')
+
+                  if expected_edge > 0:
+                      positive_edges += 1
+                  elif expected_edge < 0:
+                      negative_edges += 1
+                  derived_count += 1
+
+              player_prop = {
+                  'game_pk': game_id,
+                  'market': 'Home Run',
+                  'probability': 0.25,
+                  'side': 'Over 0.5',
+                  'name': 'Synthetic Player',
+              }
+              try:
+                  model_market_edge(player_prop, context, away_team=away, home_team=home)
+              except MLBModelMarketEdgeError:
+                  pass
+              else:
+                  raise SystemExit(f'STEP5_4_PLAYER_PROP_SHOULD_FAIL_CLOSED_{game_id}')
+
+          expected_count = len(games) * 6
+          if derived_count != expected_count:
+              raise SystemExit('STEP5_4_LIVE_DERIVED_COUNT_MISMATCH')
+          if positive_edges == 0 or negative_edges == 0:
+              raise SystemExit('STEP5_4_EDGE_SIGN_COVERAGE_MISSING')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'http_status': status,
+              'production_game_count': len(games),
+              'step5_2_attached_count': step52.get('attached_count'),
+              'step5_3_derived_context_count': step53.get('derived_context_count'),
+              'step5_4_comparisons_verified': derived_count,
+              'positive_edge_cases': positive_edges,
+              'negative_edge_cases': negative_edges,
+              'markets_compared': ['moneyline', 'run_line', 'total'],
+              'production_source': payload.get('source'),
+              'production_transport': payload.get('transport'),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'model_math_changed': False,
+              'pick_strength_changed': False,
+              'ranking_changed': False,
+              'player_prop_edge_fabricated': False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP5_4_MODEL_MARKET_EDGE_GREEN')
+          PY

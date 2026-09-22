@@ -1,0 +1,219 @@
+name: MLB Step5.2 live market context certification
+
+on:
+  push:
+    branches:
+      - mlb-step5-2-live-market-context
+    paths:
+      - sports_api/mlb_live_market_context_v1.py
+      - mlb_daily_game_picks_live_market_context_v1.py
+      - mlb_daily_game_picks_v217_guard.py
+      - tests/test_mlb_live_market_context_v1.py
+      - .github/workflows/mlb-step5-2-live-market-context-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-live-market-context:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      STEP5_2_BASE_SHA: 990b5d5ecffaa0730edd9403aacbf3caf7ba9505
+      PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert additive MLB-only change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP5_2_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP5_2_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          allowed='^(sports_api/mlb_live_market_context_v1.py|mlb_daily_game_picks_live_market_context_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_live_market_context_v1.py|\.github/workflows/mlb-step5-2-live-market-context-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP5_2_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          echo 'MLB_STEP5_2_CHANGE_SCOPE_OK'
+
+      - name: Assert exact-ID presentation contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          helper = Path('sports_api/mlb_live_market_context_v1.py').read_text(encoding='utf-8')
+          integration = Path('mlb_daily_game_picks_live_market_context_v1.py').read_text(encoding='utf-8')
+          guard = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          combined = helper + '\n' + integration + '\n' + guard
+
+          forbidden_matchers = ('difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz')
+          bad_matchers = [token for token in forbidden_matchers if token in combined]
+          if bad_matchers:
+              raise SystemExit('STEP5_2_HEURISTIC_MATCHER_PRESENT: ' + ','.join(bad_matchers))
+
+          required = (
+              'join_model_games_to_markets(model_games, market_games)',
+              '"fallback_matching_used": joined["fallback_matching_used"]',
+              'canonical_official_game_id(candidate.get("game_pk"))',
+              'install_live_market_context(games_df)',
+              'projection and Pick Strength unchanged',
+          )
+          missing = [token for token in required if token not in combined]
+          if missing:
+              raise SystemExit('STEP5_2_CONTRACT_TOKEN_MISSING: ' + ' | '.join(missing))
+
+          forbidden_writes = (
+              'c["probability"] =', "c['probability'] =",
+              'c["score"] =', "c['score'] =",
+              'c["projection"] =', "c['projection'] =",
+          )
+          bad_writes = [token for token in forbidden_writes if token in integration or token in guard]
+          if bad_writes:
+              raise SystemExit('STEP5_2_PRODUCTION_FIELD_WRITE_PRESENT: ' + ','.join(bad_writes))
+
+          print('MLB_STEP5_2_EXACT_ID_PRESENTATION_CONTRACT_OK')
+          PY
+
+      - name: Compile Step5.2 Python files
+        run: |
+          python -m py_compile \
+            sports_api/mlb_live_market_context_v1.py \
+            mlb_daily_game_picks_live_market_context_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            tests/test_mlb_live_market_context_v1.py
+
+      - name: Run deterministic live-market regression suite
+        run: python -m pytest -q tests/test_mlb_live_market_context_v1.py
+
+      - name: Certify exact market attachment against current production MLB identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+
+          req = urllib.request.Request(
+              os.environ['PRODUCTION_ODDS_URL'],
+              headers={
+                  'Accept': 'application/json',
+                  'User-Agent': 'KyreSportsStep5-2Cert/1.0',
+              },
+              method='GET',
+          )
+          with urllib.request.urlopen(req, timeout=35) as response:
+              status = int(response.status)
+              payload = json.loads(response.read(2_000_000).decode('utf-8'))
+
+          if status != 200:
+              raise SystemExit(f'STEP5_2_PRODUCTION_HTTP_{status}')
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+              raise SystemExit('STEP5_2_BAD_PRODUCTION_DATA_TYPE')
+          if payload.get('schema_version') != 1:
+              raise SystemExit('STEP5_2_BAD_PRODUCTION_SCHEMA')
+          if payload.get('source') != 'FanDuel':
+              raise SystemExit('STEP5_2_BAD_PRODUCTION_SOURCE')
+
+          games = payload.get('games') or []
+          if not games:
+              raise SystemExit('STEP5_2_NO_CURRENT_PRODUCTION_MARKET_GAMES')
+
+          model_identity_rows = [
+              {'game_pk': game.get('official_game_id')}
+              for game in reversed(games)
+          ]
+          attached = attach_live_market_context(model_identity_rows, games)
+
+          if attached.get('exact_id_matched_count') != len(games):
+              raise SystemExit('STEP5_2_LIVE_EXACT_ID_MATCH_COUNT_MISMATCH')
+          if attached.get('attached_count') != len(games):
+              raise SystemExit('STEP5_2_LIVE_MARKET_ATTACH_COUNT_MISMATCH')
+          if attached.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP5_2_FALLBACK_WAS_USED')
+          if attached.get('unmatched_model_game_ids') or attached.get('unmatched_market_game_ids'):
+              raise SystemExit('STEP5_2_LIVE_JOIN_HAS_UNMATCHED_VALID_IDS')
+
+          contexts = attached.get('contexts_by_game_id') or {}
+          for game in games:
+              game_id = int(game['official_game_id'])
+              context = contexts.get(game_id)
+              if not context:
+                  raise SystemExit(f'STEP5_2_MISSING_CONTEXT_{game_id}')
+              markets = game.get('markets') or {}
+              expected_ml = markets.get('moneyline') or {}
+              expected_rl = markets.get('run_line') or {}
+              expected_total = markets.get('total') or {}
+              if context.get('moneyline') != {
+                  'away_odds': expected_ml.get('away_odds'),
+                  'home_odds': expected_ml.get('home_odds'),
+              }:
+                  raise SystemExit(f'STEP5_2_MONEYLINE_VALUE_DRIFT_{game_id}')
+              if context.get('run_line') != {
+                  'away_line': expected_rl.get('away_line'),
+                  'away_odds': expected_rl.get('away_odds'),
+                  'home_line': expected_rl.get('home_line'),
+                  'home_odds': expected_rl.get('home_odds'),
+              }:
+                  raise SystemExit(f'STEP5_2_RUN_LINE_VALUE_DRIFT_{game_id}')
+              if context.get('total') != {
+                  'line': expected_total.get('line'),
+                  'over_odds': expected_total.get('over_odds'),
+                  'under_odds': expected_total.get('under_odds'),
+              }:
+                  raise SystemExit(f'STEP5_2_TOTAL_VALUE_DRIFT_{game_id}')
+
+          # A deliberately wrong ID cannot be rescued by identical display names.
+          first = games[0]
+          original = int(first['official_game_id'])
+          wrong = original + 90_000_000
+          mismatch = attach_live_market_context(
+              [{'game_pk': wrong, 'away_team': 'same-name', 'home_team': 'same-name'}],
+              [{
+                  **first,
+                  'away_team': {'name': 'same-name'},
+                  'home_team': {'name': 'same-name'},
+              }],
+          )
+          if mismatch.get('attached_count') != 0:
+              raise SystemExit('STEP5_2_FALSE_POSITIVE_ON_WRONG_ID')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'http_status': status,
+              'production_game_count': len(games),
+              'exact_id_matched_count': attached.get('exact_id_matched_count'),
+              'attached_count': attached.get('attached_count'),
+              'match_method': attached.get('match_method'),
+              'fallback_matching_used': attached.get('fallback_matching_used'),
+              'production_source': payload.get('source'),
+              'production_transport': payload.get('transport'),
+              'collected_at_utc': payload.get('collected_at_utc'),
+              'markets_attached': ['moneyline', 'run_line', 'total'],
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP5_2_LIVE_MARKET_CONTEXT_GREEN')
+          PY

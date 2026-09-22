@@ -1,0 +1,72 @@
+name: DevSystem API observability
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/main.py"
+      - "sports_api/observability_v1.py"
+      - "sports_api/api/health.py"
+      - "devsystem/production_contract_v1.py"
+      - "tests/test_sports_api_observability_v1.py"
+      - "tests/test_devsystem_production_contract_v1.py"
+      - ".github/workflows/devsystem-api-observability-v1.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/main.py"
+      - "sports_api/observability_v1.py"
+      - "sports_api/api/health.py"
+      - "devsystem/production_contract_v1.py"
+      - "tests/test_sports_api_observability_v1.py"
+      - "tests/test_devsystem_production_contract_v1.py"
+      - ".github/workflows/devsystem-api-observability-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devsystem-api-observability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-observability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install API observability test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile API observability entry points
+        run: |
+          python -m py_compile \
+            sports_api/observability_v1.py \
+            sports_api/api/health.py \
+            sports_api/main.py \
+            devsystem/production_contract_v1.py
+
+      - name: Prove API entrypoint installs observability
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path("sports_api/main.py").read_text(encoding="utf-8")
+          assert "from sports_api.observability_v1 import install_observability" in source
+          assert "install_observability(app)" in source
+          print("DEVSYSTEM_API_OBSERVABILITY_WIRING_GREEN")
+          PY
+
+      - name: Run API observability and deployment-contract tests
+        run: |
+          python -m pytest -q \
+            tests/test_sports_api_observability_v1.py \
+            tests/test_devsystem_production_contract_v1.py

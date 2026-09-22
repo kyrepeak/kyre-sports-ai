@@ -1,0 +1,17 @@
+.git
+.github
+.streamlit
+__pycache__
+*.py[cod]
+*.sqlite
+*.sqlite3
+*.db
+*.log
+*.csv
+*.pdf
+.env
+.env.*
+venv
+.venv
+node_modules
+checkpoints

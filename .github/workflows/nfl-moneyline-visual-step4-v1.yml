@@ -1,0 +1,293 @@
+name: NFL Moneyline Visual Step 4
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v17.py'
+      - 'streamlit_memory_lazy_router_v200.py'
+      - 'devsystem/task_ledgers/nfl-moneyline-visual-step4-v1.json'
+      - '.github/workflows/nfl-moneyline-visual-step4-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_moneyline_hub_v17.py'
+      - 'streamlit_memory_lazy_router_v200.py'
+      - 'devsystem/task_ledgers/nfl-moneyline-visual-step4-v1.json'
+      - '.github/workflows/nfl-moneyline-visual-step4-v1.yml'
+  workflow_dispatch:
+
+jobs:
+  visual-step4-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Step 4 layer
+        run: |
+          python -m py_compile nfl_moneyline_hub_v17.py streamlit_memory_lazy_router_v200.py app.py
+
+      - name: Verify Step 4 frozen contract and route
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          v17 = Path("nfl_moneyline_hub_v17.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v200.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_moneyline_hub_v16"' in v17
+          assert 'VISUAL_UPGRADE_STEP = 4' in v17
+          assert 'PRESENTATION_ONLY = True' in v17
+          assert 'MAY_MODIFY_PROJECTION = False' in v17
+          assert 'MAY_MODIFY_MARKET_MATH = False' in v17
+          assert 'SPORTSBOOK_MODEL_INFLUENCE = 0.0' in v17
+          assert 'STAKE_SIZING_ENABLED = False' in v17
+          assert 'MONTE_CARLO_SIMULATIONS = 5_000_000' in v17
+
+          assert '_FROZEN_STEP3_MATCHUP = prior._analysis_matchup_html' in v17
+          assert 'prior._analysis_matchup_html = _market_matchup_html' in v17
+          assert 'prior._step3_css = lambda base: _step4_css(original_step3_css(base))' in v17
+          assert 'data-nfl-moneyline-visual-step="4"' in v17
+
+          for marker in (
+              'MARKET / ODDS CONTROL PANEL',
+              'MARKET QUALITY',
+              'USABLE BOOKS',
+              'FRESHEST QUOTE',
+              'DISAGREEMENT',
+              'BEST AVAILABLE ML',
+              'NO-VIG CONSENSUS',
+              'LIVE PRICE BOARD',
+              'MODEL / MARKET FIREWALL',
+          ):
+              assert marker in v17, marker
+
+          assert 'import streamlit_memory_lazy_router_v199 as prior' in router
+          assert 'MONEYLINE_HUB = "nfl_moneyline_hub_v17"' in router
+          assert 'from streamlit_memory_lazy_router_v200 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v199 import record_bootstrap_import_ms, render_app' in app
+
+          banned = (
+              "_build_final(",
+              "_fit_calibration_model(",
+              "_build_game_output(",
+              "fetch_nfl_moneyline_markets(",
+              "random.",
+              "np.random",
+          )
+          for token in banned:
+              assert token not in v17, f"Step 4 unexpectedly owns analytical token: {token}"
+
+          print("NFL Moneyline visual Step 4 GREEN")
+          PY
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install targeted browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public NFL Moneyline Step 4
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          artifacts = Path("artifacts/nfl-moneyline-step4-public")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          no_games_marker = "No verified pregame NFL matchup is available for this date."
+
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(
+                  headless=True,
+                  args=["--disable-dev-shm-usage", "--no-sandbox"],
+              )
+              page = browser.new_page(viewport={"width": 1024, "height": 1366})
+              try:
+                  page.goto(base, wait_until="domcontentloaded", timeout=120000)
+                  frame, initial_scan = _find_app_frame(page)
+
+                  _choose(page, frame, 0, "NFL")
+                  nfl_market = frame.get_by_role(
+                      "combobox", name="🎯 NFL Market", exact=True
+                  )
+                  nfl_market.wait_for(state="visible", timeout=60000)
+                  _choose(page, frame, 1, "Moneyline")
+
+                  # Route readiness owns the transition proof. Do not preempt it
+                  # with an exact-text wait that can fail before Step 4 is evaluated.
+                  readiness_deadline = time.monotonic() + 45.0
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(
+                              f"MONEYLINE_RUNTIME: forbidden marker {forbidden}"
+                          )
+
+                      core_ready = all(
+                          marker in body
+                          for marker in ("NFL Moneyline", "Command Center", "PREGAME VERIFIED")
+                      )
+                      step2_style = frame.locator(
+                          'style[data-nfl-moneyline-visual-step="2"]'
+                      ).count()
+                      step3_style = frame.locator(
+                          'style[data-nfl-moneyline-visual-step="3"]'
+                      ).count()
+                      step4_style = frame.locator(
+                          'style[data-nfl-moneyline-visual-step="4"]'
+                      ).count()
+                      card_count = frame.locator("article.kml15-card").count()
+                      no_games = no_games_marker in body
+
+                      settled = (
+                          core_ready
+                          and step2_style >= 1
+                          and step3_style >= 1
+                          and step4_style >= 1
+                          and (card_count > 0 or no_games)
+                      )
+                      if settled:
+                          break
+
+                      if time.monotonic() >= readiness_deadline:
+                          raise BrowserQAFailure(
+                              "MONEYLINE_STEP4_ROUTE_READINESS: settled route did not appear; "
+                              f"core_ready={core_ready}; step2_style={step2_style}; "
+                              f"step3_style={step3_style}; step4_style={step4_style}; "
+                              f"card_count={card_count}; no_games={no_games}; "
+                              f"body start={body[:1800]!r}"
+                          )
+                      page.wait_for_timeout(500)
+
+                  structural = {}
+                  streak = 0
+                  if not no_games:
+                      deadline = time.monotonic() + 60.0
+                      while True:
+                          card = frame.locator("article.kml15-card").first
+                          market_count = card.locator(".kml17-market").count()
+                          health_count = card.locator(".kml17-health > div").count()
+                          side_count = card.locator(".kml17-side").count()
+                          best_count = card.locator(".kml17-price.hero").count()
+                          no_vig_count = card.locator(".kml17-price:not(.hero)").count()
+                          board_count = card.locator(".kml17-board").count()
+                          analysis_count = card.locator(".kml16-analysis").count()
+                          step2_team_count = card.locator(
+                              ".kml15-grid > section.kml15-team"
+                          ).count()
+                          forbidden_count = card.locator(
+                              'pre, code, [data-testid="stMarkdownPre"]'
+                          ).count()
+                          text = card.inner_text(timeout=5000)
+
+                          labels = (
+                              "MARKET / ODDS CONTROL PANEL",
+                              "MARKET QUALITY",
+                              "USABLE BOOKS",
+                              "FRESHEST QUOTE",
+                              "DISAGREEMENT",
+                              "BEST AVAILABLE ML",
+                              "NO-VIG CONSENSUS",
+                              "LIVE PRICE BOARD",
+                              "MODEL / MARKET FIREWALL",
+                          )
+                          labels_ok = all(label in text for label in labels)
+
+                          structural = {
+                              "market_count": market_count,
+                              "health_count": health_count,
+                              "side_count": side_count,
+                              "best_count": best_count,
+                              "no_vig_count": no_vig_count,
+                              "board_count": board_count,
+                              "analysis_count": analysis_count,
+                              "step2_team_count": step2_team_count,
+                              "forbidden_pre_code_count": forbidden_count,
+                              "labels_ok": labels_ok,
+                          }
+                          valid = (
+                              market_count == 1
+                              and health_count == 4
+                              and side_count == 2
+                              and best_count == 2
+                              and no_vig_count == 2
+                              and board_count == 1
+                              and analysis_count == 1
+                              and step2_team_count == 2
+                              and forbidden_count == 0
+                              and labels_ok
+                          )
+                          streak = streak + 1 if valid else 0
+                          if streak >= 2:
+                              break
+
+                          if time.monotonic() >= deadline:
+                              raise BrowserQAFailure(
+                                  "MONEYLINE_STEP4_STRUCTURE: Step 4 DOM did not "
+                                  "remain valid for two consecutive observations; "
+                                  f"structural={structural}; body start={text[:2500]!r}"
+                              )
+                          page.wait_for_timeout(500)
+
+                  result = {
+                      "status": "GREEN",
+                      "route": "NFL -> Moneyline",
+                      "step2_style_count": step2_style,
+                      "step3_style_count": step3_style,
+                      "step4_style_count": step4_style,
+                      "step4_render_state": (
+                          "NO_VERIFIED_PREGAME_GAMES" if no_games else "MARKET_ODDS_PANEL"
+                      ),
+                      "step4_card_count": card_count,
+                      "step4_structural": structural,
+                      "consecutive_valid_observations": streak,
+                      "initial_frame_scan_count": len(initial_scan),
+                  }
+                  (artifacts / "result.json").write_text(
+                      json.dumps(result, indent=2), encoding="utf-8"
+                  )
+                  page.screenshot(
+                      path=str(artifacts / "nfl_moneyline_step4_public_green.png"),
+                      full_page=True,
+                  )
+                  print("NFL_MONEYLINE_STEP4_PUBLIC_PRODUCTION_GREEN")
+                  print(json.dumps(result, indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload isolated Moneyline Step 4 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-moneyline-step4-isolated-public-${{ github.run_id }}
+          path: artifacts/nfl-moneyline-step4-public
+          if-no-files-found: warn
+          retention-days: 7

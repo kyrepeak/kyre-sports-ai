@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-final-production-proof-v164",
+  "status": "DONE",
+  "scope": "Close the final V164 Step 1 production proof by defining the missing presentation marker and preserving hidden DOM marker text through the production verifier.",
+  "trigger": "Production proof #22 attempt 2 timed out because the hidden V164 identity marker could not reliably render and the verifier discarded hidden DOM text after its deployment gate.",
+  "guardrails": {
+    "frozen_v163_edited_in_place": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

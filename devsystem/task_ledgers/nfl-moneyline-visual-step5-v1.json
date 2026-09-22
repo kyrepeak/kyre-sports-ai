@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "task_id": "nfl-moneyline-visual-step5-v1",
+  "status": "DONE",
+  "scope": "NFL Moneyline visual upgrade Step 5 only: responsive mobile/tablet polish and final production certification over frozen Steps 1-4.",
+  "baseline": {
+    "main_sha": "ee4541631a12cdfc1fc19c2bf2a39f7a168c1b8b",
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "step3_green_frozen": true,
+    "step4_green_frozen": true,
+    "frozen_product": "nfl_moneyline_hub_v17",
+    "frozen_router": "streamlit_memory_lazy_router_v200"
+  },
+  "acceptance": {
+    "responsive_step5_style_present": true,
+    "tablet_breakpoint_present": true,
+    "mobile_breakpoint_present": true,
+    "narrow_mobile_breakpoint_present": true,
+    "step2_command_center_preserved": true,
+    "step3_analysis_preserved": true,
+    "step4_market_panel_preserved": true,
+    "no_horizontal_overflow_public": true,
+    "public_tablet_proof": true,
+    "public_mobile_proof": true,
+    "legal_no_games_terminal_state": true
+  },
+  "guardrails": {
+    "markup_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "monte_carlo_logic_changed": false,
+    "sportsbook_transport_changed": false,
+    "market_math_changed": false,
+    "no_vig_math_changed": false,
+    "edge_ev_logic_changed": false,
+    "grading_logic_changed": false,
+    "identity_logic_changed": false,
+    "availability_logic_changed": false,
+    "stake_sizing_changed": false,
+    "other_markets_changed": false,
+    "other_sports_changed": false,
+    "monte_carlo_simulations": 5000000,
+    "sportsbook_projection_influence": 0
+  },
+  "responsive_contract": {
+    "tablet_max_width": 900,
+    "mobile_max_width": 640,
+    "narrow_mobile_max_width": 430,
+    "target_surfaces": [
+      "Step 1 command surface",
+      "Step 2 matchup command center",
+      "Step 3 analysis/evidence",
+      "Step 4 market/odds control panel"
+    ]
+  },
+  "freeze_rule": "After targeted branch proof, required merge gate, merge, and one successful post-merge public-production proof across declared responsive viewports, Step 5 and the full five-step Moneyline visual rebuild are GREEN + FROZEN.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

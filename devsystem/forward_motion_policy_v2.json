@@ -1,0 +1,72 @@
+{
+  "version": 2,
+  "mode": "strict_auto_continue_v2",
+  "retry_budgets": {
+    "deterministic-regression": 0,
+    "transient-capable": 1,
+    "unknown_evidence_actions": 1
+  },
+  "stagnation": {
+    "max_no_progress_actions": 3
+  },
+  "proof_rules": {
+    "reject_duplicate_without_changed_inputs": true,
+    "reject_same_root_cause_without_new_evidence": true,
+    "closed_checkpoint_requires_contradictory_evidence": true,
+    "max_active_blockers": 1,
+    "defer_unrelated_findings": true,
+    "terminal_task_is_authoritative": true,
+    "receipt_required_for_authoritative_action": true,
+    "receipt_single_use": true,
+    "checkpoint_transition_references_action_event": true
+  },
+  "override_rules": {
+    "allowed_source": "user_explicit",
+    "single_use": true,
+    "exact_action_only": true,
+    "cannot_disable_policy": true,
+    "cryptographic_human_identity_claim": false
+  },
+  "bootstrap_rules": {
+    "allowed_only_when_base_lacks_v2_policy": true,
+    "single_activation": true
+  },
+  "hard_boundaries": [
+    "material_scope_or_architecture_change",
+    "destructive_action",
+    "credential_or_secret_change",
+    "cost_impacting_infrastructure_change",
+    "material_product_behavior_choice",
+    "external_blocker_unresolvable_with_available_tools"
+  ],
+  "authorized_decisions": [
+    "AUTHORIZED",
+    "AUTHORIZED_NEW_HYPOTHESIS",
+    "AUTHORIZED_CONTROLLED_RETRY",
+    "AUTHORIZED_USER_OVERRIDE"
+  ],
+  "denied_decisions": [
+    "DENIED_LOOP",
+    "DENIED_STAGNATION",
+    "DENIED_BACKTRACK",
+    "DENIED_STALE_FAILURE",
+    "DENIED_CLOSED_CHECKPOINT",
+    "DENIED_UNAUTHORIZED_OVERRIDE",
+    "DENIED_UNAUTHORIZED_ACTION",
+    "DEFER_SIDE_QUEST",
+    "STOP_EXTERNAL_BLOCKER",
+    "TASK_COMPLETE"
+  ],
+  "progress_classes": [
+    "new_evidence",
+    "relevant_input_changed",
+    "root_cause_narrowed",
+    "blocker_resolved",
+    "blocker_deferred",
+    "checkpoint_closed",
+    "checkpoint_advanced",
+    "hypothesis_validated",
+    "hypothesis_falsified",
+    "no_progress"
+  ]
+}

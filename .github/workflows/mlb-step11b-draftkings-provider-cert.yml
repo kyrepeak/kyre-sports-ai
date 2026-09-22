@@ -1,0 +1,270 @@
+name: MLB Step11B DraftKings provider adapter certification
+
+on:
+  push:
+    branches:
+      - mlb-step11b-draftkings-provider-adapter
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-draftkings-provider-adapter:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      STEP11B_BASE_SHA: 733206c8fe8c0d219c5d76b8706eca652507de30
+      API_BASE_URL: https://kyre-sports-api.onrender.com
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step11B is exactly three-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP11B_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/collectors/mlb_draftkings_provider.py|tests/test_mlb_step11b_draftkings_provider.py|\.github/workflows/mlb-step11b-draftkings-provider-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP11B_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP11B_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP11B_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP11B_BASE_SHA"...HEAD
+          echo 'MLB_STEP11B_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove frozen runtime Step10 and Step11A remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP11B_BASE_SHA"...HEAD -- \
+            app.py \
+            engine.py \
+            history.py \
+            spread_engine.py \
+            live_game_hub_v182.py \
+            live_game_hub_v19.py \
+            live_game_hub_v191.py \
+            live_game_hub_v192.py \
+            live_game_hub_v1921.py \
+            mlb_live_hub_v193.py \
+            live_odds_feed.py \
+            mlb_step9c_live_state_consumer_v1.py \
+            mlb_step9e_live_market_consumer_v1.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py \
+            sports_api/database/mlb_live_snapshot_recovery.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11a_provider_contract_v1.py \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py
+          echo 'MLB_STEP11B_FROZEN_RUNTIME_STEP10_STEP11A_BYTE_IDENTICAL'
+
+      - name: Assert DraftKings adapter boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step9_final_freeze_v1 import PROTECTED_INVARIANTS
+          from sports_api.mlb_step11a_provider_contract_v1 import CONTRACT_STATUS, FINAL_CERTIFICATION_MARKER as STEP11A_MARKER
+          from sports_api.collectors.mlb_draftkings_provider import (
+              ADAPTER_STATUS, FINAL_CERTIFICATION_MARKER, STEP11B_BASE_MAIN_SHA, adapter_manifest,
+          )
+          m = adapter_manifest()
+          assert STEP11B_BASE_MAIN_SHA == '733206c8fe8c0d219c5d76b8706eca652507de30'
+          assert m['adapter_status'] == ADAPTER_STATUS
+          assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER
+          assert m['step11a_contract_status_required'] == CONTRACT_STATUS
+          assert m['step11a_final_certification_marker_required'] == STEP11A_MARKER
+          for key in ['public_get_only', 'explicit_endpoint_configuration_required', 'exact_provider_event_to_gamepk_map_required', 'shadow_adapter_only']:
+              assert m[key] is True, key
+          for key in ['default_unverified_endpoint_allowed', 'team_name_join_allowed', 'player_name_join_allowed', 'fuzzy_matching_allowed', 'synthetic_game_id_allowed', 'price_fabrication_allowed', 'fallback_price_fabrication_allowed', 'login_or_account_session_allowed', 'cookies_allowed', 'browser_automation_allowed', 'wager_actions_allowed', 'production_api_wiring_added_by_step11b', 'production_runtime_wiring_added_by_step11b', 'persistence_schema_changed_by_step11b', 'production_database_writes_enabled', 'provider_consensus_enabled_by_step11b', 'provider_failover_enabled_by_step11b']:
+              assert m[key] is False, key
+          for key, value in PROTECTED_INVARIANTS.items():
+              assert value is False and m[key] is False, key
+          print('MLB_STEP11B_DRAFTKINGS_ADAPTER_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step11B Python
+        run: |
+          python -m py_compile \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            tests/test_mlb_step11b_draftkings_provider.py
+
+      - name: Run Step11B targeted tests
+        run: python -m pytest -q tests/test_mlb_step11b_draftkings_provider.py
+
+      - name: Run complete certified MLB regression through Step11B
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py \
+            tests/test_mlb_step9b_live_game_state_collector_api.py \
+            tests/test_mlb_step9c_live_state_consumer_v1.py \
+            tests/test_mlb_step9d_live_inplay_market_collector_api.py \
+            tests/test_mlb_step9e_live_market_consumer_v1.py \
+            tests/test_mlb_step9_final_freeze_v1.py \
+            tests/test_mlb_step9g_postfreeze_handoff_v1.py \
+            tests/test_mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            tests/test_mlb_step10b_live_snapshot_store.py \
+            tests/test_mlb_step10c_live_snapshot_recovery.py \
+            tests/test_mlb_step10_final_persistence_freeze_v1.py \
+            tests/test_mlb_step11a_provider_contract_v1.py \
+            tests/test_mlb_step11b_draftkings_provider.py
+
+      - name: Certify shadow adapter and unchanged production boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+          import os
+          import requests
+
+          from sports_api.collectors.mlb_draftkings_provider import (
+              FINAL_CERTIFICATION_MARKER,
+              collect_draftkings_provider_snapshots,
+              describe_draftkings_provider,
+          )
+          from sports_api.mlb_step11a_provider_contract_v1 import validate_market_provider_game_snapshot
+
+          event_id = 'cert-dk-event'
+          gamepk = 999001
+          document = {
+              'events': [{'id': event_id}],
+              'markets': [
+                  {'id': 'm1', 'eventId': event_id, 'name': 'Moneyline', 'status': 'OPEN', 'inPlay': False},
+                  {'id': 'm2', 'eventId': event_id, 'name': 'Run Line', 'status': 'OPEN', 'inPlay': False},
+                  {'id': 'm3', 'eventId': event_id, 'name': 'Total Runs', 'status': 'OPEN', 'inPlay': False},
+              ],
+              'selections': [
+                  {'id': 'a1', 'marketId': 'm1', 'side': 'away', 'oddsAmerican': 110},
+                  {'id': 'h1', 'marketId': 'm1', 'side': 'home', 'oddsAmerican': -130},
+                  {'id': 'a2', 'marketId': 'm2', 'side': 'away', 'points': 1.5, 'oddsAmerican': -105},
+                  {'id': 'h2', 'marketId': 'm2', 'side': 'home', 'points': -1.5, 'oddsAmerican': -115},
+                  {'id': 'o3', 'marketId': 'm3', 'side': 'over', 'points': 8.5, 'oddsAmerican': -110},
+                  {'id': 'u3', 'marketId': 'm3', 'side': 'under', 'points': 8.5, 'oddsAmerican': -110},
+              ],
+          }
+          class Response:
+              status_code = 200
+              content = b'{}'
+              def json(self): return document
+          calls = []
+          def requester(url, **kwargs):
+              calls.append(url)
+              return Response()
+          result = collect_draftkings_provider_snapshots(
+              market_phase='PREGAME',
+              urls=['https://sportsbook.draftkings.com/api/certification-only'],
+              event_gamepk_map={event_id: gamepk},
+              requester=requester,
+              env={},
+              now_utc=datetime(2026, 9, 1, 17, 30, tzinfo=timezone.utc),
+          )
+          assert calls == ['https://sportsbook.draftkings.com/api/certification-only']
+          assert result['snapshot_count'] == 1
+          assert validate_market_provider_game_snapshot(result['snapshots'][0])['snapshot_valid'] is True
+          assert result['snapshots'][0]['fully_priced'] is True
+          assert result['price_fabrication_used'] is False
+          assert result['production_runtime_wiring'] is False
+          assert result['production_database_writes'] is False
+          print('MLB_STEP11B_DRAFTKINGS_FIXTURE_TRANSPORT_AND_NORMALIZATION_GREEN')
+
+          readiness = describe_draftkings_provider({})
+          assert readiness['ready'] is False
+          assert readiness['configured_url_count'] == 0
+          assert readiness['configured_event_gamepk_count'] == 0
+          print('MLB_STEP11B_NO_UNVERIFIED_DEFAULT_DRAFTKINGS_ENDPOINT_GREEN')
+
+          base = os.environ['API_BASE_URL'].rstrip('/')
+          headers = {'Accept': 'application/json', 'User-Agent': 'KyreSportsMLBStep11BCertification/1.0', 'Cache-Control': 'no-cache'}
+          games = requests.get(base + '/api/v1/mlb/games/today', timeout=120, headers=headers)
+          games.raise_for_status()
+          games_payload = games.json()
+          odds = requests.get(base + '/api/v1/mlb/odds', params={'max_events': 30, 'fully_priced_only': 'true'}, timeout=120, headers=headers)
+          odds.raise_for_status()
+          odds_payload = odds.json()
+          assert odds_payload.get('source') == 'FanDuel'
+          evidence = {
+              'production_schedule_game_count': games_payload.get('game_count', 0),
+              'production_fanduel_fully_priced_game_count': odds_payload.get('game_count', 0),
+              'draftkings_shadow_fixture_records': 1,
+              'live_draftkings_network_calls': 0,
+              'fake_provider_records': 0,
+              'production_runtime_changes': 0,
+              'production_database_writes': 0,
+              'production_provider_failover_enabled': False,
+          }
+          print(json.dumps(evidence, sort_keys=True))
+          print('MLB_STEP11B_EXACT_EVENT_GAMEPK_MAPPING_GREEN')
+          print('MLB_STEP11B_ZERO_PRICE_FABRICATION_GREEN')
+          print('MLB_STEP11B_ZERO_PRODUCTION_RUNTIME_WIRING_GREEN')
+          print('MLB_STEP11B_ZERO_PRODUCTION_DATABASE_WRITES_GREEN')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY

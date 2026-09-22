@@ -1,0 +1,182 @@
+name: WNBA Step 8E final FastAPI release freeze certification
+
+on:
+  push:
+    branches:
+      - wnba-step8-projection-contract-20260828
+    paths:
+      - 'sports_api/api/wnba_step8_projection.py'
+      - 'sports_api/main.py'
+      - 'sports_api/wnba_step8_release_freeze.py'
+      - 'tests/test_wnba_step8_fastapi_integration.py'
+      - 'sports_api/tools/wnba_step8e_final_release_freeze_cert.py'
+      - '.github/workflows/wnba-step-8e-final-release-freeze-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step8e-final-release-freeze-cert
+  cancel-in-progress: true
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+  WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+  WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+  WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+  WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+
+jobs:
+  freeze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Step 8 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert production OFF and isolated Step 8 flags
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'true'
+          test "$WNBA_STEP8_PROJECTION_HANDOFF_ENABLED" = 'true'
+          test "$WNBA_STEP8_CORE_PROJECTION_ENABLED" = 'true'
+          test "$WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED" = 'true'
+          test "$WNBA_STEP8_MONTE_CARLO_ENABLED" = 'true'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile complete frozen Step 8 stack
+        shell: bash
+        run: |
+          python -m py_compile sports_api/main.py
+          python -m py_compile sports_api/api/wnba_step8_projection.py
+          python -m py_compile sports_api/wnba_step8_release_freeze.py
+          python -m py_compile sports_api/wnba_step8_projection_handoff.py
+          python -m py_compile sports_api/wnba_step8_official_box_baseline.py
+          python -m py_compile sports_api/wnba_step8_core_projection.py
+          python -m py_compile sports_api/wnba_step8_context_adjustment.py
+          python -m py_compile sports_api/wnba_step8_joint_monte_carlo.py
+          python -m py_compile sports_api/tools/wnba_step8e_final_release_freeze_cert.py
+
+      - name: Run Step 8E FastAPI guards
+        run: PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Run all inherited Step 8 guards
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+
+      - name: Prove certified Step 8A through 8D code is unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8D_CERTIFIED_SHA='932e1baf05bf762cfb149de1f58be4f72bb7a526'
+          git fetch origin wnba-step8-projection-contract-20260828 --depth=500
+          git cat-file -e "$STEP8D_CERTIFIED_SHA^{commit}"
+          git diff --exit-code "$STEP8D_CERTIFIED_SHA" -- \
+            sports_api/wnba_step8_projection_handoff.py \
+            sports_api/wnba_step8_official_box_baseline.py \
+            sports_api/wnba_step8_core_projection.py \
+            sports_api/wnba_step8_context_adjustment.py \
+            sports_api/wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_projection_handoff.py \
+            tests/test_wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_core_projection.py \
+            tests/test_wnba_step8_context_adjustment.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            sports_api/tools/wnba_step8a_projection_handoff_cert.py \
+            sports_api/tools/wnba_step8b_official_box_baseline_cert.py \
+            sports_api/tools/wnba_step8b_core_projection_cert.py \
+            sports_api/tools/wnba_step8c_context_adjustment_cert.py \
+            sports_api/tools/wnba_step8d_distribution_surface_probe.py \
+            sports_api/tools/wnba_step8d_joint_monte_carlo_cert.py \
+            .github/workflows/wnba-step-8a-projection-handoff-cert.yml \
+            .github/workflows/wnba-step-8b-official-box-baseline-cert.yml \
+            .github/workflows/wnba-step-8b-core-projection-cert.yml \
+            .github/workflows/wnba-step-8c-context-adjustment-cert.yml \
+            .github/workflows/wnba-step-8d-distribution-surface-probe.yml \
+            .github/workflows/wnba-step-8d-joint-monte-carlo-cert.yml
+
+      - name: Prove only Step 8E integration/freeze files changed after certified Step 8D
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8D_CERTIFIED_SHA='932e1baf05bf762cfb149de1f58be4f72bb7a526'
+          git diff --name-only "$STEP8D_CERTIFIED_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/api/wnba_step8_projection.py|\
+              sports_api/main.py|\
+              sports_api/wnba_step8_release_freeze.py|\
+              tests/test_wnba_step8_fastapi_integration.py|\
+              sports_api/tools/wnba_step8e_final_release_freeze_cert.py|\
+              .github/workflows/wnba-step-8e-final-release-freeze-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step8D file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify frozen release contract constants
+        shell: bash
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step8_release_freeze as freeze
+          assert freeze.CERTIFIED_STEP8D_SHA == '932e1baf05bf762cfb149de1f58be4f72bb7a526'
+          assert freeze.DEFAULT_ENABLED is False
+          assert freeze.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert freeze.DEFAULT_SIMULATIONS == 5_000_000
+          assert freeze.DEFAULT_BATCH_SIZE == 250_000
+          assert all(value is False for value in freeze.SAFETY_CONTRACT.values())
+          print('STEP8_RELEASE_CONTRACT_STATIC_GUARDS_OK')
+          PY
+
+      - name: Live certify FastAPI default 5M projection probability endpoint and freeze
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step8e_final_release_freeze_cert
+
+      - name: Upload final Step 8 freeze certificate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step8e-final-release-freeze-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step8e-final-release-freeze-cert.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Re-assert production OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

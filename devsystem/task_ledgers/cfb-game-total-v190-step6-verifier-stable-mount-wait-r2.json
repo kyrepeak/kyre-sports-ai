@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v190-step6-verifier-stable-mount-wait-r2",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V190 verifier-only hotfix applied on top of current V189 official-embed/wake production verifier. V189 keeps three access paths and sleeping-app wake handling, but _wait_for_live_step6 still reloads the page during the mount wait, resetting Streamlit Cloud auth/session/iframe progress. Preserve every V189 access/wake feature and remove only the repeated reload so the same session can finish mounting. No product/data/model/router/render code changes.",
+  "proof_target": "Verifier must retain shell, official embed=true, embedded internal /~/+/ fallback, and wake handling; must not call page.reload() inside _wait_for_live_step6; must poll the same session every 2 seconds; and must keep strict READY, 100% coverage, exactly 12 total Step 6 tiles, exactly 12 ready tiles, no DATA LIMITED, sportsbook influence 0.0%, projection mutation OFF, and event/date persistence. One successful live production verifier pass completes Step 7 and ends the task.",
+  "internal_steps": {
+    "1": "Freeze all upstream GREEN layers and V189 access/wake behavior.",
+    "2": "Remove only the mount-resetting page.reload loop.",
+    "3": "Poll the existing Streamlit session every 2 seconds.",
+    "4": "Update verifier tests to preserve wake behavior while forbidding reload.",
+    "5": "Run dedicated verifier and DevSystem gates on a clean branch from current main.",
+    "6": "Merge and require one live READY/100%/12-of-12 pass, then TASK_COMPLETE."
+  }
+}

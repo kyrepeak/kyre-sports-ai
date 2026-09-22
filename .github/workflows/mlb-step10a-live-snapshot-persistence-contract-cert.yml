@@ -1,0 +1,297 @@
+name: MLB Step10A live snapshot persistence contract certification
+
+on:
+  push:
+    branches:
+      - mlb-step10a-durable-live-snapshot-persistence-contract
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step10a-live-snapshot-persistence-contract-cert
+  cancel-in-progress: false
+
+env:
+  STEP10A_BASE_SHA: 21e96c8fece99fc49feff0768d5cd9602f57afda
+  API_BASE_URL: https://kyre-sports-api.onrender.com
+
+jobs:
+  certify-live-snapshot-persistence-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step10A is exactly three-file contract-only MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP10A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py|tests/test_mlb_step10a_live_snapshot_persistence_contract_v1.py|\.github/workflows/mlb-step10a-live-snapshot-persistence-contract-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP10A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP10A_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP10A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP10A_BASE_SHA"...HEAD
+          echo 'MLB_STEP10A_THREE_FILE_CONTRACT_ONLY_SCOPE_OK'
+
+      - name: Prove complete frozen Step9 runtime remains byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP10A_BASE_SHA"...HEAD -- \
+            app.py \
+            engine.py \
+            history.py \
+            spread_engine.py \
+            live_game_hub_v182.py \
+            live_game_hub_v19.py \
+            live_game_hub_v191.py \
+            live_game_hub_v192.py \
+            live_game_hub_v1921.py \
+            mlb_live_hub_v193.py \
+            live_odds_feed.py \
+            mlb_step9c_live_state_consumer_v1.py \
+            mlb_step9e_live_market_consumer_v1.py \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py
+          echo 'MLB_STEP10A_FROZEN_STEP9_RUNTIME_BYTE_IDENTICAL'
+
+      - name: Assert Step9G prerequisite and Step10A contract manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step9_final_freeze_v1 import PROTECTED_INVARIANTS
+          from sports_api.mlb_step9g_postfreeze_handoff_v1 import (
+              FINAL_CERTIFICATION_MARKER as STEP9G_MARKER,
+              HANDOFF_STATUS as STEP9G_STATUS,
+          )
+          from sports_api.mlb_step10a_live_snapshot_persistence_contract_v1 import (
+              CONTRACT_STATUS,
+              FINAL_CERTIFICATION_MARKER,
+              STEP10A_BASE_MAIN_SHA,
+              persistence_contract_manifest,
+          )
+
+          m = persistence_contract_manifest()
+          assert STEP10A_BASE_MAIN_SHA == '21e96c8fece99fc49feff0768d5cd9602f57afda'
+          assert m['step10a_base_main_sha'] == STEP10A_BASE_MAIN_SHA
+          assert m['contract_status'] == CONTRACT_STATUS
+          assert m['final_certification_marker'] == FINAL_CERTIFICATION_MARKER
+          assert m['step9g_handoff_status_required'] == STEP9G_STATUS
+          assert m['step9g_handoff_marker_required'] == STEP9G_MARKER
+          assert m['database_writes_enabled_by_step10a'] is False
+          assert m['database_adapter_added_by_step10a'] is False
+          assert m['runtime_files_changed_by_step10a'] is False
+          assert m['append_only_required'] is True
+          assert m['overwrite_allowed'] is False
+          assert m['upsert_allowed'] is False
+          assert m['delete_allowed'] is False
+          assert m['backfill_fabrication_allowed'] is False
+          assert m['persisted_snapshot_as_model_input_allowed'] is False
+          assert m['persisted_snapshot_as_sportsbook_input_allowed'] is False
+          for key, value in PROTECTED_INVARIANTS.items():
+              assert value is False
+              assert m[key] is False, key
+          print('MLB_STEP10A_PERSISTENCE_CONTRACT_MANIFEST_OK')
+          PY
+
+      - name: Compile Step10A Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            tests/test_mlb_step10a_live_snapshot_persistence_contract_v1.py
+
+      - name: Run Step10A targeted tests
+        run: python -m pytest -q tests/test_mlb_step10a_live_snapshot_persistence_contract_v1.py
+
+      - name: Run complete certified MLB regression through Step10A
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py \
+            tests/test_mlb_step9b_live_game_state_collector_api.py \
+            tests/test_mlb_step9c_live_state_consumer_v1.py \
+            tests/test_mlb_step9d_live_inplay_market_collector_api.py \
+            tests/test_mlb_step9e_live_market_consumer_v1.py \
+            tests/test_mlb_step9_final_freeze_v1.py \
+            tests/test_mlb_step9g_postfreeze_handoff_v1.py \
+            tests/test_mlb_step10a_live_snapshot_persistence_contract_v1.py
+
+      - name: Certify real production snapshots satisfy Step10A without database writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib
+          import json
+          import os
+          import requests
+
+          from sports_api.mlb_step9g_postfreeze_handoff_v1 import (
+              FINAL_CERTIFICATION_MARKER as STEP9G_MARKER,
+              HANDOFF_STATUS as STEP9G_STATUS,
+          )
+          from sports_api.mlb_step10a_live_snapshot_persistence_contract_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              build_live_snapshot_persistence_record,
+              validate_live_snapshot_persistence_record,
+          )
+
+          base = os.environ['API_BASE_URL'].rstrip('/')
+          headers = {
+              'Accept': 'application/json',
+              'User-Agent': 'KyreSportsMLBStep10APersistenceContract/1.0',
+              'Cache-Control': 'no-cache',
+          }
+          observed = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+          state_response = requests.get(
+              f'{base}/api/v1/mlb/live-game-state',
+              params={'max_games': 30},
+              timeout=120,
+              headers=headers,
+          )
+          state_response.raise_for_status()
+          state_payload = state_response.json()
+          assert state_payload['data_type'] == 'mlb_live_game_state_api_response_v1'
+          assert state_payload['schema_version'] == 1
+          assert state_payload.get('fuzzy_matching_used') is False
+          assert state_payload.get('synthetic_game_id_used') is False
+          state_games = state_payload.get('games') or []
+          state_record_count = 0
+          if state_games:
+              row = state_games[0]
+              game_id = row['official_game_id']
+              raw = json.dumps(row, sort_keys=True, separators=(',', ':')).encode('utf-8')
+              record = build_live_snapshot_persistence_record(
+                  snapshot_kind='live_game_state',
+                  official_game_id=game_id,
+                  observed_at_utc=observed,
+                  source_data_type=state_payload['data_type'],
+                  source_schema_version=state_payload['schema_version'],
+                  payload_sha256=hashlib.sha256(raw).hexdigest(),
+                  source_complete=True,
+                  step9g_handoff_status=STEP9G_STATUS,
+                  step9g_handoff_marker=STEP9G_MARKER,
+              )
+              assert validate_live_snapshot_persistence_record(record)['record_valid'] is True
+              state_record_count = 1
+
+          odds_response = requests.get(
+              f'{base}/api/v1/mlb/live-odds',
+              params={'max_events': 30, 'fully_priced_only': 'true'},
+              timeout=120,
+              headers=headers,
+          )
+          odds_response.raise_for_status()
+          odds_payload = odds_response.json()
+          assert odds_payload['data_type'] == 'mlb_inplay_odds_api_response_v1'
+          assert odds_payload['schema_version'] == 1
+          assert odds_payload['source'] == 'FanDuel'
+          assert odds_payload['market_phase'] == 'IN_PLAY'
+          assert odds_payload['fuzzy_matching_used'] is False
+          assert odds_payload['synthetic_game_id_used'] is False
+          odds_games = odds_payload.get('games') or []
+          market_record_count = 0
+          if odds_games:
+              row = odds_games[0]
+              assert row.get('fully_priced') is True
+              raw = json.dumps(row, sort_keys=True, separators=(',', ':')).encode('utf-8')
+              record = build_live_snapshot_persistence_record(
+                  snapshot_kind='live_market',
+                  official_game_id=row['official_game_id'],
+                  observed_at_utc=observed,
+                  source_data_type=odds_payload['data_type'],
+                  source_schema_version=odds_payload['schema_version'],
+                  payload_sha256=hashlib.sha256(raw).hexdigest(),
+                  source_complete=True,
+                  step9g_handoff_status=STEP9G_STATUS,
+                  step9g_handoff_marker=STEP9G_MARKER,
+              )
+              assert validate_live_snapshot_persistence_record(record)['record_valid'] is True
+              market_record_count = 1
+          else:
+              print('MLB_STEP10A_NO_OPEN_FULLY_PRICED_INPLAY_MARKET_NO_FAKE_RECORD_OK')
+
+          evidence = {
+              'state_game_count': state_payload.get('game_count'),
+              'state_contract_record_count': state_record_count,
+              'live_market_game_count': odds_payload.get('game_count'),
+              'live_market_contract_record_count': market_record_count,
+              'database_writes_performed': 0,
+          }
+          print(json.dumps(evidence, sort_keys=True))
+          print('MLB_STEP10A_LIVE_STATE_PERSISTENCE_RECORD_CONTRACT_GREEN')
+          print('MLB_STEP10A_LIVE_MARKET_PERSISTENCE_RECORD_CONTRACT_GREEN')
+          print('MLB_STEP10A_ZERO_DATABASE_WRITES_GREEN')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY

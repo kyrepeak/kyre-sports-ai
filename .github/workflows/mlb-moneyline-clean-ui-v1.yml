@@ -1,0 +1,97 @@
+name: MLB Moneyline clean UI freeze certification
+
+on:
+  push:
+    branches:
+      - mlb-moneyline-clean-ui-v1
+    paths:
+      - mlb_moneyline_hub_v164.py
+      - mlb_moneyline_hub_v165.py
+      - tests/test_mlb_moneyline_clean_ui_v1.py
+      - .github/workflows/mlb-moneyline-clean-ui-v1.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - mlb_moneyline_hub_v164.py
+      - mlb_moneyline_hub_v165.py
+      - tests/test_mlb_moneyline_clean_ui_v1.py
+      - .github/workflows/mlb-moneyline-clean-ui-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Assert exact presentation-only scope
+        run: |
+          git fetch origin main --depth=1
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' \
+            '.github/workflows/mlb-moneyline-clean-ui-v1.yml' \
+            'mlb_moneyline_hub_v164.py' \
+            'mlb_moneyline_hub_v165.py' \
+            'tests/test_mlb_moneyline_clean_ui_v1.py' | sort)"
+          if [ "$actual" != "$expected" ]; then
+            echo "Unexpected Moneyline clean-UI scope"
+            echo "--- expected ---"
+            echo "$expected"
+            echo "--- actual ---"
+            echo "$actual"
+            exit 1
+          fi
+
+      - name: Prove frozen Moneyline model files are untouched
+        run: |
+          for path in \
+            mlb_moneyline_hub_v163.py \
+            moneyline_hub_v162.py \
+            moneyline_hub_v161.py \
+            moneyline_hub_v16.py \
+            spread_engine.py \
+            spread_history.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py
+          do
+            if ! git diff --quiet origin/main...HEAD -- "$path"; then
+              echo "Frozen Moneyline/model boundary changed: $path"
+              exit 1
+            fi
+          done
+          echo "MONEYLINE_MODEL_FREEZE=PASS"
+
+      - name: Compile clean presentation boundary
+        run: |
+          python -m py_compile \
+            mlb_moneyline_hub_v164.py \
+            mlb_moneyline_hub_v165.py \
+            tests/test_mlb_moneyline_clean_ui_v1.py
+
+      - name: Run clean UI and Step 7C regression tests
+        run: |
+          PYTHONPATH=. python -m pytest -q \
+            tests/test_mlb_moneyline_clean_ui_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py
+
+      - name: Certification marker
+        run: echo "MLB_MONEYLINE_CLEAN_UI_V1_GREEN"

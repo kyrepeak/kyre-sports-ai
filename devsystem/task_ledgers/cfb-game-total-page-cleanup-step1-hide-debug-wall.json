@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-page-cleanup-step1-hide-debug-wall",
+  "status": "DONE",
+  "scope": "Presentation-only cleanup Step 1 suppressing the legacy visible CFB Game Total production-heartbeat wall through additive Router V174.",
+  "trigger": "User screenshot shows internal version/activation markers visibly rendered above GAME DAY on the production CFB Game Total page.",
+  "guardrails": {
+    "prior_six_step_redesign_frozen": true,
+    "page_v28_edited_in_place": false,
+    "router_v173_edited_in_place": false,
+    "data_contract_changed": false,
+    "normalization_changed": false,
+    "projection_math_changed": false,
+    "confidence_math_changed": false,
+    "team_stat_math_changed": false,
+    "market_ownership_changed": false,
+    "sport_navigation_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

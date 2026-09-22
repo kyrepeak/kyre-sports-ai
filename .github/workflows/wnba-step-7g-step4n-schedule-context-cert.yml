@@ -1,0 +1,93 @@
+name: WNBA Step 7G Step 4N schedule-context certification
+
+on:
+  push:
+    branches:
+      - wnba-step7g-official-data-preflight-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-step4n-schedule-context-cert.yml'
+      - 'sports_api/wnba_step7g_first_party_schedule_context.py'
+      - 'sports_api/tools/wnba_step7g_step4n_schedule_context_cert.py'
+      - 'tests/test_wnba_step7g_schedule_context.py'
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout isolated Step 7G branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert every production switch is OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile isolated adapter and certification
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step7g_first_party_schedule_context.py \
+            sports_api/tools/wnba_step7g_step4n_schedule_context_cert.py \
+            tests/test_wnba_step7g_schedule_context.py
+
+      - name: Run fail-closed regression fixtures
+        shell: bash
+        run: PYTHONPATH=. python tests/test_wnba_step7g_schedule_context.py
+
+      - name: Prove frozen Step 4C and Step 4N files are unchanged from main
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          git diff --exit-code origin/main -- \
+            sports_api/wnba_schedule.py \
+            sports_api/wnba_schedule_context.py
+
+      - name: Run live 2026 first-party Step 4N certification
+        shell: bash
+        run: python -m sports_api.tools.wnba_step7g_step4n_schedule_context_cert
+
+      - name: Upload sanitized certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-step4n-schedule-context-cert-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-step4n-schedule-context-cert.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert every production switch is still OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

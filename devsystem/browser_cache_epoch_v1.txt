@@ -1,0 +1,4 @@
+DEVSYSTEM_BROWSER_CACHE_EPOCH=1
+
+This file is part of the DevSystem browser-QA cache contract.
+Bump the epoch when intentionally refreshing the cached browser virtualenv or Playwright runtime outside of a requirements.txt change.

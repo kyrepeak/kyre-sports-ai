@@ -1,0 +1,33 @@
+name: NFL Passing Yards Why Reference Style
+
+on:
+  push:
+    branches:
+      - "monster/nfl-passing-why-reference-style-v1"
+    paths:
+      - "nfl_passing_yards_hub_v16.py"
+      - "tests/test_nfl_passing_yards_why_reference_style_v1.py"
+      - ".github/workflows/nfl-passing-yards-why-reference-style-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install targeted test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Prove reference-style compact Why This Projection panel
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_why_reference_style_v1.py
+          echo "NFL_PASSING_WHY_REFERENCE_STYLE_GREEN"

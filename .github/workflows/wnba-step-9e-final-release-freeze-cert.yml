@@ -1,0 +1,246 @@
+name: WNBA Step 9E final FastAPI release freeze certification
+
+on:
+  push:
+    branches:
+      - wnba-step9e-fastapi-freeze-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step9e-final-release-freeze-cert
+  cancel-in-progress: true
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP9_FASTAPI_ENABLED: 'true'
+  WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+  WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+  WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+  WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout Step 9E branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - name: Assert production OFF and isolated Step 9 gates ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP9_FASTAPI_ENABLED" = 'true'
+          test "$WNBA_STEP9_THRESHOLD_PRICING_ENABLED" = 'true'
+          test "$WNBA_STEP9B_MARKET_COMPARISON_ENABLED" = 'true'
+          test "$WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED" = 'true'
+          test "$WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED" = 'true'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile complete Step 9E integration surface
+        shell: bash
+        run: |
+          python -m py_compile sports_api/api/wnba_step9_market_board.py
+          python -m py_compile sports_api/wnba_step9_release_freeze.py
+          python -m py_compile tests/test_wnba_step9_fastapi_integration.py
+          python -m py_compile sports_api/tools/wnba_step9e_final_release_freeze_cert.py
+          python -m py_compile sports_api/main.py
+          python -m py_compile sports_api/wnba_step9_qualification_ranking.py
+          python -m py_compile sports_api/wnba_step9_multisportsbook_consensus.py
+          python -m py_compile sports_api/wnba_step9_sportsbook_market_comparison.py
+          python -m py_compile sports_api/wnba_step9_threshold_pricing.py
+
+      - name: Run Step 9E FastAPI guards
+        shell: bash
+        run: PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+
+      - name: Run inherited Step 9D through Step 8 regression guards
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 8 model and API files unchanged except approved main registration seam
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP8_FROZEN_SHA='8faf468b770f7a31244914df75390fc788f859a1'
+          git fetch origin wnba-step8-projection-contract-20260828 --depth=1
+          test "$(git rev-parse FETCH_HEAD)" = "$STEP8_FROZEN_SHA"
+          git diff --exit-code "$STEP8_FROZEN_SHA" -- \
+            sports_api/api/wnba_step8_projection.py \
+            sports_api/wnba_step8_release_freeze.py \
+            sports_api/wnba_step8_projection_handoff.py \
+            sports_api/wnba_step8_official_box_baseline.py \
+            sports_api/wnba_step8_core_projection.py \
+            sports_api/wnba_step8_context_adjustment.py \
+            sports_api/wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_projection_handoff.py \
+            tests/test_wnba_step8_official_box_baseline.py \
+            tests/test_wnba_step8_core_projection.py \
+            tests/test_wnba_step8_context_adjustment.py \
+            tests/test_wnba_step8_joint_monte_carlo.py \
+            tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove main.py changed only by Step 9 router registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP9D_FROZEN_SHA='c05908fa6cb79f44921d08ba0bd3ef8f2998c4eb'
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          base = subprocess.check_output(
+              ['git', 'show', 'c05908fa6cb79f44921d08ba0bd3ef8f2998c4eb:sports_api/main.py'],
+              text=True,
+          )
+          current = Path('sports_api/main.py').read_text(encoding='utf-8')
+          allowed = {
+              'from sports_api.api.wnba_step9_market_board import router as wnba_step9_market_board_router\n',
+              'app.include_router(wnba_step9_market_board_router)\n',
+          }
+          sanitized = ''.join(line for line in current.splitlines(keepends=True) if line not in allowed)
+          if sanitized != base:
+              raise SystemExit('sports_api/main.py drift exceeds the approved Step 9E router seam')
+          print('STEP9E_MAIN_REGISTRATION_SEAM_ONLY_OK')
+          PY
+
+      - name: Prove frozen Step 9A surface unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA='3b9acde91250d0e7a1767f3861765d4366f510ba'
+          git diff --exit-code "$SHA" -- \
+            sports_api/wnba_step9_threshold_pricing.py \
+            tests/test_wnba_step9_threshold_pricing.py \
+            sports_api/tools/wnba_step9a_threshold_pricing_cert.py \
+            .github/workflows/wnba-step-9a-threshold-pricing-cert.yml
+
+      - name: Prove frozen Step 9B surface unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA='45cd3b43ca2771ae01f6fa3c7345ef0b9a444394'
+          git diff --exit-code "$SHA" -- \
+            sports_api/wnba_step9_sportsbook_market_comparison.py \
+            tests/test_wnba_step9_sportsbook_market_comparison.py \
+            sports_api/tools/wnba_step9b_sportsbook_market_comparison_cert.py \
+            .github/workflows/wnba-step-9b-sportsbook-market-comparison-cert.yml
+
+      - name: Prove frozen Step 9C surface unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA='7372d5a22665e84cd0179c2346939d953e52c31a'
+          git diff --exit-code "$SHA" -- \
+            sports_api/wnba_step9_multisportsbook_consensus.py \
+            tests/test_wnba_step9_multisportsbook_consensus.py \
+            sports_api/tools/wnba_step9c_multisportsbook_consensus_cert.py \
+            .github/workflows/wnba-step-9c-multisportsbook-consensus-cert.yml
+
+      - name: Prove frozen Step 9D surface unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA='c05908fa6cb79f44921d08ba0bd3ef8f2998c4eb'
+          git diff --exit-code "$SHA" -- \
+            sports_api/wnba_step9_qualification_ranking.py \
+            tests/test_wnba_step9_qualification_ranking.py \
+            sports_api/tools/wnba_step9d_qualification_ranking_cert.py \
+            .github/workflows/wnba-step-9d-qualification-ranking-cert.yml
+
+      - name: Prove only Step 9E files changed after frozen Step 9D
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA='c05908fa6cb79f44921d08ba0bd3ef8f2998c4eb'
+          git diff --name-only "$SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/api/wnba_step9_market_board.py|\
+              sports_api/main.py|\
+              sports_api/wnba_step9_release_freeze.py|\
+              tests/test_wnba_step9_fastapi_integration.py|\
+              sports_api/tools/wnba_step9e_final_release_freeze_cert.py|\
+              .github/workflows/wnba-step-9e-final-release-freeze-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step9D file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify frozen Step 9 release constants
+        shell: bash
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step9_release_freeze as r
+          assert r.DEFAULT_ENABLED is False
+          assert r.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert r.ENDPOINT_METHOD == 'POST'
+          assert r.ENDPOINT_PATH == '/api/v1/wnba/props/market-board'
+          assert r.STEP8_FROZEN_SHA == '8faf468b770f7a31244914df75390fc788f859a1'
+          assert r.STEP9A_FROZEN_SHA == '3b9acde91250d0e7a1767f3861765d4366f510ba'
+          assert r.STEP9B_FROZEN_SHA == '45cd3b43ca2771ae01f6fa3c7345ef0b9a444394'
+          assert r.STEP9C_FROZEN_SHA == '7372d5a22665e84cd0179c2346939d953e52c31a'
+          assert r.STEP9D_FROZEN_SHA == 'c05908fa6cb79f44921d08ba0bd3ef8f2998c4eb'
+          assert all(value is False for value in r.SAFETY_CONTRACT.values())
+          print('STEP9_RELEASE_CONTRACT_STATIC_GUARDS_OK')
+          PY
+
+      - name: Certify final Step 9 FastAPI market board release
+        shell: bash
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step9e_final_release_freeze_cert
+
+      - name: Upload final Step 9 certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step9e-final-release-freeze-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step9e-final-release-freeze-cert.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Re-assert production OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

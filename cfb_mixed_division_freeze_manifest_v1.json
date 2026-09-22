@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "policy": "The certified College Football mixed-division schedule/data hotfix is immutable. Future CFB work must be additive through new versioned providers/hubs/routers and must preserve the frozen Step 5 and hotfix contracts.",
+  "baseline_commit": "3f28da75a008911a068cb97bcfb2d42f1d6aaaa0",
+  "certified_pr": 178,
+  "exact_blobs": {
+    "cfb_schedule_v2.py": "b955268630f82aa7d007328838f896a1ee82889f",
+    "cfb_team_data_v2.py": "da40c2d5700c717a2db8390efd16a29ff99c156b",
+    "cfb_moneyline_hub_v3.py": "ff93306ffb96a2829f51b998c57ab5a70ad429fe",
+    "streamlit_memory_lazy_router_v28.py": "b3407dd53be6731f6a425e04f1baa72e9323ef15"
+  },
+  "preserved_contracts": [
+    "cfb_freeze_manifest_v5.json",
+    "mlb_hits_freeze_manifest_v7.json",
+    "mlb_moneyline_freeze_manifest_v13.json",
+    "mlb_matchup_explorer_freeze_manifest_v1.json"
+  ],
+  "guarantees": [
+    "FBS-vs-FCS crossover schedule completeness via additive verified fallback",
+    "No unrelated pure-FCS games admitted through NCAA crossover supplement",
+    "FCS profile rebuild requires NCAA FCS team-stat membership evidence",
+    "FBS opponents are never relabeled as FCS merely because they appear in an FCS contest",
+    "Frozen College Football Moneyline Model V1 probability math remains unchanged",
+    "No shared-provider mutation during Streamlit Moneyline renders",
+    "Over/Under and Game Total remain delegated through frozen prior routes"
+  ]
+}

@@ -1,0 +1,395 @@
+name: MLB Step6E 25 percent production stability window
+
+on:
+  push:
+    branches:
+      - mlb-step6e-25pct-production-stability
+  workflow_dispatch:
+  schedule:
+    - cron: '53 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step6e-25pct-stability-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  STEP6E_BASE_SHA: abef1569947ca4c63d5fe983c11d0055035266c9
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+  STABILITY_CYCLES: '12'
+  STABILITY_INTERVAL_SECONDS: '20'
+
+jobs:
+  certify-step6e-contract:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests
+
+      - name: Assert read-only MLB-only Step6E change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP6E_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step6e_25pct_stability_monitor_v1.py|tests/test_mlb_step6e_25pct_stability_monitor_v1.py|\.github/workflows/mlb-step6e-25pct-stability-window.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP6E_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP6E_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP6E_READ_ONLY_CHANGE_SCOPE_OK'
+
+      - name: Prove Step6D and all prior production runtime are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP6E_BASE_SHA"...HEAD -- \
+            sports_api/mlb_step6d_production_expansion_v1.py \
+            mlb_daily_game_picks_step6d_production_expansion_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            sports_api/mlb_step6c_evidence_gate_v1.py \
+            sports_api/mlb_step6b_canary_monitor_v1.py \
+            sports_api/mlb_step6a_production_canary_v1.py \
+            mlb_daily_game_picks_step6a_production_canary_v1.py \
+            sports_api/mlb_price_gate_canary_v1.py \
+            sports_api/mlb_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_price_gate_canary_v1.py \
+            mlb_daily_game_picks_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_v217.py \
+            app.py
+          echo 'MLB_STEP6E_PRIOR_PRODUCTION_RUNTIME_FROZEN'
+
+      - name: Assert Step6E stability contract and no write surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          core = Path('sports_api/mlb_step6e_25pct_stability_monitor_v1.py').read_text(encoding='utf-8')
+          workflow = Path('.github/workflows/mlb-step6e-25pct-stability-window.yml').read_text(encoding='utf-8')
+          required = (
+              'TARGET_PRODUCTION_PERCENT = 25.0',
+              'MAX_PRODUCTION_PERCENT = 25.0',
+              'MIN_STABILITY_CYCLES = 12',
+              'MIN_DISTINCT_SNAPSHOTS = 8',
+              'MAX_FEED_AGE_SECONDS = 60.0',
+              'requires_separate_graduation_step',
+              'automatic_runtime_mutation',
+              'graduation_evidence_ready',
+              'SAME_SLATE_COHORT_CHANGED',
+              'ROLLBACK_PASSTHROUGH_MISMATCH',
+          )
+          missing = [token for token in required if token not in core]
+          if missing:
+              raise SystemExit('STEP6E_CONTRACT_TOKEN_MISSING: ' + ' | '.join(missing))
+          if "cron: '53 * * * *'" not in workflow:
+              raise SystemExit('STEP6E_HOURLY_STABILITY_MONITOR_MISSING')
+          forbidden = (
+              'sqlite3', 'psycopg', 'sqlalchemy', 'INSERT INTO', 'UPDATE ', 'DELETE FROM',
+              'requests.post(', 'requests.put(', 'requests.patch(', 'requests.delete(',
+              'candidate["probability"] =', 'candidate["score"] =', 'candidate["projection"] =',
+              'place_bet', 'automated_wager',
+          )
+          bad = [token for token in forbidden if token in core]
+          if bad:
+              raise SystemExit('STEP6E_WRITE_OR_MODEL_MUTATION_SURFACE_FOUND: ' + ' | '.join(bad))
+          print('MLB_STEP6E_STABILITY_CONTRACT_OK')
+          PY
+
+      - name: Compile Step6E Python files
+        run: python -m py_compile sports_api/mlb_step6e_25pct_stability_monitor_v1.py tests/test_mlb_step6e_25pct_stability_monitor_v1.py
+
+      - name: Run full frozen regression plus Step6E tests
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py
+
+  certify-live-25-percent-stability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout candidate or current main
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install live certification dependencies
+        run: python -m pip install --disable-pip-version-check -q requests
+
+      - name: Certify longer live 25 percent production stability window
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json, math, os, time
+          import requests
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_market_probability_v1 import derive_market_probability_contexts
+          from sports_api.mlb_model_market_edge_v1 import model_market_edge
+          from sports_api.mlb_price_discipline_v1 import price_discipline_context
+          from sports_api.mlb_market_movement_v1 import build_market_observation, compare_market_observations
+          from sports_api.mlb_price_health_v1 import price_health_context
+          from sports_api.mlb_actionability_shadow_v1 import actionability_shadow_context
+          from sports_api.mlb_controlled_price_gate_v1 import controlled_price_gate
+          from sports_api.mlb_price_gate_canary_v1 import select_canary_game_ids
+          from sports_api.mlb_step6d_production_expansion_v1 import resolve_step6d_production_expansion
+          from sports_api.mlb_step6e_25pct_stability_monitor_v1 import (
+              MIN_DISTINCT_SNAPSHOTS,
+              MIN_STABILITY_CYCLES,
+              build_25pct_stability_cycle,
+              evaluate_25pct_stability_window,
+          )
+
+          cycles = max(MIN_STABILITY_CYCLES, int(os.environ.get('STABILITY_CYCLES', '12')))
+          interval = max(0, int(os.environ.get('STABILITY_INTERVAL_SECONDS', '20')))
+          odds_url = os.environ['PRODUCTION_ODDS_URL']
+          streamlit_url = os.environ['STREAMLIT_URL'].rstrip('/')
+          session = requests.Session()
+          session.headers.update({
+              'User-Agent': 'KyreSportsStep6EStabilityMonitor/1.0',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+          })
+
+          def get_json(url, label):
+              last = None
+              for attempt in range(1, 4):
+                  try:
+                      response = session.get(url, timeout=45, headers={'Accept': 'application/json'})
+                      response.raise_for_status()
+                      return int(response.status_code), response.json()
+                  except Exception as exc:
+                      last = exc
+                      print(f'{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}')
+                      if attempt < 3:
+                          time.sleep(4)
+              raise RuntimeError(f'{label}_FAILED: {last}')
+
+          def get_text(url, label):
+              last = None
+              for attempt in range(1, 4):
+                  try:
+                      response = session.get(url, timeout=45, allow_redirects=True, headers={'Accept': 'text/html,*/*'})
+                      response.raise_for_status()
+                      return int(response.status_code), response.text, response.url
+                  except Exception as exc:
+                      last = exc
+                      print(f'{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}')
+                      if attempt < 3:
+                          time.sleep(4)
+              raise RuntimeError(f'{label}_FAILED: {last}')
+
+          rows = []
+          for cycle_index in range(cycles):
+              http_status, payload = get_json(odds_url, f'STEP6E_ODDS_CYCLE_{cycle_index}')
+              if payload.get('source') != 'FanDuel' or payload.get('data_type') != 'mlb_live_odds_api_response_v1':
+                  raise RuntimeError('STEP6E_BAD_PRODUCTION_FEED_CONTRACT')
+              games = payload.get('games') or []
+              collected_at = payload.get('collected_at_utc')
+              game_ids = [int(game['official_game_id']) for game in games]
+              if not game_ids:
+                  raise RuntimeError('STEP6E_EMPTY_LIVE_SLATE')
+
+              step52 = attach_live_market_context([{'game_pk': gid} for gid in reversed(game_ids)], games)
+              step53 = derive_market_probability_contexts(step52)
+              rollout = resolve_step6d_production_expansion({})
+              if rollout.get('enabled') is not True or rollout.get('effective_percent') != 25.0:
+                  raise RuntimeError('STEP6E_STEP6D_NOT_ACTIVE_AT_25')
+              if rollout.get('step6c_permission_valid') is not True:
+                  raise RuntimeError('STEP6E_STEP6C_PERMISSION_NOT_VALID')
+
+              cohort = select_canary_game_ids(
+                  game_ids,
+                  enabled=rollout['enabled'],
+                  requested_percent=rollout['effective_percent'],
+              )
+              selected = set(cohort['selected_game_ids'])
+              expected_count = int(math.floor(len(set(game_ids)) * 0.25))
+              if cohort['selected_game_count'] != expected_count:
+                  raise RuntimeError('STEP6E_COHORT_SIZE_MISMATCH')
+              if cohort['realized_percent'] > 25.0 + 1e-12:
+                  raise RuntimeError('STEP6E_COHORT_EXCEEDS_25')
+
+              total = enrolled = allow = block = non = rollback = line_bearing = 0
+              protected_clear = True
+              for game in games:
+                  gid = int(game['official_game_id'])
+                  context = (step53.get('contexts_by_game_id') or {}).get(gid)
+                  if not context:
+                      raise RuntimeError(f'STEP6E_MISSING_CONTEXT_{gid}')
+                  away = str(game.get('away_team') or f'AWAY_{gid}')
+                  home = str(game.get('home_team') or f'HOME_{gid}')
+                  scenarios = [
+                      ('Moneyline', 'Away', context['moneyline']['away']),
+                      ('Moneyline', 'Home', context['moneyline']['home']),
+                      ('Run Line', 'Away', context['run_line']['away']),
+                      ('Run Line', 'Home', context['run_line']['home']),
+                      ('Total', 'Over ' + str(context['total'].get('line')), context['total']['over']),
+                      ('Total', 'Under ' + str(context['total'].get('line')), context['total']['under']),
+                  ]
+                  for market, side_text, side_block in scenarios:
+                      no_vig = float(side_block['no_vig_probability'])
+                      model_p = min(0.90, max(0.10, no_vig + 0.02))
+                      candidate = {
+                          'game_pk': gid,
+                          'market': market,
+                          'probability': model_p,
+                          'side': side_text,
+                          'name': None,
+                          'team': None,
+                      }
+                      edge = model_market_edge(candidate, context, away_team=away, home_team=home)
+                      price = price_discipline_context(edge)
+                      observation = build_market_observation(price, collected_at_utc=collected_at)
+                      movement = compare_market_observations(observation, as_of_utc=observation['collected_at_utc'])
+                      health = price_health_context(movement)
+                      shadow = actionability_shadow_context(health)
+
+                      rollback_gate = controlled_price_gate(shadow, activation_requested=False)
+                      if rollback_gate.get('gate_status') == 'CONTROL_DISABLED' and rollback_gate.get('final_card_price_eligible') is True:
+                          rollback += 1
+
+                      active = gid in selected
+                      gate = controlled_price_gate(shadow, activation_requested=active)
+                      if active:
+                          enrolled += 1
+                          if gate.get('gate_status') == 'GATE_ALLOW' and gate.get('final_card_price_eligible') is True:
+                              allow += 1
+                          elif gate.get('gate_status') == 'GATE_BLOCK' and gate.get('final_card_price_eligible') is False:
+                              block += 1
+                      elif gate.get('gate_status') == 'CONTROL_DISABLED' and gate.get('final_card_price_eligible') is True:
+                          non += 1
+                      total += 1
+                      if market in {'Run Line', 'Total'}:
+                          line_bearing += 1
+                      for flag in ('model_math_impact', 'pick_strength_impact', 'ranking_math_impact', 'risk_logic_impact', 'wagering_impact'):
+                          protected_clear = protected_clear and gate.get(flag) is False
+                      protected_clear = protected_clear and gate.get('durable_persistence') is False
+
+              row = build_25pct_stability_cycle(
+                  cycle_index=cycle_index,
+                  observed_at_utc=datetime.now(timezone.utc),
+                  collected_at_utc=collected_at,
+                  http_status=http_status,
+                  source=payload.get('source'),
+                  official_game_ids=game_ids,
+                  selected_game_ids=cohort['selected_game_ids'],
+                  attached_count=step52.get('attached_count'),
+                  derived_context_count=step53.get('derived_context_count'),
+                  fallback_matching_used=bool(step53.get('fallback_matching_used')),
+                  total_checks=total,
+                  enrolled_checks=enrolled,
+                  allow_count=allow,
+                  block_count=block,
+                  nonenrolled_passthrough=non,
+                  rollback_passthrough=rollback,
+                  line_bearing_checks=line_bearing,
+                  rollout_enabled=rollout['enabled'],
+                  rollout_percent=rollout['effective_percent'],
+                  step6c_permission_valid=rollout['step6c_permission_valid'],
+                  protected_impacts_clear=protected_clear,
+              )
+              if not row['cycle_green']:
+                  raise RuntimeError('STEP6E_CYCLE_NOT_GREEN: ' + json.dumps(row, sort_keys=True))
+              rows.append(row)
+              print('STEP6E_STABILITY_CYCLE=' + json.dumps({
+                  'cycle_index': cycle_index,
+                  'collected_at_utc': row['collected_at_utc'],
+                  'game_count': row['game_count'],
+                  'selected_game_ids': row['selected_game_ids'],
+                  'realized_percent': row['realized_percent'],
+                  'total_checks': row['total_checks'],
+                  'enrolled_checks': row['enrolled_checks'],
+                  'allow_count': row['allow_count'],
+                  'block_count': row['block_count'],
+                  'nonenrolled_passthrough': row['nonenrolled_passthrough'],
+                  'rollback_passthrough': row['rollback_passthrough'],
+                  'feed_age_seconds': row['feed_age_seconds'],
+              }, sort_keys=True))
+              if cycle_index + 1 < cycles:
+                  time.sleep(interval)
+
+          report = evaluate_25pct_stability_window(
+              rows,
+              min_cycles=cycles,
+              min_distinct_snapshots=MIN_DISTINCT_SNAPSHOTS,
+          )
+          if report['stability_result'] != 'GREEN' or report['graduation_evidence_ready'] is not True:
+              raise RuntimeError('STEP6E_STABILITY_WINDOW_NOT_GREEN: ' + json.dumps(report, sort_keys=True))
+
+          root_status, root_html, _ = get_text(streamlit_url + '/', 'STEP6E_STREAMLIT_ROOT')
+          rollback_status, rollback_html, rollback_url = get_text(streamlit_url + '/?mlb_step6d_rollback=1', 'STEP6E_STREAMLIT_ROLLBACK')
+          status_http, status_payload = get_json(streamlit_url + '/api/v2/app/status', 'STEP6E_STREAMLIT_STATUS')
+          if root_status != 200 or rollback_status != 200 or status_http != 200:
+              raise RuntimeError('STEP6E_STREAMLIT_TRANSPORT_FAILED')
+          if '<html' not in root_html.lower() or '<html' not in rollback_html.lower() or 'mlb_step6d_rollback=1' not in rollback_url:
+              raise RuntimeError('STEP6E_STREAMLIT_ROLLBACK_TRANSPORT_FAILED')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'stability_report': report,
+              'last_selected_game_ids': rows[-1]['selected_game_ids'],
+              'last_realized_percent': rows[-1]['realized_percent'],
+              'streamlit_root_http_status': root_status,
+              'streamlit_rollback_http_status': rollback_status,
+              'streamlit_app_status_http_status': status_http,
+              'streamlit_version': status_payload.get('streamlitVersion'),
+              'rendered_streamlit_ui_verified': False,
+              'hourly_step6e_monitor_enabled': True,
+              'automatic_runtime_mutation': False,
+              'requires_separate_graduation_step': True,
+              'model_math_changed': False,
+              'pick_strength_changed': False,
+              'ranking_math_changed': False,
+              'risk_logic_changed': False,
+              'durable_persistence_added': False,
+              'wagering_changed': False,
+              'player_props_price_gated': False,
+              'wnba_changed': False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP6E_25PCT_PRODUCTION_STABILITY_GREEN')
+          PY

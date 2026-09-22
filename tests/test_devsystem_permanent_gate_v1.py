@@ -1,0 +1,237 @@
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+import pytest
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load(name: str, path: str):
+    target = ROOT / path
+    spec = importlib.util.spec_from_file_location(name, target)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_permanent_contract_is_green():
+    module = _load("permanent_gate_v1", "devsystem/permanent_gate_v1.py")
+    result = module.validate()
+    assert result["status"] == "GREEN"
+    assert result["active_domains"] == ["cfb", "mlb", "nfl", "wnba"]
+    assert "nfl" not in result["blocked_until_activated"]
+    assert result["critical_test_count"] == 19
+    assert result["api_observability_permanent"] is True
+    assert result["predictive_failure_triage_permanent"] is True
+    assert result["automatic_failure_evidence_wiring_permanent"] is True
+    assert result["failed_job_log_evidence_permanent"] is True
+    assert result["failure_remediation_policy_permanent"] is True
+    assert result["stable_failure_fingerprint_permanent"] is True
+    assert result["failure_packet_self_health_permanent"] is True
+    assert result["failure_recurrence_history_permanent"] is True
+    assert result["failure_recurrence_chronology_permanent"] is True
+    assert result["failure_recurrence_age_permanent"] is True
+    assert result["failure_history_coverage_permanent"] is True
+    assert result["forward_motion_v2_permanent"] is True
+    assert result["forward_motion_v2_pr_enforcement"] is True
+
+
+def test_forward_motion_contract_is_permanently_enforced_by_required_lane():
+    contract = _load("forward_motion_contract_v1", "devsystem/forward_motion_contract_v1.py")
+    result = contract.validate()
+    assert result["status"] == "GREEN"
+    assert result["mode"] == "strict_auto_continue"
+    assert result["duplicate_proof_guard"] is True
+    assert result["deterministic_zero_retry"] is True
+    assert result["transient_single_retry"] is True
+    assert result["one_active_blocker"] is True
+    assert result["side_quest_deferral"] is True
+    assert result["terminal_task_authoritative"] is True
+    assert result["a9_replay_permanent"] is True
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "permanent-contract:" in workflow
+    assert "tests/test_devsystem_permanent_gate_v1.py" in workflow
+
+
+def test_forward_motion_v2_contract_is_permanently_enforced():
+    contract = _load("forward_motion_contract_v2", "devsystem/forward_motion_contract_v2.py")
+    result = contract.validate()
+    assert result["status"] == "GREEN"
+    assert result["mode"] == "strict_auto_continue_v2"
+    assert result["semantic_root_cause_guard"] is True
+    assert result["stagnation_guard"] is True
+    assert result["monotonic_checkpoint_guard"] is True
+    assert result["single_use_receipts"] is True
+    assert result["receipt_chain_tamper_guard"] is True
+    assert result["terminal_task_authoritative"] is True
+    assert result["user_override_exact_single_use"] is True
+    assert result["bootstrap_self_expiring"] is True
+    assert result["v1_replay_still_green"] is True
+    assert result["v2_replay_green"] is True
+
+    workflow = (ROOT / ".github/workflows/devsystem-targeted-ci.yml").read_text(encoding="utf-8")
+    assert "python devsystem/forward_motion_contract_v2.py" in workflow
+    assert "python devsystem/action_ledger_v2.py verify-pr" in workflow
+
+
+def test_final_gate_accepts_success_and_skipped_only():
+    module = _load("final_gate_v1", "devsystem/final_gate_v1.py")
+    result = module.evaluate({
+        "classify": {"result": "success"},
+        "browser-qa": {"result": "skipped"},
+        "mlb-critical": {"result": "success"},
+    })
+    assert result["status"] == "GREEN"
+
+    with pytest.raises(module.FinalGateFailure) as exc:
+        module.evaluate({
+            "classify": {"result": "success"},
+            "cfb-critical": {"result": "failure"},
+        })
+    message = str(exc.value)
+    assert "DEVSYSTEM_FAILURE_TRIAGE" in message
+    assert "primary=cfb-critical" in message
+    assert "layer=cfb" in message
+    assert "official-ID contracts" in message
+
+
+def test_predictive_triage_signature_is_permanently_exercised():
+    triage = _load("failure_triage_predictive", "devsystem/failure_triage_v1.py")
+    report = triage.triage({
+        "browser-qa": {
+            "result": "failure",
+            "evidence": "Playwright TimeoutError while waiting for locator combobox",
+        }
+    })
+    primary = report["primary"]
+    assert primary["layer"] == "ui-browser"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
+    assert primary["remediation_class"] == "transient-capable"
+    assert primary["retry_policy"] == "retry-once-after-inspection"
+    assert "readiness" in primary["inspect_first"]
+
+
+def test_deterministic_failure_is_permanently_protected_from_blind_retry():
+    triage = _load("failure_triage_no_blind_retry", "devsystem/failure_triage_v1.py")
+    report = triage.triage({
+        "cfb-critical": {
+            "result": "failure",
+            "evidence": "AssertionError: expected official ESPN event ID",
+        }
+    })
+    primary = report["primary"]
+    assert primary["layer"] == "cfb"
+    assert primary["remediation_class"] == "deterministic-regression"
+    assert primary["retry_policy"] == "do-not-retry"
+
+
+def test_failure_packet_automatically_wires_captured_step_evidence():
+    packet_module = _load("failure_packet_evidence_wiring", "devsystem/failure_packet_v1.py")
+    packet = packet_module.build_packet(
+        {"browser-qa": {"result": "failure"}},
+        failed_steps={
+            "browser-qa": [
+                "Drive real UI: Playwright TimeoutError waiting for locator combobox"
+            ]
+        },
+    )
+    primary = packet["triage"]["primary"]
+    assert primary["job"] == "browser-qa"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
+    assert primary["retry_policy"] == "retry-once-after-inspection"
+    assert primary["failure_fingerprint"].startswith("KYRE-CI-")
+    assert primary["recurrence_status"] == "history-unavailable"
+    assert primary["recurrence_timing_confidence"] == "unavailable"
+    assert primary["recurrence_age_confidence"] == "unavailable"
+
+
+def test_same_packet_failure_keeps_same_fingerprint_across_run_metadata():
+    packet_module = _load("failure_packet_fingerprint", "devsystem/failure_packet_v1.py")
+    needs = {
+        "browser-qa": {
+            "result": "failure",
+            "evidence": "Playwright TimeoutError while waiting for locator combobox",
+        }
+    }
+    first = packet_module.build_packet(needs, run_id="100", sha="aaa")
+    second = packet_module.build_packet(needs, run_id="200", sha="bbb")
+    assert first["triage"]["primary"]["failure_fingerprint"] == second["triage"]["primary"]["failure_fingerprint"]
+
+
+def test_failed_job_log_excerpt_reaches_predictive_triage():
+    extractor = _load("failure_log_excerpt_permanent", "devsystem/failure_log_excerpt_v1.py")
+    packet_module = _load("failure_packet_log_path", "devsystem/failure_packet_v1.py")
+    raw_log = "\n".join([
+        "browser setup complete",
+        "Playwright TimeoutError: waiting for locator combobox",
+        "cleanup complete",
+    ])
+    excerpt = extractor.extract_log_excerpt(raw_log)
+    packet = packet_module.build_packet({
+        "browser-qa": {"result": "failure", "log_excerpt": excerpt}
+    })
+    primary = packet["triage"]["primary"]
+    assert primary["job"] == "browser-qa"
+    assert primary["evidence_signal"] == "browser-selector-race"
+    assert primary["confidence"] == "high"
+    assert primary["retry_policy"] == "retry-once-after-inspection"
+    assert primary["failure_fingerprint"].startswith("KYRE-CI-")
+
+
+def test_production_contract_separates_hosting_config_from_release_parity():
+    contract = _load("production_contract_v1", "devsystem/production_contract_v1.py")
+    service = {
+        "name": contract.SERVICE_NAME,
+        "id": contract.SERVICE_ID,
+        "repo": contract.REPOSITORY,
+        "branch": contract.RENDER_RELEASE_BRANCH,
+        "autoDeploy": contract.EXPECTED_AUTO_DEPLOY,
+        "suspended": "not_suspended",
+        "serviceDetails": {
+            "healthCheckPath": contract.EXPECTED_HEALTH_PATH,
+            "url": contract.PUBLIC_URL,
+        },
+    }
+    hosting = contract.evaluate_render_service(service)
+    assert hosting["status"] == "GREEN"
+
+    parity = contract.evaluate_release_parity(
+        {"status": "diverged", "ahead_by": 1199, "behind_by": 63}
+    )
+    assert parity["status"] == "RED"
+    assert parity["main_only_commits"] == 1199
+    assert parity["release_only_commits"] == 63
+
+
+def test_observability_core_is_dependency_light_and_secret_safe(monkeypatch):
+    obs = _load("observability_v1", "sports_api/observability_v1.py")
+
+    fingerprint = obs.error_fingerprint(ValueError("one"), path="/health")
+    assert fingerprint == obs.error_fingerprint(ValueError("two"), path="/health")
+    assert fingerprint.startswith("KYRE-")
+
+    redacted = obs.sanitize_error_message("token=abc password=xyz")
+    assert "abc" not in redacted
+    assert "xyz" not in redacted
+
+    monkeypatch.setenv("RENDER_GIT_BRANCH", "main")
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "abc123")
+    monkeypatch.setenv("API_KEY", "do-not-leak")
+    runtime = obs.runtime_metadata()
+    assert runtime["deploy_branch"] == "main"
+    assert runtime["deploy_commit"] == "abc123"
+    assert "do-not-leak" not in repr(runtime)
+
+
+def test_production_contract_and_observability_share_branch_truth():
+    contract = _load("production_contract_branch_truth", "devsystem/production_contract_v1.py")
+    obs = _load("observability_branch_truth", "sports_api/observability_v1.py")
+
+    assert obs.CANONICAL_SOURCE_BRANCH == contract.CANONICAL_SOURCE_BRANCH
+    assert obs.DEFAULT_RENDER_RUNTIME_BRANCH == contract.RENDER_RELEASE_BRANCH

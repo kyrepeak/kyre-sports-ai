@@ -1,0 +1,136 @@
+name: NFL Receiving Yards Page Step 3 Summary Metrics V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_receiving_yards_hub_v3.py"
+      - "streamlit_memory_lazy_router_v114.py"
+      - "app.py"
+      - "tests/test_nfl_receiving_yards_page_step3_summary_metrics_v1.py"
+      - ".github/workflows/nfl-receiving-yards-page-step3-summary-metrics-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-receiving-yards-page-step3-summary-metrics-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-receiving-step3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests
+
+      - name: Prove exact five-file Step 3 boundary
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-receiving-yards-page-step3-summary-metrics-v1.yml
+          app.py
+          nfl_receiving_yards_hub_v3.py
+          streamlit_memory_lazy_router_v114.py
+          tests/test_nfl_receiving_yards_page_step3_summary_metrics_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo "Actual Step 3 diff:"
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "NFL_RECEIVING_PAGE_STEP3_EXACT_DIFF_GREEN"
+
+      - name: Compile Step 3 surface
+        run: |
+          python -m py_compile \
+            nfl_receiving_yards_hub_v3.py \
+            streamlit_memory_lazy_router_v114.py \
+            app.py \
+            tests/test_nfl_receiving_yards_page_step3_summary_metrics_v1.py
+
+      - name: Run Receiving Steps 1-3 and frozen Rushing card contracts
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_receiving_yards_step1_foundation_v1.py \
+            tests/test_nfl_receiving_yards_page_step2_player_cards_v1.py \
+            tests/test_nfl_receiving_yards_page_step3_summary_metrics_v1.py \
+            tests/test_nfl_rushing_yards_page_step1_compact_v1.py
+
+      - name: Prove frozen owners were not modified
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_|nfl_rushing_yards_|nfl_receiving_yards_context_api_v1\.py|nfl_receiving_yards_hub_v(1|2)\.py|streamlit_memory_lazy_router_v(80|81|82|83|84|85|86|87|88|89|90|91|92|93|94|95|96|97|98|99|100|101|102|103|104|105|106|107|108|109|110|111|112|113)\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "NFL_RECEIVING_PAGE_STEP3_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "NFL_RECEIVING_PAGE_STEP3_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Prove live production Receiving API status contract
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.request import Request, urlopen
+
+          url = "https://kyre-sports-api.onrender.com/api/v1/nfl/receiving-yards/status"
+          req = Request(url, headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Step3-Cert/1.0"})
+          with urlopen(req, timeout=45) as response:
+              assert response.status == 200, response.status
+              payload = json.loads(response.read().decode("utf-8"))
+          assert payload["status"] == "ready"
+          assert payload["schema_version"] == "nfl_receiving_yards_context_v1"
+          assert payload["official_event_id_required"] is True
+          assert payload["official_athlete_id_required"] is True
+          assert payload["official_team_id_required"] is True
+          assert payload["fuzzy_matching"] is False
+          assert payload["targets_explicit_only"] is True
+          assert payload["targets_inferred"] is False
+          assert payload["projection_enabled"] is False
+          assert payload["market_enabled"] is False
+          assert payload["sportsbook_influence"] == 0.0
+          print("NFL_RECEIVING_PAGE_STEP3_LIVE_API_STATUS_GREEN")
+          PY
+
+      - name: Prove Step 3 safety boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          page = Path("nfl_receiving_yards_hub_v3.py").read_text(encoding="utf-8")
+          router = Path("streamlit_memory_lazy_router_v114.py").read_text(encoding="utf-8")
+          app = Path("app.py").read_text(encoding="utf-8")
+
+          assert 'PAGE_BUILD_STEP = 3' in page
+          assert 'PAGE_BUILD_TOTAL = 10' in page
+          assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in page
+          assert 'targets_live = player.get("targets_data_available") is True' in page
+          assert '.krecv-progress .krecv-fill{width:30%!important}' in page
+          assert 'ACTIVE_RECEIVING_YARDS_HUB = "nfl_receiving_yards_hub_v3"' in router
+          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v113"' in router
+          assert 'from streamlit_memory_lazy_router_v114 import record_bootstrap_import_ms, render_app' in app
+          assert 'FROZEN_V113_DEPLOYMENT_HEARTBEAT' in app
+          print("NFL_RECEIVING_YARDS_PAGE_STEP3_SUMMARY_METRICS_GREEN")
+          PY

@@ -1,0 +1,75 @@
+name: WNBA Step 7G advanced surface probe
+
+on:
+  push:
+    branches:
+      - wnba-step7g-step4j-team-history-20260827
+    paths:
+      - 'sports_api/tools/wnba_step7g_advanced_surface_probe.py'
+      - '.github/workflows/wnba-step-7g-advanced-surface-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'false'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout isolated Step 7G branch
+        uses: actions/checkout@v4
+
+      - name: Assert production OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile probe
+        run: python -m py_compile sports_api/tools/wnba_step7g_advanced_surface_probe.py
+
+      - name: Probe official first-party advanced surfaces
+        env:
+          PYTHONPATH: .
+        run: python -m sports_api.tools.wnba_step7g_advanced_surface_probe
+
+      - name: Upload sanitized schema evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-advanced-surface-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-advanced-surface-probe.json
+          retention-days: 30
+
+      - name: Re-assert production OFF
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

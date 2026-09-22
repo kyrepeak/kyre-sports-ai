@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-current-form-opponent-quality-v1",
+  "status": "DONE",
+  "scope": "Rebuild only Step 3 as a universal Current Form & Opponent Quality surface matching the approved expanded purple comparison layout for every future CFB Game Total matchup.",
+  "trigger": "User locked the Step 3 visual target and requested a universal last-3-to-5-game, trend, opponent-quality, comparison, takeaway, and form-edge experience while keeping Steps 1-2 frozen.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step4_plus_not_started": true,
+    "hardcoded_matchup_logic_added": false,
+    "frozen_v163_edited_in_place": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "internal_steps": {
+    "3.1": "universal form/opponent-quality contract locked",
+    "3.2": "expanded purple screenshot-style UI shell built",
+    "3.3": "completed-game and SOS evidence wired",
+    "3.4": "trend, takeaways, edge, and fail-closed logic built",
+    "3.5": "multi-matchup regression coverage added",
+    "3.6": "branch and production proof required before freeze"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

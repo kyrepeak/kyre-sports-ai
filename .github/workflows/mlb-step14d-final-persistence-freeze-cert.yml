@@ -1,0 +1,227 @@
+name: MLB Step14D final persistence freeze certification
+
+on:
+  push:
+    branches:
+      - mlb-step14d-final-persistence-freeze
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-final-persistence-freeze:
+    runs-on: ubuntu-24.04
+    env:
+      STEP14D_BASE_SHA: 9435d9db84b34a276281b2528205030ac27dd3c6
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Assert Step14D is exactly three-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP14D_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step14_final_persistence_freeze_v1.py|tests/test_mlb_step14_final_persistence_freeze_v1.py|\.github/workflows/mlb-step14d-final-persistence-freeze-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP14D_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP14D_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP14D_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP14D_BASE_SHA"...HEAD
+          numstat="$(git diff --numstat "$STEP14D_BASE_SHA"...HEAD)"
+          printf '%s\n' "$numstat"
+          if printf '%s\n' "$numstat" | awk '$2 != 0 { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'STEP14D_DELETIONS_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP14D_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove Step14 parents and frozen production paths remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP14D_BASE_SHA"...HEAD -- \
+            app.py engine.py history.py spread_engine.py \
+            live_game_hub_v182.py live_game_hub_v19.py live_game_hub_v191.py \
+            live_game_hub_v192.py live_game_hub_v1921.py mlb_live_hub_v193.py live_odds_feed.py \
+            sports_api/main.py sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11_final_provider_expansion_freeze_v1.py \
+            sports_api/mlb_step12_final_runtime_freeze_v1.py \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            sports_api/mlb_step13b_runtime_supervisor_v1.py \
+            sports_api/mlb_step13c_reliability_recovery_v1.py \
+            sports_api/mlb_step13_final_scheduler_freeze_v1.py \
+            sports_api/mlb_step14a_persistence_contract_v1.py \
+            sports_api/sql/mlb_step14a_persistence_schema.sql \
+            sports_api/mlb_step14b_database_checkpoint_adapter_v1.py \
+            sports_api/requirements-mlb-step14b-persistence.txt \
+            sports_api/mlb_step14c_durable_restart_lease_v1.py \
+            sports_api/sql/mlb_step14c_runtime_lease_schema.sql
+          echo 'MLB_STEP14D_ALL_FROZEN_PARENT_AND_PRODUCTION_PATHS_BYTE_IDENTICAL'
+
+      - name: Prove exact frozen Step14 parent source blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse "$STEP14D_BASE_SHA:sports_api/mlb_step13_final_scheduler_freeze_v1.py")" = 'b53400fe205717ca075231f841b4ca7aabed90bc'
+          test "$(git rev-parse "$STEP14D_BASE_SHA:sports_api/mlb_step14a_persistence_contract_v1.py")" = '373996a35959e5ad2252325062b250ddffd4286c'
+          test "$(git rev-parse "$STEP14D_BASE_SHA:sports_api/sql/mlb_step14a_persistence_schema.sql")" = '969c88c529486c8cde54f7928919e2a393a0f588'
+          test "$(git rev-parse "$STEP14D_BASE_SHA:sports_api/mlb_step14b_database_checkpoint_adapter_v1.py")" = 'ee7ffe3117edc33b1377f883c25613d63760095b'
+          test "$(git rev-parse "$STEP14D_BASE_SHA:sports_api/mlb_step14c_durable_restart_lease_v1.py")" = '2ea48e2badc73750f96cc8d3b5ef3927fb40a08e'
+          test "$(git rev-parse "$STEP14D_BASE_SHA:sports_api/sql/mlb_step14c_runtime_lease_schema.sql")" = 'e341e41ae7b21d1781c0b96be05ad924fcccab86'
+          echo 'MLB_STEP14D_FROZEN_PARENT_BLOBS_EXACT'
+
+      - name: Prove final freeze adds no database network background or schema machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='sports_api/mlb_step14_final_persistence_freeze_v1.py'
+          if grep -Ein '^[[:space:]]*(from|import)[[:space:]]+(requests|httpx|urllib|socket|threading|multiprocessing|subprocess|apscheduler|sqlalchemy|psycopg|supabase)([[:space:].]|$)' "$file"; then
+            echo 'STEP14D_FORBIDDEN_IO_OR_BACKGROUND_IMPORT'
+            exit 1
+          fi
+          if grep -Ein 'time\.sleep|asyncio\.create_task|threading\.Thread|multiprocessing\.|subprocess\.|os\.system|Popen\(|psycopg\.connect|requests\.|httpx\.' "$file"; then
+            echo 'STEP14D_FORBIDDEN_EXECUTION_OR_IO'
+            exit 1
+          fi
+          if grep -Ein 'CREATE[[:space:]]+(TABLE|SCHEMA)|ALTER[[:space:]]+TABLE|DROP[[:space:]]+TABLE|TRUNCATE[[:space:]]' "$file"; then
+            echo 'STEP14D_SCHEMA_MUTATION_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP14D_PURE_FREEZE_SAFETY_OK'
+
+      - name: Compile Step14D Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step14_final_persistence_freeze_v1.py \
+            tests/test_mlb_step14_final_persistence_freeze_v1.py
+
+      - name: Run Step14D targeted tests
+        run: python -m pytest -q tests/test_mlb_step14_final_persistence_freeze_v1.py
+
+      - name: Run complete MLB regression including Step14D
+        run: python -m pytest -q tests/test_mlb_*.py
+
+      - name: Certify final durable persistence release boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from sports_api.mlb_step13_final_scheduler_freeze_v1 import final_scheduler_freeze_manifest
+          from sports_api import mlb_step14a_persistence_contract_v1 as step14a
+          from sports_api import mlb_step14b_database_checkpoint_adapter_v1 as step14b
+          from sports_api import mlb_step14c_durable_restart_lease_v1 as step14c
+          from sports_api.mlb_step14_final_persistence_freeze_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              STEP14D_BASE_MAIN_SHA,
+              final_persistence_freeze_manifest,
+              validate_final_persistence_freeze,
+              validate_final_persistence_freeze_manifest,
+          )
+
+          manifest = final_persistence_freeze_manifest()
+          assert validate_final_persistence_freeze_manifest(manifest)["freeze_manifest_valid"] is True
+          assert STEP14D_BASE_MAIN_SHA == "9435d9db84b34a276281b2528205030ac27dd3c6"
+          assert manifest["runtime_mode"] == "SHADOW_ONLY"
+          assert manifest["step14_durable_persistence_block_frozen"] is True
+          assert manifest["postgresql_checkpoint_adapter_certified"] is True
+          assert manifest["append_only_checkpoint_history_certified"] is True
+          assert manifest["checkpoint_head_compare_and_swap_certified"] is True
+          assert manifest["durable_restart_recovery_certified"] is True
+          assert manifest["durable_distributed_lease_certified"] is True
+          assert manifest["cross_process_duplicate_run_guard_certified"] is True
+          assert manifest["monotonic_fencing_generation_certified"] is True
+          assert manifest["stale_owner_fencing_certified"] is True
+          assert manifest["lease_revalidation_before_checkpoint_save_certified"] is True
+          assert manifest["global_persistence_runtime_enabled"] is False
+          assert manifest["automatic_restart_execution_allowed"] is False
+          assert manifest["production_runtime_activation_allowed"] is False
+          assert manifest["production_scheduler_activation_allowed"] is False
+          assert manifest["background_worker_allowed"] is False
+          assert manifest["future_step15_live_postgres_preflight_required"] is True
+
+          result = validate_final_persistence_freeze(
+              step13d_manifest=final_scheduler_freeze_manifest(),
+              step14a_manifest=step14a.persistence_contract_manifest(),
+              step14b_manifest=step14b.database_checkpoint_adapter_manifest(),
+              step14c_manifest=step14c.durable_restart_lease_manifest(),
+              step14a_contract_evidence_ok=True,
+              step14b_adapter_evidence_ok=True,
+              step14c_restart_restore_evidence_ok=True,
+              step14c_duplicate_lease_fencing_evidence_ok=True,
+              step14c_lost_lease_fencing_evidence_ok=True,
+              checkpoint_cas_evidence_ok=True,
+              append_only_history_evidence_ok=True,
+              zero_parent_drift_ok=True,
+              zero_runtime_retry_restart_execution_ok=True,
+              zero_provider_sportsbook_calls_ok=True,
+              zero_live_database_connections_ok=True,
+              zero_production_activation_ok=True,
+              zero_actionable_output_ok=True,
+          )
+          assert result["certified"] is True
+          assert result["final_certification_marker"] == FINAL_CERTIFICATION_MARKER
+          assert result["runtime_cycle_executed"] is False
+          assert result["retry_executed"] is False
+          assert result["restart_executed"] is False
+          assert result["lease_operation_executed"] is False
+          assert result["checkpoint_read_executed"] is False
+          assert result["checkpoint_write_executed"] is False
+          assert result["provider_network_calls"] == 0
+          assert result["sportsbook_network_calls"] == 0
+          assert result["live_database_connections"] == 0
+          assert result["production_database_writes"] == 0
+          assert result["production_runtime_activation"] is False
+          assert result["production_scheduler_activation"] is False
+
+          print("STEP14D_STEP14A_CONTRACT_FROZEN=1")
+          print("STEP14D_STEP14B_ADAPTER_FROZEN=1")
+          print("STEP14D_STEP14C_RESTART_LEASE_FROZEN=1")
+          print("STEP14D_CHECKPOINT_CAS_FROZEN=1")
+          print("STEP14D_DUPLICATE_LEASE_FENCING_FROZEN=1")
+          print("STEP14D_STALE_OWNER_FENCING_FROZEN=1")
+          print("STEP14D_LIVE_DATABASE_CONNECTIONS=0")
+          print("STEP14D_PROVIDER_NETWORK_CALLS=0")
+          print("STEP14D_SPORTSBOOK_NETWORK_CALLS=0")
+          print("STEP14D_RUNTIME_EXECUTIONS=0")
+          print("STEP14D_RETRY_EXECUTIONS=0")
+          print("STEP14D_RESTART_EXECUTIONS=0")
+          print("STEP14D_PRODUCTION_ACTIVATION=0")
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
+
+      - name: Final Step14D certification marker
+        run: echo 'MLB_STEP14D_FINAL_PERSISTENCE_FREEZE_GREEN'

@@ -1,0 +1,38 @@
+name: NFL Passing Yards Step 3 Full Slate Router
+
+on:
+  push:
+    branches:
+      - "monster/nfl-passing-step3-production-cert-v1"
+    paths:
+      - "nfl_passing_yards_full_slate_router_v1.py"
+      - "nfl_passing_yards_hub_v42.py"
+      - "tests/test_nfl_passing_yards_step3_full_slate_router_v1.py"
+      - ".github/workflows/nfl-passing-yards-step3-full-slate-router-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-passing-step3-full-slate-router-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  targeted-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+      - name: Prove full-slate fallback routing
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest -q tests/test_nfl_passing_yards_step3_full_slate_router_v1.py
+          echo "NFL_PASSING_STEP3_FULL_SLATE_ROUTER_GREEN"

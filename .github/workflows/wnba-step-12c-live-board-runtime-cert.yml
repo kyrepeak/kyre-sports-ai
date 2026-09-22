@@ -1,0 +1,188 @@
+name: WNBA Step 12C live board runtime certification
+
+on:
+  push:
+    branches:
+      - wnba-step12c-live-board-runtime-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+      WNBA_BOARD_SCHEDULER_ENABLED: "false"
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: "false"
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: "false"
+      WNBA_STEP6J_CANARY_ENABLED: "false"
+      WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: "false"
+      WNBA_PERSISTENCE_ENABLED: "false"
+      WNBA_SUPABASE_WRITE_ENABLED: "false"
+      WNBA_WAGERING_ENABLED: "false"
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: "false"
+      WNBA_STEP12_SCHEDULER_ENABLED: "false"
+      WNBA_STEP9_FASTAPI_ENABLED: "true"
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: "true"
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: "true"
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: "true"
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: "true"
+
+    steps:
+      - name: Checkout Step 12C branch with frozen history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 320
+
+      - name: Assert production scheduler persistence writes remain OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 12C live board surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile sports_api/wnba_step12c_live_board_runtime.py
+          python -m py_compile tests/test_wnba_step12c_live_board_runtime.py
+          python -m py_compile sports_api/tools/wnba_step12c_live_board_runtime_cert.py
+
+      - name: Run Step 12C live board guards
+        run: PYTHONPATH=. python tests/test_wnba_step12c_live_board_runtime.py
+
+      - name: Run frozen Step 12B and Step 12A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step12b_live_runtime_assembly.py
+          PYTHONPATH=. python tests/test_wnba_step12_shadow_runner.py
+
+      - name: Run frozen Step 11E through Step 11A guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step11_controlled_automation.py
+          PYTHONPATH=. python tests/test_wnba_step11_multibook_shadow_board.py
+          PYTHONPATH=. python tests/test_wnba_step11_fanduel_provider.py
+          PYTHONPATH=. python tests/test_wnba_step11_network_refresh_orchestrator.py
+          PYTHONPATH=. python tests/test_wnba_step11_draftkings_provider.py
+
+      - name: Run frozen Step 10 guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_board.py
+          PYTHONPATH=. python tests/test_wnba_step10_refresh_controller.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_snapshot.py
+          PYTHONPATH=. python tests/test_wnba_step10_market_adapters.py
+          PYTHONPATH=. python tests/test_wnba_step10_live_market_input.py
+
+      - name: Run frozen Step 9 through Step 8 regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_wnba_step9_fastapi_integration.py
+          PYTHONPATH=. python tests/test_wnba_step9_qualification_ranking.py
+          PYTHONPATH=. python tests/test_wnba_step9_multisportsbook_consensus.py
+          PYTHONPATH=. python tests/test_wnba_step9_sportsbook_market_comparison.py
+          PYTHONPATH=. python tests/test_wnba_step9_threshold_pricing.py
+          PYTHONPATH=. python tests/test_wnba_step8_joint_monte_carlo.py
+          PYTHONPATH=. python tests/test_wnba_step8_context_adjustment.py
+          PYTHONPATH=. python tests/test_wnba_step8_core_projection.py
+          PYTHONPATH=. python tests/test_wnba_step8_official_box_baseline.py
+          PYTHONPATH=. python tests/test_wnba_step8_projection_handoff.py
+          PYTHONPATH=. python tests/test_wnba_step8_fastapi_integration.py
+
+      - name: Prove frozen Step 12B head is exact ancestor
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP12B_FROZEN_SHA='a109be6116fde66e6857d6c676c0f08790a334f3'
+          git merge-base --is-ancestor "$STEP12B_FROZEN_SHA" HEAD
+          test "$(git rev-list --count "$STEP12B_FROZEN_SHA"..HEAD)" -ge 1
+
+      - name: Prove only Step 12C files changed after frozen Step 12B
+        shell: bash
+        run: |
+          set -euo pipefail
+          STEP12B_FROZEN_SHA='a109be6116fde66e6857d6c676c0f08790a334f3'
+          git diff --name-only "$STEP12B_FROZEN_SHA" HEAD | while IFS= read -r path; do
+            case "$path" in
+              sports_api/wnba_step12c_live_board_runtime.py|\
+              tests/test_wnba_step12c_live_board_runtime.py|\
+              sports_api/tools/wnba_step12c_live_board_runtime_cert.py|\
+              .github/workflows/wnba-step-12c-live-board-runtime-cert.yml)
+                ;;
+              *)
+                echo "Unexpected post-Step12B file drift: $path" >&2
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Verify frozen lineage and Step 12C safety contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python - <<'PY'
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step12c_live_board_runtime as s12c
+          assert s12c.STEP12B_FROZEN_SHA == 'a109be6116fde66e6857d6c676c0f08790a334f3'
+          assert s12b.STEP12A_FROZEN_SHA == '4523abb8b230e8e29d9f9d298232dfb8948fc883'
+          assert s12c.CERTIFIED_SIMULATIONS == 5_000_000
+          assert s12c.DEFAULT_ENABLED is False
+          assert s12c.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert s12c.BACKGROUND_SCHEDULER_ALLOWED is False
+          assert s12c.PERSISTENCE_ALLOWED is False
+          assert s12c.SUPABASE_WRITE_ALLOWED is False
+          assert s12c.PUBLIC_FASTAPI_ACTIVATION_ALLOWED is False
+          assert s12c.WAGERING_ALLOWED is False
+          assert s12b.DEFAULT_ENABLED is False
+          assert s12b.PRODUCTION_ACTIVATION_ALLOWED is False
+          assert s12b.BACKGROUND_SCHEDULER_ALLOWED is False
+          assert s12b.PERSISTENCE_ALLOWED is False
+          assert s12b.SUPABASE_WRITE_ALLOWED is False
+          assert s12b.PUBLIC_FASTAPI_ACTIVATION_ALLOWED is False
+          assert s12b.WAGERING_ALLOWED is False
+          assert s12c.step12c_live_board_runtime_enabled({}) is False
+          print('STEP12C_FROZEN_LINEAGE_AND_SAFETY_OK')
+          PY
+
+      - name: Certify Step 12C live board runtime
+        run: PYTHONPATH=. python -m sports_api.tools.wnba_step12c_live_board_runtime_cert
+
+      - name: Upload Step 12C certification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step12c-live-board-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step12c-live-board-runtime-cert.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Re-assert production scheduler persistence writes OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_PERSISTENCE_ENABLED" = 'false'
+          test "$WNBA_SUPABASE_WRITE_ENABLED" = 'false'
+          test "$WNBA_WAGERING_ENABLED" = 'false'
+          test "$WNBA_STEP12_SCHEDULER_ENABLED" = 'false'

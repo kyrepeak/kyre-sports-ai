@@ -1,0 +1,256 @@
+name: WNBA Step 5Z authenticated Render provisioning tests
+
+on:
+  pull_request:
+    paths:
+      - "sports_api/**"
+      - ".github/workflows/wnba-step-5z.yml"
+  push:
+    branches:
+      - api-foundation-v1
+  workflow_dispatch:
+    inputs:
+      provision_render:
+        description: Provision the real Render staging service after tests pass
+        required: true
+        type: boolean
+        default: false
+      confirm_paid_provisioning:
+        description: I explicitly approve creating the paid Starter service + persistent disk
+        required: true
+        type: boolean
+        default: false
+      release_id:
+        description: Optional release ID; blank uses the exact commit SHA prefix
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  step5z:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sports_api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 5Z modules
+        run: |
+          python -m py_compile sports_api/wnba_render_provisioning.py
+          python -m py_compile sports_api/api/wnba_render_provisioning.py
+          python -m py_compile sports_api/tools/wnba_render_provision.py
+          python -m py_compile sports_api/main.py
+
+      - name: Run Step 5I regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_historical_backtest_calibration.py
+
+      - name: Run Step 5J regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_pregame_prediction_store.py
+
+      - name: Run Step 5K regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_player_prop_top_five_board.py
+
+      - name: Run Step 5L regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_daily_slate_top_five.py
+
+      - name: Run Step 5M regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_prop_line_feed_adapter.py
+
+      - name: Run Step 5N regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_prop_feed_collector.py
+
+      - name: Run Step 5O regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_prop_feed_failover.py
+
+      - name: Run Step 5P regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_pregame_board_scheduler.py
+
+      - name: Run Step 5Q regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_scheduler_cycle_lock.py
+
+      - name: Run Step 5R regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_production_runtime_readiness.py
+
+      - name: Run Step 5S regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_deployment_smoke_readiness.py
+
+      - name: Run Step 5T regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_release_activation_readiness.py
+
+      - name: Run Step 5U regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_hosted_staging_readiness.py
+
+      - name: Run Step 5V regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_release_publication_handoff.py
+
+      - name: Run Step 5W regression harness
+        env: { PYTHONPATH: . }
+        run: |
+          python sports_api/tests/test_wnba_staging_activation_gate.py
+          python sports_api/tests/test_wnba_staging_activation_routes.py
+
+      - name: Run Step 5X regression harness
+        env: { PYTHONPATH: . }
+        run: |
+          python sports_api/tests/test_wnba_real_staging_deployment.py
+          python sports_api/tests/test_wnba_real_staging_routes.py
+
+      - name: Run Step 5Y regression harness
+        env: { PYTHONPATH: . }
+        run: |
+          python sports_api/tests/test_wnba_render_attachment_readiness.py
+          python sports_api/tests/test_wnba_render_attachment_routes.py
+
+      - name: Run Step 5Z deterministic harness
+        env: { PYTHONPATH: . }
+        run: |
+          python sports_api/tests/test_wnba_render_provisioning.py
+          python sports_api/tests/test_wnba_render_provisioning_routes.py
+
+  provision-real-render-staging:
+    needs: step5z
+    if: github.event_name == 'workflow_dispatch' && inputs.provision_render == true && inputs.confirm_paid_provisioning == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: wnba-render-staging
+
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Verify operator secrets are configured
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          GHCR_RENDER_USERNAME: ${{ secrets.GHCR_RENDER_USERNAME }}
+          GHCR_RENDER_TOKEN: ${{ secrets.GHCR_RENDER_TOKEN }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+        run: |
+          missing=0
+          for name in RENDER_API_KEY GHCR_RENDER_USERNAME GHCR_RENDER_TOKEN SPORTSGAMEODDS_API_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required GitHub Actions secret: $name" >&2
+              missing=1
+            fi
+          done
+          test "$missing" -eq 0
+
+      - name: Resolve exact release identity
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          test "${#REVISION}" -eq 40
+          SHORT_SHA="${REVISION:0:12}"
+          REQUESTED_RELEASE="${{ inputs.release_id }}"
+          if [ -n "$REQUESTED_RELEASE" ]; then
+            RELEASE_ID="$REQUESTED_RELEASE"
+          else
+            RELEASE_ID="wnba-step5z-$SHORT_SHA"
+          fi
+          case "$RELEASE_ID" in
+            *[!A-Za-z0-9._-]*|'') echo "Invalid release ID" >&2; exit 1 ;;
+          esac
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          echo "WNBA_STEP5Z_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP5Z_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP5Z_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR for publication
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish exact Step 5Z image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$WNBA_STEP5Z_REVISION" \
+            --build-arg WNBA_RELEASE_ID="$WNBA_STEP5Z_RELEASE_ID" \
+            --metadata-file /tmp/wnba-step5z-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$WNBA_STEP5Z_REPOSITORY:$WNBA_STEP5Z_RELEASE_ID" \
+            -t "$WNBA_STEP5Z_REPOSITORY:$WNBA_STEP5Z_REVISION" \
+            --push .
+
+      - name: Freeze immutable digest
+        run: |
+          python - <<'PY'
+          import json, os, re
+          meta = json.load(open('/tmp/wnba-step5z-build-metadata.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid registry digest: {digest!r}')
+          ref = f"{os.environ['WNBA_STEP5Z_REPOSITORY']}@{digest}"
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f"WNBA_STEP5Z_IMAGE_REF={ref}\n")
+          print(ref)
+          PY
+
+      - name: Show sanitized provisioning plan
+        env:
+          PYTHONPATH: .
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+        run: |
+          python sports_api/tools/wnba_render_provision.py \
+            --dry-run \
+            --release-id "$WNBA_STEP5Z_RELEASE_ID" \
+            --revision "$WNBA_STEP5Z_REVISION" \
+            --image-ref "$WNBA_STEP5Z_IMAGE_REF"
+
+      - name: Provision and verify real Render staging
+        env:
+          PYTHONPATH: .
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+          GHCR_RENDER_USERNAME: ${{ secrets.GHCR_RENDER_USERNAME }}
+          GHCR_RENDER_TOKEN: ${{ secrets.GHCR_RENDER_TOKEN }}
+          SPORTSGAMEODDS_API_KEY: ${{ secrets.SPORTSGAMEODDS_API_KEY }}
+          WNBA_RENDER_ALLOW_PAID_PROVISIONING: "true"
+          WNBA_PRODUCTION_RUNTIME_ENABLED: "false"
+        run: |
+          python sports_api/tools/wnba_render_provision.py \
+            --confirm-paid-provisioning \
+            --release-id "$WNBA_STEP5Z_RELEASE_ID" \
+            --revision "$WNBA_STEP5Z_REVISION" \
+            --image-ref "$WNBA_STEP5Z_IMAGE_REF"

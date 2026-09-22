@@ -1,0 +1,159 @@
+name: Monster Control Plane V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "sports_api/monster_control_plane_v1.py"
+      - "tests/test_monster_control_plane_v1.py"
+      - ".github/workflows/monster-control-plane-v1.yml"
+      - "sports_api/observability_v1.py"
+      - "sports_api/posthog_error_radar_v1.py"
+      - "sports_api/monster_performance_profiler_v1.py"
+      - "sports_api/monster_dependency_map_v1.py"
+      - "sports_api/monster_page_factory_v1.py"
+      - "sports_api/monster_test_matrix_v1.py"
+      - "sports_api/monster_failure_memory_v1.py"
+      - "sports_api/monster_certification_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - "sports_api/monster_control_plane_v1.py"
+      - "tests/test_monster_control_plane_v1.py"
+      - ".github/workflows/monster-control-plane-v1.yml"
+      - "sports_api/observability_v1.py"
+      - "sports_api/posthog_error_radar_v1.py"
+      - "sports_api/monster_performance_profiler_v1.py"
+      - "sports_api/monster_dependency_map_v1.py"
+      - "sports_api/monster_page_factory_v1.py"
+      - "sports_api/monster_test_matrix_v1.py"
+      - "sports_api/monster_failure_memory_v1.py"
+      - "sports_api/monster_certification_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monster-control-plane-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  monster-control-plane:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            sports_api/requirements.txt
+
+      - name: Install Monster Control Plane dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Monster Control Plane
+        run: |
+          python -m py_compile sports_api/monster_control_plane_v1.py
+
+      - name: Run Monster Control Plane contracts
+        run: |
+          python -m pytest -q tests/test_monster_control_plane_v1.py
+
+      - name: Run real Final Form control-plane diagnosis and certification
+        run: |
+          python -m sports_api.monster_control_plane_v1 \
+            --target sports_api/monster_control_plane_v1.py \
+            --signature "cfb ou cold start eagerly imports historical router spine before active page" \
+            --sport CFB \
+            --surface streamlit \
+            --path cfb-over-under \
+            --total-ms 3600 \
+            --span "bootstrap.router=2800:import" \
+            --span "render.cards=400:render" \
+            --certify \
+            --json > /tmp/monster-control-plane.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('/tmp/monster-control-plane.json').read_text())
+          assert report['control_plane_version'] == 'MONSTER_CONTROL_PLANE_V1'
+          assert report['status'] == 'INVESTIGATE'
+
+          signals = report['signals']
+          assert signals['observability']['status'] == 'ok'
+          assert signals['error_radar']['version'] == 'MONSTER_ERROR_RADAR_V1'
+          assert signals['performance']['grade'] == 'CRITICAL'
+          assert signals['performance']['bottleneck'] == 'bootstrap.router'
+          assert signals['failure_memory']['status'] == 'FOUND'
+          assert signals['failure_memory']['exact'] is True
+          assert signals['dependency']['status'] == 'OK'
+          assert signals['dependency']['impacted_entrypoints'] == []
+          assert signals['test_matrix']['passed'] is True
+          assert signals['test_matrix']['scenario_count'] >= 20
+          assert signals['certification']['status'] == 'PASS'
+          assert signals['certification']['passed_check_count'] == 7
+
+          protections = report['protections']
+          assert protections['projection_weight'] == 0.0
+          assert protections['may_modify_projection'] is False
+          assert protections['may_modify_source_data'] is False
+          assert protections['may_modify_runtime'] is False
+          assert protections['network_calls'] is False
+          assert protections['fuzzy_matching'] is False
+          assert protections['auto_fix'] is False
+          assert protections['replaces_devsystem_final_gate'] is False
+          assert protections['authoritative_merge_gate'] == 'devsystem-final-gate'
+
+          required = {'cfb-critical', 'browser-qa', 'devsystem-final-gate'}
+          assert required.issubset(set(report['recommended_tests']))
+          print(
+              'control-plane:',
+              report['status'],
+              'certification=', signals['certification']['status'],
+              'matrix=', signals['test_matrix']['passed_count'],
+              '/', signals['test_matrix']['scenario_count'],
+          )
+          PY
+
+      - name: Prove control plane remains outside production entrypoints
+        run: |
+          python - <<'PY'
+          from sports_api.monster_dependency_map_v1 import build_dependency_map
+
+          graph = build_dependency_map('.')
+          report = graph.impact_report('sports_api/monster_control_plane_v1.py')
+          assert report['status'] == 'OK'
+          assert report['impacted_entrypoints'] == []
+          print(
+              f"control-plane blast_radius={report['blast_radius']} "
+              f"entrypoints={report['impacted_entrypoints']}"
+          )
+          PY
+
+      - name: Prove frozen authority remains unchanged
+        run: |
+          python - <<'PY'
+          from sports_api.monster_control_plane_v1 import protection_snapshot
+
+          protections = protection_snapshot()
+          assert protections == {
+              'projection_weight': 0.0,
+              'may_modify_projection': False,
+              'may_modify_source_data': False,
+              'may_modify_runtime': False,
+              'network_calls': False,
+              'fuzzy_matching': False,
+              'auto_fix': False,
+              'replaces_devsystem_final_gate': False,
+              'authoritative_merge_gate': 'devsystem-final-gate',
+          }
+          print('Step 8 is read-only; devsystem-final-gate remains authoritative')
+          PY

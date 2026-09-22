@@ -1,0 +1,5 @@
+# DevSystem Browser QA tooling lock.
+# Keep Playwright pinned so the combined Browser QA stack cache has deterministic browser/runtime identity.
+pytest
+requests
+playwright==1.62.0

@@ -1,0 +1,342 @@
+name: Passing Yards Universal Step 4 Cards
+
+on:
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v54.py'
+      - 'streamlit_memory_lazy_router_v205.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step4-cards-v1.json'
+      - '.github/workflows/passing-yards-universal-step4-cards-v1.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app.py'
+      - 'nfl_passing_yards_hub_v54.py'
+      - 'streamlit_memory_lazy_router_v205.py'
+      - 'devsystem/task_ledgers/passing-yards-universal-step4-cards-v1.json'
+      - '.github/workflows/passing-yards-universal-step4-cards-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-step4-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Step 4 card chain
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v54.py streamlit_memory_lazy_router_v205.py app.py
+
+      - name: Verify Step 4 card contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          v54 = Path("nfl_passing_yards_hub_v54.py").read_text()
+          router = Path("streamlit_memory_lazy_router_v205.py").read_text()
+          app = Path("app.py").read_text()
+
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v53"' in v54
+          assert 'VISUAL_UPGRADE_STEP = 4' in v54
+          assert 'PRESENTATION_ONLY = True' in v54
+          assert 'MAY_MODIFY_PROJECTION = False' in v54
+          assert 'MAY_MODIFY_MARKET_MATH = False' in v54
+          assert 'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0' in v54
+          assert 'data-passing-yards-card-system="v54"' in v54
+          assert 'data-passing-yards-card-owner="v54"' in v54
+          assert 'build_semantic_tokens_css() + _CARD_CSS' in v54
+
+          css = v54.split('_CARD_CSS = r"""',1)[1].split('"""',1)[0]
+          assert not re.search(r'#[0-9a-fA-F]{3,8}', css), "V54 contains page-local hex colors"
+          assert 'rgba(' not in css, "V54 contains page-local rgba colors"
+          for marker in (
+              ".ks-py47-player",
+              ".ks-py48-player",
+              ".ks-py47-playerhead",
+              ".ks-py48-playerhead",
+              ".ks-py47-identity",
+              ".ks-py48-identity",
+              ".ks-py47-tile",
+              ".ks-py48-market",
+              "--kyre-sem-surface-panel",
+              "--kyre-sem-border-medium",
+              "--kyre-sem-radius-card",
+              "--kyre-sem-shadow-card",
+          ):
+              assert marker in css, marker
+
+          assert 'import streamlit_memory_lazy_router_v204 as prior' in router
+          assert 'import streamlit_memory_lazy_router_v185 as handoff' in router
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v54"' in router
+          assert 'data-passing-yards-v205-runtime="step4"' in router
+          assert 'def _cold_passing_yards_query_requested() -> bool:' in router
+          assert 'handoff._query_value(handoff.SPORT_JUMP_QUERY_KEY)' in router
+          assert 'handoff._query_value(handoff.MARKET_JUMP_QUERY_KEY)' in router
+          assert 'prior._cold_passing_yards_query_requested()' not in router
+          assert 'prior.PASSING_HUB = PASSING_HUB' in router
+          render_body = router.split("def render_app() -> None:",1)[1]
+          assert 'cold_query = _cold_passing_yards_query_requested()' in render_body
+          assert "_consume_passing_yards_query_entry()" not in render_body
+
+          assert 'from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app' in app
+          assert 'from streamlit_memory_lazy_router_v204 import record_bootstrap_import_ms, render_app' in app
+          assert 'PASSING_YARDS_UNIVERSAL_STEP4_RUNTIME' in app
+          assert 'PASSING_YARDS_STEP4_PUBLIC_DEPLOY_REFRESH' in app
+          workflow = Path(".github/workflows/passing-yards-universal-step4-cards-v1.yml").read_text()
+          assert re.search(r"(?m)^  runtime-trace-diagnostic:\\s*$", workflow) is None
+          public_body = workflow.split("\n  public-production-proof:\n",1)[1]
+          assert public_body.index("revision_ready = False") < public_body.index("frame, scan = _find_app_frame(page)")
+          assert 'page.reload(' not in public_body
+          assert 'next_route_retry = time.monotonic() + 20.0' in public_body
+          assert 'revision_deadline = time.monotonic() + 480.0' in public_body
+          assert 'page.wait_for_timeout(1000)' in public_body
+          assert 'v205_runtime_witness' in public_body
+          assert 'step4_card_style' in public_body
+          assert 'step4_card_owner' in public_body
+          assert public_body.count('page.goto(route_url, wait_until="domcontentloaded", timeout=120000)') >= 2
+
+          banned = (
+              "_build_projection(",
+              "_build_final(",
+              "fetch_nfl_passing",
+              "requests.get(",
+              "random.",
+              "np.random",
+              "st.selectbox(",
+              "st.date_input(",
+          )
+          for token in banned:
+              assert token not in v54, f"Step 4 unexpectedly owns analytical/widget token: {token}"
+
+          print("PASSING_YARDS_UNIVERSAL_STEP4_STATIC_GREEN")
+          PY
+
+
+  public-production-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install targeted browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Prove public Passing Yards Step 4 cards
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _body_has_forbidden_error,
+              BrowserQAFailure,
+          )
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          router_source = Path("streamlit_memory_lazy_router_v205.py").read_text()
+          app_source = Path("app.py").read_text()
+          if 'PASSING_HUB = "nfl_passing_yards_hub_v54"' not in router_source:
+              raise BrowserQAFailure("PASSING_YARDS_STEP4_SOURCE_OWNER: V205 no longer owns V54")
+          if 'from streamlit_memory_lazy_router_v205 import record_bootstrap_import_ms, render_app' not in app_source:
+              raise BrowserQAFailure("PASSING_YARDS_STEP4_SOURCE_OWNER: app no longer boots V205")
+
+          artifacts = Path("artifacts/passing-yards-universal-step4-public")
+          artifacts.mkdir(parents=True, exist_ok=True)
+          _wait_for_health(base)
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width":1280,"height":1000})
+              try:
+                  route_url = base + "/?ks_jump_sport=NFL&ks_jump_market=Passing%20Yards"
+                  page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+
+                  # Deployment revision readiness must happen before the strict
+                  # frame grader. A stale Streamlit revision can legitimately
+                  # render an old error screen while the new main revision is
+                  # still rolling out; that stale screen cannot disprove V54.
+                  revision_deadline = time.monotonic() + 480.0
+                  next_route_retry = time.monotonic() + 20.0
+                  revision_scan = []
+                  while True:
+                      revision_scan = []
+                      revision_ready = False
+                      for index, candidate in enumerate(page.frames):
+                          try:
+                              marker_count = candidate.locator(
+                                  '[data-passing-yards-v205-runtime="step4"]'
+                              ).count()
+                              step4_card_style = candidate.locator(
+                                  'style[data-passing-yards-card-system="v54"]'
+                              ).count()
+                              step4_card_owner = candidate.locator(
+                                  '[data-passing-yards-card-owner="v54"]'
+                              ).count()
+                              body_start = candidate.locator("body").inner_text(timeout=3000)[:1200]
+                          except Exception:
+                              marker_count = 0
+                              step4_card_style = 0
+                              step4_card_owner = 0
+                              body_start = ""
+                          revision_scan.append({
+                              "index": index,
+                              "url": candidate.url,
+                              "v205_hidden_runtime": marker_count,
+                              "step4_card_style": step4_card_style,
+                              "step4_card_owner": step4_card_owner,
+                              "body_start": body_start,
+                          })
+                          if step4_card_style == 1:
+                              revision_ready = True
+                              break
+
+                      if revision_ready:
+                          break
+
+                      if time.monotonic() >= revision_deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_STEP4_REVISION_READINESS: "
+                              "public Streamlit never exposed the durable V54 style runtime witness owned by V205; "
+                              + json.dumps(revision_scan, sort_keys=True)
+                          )
+
+                      page.wait_for_timeout(1000)
+
+                      # Give Streamlit enough uninterrupted time to hydrate.
+                      # Prior local Step 4 proof needed materially longer than
+                      # 1.5 seconds; rapid renavigation starves the app before
+                      # the V205 witness can appear.
+                      now = time.monotonic()
+                      if now >= next_route_retry:
+                          page.goto(route_url, wait_until="domcontentloaded", timeout=120000)
+                          next_route_retry = time.monotonic() + 20.0
+
+                  # Once the exact V205 revision is serving, restore the strict
+                  # existing frame selection and all existing acceptance checks.
+                  frame, scan = _find_app_frame(page)
+
+                  deadline = time.monotonic() + 60.0
+                  evidence = {}
+                  while True:
+                      body = frame.locator("body").inner_text(timeout=5000)
+                      forbidden = _body_has_forbidden_error(body)
+                      if forbidden:
+                          raise BrowserQAFailure(f"PASSING_YARDS_RUNTIME: forbidden marker {forbidden}")
+
+                      cards = frame.locator(".ks-py47-player, .ks-py48-player")
+                      headers = frame.locator(".ks-py47-playerhead, .ks-py48-playerhead")
+                      step4_card_style = frame.locator('style[data-passing-yards-card-system="v54"]').count()
+                      step4_card_owner = frame.locator('[data-passing-yards-card-owner="v54"]').count()
+                      v205_hidden_runtime = frame.locator('[data-passing-yards-v205-runtime="step4"]').count()
+                      v205_runtime_witness = int(step4_card_style == 1)
+
+                      evidence = {
+                          "v205_runtime_witness": v205_runtime_witness,
+                          "v205_hidden_runtime_diagnostic": v205_hidden_runtime,
+                          "v204_runtime": frame.locator('[data-passing-yards-v204-runtime="step3"]').count(),
+                          "step4_card_style": step4_card_style,
+                          "step4_card_owner": step4_card_owner,
+                          "step3_shell_style": frame.locator('style[data-passing-yards-page-shell="v53"]').count(),
+                          "step3_shell_owner": frame.locator('[data-passing-yards-shell-owner="v53"]').count(),
+                          "step2_token_style": frame.locator('style[data-passing-yards-design-tokens="v52"]').count(),
+                          "step2_token_owner": frame.locator('[data-passing-yards-token-owner="v52"]').count(),
+                          "step1_owner_style": frame.locator('style[data-passing-yards-universal-owner="v51"]').count(),
+                          "player_cards": cards.count(),
+                          "player_headers": headers.count(),
+                          "passing_yards_text": "Passing Yards" in body,
+                      }
+
+                      if (
+                          evidence["v205_runtime_witness"] == 1
+                          and evidence["step4_card_style"] == 1
+                          and evidence["step3_shell_style"] >= 1
+                          and evidence["step2_token_style"] >= 1
+                          and evidence["step1_owner_style"] >= 1
+                          and evidence["player_cards"] >= 2
+                          and evidence["player_headers"] >= 2
+                          and evidence["passing_yards_text"]
+                      ):
+                          break
+
+                      if time.monotonic() >= deadline:
+                          raise BrowserQAFailure(
+                              "PASSING_YARDS_STEP4_CARD_READINESS: "
+                              + json.dumps(evidence, sort_keys=True)
+                              + f"; body start={body[:2200]!r}"
+                          )
+                      page.wait_for_timeout(500)
+
+                  card_style = frame.locator(".ks-py47-player, .ks-py48-player").first.evaluate(
+                      """el => {
+                          const s=getComputedStyle(el);
+                          return {
+                              backgroundImage:s.backgroundImage,
+                              borderRadius:s.borderRadius,
+                              borderTopColor:s.borderTopColor,
+                              boxShadow:s.boxShadow
+                          };
+                      }"""
+                  )
+                  header_style = frame.locator(".ks-py47-playerhead, .ks-py48-playerhead").first.evaluate(
+                      """el => {
+                          const s=getComputedStyle(el);
+                          return {
+                              minHeight:s.minHeight,
+                              backgroundImage:s.backgroundImage,
+                              borderBottomColor:s.borderBottomColor
+                          };
+                      }"""
+                  )
+
+                  if "gradient" not in card_style["backgroundImage"].lower():
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP4_CARD_BACKGROUND: {card_style}")
+                  if card_style["borderRadius"] in {"0px", "0"}:
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP4_CARD_RADIUS: {card_style}")
+                  if card_style["boxShadow"] in {"none", ""}:
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP4_CARD_SHADOW: {card_style}")
+                  if "gradient" not in header_style["backgroundImage"].lower():
+                      raise BrowserQAFailure(f"PASSING_YARDS_STEP4_HEADER_BACKGROUND: {header_style}")
+
+                  result = {
+                      "status":"GREEN",
+                      "route":"NFL -> Passing Yards",
+                      "owner":"nfl_passing_yards_hub_v54",
+                      "frozen_step3":"nfl_passing_yards_hub_v53",
+                      "evidence":evidence,
+                      "card_computed_style":card_style,
+                      "header_computed_style":header_style,
+                      "frame_scan_count":len(scan),
+                  }
+                  (artifacts/"result.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
+                  page.screenshot(path=str(artifacts/"passing_yards_step4_cards_green.png"),full_page=True)
+                  print("PASSING_YARDS_UNIVERSAL_STEP4_PUBLIC_GREEN")
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Upload Passing Yards Step 4 proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-universal-step4-${{ github.run_id }}
+          path: artifacts/passing-yards-universal-step4-public
+          if-no-files-found: warn
+          retention-days: 7

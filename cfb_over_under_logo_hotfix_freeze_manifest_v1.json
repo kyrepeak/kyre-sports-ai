@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "scope": "cfb_over_under_logo_hotfix",
+  "policy": "The College Football Over/Under ESPN logo hotfix is presentation-only and additive above permanently frozen CFB Steps 1-12 and O/U Upgrade Steps 1-3. Future work must not edit these hotfix files; use new versioned modules and routers.",
+  "baseline_commit": "c323dd347e7569fcadac35263312752e03045309",
+  "completed_hotfixes": [1],
+  "exact_blobs": {
+    "cfb_over_under_logo_resolver_v1.py": "e4f47459ad853225ad62f4dd12e1d6bc2a1c6d94",
+    "cfb_over_under_matchup_ui_v3_logo_hotfix_v1.py": "f22972c012458e14fa95f2d78888ed7244827de5",
+    "streamlit_memory_lazy_router_v40.py": "fc4da9f79a1f501a90a97a800bf8ea190e18e382"
+  },
+  "hotfix1_contract": {
+    "name": "ESPN college team logo resolver",
+    "market": "Over/Under",
+    "frozen_parent_upgrade": "cfb_over_under_matchup_ui_v3",
+    "frozen_parent_router": "streamlit_memory_lazy_router_v39",
+    "active_resolver": "cfb_over_under_logo_resolver_v1",
+    "active_ui": "cfb_over_under_matchup_ui_v3_logo_hotfix_v1",
+    "active_router": "streamlit_memory_lazy_router_v40",
+    "espn_scoreboard_alias_matching_active": true,
+    "espn_event_id_match_active": true,
+    "espn_event_summary_fallback_active": true,
+    "espn_team_id_cdn_fallback_active": true,
+    "florida_am_alias_case_certified": true,
+    "miami_fl_alias_case_certified": true,
+    "florida_am_espn_team_id": "50",
+    "miami_espn_team_id": "2390",
+    "presentation_only": true,
+    "projection_math_changed": false,
+    "probability_math_changed": false,
+    "selection_math_changed": false,
+    "top5_ranking_math_changed": false,
+    "reliability_changed": false,
+    "sportsbook_input_added": false,
+    "market_probability_input_added": false,
+    "edge_or_ev_added": false,
+    "monte_carlo_added": false,
+    "next_upgrade_step": 4,
+    "next_upgrade_name": "pace / expected possessions"
+  }
+}

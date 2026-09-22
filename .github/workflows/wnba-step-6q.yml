@@ -1,0 +1,104 @@
+name: WNBA Step 6Q durable storage abstraction
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_step6q_durable_storage.py'
+      - 'sports_api/api/wnba_step6q_durable_storage.py'
+      - 'sports_api/tests/test_wnba_step6q_durable_storage.py'
+      - 'sports_api/main.py'
+      - 'sports_api/production.env.example'
+      - '.github/workflows/wnba-step-6q.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_step6q_durable_storage.py'
+      - 'sports_api/api/wnba_step6q_durable_storage.py'
+      - 'sports_api/tests/test_wnba_step6q_durable_storage.py'
+      - 'sports_api/main.py'
+      - 'sports_api/production.env.example'
+      - '.github/workflows/wnba-step-6q.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step6q-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6q-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact Step 6Q revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6Q storage abstraction
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step6q_durable_storage.py \
+            sports_api/api/wnba_step6q_durable_storage.py \
+            sports_api/main.py
+
+      - name: Run Step 6Q fail-closed tests
+        run: python -m unittest sports_api.tests.test_wnba_step6q_durable_storage
+
+      - name: Run frozen Kyre feed compatibility regression
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed
+
+      - name: Run frozen Step 6J filesystem canary regression
+        run: python -m unittest sports_api.tests.test_wnba_step6j_canary_activation
+
+      - name: Run Phase 6 master certification regression
+        run: python -m unittest sports_api.tests.test_wnba_step6p_phase6_certification
+
+      - name: Prove Step 6Q status is mutation-free and network-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          core = Path('sports_api/wnba_step6q_durable_storage.py').read_text(encoding='utf-8').lower()
+          api = Path('sports_api/api/wnba_step6q_durable_storage.py').read_text(encoding='utf-8').lower()
+          status_body = core.split('def get_step6q_durable_storage_status', 1)[1]
+          forbidden_status = ('write_bytes_atomic(', 'delete(', 'exclusive_lock(', 'httpx.', 'requests.', 'urllib.request')
+          for token in forbidden_status:
+              assert token not in status_body, token
+          assert '@router.get' in api
+          assert '@router.post' not in api
+          assert '@router.put' not in api
+          assert '@router.delete' not in api
+          print('Step 6Q status path is GET-only, storage-mutation-free, and network-free.')
+          PY
+
+      - name: Prove Supabase is reserved but cannot silently activate early
+        shell: bash
+        run: |
+          python - <<'PY'
+          from sports_api.wnba_step6q_durable_storage import (
+              STORAGE_BACKEND_ENV,
+              SUPABASE_BACKEND,
+              WNBADurableStorageNotReadyError,
+              build_durable_storage,
+              resolve_storage_backend_name,
+          )
+          env = {STORAGE_BACKEND_ENV: SUPABASE_BACKEND}
+          assert resolve_storage_backend_name(env) == SUPABASE_BACKEND
+          try:
+              build_durable_storage(env=env)
+          except WNBADurableStorageNotReadyError as exc:
+              assert 'Step 6R' in str(exc)
+          else:
+              raise AssertionError('Supabase must not silently fall back to filesystem before Step 6R.')
+          print('Supabase selector is reserved and fails closed until Step 6R.')
+          PY

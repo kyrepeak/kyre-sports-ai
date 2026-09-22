@@ -1,0 +1,125 @@
+name: CFB Game Total V184 Step 6 permanent freeze
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [freeze/cfb-game-total-v184-step6]
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify V184 Step 6 freeze metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v184_step6_freeze_manifest_v1.json").read_text())
+          assert m["version"] == 1
+          assert m["feature_pr"] == 736
+          assert m["status"] == "FROZEN"
+          assert m["production_proof_required"] is True
+          assert m["production_proof_status"] == "GREEN"
+          assert int(m["production_proof_run"]) > 0
+          assert m["contract"]["active_page"] == "cfb_game_total_clean_page_v18"
+          assert m["contract"]["active_router"] == "streamlit_memory_lazy_router_v163"
+          assert m["contract"]["step6_tile_count"] == 12
+          assert m["contract"]["step6_ready_coverage_required"] == 100
+          assert m["contract"]["step6_ready_tiles_required"] == 12
+          assert m["contract"]["pass_explosive_threshold_yards"] == 20
+          assert m["contract"]["rush_explosive_threshold_yards"] == 10
+          assert m["contract"]["sportsbook_projection_influence"] == 0.0
+          assert m["contract"]["projection_mutation"] is False
+          assert m["contract"]["steps_1_through_5_remain_frozen"] is True
+          assert m["contract"]["permanently_frozen"] is True
+          print("CFB_GAME_TOTAL_V184_STEP6_FREEZE_METADATA=PASS")
+          PY
+
+      - name: Verify every prepared frozen blob exactly
+        run: |
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          m=json.loads(Path("cfb_game_total_v184_step6_freeze_manifest_v1.json").read_text())
+          failures=[]
+          for path, expected in m["exact_blobs"].items():
+              actual=subprocess.check_output(["git","rev-parse",f"HEAD:{path}"], text=True).strip()
+              if actual != expected:
+                  failures.append(f"{path}: expected {expected}, got {actual}")
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("CFB_GAME_TOTAL_V184_STEP6_EXACT_BLOBS=PASS", len(m["exact_blobs"]))
+          PY
+
+      - name: Enforce frozen Step 6 boundaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          owner=Path("cfb_game_total_step6_scoring_v1.py").read_text(encoding="utf-8")
+          page=Path("cfb_game_total_clean_page_v18.py").read_text(encoding="utf-8")
+          router=Path("streamlit_memory_lazy_router_v163.py").read_text(encoding="utf-8")
+          app=Path("app.py").read_text(encoding="utf-8")
+          required = {
+              "owner": (owner, [
+                  "10+ YARD RUSHES",
+                  "overall_explosive_rate",
+                  "big_play_susceptibility",
+                  "scoring_op_conversion",
+                  "red_zone_td_rate_allowed",
+                  "SPORTSBOOK INFLUENCE 0.0%",
+                  "PROJECTION MUTATION OFF",
+              ]),
+              "page": (page, [
+                  "cfb_game_total_clean_page_v17",
+                  "int(number) == 6",
+              ]),
+              "router": (router, [
+                  "cfb_game_total_clean_page_v18",
+                  "streamlit_memory_lazy_router_v162 as prior",
+                  "SPORTSBOOK_PROJECTION_INFLUENCE = 0.0",
+                  "MAY_MODIFY_PROJECTION = False",
+              ]),
+              "app": (app, [
+                  "streamlit_memory_lazy_router_v163",
+              ]),
+          }
+          for label,(source,tokens) in required.items():
+              for token in tokens:
+                  if token not in source:
+                      raise SystemExit(f"missing frozen {label} marker: {token}")
+          print("CFB_GAME_TOTAL_V184_STEP6_BOUNDARIES=PASS")
+          PY
+
+      - name: Compile prepared frozen surface
+        run: |
+          python -m py_compile \
+            cfb_game_total_step6_scoring_v1.py \
+            cfb_game_total_clean_page_v18.py \
+            streamlit_memory_lazy_router_v163.py \
+            devsystem/cfb_game_total_step6_browser_qa_v184.py
+
+      - name: Install live-proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Mandatory production proof before permanent freeze
+        run: |
+          python -m devsystem.production_verify_step6_v184 \
+            --artifact-dir artifacts/production-step6-v184-freeze
+
+      - name: Permanent freeze marker
+        run: echo "CFB_GAME_TOTAL_V184_STEP6_PERMANENT_FREEZE_GREEN"

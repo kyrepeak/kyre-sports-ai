@@ -1,0 +1,58 @@
+{
+  "data_type": "mlb_step17a_production_host_contract_evidence_v1",
+  "schema_version": 1,
+  "observed_at_utc": "2026-09-01T23:26:13Z",
+  "evidence_content_sha256": "56203a5f1f02f6979e0089d85955597158cac663370d2dd362e7bee7ce4e9d98",
+  "step16e": {
+    "main_merge_sha": "9676d4b657b4928a61563014e1bc519dfe52fa26",
+    "tested_head_sha": "b4a69b96c9783006d8dd463fc6407c44958081e5",
+    "tree_sha": "d87955d61fa7c463ebe4f03601dab854ccc40622",
+    "release_content_sha256": "769e16a66c87a49a627e9bec80f3d119ec10410f44abc5e10444b0ec3b0617ff",
+    "final_evidence_content_sha256": "5987ae2e98b72031007757c631772f26fac0134a2f6ca3a19e496bfc26e0d7a0",
+    "dockerfile_blob_sha": "34a542b0a32456de58b81fd711fef215e618469f",
+    "main_blob_sha": "839a7cae1b69b456260031803856df1f7f9661ec"
+  },
+  "render_inventory": {
+    "github_run_id": 33571003479,
+    "github_job_id": 100064723826,
+    "artifact_id": 9824909774,
+    "artifact_zip_sha256": "c9ea62b5aa263170cab4449ac578752059c83438ba254214b7fa2a994e87a586",
+    "mutation_performed": false,
+    "service_count": 1,
+    "service": {
+      "id": "srv-da84q6ifngtc73bdbm6g",
+      "name": "kyre-sports-api",
+      "type": "web_service",
+      "runtime": "docker",
+      "url": "https://kyre-sports-api.onrender.com",
+      "region": "oregon",
+      "plan": "free",
+      "repo": "https://github.com/kyrepeak/kyre-sports-ai",
+      "observed_branch": "wnba-step20b-rollover-runtime-diagnostic-20260830",
+      "auto_deploy": "no",
+      "root_dir": "",
+      "health_check_path": "/health",
+      "num_instances": 1
+    }
+  },
+  "host_boundary": {
+    "existing_shared_service_identified": true,
+    "new_service_created": false,
+    "render_mutated": false,
+    "deploy_triggered": false,
+    "current_host_replaced": false,
+    "mlb_always_on_activated": false,
+    "step17b_required_for_activation": true
+  },
+  "safety": {
+    "production_runtime_started": false,
+    "production_scheduler_started": false,
+    "database_connection_opened": false,
+    "database_write_performed": false,
+    "provider_calls": 0,
+    "sportsbook_calls": 0,
+    "actionable_output_enabled": false,
+    "wagering_enabled": false,
+    "credential_value_exposed": false
+  }
+}

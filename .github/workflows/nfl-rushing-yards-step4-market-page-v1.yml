@@ -1,0 +1,216 @@
+name: NFL Rushing Yards Step 4 Market Page V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_rushing_yards_market_api_v1.py"
+      - "nfl_rushing_yards_hub_v3.py"
+      - "streamlit_memory_lazy_router_v99.py"
+      - "app.py"
+      - "tests/test_nfl_rushing_yards_market_api_v1.py"
+      - "tests/test_nfl_rushing_yards_step4_surface_v1.py"
+      - ".github/workflows/nfl-rushing-yards-step4-market-page-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nfl-rushing-yards-step4-market-page-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  certify-step4-market-page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests
+
+      - name: Compile Step 4 surface
+        run: |
+          python -m py_compile \
+            nfl_rushing_yards_market_api_v1.py \
+            nfl_rushing_yards_hub_v3.py \
+            streamlit_memory_lazy_router_v99.py \
+            app.py \
+            tests/test_nfl_rushing_yards_market_api_v1.py \
+            tests/test_nfl_rushing_yards_step4_surface_v1.py
+
+      - name: Prove certified owners were not modified
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_passing_yards_|nfl_hub_v35\.py$|streamlit_memory_lazy_router_v97\.py$|streamlit_memory_lazy_router_v98\.py$|nfl_rushing_yards_hub_v1\.py$|nfl_rushing_yards_hub_v2\.py$|nfl_rushing_yards_projection_v1\.py$|nfl_rushing_yards_context_api_v1\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "STEP4_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "STEP4_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Re-run certified Step 3 contracts
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_rushing_yards_projection_v1.py \
+            tests/test_nfl_rushing_yards_step3_surface_v1.py
+
+      - name: Run Step 4 market client and surface contracts
+        run: |
+          python -m pytest -q \
+            tests/test_nfl_rushing_yards_market_api_v1.py \
+            tests/test_nfl_rushing_yards_step4_surface_v1.py
+
+      - name: Prove post-projection market isolation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          engine = Path("nfl_rushing_yards_projection_v1.py").read_text(encoding="utf-8")
+          client = Path("nfl_rushing_yards_market_api_v1.py").read_text(encoding="utf-8")
+          page = Path("nfl_rushing_yards_hub_v3.py").read_text(encoding="utf-8")
+          router98 = Path("streamlit_memory_lazy_router_v98.py").read_text(encoding="utf-8")
+          router99 = Path("streamlit_memory_lazy_router_v99.py").read_text(encoding="utf-8")
+
+          assert '"sportsbook_influence": 0.0' in engine
+          assert '"market_enabled": False' in engine
+          assert '"ev_enabled": False' in engine
+          assert '"stake_sizing_enabled": False' in engine
+          assert '"projection_weight": 0.0' in client
+          assert '"probability_enabled": False' in client
+          assert '"fair_odds_enabled": False' in client
+          assert '"ev_enabled": False' in client
+          assert '"grading_enabled": False' in client
+          assert '"wager_actions": False' in client
+          assert "_ORIGINAL_STEP3_RENDER(context, event_id)" in page
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v2"' in router98
+          assert 'ACTIVE_RUSHING_YARDS_HUB = "nfl_rushing_yards_hub_v3"' in router99
+          print("NFL_RUSHING_YARDS_STEP4_POST_PROJECTION_ISOLATION_GREEN")
+          PY
+
+      - name: Live production Step 4 contract witness
+        env:
+          RUSH_EVENT_ID: "401872925"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import requests
+
+          base = "https://kyre-sports-api.onrender.com"
+          event_id = os.environ["RUSH_EVENT_ID"]
+
+          def get_json(path: str):
+              last = None
+              for attempt in range(1, 4):
+                  try:
+                      response = requests.get(
+                          base + path,
+                          timeout=(5, 25),
+                          headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Step4-Cert/1.0"},
+                      )
+                      last = response
+                      if response.status_code == 200:
+                          return response.json()
+                  except requests.RequestException:
+                      pass
+                  if attempt < 3:
+                      time.sleep(2)
+              raise AssertionError(
+                  f"production GET failed: {path} status={getattr(last, 'status_code', None)} body={getattr(last, 'text', '')[:300]}"
+              )
+
+          health = get_json("/health")
+          assert health.get("status") == "ok"
+          deployment = health.get("deployment") or {}
+          assert deployment.get("branch") == "mlb-step17b-shared-host-cert"
+          assert deployment.get("branch_aligned") is True
+          assert str(deployment.get("commit") or "").strip()
+
+          status = get_json("/api/v1/nfl/rushing-yards/market/status")
+          assert status.get("status") == "ready"
+          assert status.get("schema_version") == "nfl_rushing_yards_market_v1"
+          assert status.get("provider") == "FanDuel"
+          assert status.get("official_authority") == "ESPN"
+          assert status.get("official_event_id_required") is True
+          assert status.get("official_athlete_id_required") is True
+          assert status.get("official_team_id_required") is True
+          assert status.get("player_name_matching") is False
+          assert status.get("fuzzy_matching") is False
+          assert status.get("synthetic_event_ids") is False
+          assert status.get("synthetic_player_ids") is False
+          assert status.get("projection_weight") == 0.0
+          assert status.get("market_context_only") is True
+          assert status.get("may_modify_projection") is False
+          assert status.get("probability_enabled") is False
+          assert status.get("fair_odds_enabled") is False
+          assert status.get("ev_enabled") is False
+          assert status.get("grading_enabled") is False
+          assert status.get("stake_sizing_enabled") is False
+          assert status.get("wager_actions") is False
+
+          market = get_json(f"/api/v1/nfl/rushing-yards/market?event_id={event_id}")
+          assert market.get("schema_version") == "nfl_rushing_yards_market_v1"
+          assert str(market.get("official_event_id") or "") == event_id
+          assert market.get("sportsbook") == "FanDuel"
+          identity = market.get("identity") or {}
+          semantics = market.get("market_semantics") or {}
+          assert identity.get("player_name_matching") is False
+          assert identity.get("fuzzy_matching") is False
+          assert identity.get("synthetic_event_ids") is False
+          assert identity.get("synthetic_player_ids") is False
+          assert semantics.get("projection_weight") == 0.0
+          assert semantics.get("market_context_only") is True
+          assert semantics.get("may_modify_projection") is False
+          assert semantics.get("probability_enabled") is False
+          assert semantics.get("fair_odds_enabled") is False
+          assert semantics.get("ev_enabled") is False
+          assert semantics.get("grading_enabled") is False
+          assert semantics.get("stake_sizing_enabled") is False
+          assert semantics.get("wager_actions") is False
+
+          props = market.get("props") or []
+          seen = set()
+          for row in props:
+              athlete_id = str(row.get("official_athlete_id") or "")
+              team_id = str(row.get("official_team_id") or "")
+              assert athlete_id.isdigit()
+              assert team_id.isdigit()
+              assert athlete_id not in seen
+              seen.add(athlete_id)
+              assert str(row.get("official_event_id") or "") == event_id
+              assert str(row.get("market_type") or "").lower() == "rushing_yards"
+              assert str(row.get("sportsbook") or "").lower() == "fanduel"
+              assert str(row.get("line_status") or "").lower() == "active"
+
+          print(
+              "NFL_RUSHING_YARDS_STEP4_LIVE_PRODUCTION_GREEN",
+              json.dumps(
+                  {
+                      "deployment_commit": deployment.get("commit"),
+                      "event_id": event_id,
+                      "market_available": bool(market.get("market_available")),
+                      "prop_count": len(props),
+                      "captured_at_utc": market.get("captured_at_utc"),
+                  },
+                  sort_keys=True,
+              ),
+          )
+          PY

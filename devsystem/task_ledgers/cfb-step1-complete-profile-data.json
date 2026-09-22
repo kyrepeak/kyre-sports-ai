@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-complete-profile-data",
+  "status": "DONE",
+  "scope": "Step 1 only: fill mascot, FBS/FCS classification, current record and head coach from exact ESPN event/team identity and existing ESPN Core helpers, while treating placeholder values as missing. Steps 2-12 and all model/math/ranking/API behavior remain untouched.",
+  "root_cause": "Live production proof showed Step 1 exact identities/logos were correct but the presentation inputs lacked complete profile metadata: mascot, classification and head coach were missing, and the record placeholder prevented fallback to verified record summary.",
+  "guardrails": {
+    "step1_only": true,
+    "exact_team_id_only": true,
+    "fuzzy_team_matching_added": false,
+    "steps_2_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0,
+    "missing_provider_data_fails_closed": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

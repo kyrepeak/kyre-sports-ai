@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-exact-event-profile-handoff",
+  "status": "DONE",
+  "scope": "Step 1 only: hand the exact recovered V164 event identity into the Step 1 profile layer and query exact ESPN team detail by verified team ID so mascot, record, and current FBS/FCS classification can render from exact sources.",
+  "root_cause": "Production proof #16 waited for the new deployment marker but still rendered the pre-enrichment Step 1 fields because Step 1 profile enrichment was receiving the original V9 display_game with a blank espn_event_id and depended on broad directory/schedule fallbacks. Exact final presentation identity was not handed into the profile lookup boundary.",
+  "guardrails": {
+    "step1_only": true,
+    "exact_event_and_team_id_only": true,
+    "fuzzy_team_matching_added": false,
+    "steps_2_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

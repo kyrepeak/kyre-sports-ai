@@ -1,0 +1,357 @@
+name: MLB Step7E Game Total presentation integration certification
+
+on:
+  push:
+    branches:
+      - mlb-step7e-game-total-presentation-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step7e-game-total-presentation-integration-cert
+  cancel-in-progress: false
+
+env:
+  STEP7E_BASE_SHA: da3342be10bd6358f51833c50d218ef65e2642c1
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_HEALTH_URL: https://kyre-sports-ai.streamlit.app/_stcore/health
+
+jobs:
+  certify-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert Step7E narrow presentation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP7E_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(app.py|mlb_totals_hub_v174.py|sports_api/mlb_step7d_total_api_integration_v1.py|tests/test_mlb_step7e_total_presentation_integration_v1.py|\.github/workflows/mlb-step7e-game-total-presentation-integration-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP7E_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP7E_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP7E_NARROW_GAME_TOTAL_PRESENTATION_SCOPE_OK'
+
+      - name: Prove frozen Totals engine remains byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP7E_BASE_SHA"...HEAD -- \
+            mlb_totals_hub_v173.py \
+            totals_hub_v172.py \
+            totals_hub_v171.py \
+            totals_hub_v17.py \
+            mlb_daily_game_picks_v217.py \
+            mlb_spread_hub_v157.py \
+            mlb_spread_hub_v156.py \
+            mlb_moneyline_hub_v164.py \
+            mlb_moneyline_hub_v163.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py
+          echo 'MLB_STEP7E_FROZEN_TOTALS_ENGINE_BYTE_IDENTICAL'
+
+      - name: Prove Step7D change is freshness hardening only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import os, subprocess
+
+          base_sha = os.environ['STEP7E_BASE_SHA']
+          path = 'sports_api/mlb_step7d_total_api_integration_v1.py'
+          base = subprocess.check_output(['git', 'show', f'{base_sha}:{path}'], text=True)
+          old = 'if state.get("feed_fresh") is False:'
+          new = 'if state.get("feed_fresh") is not True:'
+          if base.count(old) != 1:
+              raise SystemExit('STEP7E_BASE_FRESHNESS_SEAM_NOT_UNIQUE')
+          expected = base.replace(old, new, 1)
+          current = Path(path).read_text()
+          if current != expected:
+              raise SystemExit('STEP7E_STEP7D_CHANGE_EXCEEDS_FRESHNESS_HARDENING')
+          print('MLB_STEP7E_STEP7D_FRESHNESS_HARDENING_ONLY')
+          PY
+
+      - name: Prove app change is additive presentation routing only
+        shell: bash
+        run: |
+          set -euo pipefail
+          read additions deletions path <<EOF
+          $(git diff --numstat "$STEP7E_BASE_SHA"...HEAD -- app.py)
+          EOF
+          test "$path" = "app.py"
+          test "$deletions" = "0"
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('app.py').read_text()
+          required = (
+              'def _install_mlb_totals_step7e_route() -> dict:',
+              'import mlb_totals_hub_v174 as totals_v174',
+              'sys.modules["mlb_totals_hub_v173"] = totals_v174',
+              'import mlb_totals_hub_v173 as frozen_v173',
+              'sys.modules["mlb_totals_hub_v173"] = frozen_v173',
+              '_STEP7E_MLB_TOTALS_ROUTE = _install_mlb_totals_step7e_route()',
+          )
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit('STEP7E_APP_ROUTE_CONTRACT_MISSING:' + ','.join(missing))
+          if text.index('_STEP7E_MLB_TOTALS_ROUTE = _install_mlb_totals_step7e_route()') > text.index('source = _load_frozen_pre_live_app()'):
+              raise SystemExit('STEP7E_TOTALS_ALIAS_INSTALLED_TOO_LATE')
+          print('MLB_STEP7E_APP_ADDITIVE_PRESENTATION_ROUTE_OK')
+          PY
+
+      - name: Prove V17.4 is display-only over frozen cards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('mlb_totals_hub_v174.py').read_text()
+          required = (
+              'import mlb_totals_hub_v173 as prior',
+              'enforce_total_api_freshness(build_total_api_state(response.json()))',
+              'total_api_context_for_result(result, state)',
+              'v171 = prior.base.base',
+              'frozen_cards = v171._render_ou_cards',
+              'v171._render_ou_cards = cards_with_api_context',
+              'v171._render_ou_cards = frozen_cards',
+              'return prior.render_totals_hub',
+              'never substituted into the frozen V17.3/V17.2/V17.1 model',
+          )
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit('STEP7E_PRESENTATION_CONTRACT_MISSING:' + ','.join(missing))
+          forbidden = (
+              '_scan_ou_game =',
+              '_default_market_lines =',
+              'simulate_total(',
+              'projected_total =',
+              'fair_lean =',
+              'sportsbook_price_model_input": True',
+          )
+          bad = [token for token in forbidden if token in text]
+          if bad:
+              raise SystemExit('STEP7E_FORBIDDEN_MODEL_OR_LINE_MUTATION:' + ','.join(bad))
+          print('MLB_STEP7E_DISPLAY_ONLY_PRESENTATION_CONTRACT_OK')
+          PY
+
+      - name: Compile Step7E Python
+        run: |
+          python -m py_compile \
+            app.py \
+            mlb_totals_hub_v174.py \
+            sports_api/mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py
+
+      - name: Run frozen MLB regression plus Step7A through Step7E
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py
+
+  certify-live-game-total-presentation-boundary:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install live certification dependencies
+        run: python -m pip install --disable-pip-version-check -q requests
+
+      - name: Certify live exact-ID presentation evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timedelta, timezone
+          import json, os
+          import requests
+
+          from sports_api.mlb_step7d_total_api_integration_v1 import (
+              API_CONNECTED,
+              FALLBACK,
+              build_total_api_state,
+              enforce_total_api_freshness,
+              total_api_context_for_result,
+          )
+
+          response = requests.get(
+              os.environ['PRODUCTION_ODDS_URL'],
+              timeout=45,
+              headers={'Accept':'application/json','User-Agent':'KyreSportsStep7ECert/1.0','Cache-Control':'no-cache'},
+          )
+          response.raise_for_status()
+          payload = response.json()
+          games = payload.get('games')
+          if not isinstance(games, list) or not games:
+              raise RuntimeError('STEP7E_EMPTY_OR_INVALID_API_SLATE')
+
+          raw = build_total_api_state(payload)
+          if raw.get('integration_status') != API_CONNECTED or raw.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7E_RAW_API_CONTRACT_NOT_GREEN:' + json.dumps(raw, sort_keys=True))
+          if raw.get('feed_fresh') is not None:
+              raise RuntimeError('STEP7E_RAW_STATE_FRESHNESS_ALREADY_ASSUMED')
+          first_gid = int(games[0]['official_game_id'])
+          if total_api_context_for_result({'game_pk': first_gid}, raw) is not None:
+              raise RuntimeError('STEP7E_UNPROVEN_FRESHNESS_EXPOSED_CONTEXT')
+
+          state = enforce_total_api_freshness(raw)
+          if state.get('integration_status') != API_CONNECTED or state.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7E_FRESH_API_STATE_NOT_GREEN:' + json.dumps(state, sort_keys=True))
+          if state.get('feed_fresh') is not True or float(state.get('snapshot_age_seconds') or 0) > 60.0:
+              raise RuntimeError('STEP7E_API_FEED_NOT_FRESH:' + json.dumps(state, sort_keys=True))
+          if state.get('usable_game_total_game_count') != len(games) or state.get('unusable_game_ids'):
+              raise RuntimeError('STEP7E_TOTAL_COVERAGE_NOT_COMPLETE:' + json.dumps(state, sort_keys=True))
+
+          game_ids = [int(game['official_game_id']) for game in games]
+          if len(game_ids) != len(set(game_ids)):
+              raise RuntimeError('STEP7E_DUPLICATE_OFFICIAL_GAME_IDS')
+
+          checked_games = 0
+          for game in games:
+              gid = int(game['official_game_id'])
+              market = game['markets']['total']
+              result = {'game_pk': gid, 'projection': {'sentinel': 1}}
+              before = deepcopy(result)
+              context = total_api_context_for_result(result, state)
+              if context is None:
+                  raise RuntimeError(f'STEP7E_EXACT_CONTEXT_MISSING_{gid}')
+              if float(context.get('live_fanduel_total_line')) != float(market['line']):
+                  raise RuntimeError(f'STEP7E_TOTAL_LINE_MISMATCH_{gid}')
+              if int(context.get('live_fanduel_over_odds')) != int(market['over_odds']):
+                  raise RuntimeError(f'STEP7E_OVER_PRICE_MISMATCH_{gid}')
+              if int(context.get('live_fanduel_under_odds')) != int(market['under_odds']):
+                  raise RuntimeError(f'STEP7E_UNDER_PRICE_MISMATCH_{gid}')
+              if context.get('match_method') != 'official_mlb_game_id_exact' or context.get('fallback_matching_used') is not False:
+                  raise RuntimeError(f'STEP7E_EXACT_MATCH_PROOF_FAILED_{gid}')
+              if context.get('sportsbook_price_model_input') is not False or context.get('display_only') is not True:
+                  raise RuntimeError(f'STEP7E_DISPLAY_ONLY_CONTRACT_FAILED_{gid}')
+              if result != before:
+                  raise RuntimeError(f'STEP7E_RESULT_MUTATED_{gid}')
+              checked_games += 1
+
+          duplicate_payload = deepcopy(payload)
+          duplicate_payload['games'].append(deepcopy(duplicate_payload['games'][0]))
+          duplicate = enforce_total_api_freshness(build_total_api_state(duplicate_payload))
+          if duplicate.get('integration_status') != FALLBACK or duplicate.get('api_integration_active') is not False:
+              raise RuntimeError('STEP7E_DUPLICATE_FAIL_CLOSED_FAILED')
+
+          missing_payload = deepcopy(payload)
+          missing_gid = int(missing_payload['games'][0]['official_game_id'])
+          missing_payload['games'][0]['markets']['total']['under_odds'] = None
+          missing = enforce_total_api_freshness(build_total_api_state(missing_payload))
+          if missing.get('integration_status') != API_CONNECTED or missing.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7E_MISSING_PRICE_DISTINCT_GAMES_POISONED')
+          if missing_gid not in set(missing.get('unusable_game_ids') or []):
+              raise RuntimeError('STEP7E_MISSING_PRICE_GAME_NOT_MARKED_UNUSABLE')
+          if total_api_context_for_result({'game_pk': missing_gid}, missing) is not None:
+              raise RuntimeError('STEP7E_MISSING_PRICE_CONTEXT_FABRICATED')
+          if int(missing.get('usable_game_total_game_count') or 0) != len(games) - 1:
+              raise RuntimeError('STEP7E_MISSING_PRICE_VALID_CONTEXT_COUNT_WRONG')
+
+          stale_payload = deepcopy(payload)
+          stale_payload['collected_at_utc'] = (datetime.now(timezone.utc) - timedelta(seconds=120)).isoformat()
+          stale = enforce_total_api_freshness(build_total_api_state(stale_payload))
+          if stale.get('integration_status') != FALLBACK or stale.get('feed_fresh') is not False:
+              raise RuntimeError('STEP7E_STALE_FAIL_CLOSED_FAILED')
+          if total_api_context_for_result({'game_pk': first_gid}, stale) is not None:
+              raise RuntimeError('STEP7E_STALE_CONTEXT_EXPOSED')
+
+          print(json.dumps({
+              'marker':'MLB_STEP7E_GAME_TOTAL_PRESENTATION_BOUNDARY_GREEN',
+              'live_games':len(games),
+              'usable_game_total_contexts':state.get('usable_game_total_game_count'),
+              'exact_game_checks':checked_games,
+              'feed_age_seconds':state.get('snapshot_age_seconds'),
+              'integration_status':state.get('integration_status'),
+              'fallback_matching_used':state.get('fallback_matching_used'),
+              'unproven_freshness_context_blocked':True,
+              'duplicate_fallback':duplicate.get('integration_status'),
+              'missing_price_game_unusable':missing_gid,
+              'missing_price_remaining_contexts':missing.get('usable_game_total_game_count'),
+              'stale_fallback':stale.get('integration_status'),
+          }, sort_keys=True))
+          PY
+
+  certify-streamlit-transport:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify Streamlit reachable transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -o /tmp/streamlit-health.txt -w '%{http_code}' --max-time 45 "$STREAMLIT_HEALTH_URL")"
+          case "$code" in
+            2*|3*) ;;
+            *)
+              echo "STEP7E_STREAMLIT_UNREACHABLE_HTTP_${code}"
+              cat /tmp/streamlit-health.txt || true
+              exit 1
+              ;;
+          esac
+          echo "MLB_STEP7E_STREAMLIT_REACHABLE_HTTP_${code}"
+          echo 'MLB_STEP7E_RENDERED_TOTALS_PRESENTATION_UNVERIFIED_BY_AUTOMATION'
+
+  certification-marker:
+    needs:
+      - certify-contract
+      - certify-live-game-total-presentation-boundary
+      - certify-streamlit-transport
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Emit final marker
+        run: echo 'MLB_STEP7E_GAME_TOTAL_PRESENTATION_INTEGRATION_GREEN'

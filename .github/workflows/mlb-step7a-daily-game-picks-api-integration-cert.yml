@@ -1,0 +1,281 @@
+name: MLB Step7A Daily Game Picks API integration certification
+
+on:
+  push:
+    branches:
+      - mlb-step7a-daily-game-picks-api-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step7a-daily-game-picks-api-integration-cert
+  cancel-in-progress: false
+
+env:
+  STEP7A_BASE_SHA: 336e42c83d94213245fdd30a9de276ba6b1f7e0d
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+
+jobs:
+  certify-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert Step7A narrow MLB page-integration scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP7A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py|mlb_daily_game_picks_step7a_api_integration_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py|\.github/workflows/mlb-step7a-daily-game-picks-api-integration-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP7A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP7A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP7A_NARROW_CHANGE_SCOPE_OK'
+
+      - name: Prove Step5 and Step6 internals remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP7A_BASE_SHA"...HEAD -- \
+            app.py \
+            mlb_daily_game_picks_v217.py \
+            mlb_daily_game_picks_live_market_context_v1.py \
+            mlb_daily_game_picks_market_probability_v1.py \
+            mlb_daily_game_picks_model_market_edge_v1.py \
+            mlb_daily_game_picks_price_discipline_v1.py \
+            mlb_daily_game_picks_market_movement_v1.py \
+            mlb_daily_game_picks_price_health_v1.py \
+            mlb_daily_game_picks_actionability_shadow_v1.py \
+            mlb_daily_game_picks_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_price_gate_canary_v1.py \
+            mlb_daily_game_picks_step6d_production_expansion_v1.py \
+            mlb_daily_game_picks_step6g_controlled_graduation_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_market_probability_v1.py \
+            sports_api/mlb_model_market_edge_v1.py \
+            sports_api/mlb_price_discipline_v1.py \
+            sports_api/mlb_market_movement_v1.py \
+            sports_api/mlb_price_health_v1.py \
+            sports_api/mlb_actionability_shadow_v1.py \
+            sports_api/mlb_controlled_price_gate_v1.py \
+            sports_api/mlb_price_gate_canary_v1.py \
+            sports_api/mlb_step6a_production_canary_v1.py \
+            sports_api/mlb_step6b_canary_monitor_v1.py \
+            sports_api/mlb_step6c_evidence_gate_v1.py \
+            sports_api/mlb_step6d_production_expansion_v1.py \
+            sports_api/mlb_step6e_25pct_stability_monitor_v1.py \
+            sports_api/mlb_step6f_production_graduation_gate_v1.py \
+            sports_api/mlb_step6g_controlled_graduation_v1.py \
+            sports_api/mlb_step6_final_freeze_v1.py
+          echo 'MLB_STEP7A_STEP5_STEP6_INTERNALS_FROZEN'
+
+      - name: Prove active guard change is only the Step7A seam
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+          base_sha = '336e42c83d94213245fdd30a9de276ba6b1f7e0d'
+          base = subprocess.check_output(['git','show',f'{base_sha}:mlb_daily_game_picks_v217_guard.py'], text=True)
+          expected = base.replace(
+              'from mlb_daily_game_picks_step6g_controlled_graduation_v1 import install_step6g_controlled_graduation_layer',
+              'from mlb_daily_game_picks_step7a_api_integration_v1 import install_step7a_daily_game_picks_api_integration',
+              1,
+          ).replace(
+              'VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6G GRADUATED 25% PRODUCTION"',
+              'VERSION = "MLB Daily Game Picks V2.1.7 • CONFIRMED-LINEUP GUARD + STEP 6G GRADUATED 25% PRODUCTION + STEP 7A API"',
+              1,
+          ).replace(
+              '    install_step6g_controlled_graduation_layer(games_df)',
+              '    install_step7a_daily_game_picks_api_integration(games_df)',
+              1,
+          )
+          actual = Path('mlb_daily_game_picks_v217_guard.py').read_text()
+          if actual != expected:
+              raise SystemExit('STEP7A_GUARD_CHANGED_OUTSIDE_APPROVED_SEAM')
+          print('MLB_STEP7A_GUARD_SEAM_EXACT')
+          PY
+
+      - name: Compile Step7A Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py
+
+      - name: Run full frozen MLB regression plus Step7A
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py
+
+  certify-live-api-boundary:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install live certification dependencies
+        run: python -m pip install --disable-pip-version-check -q requests
+
+      - name: Certify live Kyre Sports API to Daily Picks contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json, os
+          import requests
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_step6d_production_expansion_v1 import CERTIFIED_STEP6C_PERMISSION, resolve_step6d_production_expansion
+          from sports_api.mlb_step6g_controlled_graduation_v1 import CERTIFIED_STEP6F_DECISION, resolve_step6g_controlled_graduation
+          from sports_api.mlb_step7a_daily_game_picks_api_integration_v1 import API_CONNECTED, FALLBACK, evaluate_daily_game_picks_api_integration
+
+          url = os.environ['PRODUCTION_ODDS_URL']
+          response = requests.get(url, timeout=45, headers={'Accept':'application/json','User-Agent':'KyreSportsStep7ACert/1.0','Cache-Control':'no-cache'})
+          response.raise_for_status()
+          payload = response.json()
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1' or payload.get('schema_version') != 1 or payload.get('source') != 'FanDuel':
+              raise RuntimeError('STEP7A_BAD_API_CONTRACT')
+          games = payload.get('games')
+          if not isinstance(games, list):
+              raise RuntimeError('STEP7A_GAMES_NOT_LIST')
+          game_ids = [int(game['official_game_id']) for game in games]
+          if len(game_ids) != len(set(game_ids)):
+              raise RuntimeError('STEP7A_DUPLICATE_OFFICIAL_GAME_IDS')
+
+          live = attach_live_market_context([{'game_pk': gid} for gid in reversed(game_ids)], games)
+          live['available'] = True
+          live['api_data_type'] = payload.get('data_type')
+          live['collected_at_utc'] = payload.get('collected_at_utc')
+          if live.get('attached_count') != len(game_ids):
+              raise RuntimeError('STEP7A_EXACT_ID_ATTACH_COVERAGE_FAILED')
+          if live.get('fallback_matching_used') is not False:
+              raise RuntimeError('STEP7A_FUZZY_OR_FALLBACK_MATCHING_USED')
+
+          rollout = resolve_step6d_production_expansion({}, permission=CERTIFIED_STEP6C_PERMISSION)
+          graduation = resolve_step6g_controlled_graduation(rollout, permission=CERTIFIED_STEP6F_DECISION)
+          step6 = {
+              'data_type':'mlb_step6g_controlled_graduation_presentation_v1',
+              **rollout,
+              **graduation,
+              'production_exposure_changed':False,
+              'same_step5_10_cohort':True,
+              'same_step5_9_gate':True,
+              'exact_session_rollback':True,
+              'global_kill_switch_available':True,
+              'player_props_passthrough':True,
+              'model_math_impact':False,
+              'pick_strength_impact':False,
+              'ranking_math_impact':False,
+              'risk_logic_impact':False,
+              'wnba_impact':False,
+          }
+          state = evaluate_daily_game_picks_api_integration(live, step6)
+          if state.get('integration_status') != API_CONNECTED or state.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7A_API_INTEGRATION_NOT_GREEN: ' + json.dumps(state, sort_keys=True))
+          if rollout.get('effective_percent') != 25.0 or graduation.get('graduation_status') != 'GRADUATED_PRODUCTION_ACTIVE':
+              raise RuntimeError('STEP7A_STEP6_PRODUCTION_STATE_DRIFT')
+
+          bad_live = dict(live)
+          bad_live['fallback_matching_used'] = True
+          fallback = evaluate_daily_game_picks_api_integration(bad_live, step6)
+          if fallback.get('integration_status') != FALLBACK or fallback.get('page_fallback_behavior_preserved') is not True:
+              raise RuntimeError('STEP7A_FAIL_OPEN_FALLBACK_FAILED')
+
+          collected = str(payload.get('collected_at_utc') or '')
+          if not collected:
+              raise RuntimeError('STEP7A_MISSING_COLLECTION_TIME')
+          collected_dt = datetime.fromisoformat(collected.replace('Z','+00:00')).astimezone(timezone.utc)
+          age = max(0.0, (datetime.now(timezone.utc) - collected_dt).total_seconds())
+          if age > 60.0:
+              raise RuntimeError(f'STEP7A_STALE_API_FEED_{age:.3f}s')
+
+          print('STEP7A_LIVE_API=' + json.dumps({
+              'games':len(game_ids),
+              'attached':live.get('attached_count'),
+              'fallback_matching_used':live.get('fallback_matching_used'),
+              'feed_age_seconds':round(age,3),
+              'integration_status':state.get('integration_status'),
+              'step6_status':graduation.get('graduation_status'),
+              'effective_percent':rollout.get('effective_percent'),
+              'failure_path':fallback.get('integration_status'),
+          }, sort_keys=True))
+          PY
+
+      - name: Certify Streamlit transport remains healthy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, requests
+          root = os.environ['STREAMLIT_URL'].rstrip('/')
+          checks = {}
+          for label, url in (
+              ('root', root),
+              ('rollback', root + '/?mlb_step6d_rollback=1'),
+              ('status', root + '/api/v2/app/status'),
+          ):
+              r = requests.get(url, timeout=45, headers={'User-Agent':'KyreSportsStep7ATransport/1.0'})
+              checks[label] = r.status_code
+              if r.status_code != 200:
+                  raise RuntimeError(f'STEP7A_STREAMLIT_{label.upper()}_{r.status_code}')
+              if label == 'status':
+                  try:
+                      checks['streamlit_version'] = r.json().get('streamlitVersion')
+                  except Exception:
+                      checks['streamlit_version'] = None
+          checks['rendered_ui_verified'] = False
+          print('STEP7A_STREAMLIT_TRANSPORT=' + json.dumps(checks, sort_keys=True))
+          print('MLB_STEP7A_DAILY_GAME_PICKS_API_INTEGRATION_GREEN')
+          PY

@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-debug-wall-production-fix-v1",
+  "status": "DONE",
+  "scope": "Production CFB Game Total debug-wall fix: keep V164 certification identity in the DOM but natively hidden, and verify markers from the hidden DOM node instead of visible page text.",
+  "trigger": "User provided fresh production screenshot showing V164/Step activation markers visibly rendered above GAME DAY after prior cleanup certification.",
+  "guardrails": {
+    "prior_six_step_redesign_frozen": true,
+    "sport_navigation_fix_frozen": true,
+    "data_contract_changed": false,
+    "normalization_changed": false,
+    "projection_math_changed": false,
+    "confidence_math_changed": false,
+    "team_stat_math_changed": false,
+    "market_ownership_changed": false,
+    "page_layout_changed": false,
+    "visible_certification_wall_allowed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

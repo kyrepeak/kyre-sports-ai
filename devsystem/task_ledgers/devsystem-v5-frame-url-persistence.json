@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "task_id": "devsystem-v5-frame-url-persistence",
+  "status": "DONE",
+  "scope": "Production verifier V5 only. Preserve the exact top-level event-id gate while accepting the exact Streamlit app-frame event query when the selected-card aria marker is absent after rerender/hard refresh.",
+  "root_cause": "Production verification V5 #21 had the correct official event_id in both the outer browser URL and app-frame URL, but the selected-card DOM marker was temporarily absent, so the verifier reported selected='' and failed a persistence state that was already exact in both URLs.",
+  "guardrails": {
+    "verifier_only": true,
+    "top_level_event_id_still_required": true,
+    "exact_frame_event_id_required_when_dom_marker_missing": true,
+    "product_behavior_changed": false,
+    "projection_math_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

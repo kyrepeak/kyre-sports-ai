@@ -1,0 +1,264 @@
+name: MLB Step13A bounded scheduler certification
+
+on:
+  push:
+    branches:
+      - mlb-step13a-bounded-scheduler
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP13A_BASE_SHA: 6f67626c064facf3402c8fdcb66b00832bdb47d1
+
+jobs:
+  certify-bounded-scheduler:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step13A is exactly three-file additive MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP13A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/mlb_step13a_bounded_scheduler_v1.py|tests/test_mlb_step13a_bounded_scheduler_v1.py|\.github/workflows/mlb-step13a-bounded-scheduler-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP13A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 3 ]; then
+            echo "STEP13A_EXPECTED_EXACTLY_THREE_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP13A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP13A_BASE_SHA"...HEAD
+          numstat="$(git diff --numstat "$STEP13A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$numstat"
+          if printf '%s\n' "$numstat" | awk '$2 != 0 { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'STEP13A_DELETIONS_FORBIDDEN'
+            exit 1
+          fi
+          echo 'MLB_STEP13A_THREE_FILE_ADDITIVE_SCOPE_OK'
+
+      - name: Prove Step12 and frozen production paths remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP13A_BASE_SHA"...HEAD -- \
+            app.py engine.py history.py spread_engine.py \
+            live_game_hub_v182.py live_game_hub_v19.py live_game_hub_v191.py \
+            live_game_hub_v192.py live_game_hub_v1921.py mlb_live_hub_v193.py live_odds_feed.py \
+            mlb_step9c_live_state_consumer_v1.py mlb_step9e_live_market_consumer_v1.py \
+            sports_api/main.py sports_api/api/mlb.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            sports_api/mlb_step9_final_freeze_v1.py \
+            sports_api/mlb_step9g_postfreeze_handoff_v1.py \
+            sports_api/mlb_step10a_live_snapshot_persistence_contract_v1.py \
+            sports_api/database/mlb_live_snapshot_store.py \
+            sports_api/database/mlb_live_snapshot_recovery.py \
+            sports_api/mlb_step10_final_persistence_freeze_v1.py \
+            sports_api/mlb_step11a_provider_contract_v1.py \
+            sports_api/mlb_step11c_multi_provider_shadow_board_v1.py \
+            sports_api/mlb_step11d_provider_consensus_failover_shadow_policy_v1.py \
+            sports_api/mlb_step11_final_provider_expansion_freeze_v1.py \
+            sports_api/mlb_step12a_shadow_runtime_runner_v1.py \
+            sports_api/mlb_step12b_live_runtime_assembly_v1.py \
+            sports_api/mlb_step12c_live_board_runtime_v1.py \
+            sports_api/mlb_step12_final_runtime_freeze_v1.py
+          echo 'MLB_STEP13A_STEP12_AND_PRODUCTION_PATHS_BYTE_IDENTICAL'
+
+      - name: Assert Step13A adds no execution or network machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='sports_api/mlb_step13a_bounded_scheduler_v1.py'
+          forbidden='(^|[^A-Za-z])(requests|httpx|urllib|socket|threading|multiprocessing|subprocess|apscheduler)([^A-Za-z]|$)|time\.sleep|asyncio\.create_task|os\.system|Popen\('
+          if grep -Ein "$forbidden" "$file"; then
+            echo 'STEP13A_FORBIDDEN_EXECUTION_OR_NETWORK_MACHINERY'
+            exit 1
+          fi
+          echo 'MLB_STEP13A_NO_EXECUTION_OR_NETWORK_MACHINERY_OK'
+
+      - name: Compile Step13A Python
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step13a_bounded_scheduler_v1.py \
+            tests/test_mlb_step13a_bounded_scheduler_v1.py
+
+      - name: Run Step13A targeted tests
+        run: python -m pytest -q tests/test_mlb_step13a_bounded_scheduler_v1.py
+
+      - name: Run complete MLB regression including Step13A
+        run: python -m pytest -q tests/test_mlb_*.py
+
+      - name: Certify bounded cadence overlap and no-catch-up behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timedelta, timezone
+
+          from sports_api.mlb_step12_final_runtime_freeze_v1 import (
+              FINAL_CERTIFICATION_MARKER as STEP12_MARKER,
+              FINAL_FREEZE_STATUS as STEP12_STATUS,
+              final_runtime_freeze_manifest,
+          )
+          from sports_api.mlb_step13a_bounded_scheduler_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              RUNTIME_MODE,
+              STEP13A_BASE_MAIN_SHA,
+              bounded_scheduler_manifest,
+              build_bounded_scheduler_tick,
+              validate_bounded_scheduler_tick,
+          )
+
+          def z(dt):
+              return dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+          anchor_dt = datetime(2026, 9, 1, 19, 0, 0, tzinfo=timezone.utc)
+          anchor = z(anchor_dt)
+          step12 = final_runtime_freeze_manifest()
+          manifest = bounded_scheduler_manifest()
+
+          assert STEP13A_BASE_MAIN_SHA == '6f67626c064facf3402c8fdcb66b00832bdb47d1'
+          assert RUNTIME_MODE == 'SHADOW_ONLY'
+          assert manifest['step12_final_freeze_status_required'] == STEP12_STATUS
+          assert manifest['step12_final_certification_marker_required'] == STEP12_MARKER
+          assert manifest['at_most_one_permit_per_tick'] is True
+          assert manifest['overlapping_cycles_forbidden'] is True
+          assert manifest['catch_up_bursts_forbidden'] is True
+          assert manifest['network_io_added_by_step13a'] is False
+          assert manifest['production_scheduler_activation_enabled'] is False
+
+          disabled = build_bounded_scheduler_tick(
+              evaluated_at_utc=anchor,
+              scheduler_anchor_utc=anchor,
+              scheduler_state=None,
+              step12_final_manifest=step12,
+          )
+          assert disabled['decision_reason'] == 'SCHEDULER_DISABLED'
+          assert disabled['permits_granted'] == 0
+
+          first = build_bounded_scheduler_tick(
+              evaluated_at_utc=anchor,
+              scheduler_anchor_utc=anchor,
+              scheduler_state=None,
+              step12_final_manifest=step12,
+              scheduler_enabled=True,
+          )
+          assert first['decision_reason'] == 'FIRST_CURRENT_SLOT_ELIGIBLE'
+          assert first['permits_granted'] == 1
+          assert validate_bounded_scheduler_tick(first)['tick_valid'] is True
+
+          completed = {
+              'last_granted_slot_utc': first['permit_slot_utc'],
+              'active_cycle_id': None,
+              'active_cycle_slot_utc': None,
+          }
+          duplicate = build_bounded_scheduler_tick(
+              evaluated_at_utc=z(anchor_dt + timedelta(seconds=29)),
+              scheduler_anchor_utc=anchor,
+              scheduler_state=completed,
+              step12_final_manifest=step12,
+              scheduler_enabled=True,
+          )
+          assert duplicate['decision_reason'] == 'CURRENT_SLOT_ALREADY_GRANTED'
+          assert duplicate['permits_granted'] == 0
+
+          active = {
+              'last_granted_slot_utc': first['permit_slot_utc'],
+              'active_cycle_id': first['permit_cycle_id'],
+              'active_cycle_slot_utc': first['permit_slot_utc'],
+          }
+          overlap = build_bounded_scheduler_tick(
+              evaluated_at_utc=z(anchor_dt + timedelta(minutes=3)),
+              scheduler_anchor_utc=anchor,
+              scheduler_state=active,
+              step12_final_manifest=step12,
+              scheduler_enabled=True,
+          )
+          assert overlap['decision_reason'] == 'ACTIVE_CYCLE_OVERLAP_BLOCKED'
+          assert overlap['active_cycle_age_slots'] == 6
+          assert overlap['permits_granted'] == 0
+
+          late = build_bounded_scheduler_tick(
+              evaluated_at_utc=z(anchor_dt + timedelta(minutes=5)),
+              scheduler_anchor_utc=anchor,
+              scheduler_state=completed,
+              step12_final_manifest=step12,
+              scheduler_enabled=True,
+          )
+          assert late['missed_slot_count'] == 9
+          assert late['missed_slots_replayed'] == 0
+          assert late['catch_up_cycles_granted'] == 0
+          assert late['permits_granted'] == 1
+
+          # Ten-minute one-second tick simulation. The caller marks every permit
+          # complete immediately. Exactly one permit is allowed per 30-second slot.
+          state = None
+          permits = []
+          for offset in range(0, 601):
+              tick = build_bounded_scheduler_tick(
+                  evaluated_at_utc=z(anchor_dt + timedelta(seconds=offset)),
+                  scheduler_anchor_utc=anchor,
+                  scheduler_state=state,
+                  step12_final_manifest=step12,
+                  scheduler_enabled=True,
+              )
+              assert tick['permits_granted'] in (0, 1)
+              assert tick['network_io_performed'] is False
+              assert tick['provider_network_calls'] == 0
+              assert tick['production_database_writes'] == 0
+              assert tick['production_scheduler_activation'] is False
+              if tick['permit_granted']:
+                  permits.append(tick['permit_slot_utc'])
+                  state = {
+                      'last_granted_slot_utc': tick['permit_slot_utc'],
+                      'active_cycle_id': None,
+                      'active_cycle_slot_utc': None,
+                  }
+          assert len(permits) == 21
+          assert len(set(permits)) == 21
+          assert permits[0] == anchor
+          assert permits[-1] == z(anchor_dt + timedelta(minutes=10))
+
+          print('STEP13A_SIMULATED_TICKS=601')
+          print(f'STEP13A_SIMULATED_PERMITS={len(permits)}')
+          print('STEP13A_OVERLAP_PERMITS=0')
+          print('STEP13A_CATCH_UP_REPLAYS=0')
+          print('STEP13A_PROVIDER_NETWORK_CALLS=0')
+          print('STEP13A_PRODUCTION_DB_WRITES=0')
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
+
+      - name: Final Step13A certification marker
+        run: |
+          echo 'MLB_STEP13A_BOUNDED_SCHEDULER_GREEN'

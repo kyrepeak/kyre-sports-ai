@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-universal-step8-final-cert-v1",
+  "status": "DONE",
+  "scope": "Universal Theme -> NFL Passing Yards Step 8 only: final certification and freeze of the already-merged Step 1-7 product chain. Certification-only. No product, router, data, analytics, projection, probability, market math, widget, sportsbook influence, stake sizing, other sport, or other market changes.",
+  "baseline": {
+    "main_sha": "11226dcbf4d99946bfb9b7ad283c63a4674588e8",
+    "steps_1_7_green_frozen": true,
+    "frozen_product": "nfl_passing_yards_hub_v57",
+    "frozen_router": "streamlit_memory_lazy_router_v208"
+  },
+  "acceptance": {
+    "correct_passing_yards_route_renders": true,
+    "step1_owner_style_present": true,
+    "step2_token_style_present": true,
+    "step3_shell_style_present": true,
+    "step4_card_style_present": true,
+    "step5_analysis_style_present": true,
+    "step6_control_style_present": true,
+    "step7_responsive_style_present": true,
+    "two_player_cards_present": true,
+    "analysis_sections_present": true,
+    "top_control_deck_present": true,
+    "date_control_interactive": true,
+    "matchup_control_interactive": true,
+    "desktop_two_column_players_preserved": true,
+    "tablet_players_stack": true,
+    "mobile_players_stack": true,
+    "tablet_controls_stack": true,
+    "mobile_controls_stack": true,
+    "mobile_touch_targets_min_48px": true,
+    "no_horizontal_overflow": true,
+    "no_forbidden_runtime_error": true,
+    "frozen_product_chain_unchanged": true,
+    "targeted_step8_proof_required": true,
+    "protected_merge_gate_required": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "product_files_changed": false,
+    "router_files_changed": false,
+    "app_changed": false,
+    "data_logic_changed": false,
+    "analytics_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_logic_changed": false,
+    "widget_keys_changed": false,
+    "sportsbook_projection_influence": 0.0,
+    "stake_sizing_changed": false,
+    "other_sports_changed": false,
+    "other_markets_changed": false
+  },
+  "freeze_rule": "After targeted Step 8 proof, required DevSystem final gate, merge, and one successful MAIN public final certification, the complete Passing Yards 8-step rollout is GREEN + FROZEN and execution stops.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

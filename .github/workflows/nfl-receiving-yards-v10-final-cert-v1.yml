@@ -1,0 +1,297 @@
+name: NFL Receiving Yards V10 Final Polish Speed Cert V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_receiving_yards_hub_v10.py"
+      - "streamlit_memory_lazy_router_v121.py"
+      - "app.py"
+      - "tests/test_nfl_receiving_yards_v10_final_v1.py"
+      - "tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py"
+      - ".github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-final-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
+
+      - name: Enforce certified Step 10 diff or exact stale-badge hotfix diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected-step10.txt <<'EOF'
+          .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml
+          app.py
+          nfl_receiving_yards_hub_v10.py
+          streamlit_memory_lazy_router_v121.py
+          tests/test_nfl_receiving_yards_v10_final_v1.py
+          EOF
+          cat > /tmp/expected-badge-hotfix.txt <<'EOF'
+          .github/workflows/nfl-receiving-yards-v10-final-cert-v1.yml
+          nfl_receiving_yards_hub_v10.py
+          tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py
+          EOF
+          sort -o /tmp/expected-step10.txt /tmp/expected-step10.txt
+          sort -o /tmp/expected-badge-hotfix.txt /tmp/expected-badge-hotfix.txt
+          echo 'Actual Receiving final diff:'
+          cat /tmp/actual.txt
+          if diff -q /tmp/expected-step10.txt /tmp/actual.txt >/dev/null; then
+            echo STEP10_ORIGINAL_EXACT_DIFF_GREEN
+          elif diff -q /tmp/expected-badge-hotfix.txt /tmp/actual.txt >/dev/null; then
+            echo STEP10_BADGE_HOTFIX_EXACT_DIFF_GREEN
+          else
+            echo RECEIVING_FINAL_DIFF_GUARD_FAILED
+            exit 1
+          fi
+
+      - name: Compile final Receiving surface
+        run: |
+          python -m py_compile \
+            nfl_receiving_yards_hub_v10.py \
+            streamlit_memory_lazy_router_v121.py \
+            app.py \
+            tests/test_nfl_receiving_yards_v10_final_v1.py \
+            tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py
+
+      - name: Prove all prior Receiving owners remain frozen
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_receiving_yards_projection_v1\.py$|nfl_receiving_yards_hub_v[1-9]\.py$|nfl_receiving_yards_market_api_v1\.py$|streamlit_memory_lazy_router_v120\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "STEP10_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "STEP10_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Run final Step 10 contracts
+        run: |
+          python -m pytest -q tests/test_nfl_receiving_yards_v10_final_v1.py
+          python -m pytest -q tests/test_nfl_receiving_yards_v10_badge_hotfix_v1.py
+
+      - name: Re-run frozen Step 9 and Step 8 contracts
+        run: |
+          python -m pytest -q tests/test_nfl_receiving_yards_v9_matchup_tiers_v1.py
+          python -m pytest -q tests/test_nfl_receiving_yards_step8_market_v1.py
+
+      - name: Prove final layer remains market-blind
+        shell: bash
+        run: |
+          python - <<'PY'
+          import inspect
+          import nfl_receiving_yards_hub_v10 as page
+          assert page.FINAL_PAGE_COMPLETE is True
+          assert page.PAGE_BUILD_STEP == page.PAGE_BUILD_TOTAL == 10
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.MATCHUP_CLASSIFICATION_ONLY is True
+          assert page.BETTING_GRADE_ENABLED is False
+          source = inspect.getsource(page._detailed_player_card_v10) + inspect.getsource(page._grade_for_team_opponent)
+          for forbidden in ('over_odds', 'under_odds', 'market_row', 'probability', 'fair_odds', 'stake'):
+              assert forbidden not in source, forbidden
+          print('NFL_RECEIVING_YARDS_STEP10_MARKET_BLIND_FINAL_GREEN')
+          PY
+
+  warm-page-final-ui:
+    needs: certify-final-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        id: browser-python
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        id: browser-stack-cache
+        with:
+          path: |
+            .venv-browser-qa
+            ~/.cache/ms-playwright
+          key: devsystem-browser-stack-${{ runner.os }}-py${{ steps.browser-python.outputs.python-version }}-${{ hashFiles('requirements.txt', 'devsystem/browser_tooling_v1.txt', 'devsystem/browser_cache_epoch_v1.txt') }}
+
+      - name: Build browser stack on cache miss
+        if: steps.browser-stack-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python -m venv .venv-browser-qa
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r requirements.txt
+          .venv-browser-qa/bin/python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          .venv-browser-qa/bin/python -m playwright install chromium
+
+      - name: Activate browser stack
+        shell: bash
+        run: echo "$GITHUB_WORKSPACE/.venv-browser-qa/bin" >> "$GITHUB_PATH"
+
+      - name: Verify live Receiving market backend before UI witness
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 \
+            'https://kyre-sports-api.onrender.com/api/v1/nfl/receiving-yards/market/status' \
+            -o /tmp/receiving-market-status.json
+          python - <<'PY'
+          import json
+          payload=json.load(open('/tmp/receiving-market-status.json'))
+          assert payload['status'] == 'ready'
+          assert payload['schema_version'] == 'nfl_receiving_yards_market_v1'
+          assert payload['provider'] == 'FanDuel'
+          assert payload['projection_weight'] == 0.0
+          assert payload['market_context_only'] is True
+          print('RECEIVING_FINAL_BACKEND_STATUS_GREEN')
+          PY
+
+      - name: Start clean branch-local Streamlit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/receiving-final
+          nohup python -m streamlit run app.py \
+            --server.headless true \
+            --server.address 127.0.0.1 \
+            --server.port 8510 \
+            > artifacts/receiving-final/streamlit.log 2>&1 &
+          echo $! > /tmp/receiving_final_pid
+
+      - name: Drive cold and warm final Receiving UI with Playwright
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from time import perf_counter
+          from playwright.sync_api import sync_playwright
+          from devsystem.browser_qa_v1 import (
+              _wait_for_health,
+              _find_app_frame,
+              _wait_for_text,
+              _body_has_forbidden_error,
+              _choose,
+              BrowserQAFailure,
+          )
+
+          base='http://127.0.0.1:8510'
+          artifacts=Path('artifacts/receiving-final')
+          _wait_for_health(base)
+
+          def navigate_receiving(page):
+              frame,_=_find_app_frame(page)
+              _choose(page,frame,0,'NFL')
+              nfl_market_combo=frame.get_by_role('combobox',name='🎯 NFL Market',exact=True)
+              nfl_market_combo.wait_for(state='visible',timeout=30000)
+              _choose(page,frame,1,'Receiving Yards')
+              body=_wait_for_text(frame,'STEP 10 OF 10',180.0)
+              return frame,body
+
+          def verify(frame, body, label):
+              forbidden=_body_has_forbidden_error(body)
+              if forbidden:
+                  raise BrowserQAFailure(f'{label} runtime error marker: {forbidden}')
+              for required in (
+                  'STEP 10 OF 10',
+                  'FINAL CERTIFIED',
+                  'MATCHUP TIERS',
+              ):
+                  if required not in body:
+                      raise BrowserQAFailure(f'{label} missing final marker: {required}')
+              body_lower=body.lower()
+              if 'page step 7 / 10' in body_lower:
+                  raise BrowserQAFailure(f'{label} stale inherited Page Step 7 / 10 badge still visible')
+              if 'projection math remains frozen' not in body_lower:
+                  raise BrowserQAFailure(f'{label} missing frozen projection marker')
+              if 'sportsbook influence remains 0.0%' not in body_lower:
+                  raise BrowserQAFailure(f'{label} missing 0.0% sportsbook influence marker')
+              player_count=frame.locator('.krecv10-player').count()
+              ribbon_count=frame.locator('.krecv10-ribbon').count()
+              if player_count > 0 and ribbon_count != player_count:
+                  raise BrowserQAFailure(
+                      f'{label} detailed ribbon mismatch: players={player_count} ribbons={ribbon_count}'
+                  )
+              return player_count,ribbon_count
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=['--disable-dev-shm-usage','--no-sandbox'])
+              page=browser.new_page(viewport={'width':1440,'height':1800})
+              try:
+                  cold_started=perf_counter()
+                  page.goto(base,wait_until='domcontentloaded',timeout=120000)
+                  frame,cold_body=navigate_receiving(page)
+                  cold_ms=(perf_counter()-cold_started)*1000.0
+                  cold_players,cold_ribbons=verify(frame,cold_body,'cold')
+                  page.screenshot(path=str(artifacts/'receiving_final_cold.png'),full_page=True)
+
+                  warm_started=perf_counter()
+                  page.reload(wait_until='domcontentloaded',timeout=120000)
+                  frame,warm_body=navigate_receiving(page)
+                  warm_ms=(perf_counter()-warm_started)*1000.0
+                  warm_players,warm_ribbons=verify(frame,warm_body,'warm')
+                  page.screenshot(path=str(artifacts/'receiving_final_warm.png'),full_page=True)
+
+                  result={
+                      'status':'GREEN',
+                      'cold_ms':round(cold_ms,1),
+                      'warm_ms':round(warm_ms,1),
+                      'warm_vs_cold_ratio':round(warm_ms/cold_ms,3) if cold_ms > 0 else None,
+                      'cold_detailed_players':cold_players,
+                      'cold_detailed_ribbons':cold_ribbons,
+                      'warm_detailed_players':warm_players,
+                      'warm_detailed_ribbons':warm_ribbons,
+                      'page_step':'10/10',
+                      'sportsbook_projection_influence':0.0,
+                      'projection_math_changed':False,
+                  }
+                  (artifacts/'receiving_final_metrics.json').write_text(json.dumps(result,indent=2))
+                  print('NFL_RECEIVING_FINAL_UI_SPEED_WITNESS_GREEN')
+                  print(json.dumps(result,indent=2))
+              finally:
+                  browser.close()
+          PY
+
+      - name: Print Streamlit log
+        if: always()
+        run: tail -n 500 artifacts/receiving-final/streamlit.log || true
+
+      - name: Upload final Receiving UI + speed evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-receiving-final-${{ github.run_id }}
+          path: artifacts/receiving-final
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Stop Streamlit
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/receiving_final_pid ]; then
+            kill "$(cat /tmp/receiving_final_pid)" 2>/dev/null || true
+          fi

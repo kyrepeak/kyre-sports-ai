@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-09T15:26:00Z",
+  "season": 2026,
+  "purpose": "Readable Step 3 offense-vs-defense current-season evidence fallback. Raw current stats only; no sportsbook or market inputs.",
+  "teams": {
+    "50": {
+      "team": "Florida A&M",
+      "games": 2,
+      "offense": {
+        "points_pg": 16.5,
+        "total_yards_pg": 210.5,
+        "pass_yards_pg": 176,
+        "rush_yards_pg": 34.5,
+        "pass_td_pg": 0.5,
+        "rush_td_pg": 0.5,
+        "first_downs_pg": 12.5,
+        "yards_per_play": 3.368
+      },
+      "defense": {
+        "points_allowed_pg": 19,
+        "total_yards_allowed_pg": 321,
+        "pass_yards_allowed_pg": 173.5,
+        "rush_yards_allowed_pg": 147.5,
+        "pass_td_allowed_pg": 0.5,
+        "rush_td_allowed_pg": 2,
+        "first_downs_allowed_pg": 17,
+        "yards_per_play_allowed": 5.4871794872
+      },
+      "completed_events": [
+        "401868948",
+        "401867939"
+      ],
+      "sources": [
+        "ESPN Core 2026 team statistics",
+        "ESPN exact-event summaries 401868948 and 401867939",
+        "Florida A&M Athletics 2026 cumulative statistics cross-check"
+      ]
+    },
+    "2390": {
+      "team": "Miami (FL)",
+      "games": 1,
+      "offense": {
+        "points_pg": 45,
+        "total_yards_pg": 549,
+        "pass_yards_pg": 428,
+        "rush_yards_pg": 121,
+        "pass_td_pg": 5,
+        "rush_td_pg": 1,
+        "first_downs_pg": 27,
+        "yards_per_play": 8.1940298507
+      },
+      "defense": {
+        "points_allowed_pg": 6,
+        "total_yards_allowed_pg": 299,
+        "pass_yards_allowed_pg": 221,
+        "rush_yards_allowed_pg": 78,
+        "pass_td_allowed_pg": 0,
+        "rush_td_allowed_pg": 0,
+        "first_downs_allowed_pg": 17,
+        "yards_per_play_allowed": 4.6
+      },
+      "completed_events": [
+        "401858206"
+      ],
+      "sources": [
+        "ESPN Core 2026 team statistics",
+        "ESPN exact-event summary 401858206",
+        "Miami Athletics Stanford recap cross-check"
+      ]
+    }
+  }
+}

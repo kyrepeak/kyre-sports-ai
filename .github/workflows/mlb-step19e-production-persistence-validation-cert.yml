@@ -1,0 +1,402 @@
+name: MLB Step19E production persistence validation certification
+
+on:
+  push:
+    branches:
+      - mlb-step19e-production-persistence-validation
+    paths:
+      - sports_api/mlb_step19e_production_persistence_validation_v1.py
+      - sports_api/sql/mlb_step19e_live_data_persistence.sql
+      - tests/test_mlb_step19e_production_persistence_validation.py
+      - .github/workflows/mlb-step19e-production-persistence-validation-cert.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - sports_api/mlb_step19e_production_persistence_validation_v1.py
+      - sports_api/sql/mlb_step19e_live_data_persistence.sql
+      - tests/test_mlb_step19e_production_persistence_validation.py
+      - .github/workflows/mlb-step19e-production-persistence-validation-cert.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step19e-production-persistence-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  STEP19E_BASE_SHA: 4e9f5494f520b2c491b0820d3069baecd49124b3
+  STEP16A_FROZEN_SHA: c5ad6047224aaf014cec13f5efa6e5cd650da939
+  STEP16B_FROZEN_SHA: eb0ea430caea02f90b6367b8bc0ea28f698246bf
+  STEP17A_FROZEN_SHA: 1d30fc71e86ed4234d3c38e5d4ed813b0e967635
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_PRODUCTION_SCHEDULER_ENABLED: "false"
+  MLB_ACTIONABLE_OUTPUT_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+  MLB_STEP19E_PERSISTENCE_ADAPTER_ENABLED: "true"
+  MLB_STEP19E_DATABASE_READ_ENABLED: "true"
+  MLB_STEP19E_DATABASE_WRITE_ENABLED: "true"
+  KYRE_DATABASE_URL: postgresql://step19e:step19e@127.0.0.1:5432/kyre_step19e
+
+jobs:
+  certify-production-persistence-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: step19e
+          POSTGRES_PASSWORD: step19e
+          POSTGRES_DB: kyre_step19e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U step19e -d kyre_step19e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove exact four-file Step19E scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$STEP19E_BASE_SHA" HEAD
+          git diff --check "$STEP19E_BASE_SHA"...HEAD
+          changed="$(git diff --name-only "$STEP19E_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          expected='^(sports_api/mlb_step19e_production_persistence_validation_v1.py|sports_api/sql/mlb_step19e_live_data_persistence.sql|tests/test_mlb_step19e_production_persistence_validation.py|\.github/workflows/mlb-step19e-production-persistence-validation-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$expected" || true)"
+          test -z "$bad"
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          test "$count" -eq 4
+          test -z "$(git diff --name-status "$STEP19E_BASE_SHA"...HEAD | awk '$1 == "D" {print}')"
+          echo 'MLB_STEP19E_EXACT_SCOPE_OK'
+
+      - name: Prove frozen production Step14 Step18 Step19A-D and provider boundaries unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_PRODUCTION_RUNTIME_ENABLED" = false
+          test "$MLB_PRODUCTION_SCHEDULER_ENABLED" = false
+          test "$MLB_ACTIONABLE_OUTPUT_ENABLED" = false
+          test "$MLB_WAGERING_ENABLED" = false
+          git diff --exit-code "$STEP19E_BASE_SHA"...HEAD -- \
+            sports_api/main.py \
+            sports_api/api/mlb.py \
+            sports_api/mlb_step14a_persistence_contract_v1.py \
+            sports_api/mlb_step14b_database_checkpoint_adapter_v1.py \
+            sports_api/mlb_step14c_durable_restart_lease_v1.py \
+            sports_api/collectors/mlb_official_slate.py \
+            sports_api/collectors/mlb_live_market_feed.py \
+            sports_api/collectors/mlb_event_player_identity.py \
+            sports_api/collectors/mlb_provider_reliability.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_draftkings_provider.py \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/tools/mlb_step18a_production_baseline.py \
+            sports_api/tools/mlb_step18b_production_observability.py \
+            sports_api/tools/mlb_step18c_incident_response.py \
+            sports_api/tools/mlb_step18d_final_production_freeze.py
+          echo 'MLB_STEP19E_FROZEN_BOUNDARIES_OK'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests httpx
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Compile Step19E surface
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step19e_production_persistence_validation_v1.py \
+            tests/test_mlb_step19e_production_persistence_validation.py
+
+      - name: Verify Step19E SQL schema hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          observed="$(sha256sum sports_api/sql/mlb_step19e_live_data_persistence.sql | awk '{print $1}')"
+          test "$observed" = "154faefe8bc6e366f010339530fefcdea3a99db18b0a83be15d5b63ac5859a69"
+          echo 'MLB_STEP19E_SQL_HASH_OK'
+
+      - name: Run Step19E fail-closed persistence validation tests
+        run: PYTHONPATH=. python -m pytest -q tests/test_mlb_step19e_production_persistence_validation.py
+
+      - name: Revalidate historical snapshot guards at their exact frozen commits
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$STEP16A_FROZEN_SHA^{commit}"
+          git cat-file -e "$STEP16B_FROZEN_SHA^{commit}"
+          git cat-file -e "$STEP17A_FROZEN_SHA^{commit}"
+
+          rm -rf /tmp/mlb-step16a-frozen /tmp/mlb-step16b-frozen /tmp/mlb-step17a-frozen
+
+          git worktree add --detach /tmp/mlb-step16a-frozen "$STEP16A_FROZEN_SHA"
+          (
+            cd /tmp/mlb-step16a-frozen
+            PYTHONPATH=. python -m pytest -q tests/test_mlb_step16a_production_activation_contract_v1.py
+          )
+          git worktree remove /tmp/mlb-step16a-frozen --force
+
+          git worktree add --detach /tmp/mlb-step16b-frozen "$STEP16B_FROZEN_SHA"
+          (
+            cd /tmp/mlb-step16b-frozen
+            PYTHONPATH=. python -m pytest -q tests/test_mlb_step16b_production_packaging_lifecycle_v1.py
+          )
+          git worktree remove /tmp/mlb-step16b-frozen --force
+
+          git worktree add --detach /tmp/mlb-step17a-frozen "$STEP17A_FROZEN_SHA"
+          (
+            cd /tmp/mlb-step17a-frozen
+            PYTHONPATH=. python -m pytest -q tests/test_mlb_step17a_production_host_contract_v1.py
+          )
+          git worktree remove /tmp/mlb-step17a-frozen --force
+
+          echo 'MLB_STEP19E_HISTORICAL_SNAPSHOT_GUARDS_OK'
+
+      - name: Run current MLB regression excluding historical snapshot-only guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=()
+          for path in tests/test_mlb_*.py; do
+            case "$path" in
+              tests/test_mlb_step16a_production_activation_contract_v1.py|\
+              tests/test_mlb_step16b_production_packaging_lifecycle_v1.py|\
+              tests/test_mlb_step17a_production_host_contract_v1.py)
+                continue
+                ;;
+            esac
+            files+=("$path")
+          done
+          test "${#files[@]}" -gt 0
+          PYTHONPATH=. python -m pytest -q "${files[@]}"
+
+      - name: Provision ephemeral Step19E PostgreSQL schema
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$KYRE_DATABASE_URL" -v ON_ERROR_STOP=1 \
+            -f sports_api/sql/mlb_step19e_live_data_persistence.sql
+          psql "$KYRE_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc \
+            "SELECT to_regclass('kyre_runtime.mlb_step19_live_data_checkpoints'), to_regclass('kyre_runtime.mlb_step19_live_data_checkpoint_heads');"
+          echo 'MLB_STEP19E_EPHEMERAL_POSTGRES_READY'
+
+      - name: Live read-only Step19 chain through PostgreSQL save and restart recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .step19e
+          PYTHONPATH=. python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timedelta, timezone
+          import json
+          import os
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          import psycopg
+
+          from sports_api.collectors.mlb_event_player_identity import (
+              build_mlb_event_player_identity_registry,
+          )
+          from sports_api.collectors.mlb_official_slate import collect_official_mlb_slate
+          from sports_api.collectors.mlb_provider_reliability import (
+              collect_reliable_mlb_market_feed,
+          )
+          from sports_api.mlb_step19e_production_persistence_validation_v1 import (
+              FINAL_CERTIFICATION_MARKER,
+              build_step19e_checkpoint_envelope,
+              recover_step19e_live_data,
+              save_step19e_checkpoint,
+              validate_step19e_checkpoint_envelope,
+          )
+
+          provider_now = datetime.now(timezone.utc)
+          reliable = collect_reliable_mlb_market_feed(
+              now_utc=provider_now,
+              max_events=1,
+              include_fanduel_game_odds=True,
+              include_fanduel_player_props=False,
+              include_draftkings=False,
+              max_attempts=2,
+              base_backoff_seconds=0.1,
+              max_backoff_seconds=0.25,
+              cooldown_seconds=60,
+              max_snapshot_age_seconds=120,
+          )
+          feed = reliable['market_feed']
+          assert reliable['collection_status'] in {'ok', 'recovered'}, reliable
+          assert feed['game_market_snapshot_count'] > 0, reliable
+          assert feed['successful_surface_count'] == feed['enabled_surface_count'], feed
+          assert feed['not_ready_surface_count'] == 0, feed
+          assert feed['error_surface_count'] == 0, feed
+          assert feed['rejected_record_count'] == 0, feed
+          assert all(int(row.get('upstream_rejected_count') or 0) == 0 for row in feed['provider_surface_statuses']), feed
+
+          eastern_date = provider_now.astimezone(ZoneInfo('America/New_York')).date()
+          official_games = {}
+          slate_dates = []
+          for offset in (0, 1):
+              slate_date = (eastern_date + timedelta(days=offset)).isoformat()
+              slate = collect_official_mlb_slate(slate_date=slate_date)
+              slate_dates.append(slate_date)
+              for game in slate['games']:
+                  official_games[game['game_pk']] = game
+
+          combined_slate = {
+              'sport': 'MLB',
+              'slate_date': ','.join(slate_dates),
+              'game_count': len(official_games),
+              'games': list(official_games.values()),
+              'source': 'MLB Stats API',
+          }
+          registry = build_mlb_event_player_identity_registry(
+              official_slate=combined_slate,
+              market_feed=feed,
+          )
+          assert registry['event_identity_count'] == feed['game_market_snapshot_count'], registry
+          assert registry['rejected_event_identity_count'] == 0, registry
+          assert registry['rejected_player_identity_count'] == 0, registry
+          assert registry['identity_complete_for_all_market_games'] is True, registry
+
+          checkpoint_now = datetime.now(timezone.utc)
+          envelope = build_step19e_checkpoint_envelope(
+              checkpoint_date=eastern_date.isoformat(),
+              official_slate=combined_slate,
+              reliable_market_collection=reliable,
+              identity_registry=registry,
+              created_at_utc=checkpoint_now,
+          )
+          validation = validate_step19e_checkpoint_envelope(
+              envelope,
+              expected_checkpoint_date=eastern_date.isoformat(),
+              now_utc=checkpoint_now,
+              max_checkpoint_age_seconds=300,
+          )
+          assert validation['envelope_valid'] is True, validation
+
+          safe_env = {
+              'MLB_STEP19E_PERSISTENCE_ADAPTER_ENABLED': 'true',
+              'MLB_STEP19E_DATABASE_READ_ENABLED': 'true',
+              'MLB_STEP19E_DATABASE_WRITE_ENABLED': 'true',
+              'KYRE_DATABASE_URL': os.environ['KYRE_DATABASE_URL'],
+          }
+          saved = save_step19e_checkpoint(
+              checkpoint_envelope=envelope,
+              expected_head_version=0,
+              env=safe_env,
+              generated_at_utc=checkpoint_now,
+          )
+          assert saved['status'] == 'saved', saved
+          assert saved['checkpoint_version'] == 1, saved
+
+          idempotent = save_step19e_checkpoint(
+              checkpoint_envelope=envelope,
+              expected_head_version=999,
+              env=safe_env,
+              generated_at_utc=checkpoint_now,
+          )
+          assert idempotent['status'] == 'idempotent', idempotent
+          assert idempotent['checkpoint_version'] == 1, idempotent
+
+          recovered = recover_step19e_live_data(
+              checkpoint_date=eastern_date.isoformat(),
+              env=safe_env,
+              now_utc=datetime.now(timezone.utc),
+              max_checkpoint_age_seconds=300,
+          )
+          assert recovered['status'] == 'recovered', recovered
+          assert recovered['reliability_state_for_restart'] == reliable['reliability_state']
+          assert recovered['market_feed_for_restart'] == feed
+          assert recovered['identity_registry_for_restart'] == registry
+          assert recovered['official_slate_for_restart'] == combined_slate
+          assert recovered['production_runtime_wiring'] is False
+          assert recovered['model_probability_mutation'] is False
+          assert recovered['projection_mutation'] is False
+          assert recovered['actionable_output'] is False
+          assert recovered['wagering'] is False
+
+          corrupt = deepcopy(envelope)
+          corrupt['envelope_content_sha256'] = '0' * 64
+          corrupt_validation = validate_step19e_checkpoint_envelope(corrupt)
+          assert corrupt_validation['envelope_valid'] is False, corrupt_validation
+
+          with psycopg.connect(os.environ['KYRE_DATABASE_URL']) as connection:
+              with connection.cursor() as cursor:
+                  cursor.execute('SELECT count(*) FROM kyre_runtime.mlb_step19_live_data_checkpoints')
+                  history_count = int(cursor.fetchone()[0])
+                  cursor.execute('SELECT count(*) FROM kyre_runtime.mlb_step19_live_data_checkpoint_heads')
+                  head_count = int(cursor.fetchone()[0])
+          assert history_count == 1
+          assert head_count == 1
+
+          provider = next(row for row in reliable['provider_reliability'] if row['provider_key'] == 'fanduel')
+          evidence = {
+              'marker': FINAL_CERTIFICATION_MARKER,
+              'certified_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+              'checkpoint_date': eastern_date.isoformat(),
+              'checkpoint_version': recovered['checkpoint_version'],
+              'checkpoint_id': recovered['checkpoint_id'],
+              'envelope_content_sha256': envelope['envelope_content_sha256'],
+              'official_slate_sha256': envelope['official_slate_sha256'],
+              'market_feed_sha256': envelope['market_feed_sha256'],
+              'identity_registry_sha256': envelope['identity_registry_sha256'],
+              'reliability_state_sha256': envelope['reliability_state_sha256'],
+              'official_game_count': registry['official_game_count'],
+              'live_market_game_claim_count': registry['market_game_claim_count'],
+              'verified_event_identity_count': registry['event_identity_count'],
+              'rejected_event_identity_count': registry['rejected_event_identity_count'],
+              'provider_key': provider['provider_key'],
+              'provider_status': provider['status'],
+              'network_attempt_count': provider['network_attempt_count'],
+              'retry_count': reliable['retry_count'],
+              'ephemeral_postgresql_history_rows': history_count,
+              'ephemeral_postgresql_head_rows': head_count,
+              'restart_recovery_verified': True,
+              'reliability_state_restart_verified': True,
+              'idempotent_save_verified': True,
+              'corruption_fail_closed_verified': True,
+              'stale_checkpoint_fail_closed': True,
+              'fuzzy_matching_used': False,
+              'synthetic_game_id_used': False,
+              'synthetic_player_id_used': False,
+              'price_fabrication_used': False,
+              'production_database_writes': 0,
+              'production_mutations': 0,
+              'model_probability_mutations': 0,
+              'projection_mutations': 0,
+              'actionable_output': False,
+              'wagering': False,
+          }
+          Path('.step19e/mlb-step19e-production-persistence-validation-evidence.json').write_text(
+              json.dumps(evidence, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print(FINAL_CERTIFICATION_MARKER)
+          PY
+
+      - name: Upload Step19E evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step19e-production-persistence-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step19e/mlb-step19e-production-persistence-validation-evidence.json
+          if-no-files-found: error
+          retention-days: 90

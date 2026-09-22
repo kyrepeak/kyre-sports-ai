@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-evidence-step6-final",
+  "status": "DONE",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": [],
+  "scope": "V184 Game Total Step 6 Scoring Creation rebuild. Additive presentation/evidence only over frozen Page V17. Preserve Steps 1-5, especially production-certified Step 5 Pace & Expected Possessions, plus all projection/probability/distribution math, APIs, qualification/ranking, and sportsbook projection influence 0.0%. Step 6 combines 20+ yard explosive pass rate, 10+ yard explosive rush rate, overall explosive rate, defensive big-play susceptibility, scoring opportunities per game, scoring-opportunity conversion, red-zone TD rate, and red-zone TD rate allowed using bounded SportsDataverse completed-game PBP with certified Runtime Snapshot V2 event identity. Missing evidence fails closed to DATA LIMITED.",
+  "proof_target": "Step 6 must match the approved premium Scoring Creation design: dedicated Step 6 accordion, matchup header, two offense-vs-prevention battle panels, exactly 12 scoring tiles, Scoring Environment summary, Matchup Read, Biggest Accelerator, Biggest Suppressor, O/U Impact, Data Confidence, responsive mobile/tablet layout, source integrity strip, sportsbook influence 0.0%, and projection mutation OFF. READY requires all 12 matchup tiles to have verified offense + opposing-defense evidence; otherwise DATA LIMITED.",
+  "internal_steps": {
+    "1": "Freeze Steps 1-5 and map the approved Step 6 visual/data target.",
+    "2": "Reuse certified Runtime Snapshot V2 identity plus bounded SportsDataverse PBP; do not reopen slow NCAA live crawlers.",
+    "3": "Build dedicated Step 6 Scoring Creation owner and additive Page V18 that intercepts only Step 6.",
+    "4": "Lock 12/12 READY, DATA LIMITED fail-closed behavior, PBP parsing, visual sections, and frozen Step 5 with dedicated CI.",
+    "5": "Activate Page V18 only after Step 6 CI is GREEN.",
+    "6": "Run exact-route Browser QA and regression protection.",
+    "7": "Polish responsive visual parity and accordion behavior to the approved mockup.",
+    "8": "Merge, prove live production Step 6, and freeze."
+  }
+}

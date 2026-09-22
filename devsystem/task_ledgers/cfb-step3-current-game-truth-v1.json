@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-current-game-truth-v1",
+  "status": "DONE",
+  "scope": "Refresh Step 3 recent-game truth from the exact current-season team schedule before accepting older but internally-complete snapshot/current evidence.",
+  "trigger": "Live Miami-Wake Step 3 showed only one completed game per team on Sep 18 because an older one-game snapshot satisfied the core contract and short-circuited the fresher exact schedule refresh.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step2_frozen_and_untouched": true,
+    "step4_frozen_and_untouched": true,
+    "step5_plus_not_started": true,
+    "exact_team_id_required": true,
+    "future_game_leakage_allowed": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "proof_target": "Focused Step 3 tests must prove a stale one-game sample refreshes to all completed pre-kickoff games and snapshot evidence is used only when live refresh fails.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

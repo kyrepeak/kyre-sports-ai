@@ -1,0 +1,406 @@
+name: MLB Step6A production canary activation certification
+
+on:
+  push:
+    branches:
+      - mlb-step6a-production-canary-activation
+    paths:
+      - 'sports_api/mlb_step6a_production_canary_v1.py'
+      - 'mlb_daily_game_picks_step6a_production_canary_v1.py'
+      - 'mlb_daily_game_picks_v217_guard.py'
+      - 'tests/test_mlb_step6a_production_canary_v1.py'
+      - '.github/workflows/mlb-step6a-production-canary-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STEP6A_BASE_SHA: b5e315574c1c8d1c34d8f82293a998cf6b96be42
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+
+jobs:
+  certify-production-canary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install focused certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests
+
+      - name: Assert additive Step6A MLB-only change scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP6A_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP6A_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          allowed='^(sports_api/mlb_step6a_production_canary_v1.py|mlb_daily_game_picks_step6a_production_canary_v1.py|mlb_daily_game_picks_v217_guard.py|tests/test_mlb_step6a_production_canary_v1.py|\.github/workflows/mlb-step6a-production-canary-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP6A_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          echo 'MLB_STEP6A_CHANGE_SCOPE_OK'
+
+      - name: Prove certified Step 5 runtime remains frozen except downstream guard route
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP6A_BASE_SHA"...HEAD -- \
+            sports_api/mlb_official_game_id_join_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_market_probability_v1.py \
+            sports_api/mlb_model_market_edge_v1.py \
+            sports_api/mlb_price_discipline_v1.py \
+            sports_api/mlb_market_movement_v1.py \
+            sports_api/mlb_price_health_v1.py \
+            sports_api/mlb_actionability_shadow_v1.py \
+            sports_api/mlb_controlled_price_gate_v1.py \
+            sports_api/mlb_price_gate_canary_v1.py \
+            sports_api/mlb_streamlit_canary_control_v1.py \
+            mlb_daily_game_picks_live_market_context_v1.py \
+            mlb_daily_game_picks_market_probability_v1.py \
+            mlb_daily_game_picks_model_market_edge_v1.py \
+            mlb_daily_game_picks_price_discipline_v1.py \
+            mlb_daily_game_picks_market_movement_v1.py \
+            mlb_daily_game_picks_price_health_v1.py \
+            mlb_daily_game_picks_actionability_shadow_v1.py \
+            mlb_daily_game_picks_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_price_gate_canary_v1.py \
+            mlb_daily_game_picks_price_gate_canary_streamlit_v1.py \
+            mlb_daily_game_picks_v217.py \
+            app.py
+          echo 'MLB_STEP6A_STEP5_RUNTIME_FROZEN'
+
+      - name: Prove protected V2.1.7 lineup and risk functions are AST-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import ast, os, subprocess
+          from pathlib import Path
+
+          base = subprocess.check_output(
+              ['git', 'show', f'{os.environ["STEP6A_BASE_SHA"]}:mlb_daily_game_picks_v217_guard.py'],
+              text=True,
+          )
+          head = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          protected = {
+              '_safe_int', '_norm', '_lineup_members_bulk', '_official_snapshots_v217',
+              '_player_lineup_guard', '_risk_context_v217_guard',
+          }
+          def dumps(source):
+              tree = ast.parse(source)
+              return {
+                  node.name: ast.dump(node, include_attributes=False)
+                  for node in tree.body
+                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in protected
+              }
+          if dumps(base) != dumps(head) or set(dumps(head)) != protected:
+              raise SystemExit('STEP6A_PROTECTED_V217_FUNCTION_DRIFT')
+          print('MLB_STEP6A_V217_PROTECTED_FUNCTIONS_FROZEN')
+          PY
+
+      - name: Assert activation, cap, rollback, and no-write contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('sports_api/mlb_step6a_production_canary_v1.py').read_text(encoding='utf-8')
+          presentation = Path('mlb_daily_game_picks_step6a_production_canary_v1.py').read_text(encoding='utf-8')
+          guard = Path('mlb_daily_game_picks_v217_guard.py').read_text(encoding='utf-8')
+          combined = core + '\n' + presentation + '\n' + guard
+
+          required = (
+              'DEFAULT_ENABLED = True',
+              'DEFAULT_PERCENT = 10.0',
+              'MAX_PRODUCTION_CANARY_PERCENT = 10.0',
+              'MLB_STEP6A_PRODUCTION_CANARY_ENABLED',
+              'MLB_STEP6A_PRODUCTION_CANARY_PERCENT',
+              'MLB_STEP6A_PRODUCTION_CANARY_KILL_SWITCH',
+              'mlb_step6a_rollback',
+              'GLOBAL_KILL_SWITCH',
+              'STREAMLIT_SESSION_ROLLBACK',
+              'REPOSITORY_PRODUCTION_DEFAULT',
+              'step510.canary_rollout_config = step6a_rollout_config',
+              'step510.install_price_gate_canary_layer(games_df)',
+              'install_step6a_production_canary_layer(games_df)',
+              'player_props_passthrough',
+              'model_math_impact',
+              'pick_strength_impact',
+              'ranking_math_impact',
+              'risk_logic_impact',
+              'wagering_impact',
+              'durable_persistence',
+              'wnba_impact',
+          )
+          missing = [token for token in required if token not in combined]
+          if missing:
+              raise SystemExit('STEP6A_REQUIRED_CONTRACT_MISSING: ' + ' | '.join(missing))
+
+          forbidden = (
+              'difflib', 'SequenceMatcher', 'fuzzywuzzy', 'rapidfuzz',
+              'sqlite3', 'psycopg', 'sqlalchemy', 'INSERT INTO', 'requests.post(',
+          )
+          bad = [token for token in forbidden if token in core + '\n' + presentation]
+          if bad:
+              raise SystemExit('STEP6A_FORBIDDEN_MATCHER_WRITE_OR_PERSISTENCE: ' + ' | '.join(bad))
+
+          forbidden_writes = (
+              'candidate["probability"] =', "candidate['probability'] =",
+              'candidate["score"] =', "candidate['score'] =",
+              'candidate["projection"] =', "candidate['projection'] =",
+          )
+          if any(token in presentation for token in forbidden_writes):
+              raise SystemExit('STEP6A_PROTECTED_PRODUCTION_FIELD_WRITE')
+
+          if 'from mlb_daily_game_picks_step6a_production_canary_v1 import install_step6a_production_canary_layer' not in guard:
+              raise SystemExit('STEP6A_ACTIVE_GUARD_IMPORT_MISSING')
+          print('MLB_STEP6A_ACTIVATION_SAFETY_CONTRACT_OK')
+          PY
+
+      - name: Compile Step6A Python files
+        run: |
+          python -m py_compile \
+            sports_api/mlb_step6a_production_canary_v1.py \
+            mlb_daily_game_picks_step6a_production_canary_v1.py \
+            mlb_daily_game_picks_v217_guard.py \
+            tests/test_mlb_step6a_production_canary_v1.py
+
+      - name: Run full frozen Step 5 regression plus Step6A tests
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py
+
+      - name: Certify live 10 percent cohort, gate partition, and exact rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, math, os, time
+          import requests
+
+          from sports_api.mlb_live_market_context_v1 import attach_live_market_context
+          from sports_api.mlb_market_probability_v1 import derive_market_probability_contexts
+          from sports_api.mlb_model_market_edge_v1 import model_market_edge
+          from sports_api.mlb_price_discipline_v1 import price_discipline_context
+          from sports_api.mlb_market_movement_v1 import build_market_observation, compare_market_observations
+          from sports_api.mlb_price_health_v1 import price_health_context
+          from sports_api.mlb_actionability_shadow_v1 import actionability_shadow_context
+          from sports_api.mlb_controlled_price_gate_v1 import controlled_price_gate
+          from sports_api.mlb_price_gate_canary_v1 import select_canary_game_ids
+          from sports_api.mlb_step6a_production_canary_v1 import (
+              MAX_PRODUCTION_CANARY_PERCENT,
+              resolve_step6a_production_canary,
+          )
+
+          session = requests.Session()
+          session.headers.update({'User-Agent': 'KyreSportsStep6AProductionCanary/1.0'})
+
+          def get_json(url, label):
+              last = None
+              for attempt in range(1, 4):
+                  try:
+                      r = session.get(url, timeout=45, headers={'Accept': 'application/json'})
+                      r.raise_for_status()
+                      return int(r.status_code), r.json()
+                  except Exception as exc:
+                      last = exc
+                      print(f'{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}')
+                      if attempt < 3:
+                          time.sleep(4)
+              raise SystemExit(f'{label}_FAILED: {last}')
+
+          def get_text(url, label):
+              last = None
+              for attempt in range(1, 4):
+                  try:
+                      r = session.get(url, timeout=45, allow_redirects=True, headers={'Accept': 'text/html,*/*'})
+                      r.raise_for_status()
+                      return int(r.status_code), r.text, r.url
+                  except Exception as exc:
+                      last = exc
+                      print(f'{label}_ATTEMPT_{attempt}_FAILED: {type(exc).__name__}: {exc}')
+                      if attempt < 3:
+                          time.sleep(4)
+              raise SystemExit(f'{label}_FAILED: {last}')
+
+          status, payload = get_json(os.environ['PRODUCTION_ODDS_URL'], 'STEP6A_ODDS')
+          if status != 200 or payload.get('source') != 'FanDuel':
+              raise SystemExit('STEP6A_BAD_PRODUCTION_SOURCE_OR_STATUS')
+          if payload.get('data_type') != 'mlb_live_odds_api_response_v1' or payload.get('schema_version') != 1:
+              raise SystemExit('STEP6A_BAD_PRODUCTION_CONTRACT')
+          games = payload.get('games') or []
+          collected_at = payload.get('collected_at_utc')
+          if not games or not collected_at:
+              raise SystemExit('STEP6A_EMPTY_CURRENT_SLATE')
+
+          game_ids = [int(game['official_game_id']) for game in games]
+          identity_rows = [{'game_pk': gid} for gid in reversed(game_ids)]
+          step52 = attach_live_market_context(identity_rows, games)
+          step53 = derive_market_probability_contexts(step52)
+          if step52.get('attached_count') != len(games) or step53.get('derived_context_count') != len(games):
+              raise SystemExit('STEP6A_EXACT_ID_CONTEXT_COUNT_MISMATCH')
+          if step53.get('fallback_matching_used') is not False:
+              raise SystemExit('STEP6A_FALLBACK_MATCHING_USED')
+
+          default = resolve_step6a_production_canary({})
+          rollback = resolve_step6a_production_canary({}, rollback_requested=True)
+          if default['enabled'] is not True or default['requested_percent'] != 10.0:
+              raise SystemExit('STEP6A_REPOSITORY_DEFAULT_NOT_ACTIVE_10_PERCENT')
+          if rollback['enabled'] is not False or rollback['requested_percent'] != 0.0:
+              raise SystemExit('STEP6A_ROLLBACK_NOT_OFF_ZERO')
+
+          cohort = select_canary_game_ids(game_ids, enabled=default['enabled'], requested_percent=default['requested_percent'])
+          rollback_cohort = select_canary_game_ids(game_ids, enabled=rollback['enabled'], requested_percent=rollback['requested_percent'])
+          expected_games = int(math.floor(len(set(game_ids)) * 10.0 / 100.0))
+          if cohort['selected_game_count'] != expected_games:
+              raise SystemExit('STEP6A_COHORT_SIZE_MISMATCH')
+          if cohort['realized_percent'] > MAX_PRODUCTION_CANARY_PERCENT + 1e-12:
+              raise SystemExit('STEP6A_REALIZED_PERCENT_EXCEEDS_CAP')
+          if rollback_cohort['selected_game_ids']:
+              raise SystemExit('STEP6A_ROLLBACK_COHORT_NOT_EMPTY')
+          selected_games = set(cohort['selected_game_ids'])
+
+          checks = enrolled = allow = block = nonenrolled = rollback_pass = line_bearing = 0
+          for game in games:
+              gid = int(game['official_game_id'])
+              context = (step53.get('contexts_by_game_id') or {}).get(gid)
+              if not context:
+                  raise SystemExit(f'STEP6A_MISSING_CONTEXT_{gid}')
+              away = str(game.get('away_team') or f'AWAY_{gid}')
+              home = str(game.get('home_team') or f'HOME_{gid}')
+              scenarios = [
+                  ('Moneyline', 'Away', context['moneyline']['away']),
+                  ('Moneyline', 'Home', context['moneyline']['home']),
+                  ('Run Line', 'Away', context['run_line']['away']),
+                  ('Run Line', 'Home', context['run_line']['home']),
+                  ('Total', 'Over ' + str(context['total'].get('line')), context['total']['over']),
+                  ('Total', 'Under ' + str(context['total'].get('line')), context['total']['under']),
+              ]
+              for market, side_text, side_block in scenarios:
+                  no_vig = float(side_block['no_vig_probability'])
+                  model_p = min(0.90, max(0.10, no_vig + 0.02))
+                  candidate = {'game_pk': gid, 'market': market, 'probability': model_p, 'side': side_text, 'name': None, 'team': None}
+                  edge = model_market_edge(candidate, context, away_team=away, home_team=home)
+                  price = price_discipline_context(edge)
+                  observation = build_market_observation(price, collected_at_utc=collected_at)
+                  movement = compare_market_observations(observation, as_of_utc=observation['collected_at_utc'])
+                  health = price_health_context(movement)
+                  shadow = actionability_shadow_context(health)
+
+                  off_gate = controlled_price_gate(shadow, activation_requested=False)
+                  if off_gate['gate_status'] != 'CONTROL_DISABLED' or off_gate['final_card_price_eligible'] is not True:
+                      raise SystemExit(f'STEP6A_ROLLBACK_CHANGED_ELIGIBILITY_{gid}_{market}')
+                  rollback_pass += 1
+
+                  is_enrolled = gid in selected_games
+                  gate = controlled_price_gate(shadow, activation_requested=is_enrolled)
+                  if is_enrolled:
+                      enrolled += 1
+                      if shadow['shadow_status'].startswith('SHADOW_PLAYABLE'):
+                          if gate['gate_status'] != 'GATE_ALLOW' or gate['final_card_price_eligible'] is not True:
+                              raise SystemExit(f'STEP6A_ALLOW_MISMATCH_{gid}_{market}')
+                          allow += 1
+                      else:
+                          if gate['gate_status'] != 'GATE_BLOCK' or gate['final_card_price_eligible'] is not False:
+                              raise SystemExit(f'STEP6A_BLOCK_MISMATCH_{gid}_{market}')
+                          block += 1
+                  else:
+                      if gate['gate_status'] != 'CONTROL_DISABLED' or gate['final_card_price_eligible'] is not True:
+                          raise SystemExit(f'STEP6A_NONENROLLED_CHANGED_{gid}_{market}')
+                      nonenrolled += 1
+
+                  for flag in ('model_math_impact', 'pick_strength_impact', 'ranking_math_impact', 'risk_logic_impact', 'wagering_impact'):
+                      if gate.get(flag) is not False:
+                          raise SystemExit(f'STEP6A_PROTECTED_IMPACT_DRIFT_{flag}_{gid}_{market}')
+                  if gate.get('durable_persistence') is not False:
+                      raise SystemExit(f'STEP6A_PERSISTENCE_DRIFT_{gid}_{market}')
+                  checks += 1
+                  if market in {'Run Line', 'Total'}:
+                      line_bearing += 1
+
+          expected_checks = len(games) * 6
+          if checks != expected_checks or rollback_pass != expected_checks:
+              raise SystemExit('STEP6A_LIVE_COVERAGE_MISMATCH')
+          if enrolled != cohort['selected_game_count'] * 6 or allow + block != enrolled:
+              raise SystemExit('STEP6A_ENROLLED_PARTITION_MISMATCH')
+          if nonenrolled + enrolled != expected_checks:
+              raise SystemExit('STEP6A_COHORT_PARTITION_MISMATCH')
+          if line_bearing != len(games) * 4:
+              raise SystemExit('STEP6A_LINE_BEARING_COVERAGE_MISMATCH')
+
+          streamlit = os.environ['STREAMLIT_URL'].rstrip('/')
+          root_status, root, root_url = get_text(streamlit + '/', 'STEP6A_STREAMLIT_ROOT')
+          rollback_status, rollback_html, rollback_url = get_text(streamlit + '/?mlb_step6a_rollback=1', 'STEP6A_STREAMLIT_ROLLBACK')
+          app_status_http, app_status = get_json(streamlit + '/api/v2/app/status', 'STEP6A_STREAMLIT_STATUS')
+          if any(code != 200 for code in (root_status, rollback_status, app_status_http)):
+              raise SystemExit('STEP6A_STREAMLIT_TRANSPORT_NOT_200')
+          if '<html' not in root.lower() or '<html' not in rollback_html.lower():
+              raise SystemExit('STEP6A_STREAMLIT_ROOT_NOT_HTML')
+          if 'mlb_step6a_rollback=1' not in rollback_url:
+              raise SystemExit('STEP6A_ROLLBACK_QUERY_NOT_PRESERVED')
+
+          evidence = {
+              'certification_result': 'GREEN',
+              'production_http_status': status,
+              'source': payload.get('source'),
+              'production_game_count': len(games),
+              'step5_2_attached_count': step52.get('attached_count'),
+              'step5_3_derived_context_count': step53.get('derived_context_count'),
+              'step6a_default_enabled': default['enabled'],
+              'step6a_default_percent': default['requested_percent'],
+              'step6a_max_percent': MAX_PRODUCTION_CANARY_PERCENT,
+              'step6a_canary_game_count': cohort['selected_game_count'],
+              'step6a_realized_percent': cohort['realized_percent'],
+              'step6a_enrolled_checks': enrolled,
+              'step6a_allow_count': allow,
+              'step6a_block_count': block,
+              'step6a_nonenrolled_passthrough': nonenrolled,
+              'step6a_rollback_passthrough': rollback_pass,
+              'line_bearing_checks_verified': line_bearing,
+              'streamlit_root_http_status': root_status,
+              'streamlit_rollback_http_status': rollback_status,
+              'streamlit_app_status_http_status': app_status_http,
+              'streamlit_version': app_status.get('streamlitVersion'),
+              'rendered_streamlit_ui_verified': False,
+              'model_math_changed': False,
+              'pick_strength_changed': False,
+              'ranking_math_changed': False,
+              'risk_logic_changed': False,
+              'durable_persistence_added': False,
+              'wagering_changed': False,
+              'player_props_price_gated': False,
+              'wnba_changed': False,
+          }
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          print('MLB_STEP6A_PRODUCTION_CANARY_GREEN')
+          PY

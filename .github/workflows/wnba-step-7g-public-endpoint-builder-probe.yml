@@ -1,0 +1,74 @@
+name: WNBA Step 7G public endpoint builder probe
+
+on:
+  push:
+    branches:
+      - wnba-step7g-official-data-preflight-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-public-endpoint-builder-probe.yml'
+      - 'sports_api/tools/wnba_step7g_public_endpoint_builder_probe.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-public-endpoint-builder-probe
+  cancel-in-progress: false
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout isolated Step 7G diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Verify production activation switches are OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install minimal dependency
+        run: python -m pip install 'httpx==0.28.1'
+
+      - name: Inspect WNBA public endpoint builder
+        shell: bash
+        run: python -m sports_api.tools.wnba_step7g_public_endpoint_builder_probe
+
+      - name: Upload sanitized builder evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-public-endpoint-builder-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-public-endpoint-builder-probe.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Re-assert production remained OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

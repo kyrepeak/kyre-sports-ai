@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "scope": "cfb_over_under_intelligence_v2",
+  "policy": "CFB Over/Under Intelligence V2 upgrades are additive above the permanently frozen CFB Steps 1-12. Completed upgrade steps must not be edited; future work must use new versioned modules and routers.",
+  "baseline_commit": "20df7fd996e3961c0d398f6e1d175971dcf0423c",
+  "completed_upgrade_steps": [1],
+  "exact_blobs": {
+    "cfb_over_under_matchup_ui_v1.py": "44ac4022733664572e13d44a20a6321ae426525b",
+    "streamlit_memory_lazy_router_v37.py": "b818c72c6733f884afcfb270fff688733bce012c"
+  },
+  "step1_contract": {
+    "name": "team logos + better matchup header",
+    "market": "Over/Under",
+    "frozen_parent_hub": "cfb_over_under_hub_v3",
+    "frozen_parent_router": "streamlit_memory_lazy_router_v36",
+    "active_router": "streamlit_memory_lazy_router_v37",
+    "visual_source": "ESPN College Football scoreboard",
+    "team_logos_active": true,
+    "logo_fallback_active": true,
+    "matchup_header_active": true,
+    "kickoff_context_active": true,
+    "stadium_context_active": true,
+    "broadcast_context_active": true,
+    "status_context_active": true,
+    "site_context_active": true,
+    "presentation_only": true,
+    "projection_math_changed": false,
+    "selection_math_changed": false,
+    "ranking_math_changed": false,
+    "analysis_line_behavior_changed": false,
+    "sportsbook_input_added": false,
+    "market_probability_input_added": false,
+    "monte_carlo_added": false,
+    "next_upgrade_step": 2,
+    "next_upgrade_name": "rankings + conference + records"
+  }
+}

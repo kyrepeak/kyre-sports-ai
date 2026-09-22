@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "task_id": "cfb-step3-scoreboard-quality-universe-v1",
+  "status": "DONE",
+  "scope": "Step 3 only: derive opponent win percentage, opponent scoring-defense rank, Top-40 defenses faced, record vs winning teams, and strength-of-schedule rank from one exact pre-kickoff ESPN FBS+FCS scoreboard universe.",
+  "trigger": "Production #48 correctly failed Step 3 at CHECK after game-truth recovery because opponent-quality context was still incomplete. Per-opponent schedule/stat lookups remain too fragile to satisfy the live card consistently.",
+  "guardrails": {
+    "step3_only": true,
+    "other_steps_untouched": true,
+    "pregame_completed_events_only": true,
+    "fbs_and_fcs_universe": true,
+    "exact_team_ids_for_selected_and_opponents": true,
+    "future_game_leakage_allowed": false,
+    "synthetic_scores": false,
+    "synthetic_records": false,
+    "synthetic_ranks": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "proof_target": "Certified Step 3 must render READY with at least two completed rows per side and all five Opponent Quality values nonblank; any remaining CHECK must print its live reason in the production failure.",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

@@ -1,0 +1,207 @@
+name: MLB Step18A production baseline certification
+
+on:
+  push:
+    branches:
+      - mlb-step18a-production-baseline
+    paths:
+      - .github/workflows/mlb-step18a-production-baseline-cert.yml
+      - sports_api/tools/mlb_step18a_production_baseline.py
+      - tests/test_mlb_step18a_production_baseline.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step18a-production-baseline-cert
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: wnba-render-staging
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -q -r sports_api/requirements.txt
+          python -m pip install -q pytest
+
+      - name: Prove Step 18A starts from merged Step 17B baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 911e917d9d1552289bab5f8c74604103c056982f HEAD
+          git cat-file -e ece3cd2d15d091728fdbe30be774dd9c15e4fe8e^{commit}
+          echo MLB_STEP18A_LINEAGE_BASELINE_OK
+
+      - name: Run fail-closed Step 18A unit tests
+        run: PYTHONPATH=. pytest -q tests/test_mlb_step18a_production_baseline.py
+
+      - name: Capture read-only Render and hosted rollback baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$RENDER_API_KEY"
+          mkdir -p .step18a-baseline
+          PYTHONPATH=. python - <<'PY'
+          import json
+          import os
+          import time
+          from pathlib import Path
+
+          import httpx
+
+          from sports_api.tools.mlb_step18a_production_baseline import (
+              EXPECTED_RENDER_SERVICE_ID,
+              EXPECTED_RENDER_SERVICE_NAME,
+              EXPECTED_SERVICE_URL,
+              STEP18A_FINAL_MARKER,
+              validate_production_baseline,
+          )
+          from sports_api.wnba_render_provisioning import RenderAPIClient, resolve_owner_id
+          from sports_api.tools import wnba_step7c_render_free_deploy as step7c
+
+          def clean(value):
+              if value is None:
+                  return None
+              text = str(value).strip()
+              return text or None
+
+          def truthy(value):
+              return str(value or '').strip().casefold() not in {'', '0', 'false', 'no', 'off', 'disabled'}
+
+          def env_map(rows):
+              result = {}
+              for row in rows:
+                  if not isinstance(row, dict):
+                      continue
+                  key = clean(row.get('key'))
+                  if key and row.get('value') is not None:
+                      result[key] = str(row['value'])
+              return result
+
+          def get_json_retry(path, *, ready=None, timeout_seconds=240.0):
+              deadline = time.monotonic() + timeout_seconds
+              last = 'not attempted'
+              with httpx.Client(
+                  timeout=30.0,
+                  follow_redirects=True,
+                  headers={'user-agent': 'kyre-mlb-step18a-baseline/1'},
+              ) as client:
+                  while True:
+                      try:
+                          response = client.get(EXPECTED_SERVICE_URL + path)
+                          if response.status_code == 200:
+                              body = response.json()
+                              if isinstance(body, dict):
+                                  if ready is None or ready(body):
+                                      return body
+                                  last = f'not-ready: {body.get("last_status") or body.get("status") or body.get("data_type")}'
+                              else:
+                                  last = 'non-object JSON'
+                          else:
+                              last = f'HTTP {response.status_code}'
+                      except Exception as exc:
+                          last = f'{type(exc).__name__}: {exc}'
+                      if time.monotonic() >= deadline:
+                          raise AssertionError(f'hosted read-only verification failed for {path}: {last}')
+                      time.sleep(5)
+
+          key = clean(os.environ.get('RENDER_API_KEY'))
+          assert key and len(key) >= 20, 'Render credential missing'
+
+          # Read-only Render API calls only: list/get service and list env vars.
+          with RenderAPIClient(api_key=key, timeout_seconds=30.0) as render:
+              owner = resolve_owner_id(render, clean(os.environ.get('RENDER_OWNER_ID')))
+              matches = render.list_services(owner, EXPECTED_RENDER_SERVICE_NAME)
+              assert len(matches) == 1, f'expected exactly one {EXPECTED_RENDER_SERVICE_NAME}; found {len(matches)}'
+              service_id = clean(matches[0].get('id'))
+              assert service_id == EXPECTED_RENDER_SERVICE_ID, f'Render service identity drift: {service_id!r}'
+              service = render.get_service(service_id)
+              values = env_map(render.list_env_vars(service_id))
+
+          assert values.get('WNBA_KYRE_DURABLE_STORAGE_BACKEND') == 'supabase', 'WNBA durable backend drift'
+          for name in step7c.OFF_SWITCHES:
+              assert not truthy(values.get(name)), f'WNBA safety switch unexpectedly enabled: {name}'
+
+          # Public hosted checks are GET-only. /health also wakes a sleeping Free service.
+          health = get_json_retry('/health', ready=lambda body: body.get('status') == 'ok')
+          wnba = get_json_retry(
+              '/api/v1/wnba/runtime/deployment',
+              ready=lambda body: body.get('data_type') == 'wnba_deployment_and_smoke_readiness',
+          )
+          mlb = get_json_retry(
+              '/api/v1/mlb/runtime/step17b',
+              ready=lambda body: (
+                  body.get('enabled') is True
+                  and body.get('running') is True
+                  and body.get('role') == 'leader'
+                  and body.get('leadership_acquired') is True
+                  and isinstance(body.get('success_count'), int)
+                  and body.get('success_count', 0) >= 1
+                  and isinstance(body.get('last_checkpoint_version'), int)
+                  and body.get('last_checkpoint_version', 0) >= 1
+                  and body.get('recovered_from_checkpoint') is True
+              ),
+          )
+
+          evidence = validate_production_baseline(
+              service=service,
+              env=values,
+              health=health,
+              wnba=wnba,
+              mlb=mlb,
+          )
+          output = Path('.step18a-baseline/mlb-step18a-production-baseline-evidence.json')
+          output.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          print(STEP18A_FINAL_MARKER)
+          print(json.dumps(evidence, indent=2, sort_keys=True))
+          PY
+
+      - name: Validate evidence contains no secret material
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.step18a-baseline/mlb-step18a-production-baseline-evidence.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          text = path.read_text(encoding='utf-8').casefold()
+          assert data['state'] == 'green'
+          assert data['mutation_performed'] is False
+          assert data['safety']['render_mutation_performed'] is False
+          assert data['safety']['provider_calls'] == 0
+          assert data['safety']['sportsbook_calls'] == 0
+          assert 'postgresql://' not in text
+          assert 'render_api_key' not in text
+          assert 'authorization' not in text
+          print('MLB_STEP18A_EVIDENCE_SANITIZED')
+          PY
+
+      - name: Upload sanitized Step 18A baseline evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-step18a-production-baseline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .step18a-baseline/mlb-step18a-production-baseline-evidence.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Final GREEN marker
+        run: echo MLB_STEP18A_PRODUCTION_BASELINE_GREEN

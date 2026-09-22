@@ -1,0 +1,63 @@
+name: CFB Game Total V184 Step 6
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "cfb_game_total_step6_scoring_v1.py"
+      - "cfb_game_total_clean_page_v18.py"
+      - "streamlit_memory_lazy_router_v163.py"
+      - "app.py"
+      - "tests/test_cfb_game_total_v184_step6_scoring.py"
+      - "tests/test_cfb_game_total_v168_step5_pace.py"
+      - "devsystem/task_ledgers/cfb-game-total-evidence-step6-final.json"
+      - ".github/workflows/cfb-game-total-v184-step6.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cfb_game_total_step6_scoring_v1.py"
+      - "cfb_game_total_clean_page_v18.py"
+      - "streamlit_memory_lazy_router_v163.py"
+      - "app.py"
+      - "tests/test_cfb_game_total_v184_step6_scoring.py"
+      - "tests/test_cfb_game_total_v168_step5_pace.py"
+      - "devsystem/task_ledgers/cfb-game-total-evidence-step6-final.json"
+      - ".github/workflows/cfb-game-total-v184-step6.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cfb-game-total-v184-step6-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  step6-v184:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Step 6 test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile Step 6 owner, Page V18 and Router V163
+        run: |
+          python -m py_compile \
+            cfb_game_total_step6_scoring_v1.py \
+            cfb_game_total_clean_page_v18.py \
+            streamlit_memory_lazy_router_v163.py
+
+      - name: Prove Step 6 Scoring Creation contract
+        run: |
+          PYTHONPATH="$PWD" python -m pytest -q \
+            tests/test_cfb_game_total_v184_step6_scoring.py \
+            tests/test_cfb_game_total_v168_step5_pace.py

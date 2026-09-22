@@ -1,0 +1,172 @@
+# Triggered after the exact certified MLB runtime graft landed on the preserved WNBA host.
+name: MLB Step17B shared-host WNBA+MLB certification
+
+on:
+  push:
+    branches:
+      - mlb-step17b-shared-host-cert
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SHARED_HOST_BASE_SHA: 92b22b962fbe73cdb3ce083de0ea01c0eab2133a
+  MLB_PRODUCTION_RUNTIME_ENABLED: "false"
+  MLB_PRODUCTION_SCHEDULER_ENABLED: "false"
+  MLB_ACTIONABLE_OUTPUT_ENABLED: "false"
+  MLB_WAGERING_ENABLED: "false"
+  MLB_SUPABASE_REST_WRITE_ENABLED: "false"
+  MLB_STEP16C_LIVE_POSTGRESQL_CANARY_ENABLED: "false"
+  MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_ENABLED: "false"
+  MLB_STEP16E_FINAL_PRODUCTION_FREEZE_ENABLED: "false"
+  MLB_STEP17B_ALWAYS_ON_ENABLED: "false"
+
+jobs:
+  certify-shared-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout candidate with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prove exact shared-host graft scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$SHARED_HOST_BASE_SHA" HEAD
+          git diff --check "$SHARED_HOST_BASE_SHA"..HEAD
+          changed="$(git diff --name-only "$SHARED_HOST_BASE_SHA"..HEAD)"
+          printf '%s\n' "$changed"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')" -eq 5
+          allowed='^(sports_api/main.py|sports_api/mlb_step17b_always_on_runtime_v1.py|sports_api/api/mlb_step17b_runtime.py|tests/test_mlb_step17b_always_on_runtime_v1.py|\.github/workflows/mlb-step17b-shared-host-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          test -z "$bad"
+
+      - name: Prove exact certified MLB blobs and frozen shared packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object sports_api/main.py)" = 'ce7cbb4b27f662f6cae3f034b62940ddb59d5564'
+          test "$(git hash-object sports_api/mlb_step17b_always_on_runtime_v1.py)" = 'bc6b6acbf7641c0457cad5351f437b80b69d21df'
+          test "$(git hash-object sports_api/api/mlb_step17b_runtime.py)" = 'ffd66bc361bfae1167e9fe10980b5d0a53d622f6'
+          test "$(git hash-object tests/test_mlb_step17b_always_on_runtime_v1.py)" = '46fda52d0b349cc237a9b8cf2f7560a02f16751b'
+          test "$(git hash-object sports_api/Dockerfile)" = '34a542b0a32456de58b81fd711fef215e618469f'
+          git diff --exit-code "$SHARED_HOST_BASE_SHA"..HEAD -- sports_api/Dockerfile sports_api/requirements.txt sports_api/requirements-mlb-step14b-persistence.txt
+
+      - name: Prove WNBA production tree was not rewritten
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only "$SHARED_HOST_BASE_SHA"..HEAD -- 'sports_api/wnba_*' 'sports_api/api/wnba_*' | sed '/^$/d')"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements.txt
+          python -m pip install --disable-pip-version-check -q -r sports_api/requirements-mlb-step14b-persistence.txt
+          python -m pip install --disable-pip-version-check -q pytest pandas streamlit requests
+
+      - name: Compile shared-host wiring
+        run: |
+          python -m py_compile \
+            sports_api/main.py \
+            sports_api/mlb_step17b_always_on_runtime_v1.py \
+            sports_api/api/mlb_step17b_runtime.py \
+            tests/test_mlb_step17b_always_on_runtime_v1.py
+
+      - name: Run Step17B fail-closed tests
+        run: python -m pytest -q tests/test_mlb_step17b_always_on_runtime_v1.py
+
+      - name: Prove WNBA and MLB coexist with activation OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$MLB_STEP17B_ALWAYS_ON_ENABLED" = false
+          PYTHONPATH=. python - <<'PY'
+          from fastapi.testclient import TestClient
+          from sports_api.main import app
+          with TestClient(app) as client:
+              health = client.get('/health')
+              assert health.status_code == 200, health.text
+              wnba = client.get('/api/v1/wnba/runtime/deployment')
+              assert wnba.status_code == 200, wnba.text
+              mlb = client.get('/api/v1/mlb/runtime/step17b')
+              assert mlb.status_code == 200, mlb.text
+              body = mlb.json()
+              assert body['enabled'] is False, body
+              assert body['running'] is False, body
+              assert body['provider_calls'] == 0, body
+              assert body['sportsbook_calls'] == 0, body
+              assert body['actionable_output_enabled'] is False, body
+              assert body['wagering_enabled'] is False, body
+          print('WNBA_MLB_SHARED_HOST_OFF_SMOKE_OK')
+          PY
+
+      - name: Build combined Docker image
+        run: |
+          docker build \
+            -f sports_api/Dockerfile \
+            --build-arg WNBA_RELEASE_REVISION="${GITHUB_SHA}" \
+            --build-arg WNBA_RELEASE_ID="mlb-step17b-shared-host-cert" \
+            -t "mlb-step17b-shared:${GITHUB_SHA}" .
+
+      - name: Certify combined container with MLB Step17B OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="mlb-step17b-shared-${GITHUB_RUN_ID}"
+          cleanup() { docker logs "$name" 2>/dev/null || true; docker rm -f "$name" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run -d --name "$name" -p 18082:8000 \
+            -e PORT=8000 \
+            -e WEB_CONCURRENCY=1 \
+            -e MLB_PRODUCTION_RUNTIME_ENABLED=false \
+            -e MLB_PRODUCTION_SCHEDULER_ENABLED=false \
+            -e MLB_ACTIONABLE_OUTPUT_ENABLED=false \
+            -e MLB_WAGERING_ENABLED=false \
+            -e MLB_SUPABASE_REST_WRITE_ENABLED=false \
+            -e MLB_STEP16C_LIVE_POSTGRESQL_CANARY_ENABLED=false \
+            -e MLB_STEP16D_CONTROLLED_PRODUCTION_ACTIVATION_ENABLED=false \
+            -e MLB_STEP16E_FINAL_PRODUCTION_FREEZE_ENABLED=false \
+            -e MLB_STEP17B_ALWAYS_ON_ENABLED=false \
+            "mlb-step17b-shared:${GITHUB_SHA}"
+          python - <<'PY'
+          import json,time,urllib.request
+          base='http://127.0.0.1:18082'
+          last=None
+          for _ in range(60):
+              try:
+                  with urllib.request.urlopen(base + '/health',timeout=3) as r:
+                      health=json.loads(r.read().decode())
+                  with urllib.request.urlopen(base + '/api/v1/wnba/runtime/deployment',timeout=3) as r:
+                      wnba=json.loads(r.read().decode())
+                  with urllib.request.urlopen(base + '/api/v1/mlb/runtime/step17b',timeout=3) as r:
+                      mlb=json.loads(r.read().decode())
+                  with urllib.request.urlopen(base + '/openapi.json',timeout=3) as r:
+                      paths=set(json.loads(r.read().decode())['paths'])
+                  assert health.get('status') == 'ok', health
+                  assert isinstance(wnba, dict), wnba
+                  assert mlb.get('enabled') is False, mlb
+                  assert mlb.get('running') is False, mlb
+                  assert mlb.get('provider_calls') == 0, mlb
+                  assert mlb.get('sportsbook_calls') == 0, mlb
+                  required={'/api/v1/wnba/runtime/deployment','/api/v1/mlb/runtime/step17b'}
+                  assert required <= paths, sorted(required - paths)
+                  print('WNBA_MLB_SHARED_CONTAINER_OFF_OK')
+                  raise SystemExit(0)
+              except Exception as exc:
+                  last=repr(exc)
+                  time.sleep(1)
+          raise SystemExit(f'shared container did not certify: {last}')
+          PY
+          test -z "$(docker inspect "$name" --format '{{range .Config.Env}}{{println .}}{{end}}' | grep '^KYRE_DATABASE_URL=' || true)"
+
+      - name: Final shared-host certification marker
+        run: echo MLB_STEP17B_SHARED_HOST_CERT_GREEN

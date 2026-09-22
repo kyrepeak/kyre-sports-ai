@@ -1,0 +1,13 @@
+name: WNBA Step19J input profile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Input profiling completed; retained for audit only.'

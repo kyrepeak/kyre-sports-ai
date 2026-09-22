@@ -1,0 +1,217 @@
+name: WNBA Step 5X real hosted staging pre-activation tests
+
+on:
+  pull_request:
+    paths:
+      - "sports_api/**"
+      - ".github/workflows/wnba-step-5x.yml"
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - ".github/workflows/wnba-step-5x.yml"
+  workflow_dispatch:
+    inputs:
+      publish_image:
+        description: Publish the exact tested image to GHCR
+        required: true
+        type: boolean
+        default: true
+      release_id:
+        description: Optional immutable release ID; blank uses the commit SHA prefix
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  step5x:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sports_api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 5X modules
+        run: |
+          python -m py_compile sports_api/wnba_real_staging_deployment.py
+          python -m py_compile sports_api/api/wnba_real_staging.py
+          python -m py_compile sports_api/tools/wnba_real_staging_verify.py
+          python -m py_compile sports_api/main.py
+
+      - name: Run Step 5I regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_historical_backtest_calibration.py
+
+      - name: Run Step 5J regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_pregame_prediction_store.py
+
+      - name: Run Step 5K regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_player_prop_top_five_board.py
+
+      - name: Run Step 5L regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_daily_slate_top_five.py
+
+      - name: Run Step 5M regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_prop_line_feed_adapter.py
+
+      - name: Run Step 5N regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_prop_feed_collector.py
+
+      - name: Run Step 5O regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_prop_feed_failover.py
+
+      - name: Run Step 5P regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_pregame_board_scheduler.py
+
+      - name: Run Step 5Q regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_scheduler_cycle_lock.py
+
+      - name: Run Step 5R regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_production_runtime_readiness.py
+
+      - name: Run Step 5S regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_deployment_smoke_readiness.py
+
+      - name: Run Step 5T regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_release_activation_readiness.py
+
+      - name: Run Step 5U regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_hosted_staging_readiness.py
+
+      - name: Run Step 5V regression harness
+        env: { PYTHONPATH: . }
+        run: python sports_api/tests/test_wnba_release_publication_handoff.py
+
+      - name: Run Step 5W regression harness
+        env: { PYTHONPATH: . }
+        run: |
+          python sports_api/tests/test_wnba_staging_activation_gate.py
+          python sports_api/tests/test_wnba_staging_activation_routes.py
+
+      - name: Run Step 5X deterministic harness
+        env: { PYTHONPATH: . }
+        run: |
+          python sports_api/tests/test_wnba_real_staging_deployment.py
+          python sports_api/tests/test_wnba_real_staging_routes.py
+
+  publish-tested-image:
+    needs: step5x
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_image == true)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Resolve immutable publication identity
+        shell: bash
+        run: |
+          REVISION="$(git rev-parse HEAD)"
+          test "${#REVISION}" -eq 40
+          SHORT_SHA="${REVISION:0:12}"
+          REQUESTED_RELEASE="${{ github.event_name == 'workflow_dispatch' && inputs.release_id || '' }}"
+          if [ -n "$REQUESTED_RELEASE" ]; then
+            RELEASE_ID="$REQUESTED_RELEASE"
+          else
+            RELEASE_ID="wnba-step5x-$SHORT_SHA"
+          fi
+          case "$RELEASE_ID" in
+            *[!A-Za-z0-9._-]*|'') echo "Invalid release ID" >&2; exit 1 ;;
+          esac
+          REPOSITORY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kyre-sports-api"
+          echo "WNBA_STEP5X_REVISION=$REVISION" >> "$GITHUB_ENV"
+          echo "WNBA_STEP5X_RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "WNBA_STEP5X_REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and publish exact tested image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --build-arg WNBA_RELEASE_REVISION="$WNBA_STEP5X_REVISION" \
+            --build-arg WNBA_RELEASE_ID="$WNBA_STEP5X_RELEASE_ID" \
+            --metadata-file /tmp/wnba-step5x-build-metadata.json \
+            -f sports_api/Dockerfile \
+            -t "$WNBA_STEP5X_REPOSITORY:$WNBA_STEP5X_RELEASE_ID" \
+            -t "$WNBA_STEP5X_REPOSITORY:$WNBA_STEP5X_REVISION" \
+            --push .
+
+      - name: Freeze immutable GHCR publication record
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import pathlib
+          import re
+
+          meta = json.load(open('/tmp/wnba-step5x-build-metadata.json', encoding='utf-8'))
+          digest = meta.get('containerimage.digest')
+          if not isinstance(digest, str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+              raise SystemExit(f'invalid registry digest: {digest!r}')
+          repository = os.environ['WNBA_STEP5X_REPOSITORY']
+          revision = os.environ['WNBA_STEP5X_REVISION']
+          release_id = os.environ['WNBA_STEP5X_RELEASE_ID']
+          immutable_ref = f'{repository}@{digest}'
+          record = {
+              'schema_version': 'wnba_step_5x_ghcr_publication_v1',
+              'release_id': release_id,
+              'revision': revision,
+              'registry': 'ghcr.io',
+              'image_repository': repository,
+              'published_image_ref': immutable_ref,
+              'image_digest_sha256': digest.removeprefix('sha256:'),
+              'production_runtime_enabled': False,
+              'activation_approved': False,
+              'next_required_gate': 'Deploy this exact digest to the real Render staging service, keep runtime disabled, then require Step 5X ready_for_explicit_activation=true.',
+          }
+          out = pathlib.Path('.wnba-step5x-publication')
+          out.mkdir(exist_ok=True)
+          (out / 'published-image.json').write_text(json.dumps(record, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+          (out / 'PUBLISHED_IMAGE_REF.txt').write_text(immutable_ref + '\n', encoding='utf-8')
+          print(immutable_ref)
+          PY
+
+      - name: Upload Step 5X publication record
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step5x-publication-${{ github.run_id }}
+          path: .wnba-step5x-publication/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 30

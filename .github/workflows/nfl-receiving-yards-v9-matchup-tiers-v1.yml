@@ -1,0 +1,99 @@
+name: NFL Receiving Yards V9 Matchup Tiers V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "nfl_receiving_yards_hub_v9.py"
+      - "streamlit_memory_lazy_router_v120.py"
+      - "app.py"
+      - "tests/test_nfl_receiving_yards_v9_matchup_tiers_v1.py"
+      - ".github/workflows/nfl-receiving-yards-v9-matchup-tiers-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-step9-matchup-tiers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic test dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
+
+      - name: Enforce exact five-file Step 9 diff
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/nfl-receiving-yards-v9-matchup-tiers-v1.yml
+          app.py
+          nfl_receiving_yards_hub_v9.py
+          streamlit_memory_lazy_router_v120.py
+          tests/test_nfl_receiving_yards_v9_matchup_tiers_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          echo 'Actual Step 9 diff:'
+          cat /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Compile Step 9 surface
+        run: |
+          python -m py_compile \
+            nfl_receiving_yards_hub_v9.py \
+            streamlit_memory_lazy_router_v120.py \
+            app.py \
+            tests/test_nfl_receiving_yards_v9_matchup_tiers_v1.py
+
+      - name: Prove frozen Receiving owners were not modified
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          blocked="$(printf '%s\n' "$changed" | grep -E '^(nfl_receiving_yards_projection_v1\.py$|nfl_receiving_yards_hub_v[1-8]\.py$|nfl_receiving_yards_market_api_v1\.py$|streamlit_memory_lazy_router_v119\.py$)' || true)"
+          if [ -n "$blocked" ]; then
+            echo "STEP9_FROZEN_OWNER_MODIFICATION_BLOCKED"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "STEP9_FROZEN_OWNER_GUARD_GREEN"
+
+      - name: Run Step 9 matchup-tier contracts
+        run: python -m pytest -q tests/test_nfl_receiving_yards_v9_matchup_tiers_v1.py
+
+      - name: Re-run frozen Step 8 market contracts
+        run: python -m pytest -q tests/test_nfl_receiving_yards_step8_market_v1.py
+
+      - name: Prove matchup tiers are market-blind classification only
+        shell: bash
+        run: |
+          python - <<'PY'
+          import inspect
+          import nfl_receiving_yards_hub_v9 as page
+
+          assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert page.MATCHUP_CLASSIFICATION_ONLY is True
+          assert page.BETTING_GRADE_ENABLED is False
+          source = inspect.getsource(page._matchup_tier)
+          for forbidden in ('over_odds', 'under_odds', 'line', 'FanDuel', 'player_name'):
+              assert forbidden not in source, forbidden
+          print('NFL_RECEIVING_YARDS_STEP9_MARKET_BLIND_TIERS_GREEN')
+          PY

@@ -1,0 +1,243 @@
+name: MLB Step9D live in-play market collector API certification
+
+on:
+  push:
+    branches:
+      - mlb-step9d-live-inplay-market-collector-api
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step9d-live-inplay-market-collector-api-cert
+  cancel-in-progress: false
+
+env:
+  STEP9D_BASE_SHA: e0121a1c9f530900cd3e92b4a4391f2483162f37
+
+jobs:
+  certify-live-inplay-market-api:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest fastapi httpx numpy pandas streamlit requests
+
+      - name: Assert Step9D exact four-file MLB scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP9D_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(sports_api/api/mlb.py|sports_api/collectors/mlb_fanduel_inplay.py|tests/test_mlb_step9d_live_inplay_market_collector_api.py|\.github/workflows/mlb-step9d-live-inplay-market-collector-api-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP9D_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          count="$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 4 ]; then
+            echo "STEP9D_EXPECTED_EXACTLY_FOUR_CHANGED_PATHS_GOT_$count"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP9D_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          git diff --check "$STEP9D_BASE_SHA"...HEAD
+          echo 'MLB_STEP9D_FOUR_FILE_SCOPE_OK'
+
+      - name: Prove MLB router change is additive only
+        shell: bash
+        run: |
+          set -euo pipefail
+          read adds dels path <<<"$(git diff --numstat "$STEP9D_BASE_SHA"...HEAD -- sports_api/api/mlb.py)"
+          echo "mlb.py additions=$adds deletions=$dels path=$path"
+          if [ "$adds" -ne 67 ] || [ "$dels" -ne 0 ]; then
+            echo 'STEP9D_MLB_ROUTER_NOT_EXPECTED_ADDITIVE_67_0_PATCH'
+            exit 1
+          fi
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('sports_api/api/mlb.py').read_text()
+          assert '@router.get("/live-odds")' in text
+          assert 'collect_inplay_mlb_game_odds' in text
+          assert 'mlb_inplay_odds_api_response_v1' in text
+          assert '@router.get("/odds")' in text
+          assert '@router.get("/player-props")' in text
+          assert '@router.get("/live-game-state")' in text
+          print('MLB_STEP9D_ROUTER_ADDITIVE_ONLY_OK')
+          PY
+
+      - name: Prove frozen pregame collector, V19, Step9C and prior MLB contracts are byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP9D_BASE_SHA"...HEAD -- \
+            app.py \
+            live_game_hub_v182.py \
+            live_game_hub_v19.py \
+            live_game_hub_v191.py \
+            live_game_hub_v192.py \
+            live_game_hub_v1921.py \
+            mlb_live_hub_v193.py \
+            live_odds_feed.py \
+            spread_engine.py \
+            engine.py \
+            history.py \
+            sports_api/main.py \
+            sports_api/collectors/mlb_fanduel_direct.py \
+            sports_api/collectors/mlb_fanduel_player_props.py \
+            sports_api/collectors/mlb_live_game_state.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_step7_final_freeze_v1.py \
+            sports_api/mlb_step8a_player_prop_api_contract_v1.py \
+            sports_api/mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            sports_api/mlb_step8d_player_hits_integration_v1.py \
+            sports_api/mlb_step8e_hits_runs_rbi_integration_v1.py \
+            sports_api/mlb_step8_final_freeze_v1.py \
+            mlb_step8f_player_prop_presentation_v1.py \
+            sports_api/mlb_step9a_live_game_state_api_contract_v1.py \
+            mlb_step9c_live_state_consumer_v1.py
+          echo 'MLB_STEP9D_PREEXISTING_PREGAME_V19_STEP9C_BYTES_FROZEN'
+
+      - name: Assert read-only OPEN in-play market boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          collector = Path('sports_api/collectors/mlb_fanduel_inplay.py').read_text()
+          router = Path('sports_api/api/mlb.py').read_text()
+          assert 'market.get("inPlay") is True' in collector
+          assert 'status == "OPEN"' in collector
+          assert 'CORE_MARKET_NAMES["moneyline"]' in collector
+          assert 'CORE_MARKET_NAMES["run_line"]' in collector
+          assert 'CORE_MARKET_NAMES["total"]' in collector
+          assert 'official_game_id' in collector
+          assert 'synthetic_game_id_used' in collector
+          assert 'fuzzy_matching_used' in collector
+          assert '@router.get("/live-odds")' in router
+          for forbidden in ('@router.post("/live-odds")','@router.put("/live-odds")','@router.patch("/live-odds")','@router.delete("/live-odds")'):
+              assert forbidden not in router
+          for forbidden in ('method="POST"','method="PUT"','method="PATCH"','method="DELETE"'):
+              assert forbidden not in collector
+          assert 'difflib' not in collector
+          assert 'fuzzywuzzy' not in collector
+          print('MLB_STEP9D_READ_ONLY_OPEN_INPLAY_BOUNDARY_OK')
+          PY
+
+      - name: Compile Step9D Python
+        run: |
+          python -m py_compile \
+            sports_api/collectors/mlb_fanduel_inplay.py \
+            sports_api/api/mlb.py \
+            tests/test_mlb_step9d_live_inplay_market_collector_api.py
+
+      - name: Run Step9D targeted tests
+        run: python -m pytest -q tests/test_mlb_step9d_live_inplay_market_collector_api.py
+
+      - name: Run complete certified MLB regression through Step9D
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py \
+            tests/test_mlb_step7d_total_api_integration_v1.py \
+            tests/test_mlb_step7e_total_presentation_integration_v1.py \
+            tests/test_mlb_step7_final_freeze_v1.py \
+            tests/test_mlb_step8a_player_prop_api_contract_v1.py \
+            tests/test_mlb_step8b_fanduel_player_prop_collector_api.py \
+            tests/test_mlb_step8c_pitcher_strikeouts_integration_v1.py \
+            tests/test_mlb_step8d_player_hits_integration_v1.py \
+            tests/test_mlb_step8e_hits_runs_rbi_integration_v1.py \
+            tests/test_mlb_step8f_player_prop_presentation_v1.py \
+            tests/test_mlb_step8_final_freeze_v1.py \
+            tests/test_mlb_step9a_live_game_state_api_contract_v1.py \
+            tests/test_mlb_step9b_live_game_state_collector_api.py \
+            tests/test_mlb_step9c_live_state_consumer_v1.py \
+            tests/test_mlb_step9d_live_inplay_market_collector_api.py
+
+      - name: Probe real FanDuel MLB in-play boundary without inventing markets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from sports_api.collectors.mlb_fanduel_inplay import collect_inplay_mlb_game_odds
+
+          snapshot = collect_inplay_mlb_game_odds(
+              now_utc=datetime.now(timezone.utc),
+              max_events=30,
+          )
+          print('STEP9D_REAL_FANDUEL', {
+              'landing_event_count': snapshot['landing_event_count'],
+              'candidate_started_event_count': snapshot['candidate_started_event_count'],
+              'matched_inplay_game_count': snapshot['matched_inplay_game_count'],
+              'fully_priced_game_count': snapshot['fully_priced_game_count'],
+              'rejected_event_count': len(snapshot['rejected_events']),
+          })
+          assert snapshot['provider'] == 'FanDuel'
+          assert snapshot['market_phase'] == 'IN_PLAY'
+          assert snapshot['http_methods'] == ['GET']
+          assert snapshot['fuzzy_matching_used'] is False
+          assert snapshot['synthetic_game_id_used'] is False
+          seen = set()
+          for game in snapshot['games']:
+              game_id = game['official_game_id']
+              assert isinstance(game_id, int) and not isinstance(game_id, bool) and game_id > 0
+              assert game_id not in seen
+              seen.add(game_id)
+              assert game['market_phase'] == 'IN_PLAY'
+              assert game['in_play'] is True
+              markets = game['markets']
+              for market in markets.values():
+                  assert isinstance(market, dict)
+              if game['fully_priced']:
+                  assert set(('moneyline','run_line','total')).issubset(markets)
+          if snapshot['games']:
+              selected = snapshot['games'][0]['official_game_id']
+              exact = collect_inplay_mlb_game_odds(
+                  now_utc=datetime.now(timezone.utc),
+                  official_game_id=selected,
+                  max_events=30,
+              )
+              assert exact['games']
+              assert all(game['official_game_id'] == selected for game in exact['games'])
+              print('MLB_STEP9D_REAL_FANDUEL_EXACT_ID_INPLAY_OK', selected)
+          else:
+              print('MLB_STEP9D_NO_OPEN_INPLAY_GAMES_AT_CERT_TIME_FAIL_CLOSED_OK')
+          PY
+
+      - name: Final Step9D certification marker
+        run: echo 'MLB_STEP9D_LIVE_INPLAY_MARKET_COLLECTOR_API_GREEN'

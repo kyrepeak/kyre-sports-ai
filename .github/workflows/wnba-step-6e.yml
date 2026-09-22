@@ -1,0 +1,136 @@
+name: WNBA Step 6E DraftKings endpoint discovery
+
+on:
+  push:
+    branches:
+      - api-foundation-v1
+    paths:
+      - 'sports_api/wnba_draftkings_endpoint_discovery.py'
+      - 'sports_api/api/wnba_draftkings_endpoint_discovery.py'
+      - 'sports_api/tools/wnba_draftkings_endpoint_probe.py'
+      - 'sports_api/tests/test_wnba_draftkings_endpoint_discovery.py'
+      - 'sports_api/tests/test_wnba_draftkings_endpoint_discovery_routes.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6e.yml'
+  pull_request:
+    paths:
+      - 'sports_api/wnba_draftkings_endpoint_discovery.py'
+      - 'sports_api/api/wnba_draftkings_endpoint_discovery.py'
+      - 'sports_api/tools/wnba_draftkings_endpoint_probe.py'
+      - 'sports_api/tests/test_wnba_draftkings_endpoint_discovery.py'
+      - 'sports_api/tests/test_wnba_draftkings_endpoint_discovery_routes.py'
+      - 'sports_api/main.py'
+      - '.github/workflows/wnba-step-6e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  step6e-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 6E modules
+        run: |
+          python -m py_compile \
+            sports_api/wnba_draftkings_endpoint_discovery.py \
+            sports_api/api/wnba_draftkings_endpoint_discovery.py \
+            sports_api/tools/wnba_draftkings_endpoint_probe.py \
+            sports_api/main.py
+
+      - name: Run Step 6E deterministic discovery tests
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_endpoint_discovery
+
+      - name: Run Step 6E route tests
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_endpoint_discovery_routes
+
+      - name: Run Step 6D direct collector regression
+        run: python -m unittest sports_api.tests.test_wnba_draftkings_direct sports_api.tests.test_wnba_step6d_direct_integration
+
+      - name: Run Step 6C owned-feed regression
+        run: python -m unittest sports_api.tests.test_wnba_kyre_market_feed sports_api.tests.test_wnba_kyre_market_feed_routes
+
+      - name: Run frozen Step 5O regression
+        run: python -m unittest sports_api.tests.test_wnba_prop_feed_failover
+
+      - name: Run frozen Step 5P regression
+        run: python -m unittest sports_api.tests.test_wnba_pregame_board_scheduler
+
+      - name: Run frozen Step 5R regression
+        run: python -m unittest sports_api.tests.test_wnba_production_runtime_readiness
+
+      - name: Prove Step 6E remains GET-only and account-free
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files = [
+              Path('sports_api/wnba_draftkings_endpoint_discovery.py'),
+              Path('sports_api/tools/wnba_draftkings_endpoint_probe.py'),
+          ]
+          text = '\n'.join(p.read_text(encoding='utf-8') for p in files).lower()
+          assert 'post(' not in text
+          assert 'sportsgameodds_api_key' not in text
+          assert 'password' not in Path('sports_api/tools/wnba_draftkings_endpoint_probe.py').read_text(encoding='utf-8').lower()
+          print('Step 6E is GET-only, account-free, and paid-odds-vendor-free.')
+          PY
+
+  live-read-only-probe:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: step6e-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact tested revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Probe bounded public DraftKings WNBA endpoint candidates
+        env:
+          WNBA_DRAFTKINGS_DISCOVERY_TIMEOUT_SECONDS: '10'
+        run: |
+          mkdir -p .wnba-step6e-discovery
+          python -m sports_api.tools.wnba_draftkings_endpoint_probe \
+            --output .wnba-step6e-discovery/live-probe.json
+
+      - name: Print sanitized live result summary
+        run: |
+          python - <<'PY'
+          import json
+          report = json.load(open('.wnba-step6e-discovery/live-probe.json', encoding='utf-8'))
+          print('live_endpoint_verified=', report.get('live_endpoint_verified'))
+          selected = report.get('selected_candidate') or {}
+          print('selected_candidate_id=', selected.get('candidate_id'))
+          print('selected_url=', selected.get('url'))
+          print('normalized_offer_count=', selected.get('normalized_offer_count'))
+          print('supported_stats=', selected.get('supported_stats'))
+          for row in report.get('attempts', []):
+              print('attempt', row.get('candidate_id'), row.get('http_status'), row.get('response_error'), row.get('network_error_type'), row.get('normalized_offer_count'))
+          PY
+
+      - name: Upload sanitized Step 6E live discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step6e-live-discovery-${{ github.run_id }}
+          path: .wnba-step6e-discovery/live-probe.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "task_id": "cfb-step1-dom-marker-proof",
+  "status": "DONE",
+  "scope": "Step 1 production proof only: read deployment heartbeat markers from DOM textContent so hidden proof markers can be detected while keeping all visible Step 1 field/logo assertions strict and unchanged.",
+  "root_cause": "The V164 verifier waited for Step 1 deployment markers in visible innerText, but those markers are intentionally rendered inside a display:none identity node. The live code was present, but the proof gate could never observe the hidden marker.",
+  "guardrails": {
+    "proof_only": true,
+    "step1_only": true,
+    "product_logic_changed": false,
+    "step2_modified": false,
+    "steps_3_12_modified": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "api_behavior_changed": false,
+    "sportsbook_projection_influence": 0
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

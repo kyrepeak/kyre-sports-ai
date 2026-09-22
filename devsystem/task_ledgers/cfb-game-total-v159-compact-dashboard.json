@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "task_id": "cfb-game-total-v159-compact-dashboard",
+  "status": "DONE",
+  "action_log": {
+    "events": [],
+    "consumed_receipts": [],
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "transition_history": [],
+  "override_events": []
+}

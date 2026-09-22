@@ -1,0 +1,26 @@
+name: Passing Yards Visual Upgrade Step 3
+
+on:
+  push:
+    branches:
+      - "monster/passing-yards-visual-upgrade-step3-evidence-v1"
+
+permissions:
+  contents: read
+
+jobs:
+  targeted-step3:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Step 3 presentation chain
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v48.py streamlit_memory_lazy_router_v194.py app.py
+      - name: Prove Steps 7-9 evidence board contract
+        run: |
+          python -m pip install --disable-pip-version-check -q pytest
+          python -m pytest -q tests/test_passing_yards_visual_upgrade_step3_v1.py

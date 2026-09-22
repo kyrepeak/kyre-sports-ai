@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "policy": "Every completed MLB Moneyline step is immutable. New Moneyline intelligence must be additive in new versioned files and preserve all frozen prior contracts.",
+  "completed_steps": [
+    1,
+    2
+  ],
+  "baseline_commit": "ffe4eb805a0ac77c74afafce45b5bd120b0dd7a6",
+  "baseline_paths": [
+    "moneyline_hub_v16.py",
+    "moneyline_hub_v161.py",
+    "moneyline_hub_v162.py",
+    "mlb_moneyline_hub_v163.py",
+    "mlb_moneyline_hub_v164.py",
+    "mlb_moneyline_hub_v165.py",
+    "spread_engine.py",
+    "spread_history.py",
+    "sports_api/mlb_step7c_moneyline_api_integration_v1.py",
+    "mlb_schedule_v32.py",
+    "slate_lineup_v204.py"
+  ],
+  "exact_blobs": {
+    "mlb_moneyline_hub_v166.py": "cd64be64bf663191274b26b38d301a8bab4ccc66",
+    "streamlit_memory_lazy_router_v4.py": "99e1a29ec49d5525f70cccf1bd592bd7c40b5f18",
+    "mlb_moneyline_hub_v167.py": "6ae6c385ab61e224f0491d5b46431c3f62189835",
+    "streamlit_memory_lazy_router_v5.py": "859692a772c0c68dd8efcb34b484b645f945b6c7"
+  },
+  "step2_merge_commit": "89d82e7bb1633f952fa225d401c2621744916e6a",
+  "step2_syntax_hotfix_commit": "a20a69f57933087e6475fe441f8478a6dfd6a0eb"
+}

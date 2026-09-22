@@ -1,0 +1,115 @@
+name: WNBA Step 7G FastAPI core smoke
+
+on:
+  push:
+    branches:
+      - wnba-step7g-step4j-team-history-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-fastapi-core-smoke.yml'
+      - 'sports_api/main.py'
+      - 'sports_api/wnba_step7g_first_party_integration.py'
+      - 'sports_api/wnba_step7g_first_party_team_history_cup_safe.py'
+      - 'sports_api/tools/wnba_step7g_fastapi_core_smoke.py'
+      - 'tests/test_wnba_step7g_first_party_integration.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-fastapi-core-smoke
+  cancel-in-progress: false
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'false'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated Step 7G branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert production switches OFF and Step 7G default OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'false'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile runtime integration and smoke
+        run: |
+          python -m py_compile \
+            sports_api/main.py \
+            sports_api/wnba_step7g_first_party_integration.py \
+            sports_api/tools/wnba_step7g_fastapi_core_smoke.py \
+            tests/test_wnba_step7g_first_party_integration.py
+
+      - name: Prove Step 7G integration is default OFF and guarded
+        shell: bash
+        run: PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
+
+      - name: Prove inherited frozen core files unchanged from exact Step 7G baseline
+        shell: bash
+        run: |
+          EXPECTED_BASE_SHA='368dbde84ea0aa6f570703688ae899285ecd7cfc'
+          git fetch origin wnba-step7g-official-data-preflight-20260827 --depth=1
+          ACTUAL_BASE_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$ACTUAL_BASE_SHA" = "$EXPECTED_BASE_SHA"
+          git diff --exit-code "$EXPECTED_BASE_SHA" -- \
+            sports_api/wnba_team_history.py \
+            sports_api/wnba_schedule.py \
+            sports_api/wnba_schedule_context.py \
+            sports_api/wnba_model_input_readiness.py \
+            sports_api/wnba_projection_input_snapshot.py \
+            sports_api/wnba_player_event_features.py \
+            sports_api/wnba_player_opportunity_context.py \
+            sports_api/wnba_event_lineup_context.py \
+            sports_api/wnba_rotation_context.py
+
+      - name: Call real FastAPI Step 4X endpoint with Step 7G core mode ON
+        shell: bash
+        env:
+          WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+        run: python -m sports_api.tools.wnba_step7g_fastapi_core_smoke
+
+      - name: Upload sanitized FastAPI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-fastapi-core-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-fastapi-core-smoke.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert every production switch is still OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

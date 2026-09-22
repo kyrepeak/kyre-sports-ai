@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-performance-profile-v2",
+  "status": "DONE",
+  "scope": "Rebuild only Step 2 as a universal Team Performance Profile matching the approved neon two-team mockup for every future CFB Game Total matchup, with exact fail-closed field handling and production proof.",
+  "trigger": "User approved a stronger Step 2 that combines scoring baseline, efficiency, per-play context, drive efficiency hooks, splits, recent form, profile reads, insights, and summary while keeping Step 1 frozen.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step3_plus_not_started": true,
+    "hardcoded_matchup_logic_added": false,
+    "frozen_v163_edited_in_place": false,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "step12_qualification_changed": false,
+    "top5_ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "gate_weakened": false
+  },
+  "internal_steps": {
+    "2.1": "universal contract locked",
+    "2.2": "mockup-style UI shell built",
+    "2.3": "existing universal evidence wired",
+    "2.4": "READY/CHECK/DATA LIMITED fail-closed logic built",
+    "2.5": "multi-matchup regression coverage added",
+    "2.6": "branch and production proof required before freeze"
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

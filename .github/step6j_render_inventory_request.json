@@ -1,0 +1,9 @@
+{
+  "step": "6J",
+  "action": "read_only_render_inventory",
+  "approved": true,
+  "render_mutation_allowed": false,
+  "feed_write_allowed": false,
+  "secret_values_allowed_in_output": false,
+  "reason": "Identify the existing Render service after two pre-write canary stops without weakening the Step 6J identity gate."
+}

@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "task_id": "cfb-step2-production-snapshot-v2",
+  "status": "DONE",
+  "scope": "Step 2 only: fix production hydration by using Runtime Snapshot V2 for completed-game form/sample evidence and a verified 138-team drive-efficiency snapshot with local fallback.",
+  "trigger": "Merged Step 2 passed branch CI but production rendered DATA LIMITED: record/sample/recent form/splits and PPD/PPDA were missing because the NCAA-only foundation lacked completed-game evidence and the live Punt & Rally request did not hydrate in deployed Streamlit.",
+  "guardrails": {
+    "step1_frozen_and_untouched": true,
+    "step3_frozen_and_untouched": true,
+    "step4_plus_untouched": true,
+    "projection_math_changed": false,
+    "distribution_math_changed": false,
+    "qualification_changed": false,
+    "ranking_changed": false,
+    "api_model_behavior_changed": false,
+    "sportsbook_projection_influence": 0,
+    "step2_ready_gate_weakened": false,
+    "external_drive_data_is_display_evidence_only": true
+  },
+  "proof_requirements": {
+    "runtime_v2_completed_game_foundation": true,
+    "sample_games_populated": true,
+    "recent_form_populated": true,
+    "split_summary_derived_from_verified_completed_games": true,
+    "universal_drive_snapshot_team_count": 138,
+    "points_per_drive_populated": true,
+    "points_per_drive_allowed_populated": true,
+    "snapshot_first_delivery": true,
+    "direct_upstream_is_fallback_only": true,
+    "branch_ci_required": true,
+    "production_step2_ready_required": true
+  },
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
+}

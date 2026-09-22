@@ -1,0 +1,140 @@
+name: WNBA Step 7G FastAPI availability probe
+
+on:
+  push:
+    branches:
+      - wnba-step7g-step4j-team-history-20260827
+    paths:
+      - '.github/workflows/wnba-step-7g-fastapi-availability-probe.yml'
+      - 'sports_api/main.py'
+      - 'sports_api/wnba_step7g_first_party_integration.py'
+      - 'sports_api/wnba_step7g_first_party_availability.py'
+      - 'sports_api/wnba_step7g_first_party_rosters.py'
+      - 'sports_api/wnba_step7g_first_party_injury_report.py'
+      - 'sports_api/wnba_step7g_first_party_injury_report_coordinate.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_fast.py'
+      - 'sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py'
+      - 'sports_api/tools/wnba_step7g_fastapi_availability_probe.py'
+      - 'tests/test_wnba_step7g_first_party_integration.py'
+      - 'tests/test_wnba_step7g_first_party_rosters.py'
+      - 'tests/test_wnba_step7g_first_party_injury_report.py'
+      - 'tests/test_wnba_step7g_first_party_injury_report_coordinate.py'
+      - 'tests/test_wnba_step7g_first_party_advanced_stats.py'
+      - 'tests/test_wnba_step7g_first_party_advanced_contract_units.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step7g-fastapi-availability-probe
+  cancel-in-progress: true
+
+env:
+  WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+  WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+  WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+  WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+  WNBA_STEP6J_CANARY_ENABLED: 'false'
+  WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED: 'false'
+  WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated Step 7G branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert production switches OFF
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'
+          test "$WNBA_STEP7G_FIRST_PARTY_ENABLED" = 'true'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install API dependencies
+        run: python -m pip install -r sports_api/requirements.txt
+
+      - name: Compile Step 4I integration and availability probe
+        run: |
+          python -m py_compile \
+            sports_api/wnba_step7g_first_party_integration.py \
+            sports_api/wnba_step7g_first_party_availability.py \
+            sports_api/wnba_step7g_first_party_rosters.py \
+            sports_api/wnba_step7g_first_party_injury_report.py \
+            sports_api/wnba_step7g_first_party_injury_report_coordinate.py \
+            sports_api/wnba_step7g_first_party_advanced_stats.py \
+            sports_api/wnba_step7g_first_party_advanced_stats_fast.py \
+            sports_api/wnba_step7g_first_party_advanced_stats_contract_safe.py \
+            sports_api/tools/wnba_step7g_fastapi_availability_probe.py \
+            tests/test_wnba_step7g_first_party_integration.py \
+            tests/test_wnba_step7g_first_party_rosters.py \
+            tests/test_wnba_step7g_first_party_injury_report.py \
+            tests/test_wnba_step7g_first_party_injury_report_coordinate.py \
+            tests/test_wnba_step7g_first_party_advanced_stats.py \
+            tests/test_wnba_step7g_first_party_advanced_contract_units.py
+
+      - name: Run guarded Step 7G regression tests
+        shell: bash
+        run: |
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_integration.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_rosters.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_injury_report_coordinate.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_stats.py
+          PYTHONPATH=. python tests/test_wnba_step7g_first_party_advanced_contract_units.py
+
+      - name: Prove inherited availability and frozen core files unchanged
+        shell: bash
+        run: |
+          EXPECTED_BASE_SHA='368dbde84ea0aa6f570703688ae899285ecd7cfc'
+          git fetch origin wnba-step7g-official-data-preflight-20260827 --depth=1
+          ACTUAL_BASE_SHA="$(git rev-parse FETCH_HEAD)"
+          test "$ACTUAL_BASE_SHA" = "$EXPECTED_BASE_SHA"
+          git diff --exit-code "$EXPECTED_BASE_SHA" -- \
+            sports_api/wnba_availability.py \
+            sports_api/wnba_rosters.py \
+            sports_api/wnba_season_stats.py \
+            sports_api/wnba_lineup_context.py \
+            sports_api/wnba_schedule.py \
+            sports_api/wnba_advanced_stats.py \
+            sports_api/wnba_model_input_readiness.py \
+            sports_api/wnba_projection_input_snapshot.py
+
+      - name: Call real FastAPI Step 4X endpoint with availability ON
+        shell: bash
+        run: python -m sports_api.tools.wnba_step7g_fastapi_availability_probe
+
+      - name: Upload sanitized availability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wnba-step7g-fastapi-availability-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: step7g-fastapi-availability-probe.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Re-assert every production switch is still OFF
+        if: always()
+        shell: bash
+        run: |
+          test "$WNBA_PRODUCTION_RUNTIME_ENABLED" = 'false'
+          test "$WNBA_BOARD_SCHEDULER_ENABLED" = 'false'
+          test "$WNBA_KYRE_DIRECT_SYNC_ENABLED" = 'false'
+          test "$WNBA_KYRE_RECONCILED_SYNC_ENABLED" = 'false'
+          test "$WNBA_STEP6J_CANARY_ENABLED" = 'false'
+          test "$WNBA_STEP6L_PRODUCTION_REFRESH_ENABLED" = 'false'

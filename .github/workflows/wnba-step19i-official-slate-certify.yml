@@ -1,0 +1,210 @@
+name: WNBA Step19I official slate transport certification
+
+on:
+  push:
+    branches: [wnba-step19i-official-slate-transport-20260830]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wnba-step19i-official-slate-certify
+  cancel-in-progress: true
+
+jobs:
+  certify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      WNBA_STEP19A_DRAFTKINGS_SPORTSCONTENT_ENABLED: 'true'
+      WNBA_STEP19A_DRAFTKINGS_SITE: dkusaz
+      WNBA_STEP11A_DRAFTKINGS_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11B_NETWORK_REFRESH_ENABLED: 'true'
+      WNBA_STEP11C_FANDUEL_PROVIDER_ENABLED: 'true'
+      WNBA_STEP11D_MULTIBOOK_SHADOW_ENABLED: 'true'
+      WNBA_STEP11E_CONTROLLED_AUTOMATION_ENABLED: 'true'
+      WNBA_STEP10_FASTAPI_ENABLED: 'true'
+      WNBA_STEP10A_LIVE_MARKET_INPUT_ENABLED: 'true'
+      WNBA_STEP10B_MARKET_ADAPTER_ENABLED: 'true'
+      WNBA_STEP10C_MARKET_SNAPSHOT_ENABLED: 'true'
+      WNBA_STEP10D_REFRESH_CONTROLLER_ENABLED: 'true'
+      WNBA_STEP9_FASTAPI_ENABLED: 'true'
+      WNBA_STEP9_THRESHOLD_PRICING_ENABLED: 'true'
+      WNBA_STEP9B_MARKET_COMPARISON_ENABLED: 'true'
+      WNBA_STEP9C_MULTIBOOK_CONSENSUS_ENABLED: 'true'
+      WNBA_STEP9D_QUALIFICATION_RANKING_ENABLED: 'true'
+      WNBA_STEP8_PROJECTION_HANDOFF_ENABLED: 'true'
+      WNBA_STEP8_CORE_PROJECTION_ENABLED: 'true'
+      WNBA_STEP8_CONTEXT_ADJUSTMENT_ENABLED: 'true'
+      WNBA_STEP8_MONTE_CARLO_ENABLED: 'true'
+      WNBA_STEP7G_FIRST_PARTY_ENABLED: 'true'
+      WNBA_STEP12A_SHADOW_RUNNER_ENABLED: 'true'
+      WNBA_STEP12B_LIVE_RUNTIME_ASSEMBLY_ENABLED: 'true'
+      WNBA_PRODUCTION_RUNTIME_ENABLED: 'false'
+      WNBA_BOARD_SCHEDULER_ENABLED: 'false'
+      WNBA_STEP12_SCHEDULER_ENABLED: 'false'
+      WNBA_KYRE_DIRECT_SYNC_ENABLED: 'false'
+      WNBA_KYRE_RECONCILED_SYNC_ENABLED: 'false'
+      WNBA_PERSISTENCE_ENABLED: 'false'
+      WNBA_SUPABASE_WRITE_ENABLED: 'false'
+      WNBA_WAGERING_ENABLED: 'false'
+      WNBA_PUBLIC_STEP11E_FASTAPI_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r sports_api/requirements.txt >/dev/null
+          python -m pip install -r sports_api/requirements-persistence.txt >/dev/null
+          python -m pip install pytest >/dev/null
+
+      - name: Frozen raw FanDuel regression in isolated process
+        run: python -m pytest -q tests/test_wnba_step11_fanduel_provider.py
+
+      - name: Step19 compatibility regression in isolated process
+        run: |
+          python -m pytest -q \
+            tests/test_wnba_step19i_official_slate_transport.py \
+            tests/test_wnba_step19h_fanduel_hosted_transport.py \
+            tests/test_wnba_step19g_hosted_provider_trace.py \
+            tests/test_wnba_step19f_draftkings_identity.py \
+            tests/test_wnba_step19e_cooldown_aware_cycle.py
+
+      - name: Hosted import installs Step19I without weakening gates
+        run: |
+          python - <<'PY'
+          import sports_api.api.wnba_step17b_runtime
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step19i_official_slate_transport as s19i
+          status=s19i.installation_status()
+          assert status['official_schedule_transport_active'] is True
+          assert fd._get_json is s19i.fanduel_get_json_step19i
+          assert status['sportsbook_transport_modified'] is False
+          assert status['readiness_relaxed'] is False
+          assert status['controller_state_modified'] is False
+          assert status['projection_logic_modified'] is False
+          assert status['wagering_enabled'] is False
+          print('STEP19I_HOST_IMPORT_CERTIFIED',s19i.MODEL_VERSION)
+          PY
+
+      - name: Read-only official WNBA first-party schedule certification
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step19i_official_slate_transport as s19i
+          from sports_api import wnba_step7g_first_party_schedule as s7g
+          from sports_api.wnba_official_reconciliation import parse_official_schedule
+
+          payload=s19i._load_certified_first_party_schedule()
+          games=parse_official_schedule(payload)
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          daily=s7g.verify_step7g_daily_slate_dataset(slate,2026)
+          summary={
+              'season_game_count':len(games),
+              'slate':slate,
+              'daily_game_count':len(daily.get('games') or []),
+              'source_variant':daily.get('source_variant'),
+              'slate_integrity_pass':(daily.get('slate') or {}).get('slate_integrity_pass'),
+              'blocking_reasons':(daily.get('slate') or {}).get('blocking_reasons'),
+          }
+          print('STEP19I_OFFICIAL_SCHEDULE',json.dumps(summary,sort_keys=True))
+          if len(games) <= 0:
+              raise SystemExit('official first-party season schedule empty')
+          if summary['source_variant'] != s7g.FIRST_PARTY_SOURCE_VARIANT:
+              raise SystemExit('unexpected schedule source variant')
+          if summary['slate_integrity_pass'] is not True:
+              raise SystemExit('official daily slate integrity failed')
+          print('STEP19I_OFFICIAL_SCHEDULE_CERTIFIED')
+          PY
+
+      - name: Read-only live FanDuel plus Step19I certification
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step11_fanduel_provider as fd
+          from sports_api import wnba_step19h_fanduel_hosted_transport as s19h
+          from sports_api import wnba_step19i_official_slate_transport as s19i
+
+          s19i.install_step19i_official_slate_transport()
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          bridge=fd.fetch_step11c_fanduel_provider_bridge(
+              season=2026,
+              slate_date=slate,
+              evaluated_at=datetime.now(timezone.utc),
+              env=os.environ,
+          )
+          transport=s19h.get_step19h_fanduel_transport_status()
+          events=transport.get('events') or []
+          payload=((bridge.get('provider_refresh') or {}).get('attempts') or [{}])[0].get('payload') or {}
+          records=payload.get('records') or []
+          network=bridge.get('network') or {}
+          summary={
+              'slate':slate,
+              'record_count':len(records),
+              'fanDuel_transport_event_count':len(events),
+              'fanDuel_invalid_json_event_count':transport.get('invalid_json_event_count'),
+              'official_schedule_get_count':network.get('official_schedule_get_count'),
+              'step19i_active':s19i.installation_status().get('official_schedule_transport_active'),
+          }
+          print('STEP19I_LIVE_FANDUEL',json.dumps(summary,sort_keys=True))
+          if len(records) <= 0:
+              raise SystemExit('FanDuel live provider returned no records')
+          if not events or any(e.get('json_decodable') is not True for e in events):
+              raise SystemExit('FanDuel transport was not valid JSON')
+          if summary['step19i_active'] is not True:
+              raise SystemExit('Step19I route not active')
+          print('STEP19I_LIVE_FANDUEL_CERTIFIED')
+          PY
+
+      - name: Full read-only Step12B provider and model preflight
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from zoneinfo import ZoneInfo
+          from sports_api import wnba_step12b_live_runtime_assembly as s12b
+          from sports_api import wnba_step19i_official_slate_transport as s19i
+
+          s19i.install_step19i_official_slate_transport()
+          slate=datetime.now(timezone.utc).astimezone(ZoneInfo('America/New_York')).date().isoformat()
+          req=s12b.build_step12b_request(
+              season=2026,
+              slate_date=slate,
+              evaluated_at=datetime.now(timezone.utc),
+              previous_state=None,
+              controller_policy={'provider_attempts':1},
+          )
+          out=s12b.run_step12b_live_runtime_job(req,env=os.environ)
+          discovery=out.get('provider_discovery') or {}
+          dk=discovery.get('draftkings') or {}
+          fd=discovery.get('fanduel') or {}
+          overlap=out.get('market_overlap') or {}
+          runtime=out.get('runtime_summary') or {}
+          checks={
+              'status_healthy':out.get('status')=='healthy',
+              'health_healthy':out.get('health')=='healthy',
+              'draftkings_records':int(dk.get('record_count') or 0)>0,
+              'draftkings_errors_empty':not (dk.get('errors') or []),
+              'fanduel_records':int(fd.get('record_count') or 0)>0,
+              'fanduel_errors_empty':not (fd.get('errors') or []),
+              'step11_cycle_executed':runtime.get('step11_cycle_executed') is True,
+              'step8_distributions':int(runtime.get('step8_distribution_count') or 0)>0,
+              'qualified_props':int(runtime.get('qualified_prop_count') or 0)>0,
+              'top_card':int(runtime.get('top_card_count') or 0)>0,
+              'multibook_overlap':int(overlap.get('exact_line_multibook_group_count') or 0)>0,
+              'different_lines_not_blended':overlap.get('different_lines_blended') is False,
+          }
+          print('STEP19I_FULL_PREFLIGHT',json.dumps(checks,sort_keys=True))
+          failed=[name for name,ok in checks.items() if not ok]
+          if failed:
+              print('STEP19I_PROVIDER_DISCOVERY',json.dumps(discovery,sort_keys=True,default=str))
+              raise SystemExit('Step19I full preflight failed: '+','.join(failed))
+          print('STEP19I_FULL_PREFLIGHT_CERTIFIED')
+          PY

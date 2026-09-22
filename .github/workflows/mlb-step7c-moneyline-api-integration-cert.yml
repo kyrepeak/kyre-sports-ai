@@ -1,0 +1,366 @@
+name: MLB Step7C Moneyline API integration certification
+
+on:
+  push:
+    branches:
+      - mlb-step7c-moneyline-api-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlb-step7c-moneyline-api-integration-cert
+  cancel-in-progress: false
+
+env:
+  STEP7C_BASE_SHA: 3f21f7223f8c9fd789a487a2182b2837ba50dfa7
+  PRODUCTION_ODDS_URL: https://kyre-sports-api.onrender.com/api/v1/mlb/odds?max_events=30&fully_priced_only=true
+  STREAMLIT_URL: https://kyre-sports-ai.streamlit.app
+
+jobs:
+  certify-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install certification dependencies
+        run: python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Assert Step7C narrow MLB Moneyline presentation scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only "$STEP7C_BASE_SHA"...HEAD)"
+          printf '%s\n' "$changed"
+          allowed='^(app.py|sports_api/mlb_step7c_moneyline_api_integration_v1.py|mlb_moneyline_hub_v164.py|tests/test_mlb_step7c_moneyline_api_integration_v1.py|\.github/workflows/mlb-step7c-moneyline-api-integration-cert.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "STEP7C_UNEXPECTED_CHANGED_PATHS: $bad"
+            exit 1
+          fi
+          if printf '%s\n' "$changed" | grep -E '(^|/)wnba|WNBA' >/dev/null; then
+            echo 'STEP7C_WNBA_SCOPE_VIOLATION'
+            exit 1
+          fi
+          echo 'MLB_STEP7C_NARROW_MONEYLINE_SCOPE_OK'
+
+      - name: Prove frozen MLB internals remain byte-identical
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$STEP7C_BASE_SHA"...HEAD -- \
+            mlb_daily_game_picks_v217.py \
+            mlb_daily_game_picks_v217_guard.py \
+            mlb_daily_game_picks_live_market_context_v1.py \
+            mlb_daily_game_picks_market_probability_v1.py \
+            mlb_daily_game_picks_model_market_edge_v1.py \
+            mlb_daily_game_picks_price_discipline_v1.py \
+            mlb_daily_game_picks_market_movement_v1.py \
+            mlb_daily_game_picks_price_health_v1.py \
+            mlb_daily_game_picks_actionability_shadow_v1.py \
+            mlb_daily_game_picks_controlled_price_gate_v1.py \
+            mlb_daily_game_picks_price_gate_canary_v1.py \
+            mlb_daily_game_picks_step6d_production_expansion_v1.py \
+            mlb_daily_game_picks_step6g_controlled_graduation_v1.py \
+            mlb_daily_game_picks_step7a_api_integration_v1.py \
+            sports_api/mlb_live_market_context_v1.py \
+            sports_api/mlb_market_probability_v1.py \
+            sports_api/mlb_model_market_edge_v1.py \
+            sports_api/mlb_price_discipline_v1.py \
+            sports_api/mlb_market_movement_v1.py \
+            sports_api/mlb_price_health_v1.py \
+            sports_api/mlb_actionability_shadow_v1.py \
+            sports_api/mlb_controlled_price_gate_v1.py \
+            sports_api/mlb_price_gate_canary_v1.py \
+            sports_api/mlb_step6a_production_canary_v1.py \
+            sports_api/mlb_step6b_canary_monitor_v1.py \
+            sports_api/mlb_step6c_evidence_gate_v1.py \
+            sports_api/mlb_step6d_production_expansion_v1.py \
+            sports_api/mlb_step6e_25pct_stability_monitor_v1.py \
+            sports_api/mlb_step6f_production_graduation_gate_v1.py \
+            sports_api/mlb_step6g_controlled_graduation_v1.py \
+            sports_api/mlb_step6_final_freeze_v1.py \
+            sports_api/mlb_step7a_daily_game_picks_api_integration_v1.py \
+            sports_api/mlb_step7b_spread_api_integration_v1.py \
+            mlb_spread_hub_v157.py \
+            mlb_spread_hub_v156.py \
+            mlb_spread_hub_v155.py \
+            spread_hub_v154.py \
+            spread_hub_v153.py \
+            spread_hub_v152.py \
+            spread_history.py \
+            mlb_moneyline_hub_v163.py \
+            moneyline_hub_v162.py \
+            moneyline_hub_v161.py \
+            moneyline_hub_v16.py
+          echo 'MLB_STEP7C_FROZEN_INTERNALS_BYTE_IDENTICAL'
+
+      - name: Prove app change is only approved Step7C Moneyline alias seam
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          base_sha = '3f21f7223f8c9fd789a487a2182b2837ba50dfa7'
+          base = subprocess.check_output(['git','show',f'{base_sha}:app.py'], text=True)
+
+          old_contract = (
+              '- MLB Step 7B redirects only the frozen Spread V15.6 presentation import to the\n'
+              '  additive V15.7 exact-ID FanDuel Run Line API context wrapper.\n'
+          )
+          new_contract = old_contract + (
+              '- MLB Step 7C redirects only the frozen Moneyline V16.3 presentation boundary to\n'
+              '  the additive V16.4 exact-ID FanDuel Moneyline API context wrapper.\n'
+          )
+          if old_contract not in base:
+              raise SystemExit('STEP7C_APP_CONTRACT_ANCHOR_MISSING')
+          expected = base.replace(old_contract, new_contract, 1)
+
+          anchor = '\n\ndef _load_frozen_pre_live_app() -> str:\n'
+          block = '''\n\ndef _install_mlb_moneyline_step7c_route() -> dict:\n    """Install only the V16.4 Moneyline presentation alias; fail open to V16.3."""\n    for name in ("mlb_moneyline_hub_v164", "mlb_moneyline_hub_v163"):\n        sys.modules.pop(name, None)\n    importlib.invalidate_caches()\n    try:\n        import mlb_moneyline_hub_v164 as moneyline_v164\n\n        prior = getattr(moneyline_v164, "prior", None)\n        if prior is None or not hasattr(prior, "render_moneyline_hub"):\n            raise RuntimeError("Moneyline V16.4 frozen V16.3 base failed to initialize.")\n        sys.modules["mlb_moneyline_hub_v163"] = moneyline_v164\n        return {\n            "installed": True,\n            "model_version": getattr(moneyline_v164, "MODEL_VERSION", "V16.4"),\n            "frozen_v163_fallback_preserved": True,\n        }\n    except Exception as exc:\n        sys.modules.pop("mlb_moneyline_hub_v164", None)\n        sys.modules.pop("mlb_moneyline_hub_v163", None)\n        importlib.invalidate_caches()\n        import mlb_moneyline_hub_v163 as frozen_v163\n\n        sys.modules["mlb_moneyline_hub_v163"] = frozen_v163\n        return {\n            "installed": False,\n            "model_version": getattr(frozen_v163, "MODEL_VERSION", "V16.3"),\n            "error_type": type(exc).__name__,\n            "frozen_v163_fallback_preserved": True,\n        }\n\n\ndef _load_frozen_pre_live_app() -> str:\n'''
+          if anchor not in expected:
+              raise SystemExit('STEP7C_APP_FUNCTION_ANCHOR_MISSING')
+          expected = expected.replace(anchor, block, 1)
+
+          old_call = '_STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()\nsource = _load_frozen_pre_live_app()\n'
+          new_call = '_STEP18C_WNBA_CONSUMER_BRIDGE = _install_step18c_wnba_consumer_bridge()\n_STEP7C_MLB_MONEYLINE_ROUTE = _install_mlb_moneyline_step7c_route()\nsource = _load_frozen_pre_live_app()\n'
+          if old_call not in expected:
+              raise SystemExit('STEP7C_APP_CALL_ANCHOR_MISSING')
+          expected = expected.replace(old_call, new_call, 1)
+
+          actual = Path('app.py').read_text()
+          if actual != expected:
+              raise SystemExit('STEP7C_APP_CHANGED_OUTSIDE_APPROVED_MONEYLINE_SEAM')
+          print('MLB_STEP7C_APP_MONEYLINE_SEAM_EXACT')
+          PY
+
+      - name: Prove V16.4 wrapper is presentation-only over frozen V16.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('mlb_moneyline_hub_v164.py').read_text()
+          required = (
+              'import mlb_moneyline_hub_v163 as prior',
+              'v161 = prior.base.base',
+              'frozen_cards = v161._render_cards_v161',
+              'v161._render_cards_v161 = cards_with_api_context',
+              'v161._render_cards_v161 = frozen_cards',
+              'return prior.render_moneyline_hub',
+              'enforce_moneyline_api_freshness',
+          )
+          missing = [token for token in required if token not in text]
+          if missing:
+              raise SystemExit('STEP7C_PRESENTATION_WRAPPER_CONTRACT_MISSING:' + ','.join(missing))
+          forbidden = (
+              '_scan_game =',
+              '_select',
+              'win_prob =',
+              'history_effect =',
+              'fair_odds =',
+              'sportsbook_price_model_input": True',
+          )
+          bad = [token for token in forbidden if token in text]
+          if bad:
+              raise SystemExit('STEP7C_FORBIDDEN_MODEL_MUTATION_SURFACE:' + ','.join(bad))
+          print('MLB_STEP7C_PRESENTATION_ONLY_WRAPPER_OK')
+          PY
+
+      - name: Compile Step7C Python
+        run: |
+          python -m py_compile \
+            app.py \
+            sports_api/mlb_step7c_moneyline_api_integration_v1.py \
+            mlb_moneyline_hub_v164.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py
+
+      - name: Run full frozen MLB regression plus Step7A Step7B Step7C
+        run: |
+          python -m pytest -q \
+            tests/test_mlb_official_game_id_join_v1.py \
+            tests/test_mlb_live_market_context_v1.py \
+            tests/test_mlb_market_probability_v1.py \
+            tests/test_mlb_model_market_edge_v1.py \
+            tests/test_mlb_price_discipline_v1.py \
+            tests/test_mlb_market_movement_v1.py \
+            tests/test_mlb_price_health_v1.py \
+            tests/test_mlb_actionability_shadow_v1.py \
+            tests/test_mlb_controlled_price_gate_v1.py \
+            tests/test_mlb_price_gate_canary_v1.py \
+            tests/test_mlb_price_gate_canary_streamlit_v1.py \
+            tests/test_mlb_step6a_production_canary_v1.py \
+            tests/test_mlb_step6b_canary_monitor_v1.py \
+            tests/test_mlb_step6c_evidence_gate_v1.py \
+            tests/test_mlb_step6d_production_expansion_v1.py \
+            tests/test_mlb_step6e_25pct_stability_monitor_v1.py \
+            tests/test_mlb_step6f_production_graduation_gate_v1.py \
+            tests/test_mlb_step6g_controlled_graduation_v1.py \
+            tests/test_mlb_step6_final_freeze_v1.py \
+            tests/test_mlb_step7a_daily_game_picks_api_integration_v1.py \
+            tests/test_mlb_step7b_spread_api_integration_v1.py \
+            tests/test_mlb_step7c_moneyline_api_integration_v1.py
+
+  certify-live-moneyline-api-boundary:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install live certification dependencies
+        run: python -m pip install --disable-pip-version-check -q requests
+
+      - name: Certify live Kyre Sports API to Moneyline contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from copy import deepcopy
+          from datetime import datetime, timedelta, timezone
+          import json, os
+          import requests
+
+          from sports_api.mlb_step6d_production_expansion_v1 import CERTIFIED_STEP6C_PERMISSION, resolve_step6d_production_expansion
+          from sports_api.mlb_step6g_controlled_graduation_v1 import CERTIFIED_STEP6F_DECISION, resolve_step6g_controlled_graduation
+          from sports_api.mlb_step7c_moneyline_api_integration_v1 import API_CONNECTED, FALLBACK, build_moneyline_api_state, enforce_moneyline_api_freshness, moneyline_api_context_for_result
+
+          url = os.environ['PRODUCTION_ODDS_URL']
+          response = requests.get(url, timeout=45, headers={'Accept':'application/json','User-Agent':'KyreSportsStep7CCert/1.0','Cache-Control':'no-cache'})
+          response.raise_for_status()
+          payload = response.json()
+          games = payload.get('games')
+          if not isinstance(games, list) or not games:
+              raise RuntimeError('STEP7C_EMPTY_OR_INVALID_API_SLATE')
+
+          state = enforce_moneyline_api_freshness(build_moneyline_api_state(payload))
+          if state.get('integration_status') != API_CONNECTED or state.get('api_integration_active') is not True:
+              raise RuntimeError('STEP7C_API_STATE_NOT_GREEN:' + json.dumps(state, sort_keys=True))
+          if state.get('feed_fresh') is not True or float(state.get('snapshot_age_seconds') or 0) > 60.0:
+              raise RuntimeError('STEP7C_API_FEED_NOT_FRESH:' + json.dumps(state, sort_keys=True))
+          if state.get('usable_moneyline_game_count') != len(games) or state.get('unusable_game_ids'):
+              raise RuntimeError('STEP7C_MONEYLINE_COVERAGE_NOT_COMPLETE:' + json.dumps(state, sort_keys=True))
+
+          game_ids = [int(game['official_game_id']) for game in games]
+          if len(game_ids) != len(set(game_ids)):
+              raise RuntimeError('STEP7C_DUPLICATE_OFFICIAL_GAME_IDS')
+
+          checked_sides = 0
+          for game in games:
+              gid = int(game['official_game_id'])
+              market = game['markets']['moneyline']
+              for side, team_id, expected_odds in (
+                  ('away', 101, int(market['away_odds'])),
+                  ('home', 202, int(market['home_odds'])),
+              ):
+                  result = {
+                      'game_pk':gid,
+                      'team_id':team_id,
+                      'away_team_id':101,
+                      'home_team_id':202,
+                      'selected_side':side,
+                      'team':'Synthetic model identity',
+                      'win_prob':0.60,
+                      'fair_odds':'-150',
+                  }
+                  before = deepcopy(result)
+                  context = moneyline_api_context_for_result(result, state)
+                  if context is None:
+                      raise RuntimeError(f'STEP7C_EXACT_CONTEXT_MISSING_{gid}_{side}')
+                  if context.get('selected_side') != side or int(context.get('live_fanduel_odds')) != expected_odds:
+                      raise RuntimeError(f'STEP7C_SIDE_OR_PRICE_MATCH_FAILED_{gid}_{side}')
+                  if context.get('match_method') != 'official_mlb_game_id_exact' or context.get('fallback_matching_used') is not False:
+                      raise RuntimeError(f'STEP7C_NONEXACT_MATCH_{gid}_{side}')
+                  if context.get('sportsbook_price_model_input') is not False:
+                      raise RuntimeError('STEP7C_LIVE_PRICE_ENTERED_MODEL')
+                  if result != before:
+                      raise RuntimeError('STEP7C_RESULT_MUTATED')
+                  checked_sides += 1
+
+          wrong = {'game_pk':max(game_ids)+999999,'team_id':101,'away_team_id':101,'home_team_id':202}
+          if moneyline_api_context_for_result(wrong, state) is not None:
+              raise RuntimeError('STEP7C_WRONG_OFFICIAL_ID_ATTACHED')
+
+          duplicate_payload = deepcopy(payload)
+          duplicate_payload['games'] = [deepcopy(games[0]), deepcopy(games[0])]
+          duplicate = enforce_moneyline_api_freshness(build_moneyline_api_state(duplicate_payload))
+          if duplicate.get('integration_status') != FALLBACK or duplicate.get('api_integration_active') is not False:
+              raise RuntimeError('STEP7C_DUPLICATE_ID_FALLBACK_FAILED')
+
+          missing_payload = deepcopy(payload)
+          missing_payload['games'] = [deepcopy(games[0])]
+          missing_payload['games'][0]['markets']['moneyline']['away_odds'] = None
+          missing = enforce_moneyline_api_freshness(build_moneyline_api_state(missing_payload))
+          if missing.get('integration_status') != FALLBACK or missing.get('contexts_by_game_id'):
+              raise RuntimeError('STEP7C_MISSING_PRICE_FALLBACK_FAILED')
+
+          stale_payload = deepcopy(payload)
+          stale_payload['collected_at_utc'] = (datetime.now(timezone.utc) - timedelta(seconds=120)).isoformat()
+          stale = enforce_moneyline_api_freshness(build_moneyline_api_state(stale_payload))
+          if stale.get('integration_status') != FALLBACK or stale.get('feed_fresh') is not False or 'api_snapshot_stale' not in stale.get('failures', []):
+              raise RuntimeError('STEP7C_STALE_SNAPSHOT_FALLBACK_FAILED')
+
+          rollout = resolve_step6d_production_expansion({}, permission=CERTIFIED_STEP6C_PERMISSION)
+          graduation = resolve_step6g_controlled_graduation(rollout, permission=CERTIFIED_STEP6F_DECISION)
+          if rollout.get('effective_percent') != 25.0 or graduation.get('graduation_status') != 'GRADUATED_PRODUCTION_ACTIVE':
+              raise RuntimeError('STEP7C_STEP6_PRODUCTION_STATE_DRIFT')
+
+          print('STEP7C_LIVE_MONEYLINE_API=' + json.dumps({
+              'games':len(games),
+              'usable_moneyline_games':state.get('usable_moneyline_game_count'),
+              'exact_sides_checked':checked_sides,
+              'fallback_matching_used':state.get('fallback_matching_used'),
+              'feed_age_seconds':round(float(state.get('snapshot_age_seconds') or 0),3),
+              'integration_status':state.get('integration_status'),
+              'duplicate_failure_path':duplicate.get('integration_status'),
+              'missing_price_failure_path':missing.get('integration_status'),
+              'stale_failure_path':stale.get('integration_status'),
+              'step6_status':graduation.get('graduation_status'),
+              'effective_percent':rollout.get('effective_percent'),
+          }, sort_keys=True))
+          PY
+
+      - name: Certify Streamlit transport remains healthy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, requests
+          root = os.environ['STREAMLIT_URL'].rstrip('/')
+          checks = {}
+          for label, url in (
+              ('root', root),
+              ('rollback', root + '/?mlb_step6d_rollback=1'),
+              ('status', root + '/api/v2/app/status'),
+          ):
+              r = requests.get(url, timeout=45, headers={'User-Agent':'KyreSportsStep7CTransport/1.0'})
+              checks[label] = r.status_code
+              if r.status_code != 200:
+                  raise RuntimeError(f'STEP7C_STREAMLIT_{label.upper()}_{r.status_code}')
+              if label == 'status':
+                  try:
+                      checks['streamlit_version'] = r.json().get('streamlitVersion')
+                  except Exception:
+                      checks['streamlit_version'] = None
+          checks['rendered_ui_verified'] = False
+          print('STEP7C_STREAMLIT_TRANSPORT=' + json.dumps(checks, sort_keys=True))
+          print('MLB_STEP7C_MONEYLINE_API_INTEGRATION_GREEN')
+          PY
