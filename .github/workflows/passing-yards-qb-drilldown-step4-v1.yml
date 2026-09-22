@@ -236,9 +236,36 @@ jobs:
                       print(date_widget.evaluate("el => el.outerHTML"))
                       print("PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_ROLES")
                       print(json.dumps(date_widget.evaluate("""el => Array.from(el.querySelectorAll('[role]')).map(x => ({role:x.getAttribute('role'), aria:x.getAttribute('aria-label'), text:x.innerText, contenteditable:x.getAttribute('contenteditable')}))"""), indent=2))
+                      day_segment = date_widget.get_by_role("spinbutton", name="day, Slate date")
+                      day_segment.fill("24")
+                      day_segment.press("Tab")
+                      page.wait_for_timeout(8000)
+                      print("PASSING_YARDS_LIVE_MATCHUP_AFTER_DATE_2026_09_24")
+                      for probe_frame in page.frames:
+                          try:
+                              probe_body = probe_frame.locator("body").inner_text(timeout=3000)
+                          except Exception:
+                              continue
+                          if "PASSING YARDS CONTROL DECK" in probe_body or "TypeError" in probe_body:
+                              print(probe_body[:30000])
                   except Exception as exc:
                       print(f"PASSING_YARDS_LIVE_MATCHUP_DATE_WIDGET_INSPECT_FAILED: {exc}")
-                  body = landing.locator("body").inner_text(timeout=5000)
+                  try:
+                      landing = find_landing(page, timeout=40)
+                      body = landing.locator("body").inner_text(timeout=5000)
+                  except Exception:
+                      error_body = ""
+                      for probe_frame in page.frames:
+                          try:
+                              candidate = probe_frame.locator("body").inner_text(timeout=3000)
+                          except Exception:
+                              continue
+                          if "TypeError" in candidate or "Traceback" in candidate:
+                              error_body = candidate
+                              break
+                      print("PASSING_YARDS_LIVE_MATCHUP_RUNTIME_ERROR_BODY")
+                      print(error_body[:30000])
+                      raise
                   forbidden = _body_has_forbidden_error(body)
                   if forbidden:
                       raise BrowserQAFailure(f"PASSING_YARDS_QB_STEP4_BRANCH_RUNTIME: {forbidden}")
