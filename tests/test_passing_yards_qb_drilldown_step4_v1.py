@@ -106,7 +106,7 @@ def test_v211_stays_frozen_under_v212():
 def test_app_boots_v212_and_preserves_v211_compatibility():
     assert "from streamlit_memory_lazy_router_v212 import record_bootstrap_import_ms, render_app" in APP
     assert "Frozen QB Drill-Down Step 3 V211 compatibility" in APP
-    assert 'PASSING_YARDS_QB_DRILLDOWN_STEP4_CARDS_RUNTIME = "NFL_PASSING_YARDS_V61_CARDS_2026_09_22"' in APP
+    assert 'PASSING_YARDS_QB_DRILLDOWN_STEP4_CARDS_RUNTIME = "NFL_PASSING_YARDS_V61_CARDS_2026_09_22_R1_VISIBLE_COMPOSITION"' in APP
 
 
 def test_v61_emits_card_css_before_frozen_v60(monkeypatch):
@@ -143,3 +143,78 @@ def test_v61_emits_card_css_before_frozen_v60(monkeypatch):
     assert ".ks-py58-card" in calls[0][1]
     assert ".ks-py59-player" in calls[0][1]
     assert calls[0][2] is True
+
+
+def test_v61_suppresses_legacy_visible_wrappers_but_preserves_styles(monkeypatch):
+    calls = []
+    streamlit_stub = types.ModuleType("streamlit")
+
+    def markdown(body, *args, **kwargs):
+        calls.append(("markdown", str(body)))
+    def success(body, *args, **kwargs):
+        calls.append(("success", str(body)))
+    def warning(body, *args, **kwargs):
+        calls.append(("warning", str(body)))
+    def info(body, *args, **kwargs):
+        calls.append(("info", str(body)))
+    def caption(body, *args, **kwargs):
+        calls.append(("caption", str(body)))
+    def html(body, *args, **kwargs):
+        calls.append(("html", str(body)))
+
+    streamlit_stub.markdown = markdown
+    streamlit_stub.success = success
+    streamlit_stub.warning = warning
+    streamlit_stub.info = info
+    streamlit_stub.caption = caption
+    streamlit_stub.html = html
+
+    prior_stub = types.ModuleType("nfl_passing_yards_hub_v60")
+    def prior_render():
+        streamlit_stub.markdown(
+            '<style data-legacy-style="true">.x{display:block}</style>'
+            '<section class="ks-v44-page">legacy universal page</section>',
+            unsafe_allow_html=True,
+        )
+        streamlit_stub.markdown('<section class="kpy16-match">legacy matchup</section>', unsafe_allow_html=True)
+        streamlit_stub.warning("⚠️ STEP 3 PASS DEFENSE CHECK")
+        streamlit_stub.caption("🏈 PASSING YARDS CONTROL DECK")
+        streamlit_stub.html('<section data-passing-yards-step3-header="v60">Passing Yards</section>')
+    prior_stub.render_nfl_passing_yards_hub = prior_render
+
+    tokens_stub = types.ModuleType("kyre_universal_semantic_tokens_v2")
+    tokens_stub.build_semantic_tokens_css = lambda: '<style data-kyre-semantic-tokens="v2"></style>'
+
+    monkeypatch.setitem(sys.modules, "streamlit", streamlit_stub)
+    monkeypatch.setitem(sys.modules, "nfl_passing_yards_hub_v60", prior_stub)
+    monkeypatch.setitem(sys.modules, "kyre_universal_semantic_tokens_v2", tokens_stub)
+
+    spec = importlib.util.spec_from_file_location(
+        "nfl_passing_yards_hub_v61_visible_composition_probe",
+        ROOT / "nfl_passing_yards_hub_v61.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    module.render_nfl_passing_yards_hub()
+
+    joined = "\n".join(body for _, body in calls)
+    assert 'data-passing-yards-step4-card-system="v61"' in joined
+    assert 'data-legacy-style="true"' in joined
+    assert "legacy universal page" not in joined
+    assert "legacy matchup" not in joined
+    assert "PASS DEFENSE CHECK" not in joined
+    assert "PASSING YARDS CONTROL DECK" in joined
+    assert 'data-passing-yards-step3-header="v60"' in joined
+
+
+def test_v61_visible_composition_guard_is_step4_only():
+    assert "st.markdown = styles_only_markdown" in V61
+    assert "st.success = filtered_success" in V61
+    assert "st.warning = filtered_warning" in V61
+    assert "st.info = filtered_info" in V61
+    assert "st.caption = filtered_caption" in V61
+    assert "finally:" in V61
+    assert "st.markdown = original_markdown" in V61
+    assert "st.warning = original_warning" in V61
