@@ -1,0 +1,21 @@
+{
+  "task": "passing-yards-live-matchup-runtime-hotfix-v1",
+  "status": "DIAGNOSING",
+  "source_main": "2cc5968749cdbe6b6c0510a39e8045782bca1cf1",
+  "user_evidence": {
+    "date": "2026-09-24",
+    "matchup": "Atlanta Falcons @ Green Bay Packers",
+    "symptom": "TypeError after V60 header and V46 control deck on public Streamlit production",
+    "traceback_visible_through": "app.py -> streamlit_memory_lazy_router_v212 -> ... -> v204"
+  },
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v58.py",
+    "nfl_passing_yards_hub_v59.py",
+    "nfl_passing_yards_hub_v60.py",
+    "streamlit_memory_lazy_router_v209.py",
+    "streamlit_memory_lazy_router_v210.py",
+    "streamlit_memory_lazy_router_v211.py",
+    "streamlit_memory_lazy_router_v212.py"
+  ],
+  "mission": "Reproduce the real verified-matchup path, identify the exact TypeError, apply the smallest additive presentation/runtime repair, then prove branch and public production GREEN."
+}
