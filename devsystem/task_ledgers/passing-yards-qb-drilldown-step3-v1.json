@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "task_id": "passing-yards-qb-drilldown-step3-v1",
+  "status": "DONE",
+  "scope": "NFL Passing Yards QB Drill-Down Step 3 only: add the approved responsive Passing Yards page header over frozen V59 Step 2 without changing the V58 picker, V59 dedicated QB analysis, V209/V210 routing behavior, model, data, math, analytics, or sportsbook logic.",
+  "baseline": {
+    "main_sha": "6a36bd28a3d364facfc4a5e74170f65a8aa5ee80",
+    "step1_green_frozen": true,
+    "step2_green_frozen": true,
+    "frozen_step1_product": "nfl_passing_yards_hub_v58",
+    "frozen_step1_router": "streamlit_memory_lazy_router_v209",
+    "frozen_step2_product": "nfl_passing_yards_hub_v59",
+    "frozen_step2_router": "streamlit_memory_lazy_router_v210",
+    "step2_final_run": 35750298736
+  },
+  "acceptance": {
+    "responsive_passing_yards_header": true,
+    "page_title": true,
+    "subtitle_context": true,
+    "slate_date_area": true,
+    "filter_status_row": true,
+    "visible_durable_header_witness": true,
+    "picker_remains_two_qbs": true,
+    "dedicated_qb_analysis_remains_one_qb": true,
+    "back_navigation_remains": true,
+    "mobile_no_horizontal_overflow": true,
+    "model_math_data_unchanged": true,
+    "targeted_step3_proof_required": true,
+    "required_devsystem_gate": true,
+    "one_post_merge_public_proof_required": true
+  },
+  "guardrails": {
+    "v58_changed": false,
+    "v59_changed": false,
+    "v209_changed": false,
+    "v210_changed": false,
+    "projection_logic_changed": false,
+    "probability_logic_changed": false,
+    "market_math_changed": false,
+    "data_provider_logic_changed": false,
+    "analytics_changed": false,
+    "sportsbook_projection_influence": 0,
+    "existing_widget_keys_changed": false,
+    "other_routes_changed": false,
+    "step4_plus_built": false
+  },
+  "freeze_rule": "After targeted Step 3 proof, required DevSystem gate, merge, and one successful MAIN public proof of the V60 header with frozen Step 1/2 behavior preserved, Step 3 is GREEN + FROZEN.",
+  "approved_prototype": {
+    "branch": "monster/passing-yards-layered-hub-step3-header-v1",
+    "commit": "99c52b914d9622ed80cd19c0f366d81f58d1a71a",
+    "concept": "Passing Yards Header",
+    "production_port": "V60/V211"
+  },
+  "monster_status": "PENDING_BUILD_PROOF_MERGE_PUBLIC_PROOF",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
