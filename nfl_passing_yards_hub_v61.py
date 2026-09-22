@@ -138,7 +138,7 @@ _CARD_CSS = r"""
 </style>
 """
 
-_STYLE_BLOCK_RE = re.compile(r"<style\\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
+_STYLE_BLOCK_RE = re.compile(r"<style\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
 _LEGACY_STATUS_PREFIXES = ("✅ STEP ", "⚠️ STEP ", "ℹ️ STEP ", "🏆 NFL PASSING YARDS BUILD")
 
 def _style_blocks_only(body: Any) -> tuple[str, ...]:
