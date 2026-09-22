@@ -49,7 +49,7 @@
   },
   "transition_history": [],
   "override_events": [],
-  "monster_status": "PENDING_MERGE_DEPLOY_PUBLIC_PROOF",
+  "monster_status": "PENDING_DEPLOY_REFRESH_MERGE_FINAL_PUBLIC_PROOF",
   "premerge_repairs": {
     "devsystem_failure_job": 106634350941,
     "devsystem_failure": "ActionLedgerFailure: future task ledger must finish in DONE state",
@@ -70,5 +70,20 @@
     "app_changed": false,
     "model_data_math_changed": false,
     "frozen_step1_product_changed": false
+  },
+  "final_public_failure_classification": {
+    "source_main_sha": "571c2fb4b1e0e7441e95d9eb7363e38cf6473754",
+    "source_run": 35698899668,
+    "source_job": 106651958077,
+    "failure": "PASSING_YARDS_QB_STEP2_PICKER_NOT_READY",
+    "v210_expected_before_click": true,
+    "reason": "V210 emits data-passing-yards-v210-runtime=qb-detail-step2 whenever the active route is NFL Passing Yards, before delegation into the V58/V59 hub. Therefore picker + V210 is a valid pre-click production ownership precondition.",
+    "failed_layer": "DEPLOYMENT_RUNTIME_ACTIVATION",
+    "deployed_sha_observability": "Production does not expose an exact commit SHA through the current proof instrumentation. The absence of the required V210 ownership marker proves the observed public runtime did not match expected V210 behavior.",
+    "patch": "Entrypoint-only Step 2 public deployment refresh marker plus exact workflow/ledger scope. No V58, V209, V59, V210, model, data, math, analytics, or sportsbook logic changes.",
+    "product_changed": false,
+    "router_changed": false,
+    "verifier_changed": false,
+    "frozen_step1_changed": false
   }
 }
