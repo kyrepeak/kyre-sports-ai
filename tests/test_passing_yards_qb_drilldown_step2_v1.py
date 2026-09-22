@@ -17,15 +17,38 @@ def test_step1_picker_is_inherited_not_rebuilt():
     assert 'data-passing-yards-selection-screen="v58"' in V58
 
 
+def test_selected_view_preserves_step1_navigation_contract():
+    assert 'data-passing-yards-selected-qb=' in V59
+    assert 'data-qb-back="true"' in V59
+    assert 'SELECTED QUARTERBACK' in V59
+
+
 def test_selected_view_has_durable_v59_markers():
     assert 'data-passing-yards-qb-detail="v59"' in V59
     assert 'data-selected-qb-analysis=' in V59
-    assert 'data-qb-back="true"' in V59
+    assert 'data-qb-analysis-slot=' in V59
+    assert 'data-qb-analysis-index=' in V59
 
 
-def test_selected_view_reuses_certified_single_player_renderer():
-    assert 'evidence._player(captured, index)' in V59
-    assert 'index = slot - 1' in V59
+def test_selected_view_has_complete_certified_analysis_sections():
+    for marker in [
+        'data-qb-analysis-section="market"',
+        'data-qb-analysis-section="projection"',
+        'data-qb-analysis-section="context"',
+        'data-qb-analysis-section="distribution"',
+        'data-qb-analysis-support="matchup"',
+        'data-qb-analysis-support="conditions"',
+    ]:
+        assert marker in V59
+
+
+def test_v59_uses_captured_payload_without_legacy_full_player_wrappers():
+    assert '_piece(captured, "identity", index)' in V59
+    assert '_piece(captured, "projection", index)' in V59
+    assert '_piece(captured, "distribution", index)' in V59
+    assert 'evidence._player(' not in V59
+    assert 'class="ks-py48-player"' not in V59
+    assert 'class="ks-py48-step"' not in V59
 
 
 def test_selected_view_only_accepts_qb_slots_one_or_two():
@@ -40,6 +63,10 @@ def test_v59_does_not_compute_model_or_market_values():
         "probability_model(",
         "fetch_odds(",
         "requests.get(",
+        "st.selectbox(",
+        "st.date_input(",
+        "st.text_input(",
+        "st.button(",
     ]
     assert not any(token in V59 for token in forbidden)
 
@@ -60,6 +87,7 @@ def test_router_v210_only_advances_passing_yards_to_v59():
     assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v209"' in R210
     assert 'PASSING_HUB = "nfl_passing_yards_hub_v59"' in R210
     assert 'return prior.render_app()' in R210
+    assert 'data-passing-yards-v210-runtime="qb-detail-step2"' in R210
 
 
 def test_router_v210_guardrails_remain_frozen():
