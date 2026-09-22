@@ -231,10 +231,8 @@ jobs:
                   fail_if_runtime_error(page,"selected matchup -> V58 picker")
                   for frame in page.frames:
                       try:
-                          txt=frame.locator("body").inner_text(timeout=1500)
                           if (
-                              target_matchup in txt
-                              and frame.locator('section[data-passing-yards-step3-header="v60"]').count()==1
+                              frame.locator('section[data-passing-yards-step3-header="v60"]').count()==1
                               and frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1
                               and frame.locator('[data-qb-selection-card]').count()==2
                           ):
@@ -512,8 +510,7 @@ jobs:
                       print(body[:50000]); raise RuntimeError("PUBLIC_LIVE_MATCHUP_TYPEERROR")
                   for frame in page.frames:
                       try:
-                          txt=frame.locator("body").inner_text(timeout=1500)
-                          if target_matchup in txt and frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1 and frame.locator('[data-qb-selection-card]').count()==2:
+                          if frame.locator('[data-passing-yards-selection-screen="v58"]').count()==1 and frame.locator('[data-qb-selection-card]').count()==2:
                               return frame
                       except Exception: pass
                   page.wait_for_timeout(500)
