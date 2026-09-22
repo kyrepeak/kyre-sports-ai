@@ -180,6 +180,14 @@ def test_v61_suppresses_legacy_visible_wrappers_but_preserves_styles(monkeypatch
             '<section class="ks-v44-page">legacy universal page</section>',
             unsafe_allow_html=True,
         )
+        streamlit_stub.markdown(
+            '<style data-passing-yards-step3-header-css="v60">.v60{display:block}</style>',
+            unsafe_allow_html=True,
+        )
+        streamlit_stub.markdown(
+            '<style data-passing-yards-top-polish="v46">.v46{display:block}</style>',
+            unsafe_allow_html=True,
+        )
         streamlit_stub.markdown('<section class="kpy16-match">legacy matchup</section>', unsafe_allow_html=True)
         streamlit_stub.warning("⚠️ STEP 3 PASS DEFENSE CHECK")
         streamlit_stub.caption("🏈 PASSING YARDS CONTROL DECK")
@@ -205,7 +213,9 @@ def test_v61_suppresses_legacy_visible_wrappers_but_preserves_styles(monkeypatch
 
     joined = "\n".join(body for _, body in calls)
     assert 'data-passing-yards-step4-card-system="v61"' in joined
-    assert 'data-legacy-style="true"' in joined
+    assert 'data-legacy-style="true"' not in joined
+    assert 'data-passing-yards-step3-header-css="v60"' in joined
+    assert 'data-passing-yards-top-polish="v46"' in joined
     assert "legacy universal page" not in joined
     assert "legacy matchup" not in joined
     assert "PASS DEFENSE CHECK" not in joined
@@ -241,3 +251,10 @@ def test_step4_removes_zero_height_gap_owners_and_duplicate_matchup():
     assert '[data-testid="stElementContainer"]:has(> div:empty)' in V61
     assert '.st-key-nfl_passing_yards_v8_matchup' in V61
     assert 'display:none!important;' in V61
+
+
+def test_step4_preserves_only_current_pre_placeholder_style_owners():
+    assert 'def _preserve_style_block(style: str) -> bool:' in V61
+    assert 'data-passing-yards-step3-header-css="v60"' in V61
+    assert 'data-passing-yards-top-polish="v46"' in V61
+    assert 'if _preserve_style_block(style):' in V61
