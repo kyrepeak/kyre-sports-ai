@@ -85,16 +85,22 @@ _CATEGORY_NAV_CSS = r"""
 </style>
 """
 
-def _category_href(slot: int, target_id: str) -> str:
-    # Reuse the frozen V58 date/matchup/QB navigation helper. V62 does not
-    # create or own any new navigation state.
-    return escape(navigation._current_nav_url(slot) + f"#{target_id}", quote=True)
+def _category_context_url(slot: int) -> str:
+    # Reuse the frozen V58 date/matchup/QB navigation helper as the preserved
+    # context source. The actual category click is fragment-only so the current
+    # selected-QB page never reloads or changes navigation state.
+    return escape(navigation._current_nav_url(slot), quote=True)
+
+
+def _category_href(target_id: str) -> str:
+    return escape(f"#{target_id}", quote=True)
 
 
 def build_category_nav(slot: int) -> str:
+    preserved_context = _category_context_url(slot)
     links = "".join(
         f'<a class="ks-py62-category-link" data-category-target="{kind}" '
-        f'href="{_category_href(slot, target_id)}">{label}</a>'
+        f'data-preserved-nav="{preserved_context}" href="{_category_href(target_id)}">{label}</a>'
         for kind, label, target_id in CATEGORY_NAV_ITEMS
     )
     return (
