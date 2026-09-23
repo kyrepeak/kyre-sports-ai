@@ -53,6 +53,9 @@ jobs:
           diff -u /tmp/expected.txt /tmp/actual.txt
           echo "PASSING_YARDS_MOBILE_CLEANUP_STEPS4_5_SCOPE_GREEN"
 
+      - name: Install static runtime dependencies
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt
+
       - name: Compile closeout verifier
         run: python -m py_compile devsystem/passing_yards_mobile_cleanup_steps4_5_closeout_v1.py
 
