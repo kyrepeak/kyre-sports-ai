@@ -62,12 +62,20 @@ jobs:
           .github/workflows/passing-yards-projection-explainability-step2-v1.yml
           devsystem/task_ledgers/passing-yards-step2-public-settled-state-verifier-v1.json
           EOF
+          cat > /tmp/stable-marker-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-projection-explainability-step2-v1.yml
+          devsystem/task_ledgers/passing-yards-step2-stable-runtime-markers-v1.json
+          nfl_passing_yards_hub_v71.py
+          EOF
           sort -o /tmp/full-build.txt /tmp/full-build.txt
           sort -o /tmp/verifier-hotfix.txt /tmp/verifier-hotfix.txt
+          sort -o /tmp/stable-marker-hotfix.txt /tmp/stable-marker-hotfix.txt
           if diff -q /tmp/full-build.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_EXPLAINABILITY_STEP2_SCOPE_FULL_BUILD_GREEN"
           elif diff -q /tmp/verifier-hotfix.txt /tmp/actual.txt >/dev/null; then
             echo "PASSING_YARDS_EXPLAINABILITY_STEP2_SCOPE_VERIFIER_HOTFIX_GREEN"
+          elif diff -q /tmp/stable-marker-hotfix.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_EXPLAINABILITY_STEP2_SCOPE_STABLE_MARKER_HOTFIX_GREEN"
           else
             echo "Unexpected Step 2 scope:"
             cat /tmp/actual.txt
@@ -119,6 +127,8 @@ jobs:
               'MAY_MODIFY_DATA = False',
               'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
               'data-passing-yards-projection-explainability="v71"',
+              'data-passing-yards-mobile-cleanup-runtime="v70"',
+              'data-passing-yards-v222-runtime="projection-explainability-step2"',
               'data-passing-yards-explainability-method="v71"',
               'Why the model landed here',
               'QB season workload',
@@ -247,6 +257,8 @@ jobs:
 
               panel=root.locator('[data-passing-yards-projection-explainability="v71"]')
               assert panel.count()==1
+              assert panel.get_attribute("data-passing-yards-mobile-cleanup-runtime")=="v70"
+              assert panel.get_attribute("data-passing-yards-v222-runtime")=="projection-explainability-step2"
               assert panel.locator('[data-explainability-driver]').count()==5
               assert panel.locator('[data-explainability-field]').count()==4
               assert panel.locator('[data-explainability-market-read="v71"]').count()==1
@@ -380,13 +392,12 @@ jobs:
               page.goto(route,wait_until="domcontentloaded",timeout=120000)
               frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
               assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
-              # Hosted Streamlit settles after its route/query rerun. The focused
-              # public diagnostic proved V71 product markers persist while top-level
-              # V70/V222 wrapper markers do not. Certify the stable product state.
               assert root.get_attribute("data-passing-yards-detail-cleanup")=="v69"
               assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
               panel=root.locator('[data-passing-yards-projection-explainability="v71"]')
               assert panel.count()==1
+              assert panel.get_attribute("data-passing-yards-mobile-cleanup-runtime")=="v70"
+              assert panel.get_attribute("data-passing-yards-v222-runtime")=="projection-explainability-step2"
               assert panel.locator('[data-explainability-driver]').count()==5
               assert panel.locator('[data-explainability-field]').count()==4
               text=panel.inner_text(timeout=5000)
