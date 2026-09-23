@@ -1,0 +1,35 @@
+{
+  "task": "passing-yards-step3-public-single-cycle-v1",
+  "task_id": "passing-yards-step3-public-single-cycle-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "b4cf7be257e48da160373574c1865bbae623207d",
+  "scope": "Verifier-only Step 3 public proof stabilization. Keep the branch proof on mobile/tablet/desktop, but run the hosted public production path once instead of repeating the same Back transition three times on one page session.",
+  "failed_layer": "PUBLIC_VERIFIER_REPEATED_NAVIGATION_CYCLE",
+  "failure_run": 35824710775,
+  "failure_job": 107063879803,
+  "evidence": [
+    "390px public cycle GREEN",
+    "768px public cycle GREEN",
+    "1440px third repeated cycle failed at PROJECTION_DETAIL_PUBLIC_QB_PICKER_NOT_READY",
+    "branch proof already GREEN across 390/768/1440"
+  ],
+  "root_cause": "The public verifier redundantly repeats the same production navigation and Back transition three times in one browser session even though responsive behavior is already certified in the branch proof. The third repeated cycle is the only failing transition.",
+  "patch": "Keep branch proof at three viewports. Reduce public production proof to one complete production cycle.",
+  "product_files_changed": false,
+  "acceptance": [
+    "Step 3 branch proof remains three-viewports GREEN",
+    "Step 3 public proof validates V64 Projection Detail once on hosted production",
+    "Back returns to V58 with exactly two QB cards",
+    "date and matchup are preserved",
+    "Steps 1-2 remain frozen",
+    "no product/router/app/model/data/math changes"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
