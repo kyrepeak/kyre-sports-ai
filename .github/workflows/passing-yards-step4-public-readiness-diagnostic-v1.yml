@@ -1,0 +1,104 @@
+name: NFL Passing Yards Step 4 Public Readiness Diagnostic V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-step4-public-readiness-diagnostic-v1.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-step4-public-readiness-diagnostic-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-readiness-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser diagnostic dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Print Step 4 public readiness owner once
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try:
+                      out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception:
+                      pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=240):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError("PUBLIC_DIAGNOSTIC_SELECTOR_NOT_READY:"+selector)
+
+          def clean(value):
+              return " ".join(str(value or "").split())
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              panel=root.locator('[data-passing-yards-live-market="v73"]')
+              market_detail=root.locator('[data-passing-yards-market-detail="v63"]')
+              card=root.locator('.kpy10-card').first
+              source=root.locator('.kpy10-sub').first
+
+              print("STEP4_PUBLIC_DIAGNOSTIC_BEGIN")
+              print("PANEL_READY_ATTRIBUTE:",panel.get_attribute("data-passing-yards-live-market-ready") if panel.count() else "MISSING")
+              print("PANEL_TEXT:",clean(panel.inner_text(timeout=5000)) if panel.count() else "MISSING")
+              print("MARKET_DETAIL_TEXT:",clean(market_detail.inner_text(timeout=5000)) if market_detail.count() else "MISSING")
+              print("RAW_MARKET_CARD_TEXT:",clean(card.inner_text(timeout=5000)) if card.count() else "MISSING")
+              print("RAW_MARKET_SOURCE_TEXT:",clean(source.inner_text(timeout=5000)) if source.count() else "MISSING")
+
+              if card.count():
+                  heroes=card.locator('.kpy10-hero b').all_inner_texts()
+                  metrics=card.locator('.kpy10-metrics b').all_inner_texts()
+                  print("RAW_HERO_VALUES:",[clean(x) for x in heroes])
+                  print("RAW_METRIC_VALUES:",[clean(x) for x in metrics])
+
+              body=body_text(page)
+              print("KYRE_API_GREEN_TEXT_PRESENT:","YES" if "KYRE SPORTS API MARKET GREEN" in body else "NO")
+              print("KYRE_API_CHECK_TEXT_PRESENT:","YES" if "KYRE SPORTS API MARKET CHECK" in body else "NO")
+              for line in body.splitlines():
+                  if "KYRE SPORTS API MARKET GREEN" in line or "KYRE SPORTS API MARKET CHECK" in line:
+                      print("KYRE_API_STATUS_LINE:",clean(line))
+              print("STEP4_PUBLIC_DIAGNOSTIC_END")
+              browser.close()
+          PY
