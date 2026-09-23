@@ -15,6 +15,16 @@ SOURCE = """
   <div data-market-field="offered-odds"><b>-108 / -112</b><span>Offered Odds</span></div>
   <div class="ks-py63-market-source"><strong>Source:</strong> Kyre Sports API • FanDuel • sportsbook projection influence 0.0% • stake sizing OFF</div>
  </section>
+ <section class="kpy10-card">
+  <div class="kpy10-hero">
+   <div><b>LEAN OVER</b><span>Final Lean</span></div>
+   <div><b>247.5</b><span>Market Line</span></div>
+   <div><b>MEDIUM</b><span>Model Confidence</span></div>
+  </div>
+  <div class="kpy10-metrics">
+   <div><b>-108 / -112</b>Offered Over / Under</div>
+  </div>
+ </section>
  <section class="ks-py72-matchup" data-passing-yards-matchup-intelligence="v72"></section>
 </section>
 """
@@ -44,6 +54,42 @@ def test_step4_parses_current_certified_market_snapshot():
     assert row["over_odds"] == -108
     assert row["under_odds"] == -112
     assert row["projection_weight"] == 0.0
+
+
+def test_step4_bounded_parser_survives_proven_contaminated_v63_fields():
+    contaminated = SOURCE.replace(
+        '<div data-market-field="line"><b>247.5</b><span>Market Line</span></div>',
+        '<div data-market-field="line"><b>4036378ESPN Athlete ID9ESPN Team IDNo listed injuryAvailabilityESPN CORE DEPTH CHART Current Market + Edge Jordan Love 226.5</b><span>Market Line</span></div>',
+    ).replace(
+        '<div data-market-field="offered-odds"><b>-108 / -112</b><span>Offered Odds</span></div>',
+        '<div data-market-field="offered-odds"><b>4036378ESPN Athlete ID Current Market + Edge 55.3% / 44.7% Model Over / Under -123 / +123 Model fair Over / Under -114 / -114</b><span>Offered Odds</span></div>',
+    ).replace(
+        '<div><b>247.5</b><span>Market Line</span></div>',
+        '<div><b>226.5</b><span>Market Line</span></div>',
+    ).replace(
+        '<div><b>-108 / -112</b>Offered Over / Under</div>',
+        '<div><b>-114 / -114</b>Offered Over / Under</div>',
+    )
+    row = v73.build_snapshot(contaminated, 2, timestamp="2026-09-23T21:44:00+00:00")
+    assert row["ready"] is True
+    assert row["line"] == 226.5
+    assert row["over_odds"] == -114
+    assert row["under_odds"] == -114
+
+
+def test_step4_bounded_parser_fails_closed_when_exact_values_are_malformed():
+    malformed = SOURCE.replace(
+        '<div><b>247.5</b><span>Market Line</span></div>',
+        '<div><b>not-a-line</b><span>Market Line</span></div>',
+    ).replace(
+        '<div><b>-108 / -112</b>Offered Over / Under</div>',
+        '<div><b>bad / bad</b>Offered Over / Under</div>',
+    )
+    row = v73.build_snapshot(malformed, 2)
+    assert row["ready"] is False
+    assert row["line"] != row["line"]
+    assert row["over_odds"] is None
+    assert row["under_odds"] is None
 
 
 def test_uncertified_or_missing_market_fails_closed():

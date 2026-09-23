@@ -93,13 +93,19 @@ def _finite(value: Any) -> bool:
     return math.isfinite(_num(value))
 
 
-def _market_field(body: str, kind: str, fallback: str = "—") -> str:
-    pattern = (
-        rf'data-market-field="{re.escape(kind)}"[^>]*>\s*'
-        rf'<b[^>]*>(.*?)</b>'
+def _bounded_market_line(body: str) -> str:
+    """Return only a clean value whose own <b> is directly tied to Market Line."""
+    pattern = re.compile(
+        r'<b[^>]*>\s*([0-9]{1,3}(?:\.[0-9]+)?)\s*</b>\s*'
+        r'<span[^>]*>\s*Market Line\s*</span>',
+        flags=re.I,
     )
-    match = re.search(pattern, str(body or ""), flags=re.S | re.I)
-    return _plain(match.group(1), fallback) if match else fallback
+    for match in pattern.finditer(str(body or "")):
+        value = match.group(1).strip()
+        number = _num(value)
+        if _finite(number) and 0.0 < number <= 700.0:
+            return value
+    return ""
 
 
 def _market_source(body: str) -> str:
@@ -111,10 +117,23 @@ def _market_source(body: str) -> str:
     return _plain(match.group(1), "Verified market source unavailable") if match else "Verified market source unavailable"
 
 
-def _odds_pair(body: str) -> tuple[str, str]:
-    text = _market_field(body, "offered-odds", "— / —")
-    parts = [part.strip() for part in text.split("/", 1)]
-    return (parts[0] if parts else "—", parts[1] if len(parts) > 1 else "—")
+def _bounded_offered_odds(body: str) -> tuple[str, str]:
+    """Return the clean O/U moneyline pair bound to Offered Over / Under only."""
+    pattern = re.compile(
+        r'<b[^>]*>\s*([+-]?\d{3,4})\s*/\s*([+-]?\d{3,4})\s*</b>\s*'
+        r'Offered Over / Under',
+        flags=re.I,
+    )
+    for match in pattern.finditer(str(body or "")):
+        over, under = match.group(1).strip(), match.group(2).strip()
+        if (
+            _finite(over)
+            and _finite(under)
+            and abs(_num(over)) >= 100.0
+            and abs(_num(under)) >= 100.0
+        ):
+            return over, under
+    return "", ""
 
 
 def _session_timestamp(slot: int) -> str:
@@ -139,8 +158,8 @@ def _snapshot_key(slot: int, source: str) -> str:
 
 
 def build_snapshot(body: str, slot: int, *, timestamp: str = "") -> dict:
-    line_text = _market_field(body, "line", "")
-    over_text, under_text = _odds_pair(body)
+    line_text = _bounded_market_line(body)
+    over_text, under_text = _bounded_offered_odds(body)
     source = _market_source(body)
     certified = _CERTIFIED_SOURCE.casefold() in source.casefold() and _CERTIFIED_BOOK.casefold() in source.casefold()
     ready = bool(
