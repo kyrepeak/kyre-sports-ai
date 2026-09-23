@@ -58,10 +58,20 @@ jobs:
           EOF
           sort -o /tmp/expected-shared-public-back-verifier-hotfix.txt /tmp/expected-shared-public-back-verifier-hotfix.txt
 
+          cat > /tmp/expected-shared-public-back-runtime-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          .github/workflows/passing-yards-new-phase-step2-market-detail-v1.yml
+          devsystem/task_ledgers/passing-yards-public-back-runtime-v1.json
+          nfl_passing_yards_hub_v62.py
+          EOF
+          sort -o /tmp/expected-shared-public-back-runtime-hotfix.txt /tmp/expected-shared-public-back-runtime-hotfix.txt
+
           if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP2_SCOPE_FULL_GREEN"
           elif cmp -s /tmp/expected-shared-public-back-verifier-hotfix.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP2_SCOPE_SHARED_PUBLIC_BACK_VERIFIER_HOTFIX_GREEN"
+          elif cmp -s /tmp/expected-shared-public-back-runtime-hotfix.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP2_SCOPE_SHARED_PUBLIC_BACK_RUNTIME_HOTFIX_GREEN"
           else
             echo "INVALID_STEP2_SCOPE"
             echo "Actual:"
