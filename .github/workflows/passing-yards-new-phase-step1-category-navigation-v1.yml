@@ -64,12 +64,21 @@ jobs:
           EOF
           sort -o /tmp/expected-hotfix-ledger.txt /tmp/expected-hotfix-ledger.txt
 
+          cat > /tmp/expected-deploy-refresh.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json
+          EOF
+          sort -o /tmp/expected-deploy-refresh.txt /tmp/expected-deploy-refresh.txt
+
           if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_FULL_GREEN"
           elif cmp -s /tmp/expected-hotfix.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_GREEN"
           elif cmp -s /tmp/expected-hotfix-ledger.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_LEDGER_GREEN"
+          elif cmp -s /tmp/expected-deploy-refresh.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP1_DEPLOY_REFRESH_SCOPE_GREEN"
           else
             echo "INVALID_STEP1_SCOPE"
             echo "Actual:"
