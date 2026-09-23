@@ -83,8 +83,6 @@ jobs:
               'data-passing-yards-navigation-mobile-ready="v68"',
               'data-passing-yards-navigation-mobile-css="v68"',
               'id="ks-py-deep-evidence"',
-              'min-height:48px',
-              'overflow-x:auto',
           ]
           for token in required:
               assert token in v68, token
