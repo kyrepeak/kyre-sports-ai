@@ -1,0 +1,341 @@
+name: NFL Passing Yards Mobile Cleanup Steps 2-3 V70
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/passing-yards-mobile-cleanup-steps2-3-v70.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-mobile-cleanup-steps2-3-v70.json"
+      - "nfl_passing_yards_hub_v70.py"
+      - "streamlit_memory_lazy_router_v221.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-mobile-cleanup-steps2-3-v70.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-mobile-cleanup-steps2-3-v70.json"
+      - "nfl_passing_yards_hub_v70.py"
+      - "streamlit_memory_lazy_router_v221.py"
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install static runtime dependencies
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt
+
+      - name: Enforce Steps 2-3 exact scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-mobile-cleanup-steps2-3-v70.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-mobile-cleanup-steps2-3-v70.json
+          nfl_passing_yards_hub_v70.py
+          streamlit_memory_lazy_router_v221.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_MOBILE_CLEANUP_STEPS2_3_SCOPE_GREEN"
+
+      - name: Compile V70 activation
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v70.py
+          python -m py_compile streamlit_memory_lazy_router_v221.py
+          python -m py_compile app.py
+
+      - name: Verify presentation-only contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import nfl_passing_yards_hub_v70 as v70
+          import streamlit_memory_lazy_router_v221 as v221
+
+          assert v70.FROZEN_PRIOR == "nfl_passing_yards_hub_v69"
+          assert v70.MOBILE_CLEANUP_VERSION == "v70"
+          assert v70.MOBILE_CLEANUP_STEP_2 == 2
+          assert v70.MOBILE_CLEANUP_STEP_3 == 3
+          assert v70.PRESENTATION_ONLY is True
+          assert v70.DISPLAY_ONLY is True
+          assert v70.MAY_MODIFY_PROJECTION is False
+          assert v70.MAY_MODIFY_CONTEXT is False
+          assert v70.MAY_MODIFY_PROBABILITY is False
+          assert v70.MAY_MODIFY_MARKET_MATH is False
+          assert v70.MAY_MODIFY_DATA is False
+          assert v70.MAY_MODIFY_NAVIGATION_STATE is False
+          assert v70.MAY_MODIFY_WIDGET_KEYS is False
+          assert v70.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v70.STAKE_SIZING_ENABLED is False
+
+          css=v70._MOBILE_CLEANUP_CSS
+          for token in (
+              ".kpy15-center",
+              ".ks-py67-deep .kpass30-profile",
+              ".ks-py67-deep .kpy-defense",
+              ".ks-py67-deep .kpy-pressure",
+              ".ks-py67-deep .kpy-personnel",
+              ".ks-py67-deep .kpy-env",
+              "display:block!important",
+              "flex-direction:column!important",
+              'data-passing-yards-mobile-cleanup-css="v70"',
+          ):
+              assert token in css, token
+
+          assert v221.FROZEN_ROUTER == "streamlit_memory_lazy_router_v220"
+          assert v221.PASSING_HUB == "nfl_passing_yards_hub_v70"
+          assert v221.PRESENTATION_ONLY is True
+          assert v221.MAY_MODIFY_NAVIGATION_STATE is False
+          assert v221.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+
+          app=Path("app.py").read_text()
+          assert 'from streamlit_memory_lazy_router_v221 import record_bootstrap_import_ms, render_app' in app
+          print("PASSING_YARDS_MOBILE_CLEANUP_STEPS2_3_STATIC_GREEN")
+          PY
+
+      - name: Verify Step 1 owners and prior cleanup remain frozen
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" -- \
+            nfl_passing_yards_hub_v4.py \
+            nfl_passing_yards_hub_v5.py \
+            nfl_passing_yards_hub_v7.py \
+            nfl_passing_yards_hub_v15.py \
+            nfl_passing_yards_hub_v28.py \
+            nfl_passing_yards_hub_v30.py \
+            nfl_passing_yards_hub_v67.py \
+            nfl_passing_yards_hub_v69.py \
+            streamlit_memory_lazy_router_v220.py \
+            devsystem/task_ledgers/passing-yards-mobile-cleanup-step1-scope-v1.json
+          echo "PASSING_YARDS_MOBILE_CLEANUP_PRIORS_FROZEN_GREEN"
+
+  branch-mobile-cleanup-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-mobile-cleanup-steps2-3-v70
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-mobile-cleanup-steps2-3-v70/streamlit.log 2>&1 &
+          echo $! > /tmp/py_v70_pid
+
+      - name: Prove phone and tablet cleanup
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          params={
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+          }
+          picker_route=base+"/?"+urlencode(params)
+          detail_route=base+"/?"+urlencode({**params,"ks_qb_slot":"2"})
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("V70_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try:
+                      out.append(frame.locator("body").inner_text(timeout=2000))
+                  except Exception:
+                      pass
+              return "\n".join(out)
+
+          def find(page, selector, timeout=180):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000])
+                      raise RuntimeError("V70_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count() >= 1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(350)
+              raise RuntimeError("V70_SELECTOR_NOT_READY:"+selector)
+
+          def assert_value_above_label(frame, tile_selector):
+              tiles=frame.locator(tile_selector)
+              assert tiles.count() >= 1, tile_selector
+              checked=0
+              for i in range(min(tiles.count(),8)):
+                  tile=tiles.nth(i)
+                  b=tile.locator("b").first
+                  span=tile.locator("span").first
+                  if b.count()!=1 or span.count()!=1:
+                      continue
+                  assert b.evaluate("e => getComputedStyle(e).display") == "block", tile_selector
+                  assert span.evaluate("e => getComputedStyle(e).display") == "block", tile_selector
+                  bb=b.bounding_box()
+                  sb=span.bounding_box()
+                  if bb and sb:
+                      assert sb["y"] >= bb["y"] + bb["height"] - 2, (tile_selector,i,bb,sb)
+                  checked += 1
+              assert checked >= 1, tile_selector
+
+          def certify(width,height):
+              with sync_playwright() as p:
+                  browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+                  page=browser.new_page(viewport={"width":width,"height":height})
+
+                  # Surface 1: Game Center
+                  page.goto(picker_route,wait_until="domcontentloaded",timeout=120000)
+                  frame,marker=find(page,'[data-passing-yards-mobile-cleanup-runtime="v70"]')
+                  assert marker.count()==1
+                  _,center=find(page,'.kpy15-center')
+                  assert_value_above_label(frame,'.kpy15-center .kpy15-metric')
+                  badge=frame.locator('.kpy15-center .kpy15-conf').first
+                  assert badge.count()==1
+                  assert badge.evaluate("e => getComputedStyle(e).display") == "inline-flex"
+
+                  # Surfaces 2-6: Deep Evidence
+                  page.goto(detail_route,wait_until="domcontentloaded",timeout=120000)
+                  frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-passing-yards-detail-cleanup="v69"]')
+                  body=frame.locator("body").inner_text(timeout=5000)
+                  assert "Jordan Love" in body
+                  assert "TypeError" not in body and "Traceback" not in body
+                  assert frame.locator('[data-passing-yards-mobile-cleanup-runtime="v70"]').count()==1
+
+                  deep=root.locator('#ks-py-deep-evidence[data-passing-yards-deep-evidence="v67"]')
+                  assert deep.count()==1
+                  assert deep.locator('[data-deep-evidence-kind]').count()==5
+
+                  expected={
+                      "recent":".kpass30-profile",
+                      "opponent":".kpy-defense",
+                      "pressure":".kpy-pressure",
+                      "personnel":".kpy-personnel",
+                      "environment":".kpy-env",
+                  }
+                  for kind,selector in expected.items():
+                      card=deep.locator(f'[data-deep-evidence-kind="{kind}"]')
+                      assert card.count()==1,kind
+                      assert card.locator(selector).count()==1,(kind,selector)
+
+                  assert_value_above_label(frame,'#ks-py-deep-evidence .kpass30-herostat')
+                  assert_value_above_label(frame,'#ks-py-deep-evidence .kpy-dmetric')
+                  assert_value_above_label(frame,'#ks-py-deep-evidence .kpy-xmetric')
+                  assert_value_above_label(frame,'#ks-py-deep-evidence .kpy-imetric')
+                  assert_value_above_label(frame,'#ks-py-deep-evidence .kpy-envmetric')
+
+                  envcell=deep.locator('.kpy-envcell').first
+                  assert envcell.count()==1
+                  assert envcell.evaluate("e => getComputedStyle(e).display")=="flex"
+                  assert envcell.evaluate("e => getComputedStyle(e).flexDirection")=="column"
+
+                  for badge_selector in (
+                      ".kpass30-state",
+                      ".kpy-grade",
+                      ".kpy-xgrade",
+                      ".kpy-ilabel",
+                      ".kpy-envlabel",
+                  ):
+                      badge=deep.locator(badge_selector).first
+                      assert badge.count()==1,badge_selector
+                      assert badge.evaluate("e => getComputedStyle(e).display")=="inline-flex",badge_selector
+
+                  assert root.locator('[data-passing-yards-clean-detail]').count()==4
+                  nav=root.locator('[data-passing-yards-category-nav="v62"]')
+                  assert nav.locator("a.ks-py62-category-link").count()==6
+
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+                  assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+                  assert dims["docScroll"] <= dims["viewport"] + 2,dims
+                  print(f"PASSING_YARDS_MOBILE_CLEANUP_STEPS2_3_{width}_GREEN")
+                  browser.close()
+
+          certify(390,844)
+          certify(768,1024)
+          print("PASSING_YARDS_MOBILE_CLEANUP_STEPS2_3_BRANCH_GREEN")
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 600 artifacts/passing-yards-mobile-cleanup-steps2-3-v70/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py_v70_pid ]; then kill "$(cat /tmp/py_v70_pid)" 2>/dev/null || true; fi
+
+  main-activation-certification:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Freeze Steps 2-3 activation on MAIN
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-mobile-cleanup-steps2-3-v70.json").read_text())
+          assert ledger["status"]=="DONE"
+          assert ledger["step2_status"]=="DONE"
+          assert ledger["step3_status"]=="DONE"
+          assert ledger["presentation_only"] is True
+          app=Path("app.py").read_text()
+          assert 'from streamlit_memory_lazy_router_v221 import record_bootstrap_import_ms, render_app' in app
+          print("PASSING_YARDS_MOBILE_CLEANUP_STEPS2_3_MAIN_GREEN")
+          PY
