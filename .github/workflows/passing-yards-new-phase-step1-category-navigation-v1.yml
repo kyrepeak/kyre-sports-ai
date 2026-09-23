@@ -439,3 +439,174 @@ jobs:
               print("PASSING_YARDS_NEW_PHASE_STEP1_PUBLIC_GREEN")
               browser.close()
           PY
+
+
+  public-back-query-diagnostic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public diagnostic dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+      - name: Capture public Back query transition
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          from urllib.parse import parse_qs, urlencode, urlparse
+          from playwright.sync_api import sync_playwright
+
+          base = "https://kyre-sports-ai.streamlit.app"
+          expected_date = "2026-09-24"
+          expected_matchup = "Atlanta Falcons @ Green Bay Packers"
+          params = {
+              "ks_jump_sport": "NFL",
+              "ks_jump_market": "Passing Yards",
+              "ks_py_date": expected_date,
+              "ks_py_matchup": expected_matchup,
+              "ks_qb_slot": "2",
+          }
+          route = base + "/?" + urlencode(params)
+
+          DETAIL = '[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]'
+          NAV = '[data-passing-yards-category-nav="v62"]'
+          BACK = 'a[data-qb-back="true"]'
+          PICKER = '[data-passing-yards-selection-screen="v58"]'
+          QB_CARD = 'a[data-qb-select]'
+
+          def qs_for(url):
+              return parse_qs(urlparse(url).query)
+
+          def first_value(qs, key):
+              values = qs.get(key) or []
+              return values[0] if values else ""
+
+          def all_count(page, selector):
+              total = 0
+              for frame in list(page.frames):
+                  try:
+                      total += frame.locator(selector).count()
+                  except Exception:
+                      pass
+              return total
+
+          def frame_urls(page):
+              out = []
+              for frame in list(page.frames):
+                  try:
+                      out.append(frame.url)
+                  except Exception:
+                      out.append("<frame-unavailable>")
+              return out
+
+          def find_ready_detail(page, timeout=150):
+              deadline = time.monotonic() + timeout
+              while time.monotonic() < deadline:
+                  for frame in list(page.frames):
+                      try:
+                          detail = frame.locator(DETAIL)
+                          nav = frame.locator(NAV)
+                          body = frame.locator("body").inner_text(timeout=1500)
+                          if detail.count() == 1 and nav.count() == 1 and "Jordan Love" in body:
+                              return frame, detail
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(400)
+              raise RuntimeError("PUBLIC_BACK_DIAGNOSTIC_DETAIL_NOT_READY")
+
+          def useful_body(page):
+              candidates = []
+              for frame in list(page.frames):
+                  try:
+                      text = frame.locator("body").inner_text(timeout=1800).strip()
+                  except Exception:
+                      continue
+                  if not text:
+                      continue
+                  score = 0
+                  if "Quarterback" in text:
+                      score += 5
+                  if "Passing Yards" in text:
+                      score += 4
+                  if "Jordan Love" in text:
+                      score += 3
+                  if all_count(page, PICKER):
+                      if "Quarterback" in text or "Jordan Love" in text:
+                          score += 2
+                  candidates.append((score, len(text), text))
+              if not candidates:
+                  return "<no useful rendered body>"
+              candidates.sort(key=lambda row: (row[0], row[1]), reverse=True)
+              return candidates[0][2][:5000].replace("\n", " | ")
+
+          def snapshot(page, label):
+              url = page.url
+              qs = qs_for(url)
+              print(f"URL_AFTER_BACK_{label}:{url}")
+              print(f"QUERY_AFTER_BACK_{label}:{json.dumps(qs, sort_keys=True)}")
+              print(f"KS_QB_SLOT_{label}:{first_value(qs, 'ks_qb_slot') or '<ABSENT>'}")
+              print(f"DATE_AFTER_BACK_{label}:{first_value(qs, 'ks_py_date') or '<ABSENT>'}")
+              print(f"MATCHUP_AFTER_BACK_{label}:{first_value(qs, 'ks_py_matchup') or '<ABSENT>'}")
+              print(f"V58_PICKER_COUNT_{label}:{all_count(page, PICKER)}")
+              print(f"QB_CARD_COUNT_{label}:{all_count(page, QB_CARD)}")
+              print(f"V59_DETAIL_COUNT_{label}:{all_count(page, DETAIL)}")
+              print(f"CATEGORY_NAV_COUNT_{label}:{all_count(page, NAV)}")
+              print(f"FRAME_URLS_{label}:{json.dumps(frame_urls(page))}")
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-sandbox"])
+              page = browser.new_page(viewport={"width": 1440, "height": 1000})
+              page.goto(route, wait_until="domcontentloaded", timeout=120000)
+
+              frame, detail = find_ready_detail(page)
+              body = frame.locator("body").inner_text(timeout=5000)
+              assert detail.count() == 1
+              assert frame.locator(NAV).count() == 1
+              assert "Jordan Love" in body
+
+              back = frame.locator(BACK)
+              assert back.count() == 1
+
+              before_url = page.url
+              before_qs = qs_for(before_url)
+              print(f"BACK_HREF:{back.get_attribute('href') or ''}")
+              print(f"BACK_TARGET:{back.get_attribute('target') or ''}")
+              print(f"URL_BEFORE_BACK:{before_url}")
+              print(f"QUERY_BEFORE_BACK:{json.dumps(before_qs, sort_keys=True)}")
+              print(f"KS_QB_SLOT_BEFORE:{first_value(before_qs, 'ks_qb_slot') or '<ABSENT>'}")
+              print(f"DATE_BEFORE:{first_value(before_qs, 'ks_py_date') or '<ABSENT>'}")
+              print(f"MATCHUP_BEFORE:{first_value(before_qs, 'ks_py_matchup') or '<ABSENT>'}")
+              print(f"FRAME_URLS_BEFORE:{json.dumps(frame_urls(page))}")
+
+              back.click(no_wait_after=True, timeout=10000)
+
+              time.sleep(0.25)
+              snapshot(page, "250MS")
+              time.sleep(0.75)
+              snapshot(page, "1S")
+              time.sleep(2.0)
+              snapshot(page, "3S")
+              time.sleep(5.0)
+              snapshot(page, "8S")
+
+              final_url = page.url
+              final_qs = qs_for(final_url)
+              print(f"FINAL_URL_AFTER_BACK:{final_url}")
+              print(f"FINAL_QUERY_AFTER_BACK:{json.dumps(final_qs, sort_keys=True)}")
+              print(f"FINAL_KS_QB_SLOT:{first_value(final_qs, 'ks_qb_slot') or '<ABSENT>'}")
+              print(f"FINAL_DATE:{first_value(final_qs, 'ks_py_date') or '<ABSENT>'}")
+              print(f"FINAL_MATCHUP:{first_value(final_qs, 'ks_py_matchup') or '<ABSENT>'}")
+              print(f"FINAL_V58_PICKER_COUNT:{all_count(page, PICKER)}")
+              print(f"FINAL_QB_CARD_COUNT:{all_count(page, QB_CARD)}")
+              print(f"FINAL_V59_DETAIL_COUNT:{all_count(page, DETAIL)}")
+              print(f"FINAL_CATEGORY_NAV_COUNT:{all_count(page, NAV)}")
+              print(f"FINAL_FRAME_URLS:{json.dumps(frame_urls(page))}")
+              print(f"BODY_TEXT_AFTER_BACK:{useful_body(page)}")
+              browser.close()
+          PY
