@@ -46,5 +46,14 @@
     "1440px responsive proof",
     "public production proof succeeds"
   ],
-  "freeze_on_public_success": true
+  "freeze_on_public_success": true,
+  "task": "passing-yards-availability-game-day-step5-v1",
+  "task_id": "passing-yards-availability-game-day-step5-v1",
+  "version": 1,
+  "source_main": "a710a7b8f6cb60d3571d9d563a4840a8b61327fb",
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  }
 }
