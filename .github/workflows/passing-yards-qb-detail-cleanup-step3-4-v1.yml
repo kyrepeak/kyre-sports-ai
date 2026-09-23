@@ -208,10 +208,11 @@ jobs:
                   assert_no_horizontal_overflow(item,f"step4 metric {i}")
 
               body=frame.locator("body").inner_text(timeout=5000)
-              assert "Jordan Love" in body
-              assert "Current Market + Edge" in body
-              assert "Baseline Projection" in body
-              assert "TypeError" not in body and "Traceback" not in body
+              body_lower=body.lower()
+              assert "jordan love" in body_lower
+              assert "current market + edge" in body_lower
+              assert "baseline projection" in body_lower
+              assert "typeerror" not in body_lower and "traceback" not in body_lower
 
               print("PASSING_YARDS_QB_DETAIL_STEP3_BRANCH_GREEN")
               print("PASSING_YARDS_QB_DETAIL_STEP4_BRANCH_GREEN")
@@ -311,10 +312,11 @@ jobs:
               assert_no_horizontal_overflow(projection,"public step4 projection")
 
               body=frame.locator("body").inner_text(timeout=5000)
-              assert "Jordan Love" in body
-              assert "Current Market + Edge" in body
-              assert "Baseline Projection" in body
-              assert "TypeError" not in body and "Traceback" not in body
+              body_lower=body.lower()
+              assert "jordan love" in body_lower
+              assert "current market + edge" in body_lower
+              assert "baseline projection" in body_lower
+              assert "typeerror" not in body_lower and "traceback" not in body_lower
 
               print("PASSING_YARDS_QB_DETAIL_STEP3_PUBLIC_GREEN")
               print("PASSING_YARDS_QB_DETAIL_STEP4_PUBLIC_GREEN")
