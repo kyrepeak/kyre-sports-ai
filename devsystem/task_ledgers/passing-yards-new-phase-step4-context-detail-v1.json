@@ -1,0 +1,31 @@
+{
+  "task": "passing-yards-new-phase-step4-context-detail-v1",
+  "task_id": "passing-yards-new-phase-step4-context-detail-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "59b9281cde3b92f52597349a26be0948c04bc112",
+  "scope": "New Phase Step 4 Context + Uncertainty Detail for NFL Passing Yards. Presentation-only V65 over frozen V64, plus Router V216 activation, dedicated workflow, and app activation. Reorganizes only already-certified Context + Uncertainty values.",
+  "failed_layer": "NONE",
+  "product_files_changed": true,
+  "acceptance": [
+    "Context + Uncertainty Detail renders for the selected quarterback",
+    "Context Pass Yards, Baseline Pass Yards, and Pressure Adjustment are present",
+    "Context Attempts and held Expected YPA are present",
+    "Uncertainty Envelope and bounded sack-rate delta are present",
+    "Personnel, weather, rest, and pressure-cap state are present",
+    "Step 1 Category Navigation remains present",
+    "Step 2 Market Decision Detail remains present",
+    "Step 3 Projection Detail remains present",
+    "Back to Quarterbacks returns to V58 with exactly two QB cards",
+    "date and matchup are preserved",
+    "sportsbook projection influence remains 0.0%",
+    "no projection, probability, market-math, data, or sportsbook logic changes"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}

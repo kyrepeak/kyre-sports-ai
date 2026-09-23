@@ -1,0 +1,486 @@
+name: NFL Passing Yards New Phase Step 4 Context Detail
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/passing-yards-new-phase-step4-context-detail-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-new-phase-step4-context-detail-v1.json"
+      - "nfl_passing_yards_hub_v65.py"
+      - "streamlit_memory_lazy_router_v216.py"
+      - "app.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-new-phase-step4-context-detail-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-new-phase-step4-context-detail-v1.json"
+      - "nfl_passing_yards_hub_v65.py"
+      - "streamlit_memory_lazy_router_v216.py"
+      - "app.py"
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce new-phase Step 4 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step4-context-detail-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-new-phase-step4-context-detail-v1.json
+          nfl_passing_yards_hub_v65.py
+          streamlit_memory_lazy_router_v216.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_NEW_PHASE_STEP4_SCOPE_GREEN"
+
+      - name: Compile Step 4 activation
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v65.py
+          python -m py_compile streamlit_memory_lazy_router_v216.py
+          python -m py_compile app.py
+
+      - name: Verify Context Detail static contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          v65=Path("nfl_passing_yards_hub_v65.py").read_text()
+          v216=Path("streamlit_memory_lazy_router_v216.py").read_text()
+          app=Path("app.py").read_text()
+
+          required=[
+              'FROZEN_PRIOR = "nfl_passing_yards_hub_v64"',
+              'CONTEXT_DETAIL_VERSION = "v65"',
+              'NEW_PHASE_STEP = 4',
+              'PRESENTATION_ONLY = True',
+              'MAY_MODIFY_PROJECTION = False',
+              'MAY_MODIFY_PROBABILITY = False',
+              'MAY_MODIFY_MARKET_MATH = False',
+              'MAY_MODIFY_DATA = False',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'data-passing-yards-context-detail="v65"',
+              'data-passing-yards-context-method="v65"',
+              'data-passing-yards-context-detail-ready="v65"',
+              'Context Pass Yards',
+              'Baseline Pass Yards',
+              'Pressure Adjustment',
+              'Context Attempts',
+              'Held Expected YPA',
+              'Uncertainty Envelope',
+              'Bounded Sack-Rate Delta',
+              'Personnel Context',
+              'Weather Context',
+              'Rest Context',
+              'Pressure Cap Hit',
+          ]
+          for token in required:
+              assert token in v65, token
+
+          for forbidden in ["build_context_projection(", "build_baseline_projection(", "build_distribution(", "evaluate_market("]:
+              assert forbidden not in v65, forbidden
+
+          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v215"' in v216
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v65"' in v216
+          assert 'from streamlit_memory_lazy_router_v216 import record_bootstrap_import_ms, render_app' in app
+          print("PASSING_YARDS_NEW_PHASE_STEP4_STATIC_GREEN")
+          PY
+
+      - name: Verify frozen Steps 1-3 remain unchanged
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" -- \
+            nfl_passing_yards_hub_v58.py \
+            nfl_passing_yards_hub_v59.py \
+            nfl_passing_yards_hub_v60.py \
+            nfl_passing_yards_hub_v61.py \
+            nfl_passing_yards_hub_v62.py \
+            nfl_passing_yards_hub_v63.py \
+            nfl_passing_yards_hub_v64.py \
+            streamlit_memory_lazy_router_v213.py \
+            streamlit_memory_lazy_router_v214.py \
+            streamlit_memory_lazy_router_v215.py
+          echo "PASSING_YARDS_NEW_PHASE_STEPS1_3_FROZEN_GREEN"
+
+  branch-context-detail-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-new-phase-step4
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-new-phase-step4/streamlit.log 2>&1 &
+          echo $! > /tmp/py_step4_pid
+      - name: Prove Context Detail desktop tablet mobile
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import parse_qs, urlencode, urlparse
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          expected_date="2026-09-24"
+          expected_matchup="Atlanta Falcons @ Green Bay Packers"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":expected_date,
+              "ks_py_matchup":expected_matchup,
+              "ks_qb_slot":"2",
+          })
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("CONTEXT_DETAIL_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try:
+                      out.append(frame.locator("body").inner_text(timeout=2000))
+                  except Exception:
+                      pass
+              return "\n".join(out)
+
+          def find_detail(page,timeout=180):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000])
+                      raise RuntimeError("CONTEXT_DETAIL_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          root=frame.locator('[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                          if root.count()==1:
+                              return frame,root
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(400)
+              raise RuntimeError("CONTEXT_DETAIL_QB_DETAIL_NOT_READY")
+
+          def find_picker(page,timeout=120):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          picker=frame.locator('[data-passing-yards-selection-screen="v58"]')
+                          if picker.count()==1:
+                              return frame,picker
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(300)
+              raise RuntimeError("CONTEXT_DETAIL_QB_PICKER_NOT_READY")
+
+          def find_back(page,timeout=30):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          back=frame.get_by_role("button",name="← Back to Quarterbacks",exact=True)
+                          if back.count()==1:
+                              return frame,back
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("CONTEXT_DETAIL_BACK_NOT_READY")
+
+          def frame_query(frame):
+              href=frame.evaluate("() => window.location.href")
+              return parse_qs(urlparse(href).query)
+
+          def canonical_matchup(value):
+              return str(value or "").split(" • ",1)[0].strip()
+
+          expected_labels=[
+              "Context Pass Yards","Baseline Pass Yards","Pressure Adjustment",
+              "Context Attempts","Held Expected YPA","Uncertainty Envelope",
+              "Bounded Sack-Rate Delta","Personnel Context","Weather Context",
+              "Rest Context","Pressure Cap Hit",
+          ]
+
+          def certify(page,width,height):
+              page.set_viewport_size({"width":width,"height":height})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find_detail(page)
+              body=frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in body
+              assert "TypeError" not in body and "Traceback" not in body
+              assert root.get_attribute("data-passing-yards-category-nav-ready")=="v62"
+              assert root.get_attribute("data-passing-yards-market-detail-ready")=="v63"
+              assert root.get_attribute("data-passing-yards-projection-detail-ready")=="v64"
+              assert root.get_attribute("data-passing-yards-context-detail-ready")=="v65"
+
+              nav=root.locator('[data-passing-yards-category-nav="v62"]')
+              assert nav.count()==1
+              assert nav.locator("a.ks-py62-category-link").count()==6
+
+              market=root.locator('[data-passing-yards-market-detail="v63"]')
+              assert market.count()==1
+              assert market.locator('[data-market-field]').count()==9
+
+              projection=root.locator('[data-passing-yards-projection-detail="v64"]')
+              assert projection.count()==1
+              assert projection.locator('[data-projection-field]').count()==9
+
+              panel=root.locator('[data-passing-yards-context-detail="v65"]')
+              assert panel.count()==1
+              assert panel.locator('[data-context-field]').count()==11
+              assert panel.locator('[data-passing-yards-context-method="v65"]').count()==1
+              text=panel.inner_text(timeout=5000)
+              for label in expected_labels:
+                  assert label.casefold() in text.casefold(),(label,text)
+              values=[v.strip() for v in panel.locator('[data-context-field] b').all_inner_texts()]
+              assert len(values)==11,values
+              assert all(v and v!="—" for v in values),values
+              assert "sportsbook projection influence 0.0%" in text.casefold()
+
+              context_link=nav.locator('a[data-category-target="context"]')
+              assert context_link.count()==1
+              context_link.click()
+              page.wait_for_timeout(200)
+              frame,root=find_detail(page)
+              assert frame.evaluate("() => location.hash")=="#ks-py-category-context"
+
+              dims=frame.locator("body").evaluate("""e => ({
+                bodyScroll:e.scrollWidth,
+                docScroll:document.documentElement.scrollWidth,
+                viewport:window.innerWidth
+              })""")
+              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+
+              _,back=find_back(page)
+              back.click()
+              picker_frame,picker=find_picker(page,timeout=120)
+              assert picker.count()==1
+              assert picker.locator('a[data-qb-select]').count()==2
+              qs=frame_query(picker_frame)
+              assert "ks_qb_slot" not in qs,qs
+              assert qs.get("ks_py_date")==[expected_date],qs
+              mv=qs.get("ks_py_matchup") or [""]
+              assert canonical_matchup(mv[0])==expected_matchup,qs
+              assert picker_frame.locator('[data-passing-yards-context-detail="v65"]').count()==0
+              print(f"PASSING_YARDS_NEW_PHASE_STEP4_{width}_GREEN")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              certify(page,390,844)
+              certify(page,768,1024)
+              certify(page,1440,1000)
+              print("PASSING_YARDS_NEW_PHASE_STEP4_BRANCH_GREEN")
+              browser.close()
+          PY
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 500 artifacts/passing-yards-new-phase-step4/streamlit.log || true
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py_step4_pid ]; then kill "$(cat /tmp/py_step4_pid)" 2>/dev/null || true; fi
+
+  public-context-detail-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Allow Streamlit deployment to publish
+        run: sleep 90
+      - name: Prove public Context Detail once
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import parse_qs, urlencode, urlparse
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          expected_date="2026-09-24"
+          expected_matchup="Atlanta Falcons @ Green Bay Packers"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":expected_date,
+              "ks_py_matchup":expected_matchup,
+              "ks_qb_slot":"2",
+          })
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try:
+                      out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception:
+                      pass
+              return "\n".join(out)
+
+          def find_detail(page,timeout=180):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000])
+                      raise RuntimeError("CONTEXT_DETAIL_PUBLIC_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          root=frame.locator('[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                          if root.count()==1:
+                              return frame,root
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError("CONTEXT_DETAIL_PUBLIC_QB_DETAIL_NOT_READY")
+
+          def find_picker(page,timeout=120):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          picker=frame.locator('[data-passing-yards-selection-screen="v58"]')
+                          if picker.count()==1:
+                              return frame,picker
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(350)
+              raise RuntimeError("CONTEXT_DETAIL_PUBLIC_QB_PICKER_NOT_READY")
+
+          def find_back(page,timeout=30):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          back=frame.get_by_role("button",name="← Back to Quarterbacks",exact=True)
+                          if back.count()==1:
+                              return frame,back
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("CONTEXT_DETAIL_PUBLIC_BACK_NOT_READY")
+
+          def frame_query(frame):
+              href=frame.evaluate("() => window.location.href")
+              return parse_qs(urlparse(href).query)
+
+          def canonical_matchup(value):
+              return str(value or "").split(" • ",1)[0].strip()
+
+          expected_labels=[
+              "Context Pass Yards","Baseline Pass Yards","Pressure Adjustment",
+              "Context Attempts","Held Expected YPA","Uncertainty Envelope",
+              "Bounded Sack-Rate Delta","Personnel Context","Weather Context",
+              "Rest Context","Pressure Cap Hit",
+          ]
+
+          def certify(page,width,height):
+              page.set_viewport_size({"width":width,"height":height})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find_detail(page)
+              body=frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in body
+              assert "TypeError" not in body and "Traceback" not in body
+              assert root.get_attribute("data-passing-yards-category-nav-ready")=="v62"
+              assert root.get_attribute("data-passing-yards-market-detail-ready")=="v63"
+              assert root.get_attribute("data-passing-yards-projection-detail-ready")=="v64"
+              assert root.get_attribute("data-passing-yards-context-detail-ready")=="v65"
+
+              nav=root.locator('[data-passing-yards-category-nav="v62"]')
+              assert nav.count()==1
+              assert nav.locator("a.ks-py62-category-link").count()==6
+
+              market=root.locator('[data-passing-yards-market-detail="v63"]')
+              assert market.count()==1
+              assert market.locator('[data-market-field]').count()==9
+
+              projection=root.locator('[data-passing-yards-projection-detail="v64"]')
+              assert projection.count()==1
+              assert projection.locator('[data-projection-field]').count()==9
+
+              panel=root.locator('[data-passing-yards-context-detail="v65"]')
+              assert panel.count()==1
+              assert panel.locator('[data-context-field]').count()==11
+              text=panel.inner_text(timeout=5000)
+              for label in expected_labels:
+                  assert label.casefold() in text.casefold(),(label,text)
+              values=[v.strip() for v in panel.locator('[data-context-field] b').all_inner_texts()]
+              assert len(values)==11,values
+              assert all(v and v!="—" for v in values),values
+              assert "sportsbook projection influence 0.0%" in text.casefold()
+
+              dims=frame.locator("body").evaluate("""e => ({
+                bodyScroll:e.scrollWidth,
+                docScroll:document.documentElement.scrollWidth,
+                viewport:window.innerWidth
+              })""")
+              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+
+              _,back=find_back(page)
+              back.click()
+              picker_frame,picker=find_picker(page,timeout=120)
+              assert picker.count()==1
+              assert picker.locator('a[data-qb-select]').count()==2
+              qs=frame_query(picker_frame)
+              assert "ks_qb_slot" not in qs,qs
+              assert qs.get("ks_py_date")==[expected_date],qs
+              mv=qs.get("ks_py_matchup") or [""]
+              assert canonical_matchup(mv[0])==expected_matchup,qs
+              assert picker_frame.locator('[data-passing-yards-context-detail="v65"]').count()==0
+              print(f"PASSING_YARDS_NEW_PHASE_STEP4_PUBLIC_{width}_GREEN")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              certify(page,390,844)
+              print("PASSING_YARDS_NEW_PHASE_STEP4_PUBLIC_GREEN")
+              browser.close()
+          PY
