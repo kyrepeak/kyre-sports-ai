@@ -1,0 +1,99 @@
+{
+  "task": "passing-yards-mobile-cleanup-step1-scope-v1",
+  "task_id": "passing-yards-mobile-cleanup-step1-scope-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "3af4b267d03db47db0af75f458528938bfb6fd5c",
+  "scope": "NFL Passing Yards mobile cleanup Step 1 scope-map certification only. Locks the six presentation surfaces proven by user screenshots and the exact frozen source owners that render them. No product, router, app, model, data, math, analytics, sportsbook, widget-state, or navigation-state changes.",
+  "presentation_only": true,
+  "certification_only": true,
+  "product_files_changed": false,
+  "affected_surface_count": 6,
+  "affected_surfaces": [
+    {
+      "surface": "Game Center — Result First",
+      "owner": "nfl_passing_yards_hub_v15.py",
+      "selector": ".kpy15-center",
+      "symptoms": ["value and label visually collide on phone", "confidence and grade states read like loose text", "market summary lacks compact mobile hierarchy"]
+    },
+    {
+      "surface": "Recent QB Games + Profile",
+      "owner": "nfl_passing_yards_hub_v30.py",
+      "selector": ".kpass30-profile",
+      "symptoms": ["metric values and labels visually concatenate", "dense rows lack mobile separation", "status reads as inline text rather than a clear badge"]
+    },
+    {
+      "surface": "Opponent Pass-Defense Evidence",
+      "owner": "nfl_passing_yards_hub_v4.py",
+      "selector": ".kpy-defense",
+      "symptoms": ["metric values and labels visually concatenate", "recent-form text is too dense on phone", "grade state lacks strong hierarchy"]
+    },
+    {
+      "surface": "Protection + Pressure Evidence",
+      "owner": "nfl_passing_yards_hub_v5.py",
+      "selector": ".kpy-pressure",
+      "symptoms": ["metric values and labels visually concatenate", "recent protection/rush text is too dense", "blitz context competes with primary metrics"]
+    },
+    {
+      "surface": "Personnel + Availability Evidence",
+      "owner": "nfl_passing_yards_hub_v28.py",
+      "selector": ".kpy-personnel",
+      "symptoms": ["metric values and labels visually concatenate", "weapon rows collapse into a text wall", "availability/status hierarchy is weak"]
+    },
+    {
+      "surface": "Game Environment Evidence",
+      "owner": "nfl_passing_yards_hub_v7.py",
+      "selector": ".kpy-env",
+      "symptoms": ["venue/weather values and labels visually concatenate", "team pace blocks are oversized on phone", "environment status hierarchy is weak"]
+    }
+  ],
+  "composition_owner": {
+    "owner": "nfl_passing_yards_hub_v67.py",
+    "selector": ".ks-py67-deep",
+    "contract": "Re-embeds the five frozen upstream evidence payloads without recalculating or mutating values."
+  },
+  "future_step2_boundary": "Step 2 may add one additive presentation-only cleanup layer over the current frozen product. It must not recompute or mutate any displayed analytical value and must not broaden scope beyond these six surfaces unless new direct evidence proves an additional presentation surface is broken.",
+  "acceptance": [
+    "exactly six affected presentation surfaces are mapped",
+    "Game Center owner is V15 .kpy15-center",
+    "profile owner is V30 .kpass30-profile",
+    "opponent defense owner is V4 .kpy-defense",
+    "pressure owner is V5 .kpy-pressure",
+    "personnel owner is V28 .kpy-personnel",
+    "environment owner is V7 .kpy-env",
+    "V67 is certified as the Deep Evidence composition/re-embed owner",
+    "V69 selected-QB detail cleanup remains frozen and untouched",
+    "Router V220 and app activation remain frozen and untouched",
+    "no model/data/math/probability/market/sportsbook/navigation-state files change",
+    "Step 1 branch scope certification passes",
+    "merged MAIN scope certification passes",
+    "freeze mobile cleanup Step 1 scope map"
+  ],
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v4.py",
+    "nfl_passing_yards_hub_v5.py",
+    "nfl_passing_yards_hub_v7.py",
+    "nfl_passing_yards_hub_v15.py",
+    "nfl_passing_yards_hub_v28.py",
+    "nfl_passing_yards_hub_v30.py",
+    "nfl_passing_yards_hub_v67.py",
+    "nfl_passing_yards_hub_v69.py",
+    "streamlit_memory_lazy_router_v220.py",
+    "app.py"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_changed": false,
+  "navigation_state_changed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
