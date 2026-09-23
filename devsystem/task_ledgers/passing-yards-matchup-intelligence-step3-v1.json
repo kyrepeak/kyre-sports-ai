@@ -1,0 +1,72 @@
+{
+  "task": "passing-yards-matchup-intelligence-step3-v1",
+  "task_id": "passing-yards-matchup-intelligence-step3-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "fae38d3048028feb9e4c857365d00de898bc149b",
+  "scope": "Passing Yards next-phase Step 3: matchup intelligence. Add a presentation-only selected-QB panel that consolidates already-certified opponent pass-defense, recent defense form, pass-protection/defensive-pressure, blitz availability, pace, pass tendency, and expected-attempt evidence. Unsupported coverage-shell and explosive-pass fields fail closed as UNAVAILABLE — NOT SYNTHESIZED. No projection/model/context math, probability, market math, sportsbook logic, data-provider behavior, widget state, or navigation behavior changes.",
+  "failed_layer": "NONE",
+  "new_build_mode": true,
+  "product_files_changed": true,
+  "step3_status": "DONE",
+  "required": [
+    "selected-QB page renders one Matchup Intelligence V72 panel",
+    "opponent pass-defense rank or explicit rank-unavailable state is shown",
+    "pass yards allowed per game is shown",
+    "opponent attempts allowed per game is shown",
+    "opponent completion percentage allowed is shown",
+    "opponent yards per attempt allowed is shown",
+    "recent-three opponent pass yards allowed is shown",
+    "defensive sack rate is shown",
+    "pressure state is shown",
+    "blitz context is shown and fails closed when unavailable",
+    "pace context is shown",
+    "selected offense pass tendency is shown when verified",
+    "expected attempts are shown from the frozen projection payload",
+    "volume/game-script signal is descriptive only and does not alter projection",
+    "coverage tendency is verified if present, otherwise explicitly UNAVAILABLE — NOT SYNTHESIZED",
+    "explosive passes allowed is verified if present, otherwise explicitly UNAVAILABLE — NOT SYNTHESIZED",
+    "Step 2 V70 and V222 stable runtime markers remain present",
+    "V71 explainability panel remains present and unchanged",
+    "branch proof passes at 390px, 768px, and 1440px",
+    "public proof passes on hosted Streamlit",
+    "no horizontal overflow",
+    "no TypeError or Traceback",
+    "Step 1 remains frozen",
+    "Step 2 remains frozen"
+  ],
+  "important": [
+    "matchup intelligence appears after V71 explainability and before frozen Projection Detail",
+    "source-gap guardrail is visible when coverage/explosive fields are unsupported",
+    "Back to Quarterbacks still restores exactly two QB cards",
+    "sportsbook projection influence remains 0.0%"
+  ],
+  "optional": [
+    "retain branch/public evidence artifacts when workflow infrastructure provides them"
+  ],
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v71.py",
+    "streamlit_memory_lazy_router_v222.py",
+    "devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json",
+    "devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json",
+    "devsystem/task_ledgers/passing-yards-step2-stable-runtime-markers-v1.json",
+    "devsystem/task_ledgers/passing-yards-mobile-cleanup-steps4-5-closeout-v1.json"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_provider_behavior_changed": false,
+  "widget_keys_changed": false,
+  "navigation_state_changed": false,
+  "sportsbook_projection_influence": 0,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
