@@ -1,0 +1,55 @@
+{
+  "task": "passing-yards-new-phase-step2-market-detail-v1",
+  "task_id": "passing-yards-new-phase-step2-market-detail-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "3b10dc4dc6612aaaffbeac5e6b2f93374de6b529",
+  "scope": "New Passing Yards phase Step 2 only. Adds presentation-only Market + Edge Detail above frozen V62 through additive V63 and Router V214. Reads values already rendered by the certified market card and reorganizes them without recalculation. Step 1 Category Navigation and Back behavior remain frozen.",
+  "new_phase_step": 2,
+  "presentation_only": true,
+  "market_detail_fields": [
+    "Final Lean",
+    "Market Line",
+    "Model Confidence",
+    "Model Over / Under",
+    "Model Fair Odds",
+    "Offered Odds",
+    "No-Vig Market",
+    "Model Edge",
+    "EV per $1"
+  ],
+  "acceptance": [
+    "selected QB detail preserves date matchup and QB query state",
+    "Step 1 Category Navigation remains present exactly once with six links",
+    "Market Decision Detail appears exactly once inside Current Market + Edge",
+    "Market detail exposes nine frozen market readouts and source provenance",
+    "V63 does not recalculate projection probability market math or data",
+    "Back to Quarterbacks still clears ks_qb_slot and returns one V58 picker with exactly two QB cards",
+    "no TypeError or Traceback",
+    "no horizontal overflow at 390px 768px 1440px",
+    "branch proof passes before merge",
+    "merged MAIN passes one public Step 2 proof",
+    "stop after Step 2 GREEN + FROZEN"
+  ],
+  "frozen_files": [
+    "nfl_passing_yards_hub_v58.py",
+    "nfl_passing_yards_hub_v59.py",
+    "nfl_passing_yards_hub_v60.py",
+    "nfl_passing_yards_hub_v61.py",
+    "nfl_passing_yards_hub_v62.py",
+    "streamlit_memory_lazy_router_v213.py"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_changed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
