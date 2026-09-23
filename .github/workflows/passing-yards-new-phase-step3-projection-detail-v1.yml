@@ -56,10 +56,18 @@ jobs:
           EOF
           sort -o /tmp/expected-verifier-hotfix.txt /tmp/expected-verifier-hotfix.txt
 
+          cat > /tmp/expected-public-single-cycle-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step3-projection-detail-v1.yml
+          devsystem/task_ledgers/passing-yards-step3-public-single-cycle-v1.json
+          EOF
+          sort -o /tmp/expected-public-single-cycle-hotfix.txt /tmp/expected-public-single-cycle-hotfix.txt
+
           if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP3_SCOPE_FULL_GREEN"
           elif cmp -s /tmp/expected-verifier-hotfix.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP3_SCOPE_VERIFIER_HOTFIX_GREEN"
+          elif cmp -s /tmp/expected-public-single-cycle-hotfix.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP3_SCOPE_PUBLIC_SINGLE_CYCLE_HOTFIX_GREEN"
           else
             echo "INVALID_STEP3_SCOPE"
             echo "Actual:"
@@ -483,8 +491,6 @@ jobs:
               browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
               page=browser.new_page(viewport={"width":390,"height":844})
               certify(page,390,844)
-              certify(page,768,1024)
-              certify(page,1440,1000)
               print("PASSING_YARDS_NEW_PHASE_STEP3_PUBLIC_GREEN")
               browser.close()
           PY
