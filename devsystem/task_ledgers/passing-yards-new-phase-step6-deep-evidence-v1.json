@@ -1,0 +1,32 @@
+{
+  "task": "passing-yards-new-phase-step6-deep-evidence-v1",
+  "task_id": "passing-yards-new-phase-step6-deep-evidence-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "10fff9a5fe1c0225b2bfbde37f2517c56254790c",
+  "scope": "New Phase Step 6 Deep Evidence for NFL Passing Yards. Presentation-only V67 over frozen V66, plus Router V218 activation, dedicated workflow, and app activation. Exposes only existing certified captured evidence payloads.",
+  "failed_layer": "NONE",
+  "product_files_changed": true,
+  "acceptance": [
+    "Deep Evidence renders for the selected quarterback",
+    "Recent QB Games + Profile evidence is present",
+    "Opponent Pass-Defense Evidence is present",
+    "Protection + Pressure Evidence is present",
+    "Personnel + Availability Evidence is present",
+    "Game Environment Evidence is present",
+    "Source / provenance explicitly states frozen captured payload ownership",
+    "Step 1 Category Navigation remains present with six links",
+    "Steps 2-5 detail panels remain present",
+    "Back to Quarterbacks returns to V58 with exactly two QB cards",
+    "date and matchup are preserved",
+    "sportsbook projection influence remains 0.0%",
+    "no projection, context, probability, market-math, data, sportsbook, or provider logic changes"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
