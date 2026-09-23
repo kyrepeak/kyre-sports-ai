@@ -1,0 +1,53 @@
+{
+  "task": "passing-yards-qb-detail-cleanup-step5-6-v1",
+  "task_id": "passing-yards-qb-detail-cleanup-step5-6-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "6556d64d5a91a28430c8e29c77a530d344f33722",
+  "scope": "NFL Passing Yards V59 presentation cleanup only: Step 5 Context + Uncertainty and Step 6 Distribution + Probability. Steps 1-4 remain frozen. No model, projection, context math, probability math, market math, data, sportsbook, router, or V58/V60/V61 behavior changes.",
+  "presentation_only": true,
+  "product_file": "nfl_passing_yards_hub_v59.py",
+  "cleanup_steps": [
+    5,
+    6
+  ],
+  "acceptance": [
+    "Step 5 Context + Uncertainty has separated values and labels on mobile",
+    "Step 5 context hero, evidence metrics and uncertainty note render compactly",
+    "Step 6 Distribution + Probability has separated values and labels on mobile",
+    "Step 6 P10/P25/P50/P75/P90 ladder is readable and compact",
+    "Steps 1-4 markers remain green",
+    "No TypeError or Traceback on selected-quarterback detail page",
+    "Branch mobile proof passes",
+    "Merged revision passes one public mobile proof",
+    "Stop after Step 6"
+  ],
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v58.py",
+    "nfl_passing_yards_hub_v60.py",
+    "nfl_passing_yards_hub_v61.py",
+    "streamlit_memory_lazy_router_v209.py",
+    "streamlit_memory_lazy_router_v210.py",
+    "streamlit_memory_lazy_router_v211.py",
+    "streamlit_memory_lazy_router_v212.py",
+    "app.py",
+    ".github/workflows/passing-yards-qb-detail-cleanup-step1-2-v1.yml",
+    ".github/workflows/passing-yards-qb-detail-cleanup-step3-4-v1.yml",
+    "devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step1-2-v1.json",
+    "devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step3-4-v1.json"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_changed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
