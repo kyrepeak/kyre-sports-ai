@@ -183,9 +183,9 @@ jobs:
 
               body=frame.locator("body").inner_text(timeout=5000)
               assert "Jordan Love" in body
-              assert "Context + Uncertainty" in body
-              assert "Distribution + Probability" in body
-              assert "P50 Median" in body
+              assert context.locator(":scope > strong").inner_text().strip()=="Context + Uncertainty"
+              assert distribution.locator(":scope > strong").inner_text().strip()=="Distribution + Probability"
+              assert "P50 Median" in distribution.locator(".kpy9-q").inner_text()
               assert "TypeError" not in body and "Traceback" not in body
 
               print("PASSING_YARDS_QB_DETAIL_STEP5_BRANCH_GREEN")
@@ -273,9 +273,9 @@ jobs:
 
               body=frame.locator("body").inner_text(timeout=5000)
               assert "Jordan Love" in body
-              assert "Context + Uncertainty" in body
-              assert "Distribution + Probability" in body
-              assert "P50 Median" in body
+              assert context.locator(":scope > strong").inner_text().strip()=="Context + Uncertainty"
+              assert distribution.locator(":scope > strong").inner_text().strip()=="Distribution + Probability"
+              assert "P50 Median" in distribution.locator(".kpy9-q").inner_text()
               assert "TypeError" not in body and "Traceback" not in body
 
               print("PASSING_YARDS_QB_DETAIL_STEP5_PUBLIC_GREEN")
