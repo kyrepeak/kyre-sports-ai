@@ -97,6 +97,11 @@ _MOBILE_CLEANUP_CSS = r"""
   line-height:1.15!important;
   white-space:nowrap!important;
 }
+.kpy15-center .kpy15-conf,
+.kpy15-center .kpy15-grade,
+.kpy15-center .kpy15-modeltag{
+  display:inline-flex!important;
+}
 .kpy15-grid{
   display:grid!important;
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
