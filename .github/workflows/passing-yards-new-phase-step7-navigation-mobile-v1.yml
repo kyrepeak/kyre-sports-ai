@@ -62,67 +62,31 @@ jobs:
       - name: Verify Navigation Mobile static contract
         run: |
           python - <<'PY'
-          import ast
           from pathlib import Path
+          import nfl_passing_yards_hub_v68 as v68
+          import streamlit_memory_lazy_router_v219 as v219
 
-          v68_text=Path("nfl_passing_yards_hub_v68.py").read_text()
-          v219_text=Path("streamlit_memory_lazy_router_v219.py").read_text()
-          app_text=Path("app.py").read_text()
+          app=Path("app.py").read_text()
+          source=Path("nfl_passing_yards_hub_v68.py").read_text()
 
-          def constants(source):
-              tree=ast.parse(source)
-              out={}
-              for node in tree.body:
-                  if isinstance(node, ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name):
-                      try:
-                          out[node.targets[0].id]=ast.literal_eval(node.value)
-                      except Exception:
-                          pass
-              return tree,out
+          assert v68.FROZEN_PRIOR == "nfl_passing_yards_hub_v67"
+          assert v68.NAVIGATION_MOBILE_VERSION == "v68"
+          assert v68.NEW_PHASE_STEP == 7
+          assert v68.PRESENTATION_ONLY is True
+          assert v68.MAY_MODIFY_PROJECTION is False
+          assert v68.MAY_MODIFY_CONTEXT is False
+          assert v68.MAY_MODIFY_PROBABILITY is False
+          assert v68.MAY_MODIFY_MARKET_MATH is False
+          assert v68.MAY_MODIFY_DATA is False
+          assert v68.MAY_MODIFY_NAVIGATION_STATE is False
+          assert v68.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
-          v68_tree,v68=constants(v68_text)
-          v219_tree,v219=constants(v219_text)
-          app_tree=ast.parse(app_text)
+          assert v219.FROZEN_ROUTER == "streamlit_memory_lazy_router_v218"
+          assert v219.PASSING_HUB == "nfl_passing_yards_hub_v68"
+          assert v219.MAY_MODIFY_NAVIGATION_STATE is False
+          assert v219.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
 
-          expected_v68={
-              "FROZEN_PRIOR":"nfl_passing_yards_hub_v67",
-              "NAVIGATION_MOBILE_VERSION":"v68",
-              "NEW_PHASE_STEP":7,
-              "PRESENTATION_ONLY":True,
-              "MAY_MODIFY_PROJECTION":False,
-              "MAY_MODIFY_CONTEXT":False,
-              "MAY_MODIFY_PROBABILITY":False,
-              "MAY_MODIFY_MARKET_MATH":False,
-              "MAY_MODIFY_DATA":False,
-              "MAY_MODIFY_NAVIGATION_STATE":False,
-              "SPORTSBOOK_PROJECTION_INFLUENCE":0.0,
-          }
-          for key,value in expected_v68.items():
-              assert v68.get(key)==value,(key,v68.get(key),value)
-
-          expected_v219={
-              "FROZEN_ROUTER":"streamlit_memory_lazy_router_v218",
-              "PASSING_HUB":"nfl_passing_yards_hub_v68",
-              "MAY_MODIFY_NAVIGATION_STATE":False,
-              "SPORTSBOOK_PROJECTION_INFLUENCE":0.0,
-          }
-          for key,value in expected_v219.items():
-              assert v219.get(key)==value,(key,v219.get(key),value)
-
-          imports=[]
-          for node in app_tree.body:
-              if isinstance(node, ast.Try):
-                  for sub in node.body:
-                      if isinstance(sub,ast.ImportFrom):
-                          imports.append((sub.module,tuple(a.name for a in sub.names)))
-          assert any(
-              module=="streamlit_memory_lazy_router_v219"
-              and "record_bootstrap_import_ms" in names
-              and "render_app" in names
-              for module,names in imports
-          ),imports
-
-          forbidden=(
+          for forbidden in [
               "requests.get(",
               "httpx.",
               "urllib.request",
@@ -130,10 +94,22 @@ jobs:
               "build_context_projection(",
               "build_baseline_projection(",
               "evaluate_market(",
-          )
-          for token in forbidden:
-              assert token not in v68_text,token
+          ]:
+              assert forbidden not in source, forbidden
 
+          fixture = (
+              '<section data-passing-yards-qb-detail="v59" '
+              'data-passing-yards-deep-evidence-ready="v67">'
+              '<section class="ks-py67-deep" data-passing-yards-deep-evidence="v67"></section>'
+              '</section>'
+          )
+          rendered = v68._inject_navigation_mobile_polish(fixture)
+          assert 'data-passing-yards-navigation-mobile="v68"' in rendered
+          assert 'data-passing-yards-navigation-mobile-ready="v68"' in rendered
+          assert 'id="ks-py-deep-evidence"' in rendered
+          assert 'data-passing-yards-navigation-mobile-css="v68"' in rendered
+
+          assert 'from streamlit_memory_lazy_router_v219 import record_bootstrap_import_ms, render_app' in app
           print("PASSING_YARDS_NEW_PHASE_STEP7_STATIC_GREEN")
           PY
 
