@@ -102,7 +102,7 @@ jobs:
               assert forbidden not in source, forbidden
 
           fixture = (
-              '<section data-passing-yards-qb-detail="v59" '
+              '<section class="ks-py59" data-passing-yards-qb-detail="v59" '
               'data-passing-yards-deep-evidence-ready="v67">'
               '<section class="ks-py67-deep" data-passing-yards-deep-evidence="v67"></section>'
               '</section>'
