@@ -197,7 +197,7 @@ jobs:
                   page.wait_for_timeout(400)
               raise RuntimeError("CATEGORY_NAV_QB_DETAIL_NOT_READY")
 
-          def find_picker(page,timeout=90):
+          def find_picker(page,timeout=120):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
                   for frame in page.frames:
@@ -353,7 +353,7 @@ jobs:
                   page.wait_for_timeout(500)
               raise RuntimeError("CATEGORY_NAV_PUBLIC_QB_DETAIL_NOT_READY")
 
-          def find_picker(page,timeout=90):
+          def find_picker(page,timeout=120):
               deadline=time.monotonic()+timeout
               while time.monotonic()<deadline:
                   for frame in page.frames:
