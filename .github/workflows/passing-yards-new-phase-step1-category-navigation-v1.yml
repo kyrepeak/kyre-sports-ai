@@ -266,12 +266,21 @@ jobs:
                   }""")
                   assert rect["bottom"] > 0 and rect["top"] < rect["innerHeight"], (kind,rect)
 
-              back=root.locator('a[data-qb-back="true"]')
+              back=page.get_by_role("button",name="← Back to Quarterbacks",exact=True)
               assert back.count()==1
               back.click()
+              deadline=time.monotonic()+20
+              while time.monotonic()<deadline:
+                  qs=parse_qs(urlparse(page.url).query)
+                  if "ks_qb_slot" not in qs:
+                      break
+                  page.wait_for_timeout(100)
+              else:
+                  raise RuntimeError("CATEGORY_NAV_BACK_QUERY_NOT_CLEARED")
+              assert_state(page,False)
               frame,picker=find_picker(page)
               assert picker.count()==1
-              assert_state(page,False)
+              assert picker.locator('a[data-qb-select]').count()==2
               assert frame.locator('[data-passing-yards-category-nav="v62"]').count()==0
               print(f"PASSING_YARDS_NEW_PHASE_STEP1_{width}_GREEN")
 
@@ -421,12 +430,21 @@ jobs:
                   }""")
                   assert rect["bottom"] > 0 and rect["top"] < rect["innerHeight"], (kind,rect)
 
-              back=root.locator('a[data-qb-back="true"]')
+              back=page.get_by_role("button",name="← Back to Quarterbacks",exact=True)
               assert back.count()==1
               back.click()
+              deadline=time.monotonic()+20
+              while time.monotonic()<deadline:
+                  qs=parse_qs(urlparse(page.url).query)
+                  if "ks_qb_slot" not in qs:
+                      break
+                  page.wait_for_timeout(100)
+              else:
+                  raise RuntimeError("CATEGORY_NAV_BACK_QUERY_NOT_CLEARED")
+              assert_state(page,False)
               frame,picker=find_picker(page)
               assert picker.count()==1
-              assert_state(page,False)
+              assert picker.locator('a[data-qb-select]').count()==2
               assert frame.locator('[data-passing-yards-category-nav="v62"]').count()==0
               print(f"PASSING_YARDS_NEW_PHASE_STEP1_PUBLIC_{width}_GREEN")
 
