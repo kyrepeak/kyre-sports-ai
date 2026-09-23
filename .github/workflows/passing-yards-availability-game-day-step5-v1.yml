@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Enforce exact Step 5 scope
+      - name: Enforce exact Step 5 build or public-session repair scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -50,7 +50,8 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/original_scope.txt <<'EOF'
           .github/workflows/passing-yards-availability-game-day-step5-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-availability-game-day-step5-v1.json
@@ -58,9 +59,26 @@ jobs:
           streamlit_memory_lazy_router_v225.py
           tests/test_passing_yards_availability_game_day_step5_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
-          echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_SCOPE_GREEN"
+          sort -o /tmp/original_scope.txt /tmp/original_scope.txt
+
+          cat > /tmp/public_session_repair_scope.txt <<'EOF'
+          .github/workflows/passing-yards-availability-game-day-step5-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-availability-game-day-step5-v1.json
+          streamlit_memory_lazy_router_v225.py
+          tests/test_passing_yards_availability_game_day_step5_v1.py
+          EOF
+          sort -o /tmp/public_session_repair_scope.txt /tmp/public_session_repair_scope.txt
+
+          if diff -q /tmp/original_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_SCOPE_GREEN"
+          elif diff -q /tmp/public_session_repair_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_PUBLIC_SESSION_REPAIR_SCOPE_GREEN"
+          else
+            echo "PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_SCOPE_MISMATCH"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - name: Prove Steps 1-4 and data/math owners remain frozen
         if: github.event_name == 'pull_request'
@@ -101,6 +119,8 @@ jobs:
           assert v74.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           assert v225.FROZEN_ROUTER == "streamlit_memory_lazy_router_v224"
           assert v225.PASSING_HUB == "nfl_passing_yards_hub_v74"
+          assert v225.PUBLIC_SESSION_PURGE_GUARD == "passing-yards-session-route-token-v1"
+          assert v225.PASSING_ROUTE_TOKEN == "NFL:Passing Yards"
 
           source=Path("nfl_passing_yards_hub_v74.py").read_text()
           required=[
@@ -117,6 +137,7 @@ jobs:
 
           app=Path("app.py").read_text()
           assert "from streamlit_memory_lazy_router_v225 import record_bootstrap_import_ms, render_app" in app
+          assert "PASSING_YARDS_STEP5_PUBLIC_SESSION_PURGE_GUARD_RUNTIME" in app
           print("PASSING_YARDS_AVAILABILITY_GAME_DAY_STEP5_STATIC_GREEN")
           PY
 

@@ -40,6 +40,8 @@ def test_step5_contract_is_additive_and_math_frozen() -> None:
     assert v74.STAKE_SIZING_ENABLED is False
     assert v225.FROZEN_ROUTER == "streamlit_memory_lazy_router_v224"
     assert v225.PASSING_HUB == "nfl_passing_yards_hub_v74"
+    assert v225.PUBLIC_SESSION_PURGE_GUARD == "passing-yards-session-route-token-v1"
+    assert v225.PASSING_ROUTE_TOKEN == "NFL:Passing Yards"
 
 
 def test_exact_matchup_identity_from_frozen_selected_qb_card() -> None:
@@ -155,3 +157,11 @@ def test_injection_is_once_only_and_preserves_step4() -> None:
     assert twice.count('data-passing-yards-availability-game-day="v74"') == 1
     assert 'data-passing-yards-live-market="v73"' in twice
     assert 'data-passing-yards-availability-game-day-ready="v74"' in twice
+
+
+def test_public_session_route_token_prime_prevents_fresh_session_nfl_purge() -> None:
+    state = {"keep": "safe"}
+    token = v225._prime_passing_route_token_for_session(state)
+    assert token == "NFL:Passing Yards"
+    assert state[v225.SESSION_ROUTE_TOKEN_KEY] == token
+    assert state["keep"] == "safe"
