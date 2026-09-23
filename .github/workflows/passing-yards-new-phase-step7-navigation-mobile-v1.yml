@@ -85,7 +85,6 @@ jobs:
               'id="ks-py-deep-evidence"',
               'min-height:48px',
               'overflow-x:auto',
-              'grid-template-columns:1fr',
           ]
           for token in required:
               assert token in v68, token
@@ -295,6 +294,31 @@ jobs:
               evidence.scroll_into_view_if_needed()
               assert evidence.is_visible()
               assert evidence.locator('[data-deep-evidence-kind]').count()==5
+
+              if width <= 560:
+                  for selector in (
+                      ".ks-py63-market-grid",
+                      ".ks-py64-projection-grid",
+                      ".ks-py65-context-grid",
+                      ".ks-py66-distribution-grid",
+                      ".ks-py67-grid",
+                  ):
+                      grid=root.locator(selector)
+                      assert grid.count()==1,selector
+                      columns=grid.evaluate("e => getComputedStyle(e).gridTemplateColumns")
+                      assert len([x for x in columns.split(" ") if x])==1,(selector,columns)
+
+              for selector in (
+                  ".ks-py63-market-grid",
+                  ".ks-py64-projection-grid",
+                  ".ks-py65-context-grid",
+                  ".ks-py66-distribution-grid",
+                  ".ks-py67-grid",
+              ):
+                  grid=root.locator(selector)
+                  assert grid.count()==1,selector
+                  columns=grid.evaluate("e => getComputedStyle(e).gridTemplateColumns")
+                  assert len([x for x in columns.split(" ") if x])==1,(selector,columns)
 
               dims=frame.locator("body").evaluate("""e => ({
                 bodyScroll:e.scrollWidth,
