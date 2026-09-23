@@ -1,0 +1,32 @@
+{
+  "task": "passing-yards-shared-public-back-verifier-v1",
+  "task_id": "passing-yards-shared-public-back-verifier-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "e4eb0a0b46132663c776ea6cb431e933f69c6b38",
+  "scope": "Shared verifier-only repair for Passing Yards New Phase Steps 1 and 2. Makes the public Back-to-Quarterbacks proof frame-aware without modifying V62, V63, routers, app runtime, model, data, math, analytics, sportsbook logic, or product behavior.",
+  "failed_layer": "PUBLIC_VERIFIER_FRAME_STATE",
+  "product_files_changed": false,
+  "step1_branch_run": 35820434362,
+  "step1_branch_proof": "GREEN",
+  "step2_branch_run": 35820434425,
+  "step2_branch_proof": "GREEN",
+  "public_proof": "PENDING_POST_MERGE",
+  "acceptance": [
+    "Step 1 public Back proof follows the Streamlit app frame that renders V58",
+    "Step 2 public Back proof follows the Streamlit app frame that renders V58",
+    "ks_qb_slot is validated from the picker-owning app frame",
+    "date is preserved",
+    "matchup is preserved",
+    "V58 picker returns with exactly two QB cards",
+    "no product code changes",
+    "Step 1 and Step 2 public proofs pass after merge"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
