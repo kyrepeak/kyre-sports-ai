@@ -48,7 +48,7 @@ _DEEP_EVIDENCE_CSS = r"""
   min-width:0;padding:10px;border:1px solid var(--kyre-sem-border-soft);
   border-radius:11px;background:rgba(255,255,255,.018);overflow-wrap:anywhere
 }
-.ks-py67-card[data-evidence-kind="recent"]{grid-column:1/-1}
+.ks-py67-card[data-deep-evidence-kind="recent"]{grid-column:1/-1}
 .ks-py67-label{display:block;margin-bottom:7px;color:var(--kyre-sem-text-accent-soft);font-size:.59rem;font-weight:950;letter-spacing:.055em;text-transform:uppercase}
 .ks-py67-body{min-width:0;color:var(--kyre-sem-text-primary);font-size:.66rem;line-height:1.45}
 .ks-py67-provenance{
@@ -61,7 +61,7 @@ _DEEP_EVIDENCE_CSS = r"""
 .ks-py67-method p{margin:7px 0 0;color:var(--kyre-sem-text-muted);font-size:.64rem;line-height:1.55}
 @media(max-width:760px){
   .ks-py67-grid{grid-template-columns:1fr}
-  .ks-py67-card[data-evidence-kind="recent"]{grid-column:auto}
+  .ks-py67-card[data-deep-evidence-kind="recent"]{grid-column:auto}
 }
 @media(max-width:560px){
   .ks-py67-head{flex-direction:column;gap:8px}
