@@ -46,5 +46,13 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "closeout_navigation_repair": {
+    "root_cause_layer": "NAVIGATION",
+    "public_evidence_run": 35815578616,
+    "root_cause": "Back click left ks_qb_slot=2 in the public top-level query through 8 seconds.",
+    "patch": "V62 promotes Back href from query-relative ?... to app-root /?... while retaining target=_top.",
+    "branch_proof_run": 35815924910,
+    "branch_proof": "GREEN"
+  }
 }
