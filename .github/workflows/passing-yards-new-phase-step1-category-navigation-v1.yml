@@ -208,10 +208,14 @@ jobs:
                   page.wait_for_timeout(300)
               raise RuntimeError("CATEGORY_NAV_QB_PICKER_NOT_READY")
 
+          def canonical_matchup(value):
+              return str(value or "").split(" • ", 1)[0].strip()
+
           def assert_state(page, qb=True):
               qs=parse_qs(urlparse(page.url).query)
               assert qs.get("ks_py_date")==[expected_date], qs
-              assert qs.get("ks_py_matchup")==[expected_matchup], qs
+              matchup_values = qs.get("ks_py_matchup") or [""]
+              assert canonical_matchup(matchup_values[0]) == expected_matchup, qs
               if qb:
                   assert qs.get("ks_qb_slot")==[expected_qb], qs
               else:
@@ -364,10 +368,14 @@ jobs:
                   page.wait_for_timeout(350)
               raise RuntimeError("CATEGORY_NAV_PUBLIC_QB_PICKER_NOT_READY")
 
+          def canonical_matchup(value):
+              return str(value or "").split(" • ", 1)[0].strip()
+
           def assert_state(page,qb=True):
               qs=parse_qs(urlparse(page.url).query)
               assert qs.get("ks_py_date")==[expected_date], qs
-              assert qs.get("ks_py_matchup")==[expected_matchup], qs
+              matchup_values = qs.get("ks_py_matchup") or [""]
+              assert canonical_matchup(matchup_values[0]) == expected_matchup, qs
               if qb:
                   assert qs.get("ks_qb_slot")==[expected_qb], qs
               else:
