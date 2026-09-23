@@ -1,0 +1,26 @@
+{
+  "task": "passing-yards-step3-public-verifier-v1",
+  "task_id": "passing-yards-step3-public-verifier-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "6bd04d62d5028d5637c2744cd35161cc736f12de",
+  "scope": "Verifier-only Step 3 hotfix. Removes the redundant hidden Router V215 marker assertion after the public proof already confirms the V64 Projection Detail root and ready marker. No product, router, app, model, data, projection, probability, market-math, or sportsbook changes.",
+  "failed_layer": "PUBLIC_VERIFIER_REDUNDANT_RUNTIME_MARKER",
+  "failure_run": 35824124798,
+  "failure_job": 107062199973,
+  "failure": "AssertionError on hidden data-passing-yards-v215-runtime marker after V64 detail was already proven present.",
+  "acceptance": [
+    "Step 3 static contract remains GREEN",
+    "Step 3 branch Projection Detail proof remains GREEN",
+    "Step 3 public proof validates V64 Projection Detail directly",
+    "Steps 1-2 remain frozen",
+    "no product files changed"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
