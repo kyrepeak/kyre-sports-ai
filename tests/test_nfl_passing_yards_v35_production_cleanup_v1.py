@@ -71,9 +71,10 @@ class _Response:
 
 def test_market_v2_transport_is_bounded_and_safety_contract_is_frozen() -> None:
     assert market_v2.FROZEN_VALIDATION_OWNER == "nfl_passing_yards_market_api_v1"
-    assert market_v2.MAX_REQUEST_ATTEMPTS == 1
+    assert market_v2.MAX_REQUEST_ATTEMPTS == 2
     assert market_v2.REQUEST_CONNECT_TIMEOUT_SECONDS == 3.0
     assert market_v2.REQUEST_READ_TIMEOUT_SECONDS == 15.0
+    assert market_v2.RETRY_BACKOFF_SECONDS == 0.35
     assert market_v2.HOT_CACHE_TTL_SECONDS == 20.0
     assert market_v2.MAX_MARKET_AGE_SECONDS == market_v1.MAX_MARKET_AGE_SECONDS == 300
     assert market_v2.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
@@ -101,6 +102,55 @@ def test_market_v2_hot_cache_avoids_duplicate_streamlit_rerun_request(monkeypatc
     assert len(calls) == 1
     assert calls[0]["timeout"] == (3.0, 15.0)
     assert second["projection_weight"] == 0.0
+
+
+def test_market_v2_read_timeout_retries_once_same_event_then_accepts_fresh_market(monkeypatch) -> None:
+    market_v2.reset_transport_cache()
+    calls: list[dict[str, Any]] = []
+    sleeps: list[float] = []
+
+    def fake_get(*args, **kwargs):
+        calls.append(kwargs)
+        if len(calls) == 1:
+            raise requests.exceptions.ReadTimeout("cold public read")
+        return _Response(_payload())
+
+    monkeypatch.setattr(market_v2._SESSION, "get", fake_get)
+    monkeypatch.setattr(market_v2.time, "sleep", lambda seconds: sleeps.append(seconds))
+    out = market_v2.fetch_event_market(EVENT_ID, now_utc=NOW, base_url="https://example.test")
+
+    assert out["ready"] is True
+    assert out["transport_source"] == "network"
+    assert out["request_attempts"] == 2
+    assert len(calls) == 2
+    assert calls[0]["params"] == calls[1]["params"] == {"event_id": EVENT_ID}
+    assert calls[0]["timeout"] == calls[1]["timeout"] == (3.0, 15.0)
+    assert sleeps == [market_v2.RETRY_BACKOFF_SECONDS]
+    assert out["projection_weight"] == 0.0
+    assert out["stake_sizing_enabled"] is False
+
+
+def test_market_v2_second_read_timeout_stops_after_two_attempts_and_fails_closed(monkeypatch) -> None:
+    market_v2.reset_transport_cache()
+    calls: list[dict[str, Any]] = []
+    sleeps: list[float] = []
+
+    def fake_get(*args, **kwargs):
+        calls.append(kwargs)
+        raise requests.exceptions.ReadTimeout("still slow")
+
+    monkeypatch.setattr(market_v2._SESSION, "get", fake_get)
+    monkeypatch.setattr(market_v2.time, "sleep", lambda seconds: sleeps.append(seconds))
+    out = market_v2.fetch_event_market(EVENT_ID, now_utc=NOW, base_url="https://example.test")
+
+    assert out["ready"] is False
+    assert out["transport_source"] == "network-failed-closed"
+    assert out["request_attempts"] == 2
+    assert len(calls) == 2
+    assert sleeps == [market_v2.RETRY_BACKOFF_SECONDS]
+    assert out["reason"].endswith("ReadTimeout")
+    assert out["projection_weight"] == 0.0
+    assert out["stake_sizing_enabled"] is False
 
 
 def test_market_v2_read_timeout_can_use_only_still_fresh_certified_cache(monkeypatch) -> None:
@@ -147,6 +197,7 @@ def test_market_v2_rejects_cached_payload_after_certified_freshness_window(monke
     )
     assert out["ready"] is False
     assert out["transport_source"] == "network-failed-closed"
+    assert out["request_attempts"] == 2
     assert "ReadTimeout" in out["reason"]
     assert out["projection_weight"] == 0.0
 

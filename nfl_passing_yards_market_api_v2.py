@@ -2,9 +2,10 @@
 
 Additive transport/cache wrapper over the certified V1 market contract. V2 does
 not loosen identity, freshness, market, sportsbook, or model-safety validation.
-It removes the duplicate long retry path, reuses an HTTP session, and keeps a
-small in-process payload cache so Streamlit reruns do not repeatedly hit the
-same event endpoint. A cached payload may rescue a transient request failure
+It reuses an HTTP session, keeps a small in-process payload cache so Streamlit
+reruns do not repeatedly hit the same event endpoint, and permits exactly one
+bounded retry for transient connection/read failures against the same exact
+event endpoint. A cached payload may rescue a transient request failure
 only when V1 re-validates that exact payload as still fresh (<= 300 seconds).
 
 Permanent contract remains unchanged:
@@ -34,7 +35,8 @@ SCHEMA_VERSION = prior.SCHEMA_VERSION
 MAX_MARKET_AGE_SECONDS = prior.MAX_MARKET_AGE_SECONDS
 REQUEST_CONNECT_TIMEOUT_SECONDS = 3.0
 REQUEST_READ_TIMEOUT_SECONDS = 15.0
-MAX_REQUEST_ATTEMPTS = 1
+MAX_REQUEST_ATTEMPTS = 2
+RETRY_BACKOFF_SECONDS = 0.35
 HOT_CACHE_TTL_SECONDS = 20.0
 MAX_CACHE_ENTRIES = 24
 SPORTSBOOK_PROJECTION_INFLUENCE = 0.0
@@ -142,40 +144,58 @@ def fetch_event_market(
             http=200,
         )
 
-    try:
-        response = _SESSION.get(
-            url,
-            params={"event_id": event_id},
-            timeout=(REQUEST_CONNECT_TIMEOUT_SECONDS, REQUEST_READ_TIMEOUT_SECONDS),
-            headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Streamlit/2.0"},
-        )
-    except _TRANSIENT_REQUEST_EXCEPTIONS as exc:
-        warning = f"Kyre Sports API request failed: {type(exc).__name__}"
-        cached = _cached_validated(event_id, now_utc=now_utc, hot_only=False)
-        if cached is not None:
-            return _with_transport_meta(
-                cached,
-                source="fresh-cache-after-transient-error",
-                url=url,
-                request_attempts=1,
-                http=200,
-                warning=warning,
+    response = None
+    request_attempts = 0
+    for attempt in range(1, MAX_REQUEST_ATTEMPTS + 1):
+        request_attempts = attempt
+        try:
+            response = _SESSION.get(
+                url,
+                params={"event_id": event_id},
+                timeout=(REQUEST_CONNECT_TIMEOUT_SECONDS, REQUEST_READ_TIMEOUT_SECONDS),
+                headers={"Accept": "application/json", "User-Agent": "KyreSportsAI-Streamlit/2.0"},
             )
-        out = _fail(warning, event_id=event_id)
-        return _with_transport_meta(out, source="network-failed-closed", url=url, request_attempts=1)
-    except Exception as exc:
-        out = _fail(f"Kyre Sports API request failed: {type(exc).__name__}", event_id=event_id)
-        return _with_transport_meta(out, source="network-failed-closed", url=url, request_attempts=1)
+            break
+        except _TRANSIENT_REQUEST_EXCEPTIONS as exc:
+            warning = f"Kyre Sports API request failed: {type(exc).__name__}"
+            cached = _cached_validated(event_id, now_utc=now_utc, hot_only=False)
+            if cached is not None:
+                return _with_transport_meta(
+                    cached,
+                    source="fresh-cache-after-transient-error",
+                    url=url,
+                    request_attempts=attempt,
+                    http=200,
+                    warning=warning,
+                )
+            if attempt < MAX_REQUEST_ATTEMPTS:
+                time.sleep(RETRY_BACKOFF_SECONDS)
+                continue
+            out = _fail(warning, event_id=event_id)
+            return _with_transport_meta(
+                out,
+                source="network-failed-closed",
+                url=url,
+                request_attempts=attempt,
+            )
+        except Exception as exc:
+            out = _fail(f"Kyre Sports API request failed: {type(exc).__name__}", event_id=event_id)
+            return _with_transport_meta(
+                out,
+                source="network-failed-closed",
+                url=url,
+                request_attempts=attempt,
+            )
 
     status = int(getattr(response, "status_code", 0) or 0)
     if status != 200:
         out = _fail(f"Kyre Sports API returned HTTP {status}", event_id=event_id, http=status)
-        return _with_transport_meta(out, source="network-http-failed-closed", url=url, request_attempts=1, http=status)
+        return _with_transport_meta(out, source="network-http-failed-closed", url=url, request_attempts=request_attempts, http=status)
     try:
         payload = response.json()
     except Exception:
         out = _fail("Kyre Sports API returned invalid JSON", event_id=event_id, http=status)
-        return _with_transport_meta(out, source="network-json-failed-closed", url=url, request_attempts=1, http=status)
+        return _with_transport_meta(out, source="network-json-failed-closed", url=url, request_attempts=request_attempts, http=status)
 
     validated = prior.validate_event_payload(payload, event_id, now_utc=now_utc)
     if validated.get("ready"):
@@ -184,7 +204,7 @@ def fetch_event_market(
         validated,
         source="network",
         url=url,
-        request_attempts=1,
+        request_attempts=request_attempts,
         http=status,
     )
 
@@ -206,6 +226,7 @@ __all__ = [
     "MODEL_VERSION",
     "REQUEST_CONNECT_TIMEOUT_SECONDS",
     "REQUEST_READ_TIMEOUT_SECONDS",
+    "RETRY_BACKOFF_SECONDS",
     "SPORTSBOOK_PROJECTION_INFLUENCE",
     "STAKE_SIZING_ENABLED",
     "fetch_event_market",

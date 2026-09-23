@@ -54,7 +54,6 @@
     "streamlit_memory_lazy_router_v223.py",
     "nfl_passing_yards_market_v1.py",
     "nfl_passing_yards_market_api_v1.py",
-    "nfl_passing_yards_market_api_v2.py",
     "sports_api/collectors/nfl_fanduel_passing_yards.py",
     "devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json",
     "devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json",
@@ -77,5 +76,17 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "repair_epoch": "step4-public-transport-v1",
+  "repair_source_main": "8e3a44229db4442267b4c6c2aa010641308e84ca",
+  "repair_root_cause": "Hosted Streamlit exact-ID Kyre Sports API V2 transport produced ReadTimeout on its first network request, causing the frozen manual fail-closed fallback and V73 ready=false.",
+  "repair_failed_layer": "PUBLIC_MARKET_TRANSPORT_V2",
+  "repair_state": "PATCH_PENDING_PROOF",
+  "transport_retry_attempts": 2,
+  "transport_retry_backoff_seconds": 0.35,
+  "transport_validation_owner": "nfl_passing_yards_market_api_v1",
+  "public_freeze_pending": true,
+  "reopened_by_direct_evidence": [
+    "nfl_passing_yards_market_api_v2.py"
+  ]
 }
