@@ -149,15 +149,6 @@ def _inject_category_navigation(body: str, slot: int) -> str:
     for old, new in replacements:
         text = text.replace(old, new, 1)
 
-    # Category fragment navigation stays inside the current document. Force the
-    # already-certified frozen Back URL to navigate the top-level Streamlit app
-    # so removing ks_qb_slot reliably returns to the frozen V58 picker.
-    text = text.replace(
-        'data-qb-back="true" href="',
-        'data-qb-back="true" target="_top" href="',
-        1,
-    )
-
     root_token = f'data-qb-analysis-slot="{slot}"'
     text = text.replace(
         root_token,
