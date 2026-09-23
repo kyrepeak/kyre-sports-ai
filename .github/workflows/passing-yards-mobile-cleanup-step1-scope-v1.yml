@@ -1,0 +1,193 @@
+name: NFL Passing Yards Mobile Cleanup Step 1 Scope
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/passing-yards-mobile-cleanup-step1-scope-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-mobile-cleanup-step1-scope-v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-mobile-cleanup-step1-scope-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-mobile-cleanup-step1-scope-v1.json"
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Enforce Step 1 certification-only scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-mobile-cleanup-step1-scope-v1.yml
+          devsystem/task_ledgers/passing-yards-mobile-cleanup-step1-scope-v1.json
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_MOBILE_CLEANUP_STEP1_SCOPE_GREEN"
+
+      - name: Verify exact presentation owner map
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          ledger = json.loads(Path("devsystem/task_ledgers/passing-yards-mobile-cleanup-step1-scope-v1.json").read_text())
+          assert ledger["affected_surface_count"] == 6
+          assert len(ledger["affected_surfaces"]) == 6
+          assert ledger["product_files_changed"] is False
+          assert ledger["model_math_changed"] is False
+          assert ledger["data_changed"] is False
+          assert ledger["market_math_changed"] is False
+          assert ledger["navigation_state_changed"] is False
+
+          contracts = {
+              "nfl_passing_yards_hub_v15.py": [
+                  ".kpy15-center",
+                  "Game Center — Result First",
+                  "MODEL-INDEPENDENT FROM MARKET",
+              ],
+              "nfl_passing_yards_hub_v30.py": [
+                  ".kpass30-profile",
+                  "Pass Yards / Game",
+                  "Recent Form + Location Splits",
+              ],
+              "nfl_passing_yards_hub_v4.py": [
+                  ".kpy-defense",
+                  ".kpy-dmetric",
+                  "Pass Yds Allowed/G",
+              ],
+              "nfl_passing_yards_hub_v5.py": [
+                  ".kpy-pressure",
+                  "_pressure_card",
+              ],
+              "nfl_passing_yards_hub_v28.py": [
+                  'class="kpy-personnel"',
+                  "_personnel_card",
+              ],
+              "nfl_passing_yards_hub_v7.py": [
+                  ".kpy-env",
+                  "_environment_card",
+                  "Venue Type",
+                  "Play Volume",
+              ],
+              "nfl_passing_yards_hub_v67.py": [
+                  ".ks-py67-deep",
+                  "Recent QB Games + Profile",
+                  "Opponent Pass-Defense Evidence",
+                  "Protection + Pressure Evidence",
+                  "Personnel + Availability Evidence",
+                  "Game Environment Evidence",
+              ],
+          }
+
+          for path, tokens in contracts.items():
+              source = Path(path).read_text()
+              for token in tokens:
+                  assert token in source, (path, token)
+
+          v67 = Path("nfl_passing_yards_hub_v67.py").read_text()
+          for key in ('"profile"', '"defense"', '"pressure"', '"personnel"', '"environment"'):
+              assert key in v67, key
+
+          v69 = Path("nfl_passing_yards_hub_v69.py").read_text()
+          assert 'FROZEN_PRIOR = "nfl_passing_yards_hub_v68"' in v69
+          assert 'DETAIL_CLEANUP_VERSION = "v69"' in v69
+
+          router = Path("streamlit_memory_lazy_router_v220.py").read_text()
+          assert 'PASSING_HUB = "nfl_passing_yards_hub_v69"' in router
+
+          app = Path("app.py").read_text()
+          assert 'from streamlit_memory_lazy_router_v220 import record_bootstrap_import_ms, render_app' in app
+
+          print("PASSING_YARDS_MOBILE_CLEANUP_STEP1_OWNER_MAP_GREEN")
+          PY
+
+      - name: Verify product remains frozen
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" -- \
+            nfl_passing_yards_hub_v4.py \
+            nfl_passing_yards_hub_v5.py \
+            nfl_passing_yards_hub_v7.py \
+            nfl_passing_yards_hub_v15.py \
+            nfl_passing_yards_hub_v28.py \
+            nfl_passing_yards_hub_v30.py \
+            nfl_passing_yards_hub_v67.py \
+            nfl_passing_yards_hub_v69.py \
+            streamlit_memory_lazy_router_v220.py \
+            app.py
+          echo "PASSING_YARDS_MOBILE_CLEANUP_STEP1_PRODUCT_FROZEN_GREEN"
+
+  branch-scope-certification:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Certify locked six-surface scope
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-mobile-cleanup-step1-scope-v1.json").read_text())
+          expected=[
+              ("Game Center — Result First","nfl_passing_yards_hub_v15.py",".kpy15-center"),
+              ("Recent QB Games + Profile","nfl_passing_yards_hub_v30.py",".kpass30-profile"),
+              ("Opponent Pass-Defense Evidence","nfl_passing_yards_hub_v4.py",".kpy-defense"),
+              ("Protection + Pressure Evidence","nfl_passing_yards_hub_v5.py",".kpy-pressure"),
+              ("Personnel + Availability Evidence","nfl_passing_yards_hub_v28.py",".kpy-personnel"),
+              ("Game Environment Evidence","nfl_passing_yards_hub_v7.py",".kpy-env"),
+          ]
+          actual=[(x["surface"],x["owner"],x["selector"]) for x in ledger["affected_surfaces"]]
+          assert actual == expected, (actual, expected)
+          assert ledger["composition_owner"]["owner"] == "nfl_passing_yards_hub_v67.py"
+          assert ledger["composition_owner"]["selector"] == ".ks-py67-deep"
+          assert ledger["future_step2_boundary"].startswith("Step 2 may add one additive presentation-only cleanup layer")
+          print("PASSING_YARDS_MOBILE_CLEANUP_STEP1_BRANCH_GREEN")
+          PY
+
+  main-scope-certification:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Freeze Step 1 scope map on MAIN
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-mobile-cleanup-step1-scope-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["certification_only"] is True
+          assert ledger["affected_surface_count"] == 6
+          assert len(ledger["affected_surfaces"]) == 6
+          assert ledger["composition_owner"]["owner"] == "nfl_passing_yards_hub_v67.py"
+          print("PASSING_YARDS_MOBILE_CLEANUP_STEP1_MAIN_GREEN")
+          PY
