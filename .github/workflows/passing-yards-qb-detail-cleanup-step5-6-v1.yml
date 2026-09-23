@@ -183,8 +183,8 @@ jobs:
 
               body=frame.locator("body").inner_text(timeout=5000)
               assert "Jordan Love" in body
-              assert context.locator(":scope > strong").inner_text().strip()=="Context + Uncertainty"
-              assert distribution.locator(":scope > strong").inner_text().strip()=="Distribution + Probability"
+              assert context.locator(":scope > strong").text_content().strip()=="Context + Uncertainty"
+              assert distribution.locator(":scope > strong").text_content().strip()=="Distribution + Probability"
               assert "P50 Median" in distribution.locator(".kpy9-q").inner_text()
               assert "TypeError" not in body and "Traceback" not in body
 
@@ -273,8 +273,8 @@ jobs:
 
               body=frame.locator("body").inner_text(timeout=5000)
               assert "Jordan Love" in body
-              assert context.locator(":scope > strong").inner_text().strip()=="Context + Uncertainty"
-              assert distribution.locator(":scope > strong").inner_text().strip()=="Distribution + Probability"
+              assert context.locator(":scope > strong").text_content().strip()=="Context + Uncertainty"
+              assert distribution.locator(":scope > strong").text_content().strip()=="Distribution + Probability"
               assert "P50 Median" in distribution.locator(".kpy9-q").inner_text()
               assert "TypeError" not in body and "Traceback" not in body
 
