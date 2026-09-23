@@ -162,7 +162,7 @@ _DETAIL_CLEANUP_CSS = r"""
   line-height:1.5;
 }
 
-@media(max-width:820px){
+@media(max-width:1100px){
   [data-passing-yards-detail-cleanup="v69"] .ks-py69-hero,
   [data-passing-yards-detail-cleanup="v69"] .ks-py69-grid{
     grid-template-columns:repeat(2,minmax(0,1fr));
