@@ -55,6 +55,15 @@
     "patch": "V62 renders a native Streamlit Back control that deletes only ks_qb_slot from st.query_params and reruns; the dead framed Back anchor is hidden.",
     "branch_proof_run": 35817294600,
     "branch_proof": "GREEN",
+    "final_public_proof": "PENDING_AFTER_FRAME_AWARE_VERIFIER"
+  },
+  "public_verifier_frame_fix": {
+    "failed_public_run": 35817665489,
+    "failed_layer": "VERIFIER",
+    "first_broken_assertion": "page.get_by_role('button', name='← Back to Quarterbacks') returned count 0 on public hosted production before any click.",
+    "root_cause": "The native Streamlit Back button is rendered inside the hosted app frame, while the public verifier searched only the top-level page.",
+    "patch": "Search all Playwright frames for the Back button before clicking. Product code is unchanged.",
+    "branch_proof": "PENDING",
     "final_public_proof": "PENDING"
   }
 }
