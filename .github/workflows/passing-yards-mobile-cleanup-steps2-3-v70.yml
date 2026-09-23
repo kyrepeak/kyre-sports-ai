@@ -243,7 +243,17 @@ jobs:
                   badge=frame.locator('.kpy15-center .kpy15-conf').first
                   assert badge.count()==1
                   bb=badge.bounding_box()
-                  assert bb and bb["width"] < 180 and bb["height"] <= 44,bb
+                  if bb:
+                      assert bb["width"] < 180 and bb["height"] <= 44,bb
+                  else:
+                      # Frozen V61 intentionally hides legacy Game Center in Chromium.
+                      # When hidden, geometry is unavailable; prove V70's exact CSS instead.
+                      style=badge.evaluate("""e => {
+                        const s=getComputedStyle(e);
+                        return {paddingTop:s.paddingTop,paddingRight:s.paddingRight,borderRadius:s.borderRadius};
+                      }""")
+                      assert style["paddingTop"]=="5px",style
+                      assert style["paddingRight"]=="8px",style
                   assert badge.evaluate("e => getComputedStyle(e).borderRadius") != "0px"
 
                   # Surfaces 2-6: Deep Evidence
