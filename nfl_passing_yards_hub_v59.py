@@ -23,7 +23,8 @@ DETAIL_SYSTEM_VERSION = "v59"
 DETAIL_CLEANUP_VERSION = "step1-2-v1"
 DETAIL_CLEANUP_STEPS = 2
 DETAIL_CLEANUP_STEP34_VERSION = "step3-4-v1"
-DETAIL_CLEANUP_COMPLETED_STEPS = 4
+DETAIL_CLEANUP_STEP56_VERSION = "step5-6-v1"
+DETAIL_CLEANUP_COMPLETED_STEPS = 6
 PRESENTATION_ONLY = True
 DISPLAY_ONLY = True
 MAY_MODIFY_PROJECTION = False
@@ -287,6 +288,137 @@ _DETAIL_CSS = r"""
   color:var(--kyre-sem-text-muted)!important;font-size:.67rem!important;line-height:1.55!important
 }
 
+
+/* Step 5 — Context + Uncertainty: compact readable evidence hierarchy. */
+.ks-py59-section[data-qb-analysis-section="context"]{
+  padding:12px;border-color:rgba(168,85,247,.30);
+  background:linear-gradient(145deg,rgba(22,14,34,.94),rgba(8,19,31,.94))
+}
+.ks-py59-section[data-qb-analysis-section="context"]>strong{
+  margin:0 0 10px;padding:0 0 9px;border-bottom:1px solid var(--kyre-sem-border-soft);
+  font-size:.66rem;letter-spacing:.09em
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-card{
+  margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-top{
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:start!important;gap:10px!important;margin:0 0 10px!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-name{
+  color:var(--kyre-sem-text-primary)!important;font-size:1rem!important;
+  font-weight:950!important;line-height:1.16!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-sub{
+  margin-top:4px!important;color:var(--kyre-sem-text-muted)!important;
+  font-size:.67rem!important;line-height:1.45!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-grade{
+  padding:5px 8px!important;border-radius:999px!important;
+  font-size:.58rem!important;font-weight:950!important;white-space:nowrap!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero{
+  display:grid!important;grid-template-columns:1.25fr 1fr 1fr!important;
+  gap:8px!important;margin:0 0 8px!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero>div,
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-meta>div{
+  min-width:0!important;padding:10px!important;border:1px solid var(--kyre-sem-border-soft)!important;
+  border-radius:11px!important;background:rgba(255,255,255,.018)!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero b{
+  display:block!important;color:var(--kyre-sem-text-primary)!important;
+  font-size:1rem!important;line-height:1.12!important;overflow-wrap:anywhere!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero span{
+  display:block!important;margin-top:4px!important;color:var(--kyre-sem-text-muted)!important;
+  font-size:.56rem!important;font-weight:900!important;line-height:1.25!important;
+  text-transform:uppercase!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-meta{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-meta>div{
+  color:var(--kyre-sem-text-muted)!important;font-size:.64rem!important;line-height:1.35!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-meta b{
+  display:block!important;margin:0 0 4px!important;color:var(--kyre-sem-text-primary)!important;
+  font-size:.86rem!important;line-height:1.18!important;overflow-wrap:anywhere!important
+}
+.ks-py59-section[data-qb-analysis-section="context"] .kpy8-note{
+  margin-top:9px!important;padding-top:9px!important;border-top:1px solid var(--kyre-sem-border-soft)!important;
+  color:var(--kyre-sem-text-muted)!important;font-size:.66rem!important;line-height:1.5!important
+}
+
+/* Step 6 — Distribution + Probability: compact probability ladder. */
+.ks-py59-section[data-qb-analysis-section="distribution"]{
+  padding:12px;border-color:rgba(59,130,246,.30);
+  background:linear-gradient(145deg,rgba(7,20,37,.96),rgba(8,19,31,.94))
+}
+.ks-py59-section[data-qb-analysis-section="distribution"]>strong{
+  margin:0 0 10px;padding:0 0 9px;border-bottom:1px solid var(--kyre-sem-border-soft);
+  font-size:.66rem;letter-spacing:.09em
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-card{
+  margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;box-shadow:none!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-top{
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:start!important;gap:10px!important;margin:0 0 10px!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-name{
+  color:var(--kyre-sem-text-primary)!important;font-size:1rem!important;
+  font-weight:950!important;line-height:1.16!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-sub{
+  margin-top:4px!important;color:var(--kyre-sem-text-muted)!important;
+  font-size:.67rem!important;line-height:1.45!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-grade{
+  padding:5px 8px!important;border-radius:999px!important;
+  font-size:.58rem!important;font-weight:950!important;white-space:nowrap!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero{
+  display:grid!important;grid-template-columns:1.25fr 1fr 1fr!important;
+  gap:8px!important;margin:0 0 8px!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero>div{
+  min-width:0!important;padding:10px!important;border:1px solid var(--kyre-sem-border-soft)!important;
+  border-radius:11px!important;background:rgba(255,255,255,.018)!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero b{
+  display:block!important;color:var(--kyre-sem-text-primary)!important;
+  font-size:1rem!important;line-height:1.12!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero span{
+  display:block!important;margin-top:4px!important;color:var(--kyre-sem-text-muted)!important;
+  font-size:.56rem!important;font-weight:900!important;line-height:1.25!important;
+  text-transform:uppercase!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-q{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:6px!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-q>div{
+  min-width:0!important;padding:8px 5px!important;border:1px solid var(--kyre-sem-border-soft)!important;
+  border-radius:10px!important;background:rgba(255,255,255,.014)!important;text-align:center!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-q b{
+  display:block!important;color:var(--kyre-sem-text-primary)!important;
+  font-size:.75rem!important;line-height:1.12!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-q span{
+  display:block!important;margin-top:4px!important;color:var(--kyre-sem-text-muted)!important;
+  font-size:.52rem!important;font-weight:900!important;line-height:1.2!important
+}
+.ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-note{
+  margin-top:9px!important;padding-top:9px!important;border-top:1px solid var(--kyre-sem-border-soft)!important;
+  color:var(--kyre-sem-text-muted)!important;font-size:.66rem!important;line-height:1.5!important
+}
+
 .ks-py59-section{
   min-width:0;margin-top:var(--kyre-space-3);padding:var(--kyre-space-3);
   border:1px solid var(--kyre-sem-border-soft);border-radius:var(--kyre-sem-radius-section);
@@ -375,6 +507,31 @@ _DETAIL_CSS = r"""
   .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projmeta>div{
     min-height:0!important
   }
+  /* Step 5-6 mobile cleanup */
+  .ks-py59-section[data-qb-analysis-section="context"],
+  .ks-py59-section[data-qb-analysis-section="distribution"]{padding:10px}
+  .ks-py59-section[data-qb-analysis-section="context"] .kpy8-top,
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-top{
+    grid-template-columns:1fr!important
+  }
+  .ks-py59-section[data-qb-analysis-section="context"] .kpy8-grade,
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-grade{
+    justify-self:start!important
+  }
+  .ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero,
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important
+  }
+  .ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero>div:first-child,
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero>div:first-child{
+    grid-column:1/-1!important
+  }
+  .ks-py59-section[data-qb-analysis-section="context"] .kpy8-meta{
+    grid-template-columns:1fr!important
+  }
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-q{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important
+  }
 }
 </style>
 """
@@ -391,6 +548,10 @@ def _section(kind: str, title: str, content: str) -> str:
         cleanup_marker = ' data-qb-detail-cleanup-step3="green"'
     elif kind == "projection":
         cleanup_marker = ' data-qb-detail-cleanup-step4="green"'
+    elif kind == "context":
+        cleanup_marker = ' data-qb-detail-cleanup-step5="green"'
+    elif kind == "distribution":
+        cleanup_marker = ' data-qb-detail-cleanup-step6="green"'
     return (
         f'<section class="ks-py59-section" data-qb-analysis-section="{kind}"{cleanup_marker}>'
         f'<strong>{title}</strong>'
