@@ -1,0 +1,32 @@
+{
+  "task": "passing-yards-new-phase-step7-navigation-mobile-v1",
+  "task_id": "passing-yards-new-phase-step7-navigation-mobile-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "10c511af9b88876943c9e179a49c00735839aa63",
+  "scope": "New Phase Step 7 Navigation + Mobile Polish for NFL Passing Yards. Presentation-only V68 over frozen V67, plus Router V219 activation, dedicated workflow, and app activation. No analytics/data/model/value changes.",
+  "failed_layer": "NONE",
+  "product_files_changed": true,
+  "acceptance": [
+    "exact six-category navigation contract remains unchanged",
+    "all six category links move to their intended existing section",
+    "selected QB remains preserved across category navigation",
+    "Deep Evidence remains reachable and visible after category navigation",
+    "Back to Quarterbacks returns to V58 with exactly two QB cards",
+    "date and matchup remain preserved after Back",
+    "mobile category links are easy to tap",
+    "Back control is easy to tap",
+    "detail grids stack cleanly on small screens",
+    "desktop tablet mobile have no body-level horizontal overflow",
+    "Steps 1-6 remain frozen",
+    "sportsbook projection influence remains 0.0%",
+    "no projection context probability market-math data provider or sportsbook changes"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
