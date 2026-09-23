@@ -73,6 +73,7 @@ jobs:
           cat > /tmp/expected-shared-public-back-verifier-hotfix.txt <<'EOF'
           .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
           .github/workflows/passing-yards-new-phase-step2-market-detail-v1.yml
+          devsystem/task_ledgers/passing-yards-shared-public-back-verifier-v1.json
           EOF
           sort -o /tmp/expected-shared-public-back-verifier-hotfix.txt /tmp/expected-shared-public-back-verifier-hotfix.txt
 
