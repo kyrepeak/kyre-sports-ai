@@ -1,0 +1,40 @@
+{
+  "task": "passing-yards-step2-public-frame-verifier-v2",
+  "task_id": "passing-yards-step2-public-frame-verifier-v2",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "48aff5aedaaa512e1fe942cc08d9cdd6cf1104f6",
+  "scope": "Verifier-only repair for Passing Yards Projection Explainability Step 2. Preserve all V71/V222/product/model/data/math/runtime behavior and allow hosted runtime markers to be discovered across Streamlit frames.",
+  "failed_layer": "VERIFIER",
+  "product_files_changed": false,
+  "model_math_changed": false,
+  "projection_changed": false,
+  "probability_changed": false,
+  "context_math_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_changed": false,
+  "router_changed": false,
+  "navigation_state_changed": false,
+  "widget_keys_changed": false,
+  "acceptance": [
+    "PR changes only the Step 2 workflow verifier and this task ledger",
+    "V71 product remains frozen",
+    "V222 router remains frozen",
+    "public selected-QB detail resolves for Jordan Love",
+    "V70 runtime marker may resolve from any hosted Streamlit frame",
+    "V222 runtime marker may resolve from any hosted Streamlit frame",
+    "V71 explainability contract remains unchanged",
+    "no TypeError or Traceback",
+    "branch Step 2 proof passes",
+    "public Step 2 proof passes once",
+    "Step 2 freezes after public PASS"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
