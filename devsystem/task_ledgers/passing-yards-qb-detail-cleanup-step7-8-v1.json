@@ -1,0 +1,54 @@
+{
+  "task": "passing-yards-qb-detail-cleanup-step7-8-v1",
+  "task_id": "passing-yards-qb-detail-cleanup-step7-8-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "c10376eabf2bb935e8d103fdbf416e1631a4dd79",
+  "scope": "NFL Passing Yards selected-QB detail final cleanup. Step 7 adds presentation-only mobile/tablet responsiveness in V59. Step 8 certifies the frozen Steps 1-7 page at desktop, tablet, and mobile in branch and production. No model, projection, context math, probability math, market math, data, sportsbook, router, or V58/V60/V61 behavior changes.",
+  "presentation_only": true,
+  "product_file": "nfl_passing_yards_hub_v59.py",
+  "cleanup_steps": [
+    7,
+    8
+  ],
+  "acceptance": [
+    "Step 7 prevents horizontal overflow at 390px, 768px, and 1440px viewports",
+    "Step 7 preserves readable identity, market, baseline, context, distribution, and support layouts",
+    "Back control and support summaries remain tap-safe on mobile",
+    "Steps 1-6 markers remain green",
+    "Step 8 branch certification passes desktop, tablet, and mobile",
+    "Step 8 merged MAIN passes exactly one final public certification",
+    "No TypeError or Traceback on selected-QB detail page",
+    "Stop and freeze Steps 1-8 after public certification"
+  ],
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v58.py",
+    "nfl_passing_yards_hub_v60.py",
+    "nfl_passing_yards_hub_v61.py",
+    "streamlit_memory_lazy_router_v209.py",
+    "streamlit_memory_lazy_router_v210.py",
+    "streamlit_memory_lazy_router_v211.py",
+    "streamlit_memory_lazy_router_v212.py",
+    "app.py",
+    ".github/workflows/passing-yards-qb-detail-cleanup-step1-2-v1.yml",
+    ".github/workflows/passing-yards-qb-detail-cleanup-step3-4-v1.yml",
+    ".github/workflows/passing-yards-qb-detail-cleanup-step5-6-v1.yml",
+    "devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step1-2-v1.json",
+    "devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step3-4-v1.json",
+    "devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step5-6-v1.json"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_changed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
