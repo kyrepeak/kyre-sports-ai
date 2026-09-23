@@ -1,0 +1,157 @@
+name: NFL Passing Yards Data + Starter Truth Step 1 V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-data-starter-truth-step1-v1.yml"
+      - "devsystem/passing_yards_data_starter_truth_step1_v1.py"
+      - "devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json"
+      - "tests/test_passing_yards_data_starter_truth_step1_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-data-starter-truth-step1-v1.yml"
+      - "devsystem/passing_yards_data_starter_truth_step1_v1.py"
+      - "devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json"
+      - "tests/test_passing_yards_data_starter_truth_step1_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-data-starter-truth-step1-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step 1 certification scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-data-starter-truth-step1-v1.yml
+          devsystem/passing_yards_data_starter_truth_step1_v1.py
+          devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json
+          tests/test_passing_yards_data_starter_truth_step1_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_STARTER_TRUTH_STEP1_SCOPE_GREEN"
+
+      - name: Prove frozen product boundaries untouched
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" --             nfl_passing_yards_hub_v70.py             streamlit_memory_lazy_router_v221.py             app.py             nfl_passing_yards_identity_v1.py             nfl_game_day_availability_v1.py             devsystem/task_ledgers/passing-yards-mobile-cleanup-steps4-5-closeout-v1.json
+          echo "PASSING_YARDS_PREVIOUS_FROZEN_WORK_GREEN"
+
+      - name: Install targeted test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and unit-test starter truth contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile devsystem/passing_yards_data_starter_truth_step1_v1.py
+          python -m pytest -q tests/test_passing_yards_data_starter_truth_step1_v1.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step1_status"] == "DONE"
+          assert ledger["certification_only"] is True
+          assert ledger["product_files_changed"] is False
+          print("PASSING_YARDS_STARTER_TRUTH_STEP1_STATIC_GREEN")
+          PY
+
+  branch-live-starter-truth-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install live audit dependencies
+        run: python -m pip install --disable-pip-version-check -q -r requirements.txt
+
+      - name: Audit current seven-day slate starter truth
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/passing_yards_data_starter_truth_step1_v1.py             --start-date 2026-09-23             --days 7             --json-out artifacts/passing-yards-starter-truth-step1/branch-live.json
+          echo "PASSING_YARDS_STARTER_TRUTH_STEP1_BRANCH_LIVE_GREEN"
+
+      - name: Upload branch audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-starter-truth-step1-branch-${{ github.run_id }}
+          path: artifacts/passing-yards-starter-truth-step1
+          if-no-files-found: warn
+          retention-days: 14
+
+  main-public-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install final proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Audit current data and prove public starter cards
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python devsystem/passing_yards_data_starter_truth_step1_v1.py             --start-date 2026-09-23             --days 7             --public-url https://kyre-sports-ai.streamlit.app             --artifact-dir artifacts/passing-yards-starter-truth-step1             --json-out artifacts/passing-yards-starter-truth-step1/main-public.json
+          echo "PASSING_YARDS_STARTER_TRUTH_STEP1_PUBLIC_GREEN"
+          echo "PASSING_YARDS_DATA_STARTER_TRUTH_STEP1_FROZEN_GREEN"
+
+      - name: Upload final Step 1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passing-yards-starter-truth-step1-public-${{ github.run_id }}
+          path: artifacts/passing-yards-starter-truth-step1
+          if-no-files-found: warn
+          retention-days: 14

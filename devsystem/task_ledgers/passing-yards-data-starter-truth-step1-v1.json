@@ -1,0 +1,60 @@
+{
+  "task": "passing-yards-data-starter-truth-step1-v1",
+  "task_id": "passing-yards-data-starter-truth-step1-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "6cde81c107d42893b383ef8948b89e7dd1597910",
+  "scope": "Passing Yards next-phase Step 1: data completeness plus quarterback starter/availability truth certification. Audit the existing frozen Passing Yards identity path against official ESPN slate IDs, verified QB depth charts, current active rosters, league injury data, and exact-event injury data. Prove that an Out/Inactive/reserve/stale depth QB is not displayed as the current starter and that a replacement QB is promoted only when the higher depth candidate has a verified availability or roster reason. No product, router, visual, projection, probability, market, sportsbook, or navigation change.",
+  "certification_only": true,
+  "product_files_changed": false,
+  "step1_status": "DONE",
+  "required": [
+    "official ESPN game IDs are used for every audited matchup",
+    "full-slate completeness is checked against the existing schedule completeness contract",
+    "both team starter identities resolve from verified ESPN depth data",
+    "selected starter has exact athlete ID and name",
+    "selected starter is present on the current active ESPN roster",
+    "selected starter is not Out, Inactive, IR, PUP, Suspended, NFI, or reserve-unavailable",
+    "league or exact-event injury feed is available for every audited matchup",
+    "healthy current depth QB1 remains selected",
+    "an unavailable depth QB1 may promote the next verified active QB",
+    "a stale or roster-ineligible depth QB1 may promote the next verified active QB",
+    "an unjustified lower-depth replacement fails closed",
+    "branch live-source audit covers the current seven-day NFL window",
+    "public Passing Yards QB picker shows the same two verified starters returned by the data audit",
+    "public V70 and V221 runtime markers remain present",
+    "public runtime has no TypeError or Traceback",
+    "Steps 1-5 mobile cleanup remain frozen and untouched"
+  ],
+  "important": [
+    "report how many replacement starters were verified in the audit window",
+    "report exact replacement reason when a lower-depth QB is selected",
+    "preserve existing game-day inactive fail-closed behavior for prop eligibility"
+  ],
+  "optional": [
+    "retain a screenshot and JSON artifact from the final public proof"
+  ],
+  "frozen_boundaries": [
+    "nfl_passing_yards_hub_v70.py",
+    "streamlit_memory_lazy_router_v221.py",
+    "app.py",
+    "nfl_passing_yards_identity_v1.py",
+    "nfl_game_day_availability_v1.py",
+    "devsystem/task_ledgers/passing-yards-mobile-cleanup-steps4-5-closeout-v1.json"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_provider_behavior_changed": false,
+  "navigation_state_changed": false,
+  "widget_keys_changed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
