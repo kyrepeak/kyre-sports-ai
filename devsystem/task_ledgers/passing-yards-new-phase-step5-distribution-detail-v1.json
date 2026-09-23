@@ -1,0 +1,31 @@
+{
+  "task": "passing-yards-new-phase-step5-distribution-detail-v1",
+  "task_id": "passing-yards-new-phase-step5-distribution-detail-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "7e3fa00a429b1e767d2d4738bc6e3378e1c7e433",
+  "scope": "New Phase Step 5 Distribution + Probability Detail for NFL Passing Yards. Presentation-only V66 over frozen V65, plus Router V217 activation, dedicated workflow, and app activation. Reorganizes only already-certified distribution values.",
+  "failed_layer": "NONE",
+  "product_files_changed": true,
+  "acceptance": [
+    "Distribution + Probability Detail renders for the selected quarterback",
+    "Distribution Location, Observed Recent SD, and Recent Games are present",
+    "P10, P25, P50 Median, P75, and P90 are present",
+    "Sampling Error and analytic distribution basis are present",
+    "Step 1 Category Navigation remains present",
+    "Step 2 Market Decision Detail remains present",
+    "Step 3 Projection Detail remains present",
+    "Step 4 Context + Uncertainty Detail remains present",
+    "Back to Quarterbacks returns to V58 with exactly two QB cards",
+    "date and matchup are preserved",
+    "sportsbook projection influence remains 0.0%",
+    "no projection, context, probability, market-math, data, or sportsbook logic changes"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
