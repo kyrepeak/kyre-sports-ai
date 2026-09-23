@@ -64,12 +64,20 @@ jobs:
           EOF
           sort -o /tmp/expected-hotfix-ledger.txt /tmp/expected-hotfix-ledger.txt
 
+          cat > /tmp/expected-verifier-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json
+          EOF
+          sort -o /tmp/expected-verifier-hotfix.txt /tmp/expected-verifier-hotfix.txt
+
           if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_FULL_GREEN"
           elif cmp -s /tmp/expected-hotfix.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_GREEN"
           elif cmp -s /tmp/expected-hotfix-ledger.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_LEDGER_GREEN"
+          elif cmp -s /tmp/expected-verifier-hotfix.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_VERIFIER_HOTFIX_GREEN"
           else
             echo "INVALID_STEP1_SCOPE"
             echo "Actual:"
@@ -234,6 +242,17 @@ jobs:
                   page.wait_for_timeout(300)
               raise RuntimeError("CATEGORY_NAV_QB_PICKER_NOT_READY")
 
+          def find_back(page,timeout=30):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          back=frame.get_by_role("button",name="← Back to Quarterbacks",exact=True)
+                          if back.count()==1: return frame,back
+                      except Exception: pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("CATEGORY_NAV_BACK_BUTTON_NOT_READY")
+
           def canonical_matchup(value):
               return str(value or "").split(" • ", 1)[0].strip()
 
@@ -292,7 +311,7 @@ jobs:
                   }""")
                   assert rect["bottom"] > 0 and rect["top"] < rect["innerHeight"], (kind,rect)
 
-              back=page.get_by_role("button",name="← Back to Quarterbacks",exact=True)
+              back_frame,back=find_back(page)
               assert back.count()==1
               back.click()
               deadline=time.monotonic()+20
@@ -403,6 +422,17 @@ jobs:
                   page.wait_for_timeout(350)
               raise RuntimeError("CATEGORY_NAV_PUBLIC_QB_PICKER_NOT_READY")
 
+          def find_back(page,timeout=30):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          back=frame.get_by_role("button",name="← Back to Quarterbacks",exact=True)
+                          if back.count()==1: return frame,back
+                      except Exception: pass
+                  page.wait_for_timeout(200)
+              raise RuntimeError("CATEGORY_NAV_PUBLIC_BACK_BUTTON_NOT_READY")
+
           def canonical_matchup(value):
               return str(value or "").split(" • ", 1)[0].strip()
 
@@ -456,7 +486,7 @@ jobs:
                   }""")
                   assert rect["bottom"] > 0 and rect["top"] < rect["innerHeight"], (kind,rect)
 
-              back=page.get_by_role("button",name="← Back to Quarterbacks",exact=True)
+              back_frame,back=find_back(page)
               assert back.count()==1
               back.click()
               deadline=time.monotonic()+20
