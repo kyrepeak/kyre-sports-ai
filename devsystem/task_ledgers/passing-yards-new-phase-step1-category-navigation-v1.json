@@ -55,6 +55,11 @@
     "patch": "V62 renders a native Streamlit Back control that deletes only ks_qb_slot from st.query_params and reruns; the dead framed Back anchor is hidden.",
     "branch_proof_run": 35817294600,
     "branch_proof": "GREEN",
-    "final_public_proof": "PENDING"
-  }
+    "final_public_proof": "PENDING_DEPLOY_REFRESH",
+    "final_public_failure_run": 35817665489,
+    "final_public_failure": "Merged native Back control was absent from production on two public attempts; verifier failed at back button count before click.",
+    "failed_layer": "DEPLOYMENT_RUNTIME_ACTIVATION",
+    "deployment_patch": "Entrypoint-only app.py V62 public refresh marker. No V62/V58/V59/model/data/math/analytics logic change."
+  },
+  "monster_status": "PENDING_DEPLOY_REFRESH_MERGE_FINAL_PUBLIC_PROOF"
 }
