@@ -53,6 +53,7 @@ jobs:
 
           cat > /tmp/expected-hotfix.txt <<'EOF'
           .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json
           nfl_passing_yards_hub_v62.py
           EOF
           sort -o /tmp/expected-hotfix.txt /tmp/expected-hotfix.txt
