@@ -24,7 +24,8 @@ DETAIL_CLEANUP_VERSION = "step1-2-v1"
 DETAIL_CLEANUP_STEPS = 2
 DETAIL_CLEANUP_STEP34_VERSION = "step3-4-v1"
 DETAIL_CLEANUP_STEP56_VERSION = "step5-6-v1"
-DETAIL_CLEANUP_COMPLETED_STEPS = 6
+DETAIL_CLEANUP_STEP78_VERSION = "step7-8-v1"
+DETAIL_CLEANUP_COMPLETED_STEPS = 7
 PRESENTATION_ONLY = True
 DISPLAY_ONLY = True
 MAY_MODIFY_PROJECTION = False
@@ -419,6 +420,68 @@ _DETAIL_CSS = r"""
   color:var(--kyre-sem-text-muted)!important;font-size:.66rem!important;line-height:1.5!important
 }
 
+/* STEP 7 RESPONSIVE POLISH */
+.ks-py59{overflow-x:clip}
+.ks-py59 img,.ks-py59 svg{max-width:100%}
+.ks-py59-support details{overflow:hidden}
+.ks-py59-support summary{
+  display:flex;align-items:center;min-height:44px;padding:4px 2px;
+  line-height:1.35;overflow-wrap:anywhere;touch-action:manipulation
+}
+.ks-py59-supportbody,.ks-py59-supportbody *{
+  max-width:100%;overflow-wrap:anywhere;word-break:break-word
+}
+.ks-py59 a{touch-action:manipulation}
+@media(max-width:900px){
+  .ks-py59{max-width:760px}
+  .ks-py59-head{grid-template-columns:1fr;align-items:start}
+  .ks-py59-player{padding:12px}
+  .ks-py59-evidence,.ks-py59-support{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .ks-py59{width:100%;max-width:none;margin:.2rem 0 .8rem}
+  .ks-py59-toolbar{align-items:stretch;gap:8px}
+  .ks-py59-back{min-height:44px}
+  .ks-py59-head{padding:14px}
+  .ks-py59-title{font-size:clamp(1.7rem,7vw,2.1rem)}
+  .ks-py59-player{padding:10px}
+  .ks-py59-section,.ks-py59-support details{width:100%;min-width:0}
+}
+@media(max-width:430px){
+  .ks-py59-toolbar{display:grid;grid-template-columns:1fr}
+  .ks-py59-toolbar>*{width:100%}
+  .ks-py59-head{padding:12px}
+  .ks-py59-sub{font-size:.77rem}
+  .ks-py59-identity-head{align-items:flex-start;flex-direction:column;gap:4px}
+  .ks-py59-identity .kpass29-top{
+    grid-template-columns:64px minmax(0,1fr) 34px!important;gap:8px!important
+  }
+  .ks-py59-identity .kpass29-head{
+    width:64px!important;height:64px!important;min-width:64px!important;max-width:64px!important;
+    flex-basis:64px!important
+  }
+  .ks-py59-identity .kpass29-logo{
+    width:34px!important;height:34px!important;min-width:34px!important;max-width:34px!important
+  }
+  .ks-py59-identity .kpass29-main{grid-template-columns:1fr!important}
+  .ks-py59-identity .kpass29-main>.kpass29-metric:nth-child(3){grid-column:auto!important}
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero,
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero,
+  .ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero,
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero{
+    grid-template-columns:1fr!important
+  }
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero>div:first-child,
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero>div:first-child,
+  .ks-py59-section[data-qb-analysis-section="context"] .kpy8-hero>div:first-child,
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-hero>div:first-child{
+    grid-column:auto!important
+  }
+  .ks-py59-section[data-qb-analysis-section="distribution"] .kpy9-q{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important
+  }
+}
+
 .ks-py59-section{
   min-width:0;margin-top:var(--kyre-space-3);padding:var(--kyre-space-3);
   border:1px solid var(--kyre-sem-border-soft);border-radius:var(--kyre-sem-radius-section);
@@ -590,7 +653,8 @@ def _selected_analysis(captured: dict[str, list[str]], slot: int) -> str:
         + _DETAIL_CSS
         + f'<section class="ks-py59" data-passing-yards-qb-detail="v59" '
           f'data-passing-yards-selected-qb="{slot}" data-qb-analysis-slot="{slot}" '
-          f'data-qb-detail-cleanup-version="{DETAIL_CLEANUP_VERSION}">'
+          f'data-qb-detail-cleanup-version="{DETAIL_CLEANUP_VERSION}" '
+          f'data-qb-detail-cleanup-step7="green" data-qb-detail-responsive="step7-v1">'
         + '<div class="ks-py59-toolbar">'
         + f'<a class="ks-py59-back" data-qb-back="true" href="{back}">← Back to Quarterbacks</a>'
         + build_badge("DEDICATED QB VIEW", tone="success")
@@ -641,6 +705,7 @@ def render_nfl_hub(market: str = "Passing Yards") -> None:
 __all__ = [
     "DETAIL_CLEANUP_COMPLETED_STEPS",
     "DETAIL_CLEANUP_STEP34_VERSION",
+    "DETAIL_CLEANUP_STEP78_VERSION",
     "DETAIL_CLEANUP_STEPS",
     "DETAIL_CLEANUP_VERSION",
     "DETAIL_SYSTEM_VERSION",
