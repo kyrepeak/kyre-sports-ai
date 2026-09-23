@@ -70,6 +70,12 @@ jobs:
           EOF
           sort -o /tmp/expected-verifier-hotfix.txt /tmp/expected-verifier-hotfix.txt
 
+          cat > /tmp/expected-shared-public-back-verifier-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          .github/workflows/passing-yards-new-phase-step2-market-detail-v1.yml
+          EOF
+          sort -o /tmp/expected-shared-public-back-verifier-hotfix.txt /tmp/expected-shared-public-back-verifier-hotfix.txt
+
           if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_FULL_GREEN"
           elif cmp -s /tmp/expected-hotfix.txt /tmp/actual.txt; then
@@ -78,6 +84,8 @@ jobs:
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_LEDGER_GREEN"
           elif cmp -s /tmp/expected-verifier-hotfix.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_VERIFIER_HOTFIX_GREEN"
+          elif cmp -s /tmp/expected-shared-public-back-verifier-hotfix.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_SHARED_PUBLIC_BACK_VERIFIER_HOTFIX_GREEN"
           else
             echo "INVALID_STEP1_SCOPE"
             echo "Actual:"
@@ -433,6 +441,10 @@ jobs:
                   page.wait_for_timeout(200)
               raise RuntimeError("CATEGORY_NAV_PUBLIC_BACK_BUTTON_NOT_READY")
 
+          def frame_query(frame):
+              href=frame.evaluate("() => window.location.href")
+              return parse_qs(urlparse(href).query)
+
           def canonical_matchup(value):
               return str(value or "").split(" • ", 1)[0].strip()
 
@@ -489,19 +501,18 @@ jobs:
               back_frame,back=find_back(page)
               assert back.count()==1
               back.click()
-              deadline=time.monotonic()+20
-              while time.monotonic()<deadline:
-                  qs=parse_qs(urlparse(page.url).query)
-                  if "ks_qb_slot" not in qs:
-                      break
-                  page.wait_for_timeout(100)
-              else:
-                  raise RuntimeError("CATEGORY_NAV_BACK_QUERY_NOT_CLEARED")
-              assert_state(page,False)
-              frame,picker=find_picker(page)
+
+              picker_frame,picker=find_picker(page,timeout=120)
               assert picker.count()==1
               assert picker.locator('a[data-qb-select]').count()==2
-              assert frame.locator('[data-passing-yards-category-nav="v62"]').count()==0
+
+              qs=frame_query(picker_frame)
+              assert "ks_qb_slot" not in qs,qs
+              assert qs.get("ks_py_date")==[expected_date],qs
+              mv=qs.get("ks_py_matchup") or [""]
+              assert canonical_matchup(mv[0])==expected_matchup,qs
+
+              assert picker_frame.locator('[data-passing-yards-category-nav="v62"]').count()==0
               print(f"PASSING_YARDS_NEW_PHASE_STEP1_PUBLIC_{width}_GREEN")
 
           with sync_playwright() as p:
