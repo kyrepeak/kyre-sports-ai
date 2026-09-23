@@ -1,0 +1,42 @@
+{
+  "task": "passing-yards-step2-public-runtime-owner-diagnostic-v1",
+  "task_id": "passing-yards-step2-public-runtime-owner-diagnostic-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "fafb5ddad199b82041f7fa391a679f3c5ac7ae9a",
+  "scope": "One focused read-only diagnostic for Passing Yards Step 2 after the same public V70 runtime-marker failure persisted through a deployment refresh. Inspect only the hosted Streamlit runtime to classify whether the owner is stale deployment identity, missing V70 marker behavior, V222 activation, or V71 explainability render. No product, router, model, data, math, verifier acceptance, navigation, or widget behavior changes.",
+  "failed_layer": "UNKNOWN",
+  "product_files_changed": false,
+  "model_math_changed": false,
+  "projection_changed": false,
+  "probability_changed": false,
+  "context_math_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_changed": false,
+  "router_changed": false,
+  "navigation_state_changed": false,
+  "widget_keys_changed": false,
+  "acceptance": [
+    "diagnostic changes only this workflow and this task ledger",
+    "public selected-QB detail presence is recorded",
+    "Jordan Love presence is recorded",
+    "V69 detail-cleanup marker count is recorded",
+    "V70 cleanup CSS marker count is recorded",
+    "V70 cleanup runtime marker count is recorded",
+    "V222 router marker count is recorded",
+    "V71 explainability ready marker count is recorded",
+    "V71 explainability panel count is recorded",
+    "TypeError and Traceback presence are recorded",
+    "frame count and frame URLs are recorded",
+    "exactly one owner classification is emitted",
+    "diagnostic does not modify product or acceptance logic"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
