@@ -46,5 +46,14 @@
     "consumed_receipts": []
   },
   "transition_history": [],
-  "override_events": []
+  "override_events": [],
+  "closeout_navigation_repair": {
+    "root_cause_layer": "NAVIGATION",
+    "public_evidence_run": 35815578616,
+    "root_cause": "Public Back anchor used target=_top with a query-relative href; the top-level query retained ks_qb_slot=2 through the bounded 8-second production observation.",
+    "patch": "V62 promotes the frozen Back href from ?... to /?... while retaining target=_top so hosted Streamlit navigation resolves against the app root.",
+    "branch_proof_run": 35815924910,
+    "branch_proof": "GREEN",
+    "product_file": "nfl_passing_yards_hub_v62.py"
+  }
 }
