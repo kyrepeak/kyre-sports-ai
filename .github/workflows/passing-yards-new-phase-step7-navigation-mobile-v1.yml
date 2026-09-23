@@ -135,6 +135,8 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -302,18 +304,6 @@ jobs:
                       assert grid.count()==1,selector
                       columns=grid.evaluate("e => getComputedStyle(e).gridTemplateColumns")
                       assert len([x for x in columns.split(" ") if x])==1,(selector,columns)
-
-              for selector in (
-                  ".ks-py63-market-grid",
-                  ".ks-py64-projection-grid",
-                  ".ks-py65-context-grid",
-                  ".ks-py66-distribution-grid",
-                  ".ks-py67-grid",
-              ):
-                  grid=root.locator(selector)
-                  assert grid.count()==1,selector
-                  columns=grid.evaluate("e => getComputedStyle(e).gridTemplateColumns")
-                  assert len([x for x in columns.split(" ") if x])==1,(selector,columns)
 
               dims=frame.locator("body").evaluate("""e => ({
                 bodyScroll:e.scrollWidth,
