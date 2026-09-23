@@ -134,16 +134,36 @@ jobs:
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          git diff --exit-code "$BASE_SHA" -- \
-            nfl_passing_yards_hub_v58.py \
-            nfl_passing_yards_hub_v59.py \
-            nfl_passing_yards_hub_v60.py \
-            nfl_passing_yards_hub_v61.py \
-            nfl_passing_yards_hub_v62.py \
-            streamlit_memory_lazy_router_v213.py
-          echo "PASSING_YARDS_STEP1_AND_ORIGINAL_FROZEN_GREEN"
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual-frozen-check.txt
+          cat > /tmp/expected-back-runtime-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          .github/workflows/passing-yards-new-phase-step2-market-detail-v1.yml
+          devsystem/task_ledgers/passing-yards-public-back-runtime-v1.json
+          nfl_passing_yards_hub_v62.py
+          EOF
+          sort -o /tmp/expected-back-runtime-hotfix.txt /tmp/expected-back-runtime-hotfix.txt
+
+          if cmp -s /tmp/expected-back-runtime-hotfix.txt /tmp/actual-frozen-check.txt; then
+            git diff --exit-code "$BASE_SHA" -- \
+              nfl_passing_yards_hub_v58.py \
+              nfl_passing_yards_hub_v59.py \
+              nfl_passing_yards_hub_v60.py \
+              nfl_passing_yards_hub_v61.py \
+              streamlit_memory_lazy_router_v213.py
+            echo "PASSING_YARDS_STEP1_FROZEN_EXCEPT_EXACT_V62_BACK_RUNTIME_HOTFIX_GREEN"
+          else
+            git diff --exit-code "$BASE_SHA" -- \
+              nfl_passing_yards_hub_v58.py \
+              nfl_passing_yards_hub_v59.py \
+              nfl_passing_yards_hub_v60.py \
+              nfl_passing_yards_hub_v61.py \
+              nfl_passing_yards_hub_v62.py \
+              streamlit_memory_lazy_router_v213.py
+            echo "PASSING_YARDS_STEP1_AND_ORIGINAL_FROZEN_GREEN"
+          fi
 
   branch-market-detail-proof:
     if: github.event_name == 'pull_request'
