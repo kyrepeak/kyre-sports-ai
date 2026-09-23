@@ -442,6 +442,18 @@ _MOBILE_CLEANUP_CSS = r"""
 /* ---------------------------------------------------------
    Tablet + phone
    --------------------------------------------------------- */
+@media(max-width:820px){
+  /* Keep the confidence pill out of flex-item blockification on phone/tablet.
+     The badge remains inline-flex and gets its own clean row below the QB name. */
+  .kpy15-qbtop{
+    display:block!important;
+  }
+  .kpy15-qbtop .kpy15-conf{
+    display:inline-flex!important;
+    margin-top:7px!important;
+  }
+}
+
 @media(max-width:760px){
   .kpy15-grid{
     grid-template-columns:1fr!important;
