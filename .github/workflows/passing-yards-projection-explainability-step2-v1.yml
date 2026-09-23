@@ -1,0 +1,393 @@
+name: NFL Passing Yards Projection Explainability Step 2 V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-projection-explainability-step2-v1.yml"
+      - "nfl_passing_yards_hub_v71.py"
+      - "streamlit_memory_lazy_router_v222.py"
+      - "app.py"
+      - "tests/test_passing_yards_projection_explainability_step2_v1.py"
+      - "devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-projection-explainability-step2-v1.yml"
+      - "nfl_passing_yards_hub_v71.py"
+      - "streamlit_memory_lazy_router_v222.py"
+      - "app.py"
+      - "tests/test_passing_yards_projection_explainability_step2_v1.py"
+      - "devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-projection-explainability-step2-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step 2 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-projection-explainability-step2-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json
+          nfl_passing_yards_hub_v71.py
+          streamlit_memory_lazy_router_v222.py
+          tests/test_passing_yards_projection_explainability_step2_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_EXPLAINABILITY_STEP2_SCOPE_GREEN"
+
+      - name: Prove Step 1 and prior Passing Yards work remain frozen
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" --             devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json             nfl_passing_yards_hub_v70.py             streamlit_memory_lazy_router_v221.py             devsystem/task_ledgers/passing-yards-mobile-cleanup-steps4-5-closeout-v1.json             nfl_passing_yards_identity_v1.py             nfl_game_day_availability_v1.py
+          echo "PASSING_YARDS_STEP1_AND_PRIOR_FROZEN_GREEN"
+
+      - name: Install static test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and test explainability contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v71.py streamlit_memory_lazy_router_v222.py
+          python -m pytest -q tests/test_passing_yards_projection_explainability_step2_v1.py
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import nfl_passing_yards_hub_v71 as v71
+          import streamlit_memory_lazy_router_v222 as v222
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step2_status"] == "DONE"
+          assert ledger["sportsbook_projection_influence"] == 0.0
+
+          source=Path("nfl_passing_yards_hub_v71.py").read_text()
+          required=[
+              'FROZEN_PRIOR = "nfl_passing_yards_hub_v70"',
+              'EXPLAINABILITY_VERSION = "v71"',
+              'NEW_PHASE_STEP = 2',
+              'PRESENTATION_ONLY = True',
+              'MAY_MODIFY_PROJECTION = False',
+              'MAY_MODIFY_PROBABILITY = False',
+              'MAY_MODIFY_MARKET_MATH = False',
+              'MAY_MODIFY_DATA = False',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'data-passing-yards-projection-explainability="v71"',
+              'data-passing-yards-explainability-method="v71"',
+              'Why the model landed here',
+              'QB season workload',
+              'QB recent workload',
+              'Opponent pass-defense volume + efficiency',
+              'QB passing efficiency',
+              'Team passing pace',
+          ]
+          for token in required:
+              assert token in source, token
+
+          for forbidden in ("build_baseline_projection(", "build_distribution(", "evaluate_market("):
+              assert forbidden not in source, forbidden
+
+          assert v222.FROZEN_ROUTER == "streamlit_memory_lazy_router_v221"
+          assert v222.PASSING_HUB == "nfl_passing_yards_hub_v71"
+          app=Path("app.py").read_text()
+          assert "from streamlit_memory_lazy_router_v222 import record_bootstrap_import_ms, render_app" in app
+          print("PASSING_YARDS_EXPLAINABILITY_STEP2_STATIC_GREEN")
+          PY
+
+  branch-explainability-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-explainability-step2
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-explainability-step2/streamlit.log 2>&1 &
+          echo $! > /tmp/py_step2_pid
+
+      - name: Prove Step 2 at phone tablet desktop
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import parse_qs, urlencode, urlparse
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          expected_date="2026-09-24"
+          expected_matchup="Atlanta Falcons @ Green Bay Packers"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":expected_date,
+              "ks_py_matchup":expected_matchup,
+              "ks_qb_slot":"2",
+          })
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("EXPLAINABILITY_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2200))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=180):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000])
+                      raise RuntimeError("EXPLAINABILITY_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1:
+                              return frame,loc.first
+                      except Exception:
+                          pass
+                  page.wait_for_timeout(400)
+              raise RuntimeError("EXPLAINABILITY_SELECTOR_NOT_READY:"+selector)
+
+          def find_back(page,timeout=40):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  for frame in page.frames:
+                      try:
+                          loc=frame.get_by_role("button",name="← Back to Quarterbacks",exact=True)
+                          if loc.count()==1: return frame,loc
+                      except Exception: pass
+                  page.wait_for_timeout(250)
+              raise RuntimeError("EXPLAINABILITY_BACK_NOT_READY")
+
+          def certify(page,width,height):
+              page.set_viewport_size({"width":width,"height":height})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              body=frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in body
+              assert "TypeError" not in body and "Traceback" not in body
+              assert frame.locator('[data-passing-yards-mobile-cleanup-runtime="v70"]').count()==1
+              _,router=find(page,'[data-passing-yards-v222-runtime="projection-explainability-step2"]')
+              assert router.count()==1
+              assert root.get_attribute("data-passing-yards-detail-cleanup-ready")=="v69"
+              assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
+
+              panel=root.locator('[data-passing-yards-projection-explainability="v71"]')
+              assert panel.count()==1
+              assert panel.locator('[data-explainability-driver]').count()==5
+              assert panel.locator('[data-explainability-field]').count()==4
+              assert panel.locator('[data-explainability-market-read="v71"]').count()==1
+              assert panel.locator('[data-passing-yards-explainability-method="v71"]').count()==1
+
+              text=panel.inner_text(timeout=5000)
+              for label in (
+                  "Why the model landed here",
+                  "Model Projection",
+                  "Expected Attempts",
+                  "Expected YPA",
+                  "Attempt / Efficiency Coverage",
+                  "QB season workload",
+                  "QB recent workload",
+                  "Opponent pass-defense volume + efficiency",
+                  "QB passing efficiency",
+                  "Team passing pace",
+                  "Post-model market comparison",
+                  "Sportsbook projection influence remains 0.0%",
+              ):
+                  assert label.casefold() in text.casefold(), (label,text)
+
+              fields=[v.strip() for v in panel.locator('[data-explainability-field] b').all_inner_texts()]
+              assert len(fields)==4,fields
+              assert all(v and v!="—" for v in fields[:3]),fields
+
+              clean_projection=root.locator('[data-passing-yards-clean-detail="projection"]')
+              assert clean_projection.count()==1
+              assert panel.bounding_box()["y"] <= clean_projection.bounding_box()["y"]
+
+              dims=frame.locator("body").evaluate("""e => ({
+                bodyScroll:e.scrollWidth,
+                docScroll:document.documentElement.scrollWidth,
+                viewport:window.innerWidth
+              })""")
+              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+
+              _,back=find_back(page)
+              back.click()
+              picker_frame,picker=find(page,'[data-passing-yards-selection-screen="v58"]',timeout=120)
+              assert picker.locator('a[data-qb-select]').count()==2
+              href=picker_frame.evaluate("() => window.location.href")
+              qs=parse_qs(urlparse(href).query)
+              assert "ks_qb_slot" not in qs,qs
+              assert qs.get("ks_py_date")==[expected_date],qs
+              mv=(qs.get("ks_py_matchup") or [""])[0].split(" • ",1)[0].strip()
+              assert mv==expected_matchup,qs
+              print(f"PASSING_YARDS_EXPLAINABILITY_STEP2_{width}_GREEN")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              certify(page,390,844)
+              certify(page,768,1024)
+              certify(page,1440,1000)
+              print("PASSING_YARDS_EXPLAINABILITY_STEP2_BRANCH_GREEN")
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 600 artifacts/passing-yards-explainability-step2/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py_step2_pid ]; then kill "$(cat /tmp/py_step2_pid)" 2>/dev/null || true; fi
+
+  public-explainability-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Allow Streamlit deployment to publish
+        run: sleep 120
+
+      - name: Prove public explainability and freeze Step 2
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=210):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000])
+                      raise RuntimeError("EXPLAINABILITY_PUBLIC_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError("EXPLAINABILITY_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
+              assert frame.locator('[data-passing-yards-mobile-cleanup-runtime="v70"]').count()==1
+              _,router=find(page,'[data-passing-yards-v222-runtime="projection-explainability-step2"]')
+              assert router.count()==1
+              assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
+              panel=root.locator('[data-passing-yards-projection-explainability="v71"]')
+              assert panel.count()==1
+              assert panel.locator('[data-explainability-driver]').count()==5
+              assert panel.locator('[data-explainability-field]').count()==4
+              text=panel.inner_text(timeout=5000)
+              assert "Why the model landed here" in text
+              assert "Post-model market comparison" in text
+              assert "Sportsbook projection influence remains 0.0%" in text
+              fields=[v.strip() for v in panel.locator('[data-explainability-field] b').all_inner_texts()]
+              assert all(v and v!="—" for v in fields[:3]),fields
+              dims=frame.locator("body").evaluate("""e => ({
+                bodyScroll:e.scrollWidth,
+                docScroll:document.documentElement.scrollWidth,
+                viewport:window.innerWidth
+              })""")
+              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+              print("PASSING_YARDS_EXPLAINABILITY_STEP2_PUBLIC_GREEN")
+              print("PASSING_YARDS_PROJECTION_EXPLAINABILITY_STEP2_FROZEN_GREEN")
+              browser.close()
+          PY

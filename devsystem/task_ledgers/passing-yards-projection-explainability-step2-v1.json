@@ -1,0 +1,69 @@
+{
+  "task": "passing-yards-projection-explainability-step2-v1",
+  "task_id": "passing-yards-projection-explainability-step2-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "f5e789d53d29756474025ef031a209540dd662ed",
+  "scope": "Passing Yards next-phase Step 2: projection explainability. Add a presentation-only selected-QB panel that copies already-certified projection, market comparison, confidence, coverage, and the frozen Step 7 driver-weight contract into one readable explanation surface. No projection, probability, context, market math, sportsbook logic, data provider, widget, or navigation behavior changes.",
+  "failed_layer": "NONE",
+  "new_build_mode": true,
+  "product_files_changed": true,
+  "step2_status": "DONE",
+  "required": [
+    "selected-QB page renders one Projection Explainability V71 panel",
+    "model projection is shown",
+    "expected attempts are shown",
+    "expected YPA is shown",
+    "attempt and efficiency source coverage are shown",
+    "market line is shown as post-model comparison only",
+    "final lean is shown as post-model comparison only",
+    "model edge is shown as post-model comparison only",
+    "model confidence is shown",
+    "exactly five model-driver groups are shown",
+    "driver text mirrors frozen Step 7 attempt weights: QB season 45%, recent QB 20%, opponent attempts allowed 20%, team pace 15%",
+    "driver text mirrors frozen Step 7 efficiency weights: QB season YPA 45%, recent QB YPA 20%, opponent season YPA allowed 25%, opponent recent YPA allowed 10%",
+    "missing-input renormalization and source coverage are explicitly explained",
+    "pressure and personnel remain visibly context-only unless upstream model already adjusts them",
+    "sportsbook projection influence remains 0.0%",
+    "no projection, distribution, or market evaluation function is called from V71",
+    "branch proof passes at 390px, 768px, and 1440px",
+    "public proof passes on hosted Streamlit",
+    "Step 1 data/starter truth remains frozen",
+    "mobile cleanup Steps 1-5 remain frozen"
+  ],
+  "important": [
+    "explainability panel appears before the cleaned Projection Detail panel",
+    "panel is responsive without horizontal overflow",
+    "V70 mobile-cleanup marker remains present",
+    "V222 router runtime marker is present",
+    "Back to Quarterbacks still returns to exactly two QB cards"
+  ],
+  "optional": [
+    "retain screenshots from branch and public proof"
+  ],
+  "frozen_boundaries": [
+    "devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json",
+    "nfl_passing_yards_hub_v70.py",
+    "streamlit_memory_lazy_router_v221.py",
+    "devsystem/task_ledgers/passing-yards-mobile-cleanup-steps4-5-closeout-v1.json",
+    "nfl_passing_yards_identity_v1.py",
+    "nfl_game_day_availability_v1.py"
+  ],
+  "model_math_changed": false,
+  "projection_changed": false,
+  "context_math_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_provider_behavior_changed": false,
+  "widget_keys_changed": false,
+  "navigation_state_changed": false,
+  "sportsbook_projection_influence": 0,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
