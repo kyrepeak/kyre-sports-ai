@@ -1,0 +1,284 @@
+name: NFL Passing Yards QB Detail Cleanup Steps 5-6
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/passing-yards-qb-detail-cleanup-step5-6-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step5-6-v1.json"
+      - "nfl_passing_yards_hub_v59.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-qb-detail-cleanup-step5-6-v1.yml"
+      - "devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step5-6-v1.json"
+      - "nfl_passing_yards_hub_v59.py"
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce Step 5-6 visual-only scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-qb-detail-cleanup-step5-6-v1.yml
+          devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step5-6-v1.json
+          nfl_passing_yards_hub_v59.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_QB_DETAIL_STEP5_6_SCOPE_GREEN"
+
+      - name: Compile V59
+        run: python -m py_compile nfl_passing_yards_hub_v59.py
+
+      - name: Verify Steps 1-6 presentation contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path("nfl_passing_yards_hub_v59.py").read_text()
+          required=[
+              'DETAIL_CLEANUP_STEP56_VERSION = "step5-6-v1"',
+              'DETAIL_CLEANUP_COMPLETED_STEPS = 6',
+              'PRESENTATION_ONLY = True',
+              'MAY_MODIFY_PROJECTION = False',
+              'MAY_MODIFY_PROBABILITY = False',
+              'MAY_MODIFY_MARKET_MATH = False',
+              'MAY_MODIFY_DATA = False',
+              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
+              'data-qb-detail-cleanup-step1="green"',
+              'data-qb-detail-cleanup-step2="green"',
+              'data-qb-detail-cleanup-step3="green"',
+              'data-qb-detail-cleanup-step4="green"',
+              'data-qb-detail-cleanup-step5="green"',
+              'data-qb-detail-cleanup-step6="green"',
+              '.kpy8-meta b',
+              '.kpy9-q b',
+          ]
+          missing=[x for x in required if x not in text]
+          if missing:
+              raise SystemExit("MISSING_STEP5_6_CONTRACT: "+", ".join(missing))
+          print("PASSING_YARDS_QB_DETAIL_STEP5_STATIC_GREEN")
+          print("PASSING_YARDS_QB_DETAIL_STEP6_STATIC_GREEN")
+          PY
+
+      - name: Verify frozen boundaries
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" --             nfl_passing_yards_hub_v58.py             nfl_passing_yards_hub_v60.py             nfl_passing_yards_hub_v61.py             streamlit_memory_lazy_router_v209.py             streamlit_memory_lazy_router_v210.py             streamlit_memory_lazy_router_v211.py             streamlit_memory_lazy_router_v212.py             app.py             .github/workflows/passing-yards-qb-detail-cleanup-step1-2-v1.yml             .github/workflows/passing-yards-qb-detail-cleanup-step3-4-v1.yml             devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step1-2-v1.json             devsystem/task_ledgers/passing-yards-qb-detail-cleanup-step3-4-v1.json
+          echo "PASSING_YARDS_QB_DETAIL_STEP1_4_FROZEN_GREEN"
+
+  branch-mobile-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-qb-detail-step5-6
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-qb-detail-step5-6/streamlit.log 2>&1 &
+          echo $! > /tmp/py56_pid
+      - name: Prove Step 5-6 mobile cleanup
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          params={
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          }
+          route=base+"/?"+urlencode(params)
+
+          deadline=time.monotonic()+120
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500: break
+              except Exception: pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("STEP56_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2000))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find_detail(page,timeout=180):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000]); raise RuntimeError("STEP56_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          root=frame.locator('[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                          if root.count()==1: return frame,root
+                      except Exception: pass
+                  page.wait_for_timeout(400)
+              raise RuntimeError("STEP56_V59_NOT_READY")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find_detail(page)
+
+              for step in (1,2,3,4,5,6):
+                  assert root.locator(f'[data-qb-detail-cleanup-step{step}="green"]').count()==1
+
+              context=root.locator('[data-qb-analysis-section="context"]')
+              distribution=root.locator('[data-qb-analysis-section="distribution"]')
+              assert context.locator(".kpy8-card").count()==1
+              assert context.locator(".kpy8-meta").count()==1
+              assert distribution.locator(".kpy9-card").count()==1
+              assert distribution.locator(".kpy9-q").count()==1
+              assert distribution.locator(".kpy9-q>div").count()==5
+
+              assert context.locator(".kpy8-meta b").first.evaluate("e => getComputedStyle(e).display")=="block"
+              assert distribution.locator(".kpy9-q b").first.evaluate("e => getComputedStyle(e).display")=="block"
+
+              cb=context.bounding_box(); db=distribution.bounding_box()
+              assert cb and cb["width"] <= 390, cb
+              assert db and db["width"] <= 390, db
+
+              body=frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in body
+              assert context.locator(":scope > strong").text_content().strip()=="Context + Uncertainty"
+              assert distribution.locator(":scope > strong").text_content().strip()=="Distribution + Probability"
+              assert "P50 Median" in distribution.locator(".kpy9-q").inner_text()
+              assert "TypeError" not in body and "Traceback" not in body
+
+              print("PASSING_YARDS_QB_DETAIL_STEP5_BRANCH_GREEN")
+              print("PASSING_YARDS_QB_DETAIL_STEP6_BRANCH_GREEN")
+              browser.close()
+          PY
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 500 artifacts/passing-yards-qb-detail-step5-6/streamlit.log || true
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py56_pid ]; then kill "$(cat /tmp/py56_pid)" 2>/dev/null || true; fi
+
+  public-mobile-proof:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+      - name: Allow Streamlit deployment to publish
+        run: sleep 90
+      - name: Prove public Step 5-6 mobile cleanup once
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          params={
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          }
+          route=base+"/?"+urlencode(params)
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find_detail(page,timeout=180):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  if "TypeError" in body or "Traceback" in body:
+                      print(body[:50000]); raise RuntimeError("STEP56_PUBLIC_RUNTIME_ERROR")
+                  for frame in page.frames:
+                      try:
+                          root=frame.locator('[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                          if root.count()==1: return frame,root
+                      except Exception: pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError("STEP56_PUBLIC_V59_NOT_READY")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find_detail(page)
+
+              for step in (1,2,3,4,5,6):
+                  assert root.locator(f'[data-qb-detail-cleanup-step{step}="green"]').count()==1
+
+              context=root.locator('[data-qb-analysis-section="context"]')
+              distribution=root.locator('[data-qb-analysis-section="distribution"]')
+              assert context.locator(".kpy8-card").count()==1
+              assert distribution.locator(".kpy9-card").count()==1
+              assert distribution.locator(".kpy9-q>div").count()==5
+              assert context.locator(".kpy8-meta b").first.evaluate("e => getComputedStyle(e).display")=="block"
+              assert distribution.locator(".kpy9-q b").first.evaluate("e => getComputedStyle(e).display")=="block"
+
+              body=frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in body
+              assert context.locator(":scope > strong").text_content().strip()=="Context + Uncertainty"
+              assert distribution.locator(":scope > strong").text_content().strip()=="Distribution + Probability"
+              assert "P50 Median" in distribution.locator(".kpy9-q").inner_text()
+              assert "TypeError" not in body and "Traceback" not in body
+
+              print("PASSING_YARDS_QB_DETAIL_STEP5_PUBLIC_GREEN")
+              print("PASSING_YARDS_QB_DETAIL_STEP6_PUBLIC_GREEN")
+              browser.close()
+          PY
