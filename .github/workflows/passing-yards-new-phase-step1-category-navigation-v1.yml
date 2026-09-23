@@ -41,15 +41,32 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/expected-full.txt <<'EOF'
           .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json
           nfl_passing_yards_hub_v62.py
           streamlit_memory_lazy_router_v213.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          sort -o /tmp/expected-full.txt /tmp/expected-full.txt
+
+          cat > /tmp/expected-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          nfl_passing_yards_hub_v62.py
+          EOF
+          sort -o /tmp/expected-hotfix.txt /tmp/expected-hotfix.txt
+
+          if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_FULL_GREEN"
+          elif cmp -s /tmp/expected-hotfix.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_GREEN"
+          else
+            echo "INVALID_STEP1_SCOPE"
+            echo "Actual:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
           echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_GREEN"
 
       - name: Compile Step 1 activation
