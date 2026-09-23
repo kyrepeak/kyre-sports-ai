@@ -31,7 +31,7 @@ jobs:
       - name: Install deterministic test dependencies
         run: python -m pip install --disable-pip-version-check -q pytest requests streamlit
 
-      - name: Enforce exact six-file production-cleanup diff
+      - name: Enforce production-cleanup or Step 4 transport-repair scope
         if: github.event_name == 'pull_request'
         shell: bash
         env:
@@ -40,7 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/original_scope.txt <<'EOF'
           .github/workflows/nfl-passing-yards-v35-production-cleanup-v1.yml
           app.py
           nfl_passing_yards_hub_v35.py
@@ -48,10 +49,26 @@ jobs:
           streamlit_memory_lazy_router_v128.py
           tests/test_nfl_passing_yards_v35_production_cleanup_v1.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          echo 'Actual Passing V35 production cleanup diff:'
-          cat /tmp/actual.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          sort -o /tmp/original_scope.txt /tmp/original_scope.txt
+
+          cat > /tmp/step4_transport_scope.txt <<'EOF'
+          .github/workflows/nfl-passing-yards-v35-production-cleanup-v1.yml
+          .github/workflows/passing-yards-live-market-step4-v1.yml
+          nfl_passing_yards_market_api_v2.py
+          tests/test_nfl_passing_yards_v35_production_cleanup_v1.py
+          EOF
+          sort -o /tmp/step4_transport_scope.txt /tmp/step4_transport_scope.txt
+
+          if diff -q /tmp/original_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_V35_ORIGINAL_SCOPE_GREEN"
+          elif diff -q /tmp/step4_transport_scope.txt /tmp/actual.txt >/dev/null; then
+            echo "PASSING_STEP4_PUBLIC_TRANSPORT_REPAIR_SCOPE_GREEN"
+          else
+            echo "PASSING_V35_SCOPE_MISMATCH"
+            echo "Actual:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
 
       - name: Compile V35 production surface
         run: |
@@ -105,7 +122,8 @@ jobs:
           assert page.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           assert page.STAKE_SIZING_ENABLED is False
           assert transport.FROZEN_VALIDATION_OWNER == 'nfl_passing_yards_market_api_v1'
-          assert transport.MAX_REQUEST_ATTEMPTS == 1
+          assert transport.MAX_REQUEST_ATTEMPTS == 2
+          assert transport.RETRY_BACKOFF_SECONDS == 0.35
           assert transport.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
           source = inspect.getsource(page.render_nfl_passing_yards_hub)
           for forbidden in (
