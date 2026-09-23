@@ -1,0 +1,37 @@
+{
+  "task": "passing-yards-step2-deployment-refresh-v1",
+  "task_id": "passing-yards-step2-deployment-refresh-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "251263fa13f2cbe2372a052ba4dbdb411901b69c",
+  "scope": "Deployment-only refresh for Passing Yards Projection Explainability Step 2 after current MAIN passed branch/runtime proof but hosted Streamlit did not expose the frozen V70 runtime marker. Preserve all product, router, model, data, math, verifier, navigation, and widget behavior. This ledger exists only to satisfy permanent DevSystem merge policy for the deployment refresh PR.",
+  "failed_layer": "MERGE_POLICY",
+  "product_files_changed": false,
+  "model_math_changed": false,
+  "projection_changed": false,
+  "probability_changed": false,
+  "context_math_changed": false,
+  "market_math_changed": false,
+  "sportsbook_logic_changed": false,
+  "data_changed": false,
+  "router_changed": false,
+  "navigation_state_changed": false,
+  "widget_keys_changed": false,
+  "acceptance": [
+    "deployment refresh PR changes only this task ledger beyond the empty-tree refresh commit",
+    "V71 product remains frozen",
+    "V222 router remains frozen",
+    "Step 1 remains frozen",
+    "DevSystem final gate passes",
+    "deployment refresh PR merges",
+    "one final public Step 2 proof runs after refresh",
+    "Step 2 freezes only after public PASS"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
