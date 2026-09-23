@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/passing-yards-live-market-step4-v1.yml"
+      - ".github/workflows/nfl-passing-yards-v35-production-cleanup-v1.yml"
       - "nfl_passing_yards_hub_v73.py"
       - "nfl_passing_yards_market_api_v2.py"
       - "streamlit_memory_lazy_router_v224.py"
@@ -15,6 +16,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/passing-yards-live-market-step4-v1.yml"
+      - ".github/workflows/nfl-passing-yards-v35-production-cleanup-v1.yml"
       - "nfl_passing_yards_hub_v73.py"
       - "streamlit_memory_lazy_router_v224.py"
       - "app.py"

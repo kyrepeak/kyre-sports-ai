@@ -213,40 +213,24 @@ jobs:
                   market_combo.wait_for(state='visible',timeout=30000)
                   _choose(page,frame,1,'Passing Yards')
 
-                  _wait_for_text(frame,'ALL 10 STEPS • PLAYER CARDS',180.0)
-                  body=_wait_for_text(frame,'Model probabilities are estimates — not guarantees.',210.0)
+                  _wait_for_text(frame,'PASSING YARDS • QUARTERBACKS',180.0)
+                  body=_wait_for_text(frame,'KYRE SPORTS API MARKET GREEN',210.0)
                   forbidden=_body_has_forbidden_error(body)
                   if forbidden:
                       raise BrowserQAFailure(f'Passing V35 runtime error marker: {forbidden}')
 
-                  deadline=time.time()+180
-                  cards=frame.locator('.kpass34-player')
-                  required=(
-                      ('.kpass29-card',1),('.kpass30-profile',1),('.kpy-defense',1),
-                      ('.kpy-pressure',1),('.kpy-personnel',1),('.kpy-env',1),
-                      ('.kpy-proj',1),('.kpy8-card',1),('.kpy9-card',1),('.kpy10-card',1),
-                      ('.kpass34-step',9),
-                  )
-                  while time.time() < deadline:
-                      if cards.count() == 2 and all(
-                          all(cards.nth(idx).locator(selector).count() == want for selector,want in required)
-                          for idx in range(2)
-                      ):
-                          break
-                      time.sleep(2)
-
-                  if cards.count() != 2:
-                      raise BrowserQAFailure(f'expected 2 combined QB cards, got {cards.count()}')
-                  per_card=[]
-                  for idx in range(2):
-                      card=cards.nth(idx)
-                      counts={selector:card.locator(selector).count() for selector,_ in required}
-                      for selector,want in required:
-                          if counts[selector] != want:
-                              raise BrowserQAFailure(f'QB card {idx+1} expected {want} {selector}, got {counts[selector]}')
-                      per_card.append(counts)
+                  picker=frame.locator('[data-passing-yards-selection-screen="v58"]')
+                  if picker.count() != 1:
+                      raise BrowserQAFailure(f'expected current V58 QB selection screen, got {picker.count()}')
+                  qb_links=picker.locator('a[data-qb-select]')
+                  if qb_links.count() != 2:
+                      raise BrowserQAFailure(f'expected 2 current QB selection links, got {qb_links.count()}')
 
                   settled_body=frame.locator('body').inner_text()
+                  if 'KYRE SPORTS API MARKET GREEN' not in settled_body:
+                      raise BrowserQAFailure('V2 transport did not reach a certified live market')
+                  if 'Kyre Sports API request failed: ReadTimeout' in settled_body:
+                      raise BrowserQAFailure('V2 transport regressed to public ReadTimeout fallback')
                   leaked=[
                       f'NFL PASSING YARDS V{version} •'
                       for version in range(20,25)
@@ -265,8 +249,9 @@ jobs:
 
                   result={
                       'status':'GREEN',
-                      'combined_qb_cards':2,
-                      'nested_section_counts':per_card,
+                      'current_qb_picker':'v58',
+                      'current_qb_select_links':2,
+                      'live_market_transport_green':True,
                       'legacy_v20_v24_caption_count':0,
                       'model_disclaimer_preserved':True,
                       'step10_manual_fallback_controls_preserved':True,
