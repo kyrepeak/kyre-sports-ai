@@ -19,7 +19,10 @@ projection influence remains 0.0% and stake sizing remains OFF.
 from __future__ import annotations
 
 from typing import Any
+import importlib
 
+import nfl_passing_yards_environment_v1 as environment_v1
+import nfl_passing_yards_environment_v2 as environment_v2
 import nfl_passing_yards_hub_v17 as prior
 
 MODEL_VERSION = "NFL PASSING YARDS V18 • RECURSION-SAFE EARLY-SEASON MODULE PROXIES"
@@ -36,7 +39,16 @@ class _WritableModuleProxy:
         return getattr(self._wrapped, name)
 
 
+def _repair_environment_base_if_poisoned() -> bool:
+    """Restore canonical V1 builder only when a stale runtime points it back to V2."""
+    if environment_v1.build_game_environment is environment_v2.build_game_environment:
+        importlib.reload(environment_v1)
+        return True
+    return False
+
+
 def render_nfl_passing_yards_hub() -> None:
+    _repair_environment_base_if_poisoned()
     step7 = prior.step7_ui
 
     original_defense_module = step7.defense
@@ -57,5 +69,6 @@ def render_nfl_passing_yards_hub() -> None:
 __all__ = [
     "FROZEN_PRIOR",
     "MODEL_VERSION",
+    "_repair_environment_base_if_poisoned",
     "render_nfl_passing_yards_hub",
 ]
