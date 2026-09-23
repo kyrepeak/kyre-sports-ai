@@ -86,6 +86,8 @@ _MOBILE_CLEANUP_CSS = r"""
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
+  width:max-content!important;
+  max-width:100%!important;
   min-height:26px!important;
   padding:5px 8px!important;
   border:1px solid var(--kyre-sem-border-medium)!important;
@@ -261,6 +263,8 @@ _MOBILE_CLEANUP_CSS = r"""
   align-items:center!important;
   justify-content:center!important;
   flex:0 0 auto!important;
+  width:max-content!important;
+  max-width:100%!important;
   min-height:26px!important;
   padding:5px 8px!important;
   border:1px solid var(--kyre-sem-border-medium)!important;
