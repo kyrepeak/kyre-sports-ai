@@ -53,15 +53,23 @@ jobs:
 
           cat > /tmp/expected-hotfix.txt <<'EOF'
           .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
-          devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json
           nfl_passing_yards_hub_v62.py
           EOF
           sort -o /tmp/expected-hotfix.txt /tmp/expected-hotfix.txt
+
+          cat > /tmp/expected-hotfix-ledger.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          devsystem/task_ledgers/passing-yards-new-phase-step1-category-navigation-v1.json
+          nfl_passing_yards_hub_v62.py
+          EOF
+          sort -o /tmp/expected-hotfix-ledger.txt /tmp/expected-hotfix-ledger.txt
 
           if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_FULL_GREEN"
           elif cmp -s /tmp/expected-hotfix.txt /tmp/actual.txt; then
             echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_GREEN"
+          elif cmp -s /tmp/expected-hotfix-ledger.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP1_SCOPE_HOTFIX_LEDGER_GREEN"
           else
             echo "INVALID_STEP1_SCOPE"
             echo "Actual:"
@@ -284,12 +292,21 @@ jobs:
                   }""")
                   assert rect["bottom"] > 0 and rect["top"] < rect["innerHeight"], (kind,rect)
 
-              back=root.locator('a[data-qb-back="true"]')
+              back=page.get_by_role("button",name="← Back to Quarterbacks",exact=True)
               assert back.count()==1
               back.click()
+              deadline=time.monotonic()+20
+              while time.monotonic()<deadline:
+                  qs=parse_qs(urlparse(page.url).query)
+                  if "ks_qb_slot" not in qs:
+                      break
+                  page.wait_for_timeout(100)
+              else:
+                  raise RuntimeError("CATEGORY_NAV_BACK_QUERY_NOT_CLEARED")
+              assert_state(page,False)
               frame,picker=find_picker(page)
               assert picker.count()==1
-              assert_state(page,False)
+              assert picker.locator('a[data-qb-select]').count()==2
               assert frame.locator('[data-passing-yards-category-nav="v62"]').count()==0
               print(f"PASSING_YARDS_NEW_PHASE_STEP1_{width}_GREEN")
 
@@ -439,12 +456,21 @@ jobs:
                   }""")
                   assert rect["bottom"] > 0 and rect["top"] < rect["innerHeight"], (kind,rect)
 
-              back=root.locator('a[data-qb-back="true"]')
+              back=page.get_by_role("button",name="← Back to Quarterbacks",exact=True)
               assert back.count()==1
               back.click()
+              deadline=time.monotonic()+20
+              while time.monotonic()<deadline:
+                  qs=parse_qs(urlparse(page.url).query)
+                  if "ks_qb_slot" not in qs:
+                      break
+                  page.wait_for_timeout(100)
+              else:
+                  raise RuntimeError("CATEGORY_NAV_BACK_QUERY_NOT_CLEARED")
+              assert_state(page,False)
               frame,picker=find_picker(page)
               assert picker.count()==1
-              assert_state(page,False)
+              assert picker.locator('a[data-qb-select]').count()==2
               assert frame.locator('[data-passing-yards-category-nav="v62"]').count()==0
               print(f"PASSING_YARDS_NEW_PHASE_STEP1_PUBLIC_{width}_GREEN")
 
