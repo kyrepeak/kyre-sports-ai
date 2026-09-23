@@ -1,0 +1,30 @@
+{
+  "task": "passing-yards-new-phase-step3-projection-detail-v1",
+  "task_id": "passing-yards-new-phase-step3-projection-detail-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "412491b680803d5519e5d6ed8d00bd3a3a0e7e15",
+  "scope": "New Phase Step 3 Projection Detail for NFL Passing Yards. Presentation-only V64 over frozen V63, plus Router V215 activation, dedicated workflow, and app activation. Reorganizes only already-certified Baseline Projection values.",
+  "failed_layer": "NONE",
+  "product_files_changed": true,
+  "acceptance": [
+    "Projection Detail renders for the selected quarterback",
+    "Baseline Pass Yards, Expected Attempts, and Expected YPA are present",
+    "Attempt and efficiency coverage are present",
+    "Pressure, personnel, environment, and weather context are present",
+    "all nine projection readouts are copied from frozen rendered projection values",
+    "Step 1 Category Navigation remains present",
+    "Step 2 Market Decision Detail remains present",
+    "Back to Quarterbacks returns to V58 with exactly two QB cards",
+    "date and matchup are preserved",
+    "sportsbook projection influence remains 0.0%",
+    "no projection, probability, market-math, data, or sportsbook logic changes"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
