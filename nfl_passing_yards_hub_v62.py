@@ -166,11 +166,17 @@ def _inject_category_navigation(body: str, slot: int) -> str:
     return _CATEGORY_NAV_CSS + text
 
 
+def _clear_qb_slot_for_back() -> None:
+    if "ks_qb_slot" in st.query_params:
+        del st.query_params["ks_qb_slot"]
+
+
 def _selected_analysis_v62(captured: dict[str, list[str]], slot: int) -> str:
-    if st.button("← Back to Quarterbacks", key="ks_py62_back_to_quarterbacks"):
-        if "ks_qb_slot" in st.query_params:
-            del st.query_params["ks_qb_slot"]
-        st.rerun()
+    st.button(
+        "← Back to Quarterbacks",
+        key="ks_py62_back_to_quarterbacks",
+        on_click=_clear_qb_slot_for_back,
+    )
     return _inject_category_navigation(_FROZEN_SELECTED_ANALYSIS(captured, slot), slot)
 
 
