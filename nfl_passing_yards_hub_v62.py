@@ -10,8 +10,6 @@ from __future__ import annotations
 
 from html import escape
 
-import streamlit as st
-
 import nfl_passing_yards_hub_v58 as navigation
 import nfl_passing_yards_hub_v59 as detail
 import nfl_passing_yards_hub_v61 as prior
@@ -44,7 +42,6 @@ CATEGORY_NAV_ITEMS = (
 _CATEGORY_NAV_CSS = r"""
 <style data-passing-yards-category-nav-css="v62">
 .ks-py62-category-nav,.ks-py62-category-nav *{box-sizing:border-box}
-.ks-py59-back[data-qb-back="true"]{display:none!important}
 .ks-py62-category-nav{
   width:100%;max-width:100%;margin:0 0 12px;padding:10px;
   border:1px solid var(--kyre-sem-border-soft);
@@ -177,10 +174,6 @@ def _inject_category_navigation(body: str, slot: int) -> str:
 
 
 def _selected_analysis_v62(captured: dict[str, list[str]], slot: int) -> str:
-    if st.button("← Back to Quarterbacks", key="ks_py62_back_to_quarterbacks"):
-        if "ks_qb_slot" in st.query_params:
-            del st.query_params["ks_qb_slot"]
-        st.rerun()
     return _inject_category_navigation(_FROZEN_SELECTED_ANALYSIS(captured, slot), slot)
 
 
