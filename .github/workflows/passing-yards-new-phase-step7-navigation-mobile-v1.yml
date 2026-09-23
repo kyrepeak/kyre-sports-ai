@@ -62,29 +62,67 @@ jobs:
       - name: Verify Navigation Mobile static contract
         run: |
           python - <<'PY'
+          import ast
           from pathlib import Path
 
-          v68=Path("nfl_passing_yards_hub_v68.py").read_text()
-          v219=Path("streamlit_memory_lazy_router_v219.py").read_text()
-          app=Path("app.py").read_text()
+          v68_text=Path("nfl_passing_yards_hub_v68.py").read_text()
+          v219_text=Path("streamlit_memory_lazy_router_v219.py").read_text()
+          app_text=Path("app.py").read_text()
 
-          required=[
-              'FROZEN_PRIOR = "nfl_passing_yards_hub_v67"',
-              'NAVIGATION_MOBILE_VERSION = "v68"',
-              'NEW_PHASE_STEP = 7',
-              'PRESENTATION_ONLY = True',
-              'MAY_MODIFY_PROJECTION = False',
-              'MAY_MODIFY_CONTEXT = False',
-              'MAY_MODIFY_PROBABILITY = False',
-              'MAY_MODIFY_MARKET_MATH = False',
-              'MAY_MODIFY_DATA = False',
-              'MAY_MODIFY_NAVIGATION_STATE = False',
-              'SPORTSBOOK_PROJECTION_INFLUENCE = 0.0',
-          ]
-          for token in required:
-              assert token in v68, token
+          def constants(source):
+              tree=ast.parse(source)
+              out={}
+              for node in tree.body:
+                  if isinstance(node, ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name):
+                      try:
+                          out[node.targets[0].id]=ast.literal_eval(node.value)
+                      except Exception:
+                          pass
+              return tree,out
 
-          for forbidden in [
+          v68_tree,v68=constants(v68_text)
+          v219_tree,v219=constants(v219_text)
+          app_tree=ast.parse(app_text)
+
+          expected_v68={
+              "FROZEN_PRIOR":"nfl_passing_yards_hub_v67",
+              "NAVIGATION_MOBILE_VERSION":"v68",
+              "NEW_PHASE_STEP":7,
+              "PRESENTATION_ONLY":True,
+              "MAY_MODIFY_PROJECTION":False,
+              "MAY_MODIFY_CONTEXT":False,
+              "MAY_MODIFY_PROBABILITY":False,
+              "MAY_MODIFY_MARKET_MATH":False,
+              "MAY_MODIFY_DATA":False,
+              "MAY_MODIFY_NAVIGATION_STATE":False,
+              "SPORTSBOOK_PROJECTION_INFLUENCE":0.0,
+          }
+          for key,value in expected_v68.items():
+              assert v68.get(key)==value,(key,v68.get(key),value)
+
+          expected_v219={
+              "FROZEN_ROUTER":"streamlit_memory_lazy_router_v218",
+              "PASSING_HUB":"nfl_passing_yards_hub_v68",
+              "MAY_MODIFY_NAVIGATION_STATE":False,
+              "SPORTSBOOK_PROJECTION_INFLUENCE":0.0,
+          }
+          for key,value in expected_v219.items():
+              assert v219.get(key)==value,(key,v219.get(key),value)
+
+          imports=[]
+          for node in app_tree.body:
+              if isinstance(node, ast.Try):
+                  for sub in node.body:
+                      if isinstance(sub,ast.ImportFrom):
+                          imports.append((sub.module,tuple(a.name for a in sub.names)))
+          assert any(
+              module=="streamlit_memory_lazy_router_v219"
+              and "record_bootstrap_import_ms" in names
+              and "render_app" in names
+              for module,names in imports
+          ),imports
+
+          forbidden=(
               "requests.get(",
               "httpx.",
               "urllib.request",
@@ -92,13 +130,10 @@ jobs:
               "build_context_projection(",
               "build_baseline_projection(",
               "evaluate_market(",
-          ]:
-              assert token not in v68, token
+          )
+          for token in forbidden:
+              assert token not in v68_text,token
 
-          assert 'FROZEN_ROUTER = "streamlit_memory_lazy_router_v218"' in v219
-          assert 'PASSING_HUB = "nfl_passing_yards_hub_v68"' in v219
-          assert 'MAY_MODIFY_NAVIGATION_STATE = False' in v219
-          assert 'from streamlit_memory_lazy_router_v219 import record_bootstrap_import_ms, render_app' in app
           print("PASSING_YARDS_NEW_PHASE_STEP7_STATIC_GREEN")
           PY
 
