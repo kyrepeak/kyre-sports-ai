@@ -14,6 +14,8 @@ import nfl_passing_yards_hub_v58 as navigation
 import nfl_passing_yards_hub_v59 as detail
 import nfl_passing_yards_hub_v61 as prior
 
+_FROZEN_SELECTED_ANALYSIS = detail._selected_analysis
+
 MODEL_VERSION = "NFL PASSING YARDS V62 • NEW PHASE STEP 1 CATEGORY NAVIGATION"
 FROZEN_PRIOR = "nfl_passing_yards_hub_v61"
 CATEGORY_NAV_VERSION = "v62"
@@ -156,7 +158,7 @@ def _inject_category_navigation(body: str, slot: int) -> str:
 
 
 def _selected_analysis_v62(captured: dict[str, list[str]], slot: int) -> str:
-    return _inject_category_navigation(detail._selected_analysis(captured, slot), slot)
+    return _inject_category_navigation(_FROZEN_SELECTED_ANALYSIS(captured, slot), slot)
 
 
 def render_nfl_passing_yards_hub() -> None:
