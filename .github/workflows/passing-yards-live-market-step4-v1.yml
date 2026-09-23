@@ -240,7 +240,40 @@ jobs:
               panel=root.locator('[data-passing-yards-live-market="v73"]')
               assert market_detail.count()==1
               assert panel.count()==1
-              assert panel.get_attribute("data-passing-yards-live-market-ready")=="true"
+
+              ready_attr=panel.get_attribute("data-passing-yards-live-market-ready")
+              line_field=market_detail.locator('[data-market-field="line"] b').inner_text(timeout=5000).strip()
+              offered_field=market_detail.locator('[data-market-field="offered-odds"] b').inner_text(timeout=5000).strip()
+              source_text=market_detail.locator('.ks-py63-market-source').inner_text(timeout=5000).strip()
+              odds_parts=[part.strip() for part in offered_field.split("/",1)]
+              parsed_over=odds_parts[0] if odds_parts else ""
+              parsed_under=odds_parts[1] if len(odds_parts)>1 else ""
+
+              def diag_num(value):
+                  try:
+                      return float(str(value).replace(",","").replace("+","").strip())
+                  except Exception:
+                      return float("nan")
+
+              line_num=diag_num(line_field)
+              over_num=diag_num(parsed_over)
+              under_num=diag_num(parsed_under)
+
+              print("PANEL READY ATTRIBUTE:",ready_attr)
+              print("CURRENT MARKET LINE FIELD:",line_field)
+              print("OFFERED ODDS FIELD:",offered_field)
+              print("PARSED OVER PRICE:",parsed_over)
+              print("PARSED UNDER PRICE:",parsed_under)
+              print("MARKET SOURCE TEXT:",source_text)
+              print('SOURCE CONTAINS "Kyre Sports API":',"YES" if "Kyre Sports API" in source_text else "NO")
+              print('SOURCE CONTAINS "FanDuel":',"YES" if "FanDuel" in source_text else "NO")
+              print("LINE FINITE:","YES" if line_num==line_num else "NO")
+              print("OVER FINITE:","YES" if over_num==over_num else "NO")
+              print("UNDER FINITE:","YES" if under_num==under_num else "NO")
+              print("OVER ABS >= 100:","YES" if over_num==over_num and abs(over_num)>=100 else "NO")
+              print("UNDER ABS >= 100:","YES" if under_num==under_num and abs(under_num)>=100 else "NO")
+
+              assert ready_attr=="true"
               assert panel.get_attribute("data-passing-yards-v224-runtime")=="live-market-step4"
               assert panel.locator('[data-live-market-field]').count()==4
               assert panel.locator('[data-live-market-movement="v73"]').count()==1
