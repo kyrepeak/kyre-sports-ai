@@ -177,9 +177,12 @@ def _inject_navigation_mobile_polish(body: str) -> str:
     ):
         return text
 
+    root_anchor = '<section class="ks-py59" data-passing-yards-qb-detail="v59"'
+    if root_anchor not in text:
+        return text
     text = text.replace(
-        'data-passing-yards-qb-detail="v59"',
-        'data-passing-yards-qb-detail="v59" data-passing-yards-navigation-mobile="v68"',
+        root_anchor,
+        root_anchor + ' data-passing-yards-navigation-mobile="v68"',
         1,
     )
 
