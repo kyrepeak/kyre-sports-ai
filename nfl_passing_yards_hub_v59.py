@@ -22,6 +22,8 @@ DRILLDOWN_STEP = 2
 DETAIL_SYSTEM_VERSION = "v59"
 DETAIL_CLEANUP_VERSION = "step1-2-v1"
 DETAIL_CLEANUP_STEPS = 2
+DETAIL_CLEANUP_STEP34_VERSION = "step3-4-v1"
+DETAIL_CLEANUP_COMPLETED_STEPS = 4
 PRESENTATION_ONLY = True
 DISPLAY_ONLY = True
 MAY_MODIFY_PROJECTION = False
@@ -168,6 +170,123 @@ _DETAIL_CSS = r"""
 }
 .ks-py59-identity .kpass29-foot strong{color:var(--kyre-sem-text-accent-soft)!important}
 
+/* Step 3 — Current Market + Edge: separate values from labels and compact the card. */
+.ks-py59-section[data-qb-analysis-section="market"],
+.ks-py59-section[data-qb-analysis-section="projection"]{
+  padding:12px;background:linear-gradient(145deg,rgba(255,255,255,.018),rgba(255,255,255,.006))
+}
+.ks-py59-section[data-qb-analysis-section="market"]>strong,
+.ks-py59-section[data-qb-analysis-section="projection"]>strong{
+  margin:0 0 10px;padding:0 0 9px;border-bottom:1px solid var(--kyre-sem-border-soft);
+  font-size:.66rem;letter-spacing:.09em
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-card{
+  margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-top{
+  display:flex!important;align-items:flex-start!important;justify-content:space-between!important;
+  gap:10px!important;margin:0 0 10px!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy21-team-logo-slot{
+  width:40px!important;height:40px!important;flex:0 0 40px!important;
+  margin:0!important;border-radius:10px!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-name{
+  font-size:1rem!important;line-height:1.18!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-sub{
+  margin-top:4px!important;font-size:.67rem!important;line-height:1.45!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-grade{
+  padding:5px 8px!important;font-size:.60rem!important;line-height:1!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero{
+  display:grid!important;grid-template-columns:1.15fr repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;margin:0 0 8px!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero>div,
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-metrics>div{
+  min-width:0!important;padding:10px!important;border-radius:11px!important;
+  border:1px solid var(--kyre-sem-border-soft)!important;background:rgba(255,255,255,.018)!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero b{
+  display:block!important;font-size:1rem!important;line-height:1.12!important;
+  white-space:normal!important;overflow-wrap:anywhere!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero span{
+  display:block!important;margin-top:4px!important;font-size:.57rem!important;
+  line-height:1.25!important;letter-spacing:.03em!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-metrics{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-metrics>div{
+  display:flex!important;flex-direction:column!important;gap:5px!important;
+  color:var(--kyre-sem-text-muted)!important;font-size:.64rem!important;line-height:1.3!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-metrics b{
+  display:block!important;margin:0!important;color:var(--kyre-sem-text-primary)!important;
+  font-size:.88rem!important;line-height:1.15!important;
+  white-space:normal!important;overflow-wrap:anywhere!important
+}
+.ks-py59-section[data-qb-analysis-section="market"] .kpy10-note{
+  margin-top:9px!important;padding-top:9px!important;
+  color:var(--kyre-sem-text-muted)!important;font-size:.67rem!important;line-height:1.55!important
+}
+
+/* Step 4 — Baseline Projection: clean metric hierarchy without changing any values. */
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-proj{
+  margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projtop{
+  display:flex!important;align-items:flex-start!important;justify-content:space-between!important;
+  gap:10px!important;margin:0 0 10px!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projname{
+  font-size:1rem!important;line-height:1.18!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projsub{
+  margin-top:4px!important;font-size:.67rem!important;line-height:1.45!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projgrade{
+  padding:5px 8px!important;font-size:.60rem!important;line-height:1!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero{
+  display:grid!important;grid-template-columns:1.25fr repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;margin:0 0 8px!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero>div,
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projmeta>div{
+  min-width:0!important;padding:10px!important;border-radius:11px!important;
+  border:1px solid var(--kyre-sem-border-soft)!important;background:rgba(255,255,255,.018)!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero b{
+  display:block!important;font-size:1.04rem!important;line-height:1.12!important;
+  white-space:normal!important;overflow-wrap:anywhere!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero span{
+  display:block!important;margin-top:4px!important;font-size:.57rem!important;
+  line-height:1.25!important;letter-spacing:.03em!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projmeta{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projmeta>div{
+  color:var(--kyre-sem-text-muted)!important;font-size:.64rem!important;line-height:1.35!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projmeta b{
+  display:block!important;margin:0 0 5px!important;color:var(--kyre-sem-text-primary)!important;
+  font-size:.88rem!important;line-height:1.15!important;
+  white-space:normal!important;overflow-wrap:anywhere!important
+}
+.ks-py59-section[data-qb-analysis-section="projection"] .kpy-projctx{
+  margin-top:9px!important;padding-top:9px!important;
+  color:var(--kyre-sem-text-muted)!important;font-size:.67rem!important;line-height:1.55!important
+}
+
 .ks-py59-section{
   min-width:0;margin-top:var(--kyre-space-3);padding:var(--kyre-space-3);
   border:1px solid var(--kyre-sem-border-soft);border-radius:var(--kyre-sem-radius-section);
@@ -228,6 +347,34 @@ _DETAIL_CSS = r"""
   .ks-py59-identity .kpass29-metric{padding:9px!important}
   .ks-py59-identity .kpass29-metric b{font-size:.82rem!important}
   .ks-py59-identity .kpass29-foot{font-size:.64rem!important}
+  .ks-py59-section[data-qb-analysis-section="market"],
+  .ks-py59-section[data-qb-analysis-section="projection"]{padding:10px}
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-top,
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projtop{
+    flex-direction:column!important;gap:8px!important
+  }
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-grade,
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projgrade{
+    align-self:flex-start!important
+  }
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero,
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important
+  }
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-hero>div:first-child,
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projhero>div:first-child{
+    grid-column:1/-1!important
+  }
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-metrics{
+    grid-template-columns:1fr!important
+  }
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projmeta{
+    grid-template-columns:1fr!important
+  }
+  .ks-py59-section[data-qb-analysis-section="market"] .kpy10-metrics>div,
+  .ks-py59-section[data-qb-analysis-section="projection"] .kpy-projmeta>div{
+    min-height:0!important
+  }
 }
 </style>
 """
@@ -239,8 +386,13 @@ def _piece(captured: dict[str, list[str]], key: str, index: int) -> str:
     return rows[index] if index < len(rows) else ""
 
 def _section(kind: str, title: str, content: str) -> str:
+    cleanup_marker = ""
+    if kind == "market":
+        cleanup_marker = ' data-qb-detail-cleanup-step3="green"'
+    elif kind == "projection":
+        cleanup_marker = ' data-qb-detail-cleanup-step4="green"'
     return (
-        f'<section class="ks-py59-section" data-qb-analysis-section="{kind}">'
+        f'<section class="ks-py59-section" data-qb-analysis-section="{kind}"{cleanup_marker}>'
         f'<strong>{title}</strong>'
         + (content or "<div>Unavailable</div>")
         + "</section>"
@@ -326,6 +478,8 @@ def render_nfl_hub(market: str = "Passing Yards") -> None:
     return render_nfl_passing_yards_hub()
 
 __all__ = [
+    "DETAIL_CLEANUP_COMPLETED_STEPS",
+    "DETAIL_CLEANUP_STEP34_VERSION",
     "DETAIL_CLEANUP_STEPS",
     "DETAIL_CLEANUP_VERSION",
     "DETAIL_SYSTEM_VERSION",
