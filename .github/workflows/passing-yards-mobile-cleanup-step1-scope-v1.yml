@@ -77,7 +77,7 @@ jobs:
                   "_pressure_card",
               ],
               "nfl_passing_yards_hub_v28.py": [
-                  ".kpy-personnel",
+                  'class="kpy-personnel"',
                   "_personnel_card",
               ],
               "nfl_passing_yards_hub_v7.py": [
