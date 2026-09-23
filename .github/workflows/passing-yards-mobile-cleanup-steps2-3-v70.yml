@@ -242,7 +242,9 @@ jobs:
                   assert_value_above_label(frame,'.kpy15-center .kpy15-metric')
                   badge=frame.locator('.kpy15-center .kpy15-conf').first
                   assert badge.count()==1
-                  assert badge.evaluate("e => getComputedStyle(e).display") == "inline-flex"
+                  bb=badge.bounding_box()
+                  assert bb and bb["width"] < 180 and bb["height"] <= 44,bb
+                  assert badge.evaluate("e => getComputedStyle(e).borderRadius") != "0px"
 
                   # Surfaces 2-6: Deep Evidence
                   page.goto(detail_route,wait_until="domcontentloaded",timeout=120000)
@@ -288,7 +290,9 @@ jobs:
                   ):
                       badge=deep.locator(badge_selector).first
                       assert badge.count()==1,badge_selector
-                      assert badge.evaluate("e => getComputedStyle(e).display")=="inline-flex",badge_selector
+                      bb=badge.bounding_box()
+                      assert bb and bb["width"] < 180 and bb["height"] <= 44,(badge_selector,bb)
+                      assert badge.evaluate("e => getComputedStyle(e).borderRadius") != "0px",badge_selector
 
                   assert root.locator('[data-passing-yards-clean-detail]').count()==4
                   nav=root.locator('[data-passing-yards-category-nav="v62"]')
