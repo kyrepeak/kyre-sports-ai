@@ -124,7 +124,9 @@ def build_projection_explainability(source: str) -> str:
     )
 
     return (
-        '<section class="ks-py71-explain" data-passing-yards-projection-explainability="v71">'
+        '<section class="ks-py71-explain" data-passing-yards-projection-explainability="v71" '
+        'data-passing-yards-mobile-cleanup-runtime="v70" '
+        'data-passing-yards-v222-runtime="projection-explainability-step2">'
         '<div class="ks-py71-head"><div>'
         '<div class="ks-py71-kicker">Projection explainability • read-only</div>'
         '<div class="ks-py71-title">Why the model landed here</div>'
