@@ -64,5 +64,12 @@
   "sportsbook_logic_changed": false,
   "data_changed": false,
   "navigation_state_changed": false,
-  "widget_keys_changed": false
+  "widget_keys_changed": false,
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
 }
