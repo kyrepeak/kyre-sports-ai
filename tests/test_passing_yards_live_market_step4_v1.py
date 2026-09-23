@@ -79,6 +79,12 @@ def test_step4_bounded_parser_survives_proven_contaminated_v63_fields():
 
 def test_step4_bounded_parser_fails_closed_when_exact_values_are_malformed():
     malformed = SOURCE.replace(
+        '<div data-market-field="line"><b>247.5</b><span>Market Line</span></div>',
+        '<div data-market-field="line"><b>not-a-line</b><span>Market Line</span></div>',
+    ).replace(
+        '<div data-market-field="offered-odds"><b>-108 / -112</b><span>Offered Odds</span></div>',
+        '<div data-market-field="offered-odds"><b>bad / bad</b><span>Offered Odds</span></div>',
+    ).replace(
         '<div><b>247.5</b><span>Market Line</span></div>',
         '<div><b>not-a-line</b><span>Market Line</span></div>',
     ).replace(
