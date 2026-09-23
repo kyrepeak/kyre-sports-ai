@@ -50,9 +50,11 @@
   "closeout_navigation_repair": {
     "root_cause_layer": "NAVIGATION",
     "public_evidence_run": 35815578616,
-    "root_cause": "Back click left ks_qb_slot=2 in the public top-level query through 8 seconds.",
-    "patch": "V62 promotes Back href from query-relative ?... to app-root /?... while retaining target=_top.",
-    "branch_proof_run": 35815924910,
-    "branch_proof": "GREEN"
+    "failed_app_root_fix_public_run": 35816823411,
+    "root_cause": "Hosted Streamlit iframe Back navigation did not change the top-level query; ks_qb_slot remained 2, so V58 could not become the active composition.",
+    "patch": "V62 renders a native Streamlit Back control that deletes only ks_qb_slot from st.query_params and reruns; the dead framed Back anchor is hidden.",
+    "branch_proof_run": 35817294600,
+    "branch_proof": "GREEN",
+    "final_public_proof": "PENDING"
   }
 }
