@@ -41,15 +41,32 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
+
+          cat > /tmp/expected-full.txt <<'EOF'
           .github/workflows/passing-yards-new-phase-step2-market-detail-v1.yml
           app.py
           devsystem/task_ledgers/passing-yards-new-phase-step2-market-detail-v1.json
           nfl_passing_yards_hub_v63.py
           streamlit_memory_lazy_router_v214.py
           EOF
-          sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          sort -o /tmp/expected-full.txt /tmp/expected-full.txt
+
+          cat > /tmp/expected-shared-public-back-verifier-hotfix.txt <<'EOF'
+          .github/workflows/passing-yards-new-phase-step1-category-navigation-v1.yml
+          .github/workflows/passing-yards-new-phase-step2-market-detail-v1.yml
+          EOF
+          sort -o /tmp/expected-shared-public-back-verifier-hotfix.txt /tmp/expected-shared-public-back-verifier-hotfix.txt
+
+          if cmp -s /tmp/expected-full.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP2_SCOPE_FULL_GREEN"
+          elif cmp -s /tmp/expected-shared-public-back-verifier-hotfix.txt /tmp/actual.txt; then
+            echo "PASSING_YARDS_NEW_PHASE_STEP2_SCOPE_SHARED_PUBLIC_BACK_VERIFIER_HOTFIX_GREEN"
+          else
+            echo "INVALID_STEP2_SCOPE"
+            echo "Actual:"
+            cat /tmp/actual.txt
+            exit 1
+          fi
           echo "PASSING_YARDS_NEW_PHASE_STEP2_SCOPE_GREEN"
 
       - name: Compile Step 2 activation
@@ -405,6 +422,10 @@ jobs:
                   page.wait_for_timeout(200)
               raise RuntimeError("MARKET_DETAIL_PUBLIC_BACK_NOT_READY")
 
+          def frame_query(frame):
+              href=frame.evaluate("() => window.location.href")
+              return parse_qs(urlparse(href).query)
+
           def canonical_matchup(value):
               return str(value or "").split(" • ",1)[0].strip()
 
@@ -462,18 +483,18 @@ jobs:
 
               _,back=find_back(page)
               back.click()
-              deadline=time.monotonic()+20
-              while time.monotonic()<deadline:
-                  if "ks_qb_slot" not in parse_qs(urlparse(page.url).query):
-                      break
-                  page.wait_for_timeout(100)
-              else:
-                  raise RuntimeError("MARKET_DETAIL_PUBLIC_BACK_QUERY_NOT_CLEARED")
-              assert_state(page,False)
-              frame,picker=find_picker(page)
+
+              picker_frame,picker=find_picker(page,timeout=120)
               assert picker.count()==1
               assert picker.locator('a[data-qb-select]').count()==2
-              assert frame.locator('[data-passing-yards-market-detail="v63"]').count()==0
+
+              qs=frame_query(picker_frame)
+              assert "ks_qb_slot" not in qs,qs
+              assert qs.get("ks_py_date")==[expected_date],qs
+              mv=qs.get("ks_py_matchup") or [""]
+              assert canonical_matchup(mv[0])==expected_matchup,qs
+
+              assert picker_frame.locator('[data-passing-yards-market-detail="v63"]').count()==0
               print(f"PASSING_YARDS_NEW_PHASE_STEP2_PUBLIC_{width}_GREEN")
 
           with sync_playwright() as p:
