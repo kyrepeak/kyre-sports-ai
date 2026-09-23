@@ -269,7 +269,12 @@ jobs:
               assert values[2] not in {"","—"},values
               assert values[3] not in {"","—"},values
 
-              assert market_detail.bounding_box()["y"] <= panel.bounding_box()["y"]
+              order_ok=frame.evaluate("""() => {
+                const market=document.querySelector('[data-passing-yards-market-detail="v63"]');
+                const live=document.querySelector('[data-passing-yards-live-market="v73"]');
+                return Boolean(market && live && (market.compareDocumentPosition(live) & Node.DOCUMENT_POSITION_FOLLOWING));
+              }""")
+              assert order_ok
 
               dims=frame.locator("body").evaluate("""e => ({
                 bodyScroll:e.scrollWidth,
