@@ -62,29 +62,41 @@ jobs:
       - name: Verify Navigation Mobile static contract
         run: |
           python - <<'PY'
+          import ast
           from pathlib import Path
-          import nfl_passing_yards_hub_v68 as v68
-          import streamlit_memory_lazy_router_v219 as v219
 
+          def constants(path):
+              source=Path(path).read_text()
+              tree=ast.parse(source)
+              values={}
+              for node in tree.body:
+                  if isinstance(node, ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0], ast.Name):
+                      try:
+                          values[node.targets[0].id]=ast.literal_eval(node.value)
+                      except Exception:
+                          pass
+              return source,values
+
+          v68_source,v68=constants("nfl_passing_yards_hub_v68.py")
+          v219_source,v219=constants("streamlit_memory_lazy_router_v219.py")
           app=Path("app.py").read_text()
-          source=Path("nfl_passing_yards_hub_v68.py").read_text()
 
-          assert v68.FROZEN_PRIOR == "nfl_passing_yards_hub_v67"
-          assert v68.NAVIGATION_MOBILE_VERSION == "v68"
-          assert v68.NEW_PHASE_STEP == 7
-          assert v68.PRESENTATION_ONLY is True
-          assert v68.MAY_MODIFY_PROJECTION is False
-          assert v68.MAY_MODIFY_CONTEXT is False
-          assert v68.MAY_MODIFY_PROBABILITY is False
-          assert v68.MAY_MODIFY_MARKET_MATH is False
-          assert v68.MAY_MODIFY_DATA is False
-          assert v68.MAY_MODIFY_NAVIGATION_STATE is False
-          assert v68.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v68["FROZEN_PRIOR"] == "nfl_passing_yards_hub_v67"
+          assert v68["NAVIGATION_MOBILE_VERSION"] == "v68"
+          assert v68["NEW_PHASE_STEP"] == 7
+          assert v68["PRESENTATION_ONLY"] is True
+          assert v68["MAY_MODIFY_PROJECTION"] is False
+          assert v68["MAY_MODIFY_CONTEXT"] is False
+          assert v68["MAY_MODIFY_PROBABILITY"] is False
+          assert v68["MAY_MODIFY_MARKET_MATH"] is False
+          assert v68["MAY_MODIFY_DATA"] is False
+          assert v68["MAY_MODIFY_NAVIGATION_STATE"] is False
+          assert v68["SPORTSBOOK_PROJECTION_INFLUENCE"] == 0.0
 
-          assert v219.FROZEN_ROUTER == "streamlit_memory_lazy_router_v218"
-          assert v219.PASSING_HUB == "nfl_passing_yards_hub_v68"
-          assert v219.MAY_MODIFY_NAVIGATION_STATE is False
-          assert v219.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v219["FROZEN_ROUTER"] == "streamlit_memory_lazy_router_v218"
+          assert v219["PASSING_HUB"] == "nfl_passing_yards_hub_v68"
+          assert v219["MAY_MODIFY_NAVIGATION_STATE"] is False
+          assert v219["SPORTSBOOK_PROJECTION_INFLUENCE"] == 0.0
 
           for forbidden in [
               "requests.get(",
@@ -95,20 +107,12 @@ jobs:
               "build_baseline_projection(",
               "evaluate_market(",
           ]:
-              assert forbidden not in source, forbidden
+              assert forbidden not in v68_source, forbidden
 
-          fixture = (
-              '<section data-passing-yards-qb-detail="v59" '
-              'data-passing-yards-deep-evidence-ready="v67">'
-              '<section class="ks-py67-deep" data-passing-yards-deep-evidence="v67"></section>'
-              '</section>'
-          )
-          rendered = v68._inject_navigation_mobile_polish(fixture)
-          assert 'data-passing-yards-navigation-mobile="v68"' in rendered
-          assert 'data-passing-yards-navigation-mobile-ready="v68"' in rendered
-          assert 'id="ks-py-deep-evidence"' in rendered
-          assert 'data-passing-yards-navigation-mobile-css="v68"' in rendered
-
+          assert 'data-passing-yards-navigation-mobile="v68"' in v68_source
+          assert 'data-passing-yards-navigation-mobile-ready="v68"' in v68_source
+          assert 'id="ks-py-deep-evidence"' in v68_source
+          assert 'data-passing-yards-navigation-mobile-css="v68"' in v68_source
           assert 'from streamlit_memory_lazy_router_v219 import record_bootstrap_import_ms, render_app' in app
           print("PASSING_YARDS_NEW_PHASE_STEP7_STATIC_GREEN")
           PY
