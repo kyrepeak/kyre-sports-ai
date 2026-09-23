@@ -85,7 +85,7 @@ jobs:
               'id="ks-py-deep-evidence"',
               'min-height:48px',
               'overflow-x:auto',
-              'grid-template-columns:1fr!important',
+              'grid-template-columns:1fr!important;',
           ]
           for token in required:
               assert token in v68, token
