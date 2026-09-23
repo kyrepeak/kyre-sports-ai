@@ -1,0 +1,30 @@
+{
+  "task": "passing-yards-public-back-runtime-v1",
+  "task_id": "passing-yards-public-back-runtime-v1",
+  "status": "DONE",
+  "version": 1,
+  "source_main": "894c3c888f67b483ec6f8f4813f441812bf43704",
+  "scope": "Shared runtime repair for Passing Yards New Phase Steps 1 and 2. Changes only the V62 Back-to-Quarterbacks state transition from query mutation plus explicit rerun to a native Streamlit on_click callback, with no changes to V58, V59, V60, V61, V63, routers, app runtime, model, data, math, analytics, market calculations, sportsbook logic, category links, or Market Detail.",
+  "failed_layer": "PUBLIC_RUNTIME_BACK_TRANSITION",
+  "root_cause": "V62 Back mutated ks_qb_slot during the widget rerun and immediately called st.rerun(), producing a hosted-runtime transition that never reached the V58 picker.",
+  "patch": "Move ks_qb_slot deletion to the native Back button on_click callback and remove explicit st.rerun().",
+  "product_owner": "nfl_passing_yards_hub_v62.py",
+  "step1_public_run": 35821218607,
+  "step2_public_run": 35821218625,
+  "acceptance": [
+    "Step 1 branch proves Back returns to V58 with two QB cards",
+    "Step 2 branch proves Back returns to V58 with two QB cards",
+    "ks_qb_slot is removed by the Back callback",
+    "date is preserved",
+    "matchup is preserved",
+    "no TypeError or Traceback",
+    "Step 1 and Step 2 public proofs pass after merge"
+  ],
+  "action_log": {
+    "head_chain_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "events": [],
+    "consumed_receipts": []
+  },
+  "transition_history": [],
+  "override_events": []
+}
