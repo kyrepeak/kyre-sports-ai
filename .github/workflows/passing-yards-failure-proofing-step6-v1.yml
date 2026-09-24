@@ -1,0 +1,366 @@
+name: NFL Passing Yards Failure-Proofing Step 6 V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-failure-proofing-step6-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-failure-proofing-step6-v1.json"
+      - "nfl_passing_yards_hub_v75.py"
+      - "streamlit_memory_lazy_router_v226.py"
+      - "tests/test_passing_yards_failure_proofing_step6_v1.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/passing-yards-failure-proofing-step6-v1.yml"
+      - "app.py"
+      - "devsystem/task_ledgers/passing-yards-failure-proofing-step6-v1.json"
+      - "nfl_passing_yards_hub_v75.py"
+      - "streamlit_memory_lazy_router_v226.py"
+      - "tests/test_passing_yards_failure_proofing_step6_v1.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passing-yards-failure-proofing-step6-v1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Enforce exact Step 6 scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/passing-yards-failure-proofing-step6-v1.yml
+          app.py
+          devsystem/task_ledgers/passing-yards-failure-proofing-step6-v1.json
+          nfl_passing_yards_hub_v75.py
+          streamlit_memory_lazy_router_v226.py
+          tests/test_passing_yards_failure_proofing_step6_v1.py
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          echo "PASSING_YARDS_FAILURE_PROOFING_STEP6_SCOPE_GREEN"
+
+      - name: Prove Steps 1-5 and data-math owners remain frozen
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$BASE_SHA" -- \
+            nfl_passing_yards_hub_v71.py \
+            nfl_passing_yards_hub_v72.py \
+            nfl_passing_yards_hub_v73.py \
+            nfl_passing_yards_hub_v74.py \
+            streamlit_memory_lazy_router_v222.py \
+            streamlit_memory_lazy_router_v223.py \
+            streamlit_memory_lazy_router_v224.py \
+            streamlit_memory_lazy_router_v225.py \
+            nfl_game_day_availability_v1.py \
+            nfl_passing_yards_personnel_v3.py \
+            nfl_passing_yards_environment_v2.py \
+            nfl_passing_yards_market_v1.py \
+            nfl_passing_yards_market_api_v2.py \
+            devsystem/task_ledgers/passing-yards-data-starter-truth-step1-v1.json \
+            devsystem/task_ledgers/passing-yards-projection-explainability-step2-v1.json \
+            devsystem/task_ledgers/passing-yards-matchup-intelligence-step3-v1.json \
+            devsystem/task_ledgers/passing-yards-live-market-step4-v1.json \
+            devsystem/task_ledgers/passing-yards-availability-game-day-step5-v1.json
+          echo "PASSING_YARDS_STEPS1_5_AND_DATA_MATH_OWNERS_FROZEN_GREEN"
+
+      - name: Install static test stack
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q pytest
+
+      - name: Compile and test Step 6 failure-proofing contract
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m py_compile nfl_passing_yards_hub_v75.py streamlit_memory_lazy_router_v226.py
+          python -m pytest -q \
+            tests/test_passing_yards_availability_game_day_step5_v1.py \
+            tests/test_passing_yards_failure_proofing_step6_v1.py
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import nfl_passing_yards_hub_v75 as v75
+          import streamlit_memory_lazy_router_v226 as v226
+
+          ledger=json.loads(Path("devsystem/task_ledgers/passing-yards-failure-proofing-step6-v1.json").read_text())
+          assert ledger["status"] == "DONE"
+          assert ledger["step6_status"] == "DONE"
+          assert ledger["sportsbook_projection_influence"] == 0
+          assert ledger["stake_sizing_enabled"] is False
+
+          assert v75.FROZEN_PRIOR == "nfl_passing_yards_hub_v74"
+          assert v75.FROZEN_FALLBACK == "nfl_passing_yards_hub_v73"
+          assert v75.NEW_PHASE_STEP == 6
+          assert v75.SPORTSBOOK_PROJECTION_INFLUENCE == 0.0
+          assert v226.FROZEN_ROUTER == "streamlit_memory_lazy_router_v225"
+          assert v226.PASSING_HUB == "nfl_passing_yards_hub_v75"
+          assert v226.FALLBACK_HUB == "nfl_passing_yards_hub_v74"
+
+          source=Path("nfl_passing_yards_hub_v75.py").read_text()
+          required=[
+              'data-passing-yards-failure-proofing="v75"',
+              'data-passing-yards-failure-proofing-ready="v75"',
+              'data-passing-yards-failure-mode=',
+              'Failure-proofing active',
+              'Failure contained',
+              'no unavailable evidence was synthesized',
+          ]
+          for token in required:
+              assert token in source, token
+          for forbidden in ("build_baseline_projection(", "evaluate_market(", "collect_fanduel_nfl_passing_yards("):
+              assert forbidden not in source, forbidden
+
+          app=Path("app.py").read_text()
+          assert "from streamlit_memory_lazy_router_v226 import record_bootstrap_import_ms, render_app" in app
+          assert "PASSING_YARDS_FAILURE_PROOFING_STEP6_RUNTIME" in app
+          print("PASSING_YARDS_FAILURE_PROOFING_STEP6_STATIC_GREEN")
+          PY
+
+  branch-step6-proof:
+    if: github.event_name == 'pull_request'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q -r requirements.txt
+          python -m pip install --disable-pip-version-check -q -r devsystem/browser_tooling_v1.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Start branch-local Streamlit
+        run: |
+          mkdir -p artifacts/passing-yards-failure-proofing-step6
+          nohup python -m streamlit run app.py --server.headless true --server.address 127.0.0.1 --server.port 8501 > artifacts/passing-yards-failure-proofing-step6/streamlit.log 2>&1 &
+          echo $! > /tmp/py_step6_pid
+
+      - name: Prove Step 6 at phone tablet desktop
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          import requests
+          from playwright.sync_api import sync_playwright
+
+          base="http://127.0.0.1:8501"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+
+          deadline=time.monotonic()+150
+          while time.monotonic()<deadline:
+              try:
+                  if requests.get(base,timeout=3).status_code < 500:
+                      break
+              except Exception:
+                  pass
+              time.sleep(.5)
+          else:
+              raise RuntimeError("STEP6_LOCAL_STREAMLIT_NOT_READY")
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2200))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=210):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                      if token in body:
+                          print(body[:50000])
+                          raise RuntimeError("STEP6_RUNTIME_ERROR:"+token)
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(450)
+              raise RuntimeError("STEP6_SELECTOR_NOT_READY:"+selector)
+
+          def certify(page,width,height):
+              page.set_viewport_size({"width":width,"height":height})
+              page.goto(route,wait_until="domcontentloaded",timeout=120000)
+              frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+              body=frame.locator("body").inner_text(timeout=5000)
+              assert "Jordan Love" in body
+              assert root.get_attribute("data-passing-yards-explainability-ready")=="v71"
+              assert root.get_attribute("data-passing-yards-matchup-intelligence-ready")=="v72"
+              assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
+              assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
+              assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
+              assert root.get_attribute("data-passing-yards-failure-mode")=="HEALTHY"
+
+              step5=root.locator('[data-passing-yards-availability-game-day="v74"]')
+              assert step5.count()==1
+              assert step5.get_attribute("data-passing-yards-availability-ready")=="true"
+
+              step6=root.locator('[data-passing-yards-failure-proofing="v75"]')
+              assert step6.count()==1
+              assert step6.get_attribute("data-failure-proofing-mode")=="HEALTHY"
+              text=step6.inner_text(timeout=5000)
+              assert "Failure-proofing active" in text
+              assert "frozen certified baseline preserved" in text
+
+              dims=frame.locator("body").evaluate("""e => ({
+                bodyScroll:e.scrollWidth,
+                docScroll:document.documentElement.scrollWidth,
+                viewport:window.innerWidth
+              })""")
+              assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+              assert dims["docScroll"] <= dims["viewport"] + 2,dims
+              print(f"PASSING_YARDS_FAILURE_PROOFING_STEP6_{width}_GREEN")
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              page=browser.new_page(viewport={"width":390,"height":844})
+              certify(page,390,844)
+              certify(page,768,1024)
+              certify(page,1440,1000)
+              print("PASSING_YARDS_FAILURE_PROOFING_STEP6_BRANCH_GREEN")
+              page.close()
+              browser.close()
+          PY
+
+      - name: Print Streamlit log on failure
+        if: failure()
+        run: tail -n 900 artifacts/passing-yards-failure-proofing-step6/streamlit.log || true
+
+      - name: Stop branch-local Streamlit
+        if: always()
+        run: |
+          if [ -f /tmp/py_step6_pid ]; then kill "$(cat /tmp/py_step6_pid)" 2>/dev/null || true; fi
+
+  public-step6-freeze:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: static-contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install public proof dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -q requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Allow Streamlit deployment to publish
+        run: sleep 120
+
+      - name: Prove public Step 6 and freeze
+        run: |
+          python - <<'PY'
+          import time
+          from urllib.parse import urlencode
+          from playwright.sync_api import sync_playwright
+
+          base="https://kyre-sports-ai.streamlit.app"
+          route=base+"/?"+urlencode({
+              "ks_jump_sport":"NFL",
+              "ks_jump_market":"Passing Yards",
+              "ks_py_date":"2026-09-24",
+              "ks_py_matchup":"Atlanta Falcons @ Green Bay Packers",
+              "ks_qb_slot":"2",
+          })
+
+          def body_text(page):
+              out=[]
+              for frame in page.frames:
+                  try: out.append(frame.locator("body").inner_text(timeout=2500))
+                  except Exception: pass
+              return "\n".join(out)
+
+          def find(page,selector,timeout=260):
+              deadline=time.monotonic()+timeout
+              while time.monotonic()<deadline:
+                  body=body_text(page)
+                  for token in ("TypeError","KeyError","Traceback","RecursionError"):
+                      if token in body:
+                          print(body[:50000])
+                          raise RuntimeError("STEP6_PUBLIC_RUNTIME_ERROR:"+token)
+                  for frame in page.frames:
+                      try:
+                          loc=frame.locator(selector)
+                          if loc.count()>=1: return frame,loc.first
+                      except Exception: pass
+                  page.wait_for_timeout(500)
+              raise RuntimeError("STEP6_PUBLIC_SELECTOR_NOT_READY:"+selector)
+
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,args=["--disable-dev-shm-usage","--no-sandbox"])
+              for width,height in ((390,844),(768,1024),(1440,1000)):
+                  page=browser.new_page(viewport={"width":width,"height":height})
+                  page.goto(route,wait_until="domcontentloaded",timeout=120000)
+                  frame,root=find(page,'[data-passing-yards-qb-detail="v59"][data-qb-analysis-slot="2"]')
+                  assert root.get_attribute("data-passing-yards-live-market-ready")=="v73"
+                  assert root.get_attribute("data-passing-yards-availability-game-day-ready")=="v74"
+                  assert root.get_attribute("data-passing-yards-failure-proofing-ready")=="v75"
+                  assert root.get_attribute("data-passing-yards-failure-mode")=="HEALTHY"
+                  step5=root.locator('[data-passing-yards-availability-game-day="v74"]')
+                  assert step5.count()==1
+                  assert step5.get_attribute("data-passing-yards-availability-ready")=="true"
+                  step6=root.locator('[data-passing-yards-failure-proofing="v75"]')
+                  assert step6.count()==1
+                  assert step6.get_attribute("data-failure-proofing-mode")=="HEALTHY"
+                  text=step6.inner_text(timeout=5000)
+                  assert "Failure-proofing active" in text
+                  assert "Jordan Love" in frame.locator("body").inner_text(timeout=5000)
+                  dims=frame.locator("body").evaluate("""e => ({
+                    bodyScroll:e.scrollWidth,
+                    docScroll:document.documentElement.scrollWidth,
+                    viewport:window.innerWidth
+                  })""")
+                  assert dims["bodyScroll"] <= dims["viewport"] + 2,dims
+                  assert dims["docScroll"] <= dims["viewport"] + 2,dims
+                  print(f"PASSING_YARDS_FAILURE_PROOFING_STEP6_PUBLIC_{width}_GREEN")
+                  page.close()
+              browser.close()
+          print("PASSING_YARDS_FAILURE_PROOFING_STEP6_PUBLIC_GREEN")
+          print("PASSING_YARDS_FAILURE_PROOFING_STEP6_FROZEN")
+          PY
