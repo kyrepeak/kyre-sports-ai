@@ -205,7 +205,12 @@ _GUIDE = """
 def _add_id_once(text: str, token: str, element_id: str) -> str:
     if token not in text or f'id="{element_id}"' in text:
         return text
-    return text.replace(token, token[:-1] + f' id="{element_id}">', 1)
+    replacement = (
+        token[:-1] + f' id="{element_id}">'
+        if token.endswith(">")
+        else token + f' id="{element_id}"'
+    )
+    return text.replace(token, replacement, 1)
 
 
 def _inject_ux_presentation(body: str) -> str:
