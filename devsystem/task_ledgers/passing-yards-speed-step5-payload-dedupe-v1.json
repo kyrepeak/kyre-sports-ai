@@ -76,6 +76,17 @@
       "V80_V79_ACTIVE",
       "V79_ACTIVE",
       "OWNER_NOT_OBSERVED"
-    ]
+    ],
+    "expanded_shell_probe": true,
+    "expanded_known_owners": [
+      "v81",
+      "v80",
+      "v79",
+      "v77",
+      "v70",
+      "v60",
+      "v59"
+    ],
+    "fail_on_unknown": false
   }
 }
