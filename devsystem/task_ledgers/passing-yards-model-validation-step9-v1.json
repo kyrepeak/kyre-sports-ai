@@ -1,0 +1,37 @@
+{
+  "task": "passing-yards-model-validation-step9-v1",
+  "task_id": "passing-yards-model-validation-step9-v1",
+  "title": "Passing Yards Model Validation Step 9",
+  "step": 9,
+  "status": "DONE",
+  "source_main_sha": "91f8d2210334f4fb5d8cba4fbe692e50f0322daa",
+  "scope": "Verifier-only model validation. Recompute the frozen Passing Yards projection from underlying football inputs, validate bounded context math and probability invariants, and prove sportsbook lines/prices cannot feed back into projection or distribution. Steps 1-8 product owners remain unchanged.",
+  "frozen_prior_steps": [1,2,3,4,5,6,7,8],
+  "product_code_changed": false,
+  "model_math_changed": false,
+  "projection_changed": false,
+  "probability_changed": false,
+  "market_math_changed": false,
+  "sportsbook_projection_influence": 0,
+  "stake_sizing_enabled": false,
+  "freeze_on_public_success": true,
+  "required": [
+    "Steps 1-8 owners remain byte-identical to the Step 8 frozen main checkpoint",
+    "baseline projection independently recomputes from verified volume and efficiency inputs",
+    "context projection uses only the certified bounded pressure opportunity adjustment",
+    "distribution probabilities are monotonic, complementary and nonnegative",
+    "sportsbook market evaluation cannot mutate Step 7/8/9 model state",
+    "sportsbook projection influence remains 0.0%",
+    "public Jordan Love selected-QB projection satisfies displayed attempts x YPA within display-rounding tolerance",
+    "public runtime shows no TypeError, KeyError, Traceback or RecursionError"
+  ],
+  "frozen_blob_shas": {
+    "app.py": "233b7295706db346b570f15241758b35bb76d6f3",
+    "nfl_passing_yards_projection_v1.py": "b65aae26bcb2476b674b34a797766136ba42595f",
+    "nfl_passing_yards_context_v1.py": "f958fbc1960b464264eb70e47564bf5bf22ded48",
+    "nfl_passing_yards_distribution_v1.py": "67ab23866f61aef2b9c495fd376574cbdfd77197",
+    "nfl_passing_yards_market_v1.py": "892bd14ae62a5040dcf5d9c9c7c308def0dfde64",
+    "nfl_passing_yards_hub_v77.py": "b201bfac5af278ebbd7bdff63f0900526af686d1",
+    "streamlit_memory_lazy_router_v228.py": "643d0c05efbde8593f197f0142fea205572e36af"
+  }
+}
