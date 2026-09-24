@@ -61,6 +61,7 @@ jobs:
           cat > /tmp/expected-deploy-refresh.txt <<'EOF'
           .github/workflows/passing-yards-performance-step8-v2.yml
           app.py
+          devsystem/task_ledgers/passing-yards-performance-step8-v1.json
           EOF
           sort -o /tmp/expected-build.txt /tmp/expected-build.txt
           sort -o /tmp/expected-deploy-refresh.txt /tmp/expected-deploy-refresh.txt
